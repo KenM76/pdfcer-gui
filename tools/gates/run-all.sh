@@ -128,6 +128,7 @@ run "check-shipped-assets --self-test" bash "$HERE/check-shipped-assets.sh" --se
 run "check-string-gaps --self-test" bash "$HERE/check-string-gaps.sh" --self-test
 run "check-trace-names --self-test" python "$HERE/check-trace-names.py" --self-test
 run "check-orphan-docs --self-test" python "$HERE/check-orphan-docs.py" --self-test
+run "check-doc-markup --self-test" python "$HERE/check-doc-markup.py" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
@@ -292,6 +293,37 @@ run "check-trace-names" python "$HERE/check-trace-names.py"
 # fails the gate. `check-strong-text.sh` had carried a carve-out whose premise
 # had silently stopped being true, and that is the lesson taken literally.
 run "check-orphan-docs" python "$HERE/check-orphan-docs.py"
+
+# ★★★ `check-doc-markup`, added 2026-09-12 — and it is the only gate
+# here that asks whether a sentence is VISIBLE rather than whether it is true.
+#
+# GitHub-flavoured Markdown pads a table row that has FEWER cells than its
+# header and **discards** the excess from a row that has more. So a single
+# unescaped pipe inside a cell does not shift the layout — it deletes every
+# character after the header's last column boundary, for the reader, while the
+# file on disk stays complete and the editor shows an ordinary line.
+#
+# ★★ Measured the day it was written: FIVE rows in four of this project's
+# own documents were being truncated, including the whole superseded stack of
+# `FEATURES.md`'s Source row — about two thousand characters — and the entire
+# *which side moved, and why* cell of a `RIBBON_IA.md` row, which is the
+# column that row exists for. `FEATURES.md` ships inside the release zip.
+#
+# ★ Four of the five were broken by **a document quoting a command or a
+# literal that contains a pipe**: a shell pipeline, the PDF flag pair `Print`
+# and `NoZoom`, a Rust closure parameter, another table row. That is the same
+# cause as the `Source` row broken on 2026-09-06 by the `xargs` invocation it
+# quoted, and it is why the message says *escape the pipe* rather than
+# *reword it* — the quotation is usually the point.
+#
+# Its second mechanism is a `**` that can neither open nor close because it
+# has whitespace on the wrong side — what a hand-wrapped bold heading leaves
+# behind. One was written into `HANDOFF.md` the same day and caught by eye.
+#
+# ⇒ Deliberately silent on a row with FEWER cells than its header: that
+# renders correctly, and a gate that reports correct files is a gate that gets
+# carved out until it means nothing. The asymmetry IS the finding.
+run "check-doc-markup" python "$HERE/check-doc-markup.py"
 
 # `check-verb-coverage` fails when `pdfcer-core` has a verb this shell names
 # nowhere AND `EDITABLE_SURFACES.md` says nothing about it either.

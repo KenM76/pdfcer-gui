@@ -187,10 +187,22 @@ pub enum Strategy {
 /// document opens at a fit zoom and renders once before any zoom is possible,
 /// so the observation is in hand before it can matter.
 ///
-/// ★ The engine cannot be asked directly: `interpret::page_blend_space` is
-/// private, and the shell asked. Reported on the request channel rather than
-/// worked around silently — see `docs/core-api/03-capabilities.md` §7.3a, which
-/// is the reply.
+/// ★★★ **The engine CAN now be asked directly, and this shell asks
+/// first.** `interpret::page_blend_space` is still private, but `Pass 296.4`
+/// made `pdfcer_render::page_composites_in_ink` public, and it is that same
+/// function with the policy taken out of the `RenderOptions` handed in.
+/// `OpenDoc::learn_ink` calls it once per page, so the answer is in hand from
+/// the page dictionary rather than one raster later. The paragraph this
+/// replaces described the request that produced it as still open.
+///
+/// ★ **The observation below is KEPT, as a second observer that can only
+/// agree.** The engine ships a test asserting the two match on every fixture,
+/// so this is not a union of two opinions and must not be read as one — it is
+/// one answer reachable by two routes, and the render route survives for the
+/// pages that are rastered before anyone thinks to ask. What the counters
+/// cannot supply is *which* of Table 147, the output intent or the device
+/// decided it; that is `OpenDoc::ink_source`, it has one writer, and an
+/// observed-only page correctly has no entry in it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Ink {
     /// This page has never been observed compositing in a subtractive space, so

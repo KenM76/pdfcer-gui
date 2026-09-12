@@ -44,7 +44,16 @@
 //! signature — leaves the widget rendering **distorted**. The engine names it;
 //! this pane prefixes the engine's own string with what it means on screen.
 //!
-//! ## ★★★ All four properties are here, and the last two took an hour
+//! ## ★★★ All of `WidgetEdit`'s properties are here, and two of them took an hour
+//!
+//! ⚠ **This heading said *"All four"* until 2026-09-11, by which time
+//! `WidgetEdit` carried seven** — `rect`, `resize`, `border`, `border_color`,
+//! `background`, `caption`, `visibility`. A completeness claim that names a
+//! NUMBER goes stale the moment the other side grows a field, and it goes
+//! stale **silently**: nothing fails to compile, no gate counts it, and the
+//! sentence keeps reading like an audited fact. Phrase such a claim against
+//! the type, never against a count, so that the only way to falsify it is to
+//! look at the type.
 //!
 //! This section read *"`WidgetEdit` carries four properties and this pane
 //! offers **two**"* for about an hour on 2026-08-27, and the reason is worth

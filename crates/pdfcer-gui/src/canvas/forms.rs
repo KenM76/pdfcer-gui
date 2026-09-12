@@ -135,10 +135,13 @@
 //!
 //! `Widget::background` shipped 2026-09-04 and `Widget::border_color` on
 //! 2026-09-07, and the line this cited now reads *"carries `/BC`, `/BG` (now
-//! modelled)"*. **The question can be asked. It is not yet answered** — see
-//! `ENGINE_BACKLOG.md`, where the consequence is written in the operator's
-//! terms: the in-canvas editor paints the theme's colours over a shaded
-//! field, so a tinted form box turns grey while it is being edited.
+//! modelled)"*. **The question can be asked, and as of 2026-09-11 it is
+//! answered**: `boxes::editor_fill` resolves `/MK` `/BG` onto the cached
+//! [`boxes::WidgetBox`], and the editor below pairs it through
+//! `Theme::foreign_fill_pair` before handing the `TextEdit` a
+//! `.background_color()` and a `.text_color()`. A tinted form box keeps its
+//! tint while it is being edited, and the ink on it is chosen against that
+//! tint rather than against the theme's.
 //!
 //! ★ Kept rather than deleted because the sentence was **correct when
 //! written and correctly filed** — it is what the engine request was argued

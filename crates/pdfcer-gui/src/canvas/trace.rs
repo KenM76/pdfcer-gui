@@ -634,11 +634,12 @@ pub(super) fn surface(
     on_page: bool,
     page_gesture: bool,
     paste_gesture: bool,
+    page_popup: bool,
 ) {
     crate::diag::trace_changed(SURFACE_SLOT, || {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "canvas-surface surface={} onpage={on_page} pagegesture={page_gesture} pastegesture={paste_gesture}",
+            "canvas-surface surface={} onpage={on_page} pagegesture={page_gesture} pastegesture={paste_gesture} pagepopup={page_popup}",
             match surface {
                 super::pasteboard::Surface::Page => "page",
                 super::pasteboard::Surface::Pasteboard => "pasteboard",

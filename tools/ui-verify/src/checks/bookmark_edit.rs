@@ -117,6 +117,30 @@ use crate::sys::vk;
 /// carries Bookmarks, so no extra toggle is needed — which is why [`INVOKE`]
 /// stopped toggling the panel at the same time.
 ///
+/// # ★★★ Correction, 2026-09-12: the second clause above does not follow
+///
+/// It is kept rather than deleted because it is the inference that produced a
+/// defect, and a reader who never sees it will draw it again.
+///
+/// *Carried in the default dock* means the panel is **mounted**. It does not
+/// mean the panel is **raised**, and those came apart on the very day that
+/// sentence was written. Ken asked on 2026-09-05 for *"no tabs in the left
+/// side bar when the left rail is visible"*, and the dock now draws no tab
+/// strip whenever a rail can raise every panel in the stack — which, in this
+/// application, it always can. `dock.tab.view.panel_bookmarks` has not been
+/// published since.
+///
+/// This check calls [`driving::raise_dock_tab`] and **discards the bool**. It
+/// got `false`, correctly, and carried on; the panel it then read was whatever
+/// happened to be in front. Three checks in this family did the same and all
+/// three skipped for a week with a green suite, because a SKIP is not red.
+///
+/// The repair is in `raise_dock_tab` — it now falls back to the left rail,
+/// which publishes `rail.tabs.<id>` in every mode and cannot be folded away —
+/// so nothing here changed and this check passes again. The rule it earned is
+/// on that function: **a helper that can decline must not hand back a `no` a
+/// caller is free to ignore.**
+///
 /// ★★ The general shape, and it is this project's commonest: **a check that
 /// SKIPs is not red, so a check aimed at a surface the application has since
 /// been specified not to have can sit there for ever looking like an ordinary

@@ -62,14 +62,55 @@ use super::driving::declared;
 ///
 /// # What it does
 ///
-/// Looks for `dock.tab.<panel_command_id>`. If it is declared, clicks its
-/// centre and settles; the dock then makes it the active tab in its stack and
-/// draws its body. Returns `true` if a tab was found and clicked.
+/// Three routes, tried in order, and the order is the safety argument.
 ///
-/// ★ `false` is **not** an error: a panel that is floating, or that this mode
-/// does not mount, declares no dock tab, and the caller's own precondition —
-/// which knows what it needs — is the right place to judge that. This function
-/// declines to guess.
+/// | # | region | what it does |
+/// |---|---|---|
+/// | 1 | `dock.tab.<id>` | clicks the tab. The original behaviour. |
+/// | 2 | `dock.body.<id>` | the panel is already drawn and active — presses NOTHING and returns `true`. |
+/// | 3 | `rail.tabs.<id>` | presses the left-rail entry, then checks it did not close the panel. |
+///
+/// # ★★★ Why route 3 exists — the 2026-09-05 suppression, found 2026-09-12
+///
+/// Ken asked that day for *"no tabs in the left side bar when the left rail
+/// is visible"*, and [`egui_shell::dock::Dock::tabs_suppressed`] delivers it:
+/// when a rail was drawn and can raise **every** panel in the stack, the dock
+/// draws no tab strip at all. In this application all three of its conditions
+/// hold in every mode, so **`dock.tab.*` has not been published since.**
+///
+/// This function went on returning `Ok(false)` — correctly, by its own
+/// contract — and three of its five callers **discard the bool**. They then
+/// failed later with messages naming bookmark mechanisms that were never at
+/// fault. Three checks skipped for a week and the suite stayed green, because
+/// a SKIP is not red.
+///
+/// ⇒ The rule earned, and it generalises past this file: **a helper that can
+/// decline must not hand back a `no` a caller is free to ignore.** The
+/// durable form of that is for the helper to stop declining while a route
+/// exists, which is what route 3 is. Fixing the three checks instead would
+/// have left the fourth and fifth callers — and every future one — holding
+/// the same loaded bool.
+///
+/// # ★★ Why route 2 must be tried BEFORE route 3
+///
+/// The rail entry dispatches the panel command, and `view.panel_*` is a
+/// **toggle** (`app::panels::toggle_panel`, operator decision 2026-08-14):
+/// pressing it while the panel is on screen **closes** it. A fallback that
+/// pressed the rail unconditionally would therefore close the panel its
+/// caller asked to read, and the caller would report an empty panel — the
+/// exact class of confident wrong answer this whole family of helpers exists
+/// to prevent, reintroduced by its own repair.
+///
+/// `dock.body.<id>` is published only while the panel is the drawn, active
+/// tab of a visible side, so it answers the toggle's question directly.
+///
+/// # What `false` still means
+///
+/// The contract is unchanged and it is still not an error: **this panel has
+/// no route on screen in this mode.** A caller's own precondition, which
+/// knows what it needs, is the right place to judge that. What changed is
+/// that `false` no longer *also* means "the dock happens to be drawing no
+/// tabs today", which is what made it uninformative.
 ///
 /// # Errors
 ///
@@ -81,16 +122,75 @@ pub fn raise_dock_tab(
     ui_rect: &str,
     panel_command_id: &str,
 ) -> Result<bool> {
-    let region = format!("dock.tab.{panel_command_id}");
     let trace = session.trace()?;
-    let Some(tab) = declared(&trace, ui_rect, &region) else {
+
+    // Route 1 — the dock tab. What this function was built for, and what
+    // it still uses whenever a tab strip is drawn at all.
+    let region = format!("dock.tab.{panel_command_id}");
+    // ★ One condition, not two: `declared` also hands back fossil
+    // `ui-rect-gone` entries, and a zero-sized rect is exactly how one of
+    // those presents. A tab entry that is not substantial is not a tab we
+    // declined to press — it is not a tab.
+    if let Some(tab) = declared(&trace, ui_rect, &region)
+        && tab.is_substantial()
+    {
+        driver.click_at(session.frame()?.declared_center(tab))?;
+        session.settle(20);
+        return Ok(true);
+    }
+
+    // Route 2 — already there. Probed BEFORE the rail is pressed, and
+    // that order is the entire safety argument for route 3.
+    //
+    // `dock.body.<id>` is published only while the panel is the drawn,
+    // active tab of a visible side, which is precisely what a caller
+    // means by "raised". Pressing anything in that state would be a
+    // toggle acting on an open panel, and the dock closes those.
+    if declared(&trace, ui_rect, &format!("dock.body.{panel_command_id}")).is_some() {
+        return Ok(true);
+    }
+
+    // Route 3 — the left rail.
+    //
+    // Published through `ui_rect_visible`, so a declared rect is a
+    // REACHABLE rect rather than merely a laid-out one, and marked
+    // `RailFold::Never` for the five panel entries — unlike the dock tab
+    // it cannot be folded into the overflow chevron, and unlike the dock
+    // tab it is published in every mode.
+    let rail = format!("rail.tabs.{panel_command_id}");
+    let Some(entry) = declared(&trace, ui_rect, &rail) else {
         return Ok(false);
     };
-    if !tab.is_substantial() {
+    if !entry.is_substantial() {
         return Ok(false);
     }
-    driver.click_at(session.frame()?.declared_center(tab))?;
-    session.settle(20);
+    let mark = trace.mark();
+    driver.click_at(session.frame()?.declared_center(entry))?;
+    session.settle(24);
+
+    // Verify rather than assume, and anchor the question at `mark`.
+    //
+    // The body probe above should have caught the on-screen case, but the
+    // dock owns the predicate — `DockState::is_on_screen` asks about the
+    // side as well as about the active tab — and the two can disagree. If
+    // they did, the press just CLOSED the panel the caller asked to read.
+    //
+    // The anchor is not decoration. The trace is a cumulative log, so a
+    // `panel-closed` emitted by the check's own setup minutes earlier
+    // would answer this question with a yes and send the pointer back to
+    // the rail for no reason. `Trace::mark` was taken before the press.
+    //
+    // There is no loop here and there cannot be one: a second disagreement
+    // leaves the panel closed and the caller's own precondition reports
+    // it, which is the right outcome for a state this helper cannot reach.
+    let after = session.trace()?;
+    let reclosed = after
+        .last_after("panel-closed", mark)
+        .is_some_and(|l| l.get("id") == Some(panel_command_id));
+    if reclosed {
+        driver.click_at(session.frame()?.declared_center(entry))?;
+        session.settle(24);
+    }
     Ok(true)
 }
 

@@ -102,6 +102,56 @@ pub fn summary(pages: usize, objects: usize) -> String {
     format!("{objects} {marks} sit outside the boundary, on {pages} {sheets}.")
 }
 
+/// ★★★ **Why a picture crossing the edge is still on this list after a
+/// clean** — the disclosure Rule 4 owes, added 2026-09-12.
+///
+/// # The fact, and it is the engine's, not this shell's
+///
+/// `pdfcer_core::offpage` says it outright: a `Partial` image **survives a
+/// clean by design, and this scan still reports it.** `redact_image` clears
+/// by snapping its cell grid **outward**, so it erases every sample that is
+/// off the sheet and no sample that is not. What clearing cannot do is move
+/// the placement — the picture's box still straddles the boundary — and this
+/// scan classifies by GEOMETRY. So the picture is counted again on the next
+/// run. The engine measured twelve such objects across seven of the
+/// operator's 174 drawings and its own summary is the sentence to keep:
+/// *the count is honest about the geometry and misleading about the ink.*
+///
+/// # Why this exists at all
+///
+/// Rule 4's surviving half — **an inference the operator cannot see still
+/// owes an off-canvas report.** Clean the sheet, reopen this window, and the
+/// picture is listed again. Without this sentence the only reading available
+/// to the operator is *the clean failed*; they would be wrong, and nothing on
+/// screen would say so.
+///
+/// ⚠ It marks nothing, tints nothing and flags nothing on the canvas. It is
+/// a line in a results window, which is exactly where Rule 4 puts disclosure.
+///
+/// ★ **Pictures, never objects.** Line work and text do not behave this way —
+/// their clean removes the geometry itself — so a sentence that swept them in
+/// would be false about most of what this window reports. The caller counts
+/// `kind == "image" && how == Partial` and shows nothing when that is zero,
+/// because a paragraph explaining a residual this document does not have is
+/// the kind of nagging the operator has already asked this project to stop.
+#[must_use]
+pub fn partial_image_note(pictures: usize) -> String {
+    if pictures == 1 {
+        "The picture crossing the edge stays on this list after a clean. Clearing \
+         erases what is off the sheet but cannot move the picture, so its outline \
+         still crosses the edge and this list counts by position. It is not a \
+         failed clean."
+            .to_owned()
+    } else {
+        format!(
+            "The {pictures} pictures crossing the edge stay on this list after a \
+             clean. Clearing erases what is off the sheet but cannot move a \
+             picture, so its outline still crosses the edge and this list counts \
+             by position. It is not a failed clean."
+        )
+    }
+}
+
 /// One page's heading in the list.
 ///
 /// `page_index` is the engine's 0-based index and is displayed 1-based, because

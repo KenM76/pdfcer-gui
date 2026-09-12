@@ -80,6 +80,67 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O176 — ◑ **MEASURED 2026-09-12, NEEDS YOUR VERDICT** — not something you asked for: on a big sheet at fit zoom, a small form field is all grip and no body
+
+You did not ask for this row. It is here because a full drive of the shipped
+build found something you would hit on an ordinary A1 sheet and would have
+no way to name, and because the answer is a taste call about your own
+drawings rather than an engineering one. **Nothing has been changed. This is
+a question.**
+
+### What was measured
+
+Two separate checks, both driving the real program, both stopped for the
+same reason:
+
+| what was on screen | what happened |
+|---|---|
+| a text field **27.8 px wide**, on an A1 sheet at fit zoom (17.4 %) | a quarter of that width is inside the corner grips, so **there is no point on the box that presses its body**. You cannot start a move. |
+| a check box **50 x 35 px**, eight grips of 8 px each with 2 px between them | a corner grip cannot be aimed at without touching its neighbours, so a resize starts from the wrong handle. |
+
+### Why it happens, in one sentence
+
+**The grips are sized in screen pixels and the object is sized in the
+drawing**, so every grip has a zoom below which it has eaten the thing it
+surrounds. On a letter page this never bites. On an A1 sheet at fit zoom the
+whole sheet is about 400 px wide, and a form field that is a comfortable 12
+mm on paper is 28 px on glass.
+
+This is the same shape as a rule already written down here: **any slack
+expressed in screen units shrinks in the units you actually care about.** It
+is not a bug in either check; both are reporting the program honestly.
+
+### The three ways out, and why you have to pick
+
+1. **Grips shrink with the object.** Below some box size the grips get
+   proportionally smaller. Keeps every handle reachable; makes them fiddly
+   to hit at exactly the zoom where hitting things is already hard.
+2. **The body wins below a threshold.** Under some box size the grips stop
+   taking the press and the whole box moves; you resize by zooming in, or
+   from the properties panel. Always draggable, never resizable-in-place
+   when small.
+3. **The interior wins, the outline keeps the grips.** Press inside the box
+   and it moves; press the outline and it resizes. This is what most drawing
+   programs converge on and it needs no threshold and no new setting — but
+   it changes the feel of dragging *every* object, not only the small ones.
+
+There is a fourth answer, which is **leave it alone** — you zoom in to edit
+a small field anyway, and that is a perfectly good reason to close this row
+unchanged.
+
+### What this row is NOT
+
+It is not the same as the resize-grip fault recorded further down this file,
+where a grip's hit test assumed the grip was *inside* the box it resizes.
+That one was wrong arithmetic and was fixed. This one is correct arithmetic
+producing an unusable result at a zoom you legitimately work at.
+
+It is also not blocking anything. Both checks can be driven at a higher zoom
+and will be, so the harness stops being silent about them either way. The
+harness getting its answer does not get you yours.
+
+---
+
 ## O175 — ◑ **BUILT, DRIVEN AND FALSIFIED 2026-09-11** — "in our view ribbon area we need an option to show the stuff that is off page or not"
 
 **Your words, 2026-09-11, in full**, because every clause of the paragraph is a
@@ -1157,6 +1218,10 @@ un-redacted content survives in the previous revision. The other two sheets
 (`request_a_hybrid_reference_file_cannot_be_redacted…`). **Meanwhile the box
 says what the file is and whose limit it is**, and names the workaround: print
 that sheet to a fresh PDF from another program and redact the copy.
+
+> ★★★ **UPDATE 2026-09-12 — that sheet redacts now, and the reason it did not is worse than the limit it reported.** The engine narrowed its refusal days ago: it now refuses only a hybrid file **whose compressed object table does not parse**, and yours parses fine. pdfcer went on refusing it anyway, because the code that produced the box was matching on a **fragment of the engine's own wording** rather than on a fact — so when the engine made the rule narrower, nothing here noticed, and every hybrid file kept getting the old answer. It now asks the engine a yes-or-no question instead of reading its prose. ⇒ **Try `SW41177 MATERIAL REQUIREMENTS.pdf` again**; it should go through.
+>
+> ⚠ **And when a file genuinely cannot be rewritten, the box now tells you the one thing it never used to.** pdfcer's usual advice for a file it cannot rewrite from scratch is *save incrementally* — which for a **redaction** is the worst possible advice, because an incremental save keeps the old, un-redacted version inside the same file where anyone can recover it. The refusal says so in as many words now. It was possible, before, to follow pdfcer's own advice and defeat your own redaction.
 
 ### 4. Freehand nodes — the engine shipped it this morning; wired today
 O158 was asked of the engine yesterday; they shipped it overnight (`Pass

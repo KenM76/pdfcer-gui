@@ -191,9 +191,23 @@ impl OpenDoc {
                 let page = pixels.key.page();
                 let key = pixels.key;
                 // A page blended in ink, recorded before anything else is done
-                // with the result. The ONE write to `OpenDoc::ink_pages`, and
-                // the observation `render::strategy::Ink` rests on -- see that
-                // type for why the shell learns this rather than assuming it.
+                // with the result.
+                //
+                // This comment said "the ONE write to `OpenDoc::ink_pages`"
+                // until 2026-09-11, and it had stopped being true when
+                // `OpenDoc::learn_ink` began asking
+                // `pdfcer_render::page_composites_in_ink` directly. There are
+                // TWO writers now, and `app::state`'s field doc is the one
+                // that says so and explains why the pair is safe: the engine
+                // ships a test asserting the ask and the render agree on every
+                // fixture, so this is a second observer that can only confirm
+                // the first, never contradict it.
+                //
+                // An exclusivity claim is the shape of comment that a later,
+                // correct change falsifies WITHOUT touching the file the
+                // sentence lives in - nothing fails to compile and no gate
+                // counts writers. Prefer "a writer, and here is the invariant
+                // that makes several safe" over "the writer".
                 //
                 // **Either counter**: `engaged` means the colorant buffer was
                 // used, `refused` means it was wanted and would have exceeded

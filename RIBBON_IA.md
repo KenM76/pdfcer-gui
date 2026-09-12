@@ -646,7 +646,7 @@ rather than on judgement:
 |---|---|---|
 | **Arrange** — *Bring forward* / *Send backward*, greyed | nothing | **the mockup.** Neither is a registered command; both sit in `manifest::PLANNED` as **N**, one of them reading *"the whole Edit ▸ Arrange group is unbuilt, so the GROUP is absent too."* R9 forbids the picture the mock drew: an unavailable capability renders **nothing**, and greying is for something *temporarily* unavailable, explained on hover |
 | **Object** — *Duplicate · Delete · Properties* | **Selection** — *Properties · Select the form · Give this page its own copy · Delete* | **the mockup.** `Delete` and `Properties` are the same two commands under a different band name; **`Duplicate` names nothing** — there is no `format.duplicate`, and the nearest id in the tree, `edit.paste_duplicate`, is a clipboard verb on another tab that does something else |
-| *(absent)* | **Font** — face · size · | · Bold · Italic · colour | **the mockup.** §5.8's own 2026-08-27 amendment specifies this band, it shipped that day on O37, and the mock's Format tab was drawn on 2026-09-04 without it |
+| *(absent)* | **Font** — face · size · \| · Bold · Italic · colour | **the mockup.** §5.8's own 2026-08-27 amendment specifies this band, it shipped that day on O37, and the mock's Format tab was drawn on 2026-09-04 without it |
 
 ★ The transferable half, and it is why this section is in the specification
 rather than in a session log: **a mockup is a specification only where it is

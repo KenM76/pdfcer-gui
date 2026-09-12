@@ -350,6 +350,27 @@ impl OffPageDialog {
         } else if !self.scans.is_empty() {
             ui.label(t::summary(self.scans.len(), self.objects));
             ui.add_space(4.0);
+            // ★★★ The residual disclosure, and it is owed rather than
+            // decorative: a picture that only CROSSES the edge is still on
+            // this list after a clean, because clearing erases ink and
+            // cannot move a placement. See `text::offpage::partial_image_note`
+            // for the engine's own statement of it and for why the sentence
+            // says pictures rather than objects.
+            //
+            // Counted here rather than carried on the scan because it is a
+            // question about this window's wording, not about the census —
+            // `PageScan::partial()` counts all three kinds and is right to.
+            let pictures = self
+                .scans
+                .iter()
+                .flat_map(|s| &s.objects)
+                // ui-text-exempt: the engine's stable object token, never displayed.
+                .filter(|o| o.kind == "image" && o.how == offpage::OffPage::Partial)
+                .count();
+            if pictures > 0 {
+                ui.small(t::partial_image_note(pictures));
+                ui.add_space(4.0);
+            }
         }
 
         ui.separator();

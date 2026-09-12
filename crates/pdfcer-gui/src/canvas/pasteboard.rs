@@ -72,6 +72,48 @@
 //! | in the pasteboard | up | [`Surface::Pasteboard`] | a hover out there is a hover over off-page content |
 //! | in the pasteboard | **down, pressed on the sheet** | [`Surface::Page`] | ★ a rubber-band started on the paper and dragged off it is one gesture, and it belongs to the page it began on |
 //! | in the pasteboard | **down, pressed out there** | [`Surface::Pasteboard`] | ★ the new half: a band may now START off the sheet |
+//! | **standing on the page's own context menu** | — | [`Surface::Page`] | ★★★ 2026-09-12: the menu COVERS the page, so egui stops reporting the page as containing the pointer — see below |
+//!
+//! ## ★★★ The fifth clause, and the two-day-old defect that earned it
+//!
+//! Added 2026-09-12 after the first driven sweep in three weeks found the
+//! only application defect it found: **a canvas context menu deleted itself
+//! the instant the pointer moved onto it.**
+//!
+//! egui derives a popup's identity from the id of the `Response` it was
+//! attached to — `Popup::default_response_id(r) == r.id.with("popup")`. The
+//! canvas attaches its menu to whichever response THIS function names, so a
+//! frame that changes the answer re-attaches the menu under an id nobody
+//! opened; `keep_popup_open` no-ops on the stale id and `Memory::end_pass`
+//! drops the popup as abandoned. **No close call, no event, no trace line.**
+//!
+//! And the answer changed for the most ordinary reason there is.
+//! `pointer_on_page` is read from `Response::contains_pointer`, which is
+//! layer-aware — egui's own words, `response.rs:323`: *"also checks that no
+//! other widget is covering this response rectangle."* **The open menu is
+//! that other widget.** Cursor enters menu ⇒ menu covers page ⇒ page does
+//! not contain the pointer ⇒ [`Surface::Pasteboard`] ⇒ menu destroyed,
+//! before any button went down.
+//!
+//! ⇒ The rule earned, and it is not about this canvas: **a popup's identity
+//! is its anchor `Response`'s id, so the code that chooses between two
+//! responses per frame must not be the code that attaches a popup** — or,
+//! failing that, the choice must treat an open popup as belonging to its
+//! anchor. This function takes the second route because the choice is
+//! already expressed here, as booleans, where it can be unit-tested.
+//!
+//! ★ It is a clause of the SAME rule the first two rows state, not a special
+//! case: an open menu owned by the page is an interaction in flight owned by
+//! the page, in precisely the sense row three means by *"a band started on
+//! the sheet and dragged off it is one gesture"*.
+//!
+//! ⚠ Why nothing caught it for two days: it was introduced by `bfc8dea`
+//! (2026-09-10), whose diff is literally `- &image_response,` ⇒
+//! `+ acting_response,`; it produces no diagnostic at all; **no driven check
+//! has ever activated a `menu.item.*` row**; and it is invisible to unit
+//! tests because it lives in the identity of a `Response` that cannot be
+//! constructed without a live context. It broke every canvas context menu
+//! **for the operator**, not only for the harness.
 //!
 //! The third row is the one that would be got wrong by a naive "is the pointer
 //! over the page" test, and it is not a corner case — it is the gesture the
@@ -124,6 +166,11 @@ pub enum Surface {
 ///   dragged or clicked right now, including after the pointer has left it
 ///   (`dragged() || drag_stopped() || clicked()`).
 /// * `pasteboard_has_gesture` — the same, for the content rectangle.
+/// * `page_owns_open_popup` — ★★★ a popup anchored to the page's own response
+///   is open right now (`Popup::is_id_open(ctx, Popup::default_response_id(
+///   &image_response))`). This is the canvas context menu, and without this
+///   clause the menu destroys itself the moment the pointer touches it. The
+///   module header carries the measurement and the general rule.
 /// * `pointer_in_content` — the pointer is inside the scroll content at all.
 ///   ⚠ Read but not currently able to change the answer: it is here because the
 ///   only case it would change is a pointer outside the scroll area entirely,
@@ -137,12 +184,26 @@ pub const fn surface(
     page_has_gesture: bool,
     pasteboard_has_gesture: bool,
     pointer_in_content: bool,
+    page_owns_open_popup: bool,
 ) -> Surface {
     let _ = pointer_in_content;
     // ★ The in-flight gesture wins over where the pointer happens to be NOW.
     // Row 3 of the table: a band started on the sheet and dragged off it is one
     // gesture and stays with the page. This clause is first for that reason.
     if page_has_gesture {
+        return Surface::Page;
+    }
+    // ★★★ …and so does a popup the page opened. Second, not first, only
+    // because an in-flight drag is the more specific claim; the two cannot
+    // both be true in practice, since the secondary click that opens a menu
+    // ends any drag. See the module header for the defect this closes.
+    //
+    // A click out in the pasteboard while the menu is open is handled
+    // correctly by returning Page here: the page response reports no click
+    // (the pointer is not on it), so `interact` does nothing, and egui
+    // dismisses the popup itself. The next frame has no popup and the
+    // ordinary clauses below answer.
+    if page_owns_open_popup {
         return Surface::Page;
     }
     // ★ …and symmetrically, a band started in the pasteboard and dragged ONTO
@@ -166,14 +227,17 @@ mod tests {
     /// The ordinary frame: pointer on the sheet, nothing in flight.
     #[test]
     fn a_pointer_on_the_sheet_is_the_pages() {
-        assert_eq!(surface(true, false, false, true), Surface::Page);
+        assert_eq!(surface(true, false, false, true, false), Surface::Page);
     }
 
     /// **The new half.** Pointer out in the pasteboard, nothing in flight — the
     /// frame that used to be thrown away.
     #[test]
     fn a_pointer_off_the_sheet_is_the_pasteboards() {
-        assert_eq!(surface(false, false, false, true), Surface::Pasteboard);
+        assert_eq!(
+            surface(false, false, false, true, false),
+            Surface::Pasteboard
+        );
     }
 
     /// ★★★ Row 3, and the one a naive "is the pointer over the page" test gets
@@ -184,7 +248,7 @@ mod tests {
     /// to catch an object hanging over it.
     #[test]
     fn a_band_dragged_off_the_sheet_stays_with_the_page() {
-        assert_eq!(surface(false, true, false, true), Surface::Page);
+        assert_eq!(surface(false, true, false, true, false), Surface::Page);
     }
 
     /// …and its mirror. A band started in the pasteboard that has been dragged
@@ -192,7 +256,7 @@ mod tests {
     /// change owner half way through and get read as abandoned.
     #[test]
     fn a_band_dragged_onto_the_sheet_stays_with_the_pasteboard() {
-        assert_eq!(surface(true, false, true, true), Surface::Pasteboard);
+        assert_eq!(surface(true, false, true, true, false), Surface::Pasteboard);
     }
 
     /// ⚠ Both reporting a gesture should not happen — egui resolves an overlap
@@ -201,8 +265,8 @@ mod tests {
     /// sheet the operator was plainly pointing at.
     #[test]
     fn the_page_wins_a_contradiction() {
-        assert_eq!(surface(true, true, true, true), Surface::Page);
-        assert_eq!(surface(false, true, true, true), Surface::Page);
+        assert_eq!(surface(true, true, true, true, false), Surface::Page);
+        assert_eq!(surface(false, true, true, true, false), Surface::Page);
     }
 
     /// Outside the scroll area entirely: neither reports a gesture, the answer
@@ -210,7 +274,76 @@ mod tests {
     /// here would hand `interact` a different response on alternating frames.
     #[test]
     fn outside_the_content_is_stable() {
-        assert_eq!(surface(false, false, false, false), Surface::Pasteboard);
-        assert_eq!(surface(false, false, false, false), Surface::Pasteboard);
+        assert_eq!(
+            surface(false, false, false, false, false),
+            Surface::Pasteboard
+        );
+        assert_eq!(
+            surface(false, false, false, false, false),
+            Surface::Pasteboard
+        );
+    }
+
+    /// ★★★ **The row that was lost, and the whole point of the fifth clause.**
+    ///
+    /// The operator right-clicks an object, the menu opens over the sheet, and
+    /// the operator moves the cursor down onto it. `contains_pointer` is
+    /// layer-aware, so from that frame on the page reports that it does NOT
+    /// contain the pointer — the menu is covering it. Every other input is
+    /// false: no drag is in flight, and nothing has been clicked yet.
+    ///
+    /// Without the popup clause this frame answers [`Surface::Pasteboard`],
+    /// `present` hands `interact` the other response, the menu is re-attached
+    /// under a different id, and egui drops it as abandoned. The operator sees
+    /// the menu vanish as they reach for it.
+    ///
+    /// ★ This assertion **fails** against the code as it stood on 2026-09-11,
+    /// which is the only reason it is worth having.
+    #[test]
+    fn the_page_keeps_the_frame_while_its_own_menu_covers_the_pointer() {
+        assert_eq!(surface(false, false, false, true, true), Surface::Page);
+    }
+
+    /// The popup clause must not be a latch on the pasteboard's behaviour.
+    ///
+    /// With no popup open, the identical frame is the pasteboard's — which is
+    /// the 2026-09-10 feature (O23 part B) the fifth clause must not undo. The
+    /// pair of these two is the test; either alone would pass on a stub.
+    #[test]
+    fn without_a_menu_the_same_frame_is_still_the_pasteboards() {
+        assert_eq!(
+            surface(false, false, false, true, false),
+            Surface::Pasteboard
+        );
+    }
+
+    /// A menu open over the sheet with the pointer still ON the sheet is the
+    /// page's frame either way — but it is asserted rather than assumed,
+    /// because a clause written as `!pointer_on_page && popup` would also pass
+    /// the two tests above and be wrong here in a way nothing else would show.
+    #[test]
+    fn a_menu_open_with_the_pointer_still_on_the_sheet_is_the_pages() {
+        assert_eq!(surface(true, false, false, true, true), Surface::Page);
+    }
+
+    /// ⚠ A drag in flight out in the pasteboard, and a stale page popup flag.
+    ///
+    /// This combination should not arise — the secondary click that opens a
+    /// menu ends any drag — but the clause order decides it, so the decision
+    /// is written down rather than left to whoever next reorders the function:
+    /// **the popup wins.** A drag whose owner is the pasteboard while a page
+    /// menu is open is a contradiction, and resolving a contradiction toward
+    /// the surface that owns the visible pop-up is what keeps the pop-up
+    /// alive, which is the failure mode that cost two days.
+    #[test]
+    fn a_page_menu_outranks_a_pasteboard_drag() {
+        assert_eq!(surface(false, false, true, true, true), Surface::Page);
+    }
+
+    /// …but an in-flight PAGE gesture still answers first, unchanged. The
+    /// first clause is the more specific claim and keeps its precedence.
+    #[test]
+    fn a_page_gesture_still_answers_first() {
+        assert_eq!(surface(false, true, false, true, true), Surface::Page);
     }
 }

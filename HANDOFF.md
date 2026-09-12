@@ -1001,6 +1001,128 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 
 ## 10. Things that will bite you
 
+- **★★★ 2026-09-12 — the first full driven sweep in three weeks found ONE
+  candidate defect in the program and THIRTY in the checks. Read that
+  ratio before you read any single check's failure message.**
+
+  `=== TALLY passed=162 failed=11 skipped=40` across 213 checks. The
+  dispositions: **1** application defect, 30 harness defects, **21 of the
+  30 traceable to one shared fixture or one shared aim point**, 5 checks
+  that accused a named application module wrongly, and **4 checks whose
+  own trace contained the line that refuted them** — usually forty lines
+  above the assertion that failed.
+
+  Four things came out of it that will change how the next sweep reads.
+
+  **(a) A shared harness parameter is N checks' unwritten precondition,
+  and when it stops suiting one of them the check does not say *my input
+  is wrong* — it says something specific and plausible about the
+  program.** `sweep-full.sh` passes every check
+  `--pdf fixtures/a1-titleblock.pdf --doc-point 0,2000,320`. That file is
+  one page, `/Rotate 0`, no AcroForm, no optional content, no
+  transparency, no removable font — and every one of those is some
+  check's silent requirement. Ten checks reported ten unrelated-sounding
+  problems. They were one decision. ⇒ **A check pins its own fixture**,
+  the way `off_page_census.rs` already does with a `const FIXTURE`,
+  because that puts the knowledge of what a check needs *beside the
+  check* rather than in a shell script nobody has reason to open. About
+  thirty checks already do this; the rest are the repair list in §8.
+  ★ And the shared `--doc-point` should be **derived from the crop box in
+  the trace, not typed**: one check missed the page by **16 points out of
+  2,384** because someone typed 2400 against a crop box ending at 2383.94.
+
+  **(b) A shared fixture that disarms a check does not always make it go
+  quiet. Sometimes it makes it lie.** Five checks named a real module in
+  real prose a reader would believe — `OpenDoc::prefs` is a snapshot, the
+  form classifier, `xobject::fanout` — about documents that had no form,
+  no second page, no shared resource. A SKIP is at least honest about
+  knowing nothing. **A wrong accusation costs the next reader an hour
+  and this one cost exactly that.**
+
+  **(c) ★★★ One measurement explains more of the sweep than any other:
+  `a1-titleblock.pdf` carries 123 characters on a 2383.9 × 1683.8 pt
+  sheet, and at the fit zoom the sweep drives at, the tallest text on it
+  is 2.4 SCREEN PIXELS.** Sixteen checks reported sixteen different
+  reasons for that one fact. The repair is a fixture or a zoom; it is
+  not sixteen aim points. ⚠ Any future text-related failure on this
+  fixture is this, until measured otherwise.
+
+  **(d) A capability the shell gained can blind a check silently, and a
+  SKIP is not red so nothing says so.** Ken asked on 2026-09-05 for no
+  tab strip in the left dock while the rail is visible; the dock now
+  suppresses the strip whenever a rail is drawn and can raise every panel
+  in the stack — which, here, it always can. `dock.tab.*` has not been
+  published since. Three bookmark checks called `raise_dock_tab`,
+  **discarded its `false`**, and read whichever panel happened to be in
+  front, for a week, with a green suite. ⇒ The rule, and it is on the
+  helper rather than the callers: **a helper that can decline must not
+  hand back a `no` a caller is free to ignore.** `raise_dock_tab` now has
+  three routes — dock tab, already-raised (`dock.body.<id>`, probed
+  *before* anything is pressed, because `view.panel_*` is a TOGGLE and
+  pressing it on an open panel closes it), then the left rail. All three
+  checks pass again and none of them changed.
+
+  ⇒ **And the one application defect was real, two days old, and broke
+  every canvas context menu for the operator** — see the next bullet.
+  It survived 4,193 green unit tests and 41 green gates. That is the
+  argument for R1 restated as a measurement rather than a slogan: **no
+  driven check had ever activated a `menu.item.*` row.** Publishing a
+  rect and being clickable are different claims, and this harness had
+  only ever asserted the first.
+
+- **★★★ 2026-09-12 — a popup's identity is its anchor `Response`'s id, so
+  the code that chooses between two responses per frame must not be the
+  code that attaches a popup.** This is the one application defect the
+  sweep above found, and it is written here rather than only in the RAG
+  because the shape recurs wherever a surface has two hit rectangles.
+
+  Right-click an object on the canvas and the menu **vanished as the
+  cursor moved toward it**. Introduced by `bfc8dea` on 2026-09-10, whose
+  diff is literally `- &image_response,` ⇒ `+ acting_response,` — a
+  feature that let a rubber-band start out in the pasteboard took the
+  menu's anchor with it.
+
+  The loop, and neither half is surprising alone:
+
+  1. `Popup::default_response_id(r) == r.id.with("popup")`
+     (`egui-0.35.0/src/containers/popup.rs:639`), so the popup's identity
+     *is* the response it was attached to.
+  2. `Response::contains_pointer` is **layer-aware** — egui's own words at
+     `response.rs:323`: *"also checks that no other widget is covering
+     this response rectangle."*
+  3. ⇒ The open menu covers the page ⇒ the page stops containing the
+     pointer ⇒ the per-frame surface choice flips to the pasteboard ⇒ the
+     menu is re-shown under an id **nobody opened** ⇒ `keep_popup_open`
+     no-ops on the stale id ⇒ `Memory::end_pass` drops the popup as
+     abandoned.
+
+  ⚠ **No close call, no event, no trace line, no panic.** And the frame
+  after reads healthy, because with the menu gone the page contains the
+  pointer again — so a reader scrolling the trace sees `surface=page`
+  either side of the failure.
+
+  ★ Why unit tests could not see it: the defect lives in the **identity
+  of a `Response`**, and `egui::Response` cannot be constructed without a
+  live `Context`. `canvas::pasteboard`'s module header had *already*
+  argued for extracting the surface rule to a pure function of booleans
+  *"so that it can be tested at all … a rule with this many cases that is
+  only ever exercised by driving is a rule that silently loses a case."*
+  The case it lost was the input nobody had thought to make a boolean.
+  ⇒ **When a rule is extracted to booleans for testability, the next
+  defect will be an input that was never made one.**
+
+  The fix is a fifth boolean —
+  `Popup::is_id_open(ctx, Popup::default_response_id(&image_response))` —
+  placed as a **clause of the same rule** the drag clauses state, not as a
+  special case at the call site: an open menu owned by a surface is an
+  interaction in flight owned by that surface, exactly as a band started
+  on the sheet and dragged off it is still the page's gesture. Falsified
+  by removing the clause and rebuilding: **2 of the 5 new tests go red**,
+  the other 3 being the calibration pair and the precedence rows. The
+  trace now publishes `pagepopup=` beside `onpage=`, because the failing
+  frame had said `onpage=false` and nothing distinguished a pointer
+  genuinely out in the pasteboard from one standing on our own menu.
+
 - **★★★ An engine capability can ship, be announced on the channel,
   and sit unreached for FIVE DAYS behind a test that is green the whole time.**
 
@@ -1602,6 +1724,38 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
   longer exists, so **this has to be carried as a rule, not as a path.**
 
 ---
+
+- **★★★ A full sweep forbids the very thing its ninety-five minutes
+  tempt you into: editing any `.rs` or `.toml`, anywhere in the repository,
+  while it runs.**
+
+  A full driven sweep is 213 checks in eleven chunks plus the ALONE table, each
+  check launching its own copy of the application, and it takes about an hour and
+  a half on this machine. The obvious use of that wall clock is source work.
+  It is the one use that is not available.
+
+  Two independent staleness guards fire on a source edit, and both are right to:
+
+  * `refuse_if_self_is_stale` compares the running `ui-verify.exe` against the
+    newest `.rs` or `.toml` under `tools/ui-verify/`;
+  * `staleness_complaint` compares the driven `pdfcer-gui.exe` against its own
+    sources.
+
+  Either refuses with **`rc=2`**, and `sweep-full.sh` aborts the whole run on the
+  first `rc=2` — correctly, since every later chunk would be rejected identically.
+  ★★ **So one edit two minutes in costs the entire sweep**, and the transcript
+  ends in usage text rather than in a tally.
+
+  ⇒ The guards are correct and the asymmetry is invisible to them: refusing one
+  invocation is cheap; refusing one invocation **inside a long batch** discards
+  everything the batch had already measured. Neither message can know which it is
+  doing.
+
+  **What IS safe during a sweep:** Markdown, new fixtures, new shell scripts, the
+  request channel, the RAGs, and reading anything at all.
+  **What is not, besides sources:** `sweep-full.sh` itself — bash reads a running
+  script incrementally, so editing it mid-run can change what the remaining half
+  of the run does.
 
 ## 11. The relationship with `D:\Dev\pdfcer`
 

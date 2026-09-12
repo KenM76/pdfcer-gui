@@ -595,9 +595,19 @@ fn open_and_press(
     //
     // ★★★ This assertion is about the ROUTE, not about the verb, and it is the
     // one that fails if `format.unshare_form` is registered on the ribbon only.
-    // A greyed row publishes no rect either — `plan::resolve` drops a disabled
-    // command before it is drawn — so this also catches a build where
-    // `selection.in_form` is not published for a leaf selection.
+    // ⚠ CORRECTED 2026-09-12. This comment used to claim that a greyed row
+    // publishes no rect, so the assertion below also caught a build where
+    // `selection.in_form` stopped being published. **It does not, and it
+    // never did.** `menu/plan.rs:203` keeps a disabled command as
+    // `Slot::Command { enabled: false, .. }`, and `menu/render.rs:569`
+    // reports the row's rect with no reference to `enabled` at all. What
+    // `plan` really drops is a command that is **not registered** — R8, a
+    // different rule about a different thing.
+    //
+    // ⇒ So a build that greys this row still passes here, and the greying
+    // has no check. That is left stated rather than quietly deleted: an
+    // unevidenced excuse is worse than silence, because a reader sees a
+    // question already answered and stops asking it.
     //
     // ★★ It is also the assertion R9 is defended by. The correct-looking
     // "improvement" to this feature is to grey the row when the form is not
@@ -666,15 +676,24 @@ fn no_measurement(trace_path: &std::path::Path) -> String {
     format!(
         "★★★ THE COMMAND DID NOT MEASURE THE DOCUMENT: no `{MEASURED}` line after the row was \
          pressed.\n\
-         This is the defect of 2026-08-28 exactly: nothing in the chain from \
-         `catalog/format.rs` (gates on `selection.in_form`) through `conditions.rs` (defines it \
-         as 'a leaf id is in the selection for this page') through `dispatch/format.rs` (adds \
-         'the leaf resolves to a containing form') to the engine's `unshare_form` (guards \
-         encryption, certification, /Size, form-not-on-page and nesting) asks whether the form \
-         is invoked more than once. Without that walk the command cannot decline on an unshared \
-         form and cannot state a true number on a shared one, and it will do neither silently. \
-         `app::actions::xobject::fanout` is the function that must run, on the press, before \
-         `vector_edit` is called. Trace: {}",
+         ★★★ ASK FIRST WHETHER THE PRESS DISPATCHED AT ALL, before reading any of the \
+         chain below. `app::actions::xobject::fanout` emits `{MEASURED}` UNCONDITIONALLY, \
+         before it decides anything, so its absence usually means the verb was never \
+         entered rather than that it measured wrongly. Grep the trace for the row's \
+         `ui-rect-gone` lines: if the whole menu disappeared in the same frame as the \
+         `canvas-pointer` line, the menu died on the pointer MOVE and no button ever went \
+         down. That is what happened on 2026-09-12 — `canvas::present` was choosing between \
+         two responses per frame while egui derives a popup's identity from the response it \
+         was attached to — and this message sent the first hour of that investigation to a \
+         function that was already correct.\n\
+         IF the verb WAS entered and still did not measure, the chain is: `catalog/format.rs` \
+         (gates on `selection.in_form`) through `conditions.rs` (defines it as 'a leaf id is \
+         in the selection for this page') through `dispatch/format.rs` (adds 'the leaf \
+         resolves to a containing form') to the engine's `unshare_form` (guards encryption, \
+         certification, /Size, form-not-on-page and nesting). None of those asks whether the \
+         form is invoked more than once; that walk is `fanout`'s, and without it the command \
+         can neither decline on an unshared form nor state a true number on a shared one, \
+         and it will do neither silently. Trace: {}",
         trace_path.display()
     )
 }

@@ -150,11 +150,21 @@ pub enum BoxKind {
         /// which also fixed a read/write key mismatch between the two — so the
         /// first cut was wrong on that side as well).
         ///
-        /// ⚠ **The editor still draws theme colours, and that is now a gap
-        /// rather than a boundary.** A shaded field turns grey while it is
-        /// edited and back on commit. `ENGINE_BACKLOG.md` carries the row;
-        /// this comment exists so nobody reads the old sentence as a settled
-        /// architectural decision and closes the row on it.
+        /// ★★★ **And the editor now draws the FIELD's colours — 2026-09-11,
+        /// the same day the paragraph above was written.** [`editor_fill`]
+        /// below resolves `/MK` `/BG` to an sRGB triple, [`WidgetBox`] carries
+        /// it, and `canvas::forms` pairs it through `Theme::foreign_fill_pair`
+        /// so the ink stays legible on it. A shaded field no longer turns grey
+        /// when the operator clicks into it.
+        ///
+        /// ★ The three sentences above are kept, not deleted, because each was
+        /// true when written and the sequence is the argument: *cannot ask* →
+        /// *can ask, not yet answered* → *answered*. A claim whose history is
+        /// erased cannot be audited. What must never be left standing is the
+        /// **last** one in the present tense, which is exactly what happened
+        /// here for the few hours between the fix landing and this correction —
+        /// see the standing rule that a limitation sentence has an hours-long
+        /// shelf life.
         align: Quadding,
     },
     /// A `/Btn` check box. A click toggles between `on_state` and `Off`.

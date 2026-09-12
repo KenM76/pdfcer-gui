@@ -26,17 +26,17 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-11 22:15 |
+| What | Command | Value, 2026-09-12 04:30 |
 |---|---|---|
-| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `01c4a10` |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `21403ff` — **one ahead, and it is docs-only** |
+| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `ad73160` |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `ad73160` — ★ **level with the pin**, for the first time in four releases. Level is the only state in which a sentence of the form *the engine cannot do X* is safe to write. |
 | Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.4` |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | 213 (the sweep chunks 211 and runs 2 from the ALONE table separately) |
-| Gates | `bash tools/gates/run-all.sh` | **35 passed, 0 failed, 0 skipped** |
-| Unit tests | `cargo test --workspace` | **4,189 passing**, 51 ignored |
-| Source files | `find crates -name '*.rs' \| wc -l` | 775 |
+| Gates | `bash tools/gates/run-all.sh` | **41 passed, 0 failed, 0 skipped** — ⚠ **41 gates are registered, not 39**; the runner prints its own tally and that is the only figure to quote. A hand-written 39 stood here and in `FEATURES.md` while `cargo fmt` and `cargo clippy` were red. — ★★ up four, and `check-pin-citation` went **red** on the run before this table was patched, naming both stale pin citations. It reads the row above. |
+| Unit tests | `cargo test --workspace` | **4,199 passing**, 51 ignored — summed over 24 `test result:` lines, which is the only method that counts this workspace correctly. |
+| Source files | `find crates -name '*.rs' \| wc -l` | 777 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 172 rows — wanted 35 / blocked 8 / unknown 0 / declined 13 / **shipped 116** |
-| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | 30 — **many are closed exchanges awaiting archival** |
+| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | 33 — ★ **one reply is genuinely unconsumed and it is meant to be**: `reply_G007` accepted the topic-key convention itself, asked nothing and delivered nothing, so a `done_G007` would acknowledge an acknowledgement. Leaving it red is what keeps the *reply with no done* check falsifiable. |
 
 ⚠ **The check-count command was wrong in this very table.** `--list` prints
 **two** lines per check plus a header, so `wc -l` answered 434 where the
@@ -71,13 +71,44 @@ of the day"* and it was the fourth. If you need the count, `gh release list`.
 
 ---
 
-## ⚠ The four things owed against the shipped build, all blocked on the desktop
+## ★★★ The sweep RAN — 213 checks, and what it changes
 
-**None of the last five releases had the driven sweep run against it.** Unit
-tests, 33 gates and an off-screen smoke launch were green every time; not one of
-the three is evidence that a control is *reachable*. The blocker is not time —
-the operator is at the machine, and `ui-verify` drives the real cursor and
-keyboard. Confirm the desktop is free before scheduling any of this.
+**2026-09-12, 04:34, against this exact binary.** The first full driven sweep
+in three weeks, and the first one any release has ever had.
+
+```
+=== TALLY passed=162 failed=11 skipped=40   (213 checks)
+```
+
+**1 application defect. 30 harness defects.** Read that ratio before you read
+any single check's failure message — 21 of the 30 come from one shared fixture
+or one shared aim point, 5 checks accused a named application module wrongly,
+and 4 were refuted by a line their own trace already contained.
+
+★★★ **The one application defect was real and two days old: every canvas
+context menu deleted itself as the cursor moved onto it.** `bfc8dea`
+(2026-09-10) changed the menu's anchor from a fixed response to a per-frame
+choice, and since egui derives a popup's id from its anchor — while
+`contains_pointer` is layer-aware, so an open menu makes its own anchor stop
+containing the pointer — the menu re-attached under an id nobody opened and
+`Memory::end_pass` dropped it. **Silent: no close call, no event, no trace
+line.** Fixed, falsified, unit-tested, and written up in `HANDOFF.md` §10 and
+`D:/dev/rag/egui/`. ⚠ It survived 4,193 unit tests and 41 gates because **no
+driven check had ever activated a `menu.item.*` row** — publishing a rect and
+being clickable are different claims.
+
+⇒ **The harness repair list is now the biggest single body of owed work in
+this repository**, and it is all `.rs`, none of it blocked on the desktop, so
+it can be done at any time. It is item 2 under *Do next*.
+
+---
+
+## ⚠ Two things still owed against the shipped build
+
+The sweep is no longer one of them — it ran — and **the three off-page
+pointer checks are discharged: all three PASSED in it**, on their own
+`off-page-object.pdf` fixture. Two items are left, and only the first needs
+the desktop.
 
 1. **The bold ladder is WIRED, NOT DRIVEN.** Shipped in `.3` with that caveat
    printed in his release notes. The unit evidence is strong (the assertion
@@ -85,15 +116,14 @@ keyboard. Confirm the desktop is free before scheduling any of this.
    and was falsified by putting the old call back), but nobody has pressed Bold
    on a title block in the running program. **If he reports bold misbehaving,
    this is the first place to look.**
-2. **Three off-page pointer checks**, each of whose `PDFCER_DIAG_INVOKE` string
-   was changed to open in **Edit** because their subject is off the sheet and
-   Read now hides it: `an_object_off_the_page_survives_being_zoomed_in_on`,
-   `a_band_dragged_into_the_margin_reaches_an_object_off_the_page`,
-   `a_band_that_starts_in_the_margin_reaches_an_object_off_the_page`. **An
-   instrument edited but not run is the failure mode this harness exists to
-   remove.** `an_object_off_the_page_is_actually_drawn` needs no pointer and
-   **was** run, green.
-3. **The deep-marquee adoption has no driven check at all.** Our duplicate
+   ★★ **And the sweep did not discharge it, which is a sharper fact than
+   “not driven yet”:** the three checks that would have
+   — `restyling_selected_text_reaches_the_document`,
+   `the_face_chooser_offers_a_face_the_document_does_not_contain`,
+   `the_format_tab_offers_font_controls_for_swept_text` — all ran and all
+   **skipped**, each saying so honestly: the shared `--doc-point` selected a
+   `Path`, not text. ⇒ The repair is an aim point on text, not a rerun.
+2. **The deep-marquee adoption has no driven check at all.** Our duplicate
    `hit_test_rect` is deleted and the engine's `hit_test_rect_deep` answers
    instead; a band and a click can no longer disagree, and nothing has confirmed
    that by dragging one.
@@ -109,15 +139,60 @@ keyboard. Confirm the desktop is free before scheduling any of this.
 
 1. **When the desktop frees up, drive the four owed items above** — the ladder
    first, because it is what he was given today and what he will notice.
-2. **Read the sweep result, then triage every FAIL and every SKIP.** The full
-   driven sweep ran on 2026-09-11 for the first time in three releases; its log
-   is `target/scratch/sweep-full.log`. ★★ **`=== SWEEP-DONE` alone means
-   nothing** — the runner prints `=== TALLY passed=… failed=… skipped=…` beside
-   it, and a sweep whose `passed` is zero ran nothing at all. That is not
-   hypothetical: the first attempt that day reported SWEEP-DONE having launched
-   no window, because the harness binary was stale. And per standing memory,
-   **the first full sweep after a long gap yields more harness defects than
-   application ones** — audit the check before filing an app defect against it.
+2. **★★★ Work the harness repair list the sweep produced — 30 defects, all
+   `.rs`, none of them needing the desktop.** This is the largest owed body of
+   work in the repository and the cheapest, and until it is done **the next
+   sweep will report the same thirty things in thirty different words.**
+
+   Three repairs cover most of it and each is one idea, not a list:
+
+   * **Give every check its own fixture, as a `const FIXTURE` beside the
+     check**, the way `off_page_census.rs` already does. `sweep-full.sh` hands
+     all 211 chunked checks `--pdf fixtures/a1-titleblock.pdf`, a file that is
+     one page, `/Rotate 0`, no AcroForm, no optional content, no transparency
+     and no removable font — and every one of those is some check's unwritten
+     precondition. Ten checks reported ten unrelated-sounding problems from
+     that one decision. Named fixtures: `four-pages.pdf`,
+     `four-pages-unrotated.pdf`, `layered-drawing.pdf`, `transparency-cmyk.pdf`,
+     `text-field-with-appearance.pdf`, `embedded-font.pdf`, `paragraph.pdf`,
+     `polyline-nodes.pdf`, `autosize-field.pdf`.
+   * **Derive the aim point from the crop box in the trace, never type it.**
+     `measure_calibrates_by_picking_two_points` missed the page by **16 points
+     out of 2,384** — a typed 2400 against a crop box ending at 2383.94.
+   * **Drive the text checks on a letter-size fixture, or at a higher zoom.**
+     ★★★ `a1-titleblock.pdf` carries 123 characters on a 2383.9 × 1683.8 pt
+     sheet and at the sweep's fit zoom **the tallest text on it is 2.4 screen
+     pixels**. Sixteen checks reported sixteen reasons for that one fact. ⚠ Any
+     future text failure on this fixture is this, until measured otherwise.
+
+   Then the singletons, each already diagnosed:
+   `redaction.rs::click_region` must use `frame_for`/`frame_of` (a dialog click
+   that has not landed since 2026-08-21); the two zoom checks expect a thread
+   panic and should say so with `expect_thread_panic()` on `raster-limit`;
+   `double_click_text` needs the application to emit `canvas-pick-class`;
+   `signature_trust_is_reported_as_its_own_fact` never opens the Signatures
+   panel; `rotate_handle_turns_a_selection` and `shift_constrains_a_resize`
+   need aim `0,300,500`; `print_remembered` must reach the shipped defaults by
+   `sandbox::write_prefs(&dir, "")` rather than by DELETING the file — ★ the
+   write-path fix for the first-run offer was correct and simply did not apply
+   to a check that deletes instead of writing.
+
+   ⇒ **Delete** `a_save_that_would_produce_blank_pages_is_refused` and the
+   engine half of `app::save::tests::deleting_a_page_from_a_nested_document_is
+   _caught_at_the_save`: the engine is fixed, the guard walked a real four-level
+   tree and found nothing, and a check that cannot fail is not evidence. **The
+   guard itself stays** — one tree walk at save time is all that stands between
+   a regression and a file that opens in Acrobat with blank pages on the end.
+   Close `request_delete_pages_leaves_ancestor_count_stale_on_a_nested_page
+   _tree.md` with it.
+
+   ⚠ **And two of the 'harness' results are findings about the PRODUCT.** At
+   fit zoom a form field is 27.8 px wide and its corner grips eat every point
+   on it, and a 50 × 35 px check box has eight 8 px grips with 2 px of slack
+   between them. **The harness cannot start those drags and neither can the
+   operator.** Same shape as the standing finding that a slack in screen units
+   shrinks in the units he cares about. Raising the harness zoom hides it;
+   the product fix is that a grip must yield the body below some size.
 3. **The owed driven checks — and MEASURE the list before working it.**
    `target/scratch/driven-audit.md` (2026-09-11) is the measured register: every
    `OPERATOR_REQUESTS.md` row whose heading says *"not yet driven"*, checked
@@ -125,17 +200,28 @@ keyboard. Confirm the desktop is free before scheduling any of this.
    checks named as owed had been registered all along. A registered `Box::new(…)`
    line in `roster.rs` is the evidence, not a row that claims a gap.
    `CONTINUE.md` is history, not a backlog.
-4. **★ Wire the remaining SIX engine deliveries this shell does not call.** The
-   2026-09-11 channel audit found eight with zero call sites; **two are now
-   done** — the automatic bold ladder and `hit_test_rect_deep`. Grep
-   `ENGINE_BACKLOG.md` for `**★ 2026-09-11 channel audit.**` to get the set. The
-   six left: `SignReport::appearance_lines`, `EditSession::page_objects`,
-   `MkColor` (**a rule-4 violation live in the build** — a widget's `/MK /BG` is
-   painted over with theme grey, so the canvas shows something the saved file
-   will not), `add_named_destination`, `FieldPathCrossesTerminal`, and the
-   narrowed `HybridFullRewrite` refusal whose prose is still too wide at three
-   sites (`app/save.rs`, `dialogs/compact.rs`, `app/dispatch.rs`) plus a stale
-   `FormLeaf::is_editable` sentence in `canvas/moving/mod.rs`.
+4. **★★ Wire the ONE engine delivery that is genuinely owed —
+   `SignReport::appearance_lines`.** ⚠ **This item said SIX on 2026-09-11 and
+   was re-derived from source on 2026-09-12; four were wired that day and a
+   fifth was never missing.** Wired since: `MkColor` (a widget's `/MK /BG` is
+   now honoured by the in-canvas editor, which was a live rule-4 violation),
+   `FieldPathCrossesTerminal`, and the narrowed `HybridFullRewrite` refusal at
+   all three prose sites; the stale `FormLeaf::is_editable` sentence the row
+   named had already been corrected the day before the row quoted it.
+   `add_named_destination` is **blocked by an argued decision**, not absent —
+   a destination baked at author time is indistinguishable from a correct one
+   until a reorder moves the page it names, and this shell has drag-to-reorder;
+   it opens with the `insert_pages` bookmark-carry surface and not before.
+   `EditSession::page_objects` is owed but needs a decided answer on cache
+   invalidation first (the engine keys on its session revision, we key on ours).
+   ⇒ **A backlog row is a record, not evidence** — re-derive an absence
+   claim from source before scheduling against it.
+   ★ **Why `appearance_lines` is not paperwork:** it is what the engine drew
+   into the signature box. The CLI prints it; here it reaches only a trace the
+   source itself marks as never displayed, so the operator signs and never sees
+   what the stamp says — and the engine records *a rectangle too small for
+   them* as a real outcome, so the silence **hides a truncation**. Off-canvas,
+   in the signing dialog's result, per R8b rule 4.
    ⚠ **An absence claim has to name the receiver.** `page_objects` returns 164
    hits here and every one is *ours* (`OpenDoc::page_objects`), not the engine's
    (`EditSession::page_objects`). A bare-name grep reads as thoroughly consumed

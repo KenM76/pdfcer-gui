@@ -1234,8 +1234,30 @@ fn show_in(
         || content_response.clicked()
         || content_response.secondary_clicked();
     let on_page = image_response.contains_pointer();
-    let surface = pasteboard::surface(on_page, page_gesture, paste_gesture, content_hovered);
-    trace::surface(surface, on_page, page_gesture, paste_gesture);
+    // ★★★ The page's own context menu, asked for by id rather than inferred.
+    //
+    // `contains_pointer` is layer-aware, so the open menu COVERS the page and
+    // `on_page` goes false the moment the cursor reaches the menu. That flips
+    // `acting_response`, which changes the popup's id, which makes egui drop
+    // the popup as abandoned — silently, with no close call and no trace.
+    // See `pasteboard`'s module header: this is the defect `bfc8dea`
+    // introduced on 2026-09-10 and the first full sweep found on 2026-09-12.
+    let page_owns_open_popup =
+        egui::Popup::is_id_open(ui.ctx(), egui::Popup::default_response_id(&image_response));
+    let surface = pasteboard::surface(
+        on_page,
+        page_gesture,
+        paste_gesture,
+        content_hovered,
+        page_owns_open_popup,
+    );
+    trace::surface(
+        surface,
+        on_page,
+        page_gesture,
+        paste_gesture,
+        page_owns_open_popup,
+    );
     let acting_response = match surface {
         pasteboard::Surface::Page => &image_response,
         pasteboard::Surface::Pasteboard => &content_response,
