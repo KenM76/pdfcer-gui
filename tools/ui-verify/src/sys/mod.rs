@@ -143,6 +143,23 @@ pub mod vk {
     /// `VK_END`. Pressed to prove that End reaches the end of the page's LINE
     /// rather than of the show operator the caret happens to sit in.
     pub const END: u16 = 0x23;
+    /// `VK_NEXT` -- the key every keyboard prints as **Page Down**.
+    ///
+    /// The closed-list rule again: added 2026-09-12 because one named check
+    /// needs it and nothing else could supply it.
+    /// `page_display_recentres` has to reach page index 1 of
+    /// `fixtures/four-pages.pdf` before a facing spread exists at all -- the
+    /// cover rule in `viewer::display::PageDisplay::row_of` puts page 0 in a
+    /// row by ITSELF, so a facing fit measured at launch is measuring one
+    /// page and would pass on a build that cannot fit two.
+    ///
+    /// Pressed rather than reached through the ribbon because `Action::NextPage`
+    /// is what the operator's own gesture raises, and because the page-number
+    /// box would make the run depend on a text field's focus rules. Note the
+    /// Windows name is `VK_NEXT`, not `VK_PAGEDOWN`: the platform's own
+    /// vocabulary is kept, per the note on `CONTROL` above, and the doc line
+    /// is what tells a reader which key it is.
+    pub const PAGE_DOWN: u16 = 0x22;
 
     /// `D`, `T`, `A`, `I` and `L` — the five letters that spell **DETAIL**.
     ///

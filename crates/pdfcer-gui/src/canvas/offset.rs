@@ -51,8 +51,10 @@ pub(super) struct Frame {
     /// The offset handed back by the `f64` anchor on the frame that leaves the
     /// deep tier, and `None` on every other frame.
     pub deep_handover: Option<Vec2>,
-    /// The page-local offset a fit command asked for, if one is pending.
-    pub fit_placement: Option<Vec2>,
+    /// Where a fit command, or a page-display recentre, asked the view to go —
+    /// and **which layout unit that offset is measured against**. See
+    /// [`crate::canvas::fit::Placed`]; O177.
+    pub fit_placement: Option<crate::canvas::fit::Placed>,
     /// The page a pending zoom anchor was armed against, and that page's drawn
     /// size — see `viewer::ZoomAnchor::page` for why the anchor names a page.
     pub anchor_page: usize,
@@ -62,6 +64,11 @@ pub(super) struct Frame {
     pub current: usize,
     /// The acting page's drawn size.
     pub current_display: (f32, f32),
+    /// The rect of the **row** holding the acting page — the page's own rect
+    /// outside a facing mode, the spread's union inside one. The frame of
+    /// reference a [`crate::canvas::fit::Placed::Row`] offset is converted
+    /// through. O177.
+    pub row_rect: egui::Rect,
     /// The whole strip's drawn size.
     pub display_size: Vec2,
     /// The viewport, measured before the scroll area was built.
@@ -89,6 +96,7 @@ pub(super) fn decide(
         anchor_display,
         current,
         current_display,
+        row_rect,
         display_size,
         vp,
     } = frame;
@@ -102,10 +110,13 @@ pub(super) fn decide(
     // solved here lands in a content rectangle that does not exist. See
     // `OpenDoc::pasteboard_overhang`.
     let overhang = (doc.pasteboard_overhang.x, doc.pasteboard_overhang.y);
-    let strip_offset_for = |page: usize, local: (f32, f32)| {
-        let rect = layout
-            .rect_of(page)
-            .unwrap_or_else(|| egui::Rect::from_min_size(egui::Pos2::ZERO, display_size));
+    // ★ Takes the RECT rather than a page index, as of O177. Every offset
+    // solved above arrives measured against *something* — a page for the zoom
+    // anchor and the reveal, a whole facing row for a fit and for the
+    // page-display recentre — and the conversion is the same arithmetic either
+    // way. Naming the rect rather than a page is what lets the row-based
+    // callers exist at all without a second copy of it.
+    let strip_offset_in = |rect: egui::Rect, local: (f32, f32)| {
         let (x, y) = geometry::strip_offset(
             local,
             (rect.min.x, rect.min.y),
@@ -115,6 +126,14 @@ pub(super) fn decide(
             overhang,
         );
         vec2(x, y)
+    };
+    // The page-indexed form the anchor and the reveal want, with the fallback
+    // that has always been here for a page this strip does not lay out.
+    let strip_offset_for = |page: usize, local: (f32, f32)| {
+        let rect = layout
+            .rect_of(page)
+            .unwrap_or_else(|| egui::Rect::from_min_size(egui::Pos2::ZERO, display_size));
+        strip_offset_in(rect, local)
     };
     let to_strip = |local: (f32, f32)| strip_offset_for(current, local);
 
@@ -147,7 +166,7 @@ pub(super) fn decide(
         // the `f64` tier, and the offset solved above is the position the
         // anchor was actually holding. See the branch that produced it.
         return Some(to_strip((offset.x, offset.y)));
-    } else if let Some(offset) = fit_placement {
+    } else if let Some(placed) = fit_placement {
         // ★★ ABOVE THE ZOOM ANCHOR, and it spends one if it finds it — O28.
         //
         // A fit is the operator's most recent explicit instruction about the
@@ -161,7 +180,19 @@ pub(super) fn decide(
         // the `waited` bookkeeping inside it stays consistent. Its answer is
         // discarded.
         let _ = zoom::consume_anchor(ui.ctx(), doc, anchor_display);
-        return Some(strip_offset_for(current, (offset.x, offset.y)));
+        // ★ Converted through whichever rect the offset was solved against —
+        // O177. A `Row` offset put through the page's rect is exactly the
+        // defect this arm used to have: the spread was scaled to fit two pages
+        // and then placed as though it were one, so half of it sat off the
+        // canvas. See [`crate::canvas::fit::Placed`].
+        return Some(match placed {
+            crate::canvas::fit::Placed::Page(offset) => {
+                strip_offset_for(current, (offset.x, offset.y))
+            }
+            crate::canvas::fit::Placed::Row(offset) => {
+                strip_offset_in(row_rect, (offset.x, offset.y))
+            }
+        });
     } else if let Some(offset) = zoom::consume_anchor(ui.ctx(), doc, anchor_display) {
         return Some(strip_offset_for(anchor_page, (offset.x, offset.y)));
     } else if let Some(offset) = crate::find::take_reveal_offset(doc, current_display, (vp.x, vp.y))
@@ -293,12 +324,19 @@ pub(super) fn decide(
         // function. A second spelling of "centre the page" is how the two would
         // come to disagree — which is the defect `canvas::fit`'s header
         // describes for the fit's own placement, arrived at from the other end.
-        return Some(to_strip(crate::canvas::geometry::offset_holding_anchor_at(
-            (0.5, 0.5),
-            (vp.x / 2.0, vp.y / 2.0),
-            current_display,
-            (vp.x, vp.y),
-        )));
+        // ★ Against the ROW, as of O177. A document whose remembered
+        // arrangement is a facing spread opens straight into one, so the seed
+        // is the first thing the operator sees and it must obey the same rule
+        // the fit does: the thing being centred is the spread.
+        return Some(strip_offset_in(
+            row_rect,
+            crate::canvas::geometry::offset_holding_anchor_at(
+                (0.5, 0.5),
+                (vp.x / 2.0, vp.y / 2.0),
+                (row_rect.width(), row_rect.height()),
+                (vp.x, vp.y),
+            ),
+        ));
     }
     None
 }

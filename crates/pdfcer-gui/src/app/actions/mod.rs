@@ -135,6 +135,11 @@ mod stamps;
 /// and the stamp. Split out of `apply` under R2 on 2026-08-28; its header
 /// carries the seam, which is *composes rather than routes*.
 mod textannot;
+/// **Committing an edit to text that is already on the page** — the body of
+/// `Action::CommitTextEdit`, split out of `apply` on 2026-09-12 under R2. Its
+/// header carries why that arm had stopped routing and started computing, and
+/// why the two neighbouring commit verbs did not come with it.
+mod textcommit;
 
 /// **Pages dragged out of one open document and into another.**
 ///

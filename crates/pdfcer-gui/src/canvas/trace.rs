@@ -79,6 +79,44 @@ pub(super) const REGION_PAGE: &str = "page"; // ui-text-exempt: trace region nam
 /// would sample the grey surround.
 pub(super) const REGION_CANVAS_VIEWPORT: &str = "canvas-viewport"; // ui-text-exempt: trace region name, never displayed
 
+/// Named region: **every page this frame drew, taken together** — the strip.
+///
+/// # Why a third rect, when [`REGION_PAGE`] and [`REGION_CANVAS_VIEWPORT`]
+/// already exist
+///
+/// `OPERATOR_REQUESTS.md` **O177**, 2026-09-12:
+///
+/// > *"fit page when in 2 pages side by side views should fit the two side by
+/// > side pages onto the canvas - right now it snaps to fitting one."*
+///
+/// That sentence is a claim about the **spread**, and until this region existed
+/// no consumer outside the process could see one. [`REGION_PAGE`] is the
+/// ACTING page's rect and says so in its own doc; under a facing mode the
+/// acting page is one half of what is on screen, so a check asserting "the two
+/// pages are inside the canvas" from `page` alone would have to reconstruct the
+/// other half from a page size it scanned out of the PDF and a spread gap it
+/// hard-coded. Both of those are the harness guessing at the application's
+/// arithmetic, which is the exact defect class `crop=` and `rot=` were added to
+/// this trace to end.
+///
+/// ⇒ The union of the drawn pages' rects is the one rect that answers *"is what
+/// the operator is looking at on the canvas, and is it centred on it?"* for
+/// **every** display mode at once: it degenerates to [`REGION_PAGE`] under
+/// `Single`, it is the spread under `Facing`, and it is the visible run of the
+/// strip under either continuous mode.
+///
+/// ⚠ It is the union of the pages **drawn this frame**, not of the whole
+/// document: under a continuous mode the strip extends far past the viewport
+/// and only the laid-out window of it is in `drawn`. A consumer asserting
+/// containment must therefore do so only in a non-continuous mode, where every
+/// page of the row is drawn by construction.
+///
+/// Absent — the region is simply not published — on a frame that drew no pages
+/// at all, which is the same silence [`REGION_PAGE`] keeps and for the same
+/// reason: a zero-sized rect at the origin is a measurement of something that
+/// did not happen.
+pub(super) const REGION_STRIP: &str = "canvas-strip"; // ui-text-exempt: trace region name, never displayed
+
 /// Named region: the one-sentence message shown instead of a page.
 ///
 /// Shares a name across the no-pages and render-failed arms on purpose: it

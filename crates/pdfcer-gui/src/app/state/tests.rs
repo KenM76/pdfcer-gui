@@ -21,6 +21,15 @@
 
 use super::*;
 
+// Named here rather than inherited. Both used to arrive through
+// `app::state`'s own `use` list; the 2026-09-12 R2 split moved `LayerOverride`
+// -- the only thing up there that needed them -- into `state::layers`, and the
+// parent's imports went with it. Spelling them here makes this file's
+// dependencies its own, which is what the `use super::*;` glob was hiding.
+use std::collections::BTreeSet;
+
+use pdfcer_core::object::ObjId;
+
 // =======================================================================
 // The staleness keys that landed at S4
 // =======================================================================

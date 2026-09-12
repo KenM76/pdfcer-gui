@@ -659,6 +659,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // ★ Immediately after it: same subject, opposite outcome, and a failure
         // in the sibling should be read first because this one builds on it.
         Box::new(fit_left_by_a_pan::APanLeavesTheFit),
+        // O177, both halves. Third in the fit group and after both of the
+        // single-page ones deliberately: it asserts about a two-page ROW, and
+        // a build where a single-page fit is broken would fail here too and
+        // say something much less specific about why.
+        Box::new(
+            page_display_recentres::SwitchingThePageDisplayRecentresAndAFacingFitFitsTheSpread,
+        ),
         // ★ O30: the wheel as a page turn, from the status-bar toggle. Asserts
         // the DEFAULT is silent first, so a build that flipped unconditionally
         // could not pass — and that the control is absent where the choice

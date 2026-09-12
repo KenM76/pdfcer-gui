@@ -469,6 +469,44 @@ impl Strip {
         self.place_row(row).find(|p| p.page == page).map(|p| p.rect)
     }
 
+    /// ★ **Where the whole ROW holding `page` sits** — one page under
+    /// [`PageDisplay::Single`] and [`PageDisplay::Continuous`], the facing
+    /// spread under either facing mode.
+    ///
+    /// `OPERATOR_REQUESTS.md` O177, second half: *"fit page when in 2 pages
+    /// side by side views should fit the two side by side pages onto the canvas
+    /// - right now it snaps to fitting one."*
+    ///
+    /// The defect this exists to close was an asymmetry, not an omission. The
+    /// fit's **scale** was already row-aware — [`Self::row_extent`] says so in
+    /// its own doc, *"fitting one page of a spread would leave the other half
+    /// off screen"* — while the fit's **placement** went on asking
+    /// [`Self::rect_of`] for the acting page. A spread was therefore scaled to
+    /// fit two pages and then centred as though it were one, which the operator
+    /// experiences as the fit being wrong rather than the centring being wrong.
+    /// The general lesson, worth carrying: **when a feature's scale rule learns
+    /// about a new layout unit and its placement rule does not, the symptom
+    /// presents as the scale being wrong.**
+    ///
+    /// Returns `None` on exactly the same condition [`Self::rect_of`] does —
+    /// this strip does not lay `page` out — so a caller can fall back to the
+    /// page rect with a plain `unwrap_or` and get the pre-O177 behaviour rather
+    /// than a panic.
+    ///
+    /// The union of the row's placements rather than a rect rebuilt from
+    /// `Row::{top, height, width}`: those are strip-space-at-zoom-1.0 and the
+    /// horizontal centring lives in [`Self::place_row`], so rebuilding here
+    /// would be a second copy of the placement arithmetic that could disagree
+    /// with the first. `reduce` over the placements cannot.
+    #[must_use]
+    pub fn row_rect_of(&self, page: usize) -> Option<Rect> {
+        let row = self
+            .rows
+            .iter()
+            .find(|r| page >= r.first && page < r.first + r.len)?;
+        self.place_row(row).map(|p| p.rect).reduce(Rect::union)
+    }
+
     /// The page under a **strip-space** point, if the point is on one.
     ///
     /// `None` in the gaps between rows and in the centring margin either side

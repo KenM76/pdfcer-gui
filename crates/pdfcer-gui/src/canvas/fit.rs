@@ -127,9 +127,62 @@ use crate::canvas::geometry;
 /// opens the placement is exact.
 const RESIZE_FLOOR_PT: f32 = 0.5;
 
-/// **Spend a pending fit request and return where the view should go**, as a
-/// page-local offset, or `None` on the overwhelming majority of frames where
-/// no fit is pending.
+/// ★★★ **Where the view should go, AND which layout unit that offset is
+/// relative to** — `OPERATOR_REQUESTS.md` O177, second half.
+///
+/// The operator:
+///
+/// > *"fit page when in 2 pages side by side views should fit the two side by
+/// > side pages onto the canvas - right now it snaps to fitting one."*
+///
+/// ## Why a returned offset now has to say what it is measured against
+///
+/// The fit's **scale** has been row-aware since facing modes shipped —
+/// [`crate::viewer::strip::Strip::row_extent`] says so in its own doc,
+/// *"fitting one page of a spread would leave the other half off screen"*. The
+/// fit's **placement** was not: the offset came back as a *page*-local number
+/// and `canvas::offset` converted it through the acting page's rect. So a
+/// spread was scaled to fit two pages and then positioned as though it were
+/// one, and half of it sat off the canvas.
+///
+/// The general lesson, which is the part worth carrying to the next feature:
+/// **when a rule about SCALE learns about a new layout unit and the matching
+/// rule about PLACEMENT does not, the symptom presents as the scale being
+/// wrong.** The operator reported a fit that "snaps to fitting one page"; the
+/// scale was already correct.
+///
+/// ## Why an enum rather than always returning row-local
+///
+/// Because the two arms below genuinely want different units, and collapsing
+/// them would be a silent behaviour change on the arm that is not about O177:
+///
+/// * [`Self::Row`] — a **pressed fit** and a **page-display recentre**. Both
+///   are the operator saying *"put the thing I am looking at in the middle"*,
+///   and under a facing mode the thing they are looking at is the spread.
+/// * [`Self::Page`] — the **resize** arm, which preserves whatever was in the
+///   middle across a viewport change. It must stay page-based, and that is a
+///   theorem rather than a preference: when the unit fits the viewport at both
+///   ends, `margin = (v - d)/2`, so [`geometry::centred_frac`] reduces to
+///   `u = off/d + 0.5` and [`geometry::offset_holding_anchor_at`] to
+///   `off' = off*d'/d`. The gap between the row's centre and the page's centre
+///   scales with the zoom by exactly the same factor, so row-centring is
+///   preserved **exactly** by the page-based rule. Teaching this arm about rows
+///   would buy nothing and would cost `CanvasFrame` a row field it has no other
+///   use for — its reason to exist is the zoom anchor, which genuinely wants
+///   the page.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(super) enum Placed {
+    /// Relative to the acting **page**'s rect within the strip.
+    Page(Vec2),
+    /// Relative to the acting page's **row** — the page itself under
+    /// `PageDisplay::Single` and `PageDisplay::Continuous`, the whole facing
+    /// spread under either facing mode.
+    Row(Vec2),
+}
+
+/// **Spend a pending fit request and return where the view should go**, as an
+/// offset plus the unit it is measured against, or `None` on the overwhelming
+/// majority of frames where nothing is pending.
 ///
 /// ★ The request is **taken** whatever happens — including on a frame at the
 /// deep-zoom tier, and on one where something else wins the scroll offset. A
@@ -140,18 +193,28 @@ const RESIZE_FLOOR_PT: f32 = 0.5;
 ///
 /// # Arguments
 ///
-/// * `current_rect` — the acting page's rect **within the strip**, for its
-///   origin. Under `PageDisplay::Single` that origin is `(0, 0)` and every
-///   conversion below is the identity it always was.
 /// * `current_display` — the acting page's drawn size, already re-fitted this
-///   frame.
+///   frame. Read by the resize arm alone, which stays page-based on purpose —
+///   see [`Placed`]. ★ The acting page's *rect* used to be a parameter here
+///   and was dropped by O177: arm 1 now solves against the row's origin, and
+///   nothing else ever read it.
+/// * `row_rect` — the rect of the **row** holding the acting page, for its
+///   origin. Equal to `current_rect` under every non-facing mode, which is why
+///   the arms below can use it unconditionally. See
+///   [`crate::viewer::strip::Strip::row_rect_of`].
+///
+/// ★ That row's drawn **size** — the page's own size outside a facing mode,
+///   and both pages plus the spread gap inside one — is taken from `row_rect`
+///   rather than passed beside it. It was a parameter for one afternoon on
+///   2026-09-12 and clippy's argument-count lint caught it: two arguments
+///   spelling one measurement is a pair a caller can swap in silence.
 /// * `display_size` — the whole strip's drawn size.
 /// * `vp` — the viewport measured before the scroll area was built, the same
 ///   measurement every margin term in [`geometry`] is derived against.
 pub(super) fn placement(
     doc: &mut OpenDoc,
-    current_rect: Rect,
     current_display: (f32, f32),
+    row_rect: Rect,
     display_size: Vec2,
     vp: Vec2,
     // ★ The PREVIOUS frame's geometry — `zoom::last_frame` — which is the
@@ -163,7 +226,8 @@ pub(super) fn placement(
     // The page being acted on, so a `before` describing a different document
     // can be declined. See the check below.
     page_index: usize,
-) -> Option<Vec2> {
+) -> Option<Placed> {
+    let row_display = (row_rect.width(), row_rect.height());
     // ★★★ **A pending request OR a live fit mode**, and the second half is
     // `OPERATOR_REQUESTS.md` **O55**, 2026-08-28:
     //
@@ -197,6 +261,23 @@ pub(super) fn placement(
     // note gives: a request left pending fires on some later frame and reads
     // as the view jumping for a button pressed seconds ago.
     let pending = doc.fit_placement.take();
+    // ★★★ **The other one-shot: the operator changed the page arrangement** —
+    // `OPERATOR_REQUESTS.md` O177, first half.
+    //
+    // > *"when switching the view from scroll pages to show one page at a time
+    // > or show two pages side by side the page or pages view should snap back
+    // > to center of the canvas."*
+    //
+    // Set by `Action::SetPageDisplay` and spent here, for the same two-frame
+    // reason the fit request has: the arrangement changes during the action
+    // funnel, and the new layout's drawn size is not known until the canvas
+    // next lays the strip out.
+    //
+    // ★ Taken **unconditionally**, on the same argument as `pending` above and
+    // in the same breath so the two cannot drift: a request left pending fires
+    // on whatever frame the chain next reaches it, which the operator
+    // experiences as the view jumping for a button pressed seconds ago.
+    let recentre = std::mem::take(&mut doc.recentre);
     // ★★★ **A RESIZE, NOT A FRAME**, and the difference is a regression that
     // was written, run and caught the same hour.
     //
@@ -275,29 +356,67 @@ pub(super) fn placement(
     //
     // Pressing **Fit page** while already fitted to page must recentre a view
     // the operator has panned away from, and the mode alone cannot distinguish
-    // that frame from the sixty before it. Unchanged, byte for byte, from
-    // before O78 — this is still the only path that deliberately discards the
-    // operator's position, because pressing the button is them asking for it.
+    // that frame from the sixty before it. This is still the only path that
+    // deliberately discards the operator's position, because pressing the
+    // button is them asking for it.
+    //
+    // ★ Solved against the **row** as of O177, not the page. Under every
+    // non-facing mode the row IS the page and this is the arithmetic it always
+    // was; under a facing mode it is the fix — the scale was already fitting
+    // two pages, and this is the half that puts both of them on screen.
     if let Some(mode) = pending
         && let Some(pinned) = mode.pinned_axes()
     {
-        // Where the view is now, expressed the way a single-page solve
-        // expects. The PREVIOUS frame's settled offset, which is the only one
-        // available before this frame's scroll area is built — and the correct
-        // one, because nothing has moved the view since.
+        // Where the view is now, expressed the way the solve expects. The
+        // PREVIOUS frame's settled offset, which is the only one available
+        // before this frame's scroll area is built — and the correct one,
+        // because nothing has moved the view since.
         let now = geometry::page_local_offset(
             (doc.last_scroll_offset.x, doc.last_scroll_offset.y),
-            (current_rect.min.x, current_rect.min.y),
+            (row_rect.min.x, row_rect.min.y),
             (display_size.x, display_size.y),
-            current_display,
+            row_display,
             (vp.x, vp.y),
             (doc.pasteboard_overhang.x, doc.pasteboard_overhang.y),
         );
-        let (x, y) = geometry::fit_placement_offset(pinned, now, current_display, (vp.x, vp.y));
-        return Some(vec2(x, y));
+        let (x, y) = geometry::fit_placement_offset(pinned, now, row_display, (vp.x, vp.y));
+        return Some(Placed::Row(vec2(x, y)));
     }
 
-    // ---- 2. a resize keeps what was in the middle, in the middle -------
+    // ---- 2. a page-display switch snaps back to the middle -------------
+    //
+    // `OPERATOR_REQUESTS.md` O177, first half. Below a pressed fit, because a
+    // fit is a later and more specific instruction if both land on one frame,
+    // and above the resize arm, because the resize arm's whole job is to
+    // preserve a centre that the arrangement change has just invalidated: the
+    // `before` frame it measures describes the OLD layout.
+    //
+    // ## Why this is needed at all, given the continuous strip is scrollable
+    //
+    // `Action::SetPageDisplay` assigns `doc.tracked_page = doc.view.page_index`
+    // so the new arrangement does not read the current page as "navigated to"
+    // and scroll to it. That suppression is correct and stays — but it left
+    // the scroll offset the continuous strip had settled on in force over a
+    // layout that no longer describes it. Measured on 2026-09-12 by driving
+    // the shipped build: scrolled 480 pt in Continuous, then switched to
+    // Single, and the page was drawn 431 pt above the middle of the canvas
+    // with roughly half of it off the top edge. Exactly the report.
+    //
+    // ## Why the ROW and not the page
+    //
+    // Because *"show two pages side by side ... should snap back to center"* is
+    // a sentence about the spread. See [`Placed`].
+    if recentre {
+        let (x, y) = geometry::offset_holding_anchor_at(
+            (0.5, 0.5),
+            (vp.x / 2.0, vp.y / 2.0),
+            row_display,
+            (vp.x, vp.y),
+        );
+        return Some(Placed::Row(vec2(x, y)));
+    }
+
+    // ---- 3. a resize keeps what was in the middle, in the middle -------
     if !changed {
         return None;
     }
@@ -326,7 +445,7 @@ pub(super) fn placement(
         current_display,
         (vp.x, vp.y),
     );
-    Some(vec2(x, y))
+    Some(Placed::Page(vec2(x, y)))
 }
 
 #[cfg(test)]
@@ -337,6 +456,14 @@ mod tests {
     use egui::{Pos2, Rect, vec2};
 
     const FIXTURE: &str = "annots-with-everything.pdf";
+
+    /// The offset out of a [`Placed`], for the tests that only care about the
+    /// number. Which arm produced it is asserted separately where it matters.
+    fn offset_of(placed: Placed) -> Vec2 {
+        match placed {
+            Placed::Page(v) | Placed::Row(v) => v,
+        }
+    }
 
     /// A settled single-page frame: the page drawn at `zoom`, centred in a
     /// `viewport`-sized area. The world every placement test needs and none
@@ -357,21 +484,28 @@ mod tests {
         }
     }
 
-    fn place(doc: &mut OpenDoc, vp: (f32, f32), before: Option<CanvasFrame>) -> Option<Vec2> {
+    fn place(doc: &mut OpenDoc, vp: (f32, f32), before: Option<CanvasFrame>) -> Option<Placed> {
         place_at(doc, 0.5, vp, before)
     }
 
+    /// ★ A **single** page, so the row and the page are the same rect — these
+    /// tests are about the resize gate, not about O177's layout unit, and
+    /// passing the page rect twice is the truthful modelling of Single rather
+    /// than a convenience. A facing spread is exercised by driving the real
+    /// binary; see `ui-verify`'s
+    /// `switching_the_page_display_recentres_and_a_facing_fit_fits_the_spread`.
     fn place_at(
         doc: &mut OpenDoc,
         zoom: f32,
         vp: (f32, f32),
         before: Option<CanvasFrame>,
-    ) -> Option<Vec2> {
+    ) -> Option<Placed> {
         let display = vec2(612.0 * zoom, 792.0 * zoom);
+        let rect = Rect::from_min_size(Pos2::ZERO, display);
         placement(
             doc,
-            Rect::from_min_size(Pos2::ZERO, display),
             (display.x, display.y),
+            rect,
             display,
             vec2(vp.0, vp.1),
             before,
@@ -437,9 +571,9 @@ mod tests {
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);
         let before = frame(1.0, (444.0, 592.0));
         assert_eq!(place_at(&mut doc, 1.0, (444.0, 592.0), None), None);
-        let a = place_at(&mut doc, 1.0, (446.0, 592.0), Some(before)).expect("placed");
+        let a = offset_of(place_at(&mut doc, 1.0, (446.0, 592.0), Some(before)).expect("placed"));
         doc.view_viewport = Some((444.0, 592.0));
-        let b = place_at(&mut doc, 1.0, (448.0, 592.0), Some(before)).expect("placed");
+        let b = offset_of(place_at(&mut doc, 1.0, (448.0, 592.0), Some(before)).expect("placed"));
         assert!(
             ((a.x - b.x).abs() - 1.0).abs() < 1e-4,
             "★ half the viewport delta (2 pt) on the x offset: got {} vs {}",

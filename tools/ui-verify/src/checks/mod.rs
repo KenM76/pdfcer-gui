@@ -452,6 +452,14 @@ pub mod page_clipboard;
 /// happens. Its header carries why the second document must be one the
 /// program has never seen.
 pub mod page_display_pref;
+/// **O177, both halves.** Switching out of a scrolled continuous view must
+/// snap back to the middle of the canvas, and Fit page under a facing spread
+/// must fit BOTH pages. Two independent defects with one shared setup: the
+/// recentre is suppressed by `Action::SetPageDisplay`'s `tracked_page`
+/// assignment, and the spread is mis-placed because the fit's SCALE is
+/// row-aware while its PLACEMENT is page-aware. Its header carries why every
+/// assertion is made in a NON-continuous mode.
+pub mod page_display_recentres;
 pub mod page_ops;
 /// ★★★ **The page-preview limit is remembered, and zero means never** —
 /// `OPERATOR_REQUESTS.md` O187. THREE processes, each KILLED rather than

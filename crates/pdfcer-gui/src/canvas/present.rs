@@ -311,6 +311,14 @@ fn show_in(
         .rect_of(current)
         .unwrap_or_else(|| Rect::from_min_size(Pos2::ZERO, display_size));
     let current_display = (current_rect.width(), current_rect.height());
+    // ★ **The ROW the acting page is in** — `OPERATOR_REQUESTS.md` O177.
+    //
+    // Identical to `current_rect` under Single and Continuous, where a row IS
+    // a page; the whole facing spread under either facing mode. The fit's
+    // scale has always been row-aware (`Strip::row_extent`) and its placement
+    // was not, which is the defect. Falls back to the page rect on the same
+    // degenerate case `current_rect` falls back on.
+    let row_rect = layout.row_rect_of(current).unwrap_or(current_rect);
     // The scale every page on screen is rasterized at. Derived once, here, and
     // used to look each visible page's raster up: deriving it a second time
     // inside the draw loop is how a page could be *drawn* against one key while
@@ -370,174 +378,39 @@ fn show_in(
     // and the disagreement would be a drag that panned AND marquee'd.
     let active_tool = tool::active(ui.ctx());
 
-    // Zoom to the anchor, half two: a zoom step was armed on an earlier frame
-    // and the new zoom is now known (post-clamp), so solve for the offset that
-    // keeps the anchored page point where the rule says it belongs, and force
-    // it onto the area before it lays out. `consume_anchor` owns the gate that
-    // decides whether the zoom has actually landed yet — see [`zoom`]'s header
-    // on the two-frame handshake, and on why an unconditional `take()` here
-    // made every *command*-driven zoom silently unanchored.
-    //
-    // ★ Three sources of a forced scroll offset, and the order between them is
-    // a precedence rather than a coincidence:
-    //
-    // 1. **a zoom anchor**, because a zoom has just landed and the whole point
-    //    of the anchor is that one page point does not move as it does;
-    // 2. **a find reveal**, because the operator asked to be taken somewhere
-    //    and a one-shot navigation outranks nothing else in flight;
-    // 3. **a middle-drag pan**, which is a live gesture — and a live gesture is
-    //    LAST here for the reason it wins anyway: it re-arms itself on the next
-    //    frame, while both of the others are spent once.
-    //
-    // ★ A **fourth** source arrives with Phase 4 — a page *command* under a
-    // continuous mode, which has to scroll the strip to the page it named —
-    // and it sits third, below the two one-shots and above the live gesture,
-    // by the same reasoning: it is a one-shot the operator asked for, and a
-    // live gesture re-arms itself while the one-shots are spent once.
-    //
-    // ★ Two of the three offsets below are solved by code this work does not
-    // own — `canvas::zoom`'s anchor handshake and `find::reveal`'s two-frame
-    // reveal — and both are written for a scroll area whose content is **one
-    // page at the origin**. Rather than teach either about a strip, the canvas
-    // converts: `geometry::page_local_offset` presents the world the way those
-    // solves expect, and `geometry::strip_offset` converts their answer back.
-    // The conversion is exact, and under `Single` it is the identity. See
-    // `geometry`'s header for the whole argument.
     // ★ The INNER size — `inner_avail`, measured above with the bars taken
     // off. `ui.available_size()` here is the outer, and every margin term in
     // `geometry` and every centre in `fit::placement` is derived against this
     // number, so it must be the room the content will actually get.
     let vp = inner_avail;
 
-    // ★★★ **THE PASTEBOARD'S OVERHANG, PUBLISHED ONCE FOR THE WHOLE FRAME.**
+    // ★★★ **WHERE THE VIEW SITS THIS FRAME** — the pasteboard's slack, the
+    // deep-position tier, a pending fit's placement, and the ranked list of
+    // six sources that decide the scroll offset.
     //
-    // O23's third and last part. Parts A and B gave the operator slack to
-    // scroll into and made a press out there a gesture; this is what makes the
-    // off-page object survive being **zoomed in on**, which is what "edit"
-    // means and is the half his follow-up report was about:
-    //
-    // > *"how do I view and edit objects that are off of the page? we added
-    // > this feature but I didn't see how to enable it."*
-    //
-    // `geometry::pasteboard` carries the arithmetic and the measurement. In
-    // one line: the slack was a fixed count of **screen pixels**, so the slice
-    // of the **drawing** it covered shrank in exact proportion to the zoom,
-    // and above a few hundred per cent an object placed off the sheet could no
-    // longer be brought to the middle of the screen at all.
-    //
-    // ★ Written to the document rather than threaded as an argument because
-    // eight call sites below hand it to `geometry`, and two spellings of the
-    // pasteboard is the exact defect O23 spent three attempts on — see the
-    // field's own documentation.
-    //
-    // ★★★ The MEASUREMENT moved to `tier::overhang` on 2026-09-11, with
-    // `View ▸ Off-Page Content`. It is the same decision `tier::decide` makes
-    // — *does this page reach past its sheet, and is the operator asking to be
-    // shown it?* — asked against the layout instead of against the raster, and
-    // the two halves of one switch must not live in two files. That function
-    // carries the peek's 469 ms argument, the zoom multiplication and the
-    // gate; what stays HERE is the single write, because the field must be
-    // written exactly once per frame and this is that frame.
-    doc.pasteboard_overhang = super::tier::overhang(doc, current);
-    let overhang = doc.pasteboard_overhang;
-    super::trace::pasteboard(overhang, doc.view.off_page);
-
-    // The page the pending zoom anchor was armed against, and that page's
-    // drawn size — which is what `zoom::consume_anchor` must compare its
-    // recorded size against, for the same reason.
-    let anchor_page = doc.zoom_anchor.map_or(current, |a| a.page);
-    let anchor_display = layout
-        .rect_of(anchor_page)
-        .map_or(current_display, |r| (r.width(), r.height()));
-    // ★★★ TIER 3 — the `f64` anchor takes over the POSITION.
-    //
-    // `OPERATOR_REQUESTS.md` O24. Below this the scroll offset says where the
-    // view is, and it is an `f32` over a content space of `page × zoom` where
-    // one unit is one screen pixel — so past about 2^24 content points it can
-    // only address every second pixel, then every sixteenth, and the view
-    // judders and sticks. Measured: at a trillion percent it moves in
-    // 2,048-pixel jumps.
-    //
-    // Above it the position becomes `DeepAnchor` — a page point in `f64` and
-    // the screen pixel it sits under — which does not decay with zoom, and
-    // the scroll area stops being asked to hold it. Its content becomes the
-    // viewport, so egui has nothing to scroll and nothing to round.
-    //
-    // ★ Everything below the threshold is untouched, deliberately. This
-    // canvas has twice been broken by a change that meant to affect only deep
-    // zoom, so the tier is a hard branch rather than a re-parameterisation.
-    let deep =
-        viewer::deep_position_needed(viewer::page_extent_pts(&doc.pages[current]), doc.view.zoom);
-    let deep_handover = deep::track(
-        ui,
-        doc,
-        &layout,
-        current,
-        current_display,
-        display_size,
-        vp,
-        active_tool,
+    // Split out into [`super::viewpos`] on 2026-09-12 under R2; its header
+    // carries why that is a seam rather than a cut, and why the offset comes
+    // back as a value instead of being applied there.
+    let viewpos::Position {
+        overhang,
         deep,
-    );
-
-    // ★ Where a fit command puts the view — `OPERATOR_REQUESTS.md` O28, and
-    // the whole of it is in `canvas::fit` because it is a rule about fitting
-    // rather than about this frame's geometry.
-    //
-    // Taken unconditionally, even at the deep tier and even on a frame where
-    // something else wins the offset: a request left pending would fire on
-    // whatever frame the chain next reached it, which is a view that jumps for
-    // a button pressed some seconds ago.
-    // ★ `zoom::last_frame` is read HERE and handed in, rather than read inside
-    // `fit::placement`, so the "before" state is fetched once per frame at the
-    // point that already owns the frame's geometry — and so the function stays
-    // a pure decision over its arguments, which is what makes its arithmetic
-    // unit-testable without a window. O78.
-    let previous = zoom::last_frame(ui.ctx());
-    let fit_placement = fit::placement(
-        doc,
-        current_rect,
-        current_display,
-        display_size,
-        vp,
-        previous,
-        // The page this frame is about. `acting` is not bound yet at this
-        // point in the frame — it is resolved after the strip lays out — and
-        // `current` is what every other pre-layout decision here uses. The two
-        // differ only on the frames `acting`'s own note describes, and a
-        // disagreement here can only DECLINE a centre-preservation, never
-        // misplace one.
-        current,
-    );
-    // ★★★ WHO DECIDES WHERE THE VIEW IS THIS FRAME, in one ranked list.
-    //
-    // Six sources, and the ranking is the whole of the subject — see
-    // `canvas::offset`'s header for each one's argument. It returns an offset
-    // rather than applying it, so the `ScrollArea` is configured in exactly
-    // one place.
-    if let Some(offset) = offset::decide(
+        offset,
+    } = viewpos::position(
         ui,
         doc,
         &layout,
-        active_tool,
-        offset::Frame {
-            deep,
-            deep_handover,
-            fit_placement,
-            anchor_page,
-            anchor_display,
+        viewpos::Geometry {
             current,
             current_display,
+            row_rect,
             display_size,
             vp,
+            active_tool,
         },
-    ) {
+    );
+    if let Some(offset) = offset {
         scroll_area = scroll_area.scroll_offset(offset);
     }
-
-    // How many canvas frames this document has had. Saturating, and only ever
-    // read against a small constant — see the seeding arm above.
-    doc.canvas_frames = doc.canvas_frames.saturating_add(1);
 
     let scroll_output = scroll_area.show(ui, |ui| {
         // Centre the STRIP manually rather than with
@@ -1347,6 +1220,14 @@ fn show_in(
     );
     crate::diag::ui_rect(trace::REGION_PAGE, image_rect);
     crate::diag::ui_rect(trace::REGION_CANVAS_VIEWPORT, scroll_output.inner_rect);
+    // The whole of what was drawn, as one rect — see [`trace::REGION_STRIP`].
+    // Folded from `drawn` rather than recomputed from the strip layout so it
+    // cannot disagree with what was painted: these are the same rects the
+    // rasters went into. `reduce` yields `None` on an empty strip, and nothing
+    // is published on that frame rather than a degenerate rect at the origin.
+    if let Some(strip_rect) = drawn.iter().map(|d| d.rect).reduce(egui::Rect::union) {
+        crate::diag::ui_rect(trace::REGION_STRIP, strip_rect);
+    }
     trace::pointer(ui, doc, image_rect, extent);
 
     // ★ The plain wheel as a page turn — O30. Before the Ctrl+wheel block

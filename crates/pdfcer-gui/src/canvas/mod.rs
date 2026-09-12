@@ -154,8 +154,13 @@ mod deep;
 mod offset;
 // Spending a fit command's request to place the view -- O28.
 mod fit;
+// Where the view sits this frame, settled before anything is drawn: the
+// pasteboard slack, the deep-position tier, a pending fit, and the ranked
+// offset. Split out of `present` under R2 -- its header carries why the three
+// values it hands back are the whole of the seam.
 pub mod geometry;
 pub mod gesture;
+mod viewpos;
 // Draggable alignment lines: what a guide belongs to, where it lives on disk,
 // and why grabbing one cannot also start a marquee.
 pub mod guides;

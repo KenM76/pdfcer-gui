@@ -856,88 +856,16 @@ impl PdfcerApp {
             // into it — and rule 4 forbids letting the operator discover that
             // from a diff. `plan`'s reason is what decides whether the sentence
             // is appended, so the disclosure and the disposition cannot disagree.
+            // ★ Replace text a producer already put on the page. The body is
+            // `super::textcommit`, split out 2026-09-12 under R2; its header
+            // carries why six decisions had accumulated in an arm whose job is
+            // to route, and why the two neighbouring commit verbs stayed here.
             Action::CommitTextEdit {
                 page,
                 run,
                 original,
                 replacement,
-            } => {
-                let plan = crate::canvas::textedit::plan(doc, page, run, &original, &replacement);
-                let reason = plan.reason;
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed.
-                    //
-                    // ★ It names the DISPOSITION and the REASON, and it has to
-                    // name both. `HANDOFF.md` §2's grid lesson is that a check
-                    // asserting a relation is satisfied by any absurdity in the
-                    // right direction — and "an edit happened" is exactly such a
-                    // relation here. A build that had reverted to
-                    // `EditOptions::default()` would produce an identical
-                    // `edit-text` line one line below this one; only this line
-                    // carries the number that build would get wrong.
-                    format!(
-                        "text-edit-plan page={page} run={run} disposition={:?} reason={reason:?} \
-                         pinned={}",
-                        plan.options.disposition,
-                        plan.request.pinned_span.is_some()
-                    )
-                });
-                // ★ Gathered BEFORE the edit, because it reads a `Ref` into the
-                // decomposition cache and `vector_edit` wants `&mut OpenDoc`.
-                // It decides whether the engine's SHARED CONTENT sentence may
-                // be followed by a remedy; `report::PageLevelForms` carries the
-                // whole argument, including the nested-form case where the
-                // remedy would succeed and change nothing.
-                let page_forms = crate::canvas::textedit::report::PageLevelForms::of(doc);
-                // ★★★ **The one fact that turns the engine's answer into a
-                // sentence he can act on** — `OPERATOR_REQUESTS.md` O140. Copied
-                // out of the plan before the closure takes `plan` by reference,
-                // because the classification below runs inside it.
-                let one_operator = plan.one_operator;
-                vector_edit(doc, "edit-text", page, 1, |session| {
-                    session
-                        .edit_text(&plan.request, &plan.options)
-                        // ★★★ **O140 — the refusal is CLASSIFIED, and the arm
-                        // routes rather than deciding.**
-                        //
-                        // `app::status::decline::textedit` owns *"what does the
-                        // text caret decline, and who says so"*; this is its
-                        // third decline, and its header carries the whole
-                        // argument — the engine's coarse `RefusalKind`, the one
-                        // fact the engine cannot see (whether the pinned run is
-                        // a single show operator), and why the tidier-looking
-                        // home in `canvas::textedit::report` was rejected.
-                        //
-                        // ★ Inside the closure, through `inspect_err`, on
-                        // `textstyle::reflow`'s precedent: the funnel takes its
-                        // decline floor *before* running this and fills the slot
-                        // only `if slot.is_none()`, so the classified sentence
-                        // survives and the generic one stands aside.
-                        .inspect_err(|error| {
-                            crate::app::status::decline::record_edit_text_refusal(
-                                page, run, one_operator, error,
-                            );
-                        })
-                        .map(|report| {
-                            // ★ The shared-content fan-out, on the trace.
-                            // `canvas::textedit::trace_target` owns the whole
-                            // argument for why those three numbers exist and
-                            // what a wrong build gets wrong about them; this arm
-                            // routes, as every other arm here does.
-                            crate::canvas::textedit::report::trace_target(page, run, &report);
-                            let mut notes = report.disclosures.clone();
-                            if reason.pins_the_tail() {
-                                notes.push(crate::text::textedit::pinned_tail_disclosure(reason));
-                            }
-                            // ★ The engine's SHARED CONTENT sentence says WHAT
-                            // happened; it cannot say what to do, because it
-                            // has never heard of this shell's commands. Nothing
-                            // here re-words it — this is appended after it.
-                            notes.extend(page_forms.remedy_for(&report));
-                            notes
-                        })
-                });
-            }
+            } => super::textcommit::commit_text_edit(doc, page, run, &original, &replacement),
             // ★ New page text, through the same funnel and the same four steps.
             //
             // `AddTextRequest::new` supplies the engine's own documented default
@@ -1020,6 +948,37 @@ impl PdfcerApp {
                     // read the current page as "navigated to" and scroll to it
                     // on its first frame.
                     doc.tracked_page = doc.view.page_index;
+                    // ★★★ **…and the view snaps back to the middle** —
+                    // `OPERATOR_REQUESTS.md` O177, first half:
+                    //
+                    // > *"when switching the view from scroll pages to show one
+                    // > page at a time or show two pages side by side the page
+                    // > or pages view should snap back to center of the
+                    // > canvas."*
+                    //
+                    // The line above is why it has to be said out loud. That
+                    // suppression is correct — without it the strip would
+                    // scroll to the current page on its first frame — but it
+                    // left the scroll offset the OLD arrangement had settled on
+                    // in force over a layout that no longer describes it.
+                    // Measured 2026-09-12 by driving the shipped build:
+                    // scrolled 480 pt in Continuous, switched to Single, and
+                    // the page was drawn 431 pt above the middle of the canvas
+                    // with about half of it off the top edge.
+                    //
+                    // ★★ Only for a **non-continuous** target, and the gate is
+                    // read from the mechanism rather than chosen: under a
+                    // continuous mode `canvas::strip::page_scroll_offset` owns
+                    // where the strip sits, and it no-ops for exactly one frame
+                    // because of the `tracked_page` line above. Arming a
+                    // recentre there would put a second opinion into a decision
+                    // that already has an owner, and the operator's sentence
+                    // does not ask for one — the two arrangements he names are
+                    // both non-continuous.
+                    //
+                    // ★ Spent by `canvas::fit::placement`, unconditionally, on
+                    // the next frame. See `OpenDoc::recentre`.
+                    doc.recentre = !display.is_continuous();
                 }
                 // Recorded unconditionally, because the operator has stated a
                 // choice and a document that was showing the mode by *default*

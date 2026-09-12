@@ -91,14 +91,12 @@
 //! selection**, moved off `egui::Memory` for the same reason. See
 //! [`OpenDoc::selection`].
 
-use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 
 use pdfcer_core::document::LoadOptions;
 use pdfcer_core::edit::EditSession;
-use pdfcer_core::object::ObjId;
 use pdfcer_core::page_tree::Page;
 
 use crate::app::cache::{FontCache, PageObjectCache, PageTextCache};
@@ -183,48 +181,13 @@ pub(crate) fn policy_token(options: LoadOptions) -> &'static str {
 /// rather than a rename, so `canvas::zoom` still names it by this path.
 pub use crate::viewer::ZoomAnchor;
 
-/// Which optional-content groups the operator has hidden, if any.
-///
-/// # ★ `None` is not "hide nothing"
-///
-/// `pdfcer_render::LayerVisibility` **replaces** the document's own default
-/// configuration rather than merging with it (core API trap T-12.9). So:
-///
-/// | state | meaning |
-/// |---|---|
-/// | `hidden: None` | obey the document's `/D` configuration (§8.11.4.3) |
-/// | `hidden: Some({})` | show **every** layer, including ones the document turns off |
-/// | `hidden: Some({…})` | exactly these are hidden |
-///
-/// Collapsing the first two would silently reveal every layer a document had
-/// turned off, which on a drawing with a "Confidential" watermark layer is a
-/// disclosure defect rather than a cosmetic one.
-///
-/// That is also why a set is stored rather than operator *deltas*: the
-/// renderer wants the complete answer, so the complete answer is what is
-/// held. A delta would have to be resolved against the document's defaults at
-/// render time, in a second place, with the merge rules the engine
-/// deliberately refused to define.
-///
-/// # ★ The operator's toggle is session-only, and nothing here can save it
-///
-/// §8.11.2.1 puts the live state outside the document entirely: the toggle is
-/// *"session-only state, held nowhere the save path can see it"*, lost on
-/// reopen. That is a property of the format rather than a gap in this build,
-/// it is what `crate::text::panels::layers_session_only_note` discloses, and
-/// it is why changing it must not bump [`OpenDoc::edit_epoch`].
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub(super) struct LayerOverride {
-    /// The complete hidden set, or `None` to obey the document.
-    pub(super) hidden: Option<BTreeSet<ObjId>>,
-    /// How many times the above has changed.
-    ///
-    /// The render staleness key — see
-    /// [`crate::render::worker::RenderKey`], whose own docs explain why a
-    /// counter beats comparing the set on every frame. `0` is the
-    /// never-touched state, which is exactly `hidden: None`.
-    pub(super) generation: u64,
-}
+/// **Which optional-content groups the operator has hidden** — split out
+/// 2026-09-12 under R2. Its header carries why a fact about what the
+/// renderer must be told is a different subject from the document model
+/// that holds it, and why the type's visibility is spelled absolutely.
+mod layers;
+
+use layers::LayerOverride;
 
 mod identity;
 /// **What the render tier needs to know about a page's colour** — one method,
@@ -645,6 +608,34 @@ pub struct OpenDoc {
     /// wheel anchor armed a frame earlier describes a position the fit has
     /// just superseded. See the offset-decision chain in `canvas::show`.
     pub fit_placement: Option<crate::viewer::FitMode>,
+    /// ★ **The page arrangement just changed, so the view must snap back to
+    /// the middle** — `OPERATOR_REQUESTS.md` O177, first half.
+    ///
+    /// > *"when switching the view from scroll pages to show one page at a
+    /// > time or show two pages side by side the page or pages view should
+    /// > snap back to center of the canvas."*
+    ///
+    /// A one-shot on exactly [`Self::fit_placement`]'s pattern, sitting beside
+    /// it deliberately: set by `Action::SetPageDisplay`, spent by
+    /// [`crate::canvas::fit::placement`] on the following frame, and taken
+    /// unconditionally whatever else that frame decides. The two-frame shape is
+    /// forced by the same fact — the arrangement changes inside the action
+    /// funnel, which cannot see the viewport, so the new layout's drawn size is
+    /// not known until the canvas next lays the strip out.
+    ///
+    /// ★★ A `bool` rather than an `Option<PageDisplay>` because nothing that
+    /// spends it needs to know *which* arrangement was asked for: by the time
+    /// it is read, `view.display` already IS that arrangement and the strip has
+    /// been laid out from it. Carrying the mode here would be a second copy of
+    /// a fact that cannot disagree with itself today and could tomorrow.
+    ///
+    /// ★★★ Set only for a **non-continuous** target, and that is not a
+    /// simplification — see the guard in `Action::SetPageDisplay`. Under a
+    /// continuous mode `canvas::strip::page_scroll_offset` is the thing that
+    /// owns where the strip sits, and it is already suppressed for one frame by
+    /// the `tracked_page` assignment beside the guard. Recentring there would
+    /// be a second opinion about a question that already has an owner.
+    pub recentre: bool,
     /// **Where a bookmark asked the view to land.** A one-shot, parked on
     /// `fit_placement`'s pattern; see `canvas::destination`.
     pub pending_destination: Option<crate::canvas::destination::PendingDestination>,
@@ -1294,6 +1285,9 @@ impl OpenDoc {
             zoom_commanded: false,
             zoom_anchor: None,
             fit_placement: None,
+            // No arrangement has been switched to; the seed arm in
+            // `canvas::offset` places a freshly opened document.
+            recentre: false,
             pending_destination: None,
             view_viewport: None,
             // Nothing to reveal on a document nobody has searched yet — and,
