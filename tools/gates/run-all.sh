@@ -415,6 +415,36 @@ run "check-ui-toolkit-drift" bash "$HERE/check-ui-toolkit-drift.sh"
 # -- which is why it is last in this section rather than first.
 run "check-third-party-licences" bash "$HERE/check-third-party-licences.sh"
 
+# ★★★ `package-portable --self-test`, registered 2026-09-11 — and, exactly like
+# `walk-engine-backlog` eight hours earlier, the delay IS the finding.
+#
+# `tools/package-portable.py` has carried a `--self-test` since it was written.
+# It asserts things nothing else can see: that a build folder name cannot be
+# swallowed by pdfcer's OWN packager's `pdfcer-*` glob, that the source digest
+# is deterministic and moves on a renamed file, and that the asset-copy loop
+# works even though `PAYLOAD_ASSET_DIRS` is empty so it never runs in a real
+# package. **Nothing ran it.** It was reachable only by a session that happened
+# to type the flag, which is to say by a session that already suspected
+# something.
+#
+# ⇒ That is the same shape twice in one day, and the shape is not "somebody
+# forgot". It is that a self-test is written by the person fixing a bug, at the
+# moment the bug is fresh, and registering it is a SEPARATE file's edit. The
+# rule this repository now holds: a `--self-test` that is not in this list does
+# not exist, and adding one means editing two files or neither.
+#
+# ★ What registering it now protects. A fourth invariant was added the same
+# hour: the GitHub release asset must be ROOTED AT THE BUILD FOLDER. For the
+# first eleven releases the zip was made by hand at publish time, and the
+# difference between right and wrong is one argument to `shutil.make_archive` —
+# an archive of loose contents is a perfectly valid archive that scatters an exe
+# and eight documents across whatever directory the operator was standing in,
+# reports no error, and is discovered by him rather than here.
+#
+# It is cheap: three temporary directories and a 1 KB zip, well under a second,
+# and it touches neither `D:\Dev\pdfcer` nor OneDrive.
+run "package-portable --self-test" python "$ROOT/tools/package-portable.py" --self-test
+
 # --- 2. cargo fmt / clippy --------------------------------------------------
 #
 # Both are wrapped in a workspace-loadability probe. If a member crate listed

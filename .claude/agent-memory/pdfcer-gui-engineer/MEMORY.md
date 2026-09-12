@@ -95,3 +95,5 @@
 - [A gate that crashes after its headline reads as a broken tool](feedback_a_gate_that_crashes_after_its_headline_reads_as_a_broken_tool.md) — it sent me to debug the tool while the named row sat unfixed; `errors="replace"`.
 - [An assertion both outcomes satisfy measures neither](feedback_an_assertion_both_outcomes_satisfy_is_not_a_measurement_of_which_one_shipped.md) — name what the WRONG mechanism cannot produce.
 - [A gate hit inside the repo is not a mandate to sweep outside it](feedback_a_gate_hit_inside_the_repo_is_not_a_mandate_to_sweep_outside_it.md) — a half-renamed archive is worse than an old-named one.
+- [A branch-pinned dependency moves without `cargo update`](feedback_a_branch_pinned_dependency_moves_without_cargo_update.md) — the engine pin changed mid-session with no update command; re-read the lock in the same breath as quoting it.
+- [The write-python-to-a-file workaround does not protect an escape](feedback_the_write_python_to_a_file_workaround_does_not_protect_an_escape.md) - use raw strings and plain ASCII; an escaped newline became a real one and an escaped NUL a real NUL, an hour apart.

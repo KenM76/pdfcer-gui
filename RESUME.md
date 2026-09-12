@@ -171,6 +171,18 @@ marked closed. **Only Ken closes a row.**
   **nothing** — a clean exit that changed nothing, indistinguishable from
   success. Write the script to a file, run the file, and `assert` its own match
   count. Eleven occurrences now; see `D:/dev/rag/rust/`.
+  - ★★ **And writing it to a file only fixes the SHELL layer.** On 2026-09-11
+    the file-first workaround was followed and the payload broke twice anyway:
+    an escaped newline inside a non-raw `'''...'''` became a **real** newline
+    inside an f-string (`SyntaxError`, reported at the *print*, not the edit),
+    and an escaped NUL became a **real** NUL byte (`source code cannot contain
+    null bytes`). Then, sixty seconds after that lesson was written down, its
+    own one-line index entry came out split across three lines — through a
+    correctly quoted heredoc, with every backslash doubled. Three layers stack
+    here. ⇒ **The rule is not "double it" and not "use a raw string" — it is
+    do not put a backslash in the payload at all.** Name the byte in words, pick
+    a printable one, or build it with `chr(10)`. Then `python -c "import ast,io;
+    ast.parse(io.open(p).read())"` before importing or running anything.
 - **Do not start Phase 5 (text editing) early.** Deliberately last, `HANDOFF.md` §8.
 - **Do not build S6 deep zoom or tiling.** Measured as a 9× regression.
 

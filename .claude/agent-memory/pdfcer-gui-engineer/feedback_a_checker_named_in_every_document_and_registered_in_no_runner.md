@@ -35,12 +35,30 @@ that wired it** and still sit under `wanted` forever, because moving it is a
 separate act no instrument asked for. A count can be right about what it
 measures and wrong about what a reader takes it for.
 
+**★ It happened AGAIN the same day, eight hours later, and the second one is
+the more instructive of the two.** `tools/package-portable.py` had carried a
+`--self-test` since the day it was written. It asserts three things nothing else
+can see: that a build folder name cannot be swallowed by pdfcer's own packager's
+`pdfcer-*` glob, that the source digest is deterministic and moves on a renamed
+file, and that the asset-copy loop works even though `PAYLOAD_ASSET_DIRS` is
+empty so it never executes in a real package. **It was in no runner.** It was
+reachable only by a session that already suspected something and typed the flag.
+
+⇒ The shape is not "somebody forgot". A `--self-test` is written by the person
+fixing a bug, in the file they are already in, at the moment the bug is fresh —
+and registering it is a **different file's edit**, made after the satisfaction of
+the fix has been collected. Two files or neither. That is the rule this
+repository now holds, and both halves of it were violated by the same author on
+the same day.
+
 **How to apply:**
 - When a doc says "checked by X", run `grep -rn X tools/gates/run-all.sh`.
   Absent ⇒ the rule is a convention, and say so in those words.
 - A one-way check invites its own hole. Having built one direction, ask what the
   other direction would catch, and make that a *report* if legitimate
   exceptions exist — a gate that forces exceptions to move teaches re-baselining.
+- **Writing a `--self-test` is half the work.** The other half is the line in
+  `run-all.sh`, and it is not done until both are in the same commit.
 - Related: [[a-check-that-cannot-fail-is-not-evidence]],
   [[a-runners-sentinel-is-a-claim-about-the-runner]],
   [[a-long-green-check-can-be-aiming-at-nothing]].

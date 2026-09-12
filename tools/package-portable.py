@@ -793,13 +793,62 @@ def self_test() -> int:
         finally:
             PAYLOAD_ASSET_DIRS = saved
 
+    # 4. The GitHub asset is ROOTED AT THE BUILD FOLDER.
+    #
+    #    ★ This is the invariant that decides what happens on the operator's
+    #    machine, and it is invisible from here: an archive of loose contents
+    #    unzips perfectly, reports no error, and scatters an exe and eight
+    #    documents across whatever directory he was standing in. The only
+    #    difference between right and wrong is one argument to
+    #    `shutil.make_archive` — `base_dir=out.name` versus `root_dir=out` —
+    #    and the wrong one is the one that looks simpler.
+    #
+    #    Asserted by reading the NAMES BACK OUT of a real zip, not by
+    #    inspecting the call: the question is what the archive contains, and
+    #    re-stating the arguments would test that the line is the line.
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        out = root / "pdfcergui-20260911-1953-abc1234-0123456789ab"
+        (out / "models").mkdir(parents=True)
+        (out / "pdfcer-gui.exe").write_bytes(b"MZ")
+        (out / "BUILD-INFO.txt").write_text("engine abc1234", encoding="utf-8")
+        (out / "models" / "weights.bin").write_bytes(b"weights")
+
+        made = archive_build(out)
+        if not made.is_file():
+            failures.append("archive_build did not write the zip it returned")
+        else:
+            import zipfile
+
+            names = zipfile.ZipFile(made).namelist()
+            roots = {n.split("/", 1)[0] for n in names}
+            if roots != {out.name}:
+                failures.append(
+                    f"the release asset is not rooted at the build folder: {sorted(roots)} "
+                    "— unzipping it would scatter the payload into the operator's cwd"
+                )
+            if f"{out.name}/BUILD-INFO.txt" not in names:
+                failures.append(
+                    "the release asset has no BUILD-INFO.txt; it would not say which "
+                    f"engine the binary is. contains: {sorted(names)}"
+                )
+            if f"{out.name}/models/weights.bin" not in names:
+                failures.append("the release asset dropped a nested asset directory")
+
+        # And it must NOT overwrite an existing archive: two different builds
+        # sharing a name is how a published asset silently changes contents.
+        stamp = made.stat().st_mtime_ns
+        again = archive_build(out)
+        if again != made or again.stat().st_mtime_ns != stamp:
+            failures.append("archive_build overwrote an archive that already existed")
+
     for msg in failures:
         print(f"package-portable --self-test: FAIL — {msg}")
     if failures:
         return 1
     print(
-        "package-portable --self-test: 3 invariants hold "
-        "(name collision, digest, asset copy)."
+        "package-portable --self-test: 4 invariants hold "
+        "(name collision, digest, asset copy, release asset is folder-rooted)."
     )
     return 0
 
@@ -1250,6 +1299,66 @@ def mirror(out: Path, forced: str | None = None) -> None:
     print()
     print(f"package-portable: mirrored to {target}")
     print(f"  (replaced the older slot; {', '.join(keeps)} still holds the previous build)")
+
+
+def archive_build(out: Path) -> Path:
+    """Zip ``out`` into a sibling ``<name>.zip``, and return the archive path.
+
+    The path is returned whether this call wrote the file or found one
+    already there, because the caller's question is *where is the asset*
+    and the answer does not depend on who made it. The distinction is
+    printed, not returned: a re-package of the same minute is worth a
+    console line and is not worth a branch at every call site.
+
+    The archive is ROOTED AT THE BUILD FOLDER, not at its contents. That is
+    the whole reason this is one line of ``shutil`` rather than a loop: a
+    caller who unzips it gets ``pdfcergui-<stamp>/`` in their current
+    directory, never an exe and eight documents scattered across whatever
+    folder they happened to be standing in. ``self_test`` asserts the
+    rooting, because an archive of loose contents is still a valid archive
+    and the damage lands on the operator, not here.
+    """
+    # ★★ WHY THIS IS IN THE TOOL AND NOT IN A RELEASE RUNBOOK.
+    #
+    # It was not, for the first eleven releases. Every one of them was zipped
+    # by hand with PowerShell's ``Compress-Archive`` at the point of publishing
+    # — which is to say, by a session that had to remember to, from a folder it
+    # had to name correctly, into a file name it had to construct to match the
+    # convention. **One of those hand-zips carried a `-dirty` build**, because
+    # the hand step happened at a moment the tree was not the moment the
+    # packager measured.
+    #
+    # ⇒ The archive is a FUNCTION OF THE BUILD FOLDER, so it belongs beside the
+    # thing that writes the build folder. Made here, it is byte-identical to
+    # what was mirrored to OneDrive by construction, it is named from the same
+    # three facts (timestamp, engine revision, shell revision), and there is no
+    # window in which the tree can move between the stamp and the archive.
+    #
+    # ★ It is made AFTER `mirror()` deliberately, for the same reason `mirror()`
+    # runs last: every payload file, `BUILD-INFO.txt` included, is on disk by
+    # now. An archive taken earlier is an archive of a directory still being
+    # written, and the failure is silent — a zip is a valid zip whether or not
+    # it contains the one document that says which engine the binary is.
+    #
+    # It is NOT pruned with the folders. `prune()` deletes superseded build
+    # DIRECTORIES because they are 43 MB of duplicated exe; the zips are the
+    # published artifacts and a zip whose GitHub release still points at it
+    # must not be deleted by a later build's housekeeping.
+    archive = out.with_suffix(".zip")
+    if archive.exists():
+        # Re-packaging the same minute is the only way to reach this, and
+        # overwriting silently would make two different builds share a name.
+        print(f"\n  NOTE: {archive.name} already exists; leaving it alone.")
+    else:
+        shutil.make_archive(str(out), "zip", root_dir=out.parent, base_dir=out.name)
+        print(
+            f"\npackage-portable: wrote {archive.name}"
+            f"  {archive.stat().st_size:,} bytes"
+        )
+        print("  This is the GitHub release asset. It contains the build FOLDER,")
+        print("  not its loose contents, so unzipping cannot scatter an exe and")
+        print("  eight documents across whatever directory the operator was in.")
+    return archive
 
 
 def main() -> int:
@@ -1830,6 +1939,11 @@ are in the program itself: File > pdfcer > About pdfcer.
     # payload file is on disk by now, and a mirror taken at any earlier point
     # is a copy of a directory that is still being built.
     mirror(out, forced=args.slot)
+
+    # The GitHub release asset, made from the folder that was just mirrored
+    # so the two are the same bytes by construction. See `archive_build` for
+    # why this is the tool's job and not a release runbook's.
+    archive_build(out)
 
     prune(out.parent, keep=KEEP_BUILDS)
 
