@@ -182,11 +182,17 @@ impl CompactDialog {
 /// Build it for the current document, or answer why not.
 ///
 /// ★★ `Err` carries a sentence rather than a flag, because the one thing that
-/// can go wrong here is the engine refusing by name — a hybrid-reference file,
-/// or one whose object numbering is too sparse for §7.5.4's single-section
-/// table. Both are facts about the operator's file that they can act on, and
-/// collapsing them to *"could not"* would waste the only useful thing the
-/// refusal carries.
+/// can go wrong here is the engine refusing by name — a hybrid file whose
+/// `/XRefStm` does not parse, or one whose object numbering is too sparse for
+/// §7.5.4's single-section table. Both are facts about the operator's file
+/// that they can act on, and collapsing them to *"could not"* would waste the
+/// only useful thing the refusal carries.
+///
+/// ★ The first of those read *"a hybrid-reference file"* until 2026-09-11.
+/// `Pass 281.0` narrowed the engine's refusal to the unparseable case, so
+/// compacting an ordinary hybrid now succeeds where this comment said it
+/// could not. The sentence the operator reads is the engine's own and was
+/// never wrong; only the account of it here was.
 pub fn open_for(status: &Status) -> Option<Result<CompactDialog, String>> {
     match status {
         Status::Open(doc) => Some(CompactDialog::open(doc)),

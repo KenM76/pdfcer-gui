@@ -177,9 +177,11 @@ pub fn written(path: &str, before: u64, after: u64) -> String {
 
 /// The engine refused to rewrite this file.
 ///
-/// ★★ A real refusal with a named cause, not a fallback. `pdfcer-core` refuses a
-/// full rewrite of a **hybrid-reference** file by name and points at incremental
-/// as the supported path — and `app::save`'s header states the rule this obeys:
+/// ★★ A real refusal with a named cause, not a fallback. `pdfcer-core` refuses
+/// a full rewrite by name — since `Pass 281.0` for a **hybrid file whose
+/// `/XRefStm` does not parse**, not for the whole hybrid class this line
+/// claimed until 2026-09-11 — and points at incremental as the supported
+/// path. `app::save`'s header states the rule this obeys:
 /// *"if a future change finds incremental genuinely impossible for some input,
 /// the honest response is to refuse and say so, not to fall back."* This is that
 /// rule read in the other direction, and quietly writing an incremental copy

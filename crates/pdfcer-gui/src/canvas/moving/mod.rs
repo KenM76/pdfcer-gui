@@ -357,13 +357,37 @@ pub enum Refusal {
     /// is on screen. This is the refusal that has an explanation to give, and
     /// [`crate::app::status::decline`] gives it.
     ///
-    /// A leaf's geometry lives in the form's own content stream
-    /// ([`pdfcer_core::vector::FormLeaf::stream`]) and
-    /// [`pdfcer_core::vector::FormLeaf::is_editable`] is `false` for every leaf
-    /// the engine produces, so this is a statement about what the engine can
-    /// do today rather than a policy this shell chose. Dated 2026-08-27
-    /// against `pdfcer-core` v0.14.0; when editing-through-recursion lands, the
-    /// remedy is to route to the form-scoped verb, not to relax this.
+    /// # ★★★ What this variant means NOW, corrected 2026-09-11
+    ///
+    /// It said: *"[`pdfcer_core::vector::FormLeaf::is_editable`] is `false` for
+    /// every leaf the engine produces"*, dated 2026-08-27 against
+    /// `pdfcer-core` v0.14.0, and ended *"when editing-through-recursion
+    /// lands, the remedy is to route to the form-scoped verb"*.
+    ///
+    /// **Editing-through-recursion landed at `Pass 188.0`, this shell routed
+    /// to all six form-scoped verbs on 2026-09-01, and the sentence stayed.**
+    /// `is_editable` did not change signature, so nothing broke and nothing
+    /// warned; it changed MEANING. It now answers *"is this leaf a path"*,
+    /// and the engine's own doc says in as many words that a shell greying
+    /// out the whole container on `false` is now wrong.
+    ///
+    /// ★★ The shell was never wrong about the CAPABILITY — only about the
+    /// reason. `eligible` routes a form-interior selection to
+    /// `MoveSubject::LeavesInForm`, `SubpathInForm`, `NodeInForm` and
+    /// `NodesInForm`, and has since 2026-09-01. What survived was the
+    /// paragraph explaining why it could not, which is the more dangerous
+    /// half to leave lying about: a later reader trusts it and does not try.
+    ///
+    /// # What actually reaches this variant
+    ///
+    /// Exactly one condition, in the Part and Node arms of `eligible`: the
+    /// entered thing is inside a form **and its part kind could not be read
+    /// as a path**. The page-order twin of that state refuses with
+    /// [`Self::NotAPath`], carrying the page-object index a leaf does not
+    /// have. So the fact is *not a path*, and containment is only how it got
+    /// here — which is why the sentence the operator reads is
+    /// [`crate::text::status::InsideFormRefusal::NotAPath`] and not a
+    /// statement about forms at all.
     InsideForm,
     /// A selected object is not a path, so the whole move is refused. Carries
     /// its paint-order index.

@@ -436,10 +436,20 @@ pub enum Action {
     /// holding `&OpenDoc` and not `&mut` **asks**. The full argument is at
     /// `canvas::moving::decline`, which is the only thing that raises this.
     ///
-    /// **No payload**, deliberately: there is one thing to say and
-    /// `text::status::selection_inside_form_declined` says it. A `Declined`
-    /// payload would turn this into a general "print any decline" channel,
-    /// which is how a single choke point becomes a bypass.
+    /// **No payload**, and the reason survived the 2026-09-11 split that gave
+    /// [`crate::app::status::decline::Declined::InsideForm`] one. The store's
+    /// variant has two arms because two call sites reach it with opposite
+    /// facts; **the canvas is only one of them and only ever has one fact** —
+    /// a part or node entered inside a form whose kind is not a path — so the
+    /// apply arm names
+    /// [`crate::text::status::InsideFormRefusal::NotAPath`] as a constant.
+    ///
+    /// ★ Widening this to carry a `Declined` would turn a single choke point
+    /// into a general "print any decline" channel, which is how a choke point
+    /// becomes a bypass. Adding an `InsideFormRefusal` payload would be milder
+    /// and is still wrong today: it would let the canvas claim a fact it has
+    /// no way to establish. Add it the day the canvas can raise the second
+    /// one, not before.
     ///
     /// ★ **A selection is still not an edit** — no `vector_edit`, no epoch
     /// bump, no cache invalidation, for the reason `Action::SelectObject`

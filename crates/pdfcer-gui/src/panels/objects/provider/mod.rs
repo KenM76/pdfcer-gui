@@ -179,9 +179,22 @@ pub enum TargetId {
     /// a form XObject.
     ///
     /// Selectable, measurable and reportable. **Not** editable by the
-    /// paint-order verbs: see the type docs, and
-    /// [`pdfcer_core::vector::FormLeaf::is_editable`], which is `false` for
-    /// every leaf until the engine grows editing-through-recursion.
+    /// paint-order verbs — see the type docs — and that is a statement
+    /// about the INDEX SPACE, which is what this type is for.
+    ///
+    /// ★★ It is **not** a statement about editability, and this doc said it
+    /// was until 2026-09-11: *"`is_editable` is `false` for every leaf until
+    /// the engine grows editing-through-recursion"*. The engine grew it at
+    /// `Pass 188.0` and `is_editable` now means *"this leaf is a path"*.
+    /// A leaf reached through this variant is edited by the **form-scoped**
+    /// verbs — `move_objects_in_form`, `move_subpath_in_form`,
+    /// `move_node_in_form`, `move_nodes_in_form`, `move_handle_in_form`,
+    /// `delete_objects_in_form` — every one of which this shell calls.
+    ///
+    /// ★ [`Self::page_object_index`] returning `None` is still the guard it
+    /// always was. What it guards is *do not hand a leaf index to a
+    /// paint-order verb*, which remains exactly true; it never meant *do not
+    /// edit this*.
     Leaf(u64),
 }
 

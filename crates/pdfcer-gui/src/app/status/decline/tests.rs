@@ -692,7 +692,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         Declined::NothingToFrame
         | Declined::CanvasNotDrawn
         | Declined::SaveFailed
-        | Declined::InsideForm
+        | Declined::InsideForm(_)
         | Declined::TextStyle(_)
         | Declined::Rotate(_)
         | Declined::Unshare(_)

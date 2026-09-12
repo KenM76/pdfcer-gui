@@ -133,9 +133,13 @@ pub mod waiting;
 pub use waiting::{line_weights_no_effect, line_weights_off, page_catching_up};
 
 pub use selection::{
+    // ★ `InsideFormRefusal` replaced the flat `selection_inside_form_declined`
+    // on 2026-09-11. The old name is NOT re-exported as an alias: it was
+    // wrong about a shipped capability, and an alias would let a call site
+    // keep asking for the wrong sentence by its old name and compile.
+    InsideFormRefusal,
     TextStyleRefusal,
     inside_container,
-    selection_inside_form_declined,
     selection_many,
     selection_one,
     selection_one_in_form,

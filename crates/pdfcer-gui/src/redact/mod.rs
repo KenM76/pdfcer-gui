@@ -376,7 +376,7 @@ use pdfcer_core::document::Document;
 use pdfcer_core::edit::EditSession;
 use pdfcer_core::object::ObjId;
 use pdfcer_core::redact::{self, RedactError, RedactionReport};
-use pdfcer_core::writer::SaveOptions;
+use pdfcer_core::writer::{SaveOptions, WriteError};
 
 pub use proof::{AbsenceVerification, Residual, ResidualSite};
 
@@ -408,6 +408,25 @@ pub enum RedactApplyRefusal {
     FullRewriteUnavailable {
         /// `pdfcer-core`'s own diagnostic for the failed rewrite.
         reason: String,
+        /// **The engine named `WriteError::HybridFullRewrite`** — the one
+        /// cause in this class that earns its own sentence, because its
+        /// subject is a specific damaged structure in the operator's file
+        /// rather than a general inability to rewrite.
+        ///
+        /// # ★★★ A `bool` here replaced a substring match on the engine's prose
+        ///
+        /// `crate::text::redact::refusal_message` selected its sentence with
+        /// `reason.contains("hybrid-reference")` until 2026-09-11. That is a
+        /// locator for another crate's message format living inside a GUI,
+        /// and `TextStyleRefusal::FaceLacksCharacters` spends a section
+        /// refusing to do the same thing for the same reason: the clause
+        /// gets reworded and the match silently stops firing, or — what
+        /// actually happened — the engine NARROWS the condition, the words
+        /// survive, and the match keeps firing for a sentence that is now
+        /// describing a different file.
+        ///
+        /// The variant is in hand at all three construction sites. Ask it.
+        broken_xref_stream: bool,
     },
     /// The full-rewrite bytes could not be re-parsed into a document, so the
     /// apply could not run against them.
@@ -917,6 +936,7 @@ pub fn prepare_redaction_apply(
     let (materialised, materialise_report) = session
         .to_full_bytes(&SaveOptions::identity())
         .map_err(|err| RedactApplyRefusal::FullRewriteUnavailable {
+            broken_xref_stream: matches!(err, WriteError::HybridFullRewrite),
             reason: err.to_string(),
         })?;
 
@@ -935,6 +955,7 @@ pub fn prepare_redaction_apply(
             // A write failure is the same class of refusal as a failed
             // materialisation: the full rewrite did not happen.
             RedactError::Write(inner) => RedactApplyRefusal::FullRewriteUnavailable {
+                broken_xref_stream: matches!(inner, WriteError::HybridFullRewrite),
                 reason: inner.to_string(),
             },
             other => RedactApplyRefusal::CoreRefused {
@@ -1284,6 +1305,7 @@ fn map_refusal(err: RedactError) -> RedactApplyRefusal {
         // A write failure is the same class of refusal as a failed
         // materialisation: the full rewrite did not happen.
         RedactError::Write(inner) => RedactApplyRefusal::FullRewriteUnavailable {
+            broken_xref_stream: matches!(inner, WriteError::HybridFullRewrite),
             reason: inner.to_string(),
         },
         RedactError::NothingToApply => RedactApplyRefusal::NothingToApply,

@@ -385,10 +385,26 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                     Some(form) => {
                         doc.selection.select_only(page, form, "select-form");
                     }
-                    // Nothing selected is inside a form, or the page's model
-                    // has gone. Both are honestly reported by the same
-                    // sentence: this verb had nothing to reach.
-                    None => crate::app::status::decline::record_inside_form(),
+                    // ★★★ **This refusal was silent until 2026-09-11**, and it
+                    // was silent for the whole life of the verb.
+                    //
+                    // Nothing selected is inside a form, or the page's model has
+                    // gone. Both are honestly reported by one sentence — that
+                    // part of the old comment was right. What it did not say is
+                    // which sentence, and the one it got was
+                    // *"That object is inside a form"*, recorded at the exact
+                    // moment pdfcer had established that no object is.
+                    //
+                    // ★ And it never reached the bar anyway.
+                    // `Declined::still_true` filtered `InsideForm` on
+                    // `selection_in_form`, which is false whenever this arm
+                    // runs — so the decline was discarded on the frame it was
+                    // written and the operator got no outline, no movement and
+                    // no explanation. A sentence that is wrong is at least
+                    // reportable; this one could not be seen to be wrong.
+                    None => crate::app::status::decline::record_inside_form(
+                        crate::text::status::InsideFormRefusal::NoContainingForm,
+                    ),
                 }
             }
         }

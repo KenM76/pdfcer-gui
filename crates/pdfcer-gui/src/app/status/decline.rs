@@ -202,10 +202,20 @@ pub(crate) enum Declined {
     ///
     /// This became reachable on 2026-08-27, when a click started reaching
     /// inside form XObjects. Before that a form-interior object could not be
-    /// selected at all, so no verb could be asked about one; now it can be
-    /// selected, measured, described and copied *nowhere*, because
-    /// `EditSession`'s paint-order verbs write to the **page's** content stream
-    /// and a leaf's tokens index the **form's**.
+    /// selected at all, so no verb could be asked about one.
+    ///
+    /// # ★★★ The payload arrived on 2026-09-11, and it arrived late
+    ///
+    /// This variant carried no payload and its sentence said *"pdfcer cannot
+    /// edit inside one yet"*. `pdfcer-core`'s `Pass 188.0` shipped six
+    /// form-scoped geometry verbs, this shell wired all six, and the sentence
+    /// went on telling the operator otherwise for ten days.
+    ///
+    /// [`crate::text::status::InsideFormRefusal`] carries the whole account.
+    /// The part that belongs HERE is what it did to the retirement rule below:
+    /// the two call sites this variant serves have **opposite** predicates, so
+    /// one `still_true` arm could not be right for both, and the one that was
+    /// written discarded the other site's sentence before the bar drew it.
     ///
     /// # Retired by the operator's next act, and by the selection changing
     ///
@@ -216,7 +226,11 @@ pub(crate) enum Declined {
     /// accessor `crate::app::conditions` publishes `selection.in_form` from —
     /// so the greyed control and the sentence in the bar cannot come from
     /// different questions.
-    InsideForm,
+    ///
+    /// ★ That reasoning is still right, and it is right about
+    /// [`crate::text::status::InsideFormRefusal::NotAPath`] only. See
+    /// [`Self::still_true`].
+    InsideForm(crate::text::status::InsideFormRefusal),
     /// **A restyle of existing text did not happen** — O37, 2026-08-27.
     ///
     /// The payload is [`crate::text::status::TextStyleRefusal`], which is the
@@ -1132,7 +1146,26 @@ impl Declined {
             // them to — ends it, without any command being invoked and so
             // without `retire` running. That is precisely the case the filter
             // exists for, and it is the same shape as `NothingToFrame`.
-            Self::InsideForm => selection_in_form,
+            // ★★★ **One arm per fact, because the two facts have opposite
+            // predicates** — and this line asserting one of them for both is
+            // what kept `Select containing form`'s refusal invisible.
+            //
+            // `NotAPath` is about the selection the operator is looking at, so
+            // selecting something else ends it — including selecting the
+            // containing form, which is the remedy the sentence sends them to.
+            // Same shape as `NothingToFrame`, and it needs the filter because
+            // the operator reaches the remedy without invoking a command, so
+            // `retire` would never run.
+            Self::InsideForm(crate::text::status::InsideFormRefusal::NotAPath) => selection_in_form,
+            // ★★ `true`, and the inversion is the point. This sentence is
+            // recorded precisely BECAUSE nothing form-interior is selected, so
+            // filtering it on `selection_in_form` discarded it on the frame it
+            // was written — every time, in every build, since the verb
+            // shipped. The operator pressed the control and got silence.
+            //
+            // ★ Retired by `retire` on the operator's next command, like every
+            // other stable sentence in this enum.
+            Self::InsideForm(crate::text::status::InsideFormRefusal::NoContainingForm) => true,
             // ★ See the variant's docs: nothing on the frame can make a
             // restyle refusal stop being a true report of what happened when
             // the operator pressed the control. `retire` ends it.
@@ -1294,8 +1327,8 @@ pub(super) fn live(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declined> {
 /// at all. An arm that raised a doomed action so that the apply phase could
 /// decline it would be manufacturing an edit in order to have somewhere to
 /// refuse it.
-pub(crate) fn record_inside_form() {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::InsideForm));
+pub(crate) fn record_inside_form(reason: crate::text::status::InsideFormRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::InsideForm(reason)));
 }
 
 /// **The raw store, for tests only.**
@@ -1312,6 +1345,29 @@ pub(crate) fn record_inside_form() {
 #[must_use]
 pub(crate) fn recorded_for_test() -> Option<Declined> {
     LAST.with_borrow(Clone::clone)
+}
+
+/// What the BAR would draw — [`live`] under a test-visible name.
+///
+/// # ★★★ Why this exists when [`recorded_for_test`] is right there
+///
+/// Because they answer different questions and one of them was standing in
+/// for the other. `recorded_for_test` reads the store; `live` re-asks the
+/// sentence's predicate and is the only thing the bar calls. A decline whose
+/// predicate is false on the frame it is written is **recorded and never
+/// readable**, and a test that stops at the store cannot tell the two apart.
+///
+/// That is not hypothetical. `format.select_form`'s refusal was in exactly
+/// that state from the day the verb shipped until 2026-09-11 — see
+/// [`crate::text::status::InsideFormRefusal::NoContainingForm`] — with a
+/// green test asserting the recording.
+///
+/// ★ `live` is `pub(super)` and stays that way: the bar is the one reader.
+/// This is a `#[cfg(test)]` widening, so it cannot become a second reader in
+/// a shipped binary.
+#[cfg(test)]
+pub(crate) fn live_for_test(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declined> {
+    live(ctx, doc)
 }
 
 // ---------------------------------------------------------------------------

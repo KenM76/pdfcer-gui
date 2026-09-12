@@ -453,9 +453,11 @@ impl PdfcerApp {
             // ★★★ Save a compacted copy — `OPERATOR_REQUESTS.md` O48.
             //
             // The only `open_*` on this list that can fail rather than decline:
-            // `pdfcer-core` refuses a full rewrite of a hybrid-reference file by
-            // name, and of one whose object numbering is too sparse for §7.5.4's
-            // single-section table. Both are facts about the operator's file and
+            // `pdfcer-core` refuses a full rewrite by name for a hybrid file
+            // whose `/XRefStm` does not parse (narrowed from the whole hybrid
+            // class at `Pass 281.0`; this comment said the wide thing until
+            // 2026-09-11), and for one whose object numbering is too sparse for
+            // §7.5.4's single-section table. Both are facts about the file and
             // both are recorded rather than swallowed — `app::save`'s header
             // states the rule this obeys: *"the honest response is to refuse and
             // say so, not to fall back to a full rewrite"*, read here in the

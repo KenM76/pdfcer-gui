@@ -58,7 +58,11 @@ impl Declined {
         let fixed: &'static str = match self {
             Self::NothingToFrame => t::zoom_declined_no_selection(),
             Self::CanvasNotDrawn => t::zoom_declined_not_drawn(),
-            Self::InsideForm => t::selection_inside_form_declined(),
+            // ★ The variant carries WHICH fact refused; the catalog owns the
+            // words for each. Before 2026-09-11 this arm named one flat string
+            // that was wrong for both of its two call sites in different
+            // directions — see `text::status::InsideFormRefusal`.
+            Self::InsideForm(reason) => reason.line(),
             Self::SaveFailed => t::save_copy_failed(),
             Self::SettingsNotSaved => t::settings_not_saved(),
             Self::NothingToUndo => t::undo_declined_empty(),

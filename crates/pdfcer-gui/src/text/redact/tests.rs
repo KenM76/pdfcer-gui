@@ -508,13 +508,36 @@ fn the_suggested_name_differs_from_the_original() {
 }
 
 /// Every refusal says something different, and each names its own cause.
+///
+/// # ★★★ `FullRewriteUnavailable` appears TWICE, and until 2026-09-11 it
+/// # appeared once — with a payload that reached the wrong arm
+///
+/// The entry read `reason: "hybrid".to_owned()`, and `refusal_message`
+/// selected its sentence with `reason.contains("hybrid-reference")`. The
+/// literal `"hybrid"` does not contain `"hybrid-reference"`, so this set
+/// exercised the GENERIC arm and the specific one was never called by any
+/// test — while the fixture's own word made it read as though it were.
+///
+/// ★ That is the shape worth remembering: a payload chosen because it was
+/// short and evocative, in a test whose subject is which sentence comes
+/// out. The word `hybrid` was doing the reader's convincing and none of
+/// the assertion's work.
+///
+/// The selector is a `bool` on the variant now, so the two cases are two
+/// entries and cannot collapse into one by accident of wording. The
+/// distinctness assertion below is what proves the split earns its keep.
 #[test]
 fn each_named_refusal_says_something_different() {
     use crate::redact::RedactApplyRefusal as R;
     let all = [
         R::NothingToApply,
         R::FullRewriteUnavailable {
-            reason: "hybrid".to_owned(),
+            reason: "some other write failure".to_owned(),
+            broken_xref_stream: false,
+        },
+        R::FullRewriteUnavailable {
+            reason: "full rewrite of a hybrid-reference file (§7.5.8.4) whose /XRefStm could not be parsed is not supported".to_owned(),
+            broken_xref_stream: true,
         },
         R::MaterialisedDocumentUnreadable {
             reason: "bad xref".to_owned(),
@@ -541,7 +564,7 @@ fn each_named_refusal_says_something_different() {
         seen.push(s);
     }
     assert!(
-        refusal_message(&all[3]).contains("page 2 is an image"),
+        refusal_message(&all[4]).contains("page 2 is an image"),
         "the engine's own diagnosis is the actionable half and must survive"
     );
     // ★★ And the one that is not a failure does not read as one. It is the

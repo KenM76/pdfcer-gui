@@ -33,9 +33,17 @@
 //! module's to re-open. If a future change finds incremental genuinely
 //! impossible for some input, the honest response is to **refuse and say so**,
 //! not to fall back to a full rewrite — the engine already refuses a full
-//! rewrite of a hybrid-reference file by name (`WriteError::HybridFullRewrite`)
-//! and points at incremental as the supported path, which is the same posture
-//! from the other side.
+//! rewrite by name (`WriteError::HybridFullRewrite`) and points at incremental
+//! as the supported path, which is the same posture from the other side.
+//!
+//! ★ **Narrowed at `Pass 281.0`, and this paragraph said the old thing until
+//! 2026-09-11.** It read *"refuses a full rewrite of a hybrid-reference
+//! file"*. `save_full` now refuses only a hybrid whose `/XRefStm` **does not
+//! parse** — the file says it hides objects and pdfcer cannot tell which.
+//! Ordinary hybrid files, which is most of what Microsoft Office exports,
+//! rewrite fine. The wide refusal survives in `save_full_encrypted` and
+//! `save_full_decrypted`, so **adding or removing encryption still refuses any
+//! hybrid**. The posture being cited here is unchanged either way.
 //!
 //! ### ★★★ 1.1 …EXCEPT while a redaction is staged, 2026-09-05
 //!

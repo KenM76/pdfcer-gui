@@ -1112,22 +1112,52 @@ pub fn refusal_message(refusal: &crate::redact::RedactApplyRefusal) -> String {
     use crate::redact::RedactApplyRefusal as R;
     match refusal {
         R::NothingToApply => "Nothing to apply — this document has no redaction marks.".to_owned(),
-        // ★★ 2026-09-09 — the hybrid-reference case gets its own first
-        // sentence. Measured on the operator's own `SW41177 MATERIAL
-        // REQUIREMENTS.pdf` (Excel for Microsoft 365 writes hybrid files,
-        // §7.5.8.4): the writer refuses a full rewrite of such a file by name,
-        // so this window opened on the generic sentence below and he read it as
-        // *"we can't do it"* — his report that morning, word for word. The
-        // generic sentence is TRUE and names the wrong subject: the limit is
-        // pdfcer's writer, not his document's redactability, and the writer's
-        // own remedy ("use incremental save") is the one thing a redaction is
-        // forbidden to do. Asked of the engine as
-        // `request_a_hybrid_reference_file_cannot_be_redacted_because_its_full_rewrite_is_refused.md`;
-        // delete this arm when it ships.
-        R::FullRewriteUnavailable { reason } if reason.contains("hybrid-reference") => format!(
-            "Redaction refused — this file was saved in PDF's hybrid-reference form (some Microsoft Office exports are), and pdfcer cannot yet rewrite a hybrid file from scratch, which a redaction needs: an incremental save would leave the un-redacted content in the file's previous revision, where anyone could recover it. Nothing was written. This is a pdfcer limit, asked of the engine on 2026-09-09, not a property of your marks. Until then: print the sheet to a new PDF from another program and redact that copy. The writer's reason: {reason}"
+        // ★★★ **The ask SHIPPED, and this arm was rewritten rather than
+        // deleted** — 2026-09-11. The note it replaces ended *"delete this arm
+        // when it ships"*, and following that literally would have been wrong.
+        //
+        // # What the old arm said, and what made it stop being true
+        //
+        // It was written on 2026-09-09 against the operator's own `SW41177
+        // MATERIAL REQUIREMENTS.pdf` (Excel for Microsoft 365 writes
+        // hybrid-reference files, §7.5.8.4). At that time the engine refused a
+        // full rewrite of **any** hybrid file, so the sentence said so: *"this
+        // file was saved in PDF's hybrid-reference form... pdfcer cannot yet
+        // rewrite a hybrid file from scratch"*.
+        //
+        // `Pass 281.0` narrowed the refusal to a hybrid whose `/XRefStm`
+        // **does not parse** — the file says it hides objects and pdfcer
+        // cannot tell which, so either partition would be a guess. Ordinary
+        // hybrid files, including his, now redact.
+        //
+        // ★★ So the old sentence became the failure mode it was written to
+        // fix, with the subject moved one step: it named the file's FORM as
+        // the obstacle when the obstacle is a specific damaged structure
+        // inside it, and it told an operator whose file redacts fine that a
+        // whole class of file does not. A sentence that survives the fix it
+        // asked for is worse than the one it replaced, because the reason to
+        // doubt it has been filed as closed.
+        //
+        // ★ The arm SURVIVES because the concern that earned it survives. The
+        // engine's own remedy for this error is *"use incremental save"*, and
+        // a redaction is the one operation forbidden to take it (R35: an
+        // incremental save leaves the un-redacted bytes in a prior revision).
+        // An operator who reads the writer's advice and follows it produces
+        // exactly the file the redaction existed to prevent. That is worth a
+        // sentence of our own no matter how narrow the cause becomes.
+        //
+        // ★★★ Selected on the VARIANT now, not on the words. See
+        // `RedactApplyRefusal::broken_xref_stream`.
+        R::FullRewriteUnavailable {
+            reason,
+            broken_xref_stream: true,
+        } => format!(
+            "Redaction refused — this file hides some of its objects in a compressed table (PDF calls this hybrid-reference form; some Microsoft Office exports use it), and that table is damaged, so pdfcer cannot tell which objects it hides. Rewriting the file from scratch is what a redaction needs, and pdfcer will not guess at half a file. Nothing was written. Do NOT save it the ordinary way and assume the marks took — an incremental save would leave the un-redacted content in the file's previous revision, where anyone could recover it. The fix that works today: print the sheet to a new PDF from another program, then redact that copy. The writer's reason: {reason}"
         ),
-        R::FullRewriteUnavailable { reason } => format!(
+        R::FullRewriteUnavailable {
+            reason,
+            broken_xref_stream: false,
+        } => format!(
             "Redaction refused — this document cannot be rewritten in full, and nothing was written. Applying a redaction requires rewriting the entire file as one revision: an incremental save would leave the un-redacted content sitting in the file's previous revision, where anyone could recover it, so pdfcer will not fall back to one. The writer's reason: {reason}"
         ),
         R::MaterialisedDocumentUnreadable { reason } => format!(

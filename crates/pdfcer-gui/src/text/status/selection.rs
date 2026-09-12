@@ -153,36 +153,102 @@ fn inside_forms(nesting: usize) -> String {
     }
 }
 
-/// ★★ **Why a verb refused: the thing selected lives in a form XObject.**
+/// ★★★ **Why a verb refused when the subject lives in a form XObject.**
 ///
-/// # The two states this keeps apart
+/// # The sentence this replaced, and why it had to go
 ///
-/// *"Nothing selected"* and *"the thing you selected cannot be moved by this
-/// verb"* are the operator's mistake and the program's limit respectively, and
-/// an interface that reports the second as the first sends them looking for
-/// something they did not do wrong. `RESUME.md` records four occasions on this
-/// project where a limit reported as an absence cost weeks.
+/// Until 2026-09-11 this was a single `&'static str`:
 ///
-/// # Every clause, and what it is answering
+/// > *"That object is inside a form — pdfcer cannot edit inside one yet"*
 ///
-/// **"inside a form"** names the structure, because that is the fact the
-/// operator can then act on — it explains the page-sized outline they used to
-/// get, it explains why the Objects panel does not list this object, and it is
-/// the word they need if they go looking in another tool.
+/// It was true when it was written — `pdfcer-core` v0.14.0, 2026-08-27, when
+/// `FormLeaf::is_editable` was `false` for every leaf the engine produced and
+/// no verb could reach inside a container at all. **`Pass 188.0` shipped six
+/// form-scoped geometry verbs and this shell wired every one of them**, so by
+/// the time the sentence was read again it was telling the operator that a
+/// thing they had already been doing for ten days could not be done.
 ///
-/// **"pdfcer cannot edit inside one yet"** puts the limit on pdfcer rather than
-/// on the document. The file is not malformed and there is nothing to fix in
-/// it; a sentence that sounded like a complaint about the PDF would be a lie
-/// about whose problem this is.
+/// `TextStyleRefusal::line` below states the rule this violates, and it states
+/// it about exactly this species of mistake: *a refusal sentence that states a
+/// limit the build no longer has is worse than no sentence — it teaches the
+/// operator not to try something the program can do, and it does so with the
+/// program's own voice.*
 ///
-/// **"yet"** is load-bearing and is not optimism. `EditSession` writes a
-/// paint-order edit to the page's content stream, and a form-interior object
-/// lives in the form's — `FormLeaf::is_editable` is `false` for every leaf the
-/// engine produces today. That is a boundary this shell reports, not a policy
-/// it chose, and it is dated: `pdfcer-core` v0.14.0, 2026-08-27.
-#[must_use]
-pub const fn selection_inside_form_declined() -> &'static str {
-    "That object is inside a form — pdfcer cannot edit inside one yet"
+/// # ★★ Why splitting it was not optional once it was wrong
+///
+/// One string was serving two call sites whose facts had drifted apart in
+/// opposite directions, which is how it stayed wrong: neither site could be
+/// corrected without making the other one worse.
+///
+/// * The **move** path reaches this when a part or node inside a form is
+///   entered and the part's kind cannot be read. The address space is fine —
+///   `move_subpath_in_form` and `move_node_in_form` are wired and work — so
+///   the fact is *this is not a path*, not *this is out of reach*.
+/// * **Select containing form** reaches it when there is no containing form to
+///   reach, which is the OPPOSITE condition: nothing selected is inside one.
+///   The old sentence told that operator their selection was inside a form at
+///   the exact moment pdfcer had established it was not.
+///
+/// # ★ The second site was silent, and the split is what exposed it
+///
+/// `Declined::still_true` filtered `InsideForm` on `selection_in_form`, which
+/// is the right predicate for a sentence about a form-interior selection and
+/// the wrong one for a sentence about not having such a selection. So
+/// **Select containing form pressed with nothing form-interior selected
+/// recorded a decline that was discarded before the bar could draw it** — the
+/// operator got no outline, no movement and no sentence. A variant per fact
+/// gives each one its own retirement rule, and [`Self::NoContainingForm`]'s is
+/// `true`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InsideFormRefusal {
+    /// A part or node **inside** a form was entered, and the provider could
+    /// not say the part is a path — so there is no geometry verb to choose.
+    ///
+    /// The page-order twin of this arm refuses with `Refusal::NotAPath`,
+    /// carrying the page-object index; a leaf has no such index, so the fact
+    /// travels without one.
+    ///
+    /// ★ The sentence deliberately does not say *"inside a form"* first.
+    /// Containment is not what refused here — the container is reachable —
+    /// and leading with it would send the operator to press Escape, which
+    /// would not help.
+    NotAPath,
+    /// **Select containing form** found no form to select.
+    ///
+    /// Either nothing selected is drawn inside a form, or this page's object
+    /// model could not be read. One sentence covers both honestly because the
+    /// operator's next act is the same in each: select something that is
+    /// inside a drawing, and if nothing is, there is nothing here to reach.
+    NoContainingForm,
+}
+
+impl InsideFormRefusal {
+    /// The sentence.
+    ///
+    /// `&'static str` rather than a [`Cow`](std::borrow::Cow): neither arm
+    /// names a subject the operator can see, so neither interpolates.
+    #[must_use]
+    pub const fn line(self) -> &'static str {
+        match self {
+            // ★ Names what pdfcer CAN reach, in the same shape
+            // `text::deleting`'s form-interior sentence does — that one has
+            // said *"press Escape to step back out to the whole shape"* since
+            // the day the rung existed, and it was right the whole time this
+            // one was wrong. Escape is the remedy because the Object rung
+            // inside a form moves: `move_objects_in_form` is wired.
+            Self::NotAPath => {
+                "pdfcer can only drag the corners of a shape. Press Escape to step back out to the whole object, then drag it."
+            }
+            // ★★ Names the absence, and names the act that creates the
+            // thing this verb needs. It is deliberately not *"nothing is
+            // selected"*: something usually IS selected — a page object — and
+            // reporting the wrong absence is the failure mode this whole
+            // catalog area is organised around.
+            Self::NoContainingForm => {
+                "Nothing selected is inside a form. Click something drawn inside a form first — this finds the form that contains it."
+            }
+        }
+    }
 }
 
 /// Several objects selected.

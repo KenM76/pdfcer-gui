@@ -14,13 +14,24 @@
 //! addresses. A second numbering would make the number pdfcer shows disagree
 //! with the number the operator can act on.
 //!
-//! ★ Everything here addresses the **page's** paint order. There is no
-//! form-interior equivalent, and that is deliberate rather than missing: the
-//! part and node rungs exist to act on geometry, `part_hits`, `part_bounds`
-//! and `nearest_node` all index `PageObjects::objects`, and
-//! `FormLeaf::is_editable` is `false` for every leaf the engine produces. The
-//! ladder stops at the Object rung for a leaf, and it stops there because the
-//! address space runs out — see `TargetId::page_object_index`.
+//! ★ Everything here addresses the **page's** paint order, because
+//! `part_hits`, `part_bounds` and `nearest_node` all index
+//! `PageObjects::objects`. That is a fact about THIS provider's geometry
+//! helpers and it is still true.
+//!
+//! ★★ The paragraph used to end *"the ladder stops at the Object rung for a
+//! leaf, and it stops there because the address space runs out"*, citing
+//! `FormLeaf::is_editable` being `false` for every leaf. **Corrected
+//! 2026-09-11: the ladder does not stop.** `pdfcer-core`'s `Pass 188.0`
+//! shipped form-scoped part and node verbs, `canvas::moving::eligible`
+//! routes to them, and `is_editable` now means *"this leaf is a path"*
+//! rather than *"nothing in a form can be edited"*.
+//!
+//! What is genuinely absent is a form-interior equivalent of the three
+//! helpers above, and the coverage for it lives where the routing does
+//! rather than here. Saying *"there is no equivalent"* and saying *"the
+//! capability does not exist"* read the same in a test header and are not
+//! the same claim; this one was making the second while meaning the first.
 //!
 //! ## `#![cfg(test)]` at the top, and why it is the marker rather than the name
 //!

@@ -239,6 +239,24 @@ fn select_the_form_lands_on_the_container_and_it_is_deletable() {
 /// ★ `enabled_when` greys the ribbon item and enforces nothing — every
 /// other route reaches the dispatcher unchecked — so the arm asks again,
 /// and the arm's answer is a sentence rather than silence.
+///
+/// # ★★★ This test passed for the whole time the sentence was invisible
+///
+/// It asserted `recorded_for_test()` and stopped. That reads the store the
+/// dispatcher writes to, which is one link of a two-link chain — the bar
+/// does not draw what was **recorded**, it draws what `decline::live`
+/// returns, and `live` re-asks each sentence's predicate before handing it
+/// over. `Declined::InsideForm`'s predicate was `selection_in_form`, which
+/// is false by construction on every frame this arm can run, so the
+/// sentence was discarded on the frame it was written. **Every time, in
+/// every build, since the verb shipped**, with this test green.
+///
+/// ★★ So the assertion below is now in two parts, and the second one is the
+/// one that matters: *and it survives to the bar*. A test that stops at
+/// the store is testing that a function was called — which is the thing
+/// nobody doubted — rather than that the operator can read the answer.
+/// Found on 2026-09-11 while correcting the sentence's wording, not by any
+/// gate, and not by this test.
 #[test]
 fn select_the_form_with_no_form_selected_says_why() {
     let mut app = opened_with_a_form();
@@ -248,10 +266,24 @@ fn select_the_form_with_no_form_selected_says_why() {
     let mut actions = Vec::new();
     app.dispatch_command(&ctx, "format.select_form", &mut actions);
 
+    let expected = crate::app::status::decline::Declined::InsideForm(
+        crate::text::status::InsideFormRefusal::NoContainingForm,
+    );
     assert_eq!(
         crate::app::status::decline::recorded_for_test(),
-        Some(crate::app::status::decline::Declined::InsideForm),
+        Some(expected.clone()),
         "the operator pressed something that did nothing; it owes them a reason"
+    );
+
+    // ★ The link the old assertion could not see. `live` is what the bar
+    // calls; a sentence that does not survive it is a sentence nobody reads.
+    let crate::app::state::Status::Open(doc) = &app.status else {
+        panic!("the fixture opened a document");
+    };
+    assert_eq!(
+        crate::app::status::decline::live_for_test(&ctx, doc),
+        Some(expected),
+        "recorded is not the same as readable — the bar draws what `live` returns"
     );
 }
 
