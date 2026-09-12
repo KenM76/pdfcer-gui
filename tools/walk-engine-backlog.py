@@ -147,7 +147,23 @@ def over_cap(text: str, cap: int) -> list[tuple[str, int, str]]:
 
 #: A verdict cell that opens by announcing the capability is already here.
 #: Matched against the cell's FIRST bolded run only — see `misfiled` below.
-CONSUMED_MARKERS = ("\u2705", "WIRED", "CONSUMED", "SHIPPED AND")
+#:
+#: ★ ``CLOSED`` added 2026-09-12, and the measurement is the point. A hand
+#: read that day found a ``wanted`` row opening ``✅ **CLOSED 2026-09-11 …**``
+#: which this list could not see: the tick sat OUTSIDE the bolded run, so the
+#: only thing :func:`opening_clause` returned was the ordinary word ``CLOSED``.
+#: That is this module's own documented failure mode — *five of the eight
+#: spelled their verdict as an ordinary word* — recurring in the register it
+#: guards.
+#:
+#: It was added on the day it flags NOTHING, and that is deliberate. With the
+#: offending row moved, every remaining non-`shipped` opening clause was swept
+#: for ``CLOSED``, ``DONE``, ``LANDED``, ``Reachable``, ``Consumed`` and
+#: ``Wired``, and the count was zero. ⇒ this widening cannot be read as a
+#: re-baseline: it changes no report today and only catches the next one. A
+#: marker added while it still has hits is indistinguishable from moving the
+#: goalposts, which is why the sweep came first.
+CONSUMED_MARKERS = ("\u2705", "WIRED", "CONSUMED", "CLOSED", "SHIPPED AND")
 
 
 def opening_clause(cell: str) -> str:

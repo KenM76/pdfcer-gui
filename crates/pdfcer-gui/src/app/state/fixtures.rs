@@ -83,6 +83,29 @@ pub(crate) fn open_local_fixture(rel: &str) -> OpenDoc {
 #[cfg(test)]
 pub(crate) const FOUR_PAGES: &str = "pageops/four-pages.pdf";
 
+/// **One page, one `/Widget` annotation that no `/AcroForm` field owns** —
+/// the input `EditSession::adopt_widget` exists for, and the only fixture in
+/// either corpus that has the shape.
+///
+/// ★★ Hand-authored from ISO 32000-1, generator checked in as
+/// `fixtures/orphan-widget.PROVENANCE.py`, because **no pdfcer verb can
+/// produce this file**: every field-creating verb registers its widget in
+/// `/AcroForm /Fields` in the same commit. An unregistered widget is what a
+/// damaged or third-party document looks like — a form flattened by a tool
+/// that dropped `/AcroForm` and left the annotations, or a page extracted
+/// from a form without its field tree. ⇒ *a fixture produced by the code
+/// under test measures that code's agreement with itself.*
+///
+/// ★ The widget carries its own `/T (Orphan)` and `/FT /Tx` deliberately.
+/// That makes it the **merged field-widget** — a widget that IS its own
+/// field and was simply never registered, which is the recoverable case. A
+/// bare kid with no `/T` refuses with `WidgetHasNoFieldIdentity` before any
+/// name is examined, which would make a name-refusal test pass for the wrong
+/// reason. The generator's header lists all five of `adopt_plan`'s
+/// preconditions and the byte that clears each.
+#[cfg(test)]
+pub(crate) const ORPHAN_WIDGET: &str = "orphan-widget.pdf";
+
 /// One page carrying the same words at 0°, 90°, 180°, 270° and 30° — the page
 /// `canvas::textsel`'s §8 rules are asserted on. See
 /// [`crate::canvas::textsel::fixture`] for what each string is for and why it

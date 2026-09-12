@@ -35,7 +35,7 @@ drifting from a count is the defect this project has spent eight corrections on.
 | Gates | `bash tools/gates/run-all.sh` | **35 passed, 0 failed, 0 skipped** |
 | Unit tests | `cargo test --workspace` | **4,189 passing**, 51 ignored |
 | Source files | `find crates -name '*.rs' \| wc -l` | 775 |
-| Backlog register | `python tools/walk-engine-backlog.py` | 171 rows — wanted 37 / blocked 8 / unknown 0 / declined 13 / **shipped 113** |
+| Backlog register | `python tools/walk-engine-backlog.py` | 172 rows — wanted 35 / blocked 8 / unknown 0 / declined 13 / **shipped 116** |
 | Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | 30 — **many are closed exchanges awaiting archival** |
 
 ⚠ **The check-count command was wrong in this very table.** `--list` prints

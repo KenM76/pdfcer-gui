@@ -280,6 +280,120 @@ fn a_dotted_rename_is_worded_even_though_the_panel_greys_it() {
     );
 }
 
+/// **The control: adopting with an ordinary name succeeds.**
+///
+/// First, and not for coverage. A refusal test alone cannot tell *"the dotted
+/// guard fired"* from *"adopt refuses this fixture for some other reason"* —
+/// `adopt_plan` has five refusals before it looks at the name, and a fixture
+/// that tripped any of them would make the refusal test pass while proving
+/// nothing. ⇒ *a uniform failure at every rung of a sweep is about the probe;
+/// the baseline rung is the control.*
+///
+/// It also pins what the fixture IS, in a place a failure message will quote:
+/// an unowned merged field-widget that adopts losslessly and recovers its own
+/// `/T`. See [`crate::app::state::ORPHAN_WIDGET`].
+#[test]
+fn an_unowned_widget_adopts_under_an_ordinary_name() {
+    crate::app::status::decline::retire();
+    let mut doc = crate::app::state::open_local_fixture(crate::app::state::ORPHAN_WIDGET);
+    let widget = only_widget(&doc);
+
+    super::adopt(&mut doc, 0, widget, Some("Claimed".to_owned()));
+
+    assert!(
+        crate::app::status::decline::recorded_for_test().is_none(),
+        "adopting an unowned widget under an undotted name must not decline. A decline here means one of `adopt_plan`'s five earlier refusals fired, and the dotted test below would then be passing for a reason that has nothing to do with the period"
+    );
+    assert!(
+        super::field_names(&doc).iter().any(|n| n == "Claimed"),
+        "the registration must produce a field under the supplied name; names now: {:?}",
+        super::field_names(&doc)
+    );
+}
+
+/// ★★★ **The dotted name is refused with a sentence, on the one surface that
+/// can provoke it.**
+///
+/// This is what consuming the 2026-09-12 delivery means. The engine shipped
+/// the guard because this shell asked for it; the shell already had the
+/// `correctable` arm; so the delivery is consumed when the **chain** is proven,
+/// not when the arm exists.
+///
+/// ★★ And it is a different test from the rename one above, which is green and
+/// proves nothing about this. That drives `rename_field`, which has refused
+/// dotted names for weeks, from a surface whose button is greyed while a period
+/// is typed. `adopt_widget` is reached from
+/// `panels::forms::tab_order::register`'s per-widget name box — **free text,
+/// gated only on non-empty** — the one route in `correctable`'s reachability
+/// table marked *yes*, and it had no test at all.
+/// ⇒ *a green test naming the variant is not evidence about the route that can
+/// actually raise it.*
+///
+/// What is asserted is the operator's own string coming back, not merely the
+/// variant: a payload that is not `Text.2` means the name was re-derived
+/// somewhere instead of being read out of the engine's error, and a re-derived
+/// name is the defect this project deleted `group_is_a_field` for.
+///
+/// ★★★ **The `expect` is deliberately not the assertion that carries this, and
+/// an `is_some()` in its place would be a check that cannot fail.** Measured,
+/// by neutering `correctable`'s `DottedPartialName` arm and re-running: the
+/// `expect` passed anyway and the equality went red with `left: EditRefused`.
+/// [`crate::app::status::decline::before_the_verb`]'s floor records
+/// `Declined::EditRefused` for **any** refused vector edit unless the verb
+/// recorded something better — so on this route *something* is always recorded
+/// when the engine refuses, whatever the mapping does. The equality is the
+/// evidence; the `expect` only separates *"refused"* from *"authored it"*.
+#[test]
+fn adopting_under_a_dotted_name_is_refused_and_worded() {
+    crate::app::status::decline::retire();
+    let mut doc = crate::app::state::open_local_fixture(crate::app::state::ORPHAN_WIDGET);
+    let widget = only_widget(&doc);
+
+    super::adopt(&mut doc, 0, widget, Some("Text.2".to_owned()));
+
+    let recorded = crate::app::status::decline::recorded_for_test()
+        .expect("nothing AT ALL recorded means the verb did not refuse — `adopt_widget` authored `Text.2` — which is what an engine pin older than the 2026-09-12 guard does. It is not what a lost `correctable` arm does: the decline floor records `Declined::EditRefused` for any refused vector edit, and that case goes red on the equality below, not here");
+    assert_eq!(
+        recorded,
+        crate::app::status::decline::Declined::DottedPartialName("Text.2".to_owned()),
+        "the decline must name THIS refusal and carry the operator's own string. Recorded: {recorded:?}"
+    );
+    assert!(
+        super::field_names(&doc).is_empty(),
+        "the refusal must leave the document unchanged — no field, dotted or otherwise. Names now: {:?}",
+        super::field_names(&doc)
+    );
+}
+
+/// The fixture's single unclaimed `/Widget`, by object id.
+///
+/// ★★ Read through [`crate::panels::forms::tab_order::model::collect`] rather
+/// than as a typed `ObjId`, and that is not fastidiousness about magic numbers:
+/// **it is the derivation the panel row the operator presses uses**, so the two
+/// tests above drive the id the surface would hand to
+/// `FieldAction::Adopt`, not one a test author chose. A number typed into a test
+/// is a claim about bytes nobody re-reads, and this project has already had a
+/// harness report defects that did not exist from exactly that.
+///
+/// `form` is `None` for this fixture — the catalog has no `/AcroForm`, which is
+/// the whole point of it — and `collect` is documented to put every widget in
+/// `unclaimed` in that case. It asserts there is **one**, so a fixture that
+/// grew a second widget fails here with a sentence instead of silently testing
+/// whichever one came first in `/Annots`.
+fn only_widget(doc: &OpenDoc) -> ObjId {
+    let view = doc.session.view();
+    let slots = doc.session.page_slots().expect("the fixture's page tree walks — it is five objects and its xref offsets are asserted by its own generator");
+    let form = pdfcer_core::forms::parse_acroform(&view);
+    let listing = crate::panels::forms::tab_order::model::collect(&view, &slots, form.as_ref());
+    let found = &listing.pages[0].unclaimed;
+    assert_eq!(
+        found.len(),
+        1,
+        "`orphan-widget.pdf` holds exactly one unclaimed widget on its one page; see `fixtures/orphan-widget.PROVENANCE.py`. Found: {found:?}"
+    );
+    found[0].id
+}
+
 /// ★★★ **A delete records the orphan warning**, which is the half that matters
 /// most — pdfcer knows it degraded the document and nothing in the saved file
 /// records that it knew.

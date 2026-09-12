@@ -1444,6 +1444,7 @@ pub(crate) use fixtures::{
     // rewrote forty imports would be a diff nobody could read.
     CONTRADICTS_ITSELF,
     FOUR_PAGES,
+    ORPHAN_WIDGET,
     PAINTED_LAYERS,
     ROTATED_TEXT,
     SIGNED_TWO_PAGES,
