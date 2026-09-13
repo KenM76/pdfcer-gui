@@ -31,7 +31,7 @@ drifting from a count is the defect this project has spent eight corrections on.
 | Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `d86cb19` |
 | Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `d86cb19` — ★ **level with the pin.** Level is the only state in which a sentence of the form *the engine cannot do X* is safe to write. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | `0.53.0` |
-| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260912.1`, cut 2026-09-12 07:16. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. |
+| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260913.1`, cut 2026-09-13 05:52 UTC, `prerelease=false`, and it IS what `releases/latest` advertises. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **220** (the sweep chunks 219 and runs 1 from the ALONE table separately — its own first line says `sweeping 219 checks in chunks, plus the ALONE table`) |
 | Gates | `bash tools/gates/run-all.sh` | **41 passed, 0 failed, 0 skipped** — 41 registered. ★ `check-pin-citation` went **red** on the run before this table was rewritten, naming both stale pin citations in `FEATURES.md` and here. It reads the row three above. |
 | Unit tests | `cargo test --workspace` | **4,239 passing, 0 failed, 51 ignored, 4,290 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,290. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. |
@@ -41,12 +41,19 @@ drifting from a count is the defect this project has spent eight corrections on.
 | Registered commands | `grep -rhoE '\bcommand\(' crates/pdfcer-gui/src/shell/commands/catalog/ \| wc -l` | 162 |
 | Dockable panels | `grep -n 'pub const ALL' crates/pdfcer-gui/src/panels/mod.rs` | 13 |
 
-⚠ **The check-count command was wrong in this very table.** `--list` prints
-**two** lines per check plus a header, so `wc -l` answered 434 where the
-answer is 213. It had been quoted as 212 for long enough that the drift went
-unnoticed — in the table whose own heading says *re-measure, never quote*.
-The row now carries a command that counts check NAMES. If you see 434
-anywhere, it is this defect.
+⚠ **The check-count command was wrong in this very table, and the warning
+that replaced it then went stale too.** `--list` prints **two lines per check
+plus an eight-line header**, so a `wc -l` answers `2n + 8` — roughly double
+the real figure, which is why it looked plausible. Measured against
+`target/release/ui-verify.exe` on 2026-09-13: **220** names, **448** lines.
+
+★★★ **Write the relationship, not the pair of literals.** The first repair of
+this note said *"`wc -l` answered 434 where the answer is 213"*. Both numbers were
+correct the day they were written and both moved the next time a check was
+added, so the note that exists to stop count drift had drifted — sitting three
+lines beneath a row that said 220. A lesson spelled as two constants expires;
+one spelled as `2n + 8` cannot. ⇒ **If a count here is about double what you
+expect, you counted lines.**
 
 ⚠ **The pin is a claim with a shelf life of hours.** `Cargo.lock` pins the
 engine by git revision, not by path, so every sentence in this repository of the
@@ -62,30 +69,47 @@ seen the three releases cut since; the true figures were **21 commits** and
 **yesterday afternoon**. ⇒ **Any sentence containing *"commits unreleased"* or
 a release date gets a `git fetch --tags origin` immediately in front of it.**
 
-★★★ **`v0.5.0-dev.20260912.1` shipped 2026-09-12 07:16** — the canvas
-context menu, which had been deleting itself under the cursor since 2026-09-10,
-plus the shaded-field editor and the dotted-name refusal. Verified as what
-`releases/latest` advertises, with the packager's own zip as the only asset.
-Mirror in **`OneDrive\pdfcer-gui2`** (07:14); **`pdfcer-gui1` holds `.4`**
-(2026-09-11 20:05), so the fallback survives. **The next package rotates into
-slot 1** — and the rotation works this out for itself from the two slots'
+★★★ **`v0.5.0-dev.20260913.1` shipped 2026-09-13 05:52 UTC** — five of the
+thirteen `FEATURE.txt` rows, the deep-zoom raster refusal (O186 part three), and a
+front page written for a person. Verified as what `releases/latest` advertises,
+`prerelease=false`, with the packager's own zip as the only asset. **17 commits**
+since `.20260912.1`, counted after a `git fetch --tags origin`.
+
+★ **Both destinations, and the fallback survives.** Mirror in
+**`OneDrive\pdfcer-gui1`** (2026-09-13 01:50); **`pdfcer-gui2` still holds
+`v0.5.0-dev.20260912.1`** (2026-09-12 07:14). **The next package rotates into slot
+2** — and the rotation works this out for itself from the two slots'
 timestamps, so pass `--slot` only to RETRACT, never to steer a normal build.
+⚠ His own install at `C:\Users\Ken\OneDrive\pdfcer\` is **not**
+touched by a publish and was not touched by this one.
 
-⚠ **It packaged from a clean tree and the name proves it**:
-`pdfcergui-20260912-0714-ad73160-2ec99f5`, no `-dirty` suffix. That is the
-first release in three where it is true, and the reason is `--no-update`:
-the engine had nothing to pick up, so the packager was not asked to rewrite
-`Cargo.lock` thirty seconds before stamping the tree it had just modified.
+✓ **Clean tree, and `--verify` this time**, so `BUILD-INFO.txt` carries
+`tests: PASS` and `gates: PASS 41/41` rather than *not run*:
+`pdfcergui-20260913-0139-d86cb19-b4e3137`, no `-dirty` suffix, source digest
+`707f02b6c188`.
 
-⚠ **`BUILD-INFO.txt` in that zip says verification was *not run*.** It means
-the packager did not re-run it, not that it was not done — 41 gates and 4,199
-tests were measured against this exact source before the commit, and the
-release notes say so. ⇒ If a future release wants that line to read green,
-the flag is `--verify` and it costs a test run plus a gate sweep.
+⚠ **The stamp names `b4e3137` and the tag is on `0f51565`.** The difference is
+one commit of agent-memory markdown, which is outside both `BUILD_AFFECTING` and
+`SOURCE_GLOBS`, so the shipped bytes are the bytes of the tagged tree. Stated here
+because a reader comparing the two will otherwise go looking for a program
+difference that does not exist — and because the honest fix next time is to
+commit everything, memory included, before launching the packager.
+
+★★★ **The release pre-flight lied once on the way out, and it is worth the
+paragraph.** `run-all.sh` reported **41 of 41 green**; the commit added
+`DESIGNS.md` and `DOC_DRIFT.md`; `package-portable.py`'s own pre-flight then
+failed the **same tree** on two lines that had been sitting in those files the
+whole time. `check-old-name-absent` used plain `git grep`, which scans **tracked**
+files, so its input set changed at `git add` time. It now passes `--untracked`,
+and the repair was falsified against a planted untracked file the old version
+could not see at all. ⇒ **Every other gate in `tools/gates/` that reaches
+for `git grep` or `git ls-files` has the same hole**, and the tell is always the
+timing rather than the content: green before the commit, red after it, with
+nothing edited. That audit is not done and is the cheapest item on the register.
 
 ⚠ **The number in a release title is the release count for that DAY, not the
-session's.** The previous edition of this block called `.3` *"the fifth release
-of the day"* and it was the fourth. If you need the count, `gh release list`.
+session's.** An earlier edition of this block called `.3` *"the fifth release of
+the day"* and it was the fourth. If you need the count, `gh release list`.
 
 ---
 
@@ -222,9 +246,23 @@ has to be able to tell that apart from the caveat being forgotten.
    sixteen checks that assert nothing. `DOC_DRIFT.md` holds 12 rows of this
    project's own stale claims, dated against the commit that falsified each.
 
-   Three things to do first, in this order, and each is one idea rather than
+   Four things to do first, in this order, and each is one idea rather than
    a list:
 
+   * ⇒ **Audit every other gate that builds its input set from git.**
+     `check-old-name-absent` reported **41 of 41 green** on a tree that the
+     packager's own pre-flight failed thirty minutes later, with nothing edited
+     in between: it used plain `git grep`, which reads the **index**, so two
+     violations sitting in newly-added files were invisible until `git add`
+     made them visible. It passes `--untracked` now. ★★★ **The mechanism,
+     not the instance, is the finding** — this was the SECOND occurrence, and the
+     first repair excluded one directory instead. So grep `tools/gates/` for
+     `git grep` and `git ls-files`, and for each hit ask whether the gate's
+     subject is *the working tree* or *what has been staged*. Falsify each
+     repair by planting the violation in an **untracked** file; a gate with this
+     hole cannot see one at all, which is what makes it falsifiable in one step.
+     ⚠ A gate in this class is worst in the release path, because the thing
+     it waves through is the thing that ships.
    * ⇒ **Fix the File-tab route.** A File-tab click that produces no
      `ribbon-tab-activated tab=file` blocks **two** checks, which makes it a
      suite-wide blocker rather than a per-check defect, and it is cheaper than
