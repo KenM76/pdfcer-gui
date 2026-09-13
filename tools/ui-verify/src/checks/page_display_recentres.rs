@@ -249,7 +249,10 @@ fn contained(label: &str, strip: LRect, canvas: LRect) -> Option<String> {
 /// The display mode the canvas last said it was in, for the report's notes and
 /// for a precondition that would otherwise be silent: a run whose ribbon click
 /// missed would go on measuring a mode it never entered.
-fn display_mode(session: &Session) -> Result<Option<String>> {
+///
+/// Shared with [`crate::checks::raster_wall`], which needs the same precondition
+/// for the same reason.
+pub(super) fn display_mode(session: &Session) -> Result<Option<String>> {
     Ok(session
         .trace()?
         .events(CANVAS_EVENT)
@@ -267,7 +270,12 @@ fn acting_page(session: &Session) -> Result<Option<usize>> {
 }
 
 /// Enter a display mode and assert the canvas agrees it is in it.
-fn enter_display(
+///
+/// Shared with [`crate::checks::raster_wall`]. Kept here rather than moved to
+/// `driving` because it is specific to the View tab's display-mode group, and a
+/// helper in `driving` implies every check may reach for it; the two callers
+/// that legitimately may are both in this file's neighbourhood.
+pub(super) fn enter_display(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,

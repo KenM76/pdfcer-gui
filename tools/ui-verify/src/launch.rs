@@ -446,14 +446,44 @@ impl Session {
     /// and every trace line the check greps for already written — see
     /// [`Self::trace`].
     ///
-    /// There is no caller today and that is the intended state: nothing in this
-    /// application is *supposed* to panic. It exists so that a check which one
-    /// day provokes one on purpose says so in a greppable way, rather than the
-    /// detection being weakened for everybody.
-    #[allow(
-        dead_code,
-        reason = "the declared-intent half of a guard whose whole value is that nobody needs it yet" // ui-text-exempt: clippy lint justification, never displayed
-    )]
+    /// # ★★★ The one caller, and why a panic is the MECHANISM there
+    ///
+    /// [`TheRasterWallStopsTheZoomInsteadOfPaintingAnError`] drives the zoom
+    /// until the rasterizer gives out, because that is the only way to observe
+    /// the operator's fourth clause in O186 — *"zoom should stop at the limit
+    /// and not end up showing an error"*. Measured on 2026-09-12 against a
+    /// 5.7 MB dense vector drawing, the way the engine gives out is this:
+    ///
+    /// ```text
+    /// thread '<unnamed>' (10320) panicked at tiny-skia-0.11.4/src/pipeline/lowp.rs:350:28:
+    /// index out of bounds: the len is 2991081 but the index is 510221756928
+    /// ```
+    ///
+    /// `pdfcer-render` wraps the rasterizer in `catch_unwind` and converts that
+    /// into a `RasterizerLimit` refusal, which the canvas turns into a learned
+    /// ceiling (`raster-ceiling-learned`, backing off ×0.75 and ratcheting) and
+    /// a bottom-bar sentence in `status-group:raster-stop`. ★★ **So the panic is
+    /// not something that check tripped over; it is the delivered fix working.**
+    /// A harness that treats every thread panic as a failure reports the fix as
+    /// broken — which is precisely what happened the first time that check was
+    /// driven, on a run whose own trace showed two clean refusals and two
+    /// ceilings learned.
+    ///
+    /// ⚠ It stays narrow deliberately: per-[`Session`], declared at the call
+    /// site, never a profile flag. Every other check keeps the full detection,
+    /// because nothing else in this application is supposed to panic. If a
+    /// second caller ever appears, read it sceptically — the question is always
+    /// whether the panic is a **declared mechanism of the engine**, as it is
+    /// here, or a bug nobody has filed yet.
+    ///
+    /// The engine's own answer on this is
+    /// `reply_G002_deep_zoom_refuses_instead_of_panicking_SHIPPED.md`
+    /// (`pdfcer-render`, 2026-09-11): the refusal is the guarantee and there is
+    /// no scale it can promise, because the first failing scale bisected to
+    /// three unrelated values across six page geometries. A panic converted to
+    /// a refusal is therefore the *permanent* shape of this, not a stopgap.
+    ///
+    /// [`TheRasterWallStopsTheZoomInsteadOfPaintingAnError`]: crate::checks::raster_wall::TheRasterWallStopsTheZoomInsteadOfPaintingAnError
     pub fn expect_thread_panic(&self) -> &Self {
         self.panic_expected.set(true);
         self

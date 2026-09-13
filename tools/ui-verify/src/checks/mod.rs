@@ -688,6 +688,19 @@ pub mod multi_node;
 /// engine reports rather than a picture.
 pub mod object_clipboard;
 pub mod pan_refresh;
+/// ★★★ **O186's two drivable halves.** The neighbour sheet first: the
+/// continuous strip ordered a whole-page raster for a page it could SEE at the
+/// scale of the page it was ACTING ON, which above the pixmap ceiling is an
+/// order that cannot be filled — so the `MAX_PIXMAP_EDGE` sentence the operator
+/// read named a sheet he was not looking at. Then the wall itself: once the
+/// rasterizer refuses, the zoom must stop and the bottom bar must say why,
+/// rather than leaving an error across the drawing.
+///
+/// Runs immediately after [`deep_zoom`] in the roster and is deliberately NOT
+/// folded into it. That one asserts the ACTING page still renders past the
+/// ceiling; this one asserts nothing is ordered for the pages AROUND it. One
+/// check red for two causes would have said much less about either.
+pub mod raster_wall;
 pub mod reach_out;
 /// ★ `view.read_mode` — the command with a control, a glyph, a group, `Ctrl+H`
 /// and a line in the shortcuts reference, and **no dispatch arm** for the whole

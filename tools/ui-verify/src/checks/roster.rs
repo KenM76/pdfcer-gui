@@ -645,6 +645,18 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(scroll_input::ScrollingFarKeepsTheCanvasItsPointerInput),
         Box::new(max_zoom::TheZoomReadoutOpensTheMaximumZoomPopup),
         Box::new(deep_zoom::ZoomingPastThePixmapCeilingStillRenders),
+        // O186, immediately after it and deliberately so. `deep_zoom` proves
+        // the ACTING page survives the pixmap ceiling; this proves nothing is
+        // ordered for its NEIGHBOURS there, and then that the rasterizer's own
+        // wall stops the zoom and is explained on the bottom bar. A failure in
+        // `deep_zoom` should be read first: if the region tier is broken, the
+        // strip has no healthy page to be measured against.
+        Box::new(raster_wall::TheStripNeverOrdersARasterItCannotFill),
+        // O186 clause four, on the dense drawing. LAST of the three, and
+        // SKIPPED on any machine without it: the region tier never refuses
+        // on sparse line work, so the wall this asserts about cannot be
+        // reached with a repository fixture. Measured 2026-09-12.
+        Box::new(raster_wall::TheRasterWallStopsTheZoomInsteadOfPaintingAnError),
         Box::new(deep_pan::PanningAtDeepZoomStaysWhereItWasPut),
         Box::new(scale_sweep::MouseWorkSurvivesEveryRenderTier),
         Box::new(zoom_keeps_place::ZoomingDoesNotThrowAwayWhereTheOperatorPanned),

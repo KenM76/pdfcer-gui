@@ -93,6 +93,21 @@ use crate::viewer;
 /// literal so the next person to tune it does so once, with a paper trail.
 pub const ZOOM_SETTLE: Duration = Duration::from_millis(150);
 
+/// The [`crate::diag::trace_changed`] slot for *"the page being looked at was
+/// not ordered this frame, because nothing could be made of the order"* —
+/// O186's third route.
+///
+/// Its own slot for the same reason [`BEYOND_RASTER_SLOT`] has one: the
+/// de-duplication is per slot, so two lines sharing one suppress each other and
+/// each appears only when the two happen to alternate.
+///
+/// ★★ The line is emitted on the way OUT of the regime as well as into it, and
+/// that is not decoration. The subject is an absence — no order, no refusal, no
+/// learned ceiling — and a run that cannot tell *"never entered it"* from
+/// *"still in it"* cannot assert an absence at all. Same argument as
+/// `strip-beyond-raster pages=0`.
+const CURRENT_UNFILLABLE_SLOT: &str = "current-order-unfillable";
+
 /// The [`crate::diag::trace_changed`] slot for *"how many visible neighbour
 /// sheets could not be ordered at this zoom"* — O186.
 ///
@@ -662,6 +677,109 @@ impl OpenDoc {
         })
     }
 
+    /// ★★★ **Is there anything a worker could actually fill for this page at
+    /// this raster scale?** — O186's THIRD route, measured 2026-09-12.
+    ///
+    /// [`Self::strip_page_orderable`] answers this for a page that is handed no
+    /// region. This answers it for any page, including the current one, by
+    /// asking the extra question the current page brings with it: **it may have
+    /// a region, and if it has one the sheet's size stops mattering.**
+    ///
+    /// ```text
+    /// region present  ->  fillable at any scale (the request is viewport-sized)
+    /// region absent   ->  fillable only while the WHOLE SHEET still fits
+    /// ```
+    ///
+    /// # The measurement that made this necessary
+    ///
+    /// `ui-verify`'s `the_strip_never_orders_a_raster_it_cannot_fill` climbed a
+    /// continuous strip and reported, at a zoom of 438:
+    ///
+    /// ```text
+    /// canvas-unavailable reason=nothing-visible
+    /// render-spawn gen=52 page=0 scale=438.84824
+    /// bad-raster-size px=1046187x738924 page=0 scale=438.8 region=0
+    /// raster-ceiling-learned page=0 scale=329.1 zoom=438.85 to=329.14 moved=true
+    /// ```
+    ///
+    /// Read that in order. **Nothing was on screen** — `canvas::deep`'s anchor
+    /// is not clamped, so the view had been carried off the sheet (O186 stage
+    /// one, a separate defect and not this one). With no visible part of the
+    /// page, `canvas::tier::decide`'s region tier has nothing to intersect and
+    /// leaves `OpenDoc::raster_region` as `None`. The *same* frame then asked
+    /// for a raster, and a request with no region is a request for the whole
+    /// sheet — 1,046,187 × 738,924 device pixels of it.
+    ///
+    /// ★★ **And the damage is not the refusal, it is the ceiling learned from
+    /// it.** `absorb_render` turns a refusal into a zoom ceiling, so a page that
+    /// renders perfectly through the region tier at ten billion percent —
+    /// measured, on `fixtures/four-pages.pdf` — had its zoom capped at 329×
+    /// because of one order that should never have been placed. The operator's
+    /// O186: *"the canvas will just stop zooming in"*. It did, at a number that
+    /// was an internal mistake rather than a limit of anything.
+    ///
+    /// # ⚠ Why declining costs nothing
+    ///
+    /// The only way to reach `region_for() == None` while the whole sheet will
+    /// not fit is for **no part of the page to be on screen** — either it has
+    /// been carried off, or the canvas was not laid out this frame. There are no
+    /// pixels to show either way, so there is no picture being withheld. This is
+    /// not a clamp and it hides nothing; a clamp would be
+    /// [`crate::render::ceiling`], which still holds for real refusals.
+    ///
+    /// # What it deliberately does NOT ask
+    ///
+    /// `strategy::for_page`, for the reason [`Self::strip_page_orderable`] gives
+    /// at length: that is the union of this hard pixmap limit with the soft ink
+    /// one, and an ink page above the CMYK buffer ceiling answers `Region` from
+    /// it while its whole-page raster allocates perfectly well. Asking the union
+    /// here would decline orders that would have succeeded.
+    /// # ⚠⚠ DRIVEN COVERAGE IS OWED, AND NOTHING HERE IS EVIDENCE YET
+    ///
+    /// **Measured 2026-09-12: no driven check falsifies this guard.** Both
+    /// raster-wall checks were re-driven against a build with `&& fillable`
+    /// removed from the caller's condition, and **both still passed.** That is
+    /// recorded here rather than left as a gap in a report, because a fix whose
+    /// regression test cannot fail is a fix that will be silently reverted.
+    ///
+    /// Why neither check reaches it, which is the useful half:
+    ///
+    ///   * `the_strip_never_orders_a_raster_it_cannot_fill` now stops at zoom
+    ///     ~22. That is deliberate — its measuring window closes at ~35 — and it
+    ///     is four hundred times too shallow. The route this guard closes needs
+    ///     the view to have been carried off the sheet, which on
+    ///     `fixtures/four-pages.pdf` happens near zoom 440.
+    ///   * `the_raster_wall_stops_the_zoom_instead_of_painting_an_error` climbs
+    ///     to 36 million per cent and does reach a frame where this returns
+    ///     `false` — `current-order-unfillable page=0 fillable=false` appears in
+    ///     its trace — but on that frame nothing was stale, so the spawn below
+    ///     would not have happened even unguarded. **Reaching the predicate is
+    ///     not reaching the defect**, and a check that confused the two would
+    ///     report coverage it does not have.
+    ///
+    /// ★ **The check that will falsify this is O186 stage one's.** That stage
+    /// fixes the unclamped `canvas::deep` anchor, and its driven check has to
+    /// reproduce the terminal `canvas-unavailable reason=nothing-visible` first
+    /// in order to assert it is gone. That reproduction IS this guard's
+    /// falsification: with the guard removed, the same blank frame orders a whole
+    /// sheet and `raster-ceiling-learned … to=329.14` follows. So the assertion
+    /// to add there is not *"the canvas is not blank"* alone but also **"no
+    /// ceiling was learned while it was"**.
+    ///
+    /// Until that lands, the evidence for this guard is: the dated trace quoted
+    /// above, the unit test below, and the `current-order-unfillable` transitions
+    /// that prove the predicate is live in a real build. That is weaker than this
+    /// project's bar and is not being described as meeting it.
+    ///
+    #[must_use]
+    pub fn raster_order_fillable(&self, page: usize, raster_scale: f32) -> bool {
+        // ★ `region_for` and not `raster_region`: it is the one that checks the
+        // region belongs to THIS page. A region computed for page 4 does not
+        // make page 5's order fillable, and both rectangles are valid, so the
+        // mistake would be silent. The same argument is on `region_for` itself.
+        self.region_for(page).is_some() || self.strip_page_orderable(page, raster_scale)
+    }
+
     /// What state a **strip** page is in, for
     /// [`crate::render::strip::draw_page_state`].
     ///
@@ -862,7 +980,31 @@ impl PdfcerApp {
             key == wanted && epoch == doc.page_epochs.get(doc.view.page_index)
         });
 
-        if !current_held {
+        // ★★★ **O186's third route, closed here.** 2026-09-12.
+        //
+        // A request with no region is a request for the WHOLE SHEET, and above
+        // the renderer's pixmap ceiling there is no such pixmap. Placing the
+        // order anyway is how the page being looked at came to refuse at a zoom
+        // it could have rendered through the region tier — and worse, how
+        // `absorb_render` came to learn a *ceiling* from that refusal and cap
+        // the operator's zoom at a number that was an internal mistake. The
+        // whole measurement, and why declining withholds no picture, is on
+        // `OpenDoc::raster_order_fillable`.
+        //
+        // ★ Gated on both spawn sites at once, by wrapping them, rather than
+        // repeated inside each: the two arms differ only in *when* they ask, and
+        // a guard added to one of two call sites is the shape of defect this
+        // project has now corrected more than once.
+        let fillable = doc.raster_order_fillable(doc.view.page_index, wanted_scale);
+        crate::diag::trace_changed(CURRENT_UNFILLABLE_SLOT, || {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!(
+                "current-order-unfillable page={} fillable={fillable}",
+                doc.view.page_index
+            )
+        });
+
+        if !current_held && fillable {
             if stale_discrete {
                 let page = doc.view.page_index;
                 doc.rasterize(ctx, page, wanted_scale);
@@ -1049,5 +1191,200 @@ impl PdfcerApp {
             // is running, so the next one arrives without help.
         }
         doc.strip_visible = visible;
+    }
+}
+
+/// # Tests — can this order be filled?
+///
+/// Only [`OpenDoc::raster_order_fillable`] is covered here, and deliberately
+/// only it. Everything else in this file is a frame's worth of sequencing
+/// against a live `egui::Context`, a worker thread and a wall clock; the one
+/// part that is a pure question about a document is the predicate O186's third
+/// route turns on, and that is the part a unit test can actually pin.
+///
+/// ⚠ **What these tests do NOT establish is that the guard is in the right
+/// place.** They prove the predicate answers correctly; they cannot see the
+/// `if !current_held && fillable` that consults it, and a build with that
+/// `&& fillable` deleted passes every one of them — measured, not assumed. The
+/// driven coverage that is owed, and the check that will eventually supply it,
+/// is named on [`OpenDoc::raster_order_fillable`] itself. This paragraph exists
+/// so that a reader who finds four green tests here does not conclude the route
+/// is covered.
+///
+/// ## ★★ Why the fixture is this repository's and not the engine's
+///
+/// `open_local_fixture("four-pages.pdf")`, **not**
+/// `open_fixture(FOUR_PAGES)` — and the difference is not cosmetic. There are
+/// two documents on this machine called `four-pages.pdf`:
+///
+/// | path | pages |
+/// |---|---|
+/// | engine `synthetic/pageops/four-pages.pdf` | four sheets, **all US Letter** |
+/// | this repo's `fixtures/four-pages.pdf` | `2383.937 × 1683.78`, `612 × 792`, `612 × 792`, `306 × 396` |
+///
+/// Measured 2026-09-12 by reading both files' `/MediaBox` entries, after very
+/// nearly writing this suite against the engine's. **Only the local one can
+/// distinguish "the answer depends on THIS page" from "the answer is a
+/// constant"**, because only it has sheets that differ — by a factor of six
+/// between its largest and smallest. Against the engine's copy, every
+/// assertion below would still pass while testing nothing about the `page`
+/// argument at all, which is the worst available outcome for a test.
+///
+/// ★ Opened rather than hand-built, for the reason `app::status::rasterstop`'s
+/// tests give: [`Self::strip_page_orderable`] reaches `page_extent_pts`, which
+/// reads the real `/MediaBox` and `/Rotate`, so a synthesised page would check
+/// the arithmetic against a number this test invented rather than against a
+/// document.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::state::open_local_fixture;
+
+    /// This repository's `fixtures/four-pages.pdf`, whose four sheets differ.
+    const FOUR_DIFFERING_SHEETS: &str = "four-pages.pdf";
+
+    /// Page 0 is `2383.937 × 1683.78` pt, so against the rasterizer's
+    /// 16,384-pixel edge limit its whole-sheet raster stops fitting at a raster
+    /// scale of `16384 / 2383.937 = 6.87`.
+    ///
+    /// Both constants sit a wide factor either side of that on purpose. A test
+    /// that straddled 6.87 closely would be measuring the engine's rounding,
+    /// which is the engine's business and not this predicate's — and it would
+    /// go red the day `MAX_PIXMAP_EDGE` changes, reporting a defect here that
+    /// is not here.
+    const BIG_SHEET_FITS: f32 = 3.0;
+    const BIG_SHEET_DOES_NOT_FIT: f32 = 100.0;
+
+    /// Page 3 is `306 × 396` pt, six times smaller, so its limit is `41.4` —
+    /// which is what makes a scale of 30 comfortable for it and hopeless for
+    /// page 0. That asymmetry is the whole point of the fixture.
+    const SMALL_SHEET_SCALE: f32 = 30.0;
+
+    fn doc() -> OpenDoc {
+        open_local_fixture(FOUR_DIFFERING_SHEETS)
+    }
+
+    /// A region covering an arbitrary patch of the named page.
+    ///
+    /// The rectangle's own size is irrelevant and deliberately small: what the
+    /// predicate asks is whether a region *exists for this page*, because the
+    /// request a region produces is viewport-sized rather than page-sized. A
+    /// test that made the rectangle large would imply the size mattered.
+    fn region_on(page: usize) -> (usize, pdfcer_core::page_tree::Rect) {
+        (
+            page,
+            pdfcer_core::page_tree::Rect {
+                llx: 0.0,
+                lly: 0.0,
+                urx: 100.0,
+                ury: 100.0,
+            },
+        )
+    }
+
+    /// ★★ **The half that must answer yes, and the half that must answer no.**
+    ///
+    /// Asserted in one test because either alone is satisfied by a constant: a
+    /// predicate hard-wired to `true` passes the first assertion and one
+    /// hard-wired to `false` passes the second, so a suite holding only one of
+    /// them would be green against a function that had stopped reading its
+    /// arguments.
+    ///
+    /// The third assertion is the one that proves the answer is about the
+    /// **page**. Page 3 is a sixth of page 0, so `SMALL_SHEET_SCALE` is fine for
+    /// it and far past page 0's limit; an implementation written against a
+    /// single document-wide extent — the most likely wrong version of this —
+    /// fails here and nowhere else.
+    #[test]
+    fn with_no_region_an_order_is_fillable_only_while_the_whole_sheet_fits() {
+        let doc = doc();
+        assert!(
+            doc.raster_region.is_none(),
+            "a freshly opened document has no region, which is the state this \
+             test is about"
+        );
+
+        assert!(
+            doc.raster_order_fillable(0, BIG_SHEET_FITS),
+            "the big sheet's whole-page raster fits at a raster scale of \
+             {BIG_SHEET_FITS}"
+        );
+        assert!(
+            !doc.raster_order_fillable(0, BIG_SHEET_DOES_NOT_FIT),
+            "at {BIG_SHEET_DOES_NOT_FIT} no pixmap that size can be allocated, \
+             so the order cannot be filled and must not be placed"
+        );
+        assert!(
+            doc.raster_order_fillable(3, SMALL_SHEET_SCALE),
+            "page 3 is six times smaller and fits whole at a scale that is \
+             hopeless for page 0 — this is the assertion that proves the answer \
+             is about the page and not about the document"
+        );
+    }
+
+    /// ★★★ **A region makes the sheet's size stop mattering, which is the whole
+    /// reason this predicate is not simply [`Self::strip_page_orderable`].**
+    ///
+    /// A region request is viewport-sized whatever the page is, so there is no
+    /// scale at which it cannot be allocated. The second assertion uses a scale
+    /// four orders of magnitude past the first because the deep tier really does
+    /// reach numbers like that — a driven run measured 36 million per cent — and
+    /// a predicate that held only for *moderately* large scales would be a
+    /// second undeclared ceiling, which is the exact defect O186 reported.
+    #[test]
+    fn a_region_for_this_page_makes_any_scale_fillable() {
+        let mut doc = doc();
+        doc.raster_region = Some(region_on(0));
+
+        assert!(
+            doc.raster_order_fillable(0, BIG_SHEET_DOES_NOT_FIT),
+            "with a region the request is viewport-sized, so the sheet's size \
+             stops being the question"
+        );
+        assert!(
+            doc.raster_order_fillable(0, 1.0e6),
+            "and it stays irrelevant a million-fold in, which is the range the \
+             region tier exists to serve"
+        );
+    }
+
+    /// ★ **A region belonging to another page is not a region.**
+    ///
+    /// This is the assertion that pins [`Self::region_for`] rather than the
+    /// `raster_region` field inside the predicate. Both rectangles are valid, so
+    /// reading the field directly would answer `true` for every page in the
+    /// document the moment any one page had a region — and nothing would report
+    /// it, because the consequence is simply that the wrong sheet gets ordered
+    /// whole and refused, which is the defect this guard exists to stop.
+    ///
+    /// The second half is what makes the first half a statement about *whose*
+    /// region it is rather than about regions being ignored altogether.
+    #[test]
+    fn a_region_belonging_to_another_page_does_not_make_this_one_fillable() {
+        let mut doc = doc();
+        doc.raster_region = Some(region_on(1));
+
+        assert!(
+            !doc.raster_order_fillable(0, BIG_SHEET_DOES_NOT_FIT),
+            "page 1's region says nothing about page 0"
+        );
+        assert!(
+            doc.raster_order_fillable(1, BIG_SHEET_DOES_NOT_FIT),
+            "while page 1's own region does"
+        );
+    }
+
+    /// A page index past the end is not fillable, and must not panic.
+    ///
+    /// Reachable in practice on the frame after a page is deleted, before the
+    /// view index has been brought back into range. The answer is `false` rather
+    /// than `true` because there is no sheet to order at all — a `true` here
+    /// would place a request the worker could only discard, spending a thread on
+    /// a page that does not exist.
+    #[test]
+    fn a_page_past_the_end_is_never_fillable() {
+        let doc = doc();
+        assert!(!doc.raster_order_fillable(99, BIG_SHEET_FITS));
+        assert!(!doc.raster_order_fillable(usize::MAX, BIG_SHEET_FITS));
     }
 }
