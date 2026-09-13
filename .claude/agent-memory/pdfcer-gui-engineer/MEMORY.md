@@ -100,7 +100,7 @@
 - [An assertion both outcomes satisfy measures neither](feedback_an_assertion_both_outcomes_satisfy_is_not_a_measurement_of_which_one_shipped.md) — name what the WRONG mechanism cannot produce.
 - [A gate hit inside the repo is not a mandate to sweep outside it](feedback_a_gate_hit_inside_the_repo_is_not_a_mandate_to_sweep_outside_it.md) — a half-renamed archive is worse than an old-named one.
 - [A branch-pinned dependency moves without `cargo update`](feedback_a_branch_pinned_dependency_moves_without_cargo_update.md) — the engine pin changed mid-session with no update command.
-- [The write-python-to-a-file workaround does not protect an escape](feedback_the_write_python_to_a_file_workaround_does_not_protect_an_escape.md) - use raw strings and plain ASCII.
+- [The write-python-to-a-file workaround does not protect an escape](feedback_the_write_python_to_a_file_workaround_does_not_protect_an_escape.md) - no backslash in the payload at all; a RAW one emits a doubled one, which compiles and is wrong.
 - [A guard's placement decides which surface must explain it](feedback_a_guards_placement_decides_which_surface_must_explain_it.md) — reading the predicate is not reading the guard.
 - [A decline that revalidates its own precondition deletes itself](feedback_a_decline_that_revalidates_its_own_precondition_deletes_itself.md) — the control goes silent, not wrong, and every unit test still passes.
 - [A document that quotes its measurement command can be broken by it](feedback_a_document_that_quotes_its_measurement_command_can_be_broken_by_it.md) — a verbatim newline delimiter split a table row for six days.
@@ -120,3 +120,5 @@
 - [The thing you measured is never the thing you ship](feedback_the_thing_you_measured_is_never_the_thing_you_ship.md) — the release commit relinks the exe; 8M bytes differ, none of them behaviour.
 - [A control differs in exactly one property, and an absence needs a witness](feedback_a_control_must_differ_in_exactly_one_property_and_an_absence_needs_a_witness.md) — a healthy file satisfies the absence three ways at once.
 - [A type reached only by field access is invisible to the drift gate](feedback_a_type_reached_only_by_field_access_is_invisible_to_the_drift_gate.md) — a doc-comment mention silences it and buys nothing; write the binding.
+- [Falsify the gate against the real files, and the fix against a control binary](feedback_falsify_the_gate_against_the_real_files_and_the_fix_against_a_control_binary.md) - a self-test proves nothing about the real call sites; the control named different victims.
+- [A rule with a classification in it is where the next exception goes](feedback_a_rule_with_a_classification_in_it_is_where_the_next_exception_goes.md) - one exact token plus a written exemption, never an enumeration of acceptable forms.

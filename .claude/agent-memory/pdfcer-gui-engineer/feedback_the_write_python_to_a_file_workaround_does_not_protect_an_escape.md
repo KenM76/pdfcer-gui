@@ -1,14 +1,14 @@
 ---
 name: the-write-python-to-a-file-workaround-does-not-protect-an-escape
-description: Writing the patch script to a file instead of a heredoc fixes the SHELL's mangling and nothing else — a `\n` or `\x00` inside a non-raw triple-quoted payload is collapsed by PYTHON, one layer down
+description: Three quoting layers stack between a patch script and the file it writes, and each eats a different backslash — the only reliable rule is to put no backslash in the payload at all and spell it chr(92)
 metadata:
   type: feedback
 ---
 
-**When a python script emits code containing backslash escapes, the payload
-string must be RAW (`r'''…'''`) and plain ASCII.** Writing the script to a file
-under `$SCRATCH` first solves the shell layer; it does nothing about the python
-layer underneath it.
+**Do not put a backslash in a patch script's payload. Spell it `chr(92)`, spell
+a newline `chr(10)`, and keep the payload plain ASCII.** Writing the script to a
+file under `$SCRATCH` instead of a heredoc solves the *shell* layer and nothing
+else; there are two more layers under it and they disagree with each other.
 
 **Why:** `RESUME.md` carries a standing "Do not" bullet about heredoc-delivered
 patch scripts — eleven-plus recorded occurrences of a multi-line Rust string
@@ -25,7 +25,10 @@ and the payload still broke, twice in the same hour, in two different ways:**
   message that names neither the escape nor the writer.
 
 In the same session a sibling script that used `r'''…'''` came through clean,
-which is the control: the difference is the `r`, not the delivery method.
+which is the control for *that* pair: the difference was the `r`, not the
+delivery method. ⚠ But see the 2026-09-13 addendum at the foot of this file —
+the `r` is not a general answer, and taken as one it produces a *different*
+wrong emission that compiles.
 
 **★★ And there is a THIRD layer, found sixty seconds after this memory was
 first written — by this memory's own index entry.** The one-line pointer added to
@@ -42,8 +45,12 @@ or build it with `chr(10)`. Three layers stack here and each one is individually
 reasonable; only abstinence is reliable.
 
 **How to apply:**
-- Payload strings that will contain `\` get `r'''…'''`. Always. Even when the
-  current payload has no escape — the next edit to it will.
+- Build every backslash with `chr(92)` and every newline with `chr(10)`, in
+  every payload, including the ones that currently have no escape — the next
+  edit to that payload will.
+- Reserve `r'''…'''` for its one honest use: a payload that emits a **regex**,
+  where the backslashes belong to the emitted code and are meant to arrive
+  doubled. Do not reach for it as general protection; see the addendum below.
 - Prefer ASCII. If a test needs a byte, pick a printable one (`b"weights"`), not
   `\x00`; the null added nothing to the assertion and cost a debugging round.
 - After emitting, **`python -c "import ast; ast.parse(open(p).read())"`** before
@@ -86,3 +93,34 @@ which is cheap and says what it means.
 a guard is a measurement, and a guard that forbids a property the subject must
 have is measuring the wrong thing in the most expensive direction — it blocks work
 that is correct.
+
+---
+
+**★ 2026-09-13 — a RAW payload does not protect a Rust line continuation, and
+the two habits in this file contradict each other.**
+
+Stated plainly it is obvious, and it is not obvious at all with a patch script
+half-written:
+
+- In a **non-raw** payload, `\\` is **one** character. It reaches the emitted
+  file as a lone backslash — a Rust line continuation, a path separator.
+- In a **raw** payload, `\\` is **two** characters. It reaches the emitted file
+  as two backslashes.
+
+So *"always use a raw payload"* and *"always double the backslash"* cannot both
+be followed, and the combination is the dangerous one. A doubled backslash at
+the end of a line in emitted Rust is an **escaped backslash inside a string
+literal**, not a continuation. The crate still compiles. The string is simply
+wrong: it carries a literal backslash and every space of the indentation a
+continuation would have swallowed. Nothing goes red at the point of the mistake
+— what goes wrong is downstream, in whatever reads that string.
+
+⇒ This adds no third rule; it **removes** one. The lead of this file and its
+first *How to apply* bullet used to say "make the payload raw", and that advice
+is now deleted from both. What survives is the rule that was already written
+here: **no backslash in the payload at all.**
+
+⚠ And the emitted-file compile check above does **not** catch this class,
+because the wrong output is valid source. The only oracle for *"it compiled and
+it is wrong"* is reading the emitted region back with `sed -n` or `cat -A` and
+looking at it, which costs one command.
