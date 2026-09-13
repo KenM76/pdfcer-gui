@@ -89,8 +89,8 @@ fn the_oracle_separates_the_d2_heading_from_legible_text_eighty_pixels_away() {
         LEGIBLE_BODY_TEXT.resolve(image.width(), image.height()),
     );
 
-    println!("  heading (D2):    {}", heading.summary());
-    println!("  body prose:      {}", body.summary());
+    println!("  heading (D2):    {}", heading.summary()); // string-gap-exempt: aligned value column
+    println!("  body prose:      {}", body.summary()); // string-gap-exempt: aligned value column
 
     assert!(
         heading.sampled > 1000 && body.sampled > 1000,

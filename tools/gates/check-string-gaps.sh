@@ -144,12 +144,27 @@ scan() {
                 # Enumerating a class is a guess about what precedes a gap.
                 # "Something, then three spaces, then a letter" is the fact.
                 #
+                # ★ AND A BRACE COUNTS ON THE RIGHT TOO, for the mirror reason.
+                #
+                # The left-hand side was widened on 2026-08-20. The right-hand
+                # side was left as a letter, and that is a hole of the same
+                # shape: a wrapped sentence in this codebase very often resumes
+                # ON a value --
+                #
+                #     "... the route sentence should say              {needle:?}"
+                #
+                # -- and none of those were visible. Two were live in the tree
+                # when this was widened on 2026-09-12, both assertion sentences
+                # with an eighteen-space hole in them, while the gate had been
+                # green for weeks. One symmetry argument, applied once and not
+                # twice.
+                #
                 # ★ Two characters ARE excluded, and both for the same reason:
                 # a gap that begins a literal is INDENTATION, not a lost
                 # continuation. `println!("      default exe: {}")` is a report
                 # laying out a column, and four of them in this harness are the
                 # false positives that widening the class first produced.
-                if (code ~ /[^[:space:]("]   +[A-Za-z]/) {
+                if (code ~ /[^[:space:]("]   +[A-Za-z{]/) {
                     body = code
                     sub(/^[[:space:]]+/, "", body)
                     print "  " FILENAME ":" FNR ": a run of spaces baked into a string literal"
@@ -193,6 +208,14 @@ pub fn line(page: usize, n: u64) -> String {
     format!("transform-objects page={page} transformed={n}          m=[1 0 0 1 0 0]")
 }
 EOF
+    # ★ The shape that got past this gate until 2026-09-12: the gap is followed
+    # by an interpolation, so the character after it is a brace and not a
+    # letter. Two of these were live in the tree, both assertion sentences.
+    cat > "$tmp/dirty/interp.rs" <<'EOF'
+pub fn line(chord: &str, needle: &str) -> String {
+    format!("the text tool is bound to `{chord}`, so the sentence should say              {needle}")
+}
+EOF
     cat > "$tmp/clean/good.rs" <<'EOF'
 //! A doc comment may align a table:
 //!     Mode(id: "read",   label: "Read")
@@ -212,6 +235,9 @@ pub const fn block_marked() -> &'static str {
 pub const fn short() -> &'static str {
     "Two spaces after a stop.  That is a convention, not a defect."
 }
+pub fn column(last: &str) -> String {
+    format!("title in read mode:     {last}")  // string-gap-exempt: a value column
+}
 EOF
     # An exemption must cover ONE line, not leak down the file.
     cat > "$tmp/leak/leak.rs" <<'EOF'
@@ -225,10 +251,25 @@ pub const fn unmarked() -> &'static str {
 EOF
 
     fail=0
-    if scan "$tmp/dirty" > /dev/null; then
-        echo "SELF-TEST FAILED: a baked gap was not detected"
-        fail=1
-    fi
+    # ★ EACH DIRTY FIXTURE IS SCANNED ALONE, and that is not a tidy-up.
+    #
+    # This was one `scan "$tmp/dirty"` until 2026-09-12. In that shape adding a
+    # fixture could not make the self-test stricter, because `scan` fails when
+    # ANY file under the root has a hit: the first fixture satisfied the
+    # assertion and every fixture added afterwards was decorative. It was
+    # measured, not reasoned -- the brace fixture added on 2026-08-20 to pin
+    # that widening still passed with the widening reverted, and so did the
+    # interpolation fixture, on the day it was written.
+    #
+    # A fixture that cannot fail the test is not a test of anything, which is
+    # the same finding this gate's own header records about gates that have only
+    # ever been seen to pass.
+    for fixture in "$tmp"/dirty/*.rs; do
+        if scan "$fixture" > /dev/null; then
+            echo "SELF-TEST FAILED: a baked gap was not detected in ${fixture##*/}"
+            fail=1
+        fi
+    done
     if ! scan "$tmp/clean"; then
         echo "SELF-TEST FAILED: a clean file was reported as a violation"
         fail=1

@@ -88,3 +88,34 @@ Related: [[feedback_a_proxy_condition_survives_one_correction]],
 [[feedback_a_trace_grepping_check_passes_on_a_build_that_crashed]].
 Full write-up:
 `D:\dev\rag\egui\a_harness_given_a_bad_coordinate_does_not_fail_it_lies_fluently.md`
+
+## ★★★ FOURTH INSTANCE — and this time the fabricated diagnosis named a mechanism that had ALREADY been repaired — 2026-09-13
+
+`the_wheel_turns_pages_when_the_operator_asks_it_to` FAILed with:
+
+> ★★★ THE WHEEL DID NOT TURN A PAGE. … The most likely cause is the one this
+> check was written for: `OpenDoc::prefs` is a SNAPSHOT adopted when the
+> Settings window is applied…
+
+The document it was driving had **one page**. `open ok pages=1
+path="fixtures/a1-titleblock.pdf"`. There was no page 2 to turn to. And the
+preference it accused of being inert reached the status line on the very next
+frame after the press — `wheel=scroll` before, `wheel=flip` after — so the live
+push was working and the snapshot defect had been fixed some time ago.
+
+★★ **A wrong-fixture SKIP announces itself; a wrong-fixture FAIL writes a
+diagnosis.** The inherited fixture *opened fine*, so every precondition the
+check thought to assert held. What it never asserted was that the document it
+had been handed could exhibit the behaviour in the check's own name.
+
+★ **The diagnosis was the most convincing thing in the report**, because it was
+a real mechanism, correctly described, with the right module named — just
+already repaired. A check that hypothesises a cause in its failure text will
+keep publishing that hypothesis long after the cause is gone, and every reader
+believes it, because the alternative is believing the check is wrong.
+
+**How to apply:** a check's `const FIXTURE` is part of its assertion, not part
+of its plumbing. Before trusting a driven FAIL, grep its trace for the one fact
+that makes the behaviour *possible at all* — `pages=`, object count, selection
+count, whether the panel is the active tab. And when a failure message names a
+mechanism, **date the mechanism** before repeating it.

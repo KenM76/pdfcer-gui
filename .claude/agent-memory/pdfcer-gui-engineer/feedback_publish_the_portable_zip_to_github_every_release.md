@@ -47,3 +47,33 @@ the zip was built from the newest; `releases/latest` looked perfect
 commit → `git push` → `gh release create`. If it has already happened:
 `git tag -f <tag> <built commit>` and `git push -f origin refs/tags/<tag>`,
 then read the tag's sha back from the API.
+
+## ★★ A RELATIVE LINK IS ONLY SAFE IF ITS TARGET IS ALSO IN `PAYLOAD_DOCS` — 2026-09-13
+
+`tools/package-portable.py` ships a fixed list into the zip:
+
+```python
+PAYLOAD_DOCS = ["MANUAL.md", "LICENSE", "THIRD_PARTY_LICENSES.md",
+                "README.md", "FEATURES.md"]
+```
+
+So the **human** landing page travels with the download and the engineering
+page does not. That is the right split — someone who unzips a portable build
+wants the manual, not build instructions — but it means a relative
+`[DEVELOPING.md](DEVELOPING.md)` in `README.md` is a **dead link for everyone
+reading the README out of the download**, which is the larger audience, and it
+is dead in the one situation where they cannot work around it: no internet, no
+repo, just the folder.
+
+**The rule:** a link inside a `PAYLOAD_DOCS` file may be relative **only** if
+its target is also in `PAYLOAD_DOCS`. Otherwise spell it absolutely
+(`https://github.com/KenM76/pdfcer-gui/blob/main/<file>`).
+
+**Why it is easy to miss:** on GitHub both forms render and both resolve. The
+defect exists only in the artifact, and nothing in the build looks at it. ⇒ The
+check is *"read the README from inside the extracted zip"*, not *"read the
+README"*. The same applies to any image or asset path.
+
+This is machine-checkable and would be a cheap gate: for each `PAYLOAD_DOCS`
+file, fail any markdown link whose target is a repo-relative path not itself in
+`PAYLOAD_DOCS`.

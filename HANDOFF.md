@@ -1001,6 +1001,194 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 
 ## 10. Things that will bite you
 
+- **★★★ 2026-09-12 — the commit that falsifies a measured sentence is very
+  often the commit that MOVES the constant the sentence is about, and it will
+  update the test instead of the prose.**
+
+  `crates/pdfcer-gui/src/app/prefs/mod.rs:168-190` documents
+  `MAX_MAX_ZOOM_PERCENT`. The constant is `1e12` — a trillion percent. Four
+  sentences of its doc comment describe `1e11`:
+
+  > *"The highest a maximum-zoom setting may be — **a hundred billion percent**,
+  > which is the deepest zoom the page has been confirmed to actually DRAW at."*
+  > … *"The operator named a trillion, and a trillion very nearly works. What it
+  > does not do is put a page on screen … Measured by driving: drawn at 8.6×10^9×
+  > (859 billion percent), not drawn at 1×10^10×."* … *"So this is set **an order
+  > of magnitude inside** the confirmed-working range rather than at the edge of
+  > it."* … *"Removing this needs the strip to stop being built in `page × zoom`
+  > space at deep zoom."*
+
+  **All four were falsified by `390fcc40` (2026-08-22), which is the commit that
+  raised the constant from `1e11` to `1e12`.** That commit removed the strip-extent
+  ceiling the last sentence asks for, measured *"a page DRAWN at 10^12 % … with no
+  failed rasters"* on the operator's own file, and deleted the clamp. It renamed
+  and rewrote the unit test in the same diff —
+  `asking_for_a_trillion_percent_gets_the_deepest_that_actually_draws` became
+  `a_trillion_percent_is_accepted_and_the_page_actually_draws_there` — and never
+  touched the doc comment eleven lines above the constant it changed.
+
+  ★★ **Why this particular staleness is worse than ordinary drift: the wrong
+  prose is the most authoritative-looking text in the module.** It carries a
+  driven measurement to two significant figures, a named file format, a unit
+  conversion, and a paragraph on *what would have to change for the limit to
+  move*. Everything that makes a comment trustworthy is present. A session asking
+  *"how deep can this canvas actually go?"* reads it, gets a hundred billion, and
+  gets a flat statement that a trillion shows a blank page — the exact opposite
+  of what was measured, in the voice of the measurement.
+
+  ★ **And it was nearly dismissed for the right-sounding reason.** It was found
+  while auditing the public `README.md` claim *"Up to a trillion percent, and the
+  detail is genuinely there"*, on the assumption that product copy overstates and
+  source comments are conservative. **The product copy was correct and the source
+  comment was wrong.** That direction is rarer and therefore less looked for; the
+  audit habit from the landing-page pass — *cite the row for every member* — is
+  what turned it up, and it works in both directions.
+
+  ⇒ **Two rules.** (1) When a numeric constant changes, its doc comment is part
+  of the change; a test assertion and a doc comment are two records of one claim,
+  and only one of them can go red. (2) A doc comment that states a **magnitude**
+  for the constant it documents is machine-checkable: a gate can require that a
+  `pub const NAME: f32 = <literal>;` whose comment contains a numeric literal or a
+  magnitude word (*thousand, million, billion, trillion*) agree with the literal.
+  Filed as `R7` in this session's repair list; the grep says the claim appears at
+  exactly these two lines and nowhere else in the repository.
+
+- **★★★ 2026-09-12, second sweep of the day — a SKIP count is not a measure of
+  bad luck. Sixteen of the first hundred skipped; FOURTEEN had one cause, and one
+  of the other two is a check that CANNOT RUN on a default install.**
+
+  The Tranche-A harness repairs worked: the first hundred checks of the evening
+  sweep produced **84 PASS, 16 SKIP and zero FAIL**, against the morning sweep's
+  `162 / 11 / 40` over 213. Every verdict changed for the better. What did not
+  improve is the thing the morning sweep already said — *a shared harness
+  parameter is N checks' unwritten precondition* — because nothing was done
+  about it yet.
+
+  **Fourteen of the sixteen trace to one line in `sweep-full.sh`**: the
+  `--pdf fixtures/a1-titleblock.pdf` it passes to every check. A single-page CAD
+  title block has no optional content, no AcroForm, no transparency, one page
+  tile, one `/Rotate` already set, a crop box ending at 2383.94, and six embedded
+  fonts that are all identity-encoded or Type 3. Each of those facts silently
+  disqualifies a different check. ★ The repair is **one change made fourteen
+  times** — a per-check `const FIXTURE: &str` and
+  `workspace_root().join(FIXTURE)`, which about thirty checks in the suite
+  already do. Prefer it over adding rows to the ALONE table: the table puts the
+  knowledge in a shell script, far from the check that depends on it, where the
+  next reader of the check cannot see it.
+
+  ⚠ And note the trap one of them fell into: `a_drawing_dropped_on_the_thumbnails_becomes_pages`
+  **already pins its second document** (`fixtures/four-pages.pdf`, held back 20 s)
+  and still takes the shared first one. **Pinning one input and inheriting the
+  other is worse than inheriting both**, because the check then reads as though
+  its inputs were under its own control.
+
+  ★★★ **The other kind, and it is the serious one:
+  `print_clip_claim_follows_the_preview` skipped with a message that concedes the
+  skip is NORMAL.** Verbatim: *"the sheet on screen reports `overhang=fits`, so
+  the correction this check exists to verify was never exercised. **That is the
+  expected result on most machines**: the scale mode defaults to Fit, which does
+  not clip."* Everything in that sentence is honest — it measured, it printed
+  `clipped=Some(0) claim=none:0 overhang=fits`, it named the mechanism. And it
+  means the check has almost certainly **never run its assertion on any sweep
+  since it was written**, because the condition it needs is one the operator
+  would have to change a setting to produce.
+
+  ⇒ **Triage a SKIP by asking what would have to be true for the assertion to
+  run, and whether the check is in a position to MAKE it true.**
+
+  | the SKIP says | verdict |
+  |---|---|
+  | "the document lacks the feature" | fixture defect — repair the input |
+  | "the default setting does not produce the condition" | **the check is inert** — it must drive the setting itself, not wait for it |
+  | "expected on most machines", "usually", "on a typical setup" | any hedge about the *environment* is the check announcing it was written to be skipped |
+
+  This is the mirror of the recorded *unevidenced excuse* defect. There, an
+  absence was explained without being measured, so nobody investigated. Here the
+  absence **was** measured, the explanation is **true**, and still nobody
+  investigates — because a precise SKIP reads as diligence. A clean
+  `passed=N failed=0` line is exactly the invitation to skip the work of reading
+  sixteen messages one at a time.
+
+  ★ Two more of the sixteen are not harness defects at all and must not be
+  "repaired": `a_save_that_would_produce_blank_pages_is_refused` is reporting a
+  **fixed engine** and should be deleted (the guard stays), and
+  `removing_embedded_fonts_reaches_the_document` is reporting a **correct
+  refusal**. Counting either as a harness defect inflates the repair list with
+  work that makes the suite worse.
+
+  ⚠ A second check — `the_print_window_opens_on_the_settings_you_last_used` —
+  skipped because *"the click on `ribbon.tab.file` produced no
+  `ribbon-tab-activated tab=file` line"*. That File-tab route has been on the
+  housekeeping list since an earlier sweep as a curiosity. Two checks blocked by
+  it makes it a **suite-wide blocker**; fix it before the per-check fixtures.
+
+- **★★★ 2026-09-12 — a human-readable landing page was written from the
+  program, audited against `FEATURES.md` bullet by bullet, and FIFTEEN of its
+  claims came back wrong. None of them was a lie anybody told on purpose.**
+
+  Ken asked for the repository front page to be rewritten for ordinary readers
+  — *"sell people on the features and be concise about each one."* The draft
+  was written by someone who had spent three weeks inside this program. An
+  adversarial pass then walked **every bullet** against `FEATURES.md` and a grep
+  of the source. Result: **2 claims outright false, 13 partly false**, against
+  about twenty that were correct and cited.
+
+  The two false ones are the instructive pair, because both were *inferred from
+  the shape of a feature that really does exist*:
+
+  * *"Edit text in place and let it reflow."* Text editing in place is real.
+    **Reflow is a separate command the operator invokes**, live re-layout while
+    typing is blocked on the engine, and `FEATURES.md:787` says in terms that it
+    *"will not become automatic."* The sentence joined two true facts with a
+    connective that made a third, false one.
+  * *"You never wait for detail after moving."* The held-picture work is real and
+    measured. But `render/strategy.rs`'s own **"what it does NOT fix"** section
+    says a pan of more than a quarter of the window inside one raster's ~1.6 s
+    still arrives beyond the held picture and still shows the backdrop at its
+    leading edge. The module under the claim contained the refutation of the
+    claim.
+
+  ★★ **The thirteen partial ones are all the same shape: a FAMILY.** Every
+  single one was a sentence naming three or more members where one member was
+  absent — and the absent member is invisible, because the sentence reads as one
+  claim:
+
+  | the copy said | the member that does not exist |
+  |---|---|
+  | "Export to **PDF**, DXF, PNG, JPEG, SVG, EMF, plain text or form data" | there is no export-to-PDF command at all; PDF out is Save a copy |
+  | "position, size, colour, **line weight**" | object line weight is a **read-only fact row**; the only object-paint write is fill/stroke colour |
+  | "text fields, checkboxes, radio buttons, dropdowns, **buttons**" | a push button can be placed and authors no `/A` action, so it can never do anything |
+  | "Panels dock, undock, **tear off** and remember…" | there is no drag-to-tear; floating a panel is a *command*, and it has never been driven |
+  | "a live preview that can **pop out into its own window**" | `dialogs/print/popout.rs` has never rendered a window |
+  | "Copy and paste **any** markup" | `/Widget`, `/Popup` and `/Redact` are refused by name |
+  | "the scale is **read out of the document** where the document states one" | the only scale ever read is pdfcer's own `/PieceInfo` sidecar — there is no `/Measure` or `/Viewport` reader anywhere, so an ordinary PDF stating a scale by standard means is not read |
+  | "signatures are read **and evaluated for trust**" | trust is opt-in and **off by default**; out of the box every signature reports `NotChecked` |
+  | "pastes into Word, **Inkscape and LibreOffice** as shapes" | `imageexport.rs:89` records that LibreOffice 24.x has no route to a foreign SVG clipboard entry before 25.2, so it gets EMF; Inkscape is verified nowhere |
+
+  ⇒ **The rule that falls out: a family is a list of claims wearing one
+  sentence, and the partial members are structurally invisible to the author.**
+  The writer checks the *claim*; the reader consumes the *members*. Writing
+  "lengths, areas and angles" takes one verification in the author's head and
+  makes three promises. This is the same failure as the recorded
+  limitation-sentence defect, pointed the other way — and this direction is the
+  dangerous one, because a reader acts on a capability claim and then reports a
+  bug.
+
+  ★ **The remaining category is honest and still needs saying: BUILT AND
+  UNDRIVEN.** Four families — the image/text export formats, the comment-list
+  filters, the sticky-note pop-up, the vector clipboard — are `⬜` in
+  `FEATURES.md`: the code ships in the binary and no human or harness has driven
+  it in a window. Those were **kept in the copy** and a paragraph was added to
+  *"Status, honestly"* naming them, because withdrawing a shipped capability
+  from the page is its own kind of inaccuracy. The tick discipline only protects
+  anybody if the public page repeats it.
+
+  ⇒ **Procedure for any future public-facing page:** write it, then run a
+  separate adversarial pass whose single question is *"for each member of each
+  list, cite the row"*. Do not let the author do that pass. The draft here was
+  written by the engineer who built most of it, which is precisely why the
+  families read as obviously true.
+
 - **★★★ 2026-09-12 — the first full driven sweep in three weeks found ONE
   candidate defect in the program and THIRTY in the checks. Read that
   ratio before you read any single check's failure message.**

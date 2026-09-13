@@ -7,7 +7,7 @@
 - [The engine session runs in parallel](project_the_engine_session_runs_in_parallel_and_answers_within_the_hour.md) — it answers requests within minutes and dirties the read-only tree; that is not a violation.
 - [Always publish the latest build to OneDrive](feedback_always_publish_the_latest_build_to_onedrive.md) — **finishing work is itself the trigger**; do not weigh the cost, he has. Alternates the slots itself, so the previous survives.
 - [Never mark a release --prerelease](feedback_never_mark_a_release_prerelease_it_hides_it_from_the_front_page.md) — GitHub hides pre-releases from `releases/latest`, so the front page advertised a 3-day-old zip. Verify what HE sees.
-- [Publish the portable zip to GitHub every release](feedback_publish_the_portable_zip_to_github_every_release.md) — GitHub AND OneDrive, both, every time; and package from a CLEAN tree, the last zip says `dirty`.
+- [Publish the portable zip to GitHub every release](feedback_publish_the_portable_zip_to_github_every_release.md) — GitHub AND OneDrive both, every time; CLEAN tree; and a relative link in a shipped doc dies inside the zip.
 - [Refresh FEATURES.md before every release](feedback_refresh_features_md_before_every_release.md) — re-measure against the build, then package; he reads it to know what he has.
 - [Never defer on an external blocker](feedback_never_defer_on_an_external_blocker.md) — decompose the operation into verbs that exist; three "blockers" were never real.
 - [Use the conventional interaction, never invent one](feedback_use_the_conventional_interaction_never_invent_one.md) — the convergence of the product class IS the spec; an invented model is a defect even when it works.
@@ -20,10 +20,10 @@
 - [A backlog row is a record, not evidence](feedback_a_backlog_row_is_a_record_not_evidence.md) — verify absence claims against source; three docs said the rotate grip was missing a day after it shipped.
 - [A fixture that defeats a default does not defeat a starting state](feedback_a_fixture_that_defeats_a_default_does_not_defeat_a_starting_state.md) — an absence check is vacuous if the run already stands where the defect lands; plant it.
 - [A SKIP is not red, so a check can stop running unnoticed](feedback_a_skip_is_not_red_so_a_check_can_stop_running_unnoticed.md) — diff the SKIP set; and a one-extra-call fix needs a grep for every site.
-- [A check that cannot fail is not evidence](feedback_a_check_that_cannot_fail_is_not_evidence.md) — falsify before quoting green; make it SKIP when it never saw the mechanism.
+- [A check that cannot fail is not evidence](feedback_a_check_that_cannot_fail_is_not_evidence.md) — falsify before quoting green; a SKIP calling its own skip “expected” is an inert check.
 - [Ken's sentences are reports, not measurements](feedback_kens_sentences_are_reports_not_measurements.md) — "up to 800%" named an old setting, not a threshold; measure the boundary he names.
 - [When a measurement runs out, read a better instrument](feedback_when_a_measurement_runs_out_read_a_better_instrument.md) — an extreme-end failure is usually the harness's resolution; never widen the tolerance.
-- [A measured limit belongs to a revision, not a design](feedback_a_measured_limit_belongs_to_a_revision_not_a_design.md) — date it and name the commit; the engine removed one a day after we shipped it as permanent.
+- [A measured limit belongs to a revision, not a design](feedback_a_measured_limit_belongs_to_a_revision_not_a_design.md) — date it and name the commit — and the commit that raised our own constant updated the test, not the prose above it.
 - ["And at other junctions too" is the load-bearing clause](feedback_a_symptom_at_one_zoom_is_rarely_one_bug.md) — one symptom hid seven causes; keep hunting after the first reproduces.
 - [Never drive the published build](feedback_never_drive_the_published_build.md) — the suite's side effects land in Ken's own saved state; copy the exe to scratch instead.
 - [Learn a reference app by photographing it](feedback_learn_a_reference_app_by_photographing_it.md) — Word/Acrobat are installed and their layout rules are in no API; resize and capture, both apps, same widths.
@@ -105,3 +105,5 @@
 - [A document that quotes its measurement command can be broken by it](feedback_a_document_that_quotes_its_measurement_command_can_be_broken_by_it.md) — a verbatim newline delimiter split a table row for six days; only a renderer can see it.
 - [A fix that names its victims can still miss one](feedback_a_fix_that_names_its_victims_can_still_miss_one.md) — a guard on the write path does not cover the DELETE path; reset to the seed, never remove.
 - [A stopped background task is a claim about the wrapper](feedback_a_stopped_background_task_is_a_claim_about_the_wrapper.md) — the sweep ran an hour after it was "killed"; prove it stopped before planning a resume.
+- [A capability claim in product copy needs the same citation as a limitation claim](feedback_a_capability_claim_in_product_copy_needs_the_same_citation_as_a_limitation_claim.md) — "lengths, areas and angles" was invented from the shape of the feature; Area and Angular are not shipped.
+- [A running sweep forbids the obvious use of its own ninety-five minutes](feedback_a_running_sweep_forbids_the_obvious_use_of_its_own_ninety_five_minutes.md) - editing any .rs or .toml aborts every remaining chunk; markdown and fixtures are safe.

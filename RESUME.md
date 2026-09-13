@@ -26,17 +26,20 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-12 07:16 (the release cut) |
+| What | Command | Value, 2026-09-13 00:40 (the release cut) |
 |---|---|---|
-| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `ad73160` |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `ad73160` — ★ **level with the pin**, for the first time in four releases. Level is the only state in which a sentence of the form *the engine cannot do X* is safe to write. |
-| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260912.1` - cut 2026-09-12 07:16, 15 commits, verified as what `releases/latest` advertises |
-| Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | 213 (the sweep chunks 211 and runs 2 from the ALONE table separately) |
-| Gates | `bash tools/gates/run-all.sh` | **41 passed, 0 failed, 0 skipped** — ⚠ **41 gates are registered, not 39**; the runner prints its own tally and that is the only figure to quote. A hand-written 39 stood here and in `FEATURES.md` while `cargo fmt` and `cargo clippy` were red. — ★★ up four, and `check-pin-citation` went **red** on the run before this table was patched, naming both stale pin citations. It reads the row above. |
-| Unit tests | `cargo test --workspace` | **4,199 passing**, 51 ignored — summed over 24 `test result:` lines, which is the only method that counts this workspace correctly. |
-| Source files | `find crates -name '*.rs' \| wc -l` | 777 |
-| Backlog register | `python tools/walk-engine-backlog.py` | 172 rows — wanted 35 / blocked 8 / unknown 0 / declined 13 / **shipped 116** |
-| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | 33 — ★ **one reply is genuinely unconsumed and it is meant to be**: `reply_G007` accepted the topic-key convention itself, asked nothing and delivered nothing, so a `done_G007` would acknowledge an acknowledgement. Leaving it red is what keeps the *reply with no done* check falsifiable. |
+| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `d86cb19` |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `d86cb19` — ★ **level with the pin.** Level is the only state in which a sentence of the form *the engine cannot do X* is safe to write. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. |
+| Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | `0.53.0` |
+| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260912.1`, cut 2026-09-12 07:16. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. |
+| Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **220** (the sweep chunks 219 and runs 1 from the ALONE table separately — its own first line says `sweeping 219 checks in chunks, plus the ALONE table`) |
+| Gates | `bash tools/gates/run-all.sh` | **41 passed, 0 failed, 0 skipped** — 41 registered. ★ `check-pin-citation` went **red** on the run before this table was rewritten, naming both stale pin citations in `FEATURES.md` and here. It reads the row three above. |
+| Unit tests | `cargo test --workspace` | **4,239 passing, 0 failed, 51 ignored, 4,290 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,290. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. |
+| Source files | `find crates -name '*.rs' \| wc -l` | 785 |
+| Backlog register | `python tools/walk-engine-backlog.py` | 173 rows — wanted 35 / blocked 8 / unknown 0 / declined 14 / **shipped 116** |
+| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | 33 — newest mtime **Sep 12 03:55**, and the pin was committed Sep 12 17:59, so **nothing on the channel is newer than the build** and there is no reply to triage. ★ `reply_G007` stays unconsumed on purpose: it accepted the topic-key convention itself, asked nothing and delivered nothing, so a `done_G007` would acknowledge an acknowledgement. |
+| Registered commands | `grep -rhoE '\bcommand\(' crates/pdfcer-gui/src/shell/commands/catalog/ \| wc -l` | 162 |
+| Dockable panels | `grep -n 'pub const ALL' crates/pdfcer-gui/src/panels/mod.rs` | 13 |
 
 ⚠ **The check-count command was wrong in this very table.** `--list` prints
 **two** lines per check plus a header, so `wc -l` answered 434 where the
@@ -86,62 +89,103 @@ of the day"* and it was the fourth. If you need the count, `gh release list`.
 
 ---
 
-## ★★★ The sweep RAN — 213 checks, and what it changes
+## ★★★ The sweep ran again — 220 checks, and NOTHING went green to red
 
-**2026-09-12, 04:34, against this exact binary.** The first full driven sweep
-in three weeks, and the first one any release has ever had.
+**2026-09-12 22:42 — 2026-09-13 00:22, against the binary that ships,
+taking the real cursor and keyboard for one hour forty.** The second full
+driven sweep in a day, and the first run after a tranche of harness repairs
+landed.
 
 ```
-=== TALLY passed=162 failed=11 skipped=40   (213 checks)
+=== TALLY passed=185 failed=4 skipped=31 codes: rc=1 rc=3   (220 checks)
 ```
 
-**1 application defect. 30 harness defects.** Read that ratio before you read
-any single check's failure message — 21 of the 30 come from one shared fixture
-or one shared aim point, 5 checks accused a named application module wrongly,
-and 4 were refuted by a line their own trace already contained.
+Against the morning's `passed=162 failed=11 skipped=40` over 213 checks:
+**failures 11 → 4, skips 41 → 31, and not one check went from green
+to red.** That last clause is the one worth having. A release is allowed to
+ship with known failures standing; it is not allowed to break something that
+was measured working, and the only way to tell those apart is to run the whole
+suite rather than the part that changed.
 
-★★★ **The one application defect was real and two days old: every canvas
-context menu deleted itself as the cursor moved onto it.** `bfc8dea`
-(2026-09-10) changed the menu's anchor from a fixed response to a per-frame
-choice, and since egui derives a popup's id from its anchor — while
-`contains_pointer` is layer-aware, so an open menu makes its own anchor stop
-containing the pointer — the menu re-attached under an id nobody opened and
-`Memory::end_pass` dropped it. **Silent: no close call, no event, no trace
-line.** Fixed, falsified, unit-tested, and written up in `HANDOFF.md` §10 and
-`D:/dev/rag/egui/`. ⚠ It survived 4,193 unit tests and 41 gates because **no
-driven check had ever activated a `menu.item.*` row** — publishing a rect and
-being clickable are different claims.
+★★★ **All four remaining failures are defects in the CHECK, not the
+program, and each is written up with the line of its own evidence that refutes
+it — `SWEEP_REPAIRS.md`, rows R4, R6, R8 and R9.** Read that file before
+investigating any FAIL in this suite. The clearest of the four: a check
+reported that *the shell built no plan* on a click into real text, and three
+lines above its own assertion the trace shows the shell detect no run under
+the click, convert the gesture to an Add, place the text and disclose the font
+substitution off-canvas exactly as rule 4 requires. Four correct behaviours
+read as silence, because the oracle greps three event names and `add-text` is
+not one of them.
 
-⇒ **The harness repair list is now the biggest single body of owed work in
-this repository**, and it is all `.rs`, none of it blocked on the desktop, so
-it can be done at any time. It is item 2 under *Do next*.
+### The SKIP diff, in both directions, because a SKIP is not red
+
+```
+comm -23 now morning  ->  pages_stay_drawn_when_you_scroll_back     (1 new)
+comm -13 now morning  ->  11 names the repairs turned back ON
+```
+
+Baselines: `target/scratch/sweep-skips-2026-09-12.txt` (41 names) and
+`sweep-fails-2026-09-12.txt` (11); tonight's are `sweep-skips-now.txt` (31)
+and `sweep-fails-now.txt` (4). **Do this diff before quoting any tally, in
+both directions.** A previously-passing check falling into a SKIP moves the
+`failed=` figure not at all.
+
+★★ **All eleven reactivated checks PASSED**, which is what discharges
+both items that used to sit in the section below. And the one new SKIP is not
+a regression — it is `SWEEP_REPAIRS.md` R10, a check finally given the
+eight-page document it had been asking for that still could not reach its
+subject, because the page cache **fills itself by the very act of scrolling
+through it**. Its skip message blames the document and the view mode; its own
+trace falsifies both (`pages=8`, `display=continuous`).
+
+⇒ **The harness and doc-drift registers are now the biggest owed body of
+work in this repository**, all of it `.rs` or markdown and none of it blocked
+on the desktop: `SWEEP_REPAIRS.md` (10 rows plus two appendices) and
+`DOC_DRIFT.md` (12 rows, S11 the highest-leverage). That is item 2 under
+*Do next*.
 
 ---
 
-## ⚠ Two things still owed against the shipped build
+## ✓ Nothing is owed against the shipped build — both items discharged
 
-The sweep is no longer one of them — it ran — and **the three off-page
-pointer checks are discharged: all three PASSED in it**, on their own
-`off-page-object.pdf` fixture. Two items are left, and only the first needs
-the desktop.
+This section carried two items for a week and the sweep closed both. It is
+kept, empty, with the evidence, because *"we drove it and it worked"* is the
+only sentence that retires a *wired-not-driven* caveat, and the next session
+has to be able to tell that apart from the caveat being forgotten.
 
-1. **The bold ladder is WIRED, NOT DRIVEN.** Shipped in `.3` with that caveat
-   printed in his release notes. The unit evidence is strong (the assertion
-   moved from *"an edit happened"* to *"the run's `/Font` resource key changed"*
-   and was falsified by putting the old call back), but nobody has pressed Bold
-   on a title block in the running program. **If he reports bold misbehaving,
-   this is the first place to look.**
-   ★★ **And the sweep did not discharge it, which is a sharper fact than
-   “not driven yet”:** the three checks that would have
-   — `restyling_selected_text_reaches_the_document`,
-   `the_face_chooser_offers_a_face_the_document_does_not_contain`,
-   `the_format_tab_offers_font_controls_for_swept_text` — all ran and all
-   **skipped**, each saying so honestly: the shared `--doc-point` selected a
-   `Path`, not text. ⇒ The repair is an aim point on text, not a rerun.
-2. **The deep-marquee adoption has no driven check at all.** Our duplicate
-   `hit_test_rect` is deleted and the engine's `hit_test_rect_deep` answers
-   instead; a band and a click can no longer disagree, and nothing has confirmed
-   that by dragging one.
+1. ✓ **The bold ladder is DRIVEN now.** It shipped in `.3` with *wired,
+   not driven* printed in the operator's own release notes, and the morning
+   sweep could not discharge it because its three checks all skipped on a
+   shared aim point that selected a `Path` instead of text. All three pin
+   their own fixture now and all three PASS:
+
+   ```text
+   [PASS] restyling_selected_text_reaches_the_document
+          pins fixtures/paragraph.pdf at page 0, 120, 704
+          pdfcer-diag text-style-applied page=0 change=weight applied=1 runs=1
+   ```
+
+   That is Bold pressed in the running program and the restyle committed to
+   the open document through `format_text` — not a unit test standing in
+   for it.
+
+2. ✓ **The deep-marquee adoption is DRIVEN now**, on a scratch copy of
+   the operator's own drawing.
+   `a_marquee_over_a_table_takes_its_text_as_well_as_its_lines` drags a
+   right-to-left crossing band, and the engine's `hit_test_rect_deep` —
+   reached through `panels/objects/provider`, our duplicate `hit_test_rect`
+   having been deleted — answers with both kinds:
+
+   ```text
+   pdfcer-diag marquee-mode crossing=true mode=touched hits=3 paths=2 text=1 other=0
+   pdfcer-diag canvas-selection via=pv.marquee mod=false sel=3 level=Object
+   ```
+
+   A band and a click can no longer disagree, and that is measured now rather
+   than argued. ★ Two sibling band checks pass beside it
+   (`a_band_dragged_into_the_margin_reaches_an_object_off_the_page` and
+   `a_band_that_starts_in_the_margin_reaches_an_object_off_the_page`).
 
 ---
 
@@ -152,62 +196,63 @@ the desktop.
 > while clicking a stamp did nothing at all. The engine's replies are an input
 > to *how* a thing gets built, never to *which* thing.
 
-1. **When the desktop frees up, drive the four owed items above** — the ladder
-   first, because it is what he was given today and what he will notice.
-2. **★★★ Work the harness repair list the sweep produced — 30 defects, all
-   `.rs`, none of them needing the desktop.** This is the largest owed body of
-   work in the repository and the cheapest, and until it is done **the next
-   sweep will report the same thirty things in thirty different words.**
+1. ★★★ **His own list, and `O186` Stage 1 is the top of it.** The deep-zoom
+   raster refusal that shipped tonight is the **symptom**; the cursor jumping
+   away from the thing he was zooming into is the **cause**, and he said so
+   himself in `FEATURE.txt` item 6. It is fully designed and not written: a
+   `visible_origin_range(strip, viewport, overhang)` in `canvas/geometry.rs`
+   returning `(-pb, (strip + pb - viewport).max(-pb))`, a confinement of
+   `doc.deep_anchor` at the end of `canvas/deep.rs`'s `if deep` block, and an
+   escape hatch in `present.rs`'s empty-`drawn` branch **before** its `return`
+   so page-flip and Ctrl+wheel still work on a blank canvas. See `DESIGNS.md`
+   §O186 for the measured anchor and the driven check it owes.
 
-   Three repairs cover most of it and each is one idea, not a list:
+   Then the seven `FEATURE.txt` rows still open, in this order — cheapest
+   first, which is how the five that shipped got shipped: **O185** (print
+   dialogue memory and Cancel) → **O181** (installed fonts in Add text, and
+   the dead Format ribbon) → **O188** (moving and deleting one text block
+   inside a group) → **O189** (bookmarks on a cross-document page drag)
+   → **O183** (the nine-part ce-dimension paragraph, part 7 first)
+   → **O178** (multi-window tab dragging) → **O182** (white seams in the
+   KUBOTA render). Designs for O181, O183, O185, O188 and O189 are in
+   `DESIGNS.md`. ⚠ **Only Ken closes a row.**
+2. ★★★ **Work the two registers. All of it is `.rs` or markdown and none of
+   it needs the desktop.** `SWEEP_REPAIRS.md` holds 10 rows — the four FAILs
+   this sweep produced (R4, R6, R8, R9), the one new SKIP (R10), and Appendix B's
+   sixteen checks that assert nothing. `DOC_DRIFT.md` holds 12 rows of this
+   project's own stale claims, dated against the commit that falsified each.
 
-   * **Give every check its own fixture, as a `const FIXTURE` beside the
-     check**, the way `off_page_census.rs` already does. `sweep-full.sh` hands
-     all 211 chunked checks `--pdf fixtures/a1-titleblock.pdf`, a file that is
-     one page, `/Rotate 0`, no AcroForm, no optional content, no transparency
-     and no removable font — and every one of those is some check's unwritten
-     precondition. Ten checks reported ten unrelated-sounding problems from
-     that one decision. Named fixtures: `four-pages.pdf`,
-     `four-pages-unrotated.pdf`, `layered-drawing.pdf`, `transparency-cmyk.pdf`,
-     `text-field-with-appearance.pdf`, `embedded-font.pdf`, `paragraph.pdf`,
-     `polyline-nodes.pdf`, `autosize-field.pdf`.
-   * **Derive the aim point from the crop box in the trace, never type it.**
-     `measure_calibrates_by_picking_two_points` missed the page by **16 points
-     out of 2,384** — a typed 2400 against a crop box ending at 2383.94.
-   * **Drive the text checks on a letter-size fixture, or at a higher zoom.**
-     ★★★ `a1-titleblock.pdf` carries 123 characters on a 2383.9 × 1683.8 pt
-     sheet and at the sweep's fit zoom **the tallest text on it is 2.4 screen
-     pixels**. Sixteen checks reported sixteen reasons for that one fact. ⚠ Any
-     future text failure on this fixture is this, until measured otherwise.
+   Three things to do first, in this order, and each is one idea rather than
+   a list:
 
-   Then the singletons, each already diagnosed:
-   `redaction.rs::click_region` must use `frame_for`/`frame_of` (a dialog click
-   that has not landed since 2026-08-21); the two zoom checks expect a thread
-   panic and should say so with `expect_thread_panic()` on `raster-limit`;
-   `double_click_text` needs the application to emit `canvas-pick-class`;
-   `signature_trust_is_reported_as_its_own_fact` never opens the Signatures
-   panel; `rotate_handle_turns_a_selection` and `shift_constrains_a_resize`
-   need aim `0,300,500`; `print_remembered` must reach the shipped defaults by
-   `sandbox::write_prefs(&dir, "")` rather than by DELETING the file — ★ the
-   write-path fix for the first-run offer was correct and simply did not apply
-   to a check that deletes instead of writing.
+   * ⇒ **Fix the File-tab route.** A File-tab click that produces no
+     `ribbon-tab-activated tab=file` blocks **two** checks, which makes it a
+     suite-wide blocker rather than a per-check defect, and it is cheaper than
+     any of the fixture work.
+   * ⇒ **`DOC_DRIFT.md` S11 — 168 hard-coded engine line citations, and
+     8 of 8 sampled land on unrelated code.** `edit.rs` grows at the head, so
+     every citation into it drifts monotonically downward. ★★★ A rotted
+     citation does not merely fail to support its claim — it **protects** it,
+     because the reader who checks it finds plausible code and stops. Cite by
+     symbol name, or pair the line with the pin.
+   * ⇒ **Give every check its own fixture, as a `const FIXTURE` beside the
+     check**, the way about thirty already do. `sweep-full.sh` hands the chunked
+     checks one shared `--pdf fixtures/a1-titleblock.pdf` — one page, no
+     AcroForm, no optional content, no transparency, no removable font, 123
+     characters on a 2383.9 × 1683.8 pt sheet whose tallest text is **2.4
+     screen pixels** at the sweep's fit zoom. Every one of those absences is
+     some check's unwritten precondition. ⚠ **Any future text failure on
+     that fixture is this, until measured otherwise.**
 
-   ⇒ **Delete** `a_save_that_would_produce_blank_pages_is_refused` and the
-   engine half of `app::save::tests::deleting_a_page_from_a_nested_document_is
-   _caught_at_the_save`: the engine is fixed, the guard walked a real four-level
-   tree and found nothing, and a check that cannot fail is not evidence. **The
-   guard itself stays** — one tree walk at save time is all that stands between
-   a regression and a file that opens in Acrobat with blank pages on the end.
-   Close `request_delete_pages_leaves_ancestor_count_stale_on_a_nested_page
-   _tree.md` with it.
-
-   ⚠ **And two of the 'harness' results are findings about the PRODUCT.** At
-   fit zoom a form field is 27.8 px wide and its corner grips eat every point
-   on it, and a 50 × 35 px check box has eight 8 px grips with 2 px of slack
-   between them. **The harness cannot start those drags and neither can the
-   operator.** Same shape as the standing finding that a slack in screen units
-   shrinks in the units he cares about. Raising the harness zoom hides it;
-   the product fix is that a grip must yield the body below some size.
+   ⚠⚠ **And two of the sweep's `harness' results are findings about the
+   PRODUCT, not the checks, and they need his verdict rather than a repair.**
+   At fit zoom a form field is 27.8 px wide and its corner grips eat every
+   point on it; a 50 × 35 px check box has eight 8 px grips with 2 px of
+   slack between them. **The harness cannot start those drags and neither can
+   he.** Same shape as the standing finding that a slack measured in screen
+   units shrinks in the units he cares about. Raising the harness zoom hides
+   it; the product fix is that a grip must yield the body below some size.
+   Tracked as O176's two open product questions.
 3. **The owed driven checks — and MEASURE the list before working it.**
    `target/scratch/driven-audit.md` (2026-09-11) is the measured register: every
    `OPERATOR_REQUESTS.md` row whose heading says *"not yet driven"*, checked
@@ -343,6 +388,9 @@ python tools/package-portable.py --no-update --verify --note "…"
 | `FEATURES.md` | What this build can do. Refreshed against the build before every release. |
 | `ENGINE_BACKLOG.md` | Every engine capability this shell lacks, with a verdict and one paragraph. |
 | `CONTINUE.md` | The driven-check backlog. |
+| `SWEEP_REPAIRS.md` | The repairs a driven sweep earned — each one a defect in the CHECK, not the app. Read before investigating any FAIL. |
+| `DOC_DRIFT.md` | Stale claims in this project's own doc comments, dated against the commit that falsified each one. |
+| `DESIGNS.md` | The designs that are argued and not yet built — O186 Stage 1, O181, O183, O185, O188, O189. Read before designing any of those; they are ★ **not** operator rulings. |
 | `D:\Dev\pdfcer\docs\core-api\index.md` | *"I want to do X — what do I call, in what order, and what will bite me?"* |
 | `D:/dev/rag/egui/` | Empirical egui findings from this codebase. Read before touching the dock or the canvas rect. |
 

@@ -587,7 +587,8 @@ fn measuring_the_offset_from_the_drawn_rect_matches_the_solved_one() {
                     assert!(
                         (measured.0 - solved.0).abs() < 1e-2
                             && (measured.1 - solved.1).abs() < 1e-2,
-                        "strip={strip:?} page={page:?} origin={origin:?} off={off:?}: measured \n                             {measured:?} vs solved {solved:?}"
+                        "strip={strip:?} page={page:?} origin={origin:?} off={off:?}: measured \
+                             {measured:?} vs solved {solved:?}"
                     );
                 }
             }
@@ -635,7 +636,8 @@ fn the_strip_origin_is_the_plain_expression_wherever_that_expression_is_exact() 
                 let symbolic = strip_origin_offset(display, vp, avail, 0.0);
                 assert!(
                     (plain - symbolic).abs() < 1e-3,
-                    "display={display} vp={vp} avail={avail}: plain {plain} vs symbolic \n                         {symbolic}"
+                    "display={display} vp={vp} avail={avail}: plain {plain} vs symbolic \
+                         {symbolic}"
                 );
             }
         }

@@ -778,7 +778,10 @@ fn part_a(
     // The state IS entered. Everything below is a claim about it.
     if state.display != "continuous" {
         return Err(Error::new(format!(
-            "the strip reported {beyond} unorderable visible page(s), but by then the canvas \n             said its display was `{}` and not `continuous`. `visible >= 2` below would be \n             counting the two halves of a SPREAD rather than a page and its neighbour down the \n             strip, which is a different state from the one O186 is about. SKIPPED.",
+            "the strip reported {beyond} unorderable visible page(s), but by then the canvas \
+             said its display was `{}` and not `continuous`. `visible >= 2` below would be \
+             counting the two halves of a SPREAD rather than a page and its neighbour down the \
+             strip, which is a different state from the one O186 is about. SKIPPED.",
             state.display
         )));
     }

@@ -112,3 +112,38 @@ with every gate green.
 git — a new check is usually untracked and a revert deletes rather than
 restores. See [[never-git-checkout-to-undo-an-experiment]] and
 [[an-or-between-two-required-conditions-asserts-neither]].
+
+## ★★★ A CORRECT, WELL-EVIDENCED SKIP CAN MARK A PERMANENTLY INERT CHECK — 2026-09-12
+
+The tell is a SKIP message that **concedes its own skip is the normal outcome.**
+
+`print_clip_claim_follows_the_preview` skipped with
+`clipped=Some(0) claim=none:0 overhang=fits` and the sentence *"that is the
+expected result on most machines: the scale mode defaults to Fit, which does not
+clip."* Everything about that message is honest — it measured, it named the
+mechanism, it printed the numbers. And it means the check **has almost certainly
+never run its assertion on any sweep since it was written**, because the
+condition it needs is one the operator would have to have changed a setting to
+produce.
+
+This is the opposite failure from [[an-unevidenced-excuse-is-worse-than-silence]]:
+there the absence was explained without being measured, so nobody investigated.
+Here the absence **was** measured, the explanation is true, and still nobody
+investigates — because a precise SKIP reads as diligence.
+
+**How to apply: triage a SKIP by asking what would have to be true for the
+assertion to run, and whether the check is in a position to MAKE it true.**
+
+- *"the document lacks the feature"* → fixture defect, repair the input.
+- *"the default setting does not produce the condition"* → **the check is inert**;
+  it must drive the setting itself, not wait for it. Same family as
+  [[a-fixture-that-defeats-a-default-does-not-defeat-a-starting-state]].
+- *"expected on most machines"*, *"usually"*, *"on a typical setup"* — any
+  hedge about the environment in a SKIP message is the mechanism announcing
+  that it was written to be skipped.
+
+⇒ A SKIP count is not a measure of unluckiness. Every SKIP is a check that did
+not run, and some fraction of them are checks that **cannot** run. The two are
+indistinguishable from the tally and distinguishable from the message, so the
+messages have to be read one at a time — which is the work a clean
+`passed=N failed=0` invites you to skip.

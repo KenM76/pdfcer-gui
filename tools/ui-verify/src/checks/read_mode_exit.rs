@@ -263,7 +263,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!("title before read mode: {first:?}"));
-    report.note(format!("title in read mode:     {last:?}"));
+    report.note(format!("title in read mode:     {last:?}")); // string-gap-exempt: a value column in a report line, not a lost continuation
 
     // --- the status bar's line ---------------------------------------------
     let Some(exit) = trace.last(EXIT_LINE) else {

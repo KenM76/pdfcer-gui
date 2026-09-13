@@ -997,8 +997,11 @@ impl PdfcerApp {
         // project has now corrected more than once.
         let fillable = doc.raster_order_fillable(doc.view.page_index, wanted_scale);
         crate::diag::trace_changed(CURRENT_UNFILLABLE_SLOT, || {
-            // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!(
+                // ui-text-exempt: a diagnostic trace slot, never displayed. The
+                // exemption sits INSIDE the macro because `cargo fmt` split this
+                // call across lines and left the comment two lines above the
+                // literal, out of the range check-ui-strings reads.
                 "current-order-unfillable page={} fillable={fillable}",
                 doc.view.page_index
             )

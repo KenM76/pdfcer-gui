@@ -582,7 +582,8 @@ mod tests {
         for guess in ["name", "type a"] {
             assert!(
                 !unexpected.to_lowercase().contains(guess),
-                "the catch-all must not advise an action for a state it does not understand:                  {unexpected}"
+                "the catch-all must not advise an action for a state it does \
+                 not understand: {unexpected}"
             );
         }
     }

@@ -66,3 +66,40 @@ Related: [[feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_brok
 [[feedback_a_harness_with_a_bad_input_produces_defects_that_do_not_exist]] —
 this is the same lesson in the driven harness rather than in a gate, and the
 2026-09-05 sweep is its largest single instance.
+
+## ★★★ A CHECK'S REPORTED RUNGS ARE WHAT IT FINISHED, NOT WHERE IT GOT TO — 2026-09-13
+
+Two of three FAILs in one sweep chunk were a tiny-skia worker panic at extreme
+zoom. The panic is **the delivered fix working**: `pdfcer-render` catches it and
+hands back `RasterizerLimit`, the canvas learns a ceiling and backs off, the
+operator gets a sentence. The engine's reply said outright that the panic text
+would keep appearing and that this is what we want. One check already declares
+`session.expect_thread_panic()` for the same wall; these two climb into it and
+do not.
+
+★★ **The near-miss is the lesson.** The engine publishes
+`MAX_GUARANTEED_REGION_SCALE = 250_000.0` as a measured floor. The check's last
+reported rung was **3,099,514 %** — which is 30,995x, an order of magnitude
+*below* the floor — so I had a write-up started saying the floor was falsified.
+The panic scale in the trace was **509,704x**: eight times *above* the floor.
+Two errors stacked: percent read as scale, and **the rung list read as the
+extent of the climb when it is only the list of rungs that completed.** The
+check was mid-climb toward the next decade when it died, and that rung never
+printed.
+
+★ Both errors pointed the same way — toward a finding against someone else's
+published constant. Two independent mistakes agreeing is not corroboration; it
+is the shape of a conclusion arrived at first.
+
+**How to apply:**
+
+- Before quoting any number out of a check's *report*, find it in the check's
+  *trace*. The report is a narrative of completed steps; the trace is what
+  happened. They diverge precisely at the failure.
+- When a number is about to contradict another project's measurement, convert
+  units **out loud**, in writing, with both forms side by side, before drafting
+  a word of the request.
+- Never let `expect_thread_panic()` stand alone: require the conversion it
+  claims — a panic followed by the refusal's own trace line — or you have an
+  assertion both outcomes satisfy. See
+  [[an-assertion-both-outcomes-satisfy-is-not-a-measurement-of-which-one-shipped]].

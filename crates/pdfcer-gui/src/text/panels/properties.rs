@@ -1067,7 +1067,8 @@ mod tests {
         let needle = format!("press {chord} ");
         assert!(
             sentence.contains(&needle),
-            "the text tool is bound to `{chord}`, so the route sentence should say              {needle:?}, and it says: {sentence}"
+            "the text tool is bound to `{chord}`, so the route sentence should \
+             say {needle:?}, and it says: {sentence}"
         );
     }
 
