@@ -29,15 +29,15 @@ drifting from a count is the defect this project has spent eight corrections on.
 | What | Command | Value, 2026-09-13 16:50 (re-measured against the build about to ship, not carried over) |
 |---|---|---|
 | Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `f37598b` — moved once since the last release, across two engine commits: a CLI-side disclosure this program does not call, and a librarian filing. **Nothing the operator can see changed with the bump.** |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `20da893` — ★ **two commits ahead of the pin, and both are documentation.** `git diff --stat f37598b..main -- ':!docs' ':!*.md'` is EMPTY, which is the measurement that makes "ahead" harmless here. ⇒ **Do not read "ahead of the pin" as "we are behind".** The question a pin row exists to answer is *may I write the sentence "the engine cannot do X"* — and the safe condition is that no CODE has landed since the pin, not that the sha matches. Measure the diff; do not compare the two strings. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. ★★★ **And "level with HEAD" is not the same as "nothing is in flight":** the request channel is not a git repository and no command in this table reads it. |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `5e17017` — ★ **three commits ahead of the pin, and all three are documentation.** `git diff --stat f37598b..main -- ':!docs' ':!*.md'` is EMPTY, which is the measurement that makes "ahead" harmless here. ⇒ **Do not read "ahead of the pin" as "we are behind".** The question a pin row exists to answer is *may I write the sentence "the engine cannot do X"* — and the safe condition is that no CODE has landed since the pin, not that the sha matches. Measure the diff; do not compare the two strings. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. ★★★ **And "level with HEAD" is not the same as "nothing is in flight":** the request channel is not a git repository and no command in this table reads it. |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | `0.53.0` |
-| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260913.2`, cut 2026-09-13 12:35, `prerelease=false`, `draft=false`, and it IS what `releases/latest` advertises — verified by reading it back rather than by having passed the right flag. ★★★ **The order matters:** commit ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. |
+| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260913.3`, cut 2026-09-13 20:25 UTC, `prerelease=false`, `draft=false`, one asset of 23,232,880 bytes, and it IS what `releases/latest` advertises — verified by reading it back rather than by having passed the right flag. ★★★ **The order matters:** commit ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **222** — ⚠ **the `$` is load-bearing and its absence answers 224.** `--list` prints a second small table, the `--exe` targets, whose rows are also two-space-indented lowercase words; without the end anchor the count silently picks up `pdfcer-gui` and `pdfcer-legacy` from it. That is a *count command* being wrong, not merely a quoted answer being stale, and it is the second of that kind here. ★ The sweep chunks 221 and runs 1 from the ALONE table separately. |
 | Gates | `bash tools/gates/run-all.sh` | **49 passed, 0 failed, 0 skipped** — 49 items, up two: `check-unit-conversion` and its self-test, which fails the build on a fresh `25.4` anywhere in the GUI outside the conversion table. ★ Four gates were RED an hour before this release and every one found a real defect in our own tree, not a false positive: a doc comment that had run together with the one above it so one test carried two tests' documentation and another carried none; an engine struct we read field-by-field and **named nowhere**, which is the condition under which a rename upstream lands as a silent behaviour change instead of a compile error; a shipped capability with no verdict row in the backlog register; and the pin citation in the two documents that quote it. |
 | Unit tests | `cargo test --workspace` | **4,259 passing, 0 failed, 51 ignored, 4,310 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,310. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. |
 | Source files | `find crates -name '*.rs' \| wc -l` | 787 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 174 rows — wanted 35 / blocked 8 / unknown 0 / declined 14 / **shipped 117**. ⚠ **Rewrite the five headings from the walker's own printed figures, never by arithmetic** — that instruction is in the walker's output because the arithmetic has been got wrong seven times. |
-| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | **40** — three arrived during this session. The newest, `reply_…keep-your-wording-and-your-control-fixture-is-the-finding`, **declines an offer we made** (to adopt the CLI's phrasing verbatim) and asks for nothing; its §2 is worth reading before writing any check whose assertion is an absence. ⚠ **Re-`ls` this folder before quoting it** — it changes faster than any other input to this project, it is in no git repository, and nothing warns you. |
+| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | **41** — four moved during this session, and the last of them is ours. `reply_…keep-your-wording-and-your-control-fixture-is-the-finding` **declines an offer we made** (to adopt the CLI's phrasing verbatim) and asks for nothing; it is consumed as `done_control_fixture_reply_CONSUMED.md`. ★★★ **A declined offer gets a `done_*` even though nothing is owed**, and that is a rule rather than politeness: a decline that lives only in a reply nobody consumed reads, six weeks later, as an open question, and the next session re-offers it. Its §2 is worth reading before writing any check whose assertion is an absence. ⚠ **Re-`ls` this folder before quoting it** — it changes faster than any other input to this project, it is in no git repository, and nothing warns you. |
 | Registered commands | `grep -rn --include='*.rs' -E 'command\(' crates/pdfcer-gui/src/shell/commands/catalog/ \| grep -vE ':\s*(///\|//)' \| wc -l` | **161** — ★★★ **the obvious command is wrong, not merely its answer.** A raw `grep -rhoE 'command\('` over that directory returns **162**, and the extra is a line of prose inside a comment in `catalog/file.rs:556` that quotes the very pattern being searched for. The build's own `pdfcer-diag shell commands=` trace is the tie-breaker and says 161. |
 | Dockable panels | `grep -n 'pub const ALL' crates/pdfcer-gui/src/panels/mod.rs` | 13 |
 
@@ -115,9 +115,19 @@ the day"* and it was the fourth. If you need the count, `gh release list`.
 
 ## ★★★ The sweep ran again — 221 checks, same four failures for the third time, and the news is in the SKIP column
 
-**2026-09-13 10:16 to 11:51, against the binary that ships, taking the real
-cursor and keyboard for about ninety-five minutes.** The fourth full driven
-sweep in two days. It did not abort.
+**2026-09-13 10:16 to 11:51, taking the real cursor and keyboard for about
+ninety-five minutes.** The fourth full driven sweep in two days. It did not
+abort.
+
+⚠ **It measured the binary built at 10:16 that morning, and TWO RELEASES have
+been cut since.** The sentence here used to read *"against the binary that
+ships"* and was true for about three hours. ★ It is deliberately not written as
+a tag: the sweep ran from a working tree between two releases, so naming either
+one would be a citation I cannot support, and *"the build of 10:16"* is the
+strongest true statement available. ⇒ **A sweep tally is a fact about one
+executable, never about the program.** The figures below still stand as the
+last FULL reading; what they do not cover is the two releases since, each of
+whose commit message carries what WAS measured for it.
 
 ```
 === SWEEP-DONE
@@ -392,21 +402,41 @@ has to be able to tell that apart from the caveat being forgotten.
    All 28 dialogues were checked and Set Scale is the class's only member.** The
    generalisation was wrong; the defect is real.
 
-   ◑ **O194 — units everywhere — is a sweep and its enumeration is DONE.**
+   ◑ **O194 — units everywhere. Enumeration DONE, step 2 DELIVERED
+   2026-09-13, steps 1/4/5 still open.**
    `UNIT_SURFACES.md` lists all 55 surfaces with `file:line`: 3 already follow
    the operator's unit, 4 offer a menu, ~18 are hard points, ~12 hard
-   millimetres. ★★★ **Step 2 does not wait on the engine and is the highest
-   return in the row: the conversions already disagree.** Six private constants
-   under two names, seven re-declared closures, two of them in `f32`,
-   inconsistent rounding ⇒ *a sheet of exactly 210.5 mm renders 210 in the page
-   thumbnail's tooltip and 211 in the print dialogue, today.* ★ **The cause is
-   the rounding RULE, not the precision** — `.round()` is half-away-from-zero,
-   `{:.0}` is half-to-even, and both paths land on exactly 210.5000000000. Stated
-   backwards on both counts until 13:30, when the two expressions were compiled;
-   the remedy therefore has to settle the rounding rule, not just share a
-   constant. ⚠ Font and type
-   sizes must be **excluded, and the exclusion written into the source**, or
-   somebody eventually offers him a font size in kilometres. ⚠
+   millimetres.
+
+   ✅ **Step 2 — the one conversion table — SHIPPED in `v0.5.0-dev.20260913.3`.**
+   `crates/pdfcer-gui/src/units.rs` is now the only place a document length is
+   converted or rounded for display, and `tools/gates/check-unit-conversion.sh`
+   fails the build on a fresh `25.4` anywhere under the GUI outside it. The six
+   private constants, the seven re-declared closures, the two `f32` paths and
+   the five DPI spellings are at **zero**; `whole()` is the only function
+   permitted to round a length. The gate has a self-test with planted
+   violations, so it cannot quietly stop finding things.
+
+   ★★★ **The defect it fixed, and the diagnosis that was wrong three times
+   before it was right.** A sheet of exactly 210.5 mm read **210** in the page
+   thumbnail's tooltip and **211** in the print dialogue. **The cause is the
+   rounding RULE, not the precision** — `.round()` is half-away-from-zero,
+   `{:.0}` is half-to-even, and both paths land on exactly 210.5000000000. It
+   was stated backwards on both counts until 13:30, when the two expressions
+   were finally compiled rather than reasoned about. ⇒ **The remedy had to
+   settle the rounding rule, not merely share a constant** — a shared constant
+   would have left the two surfaces disagreeing by exactly as much.
+
+   ★ **Two escape hatches in the gate, and the second was found by RUNNING it
+   rather than by designing it:** `NOT A DOCUMENT LENGTH:` and `ORACLE, NOT A
+   CONVERSION:`. All four real-tree hits of the second kind were independent
+   test oracles — a test that recomputes the conversion by hand is the one place
+   a second spelling is the point.
+
+   ⚠ Font and type sizes are **excluded, and the exclusion is written into the
+   source** rather than merely observed, or somebody eventually offers him a
+   font size in kilometres. So are the ce-dimension group's text height, arrow
+   size and gap, and scale-aware conversion, which is a different feature. ⚠
    `text/markup.rs` is at **exactly 1,500 lines** and must be split before it
    can be touched.
 
@@ -427,9 +457,12 @@ has to be able to tell that apart from the caveat being forgotten.
    answered / blocked"* must be spelled as a dated observation and re-measured
    before it is quoted, never as a standing property.
 
-   ⚠ What is still ours in O194 is the **whole** of steps 1 and 2 — the ~30
-   hard-`pt` and hard-`mm` surfaces, and the one conversion table. Nothing in
-   that waits on anything.
+   ⚠ **What is still ours in O194, now that step 2 has shipped**, and this
+   list is the whole remainder: **step 1** — the ~30 surfaces that still have no
+   unit control at all, which is the bulk of the row and the part he will
+   notice; **step 4**, half done — `km`/`yd`/`mi` have `ui_text`
+   abbreviations and `mm`/`cm`/`m`/`in`/`ft` do not; and **step 5**, not
+   started. Nothing in any of them waits on anything.
 
    ★★ **O195 — smart select in Review — is NOT a condition change, and the
    row's own ★ clause saying it was is struck as FALSIFIED.** The preference is

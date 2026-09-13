@@ -94,7 +94,7 @@
 - [A capability can change meaning under a stable signature](feedback_a_capability_can_change_meaning_under_a_stable_signature.md) - `is_editable` went from hard false to *is a path*.
 - [A refusal filtered on the opposite condition is never readable](feedback_a_refusal_filtered_on_the_opposite_condition_is_recorded_and_never_readable.md) - the symptom is SILENCE, which nobody reports.
 - [A substring match on another crate's prose survives a narrowing](feedback_a_substring_match_on_another_crates_prose_survives_a_narrowing.md) - the words stayed, the condition shrank.
-- [A count command can be wrong, not just its quoted answer](feedback_a_count_command_can_be_wrong_not_just_its_quoted_answer.md) — `--list | wc -l` said 434 where the answer is 213.
+- [A count command can be wrong, not just its quoted answer](feedback_a_count_command_can_be_wrong_not_just_its_quoted_answer.md) — twice; the second time it was the REPAIR that lost its `$` anchor. Look for a second table.
 - [A checker named in every document and registered in no runner](feedback_a_checker_named_in_every_document_and_registered_in_no_runner.md) — grep the runner, not the prose.
 - [A gate that crashes after its headline reads as a broken tool](feedback_a_gate_that_crashes_after_its_headline_reads_as_a_broken_tool.md) — it sent me to debug the tool while the named row sat unfixed.
 - [An assertion both outcomes satisfy measures neither](feedback_an_assertion_both_outcomes_satisfy_is_not_a_measurement_of_which_one_shipped.md) — name what the WRONG mechanism cannot produce.
@@ -118,3 +118,5 @@
 - [A comment-only edit can abort a running measurement](feedback_a_comment_only_edit_freezes_nothing_but_it_can_abort_a_running_measurement.md) — the tree is frozen during a sweep.
 - [A quotation I wrote myself can carry a line number](feedback_a_quotation_i_wrote_myself_can_carry_a_line_number.md) — not stale — never true; the claim was right and the evidence was manufactured.
 - [The thing you measured is never the thing you ship](feedback_the_thing_you_measured_is_never_the_thing_you_ship.md) — the release commit relinks the exe; 8M bytes differ, none of them behaviour.
+- [A control differs in exactly one property, and an absence needs a witness](feedback_a_control_must_differ_in_exactly_one_property_and_an_absence_needs_a_witness.md) — a healthy file satisfies the absence three ways at once.
+- [A type reached only by field access is invisible to the drift gate](feedback_a_type_reached_only_by_field_access_is_invisible_to_the_drift_gate.md) — a doc-comment mention silences it and buys nothing; write the binding.

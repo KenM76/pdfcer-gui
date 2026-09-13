@@ -2065,14 +2065,26 @@ next reader will find it rather than deleting it.
 
 ---
 
-## 11b. The next engine bump — `3e73a02` ⇒ `4851316`, planned and deliberately not taken
+## 11b. ✅ TAKEN — the `3e73a02` ⇒ `4851316` bump, and the two since
 
-**Written 2026-09-13, while the ninety-five-minute sweep was still running.**
-It is filed here rather than done because of a rule this project keeps
+> ★★★ **VERDICT 2026-09-13, afternoon: this was taken, shipped and driven, and
+> the lock has moved twice more on top of it.** The pin is now **`f37598b`**,
+> and the engine's `main` is three DOCUMENTATION commits ahead of that — the
+> code diff against HEAD is empty, measured with
+> `git diff --stat f37598b..main -- ':!docs' ':!*.md'`. ⇒ **Do not read the
+> plan below as outstanding work.** It is kept because it is the reasoning
+> behind how the port was done, and a superseded plan with a dated verdict on
+> top is worth more than a deleted one. ⚠ The heading used to read *"planned
+> and deliberately not taken"*, which is the single most dangerous kind of
+> stale sentence in this file: a sentence that instructs.
+
+**Written 2026-09-13 morning, while the ninety-five-minute sweep was still
+running.** It was filed rather than done because of a rule this project keeps
 re-learning: **a pin moved after a measurement makes every number in that
 measurement a statement about a program that no longer exists.** The pin was
-taken at 09:40, the notice arrived at 10:31, the sweep ran 10:16 to 11:51. Ship
-the measured build; take this as its own commit immediately afterwards.
+taken at 09:40, the notice arrived at 10:31, the sweep ran 10:16 to 11:51. The
+instruction was: ship the measured build, then take this as its own commit
+immediately afterwards. **That is what happened.**
 
 Source: `open/notice_2026-09-13-three-more-all-accessors-are-slices-and-one-deliberately-is-not.md`.
 It is a **notice**, not a reply — nothing is owed back. The engine batched the

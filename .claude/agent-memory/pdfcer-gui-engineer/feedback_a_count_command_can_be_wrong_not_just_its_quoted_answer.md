@@ -28,3 +28,22 @@ formatting, not about the subject. Same family as
 [[a-proxy-condition-survives-one-correction]] and
 [[a-check-that-cannot-fail-is-not-evidence]]: ask what the mechanism READS,
 not whether it ran.
+
+---
+
+**Second instance, 2026-09-13, and it is the REPAIR that was mis-transcribed.**
+The corrected command is `grep -cE '^  [a-z0-9_]+$'`. Written without the
+trailing `$` it answers **224** where the answer is **222**, because `--list`
+prints a *second* small table -- the `--exe` targets -- whose rows are also
+two-space-indented lowercase words, so `pdfcer-gui` and `pdfcer-legacy` are
+counted as checks. Three different numbers were in circulation (221 carried in
+the table, 222 true, 224 from the loose pattern) and the instinct was to pick
+one. **Diagnose instead: `--list | sed -n '1,12p'` and look for a second
+table.**
+
+* The general form: **a repair to a measurement command has an anchor, and the
+anchor is the whole repair.** An end-anchor, a `--include`, a `-w`, a
+`':!docs'` pathspec -- each is the part that makes the command mean what the
+prose beside it says, and each is the part a re-typing drops. If a count comes
+out slightly high, look for a second section of the same output rather than for
+a new item.
