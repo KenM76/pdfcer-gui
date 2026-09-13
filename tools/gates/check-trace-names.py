@@ -94,6 +94,14 @@ import pathlib
 import re
 import sys
 
+# ★ Assembled from `chr()` rather than written inline, and deliberately: the
+# defect mechanism 4 catches is a backslash that did not survive a patch
+# script's quoting, and a gate written the way the bug was written is a gate
+# that can acquire the same bug.
+BS = chr(92)
+NL = chr(10)
+WS = "[ " + chr(9) + chr(13) + NL + "]*"
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC = ROOT / "crates" / "pdfcer-gui" / "src"
 EXEMPT = "trace-name-exempt:"
@@ -122,12 +130,60 @@ TRACE_CALL = re.compile(r"\btrace(?:_on_change|_changed)?\s*\(")
 # than guessed: the longest gap in this crate is a `trace_on_change` whose slot
 # name, closure header and two exemption comments precede the literal.
 TRACE_WINDOW = 400
+# What may sit between a trace call and its format literal, and nothing else.
+#
+# This is what lets mechanism 4 be ANCHORED at the call rather than searching
+# forward from it, which is the difference between a rule that cannot fail and
+# one that can:
+#
+#   * whitespace;
+#   * closure syntax -- `|`, `{`, and the `,` after a slot name;
+#   * a simple double-quoted string, which is `trace_on_change`'s slot name;
+#   * whole `//` comment lines, of which the literal this was written for has
+#     fifteen above it.
+#
+# None of those can contain a `format!`, so an anchored match either finds the
+# literal belonging to THIS call or finds nothing -- it can never walk forward
+# into an unrelated one. A larger `TRACE_WINDOW` would have traded this
+# mechanism's false negative for a false positive; the anchor trades it for
+# nothing.
+#
+# A trace whose closure does not use `format!` (a bare `"...".to_owned()`) is
+# simply not matched, and so is not checked. That is deliberate: such a literal
+# is written in one piece and has no continuation to double.
+TRACE_PREFIX = (
+    "(?:[ " + chr(9) + chr(13) + NL + "|{,]"
+    + '|"[^"' + NL + ']*"'
+    + "|//[^" + NL + "]*" + NL
+    + ")*"
+)
 # Prefixes an author uses to tell the future the name is not meant to stay.
 # `test` is deliberately NOT here: it is an ordinary English word and a trace
 # about a self-test would be a legitimate use of it, which is this project's
 # recorded failure mode *a gate keyed on a name is discharged by prose* in
 # reverse — a rule so broad it has to be exempted becomes a rule nobody trusts.
 SCRATCH_PREFIXES = ("tmp", "temp", "dbg", "debug", "xxx", "todo", "fixme", "hack")
+# ★★ The whole BODY of a trace call's format literal -- escapes, continuations
+# and Debug-quoted fields included.
+#
+# Mechanisms 1 and 3 want the first token; mechanism 4 wants everything, because
+# what it looks for can sit anywhere in the line. The alternation is ordered so
+# that an escape pair is consumed before a bare character, which is what stops a
+# `"` inside the literal (`name={n:?}` prints one) from ending the match early.
+#
+# Built by concatenation for the same reason `BS` is: a regex about backslashes,
+# written with backslashes, is a thing a patch script can silently corrupt.
+#
+# WARNING: ANCHORED, not searched. See `TRACE_PREFIX` and the note on it -- the
+# first cut of this searched forward within `TRACE_WINDOW` and could not fail.
+TRACE_LITERAL = re.compile(
+    TRACE_PREFIX
+    + "format!"
+    + re.escape("(")
+    + WS
+    + "(?://[^" + NL + "]*" + NL + WS + ")*"
+    + '"((?:[^"' + BS + BS + "]|" + BS + BS + "(?:.|" + NL + "))*)" + '"'
+)
 
 
 def looks_like_scratch(token: str) -> bool:
@@ -150,6 +206,31 @@ def looks_like_scratch(token: str) -> bool:
     if any(ch.isupper() for ch in token):
         return True
     return token.lower().startswith(SCRATCH_PREFIXES)
+
+
+def split_across_lines(body: str) -> bool:
+    """Whether a trace literal would emit a literal backslash, breaking the line.
+
+    In Rust source a SINGLE backslash at the end of a line is a
+    **continuation**: the newline and the following indentation are dropped and
+    the literal stays one line. That is how every long trace line in this crate
+    is written. TWO backslashes are a literal backslash, and whatever follows --
+    a real newline, in the case this was written for -- is emitted verbatim.
+
+    So the tell is a pair of backslashes, and the check is on the RAW literal
+    body rather than on the emitted string, because the emitted string is
+    something only a running program has.
+
+    It also fires on a deliberate newline escape or a Windows path in a trace,
+    and that is wanted: a reader splits the trace on lines, so an escaped
+    newline has exactly the same consequence as a real one, and a path in a
+    trace should be forward-slashed anyway.
+
+    ★ A pure function of the body, so the self-test can falsify it without a
+    filesystem -- the half of a checker that most often goes untested and
+    therefore most often cannot fail.
+    """
+    return BS + BS in body
 
 
 def self_test() -> int:
@@ -204,7 +285,69 @@ def self_test() -> int:
         "mechanism 3 flags a PDF content stream — the false-positive flood that "
         "made the first cut of this rule unusable"
     )
-    print("check-trace-names: SELF-TEST PASS - 5 planted inputs, all as expected.")
+    # --- mechanism 4 -----------------------------------------------------
+    #
+    # The planted input is the real defect, reduced: a trace literal whose
+    # continuation backslash was doubled by a patch script.
+    broken = (
+        'crate::diag::trace(|| format!("scale-seeded a={x} ratio=100 '
+        + BS + BS + NL + '     basis={b}"));'
+    )
+    hit = TRACE_LITERAL.match(broken, broken.index("(") + 1)
+    assert hit is not None, "mechanism 4 could not find the format literal at all"
+    bodies = [hit.group(1)]
+    assert split_across_lines(bodies[0]), (
+        "mechanism 4 did not see a doubled continuation -- the exact defect it "
+        "was written for, which made a driven check report the opposite of the "
+        "truth while quoting the truth in its own message"
+    )
+    good = (
+        'crate::diag::trace(|| format!("scale-seeded a={x} ratio=100 '
+        + BS + NL + '     basis={b}"));'
+    )
+    hit = TRACE_LITERAL.match(good, good.index("(") + 1)
+    assert hit is not None, "mechanism 4 lost the literal on a CORRECT continuation"
+    bodies = [hit.group(1)]
+    assert not split_across_lines(bodies[0]), (
+        "mechanism 4 flags an ordinary Rust line continuation, which is how "
+        "every long trace line in this crate is written -- it would fail the "
+        "build on correct code, which is how a gate gets switched off"
+    )
+    quoted = 'crate::diag::trace(|| format!("scale-seeded name={n:?} unit={u:?}"));'
+    hit = TRACE_LITERAL.match(quoted, quoted.index("(") + 1)
+    assert hit is not None and not split_across_lines(hit.group(1)), (
+        "mechanism 4 mis-parses a literal carrying Debug-quoted fields, which "
+        "most trace lines in this crate do"
+    )
+    # The regression that made the first cut of mechanism 4 unable to fail: a
+    # long explanatory comment block between the call and its literal. The real
+    # one is fifteen lines; 400 characters is enough to break a windowed
+    # search, and the anchored form does not care how long it is.
+    commented = (
+        "crate::diag::trace(|| {" + NL
+        + "    // ui-text-exempt: diagnostic trace." + NL
+        + "    //" + NL
+        + "    // " + ("x" * 400) + NL
+        + '    format!("scale-seeded a={x} ' + BS + BS + NL + '        b={y}")' + NL
+        + "});"
+    )
+    hit = TRACE_LITERAL.match(commented, commented.index("(") + 1)
+    assert hit is not None, (
+        "mechanism 4 cannot reach a literal under a long comment block -- the "
+        "exact shape it failed on when first written, where it printed PASS "
+        "over the live defect it had just been written for"
+    )
+    assert split_across_lines(hit.group(1)), (
+        "mechanism 4 reached the literal under a comment block and did not see "
+        "the doubled continuation in it"
+    )
+    slot = 'crate::diag::trace_on_change("dialog-focus", || format!("dialog-focus x={x}"));'
+    hit = TRACE_LITERAL.match(slot, slot.index("(") + 1)
+    assert hit is not None and not split_across_lines(hit.group(1)), (
+        "mechanism 4 cannot reach past a `trace_on_change` slot name, so every "
+        "line written through that helper would go unchecked in silence"
+    )
+    print("check-trace-names: SELF-TEST PASS - 11 planted inputs, all as expected.")
     return 0
 
 
@@ -224,6 +367,7 @@ def main() -> int:
 
     violations = 0
     scratch = 0
+    split = 0
     for path, text in blobs.items():
 
         def line_of(offset: int, blob: str = text) -> int:
@@ -274,6 +418,31 @@ def main() -> int:
             print(f"      {lines[n - 1].strip()[:110]}")
             scratch += 1
 
+        # Mechanism 4: the same trace calls, but reading the whole literal.
+        # A record that breaks across two physical lines has lost every field
+        # after the break, and no reader can tell that from a field that was
+        # never written.
+        for call in TRACE_CALL.finditer(text):
+            # `.match`, not `.search`: anchored at the call, so the literal
+            # found is the one belonging to it however long the comment block
+            # above it runs. See TRACE_PREFIX for why no window is needed here
+            # and why one would be wrong.
+            match = TRACE_LITERAL.match(text, call.end())
+            if match is None or not split_across_lines(match.group(1)):
+                continue
+            # `start(1)` -- the LITERAL's offset, not the call's. The match is
+            # anchored at the call, which on a multi-line trace can be fifteen
+            # comment lines above the thing that is wrong; a reader sent to the
+            # closure header has to find the defect themselves.
+            n = line_of(match.start(1))
+            window = "\n".join(lines[max(0, n - 9):n + 2])
+            if EXEMPT in window:
+                continue
+            rel = path.relative_to(ROOT).as_posix()
+            print(f"  {rel}:{n}: this trace literal emits a literal backslash")
+            print(f"      {lines[n - 1].strip()[:110]}")
+            split += 1
+
     if scratch:
         print(f"""
 {scratch} trace name(s) read as a debugging leftover rather than a diagnostic.
@@ -293,6 +462,30 @@ If it genuinely must keep the name, say so on the line or in the comment block
 above it with `{EXEMPT}` and the reason.
 """)
 
+    if split:
+        print(f"""
+{split} trace literal(s) would emit a literal backslash, breaking the line.
+
+A trace line is a RECORD. `Trace::parse` keys on the `pdfcer-diag` prefix, so a
+line that breaks in the middle does not continue -- the remainder is not a trace
+line at all, every field after the break is invisible to every reader, and the
+field the break lands in comes back with a stray backslash glued to it, so a
+numeric field stops parsing.
+
+Measured on 2026-09-13: `scale-seeded` lost `basis` and `unit` this way and
+returned `ratio_real` as an unparseable string. The driven check reading it
+reported *"the window was not seeded from the document at all"* about a window
+that had been seeded correctly -- a confident false negative, which is the same
+failure shape mechanism 1 exists for.
+
+In Rust a SINGLE backslash before a newline is a continuation and is how every
+long trace line in this crate is written. Two is a literal backslash. If the
+doubling came from a patch script, its payload was a raw string -- this
+project's standing note on that is in its agent memory.
+
+If a backslash genuinely belongs in the line, say so with `{EXEMPT}`.
+""")
+
     if violations:
         print(f"""
 {violations} trace line(s) share a first token with a `vector_edit` label.
@@ -310,12 +503,12 @@ block above it with `{EXEMPT}` and the reason.
 """)
         return 1
 
-    if scratch:
+    if scratch or split:
         return 1
 
     print(
         f"check-trace-names: PASS - {len(labels)} funnel labels, no collisions, "
-        f"no scratch names."
+        f"no scratch names, no split lines."
     )
     return 0
 

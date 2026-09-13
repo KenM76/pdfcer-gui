@@ -12,7 +12,7 @@
 //!
 //! | family | job | where it lives now |
 //! |---|---|---|
-//! | `open_*` / `close_scale` | **build** a dialog from defaults, a picked path, or a document survey, and decide whether it may exist at all | **this file** |
+//! | `open_*` / `deliver_*` | **build** a dialog from defaults, a picked path, or a document survey, and decide whether it may exist at all -- and hand a canvas gesture's answer back into one that is already open | **this file** |
 //! | `ask_*` / `take_*_answer` / `show` | carry a **question** to the operator and its **answer** back to `PdfcerApp`, and drive the per-frame draw-and-drain loop | `dialogs/mod.rs` |
 //!
 //! That is not a mechanical halving. The two families have different callers
@@ -248,35 +248,88 @@ impl DialogsState {
     /// operator has half typed, and re-opening would also re-capture the active
     /// group — so a group change made while the dialog was up would silently
     /// redirect the calibration.
+    ///
+    /// ★ **It destructures the document rather than testing for one** — O192.
+    /// This read `if !matches!(status, Status::Open(_))`, throwing away the
+    /// `OpenDoc` it had just proved it had, which is the mechanical reason the
+    /// Set-scale window was the only surface in the application that could not
+    /// see the number it was about to change. The guard is unchanged in
+    /// meaning; it now keeps what it checked.
     pub fn open_scale(&mut self, status: &Status, group: pdfcer_core::dimension::GroupId) {
-        if !matches!(status, Status::Open(_)) {
+        let Status::Open(doc) = status else {
             return;
-        }
+        };
         if self.scale.is_some() {
             return;
         }
-        self.scale = Some(scale::ScaleDialog::open(group));
+        self.scale = Some(scale::ScaleDialog::open(doc, group));
     }
 
+    /// **Open the Set-scale dialog with a reference line already measured.**
+    ///
+    /// The calibration path's fallback entry point: a two-point pick completed
+    /// with no Set-scale window open to hand the answer to.
+    ///
+    /// # ★ It REPLACES an open dialog, where [`Self::open_scale`] refuses to
+    ///
+    /// That guard exists so a second press of the ribbon control does not
+    /// discard what the operator has half typed. The situations are opposite
+    /// here: the operator asked to measure on the drawing, and they have now
+    /// finished. A guard that refused would leave them looking at a stale
+    /// window with no measurement in it — the one outcome the whole gesture
+    /// exists to avoid.
+    ///
+    /// # ⚠ This is the FALLBACK, and [`Self::deliver_scale_length`] is the road
+    ///
+    /// It used to be the only path, and being the only path was a defect: the
+    /// window was destroyed when the operator pressed *Measure it on the
+    /// drawing…* and rebuilt from defaults here, so the unit, the ratio and
+    /// the number style they had already chosen were silently discarded. The
+    /// window is no longer closed for a pick, so the ordinary route is now a
+    /// delivery into a window that never went away.
+    ///
+    /// ★★ It is kept rather than removed even though this application can no
+    /// longer reach it, because removing it would make the two-point gesture's
+    /// result depend on a window's continued existence: a pick that completed
+    /// with nowhere to land would measure the page and throw the number away.
+    /// A gesture that can silently produce nothing is worse than a redundant
+    /// constructor.
     pub fn open_scale_calibrated(
         &mut self,
         status: &Status,
         group: pdfcer_core::dimension::GroupId,
         drawn_pdf_length: f64,
     ) {
-        if !matches!(status, Status::Open(_)) {
+        let Status::Open(doc) = status else {
             return;
-        }
-        self.scale = Some(scale::ScaleDialog::calibrated(group, drawn_pdf_length));
+        };
+        self.scale = Some(scale::ScaleDialog::calibrated(doc, group, drawn_pdf_length));
     }
 
-    /// Close the Set-scale dialog, whatever state it is in.
+    /// **Hand a measured reference line back to the Set-scale window.**
     ///
-    /// Used when the operator asks to measure on the drawing: the window has to
-    /// get out of the way of the page they are about to click on.
-    pub fn close_scale(&mut self) {
-        self.scale = None;
-        self.text_annot = None;
+    /// Answers `true` when a window was there to take it, which is the caller's
+    /// signal that the fallback above is not needed.
+    ///
+    /// ★ The window is not reopened, **because it was never closed** — the same
+    /// sentence [`DialogsState::deliver_placement`] carries, and now the second
+    /// round trip in this directory that earns it. It starts drawing again on
+    /// the frame the pick tool is disarmed, with everything the operator had
+    /// already typed still in it and the measurement added.
+    ///
+    /// ⚠ It delivers into the dialog's **own** group, not into the canvas's
+    /// active authoring group. Those were the same thing before O193 gave the
+    /// window a group picker, and they are not now: an operator who opened the
+    /// window, aimed it at the detail group, and then measured a line would
+    /// otherwise have calibrated whichever group the canvas happened to be
+    /// drawing into. Nothing here has to do anything to get that right, which
+    /// is the point of delivering into the window rather than rebuilding one.
+    pub fn deliver_scale_length(&mut self, drawn_pdf_length: f64) -> bool {
+        let Some(dialog) = self.scale.as_mut() else {
+            return false;
+        };
+        dialog.deliver_measured(drawn_pdf_length);
+        true
     }
 
     /// **Open the text-annotation dialog for a just-placed annotation.**

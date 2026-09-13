@@ -26,11 +26,19 @@
 //! connected**. The chain is five links and three are frame-level:
 //!
 //! 1. a ribbon press opens the Set-scale dialog;
-//! 2. a button in it raises a request and closes the window;
+//! 2. a button in it raises a request and steps the window aside;
 //! 3. `app::frame` notices the request and arms `MeasureKind::Scale`;
 //! 4. two canvas clicks advance `ScalePick` to a completed reference line;
-//! 5. `app::frame` notices *that*, re-opens the dialog with the measured length
-//!    in it, and disarms the tool.
+//! 5. `app::frame` notices *that*, hands the measured length to the waiting
+//!    dialog, and disarms the tool -- which is what brings the window back.
+//!
+//! ⚠ Steps 2 and 5 were *close the window* and *re-open a new one* until
+//! 2026-09-13, when that was found to be discarding everything the operator
+//! had already typed. This check passed before and after, because what it
+//! asserts -- that a window is there afterwards, carrying a real measurement
+//! -- is true of both. The distinction is asserted by
+//! `set_scale_reads_the_group_it_is_about_to_overwrite`, which counts
+//! constructions.
 //!
 //! Steps 3 and 5 are edges read once per frame. Only a running window sees
 //! them.
@@ -237,7 +245,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 .to_owned(),
         ));
     }
-    report.note("the calibrate button armed the two-point pick and closed the dialog");
+    report.note("the calibrate button armed the two-point pick and stepped the dialog aside");
 
     // --- 5: pick two points on the page ------------------------------------
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;

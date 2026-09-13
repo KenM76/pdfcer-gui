@@ -472,7 +472,20 @@ pub const fn measure_instruction(kind: MeasureKind) -> &'static str {
         // to tell pdfcer the real-world value of. An operator who read
         // "then where the dimension line should sit" would wait for a third
         // click that never comes.
-        MeasureKind::Scale => "Click each end of something whose real length you know.",
+        //
+        // ★★ The second sentence is a promise about the WINDOW, in the one
+        // place an operator can read it: the Set-scale window has just
+        // disappeared off the screen, and everything they had already typed
+        // into it went with it as far as they can tell. It did not -- the
+        // window is hidden rather than closed and comes back with every entry
+        // still in it (`dialogs::scale::ScaleDialog::hidden`) -- but a
+        // correctness property nobody can see is not reassurance. Before
+        // 2026-09-13 the fear was also justified, which is why the sentence
+        // could not have been written then.
+        MeasureKind::Scale => {
+            "Click each end of something whose real length you know. \
+             The Set-scale window comes back with your entries still in it."
+        }
     }
 }
 

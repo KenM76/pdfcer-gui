@@ -89,6 +89,55 @@ pub const fn ratio_hint() -> &'static str {
      the page is a hundred of the same unit in the world."
 }
 
+/// **The group picker's label** -- `OPERATOR_REQUESTS.md` O193.
+///
+/// # Why the window needs one at all
+///
+/// The operator's report was *"there is no group dropdown"*, and the reason it
+/// is a defect rather than a missing convenience is that this window changes
+/// **one** group's scale and never said which. It was opened either from the
+/// ribbon (the group being drawn into) or from the Manage-groups panel's *Set
+/// scale...* button (the row that was selected), and those are frequently
+/// different groups -- inspecting a detail group's settings while still
+/// drawing into the plan group is an ordinary thing to want, and the panel
+/// keeps the two deliberately separate for that reason. So a window with no
+/// name on it could be, and sometimes was, aimed somewhere the operator was
+/// not looking.
+///
+/// "Set the scale of" rather than "Group", because the row then reads as a
+/// sentence with the picker as its object, and the one thing the operator must
+/// not have to infer is which drawing this number lands on.
+#[must_use]
+pub const fn group_label() -> &'static str {
+    "Set the scale of"
+}
+
+/// **The current-scale line** -- `OPERATOR_REQUESTS.md` O192.
+///
+/// The operator's report was that the window *"does not show me the scale that
+/// is already set"*. This is the half of the answer he can read; the other
+/// half is that the entry controls are now seeded from it, so the live preview
+/// under them reads the same number back (see
+/// `crate::canvas::measure::scale::ScaleEntryFields::for_group`).
+///
+/// ★ Deliberately phrased as a statement of fact about the document and not as
+/// a warning. The scale that is set is not a problem, it is the context; a
+/// window that greeted an operator with a caution every time they opened it
+/// would be the nagging the ribbon spec forbids, and he has said as much about
+/// the old GUI by name.
+///
+/// The `phrase` argument comes from
+/// [`crate::text::dimension_groups::scale_phrase`] rather than being formatted
+/// here, so this window and the Manage-groups panel cannot come to describe
+/// the same group's scale in two different ways -- including the `NeverSet`
+/// arm, which that function renders as the engine's own
+/// `NO_SCALE_DISCLOSURE` verbatim because a shell is not permitted to
+/// paraphrase it.
+#[must_use]
+pub fn current_scale(phrase: &str) -> String {
+    format!("Currently: {phrase}")
+}
+
 /// The basis row's label.
 #[must_use]
 pub const fn basis_label() -> &'static str {

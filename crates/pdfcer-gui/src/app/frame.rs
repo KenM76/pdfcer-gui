@@ -1183,8 +1183,19 @@ impl eframe::App for PdfcerApp {
                 crate::canvas::placing::cancel(&ctx);
             }
         }
+        // ★★★ **The window is NOT closed here any more**, and the line that
+        // used to close it (`self.dialogs.close_scale()`) is gone rather than
+        // moved. Arming the tool on the next statement is what hides the
+        // window, because `ScaleDialog::hidden` is derived from the armed tool
+        // and from nothing else — `canvas::placing`'s ruling, applied to the
+        // precedent that module's header names as broken.
+        //
+        // What that buys, concretely: an operator who chose metres, typed a
+        // ratio and set the number style before deciding to measure the line
+        // used to come back to a window that had forgotten all four, and one
+        // who pressed Escape mid-pick came back to no window at all. Both are
+        // now impossible to express, because there is no state to restore.
         if self.dialogs.take_scale_calibrate_request() {
-            self.dialogs.close_scale();
             crate::canvas::tool::select(
                 &ctx,
                 crate::canvas::tool::CanvasTool::Measure(
@@ -1196,17 +1207,34 @@ impl eframe::App for PdfcerApp {
                 "scale-calibrate armed=true".to_owned()
             });
         }
-        // ★ Both halves must be present, and the group is the one that can be
-        // absent. `active_group` answers `None` when no measure state exists —
-        // which cannot happen on the frame a pick completes, since completing
-        // one requires the state. Handled rather than unwrapped anyway: an
-        // `expect` here would turn an impossible ordering into a crash in the
-        // one gesture whose whole output is a number the operator is trusting.
-        if let Some(measured) = crate::canvas::measure::take_completed_scale_line(&ctx)
-            && let Some(group) = crate::canvas::measure::active_group(&ctx)
-        {
-            self.dialogs
-                .open_scale_calibrated(&self.status, group, measured);
+        if let Some(measured) = crate::canvas::measure::take_completed_scale_line(&ctx) {
+            // ★ Delivery FIRST, and the fallback only if there is nowhere to
+            // deliver to. The ordinary case is a window that is merely hidden,
+            // still holding everything the operator entered before they went
+            // to point at the page.
+            //
+            // ★★ It also fixes a bug nobody reported, by construction. The
+            // fallback resolves the group from `active_group` — the *canvas's*
+            // authoring group — and that was the only path. Since O193 gave the
+            // window its own group picker the two can differ, so an operator
+            // who aimed the window at the detail group and then measured a line
+            // would have recalibrated whatever the canvas was drawing into.
+            // Delivering into the window uses the window's group, which is the
+            // one with the operator's name on it.
+            if !self.dialogs.deliver_scale_length(measured) {
+                // No window: the pick completed with nowhere to land. Rebuild
+                // one rather than discard the measurement. `active_group`
+                // answers `None` only when no measure state exists, which
+                // cannot happen on the frame a pick completes — handled rather
+                // than unwrapped because an `expect` here would turn an
+                // impossible ordering into a crash in the one gesture whose
+                // whole output is a number the operator is trusting.
+                if let Some(group) = crate::canvas::measure::active_group(&ctx) {
+                    self.dialogs
+                        .open_scale_calibrated(&self.status, group, measured);
+                }
+            }
+            // And this is the un-hide: disarming the tool is the whole of it.
             crate::canvas::tool::select(&ctx, crate::canvas::tool::CanvasTool::Select);
             crate::diag::trace(|| {
                 format!(

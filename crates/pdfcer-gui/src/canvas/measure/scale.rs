@@ -208,6 +208,117 @@ impl ScaleEntryFields {
         }
     }
 
+    /// **Fields seeded from a group's EXISTING scale** -- O192.
+    ///
+    /// # The defect this closes
+    ///
+    /// The Set-scale window is the one surface whose entire job is to change a
+    /// number, and until 2026-09-13 it was the only surface in the application
+    /// that could not see the number it was about to change. Both of the other
+    /// constructors seed from nothing, so a group calibrated to `1:50` in
+    /// inches opened a window reading `1:100` in metres, and pressing Accept
+    /// without touching a control silently recalibrated the drawing. The
+    /// operator's words were *"the set scale dialogue does not show me the
+    /// scale that is already set"*; the sharper half of the report is the one
+    /// he did not have to say, which is that a window pre-filled with a
+    /// plausible wrong number is worse than one pre-filled with nothing.
+    ///
+    /// # What is seeded, and why the RATIO path
+    ///
+    /// The ratio path, always, whatever path the operator ends up using. A
+    /// stored [`ScaleState`] is a single number -- display units per PDF point
+    /// -- and it carries no memory of how it was entered. The real-length path
+    /// cannot be reconstructed from it even in principle: `25 ft = 42.3 pt`
+    /// and `50 ft = 84.6 pt` are the same scale, and choosing one of them to
+    /// show would be pdfcer inventing a reference line the operator never
+    /// drew. A ratio is the representation that survives the round trip
+    /// without adding information, so a ratio is what is seeded.
+    ///
+    /// [`Self::use_real_length`] is therefore left at whatever the caller's
+    /// situation implies and is **not** set here -- see the two call sites in
+    /// [`crate::dialogs::scale`]. Seeding the ratio numbers costs nothing on
+    /// the real-length path, because [`Self::entry`] reads only the three
+    /// fields belonging to the path it selects.
+    ///
+    /// # The arithmetic, and why it is exact
+    ///
+    /// [`preview_group_scale`] builds the ratio path's scale as
+    /// `(real / paper) * basis.baseline_per_point()`. Fixing `paper = 1` and
+    /// `basis = format.unit` inverts that in one step:
+    ///
+    /// ```text
+    /// real = scale / format.unit.baseline_per_point()
+    /// ```
+    ///
+    /// Setting [`Self::unit`] to `format.unit` as well makes
+    /// [`Self::in_display_unit`] the identity (`raw.unit == self.unit`), so
+    /// the value that comes back out of [`Self::preview`] is the stored
+    /// `scale` with **no** conversion applied to it in either direction. That
+    /// is the property [`tests::a_calibrated_group_round_trips_through_the_seed`]
+    /// asserts, and it is why this function sets the basis and the display
+    /// unit together rather than leaving the basis at its inch default: with
+    /// mismatched units the round trip is still arithmetically correct but is
+    /// no longer exact in floating point, and an operator who opens the window
+    /// and presses Accept without touching anything would move the drawing's
+    /// scale by a few parts in 10^16. Nobody would ever see it. It would still
+    /// be a document edit nobody asked for.
+    ///
+    /// # The three tri-state arms
+    ///
+    /// | stored state | seeded as | why |
+    /// |---|---|---|
+    /// | [`ScaleState::NeverSet`] | the [`Default`] ratio, untouched | there is no scale to show, and `NO_SCALE_DISCLOSURE` is what the window says instead |
+    /// | [`ScaleState::OneToOne`] | `1 : 1` on the unit's own basis | `1:1` back-calculates to `baseline_per_point(unit)`, which is exactly what `effective_scale` answers for this arm |
+    /// | [`ScaleState::Calibrated`] | `1 : scale / bpp(unit)` | the inversion above |
+    ///
+    /// ★ The `NeverSet` arm deliberately does **not** invent a ratio. A group
+    /// that has never been calibrated is a real state with a disclosure
+    /// sentence the engine owns (`NO_SCALE_DISCLOSURE`), and pre-filling
+    /// `1:100` over it would convert *"nobody has said what this drawing is
+    /// at"* into *"this drawing is at 1:100"* -- which is the one thing the
+    /// tri-state exists to keep distinguishable.
+    ///
+    /// ★★ A degenerate stored scale (zero, infinite, NaN -- unreachable
+    /// through this application, reachable through a hand-edited
+    /// `/PieceInfo`) falls back to the `NeverSet` seed rather than writing a
+    /// non-finite number into a `DragValue`. An `egui::DragValue` holding a
+    /// NaN is a control the operator cannot get out of.
+    #[must_use]
+    pub fn for_group(scale: ScaleState, format: NumberFormat) -> Self {
+        let unit = format.unit;
+        let base = Self {
+            unit,
+            basis: unit,
+            // An explicit display choice already made for the group is a
+            // choice, and re-offering the unit default over it would quietly
+            // revert an operator who asked for eighths. `commit` reads this
+            // field the same way.
+            fraction: Some(format.fraction),
+            ..Self::default()
+        };
+        let per_point = match scale {
+            ScaleState::NeverSet => return base,
+            ScaleState::OneToOne => unit.baseline_per_point(),
+            ScaleState::Calibrated { .. } => match scale.effective_scale(unit) {
+                Some(v) => v,
+                // Unreachable: `effective_scale` is `None` only for
+                // `NeverSet`, which the arm above already took. Spelled rather
+                // than unwrapped because an unreachable panic in a dialog
+                // constructor is still a panic in a dialog constructor.
+                None => return base,
+            },
+        };
+        let ratio_real = per_point / unit.baseline_per_point();
+        if !(ratio_real.is_finite() && ratio_real > 0.0) {
+            return base;
+        }
+        Self {
+            ratio_paper: 1.0,
+            ratio_real,
+            ..base
+        }
+    }
+
     /// The [`ScaleEntry`] these fields describe, given the optional drawn
     /// reference length `drawn_pdf_length` (points). Chooses the real-length
     /// path only when it is selected AND a drawn length is available; else the
@@ -739,6 +850,170 @@ mod tests {
         assert_eq!(preview.ratio_label, "1:100");
         // for_group_panel() pre-selects the ratio path.
         assert!(!ScaleEntryFields::for_group_panel().use_real_length);
+    }
+
+    /// **The independent calibration**, hand-stated rather than round tripped.
+    ///
+    /// `preview_group_scale` documents `Ratio { paper: 1, real: 100, basis:
+    /// Inch }` as `100/72` inches per PDF point, and that doctest is in the
+    /// engine. So a group STORED at `100/72` in inches is, by that same
+    /// definition, `1:100` -- and the seed has to say so with no arithmetic of
+    /// this crate's own in the way.
+    ///
+    /// This test exists because the round trip below cannot fail on a sign
+    /// error or a reciprocal: invert the formula wrongly in one direction and
+    /// apply it wrongly in the other, and seed -> preview still lands back on
+    /// the number it started from. Only a hand-written expected value can see
+    /// that, which is why this one is first and the round trip is second.
+    #[test]
+    fn the_seeded_ratio_reads_one_to_one_hundred_for_a_group_stored_at_that_scale() {
+        let format = NumberFormat {
+            unit: Unit::Inch,
+            ..Unit::Inch.default_format()
+        };
+        let fields = ScaleEntryFields::for_group(
+            ScaleState::Calibrated {
+                scale: 100.0 / 72.0,
+            },
+            format,
+        );
+        assert!(
+            (fields.ratio_paper - 1.0).abs() < 1e-12,
+            "paper side should be 1, was {}",
+            fields.ratio_paper
+        );
+        assert!(
+            (fields.ratio_real - 100.0).abs() < 1e-9,
+            "real side should be 100, was {}",
+            fields.ratio_real
+        );
+        assert_eq!(fields.basis, Unit::Inch, "basis must follow the group unit");
+        assert_eq!(fields.unit, Unit::Inch, "display unit must follow it too");
+        // And the label the operator reads, from the engine, not from here.
+        let preview = fields.preview(None).expect("a 1:100 seed must preview");
+        assert_eq!(preview.ratio_label, "1:100");
+    }
+
+    /// **The round trip is EXACT**, not merely close -- which is the whole
+    /// reason [`ScaleEntryFields::for_group`] sets `basis` and `unit` together.
+    ///
+    /// An operator who opens the Set-scale window on a calibrated group and
+    /// presses Accept without touching a control must write back the number
+    /// that was already there. Not a number a few parts in 10^16 away from it:
+    /// that is a document edit, with an undo step and a re-propagation of every
+    /// dimension's baked appearance stream, in response to the operator
+    /// changing nothing.
+    ///
+    /// Swept across every unit the engine offers, so a unit whose
+    /// `baseline_per_point` is an awkward number cannot be the one that breaks
+    /// it unnoticed.
+    #[test]
+    fn a_calibrated_group_round_trips_through_the_seed() {
+        for unit in Unit::all().iter().copied() {
+            // A scale with no special structure, so an accidental identity
+            // cannot pass for a correct inversion.
+            let stored = 0.013_777_31_f64 * unit.baseline_per_point();
+            let format = NumberFormat {
+                unit,
+                ..unit.default_format()
+            };
+            let fields =
+                ScaleEntryFields::for_group(ScaleState::Calibrated { scale: stored }, format);
+            let preview = fields
+                .preview(None)
+                .unwrap_or_else(|| panic!("{unit:?}: a seeded group must preview"));
+            assert_eq!(preview.unit, unit, "{unit:?}: unit must survive the seed");
+            assert!(
+                (preview.scale - stored).abs() <= f64::EPSILON * stored.abs() * 4.0,
+                "{unit:?}: round trip moved the scale from {stored} to {}",
+                preview.scale
+            );
+        }
+    }
+
+    /// **A never-set group is seeded with nothing**, and that is the point.
+    ///
+    /// Pre-filling `1:100` over a group nobody has calibrated converts *"nobody
+    /// has said what this drawing is at"* into *"this drawing is at 1:100"*.
+    /// The engine keeps those distinguishable with a tri-state and a disclosure
+    /// string it owns; a seed that guessed would throw that away in the one
+    /// window where it matters most.
+    ///
+    /// The assertion is that the fields are the DEFAULT ratio -- not that they
+    /// are any particular number -- because the default is what the window has
+    /// always shown for an uncalibrated group and this change must not move it.
+    #[test]
+    fn a_never_set_group_is_seeded_with_the_default_ratio_and_not_a_guess() {
+        let format = NumberFormat {
+            unit: Unit::Millimeter,
+            ..Unit::Millimeter.default_format()
+        };
+        let fields = ScaleEntryFields::for_group(ScaleState::NeverSet, format);
+        let default = ScaleEntryFields::default();
+        assert!((fields.ratio_paper - default.ratio_paper).abs() < 1e-12);
+        assert!((fields.ratio_real - default.ratio_real).abs() < 1e-12);
+        // The unit and basis DO follow the group even here: the group's unit is
+        // a real choice somebody made, and it is not a claim about scale.
+        assert_eq!(fields.unit, Unit::Millimeter);
+        assert_eq!(fields.basis, Unit::Millimeter);
+    }
+
+    /// **A 1:1 group seeds as `1 : 1`**, in its own unit rather than in inches.
+    ///
+    /// `ScaleState::OneToOne` answers `baseline_per_point(unit)` from
+    /// `effective_scale`, and `Ratio { paper: 1, real: 1, basis: unit }`
+    /// back-calculates to exactly that -- so this arm is the one place the
+    /// inversion is a stated identity rather than a division, and it is worth
+    /// its own test for that reason: an inversion that is wrong everywhere
+    /// except where it is trivially right would still pass the round trip
+    /// above for `OneToOne` alone.
+    #[test]
+    fn a_one_to_one_group_seeds_as_one_to_one_in_its_own_unit() {
+        let format = NumberFormat {
+            unit: Unit::DecimalFeet,
+            ..Unit::DecimalFeet.default_format()
+        };
+        let fields = ScaleEntryFields::for_group(ScaleState::OneToOne, format);
+        assert!((fields.ratio_paper - 1.0).abs() < 1e-12);
+        assert!(
+            (fields.ratio_real - 1.0).abs() < 1e-12,
+            "real side should be 1, was {}",
+            fields.ratio_real
+        );
+        let preview = fields.preview(None).expect("1:1 must preview");
+        assert_eq!(preview.ratio_label, "1:1");
+        assert!(
+            (preview.scale - Unit::DecimalFeet.baseline_per_point()).abs() < 1e-12,
+            "a 1:1 seed must back-calculate to the unit's own baseline"
+        );
+    }
+
+    /// **A degenerate stored scale falls back rather than poisoning a control.**
+    ///
+    /// Unreachable through this application -- `commit` refuses a degenerate
+    /// entry and `preview_group_scale` refuses a non-finite one -- but reachable
+    /// through a hand-edited or truncated `/PieceInfo` sidecar, which is a file
+    /// pdfcer is expected to open rather than to trust. A NaN written into an
+    /// `egui::DragValue` is a control the operator cannot type their way out
+    /// of, so the seed declines and shows the default instead.
+    #[test]
+    fn a_degenerate_stored_scale_seeds_the_default_instead_of_a_nan() {
+        let format = NumberFormat {
+            unit: Unit::Meter,
+            ..Unit::Meter.default_format()
+        };
+        for bad in [0.0_f64, -1.0, f64::NAN, f64::INFINITY] {
+            let fields = ScaleEntryFields::for_group(ScaleState::Calibrated { scale: bad }, format);
+            assert!(
+                fields.ratio_real.is_finite() && fields.ratio_real > 0.0,
+                "stored scale {bad} produced an unusable ratio {}",
+                fields.ratio_real
+            );
+            assert!(
+                fields.preview(None).is_some(),
+                "stored scale {bad} must still preview"
+            );
+        }
     }
 
     #[test]

@@ -514,6 +514,7 @@ pub mod quit_unsaved;
 /// file's digest after a LATER save, because every cheaper oracle passes
 /// against the defect it exists to catch.
 pub mod save_as;
+pub mod scale_reads_the_group;
 /// The **two** driven checks of *"give this page its own copy"*:
 /// `the_context_menu_gives_this_page_its_own_copy_of_a_shared_form` and
 /// `the_unshare_declines_when_nothing_else_draws_the_form`.

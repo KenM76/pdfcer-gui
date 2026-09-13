@@ -732,19 +732,6 @@ pub struct Frame<'a> {
 }
 
 impl DialogsState {
-    /// **Open the Set-scale dialog with a reference line already measured.**
-    ///
-    /// The calibration path's entry point, raised by the application on the
-    /// click that completes the two-point pick.
-    ///
-    /// # ★ It REPLACES an open dialog, where [`Self::open_scale`] refuses to
-    ///
-    /// That guard exists so a second press of the ribbon control does not
-    /// discard what the operator has half typed. The situations are opposite
-    /// here: the operator asked to measure on the drawing, the dialog closed
-    /// so they could, and they have now finished. A guard that refused would
-    /// leave them looking at a stale window with no measurement in it —
-    /// the one outcome the whole gesture exists to avoid.
     /// **Has a window asked to step aside?** — `OPERATOR_REQUESTS.md` O66.
     ///
     /// Read-and-clear, and it answers the page the asking dialog is placing
@@ -993,10 +980,18 @@ impl DialogsState {
         // drains it into [`Self::open_scale`] the moment the dock releases its
         // borrows. Same one-shot, same guards, one layer out.
         // ★ Takes the action queue, unlike its four neighbours. See the field.
-        // It does not take `doc`: the scale it sets belongs to a *group*, which
+        //
+        // ★★ **And it takes `doc` as of 2026-09-13.** This comment used to end
+        // *"it does not take `doc`: the scale it sets belongs to a group, which
         // is document-scoped but not page-scoped, and the entry fields need
-        // nothing from the open document at all.
-        if self.scale.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+        // nothing from the open document at all"* — and both halves of the
+        // operator's report that day were counter-examples to that last clause.
+        // The window could not show the scale already set (O192) or name the
+        // group it was aimed at (O193) for one reason: it could not see the
+        // document. The premise was that a group is a thing you *write*; a
+        // group is also a thing you *read*, and a window that only writes is a
+        // window that overwrites.
+        if self.scale.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
             self.scale = None;
         }
         // ★ Beside `scale`, below the no-document guard, and taking no `doc` —
