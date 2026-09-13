@@ -1001,6 +1001,75 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 
 ## 10. Things that will bite you
 
+- ★★★ **2026-09-13 — a FIXED path under `%TEMP%` is a cross-PROCESS race
+  that is invisible inside any single run, and it presents as a regression in
+  whichever test lost.**
+
+  Eleven test fixtures built a scratch path from a constant name. Inside one
+  `cargo test` that is safe: each name has exactly one user, and the per-caller
+  tagging two of them already carried is enough to separate THREADS. It does
+  nothing about two `cargo test` **processes**, because both have the same set
+  of callers and therefore ask for the same filenames. Two runs overlapping is
+  ordinary — a backgrounded sweep plus a foreground run, a watcher, or a second
+  suite started because the first looked stuck.
+
+  ⚠ **The symptom is what makes this expensive.** It is not *"two tests
+  collided"*. It is one unrelated assertion going red several lines downstream
+  of the real event, in whichever process lost the race, and passing on re-run.
+  That reads first as a regression in the feature that test covers and then as
+  a flake, and neither reading points at shared state. ★★★ The control run
+  proved the shape: rebuilding the **pre-fix** source and running its binary
+  twice at once named **two different victims** than the failure that opened the
+  investigation. *The casualty is whichever test lost the race*, so the same
+  defect reports a different feature broken every time.
+
+  ★★★ **And two of the eleven carried a confident note saying the hazard was
+  handled** — *"tagged per caller, because `cargo test` runs these in
+  parallel"*. True, and half. ⇒ **A note that names a hazard and fixes half of
+  it is worse than no note**: the next reader sees the hazard named, sees a
+  mechanism beside it, and stops looking. `canvas/guides.rs` had carried the
+  correct pattern (`std::process::id()` in the directory name) since it was
+  written, so the convention existed in this tree and simply was not uniform —
+  the textbook condition for a rule that lives only in prose.
+
+  Fixed and gated in `7b48dd0`. `tools/gates/check-test-temp-paths.py` is the
+  instrument. Its rule has **no taxonomy in it**: `std::process::id()` in the
+  path, or `// temp-path-exempt: <reason>`. Four helpers that were already safe
+  on a nanosecond stamp took the pid anyway, because a rule reading *"a
+  process-unique component, and here is how the gate recognises one"* contains a
+  classification, and a classification is where the next exception goes.
+
+  ⚠ **Its evidence window is derived from the code, not counted.** It starts at
+  the statement holding `env::temp_dir()` and, where that statement binds a
+  name, follows the `.push`/`.join`/`.set_extension` chain still building the
+  same path. A fixed N-line window would let a compliant neighbour vouch for a
+  bare site — precisely how `check-gate-input-scope`'s first draft reported zero
+  of three planted violations while printing PASS.
+
+- ★★★ **2026-09-13 — `build.rs` has no `rerun-if-changed` on `.git/HEAD`, so
+  the rebuild between the release commit and the packaging is a no-op and ships
+  the PRE-COMMIT stamp.**
+
+  The declared triggers are `src`, `Cargo.toml`, `../../Cargo.lock`, the two
+  Windows asset files, and `rerun-if-env-changed=PDFCER_BUILD_STAMP`. A commit
+  touches none of them. So `cargo build --release` after the commit finishes in
+  about a second, changes nothing, and the binary that gets packaged still
+  carries the dirty, pre-commit build stamp — while
+  `the_title_bar_carries_the_build_time` and `about_reports_the_build` go on
+  passing. ★ That is not a hole in those checks; the first one says so itself,
+  in its own words: *"What a passing run does NOT prove: that the stamp matches
+  when the binary was actually compiled. Nothing observable from outside can
+  establish that, and `build.rs` owns it."* They assert the **shape** reaches
+  the operator. Currency is the build system's job, and the build system was
+  not asked.
+
+  `touch crates/pdfcer-gui/build.rs` between the commit and the rebuild forces
+  it. This cost a rebuild-and-re-drive cycle on the way out of
+  `v0.5.0-dev.20260913.4`. ⇒ It is the shape worth remembering, not the fix: a
+  build system's staleness model is a **list someone wrote**, and anything not
+  on that list is invisible to it no matter how obviously it changed the output.
+
+
 - ★★★ **2026-09-13 — a change to LAYOUT SLACK changes where a document
   OPENS, not only where it can be dragged, and the whole suite will stay
   green while it does.**

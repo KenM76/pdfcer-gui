@@ -655,7 +655,7 @@ the measurement that does not change between the two frames. Both are more
 change than the symptom justifies today.
 
 ---
-## O192 — ◑ **FILED 2026-09-13** — the Set Scale dialogue never tells you what the scale is
+## O192 — ◑ **FILED 2026-09-13; BUILT AND DRIVEN 2026-09-13 (commit `3f38ef3`, shipped in `v0.5.0-dev.20260913.4`) — NOT CLOSED, that is yours** — the Set Scale dialogue never tells you what the scale is
 
 > *“Set scale dialogue box doesn't show me what the scale is currently set to
 > once I have used the Measure it on the drawing tool, it should update and show
@@ -719,6 +719,44 @@ basis, Metres display.** So a group calibrated at 1:50 in millimetres re-opens
 claiming 1:100 in inches. It is not blank; **it is confidently wrong**, which is
 worse, and is why he read it as the dialogue not knowing rather than not saying.
 
+
+### BUILT AND DRIVEN 2026-09-13 — what actually shipped, and the two defects neither row asked for
+
+**Both rows are one fix**, as the measurement below them predicted:
+`ScaleDialog` is handed `&OpenDoc` now, so the window can see the document it is
+editing. The group picker is at the top, the scale currently on the chosen group
+is written under it, and switching group re-reads that group rather than
+carrying the previous one's numbers across. ★ The groups were **already
+named**, so the naming sub-task O193 anticipated never had to be built.
+
+★★★ **A third defect, not reported, and the one that could cost him work.**
+Pressing *Measure it on the drawing…* DESTROYED the window. Choose metres, type
+a ratio, set the number style, then decide to measure a line — and all four were
+gone when it came back, because it was not the same window: `close_scale()`
+dropped it and a fresh one was built from the factory defaults. Escape mid-pick
+brought back nothing at all. The window is **hidden** now, and `hidden` is
+**derived** from whether the two-point pick is armed rather than stored, so
+Escape, a mode change, the Tool panel and the ribbon all restore it without any
+of them knowing it exists — and no state exists in which the window can be
+stranded, because none can be written down.
+
+★ **A fourth, fixed by construction:** the measured length is delivered to the
+group the *window* is aimed at, not to whichever group the canvas happens to
+have active. Before the picker existed those were always the same; the moment a
+group can be chosen they are not, and the old path would have calibrated the
+wrong one.
+
+**Driven:** `set_scale_reads_the_group_it_is_about_to_overwrite`, ten steps
+through the real binary. ★★★ Its assertion is a **count** — exactly one
+window constructed across the whole calibration — because *"the window is back
+afterwards"* is satisfied by the broken build as well as the fixed one and would
+have passed quietly for the defect's entire life.
+
+⚠ **What is NOT done, and it is the part he will look for first:** the row's
+own wording asks for the scale to update *"even before I hit apply"*, and what
+ships updates on reopen and after a calibration. Whether that is the same thing
+is his call, which is one of the two reasons this row stays open.
+
 ⇒ **The fix for O192 and O193 is one fix: pass `&OpenDoc` into `open` and seed
 there.** `dialogs/open.rs` (695 lines) and `dialogs/scale.rs` (585) both have
 room. The house exemplar for the shape is `dialogs/page_size.rs:251-288`, and
@@ -759,7 +797,7 @@ him is a glance sideways. The three export dialogues' settings are visible
 
 ---
 
-## O193 — ◑ **FILED 2026-09-13** — the Set Scale window has no way to choose which dimension group you are scaling
+## O193 — ◑ **FILED 2026-09-13; BUILT AND DRIVEN 2026-09-13 (commit `3f38ef3`, shipped in `v0.5.0-dev.20260913.4`) — NOT CLOSED, that is yours** — the Set Scale window has no way to choose which dimension group you are scaling
 
 > *“Also in the set scale window there is no drop-down to select the dimension
 > group that I am setting the scale for.”*

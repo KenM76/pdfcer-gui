@@ -26,15 +26,15 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-13 18:20 (re-measured against the build about to ship, not carried over) |
+| What | Command | Value, 2026-09-13 19:10 (re-measured after the seventh release and the temp-path fix, not carried over) |
 |---|---|---|
 | Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `5e17017` — **level with the tip of the engine's `main`**, and moved three commits since the last release. ★★★ **All three are documentation**: `git diff --stat f37598b..5e17017 -- '*.rs'` is EMPTY, and that diff is the measurement — not the fact that the two shas now match. ⇒ The question a pin row exists to answer is *may I write the sentence "the engine cannot do X"*, and the safe condition is that no CODE has landed since the pin. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. ★★★ And "level with head" is not "nothing is in flight": the request channel is not a git repository and no command in this table reads it |
 | Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `5e17017` — level with the pin, because the pin was taken at it. The three commits crossed were two librarian filings and a session-log entry |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | `0.53.0` |
-| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260913.3`, cut 2026-09-13 20:25 UTC, `prerelease=false`, `draft=false`, one asset of 23,232,880 bytes, and it IS what `releases/latest` advertises — verified by reading it back rather than by having passed the right flag. ★★★ **The order matters:** commit ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. |
+| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260913.4`, cut 2026-09-13 22:39 UTC, `prerelease=false`, `draft=false`, one asset `pdfcergui-20260913-1838-5e17017-34dde31.zip` of 23,253,157 bytes, and it IS what `releases/latest` advertises — verified by reading it back rather than by having passed the right flag. **1 commit unreleased**, counted after a `git fetch --tags origin`. ★★★ **The order matters:** commit ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. ⚠ `build.rs` has no `rerun-if-changed` on `.git/HEAD`, so the rebuild after the commit is a no-op and ships the *pre-commit* stamp — `touch crates/pdfcer-gui/build.rs` between them |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **223** — one more than the last release: `set_scale_reads_the_group_it_is_about_to_overwrite`. ⚠ **the `$` is load-bearing and its absence answers 225.** `--list` prints a second small table, the `--exe` targets, whose rows are also two-space-indented lowercase words; without the end anchor the count silently picks up `pdfcer-gui` and `pdfcer-legacy` from it. That is a *count command* being wrong rather than a quoted answer being stale, which is a different defect and the harder one to see. ★ If a count here is about double what you expect, you counted lines: `--list` prints two per check plus an eight-line header, so a `wc -l` answers `2n + 8` |
-| Gates | `bash tools/gates/run-all.sh` | **49 passed, 0 failed, 0 skipped** — ★ one was RED when this release was assembled and it was right to be: `check-pin-citation`, naming the revision both this file and `FEATURES.md` were still quoting after the engine pin moved. That is the gate's whole purpose and the second release running it has caught this |
-| Unit tests | `cargo test --workspace` | **4,264 passing, 0 failed, 51 ignored, 4,315 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,315. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. ⚠⚠ **Run ONE `cargo test` at a time.** A concurrent second run turned `protect::…::changing_the_password_keeps_what_the_document_allowed` red, and it passes alone: about a dozen test fixtures write to a FIXED path under `%TEMP%` with no process-unique component, so two test processes fight over one file. Within one run they are safe — each name has one user — so this is invisible until somebody runs the suite twice at once, and then it presents as a regression in whatever test lost the race |
+| Gates | `bash tools/gates/run-all.sh` | **51 passed, 0 failed, 0 skipped** — two more than the last release: `check-test-temp-paths` and its self-test. ★ One was RED when the release was assembled and it was right to be: `check-pin-citation`, naming the revision both this file and `FEATURES.md` were still quoting after the engine pin moved. That is the gate's whole purpose and the second release running it has caught this |
+| Unit tests | `cargo test --workspace` | **4,264 passing, 0 failed, 51 ignored, 4,315 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,315. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. ✓ **Two concurrent runs are safe again as of `7b48dd0`**, and that is measured rather than assumed: the pre-fix source was rebuilt as a CONTROL and its test binary run twice at once — red 3 rounds of 3 — then the fixed binary, green 5 of 5, then the three affected test binaries in full, twice simultaneously (3,424 + 537 + 260 each side). ★ The control named *different* victims than the failure that started it, which is the finding itself: the casualty is whichever test lost the race |
 | Source files | `find crates -name '*.rs' \| wc -l` | 787 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 174 rows — wanted 35 / blocked 8 / unknown 0 / declined 14 / **shipped 117**. ⚠ **Rewrite the five headings from the walker's own printed figures, never by arithmetic** — that instruction is in the walker's output because the arithmetic has been got wrong seven times. |
 | Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | **41** — four moved during this session, and the last of them is ours. `reply_…keep-your-wording-and-your-control-fixture-is-the-finding` **declines an offer we made** (to adopt the CLI's phrasing verbatim) and asks for nothing; it is consumed as `done_control_fixture_reply_CONSUMED.md`. ★★★ **A declined offer gets a `done_*` even though nothing is owed**, and that is a rule rather than politeness: a decline that lives only in a reply nobody consumed reads, six weeks later, as an open question, and the next session re-offers it. Its §2 is worth reading before writing any check whose assertion is an absence. ⚠ **Re-`ls` this folder before quoting it** — it changes faster than any other input to this project, it is in no git repository, and nothing warns you. |
@@ -69,31 +69,35 @@ seen the three releases cut since; the true figures were **21 commits** and
 **yesterday afternoon**. ⇒ **Any sentence containing *"commits unreleased"* or
 a release date gets a `git fetch --tags origin` immediately in front of it.**
 
-★★★ **`v0.5.0-dev.20260913.1` shipped 2026-09-13 05:52 UTC** — five of the
-thirteen `FEATURE.txt` rows, the deep-zoom raster refusal (O186 part three), and a
-front page written for a person. Verified as what `releases/latest` advertises,
-`prerelease=false`, with the packager's own zip as the only asset. **17 commits**
-since `.20260912.1`, counted after a `git fetch --tags origin`.
+★★★ **`v0.5.0-dev.20260913.4` shipped 2026-09-13 22:39 UTC** — the seventh
+release of the day, and one item: the Set scale window reads the group it is
+about to overwrite, names that group, and survives a trip out to the drawing
+with every field intact. O192 and O193 were two reports of one cause; a third
+defect and a fourth went with it. Verified as what `releases/latest` advertises,
+`prerelease=false`, the packager's own zip the only asset.
 
 ★ **Both destinations, and the fallback survives.** Mirror in
-**`OneDrive\pdfcer-gui1`** (2026-09-13 01:50); **`pdfcer-gui2` still holds
-`v0.5.0-dev.20260912.1`** (2026-09-12 07:14). **The next package rotates into slot
-2** — and the rotation works this out for itself from the two slots'
-timestamps, so pass `--slot` only to RETRACT, never to steer a normal build.
-⚠ His own install at `C:\Users\Ken\OneDrive\pdfcer\` is **not**
-touched by a publish and was not touched by this one.
+**`OneDrive\pdfcer-gui2`** (2026-09-13 18:38, shell `34dde31`, engine
+`5e17017`, source digest `4a7b5f5466af`); **`pdfcer-gui1` still holds
+`v0.5.0-dev.20260913.3`** (16:23). **The next package rotates into slot 1** —
+and the rotation works this out for itself from the two slots' timestamps, so
+pass `--slot` only to RETRACT, never to steer a normal build.
+⚠ His own install at `C:\Users\Ken\OneDrive\pdfcer\` is **not** touched by a
+publish and was not touched by this one.
 
-✓ **Clean tree, and `--verify` this time**, so `BUILD-INFO.txt` carries
-`tests: PASS` and `gates: PASS 41/41` rather than *not run*:
-`pdfcergui-20260913-0139-d86cb19-b4e3137`, no `-dirty` suffix, source digest
-`707f02b6c188`.
+⚠ **`pdfcer-gui1`'s `BUILD-INFO.txt` opens with "THE ENGINE HAS MOVED ON: 3
+COMMIT(S)"** and that is correct and harmless — it was built before the pin
+bump, and all three of those commits are documentation. It is worth knowing the
+banner exists, because a reader who opens the OLDER slot first will see a
+warning about a build that is no longer the current one.
 
-⚠ **The stamp names `b4e3137` and the tag is on `0f51565`.** The difference is
-one commit of agent-memory markdown, which is outside both `BUILD_AFFECTING` and
-`SOURCE_GLOBS`, so the shipped bytes are the bytes of the tagged tree. Stated here
-because a reader comparing the two will otherwise go looking for a program
-difference that does not exist — and because the honest fix next time is to
-commit everything, memory included, before launching the packager.
+⚠ **`build.rs` declares `rerun-if-changed` on `src`, `Cargo.toml` and
+`../../Cargo.lock` — and NOT on `.git/HEAD`.** So the rebuild that is supposed to
+happen between the release commit and the packaging finishes in about a second
+and changes nothing, and the shipped binary carries the *pre-commit*, dirty
+stamp. `touch crates/pdfcer-gui/build.rs` forces it. This cost a rebuild-and-
+re-drive cycle on the way out of `.4`; it is the kind of thing a green build
+cannot tell you about, because nothing failed.
 
 ★★★ **The release pre-flight lied once on the way out, and it is worth the
 paragraph.** `run-all.sh` reported **41 of 41 green**; the commit added
@@ -330,6 +334,52 @@ has to be able to tell that apart from the caveat being forgotten.
 
 ---
 
+---
+
+## ✓ Two `cargo test` runs at once no longer corrupt each other — and why it needed a gate
+
+**Fixed and gated in `7b48dd0`.** Eleven test fixtures wrote to a FIXED path
+under `%TEMP%` with nothing process-unique in the name. Inside one `cargo test`
+that is safe — each name has exactly one user — so it stayed invisible until two
+runs overlapped, which is ordinary: a backgrounded sweep plus a foreground run,
+a watcher, or a session that started a second suite because the first looked
+stuck.
+
+★★★ **The symptom is what makes this worth a section.** It is not "two
+tests collided". It is a single unrelated assertion going red, several lines
+downstream of the real event, in whichever process lost the race — and then
+passing on re-run. That reads as a regression in the feature that test covers,
+then as a flake. Neither reading points at shared state. The control run proved
+it: rebuilding the pre-fix source and running its binary twice at once named
+**two different victims** than the failure that started the investigation.
+
+★★★ **And two of the eleven carried a confident note saying the hazard was
+handled** — *"tagged per caller, because `cargo test` runs these in parallel"*.
+That is true and it separates THREADS. It does nothing about PROCESSES, because
+two `cargo test` runs have the same callers as each other and therefore ask for
+the same filenames. ⇒ **A note that names a hazard and fixes half of it is
+worse than no note**: the next reader sees the hazard named, sees a mechanism
+beside it, and stops looking. `canvas/guides.rs` had carried the correct pattern
+since it was written, so the convention existed here and simply was not uniform
+— which is the textbook condition for a rule living only in prose.
+
+`tools/gates/check-test-temp-paths.py` is the instrument, registered in
+`run-all.sh` with its self-test. Its rule is one sentence with no taxonomy in
+it: **`std::process::id()` in the path, or `// temp-path-exempt: <reason>`.**
+Four helpers that were already safe on a nanosecond stamp take the pid anyway,
+because a rule reading *"a process-unique component, and here is how the gate
+recognises one"* has a classification in it, and a classification is where the
+next exception goes. Seven sites are exempt with a written reason: four never
+create the path, three are `#[ignore]`d generators where a stable name is the
+whole point.
+
+⚠ **The evidence window is derived from the code, not counted.** It starts at
+the statement holding `env::temp_dir()` and, if that statement binds a name,
+follows the `.push`/`.join`/`.set_extension` chain that is still building the
+same path. A fixed N-line window would let a compliant neighbour vouch for a
+bare site — which is precisely how `check-gate-input-scope`'s first draft
+reported zero of three planted violations while printing PASS.
+
 ## Do next, in the operator's order
 
 > ★★★ **Order this list by what the operator reaches for, not by what just
@@ -376,25 +426,31 @@ has to be able to tell that apart from the caveat being forgotten.
    → **O178** (multi-window tab dragging) → **O182** (white seams in the
    KUBOTA render). Designs for O181, O183, O185, O188 and O189 are in
    `DESIGNS.md`. ⚠ **Only Ken closes a row.**
-2. ★★★ **Five rows he filed on 2026-09-13, AFTER `FEATURE.txt` — and they
-   are measured, so none of them starts from zero.** O192, O193, O194 and O195
+2. ★★★ **Five rows he filed on 2026-09-13, AFTER `FEATURE.txt` — two of them
+   are already built and shipped, and the rest are measured, so none of them
+   starts from zero.** O192, O193, O194 and O195
    are his words; O196 is one we found and he has not reported yet. Full
    `file:line` findings are in `OPERATOR_REQUESTS.md` under a
    `### MEASURED 2026-09-13` block on each row. ⚠ **Only Ken closes a row.**
 
-   ★★★ **O192 + O193 are ONE structural fix and should be built together.**
-   The Set Scale window neither reads the scale it is about to overwrite nor
-   says which dimension group it is aimed at. The cause of both is that
-   `ScaleDialog::open` takes a bare `GroupId` and `show` takes only a context and
-   an action queue, so the dialogue physically cannot see the document —
-   `dialogs/open.rs` destructures `status` and discards it. Pass `&OpenDoc` in;
-   `dialogs/page_size.rs` is the exemplar and `export_dxf.rs` already makes the
-   one call needed. ★ Groups are **already named**, so the naming sub-task
-   O193 anticipated is discharged before it starts.
+   ✓ **O192 + O193 — BUILT AND DRIVEN, shipped in `v0.5.0-dev.20260913.4`
+   (commit `3f38ef3`). NOT CLOSED — that is his.** They were one structural
+   fix, as predicted: `ScaleDialog` is handed `&OpenDoc`, so the window can see
+   the document it edits. It names the group, shows the scale already on that
+   group, and re-reads on a group change. ★ Two further defects went with it,
+   neither reported — *Measure it on the drawing…* destroyed the window and
+   everything typed into it, and a measured length would have been delivered to
+   the canvas's active group rather than the window's. Driven by
+   `set_scale_reads_the_group_it_is_about_to_overwrite`.
 
-   ★★★ **And there is a third defect in O192 he has not reported: pressing
-   “Measure it on the drawing” throws away everything already typed.**
-   `app/frame.rs` closes the dialogue and rebuilds it with default fields.
+   ⚠ **What is still open on O192, and it is the first thing he will look
+   for:** his wording asks for the scale to update *“even before I hit
+   apply”*. What ships updates on reopen and after a calibration. Whether
+   that is the same thing is his judgement, not ours — do **not** pre-emptively
+   build a live-preview until he says so. The full four-defect account, the
+   reasoning behind deriving `hidden` rather than storing it, and why the driven
+   check asserts a **count** rather than *“the window is back”*, are all on the
+   O192 row in `OPERATOR_REQUESTS.md`.
 
    ★ **A correction to O192's own text, kept because the row was wrong:** it
    claimed this was *“the third surface to have it”* and proposed a sweep of
