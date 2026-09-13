@@ -24,7 +24,7 @@
 //! |---|---|---|
 //! | **the raster error** | `render::settle::fill_strip` ordered a whole-page raster for every **visible** page at the **current** page's deep raster scale. A strip page is handed `region: None` by construction, so above the pixmap ceiling that order cannot be filled and the engine refuses it. | **part A**, below |
 //! | **the stop** | once the rasterizer's own wall is met, the zoom must *clamp* and say so on the status bar, rather than leaving an error sentence across the drawing | **part B**, below |
-//! | **the cursor jump** | `canvas::deep.rs`'s `DeepAnchor` is seeded, restated and panned and **never clamped**, so it can be carried off the sheet and the canvas draws nothing at all — a terminal state, because both wheel handlers sit below the early return that produces it | **not here.** O186 stage 1, unfixed at the time of writing; this check *notes* it if it reaches it and points at the owner |
+//! | **the cursor jump** | `canvas::deep.rs`'s `DeepAnchor` is seeded, restated and panned and **never clamped**, so it can be carried off the sheet and the canvas draws nothing at all — a terminal state, because both wheel handlers sit below the early return that produces it | **not here.** O186 stage 1. — **FIXED 2026-09-13** (`canvas::geometry::MIN_SHEET_ON_SCREEN` keeps 32 pt of sheet on screen at both ends of the pasteboard, and `canvas::escape` restores the wheel above the blank-frame early return, so the state is no longer terminal); this check still *notes* it if it reaches it and points at the owner |
 //!
 //! ★★★ **The sheet that could not be drawn was never the sheet he was looking
 //! at.** `50411508 × 32619210` is `1224 × 792` pt at scale `41185.87`, and
@@ -173,15 +173,28 @@
 //! the status bar's `status-group:raster-stop` region **is** on screen, not
 //! clipped, inside the window.
 //!
-//! What part B does **not** assert is that the page is still drawn at
-//! saturation. At that zoom the canvas is in the `DeepAnchor` tier, and stage 1
-//! of O186 — the cursor jump — is unfixed: the anchor can be carried off the
-//! sheet, at which point `canvas::present` returns an empty draw list and
-//! publishes `canvas-unavailable reason=nothing-visible`. That state is a real
-//! defect and it is **not this check's**; reporting it here would make one
-//! check red for two unrelated reasons. It is noted, loudly, with the owner
-//! named — never silently dropped, because a bound this run could not measure
-//! and does not mention reads as a bound that was measured and held.
+//! ★★★ **Part B now DOES assert that the page is still drawn at saturation**,
+//! and the history of that sentence is worth a paragraph because it is an
+//! argument about when an exemption expires.
+//!
+//! It used to be exempt. The reasoning was sound at the time: at that zoom the
+//! canvas is in the `DeepAnchor` tier, O186 was open, and a blank frame there
+//! would have been O186's defect rather than this one — so asserting it would
+//! have made one check red for two unrelated reasons. The exemption was
+//! **named, loudly**, rather than dropped, because a bound a run could not
+//! measure and does not mention reads as a bound that was measured and held.
+//!
+//! O186 was fixed on 2026-09-13 (`canvas::geometry::MIN_SHEET_ON_SCREEN`), and
+//! that retires the exemption rather than merely weakening it: a blank frame at
+//! saturation is no longer a known-open defect this check would be duplicating
+//! — it is a **regression in a guarantee that now holds**, and this check
+//! reaches it by a different trajectory than `off_sheet.rs` does (a straight
+//! climb at the seam, not an aim off the sheet). Two independent routes to the
+//! same guarantee is coverage, not duplication.
+//!
+//! ⚠ The failure message names O186 and points at `geometry::pasteboard`, so a
+//! reader who finds *only* this check red is not sent hunting in the rasterizer
+//! for a defect that lives in the layout.
 //!
 //! # What a passing run does NOT prove
 //!
@@ -691,8 +704,11 @@ fn part_a(
                      the refusal: `absorb_render` learns a zoom CEILING from it, so a page that \
                      renders through the region tier at ten billion percent gets capped at a \
                      number that was an internal mistake. Note that the blank frame itself is a \
-                     DIFFERENT defect again — O186 stage one, `canvas::deep`'s unclamped anchor — \
-                     and fixing this one does not fix that",
+                     DIFFERENT defect again — O186, and ★ NOT `canvas::deep`'s anchor as this \
+                     sentence said until 2026-09-13: the blank was measured at the SHALLOW tier, \
+                     two orders of magnitude below the `f64` hand-over, and its cause is a \
+                     pasteboard of exactly one viewport in `canvas::geometry::pasteboard`. Fixing \
+                     this one does not fix that",
                     at.saturating_sub(blank_at)
                 )
             } else {
@@ -1099,12 +1115,30 @@ fn part_b(
         state.zoom * 100.0,
         ceiling.to
     ));
+    // ★★★ ASSERTED since 2026-09-13, having been an explained exemption before
+    // it. See the module header for why the exemption expired: O186 is fixed, so
+    // a blank frame at saturation is a regression in a live guarantee rather
+    // than a second open defect this check would be double-reporting.
+    if state.drawn == 0 {
+        return Ok(Some(format!(
+            "part B climbed to the learned ceiling {:.2} ({:.0} %) and the saturated frame drew \
+             {} of {} visible page(s) — no page was rastered at all. ★ Read this as O186, NOT as \
+             a rasterizer fault: the guarantee is `canvas::geometry::MIN_SHEET_ON_SCREEN`, which \
+             narrows the pasteboard so that the extremes of `visible_origin_range` still leave a \
+             sliver of sheet on screen. Before that constant the pasteboard was exactly one \
+             viewport, which made both ends of the range the zero-overlap placement at every \
+             zoom. If this is the only red check in the sweep, start at `canvas::geometry`, not \
+             here — and `a_view_carried_off_the_sheet_comes_back` is the check that isolates it.",
+            ceiling.to,
+            state.zoom * 100.0,
+            state.drawn,
+            state.visible
+        )));
+    }
     report.note(format!(
-        "part B's saturated frame drew {} of {} page(s) with a raster. This is NOT asserted: at \
-         this zoom the canvas is in the `DeepAnchor` tier and O186 stage 1 — the unclamped deep \
-         anchor that can carry the view off the sheet — is unfixed, so a blank frame here would \
-         be that defect rather than this one. Named rather than dropped: a bound a run could not \
-         measure and does not mention reads as a bound that was measured and held.",
+        "part B's saturated frame drew {} of {} page(s) with a raster — ★ asserted, not merely \
+         noted, since O186's fix made an empty frame here a regression rather than a second known \
+         defect",
         state.drawn, state.visible
     ));
     Ok(None)

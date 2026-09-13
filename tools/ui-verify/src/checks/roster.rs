@@ -658,6 +658,17 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // reached with a repository fixture. Measured 2026-09-12.
         Box::new(raster_wall::TheRasterWallStopsTheZoomInsteadOfPaintingAnError),
         Box::new(deep_pan::PanningAtDeepZoomStaysWhereItWasPut),
+        // ★★★ O186 stage one, LAST of the deep-tier cluster and deliberately
+        // so. Everything above it proves the deep tier draws, rasterizes and
+        // pans; this one proves the view cannot be carried off the sheet
+        // altogether. A failure in any of the four above should be read first:
+        // if the tier does not draw, "the page left the screen" is not this
+        // check's subject.
+        //
+        // It is also the most expensive of the five — a hundred and sixty
+        // Ctrl+wheel notches with a settle between every ten — which is the
+        // second reason it is last.
+        Box::new(off_sheet::AViewCarriedOffTheSheetComesBack),
         Box::new(scale_sweep::MouseWorkSurvivesEveryRenderTier),
         Box::new(zoom_keeps_place::ZoomingDoesNotThrowAwayWhereTheOperatorPanned),
         // ★ Its inverse. The climb above never rolls the wheel the other way, so

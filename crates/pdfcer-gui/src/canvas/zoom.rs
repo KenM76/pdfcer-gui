@@ -516,6 +516,62 @@ pub fn zoom_step(ctx: &Context, doc: &mut OpenDoc, step: ZoomStep, actions: &mut
     });
 }
 
+/// ★ **A modified wheel notch, turned into an anchored zoom** — the body of the
+/// Ctrl+wheel gesture, with the hover gate left to the caller.
+///
+/// Does nothing when this frame carries no `zoom_delta`, which is every frame
+/// but the ones the operator is actually turning the wheel on. That early
+/// return is why the caller can be a bare `if hovered` with no second test.
+///
+/// # ★★★ Why this is a function rather than a block in `present`
+///
+/// It has **two** callers, and it had to before either of them could be
+/// trusted: the ordinary one in `canvas::present`, and the escape hatch in
+/// `canvas::escape` that runs on a frame where nothing was drawn.
+/// `OPERATOR_REQUESTS.md` **O186** is the reason the second exists — a view
+/// carried off the sheet publishes `canvas-unavailable reason=nothing-visible`
+/// and `present` returns **above** its own input handling, so the one gesture
+/// that would have got the operator out was unreachable.
+///
+/// ★★ Inlining it at the second site would be the **fourth** spelling of the
+/// zoom rule in this crate's history, and the first three drifted: the wheel
+/// built its own [`ZoomAnchor`] from the pointer position while the discrete
+/// commands went through [`arm_anchor`], and *"the rule is decided once for all
+/// four"* is what fixed it. A rescue path that zoomed *without* arming the
+/// anchor would zoom about the viewport's top-left, which on a blank canvas
+/// means the operator claws his way out and arrives somewhere else again.
+///
+/// ★ Takes the [`Context`] and not a `Ui`, so the escape hatch can call it on a
+/// frame where no `Ui` for the canvas *content* exists — which is the very
+/// condition the hatch is for. Nothing in here needs a `Ui`: the wheel delta and
+/// the pointer position are both context-wide input, not widget state.
+pub fn wheel_step(ctx: &Context, doc: &mut OpenDoc, actions: &mut Vec<Action>) {
+    let factor = ctx.input(|i| i.zoom_delta());
+    if (factor - 1.0).abs() <= f32::EPSILON {
+        return;
+    }
+    // Zoom to cursor, half one: remember WHERE on the page the pointer is
+    // before the zoom lands. Anchoring on the viewport centre instead (which is
+    // what happens when nothing records this) drags the detail being inspected
+    // out from under the operator, worse the further off-centre they point —
+    // reported as "jarring" on 2026-08-04.
+    //
+    // ★ Through [`arm_anchor`], the same call the discrete commands make —
+    // which is what "the rule is decided once for all four" means in code. The
+    // wheel used to build its own [`ZoomAnchor`] inline from the pointer
+    // position; that inline version WAS the rule, in a place no command could
+    // reach, and duplicating it at three more call sites is how the four would
+    // have drifted apart.
+    //
+    // The pointer guard that used to live here went with it: a pointer
+    // off-window (a trackpad pinch can produce exactly that) falls back to the
+    // viewport centre rather than to nothing, and a zero drawn size can no
+    // longer produce a NaN because [`frac_of`] divides by the page EXTENT,
+    // which is finite and positive for any page that drew at all.
+    arm_anchor(ctx, doc);
+    actions.push(Action::ZoomBy(factor));
+}
+
 // ---------------------------------------------------------------------------
 // Entry points — the framing commands
 // ---------------------------------------------------------------------------

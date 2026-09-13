@@ -25,10 +25,19 @@ Started 2026-08-12 as a design workspace. It became the code on
 
 ## What it does today
 
-Measured 2026-09-09 against `pdfcer-core` **v0.49.0** (`369d4de`), at commit
-`c63812a`: **3,957 tests passing**, **32 of 32 CI gates**, **198 driven checks**
-in `tools/ui-verify`, **158 registered commands** across seven ribbon tabs plus
-a contextual Format tab, **13 dockable panels**, three modes.
+Measured 2026-09-13 against `pdfcer-core` **v0.53.0** (`3e73a02`), on the
+build released as `v0.5.0-dev.20260913.2`: **4,247 tests passing** (51 ignored,
+4,298 defined), **47 of 47 CI gates**, **221 driven checks** in `tools/ui-verify`,
+**161 registered commands** across seven ribbon tabs plus a contextual Format
+tab, **13 dockable panels**, three modes, **786 source files**.
+
+★ **The driven checks are not a tally of tests that exist — they are a tally
+of checks that DROVE this binary.** All 221 were run against it before it was
+packaged: 188 passed, 4 failed (all four traced to defects in the checks, each
+with the line of its own evidence that refutes it), 29 skipped. The whole
+measurement is in `FEATURES.md` item (12) and `RESUME.md`'s sweep section,
+including how the total was verified against the roster after the run aborted
+once and had to be resumed.
 
 > ★ **This paragraph had gone four days stale while every other document was
 > refreshed** — it still named `pdfcer-core` v0.38.0, eleven minor versions
@@ -38,7 +47,9 @@ a contextual Format tab, **13 dockable panels**, three modes.
 > hand-off, so those stay honest, and the **front door is the one page the
 > ritual never touches** — which is also the first page a new reader trusts.
 > Re-measure it whenever `FEATURES.md` is re-measured. The commands here are
-> `command(` entries in `shell/commands/catalog/`, the panels are
+> `command(` entries in `shell/commands/catalog/` **excluding comment lines** (a
+> raw grep returns one more, from a doc comment, and the build's own
+> `pdfcer-diag shell commands=` trace is the tie-breaker), the panels are
 > `Panel::ALL`'s length, and the checks are `Box::new(` inside
 > `ui-verify`'s `checks::all()`.
 

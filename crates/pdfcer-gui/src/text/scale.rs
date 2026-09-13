@@ -119,7 +119,15 @@ pub const fn fraction_label() -> &'static str {
 ///
 /// `pdfcer_core::dimension::Unit` is **not** `#[non_exhaustive]`, unlike most
 /// of the engine's public enums, so a variant added there is a compile error
-/// here rather than a silently unnamed row in a picker. That is the outcome
+/// here rather than a silently unnamed row in a picker.
+///
+/// ★★★ **That is not a claim about the shape of the enum any more — it is a
+/// measurement.** On 2026-09-13 the engine shipped `Kilometer`, `Yard` and
+/// `Mile` (reply `G013`) and this match **failed to compile** until all three
+/// were named, which is exactly the outcome the paragraph above predicted. The
+/// order of the arms follows `Unit::all()`'s order rather than declaration
+/// order in the engine, because this list's consumers are dropdowns and the
+/// dropdown order is the one an operator reads. That is the outcome
 /// worth having: a unit with no name would render as an empty combo entry, and
 /// an operator would select it without knowing what they had chosen.
 ///
@@ -134,9 +142,12 @@ pub fn unit_name(unit: Unit) -> &'static str {
         Unit::Millimeter => "Millimetres",
         Unit::Centimeter => "Centimetres",
         Unit::Meter => "Metres",
+        Unit::Kilometer => "Kilometres",
         Unit::Inch => "Inches",
         Unit::DecimalFeet => "Feet (decimal)",
         Unit::FeetInches => "Feet and inches",
+        Unit::Yard => "Yards",
+        Unit::Mile => "Miles",
     }
 }
 
@@ -357,16 +368,24 @@ mod tests {
     ///
     /// A picker with two identically-labelled rows is a picker whose choice is
     /// a coin toss.
+    ///
+    /// ★★★ **This list was written out by hand until 2026-09-13, and that made
+    /// the completeness test structurally incapable of finding the gap it
+    /// exists to find.** It named six units. When the engine shipped
+    /// `Kilometer`, `Yard` and `Mile` (reply `G013`) this test would have gone
+    /// on passing while all three were unlabelled, because the only thing it
+    /// ever measured was the six it already knew about. It was saved by the
+    /// match in `unit_name` being exhaustive — the compiler refused the build
+    /// until the arms existed — which means the guard that actually worked was
+    /// somewhere else entirely, and this one was decoration.
+    ///
+    /// ⇒ **A completeness test that carries its own copy of the set is
+    /// testing the copy.** It reads `Unit::all()` now, which is the same list
+    /// the three unit dropdowns read, so the test and the product cannot
+    /// disagree about what the set is.
     #[test]
     fn every_unit_is_named_distinctly() {
-        let units = [
-            Unit::Millimeter,
-            Unit::Centimeter,
-            Unit::Meter,
-            Unit::Inch,
-            Unit::DecimalFeet,
-            Unit::FeetInches,
-        ];
+        let units = Unit::all();
         for i in 0..units.len() {
             assert!(!unit_name(units[i]).is_empty());
             for j in (i + 1)..units.len() {

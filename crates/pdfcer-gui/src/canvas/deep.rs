@@ -3,12 +3,21 @@
 //! ## Why this is its own module
 //!
 //! `OPERATOR_REQUESTS.md` O24 introduced a second mechanism for *"where is the
-//! view"*. Below about two million percent the `egui` scroll offset holds it,
-//! as it always has; above, an `f32` measured in screen pixels over a content
-//! space of `page × zoom` can no longer address every pixel — at a trillion
-//! percent it moves in 2,048-pixel jumps — so
+//! view"*. While the content extent `longest_page_pt × zoom` stays under
+//! [`crate::viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT`] the `egui` scroll
+//! offset holds it, as it always has; above, an `f32` measured in screen pixels
+//! over that content space can no longer address every pixel — at an extent of
+//! 20.5 billion px, the figure `viewer/ceiling.rs` actually drove on a Letter
+//! sheet, it moves in 2,048-px jumps — so
 //! [`crate::viewer::deep::DeepAnchor`] takes over, holding a page point in
 //! `f64` and the screen pixel it sits under.
+//!
+//! ⚠ **The threshold bounds a PRODUCT, so it is not a zoom and has no single
+//! percentage.** 2^20 px of extent is about 132,000 % on US Letter and about
+//! 44,000 % on an A1 sheet. Every earlier draft of this paragraph quoted a
+//! percentage instead, and each went stale twice over: once when O49 cut the
+//! constant from 2^24 to 2^20 on 2026-08-28, and permanently, because the
+//! figure depends on the sheet in front of the operator. Cite the constant.
 //!
 //! Two mechanisms means **two hand-overs**, and the whole of this module's
 //! subject is the seam: seeding the anchor on the way in, restating it on
@@ -50,6 +59,7 @@ use crate::app::state::OpenDoc;
 use crate::canvas::geometry;
 use crate::canvas::input::pan_delta;
 use crate::canvas::tool::CanvasTool;
+use crate::canvas::trace;
 use crate::canvas::zoom;
 use crate::viewer;
 
@@ -133,10 +143,18 @@ pub(super) fn track(
         //    looking at expanded off the screen.
         //
         // Both surface as the same sentence — *"I do lose the view at 2000000%
-        // magnification"* — and 2,000,000 % is not a number he picked. The
-        // threshold is `SUB_PIXEL_CONTENT_EXTENT / page_height` = 16,777,216 /
-        // 792 ≈ **2,118,000 %** on a Letter sheet. A defect that begins at the
-        // tier boundary is a defect in the tier hand-over.
+        // magnification"* — and 2,000,000 % is not a number he picked. On the
+        // day of that report the threshold was `SUB_PIXEL_CONTENT_EXTENT /
+        // page_height` = 16,777,216 / 792 ≈ **2,118,000 %** on a Letter sheet,
+        // so he was standing precisely on the tier boundary, and a defect that
+        // begins at a tier boundary is a defect in the tier hand-over.
+        //
+        // ⚠ Do not read that percentage as current. O49 cut the constant to
+        // 2^20 on 2026-08-28, which moves the boundary to about 132,000 % on
+        // Letter — and it is a bound on `longest_page_pt × zoom`, so there is
+        // no percentage that is right for every sheet. The figure above is kept
+        // because it is what identified the seam, not because it still locates
+        // it.
         //
         // ★ Consumed unconditionally, not only when seeding. An anchor left
         // pending here would fire on whatever frame the operator next dropped
@@ -210,6 +228,13 @@ pub(super) fn track(
             }
             doc.deep_anchor = Some(moved);
         }
+        // ★★★ CONFINE THE PLACEMENT -- O186 stage one, and the position
+        // in this block is the whole of why it works. Every mover above has
+        // had the frame: the seed, the re-statement about the cursor, the pan
+        // and the wheel. What is left is a placement, and a placement is the
+        // thing that can be out of range. See `confine`.
+        let (cx, cy) = confine(doc, layout, current, display_size, vp, overhang);
+        trace::confined(cx, cy);
     } else if let Some(anchor) = doc.deep_anchor {
         // ★★★ LEAVING THE DEEP TIER — the hand-over BACK, which for two days
         // did not exist. `OPERATOR_REQUESTS.md` O26e.
@@ -253,6 +278,117 @@ pub(super) fn track(
         return handed;
     }
     None
+}
+
+/// **Pull the anchor back into the range the view can actually place**, and say
+/// on which axes it had to — `OPERATOR_REQUESTS.md` **O186**, stage one.
+///
+/// Returns `(moved_x, moved_y)` for [`trace::confined`]. `(false, false)` when
+/// there is nothing to confine.
+///
+/// # ★★★ Where in the frame this is called, and why it is the END of the block
+///
+/// **After** the seed, the re-statement and the pan/wheel, not before. Confining
+/// earlier would clamp the operator's *intent* — the page point he asked to look
+/// at — and the intent is not what was out of range. What was out of range is
+/// the **placement** that intent implies, and the placement is only final once
+/// every mover has had the frame. A clamp applied before `panned` is a clamp a
+/// single wheel notch walks straight back out of, which is a guard that reports
+/// itself working while the defect continues.
+///
+/// # The arithmetic, and the one function it must agree with
+///
+/// [`strip_placement`] draws the strip at
+/// `content_min + screen − page × zoom − page_origin`, so the viewport's
+/// top-left expressed in strip space — which is what
+/// [`visible_in_strip`] hands the layout, and what
+/// [`geometry::visible_origin_range`] bounds — is
+///
+/// ```text
+///     u = page × zoom + page_origin − screen
+/// ```
+///
+/// ★★ **This is the algebraic inverse of [`strip_placement`] and the two must
+/// not drift.** They are deliberately in the same file, forty lines apart, for
+/// the reason this module's header gives about the hand-overs: a placement and
+/// its inverse in two files is how a seam acquires two opinions. Solve the
+/// clamped `u` back for `page` and the anchor still says *"this page point is
+/// under that screen pixel"* — it is simply a page point the view can place.
+///
+/// # ★ Why `page` is adjusted and not `screen`
+///
+/// `screen` is where the operator's pointer was, and a zoom anchored on a
+/// pointer that has been quietly moved is the *other* O186 symptom — the cursor
+/// jumping. `page` is the part that was wrong: it had walked 0.05 pt past the
+/// end of the sheet, which at 53,970 % is 27 screen pixels and the difference
+/// between the whole strip being on screen and none of it.
+///
+/// # ⚠ `max`/`min` rather than `clamp`, and it is not style
+///
+/// `f64::clamp` **panics** when handed `min > max`, and the two bounds come from
+/// a function whose inputs are a measured viewport. [`geometry::visible_origin_range`]
+/// proves it never inverts and returns a degenerate pair for a non-finite frame,
+/// so `clamp` would in fact be safe — but a panic route in the canvas's
+/// per-frame path that depends on a proof in another module is a bad trade for
+/// nothing. `max` then `min` is identical for every input that proof admits.
+fn confine(
+    doc: &mut OpenDoc,
+    layout: &viewer::strip::Strip,
+    current: usize,
+    display_size: Vec2,
+    vp: Vec2,
+    overhang: (f32, f32),
+) -> (bool, bool) {
+    let Some(anchor) = doc.deep_anchor else {
+        return (false, false);
+    };
+    let zoom = f64::from(doc.view.zoom);
+    if !(zoom.is_finite() && zoom > 0.0) {
+        return (false, false);
+    }
+    let origin = layout
+        .rect_of(current)
+        .map_or((0.0, 0.0), |r| (r.min.x, r.min.y));
+
+    // One axis, returning the page coordinate to keep and whether it moved.
+    let axis = |page: f64, screen: f32, org: f32, strip: f32, viewport: f32, over: f32| {
+        let (lo, hi) = geometry::visible_origin_range(strip, viewport, over);
+        let (lo, hi) = (f64::from(lo), f64::from(hi));
+        let u = page * zoom + f64::from(org) - f64::from(screen);
+        // The bound test is the movement test, so nothing here compares two
+        // floats for equality to ask "did the clamp bite?".
+        let out_of_range = u < lo || u > hi;
+        if out_of_range {
+            let want = u.max(lo).min(hi);
+            ((want + f64::from(screen) - f64::from(org)) / zoom, true)
+        } else {
+            (page, false)
+        }
+    };
+
+    let (page_x, moved_x) = axis(
+        anchor.page.0,
+        anchor.screen.0,
+        origin.0,
+        display_size.x,
+        vp.x,
+        overhang.0,
+    );
+    let (page_y, moved_y) = axis(
+        anchor.page.1,
+        anchor.screen.1,
+        origin.1,
+        display_size.y,
+        vp.y,
+        overhang.1,
+    );
+    if moved_x || moved_y {
+        doc.deep_anchor = Some(viewer::deep::DeepAnchor {
+            page: (page_x, page_y),
+            screen: anchor.screen,
+        });
+    }
+    (moved_x, moved_y)
 }
 
 /// **The page-local scroll offset that continues where the `f64` anchor left

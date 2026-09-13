@@ -42,7 +42,16 @@ disk, and its history is in git so a row cannot quietly disappear.
 
 ---
 
-# ★★★ THE OPERATOR'S CURRENT DIRECTION — 2026-08-20
+# ★★★ A PAST DIRECTION, KEPT FOR ITS RULING — 2026-08-20
+
+⚠ **This is not the current direction and has not been since 2026-08-20.**
+It was headed *"THE OPERATOR'S CURRENT DIRECTION"* for three weeks while
+later directions arrived beneath it, which made the first thing above the OPEN
+list the oldest thing in the file. ⇒ **A heading containing the word
+*current* is a claim with a timestamp in it; either date it or do not write
+it.** The ruling below still stands — O1 is parked — so the section is
+kept; only its claim to be current is withdrawn. **The live backlog is the
+O177—O191 block: six built, seven open.**
 
 > *"put the text editing aside again. In the next version I just need the
 > perimeter measuring tool to work with the group scale stuff the same as the
@@ -417,7 +426,7 @@ cannot be lowered to the clamp. That is now a RAG lesson of its own.
 
 ---
 
-## O186 — ◑ **FILED 2026-09-12, AND IT IS THE SAME SUBJECT AS O174** — the cursor still jumps at deep zoom, and the raster error should be a stop, not an error
+## O186 — ◑ **BUILT AND DRIVEN 2026-09-13 — CLAIMS 1 AND 3; CLAIM 2 IS A MEASUREMENT NOBODY HAS MADE, AND IT IS THE SAME SUBJECT AS O174** — the cursor still jumps at deep zoom, and the raster error should be a stop, not an error
 
 > *"At deeper zooms I am still experiencing the cursor jumping, and at some
 > point it sometimes repositions to where the object area I was zooming into is
@@ -447,6 +456,38 @@ The three claims, separated:
    error dialogue, no failed draw, no blank page — the canvas simply stops
    zooming and keeps working, and the *status bar* says why. That is the
    correct shape and it is Rule 4: disclose off-canvas, never block.
+
+### What was built, 2026-09-13 — claims 1 and 3, driven
+
+**Zooming in no longer reaches a dead end, and the page stays on screen while
+it climbs.** Driven, not argued: eighty Ctrl+wheel notches aimed at a point 84
+points *above* the top edge of an A1 sheet — grey pasteboard, which is his own
+reproduction — now reach 107,105,725 % with the sheet drawn on **every frame**,
+and eighty notches back out return to 12 % with the page still there. The same
+drive on a binary with the fix neutralised goes blank at 3,981 % and stays
+blank.
+
+The cause was a boundary that was its own failure state. The canvas reserves a
+**pasteboard** — blank room around the sheet, so a corner can be dragged to the
+middle of the screen — and it was exactly one viewport wide. That makes the
+extreme ends of the allowed range the placement where the sheet and the screen
+share **no** overlap at all, at every zoom. The pasteboard is now one viewport
+*less a sliver*, so the end of the range still leaves sheet on screen. A second
+half restores the wheel above the blank-frame early return, so a build that
+does reach a blank frame can still be zoomed back out rather than being stuck.
+
+★★★ **And the fix had a second defect inside it, found by driving and not by
+any test.** Narrowing the pasteboard let the *first* frame of a freshly opened
+document draw a sliver of sheet where it used to draw nothing, and that woke a
+view-preserving rule one frame too early: it faithfully preserved a position
+nothing had chosen yet, so a multi-page document opened with the page parked
+off the bottom-right corner of the canvas and stayed there. Every unit test and
+every gate was green while it did. Both halves are fixed and both are now
+asserted.
+
+⚠ **Claim 2 — his 32-bit hypothesis — is not built.** It is a measurement
+that has not been made, and no part of what shipped depends on it being right
+or wrong. The row stays open for it.
 
 ---
 
@@ -521,6 +562,570 @@ bookmark tree is a tree — moving one page out of a five-page chapter cannot
 carry the chapter heading without deciding what happens to the other four. So
 the row is not "copy the bookmarks"; it is "decide the rule, state it, then
 build it", and the rule is his to approve once it is written down.
+
+---
+
+## O191 — ◑ **BUILT 2026-09-13 (commit e0ca118), FILED LATE THE SAME DAY** — the GitHub landing page should read like something written for a person
+
+> *“please make the git landing page for pdfcer-gui more ordinary human
+> readable. Sell people on the features and be concise about each one.”*
+
+⚠ **This row is late, and the lateness is the finding.** The work was done
+within the hour he asked for it — `README.md` was rewritten from an
+engineering status page into a features-first landing page — and then nothing
+was written down, because the work getting done is exactly why nothing looked
+wrong. A request that is satisfied but unrecorded is indistinguishable, from
+the register, from a request that was never made; and the register is what a
+cold session reads to know what he has asked for. ⇒ **Write the row when he
+speaks, not when the work lands.**
+
+**What he asked for, in three clauses, and what each got:**
+
+1. *“ordinary human readable”* — the page opens on what the program is
+   and who it is for, not on a phase table or a gate count. The build status,
+   the crate topology and the verification numbers moved below the fold or out
+   entirely; none of them is a reason anybody downloads a PDF editor.
+2. *“sell people on the features”* — every capability is stated as
+   something the reader can do, in their words, not as the name of the module
+   that implements it.
+3. *“be concise about each one”* — one or two sentences per feature and
+   no sub-bullets. ★ This clause is the one most easily lost on the next
+   edit: the natural pull on a README is to add detail to a feature that has
+   just been improved, and three such additions turn the page back into what he
+   asked to be rid of. **The length of a feature's entry is not a function of
+   how much work went into it.**
+
+★★ **What deliberately did NOT move.** The page still names the honest
+limits — what is unfinished, what is unverified — because a landing page
+that only sells is a claim-bearing document with the claims unsourced. Concise
+is not the same as silent.
+
+★★★ **Only Ken closes this row.** It is marked BUILT rather than DONE for
+that reason: the test of a landing page is whether it reads right to the person
+it was written for, and that is a measurement nobody here can take.
+
+---
+
+## O190 — ◑ **MEASURED 2026-09-13, NOT SOMETHING YOU ASKED FOR** — a freshly opened document draws one blank frame before the page appears
+
+⚠ **Scope, because the neighbouring rows use the same words.** This row is about the ONE BLANK FRAME that survives, which is cosmetic and still open. It is **not** the off-the-bottom-right regression that the O186 fix briefly introduced — that one was found, fixed and driven the same day, and is written up under O186. Two different defects, one frame apart.
+
+You did not ask for this row. It is here because the O186 work put a permanent
+instrument on the canvas's placement decision, and the first thing that
+instrument showed is that **the very first canvas frame of a newly opened
+document is not placed at all.**
+
+**What was measured**, from three off-screen launches of the release build on
+2026-09-13, one fixture each:
+
+```
+canvas-place src=none      want=none        frames=0   <- nothing decides
+canvas-unavailable reason=nothing-visible              <- so nothing is drawn
+canvas-place src=open-seed want=938.0,1126.3 frames=1  <- placed on frame 1
+```
+
+On `fixtures/a1-titleblock.pdf` and `fixtures/annots-with-everything.pdf` the
+frame-0 line is followed by `canvas-unavailable reason=nothing-visible`: the
+canvas is **blank paper for one frame**. On `fixtures/four-pages.pdf`, whose
+page strip is taller than the viewport, frame 0 does draw — a sliver of the
+top page — because the strip reaches into the viewport even at the unplaced
+origin.
+
+**Why it is like that, stated rather than guessed.** The open-seed arm fires on
+`canvas_frames == 1`, the **second** frame, deliberately: on frame 0 the scroll
+area's own geometry has not settled, the scroll bars are not yet solid, and the
+viewport is 2 points taller than it will be for the rest of the session
+(`vp=970.0x1160.3` on frame 0, `970.0x1158.3` from frame 1 on). Seeding from
+frame 0's measurements would place the view against numbers that are about to
+change. The choice is recorded in `canvas::offset::SEED_FRAME`, with the four
+bisecting runs that argued against index 0.
+
+⚠ **Severity: low, and stated as low on purpose.** It is one frame —
+roughly 16 ms at 60 Hz — and it happens while a document is opening, when the
+window has just been resized and painted anyway. Nobody has reported it,
+including you. It is filed because it was *measured*, and an observation that
+goes into a chat reply instead of this file is an observation that will be
+rediscovered.
+
+★ **What would fix it, if it is ever worth fixing.** Either suppress the
+canvas's first paint entirely until the view is placed — which trades a blank
+frame for a frame of the previous document, or of nothing — or teach the seed
+to run on frame 0 against the *page strip* rather than the viewport, which is
+the measurement that does not change between the two frames. Both are more
+change than the symptom justifies today.
+
+---
+## O192 — ◑ **FILED 2026-09-13** — the Set Scale dialogue never tells you what the scale is
+
+> *“Set scale dialogue box doesn't show me what the scale is currently set to
+> once I have used the Measure it on the drawing tool, it should update and show
+> me the actual scale calculated after measuring it on the drawing, even before I
+> hit apply. The next time I open it it should show me what the scale is set to
+> for the group.”*
+
+**One surface, two moments, and the dialogue is silent at both.** They are
+separated here because they are different mechanisms and a fix for one does not
+give the other:
+
+1. **After “Measure it on the drawing”, the dialogue must show the scale
+   that gesture just computed — before Apply.** He draws a line across a known
+   distance, types the real-world length, and the dialogue already has everything
+   it needs to state the resulting scale. It does not state it. The number he is
+   about to commit to is invisible at the moment he decides whether to commit to
+   it, which makes Apply a leap rather than a confirmation.
+2. **Opening the dialogue on an existing group must show that group's current
+   scale.** Today it opens on a default or an empty field, so there is no route
+   in the program to the question *“what is this group set to?”* except
+   changing it and reading what changed.
+
+★★★ **This is a DISCLOSURE defect, which means Rule 4 governs it and Rule 4
+permits the whole fix.** Nothing here asks for the canvas to be marked. The
+computed scale is a value the shell already holds; showing it in the dialogue
+that is about to write it is the off-canvas disclosure the rule asks for, and
+the absence of it is precisely the failure mode the rule was written against —
+an inference the operator cannot see. ⇒ **A pre-commit affordance is welcome:
+a live scale readout that updates as the measured gesture completes is the
+*cursor*, not a mark on content.**
+
+★★ **The general finding, because this is the third surface to have it.** A
+dialogue that writes a value and does not read the current one is a write-only
+control. It cannot be used to *inspect*, only to *overwrite*, and the operator
+discovers the state by destroying it. ⇒ **Every dialogue that sets a value
+must open on the value it is setting.** Worth a sweep of the other dialogues in
+the same act as fixing this one, rather than waiting for each to be reported.
+
+**Scope note — Rule 15.** These are **ce dimensions**: the scale belongs to a
+dimension group pdfcer authors. Nothing here reads or alters **pdf dimensions**
+in the CAD-exported page content.
+
+Related: **O193** (the same window has no group selector) and **O183** clauses 1
+and 2 (units on a group cannot be changed after creation, and the per-dimension
+override does nothing). All three are the same underlying shape: **a dimension
+group's settings are authoring-time only and are not readable afterwards.**
+
+### ✅ MEASURED 2026-09-13 — the mechanism, and one thing he has not reported yet
+
+**The dialogue cannot read the scale, and the reason is structural rather than
+an oversight in its body.** `ScaleDialog::open` (`dialogs/scale.rs:183-199`)
+takes a bare `GroupId`, and `ScaleDialog::show` (`:256`) takes only
+`&egui::Context` and `&mut Vec<Action>`. **The document never crosses the
+boundary**, so no amount of work inside `scale.rs` could show the current scale.
+The registry site that drops it is `dialogs/open.rs:274-282`, which destructures
+`status` on line 275 to check the document is open and then discards it.
+
+What it shows instead is a hard-coded preset — `ScaleEntryFields::for_group_panel()`
+(`canvas/measure/scale.rs:204-209`) over `Default` (`:148-162`): **1 : 100, Inch
+basis, Metres display.** So a group calibrated at 1:50 in millimetres re-opens
+claiming 1:100 in inches. It is not blank; **it is confidently wrong**, which is
+worse, and is why he read it as the dialogue not knowing rather than not saying.
+
+⇒ **The fix for O192 and O193 is one fix: pass `&OpenDoc` into `open` and seed
+there.** `dialogs/open.rs` (695 lines) and `dialogs/scale.rs` (585) both have
+room. The house exemplar for the shape is `dialogs/page_size.rs:251-288`, and
+the exact call for this value is `doc.session.dimension_model()` — already
+done one dialogue over at `dialogs/export_dxf.rs:110`, which seeds itself from
+the very number Set Scale writes.
+
+★★★ **A third defect in the same window, which he did not report and will:
+pressing “Measure it on the drawing” throws away everything he has typed.**
+`app/frame.rs:1186-1198` calls `self.dialogs.close_scale()` before arming the
+tool, and the return path (`:1205-1217`) constructs a **brand-new** dialogue via
+`ScaleDialog::calibrated` (`scale.rs:220-236`) whose fields are
+`ScaleEntryFields::default()`. So the unit, the basis and the number style he
+chose before measuring are silently reset by the act of measuring. ⇒ **Carry
+the fields across the round trip.** The measured length is already carried; the
+rest is dropped for no reason beyond the dialogue being reconstructed rather
+than resumed.
+
+★★ **The general finding was swept, and it does not generalise — which is
+itself the finding.** This row originally called it “the third surface to have
+it” and proposed a sweep of the other dialogues. The sweep was run: **all 28
+dialogues, and Set Scale is the only member of the class.** Every other dialogue
+with a document-side current value already seeds from it in `open(doc, ...)`
+— Sheet size, Encrypt, Settings, Export to DXF, Print, bookmark rename, comment
+edit, group style. The split in `dialogs/open.rs` is clean: constructors that
+take `&OpenDoc` read it, constructors that take identity only are create-or-place
+surfaces with no prior value — **and `scale` is the single exception in the
+second group.** ⇒ **A defect that looks like a class can be a one-off, and the
+only way to find out is to enumerate; proposing the sweep and not running it
+would have left a true sentence (“worth a sweep”) standing next to a false
+one (“the third surface”) indefinitely.**
+
+⚠ **And the sweep found a different defect that outranks this one on his own
+metric.** See **O196**. Set Scale's value is at least visible elsewhere —
+`panels/dimension_groups/mod.rs:550` and `:589` both print it — so the cost to
+him is a glance sideways. The three export dialogues' settings are visible
+**nowhere in the program at all**.
+
+---
+
+## O193 — ◑ **FILED 2026-09-13** — the Set Scale window has no way to choose which dimension group you are scaling
+
+> *“Also in the set scale window there is no drop-down to select the dimension
+> group that I am setting the scale for.”*
+
+**The dialogue targets a group implicitly and never says which one.** With more
+than one dimension group in a drawing — which is the normal case on a sheet
+carrying details at different scales — there is no way to tell the dialogue
+which group the scale is for, and no way to tell from looking at it which one it
+picked.
+
+**What to build:**
+
+- A **group selector at the top of the Set Scale window**, listing every
+  dimension group in the document, defaulting to the one the current selection
+  or the active tool implies.
+- The selector and the scale readout of **O192** are one feature: **changing the
+  selection must re-read the readout**, so the window always states the scale of
+  the group named in its own dropdown. Building either half alone produces a
+  window that can lie — a scale from one group shown above the name of another.
+- ★ The group's **name** must be what is listed, not an index. If groups are
+  not nameable yet, that is the sub-task this uncovers, and it gets built rather
+  than deferred.
+
+⚠ **Do not scope this to “add a combo box”.** The ask underneath it is
+*which group am I editing*, and that question is unanswered everywhere the same
+way — the properties panel, the ribbon's scale control, and the measure tool
+itself. ⇒ **Check each of those surfaces in the same pass and give the answer
+in all of them**, because an operator who has to ask once will ask again at the
+next surface.
+
+### ✅ MEASURED 2026-09-13 — cheaper than it looked, and the sub-task does not exist
+
+**Groups are already named.** `Group::name` is live and drawn today at
+`panels/dimension_groups/identity.rs:253-254` and
+`panels/properties/dimension/mod.rs:163-171`. ⇒ **The “if groups are not
+nameable yet” sub-task this row anticipated is not needed** — that clause
+is discharged, not deferred.
+
+**The combo to copy is one file over, and it is already a group picker over the
+same model:** `panels/properties/dimension/mod.rs:163-171` —
+`ComboBox::from_id_salt("dimension-group-move").selected_text(&group.name)` over
+`model.groups()`. Second instance at `panels/dimension_groups/identity.rs:172`.
+In-file precedent for the widget style: `dialogs/scale.rs:506-513` (`unit_combo`).
+
+**Which group it targets today, and why nobody could tell.** The dialogue captures
+a `GroupId` at construction from one of three places — `active_group(ctx)`
+(`canvas/measure/mod.rs:390-392`, reading `MeasureState.group` out of egui memory
+and **falling back to `DEFAULT_GROUP_ID`** when no measure tool has been armed
+this session), the Dimension Groups panel's selected row
+(`panels/dimension_groups/mod.rs:590-592`), or the calibrate round trip
+(`app/frame.rs:1206`). ★★ **The silent `DEFAULT_GROUP_ID` fallback is the part
+that makes this a correctness defect rather than an ergonomics one:** open Set
+Scale from the ribbon without having touched a measure tool and it targets the
+default group no matter which group he is looking at, and says nothing.
+
+★ **`scale.rs:124-130` argues, correctly, that the captured id must not be
+re-read per frame** — *“a group picker that moved underneath an open dialog
+would let them type a number for one group and commit it to another”*. That
+reasoning survives this change and is not an objection to it: a picker **inside**
+the dialogue is the operator changing the target deliberately, and the readout
+re-seeds with it. **What must not happen is the target changing without him.**
+
+⇒ **Same structural fix as O192** — the dialogue needs `&OpenDoc` to list
+the groups at all. Build them together; neither is a separate piece of work.
+
+---
+
+## O194 — ★★★ **FILED 2026-09-13** — units everywhere, including kilometres and miles, and the places that still offer only points
+
+> *“Also we need units (including km and miles) added as options to
+> everything. Right now things in some places only have points as a dimension
+> type.”*
+
+**This is a sweep, not a feature.** The requirement is that **every** surface
+which shows or accepts a length offers the full unit set, and the report names
+the symptom — *“in some places only have points”* — rather than the
+place, because from where he sits it is the same defect wherever it appears.
+
+**What the work is, in order:**
+
+1. **Enumerate every surface that shows or takes a length.** Measurement
+   readouts, the dimension group's unit setting, the per-dimension override, the
+   Set Scale window, the properties panel's geometry fields, rulers and guides,
+   the grid spacing, page-size and margin fields, stamp and markup sizing, line
+   weight where it is a length, the status bar's pointer readout, and print
+   scaling. ★★★ **The enumeration is the deliverable** — a list nobody
+   wrote is why “some places” exists as a category.
+2. **One unit model, one conversion table, one formatter.** If more than one
+   place converts points to millimetres, they will disagree, and the operator
+   will find the disagreement before we do.
+3. **Add kilometres and miles**, which is his explicit ask and tells us what he
+   is drawing: site plans where a scaled sheet covers real ground. Which means
+   the set is not just “CAD units” — it wants **mm, cm, m, km, in, ft,
+   yd, mi**, and the feet-and-inches and fractional-inch presentations that
+   **O183** clause 1 already asks for.
+4. **Every unit name is a `ui_text` entry**, including the abbreviations, because
+   the gate requires it and because unit abbreviations are exactly the strings a
+   later translation would need.
+5. **A driven check per surface**, asserting the unit menu is offered and that
+   choosing one changes what is displayed. A unit list that exists but is not
+   reachable from a surface is the defect he is reporting.
+
+⚠ **Rule 15 applies throughout.** Everything above is about **ce dimensions**
+— the measurements pdfcer authors and displays. The unit a **pdf dimension**
+was exported with is CAD-exported page content and must not be silently
+rewritten; a unit choice that re-authors what the CAD system drew is a defect,
+not a feature.
+
+★★ **This extends O183 clause 1 rather than replacing it.** O183 says the unit
+setting cannot be changed after a group is created; this row says the unit set is
+incomplete and is absent from surfaces beyond the group. Fixing one without the
+other leaves him able to pick a unit he cannot then change, or to change a unit to
+one of three options. **They are scheduled together.**
+
+### ✅ MEASURED 2026-09-13 — the enumeration exists now: 55 surfaces, and the deliverable is done
+
+**Step 1 is complete.** Every surface in the program that shows or accepts a
+length has been enumerated with `file:line`, the unit it offers today, and the
+formatter behind it. The full table is in this session's record; the summary that
+decides the work:
+
+| category | count | what they offer |
+|---|---:|---|
+| follows the group's unit (correct today) | 3 | rulers, live perimeter, live radius |
+| offers a unit menu | 4 | Set Scale ×2, group unit ×2, per-dimension override |
+| **hard points, no control** | ~18 | properties geometry, all six `" pt"` suffix sites, dimension group style, import text, stamps, form fields |
+| **hard millimetres, no control** | ~12 | page size, print ×5, thumbnails, doc properties, insert image |
+| mixed/implicit | 3 | new-document presets (ISO in mm, ANSI in inches, chosen per entry) |
+| no readout at all | 2 | guides, grid |
+
+★★★ **The single sentence he was describing** is `text/panels/properties.rs:415-417`:
+*“Points, measured to the bottom-left corner. Y increases upward.”* — the
+note under Position and size, beside four `DragValue`s with no suffix and no menu.
+That is “only have points as a dimension type”, verbatim, and it is the
+properties panel, not the measure tool.
+
+★★★ **Step 2 is now the load-bearing one, because the conversions already
+disagree.** There is no shared points-to-millimetres constant. There are **six
+private constants** under two different names (`PTS_PER_MM`, `PT_PER_MM`) in six
+files, **seven re-declared inline closures** spelling `× 25.4 / 72.0`, and
+core's own `Unit::baseline_per_point`. Two of the six are **f32**
+(`panels/pages/mod.rs:203`, `panels/docprops/mod.rs:538`); the rest are f64.
+Rounding is `.round()` in some places and `{:.0}` in others. ⇒ **A sheet of
+exactly 210.5 mm renders 211 in the page thumbnail's tooltip and 210 in the print
+dialogue, today, before any of this work starts.** There is also a **second
+fractional-inch formatter** at `text/new_document.rs:180-197`, independent of
+core's `FractionMode`. **This is a live defect the enumeration found; it is not
+a consequence of the unit work and does not wait for it.**
+
+### ★★★ DELIVERED 2026-09-13 10:12 — step 3 is done, and it took ninety-one minutes
+
+**Kilometres, miles and yards are in the build.** All three unit dropdowns — Set
+Scale, the dimension group editor, the per-dimension override — offer **nine
+units** in `v0.5.0-dev.20260913.2`. **The row stays open**, because steps 1, 2, 4
+and 5 are ours and untouched; this is one clause of it closing, not the row.
+
+The paragraph that used to sit here read: *"Step 3 needs the engine and is
+therefore not ours … km, mi and yd exist nowhere in either repo … a decline
+costs us three dropdown entries, not the work."* It was measured, correct, and
+**false ninety-one minutes after it was written**. Request `G013` went out at
+08:58; the reply landed at 09:19 with all three units on the exact integer-ratio
+factors we proposed, plus the thing that actually mattered — `Unit::all()`
+widened from `[Unit; 6]` to `&'static [Unit]`. Pinned, built, smoke-launched and
+consumed by 10:12.
+
+★★ **The widening is the part worth remembering.** Not one of the three
+dropdowns was edited. All three read `Unit::all()`, so all three went from six
+entries to nine by rebuilding. The only shell changes were three match arms in
+each of two label functions, four loops taking `.iter().copied()`, and the
+deletion of our `fn units() -> [Unit; 6]` shim — which we had **reported as a
+workaround** rather than tolerated, which is the entire reason it got fixed
+instead of inherited.
+
+⇒ **A limitation sentence is a citation with an hours-long shelf life.** This
+is the second one in a single morning. Anything written in this file of the form
+*"blocked on the engine"* is a dated observation about a repository that answers
+in minutes, and must be re-measured before it is quoted, never inherited as a
+standing property.
+
+⚠ **What is still ours in this row, and none of it ever waited on anything:**
+steps 1 (done), 2 (the one conversion table — the 210.5 mm defect above),
+4 (`ui_text` entries for the abbreviations, now **inconsistently** catalogued:
+km/yd/mi have local entries and mm/cm/m/in/ft do not) and 5 (a driven check per
+surface).
+
+⚠ **One category must be EXCLUDED and the exclusion written down, or the sweep
+will damage something.** Font size, text-pen size, stamp text size and form-field
+font size (`app/fontband.rs:356`, `panels/properties/text.rs:748`,
+`panels/properties/tool.rs:212`, `text/forms/mod.rs:583`) are `" pt"` for the
+**typographic** point. It is the same 1/72 inch but it is a *type size*, not a
+document length, and no drawing program offers type size in millimetres. ⇒
+**Annotate them as deliberately excluded**, or a later sweep re-opens the question
+and eventually someone offers him a font size in kilometres.
+
+⚠ **`text/markup.rs` is at exactly 1,500 lines** and hosts one of the six `" pt"`
+suffix functions. It must be split before it can be touched. `app/markupband.rs`
+(1,479), `panels/pages/mod.rs` (1,459) and `text/print.rs` (1,437 — and it needs
+five conversion sites replaced) are the other three with no room.
+
+★★ **Catalog debt the enumeration surfaced:** there are **six separate `" pt"`
+const fns under five different names** across `text/`, and roughly twenty unit
+strings fused into `format!` templates inside `text/` — including
+`"Width (mm)"` and `"Height (mm)"` in two dialogues, where the unit is part of the
+**label**, so switching it means rewriting the label rather than the suffix. The
+string gate passes all of these because they live in `text/`. ⇒ **A gate that
+checks *where* a string lives cannot see a unit welded into it.**
+
+---
+
+## O195 — ◑ **FILED 2026-09-13** — smart select is not available in Review mode
+
+> *“Also review tab should also have access to the smart select selector.”*
+
+**`view.smart_select` is gated on `mode.edit_content` in the ribbon manifest and
+in the navigate rail**, so it is offered in Edit and nowhere else. He wants it in
+**Review** as well.
+
+**Why it is the right ask, not a convenience.** Smart select governs what a click
+on a drawing resolves to. Review mode is where he marks up someone else's sheet —
+clouds, highlights, comments anchored to things — and every one of those
+gestures starts by pointing at a piece of geometry. Without smart select, Review
+mode points at whatever single PDF path object happens to be under the cursor,
+which on his sheets is routinely a lump holding thousands of anchors. **The mode
+that most needs help resolving what you meant is the one it is withheld from.**
+
+**What to build:**
+
+- Offer `view.smart_select` when the mode is Review as well as Edit — in the
+  ribbon, in the navigate rail, and anywhere else the condition is written.
+- ❌ ★ ~~**The condition is the whole fix, and that is the point of R8:** the
+  capability is registered once and the manifest decides where it appears. No new
+  command, no second implementation.~~ **FALSIFIED 2026-09-13 — see MEASURED
+  below.** The clause that followed it was the right instinct and is what
+  happened: *“if it turns out to need more than a condition change, that is a
+  finding about the command's coupling to Edit mode and gets written up.”*
+  It needs more than a condition change. It is written up below.
+- ⚠ **Check what smart select actually DOES in Review before shipping it
+  there.** If its substitution path is wired to the editing selection model
+  rather than to the pick, offering it in Review would arm a control that does
+  nothing — which is worse than its absence, and is the exact failure R9 exists
+  to prevent.
+- A driven check that switches to Review and asserts the control is present,
+  armed, and changes what a click resolves to.
+
+★★ **Read `shell/manifest/rail.rs` before editing it.** That file carries a
+long note about `view.smart_select`'s placement which was wrong once already and
+was corrected in place; the reasoning there is about *where the toggle belongs*,
+and this row changes *which modes see it*, which is a different axis. Do not read
+the correction as settling this question.
+
+### ❌ MEASURED 2026-09-13 — a condition change would ship an inert button
+
+**The ⚠ clause in this row was the right one to write, and it fired.** Smart
+select's substitution is wired to **the pick**, not to the editing selection model
+— one funnel, `canvas/input.rs:195` `scope.resolve(targets, page_index, target)`.
+That is the good half. The bad half is that **in Review the pick funnel is never
+reached.**
+
+`canvas/clicking.rs:592` hands the press to text selection whenever
+`textsel::takes_the_press(tool, caps)` — and `canvas/textsel/gate.rs:272-273`
+is:
+
+```rust
+tool.is_text() || (matches!(tool, CanvasTool::Select) && !caps.edit_content)
+```
+
+Review has `edit_content == false`, so **an ordinary arrow click in Review is
+consumed as a text sweep** and the content ladder below it — which contains
+`probe(... scope)`, the double-click enter-container arm, the leave-container arm
+and `selection.click` — is structurally unreachable. The project already knows
+this and says so at `canvas/clicking.rs:444-449`: *“a rung below it is a rung
+that never runs.”* A test pins the gate deliberately (`gate.rs:338-341`).
+
+★★★ **So the preference is already ON in Review and always has been.**
+`app/frame.rs:430` syncs it unconditionally every frame, `canvas/smart.rs:146-149`
+defaults it to `true`, and `app/conditions/armed.rs:146-147` publishes its pressed
+state in every mode. **What Review lacks is not the mechanism and not the setting.
+It is a consumer.** ⇒ Adding the toggle to the Review ribbon would put a
+pressable, correctly-lit control in front of him that changes nothing about what
+his click selects — the exact R9 failure this row warned against, and a direct
+violation of `app/modes/capability.rs:20-23`: *“A mode changes what is visible.
+It never makes a visible control silently inert.”*
+
+**What the real work is.** Making smart select mean something in Review means
+letting a Review click resolve to page content — which is what `edit_content`
+exists to prevent. `capability.rs:116-130` argues the case: *“Selection is the
+only route to the verbs... A selection with nothing to read it is not
+inspection.”* ⇒ **This is a capability-model question, not a manifest
+question**, and the same file already names the shape of the answer at
+`:132-136`: the day canvas selection reaches a different operand space, it gets
+its own capability.
+
+★★ **But the ask is still right, and the argument in this row still stands.**
+He is not asking for a toggle; he is asking to be able to point at a thing on a
+busy sheet while marking it up. Review is where he does that. ⇒ **The
+deliverable is that a Review click resolves the way he means, not that a control
+appears** — and if that is achieved, whether the toggle is also shown becomes a
+detail rather than the feature.
+
+⚠ **A likely regression to check on the way, unverified.** The one place
+`scope` *is* live in Review today is the image arm at `clicking.rs:572-584`, and
+`allowed_candidates` classifies the **resolved** target (`input.rs:196`). An image
+inside a title-block form therefore resolves to the container, whose class is
+`FormXObject`, which the image-only `PickFilter` then rejects — selecting
+nothing. ⇒ **Drive this before assuming it; it is read from a contract, not
+from a run.**
+
+**If it does ship, the sites are known:** `app/conditions/mod.rs:759-761` must
+publish a new condition name first (there is no `mode.review` condition — the
+mode ids are *commands*, `app/dispatch.rs:1397*`; capability is derived from a
+mode's tabs, `capability.rs:32-45`), then `shell/commands/tests.rs:274`'s
+allow-list, `shell/commands/catalog/view.rs:338`, `shell/manifest/view.rs:271`,
+`shell/manifest/rail.rs:261`, `app/dispatch/navigate.rs:121`, and
+`shell/ron/built_in.ron:160,537` **regenerated, never hand-edited**
+(`cargo test -p pdfcer-gui rewrite_built_in_ron -- --ignored`). Four notes and
+three tests assert the current placement and each carries reasoning that must be
+rewritten rather than deleted — `rail.rs:431-466`, `:483-516`,
+`MODES_AND_PANELS.md:554-564`. ★ And `left_rail.rs:277`'s message
+*“Read drops the Points tool and Review drops nothing”* **becomes false**
+the moment Review gains a rail row that Read does not have.
+
+**The driven check to extend, not duplicate:** `tools/ui-verify/src/checks/smart_select.rs`
+hard-codes `const MODE: &str = "edit"` at `:100`. Parameterise it.
+
+---
+
+## O196 — ◑ **FOUND 2026-09-13, not yet reported by the operator** — three export windows forget every setting, and nothing in the program remembers them
+
+**Found by the dialogue sweep that O192 asked for**, and it outranks O192 on
+O192's own metric, which is why it gets its own row rather than a footnote.
+
+| window | file:line | what it forces back every time |
+|---|---|---|
+| **Export image** | `dialogs/export_image.rs:270-295` | PNG, current page, **300 dpi**, transparent, quality 90 |
+| **Export text** | `dialogs/export_text.rs:137-158` | all pages, default separator, default line endings, no BOM |
+| **Export to DXF** | `dialogs/export_dxf.rs:116` | `DxfOptions::default()` for everything except the scale |
+
+**Export at 600 dpi today and tomorrow it is 300 again.** There is no
+persistence: `app/prefs/` carries print preferences (`printing.rs` —
+`PrintPrefs`) and nothing for exports.
+
+★★★ **Why this is worse than O192 even though he reported O192.** A Set Scale
+that opens on the wrong number is at least *contradicted* by the Dimension Groups
+panel, which prints the real one two clicks away. **An export dialogue's settings
+are visible nowhere in the program.** The only way to learn what dpi he used last
+time is to export a file and inspect it — i.e. the state is unrecoverable by
+any route inside pdfcer.
+
+★★ **The precedent is already built and was built for exactly this.** Operator
+request **O166** produced `PrintDialog::open(doc, remembered: &PrintPrefs)` and
+the driven check `the_print_window_opens_on_the_settings_you_last_used`
+(`tools/ui-verify/src/checks/print_remembered.rs`), whose header reads: *“Before
+that day `PrintDialog::open` built every field from a literal, every single
+time.”* ⇒ **That sentence is currently true of three other windows.** Port
+`PrintPrefs` to `ExportPrefs` and port the check; this is a known shape, not a
+design problem.
+
+⚠ **Do not fold this into O192.** They present identically and are different
+defects: O192 is *reads no current value from the document*, this is *remembers
+no previous value across sessions*. The first is fixed by passing `&OpenDoc`
+in; the second by a prefs file entry. A fix for either does nothing for the
+other.
+
+**Not reported by him.** It is on this list because the sweep found it, and the
+standing rule is that anything the operator would report on discovering it gets
+written down when we discover it instead. ★ Only he closes a row.
 
 ---
 
@@ -13736,9 +14341,15 @@ feature designed to remove it.**
 
 ### O24f — the deep tier's hand-over, in three parts
 
-2,000,000 % is not a number he picked. The threshold is
-`SUB_PIXEL_CONTENT_EXTENT / page_height` = 16,777,216 / 792 ≈ **2,118,000 %**
-on a Letter sheet. Three faults met there:
+2,000,000 % is not a number he picked. On the day of the report the threshold
+was `SUB_PIXEL_CONTENT_EXTENT / page_height` = 16,777,216 / 792 ≈
+**2,118,000 %** on a Letter sheet. Three faults met there:
+
+> ⚠ **Dated.** O49 cut that constant to `2^20` on 2026-08-28, which moves the
+> boundary to about **132,000 %** on Letter. It bounds `page_height × zoom`, so
+> no single percentage is right for every sheet. The figure is kept because it
+> is what turned his sentence into a measurement, not because it still locates
+> the boundary.
 
 1. **The seed read the previous frame's scroll offset.** Dividing it by the
    *new* zoom asks where a point is using one frame's distance and the next

@@ -92,9 +92,16 @@ const MAX_STAGES: usize = 24;
 // Where the two tier boundaries sit, for the guard at the end of the climb: the
 // region raster tier engages at `MAX_PIXMAP_EDGE / page_height` ≈ 2,070 % on a
 // Letter sheet, and the `f64` position tier at
-// `SUB_PIXEL_CONTENT_EXTENT / page_height` ≈ 2,118,000 %. Both are far below
+// `SUB_PIXEL_CONTENT_EXTENT / page_height` ≈ 132,000 %. Both are far below
 // the ceiling, so a saturating climb crosses them on the way — but the guard
 // checks rather than assumes.
+//
+// ⚠ Neither figure is a zoom. Both are a bound on a PRODUCT —
+// `page_height × zoom` in pixels — so the percentage depends on the sheet in
+// front of the operator, and the deep one has already moved once: O49 cut
+// `SUB_PIXEL_CONTENT_EXTENT` from 2^24 to 2^20 on 2026-08-28, and every
+// restatement of the old 2,118,000 % in this crate outlived it. Cite the
+// constant; the percentages here are for a reader's sense of scale only.
 
 /// How far the anchored page point may drift **per wheel notch**, as a
 /// fraction of the page width currently visible.
@@ -150,8 +157,8 @@ impl Check for ZoomingDoesNotThrowAwayWhereTheOperatorPanned {
 
     fn defect(&self) -> &'static str {
         "zooming after panning snaps the view back to the centre of the page, or loses it \
-         entirely past about two million percent — the zoom discards the position instead of \
-         magnifying about it"
+         entirely once the page is magnified past the point an f32 scroll offset can address \
+         every pixel of it — the zoom discards the position instead of magnifying about it"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -571,8 +578,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Err(Error::new(format!(
             "every reading was on tier `{}` — the run never crossed the boundary between the f32 \
              scroll offset and the f64 anchor, which is half of what this check is for. That \
-             boundary is at SUB_PIXEL_CONTENT_EXTENT / page_height, about 2,118,000 % on a US \
-             Letter sheet. Raise STAGES or STAGE until it is crossed. SKIPPED rather than passed.",
+             boundary is at SUB_PIXEL_CONTENT_EXTENT / page_height, about 132,000 % on a US \
+             Letter sheet — a bound on a product, so read the constant rather than the \
+             percentage for any other page size. Raise STAGES or STAGE until it is crossed. \
+             SKIPPED rather than passed.",
             tiers.first().map_or("?", String::as_str)
         )));
     }

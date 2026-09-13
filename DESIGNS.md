@@ -36,130 +36,6 @@ a hard-coded line number in a file that grows at the head.
 
 ---
 
-## O186 Stage 1 — the cursor jumps away from what you were zooming into, and the canvas reaches a terminal dead end
-
-**The operator's report, `FEATURE.txt` item 6, second half.** Zooming deep in
-moves the thing he was zooming into off the screen, and far enough in the
-canvas stops responding altogether.
-
-★★★ **Stage 3 shipped the symptom fix and this is the cause.** The release of
-2026-09-13 stopped the shell ordering a whole-sheet raster the rasterizer
-cannot produce, so the alarming *`MAX_PIXMAP_EDGE`* message is gone and the
-last good picture stays on screen with the reason in the status bar. **That
-does not fix the jumping**, and the release notes say so in those words. The
-two share one instrument, which is why the driven falsification of Stage 3 is
-owed here rather than there.
-
-### What was measured
-
-On `D:/dev/pdfTests/ncored-benchmark-cad-drawing.pdf`, driving the real
-binary:
-
-```text
-deep anchor      pdf = (1199.50, -0.54)
-dies near        zoom = 539.7
-strip extent     hi  = 1684.27
-the anchor wants       1684.32
-```
-
-★★★ **Read the last two numbers together: the anchor is 0.05 pt outside the
-range the view can place.** That is the whole defect. The anchor is not
-nonsense and it is not far out — it is a hair beyond the end of the strip, and
-nothing clamps it, so the placement arithmetic produces an origin that puts
-every drawn page off the viewport. The canvas then publishes
-`canvas-unavailable reason=nothing-visible`, and because the early `return`
-in `present.rs` sits **above** the input handling, the gestures that would get
-him out — page flip, Ctrl+wheel zoom — are never reached. **It is terminal:
-the only escape is a keyboard route or reopening the file.**
-
-★ And the sign of the `-0.54` matters. The anchor is below the page box, so
-this is not *"he zoomed past the edge"* — it is the overhang the pasteboard is
-supposed to allow, being treated as though it were inside the page.
-
-### The design, four parts
-
-**1. `canvas/geometry.rs` — name the range the view can actually place.**
-
-```rust
-/// The closed interval of strip origins that leave at least some content
-/// visible, in the same units the caller's `strip` and `viewport` are in.
-///
-/// `overhang` is the pasteboard reserve: how far past the content the view
-/// is allowed to sit, so a page edge is not welded to the viewport edge.
-///
-/// ★ The `.max(-pb)` is not defensive decoration. When the strip is SHORTER
-/// than the viewport -- one small page at a low zoom, or any page at a zoom
-/// high enough that a single sheet no longer fills the canvas -- the naive
-/// upper bound falls BELOW the lower one and the interval inverts. An
-/// inverted interval clamps every value to its wrong end, which presents as
-/// the view snapping to a corner rather than as an error.
-pub(crate) fn visible_origin_range(strip: f32, viewport: f32, overhang: f32)
-    -> (f32, f32)
-{
-    let pb = overhang;
-    (-pb, (strip + pb - viewport).max(-pb))
-}
-```
-
-Plus a reserve in `pasteboard()` so `overhang` has one definition rather than
-a literal at each call site.
-
-**2. `canvas/deep.rs` — confine `doc.deep_anchor` at the END of the `if deep`
-block**, after the anchor has been chosen, not before. Confining it earlier
-would clamp the operator's intent; confining it at the end clamps only the
-**placement** of that intent, which is the thing that was out of range.
-
-**3. `present.rs` — an escape hatch in the empty-`drawn` branch, BEFORE the
-`return`.** This is the part that makes the dead end survivable. Run
-`paging::flip` and the Ctrl+wheel zoom handler, gated on `content_hovered`
-only — not on a selection, not on a hit test, because by construction
-nothing is hittable in this state.
-
-⚠ **Do not move the `return` instead.** Everything below it assumes at
-least one page was drawn, and several of those assumptions are not checked.
-The hatch is a deliberate, narrow exception with its reason on it.
-
-**4. A trace slot, deliberately low-cardinality.**
-
-```text
-pdfcer-diag canvas-confined axes=none|x|y|xy
-```
-
-★ Four values and no numbers, published through `trace_changed`, so the slot
-emits one line per transition instead of one per wheel notch. The numbers are
-already on `canvas-pos`, from the code that decided them. A slot that carries
-a float changes every frame of a zoom gesture and defeats its own
-de-duplication — that lesson is written on `strip-beyond-raster`, which was
-built with the scale deliberately left out for the same reason.
-
-### What this owes in the way of verification
-
-Unit tests on `visible_origin_range`, including **both signs** and the
-inverted-interval case — a suite that only tries one sign is not testing the
-value.
-
-And a driven check that:
-
-1. **Reproduces the terminal state first**, on the old behaviour: reach
-   `canvas-unavailable reason=nothing-visible` and confirm a page-flip gesture
-   does nothing. A check written only against the fix cannot tell a repair
-   from a coincidence.
-2. **Asserts no ceiling was learned while the canvas was blank.** This is the
-   non-obvious half. The zoom ceiling is learned from what the renderer
-   refused, and a blank canvas refuses everything, so a ceiling learned in
-   this state is learned from the defect and then outlives the fix.
-3. **Turns `zooming_back_out_keeps_the_view`'s SKIP into a FAIL.** ★ It
-   PASSED in the 2026-09-13 sweep, so the SKIP branch is now dead code that
-   can only hide a regression.
-
-⇒ **And it discharges Stage 3's missing falsification.** Stage 3 shipped with
-four unit tests and no driven check, and a build with its guard deleted passes
-every one of them — measured, not assumed, and written on the function
-itself. The instrument this stage needs is the same one, so the two go in
-together.
-
----
-
 ## O185 — the print dialogue forgets its settings, and Cancel does not cancel
 
 Design, written 2026-09-12 from a read-only survey of the print dialogue.
@@ -2041,8 +1917,10 @@ optional.
 
 ### 8. The driven check owed
 
-`D:\Dev\pdfcer-gui\tools\ui-verify\src\checks\` holds **210** files (measured,
-`ls | wc -l`). The existing cross-document drag check is
+`D:\Dev\pdfcer-gui\tools\ui-verify\src\checks\` holds **213** files (measured
+2026-09-13, `ls | wc -l`; it was 210 when this section was written, and the
+three added since are the O186 work's own). ★ **Date a file count or it
+becomes a claim about a directory that grows every week.**. The existing cross-document drag check is
 `checks\page_drag_between_documents.rs`, registered at
 `checks\mod.rs:845` and `checks\roster.rs:771-772` as two instances,
 `PageDraggedBetweenDocuments::COPY` and `::MOVE`, whose `fn name` at

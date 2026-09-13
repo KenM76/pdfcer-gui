@@ -813,3 +813,173 @@ pub(super) fn pasteboard(overhang: egui::Vec2, off_page: bool) {
         )
     });
 }
+
+/// The slot [`placed`] de-duplicates on.
+///
+/// Its own slot, not shared with [`LAYOUT_SLOT`]: the placement decision is a
+/// *request*, the layout line is the *outcome*, and the whole value of this
+/// trace is being able to see the two disagree. Sharing a slot would let one
+/// overwrite the other and hide exactly the case it exists to expose.
+pub(super) const PLACE_SLOT: &str = "canvas-place"; // ui-text-exempt: trace slot name, never displayed
+
+/// **What the ranked offset decision asked the scroll area for, this frame.**
+///
+/// # Why this line exists
+///
+/// `canvas::offset`'s header says it plainly: the decision returns an offset
+/// rather than applying one so that *"which branch won?"* is answerable. Until
+/// 2026-09-13 it was answerable only by reading the whole chain in a debugger,
+/// because nothing published the answer — and the `canvas` line's `off=` field
+/// reports what the area **settled on**, which is a different number whenever
+/// egui clamps the request against a content size it has not laid out yet.
+///
+/// ★★★ That difference is not hypothetical, and the history of this paragraph
+/// is itself the argument for the line.
+///
+/// A regression measured on 2026-09-13 opened a multi-page document with the
+/// page parked off the bottom-right corner. The only symptom was the `canvas`
+/// line's `off=[0.0 0.0]`, and the first two explanations written down were
+/// both wrong: *"the frame that should have seeded was skipped"* (disproved by
+/// reading `canvas::present`'s ordering — the decision runs above the scroll
+/// area every frame), then *"the open-seed arm asked for a centred offset and
+/// egui clamped it to zero"*. This line killed the second one in a single run:
+/// the request itself was `0.0,0.0`. Nothing was clamped by egui at all.
+///
+/// ⚠ **`(0.0, 0.0)` is the most over-subscribed value in this subsystem.** The
+/// deep-tier arm returns it as a literal; `geometry::strip_offset`'s lower
+/// clamp manufactures it from any sufficiently negative page-local solve; a
+/// strip-space page scroll to the top of the content produces it honestly; and
+/// *no arm firing at all* leaves the area sitting on it. That is why `src=`
+/// exists beside `want=` — the number alone cannot tell those four apart, and
+/// a session was spent proving it.
+///
+/// # Fields
+///
+/// * `src=` — [`crate::canvas::offset::Decision::source`], the name of the arm
+///   that claimed the frame, or `none`. **Read this field first.** Every other
+///   field on the line is only interpretable once it is known which arm's
+///   arithmetic produced the number.
+/// * `want=` — the offset the decision returned, or `none` when no source
+///   claimed the frame and egui's own scrolling is left alone. **A `none` is
+///   the normal case**; a canvas that forced an offset on every frame would be
+///   a canvas the wheel could not move. `src=` and `want=` are always `none`
+///   together; they are separate fields because a reader greps one and
+///   arithmetic uses the other.
+/// * `frames=` — `OpenDoc::canvas_frames` as the decision saw it, i.e. before
+///   this frame's increment. The open-seed arm fires on exactly `1`, so this
+///   field is what distinguishes "the seed did not fire" from "the seed fired
+///   and was ignored".
+/// * `strip=` — the whole strip's drawn size, which is what every `geometry`
+///   margin term above is computed against.
+/// * `row=` — the row's rect in strip space, the origin the request is
+///   measured from.
+/// * `vp=` — the viewport measured inside the scroll bars.
+/// * `over=` — `OpenDoc::pasteboard_overhang` as this frame published it. On
+///   the line because it is a hidden input to **every** `geometry` term here:
+///   `pasteboard`, `strip_margin` and `content_extent` all take it, so a
+///   request that does not reconcile with the other fields is most often a
+///   frame where the overhang was not what the reader assumed. It is zero
+///   except when the sheet is far enough off-page to need the extra room.
+///
+/// ⚠ De-duplicated, so a still canvas emits once rather than once per frame —
+/// which means a repeated identical request prints once. That is the right
+/// trade for a line whose readers are looking for a transition, but a check
+/// counting requests must not count these.
+pub(super) fn placed(
+    decision: &crate::canvas::offset::Decision,
+    frames: u8,
+    strip: egui::Vec2,
+    row: egui::Rect,
+    vp: egui::Vec2,
+    overhang: egui::Vec2,
+) {
+    crate::diag::trace_changed(PLACE_SLOT, || {
+        // Taken from the decision itself rather than passed in beside it, so
+        // the name and the number on the line cannot drift apart at the call
+        // site — the same reason `Decision::won` is the only constructor.
+        let src = decision.source;
+        let want = match decision.offset {
+            // ui-text-exempt: trace field VALUES, never displayed in the UI.
+            Some(w) => format!("{:.1},{:.1}", w.x, w.y),
+            None => "none".to_owned(), // ui-text-exempt: trace field value
+        };
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "canvas-place src={src} want={want} frames={frames} strip={:.1}x{:.1} \
+             row=[{:.1},{:.1} {:.1}x{:.1}] vp={:.1}x{:.1} over={:.1}x{:.1}",
+            strip.x,
+            strip.y,
+            row.min.x,
+            row.min.y,
+            row.width(),
+            row.height(),
+            vp.x,
+            vp.y,
+            overhang.x,
+            overhang.y
+        )
+    });
+}
+
+/// The slot [`confined`] de-duplicates on.
+///
+/// Its own slot rather than sharing [`LAYOUT_SLOT`], on this module's standing
+/// rule: the layout line changes on every scroll and every zoom, and a
+/// confinement is a **transition that happens once** at the far end of a climb.
+/// Sharing a slot would bury the one line a check is looking for under two
+/// hundred it is not.
+pub(super) const CONFINED_SLOT: &str = "canvas-confined"; // ui-text-exempt: trace slot name, never displayed
+
+/// ★★★ **Whether the `f64` anchor had to be pulled back into the range the view
+/// can actually place** — `OPERATOR_REQUESTS.md` **O186**, stage one.
+///
+/// `canvas-confined axes=none|x|y|xy`
+///
+/// # What it is evidence of
+///
+/// [`crate::canvas::geometry::visible_origin_range`] carries the defect: above
+/// the deep-position threshold nothing bounded the anchor, an unbounded
+/// `panned`/`zoomed_about` walk carried it a hair past the end of the strip,
+/// and the whole page left the screen. The fix clamps it. **A clamp that fires
+/// is invisible by construction** — the picture simply stays where it should —
+/// so without this line a check could only assert the *absence* of
+/// `canvas-unavailable`, which is satisfied equally by the clamp working and by
+/// the climb never having got deep enough to need it.
+///
+/// ⇒ That distinction is this project's most expensive recurring defect: an
+/// assertion both outcomes satisfy measures neither. `axes=` is what makes the
+/// check able to say *the mechanism ran*, separately from *the symptom is
+/// gone*.
+///
+/// # ★★ Four values and no numbers, deliberately
+///
+/// The magnitudes are already on `canvas-pos`, published by the code that
+/// decided them, and this slot is de-duplicated through
+/// [`crate::diag::trace_changed`]. A slot carrying a float **changes on every
+/// frame of a zoom gesture** and so defeats its own de-duplication — one line
+/// per wheel notch, a hundred lines per climb, and the transition a check wants
+/// is no longer findable. The same reasoning is written on `strip-beyond-raster`,
+/// which was built with its scale deliberately left out.
+///
+/// # Why `none` is emitted at all
+///
+/// So the transition is readable in **both** directions. A check that only ever
+/// saw `axes=xy` could not tell a canvas that stopped needing the clamp from a
+/// canvas that stopped emitting. ⚠ `none` also covers the two frames that have
+/// no anchor to confine — see [`crate::canvas::deep::confine`]'s early returns.
+/// At this tier the anchor is seeded on the first frame, so those are
+/// unreachable in a real climb; a reader who needs to distinguish them has
+/// `canvas-pos … deep` on the same frame.
+pub(super) fn confined(x: bool, y: bool) {
+    // ui-text-exempt: trace field VALUES, never displayed in the UI.
+    let axes = match (x, y) {
+        (true, true) => "xy",
+        (true, false) => "x",
+        (false, true) => "y",
+        (false, false) => "none",
+    };
+    crate::diag::trace_changed(CONFINED_SLOT, || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("canvas-confined axes={axes}")
+    });
+}

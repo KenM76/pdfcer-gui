@@ -251,7 +251,7 @@ pub(super) fn position(
     // `canvas::offset`'s header for each one's argument. It returns an offset
     // rather than applying it, so the `ScrollArea` is configured in exactly
     // one place.
-    let offset = offset::decide(
+    let decision = offset::decide(
         ui,
         doc,
         layout,
@@ -269,6 +269,21 @@ pub(super) fn position(
             vp,
         },
     );
+
+    // ★ Published BEFORE the frame counter moves, so `frames=` on the line is
+    // the value `offset::decide` actually branched on rather than the value the
+    // next frame will see. An off-by-one here would make the open-seed arm look
+    // as though it fired on the wrong frame, which is the single question this
+    // line was added to answer.
+    super::trace::placed(
+        &decision,
+        doc.canvas_frames,
+        display_size,
+        row_rect,
+        vp,
+        overhang,
+    );
+    let offset = decision.offset;
 
     // How many canvas frames this document has had. Saturating, and only ever
     // read against a small constant — by `offset::decide`'s open-seed arm,

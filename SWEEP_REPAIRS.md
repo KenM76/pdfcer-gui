@@ -4,7 +4,7 @@
 this project's charter makes it the only oracle that counts. The consequence
 nobody plans for is that **a driven failure is a claim about two programs** — the
 application and the check — and in this project's measured experience the check
-is wrong more often than the application. **Two full sweeps, and the score so
+is wrong more often than the application. **Three full sweeps, and the score so
 far is twenty-one to nil.** The first — 213 checks, 2026-09-12, `passed=162
 failed=11 skipped=40` — produced eleven FAILs and not one of them was a defect
 in the application. The second — 220 checks, 2026-09-13, `passed=185 failed=4
@@ -12,7 +12,12 @@ skipped=31` — produced **four**, and all four are rows in this file: R4
 (`zooming_does_not_throw_away_where_the_operator_panned`), R6
 (`text_edit_on_a_real_drawing`), R8
 (`the_page_still_renders_at_every_decade_of_zoom`) and R9
-(`the_wheel_turns_pages_when_the_operator_asks_it_to`).
+(`the_wheel_turns_pages_when_the_operator_asks_it_to`). The third — 221 checks,
+2026-09-13 morning, `passed=183 failed=4 skipped=34` — produced **the same
+four and no others**, and its news is in the SKIP column rather than the FAIL
+column: five checks that passed in the previous sweep were recorded as
+skipped, and all five pass when re-driven against the same frozen binary on
+an idle machine. That is R11, and it is a new shape for this file.
 
 ★★★ **Read the two tallies as one fact, not two.** Seven of the first sweep's
 eleven failures are gone and eleven of its skips are back on, and **not one check
@@ -249,6 +254,20 @@ not O24f either — the failing tier is `scroll`.
 only evidence we had for Ken's *"the cursor still jumps at deep zoom"*. A new
 probe, inside the sheet, on both tiers, at the zooms he actually works at, is
 owed before anything is built or reported to him.
+
+> ★★★ **PARTIALLY SUPERSEDED 2026-09-13, and the words are the trap.**
+> `OPERATOR_REQUESTS.md`'s O186 row now reads **BUILT AND DRIVEN — claims 1
+> and 3**, which contradicts the paragraph above only if you read "part 1"
+> the same way in both files. It is not the same subject. O186 claim 1 has two
+> halves: *"the cursor jumps"* **and** *"the area I was zooming into is
+> no longer on screen"*. The **second half is fixed and driven** — the
+> pasteboard was exactly one viewport, so a blank screen was an allowed
+> position, and it is one viewport less a 32 pt sliver now. The **first half —
+> a cursor that jumps while the sheet stays on screen — is still
+> unreproduced**, and the probe this paragraph asks for is still owed.
+> ⇒ **When two documents use the same phrase for different halves of one
+> report, neither is wrong and a reader will still come away wrong.** Split the
+> claim in the register, and cite the half.
 
 ---
 
@@ -567,6 +586,102 @@ defend. The program behaved correctly and the check could not see it.
 
 ---
 
+## R11 — the window wait turns machine load into missing coverage, and then explains it with a cause it never measured
+
+**Status: open. One `.rs` edit, `tools/ui-verify/src/launch.rs:341-348`.**
+
+### What the sweep measured
+
+The 2026-09-13 morning sweep reported `passed=183 failed=4 skipped=34`. The
+previous one reported `passed=188 failed=4 skipped=29` over the same roster.
+Four failures either side, the same four by name — and **five checks moved from
+PASS to SKIP**:
+
+    embedding_fonts_puts_a_program_in_the_document
+    save_copy_round_trip
+    tab_order_drag_moves_a_field_and_shows_where
+    the_standards_presets_group_is_reachable
+    the_title_bar_carries_the_build_time
+
+All five were re-driven immediately afterwards, against **the same frozen copy
+of the same binary**, with nothing else running on the machine:
+
+    5 passed, 0 failed, 0 skipped
+
+So no application behaviour changed and no check was broken. What changed was
+that the machine was busy, and four of the five reported:
+
+> no window appeared for pid NNNNN within 30s. On a platform that cannot
+> enumerate windows this is always the outcome, and the check is correctly
+> reported as SKIPPED rather than failed.
+
+### The two defects in that sentence
+
+**★ First, the explanation is unevidenced, and it is false here.** The clause
+*"on a platform that cannot enumerate windows"* is a cause the code never
+measured. This platform enumerates windows perfectly well — it did so for two
+hundred and sixteen other checks **in the same run, in the same hour, from the
+same process**. A refusal that offers a plausible reason it did not check is
+worse than one that says only *"I could not"*, because it reads as an answered
+question and nobody investigates it. That is the same failure this project has
+recorded before as an unevidenced excuse, committed here by the harness whose
+entire purpose is to not commit it.
+
+**★★★ Second, and this is the expensive half: the outcome is SKIP, so nothing
+goes red.** `launch.rs:341` returns an `Error`, the runner classifies a launch
+error as SKIPPED rather than FAILED (correctly, in the general case — a check
+that could not start has not measured the program), and the sweep ends with an
+`rc=3` that a reader has already been told to expect. **Contention silently
+removes coverage and the tally still looks ordinary.** The only reason this was
+caught at all is the standing rule that the SKIP set is diffed in both
+directions against the previous sweep; the totals alone would have read as
+"183 passed, no new failures", which is true and useless.
+
+⇒ **A threshold measured in wall-clock seconds is a threshold on how busy
+the machine is.** `spec.window_timeout` is 30 s and the poll loop
+(`launch.rs:303-339`) waits for a window whose client area has reached
+`MIN_CLIENT_PX`. Every one of the five is a check that opens a *second* surface
+— a dialogue, a settings window, a properties window — on top of a cold-started
+application, which is the slowest thing the harness ever does. On an idle
+machine that is a few seconds; under a parallel `cargo` build and a second
+driven application it is not.
+
+### The repair
+
+Three parts, and the first is the one that matters:
+
+1. **Record what was actually observed during the poll, and say that.** The loop
+   already calls `sys::find_window_for_pid` and `sys::window_frame`. Keep the
+   best observation — *no window handle ever returned*, versus *a handle was
+   returned but its client area never exceeded MIN_CLIENT_PX (best seen: W x H)*
+   — and put it in the message. Those are different diagnoses and today they
+   share one sentence.
+2. **Delete the platform clause, or earn it.** The process knows whether it has
+   ever successfully enumerated a window: a single `AtomicBool` set the first
+   time `find_window_for_pid` returns `Some` anywhere in the run. Print the
+   *"cannot enumerate windows"* explanation only when that flag is still false.
+   When it is true, the sentence is **"this machine enumerates windows; this
+   application did not show one in time"**, which is a different report and
+   points at load rather than at the platform.
+3. **Make a timeout distinguishable in the tally.** A launch that could not
+   *start* and a launch that started and was too slow are not the same event.
+   The second should carry a marker the sweep can count, so a run can say *"34
+   skipped, of which 4 were window-wait timeouts"* rather than burying it.
+
+⚠ **What NOT to do: raise the timeout.** 30 s is already long. A larger
+number moves the boundary without removing it, and it costs every genuinely
+dead launch the extra wait. The defect is not the duration, it is that the
+duration's expiry is reported as a property of the platform instead of a
+property of the moment.
+
+### Falsify it
+
+Run any one of the five with the machine loaded — a `cargo build -j8` is
+enough — and confirm the message names the observation rather than the
+platform. Then run it idle and confirm it passes. **The check that the repair
+is real is that the two runs produce two different sentences**; today they
+produce the same one, which is why the sweep could not tell them apart.
+
 # Appendix A — the measurements R4 and R6 rest on
 
 Folded in from the sweep's own findings file so this register is self-contained. These are traces and arithmetic, not conclusions: they are here because both rows above assert something counter-intuitive — that a drift the harness reported is the harness's own, and that a check reporting *"the shell built no plan"* was watching a shell that built one — and an assertion like that is worth nothing without the numbers underneath it.
@@ -692,6 +807,13 @@ bottom of it. This measurement removes the only evidence we had, so O186 part 1
 is now **unreproduced**, not diagnosed. The next step is a probe placed well
 inside the sheet, on the `deep` tier as well as `scroll`, and driven at the
 zooms he actually works at.
+
+> ★★★ **Still true on 2026-09-13, and still not what the register means.**
+> The O186 row is marked BUILT AND DRIVEN for claims 1 and 3. That covers the
+> *"no longer on screen"* half of claim 1, which was a pasteboard exactly
+> one viewport wide making a blank canvas an allowed position. **The cursor-jump
+> half is untouched by that fix** and the probe named above is still owed. See
+> the longer note at R4.
 
 ★★ It is also the second sighting of a lesson already on file: *a slack in
 screen units shrinks in the units he cares about — any reachable area sized in

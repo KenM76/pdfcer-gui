@@ -86,3 +86,94 @@ HISTORICAL and a past tick correctly says "blocked" about the day it was
 written, so a sweep of every `*.md` would demand rewriting history to stay
 green. ⇒ The fix is not "make it automatic"; it is a comment at the list
 telling the next author to add their document **in the same commit**.
+
+## ★★★ FIFTH — 2026-09-13, and this one was a hand-written list of ENUM VARIANTS, not files
+
+`text::scale::tests::every_unit_is_named_distinctly` is the test whose entire
+job is to catch a unit that reaches an operator with no English label, or two
+units sharing one. Its subject list was:
+
+```rust
+let units = [Unit::Millimeter, Unit::Centimeter, Unit::Meter,
+             Unit::Inch, Unit::DecimalFeet, Unit::FeetInches];
+```
+
+The engine shipped `Kilometer`, `Yard` and `Mile` that morning. **The test
+would have passed, green and silent, with all three unlabelled.** What actually
+caught them was the exhaustive `match` in `unit_name` directly above it — the
+compiler refused the build. The test was decoration and had been since it was
+written; the guard that worked was somewhere else entirely.
+
+It reads `Unit::all()` now — the same slice the three unit dropdowns read, so
+the test and the product cannot disagree about what the set is — and was
+falsified with a planted duplicate label before being believed.
+
+⇒ **Four earlier instances were hand-written lists of FILES. This one was a
+hand-written list of VARIANTS of a type that already knows its own members.**
+The family is wider than "module lists":
+
+| hand-written | the thing that already knows |
+|---|---|
+| `&[(&str, &str)]` of `include_str!` | `read_dir` / a build script |
+| `const DIALOGS: &[(&str, &str)]` | the command registry |
+| `DOCS=(...)` in a shell gate | the class's canonical home, named |
+| **`let units = [Unit::A, Unit::B, …]`** | **`Unit::all()`** |
+
+⇒ **The sweep to run, once, and it is overdue:** grep every `#[test]` whose
+name contains `every_`, `all_` or `complete` for a `let xs = [` or a `const X:
+&[` in its body. That literal IS the gap, every time. The lesson has been
+written five times; the instrument has never been built, which is
+[[a-lesson-in-a-docstring-is-not-an-instrument]] applied to this very memory.
+
+★ And note what the *engine* did with the same problem on the same day: when
+`Unit::all()` stopped returning `[Unit; 6]`, the cardinality check it had been
+relying on silently disappeared. They replaced it with an **exhaustive match**
+rather than a length assertion, and wrote down why — *"a plain length assertion
+would have gone red with a number to bump, which is the kind of failure people
+fix by bumping the number."* That is the right shape: a guard whose failure
+cannot be discharged by editing a constant.
+
+
+## ★★★ SIXTH — 2026-09-13, AND THE INSTRUMENT EXISTS NOW
+
+`tools/gates/check-completeness-tests.py`, registered in `run-all.sh` in the
+same commit. It is the answer to the note five sections up that kept saying
+*"build the grep"* and never did.
+
+**What it looks for, and why the obvious version was useless.** The first draft
+flagged any literal array inside a function named `every_*` / `all_*` / `each_*`
+/ `*_complete*` and returned **53** hits on a clean tree. Most were test INPUTS
+— `let widths = [90.0, 70.0, 130.0]`, a pair of drag corners — and a gate
+that fires on those teaches people to write exemptions, which is how a gate
+turns into scenery. The predicate that works is narrower: **three or more
+elements of the array must be `Type::Variant` paths sharing one `Type`.** That
+is not a list of inputs; that is a private copy of an enumeration. It returns
+**29**.
+
+★★ **The severity axis I did not expect: LOCAL versus FOREIGN.** Nine of the
+twenty-nine copy a type this repository does not declare — `FormatError`,
+`ReflowDecline`, `EditError`, `Object`, `SnapKind`, `RecompressReason`,
+`BlendSpaceFrom`, `StampSizeSource`, `ButtonAction`. Those are the dangerous
+ones by a category, and the reason is the thing this project keeps relearning:
+**the engine's enums grow on a BRANCH pin that moves without a `cargo update`,
+and nothing on this side is edited on the day it happens.** A hand-copied local
+enum at least has the copy and the declaration in one repository, so some commit
+touches both neighbourhoods. A hand-copied engine enum has no such day.
+
+★ **And the classification was wrong by one until the aliases were resolved.**
+Three sites enumerate `E`, `D` and `R`, which are `use ... as` aliases, not type
+names. A first pass that classified origin by grepping this repository for
+`enum X` called all three FOREIGN; `R` in `text/redact/tests.rs` is
+`crate::redact::RedactApplyRefusal`, which is ours. The import statement is the
+better oracle in both directions — it resolves the alias, and it also catches a
+type this repository declares but that FILE imports from elsewhere. ⇒ **A
+severity count wrong by one in the direction of alarm devalues the other nine**,
+so this was worth the extra pass rather than a footnote.
+
+★ **The register is called a debt register, in those words, inside the file.**
+`completeness-snapshot.txt` holds the 29 so the gate can be adopted red-free,
+and the header states the distinction that erodes: *an exemption says "this is
+fine"; a debt entry says "this is wrong and has not been fixed yet."* Every run
+prints the outstanding count. Both directions fail: a site missing from the
+register (the debt grew) and a register line matching nothing (the register
+stopped describing the tree).

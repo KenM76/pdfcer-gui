@@ -612,7 +612,7 @@ impl DimensionGroupsUi {
                 egui::ComboBox::from_id_salt("dimension-group-unit")
                     .selected_text(crate::text::scale::unit_name(unit))
                     .show_ui(ui, |ui| {
-                        for option in Unit::all() {
+                        for option in Unit::all().iter().copied() {
                             ui.selectable_value(
                                 &mut unit,
                                 option,
@@ -727,7 +727,7 @@ impl DimensionGroupsUi {
                     // local copy in `dialogs::scale` that happened to match —
                     // a latent divergence rather than an active one, and this is
                     // the version that cannot acquire it.
-                    for unit in Unit::all() {
+                    for unit in Unit::all().iter().copied() {
                         ui.selectable_value(
                             &mut self.new_unit,
                             unit,

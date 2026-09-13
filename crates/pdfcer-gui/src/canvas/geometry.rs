@@ -76,7 +76,99 @@ fn margin(display: f32, viewport: f32) -> f32 {
 /// The pasteboard, as a multiple of the viewport. O23: half a viewport puts
 /// a page corner at the screen's centre, a whole one puts it at the opposite
 /// corner, and the operator asked for the second.
+///
+/// ★★★ **A whole viewport is also, exactly, the placement at which the sheet
+/// stops being visible at all** — and that is what O186 turned out to be. The
+/// fraction is NOT reduced to fix it: it is still one viewport, because the
+/// operator's sentence is still the rule. [`MIN_SHEET_ON_SCREEN`] is
+/// subtracted from it instead, so the page corner arrives at the opposite
+/// corner and **can be seen there**, which is what he was asking for in the
+/// first place. See that constant for the measurement.
 const PASTEBOARD_FRACTION: f32 = 1.0;
+
+/// ★★★ **The band of the strip the pasteboard must always leave on screen**,
+/// in logical points, at every zoom and on both axes.
+///
+/// # The defect this exists for, measured rather than reasoned
+///
+/// `OPERATOR_REQUESTS.md` **O186**: *"the canvas will just stop zooming in."*
+/// Driven on 2026-09-13 by
+/// `tools/ui-verify/src/checks/off_sheet.rs` against `fixtures/four-pages.pdf`
+/// — an A1 landscape sheet — in a 970 × 1158 pt canvas, Ctrl+wheeling **in**
+/// with the pointer 84 pt above the sheet's top edge:
+///
+/// ```text
+/// notches 30     zoom   2320 %          canvas-pos at = 27073.000,-1158.688
+/// viewport       [[288.0 165.7] - [1258.0 1324.0]]   so its height is 1158.3
+/// strip/page     [[-26785.0 1324.3] - [28522.5 40388.1]]
+/// next frame     canvas-unavailable reason=nothing-visible
+/// ```
+///
+/// ★★ **Read `at.y` against the viewport height: they are the same number.**
+/// The view is parked at exactly `lo` — one whole pasteboard, which is one
+/// whole viewport, above the strip — so the strip's top edge lands on the
+/// viewport's **bottom** edge and the page occupies zero of the canvas. The
+/// published page rect says so in the other direction: `1324.3` against a
+/// viewport bottom of `1324.0`.
+///
+/// # ★★★ Three things this measurement overturned, and they matter more than the constant
+///
+/// 1. **The reported defect is NOT in the deep tier.** It reproduces at
+///    2,320 %, and the `f64` hand-over on this sheet is at a zoom of about
+///    440 — that is **44,000 %**. The peak zoom reached before the blank was
+///    `tier=scroll` throughout and [`crate::canvas::deep`]'s clamp never
+///    fired. A fix confined to the deep anchor would have left the operator's
+///    own reproduction untouched while every instrument went green.
+/// 2. **So "clamp the anchor to the reachable range" was not enough.** The
+///    extremes of [`visible_origin_range`] *are* the zero-overlap placement,
+///    at both ends and on both axes — `lo` puts the strip's start on the
+///    viewport's far edge and `hi` puts its end on the near one. Clamping a
+///    tier to a range whose endpoints are blank parks the view on a blank
+///    frame and calls it confined. The range itself had to be narrowed.
+/// 3. **And the narrowing belongs HERE, in one term, not in either tier.**
+///    [`content_extent`], [`strip_margin`], [`strip_to_scroll`]'s clamp,
+///    [`visible_origin_range`] and therefore the `ScrollArea`'s own
+///    `[0, content − viewport]` are every one of them derived from
+///    [`pasteboard`]. Subtracting the sliver once fixes the shallow tier the
+///    operator actually hit, the deep tier's new clamp, **and** the scroll bar
+///    dragged to its end — which was blank too, at any zoom, and nobody had
+///    ever reported it because a scroll bar at its stop does not feel like a
+///    defect.
+///
+/// # Why 32 points, and why points rather than a fraction
+///
+/// The guarantee is about what the operator can **see and grab**, so its unit
+/// is the screen, not the drawing: a fraction of the viewport shrinks in the
+/// units he cares about as the canvas narrows, and a fraction of the *page*
+/// would vanish as the zoom rises. 32 logical points is about a scroll bar's
+/// width — wide enough to see the sheet's edge and to put a pointer on it,
+/// small enough that it costs 2.8 % of the 1,158 pt freedom measured above.
+///
+/// ★ It is **not** a tolerance and must not be tuned by widening it when
+/// something looks wrong. Any positive value removes the blank frame; this one
+/// is the smallest that is also *usable*, and usable is the requirement.
+///
+/// See [`sheet_sliver`] for what happens on a canvas smaller than 64 pt.
+const MIN_SHEET_ON_SCREEN: f32 = 32.0;
+
+/// The sliver [`pasteboard`] actually reserves for a given viewport.
+///
+/// [`MIN_SHEET_ON_SCREEN`] normally, and **half the viewport** on a canvas
+/// narrower than twice it. The second case is not hypothetical — a docked
+/// panel can be dragged down to a few points, and a frame measured before
+/// layout reports a viewport of zero — and the `min` is what keeps the
+/// pasteboard non-negative there without a separate guard. At `viewport = 1.0`
+/// the pasteboard becomes `0.5`: still a pasteboard, still positive, and the
+/// interval [`visible_origin_range`] returns is still non-inverted, which is
+/// the property the rest of this module is entitled to assume.
+///
+/// Deliberately a function rather than an expression inlined at its one call
+/// site, so the tests can measure the rule directly instead of inferring it
+/// from a pasteboard that has already had the overhang branch applied to it.
+#[must_use]
+fn sheet_sliver(viewport: f32) -> f32 {
+    MIN_SHEET_ON_SCREEN.min(viewport / 2.0)
+}
 
 /// ★★★ **The pasteboard on one axis, in logical points — and it is NOT a
 /// count of screen pixels.**
@@ -147,7 +239,14 @@ fn pasteboard(viewport: f32, overhang: f32) -> f32 {
     if !(viewport.is_finite() && viewport > 0.0) {
         return 0.0;
     }
-    let base = viewport * PASTEBOARD_FRACTION;
+    // ★★★ The sliver is subtracted HERE, from the fraction-based slack only.
+    // The overhang branch below already guarantees its own visibility — it
+    // reserves `overhang + viewport / 2`, and `present`'s visibility query
+    // expands the viewport by `overhang`, so the content's far scrap lands
+    // half a viewport inside the edge rather than on it. It is the fixed
+    // one-viewport slack that was exactly on the boundary. See
+    // [`MIN_SHEET_ON_SCREEN`].
+    let base = (viewport * PASTEBOARD_FRACTION - sheet_sliver(viewport)).max(0.0);
     if overhang.is_finite() && overhang > 0.0 {
         let cap = crate::viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT / 4.0;
         base.max((overhang + viewport / 2.0).min(cap))
@@ -286,6 +385,123 @@ pub fn strip_to_scroll(in_strip: f32, strip: f32, viewport: f32, overhang: f32) 
         )
     } else {
         0.0
+    }
+}
+
+/// **The closed interval of strip origins that leave the content reachable**,
+/// on one axis, in the same logical points the caller's `strip` and `viewport`
+/// are measured in. `overhang` is [`pasteboard`]'s — the raw halo reach in
+/// canvas points, not a pasteboard already computed — so this function takes
+/// the same fourth argument as every other public function in this module and
+/// cannot be handed the wrong one of the two.
+///
+/// The "strip origin" meant here is the quantity [`scroll_to_strip`] produces
+/// and [`crate::canvas::deep::visible_in_strip`] produces at the other tier:
+/// **where the viewport's top-left sits, expressed in strip space.** Negative
+/// means the viewport starts before the strip does, which is what the
+/// pasteboard is for.
+///
+/// # ★★★ Why this exists: the `f64` tier has no clamp, and `f32` had one for free
+///
+/// `OPERATOR_REQUESTS.md` **O186**, stage one. Below the deep-position
+/// threshold the reachable range is enforced by nobody in this codebase —
+/// egui's own `ScrollArea` clamps the offset to `[0, content − viewport]` and
+/// [`strip_to_scroll`] states the same clamp where the shell needs to predict
+/// it. Above the threshold the scroll offset is forced to zero and
+/// [`crate::canvas::deep::strip_placement`] places the strip straight from the
+/// `f64` anchor, **so the clamp simply stopped existing.** Nothing else
+/// changed; the guard was never written because below the threshold it was not
+/// the shell's to write.
+///
+/// Measured 2026-09-12 on `ncored-benchmark-cad-drawing.pdf`:
+///
+/// ```text
+/// deep anchor      pdf = (1199.50, -0.54)
+/// dies near        zoom = 539.7
+/// strip extent     hi  = 1684.27
+/// the anchor wants       1684.32
+/// ```
+///
+/// ★★ **Read the last two lines together: the anchor is 0.05 pt past the end
+/// of the range the view can place.** Not nonsense, not far out — a hair
+/// beyond, from an unbounded `panned`/`zoomed_about` walk. Multiplied by the
+/// zoom that is 27 screen pixels, which is enough to carry the whole strip off
+/// the top of a viewport, and the canvas then publishes
+/// `canvas-unavailable reason=nothing-visible`. The sign of the `-0.54`
+/// matters too: the anchor is *below the page box*, so this is the pasteboard
+/// overhang being treated as though it were inside the sheet, not the operator
+/// zooming past an edge.
+///
+/// # ★★★ Why this is not a new formula, and what measuring the draft one found
+///
+/// The range is stated **as [`strip_to_scroll`]'s own clamp, moved into strip
+/// space by subtracting [`strip_margin`]** — the same subtraction
+/// [`scroll_to_strip`] performs. That is deliberate and it is the whole
+/// correctness argument: the two position tiers must agree about where the
+/// view can be (see [`crate::canvas::deep`]'s header invariant), and the only
+/// way to guarantee that is for one of them to be *derived from* the other
+/// rather than to resemble it.
+///
+/// The first draft of this function wrote the bound out longhand as
+/// `(-pb, (strip + pb - viewport).max(-pb))`, with the `.max` there to stop an
+/// inverted interval when the strip is shorter than the viewport. ★★ **Both
+/// halves of that were wrong, and only measuring them said so** — see
+/// [`tests::the_draft_longhand_range_was_wrong_in_the_two_ways_measuring_it_found`]:
+///
+/// * **the guard is unreachable.** Inversion needs
+///   `strip < viewport − 2 × pasteboard`, and [`PASTEBOARD_FRACTION`] is `1.0`,
+///   so the right-hand side is `−viewport` — negative, and a strip is never
+///   negative. The `.max` was dead code guarding a case a constant in another
+///   part of this module already forbids. ⇒ *A guard whose precondition is
+///   decided by a constant somewhere else is a guard you cannot read locally.*
+/// * **and the error was somewhere the guard was not looking.** For a strip
+///   shorter than the viewport the longhand's top is exactly [`margin`] too
+///   low — 100 pt at `strip = 600, viewport = 800`, 400 pt at `strip = 0`. It
+///   is not the range the scroll area permits one tier down: a short strip
+///   could not be pushed as far down its pasteboard window as egui allows, so
+///   the two tiers would have disagreed about where the view can be by exactly
+///   the centring margin. A clamp that is *narrower* than the real one is
+///   invisible until someone reaches the part of the window it removed.
+///
+/// ★ Expressed through the existing functions neither can arise: `hi − lo` is
+/// `content_extent − viewport` **by construction**, which is `2 × pasteboard`
+/// plus a non-negative term, so the interval is never inverted for any input
+/// and its width is the scroll area's own reachable span rather than a
+/// re-derivation of it. The longhand was not a simplification of the clamp; it
+/// was a second, slightly different clamp, and both of its faults were its own.
+///
+/// ⇒ The general lesson, and it has cost this project before: **a fresh
+/// formula for a range some existing function already clamps to re-derives the
+/// range and invents its own edge cases.** Ask what already enforces the bound
+/// below the threshold before writing the bound above it.
+///
+/// # What a short strip does instead
+///
+/// Unreachable at the deep tier — a strip is `pages × page × zoom`, and the
+/// tier engages only once `longest_page_pt × zoom` exceeds
+/// [`crate::viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT`], by which point the
+/// strip is at least a million px long — but the function is ordinary geometry
+/// and must answer anyway. It answers with the shallow tier's range
+/// verbatim, `[-(margin + pasteboard), pasteboard - margin]`, whose **midpoint
+/// is exactly `-margin`**: the centred placement [`fit_placement_offset`] and
+/// [`margin`] already use for a display smaller than its viewport. So a short
+/// strip is free to sit anywhere in its pasteboard window, centred when
+/// nothing has moved it, which is what the scroll area permits one tier down.
+///
+/// # Non-finite inputs
+///
+/// `(0.0, 0.0)` — clamp everything to the strip's own origin. The same answer
+/// every other function here gives for a frame measured before layout, and the
+/// one placement that needs no history.
+#[must_use]
+pub fn visible_origin_range(strip: f32, viewport: f32, overhang: f32) -> (f32, f32) {
+    let pad = strip_margin(strip, viewport, overhang);
+    let lo = -pad;
+    let hi = content_extent(strip, viewport, overhang) - viewport - pad;
+    if lo.is_finite() && hi.is_finite() && hi >= lo {
+        (lo, hi)
+    } else {
+        (0.0, 0.0)
     }
 }
 

@@ -10,12 +10,20 @@
 //! > I zoomed back from around 2 million% but seems to happen at other
 //! > junctions too."*
 //!
-//! **2 million % is the same number as O24f's**, and it is not a number he
-//! picked either time: `SUB_PIXEL_CONTENT_EXTENT / page_height` = 16,777,216 /
-//! 792 ≈ **2,118,000 %** on a US Letter sheet is where the position hands over
+//! **2 million % is the same number as O24f's**, and it was not a number he
+//! picked either time: on the day of both reports
+//! `SUB_PIXEL_CONTENT_EXTENT / page_height` was 16,777,216 / 792 ≈
+//! **2,118,000 %** on a US Letter sheet, which is where the position hands over
 //! between the `f32` scroll offset and the `f64` [`DeepAnchor`]. O24f fixed
 //! that hand-over **going up**. This check exists because nothing in the suite
 //! had ever come back **down** through it.
+//!
+//! ⚠ Do not read that percentage as current. O49 cut the constant to 2^20 on
+//! 2026-08-28, which puts the boundary at about **132,000 %** on Letter — and
+//! because it bounds `page_height × zoom` rather than the zoom, there is no
+//! percentage that is right for every sheet. The figure above is kept because
+//! it is what made the operator's sentence a measurement rather than a guess,
+//! not because it still locates the boundary.
 //!
 //! [`DeepAnchor`]: pdfcer-gui `viewer::deep::DeepAnchor`
 //!
@@ -80,12 +88,48 @@ const PAN_AT: (f32, f32) = (0.30, 0.30);
 
 /// The most notches to spend climbing to the deep tier before giving up.
 ///
-/// The threshold is about 2,118,000 % and a page-fit start is about 76 %, so
-/// the climb is a factor of ~28,000. A wheel notch multiplies the zoom by
-/// roughly 1.22, so ~52 notches reach it. The cap is generous: reaching it is
-/// a SKIP, and the only build that reaches it is one whose wheel is not
-/// zooming — which the descent guard would report anyway.
+/// The threshold is about 132,000 % on a Letter sheet — `2^20` px of content
+/// extent over 792 pt; see the module header for why the older 2,118,000 % no
+/// longer applies — and a page-fit start is about 76 %, so the climb is a
+/// factor of ~1,700. A wheel notch multiplies the zoom by roughly 1.22, so ~38
+/// notches reach it. The cap is generous: **reaching it is now a FAIL**, and the
+/// only build that reaches it is one whose wheel is not zooming — which the
+/// descent guard would report anyway.
+///
+/// ⚠ The cap is **not** re-tuned downward just because the threshold fell.
+/// Spending a hundred notches this run would cost a second; arriving exactly at
+/// the boundary and reporting a failure would cost a reader an investigation.
+///
+/// ★ On [`FIXTURE`] the numbers are **measured, not derived**, and the first
+/// two written here were neither.
+///
+/// That sheet is 2383.9 pt on its long side, not Letter's 792 — and the long
+/// side is what the bound is taken against, because the threshold is
+/// `SUB_PIXEL_CONTENT_EXTENT / longest_page_pt`. A paragraph written on
+/// 2026-09-13 said *"1683.8 pt tall"*, quoted a threshold of **623** and a
+/// crossing at **33** notches; every one of those is wrong. 1683.8 is the
+/// SHORT side, and using it inflated the threshold by the aspect ratio.
+///
+/// The driven run reports the real figures on its own progress lines:
+/// threshold **~440**, crossed at notch **39**, at a zoom of **46,479 %**,
+/// turning round at 154,316 %. Those are what [`MAX_CLIMB`]'s headroom is
+/// measured against.
+///
+/// ⚠ The Letter arithmetic above is kept anyway, because it is where the cap
+/// came from — but it is arithmetic about a different sheet, and a reader who
+/// takes it for this check's notch count will be out by six notches and two
+/// orders of magnitude of zoom.
 const MAX_CLIMB: usize = 140;
+
+/// **The sheet this check is calibrated against**, pinned rather than taken from
+/// `--pdf`.
+///
+/// The same A1 fixture `sweep-full.sh` hands the chunked checks, chosen for that
+/// reason: it is the sheet on which this check has actually been observed
+/// crossing the hand-over and coming back down, so every notch count in this
+/// file is quoted against it. See the pinning block in `drive` for why `--pdf`
+/// is ignored rather than preferred.
+const FIXTURE: &str = "fixtures/a1-titleblock.pdf";
 
 /// How far past the threshold to climb before turning round.
 ///
@@ -121,9 +165,10 @@ impl Check for ZoomingBackOutKeepsTheView {
     }
 
     fn defect(&self) -> &'static str {
-        "zooming back out from past about two million percent throws the page off screen into a \
-         corner — the f64 anchor's position is never handed back to the f32 scroll offset, so the \
-         first shallow frame solves its zoom against an offset that was forced to zero while deep"
+        "zooming back out from past the f32 scroll offset's addressing limit throws the page off \
+         screen into a corner — the f64 anchor's position is never handed back to the f32 scroll \
+         offset, so the first shallow frame solves its zoom against an offset that was forced to \
+         zero while deep"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -148,10 +193,35 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx
-        .pdf
-        .clone()
-        .ok_or_else(|| Error::new("no --pdf. There is nothing to zoom."))?;
+    // ★★★ Pinned, not taken from `--pdf`, since 2026-09-13.
+    //
+    // It used to read `ctx.pdf` and SKIP when that was absent, which made the
+    // check unrunnable on its own: `--check zooming_back_out_keeps_the_view`
+    // reported *"no --pdf. There is nothing to zoom."* and only `sweep-full.sh`
+    // — which hands the chunked checks one shared fixture — ever actually drove
+    // it. That mattered the moment the `!reached_deep` branch below became a
+    // FAIL: a failure nobody can reproduce with a one-line command is a failure
+    // nobody reproduces.
+    //
+    // ⚠ And the page SIZE is load-bearing here in a way it is not for most
+    // checks. The hand-over threshold bounds `longest_page_pt × zoom`, so the
+    // number of notches the climb takes depends on the sheet. [`FIXTURE`] is the
+    // same A1 sheet the sweep passes, which is what the measured notch counts in
+    // this file are quoted against.
+    let pdf = crate::fixture::workspace_root().join(FIXTURE);
+    if !pdf.is_file() {
+        return Err(Error::new(format!(
+            "{FIXTURE} is missing from the repository, so there is no sheet whose hand-over \
+             threshold this climb is calibrated against. SKIPPED."
+        )));
+    }
+    if ctx.pdf.is_some() {
+        report.note(format!(
+            "--pdf was IGNORED; this check pins {FIXTURE} because the hand-over it must cross and \
+             come back down through is a bound on `longest_page_pt * zoom`, so the page size \
+             decides the notch count"
+        ));
+    }
     if !ctx.allow_input {
         return Err(Error::new(
             "input is disabled (--no-input). This check pans and zooms the canvas. Reported as \
@@ -207,14 +277,38 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             break;
         }
     }
+    // ★★★ A FAIL, not a SKIP, since 2026-09-13 — and the reason is the whole
+    // argument for ever revisiting a skip branch.
+    //
+    // It was written as `Err` (which this harness reports as SKIPPED) on the
+    // defensible ground that a run which never crossed the hand-over has
+    // measured nothing about coming back down through it, and a check that
+    // measured nothing should not claim a pass. That is still true.
+    //
+    // What changed is that it has since **been observed passing**: this check
+    // appears in neither the fail list nor the skip list of the full sweep of
+    // 2026-09-13, which drove it on the sheet now pinned as [`FIXTURE`] — so it
+    // reached the deep tier, and the branch is no longer the "we might not get
+    // there" hedge it was written as. A
+    // branch that has been proven reachable-and-crossed can only be taken again
+    // by a build in which something regressed — `MAX_CLIMB` notches of Ctrl
+    // +wheel failing to cross a boundary they demonstrably cross — and a
+    // regression that reports SKIPPED is a regression nobody investigates. O49
+    // cutting the threshold by a factor of sixteen only widened the margin.
+    //
+    // ⚠ The message still explains the two benign causes, because naming them
+    // is what makes a failure diagnosable. It no longer offers them as a reason
+    // to look away.
     if !reached_deep {
         let zoom = held(&session, canvas)?.map_or(0.0, |h| h.zoom * 100.0);
-        return Err(Error::new(format!(
+        return Ok(Some(format!(
             "after {climbed} Ctrl+wheel notches the position tier was still `scroll`, at \
              {zoom:.0}%. The run never reached the f64 tier, so it cannot have come back down \
              through the hand-over — which is the entire subject of this check. Either the wheel \
              lost its Ctrl and panned instead, or the deep threshold is higher than this climb \
-             reaches. SKIPPED rather than passed."
+             reaches. ★ This used to be SKIPPED; it is a FAIL because the crossing has been \
+             measured on this fixture, so failing to cross it is a regression rather than a run \
+             that fell short."
         )));
     }
     let at_threshold = held(&session, canvas)?.map_or(0.0, |h| h.zoom * 100.0);

@@ -144,6 +144,36 @@ fn any_page_corner_can_be_brought_to_the_centre_and_to_the_opposite_corner() {
     );
 }
 
+/// **The pasteboard rule, restated rather than called.**
+///
+/// Four tests below need to know how much slack a viewport gets, and every one
+/// of them needs to know it *independently of [`pasteboard`]* — a test that
+/// calls the function under test agrees with it by construction, including when
+/// it is wrong. Before O186 they each spelled it `v * PASTEBOARD_FRACTION`
+/// inline, which was right while the rule was one term.
+///
+/// ★ It is now two, so the restatement lives here once: a whole viewport, less
+/// the band [`MIN_SHEET_ON_SCREEN`] keeps on screen. Still a restatement — it
+/// reads the two constants and does the arithmetic itself, so a change to
+/// `pasteboard`'s *code* cannot be ratified by these tests, only a change to
+/// its *constants*. That is the property worth having, and four copies of it
+/// drifting apart is not.
+fn pasteboard_rule(viewport: f32) -> f32 {
+    viewport * PASTEBOARD_FRACTION - MIN_SHEET_ON_SCREEN.min(viewport / 2.0)
+}
+
+/// **The overhang at which the overhang branch overtakes the fixed slack**, by
+/// the same restatement rule as [`pasteboard_rule`].
+///
+/// `pasteboard` offers the larger of `viewport × FRACTION − sliver` and
+/// `overhang + viewport / 2`, so the second wins once the overhang passes
+/// `viewport / 2 − sliver`. Worth naming because the number is not obvious and
+/// two tests need it: it is **zero** on a viewport narrower than twice
+/// [`MIN_SHEET_ON_SCREEN`], and a few hundred points on a real canvas.
+fn viewport_half_less_sliver(viewport: f32) -> f32 {
+    viewport / 2.0 - MIN_SHEET_ON_SCREEN.min(viewport / 2.0)
+}
+
 // ---- zoom to cursor -----------------------------------------------
 
 /// The whole point, stated as the invariant rather than as an offset:
@@ -505,12 +535,12 @@ fn the_strip_bridge_preserves_where_a_page_point_lands_on_screen() {
                         // with it by construction, including when wrong.
                         let truth = (
                             (strip.0.max(v.0) - strip.0) / 2.0
-                                + v.0 * PASTEBOARD_FRACTION
+                                + pasteboard_rule(v.0)
                                 + origin.0
                                 + frac.0 * page.0
                                 - off.0,
                             (strip.1.max(v.1) - strip.1) / 2.0
-                                + v.1 * PASTEBOARD_FRACTION
+                                + pasteboard_rule(v.1)
                                 + origin.1
                                 + frac.1 * page.1
                                 - off.1,
@@ -575,11 +605,11 @@ fn measuring_the_offset_from_the_drawn_rect_matches_the_solved_one() {
                     let page_min = (
                         content_min.0
                             + (strip.0.max(v.0) - strip.0) / 2.0
-                            + v.0 * PASTEBOARD_FRACTION
+                            + pasteboard_rule(v.0)
                             + origin.0,
                         content_min.1
                             + (strip.1.max(v.1) - strip.1) / 2.0
-                            + v.1 * PASTEBOARD_FRACTION
+                            + pasteboard_rule(v.1)
                             + origin.1,
                     );
                     let solved = page_local_offset(off, origin, strip, page, v, (0.0, 0.0));
@@ -961,12 +991,21 @@ fn the_opening_seed_centres_a_large_page_and_is_a_no_op_for_a_small_one() {
 /// `pasteboard ≥ 100 × zoom + viewport / 2`; with `pasteboard = viewport`
 /// that is `zoom ≤ 235 / 100`, i.e. **235 %**. Above it the object walks off
 /// the screen while the operator zooms toward it.
+///
+/// ★ O186 moved the crossover to **203 %** — `(470 − 32) − 235`, over 100 —
+/// because [`MIN_SHEET_ON_SCREEN`] comes out of the fixed slack. The table
+/// below is therefore re-measured rather than re-tuned, and the ceiling is
+/// derived from the rule instead of written as a literal, so the next change to
+/// either constant moves it without a second edit. The number itself does not
+/// matter to anybody: this test pins the *shape* of the old defect — a ceiling
+/// that exists at all — and the whole point of the overhang term is that the
+/// ceiling does not apply when there is content out there to reach.
 #[test]
 fn a_fixed_pasteboard_stops_reaching_off_page_content_at_a_calculable_zoom() {
     const V: f32 = 470.0;
     const OFF_PTS: f32 = 100.0;
-    let ceiling = (V / 2.0) / OFF_PTS; // 2.35
-    for (zoom, reachable) in [(2.0_f32, true), (2.3, true), (2.4, false), (10.0, false)] {
+    let ceiling = (pasteboard_rule(V) - V / 2.0) / OFF_PTS; // 2.03
+    for (zoom, reachable) in [(1.5_f32, true), (2.0, true), (2.1, false), (10.0, false)] {
         let over_px = OFF_PTS * zoom;
         // The OLD rule: no overhang term at all.
         let got = pasteboard(V, 0.0) >= over_px + V / 2.0;
@@ -1012,19 +1051,53 @@ fn an_object_off_the_page_can_be_centred_at_every_zoom() {
     }
 }
 
-/// The `max` in [`pasteboard`] keeps the operator's one-viewport slack
-/// whenever it is the larger, so **every document with nothing off the sheet
-/// is byte for byte unchanged**. This is the regression guard for the 99 %
-/// case, and it is the reason the fix could ship without re-driving every
-/// zoom, pan and fit check in the suite.
+/// The `max` in [`pasteboard`] keeps the operator's fixed slack whenever it is
+/// the larger, so **every document with nothing off the sheet takes the
+/// fraction branch and nothing else**. This is the regression guard for the
+/// 99 % case.
+///
+/// ★ It used to assert that the value was `v * PASTEBOARD_FRACTION` exactly,
+/// and was titled *"keeps exactly the old pasteboard"*. O186 made that false on
+/// purpose — see [`MIN_SHEET_ON_SCREEN`] — so what it asserts now is the thing
+/// it was always *for*: that the overhang term does not bite until the content
+/// genuinely reaches further than the fixed slack. [`pasteboard_rule`] is the
+/// independent restatement, so this still cannot be satisfied by
+/// [`pasteboard`] agreeing with itself.
 #[test]
-fn a_page_with_nothing_off_it_keeps_exactly_the_old_pasteboard() {
+fn a_page_with_nothing_off_it_takes_the_fixed_pasteboard_branch() {
     for v in [1.0_f32, 470.0, 578.3, 2000.0] {
-        assert_eq!(pasteboard(v, 0.0), v * PASTEBOARD_FRACTION);
-        // A small overhang is still smaller than the old slack, so it is the
-        // old slack that wins — the term only bites once the content genuinely
-        // reaches further than a viewport.
-        assert_eq!(pasteboard(v, v / 4.0), v * PASTEBOARD_FRACTION);
+        assert_eq!(pasteboard(v, 0.0), pasteboard_rule(v));
+        // ★★ Where the overhang term takes over, **stated rather than
+        // assumed**: it offers `overhang + viewport / 2`, so it wins once
+        // `overhang > viewport / 2 − sliver`. On any real canvas that is a
+        // reach of hundreds of points and the quarter-viewport overhang below
+        // is nowhere near it.
+        //
+        // ★ On a viewport of 1.0 pt it is **zero** — `sheet_sliver` is half the
+        // viewport there, so the fixed slack has no advantage left and *any*
+        // overhang at all wins. Harmless (the overhang branch is the more
+        // generous one, and a 1 pt canvas shows nothing either way) but it is
+        // why this assertion is guarded rather than unconditional. An earlier
+        // draft asserted it for every viewport and failed on exactly that row
+        // — which is the row that exists to be awkward.
+        let crossover = viewport_half_less_sliver(v);
+        if v / 4.0 < crossover {
+            assert_eq!(pasteboard(v, v / 4.0), pasteboard_rule(v));
+        }
+        // And past the crossover the overhang branch really does take over, so
+        // the `if` above is a guard on a reachable case rather than a way of
+        // skipping the assertion everywhere.
+        assert!(pasteboard(v, crossover + v) > pasteboard_rule(v));
+        // ★ And the sliver is real: the slack is strictly less than a whole
+        // viewport, which is the one property that removes the blank frame.
+        // Stated as an inequality rather than a difference so it holds on the
+        // 1.0 pt viewport too, where `sheet_sliver` is half the viewport
+        // rather than the constant.
+        assert!(
+            pasteboard(v, 0.0) < v * PASTEBOARD_FRACTION,
+            "viewport {v}: the pasteboard reaches a whole viewport, so its \
+             extreme is the zero-overlap placement O186 reported"
+        );
     }
 }
 
@@ -1034,7 +1107,7 @@ fn a_page_with_nothing_off_it_keeps_exactly_the_old_pasteboard() {
 #[test]
 fn nonsense_overhang_falls_back_to_the_fixed_pasteboard() {
     for bad in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, -1e30] {
-        assert_eq!(pasteboard(470.0, bad), 470.0 * PASTEBOARD_FRACTION);
+        assert_eq!(pasteboard(470.0, bad), pasteboard_rule(470.0));
         assert!(content_extent(1000.0, 470.0, bad).is_finite());
     }
 }
@@ -1058,4 +1131,337 @@ fn the_pasteboard_is_bounded_by_the_tier_the_deep_model_hands_over_at() {
     // And the cap is not a floor: an overhang under it is honoured exactly.
     let modest = cap / 2.0;
     assert_eq!(pasteboard(470.0, modest), modest + 470.0 / 2.0);
+}
+
+// ---- O186: the reachable range at the deep tier ---------------------
+
+/// ★★★ **The theorem the whole function rests on: its two ends are the two
+/// scroll offsets a `ScrollArea` can actually be at.**
+///
+/// `OPERATOR_REQUESTS.md` O186 stage one. Stated in the direction that is
+/// *exact* in `f32` — take the two reachable scroll offsets, `0` and
+/// `content_extent − viewport`, convert each into strip space with
+/// [`scroll_to_strip`], and you get `lo` and `hi` on the nose. Both sides are
+/// `x − strip_margin(...)` evaluated on the same arguments, so there is no
+/// rounding to argue about.
+///
+/// ★ The reverse direction is asserted as *behaviour* rather than as an
+/// identity, and the nudge is `64.0` rather than `1.0` on purpose: a round trip
+/// through `hi + pad` is two roundings, and at the strip magnitudes this tier
+/// reaches — nine hundred thousand points and up, where an `f32`'s step is a
+/// sixteenth of a point — `1.0` is close enough to the boundary to be arguing
+/// with the last bit rather than with the clamp. 64 points is unambiguous at
+/// every magnitude tested and is still a fraction of a viewport.
+#[test]
+fn the_ends_of_the_range_are_the_two_scroll_offsets_the_area_can_reach() {
+    for (strip, viewport, over) in [
+        (1600.0_f32, 800.0_f32, 0.0_f32),
+        (3200.0, 800.0, 0.0),
+        (12800.0, 800.0, 0.0),
+        (1600.0, 800.0, 2000.0),
+        (600.0, 800.0, 0.0),
+        (909_000.0, 700.0, 0.0),
+    ] {
+        let (lo, hi) = visible_origin_range(strip, viewport, over);
+        let top = (content_extent(strip, viewport, over) - viewport).max(0.0);
+
+        // Exact, both ends: the range IS the scroll clamp, seen from strip space.
+        assert_eq!(
+            scroll_to_strip(0.0, strip, viewport, over),
+            lo,
+            "strip {strip} viewport {viewport} overhang {over}: the bottom of the \
+             range is not the offset the area sits at when fully scrolled back"
+        );
+        assert_eq!(
+            scroll_to_strip(top, strip, viewport, over),
+            hi,
+            "strip {strip} viewport {viewport} overhang {over}: the top of the \
+             range is not the offset the area sits at when fully scrolled on"
+        );
+
+        // And going the other way, a value outside the range reaches the bound
+        // and no further — which is the property `deep::confine` relies on.
+        assert_eq!(strip_to_scroll(lo - 64.0, strip, viewport, over), 0.0);
+        assert_eq!(strip_to_scroll(hi + 64.0, strip, viewport, over), top);
+
+        // A value strictly inside is not clamped at either end, so the range is
+        // not degenerate for any case above.
+        let mid = (lo + hi) * 0.5;
+        let got = strip_to_scroll(mid, strip, viewport, over);
+        assert!(
+            got > 0.0 && got < top,
+            "strip {strip} viewport {viewport} overhang {over}: the midpoint \
+             {mid} mapped to {got}, which is outside (0, {top})"
+        );
+    }
+}
+
+/// ★★ **With no overhang the top of the range is the strip's own length, less
+/// the sliver** — and the bottom is a whole viewport below zero, plus it.
+///
+/// A corollary rather than a separate rule, and worth pinning because it is the
+/// shape every number in O186's trace block is read against:
+/// `pasteboard = viewport × PASTEBOARD_FRACTION − sliver`, so
+/// `hi = strip + pasteboard − viewport` collapses to `strip − sliver`. If
+/// someone later changes either constant this test fails immediately and says
+/// which identity the trace block's arithmetic was relying on, rather than
+/// leaving a reader to wonder why a measured `hi` of 1684.27 nearly equalled a
+/// measured sheet height.
+///
+/// ★★★ **The `− sliver` is the whole of O186's second half.** Without it `hi`
+/// is `strip` exactly, which places the viewport's top-left on the strip's last
+/// point: zero overlap, `canvas-unavailable reason=nothing-visible`, and a
+/// clamp to that endpoint is a clamp onto a blank frame. Both ends are
+/// asserted, because both ends were blank.
+#[test]
+fn without_an_overhang_the_top_of_the_range_is_the_strip_itself() {
+    for (strip, viewport) in [
+        (1600.0_f32, 800.0_f32),
+        (12800.0, 800.0),
+        (909_000.0, 700.0),
+        (4.6e8, 1380.0),
+    ] {
+        let (lo, hi) = visible_origin_range(strip, viewport, 0.0);
+        let sliver = MIN_SHEET_ON_SCREEN.min(viewport / 2.0);
+        assert_eq!(hi, strip - sliver, "strip {strip} viewport {viewport}");
+        // ★ Both endpoints leave the sliver on screen. At `hi` the strip's far
+        // end is `sliver` inside the viewport's near edge; at `lo` its start is
+        // `sliver` inside the far one. Asserted as the overlap itself — what
+        // the operator can see — rather than as the two offsets, because the
+        // offsets are what was already green while the canvas was blank.
+        for origin in [lo, hi] {
+            let overlap = (origin + viewport).min(strip) - origin.max(0.0);
+            assert!(
+                overlap >= sliver - 1.0e-2,
+                "strip {strip} viewport {viewport} origin {origin}: only \
+                 {overlap} pt of sheet on screen, wanted {sliver}"
+            );
+        }
+        // ★ `lo` used to be `-viewport` exactly — the placement that put the
+        // strip's first point on the viewport's last one. It is now that, plus
+        // the sliver.
+        assert_eq!(lo, sliver - viewport, "strip {strip} viewport {viewport}");
+    }
+}
+
+/// ★★★ **The interval is never inverted, for any input** — the property that
+/// lets [`crate::canvas::deep::confine`] clamp with `max` then `min` and lets
+/// a caller who used `f64::clamp` not panic.
+///
+/// `hi − lo` is `content_extent − viewport` by construction, which is
+/// `2 × pasteboard` plus `display.max(viewport) − viewport ≥ 0`. The grid below
+/// covers the cases a formula written out longhand gets wrong: a strip shorter
+/// than the viewport, a strip of exactly zero, a strip equal to its viewport, a
+/// degenerate viewport, and an overhang large enough to hit the pasteboard cap.
+#[test]
+fn the_range_is_never_inverted_however_short_the_strip() {
+    for strip in [0.0_f32, 1.0, 400.0, 800.0, 1600.0, 1.0e6, 1.0e9] {
+        for viewport in [0.0_f32, 1.0, 470.0, 800.0, 1.0e4] {
+            for over in [0.0_f32, 1.0, 1.0e4, 1.0e9] {
+                let (lo, hi) = visible_origin_range(strip, viewport, over);
+                assert!(
+                    lo.is_finite() && hi.is_finite(),
+                    "strip {strip} viewport {viewport} overhang {over} gave \
+                     ({lo}, {hi})"
+                );
+                assert!(
+                    hi >= lo,
+                    "strip {strip} viewport {viewport} overhang {over} inverted \
+                     the interval: ({lo}, {hi})"
+                );
+            }
+        }
+    }
+}
+
+/// **A strip shorter than its viewport is free to sit anywhere in its
+/// pasteboard window, and sits centred when nothing has moved it** — the
+/// range's midpoint is exactly `-margin(strip, viewport)`.
+///
+/// Unreachable at the deep tier, where a strip is `pages × page × zoom` and the
+/// tier engages only once `longest_page_pt × zoom` exceeds
+/// [`crate::viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT`], and asserted anyway
+/// because the function is ordinary geometry and a reader of the shallow tier
+/// will hit it. The answer must be the *shallow* tier's answer: centring a display
+/// smaller than its viewport is what [`margin`] and [`fit_placement_offset`]
+/// already do, and a range whose midpoint was anything else would mean the two
+/// tiers disagree about where a small document rests.
+#[test]
+fn a_short_strips_range_is_centred_on_the_centring_margin() {
+    for (strip, viewport) in [
+        (600.0_f32, 800.0_f32),
+        (100.0, 470.0),
+        (0.0, 800.0),
+        (792.0, 1380.0),
+    ] {
+        let (lo, hi) = visible_origin_range(strip, viewport, 0.0);
+        assert_eq!(
+            (lo + hi) * 0.5,
+            -margin(strip, viewport),
+            "strip {strip} viewport {viewport}: range ({lo}, {hi})"
+        );
+    }
+}
+
+/// ★★★ **O186 itself, in the numbers the trace printed** — the measured case
+/// this function was written for, clamped the way
+/// [`crate::canvas::deep::confine`] clamps it, in **both** directions.
+///
+/// Measured 2026-09-12 on `ncored-benchmark-cad-drawing.pdf`: an A1 sheet
+/// 1684.27 pt tall at a zoom of 539.7, an `f64` anchor that had walked to
+/// 1684.32 pt — **0.05 pt of paper past the end of the sheet** — and a canvas
+/// that published `canvas-unavailable reason=nothing-visible` as a result.
+///
+/// ★★ The two things this pins that a one-sided test would not:
+///
+/// * **the magnitude is the whole defect.** 0.05 pt is nothing; `0.05 × 539.7`
+///   is 27 logical points of strip, which against a 700-point viewport is
+///   enough to carry the entire strip off it. The assertion on the recovered
+///   page coordinate is what keeps that factor honest — a future change that
+///   clamped to the right side of the wrong bound would still satisfy
+///   `clamped == hi`.
+/// * **both signs.** A suite that only tries one sign is not testing the value;
+///   the anchor in the trace had *also* been seen at `-0.54` pt, above the
+///   sheet rather than below it, which is the same defect reached from the other
+///   end of the pasteboard.
+#[test]
+fn the_o186_anchor_is_pulled_back_to_the_end_of_the_sheet_from_either_side() {
+    let zoom = 539.7_f32;
+    let sheet = 1684.27_f32; // the A1 sheet's height, in page points
+    let strip = sheet * zoom;
+    let viewport = 700.0_f32;
+
+    let (lo, hi) = visible_origin_range(strip, viewport, 0.0);
+
+    // Where the anchor had walked to: a hair past the end of the sheet.
+    let want = 1684.32_f32 * zoom;
+    assert!(
+        want > hi,
+        "the measured anchor {want} is not outside the range ({lo}, {hi}), so \
+         this test no longer reproduces O186"
+    );
+
+    // Clamped exactly as `deep::confine` clamps it.
+    let clamped = want.max(lo).min(hi);
+    assert_eq!(clamped, hi);
+
+    // ★★ And the correction, converted back into page points the way `confine`
+    // converts it, is the 0.05 pt of overshoot the trace shows **plus the
+    // sliver**, because the range now stops short of the sheet's end by
+    // [`MIN_SHEET_ON_SCREEN`]. Stated as the sum of the two terms rather than as
+    // a re-measured literal: the interesting fact is the second term's size in
+    // paper, and it is the argument for why the sliver costs the operator
+    // nothing where it matters most.
+    let sliver_in_paper = MIN_SHEET_ON_SCREEN.min(viewport / 2.0) / zoom;
+    assert!(
+        sliver_in_paper < 0.06,
+        "at {zoom}x a 32 pt sliver should be a twentieth of a point of paper, \
+         not {sliver_in_paper}"
+    );
+    let correction = (want - clamped) / zoom;
+    assert!(
+        (correction - (0.05 + sliver_in_paper)).abs() < 1.0e-3,
+        "the correction came back as {correction} pt of paper, not \
+         0.05 + {sliver_in_paper}"
+    );
+
+    // The other sign: the same anchor was seen 0.54 pt above the sheet.
+    let above = lo - 0.54 * zoom;
+    assert!(above < lo);
+    assert_eq!(above.max(lo).min(hi), lo);
+}
+
+/// **A frame measured before layout clamps everything to the strip's own
+/// origin** — `(0.0, 0.0)`, the answer every other function in this module
+/// gives for a non-finite input.
+///
+/// Not a tolerance and not a fallback to the last good value: a degenerate pair
+/// makes [`crate::canvas::deep::confine`] pin the anchor at the strip's origin
+/// for that one frame, which is the one placement that needs no history and
+/// cannot be wrong about anything.
+#[test]
+fn a_nonsense_frame_collapses_the_range_to_the_strips_origin() {
+    for bad in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+        assert_eq!(visible_origin_range(bad, 800.0, 0.0), (0.0, 0.0));
+        assert_eq!(visible_origin_range(1600.0, bad, 0.0), (0.0, 0.0));
+    }
+    // ★ An overhang is the exception, because `pasteboard` already absorbs a
+    // nonsense one rather than propagating it — see
+    // [`nonsense_overhang_falls_back_to_the_fixed_pasteboard`]. So the range
+    // stays usable, which is the behaviour the rest of the module promises.
+    for bad in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, -1.0e30] {
+        let (lo, hi) = visible_origin_range(1600.0, 800.0, bad);
+        assert!(lo.is_finite() && hi.is_finite() && hi >= lo);
+        assert_eq!((lo, hi), visible_origin_range(1600.0, 800.0, 0.0));
+    }
+}
+
+/// ★★★ **The draft formula this function replaced, measured** — and it was
+/// wrong in two ways, neither of which was the one its own guard was written
+/// for.
+///
+/// The draft was `(-pb, (strip + pb - viewport).max(-pb))`. See
+/// [`visible_origin_range`]'s doc for the argument; this is the measurement
+/// behind it, and it exists because the doc originally claimed the `.max` was
+/// *needed*. It is not. Writing the test is what said so.
+///
+/// ⇒ Two lessons, both general: **a guard whose precondition is decided by a
+/// constant elsewhere in the module cannot be read locally** — `.max(-pb)`
+/// looks essential and is dead — and **a fresh formula for a range some
+/// existing function already clamps to re-derives the range and invents its own
+/// faults**, which here meant a window narrower than the scroll area's by
+/// exactly the centring margin.
+#[test]
+fn the_draft_longhand_range_was_wrong_in_the_two_ways_measuring_it_found() {
+    // 1. The inversion the `.max` guarded cannot happen at these constants.
+    //    It needs `strip < viewport - 2 * pasteboard`, and with the pasteboard
+    //    a whole viewport less the sliver that is `2 * sliver - viewport`,
+    //    which no strip reaches because no strip is negative.
+    //
+    // ★★★ And **`sheet_sliver`'s `min` is exactly what keeps that true.** The
+    // bound is `2 × sliver − viewport`, so it is at most zero precisely while
+    // `sliver ≤ viewport / 2` — which is the clamp `sheet_sliver` applies, put
+    // there for a quite different reason (a non-negative pasteboard on a
+    // degenerate canvas). Raise `MIN_SHEET_ON_SCREEN` past half a viewport
+    // without that `min` and the draft's dead case comes back to life.
+    //
+    // ★ `<= 0.0`, not `< 0.0`. On a 1.0 pt viewport the bound is exactly zero,
+    // and an earlier draft of this repair asserted strictly-negative and failed
+    // on that row — a reminder that the degenerate viewport is where the
+    // sliver stops being the constant and starts being half the canvas.
+    for viewport in [1.0_f32, 470.0, 800.0, 1.0e4] {
+        let pb = pasteboard(viewport, 0.0);
+        assert_eq!(pb, pasteboard_rule(viewport));
+        assert!(
+            viewport - 2.0 * pb <= 0.0,
+            "viewport {viewport}: the draft's inverted-interval case is \
+             reachable after all, at strip < {}",
+            viewport - 2.0 * pb
+        );
+    }
+
+    // 2. The fault that was real: for a strip shorter than its viewport the
+    //    draft's top is exactly `margin` below the reachable one, so a short
+    //    strip could not be pushed as far down its window as egui allows.
+    for (strip, viewport) in [(600.0_f32, 800.0_f32), (0.0, 800.0), (100.0, 470.0)] {
+        let pb = pasteboard(viewport, 0.0);
+        let draft_hi = (strip + pb - viewport).max(-pb);
+        let (_, hi) = visible_origin_range(strip, viewport, 0.0);
+        assert_eq!(
+            hi - draft_hi,
+            margin(strip, viewport),
+            "strip {strip} viewport {viewport}: the draft top was {draft_hi}, \
+             the reachable one is {hi}"
+        );
+    }
+
+    // And where the strip exceeds its viewport — every case the deep tier can
+    // actually be in — the two agree exactly, which is why the draft survived
+    // reading and only failed measuring.
+    for (strip, viewport) in [(1600.0_f32, 800.0_f32), (909_000.0, 700.0)] {
+        let pb = pasteboard(viewport, 0.0);
+        let draft_hi = (strip + pb - viewport).max(-pb);
+        let (_, hi) = visible_origin_range(strip, viewport, 0.0);
+        assert_eq!(hi, draft_hi, "strip {strip} viewport {viewport}");
+    }
 }

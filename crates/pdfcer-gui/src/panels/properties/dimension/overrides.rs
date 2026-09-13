@@ -122,7 +122,7 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         egui::ComboBox::from_id_salt("dimension-override-unit")
             .selected_text(t::unit_name(*value))
             .show_ui(ui, |ui| {
-                for unit in Unit::all() {
+                for unit in Unit::all().iter().copied() {
                     ui.selectable_value(value, unit, t::unit_name(unit));
                 }
             });

@@ -916,6 +916,22 @@ fn show_in(
         // outside every page, which happens for one frame after a mode change
         // before the scroll area has settled. Say so, and let the next frame
         // sort it out rather than inventing a rect for a page nobody drew.
+        //
+        // ★★★ AND IT IS NOT ALWAYS ONE FRAME -- `OPERATOR_REQUESTS.md` O186.
+        //
+        // The comment above was written for the transient case and the
+        // transient case is real. It is not the only one: a view carried off
+        // the sheet stays here, frame after frame, and because this `return`
+        // is ABOVE every input handler in this function the operator has no
+        // gesture left that could bring the page back. `canvas::escape` runs
+        // the two that need no drawn page -- the wheel as a page turn, and
+        // Ctrl+wheel as a zoom -- before the return rather than after it.
+        //
+        // ⚠ Do NOT move the `return` below the handlers instead. Everything
+        // past it assumes a page was drawn and several of those assumptions
+        // are unchecked; the hatch is a deliberate, narrow exception and its
+        // module header carries the terms.
+        escape::offer(ui, doc, content_hovered, actions);
         crate::diag::trace_changed(trace::LAYOUT_SLOT, || {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "canvas-unavailable reason=nothing-visible".to_owned()
@@ -1274,32 +1290,15 @@ fn show_in(
     // real egui `Response`, so it still respects layer order and a floating
     // window over the canvas still swallows the wheel; a `rect.contains`
     // test would not have.
+    // ★ The body is [`zoom::wheel_step`] and not a block here, because O186's
+    // escape hatch needs the identical gesture on a frame that drew nothing.
+    // The gate stays at this call site — it is the only part of this that is
+    // about THIS frame's two responses — and the rule about arming the anchor
+    // went with the body, so the rescue path cannot come to zoom about a
+    // different point than the ordinary path does. The reasoning that used to
+    // sit inside this block is on `zoom::wheel_step` now, unchanged.
     if content_hovered || image_response.hovered() {
-        let factor = ui.ctx().input(|i| i.zoom_delta());
-        if (factor - 1.0).abs() > f32::EPSILON {
-            // Zoom to cursor, half one: remember WHERE on the page the
-            // pointer is before the zoom lands. Anchoring on the viewport
-            // centre instead (which is what happens when nothing records
-            // this) drags the detail being inspected out from under the
-            // operator, worse the further off-centre they point — reported
-            // as "jarring" on 2026-08-04.
-            //
-            // ★ Through [`zoom::arm_anchor`], the same call the discrete
-            // commands make — which is what "the rule is decided once for all
-            // four" means in code. The wheel used to build its own `ZoomAnchor`
-            // inline from the pointer position; that inline version WAS the
-            // rule, in a place no command could reach, and duplicating it at
-            // three more call sites is how the four would have drifted apart.
-            //
-            // The pointer guard that used to live here has moved with it: a
-            // pointer off-window (a trackpad pinch can produce exactly that)
-            // falls back to the viewport centre rather than to nothing, and a
-            // zero drawn size can no longer produce a NaN because
-            // `zoom::frac_of` divides by the page EXTENT, which is finite and
-            // positive for any page that drew at all.
-            zoom::arm_anchor(ui.ctx(), doc);
-            actions.push(Action::ZoomBy(factor));
-        }
+        zoom::wheel_step(ui.ctx(), doc, actions);
     }
 
     // ★ What the frame learned, handed outwards so the rulers can be drawn

@@ -75,8 +75,95 @@ pub(super) struct Frame {
     pub vp: Vec2,
 }
 
-/// **The offset this frame's `ScrollArea` should be forced to**, or `None` to
-/// leave it wherever the operator left it.
+/// **The canvas frame the open-seed arm places a freshly opened view on.**
+///
+/// `OpenDoc::canvas_frames` counts the canvas frames this document has had and
+/// is incremented at the end of [`super::viewpos::position`], *after* this
+/// chain has run — so during the chain it reads as the zero-based index of the
+/// frame being decided. The seed fires on index `1`, the **second** frame; see
+/// the open-seed arm for the four bisecting runs that argued against index `0`.
+///
+/// ★★★ **Named rather than written as a literal because it has a second
+/// reader**, and that reader is a decline rather than a fire:
+/// [`crate::canvas::fit::placement`]'s resize arm must not preserve a "centre"
+/// measured from a frame the seed has not placed yet. Before 2026-09-13 that
+/// arm relied on `zoom::last_frame` being `None` for the first frames of a
+/// document, which is a *proxy* for "not seeded yet" and stopped being true
+/// the moment the pasteboard narrowed enough for frame 0 to draw a sliver of
+/// sheet: the resize arm then outranked the seed, preserved the un-placed
+/// corner of the pasteboard, and the seed — a one-shot — never got its turn.
+/// The document opened with the page off the bottom-right of the canvas and
+/// stayed there. Two readers of one number, so the number has one definition.
+pub(super) const SEED_FRAME: u8 = 1;
+
+/// **Which arm of the ranked chain won this frame, and what it produced.**
+///
+/// # Why the winner is returned and not merely the number
+///
+/// This module's whole design is that it *decides* and does not *apply*, so
+/// that "which source owns the view this frame?" has one answer in one place.
+/// Until 2026-09-13 that answer was unobservable from outside: [`decide`]
+/// returned a bare `Option<Vec2>` and every caller, every trace and every
+/// `ui-verify` check saw only the number.
+///
+/// ★★★ That cost a full session of diagnosis. A regression placed a freshly
+/// opened multi-page document off the bottom-right corner, the published
+/// offset was `[0.0 0.0]`, and **three different arms of this chain can
+/// produce exactly `(0.0, 0.0)`** — the deep-tier arm returns it as a literal,
+/// [`geometry::strip_offset`]'s lower clamp produces it from any sufficiently
+/// negative page-local solve, and a strip-space page scroll to the very top of
+/// the content produces it honestly. With only the number in hand, those are
+/// indistinguishable, and so is a fourth case: no arm firing at all. Naming
+/// the winner collapses four hypotheses into one measurement.
+///
+/// The name is a short stable token, never a sentence, because its readers are
+/// a `grep` in a trace file and a `ui-verify` assertion rather than a person
+/// reading prose.
+pub(super) struct Decision {
+    /// The offset the winning arm produced, or `None` when no arm claimed the
+    /// frame and egui's own scrolling is left alone.
+    ///
+    /// **`None` is the ordinary case.** A canvas that forced an offset every
+    /// frame would be a canvas the wheel could not move; see the module
+    /// header.
+    pub offset: Option<Vec2>,
+    /// The winning arm's name, or [`Decision::NONE`]'s `"none"`.
+    ///
+    /// One token per arm, in the same order the chain tests them: `deep`,
+    /// `handover`, `fit`, `zoom-anchor`, `reveal`, `page-scroll`, `pan`,
+    /// `open-seed`. Diagnostic only — it reaches the operator through nothing
+    /// but a `PDFCER_DIAG` line.
+    pub source: &'static str,
+}
+
+impl Decision {
+    /// The frame nobody claimed.
+    ///
+    /// A named constant rather than a literal at the one site that returns it,
+    /// so that the `"none"` token has exactly one definition and a check
+    /// grepping for it cannot be broken by a reworded arm.
+    // ui-text-exempt: diagnostic token, never displayed in the UI
+    pub(super) const NONE: Self = Self {
+        offset: None,
+        source: "none",
+    };
+
+    /// An arm claimed the frame with `offset`.
+    ///
+    /// Every `return` in [`decide`] goes through this, which is what keeps the
+    /// name and the number impossible to separate: there is no way to add an
+    /// arm that produces an offset without also naming it.
+    #[must_use]
+    fn won(source: &'static str, offset: Vec2) -> Self {
+        Self {
+            offset: Some(offset),
+            source,
+        }
+    }
+}
+
+/// **The offset this frame's `ScrollArea` should be forced to**, or
+/// [`Decision::NONE`] to leave it wherever the operator left it.
 ///
 /// See the module header for the ranking. The body below is that table in
 /// code, in the same order, and the comments on each arm are the ones that
@@ -87,7 +174,7 @@ pub(super) fn decide(
     layout: &viewer::strip::Strip,
     active_tool: CanvasTool,
     frame: Frame,
-) -> Option<Vec2> {
+) -> Decision {
     let Frame {
         deep,
         deep_handover,
@@ -160,12 +247,14 @@ pub(super) fn decide(
         // discrepancy is not cosmetic here: the raster region is computed
         // from the same placement, so the frame is not merely misplaced, it
         // renders a different part of the page.
-        return Some(vec2(0.0, 0.0));
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won("deep", vec2(0.0, 0.0));
     } else if let Some(offset) = deep_handover {
         // ★ FIRST, above the ordinary anchor: this frame is the one that left
         // the `f64` tier, and the offset solved above is the position the
         // anchor was actually holding. See the branch that produced it.
-        return Some(to_strip((offset.x, offset.y)));
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won("handover", to_strip((offset.x, offset.y)));
     } else if let Some(placed) = fit_placement {
         // ★★ ABOVE THE ZOOM ANCHOR, and it spends one if it finds it — O28.
         //
@@ -185,16 +274,24 @@ pub(super) fn decide(
         // defect this arm used to have: the spread was scaled to fit two pages
         // and then placed as though it were one, so half of it sat off the
         // canvas. See [`crate::canvas::fit::Placed`].
-        return Some(match placed {
-            crate::canvas::fit::Placed::Page(offset) => {
-                strip_offset_for(current, (offset.x, offset.y))
-            }
-            crate::canvas::fit::Placed::Row(offset) => {
-                strip_offset_in(row_rect, (offset.x, offset.y))
-            }
-        });
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won(
+            "fit",
+            match placed {
+                crate::canvas::fit::Placed::Page(offset) => {
+                    strip_offset_for(current, (offset.x, offset.y))
+                }
+                crate::canvas::fit::Placed::Row(offset) => {
+                    strip_offset_in(row_rect, (offset.x, offset.y))
+                }
+            },
+        );
     } else if let Some(offset) = zoom::consume_anchor(ui.ctx(), doc, anchor_display) {
-        return Some(strip_offset_for(anchor_page, (offset.x, offset.y)));
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won(
+            "zoom-anchor",
+            strip_offset_for(anchor_page, (offset.x, offset.y)),
+        );
     } else if let Some(offset) = crate::find::take_reveal_offset(doc, current_display, (vp.x, vp.y))
     {
         // The other half of `Action::Find`'s navigation: the page change was
@@ -213,10 +310,12 @@ pub(super) fn decide(
         // reveal has navigated, so the page it landed on is the one being
         // tracked.
         doc.tracked_page = doc.view.page_index;
-        return Some(to_strip((offset.x, offset.y)));
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won("reveal", to_strip((offset.x, offset.y)));
     } else if let Some(offset) = crate::canvas::strip::page_scroll_offset(doc, layout, (vp.x, vp.y))
     {
-        return Some(offset);
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won("page-scroll", offset);
     } else if let Some(pan) = pan_delta(ui, active_tool) {
         // Panning subtracts the pointer delta: the content follows the hand,
         // so the page moves WITH the pointer rather than under it.
@@ -282,8 +381,9 @@ pub(super) fn decide(
         // a pan that is not working. ★ Before the return, for the reason the
         // reveal arm above states.
         ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
-        return Some(vec2(x, y));
-    } else if doc.canvas_frames == 1 {
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won("pan", vec2(x, y));
+    } else if doc.canvas_frames == SEED_FRAME {
         // ★★★ SEED ON THE SECOND FRAME, NOT THE FIRST.
         //
         // O23. `ScrollArea` starts its offset at zero, which used to mean the
@@ -328,15 +428,19 @@ pub(super) fn decide(
         // arrangement is a facing spread opens straight into one, so the seed
         // is the first thing the operator sees and it must obey the same rule
         // the fit does: the thing being centred is the spread.
-        return Some(strip_offset_in(
-            row_rect,
-            crate::canvas::geometry::offset_holding_anchor_at(
-                (0.5, 0.5),
-                (vp.x / 2.0, vp.y / 2.0),
-                (row_rect.width(), row_rect.height()),
-                (vp.x, vp.y),
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won(
+            "open-seed",
+            strip_offset_in(
+                row_rect,
+                crate::canvas::geometry::offset_holding_anchor_at(
+                    (0.5, 0.5),
+                    (vp.x / 2.0, vp.y / 2.0),
+                    (row_rect.width(), row_rect.height()),
+                    (vp.x, vp.y),
+                ),
             ),
-        ));
+        );
     }
-    None
+    Decision::NONE
 }

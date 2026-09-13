@@ -420,10 +420,53 @@ pub(super) fn placement(
     if !changed {
         return None;
     }
-    // ★ No previous frame is no centre to preserve, so the very first frame of
-    // a document declines by construction and `canvas::offset`'s seed arm does
-    // the placing. That is also what keeps O23's first-frame hazard shut: this
-    // path never runs against a layout that has not settled once.
+    // ★★★ **DECLINE UNTIL THE OPEN-SEED ARM HAS PLACED THE VIEW** — the
+    // regression of 2026-09-13, and the paragraph this replaces is why the
+    // guard is spelled out instead of inferred.
+    //
+    // What stood here said: *"No previous frame is no centre to preserve, so
+    // the very first frame of a document declines by construction and
+    // `canvas::offset`'s seed arm does the placing."* Every clause of that is
+    // still true about the **intent**. None of it was a guard. It leaned on
+    // `before` — `zoom::last_frame` — happening to be `None` for the first two
+    // frames of a document, which is true only while those frames draw
+    // nothing: `canvas::present` returns early and publishes
+    // `canvas-unavailable reason=nothing-visible` before it ever calls
+    // `zoom::remember_frame`.
+    //
+    // O186's fix narrowed the pasteboard by `MIN_SHEET_ON_SCREEN`, which is
+    // precisely a change to *how much sheet is on screen at an extreme
+    // placement* — so frame 0 of a freshly opened document started drawing a
+    // sliver instead of nothing. `remember_frame` then ran, `before` became
+    // `Some`, and on frame 1 this arm outranked the seed and preserved the
+    // "centre" of a frame whose scroll offset was egui's own default `(0,0)`:
+    // the top-left corner of the pasteboard, one whole viewport above and left
+    // of the page. `geometry::strip_offset`'s lower clamp turned that into a
+    // request for `(0.0, 0.0)`, which is what the area was already at, so the
+    // symptom was a document that opened with the page off the bottom-right
+    // corner — and the seed arm, a one-shot keyed on a single frame index,
+    // never fired at all. Measured by driving the binary; see
+    // `canvas::trace::placed`, whose `src=` field is what made the two arms
+    // distinguishable.
+    //
+    // ⇒ **The predicate is "has the view been placed", not "is there a
+    // previous frame".** They are not the same question and the difference is
+    // exactly one un-seeded frame. `SEED_FRAME` is shared with the arm that
+    // does the seeding so the two cannot drift apart.
+    //
+    // ⚠ This is the LAST arm, deliberately. A pressed fit (arm 1) and a
+    // page-display recentre (arm 2) do not read `before` at all — they place
+    // from the viewport and the row — so neither needs the guard and neither
+    // is weakened by it. Only a centre-*preservation* needs a centre that
+    // somebody chose.
+    if doc.canvas_frames <= crate::canvas::offset::SEED_FRAME {
+        return None;
+    }
+    // A previous frame is still required on top of that: a document can reach
+    // this arm with the seed long spent and still have no frame to measure —
+    // the first frame after a tab switch writes the other document's. Kept
+    // as its own decline rather than folded into the guard above, because it
+    // is a different fact with a different lifetime.
     let before = before?;
     // ★★ …and a previous frame describing a DIFFERENT PAGE is declined rather
     // than corrected. `zoom::remember_frame` writes one global `egui::Id`, so
@@ -463,6 +506,24 @@ mod tests {
         match placed {
             Placed::Page(v) | Placed::Row(v) => v,
         }
+    }
+
+    /// **Move the document past the open-seed frame.**
+    ///
+    /// Every resize test below is about a document that has been on screen for
+    /// a while and is *then* resized — a dock drag, a window edge, a panel
+    /// collapsing. That world has a canvas-frame count well past
+    /// [`crate::canvas::offset::SEED_FRAME`], and the resize arm declines
+    /// outright below it (see the guard).
+    ///
+    /// ★ Spelled as its own call in each test rather than folded into
+    /// [`place_at`], deliberately. Folding it in would make every test in this
+    /// module unable to observe the guard at all, and
+    /// [`the_resize_arm_declines_until_the_seed_has_placed_the_view`] — the
+    /// test that exists *because* the guard was missing — would be testing a
+    /// world the helper had already made impossible.
+    fn settled(doc: &mut OpenDoc) {
+        doc.canvas_frames = crate::canvas::offset::SEED_FRAME + 4;
     }
 
     /// A settled single-page frame: the page drawn at `zoom`, centred in a
@@ -522,6 +583,10 @@ mod tests {
     #[test]
     fn a_sub_pixel_wobble_is_not_a_resize() {
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);
+        // ★ Past the seed, or every `None` below would be the seed guard's
+        // answer rather than the wobble gate's and this test would pass
+        // without ever exercising its subject.
+        settled(&mut doc);
         let before = frame(0.5, (444.0, 592.0));
         // First frame: no reference yet, so it records and declines to place
         // against a `before` — this is the seed arm's frame.
@@ -548,6 +613,7 @@ mod tests {
     #[test]
     fn a_one_point_resize_still_re_places() {
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);
+        settled(&mut doc);
         let before = frame(0.5, (444.0, 592.0));
         assert_eq!(place(&mut doc, (444.0, 592.0), None), None);
 
@@ -569,6 +635,7 @@ mod tests {
         // margin and its page-local offset is 0 whatever the viewport does —
         // the first draft of this test used zoom 0.5 and compared 0 with 0.
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);
+        settled(&mut doc);
         let before = frame(1.0, (444.0, 592.0));
         assert_eq!(place_at(&mut doc, 1.0, (444.0, 592.0), None), None);
         let a = offset_of(place_at(&mut doc, 1.0, (446.0, 592.0), Some(before)).expect("placed"));
@@ -579,6 +646,58 @@ mod tests {
             "★ half the viewport delta (2 pt) on the x offset: got {} vs {}",
             a.x,
             b.x
+        );
+    }
+
+    /// ★★★ **The regression of 2026-09-13, in the smallest world that has it.**
+    ///
+    /// A freshly opened document reaches its second canvas frame with a
+    /// `before` frame available — `zoom::remember_frame` ran on frame 0 the
+    /// moment O186's narrower pasteboard let a sliver of sheet be drawn — and
+    /// with a viewport that differs from frame 0's, because the canvas's
+    /// scroll bars have just become solid. Both of the resize arm's original
+    /// preconditions are therefore met on the one frame the open-seed arm owns.
+    ///
+    /// The arm must decline anyway. The "centre" it would preserve is
+    /// `before.offset`, which on an unplaced frame is the `ScrollArea`'s own
+    /// default `(0, 0)` — the top-left corner of the pasteboard, a whole
+    /// viewport above and left of the page. Preserving it parks the document
+    /// off the bottom-right corner of the canvas, and because the seed is a
+    /// one-shot keyed on a single frame index, nothing ever places it again.
+    ///
+    /// ⚠ The two asserts are deliberately a pair. The first is the guard; the
+    /// second is what makes the guard non-vacuous, by showing that the very
+    /// same call with the document one frame further on *does* place. Without
+    /// it a future change that made this arm decline for an unrelated reason
+    /// would leave a green test asserting nothing.
+    #[test]
+    fn the_resize_arm_declines_until_the_seed_has_placed_the_view() {
+        let mut doc = crate::app::state::open_local_fixture(FIXTURE);
+        let before = frame(1.0, (444.0, 592.0));
+
+        // Frame 0: records the viewport reference, declines for want of a
+        // `before` — exactly as it always did.
+        doc.canvas_frames = 0;
+        assert_eq!(place_at(&mut doc, 1.0, (444.0, 592.0), None), None);
+
+        // Frame 1 — the seed's frame. A `before` IS available and the viewport
+        // HAS changed, so every precondition the arm used to rely on is met.
+        doc.canvas_frames = crate::canvas::offset::SEED_FRAME;
+        assert_eq!(
+            place_at(&mut doc, 1.0, (446.0, 592.0), Some(before)),
+            None,
+            "★ the resize arm must not preserve a centre from a frame the seed has not placed \
+             yet — that is the document opening off the bottom-right corner"
+        );
+
+        // One frame later the same call places, which is what proves the
+        // assert above is about the seed and not about something else.
+        doc.canvas_frames = crate::canvas::offset::SEED_FRAME + 1;
+        doc.view_viewport = Some((444.0, 592.0));
+        assert!(
+            place_at(&mut doc, 1.0, (446.0, 592.0), Some(before)).is_some(),
+            "★ once the view has been seeded the identical resize must place, or the guard above \
+             is passing for a reason this test cannot see"
         );
     }
 }

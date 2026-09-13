@@ -206,12 +206,35 @@ cite_features() {
 }
 
 # RESUME.md: the measured-state row whose first cell is `Engine pin`.
+#
+# The FIRST backticked sha on that row, not the last, and the difference is not
+# cosmetic. The row's house style is value-then-explanation:
+#
+#   | Engine pin | <re-measure command> | `3e73a02` -- moved from `d86cb19`
+#     at 09:40 today to take reply_G013 |
+#
+# so the last sha on the row is the one it moved AWAY from. A `tail -1` here
+# read that, and on 2026-09-13 it failed a row that was right.
+#
+# The direction of that error is why this carries a comment at all. `tail -1`
+# does not merely mis-read a narrating row -- it reads the pin a STALE row is
+# most likely to carry, so a row that had genuinely gone stale (old sha in the
+# value, new sha mentioned in the prose after it) would have passed. An
+# assertion that both outcomes satisfy is not a measurement of which one
+# shipped. Self-test cases 7 and 8 below pin both directions.
+#
+# `head -1` is safe against the command cell for a structural reason worth
+# stating: that cell holds ONE backticked span containing a shell command, and
+# the pattern needs a backtick immediately either side of the hex. A sha quoted
+# inside the command would be surrounded by the command's own text, not by
+# backticks. Field-splitting on `|` was considered and rejected -- the adjacent
+# command cell is allowed to contain a pipe (the row below it does).
 cite_resume() {
     local f="$1"
     [ -f "$f" ] || return 0
     grep -m1 '^| *Engine pin *|' "$f" \
         | grep -o '`[0-9a-f]\{7,40\}`' \
-        | tail -1 \
+        | head -1 \
         | tr -d '`'
 }
 
@@ -302,6 +325,24 @@ self_test() {
         printf '**Updated:** 2026-01-01 (first revision, pinned at **`0000000`** which is the tip of its `main`.)\n'
     } > "$s6/FEATURES.md"
     expect "an older revision header quoting an older pin is LEFT ALONE" 0 "$s6"
+
+    # Case 7 -- the row NARRATES a move. Current pin first, superseded pin in
+    # the prose after it. Must stay quiet. This is the real row that failed on
+    # 2026-09-13 and it is the cheaper half of the pair.
+    local s7="$tmp/s7"; cp -r "$good" "$s7"
+    printf '| Engine pin | `grep -m1 x Cargo.lock` | `abcdef1` -- moved from `0000000` at 09:40 today |\n' > "$s7/RESUME.md"
+    expect "a row that narrates its own move is read at its CURRENT value" 0 "$s7"
+
+    # Case 8 -- the falsification. The value cell is STALE and the locked sha
+    # appears later in the same row's prose. A reader that took the last sha on
+    # the row would call this agreement; it is the exact opposite.
+    #
+    # This case is why case 7 was not fixed by loosening the match. A gate can
+    # be made to stop complaining about a correct row by reading anywhere on
+    # it, and that same looseness is what lets a wrong row through.
+    local s8="$tmp/s8"; cp -r "$good" "$s8"
+    printf '| Engine pin | `grep -m1 x Cargo.lock` | `0000000` -- will move to `abcdef1` when the next build runs |\n' > "$s8/RESUME.md"
+    expect "a stale value cell is caught even when the row later names the locked pin" 1 "$s8"
 
     if [ "$fails" -ne 0 ]; then
         echo "self-test: $fails case(s) failed" >&2

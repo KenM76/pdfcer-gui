@@ -130,6 +130,8 @@ run "check-trace-names --self-test" python "$HERE/check-trace-names.py" --self-t
 run "check-orphan-docs --self-test" python "$HERE/check-orphan-docs.py" --self-test
 run "check-doc-markup --self-test" python "$HERE/check-doc-markup.py" --self-test
 run "check-gate-input-scope --self-test" python "$HERE/check-gate-input-scope.py" --self-test
+run "check-memory-index --self-test" bash "$HERE/check-memory-index.sh" --self-test
+run "check-completeness-tests --self-test" python "$HERE/check-completeness-tests.py" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
@@ -295,6 +297,39 @@ run "check-trace-names" python "$HERE/check-trace-names.py"
 # had silently stopped being true, and that is the lesson taken literally.
 run "check-orphan-docs" python "$HERE/check-orphan-docs.py"
 
+# ★★★ `check-memory-index`, added 2026-09-13, and it is the gate above's twin
+# pointed at a folder nobody thought of as source.
+#
+# `check-orphan-docs` finds a document nothing links to. This finds a MEMORY
+# nothing indexes — and the consequence is worse, because of how agent memory
+# is loaded. Only `.claude/agent-memory/<agent>/MEMORY.md` is injected into a
+# session. The topic files are read on demand, by a session that learns they
+# exist from the index and from nowhere else. A topic file the index does not
+# name is therefore not "unlinked"; it is UNREACHABLE. Written, committed,
+# reviewed, never read again.
+#
+# ★★ It was written after finding one. `user_he_is_not_at_the_keyboard_unless
+# _he_says_so.md` — the standing rule that decides whether a session drives the
+# release binary or defers the work back to the operator — was on disk, in git,
+# and named nowhere in the index. It surfaced from a `comm` run done for an
+# unrelated reason. **Writing the artifact and registering the artifact are two
+# edits, and the second is the one that gets skipped**, because the first is
+# where the thinking was. This repository has now recorded that shape under at
+# least three other names.
+#
+# ★ The second rule it enforces is SIZE, and it guards a failure that is
+# invisible by construction: the index is truncated from the END when it is too
+# large, so the entries that disappear are the NEWEST — exactly the ones a cold
+# session needs. Nothing about the loaded text looks wrong; the oldest hundred
+# entries are all present. The byte limit is the harness's, not ours, and the
+# gate quotes it with its date and source so the next reader re-measures it
+# rather than inheriting it.
+#
+# ⇒ Six sabotages in its self-test, and the CLEAN case is one of them: a gate
+# that answered 1 unconditionally would pass five of six.
+run "check-memory-index" bash "$HERE/check-memory-index.sh"
+
+
 # ★★★ `check-doc-markup`, added 2026-09-12 — and it is the only gate
 # here that asks whether a sentence is VISIBLE rather than whether it is true.
 #
@@ -384,6 +419,43 @@ run "check-gate-input-scope" python "$HERE/check-gate-input-scope.py"
 # It found five more the moment it worked -- three attachment-clipboard verbs
 # and two cut verbs -- none of which had a sentence anywhere.
 run "check-verb-coverage" bash "$HERE/check-verb-coverage.sh"
+
+# ★★★ `check-completeness-tests`, added 2026-09-13, and it is the SIXTH time
+# this defect was found and the first time an instrument was built for it.
+#
+# A test named `every_unit_is_named_distinctly` promises, in its name, to go red
+# when a unit arrives without a label. On the morning this was written the engine
+# shipped three new units and that test stayed green — because it iterated a
+# HAND-WRITTEN array of the six variants that existed the day it was typed. What
+# actually caught the three unlabelled units was an exhaustive `match` in the
+# function above it: the compiler, not the test.
+#
+# ★★ **A completeness test that carries its own copy of the set is testing the
+# copy.** It is invisible for exactly as long as the set is stable, which is
+# exactly as long as nobody needs it. The lesson had been written into agent
+# memory five times under five different incidents; the sixth paid for the gate.
+#
+# ★ The predicate is deliberately narrow, and the first draft is the reason.
+# Aimed at "any literal array inside a completeness-named test" it returned 53
+# hits, most of them lists of test INPUTS — widths, drag corners — and a gate
+# that fires on those teaches people to write exemptions, which is how a gate
+# becomes scenery. It now requires three or more elements to be `Type::Variant`
+# paths sharing one `Type`. That is not a list of inputs; that is a private copy
+# of an enumeration.
+#
+# ★ `completeness-snapshot.txt` is a DEBT REGISTER, not an exemption list, and
+# the run prints the outstanding number every time so it stays in front of
+# whoever reads it: 29 sites, 9 of them copying a type this repository does not
+# declare. The foreign nine are the severe ones — an engine enum grows on a
+# branch pin that moves without a `cargo update`, and nothing on this side is
+# touched on the day it happens.
+#
+# ⇒ Both directions are red: a site missing from the register (the debt grew)
+# and a register line matching nothing (the register stopped describing the
+# tree). The second is the `check-strong-text.sh` lesson taken literally — a
+# carve-out whose premise had quietly stopped being true.
+run "check-completeness-tests" python "$HERE/check-completeness-tests.py"
+
 # ★★★ `check-forwarded-features`, added 2026-09-06 — and it is `check-verb-
 # coverage`'s twin one layer down.
 #

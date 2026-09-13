@@ -507,31 +507,22 @@ fn unit_combo(ui: &mut Ui, id: &str, unit: &mut Unit) {
     egui::ComboBox::from_id_salt(id)
         .selected_text(t::unit_name(*unit))
         .show_ui(ui, |ui| {
-            for option in &units() {
-                ui.selectable_value(unit, *option, t::unit_name(*option));
+            // ★ **`Unit::all()` directly, with no local list in front of it.**
+            // This read `&units()` until 2026-09-13, a one-line shim whose own
+            // doc comment recorded that the hand-written array it replaced had
+            // held the same six units in the same order — a **latent**
+            // divergence, the kind that goes wrong silently the first time the
+            // engine gains a unit, in a dropdown nobody would think to
+            // re-count. The shim was kept only because `all()` returned
+            // `[Unit; 6]` and a fixed-size array is a cardinality in a
+            // signature. Reply `G013` made it `&'static [Unit]`, which removed
+            // the reason, so the shim went with it: **a mechanism whose cause
+            // has been removed rots**, and this one would have gone on
+            // asserting a six that is now a nine.
+            for option in Unit::all().iter().copied() {
+                ui.selectable_value(unit, option, t::unit_name(option));
             }
         });
-}
-
-/// The units offered.
-///
-/// ★ **This was a hand-written array, on a claim that was false when it was
-/// written.** It read: *"A local list because `pdfcer_core::dimension::Unit`
-/// exposes no `ALL` … a unit the engine gains will not appear until this array
-/// does."*
-///
-/// `Unit::all()` exists (`units.rs:111`) and its own doc comment says what it
-/// is for: *"the GUI unit dropdown and the CLI unit parser iterate this."* The
-/// hand-written array happened to hold the same six in the same order, so the
-/// divergence was **latent rather than active** — which is the worst kind to
-/// leave, because nothing would go wrong until a unit was added and then it
-/// would go wrong silently, in a dropdown nobody would think to re-count.
-///
-/// The engine's order is metric first, for the same reason the local list
-/// chose it: millimetres are what a CAD export is overwhelmingly in, and the
-/// first entry is the one a hurried operator picks.
-fn units() -> [Unit; 6] {
-    Unit::all()
 }
 
 /// The number styles offered.

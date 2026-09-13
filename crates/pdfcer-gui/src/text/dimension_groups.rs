@@ -141,8 +141,11 @@ pub const fn unit_abbrev(unit: Unit) -> &'static str {
         Unit::Millimeter => "mm",
         Unit::Centimeter => "cm",
         Unit::Meter => "m",
+        Unit::Kilometer => "km",
         Unit::Inch => "in",
         Unit::DecimalFeet | Unit::FeetInches => "ft",
+        Unit::Yard => "yd",
+        Unit::Mile => "mi",
     }
 }
 
@@ -543,7 +546,7 @@ mod tests {
     /// debug rendering.
     #[test]
     fn every_engine_variant_is_named_in_english() {
-        for unit in Unit::all() {
+        for unit in Unit::all().iter().copied() {
             let abbrev = unit_abbrev(unit);
             assert!(!abbrev.is_empty(), "{unit:?} has no abbreviation");
             assert!(

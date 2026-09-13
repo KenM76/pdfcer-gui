@@ -426,6 +426,20 @@ pub mod off_page_toggle;
 /// uniformly-dark capture cannot pass.
 pub mod off_page_visible;
 pub mod off_page_zoom;
+/// ★★★ **O186 stage one** — Ctrl+wheeling in with the pointer just off the
+/// sheet carried the page off the screen entirely, and the state was terminal:
+/// `canvas::present` returns above every input handler when nothing was drawn,
+/// Ctrl suppresses the only wheel the deep pan route reads, and a plain wheel
+/// moves the f64 anchor by `delta / zoom` — about 0.09 pt a notch at zoom 540.
+///
+/// Its header carries the sign flip that made the measured anchor `(1199.50,
+/// −0.54)` look like it was on the page when it was half a point off the top of
+/// it, why the initial aim's magnitude is deliberately not load-bearing, and
+/// why `DESIGNS.md`'s own obligation to *"confirm a page-flip gesture does
+/// nothing"* is wrong — that gesture is gated on a non-default preference, so it
+/// does nothing on any build and would have been recorded as evidence about the
+/// clamp.
+pub mod off_sheet;
 /// ★ The **Pages tab**, all of which did nothing: six verbs registered, drawn,
 /// offered by a context menu and four of them bound to chords, with no dispatch
 /// arm between them. The only check in the suite whose subject is a

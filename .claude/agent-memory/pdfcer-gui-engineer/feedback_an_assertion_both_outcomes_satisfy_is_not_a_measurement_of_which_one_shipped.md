@@ -49,3 +49,41 @@ rule out.
   engine shipped the capability and nothing here noticed. The green test is why
   nothing looked wrong in the meantime — same family as
   [[write-the-row-when-he-speaks-not-when-the-work-lands]].
+
+## ★★★ 2026-09-13 — the variant where the check picks the WRONG ONE of two right answers
+
+`check-pin-citation.sh` failed a `RESUME.md` row that was correct:
+
+    | Engine pin | <re-measure command> | `3e73a02` — moved from `d86cb19` at 09:40 today |
+
+The extractor ended in `tail -1`, so it read the sha the row says it moved away
+from. My first instinct was that the document needed rewording — which would
+have been editing a correct sentence to please a broken instrument.
+
+★★ **The reason it is worth a memory is the DIRECTION of the error.** `tail -1`
+does not merely mis-read a row that narrates. It reads the pin a genuinely
+STALE row is most likely to carry, because the house style everywhere in this
+project is *value first, explanation after*:
+
+  - correct row  — `` `new` — moved from `old` `` ⇒ `tail -1` sees `old` ⇒ false RED.
+  - **stale row** — `` `old` — will move to `new` `` ⇒ `tail -1` sees `new` ⇒ **false GREEN.**
+
+So the false alarm I was looking at was the *cheap* half. The same line of code
+had a silent half, and the silent half is the one the gate exists to catch.
+
+★ **The tell that generalises:** when a check reads one value out of a line
+that can contain several, ask which one a DEFECTIVE line would put where the
+check is looking. A selector chosen for the shape of a healthy line is not an
+assertion about the line; it is an assertion about the layout, and a defect
+usually arrives as a change of layout.
+
+★ The repair carries two self-test cases, not one, and the second is the point:
+a narrating row must pass, AND a stale value cell must still fail **when the
+locked sha appears later in that same row's prose**. Case 8 was verified to be
+un-survivable by the old code before the fix was accepted — `head`/`tail` on
+the synthetic row printed the two opposite shas.
+
+★ And the widening was resisted: the obvious way to stop the false alarm is
+to match the pin anywhere on the row. That is exactly the looseness that lets
+case 8 through. **A gate can always be quietened by reading more broadly, and
+reading more broadly is how it stops measuring.**

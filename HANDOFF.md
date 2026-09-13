@@ -857,7 +857,7 @@ the results in `--note`.
 | **Phase 6 — markup** | **In progress, and larger than this row used to imply.** The new shell has *no markup placement at all*: all eight `markup.*` commands draw and fall through to `command-unimplemented`, `CanvasTool` has two variants, and there is no `canvas/markup.rs`. So it is *build the tool substrate, then ten kinds*, plus the Comments panel (which does not exist here either). **Three items needed engine changes; all three were filed and answered on 2026-08-14, accepted and scheduled, none started.** Revision clouds land as `MarkupSpec::Cloud` plus `Square { border_effect }` — and the *rectangular* cloud ships first, being the gesture people actually reach for. Note text lands as `/Contents` + `/T` + `/M` together, `/M` engine-stamped and `/T` optional with **no invented placeholder**. Opacity is `/CA` **alone** — writing `/ca` into the appearance stream would encode a pdfcer render bug into the file format; see **`DEFECTS.md` D9**, which is the more urgent half of that exchange and is about *viewing*, not authoring. Polyline, polygon, ink, underline, strikeout, squiggly, width and fill are engine-ready and blocked on nothing. |
 | **Phase 7 — measure** | **Three tools place dimensions**: Linear (three clicks — what, to what, where), Two-line, and **Radius / diameter**. `measure_tool.rs` came across whole into `canvas/measure/{pick,scale,state}.rs`, the 12.M1 snap primitives into `canvas/snap.rs`, 45 tests carried, **no engine API had moved**. ★ **This row used to name three remaining decisions and two of them are taken.** *Radius/diameter had no natural end to its gesture and the only place to say "done" was an accept box decision 024 retired* — the operator's answer on 2026-08-14 was **two** endings that are not boxes, a double-click and `measure.finish`, through one commit path in `canvas/measure/circular.rs`; the Finish control is gated on a new `measure.finishable` condition so it is live only when there is a non-degenerate fit to commit. *The snap query is unwired* — it is wired. What is left is **Set scale**, which still has no dialog to ask the length in. Area and Count still need engine changes; Angular is core-complete with no tool. See `SALVAGE.md`'s Phase 7 entry for the three deliberate departures from the source and the axis collision it surfaced. |
 | **Salvage remaining** | Redaction (its true-removal proof exists **only** in the old shell), and the settings dialog. |
-| **S6 — deep zoom** | ⛔ Blocked on the reusable parsed handle, which pdfcer has scheduled as `Pass 75.0`. Do not build tiling: measured as a 9× regression. |
+| **S6 — deep zoom** | ⛔ Blocked on the reusable parsed handle, which pdfcer has scheduled as `Pass 75.0`. Do not build tiling: measured as a 9× regression. ★ **This row is about per-viewport REGION TILING, not about O186.** O186's two defects — a whole-sheet raster ordered above the pixmap ceiling, and a pasteboard so wide that a blank screen was a legal position — were both fixed on 2026-09-13 and are unrelated to this blocker. A reader who sees *deep zoom* and ⛔ in the same cell will otherwise conclude the zoom work is stalled. |
 
 Smaller, unblocked, and recorded in `FEATURES.md`:
 
@@ -1000,6 +1000,83 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 ---
 
 ## 10. Things that will bite you
+
+- ★★★ **2026-09-13 — a change to LAYOUT SLACK changes where a document
+  OPENS, not only where it can be dragged, and the whole suite will stay
+  green while it does.**
+
+  `O186` had two halves. The first was arithmetic: `PASTEBOARD_FRACTION` was
+  `1.0`, so the blank room the canvas keeps around the sheet was **exactly one
+  viewport**, which makes the ends of the allowed travel the position where
+  sheet and screen overlap at **no point at all**, at every zoom. The blank
+  screen the operator reported was not an escape from the confinement; it was
+  an *allowed* position inside it. `geometry::pasteboard` now subtracts
+  `sheet_sliver(viewport) = MIN_SHEET_ON_SCREEN.min(viewport / 2.0)`, so the
+  far end always keeps 32 pt of sheet on screen.
+
+  ⚠ **Narrowing it by that sliver broke where documents open.** The chain,
+  in order, because every link is ordinary and the result is not:
+
+  1. frame 0 of a multi-page file now draws a **sliver** where it drew nothing
+  2. so `canvas::present` no longer early-returns on `reason=nothing-visible`
+  3. so `zoom::remember_frame` runs
+  4. so on frame 1 `zoom::last_frame` is `Some`
+  5. so `fit::placement`'s resize arm — which outranks the open-seed arm —
+     no longer declines, and preserves the “centre” of a frame nothing had
+     placed: egui's own default `(0, 0)`, the top-left corner of a pasteboard
+     one viewport above and left of the page
+  6. `geometry::strip_offset`'s lower clamp turns that into a request for
+     `(0.0, 0.0)`
+  7. the open-seed arm is a **one-shot keyed on a single frame index**, so it
+     never fires at all, and nothing ever places the document again
+
+  Symptom: a freshly opened file sat with its page off the bottom-right corner
+  of the canvas, permanently, until the operator scrolled. ⚠ **Every unit
+  test and all 43 gates were green while it did that**, because the defect
+  lives in the interaction of two subsystems on one frame and nothing that
+  calls either function in isolation can reach it.
+
+  ★★ **The arm that broke it was commented as impossible.** It began
+  `let before = before?;` under a comment claiming *“the very first frame of a
+  document declines by construction”*. That was true about the **intent** and
+  was never a guard: the code tested *is there a previous frame*, and leaned on
+  that being `None` only because those frames happened to draw nothing. ⇒
+  **A guard that works because some other condition happens to be false is a
+  coincidence with a comment on it.** The predicate is now written out —
+  `doc.canvas_frames <= crate::canvas::offset::SEED_FRAME` — with `SEED_FRAME`
+  a named constant read by the arm that FIRES and the arm that DECLINES, so
+  they cannot drift. The “no previous frame” decline is kept separate
+  beneath it, because it is also true on the first frame after a tab switch,
+  where the placement fact is not.
+
+  ★★★ **What made it findable in twenty minutes instead of a day.** Three
+  separate arms of `canvas::offset::decide` can emit exactly `(0.0, 0.0)`, so
+  the trace's `want=` field could not identify its producer and three plausible
+  hypotheses were indistinguishable — two of them were investigated and killed
+  by source reading before anything was measured, and the culprit was a fourth
+  arm nobody had suspected. `decide` now returns a
+  `Decision { offset, source: &'static str }` and `canvas::trace::placed`
+  prints `src=` on the `canvas-place` line, published **before**
+  `doc.canvas_frames` is incremented so the index on the line is the one the
+  chain decided on. One launch after that existed named the arm.
+  ⇒ **When more than one producer can emit a value, the value is an
+  OUTCOME, not a measurement, and it will support whichever theory the reader
+  brought with them.** The tell that you are already inside this defect: the
+  number in the trace is correct and the behaviour is wrong.
+
+  ★ Three sibling resize tests broke on the new guard because they ran at
+  `canvas_frames == 0`. The repair is a `settled(&mut doc)` call **in each
+  test**, deliberately not folded into the shared `place_at` helper — folding
+  it in would make the un-seeded world unreachable, and the new test exists
+  precisely to cover that world. The new guard was falsified with `if false`
+  before it was trusted (red, `left: Some(Page([-1.0, 0.0])) right: None`).
+
+  ⇒ **The operational rule: smoke-launch off-screen after any geometry
+  change.** Ninety seconds, `PDFCER_DIAG_VIEWPORT`, no focus stolen. It beat
+  the unit suite and the gate suite to this one, and the only oracle a
+  placement defect has ever had is what the program actually drew. Written up
+  at `D:/dev/rag/egui/a_guard_that_leans_on_another_conditions_accident_fails_when_the_accident_ends.md`
+  and `D:/dev/rag/egui/several_arms_of_a_ranked_chain_produce_the_same_value_so_the_trace_must_carry_the_SOURCE.md`.
 
 - **★★★ 2026-09-12 — the commit that falsifies a measured sentence is very
   often the commit that MOVES the constant the sentence is about, and it will
@@ -1939,7 +2016,9 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
   tempt you into: editing any `.rs` or `.toml`, anywhere in the repository,
   while it runs.**
 
-  A full driven sweep is 213 checks in eleven chunks plus the ALONE table, each
+  A full driven sweep is **221 checks** (2026-09-13) in twelve chunks plus the
+  ALONE table — the figure grows with every check added, so read it from
+  `ui-verify --list` rather than from this paragraph — each
   check launching its own copy of the application, and it takes about an hour and
   a half on this machine. The obvious use of that wall clock is source work.
   It is the one use that is not available.
@@ -1983,6 +2062,113 @@ core now carries a test whose stated job is to stop a future reader
 The lesson is worth carrying: **verify a claim against their source before
 filing it**, and when a filing is wrong, record that it was wrong where the
 next reader will find it rather than deleting it.
+
+---
+
+## 11b. The next engine bump — `3e73a02` ⇒ `4851316`, planned and deliberately not taken
+
+**Written 2026-09-13, while the ninety-five-minute sweep was still running.**
+It is filed here rather than done because of a rule this project keeps
+re-learning: **a pin moved after a measurement makes every number in that
+measurement a statement about a program that no longer exists.** The pin was
+taken at 09:40, the notice arrived at 10:31, the sweep ran 10:16 to 11:51. Ship
+the measured build; take this as its own commit immediately afterwards.
+
+Source: `open/notice_2026-09-13-three-more-all-accessors-are-slices-and-one-deliberately-is-not.md`.
+It is a **notice**, not a reply — nothing is owed back. The engine batched the
+breaking changes together on purpose so that one `cargo update` breaks us once
+rather than three times.
+
+### The two engine commits waiting
+
+| sha | what |
+|---|---|
+| `d378417` | `refactor(core)`: two more `all()` accessors become slices, one deliberately stays an array, and a rotten ordering guard is replaced |
+| `4851316` | the librarian filing for the above |
+
+### What changes
+
+| accessor | before | after |
+|---|---|---|
+| `CheckStyle::all()` | `[Self; 6]` | `&'static [CheckStyle]` |
+| `InfoField::all()` (`edit::DocInfoField`) | `[Self; 4]` | `&'static [Self]` |
+| `SnapKind::all()` | did not exist | `&'static [SnapKind]` — **new, additive** |
+| `PermissionBit::all()` | `[Self; 8]` | **unchanged on purpose** — do not "finish the job" |
+
+★ `PermissionBit`'s eight are ISO 32000-1 Table 22, a **closed** set, so the
+cardinality in that signature is information rather than debt. The engine's own
+argument is worth keeping: *an accessor whose type encodes the cardinality of a
+set that is expected to **grow** turns every addition into an API break.* Table
+22 does not grow. Our two call sites (`protect/mod.rs:281,288`,
+`protect/tests.rs:567`) need no change.
+
+### Our call sites, inventoried
+
+`CheckStyle::all()` — **none.** Nothing in this repository calls it.
+
+`InfoField::all()` — six live sites plus four in doc comments:
+
+- `panels/docprops/mod.rs:258` — `const FIELDS: usize = InfoField::all().len();`
+  ✓ **Measured, not assumed:** the new accessor is
+  `pub const fn all() -> &'static [Self]` (`pdfcer-core/src/edit.rs:250`, read in
+  the engine worktree at `4851316`), and `<[T]>::len` is const-stable, so this
+  line compiles unchanged and still follows the engine. **Had it not been const,
+  that module's whole `[_; FIELDS]` design would have had to become a
+  runtime-sized `Vec`** — a far larger edit than the notice implies, which is
+  why it was checked before the port was scheduled rather than during it.
+- `panels/docprops/mod.rs:317` — `InfoField::all().map(|field| ...)` builds
+  `[Option<InfoText>; FIELDS]`. A slice has no array-producing `map`; use
+  `core::array::from_fn`, **not** indexing — `clippy::indexing_slicing` is
+  denied crate-wide and that denial is load-bearing here.
+- `panels/docprops/mod.rs:397` — `.into_iter().enumerate()` ⇒ `.iter().copied()`
+- `text/panels/docprops.rs:374` — `for field in ...all()` ⇒ `.iter().copied()`
+- `panels/docprops/mod.rs:975,977,991` — tests, same treatment
+
+★★★ **Read `panels/docprops/mod.rs:244-258`'s doc comment before editing it,
+and again after.** It argues at length that deriving `FIELDS` from the array's
+*length* is a type-level protection `#[non_exhaustive]` cannot give. The
+engine's notice says the front end "hard-coded the cardinality in a type" —
+that sentence is about a different front end, or about `[String; FIELDS]` rather
+than `FIELDS` itself, which does follow the engine. Either way **the comment's
+argument changes when the return type does**, and a doc comment arguing from a
+signature that has moved is the defect this project has corrected repeatedly.
+Rewrite it in the same commit or delete it.
+
+`SnapKind::all()` — additive, and it **closes one of the nine FOREIGN entries**
+in `tools/gates/completeness-snapshot.txt`, line 14:
+
+    crates/pdfcer-gui/src/canvas/snap.rs::every_snap_kind_has_a_non_empty_marker_and_the_derived_one_is_distinct
+        SnapKind   FOREIGN   8
+
+Eight variants, hand-written, against an engine enum — the exact pairing the
+completeness register calls severe. Rewrite the test to iterate
+`SnapKind::all()`, then re-run the gate with `--write-snapshot` so the register
+loses the row rather than keeping a stale one. Watch the outstanding count drop
+from nine foreign to eight; that is the register earning its keep in its first
+week.
+
+★★ **And the register earned it twice over.** `SnapKind` is one of the nine
+foreign rows it produced this morning, and the engine's independent sweep of its
+own crate found a **live ordering hazard** in exactly that type: `SnapKind`'s
+ordering test carried a hand-written copy of eight variants and had stopped
+asserting rank *uniqueness*. Two kinds sharing a rank makes `snap_candidates`'
+winner depend on generation order, under the operator's cursor, which R19
+forbids. Two instruments, built independently, pointing at the same type within
+the hour.
+
+### Also worth carrying back
+
+The notice's §2 is a **third shape** of the completeness-guard class, and it is
+not in the memory yet:
+
+> a guard that worked for the thing it was written for (completeness, via an
+> exhaustive `match` next door) while never covering the thing it was NAMED for
+> (the ordering, and the rank *uniqueness* the ordering assumes).
+
+Ours was a guard that never worked; an earlier one was a guard deleted by an
+improvement. This is the third. Append it to
+`feedback_a_hand_written_list_inside_a_completeness_test_is_the_gap.md` when the
+bump lands.
 
 ---
 

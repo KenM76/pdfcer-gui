@@ -347,6 +347,10 @@ pub mod pagedrop;
 pub mod notepopup;
 // The wheel as a page turn, under a one-page-at-a-time display mode -- O30.
 mod paging;
+// The two gestures that must still work on a frame that drew no page at all,
+// run above `present`'s early return -- O186. Its header carries why the
+// return is not simply moved, and which handlers are deliberately absent.
+mod escape;
 /// ★★★ **Reaching an object that is off the page** — which of the canvas's
 /// two interactive rectangles owns this frame's gesture.
 ///
