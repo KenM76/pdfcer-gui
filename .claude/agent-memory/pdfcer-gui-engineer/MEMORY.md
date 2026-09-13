@@ -109,3 +109,4 @@
 - [A check's own gesture can satisfy the condition it was written to catch](feedback_a_checks_own_gesture_can_satisfy_the_condition_it_was_written_to_catch.md) — read the event's only emitter before blaming the fixture; jump, do not travel.
 - [A capability claim in product copy needs the same citation as a limitation claim](feedback_a_capability_claim_in_product_copy_needs_the_same_citation_as_a_limitation_claim.md) — "lengths, areas and angles" was invented from the shape of the feature; Area and Angular are not shipped.
 - [A running sweep forbids the obvious use of its own ninety-five minutes](feedback_a_running_sweep_forbids_the_obvious_use_of_its_own_ninety_five_minutes.md) - editing any .rs or .toml aborts every remaining chunk; markdown and fixtures are safe.
+- [A lesson in a docstring is not an instrument](feedback_a_lesson_in_a_docstring_is_not_an_instrument.md) — four instances, the generalisation sitting beside them; build the sweep.

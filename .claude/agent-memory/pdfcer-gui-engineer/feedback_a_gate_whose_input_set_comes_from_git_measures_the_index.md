@@ -37,3 +37,26 @@ and leaving the mechanism bought one day.**
   amount of reading.
 - Audit the siblings rather than one gate. Every checker in `tools/gates/` that
   reaches for git has the same hole.
+
+---
+
+**Closed 2026-09-13 by an instrument, after a FOURTH instance.** The audit this
+memory asked for found `check-doc-markup.py` enumerating with a bare
+`git ls-files "*.md"` — so the Markdown file most likely to carry a truncated
+table row, the one just written, was invisible to it. **It had never once fired.**
+
+`tools/gates/check-gate-input-scope.py` now sweeps `tools/` for the shape and
+`run-all.sh` registers it with its self-test (suite = 43). Every real call must
+carry `--untracked` / `--others` **in the call's own extent**, or declare
+`gate-input-scope-exempt: <reason>` on its own line or the line above. It walks
+with `os.walk` and never asks git anything — an auditor carrying the defect it
+audits is worthless.
+
+**The question that settles each hit:** *which side of `git add` does this
+check's subject live on?* A gate about what a reader sees, what ships, or what is
+on disk wants the working tree. Only a gate about what has been **recorded**
+wants the index — `check-engine-api-drift` and `verb-coverage` read the engine at
+a revision deliberately and are exempt for that stated reason.
+
+⇒ See [[feedback_a_lesson_in_a_docstring_is_not_an_instrument]] for why the
+prose version of this memory did not stop instances 2, 3 and 4.

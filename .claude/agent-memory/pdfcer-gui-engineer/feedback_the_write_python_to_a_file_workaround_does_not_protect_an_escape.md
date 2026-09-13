@@ -54,3 +54,35 @@ reasonable; only abstinence is reliable.
   logic.
 - Related: [[never-git-checkout-to-undo-an-experiment]] — keep a `cp` copy of the
   target before an emitted patch runs, because the recovery is a restore.
+
+---
+
+**★ 2026-09-13 — the GUARD against the escape is the new failure mode, and it
+killed two patch scripts in one session.** The discipline above produced
+`assert`s whose property was wrong rather than whose logic was wrong:
+
+- `assert BS + "U" not in NEW and BS + "x" not in NEW` — **unsatisfiable**, because
+  the payload legitimately contained `"C:" + BS + "Users"`. The guard could never
+  pass and was aimed at a property the payload is supposed to have.
+- `assert BS not in s.replace("chr(92)", "")` — failed because the emitted file
+  contained regexes with `\s` and `\b` **inside raw strings**, which is correct
+  code. The script died before writing, so the target was untouched; that is luck,
+  not design.
+
+⇒ **Do not assert about backslashes. Assert about the only property that matters:
+does the emitted file compile without a `SyntaxWarning`?**
+
+```
+python -W error::SyntaxWarning -c "import py_compile,sys; py_compile.compile(p, doraise=True)"
+```
+
+That catches the unrecognised-escape class the guard was reaching for, accepts
+every legitimate backslash, and cannot be unsatisfiable. For the payload's own
+integrity, keep a literal sentinel check instead (`assert "PLACEHOLDER" not in s`),
+which is cheap and says what it means.
+
+⇒ Same family as
+[[feedback_an_assertion_both_outcomes_satisfy_is_not_a_measurement_of_which_one_shipped]]:
+a guard is a measurement, and a guard that forbids a property the subject must
+have is measuring the wrong thing in the most expensive direction — it blocks work
+that is correct.
