@@ -312,8 +312,16 @@ Cancel and Keep are wired the same way — the check must go red in both
 directions, because an assertion both outcomes satisfy measures neither.
 
 The existing `the_print_window_opens_on_the_settings_you_last_used`
-(`print_remembered.rs:238`) deliberately never presses Print and is untouched
-by this.
+(`print_remembered.rs`, `impl Check for
+ThePrintWindowOpensOnTheSettingsYouLastUsed`) deliberately never presses Print
+and is untouched by this.
+
+★ Cited by **symbol**, not by line. This sentence said `print_remembered.rs:238`
+and the 2026-09-13 repair of that check added seven lines above the line in
+question — so the citation would have landed mid-doc-comment within an hour of
+being written. That is `DOC_DRIFT.md` S11 in miniature, and the rule is the same
+at one citation as at 168: **a line number is only a citation when it is paired
+with a revision.**
 
 ### Not built, on his instruction
 

@@ -1118,9 +1118,31 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 
   ⚠ A second check — `the_print_window_opens_on_the_settings_you_last_used` —
   skipped because *"the click on `ribbon.tab.file` produced no
-  `ribbon-tab-activated tab=file` line"*. That File-tab route has been on the
-  housekeeping list since an earlier sweep as a curiosity. Two checks blocked by
-  it makes it a **suite-wide blocker**; fix it before the per-check fixtures.
+  `ribbon-tab-activated tab=file` line"*.
+
+  ★★★ **CORRECTED AND FIXED 2026-09-13. This paragraph used to end "that
+  File-tab route has been on the housekeeping list since an earlier sweep as a
+  curiosity; two checks blocked by it makes it a suite-wide blocker" — and all
+  three clauses were wrong.** `ribbon/tabs.rs` emits `ribbon-tab-activated` for
+  **every** tab unconditionally, so there is no File-tab route to be broken. The
+  cause was sixty lines above the click, inside the check: its control launch
+  deleted `userdata/preferences.txt` to reach the shipped print defaults, and that
+  is the file carrying `ask_default_app = false`. An absent key takes its
+  compiled-in default, that one's is `true`, so the O173 *"Open PDFs with
+  pdfcer"* offer opened as a real OS window and took the press — the trace said
+  `dialog-owned — owned=true` and `dialog-focus — focused=Some(true)` forty lines
+  ahead of it. `sandbox::reset_prefs` instead of `std::fs::remove_file`, and the
+  check **PASSES**: all twelve remembered print settings come back into the dialog
+  and the job is planned with them, which is a capability this suite had never
+  once observed.
+
+  ⚠ **And "on the housekeeping list since an earlier sweep" cited a record
+  that has never existed.** `git log -S "File-tab route" --all` names exactly one
+  commit, and it introduced all five mentions of the phrase in the same change.
+  The clause was what promoted a single sighting to a suite-wide blocker, so an
+  unverifiable appeal to the register's own history set the next session's
+  priorities. ⇒ A row that cites its own prior existence is making a checkable
+  claim; check it.
 
 - **★★★ 2026-09-12 — a human-readable landing page was written from the
   program, audited against `FEATURES.md` bullet by bullet, and FIFTEEN of its

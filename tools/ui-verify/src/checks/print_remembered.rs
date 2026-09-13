@@ -53,8 +53,10 @@
 //!
 //! Two things prevent it:
 //!
-//! 1. **A control launch, first.** The preferences file is deleted, the program
-//!    is started, the Print window is opened, and the twelve shipped defaults
+//! 1. **A control launch, first.** The preferences file is reset to the bare
+//!    sandbox seed — which carries no print keys at all, so every one of the
+//!    twelve takes its compiled-in default — the program is started, the Print
+//!    window is opened, and the twelve shipped defaults
 //!    are read off the trace. That is measurement, not assertion — the defaults
 //!    are the *application's*, and this file does not get to have an opinion
 //!    about what they are.
@@ -187,9 +189,14 @@ const PLAN_EVENT: &str = "print-plan";
 
 /// The preferences file, beside the executable under test.
 ///
-/// ★ Deleted before the control run and rewritten before the second. Safe only
-/// because the suite is **never** pointed at a published build — that is the
-/// standing rule, and this check is one of the reasons for it. Pointed at the
+/// ★ **Reset to the bare sandbox seed** before the control run and rewritten
+/// before the second — never deleted. Those are not the same act, and the
+/// difference cost this check two sweeps: deletion takes `ask_default_app = false`
+/// with it, and the symptom is the O173 offer opening a real OS window in front of
+/// the very click this check is about to make. See [`sandbox::reset_prefs`].
+///
+/// Safe only because the suite is **never** pointed at a published build — that
+/// is the standing rule, and this check is one of the reasons for it. Pointed at the
 /// operator's own install it would overwrite his real print settings.
 const PREFS_FILE: &str = "preferences.txt";
 
@@ -417,21 +424,32 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     let prefs_path = dir.join(PREFS_FILE);
 
-    // ★★★ **Delete the seeded preferences file on EVERY path out of this
-    // check** — and the honest account of what that is worth is worth more
+    // ★★★ **Reset the seeded preferences file to the bare seed on EVERY path
+    // out of this check** — and the honest account of what that is worth is worth
+    // more
     // than the rule it enacts, because the first draft of this comment claimed
     // a danger that **does not exist under the way the suite actually runs**.
     //
-    // ★ What was MEASURED (`sandbox.rs`, 2026-09-10). Isolation is ON by
-    // default. Before each check runs, `Sandbox::for_check` makes a private
-    // directory beside the binary, hard-links the binary into it, copies in
-    // `models/` — and **`userdata/` is not among the sibling directories it
-    // brings**, so every check begins with no preferences file of any kind.
-    // `ctx.exe` is then rewritten to the sandboxed path, which is what
-    // `userdata()` below resolves against, and `drop(sandbox)` removes the
-    // whole directory afterwards. Under a default `run-all`, therefore, this
-    // guard deletes a file inside a directory that is about to be deleted
-    // anyway, and the delete at the top of this function always finds nothing.
+    // ★ What was MEASURED (`sandbox.rs`, re-measured 2026-09-13). Isolation is
+    // ON by default. Before each check runs, `Sandbox::for_check` makes a private
+    // directory beside the binary, hard-links the binary into it and copies in
+    // `models/`. `ctx.exe` is then rewritten to the sandboxed path, which is what
+    // `userdata()` below resolves against, and `drop(sandbox)` removes the whole
+    // directory afterwards. Under a default `run-all`, therefore, this guard
+    // rewrites a file inside a directory that is about to be deleted anyway.
+    //
+    // ★★★ **What this paragraph used to say, and what its one wrong clause
+    // cost.** It said *"`userdata/` is not among the sibling directories it brings,
+    // so every check begins with no preferences file of any kind"*, and concluded
+    // from that that the delete at the top of this function always finds nothing —
+    // which is what made the delete look free. The clause was **true on the day it
+    // was written**. `sandbox::seed_prefs` then began writing a
+    // `userdata/preferences.txt` holding exactly one key — `ask_default_app =
+    // false`, suppressing the O173 startup offer — and **no signature anywhere
+    // changed**, so neither the compiler nor any test could see that this comment
+    // had become the opposite of the truth. Every check now begins with a
+    // preferences file; the delete always found it; and what it removed was the
+    // suppression.
     //
     // ★★ So why keep it. Because the two runs where it is NOT redundant are
     // exactly the two where losing the file would cost the most:
@@ -450,15 +468,44 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //      obvious next move, and that install's `userdata/` holds settings a
     //      person chose.
     //
-    // ★ **Deleted rather than restored**, which is the opposite of what
-    // `ui_scale` does with the same file, and the difference is deliberate.
-    // `ui_scale` writes back `1.0` because that is a real, safe, non-absent
-    // value of the one key it owns. Here the neutral state is *no print
-    // preferences at all*: that is what a fresh `userdata` folder has, it is
-    // the state `PrintPrefs::default` is specified against, and there is no
-    // non-default print value that would be safe to leave behind. Rewriting
-    // the shipped defaults into the file would also be a lie of a different
-    // kind — it would make a later reader think the operator had chosen them.
+    // ★★★ **RESET to the bare seed, never deleted — and this paragraph used
+    // to argue the opposite, at length and persuasively.** The argument it made
+    // was: `ui_scale` writes back `1.0` because that is a real, safe, non-absent
+    // value of the one key it owns, whereas here the neutral state is *no print
+    // preferences at all* — which is what a fresh `userdata` folder has, is the
+    // state `PrintPrefs::default` is specified against, and is not something any
+    // non-default print value could be left behind to represent. Writing the
+    // shipped defaults into the file would additionally be a lie of a different
+    // kind, making a later reader think the operator had chosen them.
+    //
+    // Every clause of that is still true, and it still reached the wrong
+    // conclusion, because **the file holds one key that is not a print
+    // preference.** `sandbox::reset_prefs` writes the header and nothing else:
+    // `ask_default_app = false`, and no print keys whatever. So it delivers
+    // *exactly* the neutral state the old argument was reaching for — every print
+    // key absent, every one taking its compiled-in default, nothing pinned, no
+    // chosen-looking value left behind — while keeping the O173 offer shut.
+    // Deletion does not, because an absent `ask_default_app` takes its own
+    // compiled-in default, and that one is `true`.
+    //
+    // ★★ **What it cost, measured 2026-09-13 by driving the check.** The
+    // control launch's trace carries `dialog-owned title="Open PDFs with pdfcer"
+    // owned=true` and `dialog-focus — focused=Some(true)` forty lines ahead of the
+    // File-tab click, and the click then produced no `ribbon-tab-activated` line at
+    // all: it went to the offer's window, which had the foreground. The check
+    // skipped saying *"the click on `ribbon.tab.file` produced no
+    // `ribbon-tab-activated tab=file` line, so no click reached the ribbon"*, and
+    // **five documents in this repository then recorded that as a ribbon defect** —
+    // "the File-tab route", promoted to a suite-wide blocker on the strength of a
+    // second check reporting the same sentence. The ribbon was never involved. An
+    // absence reported by a check is first a question about the check.
+    //
+    // ⇒ `sandbox::write_prefs` exists precisely to close this class, and its own
+    // doc table names THIS CHECK as one of the three that lost the seed. The repair
+    // made then covered the **write** path — the seeding call below goes through
+    // `write_prefs` — and not the **delete** path sixty lines above it. *A fix that
+    // names its victims can still miss one*, and the one it misses is the one
+    // spelled with a different verb.
     //
     // ★ A guard rather than a line at the end, because there is more than one
     // way out below. **Measured 2026-09-10: eight explicit exits — four FAILs
@@ -470,23 +517,36 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // (The exits ABOVE this point deliberately have no guard, and that is not
     // an oversight: everything above resolves arguments — the exe, the PDF,
     // `--no-input`, the ui-rect event, the `userdata` folder — and not one of
-    // them has touched the disk yet. A guard placed earlier would delete a
-    // preferences file this check never wrote.)
+    // them has touched the disk yet. A guard placed earlier would rewrite a
+    // preferences file this check never wrote — byte-identical to the seed inside
+    // a sandbox, and a loss of the operator's own print settings on the two paths
+    // above where it is not.)
     //
-    // Failure to delete is REPORTED and does not change the verdict: this
-    // check's assertions are about the application, and a harness that
-    // downgraded a real pass because it could not remove a file would be
-    // reporting its own housekeeping as a defect in the program.
+    // Failure to reset **in the guard** is REPORTED and does not change the
+    // verdict: this check's assertions are about the application, and a harness
+    // that downgraded a real pass because it could not rewrite a file on its way
+    // out would be reporting its own housekeeping as a defect in the program.
+    // Failure to reset **before the control run** is a SKIP, which is the opposite
+    // treatment and deliberately so — see there.
     struct Neutral<'a>(&'a Path);
     impl Drop for Neutral<'_> {
         fn drop(&mut self) {
+            // ★ Reset, not removed. The two paths where this guard is not
+            // redundant — `--shared-profile`, and a hand run against a real
+            // `--exe` — are exactly the paths where removing the O173 suppression
+            // would hand the offer to the NEXT check's window.
+            //
+            // `exists()` is still the gate, so a file this check never created is
+            // never created by its cleanup either.
             if self.0.exists()
-                && let Err(why) = std::fs::remove_file(self.0)
+                && let Some(userdata) = self.0.parent()
+                && let Err(why) = crate::sandbox::reset_prefs(userdata)
             {
                 eprintln!(
-                    "ui-verify: WARNING — could not delete {} ({why}). It holds the print \
+                    "ui-verify: WARNING — could not reset {} ({why}). It holds the print \
                      settings this check seeded, so a later --shared-profile run will \
-                     not be starting from the shipped defaults. Delete it by hand.",
+                     not be starting from the shipped defaults. Reset it by hand to a \
+                     file holding `ask_default_app = false` and nothing else.",
                     self.0.display()
                 );
             }
@@ -500,15 +560,28 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // this file. They belong to the application, and a check that hard-coded
     // them would go quietly wrong the day one moved — `MIN_PRINT_DPI` moved
     // 50 → 36 on the day this feature landed.
-    match std::fs::remove_file(&prefs_path) {
+    match crate::sandbox::reset_prefs(&dir) {
         Ok(()) => report.note(format!(
-            "deleted {} so the control run starts from the shipped defaults",
+            "reset {} to the bare seed, so the control run starts from the shipped \
+             print defaults with the O173 offer still suppressed",
             prefs_path.display()
         )),
-        Err(_) => report.note(format!(
-            "{} did not exist; the control run starts from the shipped defaults anyway",
-            prefs_path.display()
-        )),
+        // ★ A SKIP, where the old delete treated its own failure as a note and
+        // carried on. The asymmetry is the point: a delete that failed left a file
+        // whose print keys this check knows nothing about, and the twelve values
+        // measured from the launch below would then be somebody else's settings
+        // recorded as "the shipped defaults" — a baseline that is wrong without
+        // being empty. `write_prefs`' own contract says a caller in a check reports
+        // this as a SKIP, because a preference that could not be written means the
+        // check never began.
+        Err(why) => {
+            return Err(Error::new(format!(
+                "could not reset {} to the bare seed ({why}), so the control run would \
+                 measure whatever that file happens to hold and call it the shipped \
+                 defaults.",
+                prefs_path.display()
+            )));
+        }
     };
 
     let session = launch_and_open(
@@ -525,11 +598,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     if control.get("remembered") != Some("none") {
         return Ok(Some(format!(
-            "★★ the preferences file was deleted and the dialog still reported \
-             `remembered={}` — `{}`.\n\n\
-             `none` is the only honest answer with no file on disk. Anything else means the \
-             dialog is being handed a `PrintPrefs` that came from somewhere this check cannot \
-             see, and every measurement below it would be against an unknown baseline.",
+            "★★ the preferences file held no print keys and the dialog still \
+             reported `remembered={}` — `{}`.\n\n\
+             `none` is the only honest answer when every print key is absent from the \
+             file. Anything else means the dialog is being handed a `PrintPrefs` that came \
+             from somewhere this check cannot see, and every measurement below it would be \
+             against an unknown baseline.",
             control.get("remembered").unwrap_or("<absent>"),
             control.raw
         )));

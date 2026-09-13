@@ -43,9 +43,25 @@ and applied in one pass after `=== SWEEP-DONE`.
    and *how to falsify the repair*. The third part is not optional: this project
    has shipped several checks that could not fail, and a repair that is not
    falsified is a second one.
-3. Rows are numbered in the order they were found, not by priority. The
-   suite-wide ones are R1 (a shared liveness detector) and the File-tab route
-   that blocks two checks at once.
+3. Rows are numbered in the order they were found, not by priority. The only
+   suite-wide one is R1 (a shared liveness detector).
+
+   ★★★ **This clause used to name a second suite-wide blocker, "the File-tab
+   route", and it did not exist.** Two checks skipped saying a click on
+   `ribbon.tab.file` produced no `ribbon-tab-activated tab=file` line; that was
+   read as one broken route in the ribbon and promoted to suite-wide on the
+   strength of the second sighting. Driven and measured 2026-09-13: the ribbon's
+   tab handler emits that line **unconditionally for every tab**, and the real
+   cause was each check's own setup putting a real OS window in front of its own
+   click. Fixed, and the check now PASSES — see the correction after the
+   2026-09-12 table below.
+
+   ⚠ **And the clause that did the promoting cited a record that has never
+   existed.** It said the route was *"already on the housekeeping list from an
+   earlier sweep"*; `git log -S "File-tab route" --all` names exactly one commit,
+   which introduced all five mentions of the phrase at once. A row that cites its
+   own prior existence is making a checkable claim, and this one was false in the
+   commit that wrote it.
 
 ★ **The standing prior, earned:** when a driven check fails, read the trace
 before reading the check's own failure message, and check what the check was
@@ -750,7 +766,9 @@ is the draft being torn down after the hand-off, not a loss.
 
 **Fourteen of the sixteen have one cause:** the shared `--pdf fixtures/a1-titleblock.pdf` that `sweep-full.sh` hands to every check. The repair is the same single change in fourteen places — a per-check `const FIXTURE: &str` plus `workspace_root().join(FIXTURE)`, which about thirty checks already do.
 
-**The other two are worse, because they are not fixture defects.** `print_clip_claim_follows_the_preview` concedes in its own SKIP text that the skip is *the expected outcome on most machines* — so it has almost certainly never run its assertion on any sweep since it was written. And `the_print_window_opens_on_the_settings_you_last_used` is blocked by the File-tab activation route, which makes that route a **suite-wide** blocker rather than a curiosity.
+**The other two are worse, because they are not fixture defects.** `print_clip_claim_follows_the_preview` concedes in its own SKIP text that the skip is *the expected outcome on most machines* — so it has almost certainly never run its assertion on any sweep since it was written. And `the_print_window_opens_on_the_settings_you_last_used` skipped saying no click reached the ribbon.
+
+★★★ **CORRECTED 2026-09-13 — the second half of that sentence used to blame "the File-tab activation route" and call it a suite-wide blocker. It was neither.** The check's own control launch deleted `userdata/preferences.txt` to reach the shipped print defaults, and that file is where the sandbox keeps `ask_default_app = false`. Every absent key takes its compiled-in default and that one's default is `true`, so the O173 *"Open PDFs with pdfcer"* offer opened as a real OS window and took the press. `reset_prefs` instead of `remove_file`, and the check **PASSES**: all twelve remembered print settings come back into the dialog and the job is planned with them. ⇒ **An absence reported by a check is first a question about the check**, and the trace said so in one line forty lines above the failure message.
 
 ★ **Two entries must NOT be "repaired".** `a_save_that_would_produce_blank_pages_is_refused` is reporting a **fixed engine** and should be deleted; `removing_embedded_fonts_reaches_the_document` is reporting a **correct refusal**. Counting either as a harness defect would inflate the list with work that makes the suite worse.
 
@@ -865,7 +883,11 @@ the ordinary fate of a cause claim made from a partial sweep.
 | check | why it skipped, from its own message | cause class | repair |
 |---|---|---|---|
 | `print_clip_claim_follows_the_preview` | `clipped=Some(0) claim=none:0 overhang=fits` — the sheet fits, so the correction the check exists to verify was never exercised. ★ **The message says so itself: "that is the expected result on most machines"** — the scale mode defaults to Fit, which does not clip | **a starting state, not a fixture.** The check measures a default that cannot produce the condition | drive the scale mode off Fit (Actual size, or a custom percentage above 100) **before** reading the claim, then the overhang is produced rather than hoped for |
-| `the_print_window_opens_on_the_settings_you_last_used` | `the click on ribbon.tab.file produced no ribbon-tab-activated tab=file line, so no click reached the ribbon` | **the File-tab route**, already on the housekeeping list from an earlier sweep | fix the File-tab activation path the harness uses. ★ This is now the **second** check measured as blocked by it, which promotes it from a curiosity to a suite-wide blocker |
+| ~~`the_print_window_opens_on_the_settings_you_last_used`~~ | ~~`the click on ribbon.tab.file produced no ribbon-tab-activated tab=file line, so no click reached the ribbon`~~ | ✓ **FIXED 2026-09-13. Not the ribbon — the check's own control launch deleted the preferences file, which is where the O173 suppression lives, so a real OS window took its click.** `sandbox::reset_prefs` instead of `std::fs::remove_file`; the check PASSES on all twelve settings | — |
+
+★★★ **The row above is struck rather than deleted, against this document's own rule 1, and the reason is the cause column.** A row whose *measurement* was right gets deleted when its repair lands; this row's measurement was right and its **cause claim was wrong**, and it had already propagated into `RESUME.md`, `HANDOFF.md` and rule 3 of this file. Deleting it would have removed the only place the wrong attribution could be found and corrected, while leaving three documents repeating it. ⇒ **Correct a wrong cause in place; delete only a row whose cause was right.**
+
+★★ **What the measurement actually was**, recorded here because the next person to meet a *"no click reached the ribbon"* SKIP will start where this started. `ribbon/tabs.rs` emits `ribbon-tab-activated` for **every** tab, unconditionally, on `response.clicked()` — there is no File-tab-specific path to be broken. The control launch's trace carried `dialog-owned title="Open PDFs with pdfcer" owned=true` and `dialog-focus — focused=Some(true)` forty lines ahead of the click. ⚠ The diagnosis had in fact been recorded a day earlier, in this session's own memory under *a fix that names its victims can still miss one* — and **three project documents went on naming the ribbon**, because the register is what a cold session reads first and nothing reconciles it against memory.
 
 ★★ **`print_clip_claim_follows_the_preview` is the more serious of the two, and
 it is not a fixture defect — it is a check that cannot fail.** Its own SKIP text

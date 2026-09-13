@@ -155,6 +155,14 @@ and `sweep-fails-now.txt` (4). **Do this diff before quoting any tally, in
 both directions.** A previously-passing check falling into a SKIP moves the
 `failed=` figure not at all.
 
+★ **Those four files are DATED RECORDS and are not edited when a name is
+closed** — a baseline that gets corrected is no longer a baseline. Struck since
+it was taken, by name: `the_print_window_opens_on_the_settings_you_last_used`
+(2026-09-13, and it **PASSES**, it did not merely stop skipping). ⇒ So the next
+sweep's diff against this baseline should show that one name leaving the SKIP
+set and **arriving in the pass set**; it landing in neither is a finding about
+the sweep, not about the check.
+
 ★★ **All eleven reactivated checks PASSED**, which is what discharges
 both items that used to sit in the section below. And the one new SKIP is not
 a regression — it is `SWEEP_REPAIRS.md` R10, a check finally given the
@@ -278,10 +286,36 @@ has to be able to tell that apart from the caveat being forgotten.
      violation in an **untracked** file, because a gate with the hole cannot see
      one at all. ⚠ Worst in the release path, where the thing waved through
      is the thing that ships.
-   * ⇒ **Fix the File-tab route.** A File-tab click that produces no
-     `ribbon-tab-activated tab=file` blocks **two** checks, which makes it a
-     suite-wide blocker rather than a per-check defect, and it is cheaper than
-     any of the fixture work.
+   * ✓ **DONE 2026-09-13 — and "the File-tab route" never existed.** This
+     bullet said a File-tab click producing no `ribbon-tab-activated tab=file` was
+     a suite-wide ribbon blocker. Measured by driving the binary: `ribbon/tabs.rs`
+     emits that line **unconditionally for every tab**, so there is no File-tab
+     path to break. The check's own control launch was deleting
+     `userdata/preferences.txt` to reach the shipped print defaults — and that is
+     the file holding `ask_default_app = false`, so the O173 *"Open PDFs with
+     pdfcer"* offer opened as a **real OS window** and took the press.
+     `sandbox::reset_prefs` instead of `std::fs::remove_file`, and the check now
+     **PASSES**: twelve remembered print settings come back into the dialog and
+     the job is planned with them.
+
+     ★★★ **Three things to carry forward, and the third is the expensive one.**
+     (a) *An absence reported by a check is first a question about the check* —
+     the trace named the cause one line at a time, forty lines above the failure
+     message that blamed the ribbon. (b) *A fix that names its victims can still
+     miss one*: `sandbox::write_prefs` was written to stop exactly this and its
+     doc table names **this check**, but the repair covered the write path and the
+     delete path is not a write. (c) ⚠ **The correct diagnosis was already in
+     this session's memory, written a day earlier, while three project documents
+     went on naming the ribbon.** A cold session reads `RESUME.md` first and
+     nothing reconciles the register against memory, so *memory loses to a
+     register row every time* — when a memory entry contradicts a register row,
+     correcting the row is the work.
+
+     ★ One measurement not to re-file: the offer's two buttons are reported
+     `shown=0.58 floor=0.60` on the frame it opens (`dialog-refocus now=0`) and are
+     fully inside the window on the next one (`now=1`). **One frame, an egui
+     galley-sizing transient, not a defect** — and `declared()` is last-wins, so
+     no check can be misled by it either.
    * ⇒ **`DOC_DRIFT.md` S11 — 168 hard-coded engine line citations, and
      8 of 8 sampled land on unrelated code.** `edit.rs` grows at the head, so
      every citation into it drifts monotonically downward. ★★★ A rotted
