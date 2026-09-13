@@ -468,7 +468,8 @@ fn a_document_that_arrived_broken_gets_the_sentence_that_does_not_offer_undo() {
     damaged[at..at + OLD.len()].copy_from_slice(b"/Count 13");
     assert_eq!(damaged.len(), bytes.len(), "the plant must not move a byte");
 
-    let dir = std::env::temp_dir().join("pdfcer-gui-pagetree-tests");
+    let dir =
+        std::env::temp_dir().join(format!("pdfcer-gui-pagetree-tests-{}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("the temporary directory must be creatable");
     let path = dir.join("arrived-broken.pdf");
     std::fs::write(&path, &damaged).expect("the damaged copy is writable");

@@ -615,7 +615,8 @@ fn real() {
     /// the crate's own offender would have to be in `src/` itself to be seen.
     #[test]
     fn the_walker_descends_and_reports_a_planted_file() {
-        let root = std::env::temp_dir().join("pdfcer-gui-sealed-selftest");
+        let root =
+            std::env::temp_dir().join(format!("pdfcer-gui-sealed-selftest-{}", std::process::id()));
         let nested = root.join("one").join("two");
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&nested).expect("the fixture tree must be creatable");

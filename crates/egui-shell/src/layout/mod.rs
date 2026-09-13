@@ -547,6 +547,9 @@ mod tests {
     /// ★ **A missing file is a first run, not a failure.**
     #[test]
     fn a_missing_file_yields_the_default_and_says_so_quietly() {
+        // temp-path-exempt: nothing is ever created here. The test wants a
+        // path that does NOT exist, and every process wanting the same
+        // non-existent path is not a collision.
         let path = std::env::temp_dir().join("egui-shell-no-such-layout-file.ron");
         let _ = std::fs::remove_file(&path);
         let loaded = LayoutDocument::load_from_path(&path, &fallback(), &AnyPanel);
@@ -805,7 +808,10 @@ mod tests {
     /// file.
     #[test]
     fn a_document_survives_a_trip_through_a_file() {
-        let dir = std::env::temp_dir().join("egui-shell-layout-tests");
+        // The pid keeps two concurrent `cargo test` processes out of each
+        // other's scratch directory; see `tools/gates/check-test-temp-paths.py`.
+        let dir =
+            std::env::temp_dir().join(format!("egui-shell-layout-tests-{}", std::process::id()));
         let path = dir.join("round-trip.ron");
         let _ = std::fs::remove_file(&path);
         let document = LayoutDocument::new(rich());

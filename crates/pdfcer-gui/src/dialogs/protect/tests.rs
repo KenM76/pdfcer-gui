@@ -72,9 +72,15 @@ fn restricted_permissions_dialog(tag: &str, granted: &[PermissionBit]) -> Protec
         .expect("the plain fixture encrypts");
 
     let mut path = std::env::temp_dir();
-    // ★ Tagged per caller: `cargo test` runs these in parallel, and two tests
-    // writing one path is a flake that reproduces about a third of the time.
-    path.push(format!("pdfcer-dialog-protect-{tag}.pdf"));
+    // ★ Tagged per caller AND per process. The caller tag stops two THREADS
+    // of one `cargo test` fighting over a file; it does nothing about two
+    // `cargo test` PROCESSES, which have the same callers as each other.
+    // That second half bit on 2026-09-13 and presented as a regression in
+    // whichever test lost the race -- see `check-test-temp-paths.py`.
+    path.push(format!(
+        "pdfcer-dialog-protect-{tag}-{}.pdf",
+        std::process::id()
+    ));
     std::fs::write(&path, &bytes).expect("the scratch file is writable");
 
     let document =

@@ -48,14 +48,31 @@ fn passwords(current_owner: &[u8], user: &[u8], owner: &[u8]) -> Passwords {
     }
 }
 
-/// A scratch path in the system temp directory, unique per caller.
+/// A scratch path in the system temp directory, unique per caller **and per
+/// process**.
 ///
 /// ★ Named per test rather than shared, because `cargo test` runs these in
 /// parallel and two tests writing one path is a flake that reproduces about a
 /// third of the time — the worst kind.
+///
+/// ★★★ **And the caller tag alone was not enough, which is the more
+/// interesting half.** It distinguishes THREADS inside one `cargo test`. It
+/// does nothing about two `cargo test` PROCESSES, because both have the same
+/// set of callers and therefore ask for the same filenames. On 2026-09-13 a
+/// second concurrent workspace run turned
+/// [`super::tests::changing_the_password_keeps_what_the_document_allowed`] red
+/// while it passed alone: one process was still writing the encrypted copy
+/// when the other opened it. The assertion that failed was five lines
+/// downstream of the real event, which is why this reads as a regression in
+/// whichever test lost the race rather than as a shared-state defect.
+///
+/// ⇒ The doc comment above named the hazard and fixed half of it, and a
+/// half-fix under a confident note is worse than no note: the next reader
+/// sees the hazard named and stops looking. `tools/gates/check-test-temp-paths.py`
+/// is what stops the other half coming back.
 fn scratch(tag: &str) -> PathBuf {
     let mut p = std::env::temp_dir();
-    p.push(format!("pdfcer-protect-{tag}.pdf"));
+    p.push(format!("pdfcer-protect-{tag}-{}.pdf", std::process::id()));
     p
 }
 

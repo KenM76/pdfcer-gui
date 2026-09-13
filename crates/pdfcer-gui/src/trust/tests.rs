@@ -49,6 +49,7 @@ use super::{Anchors, Located, candidate_paths, describe_absence, locate};
 
 /// A path this machine certainly does not have a file at.
 fn nowhere() -> PathBuf {
+    // temp-path-exempt: the whole point is a path with no file at it.
     std::env::temp_dir().join("pdfcer-trust-store-that-does-not-exist.acrodata")
 }
 

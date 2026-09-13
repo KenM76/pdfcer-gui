@@ -133,6 +133,7 @@ run "check-gate-input-scope --self-test" python "$HERE/check-gate-input-scope.py
 run "check-memory-index --self-test" bash "$HERE/check-memory-index.sh" --self-test
 run "check-completeness-tests --self-test" python "$HERE/check-completeness-tests.py" --self-test
 run "check-unit-conversion --self-test" bash "$HERE/check-unit-conversion.sh" --self-test
+run "check-test-temp-paths --self-test" python "$HERE/check-test-temp-paths.py" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
@@ -410,6 +411,30 @@ run "check-doc-markup" python "$HERE/check-doc-markup.py"
 # gate walks `tools/` with `os.walk` and never asks git anything — an auditor
 # carrying the defect it audits is worthless.
 run "check-gate-input-scope" python "$HERE/check-gate-input-scope.py"
+
+# ★★★ `check-test-temp-paths`, added 2026-09-13 — and it is here, beside
+# `check-gate-input-scope`, because it is the same species: a defect whose
+# correct generalisation was already written into this tree, in a comment,
+# beside a fix that handled half of it.
+#
+# `protect::tests` and `dialogs::protect::tests` each carried a confident note
+# saying a per-caller tag solved the parallelism hazard. It does — for THREADS.
+# Two `cargo test` PROCESSES have the same callers as each other, so they ask
+# for the same filenames under `%TEMP%`, and eleven sites in this tree did that.
+# On 2026-09-13 two overlapping workspace runs turned
+# `protect::…::changing_the_password_keeps_what_the_document_allowed` red while
+# it passed alone.
+#
+# ★ The reason it needs a gate rather than a fix: the symptom is an unrelated
+# assertion failing several lines downstream, in whichever process lost the
+# race, which reads as a regression in that feature and then as a flake when it
+# passes on re-run. Nothing about the presentation points at shared state, so
+# the class comes back the moment someone writes the twelfth site.
+#
+# It prints how many sites it audited even when clean, because a pattern that
+# stops matching prints what a clean run prints — and it FAILS on zero sites
+# for the same reason.
+run "check-test-temp-paths" python "$HERE/check-test-temp-paths.py"
 
 # `check-verb-coverage` fails when `pdfcer-core` has a verb this shell names
 # nowhere AND `EDITABLE_SURFACES.md` says nothing about it either.

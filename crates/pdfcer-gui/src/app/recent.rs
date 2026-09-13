@@ -597,7 +597,13 @@ mod tests {
         let nanos = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |d| d.as_nanos());
-        let dir = std::env::temp_dir().join(format!("pdfcer-gui-recent-{tag}-{nanos}"));
+        // The pid is what `tools/gates/check-test-temp-paths.py` requires;
+        // `nanos` stays because it also separates repeated runs inside one
+        // process, which the pid does not.
+        let dir = std::env::temp_dir().join(format!(
+            "pdfcer-gui-recent-{tag}-{nanos}-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("a temp dir");
         dir

@@ -109,7 +109,7 @@ fn session_with_unsaved_mark() -> EditSession {
 /// `crate::app::save`'s tests do it: a test that writes beside the fixtures
 /// leaves a file somebody eventually commits.
 fn scratch(name: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join("pdfcer-gui-redact-tests");
+    let dir = std::env::temp_dir().join(format!("pdfcer-gui-redact-tests-{}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("the temporary directory must be creatable");
     dir.join(name)
 }

@@ -728,6 +728,9 @@ fn a_drawn_text_field_fixture() {
     let (bytes, _) = session
         .to_incremental_bytes(&SaveOptions::identity())
         .expect("an incremental save of one fill");
+    // temp-path-exempt: an `#[ignore]`d fixture generator. The file is named
+    // so a human can drive the binary against it afterwards, which a
+    // pid-stamped name would defeat.
     let out = std::env::temp_dir().join("pdfcer-drawn-text-form.pdf");
     std::fs::write(&out, bytes).expect("the temp directory is writable");
     println!("wrote {}", out.display());
@@ -743,6 +746,7 @@ fn a_drawn_text_field_fixture() {
     let (turned, _) = session
         .to_incremental_bytes(&SaveOptions::identity())
         .expect("an incremental save of a rotation");
+    // temp-path-exempt: the same generator, its rotated half.
     let rotated = std::env::temp_dir().join("pdfcer-drawn-text-form-rotated.pdf");
     std::fs::write(&rotated, turned).expect("the temp directory is writable");
     println!("wrote {}", rotated.display());

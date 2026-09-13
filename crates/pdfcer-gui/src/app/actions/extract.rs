@@ -201,7 +201,8 @@ mod tests {
     /// two suites writing into one scratch directory is a shared mutable state
     /// nobody declared.
     fn scratch(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join("pdfcer-gui-extract-tests");
+        let dir =
+            std::env::temp_dir().join(format!("pdfcer-gui-extract-tests-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("the temporary directory must be creatable");
         dir.join(name)
     }

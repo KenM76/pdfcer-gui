@@ -206,7 +206,8 @@ mod tests {
 
     /// A scratch directory that cleans itself up.
     fn scratch(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("pdfcer-pickstore-{name}"));
+        let dir =
+            std::env::temp_dir().join(format!("pdfcer-pickstore-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("scratch dir");
         dir

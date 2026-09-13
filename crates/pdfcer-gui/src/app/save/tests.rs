@@ -36,7 +36,7 @@ use crate::app::state::{FOUR_PAGES, Origin, open_fixture, open_local_fixture};
 /// which is the exact hazard `tools/ui-verify`'s OCR check records having
 /// hit.
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join("pdfcer-gui-save-tests");
+    let dir = std::env::temp_dir().join(format!("pdfcer-gui-save-tests-{}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("the temporary directory must be creatable");
     dir.join(name)
 }

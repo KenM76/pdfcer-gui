@@ -1286,6 +1286,8 @@ mod tests {
     /// a first run needs no special case.
     #[test]
     fn a_missing_store_answers_no_guides() {
+        // temp-path-exempt: nothing is created here; the test needs a path
+        // that is absent, and absence is not contended.
         let missing = std::env::temp_dir().join("pdfcer-guides-does-not-exist-4471.txt");
         let _ = std::fs::remove_file(&missing);
         assert!(recall_at(Some(&missing), Path::new("C:\\a.pdf")).is_empty());

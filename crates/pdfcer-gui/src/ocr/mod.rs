@@ -1299,6 +1299,8 @@ mod tests {
     /// place that was looked in comes back.
     #[test]
     fn a_failed_resolution_reports_everywhere_it_looked() {
+        // temp-path-exempt: never created -- the assertion is that resolving
+        // against a directory that is not there fails.
         let nowhere = std::env::temp_dir().join("pdfcer-no-models-here-4c1a");
         let err = resolve_models(Some(&nowhere), None).expect_err("nothing is there");
         assert_eq!(err.engine, MODEL_DIR);
@@ -1329,7 +1331,8 @@ mod tests {
     /// EMPTINESS rather than about the path.
     #[test]
     fn an_empty_model_directory_is_rejected_but_a_filled_one_resolves() {
-        let root = std::env::temp_dir().join("pdfcer-empty-models-9f3b");
+        let root =
+            std::env::temp_dir().join(format!("pdfcer-empty-models-9f3b-{}", std::process::id()));
         let dir = root.join("models").join(MODEL_DIR);
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&dir).expect("temp dir");

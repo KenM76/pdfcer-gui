@@ -1084,6 +1084,9 @@ mod preview {
     fn dump() {
         for ppp in [1.0_f32, 2.0] {
             let image = super::crosshair(ppp);
+            // temp-path-exempt: an `#[ignore]`d developer dump. A stable name
+            // is the point -- a human runs this deliberately and then opens
+            // the file it printed; a pid in the name would mean hunting.
             let name = std::env::temp_dir().join(format!("crosshair-{}.rgba", image.size[0]));
             std::fs::write(&name, &*image.rgba).expect("write");
             println!("{} {}x{}", name.display(), image.size[0], image.size[1]);
