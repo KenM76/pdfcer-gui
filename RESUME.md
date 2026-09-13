@@ -33,7 +33,7 @@ drifting from a count is the defect this project has spent eight corrections on.
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | `0.53.0` |
 | Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260913.1`, cut 2026-09-13 05:52 UTC, `prerelease=false`, and it IS what `releases/latest` advertises. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **220** (the sweep chunks 219 and runs 1 from the ALONE table separately — its own first line says `sweeping 219 checks in chunks, plus the ALONE table`) |
-| Gates | `bash tools/gates/run-all.sh` | **41 passed, 0 failed, 0 skipped** — 41 registered. ★ `check-pin-citation` went **red** on the run before this table was rewritten, naming both stale pin citations in `FEATURES.md` and here. It reads the row three above. |
+| Gates | `bash tools/gates/run-all.sh` | **43 passed, 0 failed, 0 skipped** — 43 registered, up two on 2026-09-13: `check-gate-input-scope` and its self-test. ★ It audits the other gates' INPUT SETS, after the same defect was written **four** times: a checker that asks git which files exist is asking about the INDEX, so every file the current session wrote is invisible to it, and the tell is the TIMING — green before the commit, red after it, with nothing edited. ⇒ **Falsify anything in this class by planting the violation in an untracked file**; a gate with the hole cannot see one at all. ★ `check-pin-citation` went **red** on the run before this table was rewritten, naming both stale pin citations in `FEATURES.md` and here. It reads the row three above. |
 | Unit tests | `cargo test --workspace` | **4,239 passing, 0 failed, 51 ignored, 4,290 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,290. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. |
 | Source files | `find crates -name '*.rs' \| wc -l` | 785 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 173 rows — wanted 35 / blocked 8 / unknown 0 / declined 14 / **shipped 116** |
@@ -246,23 +246,38 @@ has to be able to tell that apart from the caveat being forgotten.
    sixteen checks that assert nothing. `DOC_DRIFT.md` holds 12 rows of this
    project's own stale claims, dated against the commit that falsified each.
 
-   Four things to do first, in this order, and each is one idea rather than
-   a list:
+   What to do first, in this order, and each is one idea rather than a list.
+   ★ **The list is the count.** A sentence that says *four things* beside four
+   bullets is the shape this project has corrected eight times; when one is
+   struck off, the sentence is wrong and nothing says so.
 
-   * ⇒ **Audit every other gate that builds its input set from git.**
-     `check-old-name-absent` reported **41 of 41 green** on a tree that the
-     packager's own pre-flight failed thirty minutes later, with nothing edited
-     in between: it used plain `git grep`, which reads the **index**, so two
-     violations sitting in newly-added files were invisible until `git add`
-     made them visible. It passes `--untracked` now. ★★★ **The mechanism,
-     not the instance, is the finding** — this was the SECOND occurrence, and the
-     first repair excluded one directory instead. So grep `tools/gates/` for
-     `git grep` and `git ls-files`, and for each hit ask whether the gate's
-     subject is *the working tree* or *what has been staged*. Falsify each
-     repair by planting the violation in an **untracked** file; a gate with this
-     hole cannot see one at all, which is what makes it falsifiable in one step.
-     ⚠ A gate in this class is worst in the release path, because the thing
-     it waves through is the thing that ships.
+   * ✓ **DONE 2026-09-13 — the gate audit, and it is now an instrument**
+     rather than a paragraph. A checker that asks git which files exist is asking
+     about the **index**, so every file the current session wrote is invisible to
+     it. ★★★ **Four instances, and the correct generalisation was written into
+     a gate's own docstring before three of them happened.** ⇒ **A lesson in a
+     docstring is not an instrument** — nothing swept for the pattern, so nothing
+     found it. The audit found the fourth, `check-doc-markup`, which had **never
+     once fired**: the Markdown file most likely to carry a truncated table row is
+     the one just written. Repaired, and the repair falsified against a planted
+     untracked file the old version could not see at all.
+
+     `tools/gates/check-gate-input-scope.py` is the sweep, registered in
+     `run-all.sh` with its self-test, which is why the suite is **43** and not 41.
+     It walks `tools/` with `os.walk` and never asks git anything — an auditor
+     carrying the defect it audits is worthless. Every real call must pass
+     `--untracked` / `--others` **in its own extent**, or carry
+     `gate-input-scope-exempt: <reason>` on its own line or the line above.
+     `check-engine-api-drift` and `verb-coverage` read the engine at a revision
+     deliberately and are exempt for that reason, which is the marker used
+     correctly rather than a loophole in it.
+
+     ★ **The two things to carry forward.** The tell for this defect in the
+     wild is the **TIMING, not the content**: green before the commit, red after
+     it, with nothing edited. And the one-step falsification is to plant the
+     violation in an **untracked** file, because a gate with the hole cannot see
+     one at all. ⚠ Worst in the release path, where the thing waved through
+     is the thing that ships.
    * ⇒ **Fix the File-tab route.** A File-tab click that produces no
      `ribbon-tab-activated tab=file` blocks **two** checks, which makes it a
      suite-wide blocker rather than a per-check defect, and it is cheaper than

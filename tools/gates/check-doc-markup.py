@@ -55,6 +55,54 @@ That is easy to produce when a long bold heading is wrapped by hand across two
 lines, and impossible to see in an editor. One was written into `HANDOFF.md` on
 2026-09-12 and caught by eye; this gate is so that the next one is not.
 
+THE INPUT SET IS THE WORKING TREE, NOT THE INDEX
+------------------------------------------------
+
+This gate listed its input with a bare `git ls-files "*.md"` until 2026-09-13.
+That lists **the index**, so a Markdown file written and not yet `git add`-ed
+was not scanned at all.
+
+★★★ **That is the worst possible blind spot for this particular gate.** A
+brand-new document is exactly where these two defects live, because nobody has
+ever rendered it: the hand-wrapped bold heading and the unescaped pipe inside a
+quoted command are both produced while writing, and both are invisible in an
+editor. A gate that waits until the file is committed before looking at it is
+looking after the only moment that mattered.
+
+It now passes `--cached --others --exclude-standard` — tracked files, plus
+untracked files that are not gitignored. The two sets are disjoint, so nothing
+is scanned twice, and `--exclude-standard` keeps `target/` and the portable
+build folders out without this file having to name them.
+
+★ **Four instances, and the OLDEST is the finding.** `check-old-name-absent`
+reported **41 of 41 green** and then failed the packager's pre-flight on the
+**same tree** thirty minutes later, with nothing edited in between — all that
+changed was `git add`. Its first repair excluded one directory, which treated
+the instance and left the mechanism, so it recurred. This gate is the third, and
+it had never fired at all -- it was found by the audit rather than by a failure.
+
+★★★ **And the first was `tools/check-suite-name-absent.py`, whose docstring
+already states the generalisation in this tree** — *"a gate whose input set is
+'what is already committed' cannot see the commit you are about to make"* — and
+that gate paid for it with a red CI run. It was written **before** both
+`check-old-name-absent` failures. So the lesson was recorded, correctly and
+prominently, one directory up, and did not propagate.
+⇒ **A lesson in a docstring is not an instrument.** Nothing swept the other
+gates for the pattern until one of them broke in the release path, and the sweep
+took four minutes. When a finding generalises, the next act is a grep across
+every sibling, in the same session, not a paragraph.
+
+⇒ **The question to ask at each hit: which side of `git add` does this gate's
+subject live on?** A gate about what a reader sees, what ships, or what is on
+disk wants the working tree. Only a gate about what is *recorded* wants the
+index — `check-engine-api-drift` reads the engine's `.rs` bytes at a git
+revision deliberately, because its subject is the pinned commit that compiles,
+not whatever the engine's working tree happens to hold.
+
+★ **And falsify it in one step:** plant the violation in an **untracked**
+file. A gate with this hole cannot see one at all, so the difference between
+the broken and the repaired version is a single run.
+
 WHAT IS DELIBERATELY NOT FLAGGED
 --------------------------------
 
@@ -73,7 +121,7 @@ WHAT IS DELIBERATELY NOT FLAGGED
 USAGE
 =====
 
-  tools/gates/check-doc-markup.py              scan every tracked *.md
+  tools/gates/check-doc-markup.py              scan every *.md in the tree
   tools/gates/check-doc-markup.py --self-test  falsify the mechanism
 
 Exit: 0 clean, 1 violations, 2 could not run (not a git checkout).
@@ -266,14 +314,21 @@ def main():
         return self_test()
 
     try:
-        listing = subprocess.check_output(["git", "ls-files", "*.md"], text=True)
+        # --cached --others --exclude-standard: the working tree, not the index.
+        # A bare `git ls-files` would skip a .md that has been written and not
+        # yet added, which is the file most likely to contain one of these two
+        # defects. See THE INPUT SET IS THE WORKING TREE, above.
+        listing = subprocess.check_output(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard",
+             "--", "*.md"],
+            text=True)
     except Exception as exc:
         print("check-doc-markup: SKIPPED — not a git checkout (" + str(exc) + ")")
         return 2
 
     files = [f for f in listing.split(NL) if f.strip()]
     if not files:
-        print("check-doc-markup: SKIPPED — git tracks no Markdown here")
+        print("check-doc-markup: SKIPPED — no Markdown in the working tree")
         return 2
 
     table_hits = []

@@ -129,6 +129,7 @@ run "check-string-gaps --self-test" bash "$HERE/check-string-gaps.sh" --self-tes
 run "check-trace-names --self-test" python "$HERE/check-trace-names.py" --self-test
 run "check-orphan-docs --self-test" python "$HERE/check-orphan-docs.py" --self-test
 run "check-doc-markup --self-test" python "$HERE/check-doc-markup.py" --self-test
+run "check-gate-input-scope --self-test" python "$HERE/check-gate-input-scope.py" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
@@ -324,6 +325,46 @@ run "check-orphan-docs" python "$HERE/check-orphan-docs.py"
 # renders correctly, and a gate that reports correct files is a gate that gets
 # carved out until it means nothing. The asymmetry IS the finding.
 run "check-doc-markup" python "$HERE/check-doc-markup.py"
+
+# ★★★ `check-gate-input-scope`, added 2026-09-13 — the gate that audits the
+# other gates' INPUT SETS, because the same defect has now been written four
+# times by people who had read the warning.
+#
+# The mechanism: a checker that asks git which files exist is asking about the
+# INDEX. A file written and not yet added is invisible to it — and that is
+# every file the current session wrote. So the suite goes green, the commit
+# lands, and the same tree is red afterwards with nothing edited.
+#
+# ★★ The four instances, in order:
+#   1. `tools/check-suite-name-absent.py` — paid for with a red CI run, then
+#      wrote the correct generalisation into its own docstring.
+#   2. `check-old-name-absent.sh` — an untracked file under `evidence/`. Repaired
+#      by excluding that one directory: the instance treated, the mechanism left.
+#   3. the same gate again — this suite reported 41 of 41 green, the commit
+#      added two documents, and `package-portable.py`'s pre-flight failed the
+#      SAME tree half an hour later.
+#   4. `check-doc-markup.py` — found by audit, repaired the same day. It had
+#      never once fired, because the .md most likely to carry the defect it
+#      hunts is the one just written.
+#
+# ⇒ **A lesson in a docstring is not an instrument.** Instance 1 recorded the
+# generalisation BEFORE instances 2, 3 and 4 were written. Nothing swept for the
+# pattern, so nothing found it. This file is that sweep.
+#
+# The question it makes every author answer: *which side of `git add` does this
+# check's subject live on?* A gate about what a reader sees, or what ships, or
+# what is on disk, wants the working tree. Only a gate about what has been
+# RECORDED wants the index — and then it says so, on the call's own line or the
+# one above, with `gate-input-scope-exempt: <reason>`. Two gates read the engine
+# at a revision deliberately and are exempt for that reason, which is the
+# correct use of the marker rather than a loophole in it.
+#
+# ★ Falsify this class in ONE step: plant the violation in an **untracked**
+# file. A gate with the hole cannot see one at all, so the planted defect is
+# reported by a sound gate and invisible to a broken one. That is also why this
+# gate walks `tools/` with `os.walk` and never asks git anything — an auditor
+# carrying the defect it audits is worthless.
+run "check-gate-input-scope" python "$HERE/check-gate-input-scope.py"
 
 # `check-verb-coverage` fails when `pdfcer-core` has a verb this shell names
 # nowhere AND `EDITABLE_SURFACES.md` says nothing about it either.
