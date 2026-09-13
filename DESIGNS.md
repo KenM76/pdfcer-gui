@@ -1489,7 +1489,7 @@ pub fn paste_outline_item(&mut self, clip: &OutlineClip, placement: OutlinePlace
 - `OutlineClip::deepest_page()` (`outline.rs:1240`) lets a shell say, *before*
   the press, how many destinations will not survive in the target.
 - `OutlineClip::to_bytes` / `from_bytes` (`:1260`, `:1288`) with magic
-  `PDFCEBKM\x00\x00\x00\x01` (`:1307`) — it survives leaving the process.
+  `PDFCEBKM\x00\x00\x00\x01` (`:1307`) — it survives leaving the process. <!-- old-name-exempt: the ENGINE's clipboard magic bytes, quoted verbatim. It is an on-the-wire constant a reader must match byte for byte; 'correcting' the spelling here would make the citation wrong. -->
 - `paste_outline_item` is **ONE undo entry** however many bookmarks arrive
   (`edit.rs:46316`, and the `coalesce_last` at `:46349` — with a measured-not-
   counted note at `:46325` recording that counting intended commands instead of

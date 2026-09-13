@@ -186,7 +186,7 @@ unrelated ink-stroke, `move_node_in_form` and `unshare` code.
 The invariant itself is intact: `blank_document` parses scaffold bytes through
 `from_bytes`, so it does not breach *"no separate builder/generation model"*.
 The shell already knows about the newer surface in six other files. This file
-has exactly one commit — the pdfce to pdfcer rename — and has never been
+has exactly one commit — the pdfce to pdfcer rename — and has never been <!-- old-name-exempt: names the rename commit itself; the old name IS the subject of the sentence -->
 revised.
 
 **Verdict: STALE.** **Repair:** retitle section 1 *"The engine creates documents
