@@ -184,6 +184,34 @@ oracle greps three event names and `add-text` is not one of them.
 changes membership every run is a program coming apart.** This one has not
 changed membership in three sweeps.
 
+### ★★★ The sweep never drives the binary that ships, and it is not a rounding difference
+
+**Measured 2026-09-13 while cutting `v0.5.0-dev.20260913.2`.** `sweep-full.sh`
+copies `target/release/pdfcer-gui.exe` to `target/scratch/drive/` before the
+first check, so it measures the program **as it stood before the commit
+existed**. `build.rs` compiles `PDFCER_BUILD_TIME`, the short git rev and the
+`-dirty` flag into the program and declares `.git/HEAD` an input, so the act of
+committing relinks it.
+
+    cmp  swept copy vs shipped exe     same size, 29,746,176 bytes
+    diff 7,998,303 bytes, 25,508 runs  every run a relative call target moving
+
+⇒ **Nothing there is a change to what the program does.** The stamp string
+got shorter when `-dirty` fell off, everything after it slid, and every relative
+call offset was rewritten. But *"the suite was run against this exact binary"*
+is a claim about bytes, and it has been in the last three release notes while
+being false in all three. The honest form, now in `FEATURES.md`, is **"against
+these sources, from this commit's tree"**.
+
+⚠ **The mitigation is cheap, so do it rather than argue the point.** After the
+release commit and before packaging: rebuild, then re-drive the handful of
+checks that read the version stamp against the executable that actually ships,
+plus the off-screen smoke launch. That is a couple of minutes and it converts an
+argument into a measurement. **Do not try to make the two files identical** —
+`PDFCER_BUILD_STAMP` can pin the time but nothing can pin the git rev of a
+commit to a value known before the commit exists, and a build that lies about
+its own revision is a far worse defect than a relink.
+
 ### The baselines, and the naming defect that has been fixed
 
 ```

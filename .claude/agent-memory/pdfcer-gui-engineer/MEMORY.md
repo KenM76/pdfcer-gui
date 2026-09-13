@@ -117,3 +117,4 @@
 - [A measured note that names the wrong axis is wrong by the aspect ratio](feedback_a_measured_note_that_names_the_wrong_axis_is_wrong_by_the_aspect_ratio.md) — 1683.8 is A1's SHORT side.
 - [A comment-only edit can abort a running measurement](feedback_a_comment_only_edit_freezes_nothing_but_it_can_abort_a_running_measurement.md) — the tree is frozen during a sweep.
 - [A quotation I wrote myself can carry a line number](feedback_a_quotation_i_wrote_myself_can_carry_a_line_number.md) — not stale — never true; the claim was right and the evidence was manufactured.
+- [The thing you measured is never the thing you ship](feedback_the_thing_you_measured_is_never_the_thing_you_ship.md) — the release commit relinks the exe; 8M bytes differ, none of them behaviour.
