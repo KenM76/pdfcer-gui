@@ -241,30 +241,7 @@ impl DialogsState {
         }
     }
 
-    /// Open the Render-diagnostics report for the document in `status`.
-    ///
-    /// **The dispatch target for the `tools.render_diagnostics` command**, and
-    /// it applies the same two guards [`Self::open_print`] documents, for the
-    /// same two reasons: the ribbon control is gated on `doc.open` and a chord
-    /// bound to the same id is not.
-    ///
-    /// The no-document guard is the sharper of the two here. Without it a chord
-    /// on an empty canvas would build a window that [`Self::show`] closes again
-    /// on its very next frame — a control that visibly flickers rather than one
-    /// that visibly declines, which is the harder of the two to diagnose.
-    ///
-    /// The already-open guard costs nothing (there is no configuration to
-    /// discard) and is kept for About's reason: rebuilding would move the
-    /// window back to the centre and the findings list back to the top, which
-    /// for an operator half-way down a census reads as the program losing their
-    /// place.
-    ///
-    /// ★ Note what it does **not** guard on: whether anything has been
-    /// rasterized. `doc.open` is the registered predicate, and a document with
-    /// no texture yet is precisely when an operator asks what the renderer did
-    /// — so the dialog opens and *says* that nothing has been drawn, rather
-    /// than the command silently doing nothing.
-    /// Open the Set-scale dialog on `group`.
+    /// **Open the Set-scale dialog on `group`.**
     ///
     /// The already-open guard is the same one every dialog here has, and it
     /// matters more than usual: a second press must not discard a ratio the
@@ -357,6 +334,37 @@ impl DialogsState {
         self.form_field = Some(formfield::FormFieldDialog::open(page, rect, draft));
     }
 
+    /// Open the Render-diagnostics report for the document in `status`.
+    ///
+    /// **The dispatch target for the `tools.render_diagnostics` command**, and
+    /// it applies the same two guards [`Self::open_print`] documents, for the
+    /// same two reasons: the ribbon control is gated on `doc.open` and a chord
+    /// bound to the same id is not.
+    ///
+    /// The no-document guard is the sharper of the two here. Without it a chord
+    /// on an empty canvas would build a window that [`Self::show`] closes again
+    /// on its very next frame — a control that visibly flickers rather than one
+    /// that visibly declines, which is the harder of the two to diagnose.
+    ///
+    /// The already-open guard costs nothing (there is no configuration to
+    /// discard) and is kept for About's reason: rebuilding would move the
+    /// window back to the centre and the findings list back to the top, which
+    /// for an operator half-way down a census reads as the program losing their
+    /// place.
+    ///
+    /// ★ Note what it does **not** guard on: whether anything has been
+    /// rasterized. `doc.open` is the registered predicate, and a document with
+    /// no texture yet is precisely when an operator asks what the renderer did
+    /// — so the dialog opens and *says* that nothing has been drawn, rather
+    /// than the command silently doing nothing.
+    ///
+    /// ⚠ **This comment spent an unknown period attached to the WRONG
+    /// FUNCTION** — stacked on top of `open_scale`'s title, so `open_scale`
+    /// carried two functions' documentation and this one carried none.
+    /// `check-orphan-docs` cannot see a seam of this shape: it matches the
+    /// bold-title convention and this title is plain prose. Its header names
+    /// the discriminator that would have caught it — a real orphan implies an
+    /// undocumented item in the same file.
     pub fn open_diagnostics(&mut self, status: &Status) {
         if !matches!(status, Status::Open(_)) {
             return;
