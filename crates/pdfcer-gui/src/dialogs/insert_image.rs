@@ -128,15 +128,6 @@ pub const REGION_WIDTH: &str = "insert-image.width"; // ui-text-exempt: trace re
 pub const REGION_PLACE: &str = "insert-image.place"; // ui-text-exempt: trace region name, never displayed
 pub const REGION_INSERT: &str = "insert-image.insert"; // ui-text-exempt: trace region name, never displayed
 
-/// Points per millimetre.
-///
-/// A PDF user-space unit is 1/72 inch by definition (§8.3.2.3) and an inch is
-/// 25.4 mm. Spelled here rather than imported for the reason
-/// `panels::docprops` gives for its own copy: a two-term definition
-/// restated is cheaper to read than an import that sends the reader to another
-/// module for a number they already know.
-const PTS_PER_MM: f64 = 72.0 / 25.4;
-
 /// The smallest box that can be placed, in millimetres.
 ///
 /// One millimetre. Below that the picture is not a picture on any sheet this
@@ -239,10 +230,10 @@ impl InsertImageDialog {
             page_index,
             page_size_pt: (pw, ph),
             place: crate::dialogs::placing::PlaceHandoff::default(),
-            x_mm: ((pw - w) / 2.0).max(0.0) / PTS_PER_MM,
-            y_mm: ((ph - h) / 2.0).max(0.0) / PTS_PER_MM,
-            width_mm: (w / PTS_PER_MM).max(MIN_MM),
-            height_mm: (h / PTS_PER_MM).max(MIN_MM),
+            x_mm: crate::units::mm_from_points(((pw - w) / 2.0).max(0.0)),
+            y_mm: crate::units::mm_from_points(((ph - h) / 2.0).max(0.0)),
+            width_mm: crate::units::mm_from_points(w).max(MIN_MM),
+            height_mm: crate::units::mm_from_points(h).max(MIN_MM),
             fit: ImageFit::Contain,
             insert_requested: false,
             close_requested: false,
@@ -347,12 +338,12 @@ impl InsertImageDialog {
     /// about *where*, not about *how big*. Overwriting the size with zero would
     /// throw away the one thing the operator did not ask to change.
     pub fn place(&mut self, rect: Rect) {
-        self.x_mm = rect.llx / PTS_PER_MM;
-        self.y_mm = rect.lly / PTS_PER_MM;
+        self.x_mm = crate::units::mm_from_points(rect.llx);
+        self.y_mm = crate::units::mm_from_points(rect.lly);
         let (w, h) = (rect.urx - rect.llx, rect.ury - rect.lly);
         if w > 0.0 && h > 0.0 {
-            self.width_mm = (w / PTS_PER_MM).max(MIN_MM);
-            self.height_mm = (h / PTS_PER_MM).max(MIN_MM);
+            self.width_mm = crate::units::mm_from_points(w).max(MIN_MM);
+            self.height_mm = crate::units::mm_from_points(h).max(MIN_MM);
         }
     }
 
@@ -420,8 +411,8 @@ impl InsertImageDialog {
         });
         let (nw, nh) = self.image.natural_size_pt();
         ui.weak(t::natural_size(
-            nw / PTS_PER_MM,
-            nh / PTS_PER_MM,
+            crate::units::mm_from_points(nw),
+            crate::units::mm_from_points(nh),
             self.image.dpi,
         ));
         ui.add_space(8.0);
@@ -435,7 +426,7 @@ impl InsertImageDialog {
 
         let max_mm = {
             let (pw, ph) = self.page_size_pt;
-            (pw.max(ph) / PTS_PER_MM).max(MIN_MM)
+            crate::units::mm_from_points(pw.max(ph)).max(MIN_MM)
         };
         ui.horizontal(|ui| {
             ui.label(t::placement_x());
@@ -484,8 +475,8 @@ impl InsertImageDialog {
             || (placed.ury - placed.lly - (asked.ury - asked.lly)).abs() > 0.5;
         if differs {
             ui.weak(t::placed_note(
-                (placed.urx - placed.llx) / PTS_PER_MM,
-                (placed.ury - placed.lly) / PTS_PER_MM,
+                crate::units::mm_from_points(placed.urx - placed.llx),
+                crate::units::mm_from_points(placed.ury - placed.lly),
             ));
         }
         // ★ The resolution, previewed — the number that decides whether the
@@ -558,10 +549,10 @@ impl InsertImageDialog {
 #[must_use]
 fn rect_pt(x_mm: f64, y_mm: f64, width_mm: f64, height_mm: f64) -> Rect {
     Rect {
-        llx: x_mm * PTS_PER_MM,
-        lly: y_mm * PTS_PER_MM,
-        urx: (x_mm + width_mm) * PTS_PER_MM,
-        ury: (y_mm + height_mm) * PTS_PER_MM,
+        llx: crate::units::points_from_mm(x_mm),
+        lly: crate::units::points_from_mm(y_mm),
+        urx: crate::units::points_from_mm(x_mm + width_mm),
+        ury: crate::units::points_from_mm(y_mm + height_mm),
     }
 }
 
@@ -645,11 +636,20 @@ mod tests {
     /// picture placed at 210 mm would land 0.0004 mm off A4's edge — invisible,
     /// permanent, and different from every other number in this application.
     /// `dialogs::new_document` makes the same point about `594.0 * 72/25.4`.
+    ///
+    /// ★ The constant this once asserted was a private `PTS_PER_MM` in this
+    /// file — the third of six copies. The argument above is why the
+    /// replacement is [`crate::units`] and not a fourteenth spelling: of every
+    /// surface in this program, this dialogue is the one whose numbers go
+    /// STRAIGHT INTO `pdfcer-core` as a rectangle, so it is the one that most
+    /// needs the engine's own value rather than its own.
     #[test]
     fn a_millimetre_is_the_definition() {
-        assert_eq!(PTS_PER_MM, 72.0 / 25.4);
         // A4's width, to the precision a placement needs.
-        assert!((210.0 * PTS_PER_MM - 595.2755905511812).abs() < 1e-9);
+        assert!((crate::units::points_from_mm(210.0) - 595.2755905511812).abs() < 1e-9);
+        // And back, because this dialogue round-trips: the operator drags in
+        // points and types in millimetres, in the same session, on one box.
+        assert!((crate::units::mm_from_points(595.2755905511812) - 210.0).abs() < 1e-9);
     }
 
     /// A4 in points, the sheet every case below is measured against.

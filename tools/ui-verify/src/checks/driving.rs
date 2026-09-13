@@ -827,6 +827,61 @@ pub fn list_str(names: &[&str]) -> String {
     }
 }
 
+/// **Resolve a fixture from this repository, refusing to guess.**
+///
+/// # ★★★ Why it is resolved at COMPILE time and never from `--source-root`
+///
+/// Corrected 2026-09-05, the first time a check that used it was ever run, and
+/// it is the single most expensive mistake this harness has made about its own
+/// inputs. `--source-root` defaults to `crates` because its job is the
+/// **staleness** comparison -- which tree's mtimes decide whether the binary is
+/// older than the sources it was built from. It is not a repository root and
+/// never was. Joining `fixtures` onto it produced `crates/fixtures/<name>.pdf`,
+/// a directory that does not exist, and the checks that used it reported:
+///
+/// ```text
+/// [SKIP] -> the fixture crates/fixtures/<name>.pdf is missing
+/// ```
+///
+/// ⚠ A SKIP is not red. Those checks would have skipped **for ever while
+/// looking healthy** -- the exact shape this project has filed against itself
+/// more than once. `CARGO_MANIFEST_DIR` is `tools/ui-verify`, so two parents up
+/// is the workspace root, and being resolved at compile time it cannot be got
+/// wrong by an invocation, which is the property `--source-root` lacked.
+///
+/// # Why it is an `Err` and not a SKIP
+///
+/// A SKIP reads as *"this build does not have the feature"*. A missing fixture
+/// is a fact about the **checkout**, and reporting it as a SKIP sends the next
+/// reader to look at the application. The error names the absolute path so the
+/// right thing gets fixed.
+///
+/// # The `method` argument
+///
+/// One sentence saying what the calling check's method IS -- *"one build's
+/// positive reading on a file that contradicts itself, denied on a file that
+/// does not"*. It is appended to the message so that a reader who hits this
+/// learns why the fixture is not substitutable for whatever is nearest to hand.
+/// Checks that pin their own documents ignore `--pdf` by design, and that is
+/// surprising enough to be worth restating at the point it bites.
+///
+/// ★ This function replaced five byte-identical copies on 2026-09-13. Do not
+/// write a sixth.
+pub fn repo_fixture(name: &str, method: &str) -> Result<std::path::PathBuf> {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join("fixtures")
+        .join(name);
+    if !path.is_file() {
+        return Err(Error::new(format!(
+            "the fixture {} is missing. {method}",
+            path.display()
+        )));
+    }
+    Ok(path)
+}
+
 /// The dominant colour of a declared region in a capture — a control's fill.
 ///
 /// `None` when the region resolved to no pixels, which means the application

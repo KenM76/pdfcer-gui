@@ -175,10 +175,20 @@ pub fn page_number(page_index: usize) -> String {
 ///
 /// The gestures are named because none of them is discoverable: nothing on
 /// screen says that Ctrl adds to the selection.
+/// ★ Takes **points**, not millimetres, and rounds here.
+///
+/// The caller has the sheet's extent in PDF user-space units and nothing else;
+/// asking it to convert was how this surface came to disagree with the print
+/// dialogue about a 210.5 mm sheet. `units::whole_mm_from_points` rounds half
+/// away from zero, the same rule every other length in this program now uses,
+/// and the result is printed with `{}` rather than `{:.0}` — `{:.0}` rounds
+/// half to EVEN and is what produced the disagreement.
 #[must_use]
-pub fn page_tile_tooltip(page_index: usize, width_mm: f32, height_mm: f32) -> String {
+pub fn page_tile_tooltip(page_index: usize, width_pts: f64, height_pts: f64) -> String {
+    let width_mm = crate::units::whole_mm_from_points(width_pts);
+    let height_mm = crate::units::whole_mm_from_points(height_pts);
     format!(
-        "Page {} — {width_mm:.0} × {height_mm:.0} mm. Click to go there, \
+        "Page {} — {width_mm} × {height_mm} mm. Click to go there, \
          Ctrl+click to add it to the selection, Shift+click to extend.",
         page_index + 1
     )

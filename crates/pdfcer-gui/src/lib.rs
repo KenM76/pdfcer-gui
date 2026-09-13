@@ -192,6 +192,26 @@ pub mod text;
 /// and the consequence: integrity, coverage and trust are reported separately,
 /// never folded into one badge, and `NotChecked` renders as itself.
 pub mod trust;
+
+/// **The one length-conversion table for this program.**
+///
+/// Points to millimetres, inches, metres or any other engine [`Unit`], and
+/// back. Every operator-facing length goes through it, and the gate
+/// `tools/gates/check-unit-conversion.sh` fails the build when a second copy
+/// of the constant appears anywhere under `src/`.
+///
+/// ★ It exists because of a measured defect, not for tidiness: a sheet of
+/// exactly 210.5 mm rendered `210` in the page-thumbnail tooltip and `211`
+/// in the print dialogue. Both surfaces computed the same value; they disagreed
+/// on the ROUNDING RULE, because half the program wrote `.round()` (half away
+/// from zero, the CAD convention) and the other half wrote `{:.0}` in a format
+/// string, which is Rust's default and rounds half to even. The module's header
+/// argues that choice rather than leaving it to whichever spelling a caller
+/// reached for.
+///
+/// [`Unit`]: pdfcer_core::dimension::Unit
+pub mod units;
+
 pub mod viewer;
 
 use std::path::PathBuf;

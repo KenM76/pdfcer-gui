@@ -196,12 +196,6 @@ const CURRENT_RING_PTS: f32 = 2.0;
 /// statement of the same fact.
 const SELECTION_MAT_PTS: f32 = 3.0;
 
-/// Points per millimetre, for the tooltip's sheet size.
-///
-/// A PDF user-space unit is 1/72 inch by definition (§8.3.2.3), and an inch
-/// is 25.4 mm.
-const PTS_PER_MM: f32 = 72.0 / 25.4;
-
 /// Draw the Pages panel.
 ///
 /// Returns the handler tokens a right-click produced — **intent**, never an
@@ -978,8 +972,8 @@ fn tile(
         .map_or((0.0, 0.0), crate::viewer::page_extent_pts);
     let response = response.on_hover_text(t::page_tile_tooltip(
         page_index,
-        width_pts / PTS_PER_MM,
-        height_pts / PTS_PER_MM,
+        f64::from(width_pts),
+        f64::from(height_pts),
     ));
 
     // ★ A drag begins here, and it begins by settling the OPERAND SET.

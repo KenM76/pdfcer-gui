@@ -347,28 +347,17 @@ fn ui_rect_event(ctx: &CheckContext) -> Result<&'static str> {
     })
 }
 
-/// **Resolve a fixture from this repository, refusing to guess.**
+/// This module's fixtures, resolved by [`crate::checks::driving::repo_fixture`].
 ///
-/// ★ Resolved from `CARGO_MANIFEST_DIR` at COMPILE TIME and not from
-/// `--source-root`, which defaults to `crates` because its job is the staleness
-/// comparison. `root.join("fixtures")` gave `crates/fixtures/…`, a directory
-/// that does not exist, and the checks that used it SKIPPED for ever while
-/// looking healthy.
+/// ★ See that function for why the path is compile-time resolved. The sentence
+/// kept here is the one about this check's own method.
 fn repo_fixture(name: &str) -> Result<PathBuf> {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("fixtures")
-        .join(name);
-    if !path.is_file() {
-        return Err(Error::new(format!(
-            "the fixture {} is missing. This check pins its own two documents and ignores \
-             --pdf: its whole method is one build's positive reading on a stamp collection, \
-             denied on a document that is not one, and a suite-wide fixture is neither.",
-            path.display()
-        )));
-    }
-    Ok(path)
+    crate::checks::driving::repo_fixture(
+        name,
+        "This check pins its own two documents and ignores --pdf: its whole method is one \
+         build's positive reading on a stamp collection, denied on a document that is not one, \
+         and a suite-wide fixture is neither.",
+    )
 }
 
 /// **Launch on a document this check names, with whatever extra seams it needs.**

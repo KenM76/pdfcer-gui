@@ -460,7 +460,7 @@ fn zoomed_view(zoom: f32, pan: Vec2, step: f32, at: Pos2, centre: Pos2) -> (f32,
 /// The result depends only on the page's own size, so it is fully determined
 /// by [`PreviewKey::page`] and does not need to be a key field of its own.
 fn raster_scale(page_pt: (f64, f64)) -> f32 {
-    let dpi_scale = TARGET_DPI / 72.0;
+    let dpi_scale = crate::units::scale_from_dpi(f64::from(TARGET_DPI)) as f32;
     let longest = page_pt.0.max(page_pt.1) as f32;
     if !longest.is_finite() || longest <= 0.0 {
         // A degenerate `/MediaBox`. The renderer has its own guards; this

@@ -429,10 +429,18 @@ const LCS_GM_IMAGES: u32 = 4;
 /// to nearest because the DIB field is an integer and a truncation would put
 /// a 300 DPI copy at 11,810 rather than 11,811 pixels per metre — which is
 /// how a paste ends up a hair's breadth off the page size it should have had.
+///
+/// ★ The 0.0254 itself now lives in [`crate::units`], beside every other
+/// length conversion in the program. What stays here is the part that is about
+/// the DIB and not about the inch: the guard against a nonsense DPI, the zero
+/// returned instead, and the rounding argument above. A conversions table
+/// should not know what a bitmap header does with a bad number.
 #[must_use]
 pub fn pixels_per_metre(dpi: f32) -> u32 {
     if dpi.is_finite() && dpi > 0.0 {
-        (f64::from(dpi) / 0.0254).round().max(0.0) as u32
+        crate::units::pixels_per_metre(f64::from(dpi))
+            .round()
+            .max(0.0) as u32
     } else {
         0
     }

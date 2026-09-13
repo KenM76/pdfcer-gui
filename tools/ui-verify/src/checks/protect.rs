@@ -360,8 +360,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // check's verdict is a byte scan for strings it must have put there itself,
     // and this one's verdict is about SIGNATURES — which this harness cannot
     // author. `fixtures/signed-two-pages.pdf` carries real ones.
-    let plain = repo_fixture(ctx, "four-pages.pdf")?;
-    let signed = repo_fixture(ctx, "signed-two-pages.pdf")?;
+    let plain = repo_fixture("four-pages.pdf")?;
+    let signed = repo_fixture("signed-two-pages.pdf")?;
 
     // =======================================================================
     // PHASES A and B — the plain document. The instrument's positive readings.
@@ -548,50 +548,19 @@ fn shell_rect_count(session: &Session, ui_rect: &str, name: &str) -> Result<usiz
         .count())
 }
 
-/// **Resolve a fixture from this repository, refusing to guess.**
+/// **Resolve a fixture from this repository**, via
+/// [`crate::checks::driving::repo_fixture`].
 ///
-/// ★ Refused rather than SKIPped when it is missing, and the distinction
-/// matters: a SKIP reads as *"this build does not have the feature"*, and a
-/// missing fixture is a fact about the checkout. The error names the path so
-/// the next reader fixes the right thing.
-fn repo_fixture(ctx: &CheckContext, name: &str) -> Result<PathBuf> {
-    // *** From this crate's own manifest directory, NOT from `ctx.source_root`
-    // *** -- corrected 2026-09-05, the first time this check was ever run.
-    //
-    // `--source-root` defaults to `crates`, because its job is the STALENESS
-    // comparison: which tree's mtimes decide whether the binary is older than
-    // its sources. It is not a repository root and never was. So
-    // `root.join("fixtures")` resolved to `crates/fixtures/...`, which does not
-    // exist, and this check reported:
-    //
-    // ```text
-    // [SKIP] -> the fixture crates\fixtures\<name>.pdf is missing
-    // ```
-    //
-    // => It would have SKIPPED FOR EVER WHILE LOOKING HEALTHY, which is the
-    // precise failure this check's own header warns about for a fixture that
-    // cannot exercise the feature. This is the same trap one level out: not a
-    // fixture too weak to fail, but a fixture never found at all -- and a suite
-    // reporting SKIP is reporting *nothing*, which is why this harness exits 3
-    // rather than 0 on an incomplete run.
-    //
-    // `CARGO_MANIFEST_DIR` is `tools/ui-verify`, so two parents up is the
-    // workspace root. Resolved at COMPILE TIME, so it cannot be got wrong by an
-    // invocation -- the property `--source-root` lacked. This is the pattern
-    // `checks::comment_popup` already used, and that check ran green.
-    let _ = ctx;
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("fixtures")
-        .join(name);
-    if !path.is_file() {
-        return Err(Error::new(format!(
-            "the fixture {} is missing. This check needs both `four-pages.pdf` (unprotected, \
-             unsigned) and `signed-two-pages.pdf` (real signatures), because its whole method is \
-             one build's positive readings on the first denied on the second.",
-            path.display()
-        )));
-    }
-    Ok(path)
+/// ★ The `&CheckContext` parameter is gone, and its absence is the point. It
+/// existed because this function once resolved the path from `ctx.source_root`
+/// — the staleness root, which defaults to `crates` — and then kept the
+/// parameter alive with a `let _ = ctx;` after that was corrected. A parameter
+/// retained only to be discarded is an invitation to use it again.
+fn repo_fixture(name: &str) -> Result<PathBuf> {
+    crate::checks::driving::repo_fixture(
+        name,
+        "This check needs both `four-pages.pdf` (unprotected, unsigned) and \
+         `signed-two-pages.pdf` (real signatures), because its whole method is one build's \
+         positive readings on the first denied on the second.",
+    )
 }

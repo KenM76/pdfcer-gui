@@ -352,25 +352,14 @@ pub(super) fn last_refusal(session: &Session) -> Result<Option<String>> {
         .and_then(|l| l.get("refusal").map(str::to_owned)))
 }
 
-/// Resolve a fixture from this repository.
+/// Resolve a fixture from this repository, via
+/// [`crate::checks::driving::repo_fixture`].
 pub(super) fn repo_fixture(name: &str) -> Result<PathBuf> {
-    // Resolved from this crate's manifest directory at COMPILE time, not from
-    // `--source-root`, for the reason `checks::protect::repo_fixture` records:
-    // `--source-root` is the staleness comparison's root and defaults to
-    // `crates`, so joining `fixtures` onto it produced a path that does not
-    // exist and a check that SKIPPED for ever while looking healthy.
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("fixtures")
-        .join(name);
-    if !path.is_file() {
-        return Err(Error::new(format!(
-            "the fixture {} is missing.",
-            path.display()
-        )));
-    }
-    Ok(path)
+    crate::checks::driving::repo_fixture(
+        name,
+        "The signing checks pin the documents they open, because a signature is a property of \
+         particular bytes and no suite-wide fixture has one.",
+    )
 }
 
 /// Resolve something from the engine repository's synthetic corpus.

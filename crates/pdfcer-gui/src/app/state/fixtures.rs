@@ -133,3 +133,41 @@ pub(crate) const SIGNED_TWO_PAGES: &str = "signed-two-pages.pdf";
 /// deliberately sound.
 #[cfg(test)]
 pub(crate) const CONTRADICTS_ITSELF: &str = "contradicts-itself.pdf";
+
+/// **A document with no cross-reference table at all**, so pdfcer rebuilds one
+/// by scanning — and whose scan finds two objects it cannot keep.
+///
+/// ★ It is the only file in either corpus that reaches
+/// `RecoveryReport::objects_dropped`. Every other fixture either has a sound
+/// index (so `Document::recovery()` is `None` and there is no report to read)
+/// or, like [`CONTRADICTS_ITSELF`], deliberately keeps its index sound in order
+/// to test the anomaly path without lighting this one.
+///
+/// ★★ The two drops are the two different stories that share one reason code:
+/// object 9 does not exist (the bytes `9 0 obj` appear inside the content
+/// stream's own text, which the scan is obliged to try), and object 8 is real
+/// and truncated. The disclosure has to be readable for both without making the
+/// first sound like the second. `fixtures/recovered-with-losses.PROVENANCE.py`
+/// carries the whole account, including why `DropReason::IdMismatch` cannot be
+/// produced from a hand-written file.
+#[cfg(test)]
+pub(crate) const RECOVERED_WITH_LOSSES: &str = "recovered-with-losses.pdf";
+
+/// **The control for [`RECOVERED_WITH_LOSSES`]**: the same damage, the same
+/// recovery path, and nothing the scan could not keep.
+///
+/// ★★★ It is a RECOVERED file rather than a sound one, and that is the whole
+/// point of it. A driven check that opened a sound document to prove the
+/// dropped-object block is absent would be satisfied by three different states
+/// -- the panel never opened, the document was never recovered, or the block is
+/// correctly driven by `objects_dropped` -- and an assertion satisfied by all
+/// three measures none of them. This file differs from its sibling in exactly
+/// one property, so the check's two launches isolate exactly one variable.
+///
+/// ⚠ Its property is asserted through the engine by
+/// `crate::panels::docprops::tests::the_control_fixture_for_the_dropped_disclosure_really_recovers_and_drops_nothing`,
+/// in the suite that runs on every `cargo test`, so that a fixture that stopped
+/// being a control surfaces there rather than as a red driven check blaming the
+/// application. `fixtures/recovered-no-losses.PROVENANCE.py` carries the rest.
+#[cfg(test)]
+pub(crate) const RECOVERED_NO_LOSSES: &str = "recovered-no-losses.pdf";

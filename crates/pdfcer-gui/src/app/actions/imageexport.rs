@@ -421,15 +421,22 @@ impl EmfCounts {
 /// because the three call sites are the raster render, the SVG options and the
 /// pixel-size preview the window draws, and a preview that disagreed with the
 /// render by a stray rounding would be a preview that lies about the file.
+///
+/// ★ The division itself has moved one level further out, to
+/// [`crate::units::scale_from_dpi`]. The argument above is unchanged and is
+/// now a smaller version of the same one: three call sites in this module
+/// wanted one spelling, and three modules in this crate wanted one spelling.
+/// What stays here is the guard and the fallback, which are about a corrupted
+/// preference rather than about an inch.
 #[must_use]
 pub fn scale_for(dpi: f32) -> f32 {
     if dpi.is_finite() && dpi > 0.0 {
-        dpi / 72.0
+        crate::units::scale_from_dpi(f64::from(dpi)) as f32
     } else {
         // The same fallback the engine applies to a nonsense `raster_dpi`
         // (`svg.rs`), so a plan built from a corrupted preference cannot
         // produce a zero-pixel render that reports as an engine failure.
-        300.0 / 72.0
+        crate::units::scale_from_dpi(300.0) as f32
     }
 }
 

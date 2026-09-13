@@ -422,6 +422,26 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // The long form of the same disclosure, beside the other check that
         // opens the Document properties panel — they share its opener.
         Box::new(load_anomalies::LoadAnomaliesAreListedInDocumentProperties),
+        // ★★★ The OTHER loader disclosure that lives in the same panel, wired
+        // 2026-09-13, and placed directly under its neighbour because the two
+        // are constantly mistaken for each other.
+        //
+        // ⚠ `Document::recovery()` and `Document::load_anomalies()` are
+        // DISJOINT questions. One is about the cross-reference machinery — the
+        // index was unusable and pdfcer rebuilt it by scanning — and the other
+        // is about the objects, where a key was defined twice and pdfcer had to
+        // pick. The fixtures are authored so that each lights exactly one of
+        // them, deliberately: `contradicts-itself.pdf` computes its own xref
+        // offsets so it does NOT recover, and the two recovery fixtures have no
+        // xref at all so they raise no anomaly. A check reading the wrong one
+        // would be green about a surface it never touched.
+        //
+        // ★★ Its control launch is a RECOVERED file rather than a sound one,
+        // which is the whole reason a second fixture exists. On a sound file the
+        // entire neighbourhood draws nothing, so the absence would be satisfied
+        // by a closed panel, by a document that was never recovered, and by the
+        // thing under test — three states, one green tick.
+        Box::new(recovery_losses::RecoveryLossesAreListedInDocumentProperties),
         // ★★★ O169's read half, wired 2026-09-10, and placed here because it
         // shares the Document properties opener with the two above it. Read in
         // order the three say: the panel opens, it discloses what the loader

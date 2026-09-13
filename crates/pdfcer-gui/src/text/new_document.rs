@@ -131,7 +131,7 @@ pub fn size_entry(name: &str, size_pt: (f64, f64)) -> String {
     if imperial(name) {
         return format!("{name} — {} × {} in", inches(size_pt.0), inches(size_pt.1));
     }
-    let mm = |pt: f64| (pt * 25.4 / 72.0).round() as i64;
+    use crate::units::whole_mm_from_points as mm;
     format!("{name} — {} × {} mm", mm(size_pt.0), mm(size_pt.1))
 }
 
@@ -178,11 +178,35 @@ fn imperial(name: &str) -> bool {
 /// here are 8½ × 11 and 11 × 17, and a list reading *"8.5 × 11 in"* is a list
 /// that has been translated rather than written.
 fn inches(pt: f64) -> String {
-    let total = pt / 72.0;
-    let whole = total.trunc();
-    let sixteenths = ((total - whole) * 16.0).round() as i64;
+    // ★★★ Round ONCE, in sixteenths, then split — rather than truncating to a
+    // whole inch and rounding the remainder separately.
+    //
+    // The separate-rounding shape cannot represent a carry, and this function
+    // held it until 2026-09-13:
+    //
+    //     pt = 719.5  ->  9.993055... in
+    //                     whole      = 9
+    //                     remainder  = 0.993055 × 16 = 15.888 -> rounds to 16
+    //                     printed    "9 16/16", reduced to "9 1/1"
+    //
+    // 719.5 pt is 9.993 in, which is an ordinary custom size for anyone laying
+    // out to a 10 in trim. The four named imperial sheets are all exact
+    // multiples of a sixteenth, which is why this never showed.
+    //
+    // Rounding the sixteenth COUNT puts the carry inside the rounding: 159.888
+    // rounds to 160, and 160 / 16 is 10 with no remainder, so the same input
+    // now prints "10".
+    let sixteenths_total = crate::units::whole(crate::units::inches_from_points(pt) * 16.0);
+    debug_assert!(
+        sixteenths_total >= 0,
+        "sheet sizes are positive; a negative length would make the / and % below \
+         truncate toward zero and print a sign in the wrong place"
+    );
+
+    let whole = sixteenths_total / 16;
+    let sixteenths = sixteenths_total % 16;
     if sixteenths == 0 {
-        return format!("{whole:.0}");
+        return format!("{whole}");
     }
     // Reduce the fraction: 8/16 is a half, not eight sixteenths.
     let mut num = sixteenths;
@@ -191,10 +215,10 @@ fn inches(pt: f64) -> String {
         num /= 2;
         den /= 2;
     }
-    if whole == 0.0 {
+    if whole == 0 {
         format!("{num}/{den}")
     } else {
-        format!("{whole:.0} {num}/{den}")
+        format!("{whole} {num}/{den}")
     }
 }
 
@@ -258,15 +282,15 @@ pub const fn custom_height() -> &'static str {
 /// imperial shop choosing A3 and a metric one choosing ANSI B are both
 /// answered, and neither has to convert.
 pub fn sheet_summary(width_pt: f64, height_pt: f64) -> String {
-    let mm = |pt: f64| (pt * 25.4 / 72.0).round() as i64;
+    use crate::units::whole_mm_from_points as mm;
     format!(
-        "Sheet: {} × {} mm  ·  {} × {} in  ·  {:.0} × {:.0} pt",
+        "Sheet: {} × {} mm  ·  {} × {} in  ·  {} × {} pt",
         mm(width_pt),
         mm(height_pt),
         inches(width_pt),
         inches(height_pt),
-        width_pt,
-        height_pt,
+        crate::units::whole(width_pt),
+        crate::units::whole(height_pt),
     )
 }
 
@@ -496,5 +520,52 @@ mod tests {
         // fallback would visibly mangle and the ones most likely to be added
         // to in future (ARCH A-E are named as plausible).
         assert_eq!(size_name(pdfcer_core::paper::PaperSize::AnsiD), "ANSI D");
+    }
+
+    /// ★★★ A sheet just under a whole inch used to read `9 1/1`.
+    ///
+    /// `inches` truncated to a whole inch and rounded the remainder separately,
+    /// and that shape cannot represent a carry. Measured against the code as it
+    /// stood on 2026-09-13:
+    ///
+    /// ```text
+    ///     719.5 pt = 9.993055... in
+    ///       whole     = total.trunc()          = 9
+    ///       remainder = 0.993055 × 16         = 15.888 -> rounds to 16
+    ///       printed   "9 16/16" -> reduced -> "9 1/1"
+    /// ```
+    ///
+    /// It shipped on 2026-08-20 with the imperial sizes and never showed,
+    /// because Letter, Legal, Tabloid and the ANSI/ARCH sheets are all exact
+    /// multiples of a sixteenth. `sheet_summary` calls this for **any** size an
+    /// operator types, so it was reachable the whole time.
+    ///
+    /// The test asserts three things the old shape could not satisfy together:
+    /// the carry case, the exact case, and a genuine fraction still reducing.
+    #[test]
+    fn an_inch_fraction_that_rounds_up_carries_into_the_whole_number() {
+        // The carry. 719.5 pt is 9.993 in; to the nearest sixteenth that is 10.
+        assert_eq!(
+            inches(719.5),
+            "10",
+            "a sixteenth short of 10 in must read 10"
+        );
+
+        // The exact case still reads as a bare whole number, with no " 0/16".
+        assert_eq!(inches(720.0), "10");
+
+        // And a real fraction still reduces rather than printing sixteenths.
+        assert_eq!(
+            inches(612.0),
+            "8 1/2",
+            "US Letter's width is eight and a half"
+        );
+
+        // Below one inch there is no whole part to print.
+        assert_eq!(inches(18.0), "1/4");
+
+        // ★ The carry at the top of the sub-inch range: 71.9 pt is 0.9986 in,
+        // which rounds to 16 sixteenths — one inch, not "0 1/1".
+        assert_eq!(inches(71.9), "1");
     }
 }

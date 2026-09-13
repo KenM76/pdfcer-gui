@@ -400,9 +400,16 @@ pub struct Recognised {
 /// `dpi / 72.0`, because a PDF user-space unit is 1/72 inch by definition
 /// (ISO 32000-1 §8.3.2.3). One line, in one place, so no call site does the
 /// division by hand and gets 96 into it.
+///
+/// ★ That "one place" is now [`crate::units::scale_from_dpi`], one level
+/// further out again: this function was one of THREE that each held the same
+/// one line, which is the same defect at a larger scale. The `f32` signature
+/// stays because every caller hands the result to `pdfcer-render` as a scale;
+/// the widening and narrowing around the call is cheaper to read than an `f32`
+/// twin of the table would be to maintain.
 #[must_use]
 pub fn raster_scale(dpi: f32) -> f32 {
-    dpi / 72.0
+    crate::units::scale_from_dpi(f64::from(dpi)) as f32
 }
 
 /// The DPI to rasterize a page of `width_pt` × `height_pt` at.
@@ -417,7 +424,14 @@ pub fn raster_scale(dpi: f32) -> f32 {
 /// would be a worse failure than the one it is guarding.
 #[must_use]
 pub fn fitted_dpi(width_pt: f64, height_pt: f64) -> f32 {
-    let area_in_sq_inches = (width_pt / 72.0) * (height_pt / 72.0);
+    // ★ Through the table, which converts points to inches by the engine's
+    // own `Unit::Inch` factor — a MULTIPLY by 1/72 where this line used to be
+    // a DIVIDE by 72. Those are not the same arithmetic (units.rs's header
+    // measures where they part), but the difference is in the last bit of an
+    // area that is then square-rooted, clamped into MIN_DPI..=MAX_DPI and
+    // rounded to an f32, so no page size can reach a different DPI through it.
+    let area_in_sq_inches =
+        crate::units::inches_from_points(width_pt) * crate::units::inches_from_points(height_pt);
     // `is_sign_positive` beside `is_finite` rather than `> 0.0`, and the pair is
     // exact rather than defensive: a NaN compares `false` against every ordering
     // operator, so `!(x > 0.0)` catches it but reads as though it were about

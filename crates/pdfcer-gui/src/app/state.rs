@@ -1451,6 +1451,8 @@ pub(crate) use fixtures::{
     FOUR_PAGES,
     ORPHAN_WIDGET,
     PAINTED_LAYERS,
+    RECOVERED_NO_LOSSES,
+    RECOVERED_WITH_LOSSES,
     ROTATED_TEXT,
     SIGNED_TWO_PAGES,
     open_fixture,

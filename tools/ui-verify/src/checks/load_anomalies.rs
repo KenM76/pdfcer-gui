@@ -691,29 +691,19 @@ fn ui_rect_event(ctx: &CheckContext) -> Result<&'static str> {
     })
 }
 
-/// **Resolve a fixture from this repository, refusing to guess.**
+/// This module's fixtures, resolved by [`crate::checks::driving::repo_fixture`].
 ///
-/// ★ Resolved from `CARGO_MANIFEST_DIR` at COMPILE TIME and not from
-/// `--source-root`, which defaults to `crates` because its job is the staleness
-/// comparison. `root.join("fixtures")` gave `crates/fixtures/…`, a directory
-/// that does not exist, and the checks that used it SKIPPED for ever while
-/// looking healthy. The reasoning is `checks::protect::repo_fixture`'s and is
-/// copied rather than re-derived.
+/// ★ The shared resolver carries the whole account of why the path comes from
+/// `CARGO_MANIFEST_DIR` and never from `--source-root`. What stays here is the
+/// sentence that is about THIS check: why its two documents are not
+/// substitutable for whatever `--pdf` happened to name.
 fn repo_fixture(name: &str) -> Result<PathBuf> {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("fixtures")
-        .join(name);
-    if !path.is_file() {
-        return Err(Error::new(format!(
-            "the fixture {} is missing. This check pins its own two documents and ignores \
-             --pdf: its whole method is one build's positive reading on a file that contradicts \
-             itself, denied on a file that does not, and a suite-wide fixture is neither.",
-            path.display()
-        )));
-    }
-    Ok(path)
+    crate::checks::driving::repo_fixture(
+        name,
+        "This check pins its own two documents and ignores --pdf: its whole method is one \
+         build's positive reading on a file that contradicts itself, denied on a file that does \
+         not, and a suite-wide fixture is neither.",
+    )
 }
 
 /// A launch with the diagnostic channel on, the window off the desktop, and no

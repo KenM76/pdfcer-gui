@@ -597,7 +597,7 @@ pub const fn paper_device_default() -> &'static str {
 /// gives: the operator is matching this against a ream label or a roll box.
 #[must_use]
 pub fn paper_form(name: &str, size_pt: (f64, f64)) -> String {
-    let mm = |pt: f64| (pt * 25.4 / 72.0).round() as i64;
+    use crate::units::whole_mm_from_points as mm;
     format!("{name} — {} × {} mm", mm(size_pt.0), mm(size_pt.1))
 }
 
@@ -643,7 +643,7 @@ pub const fn paper_auto() -> &'static str {
 /// page, a stray cover sheet, a range they forgot they had narrowed.
 #[must_use]
 pub fn paper_auto_matched(name: &str, sheet_pt: (f64, f64), page_pt: (f64, f64)) -> String {
-    let mm = |pt: f64| (pt * 25.4 / 72.0).round() as i64;
+    use crate::units::whole_mm_from_points as mm;
     format!(
         "Largest page in this job: {} × {} mm. Closest sheet this printer offers: {name} ({} × {} mm). pdfcer asks the printer for it; a driver may ignore the request without reporting it, so check the first sheet that comes out.",
         mm(page_pt.0),
@@ -691,7 +691,7 @@ pub const fn paper_auto_mixed() -> &'static str {
 /// dialog ends up contradicting itself.
 #[must_use]
 pub fn paper_auto_too_big(name: &str, sheet_pt: (f64, f64), page_pt: (f64, f64)) -> String {
-    let mm = |pt: f64| (pt * 25.4 / 72.0).round() as i64;
+    use crate::units::whole_mm_from_points as mm;
     format!(
         "Largest page in this job: {} × {} mm — bigger than any sheet this printer offers. Using its largest, {name} ({} × {} mm). pdfcer asks the printer for it; a driver may ignore the request without reporting it, so check the first sheet that comes out.",
         mm(page_pt.0),
@@ -765,7 +765,7 @@ pub fn paper_is_a_request(sheet: Option<(f64, f64)>) -> String {
     let Some((w_pt, h_pt)) = sheet else {
         return "pdfcer asks the printer for this sheet. A driver may ignore the request without reporting it, so check the first sheet that comes out.".to_owned();
     };
-    let mm = |pt: f64| (pt * 25.4 / 72.0).round() as i64;
+    use crate::units::whole_mm_from_points as mm;
     format!(
         "Planned for {} × {} mm. pdfcer asks the printer for this sheet; a driver may ignore the request without reporting it, so check the first sheet that comes out.",
         mm(w_pt),
@@ -817,11 +817,12 @@ pub fn sheet_from_driver(sheet: Option<(f64, f64)>) -> String {
     let Some((w_pt, h_pt)) = sheet else {
         return "Paper comes from this printer's own settings in Windows.".to_owned();
     };
-    // 1 pt = 1/72 inch, 1 inch = 25.4 mm. Rounded to whole millimetres: the
-    // operator is matching this against a ream label, and a tenth of a
-    // millimetre of driver rounding is noise that makes a familiar size look
-    // unfamiliar.
-    let mm = |pt: f64| (pt * 25.4 / 72.0).round() as i64;
+    // Whole millimetres because the operator is matching this against a ream
+    // label, and a tenth of a millimetre of driver rounding is noise that
+    // makes a familiar size look unfamiliar. The conversion and the rounding
+    // rule are both `units`'; see that module's header for why half away from
+    // zero rather than Rust's `{:.0}` default.
+    use crate::units::whole_mm_from_points as mm;
     format!(
         "Planned for {} × {} pt ({} × {} mm), from this printer's own settings in Windows.",
         w_pt.round() as i64,

@@ -59,14 +59,6 @@
 
 use pdfcer_core::paper::PaperSize;
 
-/// Points per millimetre — 72 points per inch ÷ 25.4 mm per inch.
-///
-/// A definition, restated here for the same reason
-/// [`crate::text::new_document`] restates it: a four-character constant hoisted
-/// into a public API to give two unrelated callers a common dependency is not a
-/// saving, and the value cannot drift because it is not a measurement.
-const PT_PER_MM: f64 = 72.0 / 25.4;
-
 /// The window's title.
 #[must_use]
 pub const fn window_title() -> &'static str {
@@ -150,11 +142,9 @@ pub const fn size_heading() -> &'static str {
 /// One entry in the size list: its name and its portrait dimensions.
 #[must_use]
 pub fn size_entry(name: &str, size_pt: (f64, f64)) -> String {
-    format!(
-        "{name} — {:.0} × {:.0} mm",
-        size_pt.0 / PT_PER_MM,
-        size_pt.1 / PT_PER_MM
-    )
+    let width_mm = crate::units::whole_mm_from_points(size_pt.0);
+    let height_mm = crate::units::whole_mm_from_points(size_pt.1);
+    format!("{name} — {width_mm} × {height_mm} mm")
 }
 
 /// The last entry in the size list.
@@ -235,11 +225,13 @@ pub const fn custom_height() -> &'static str {
 /// The sheet that will land, in both units.
 #[must_use]
 pub fn sheet_summary(w_pt: f64, h_pt: f64) -> String {
-    format!(
-        "New sheet: {w_pt:.2} × {h_pt:.2} pt ({:.0} × {:.0} mm).",
-        w_pt / PT_PER_MM,
-        h_pt / PT_PER_MM
-    )
+    // Points keep two decimals deliberately — this line's whole job is letting
+    // an operator check the exact sheet against a CAD page setup, and a whole
+    // point is not enough resolution for that. Millimetres are whole, through
+    // the one table, because that is the number matched against a ream label.
+    let w_mm = crate::units::whole_mm_from_points(w_pt);
+    let h_mm = crate::units::whole_mm_from_points(h_pt);
+    format!("New sheet: {w_pt:.2} × {h_pt:.2} pt ({w_mm} × {h_mm} mm).")
 }
 
 /// A custom size outside the range this window will make.

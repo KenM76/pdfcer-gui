@@ -236,7 +236,7 @@ a claim that sixty things are unbuilt.
 
 ---
 
-## `wanted` — a real gap — **35 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `wanted` — a real gap — **35 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -355,7 +355,7 @@ from here and no box in it is ticked by this pass.
 
 ---
 
-## `blocked` — waiting on something named — **8 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `blocked` — waiting on something named — **8 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it is waiting on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat, and this project has found seven stale blockers already.
 
@@ -441,14 +441,14 @@ rule.
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess. **This section is empty**, and that is a claim: see *★★ Why nothing is `unknown`* in the header before you trust it.
 
 
 ---
 
-## `declined` — deliberately no surface — **14 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `declined` — deliberately no surface — **14 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -489,7 +489,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **116 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **117 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Sixty-five of ninety (★ 64 → 65 on 2026-09-04, when the encryption-authoring row moved out of `blocked` on the operator's O119 ruling), which is the single largest finding of this triage. Each row names the surface or the call site, and where this project's own record dates the work, the date. These rows are kept, never deleted — `EDITABLE_SURFACES.md`'s own rule, and the argument is the valuable part.
 
@@ -503,6 +503,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A merge that re-points cross-file bookmarks — `AssembleOptions::source_files`, `pageops::merge`'s third argument, `AssembleReport::outline_items_relinked`** | **✅ WIRED 2026-09-06, and the interesting part is how nearly it was not.** A bookmark opening another of the files being merged used to be dropped; given the sources' file names it is repointed at that file's pages inside the combined document. ★★★ **The engine shipped this as a breaking change with `&[]` preserving the old behaviour — and `&[]` is exactly what a mechanical fix to the new three-argument signature would have passed:** the compiler goes quiet, the tests stay green, and the capability is silently declined by whoever was clearing build errors. ⇒ A compile error is an invitation to read the reply, not to satisfy the compiler. `app::actions::merge` passes the full file name, not the stem that `titles` takes beside it — captions want no extension, a file specification carries one. ⬜ `outline_items_relinked` is not yet on the merge report's disclosure line; named rather than implied. |
 | Cut, copy and paste whole PAGES, within a document or between … | **Reachable — `app::dispatch::pageclip` calls `copy_pages`** and pastes through the same funnel, so a page clip is one `EditSession` command and one `Ctrl+Z`. The clip is a real openable PDF by the engine's own design, which is what lets it leave this process. |
 | **Open a PDF that contradicts itself, and say what pdfcer decided** — a duplicate dictionary key, an unusable `/Length`, a missing `endobj` … (`Pass 283.0`/`283.1`) | **Reachable — status bar and Document properties, 2026-09-09; the engine's `[ ]` is stale for the disclosure half, still right for the override half.** `Document::load_anomalies()` feeds `app::status::anomalies`, the single derivation both surfaces share so they cannot disagree: the status bar gets a census (`status-group:load-anomalies`), Document properties one row per anomaly naming the object, the key, and what was kept. ★★ No epoch key, deliberately: a load anomaly is true for the document's life, so keying it on `OpenDoc::edit_epoch` would un-tell him on his first nudge; `recovered_disclosure` is the precedent. ⚠ `load_anomalies()` and `recovery()` are disjoint and both can be silent. Not reachable: the override — he sees pdfcer kept `/UseOutlines` and cannot ask for `/UseOC`. Filed as two `wanted` rows (`LoadOptions` re-load, `DuplicateKeyPolicy`); unbuilt — `app/lifecycle.rs` is at the 1500-line ceiling. |
+| **Recover a damaged cross-reference table and tolerate common lenient-PDF defects** — and, since `Pass 302.0`, name what the rebuild could not keep: `RecoveryReport::objects_dropped`, `Vec<DroppedObject>` of `{ number, reason }` | **✅ WIRED AND DRIVEN 2026-09-13, the day the field shipped.** Document properties' recovery block gained a second line: the two `DropReason` arms counted separately, then the object numbers, truncated at twelve. `panels::docprops::dropped_objects_note`. Renders nothing when the list is empty (R9) and stays off-canvas (R8b rule 4). ★ The driven check `recovery_losses_are_listed_in_document_properties` launches twice, and its control is a file ALSO rebuilt by scanning that lost nothing — against a sound file the absence would be satisfied by three states at once. `done_recovery_dropped_objects_CONSUMED.md` |
 | **Sign into a pre-placed empty signature field** — `SignRequest::field_name` / `pdfcer sign --field-name` … | **✅ WIRED AND DRIVEN 2026-09-06 — File > Security > `Sign…`, third placement option.** Pin `d6b998f` (v0.42.0), engine `Pass 10.13`. `crate::sign::read_empty_signature_fields` lists every `/FT /Sig` field with no `/V`; `crate::sign::Placement` is a three-arm enum so `visible` and `field_name` cannot both be sent. ★★★ The refusal wording is the load-bearing part: `crate::text::sign::author_imposed` names the person who prepared the document before it names pdfcer and quotes the engine's message verbatim, because the engine is deliberately stricter than Acrobat — he will meet refusals on documents Acrobat would sign, and the sentence must say the author's own constraint refused it. Held by `an_author_imposed_refusal_names_the_author_and_not_pdfcer`. Driven by `tools/ui-verify` phases E and F, which read the signature back under the author's own field name `SignHere`; falsified by dropping `field_name`, when phase F read `Signature1`. |
 
 ### Text

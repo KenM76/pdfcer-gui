@@ -241,6 +241,42 @@ pub const REGION_ANOMALY_ROW_PREFIX: &str = "properties.load-anomalies."; // ui-
 /// with every gate green; the visible-rect discipline is what ended that.
 pub const REGION_ANOMALY_REREAD: &str = "properties.load-anomalies.reread"; // ui-text-exempt: trace region name, never displayed
 
+/// **The region the dropped-object disclosure publishes** — both sentences, as
+/// one rectangle.
+///
+/// Published by [`dropped_objects_note`] and **only when recovery actually
+/// dropped something**. That absence is the half of the contract a driven check
+/// can only test with a second launch, exactly as for [`REGION_ANOMALIES`]: a
+/// region declared on a damaged file *and* on a sound one would be a permanent
+/// heading announcing losses that never happened, which is a worse defect than
+/// the silence it replaced and wears the same green tick.
+///
+/// ⚠ It is a sibling of the recovery note rather than a child of the anomaly
+/// block, and the two must not be confused by a check. `Document::recovery()`
+/// and `Document::load_anomalies()` are disjoint questions — one is about the
+/// cross-reference machinery, the other about the objects — and the fixtures
+/// are authored so that each lights exactly one of them.
+/// **The region the whole recovery note publishes** -- heading and detail line,
+/// as one rectangle, drawn whenever `Document::recovery()` is `Some`.
+///
+/// ## Why it exists even though nothing clicks it
+///
+/// It is the **positive witness** that makes
+/// [`REGION_RECOVERY_DROPPED`]'s absence mean something. A driven check's
+/// control launch opens a file that was rebuilt by scanning and lost nothing,
+/// and asserts the dropped-object block is not drawn. On its own that absence
+/// is satisfied by at least three states which are not the one being tested:
+/// the panel never opened, the document was never recovered, or the recovery
+/// disclosure stopped drawing altogether. Requiring *this* region on the same
+/// launch rules out all three, and leaves exactly one reading -- the block is
+/// driven by `objects_dropped` and by nothing else.
+///
+/// ⚠ It is therefore not decoration and must not be removed as unused. The
+/// check that depends on it is `recovery_losses_are_listed_in_document_properties`.
+pub const REGION_RECOVERY: &str = "properties.recovery"; // ui-text-exempt: trace region name, never displayed
+
+pub const REGION_RECOVERY_DROPPED: &str = "properties.recovery-dropped"; // ui-text-exempt: trace region name, never displayed
+
 /// How many fields `InfoField::all()` returns.
 ///
 /// ★ Derived from the engine's list rather than written as `4`, because
@@ -564,26 +600,26 @@ fn file_name(doc: &OpenDoc) -> String {
 fn sheet_size(doc: &OpenDoc) -> Option<String> {
     let first = doc.pages.first()?;
     let (w, h) = crate::viewer::page_extent_pts(first);
-    let (w_mm, h_mm) = (w / PTS_PER_MM, h / PTS_PER_MM);
+    let (w_pts, h_pts) = (f64::from(w), f64::from(h));
+
+    // Millimetres are wanted here only for the tolerance COMPARISON below; the
+    // displayed value is rounded inside `t::page_size`, from points, so that
+    // this row and the page tile's tooltip cannot round differently.
+    let (w_mm, h_mm) = (
+        crate::units::mm_from_points(w_pts),
+        crate::units::mm_from_points(h_pts),
+    );
     let mixed = doc.pages.iter().skip(1).any(|page| {
         let (ow, oh) = crate::viewer::page_extent_pts(page);
-        (ow / PTS_PER_MM - w_mm).abs() >= 1.0 || (oh / PTS_PER_MM - h_mm).abs() >= 1.0
+        (crate::units::mm_from_points(f64::from(ow)) - w_mm).abs() >= 1.0
+            || (crate::units::mm_from_points(f64::from(oh)) - h_mm).abs() >= 1.0
     });
     Some(if mixed {
-        t::page_size_mixed(w_mm, h_mm)
+        t::page_size_mixed(w_pts, h_pts)
     } else {
-        t::page_size(w_mm, h_mm)
+        t::page_size(w_pts, h_pts)
     })
 }
-
-/// Points per millimetre.
-///
-/// A PDF user-space unit is 1/72 inch by definition (§8.3.2.3), and an inch is
-/// 25.4 mm. The same constant `panels::pages` carries for its tile tooltip;
-/// duplicated rather than shared because a two-term definition restated is
-/// cheaper to read than an import that sends the reader to another module for
-/// a number they already know.
-const PTS_PER_MM: f32 = 72.0 / 25.4;
 
 /// One field: its label, its editor, and whatever the document owes about it.
 fn row(
@@ -688,22 +724,149 @@ fn row(
 /// content that is fine — the bug class decision 059 narrows rule 4 to prevent
 /// — and it would nag on every document that had ever been touched by a bad
 /// writer, which is a great many of them.
+///
+/// # ★★★ And what the rebuild could NOT keep — wired 2026-09-13
+///
+/// The three numbers above describe what recovery *kept*. Until the engine's
+/// `fb6e004` there was no way to ask what it **dropped**, and a recovery that
+/// silently loses a page's content stream is the loader silence decision 145
+/// was written to end, appearing again one layer down. `RecoveryReport`
+/// carries `objects_dropped` now — a list, with an object number and a reason
+/// on every entry — and the engine's own filing for it recorded that the
+/// disclosure *"is not yet visible to anyone"*, which was a statement about
+/// this panel. It is visible here now.
+///
+/// ## ⚠ The two reasons are drawn as two sentences and are never summed
+///
+/// This is the whole of why the engine made `DropReason` an enum instead of a
+/// prose string, and collapsing it on the way to the screen would undo that
+/// choice at the last possible moment.
+///
+/// - `Unparseable` is **usually not a loss**. The scan is obliged to try every
+///   byte sequence that spells `N G obj`, and compressed drawing data contains
+///   such sequences routinely. Failing to parse them is the correct outcome and
+///   means nothing went missing.
+/// - `IdMismatch` means something really was defined at that offset and its own
+///   number disagreed with where it was found, so the definition could not be
+///   trusted to be what the file claimed.
+///
+/// One combined total reads the same for both and would make the ordinary case
+/// as alarming as the serious one — which is the exact failure mode rule 4's
+/// *"fuzzy, never sneaky"* is trying to avoid in the other direction. A
+/// disclosure that cries wolf on every recovered file is one nobody reads.
+///
+/// ## ★ Why the object NUMBERS are printed, and why the list is elided out loud
+///
+/// A count answers neither of the two questions a person holding a damaged file
+/// actually has — *which one went* and *why* — and those are the questions the
+/// engine cited when it chose a list. The numbers are what someone can look up
+/// in another tool. The list stops at [`DROPPED_NUMBERS_SHOWN`] because a badly
+/// mangled file can produce hundreds of false-positive headers and a properties
+/// row is not a report; it stops **naming how many it did not print**, because a
+/// silent truncation reads as *"that was all of them"*.
+///
+/// ## R9, as ever
+///
+/// A recovery that dropped nothing draws **nothing** — not a reassuring
+/// "0 objects dropped" line. The great majority of recovered files are in that
+/// state, and a row that is almost always zero teaches the eye to skip the place
+/// where the non-zero will eventually appear.
 fn recovery_note(ui: &mut Ui, doc: &OpenDoc) {
     let Some(report) = doc.session.document().recovery() else {
         return;
     };
-    ui.label(egui::RichText::new(t::recovered_heading()).color(ui.visuals().warn_fg_color));
-    ui.label(
-        egui::RichText::new(t::recovered_detail(
-            report.file_level_objects + report.objstm_objects,
-            report.last_wins_collisions,
-            report.stream_lengths_recovered + report.missing_endobj_recovered,
-        ))
-        .small()
-        .weak(),
-    )
-    .on_hover_text(t::recovered_tooltip());
+    // ★ The heading and detail are scoped and published as [`REGION_RECOVERY`];
+    // the dropped-object block publishes its own region and is deliberately
+    // OUTSIDE this scope's rect, so that a check can require one and forbid the
+    // other on the same launch without the two rectangles overlapping into an
+    // ambiguity. See [`REGION_RECOVERY`] for why the positive witness matters.
+    let block = ui
+        .scope(|ui| {
+            ui.label(egui::RichText::new(t::recovered_heading()).color(ui.visuals().warn_fg_color));
+            ui.label(
+                egui::RichText::new(t::recovered_detail(
+                    report.file_level_objects + report.objstm_objects,
+                    report.last_wins_collisions,
+                    report.stream_lengths_recovered + report.missing_endobj_recovered,
+                ))
+                .small()
+                .weak(),
+            )
+            .on_hover_text(t::recovered_tooltip());
+        })
+        .response
+        .rect;
+    crate::diag::ui_rect_visible(REGION_RECOVERY, block, ui.clip_rect());
+    dropped_objects_note(ui, report);
     ui.add_space(4.0);
+}
+
+/// How many dropped object numbers are printed before the list elides.
+///
+/// ★ Twelve rather than a round ten, for a reason that is about reading and not
+/// about arithmetic: object numbers in a recovered file cluster, and a run of
+/// consecutive numbers is the single most useful thing this line can show —
+/// it says *one region of the file went*, rather than *scattered noise*. Twelve
+/// is wide enough for a short run to be visibly a run.
+///
+/// ⚠ It is a named constant and not a literal because the elision is a policy
+/// the doc above describes; a `take(12)` buried in a call is a policy nobody can
+/// find from the prose that promises it.
+const DROPPED_NUMBERS_SHOWN: usize = 12;
+
+/// **Draw what recovery threw away**, split by the engine's two reasons.
+///
+/// See [`recovery_note`]'s doc for the whole argument. The mechanics here are
+/// only: partition by [`DropReason`], build the two sentences, and draw nothing
+/// at all when there is nothing to say.
+///
+/// ⚠ The `_` arm on the match is not laziness — `DropReason` is
+/// `#[non_exhaustive]`, so a future engine reason MUST have somewhere to land or
+/// this stops compiling on a pin bump. It lands in the `Unparseable` sentence,
+/// which is the conservative of the two: a reason we have never seen is
+/// described as *could not be read*, which is true of every possible arm, rather
+/// than as *disagreed with its own numbering*, which is a specific claim we
+/// would be inventing.
+fn dropped_objects_note(ui: &mut Ui, report: &pdfcer_core::recover::RecoveryReport) {
+    if report.objects_dropped.is_empty() {
+        return;
+    }
+    let mut unreadable: Vec<u32> = Vec::new();
+    let mut mismatched: Vec<u32> = Vec::new();
+    for dropped in &report.objects_dropped {
+        match dropped.reason {
+            pdfcer_core::recover::DropReason::IdMismatch => mismatched.push(dropped.number),
+            _ => unreadable.push(dropped.number),
+        }
+    }
+    let mut numbers = unreadable.clone();
+    numbers.extend_from_slice(&mismatched);
+    numbers.sort_unstable();
+
+    // ★ Scoped so the published rect is the union egui computed, not a pair of
+    // `ui.cursor()` readings subtracted — the latter is right today and wrong
+    // the first time a caller wraps this in a horizontal layout. Same argument
+    // as `load_anomalies_note`'s block, and the same discipline: `visible`,
+    // because this panel scrolls and a rect published for a scrolled-out row is
+    // a coordinate the operator can never reach.
+    let block = ui
+        .scope(|ui| {
+            ui.label(
+                egui::RichText::new(t::dropped_summary(unreadable.len(), mismatched.len()))
+                    .small()
+                    .weak(),
+            )
+            .on_hover_text(t::dropped_tooltip());
+            ui.label(
+                egui::RichText::new(t::dropped_numbers(&numbers, DROPPED_NUMBERS_SHOWN))
+                    .small()
+                    .weak(),
+            )
+            .on_hover_text(t::dropped_tooltip());
+        })
+        .response
+        .rect;
+    crate::diag::ui_rect_visible(REGION_RECOVERY_DROPPED, block, ui.clip_rect());
 }
 
 /// ★★★ **Which places this file contradicted itself, and what pdfcer chose in
@@ -940,6 +1103,113 @@ fn reread_control(ui: &mut Ui, doc: &OpenDoc, duplicates: usize, actions: &mut V
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **The control fixture really is recovered, and really lost nothing.**
+    ///
+    /// ⚠ Two assertions and not one, because the control half of the driven
+    /// check needs both halves to be true and they fail independently. If the
+    /// file stopped being recovered -- someone adds an xref, or a future engine
+    /// revision learns to open it without rebuilding -- the recovery note would
+    /// correctly draw nothing, the driven check would demand
+    /// `properties.recovery` and get nothing, and it would report an
+    /// application defect that does not exist. If the file started dropping
+    /// something -- a careless edit to the sentence drawn on the page -- the
+    /// dropped block would correctly draw and the check would report the
+    /// opposite defect, equally wrongly.
+    ///
+    /// ★ This lives in the cheap suite on purpose. A fixture that has stopped
+    /// being a control is a fact about the corpus, and finding it out costs a
+    /// second here and a ninety-minute driven sweep there.
+    #[test]
+    fn the_control_fixture_for_the_dropped_disclosure_really_recovers_and_drops_nothing() {
+        let doc = crate::app::state::open_local_fixture(crate::app::state::RECOVERED_NO_LOSSES);
+        let report = doc.session.document().recovery().expect(
+            "the control has no xref, no trailer and no startxref, so it can only have been opened by rebuild-by-scan; if it was not, the driven check's positive witness `properties.recovery` will not be drawn and the check will blame the panel",
+        );
+        assert!(
+            report.objects_dropped.is_empty(),
+            "the control fixture dropped {:?}, so the absence of the dropped-object block is no longer a fact about the application",
+            report.objects_dropped
+        );
+    }
+
+    /// **The fixture really does produce dropped objects, and it names both.**
+    ///
+    /// ⚠ This is the test that keeps the driven check honest. The driven check
+    /// asserts a sentence is on screen; if a future engine revision stopped
+    /// finding object 9 as a candidate, or started keeping object 8, the
+    /// fixture would quietly produce an empty `objects_dropped`, the panel
+    /// would correctly draw nothing, and the driven check would then be
+    /// asserting the absence of something that was never going to be there —
+    /// green forever, measuring nothing. Asserting the INPUT here is what makes
+    /// the output assertion downstream mean anything.
+    ///
+    /// ★ Both numbers are checked, not the count. A count of two is satisfied
+    /// by finding object 8 twice, and *which object went* is the question the
+    /// engine cited when it chose to carry a list rather than a tally.
+    #[test]
+    fn the_recovery_fixture_drops_the_two_objects_it_was_built_to_drop() {
+        let doc = crate::app::state::open_local_fixture(crate::app::state::RECOVERED_WITH_LOSSES);
+        let report = doc.session.document().recovery().expect(
+            "no xref, no trailer, no startxref: this fixture can only have been opened by rebuild-by-scan, and if it was not then the file on disk is no longer the file the generator writes",
+        );
+        // ★ Annotated with the engine's own type on purpose. Every other line
+        // in this module reaches a `DroppedObject` through field access on an
+        // inferred binding, so the TYPE NAME appeared nowhere in this
+        // repository and `check-engine-api-drift` reported the struct and both
+        // of its fields as items nobody here names -- which was true, and is
+        // the condition under which a rename upstream lands as a silent
+        // behaviour change rather than a compile error. This binding is that
+        // compile error.
+        let dropped: &[pdfcer_core::recover::DroppedObject] = &report.objects_dropped;
+        let mut numbers: Vec<u32> = dropped.iter().map(|d| d.number).collect();
+        numbers.sort_unstable();
+        assert_eq!(
+            numbers,
+            vec![8, 9],
+            "the fixture is built so the scan finds a truncated object 8 and a false-positive object 9; it reported {:?} instead, so the driven check downstream is no longer measuring anything",
+            report.objects_dropped
+        );
+    }
+
+    /// **Both object numbers survive the trip from the report to the screen.**
+    ///
+    /// The panel's drawing cannot be called without an egui context, so what is
+    /// asserted is the pair of strings it hands to `ui.label` — built here from
+    /// the same report, by the same two functions, in the same order.
+    ///
+    /// ★ The summary is asserted to be non-empty and the numbers line to carry
+    /// both numbers. It deliberately does not pin the wording: prose gets
+    /// reworded, and a test that fails on a comma teaches people to edit tests.
+    /// What it pins is that neither object vanished on the way, which is the
+    /// whole subject of the disclosure.
+    #[test]
+    fn both_dropped_objects_reach_the_lines_the_operator_reads() {
+        let doc = crate::app::state::open_local_fixture(crate::app::state::RECOVERED_WITH_LOSSES);
+        let report = doc.session.document().recovery().expect("recovered");
+
+        let unreadable = report
+            .objects_dropped
+            .iter()
+            .filter(|d| d.reason != pdfcer_core::recover::DropReason::IdMismatch)
+            .count();
+        let mismatched = report.objects_dropped.len() - unreadable;
+        let summary = t::dropped_summary(unreadable, mismatched);
+        assert!(
+            !summary.is_empty(),
+            "two objects were dropped and the panel would have said nothing about it"
+        );
+
+        let mut numbers: Vec<u32> = report.objects_dropped.iter().map(|d| d.number).collect();
+        numbers.sort_unstable();
+        let line = t::dropped_numbers(&numbers, DROPPED_NUMBERS_SHOWN);
+        for n in [8_u32, 9] {
+            assert!(
+                line.contains(&n.to_string()),
+                "object {n} was dropped and does not appear in the line the operator reads: {line}"
+            );
+        }
+    }
 
     /// **The button always offers the reading the operator does not have.**
     ///

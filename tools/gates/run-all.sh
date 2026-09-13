@@ -132,10 +132,20 @@ run "check-doc-markup --self-test" python "$HERE/check-doc-markup.py" --self-tes
 run "check-gate-input-scope --self-test" python "$HERE/check-gate-input-scope.py" --self-test
 run "check-memory-index --self-test" bash "$HERE/check-memory-index.sh" --self-test
 run "check-completeness-tests --self-test" python "$HERE/check-completeness-tests.py" --self-test
+run "check-unit-conversion --self-test" bash "$HERE/check-unit-conversion.sh" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
 run "check-theme-colors" bash "$HERE/check-theme-colors.sh"
+# ★★ `check-unit-conversion`, added 2026-09-13 — O194 step 2.
+#
+# One length-conversion table, one rounding rule. Thirteen private copies
+# of the same two constants had accumulated, and the one that reached the
+# operator was not the arithmetic but the ROUNDING: a 210.5 mm sheet read
+# 210 in the page thumbnails and 211 in the print dialogue, because half
+# the sites used `.round()` and the other half `{:.0}`, which is half to
+# EVEN. Nobody chose half-to-even; it is simply what you type.
+run "check-unit-conversion" bash "$HERE/check-unit-conversion.sh"
 # ★ DEFECTS.md D11, mechanised. The rule was written on 2026-08-14 and broken
 # again on 2026-08-17 by someone who had read it; a rule that lives only in a
 # document is enforced as often as somebody remembers to read it.

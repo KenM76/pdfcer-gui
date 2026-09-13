@@ -116,17 +116,20 @@ pub const fn format_name(format: ImageFormat) -> &'static str {
 /// is the PDF default and nothing the file asked for.
 #[must_use]
 pub fn natural_size(width_mm: f64, height_mm: f64, declared_dpi: Option<(f64, f64)>) -> String {
+    // Whole millimetres, half away from zero, like every other length. The dpi
+    // values keep `{:.0}`: a resolution is not a length, nothing converted it
+    // from points, and `units` holds no opinion about how one reads.
+    let width_mm = crate::units::whole(width_mm);
+    let height_mm = crate::units::whole(height_mm);
     match declared_dpi {
         Some((x, y)) if (x - y).abs() < 0.5 => {
-            format!("{width_mm:.0} × {height_mm:.0} mm at the {x:.0} dpi the file declares")
+            format!("{width_mm} × {height_mm} mm at the {x:.0} dpi the file declares")
         }
         Some((x, y)) => {
-            format!(
-                "{width_mm:.0} × {height_mm:.0} mm at the {x:.0} × {y:.0} dpi the file declares"
-            )
+            format!("{width_mm} × {height_mm} mm at the {x:.0} × {y:.0} dpi the file declares")
         }
         None => format!(
-            "{width_mm:.0} × {height_mm:.0} mm — the file declares no resolution, so pdfcer \
+            "{width_mm} × {height_mm} mm — the file declares no resolution, so pdfcer \
              reads one pixel as one point"
         ),
     }
@@ -274,7 +277,9 @@ pub fn dpi_preview(effective_dpi: (f64, f64), below_screen_resolution: bool) -> 
 /// never does, and a line restating the two numbers above it would be noise.
 #[must_use]
 pub fn placed_note(width_mm: f64, height_mm: f64) -> String {
-    format!("It will land {width_mm:.0} × {height_mm:.0} mm, centred in that box.")
+    let width_mm = crate::units::whole(width_mm);
+    let height_mm = crate::units::whole(height_mm);
+    format!("It will land {width_mm} × {height_mm} mm, centred in that box.")
 }
 
 /// The commit button.

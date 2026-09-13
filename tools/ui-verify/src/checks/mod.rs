@@ -198,6 +198,12 @@ pub mod load_anomalies;
 /// dock tab, bringing a control inside its panel's body. Split from
 /// [`driving`] on 2026-09-05 under R2; its header carries the seam.
 pub mod reaching;
+/// The dropped-object disclosure, driven: a document pdfcer had to rebuild by
+/// scanning says in Document properties what the rebuild could NOT keep, and a
+/// document whose rebuild kept everything says nothing.
+/// Its control launch is a RECOVERED file rather than a sound one, which is the
+/// only way the absence measures the block rather than the panel.
+pub mod recovery_losses;
 // O120's fourth export format, and the one a driven check is worth most for:
 // EMF is the ONLY vector route LibreOffice 24.x and Word's Paste Special have,
 // so a radio that draws and does not bind hands the operator a file those

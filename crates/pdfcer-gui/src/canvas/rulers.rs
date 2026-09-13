@@ -1296,6 +1296,9 @@ mod tests {
             state: ScaleState::OneToOne,
             format: NumberFormat::decimal(Unit::Millimeter, 2),
         };
+        // ORACLE, NOT A CONVERSION: a whole inch of paper is 25.40 mm, stated
+        // as the literal a reader can check against a ruler. The `25.4` is in
+        // an expected string, not in arithmetic.
         assert_eq!(mm.label(72.0), "25.40 mm");
     }
 

@@ -513,6 +513,12 @@ mod tests {
             (inches - 1000.0).abs() < 1e-9,
             "1:100 at 720 pt is 1000 inches; got {inches}"
         );
+        // ORACLE, NOT A CONVERSION: 25.4 is the ANSWER here, not a step. 1000
+        // inches is 25.4 m because an inch is 0.0254 m by definition, and this
+        // assertion's whole value is that it arrived at that number without
+        // going through `units.rs` — which is the code path the scale entry
+        // itself uses. An assertion routed through the table would be
+        // asserting the table equals the table.
         assert!(
             (metres - 25.4).abs() < 1e-9,
             "the SAME distance is 25.4 m. Got {metres} — which is what a build that relabelled \
@@ -717,6 +723,10 @@ mod tests {
         );
         let preview = fields.preview(None).expect("a ratio preview with no line");
         assert_eq!(preview.unit, Unit::Meter, "the operator asked for metres");
+        // ORACLE, NOT A CONVERSION: the expected metres-per-point, computed
+        // here by hand from the definition of the inch. The subject of this
+        // test is whether the display unit reaches the scale at all, so the
+        // comparison has to come from somewhere the code under test cannot.
         let in_inches = 100.0 / 72.0;
         let expected = in_inches * 0.0254;
         assert!(

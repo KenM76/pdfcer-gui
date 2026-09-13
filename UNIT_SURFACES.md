@@ -362,6 +362,96 @@ with the highest return.** Delete all six constants and all seven closures; rout
 everything through `Unit::baseline_per_point`. ★ **This defect is not a
 consequence of the unit work and does not wait for it.**
 
+### ✅ DELIVERED 2026-09-13 — `crates/pdfcer-gui/src/units.rs`
+
+Everything above this line is the diagnosis and is left standing, because the
+enumeration is the evidence. What follows is what was actually built, **and two
+corrections to the diagnosis that only appeared once it was measured.**
+
+| what | where it went |
+|---|---|
+| six private constants | **deleted** — all six files call `crate::units` |
+| seven `\|pt: f64\| pt * 25.4 / 72.0` closures | **deleted** — `use crate::units::whole_mm_from_points as mm;` |
+| the two `f32` conversion paths | **widened to f64** at the call site |
+| every `{something_mm:.0}` and the two positional `{:.0}` mm pairs | **`{}` over an `i64`**, rounded half away from zero |
+| `dpi / 72.0` ×3 and `dpi / 0.0254` ×1 | `units::scale_from_dpi` / `units::pixels_per_metre` |
+| the rule itself | `tools/gates/check-unit-conversion.sh`, self-tested, in `run-all.sh` |
+
+The table's API, in the order a caller usually wants it:
+
+```rust
+units::mm_from_points(pt)          units::points_from_mm(mm)
+units::inches_from_points(pt)      units::points_from_inches(in)
+units::from_points(pt, unit)       units::to_points(v, unit)     // any engine Unit
+units::whole(v)                    units::whole_mm_from_points(pt)
+units::scale_from_dpi(dpi)         units::pixels_per_metre(dpi)
+```
+
+#### ★★★ Correction 1 — "the two differ in the last ulp" was the wrong SHAPE of claim
+
+The bullet above says spellings A and B "differ in the last ulp". Both halves of
+that are wrong, and the test written to defend the paragraph is what found it:
+
+- **There are three spellings, not two.** `Unit::baseline_per_point` returns a
+  **pre-divided** `25.4 / 72.0` — one constant, folded at compile time — and
+  multiplying by it is a third operation, distinct from both A and B. The
+  paragraph above had said the engine used the multiply form. It does not.
+- **They do not differ in "the last ulp"; they differ on SOME INPUTS.** Swept
+  over 10 000 deterministic inputs:
+
+  ```text
+    engine  vs closure form    3_003 of 10_000 inputs disagree
+    engine  vs divide  form      825 of 10_000 inputs disagree
+    closure vs divide  form    3_441 of 10_000 inputs disagree
+  ```
+
+  ⚠ **A4's 841.89 pt is bit-identical in all three.** So a program holding all
+  three cannot be shown to be inconsistent by checking a page size — the
+  disagreement waits for a sheet nobody thought to test. That is the same
+  failure mode as the rounding half, which is the half that reached him.
+
+⇒ *A test written to defend a paragraph can be the thing that falsifies it.*
+Two separate failures, both in this file's reasoning rather than in the code.
+
+#### ★★ Correction 2 — the escape hatch needed a second class, and running the gate is what found it
+
+`check-unit-conversion.sh` was written expecting one exempt class: **type size**
+(§4 below). On its first run against the real tree, **all four remaining hits
+were tests** — `canvas/measure/scale.rs:517` (25.4 **metres**, an answer rather
+than a factor), `:721` (`in_inches * 0.0254`, a hand-computed oracle) and
+`canvas/rulers.rs:1299` (`"25.40 mm"` as an expected string).
+
+Routing any of those through `units.rs` would make the test assert that
+`units.rs` equals `units.rs`. So the gate carries **two** markers:
+
+```
+NOT A DOCUMENT LENGTH:      this is a type size, not a length
+ORACLE, NOT A CONVERSION:   this is a test's expected value
+```
+
+⚠ Class 2 does **not** license pinning a *format*. A test asserting `"210"` out
+of `{width_mm:.0}` is not an oracle, it is the half-to-even defect written down
+as an expectation. Mark the arithmetic; never mark the rounding.
+
+#### ★ One unrelated product defect, found on the way
+
+`text/new_document.rs::inches()` printed **`9 1/1`** for a 719.5 pt sheet
+(9.993 in). It truncated to a whole inch and rounded the remainder separately,
+and that shape cannot carry. Shipped 2026-08-20 and never seen, because every
+named imperial sheet is an exact multiple of a sixteenth — but `sheet_summary`
+calls it for **any** size an operator types, so it was reachable the whole time.
+Fixed by rounding once in sixteenths and then splitting, with a regression test.
+
+#### What §3 does NOT claim to have finished
+
+- The **type-size** surfaces in §4 are untouched and un-annotated. They do not
+  trip the gate, so a marker on them would be decoration; §4 is their
+  instrument, and the gate's header states that it is blind to the mirror case
+  (a type size routed *correctly* into millimetres).
+- Bare `/ 72.0` is a stated, deliberate hole in the gate.
+- Clauses 1, 3 and 4 of O194 (the unit control itself, and the abbreviation
+  catalogue) are **not** delivered by this work.
+
 ---
 
 ## 4. ⚠ What must be EXCLUDED, and why the exclusion has to be written down

@@ -108,14 +108,6 @@ const REGION_PORTRAIT: &str = "new-document.portrait";
 /// The Landscape radio. See [`REGION_PORTRAIT`].
 const REGION_LANDSCAPE: &str = "new-document.landscape";
 
-/// Points per millimetre — 72 points per inch ÷ 25.4 mm per inch.
-///
-/// Stated once. The engine's `paper` module has the same constant for the same
-/// reason, and the two are not shared deliberately: a four-character constant
-/// hoisted into a public API to give two unrelated callers a common dependency
-/// is not a saving, and the *value* cannot drift because it is a definition.
-const PT_PER_MM: f64 = 72.0 / 25.4;
-
 /// The smallest custom sheet this dialog will make, in millimetres.
 ///
 /// ISO 32000-1 Annex C.2 advises a minimum of **3 units** (≈ 1.06 mm), so 1 mm
@@ -279,7 +271,10 @@ impl NewDocumentDialog {
                     clippy::cast_precision_loss,
                     reason = "a millimetre count bounded by MAX_CUSTOM_MM is exact in f64" // ui-text-exempt: lint justification, never displayed
                 )]
-                (w as f64 * PT_PER_MM, h as f64 * PT_PER_MM)
+                (
+                    crate::units::points_from_mm(w as f64),
+                    crate::units::points_from_mm(h as f64),
+                )
             }
         }
     }

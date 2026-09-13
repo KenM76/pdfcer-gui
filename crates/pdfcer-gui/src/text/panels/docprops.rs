@@ -232,14 +232,23 @@ pub const fn page_size_label() -> &'static str {
     "Sheet size"
 }
 
-/// One sheet size, in millimetres.
+/// One sheet size, in millimetres, from a size given in **points**.
 ///
-/// Millimetres rather than points, because a drafter knows an A3 by
-/// `420 × 297` and nobody's intuition is in 72nds of an inch. The page tile's
-/// tooltip made the same choice for the same reason.
+/// Millimetres in the sentence, because a drafter knows an A3 by `420 × 297`
+/// and nobody's intuition is in 72nds of an inch. The page tile's tooltip made
+/// the same choice for the same reason — and for a while the two of them
+/// disagreed, because each converted with its own constant and rounded with its
+/// own rule. A sheet of exactly 210.5 mm read `210` on one and `211` on the
+/// other.
+///
+/// ★ Both now take points and round through `units::whole_mm_from_points`,
+/// half away from zero. Printed with `{}`; `{:.0}` rounds half to EVEN and was
+/// the source of the disagreement.
 #[must_use]
-pub fn page_size(width_mm: f32, height_mm: f32) -> String {
-    format!("{width_mm:.0} × {height_mm:.0} mm")
+pub fn page_size(width_pts: f64, height_pts: f64) -> String {
+    let width_mm = crate::units::whole_mm_from_points(width_pts);
+    let height_mm = crate::units::whole_mm_from_points(height_pts);
+    format!("{width_mm} × {height_mm} mm")
 }
 
 /// ★ A document whose sheets are not all the same size.
@@ -250,8 +259,10 @@ pub fn page_size(width_mm: f32, height_mm: f32) -> String {
 /// so the mixed case says so and gives the first sheet's size as an example
 /// rather than as the answer.
 #[must_use]
-pub fn page_size_mixed(width_mm: f32, height_mm: f32) -> String {
-    format!("mixed — page 1 is {width_mm:.0} × {height_mm:.0} mm")
+pub fn page_size_mixed(width_pts: f64, height_pts: f64) -> String {
+    let width_mm = crate::units::whole_mm_from_points(width_pts);
+    let height_mm = crate::units::whole_mm_from_points(height_pts);
+    format!("mixed — page 1 is {width_mm} × {height_mm} mm")
 }
 
 /// The label on the encryption row.
@@ -334,9 +345,166 @@ pub const fn recovered_tooltip() -> &'static str {
     "Every PDF carries an index saying where its contents are. This one's was wrong or missing — usually an interrupted download, a crashed writer, or a tool that appended to it badly — so pdfcer scanned the whole file and rebuilt the index from what it found. The document opens and prints normally. Where something was defined more than once pdfcer had to pick one, so if anything looks out of place, check it against the original before relying on it."
 }
 
+/// **How many places the scan could not read, split by which kind of
+/// unreadable they were.**
+///
+/// # WHY THE TWO KINDS ARE NEVER ADDED TOGETHER
+///
+/// The engine went out of its way to make this an enum rather than a sentence,
+/// and its reasoning is the reason this function takes two arguments instead of
+/// one total. `DropReason::Unparseable` is **usually not a loss at all**:
+/// compressed picture and drawing data routinely contains bytes that happen to
+/// spell `N G obj`, the scan is obliged to try them, and failing to parse them
+/// is the correct and uninteresting outcome. `DropReason::IdMismatch` is a
+/// different animal -- something really was defined there, and its own number
+/// disagreed with the offset it was found at, so pdfcer could not trust the
+/// definition to be what the file claimed.
+///
+/// One combined number reads identically for both and would make the routine
+/// case as alarming as the serious one. That is the specific failure the engine
+/// named when it chose the enum, and collapsing it here would undo the choice
+/// on the way to the screen.
+///
+/// ## Why the wording leads with the ordinary explanation
+///
+/// R8b rule 4 requires the disclosure; nothing requires it to be frightening.
+/// The first clause of the unreadable sentence says what the common cause is,
+/// so an operator who reads only the first line gets the true impression rather
+/// than an alarming one. The second clause is the part that matters when
+/// something IS missing, and it is stated plainly rather than hedged.
+#[must_use]
+pub fn dropped_summary(unparseable: usize, id_mismatch: usize) -> String {
+    let mut out = String::new();
+    if unparseable > 0 {
+        out.push_str(&format!(
+            "{unparseable} more looked like the start of an object but could not be read. That is usually harmless — compressed picture and drawing data can contain bytes that look like an object heading — but if something is missing from this document, these are where it went."
+        ));
+    }
+    if id_mismatch > 0 {
+        if !out.is_empty() {
+            out.push(' ');
+        }
+        out.push_str(&format!(
+            "{id_mismatch} were found in a place that disagreed with their own numbering, so pdfcer left them out rather than trust them."
+        ));
+    }
+    out
+}
+
+/// **The object numbers themselves, elided at a fixed count.**
+///
+/// # ★ Why the numbers are printed at all
+///
+/// The engine's own argument for carrying a list rather than a count: the
+/// complaint this came from was never that a tally was wrong, it was that a
+/// human holding a file with a missing page could not find out WHICH object
+/// went. A count answers neither question. The numbers are what a person with
+/// the file in another tool can actually look up.
+///
+/// # ⚠ Why it elides, and why the remainder is COUNTED rather than dropped
+///
+/// A badly damaged file can produce hundreds of false-positive headers, and a
+/// panel row is not a report. So the list stops -- but it stops **out loud**,
+/// naming how many it did not print. A silent truncation reads as "that was all
+/// of them", which is the one impression a disclosure must never leave.
+///
+/// `limit` is passed rather than hard-coded so the caller owns the elision
+/// policy and the test can drive both sides of it without a fixture the size of
+/// the threshold.
+#[must_use]
+pub fn dropped_numbers(numbers: &[u32], limit: usize) -> String {
+    let shown: Vec<String> = numbers.iter().take(limit).map(u32::to_string).collect();
+    let rest = numbers.len().saturating_sub(shown.len());
+    if rest == 0 {
+        format!("Objects: {}.", shown.join(", "))
+    } else {
+        format!("Objects: {}, and {rest} more.", shown.join(", "))
+    }
+}
+
+/// The hover explanation for the dropped-object lines.
+///
+/// ★★ Ends without an instruction, for the same reason [`recovered_tooltip`]
+/// does: the file may be entirely fine, and the only real remedy is a good copy
+/// from whoever produced it. What it adds over that tooltip is the one thing an
+/// operator can actually check -- whether anything is visibly absent -- because
+/// that is the symptom a dropped content stream produces and it is checkable
+/// without any tool but their own eyes.
+#[must_use]
+pub const fn dropped_tooltip() -> &'static str {
+    "When pdfcer rebuilds a damaged index it scans the whole file for anything that looks like the start of an object. Some of what it finds cannot be read back. Most of those are not really objects — they are ordinary compressed data that happens to look like one — and nothing is lost. Occasionally one is real, and then a piece of the document is genuinely gone: a missing drawing, a blank page, an annotation that is not there any more. Compare the pages against the original if you can."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **The two drop reasons never merge into one sentence.**
+    ///
+    /// Driven from all four corners rather than from the one case a fixture
+    /// happens to produce. The interesting corners are the two SINGLE-kind
+    /// ones: a recovery whose drops are all false positives must not produce
+    /// the sentence about untrustworthy numbering, and a recovery whose drops
+    /// are all mismatches must not produce the reassuring one. Either would be
+    /// the collapse the engine's enum exists to prevent, arriving at the last
+    /// possible moment.
+    #[test]
+    fn the_two_drop_reasons_are_never_collapsed() {
+        let only_unreadable = dropped_summary(3, 0);
+        let only_mismatch = dropped_summary(0, 2);
+        let both = dropped_summary(3, 2);
+
+        assert!(
+            only_unreadable.contains('3') && !only_unreadable.contains("numbering"),
+            "three false positives were described as a numbering disagreement: {only_unreadable}"
+        );
+        assert!(
+            only_mismatch.contains("numbering") && !only_mismatch.contains("harmless"),
+            "two untrustworthy definitions were called harmless: {only_mismatch}"
+        );
+        assert!(
+            both.contains("harmless") && both.contains("numbering"),
+            "a file with both kinds must say both: {both}"
+        );
+        assert!(
+            dropped_summary(0, 0).is_empty(),
+            "nothing was dropped, so there is no sentence — R9, not a reassuring zero"
+        );
+    }
+
+    /// **An elided list says how many it did not print.**
+    ///
+    /// ⚠ Both sides of the boundary, because an elision tested only above its
+    /// threshold cannot tell a correct rule from one that always elides, and
+    /// one tested only below it cannot tell a correct rule from one that never
+    /// does.
+    ///
+    /// ★ The exactly-at-the-limit case is here on purpose: an off-by-one there
+    /// produces "and 0 more", which is the silent-truncation failure wearing
+    /// the opposite coat — a remainder announced that does not exist.
+    #[test]
+    fn an_elided_list_of_dropped_objects_counts_what_it_left_out() {
+        let few: Vec<u32> = (1..=3).collect();
+        let line = dropped_numbers(&few, 12);
+        assert!(line.contains('1') && line.contains('3'), "{line}");
+        assert!(
+            !line.contains("more"),
+            "three of three were printed and it still claimed a remainder: {line}"
+        );
+
+        let exactly: Vec<u32> = (1..=12).collect();
+        assert!(
+            !dropped_numbers(&exactly, 12).contains("more"),
+            "twelve of twelve printed is not an elision"
+        );
+
+        let many: Vec<u32> = (1..=40).collect();
+        let elided = dropped_numbers(&many, 12);
+        assert!(
+            elided.contains("28 more"),
+            "40 objects with 12 shown leaves 28; the count must be stated or the line reads as the whole list: {elided}"
+        );
+    }
 
     /// ⚠ **The test this module's own doc claimed, written, run, and DELETED —
     /// 2026-09-05.**

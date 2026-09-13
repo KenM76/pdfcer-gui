@@ -973,6 +973,75 @@ strings fused into `format!` templates inside `text/` — including
 string gate passes all of these because they live in `text/`. ⇒ **A gate that
 checks *where* a string lives cannot see a unit welded into it.**
 
+### DELIVERED 2026-09-13 — step 2 is done: one table, one rounding rule, and a gate that keeps it that way
+
+**The 210.5 mm defect is gone.** A sheet of 210.5 mm now reads the same number in
+the page thumbnail's tooltip and in the print dialogue, because both of them —
+and every other length in the program — now go through **one** conversion
+function with **one** rounding rule.
+
+**What was actually removed:**
+
+| what | before | after |
+|---|---:|---|
+| private points-per-mm constants, under two names | 6 | 0 |
+| re-declared `pt * 25.4 / 72.0` closures | 7 | 0 |
+| conversion paths that were `f32` | 2 | 0 |
+| DPI / pixels-per-metre sites with their own arithmetic | 5 | 0 |
+| rounding rules in use for a whole-millimetre display | 2 | 1 |
+
+The new table is `crates/pdfcer-gui/src/units.rs`. It is a thin front for the
+engine's own `Unit::baseline_per_point()`, so the shell no longer holds a second
+opinion about how long a millimetre is — it holds the engine's. `{value_mm:.0}`
+(half-to-even, and inherited from `format!` rather than chosen) is gone from
+every millimetre display; what replaced it is an `i64` rounded **half away from
+zero**, which is the rule a drafting program's readouts have always implied.
+
+**A gate now enforces it**: `tools/gates/check-unit-conversion.sh`, registered
+twice in the runner (self-test first, then the real scan). It fails the build on
+a fresh `25.4` / `0.0254` / `PTS_PER_MM` anywhere under the GUI source except the
+table itself, and on a `{something_mm:.0}` anywhere at all. It has a self-test
+with planted violations, so it cannot quietly stop finding things.
+
+**Two escape hatches exist, and the second one was found by running the gate,
+not by designing it.** The first is `NOT A DOCUMENT LENGTH:` — the typographic
+point, which the row above already says must be excluded. The second is
+`ORACLE, NOT A CONVERSION:` — **a test that recomputes the arithmetic by hand
+in order to check the table.** All four real-tree hits on the first run were
+that, not type sizes. A test's independent oracle must keep its own copy of the
+number or it is testing nothing; routing it through the table under test would
+have made three real tests vacuous.
+
+**Driven, not merely tested** (R1). Eleven checks against the release binary,
+each on its own copy under its own profile: the page-size round trip through a
+saved file, both New-document surfaces, both image-placement surfaces, both
+print surfaces, document properties, the load-anomaly panel, the metafile
+export, and a drawing dropped onto the thumbnails. **All eleven pass.** Two of
+them reported SKIP on the first attempt; both were my fixture choice — a
+one-page primary document handed to checks whose whole evidence is a page count
+changing — and both pass on a four-page primary. Neither was an application
+defect, and the harness said so in its own words rather than going green.
+
+**What this clause does NOT finish, stated so nobody reads a table of zeroes as
+a finished row:**
+
+- **Step 4 is half-done and therefore worse than not started**: km, yd and mi
+  have `ui_text` entries for their abbreviations; mm, cm, m, in and ft still do
+  not. A catalog that is inconsistent is a catalog nobody can audit.
+- **Step 5 is not done.** There is a driven check per *surface the conversion
+  work touched*, which is not the same thing as a driven check per *surface that
+  offers a unit menu*. The second is what the row asks for.
+- **The ~30 surfaces with no unit control at all still have none.** Step 2 made
+  them agree with each other; it did not give the operator a choice. The
+  properties panel still says *"Points, measured to the bottom-left corner"* --
+  the exact sentence he was describing when he filed this.
+- **The type-size surfaces were deliberately left un-annotated.** The gate never
+  flags them, so a marker it does not read is decoration, not enforcement. The
+  reasoning is written into the gate's header as a documented hole, next to the
+  two others: a bare `/ 72.0` with no `25.4` beside it, and a positional
+  `{:.0}` whose argument is a millimetre.
+
+
 ---
 
 ## O195 — ◑ **FILED 2026-09-13** — smart select is not available in Review mode

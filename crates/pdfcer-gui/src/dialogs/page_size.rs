@@ -141,9 +141,6 @@ const REGION_OUTCOME: &str = "page-size.outcome";
 /// The scale diagram.
 const REGION_DIAGRAM: &str = "page-size.diagram";
 
-/// Points per millimetre — 72 points per inch ÷ 25.4 mm per inch.
-const PT_PER_MM: f64 = 72.0 / 25.4;
-
 /// The smallest custom sheet this window will make, in millimetres.
 ///
 /// [`crate::dialogs::new_document::MIN_CUSTOM_MM`]'s value and reasoning, and
@@ -276,14 +273,15 @@ impl PageSizeDialog {
         // millimetres otherwise, for `new_document`'s reason: zeros would draw
         // the refusal line the instant Custom was picked, which reads as the
         // window objecting to a choice nobody has finished making.
-        #[allow(
-            clippy::cast_possible_truncation,
-            reason = "a sheet bounded by MAX_CUSTOM_MM is far inside i64" // ui-text-exempt: lint justification, never displayed
-        )]
+        // ★ Rounded through the one table, half away from zero. This is a
+        // pt -> mm round trip whose other half is `size_pt` below; when the two
+        // halves spelled the constant differently, reopening this window on a
+        // sheet it had just made could seed a millimetre that was not the one
+        // typed.
         let (custom_w_mm, custom_h_mm) = current.map_or((210, 297), |rect| {
             (
-                (rect.width() / PT_PER_MM).round() as i64,
-                (rect.height() / PT_PER_MM).round() as i64,
+                crate::units::whole_mm_from_points(rect.width()),
+                crate::units::whole_mm_from_points(rect.height()),
             )
         });
 
@@ -430,7 +428,10 @@ impl PageSizeDialog {
                     clippy::cast_precision_loss,
                     reason = "a millimetre count bounded by MAX_CUSTOM_MM is exact in f64" // ui-text-exempt: lint justification, never displayed
                 )]
-                (w as f64 * PT_PER_MM, h as f64 * PT_PER_MM)
+                (
+                    crate::units::points_from_mm(w as f64),
+                    crate::units::points_from_mm(h as f64),
+                )
             }
         }
     }
@@ -1041,7 +1042,7 @@ mod tests {
         assert_eq!(MIN_CUSTOM_MM, 2);
         assert_eq!(MAX_CUSTOM_MM, 5080);
         #[allow(clippy::cast_precision_loss, reason = "5080 is exact in f64")]
-        let ceiling_pt = MAX_CUSTOM_MM as f64 * PT_PER_MM;
+        let ceiling_pt = crate::units::points_from_mm(MAX_CUSTOM_MM as f64);
         assert!(
             (ceiling_pt - 14_400.0).abs() < 0.5,
             "the ceiling is Annex C.2's 14,400 units, not {ceiling_pt}"
