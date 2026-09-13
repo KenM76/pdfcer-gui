@@ -110,3 +110,4 @@
 - [A capability claim in product copy needs the same citation as a limitation claim](feedback_a_capability_claim_in_product_copy_needs_the_same_citation_as_a_limitation_claim.md) — "lengths, areas and angles" was invented from the shape of the feature; Area and Angular are not shipped.
 - [A running sweep forbids the obvious use of its own ninety-five minutes](feedback_a_running_sweep_forbids_the_obvious_use_of_its_own_ninety_five_minutes.md) - editing any .rs or .toml aborts every remaining chunk; markdown and fixtures are safe.
 - [A lesson in a docstring is not an instrument](feedback_a_lesson_in_a_docstring_is_not_an_instrument.md) — four instances, the generalisation sitting beside them; build the sweep.
+- [A register row outranks memory, so correcting the row is the work](feedback_a_register_row_outranks_memory_so_correcting_the_row_is_the_work.md) — a cold session reads RESUME first; and "from an earlier sweep" is a `git log -S` away from being disproved.
