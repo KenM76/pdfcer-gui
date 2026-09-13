@@ -902,9 +902,15 @@ private constants** under two different names (`PTS_PER_MM`, `PT_PER_MM`) in six
 files, **seven re-declared inline closures** spelling `× 25.4 / 72.0`, and
 core's own `Unit::baseline_per_point`. Two of the six are **f32**
 (`panels/pages/mod.rs:203`, `panels/docprops/mod.rs:538`); the rest are f64.
-Rounding is `.round()` in some places and `{:.0}` in others. ⇒ **A sheet of
-exactly 210.5 mm renders 211 in the page thumbnail's tooltip and 210 in the print
-dialogue, today, before any of this work starts.** There is also a **second
+Rounding is `.round()` (half-away-from-zero) in some places and `{:.0}`
+(half-to-even) in others, **and that — not the precision — is what the
+example below measures**. ⇒ **A sheet of exactly 210.5 mm renders 210 in the
+page thumbnail's tooltip and 211 in the print dialogue, today, before any of this
+work starts.** ★ *Corrected 2026-09-13 13:30: first written with the two
+surfaces the wrong way round, and with the cause attributed to the f32/f64 split.
+Both paths land on exactly 210.5000000000, so only the rounding rule differs; the
+remedy therefore has to settle that rule, not just share a constant. The
+measurement is in `UNIT_SURFACES.md`.* There is also a **second
 fractional-inch formatter** at `text/new_document.rs:180-197`, independent of
 core's `FractionMode`. **This is a live defect the enumeration found; it is not
 a consequence of the unit work and does not wait for it.**

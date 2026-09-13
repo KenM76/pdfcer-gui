@@ -177,3 +177,56 @@ fine"; a debt entry says "this is wrong and has not been fixed yet."* Every run
 prints the outstanding count. Both directions fail: a site missing from the
 register (the debt grew) and a register line matching nothing (the register
 stopped describing the tree).
+
+## ★★★ SEVENTH — 2026-09-13, and the ENGINE named a third shape the six above had not
+
+The bump that brought `SnapKind::all()` arrived with a notice, and its ★★ section
+is the part worth keeping. `SnapKind` had no `all()`; its ordering test,
+`priority_ranks_follow_decision_011_high_to_low`, carried the same hand-written
+eight this project's `every_snap_kind_has_a_non_empty_marker_—` carried. Two
+projects, same enum, same defect, found from opposite sides of a request channel
+within a day of each other.
+
+But the engine's analysis went where mine had not. `SnapKind::priority()` is an
+exhaustive match, so a ninth kind **was** a compile error there — the
+completeness half was covered. What no longer existed was any check that the
+ranks are **unique**. Give a new kind rank `5`, colliding with
+`DerivedCenterline`:
+
+* `priority()` compiles, the match is satisfied;
+* the ordering test passes, the new kind is not in its copy of the list;
+* `snap_candidates` sorts by rank then by distance, so **two kinds sharing a
+  rank makes the winner between them depend on the order candidates happened to
+  be generated in** — a non-deterministic pick under the operator's cursor.
+
+⇒ **Three shapes now, and they are genuinely different failures:**
+
+| shape | what happened |
+|---|---|
+| a guard **deleted by an improvement** | `Unit::all()` stopped returning `[Unit; 6]` and the cardinality check vanished with the type |
+| a guard that **never worked** | `every_unit_is_named_distinctly` was decoration from the day it was written |
+| **a guard that worked for what it was WRITTEN for while never covering what it was NAMED for** | the snap ordering test covered completeness, via the compiler next door, and never covered the ordering — or the uniqueness the ordering assumes |
+
+★★ The third is the hardest to see, because it is a *working* guard. Nothing
+about it looks neglected: it is green, it is exercised, and the property it
+happens to enforce is real. The question that finds it is **"what does this
+test's NAME promise, and which line asserts that?"** — not "does this test
+pass" and not "is this list current".
+
+★ And the correction I had to make to my own fix while writing it: my first
+doc comment called `SnapKind` `#[non_exhaustive]` and called this the severe end
+of the class. It is neither. `SnapKind` derives plainly and
+`snap_marker_shapes` matches it exhaustively with no wildcard, so a ninth
+variant breaks this crate's build today. **The honest hazard is narrower and
+more interesting:** the protection is a neighbour's, not the test's, and it
+evaporates the day somebody adds a `_ =>` arm to that match — at which point
+both safeguards fail in the same instant, because they were never independent.
+⇒ **Check whether the compiler is already covering you before writing that it
+is not.** An overstated severity in a memory is the same defect as an
+overstated capability in product copy.
+
+★ The register earned its keep in its first week, exactly as predicted: fixing
+the site made `check-completeness-tests` go **red**, because the snapshot line
+no longer matched anything in the tree. A debt register that only fails in the
+direction of new debt would have sat there holding a row about a defect that no
+longer existed. Outstanding is 28 sites, 8 of them foreign, down from 29 and 9.

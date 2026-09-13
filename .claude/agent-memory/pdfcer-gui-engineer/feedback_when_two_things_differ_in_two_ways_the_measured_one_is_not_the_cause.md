@@ -38,3 +38,20 @@ works-here/fails-there contrast, list the differences on paper and try to
 blocked font would have taken ninety seconds and saved a wrong request. Related:
 [[a-limitation-sentence-is-a-citation-with-an-hours-long-shelf-life]],
 [[a-driven-failure-is-a-claim-about-the-check-too]].
+
+## ★ SECOND, 2026-09-13 — and this time both differences were in MY OWN analysis
+
+Two surfaces printed different whole millimetres for one sheet. They differ in
+two ways: one converts in `f32` and the other in `f64`, and one rounds with
+`{:.0}` while the other rounds with `.round()`. I blamed the precision — and
+published that — because precision had a bullet of its own in the enumeration
+and felt like the kind of thing that causes a numeric disagreement.
+
+Both paths land on exactly `210.5000000000`. The cause was the rounding rule
+alone, which the bullet directly *above* had already named correctly.
+
+⇒ **The tell here was available with no instrument at all: a tie.** `210.5` is
+exactly representable, so a precision story has to explain how two values that
+are equal print differently — and it cannot. When your hypothesis needs the
+inputs to differ, **print the inputs** before writing the sentence. Full account
+in [[a-capability-claim-in-product-copy-needs-the-same-citation-as-a-limitation-claim]].

@@ -26,10 +26,10 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-13 00:40 (the release cut) |
+| What | Command | Value, 2026-09-13 13:15 (re-measured after the engine bump, not carried over) |
 |---|---|---|
-| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `3e73a02` — moved from `d86cb19` at 09:40 today to take `reply_G013` (km, yd, mi; `Unit::all()` as a slice) |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `3e73a02` — ★ **level with the pin.** Level is the only state in which a sentence of the form *the engine cannot do X* is safe to write. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. ★★★ **And "level with HEAD" is not the same as "nothing is in flight":** at 09:00 today this row was level, and a reply that changed three of this project's source files was already written and waiting in `open/`. Level tells you the LOCK is current. It tells you nothing about the request channel, which is not a git repository and which no command in this table reads. |
+| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `408c93c` — **moved twice today.** `d86cb19` ⇒ `3e73a02` at 09:40 for `reply_G013` (km, yd, mi; `Unit::all()` as a slice), then `3e73a02` ⇒ `4851316` ⇒ `408c93c` at 13:00 for the notice that swept the same shape through `CheckStyle`, `InfoField` and a new `SnapKind::all()`, plus one core fix to the font pre-flight this project does not consume. ★ Two of those three moves were **API breaks taken deliberately in one bump** because the engine landed them together for exactly that reason — see the notice in `open/` |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `408c93c` — ★ **level with the pin.** Level is the only state in which a sentence of the form *the engine cannot do X* is safe to write. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. ★★★ **And "level with HEAD" is not the same as "nothing is in flight":** at 09:00 today this row was level, and a reply that changed three of this project's source files was already written and waiting in `open/`. Level tells you the LOCK is current. It tells you nothing about the request channel, which is not a git repository and which no command in this table reads. |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | `0.53.0` |
 | Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260913.2`, cut 2026-09-13 12:35, `prerelease=false`, `draft=false`, one asset, and it IS what `releases/latest` advertises — verified by reading it back rather than by having passed the right flag. Six commits. Published to **both** slots' worth of the rotation correctly: OneDrive `pdfcer-gui2` holds it, `pdfcer-gui1` still holds the 01:50 build, and the mirrored exe was `cmp`-ed against `target/release` rather than assumed. ★★★ **The order matters and it is new:** commit ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **221** (the sweep chunks 220 and runs 1 from the ALONE table separately — its own first line says `sweeping 220 checks in chunks, plus the ALONE table`) |
@@ -398,8 +398,13 @@ has to be able to tell that apart from the caveat being forgotten.
    millimetres. ★★★ **Step 2 does not wait on the engine and is the highest
    return in the row: the conversions already disagree.** Six private constants
    under two names, seven re-declared closures, two of them in `f32`,
-   inconsistent rounding ⇒ *a sheet of exactly 210.5 mm renders 211 in the page
-   thumbnail's tooltip and 210 in the print dialogue, today.* ⚠ Font and type
+   inconsistent rounding ⇒ *a sheet of exactly 210.5 mm renders 210 in the page
+   thumbnail's tooltip and 211 in the print dialogue, today.* ★ **The cause is
+   the rounding RULE, not the precision** — `.round()` is half-away-from-zero,
+   `{:.0}` is half-to-even, and both paths land on exactly 210.5000000000. Stated
+   backwards on both counts until 13:30, when the two expressions were compiled;
+   the remedy therefore has to settle the rounding rule, not just share a
+   constant. ⚠ Font and type
    sizes must be **excluded, and the exclusion written into the source**, or
    somebody eventually offers him a font size in kilometres. ⚠
    `text/markup.rs` is at **exactly 1,500 lines** and must be split before it

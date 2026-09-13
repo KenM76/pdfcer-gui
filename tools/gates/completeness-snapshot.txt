@@ -11,7 +11,6 @@ crates/pdfcer-gui/src/canvas/links.rs::each_destination_kind_has_its_own_trace_t
 crates/pdfcer-gui/src/canvas/markup/pen.rs::every_slot_ships_at_the_acrobat_value_it_was_measured_from	PenSlot	LOCAL	8
 crates/pdfcer-gui/src/canvas/markup/text.rs::each_kind_authors_its_own_subtype	TextMarkKind	LOCAL	3
 crates/pdfcer-gui/src/canvas/markup/text.rs::each_text_kind_takes_its_own_pen	PenSlot	LOCAL	4
-crates/pdfcer-gui/src/canvas/snap.rs::every_snap_kind_has_a_non_empty_marker_and_the_derived_one_is_distinct	SnapKind	FOREIGN	8
 crates/pdfcer-gui/src/dialogs/ocr.rs::each_named_refusal_says_something_different	Refusal	LOCAL	4
 crates/pdfcer-gui/src/dialogs/print/verdicts_tests.rs::each_claim_state_is_distinguishable_in_the_trace	ClipClaim	LOCAL	4
 crates/pdfcer-gui/src/dialogs/protect/tests.rs::each_failure_says_something_different	PrepareFailure	LOCAL	5

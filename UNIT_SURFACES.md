@@ -311,9 +311,39 @@ re-declarations, never shared: `text/print.rs:600, :646, :694, :768, :824`;
 - **★★★ Rounding is inconsistent for the same quantity.** `.round() as i64`
   (`text/print.rs` ×5, `text/new_document.rs` ×2, `dialogs/page_size.rs:285-286`)
   is half-away-from-zero; `{:.0}` display-rounding (`text/pages.rs:181`,
-  `text/panels/docprops.rs:242, :254`) is not. ⇒ **A sheet of exactly 210.5 mm
-  renders `211` in the page thumbnail's tooltip and `210` in the print dialogue,
-  today.** Two surfaces, one document, two answers.
+  `text/panels/docprops.rs:242, :254`) is half-to-**even**. ⇒ **A sheet of
+  exactly 210.5 mm renders `210` in the page thumbnail's tooltip and `211` in the
+  print dialogue, today.** Two surfaces, one document, two answers.
+
+  ★★★ **CORRECTED 2026-09-13 13:30, and the correction is worth more than the
+  claim was.** This illustration was first written with its two ends the other
+  way round — tooltip `211`, print `210` — and it reached three project
+  documents and a published release note in that form. It was then MEASURED, by
+  compiling both expressions against the same input:
+
+  ```text
+  210.5 mm authored into points   ->  f64 596.6929133858    f32 596.6929321289
+  tooltip  {:.0} on the f32 divide   ->  210.5000000000  ->  "210"
+  print    .round() as i64 on f64    ->  210.5000000000  ->  "211"
+  ```
+
+  ★★ **And the second error is the instructive one: the working explanation of
+  *why* blamed the f32/f64 split.** It is not that. Both paths land on exactly
+  `210.5000000000`; the disagreement is the rounding rule alone. The precision
+  split is real and is the bullet immediately below this one — on a 14,400 pt
+  sheet it costs about three decimal digits — but it contributes nothing to
+  this example. ⇒ *When two things differ in two ways, the difference that
+  already has a column in the analysis is not automatically the cause.* The
+  bullet above named the rounding rule correctly and then illustrated it
+  backwards, because the analysis was reasoned and the illustration was never
+  run.
+
+  ⇒ **This sharpens the remedy.** One conversion table is necessary and not
+  sufficient: the fix must also settle **the rounding rule for an
+  operator-facing length**, in one place, with the choice argued in the source.
+  Half-away-from-zero is the CAD convention and is already what every
+  `.round() as i64` site above does; `{:.0}`'s half-to-even is a Rust formatting
+  default that nobody in this project ever chose, and it is the minority.
 - **Precision differs by crate width.** The thumbnail and Document Properties
   paths convert in **f32**; everything else in f64. On a 14,400 pt A0-class sheet
   the f32 path loses roughly three decimal digits.

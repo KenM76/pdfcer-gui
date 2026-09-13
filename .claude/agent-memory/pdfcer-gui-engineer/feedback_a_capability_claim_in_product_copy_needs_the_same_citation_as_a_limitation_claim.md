@@ -76,3 +76,62 @@ claim has a "what it does NOT fix" section that refutes it).
   copy.** Keep the capability on the page and name the undriven families in the
   status section. Withdrawing a shipped feature is its own inaccuracy, and the
   tick discipline only protects a reader if the public page repeats it.
+
+## ★★★ AN ILLUSTRATION IS A CLAIM TOO — 2026-09-13, and this one was published with BOTH ends wrong
+
+The units enumeration found a real defect: the program holds six private
+points-to-millimetres constants and two different rounding rules, so two surfaces
+can print different whole numbers for one sheet. That analysis was correct, it
+named the two rounding rules correctly, and the remedy it proposed is still the
+right one.
+
+Then it was **illustrated**, in one sentence, and the sentence was invented:
+
+> *a sheet of exactly 210.5 mm renders **211** in the page thumbnail's tooltip
+> and **210** in the print dialogue*
+
+It reached `UNIT_SURFACES.md`, `OPERATOR_REQUESTS.md`, `RESUME.md` and the
+**published GitHub release note** for `v0.5.0-dev.20260913.2`. Compiling the two
+expressions took four minutes and gave the opposite:
+
+```text
+210.5 mm into points      f64 596.6929133858    f32 596.6929321289
+tooltip  {:.0} on f32  ->  210.5000000000  ->  "210"
+print    .round() on f64 -> 210.5000000000  ->  "211"
+```
+
+★★ **And the attributed CAUSE was wrong too, which is the half that would have
+misdirected the fix.** The release note said *"two of them in single
+precision"*. Precision has nothing to do with it: **both** paths land on exactly
+`210.5000000000`. The whole disagreement is that `.round()` is
+half-away-from-zero and `{:.0}` is half-to-**even**. The f32/f64 split is a real
+separate defect — about three decimal digits on a 14,400 pt sheet — and it
+contributed nothing here. ⇒ See
+[[when-two-things-differ-in-two-ways-the-measured-one-is-not-the-cause]]: the
+difference that already had a bullet in my own analysis got the blame.
+
+⇒ **The consequence for the remedy, which is why this is worth more than the
+correction.** "Share one conversion constant" would have fixed nothing in this
+example — both sites already convert to the same value. The fix has to settle
+**the rounding rule for an operator-facing length**, in one place, with the
+choice argued in the source. An unmeasured illustration had been quietly
+steering the fix at the wrong target.
+
+**How to apply:**
+
+- **A worked example is a measurement, not an explanation.** The surrounding
+  analysis being right is exactly what makes the example feel safe to write from
+  the same reasoning — and the example is the part a reader will quote back,
+  because it is the concrete one.
+- **Anything of the form "X shows A while Y shows B" must be RUN before it is
+  written.** Forty lines of `rustc` is the whole cost. If it cannot be run
+  cheaply, write the property (*"the two rounding rules disagree on a tie"*)
+  and no numbers.
+- **Numbers in a sentence are the first thing to doubt when correcting it, and
+  the attributed cause is the second.** I corrected the direction first and
+  nearly stopped there; the cause was wrong independently.
+- ★ **The published artifact is part of the correction.** `gh release edit
+  --notes-file` on a shipped release, with a dated parenthetical saying what it
+  used to say. A document corrected in the repo while the release note still
+  carries the old claim is worse than either alone, because the two now disagree
+  in public.

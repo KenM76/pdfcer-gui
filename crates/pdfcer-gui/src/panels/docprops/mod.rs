@@ -243,18 +243,50 @@ pub const REGION_ANOMALY_REREAD: &str = "properties.load-anomalies.reread"; // u
 
 /// How many fields `InfoField::all()` returns.
 ///
-/// ★ Derived from the engine's array rather than written as `4`, because
+/// ★ Derived from the engine's list rather than written as `4`, because
 /// [`InfoDrafts`] holds a fixed-size array of drafts and the two must be the
-/// same length. A fifth field added upstream changes `all()`'s return type,
-/// which changes this, which changes `[String; FIELDS]` — so the drafts follow
+/// same length. A fifth field added upstream lengthens the slice, which
+/// changes this, which changes `[String; FIELDS]` — so the drafts follow
 /// automatically instead of the fifth field being dropped off the end.
 ///
-/// **This is the protection the LABEL function cannot have.** `InfoField` is
+/// # ★★★ The kind of protection this is changed on 2026-09-13
+///
+/// Until engine `4851316`, `all()` returned `[Self; 4]`, and this comment
+/// argued that the cardinality lived in a **type**, so a fifth field upstream
+/// broke the build at every call site. That was true. The engine removed it on
+/// purpose, and its reasoning is worth having here rather than paraphrased: an
+/// accessor whose entire purpose is that a front end **not** hard-code a list
+/// which drifts had put that list's length into its own signature — so every
+/// caller hard-coded it anyway, in the one place that is hardest to see. It
+/// returns `&'static [Self]` now.
+///
+/// ⇒ **What survives is the derivation. What is gone is the break.**
+/// `<[T]>::len` is const-stable, so `FIELDS` is still computed from the
+/// engine's own list at compile time and `[String; FIELDS]` still follows it.
+/// But a fifth field now arrives **silently**: the drafts array grows to
+/// match, the loop over `all()` covers the new position, and
+/// `crate::text::panels::docprops::info_label`'s `_` arm hands it its own PDF
+/// key as a label until someone writes a better one. That is a graceful
+/// degradation and not a defect — the panel keeps working and the field is
+/// editable the day it appears.
+///
+/// ★★ **It is silent, though, and that is the part to know before trusting
+/// this constant to raise an alarm: it will not raise one.** Two instruments
+/// do. `tools/gates/check-engine-api-drift.sh` enumerates every public item in
+/// the pinned engine and fails on one this repository names nowhere, which is
+/// exactly what a new variant is. And
+/// `tools/ui-verify/src/checks/properties_metadata.rs` counts the boxes the
+/// panel actually draws against `InfoField::all()` in a running window, which
+/// is the only oracle that can tell a field that was added from a field that
+/// was added *and drawn*.
+///
+/// **The label function still cannot have any of this.** `InfoField` is
 /// `#[non_exhaustive]`, so a `match` on it in this crate needs a `_` arm and
 /// compiles for ever whatever is added — see
-/// `crate::text::panels::docprops::info_label`. Here the
-/// dependency is on the array's *length*, which is a type-level fact
-/// `#[non_exhaustive]` does not weaken.
+/// `crate::text::panels::docprops::info_label`. That was the contrast this
+/// comment used to draw, and it is weaker than it was: the difference is now
+/// between a constant that follows silently and a `match` that falls through
+/// silently, rather than between a build break and a fall-through.
 const FIELDS: usize = InfoField::all().len();
 
 /// The operator's half-typed metadata, between frames.
@@ -314,7 +346,23 @@ impl InfoDrafts {
     /// wrote — two different questions, and only the first is what
     /// [`crate::panels::forms::rows::commit`] wants.
     fn sync(&mut self, doc: &OpenDoc) -> [Option<InfoText>; FIELDS] {
-        let stored = InfoField::all().map(|field| doc.session.info_text(field));
+        // ★ `from_fn` over `get`, rather than `all().map(...)`, because
+        // `all()` returns a **slice** as of engine `4851316` and a slice has no
+        // array-producing `map`. The return type must stay `[_; FIELDS]`: the
+        // caller zips it against `[String; FIELDS]`.
+        //
+        // `get(i)` rather than `[i]` — `clippy::indexing_slicing` is denied
+        // crate-wide, and the denial is doing real work here rather than being
+        // satisfied. `i` is always in range because `FIELDS` **is**
+        // `all().len()`, so the `None` arm is unreachable; writing it as a
+        // fallible read is what keeps that unreachability a fact about this
+        // line instead of an assumption inherited from a `const` fifteen lines
+        // up.
+        let stored: [Option<InfoText>; FIELDS] = core::array::from_fn(|index| {
+            InfoField::all()
+                .get(index)
+                .and_then(|field| doc.session.info_text(*field))
+        });
         if self.seeded_at != Some(doc.edit_epoch) {
             self.seeded_at = Some(doc.edit_epoch);
             for (draft, value) in self.drafts.iter_mut().zip(stored.iter()) {
@@ -394,7 +442,7 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
 
     let stored = drafts.sync(doc);
 
-    for (index, field) in InfoField::all().into_iter().enumerate() {
+    for (index, field) in InfoField::all().iter().copied().enumerate() {
         // `get_mut`/`get` rather than indexing: both arrays are `[_; FIELDS]`
         // and the loop is over a `[_; FIELDS]`, so this cannot fail — and
         // `clippy::indexing_slicing` is denied crate-wide precisely so that a
@@ -962,19 +1010,59 @@ mod tests {
         );
     }
 
-    /// The draft array is exactly as long as the engine's field list.
+    /// The four fields this panel was written for are still in the engine's
+    /// list.
     ///
-    /// ★ The point of the assertion is the **direction it fails in**. A fifth
-    /// `InfoField` added to `pdfcer-core` changes `InfoField::all()`'s return
-    /// type, `FIELDS` follows it, and `[String; FIELDS]` follows that — so the
-    /// build breaks at the array rather than the fifth field being silently
-    /// dropped off the end of a hard-coded four. This test states the property
-    /// so a reader does not have to derive it from three `const` definitions.
+    /// # ★★★ What this test used to assert, and why that could not fail
+    ///
+    /// It asserted `FIELDS == InfoField::all().len()` and
+    /// `drafts.len() == InfoField::all().len()`, with a doc comment explaining
+    /// *"the direction it fails in"*. It has no such direction. `FIELDS` **is**
+    /// `InfoField::all().len()`, and `drafts` is `[String; FIELDS]` — all
+    /// three values are one value wearing three names, so both assertions were
+    /// `x == x` and the test could not go red for any engine change whatsoever.
+    /// It had been that way since it was written; the slice bump is only what
+    /// made someone read it.
+    ///
+    /// ⇒ **A check that cannot fail is not evidence, and it is worse than no
+    /// check, because its name occupies the space where a real one would go.**
+    ///
+    /// # What replaced it
+    ///
+    /// The property this panel actually depends on, which is a claim about the
+    /// **engine** and can therefore be wrong: that `/Title`, `/Author`,
+    /// `/Subject` and `/Keywords` are all still offered. Every region name in
+    /// [`REGION_FIELD_PREFIX`], every label in
+    /// `crate::text::panels::docprops::info_label`, and the driven check that
+    /// reads index 0 as the title were written against those four. A field
+    /// ADDED upstream degrades gracefully and is caught by
+    /// `check-engine-api-drift`; a field REMOVED upstream silently renumbers
+    /// every position this panel addresses by index, and nothing else in this
+    /// repository would notice.
     #[test]
     fn the_draft_array_tracks_the_engines_field_list() {
-        assert_eq!(FIELDS, InfoField::all().len());
+        let fields = InfoField::all();
+        for expected in [
+            InfoField::Title,
+            InfoField::Author,
+            InfoField::Subject,
+            InfoField::Keywords,
+        ] {
+            assert!(
+                fields.contains(&expected),
+                "{expected:?} is no longer in `InfoField::all()`. Positions in \
+                 this panel are addressed by index and every region name was \
+                 written against that order -- read this test's doc comment \
+                 before adjusting anything."
+            );
+        }
         let drafts = InfoDrafts::default();
-        assert_eq!(drafts.drafts.len(), InfoField::all().len());
+        assert_eq!(
+            drafts.drafts.len(),
+            fields.len(),
+            "the drafts array and the engine's list have come apart, which \
+             `[String; FIELDS]` is supposed to make impossible"
+        );
         assert_eq!(
             drafts.seeded_at, None,
             "a fresh panel has never been seeded, and epoch 0 is a real value \
@@ -988,7 +1076,11 @@ mod tests {
     /// which is worse than a missing one because it looks like it works.
     #[test]
     fn every_info_field_is_labelled_and_no_label_repeats() {
-        let labels: Vec<&str> = InfoField::all().into_iter().map(t::info_label).collect();
+        let labels: Vec<&str> = InfoField::all()
+            .iter()
+            .copied()
+            .map(t::info_label)
+            .collect();
         let unique: std::collections::BTreeSet<&str> = labels.iter().copied().collect();
         assert_eq!(
             unique.len(),

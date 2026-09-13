@@ -41,3 +41,34 @@ Related: [[feedback_a_check_that_cannot_fail_is_not_evidence]],
 [[feedback_a_skip_is_not_red_so_a_check_can_stop_running_unnoticed]],
 [[feedback_a_trace_grepping_check_passes_on_a_build_that_crashed]],
 [[feedback_a_commit_message_can_describe_work_that_never_landed]].
+
+## ★★★ AND THE EXIT CODE THAT COMES BACK IS THE WRAPPER'S — 2026-09-13
+
+`bash tools/gates/run-all.sh` overran the 600-second tool timeout, was moved to
+the background, and the completion notice read:
+
+    Background command "Run all gates" completed (exit code 0)
+
+with the log file ending `[exited with code 0]`. The log's own last three lines,
+immediately above that, read:
+
+    45 passed, 2 failed, 0 skipped
+    RESULT: FAIL — 2 gate(s) found a violation.
+
+`run-all.sh` ends `if [ "$nf" -gt 0 ]; then ... exit 1; fi`. It exited 1. The
+zero belongs to the harness's backgrounding wrapper, which succeeded at running
+the thing.
+
+⇒ **A long command's reported exit code stops being the command's the moment
+it is backgrounded.** This is the same shape as the stopped-task memory — the
+status that comes back describes the wrapper's job, not the work's — and it is
+worse here, because `exit code 0` on a gate runner is precisely the sentence
+that ends an investigation.
+
+**How to apply:** for anything whose verdict matters — gates, sweeps, test
+runs — read the **script's own printed verdict line** out of the log and never
+the reported code. If a runner has no such line, that is the first defect to
+fix: make it print a tally that can be zero, and a `RESULT:` line that can say
+FAIL, before trusting it at any length. And prefer `run_in_background: true`
+from the start for anything that might overrun, so the exit code was never going
+to be the oracle in the first place.

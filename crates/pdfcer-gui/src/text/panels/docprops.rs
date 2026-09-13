@@ -371,7 +371,7 @@ mod tests {
     /// property that can actually reach the operator.
     #[test]
     fn the_fallback_and_the_mapping_are_indistinguishable_for_every_known_field() {
-        for field in pdfcer_core::edit::InfoField::all() {
+        for field in pdfcer_core::edit::InfoField::all().iter().copied() {
             let key = core::str::from_utf8(field.key()).unwrap_or("");
             assert_eq!(
                 info_label(field),

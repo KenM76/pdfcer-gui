@@ -522,21 +522,66 @@ mod tests {
         assert_eq!(snap_commit_clicks(SnapKind::SegmentCenterline), 1);
     }
 
+    /// Every snap kind the **engine** offers draws something, and the derived
+    /// centerline's glyph is not the routine one's.
+    ///
+    /// # ★★★ This test carried its own copy of the engine's list until 2026-09-13
+    ///
+    /// It opened `let kinds = [SnapKind::Node, — eight of them — SnapKind::Axis];`
+    /// and looped over that, under a name promising **every** kind. The array was
+    /// right, and had always been right, which is the whole difficulty with the
+    /// shape: a hand-written list agrees with the real one on every day except
+    /// the one that matters, and on that day it does not go red — it goes green
+    /// over eight of nine while its name still claims completeness.
+    ///
+    /// ## What was actually protecting it, and why that is not the same thing
+    ///
+    /// Be precise about the severity, because the first draft of this comment
+    /// overstated it. `SnapKind` is **not** `#[non_exhaustive]` (see
+    /// `pdfcer-core/src/vector/snap.rs`), and [`snap_marker_shapes`] matches it
+    /// **exhaustively with no wildcard arm**. So a ninth variant upstream breaks
+    /// this crate's build today, at that match, and the stale array would be
+    /// found while fixing the error.
+    ///
+    /// ⇒ That is real protection. It is also **somebody else's**, and it is one
+    /// ordinary edit from being gone: the day a `_ => Vec::new()` arm is added to
+    /// `snap_marker_shapes` — a reasonable thing to write, and the exact thing
+    /// that was written in `info_label` for `InfoField` — the compile error
+    /// disappears, the new kind silently draws nothing, and the one test whose
+    /// job was to catch a kind that renders nothing never looks at it. The two
+    /// safeguards fail in the same instant because they were never independent.
+    ///
+    /// Consuming `SnapKind::all()` makes this test's coverage its own property
+    /// rather than a side effect of how the neighbouring function is written.
+    /// `tools/gates/check-completeness-tests.py` had it registered as a FOREIGN
+    /// row for that reason; the engine added the accessor in the same bump that
+    /// turned `InfoField::all()` into a slice, and for the same stated reason —
+    /// its rationale is worth reading at `SnapKind::all()` itself, where it
+    /// records that this project reported the shape after finding the identical
+    /// defect in its own tests within the hour.
+    ///
+    /// **What this still cannot catch** — a kind whose marker is
+    /// indistinguishable *on screen* from another kind's. Only the one pair below
+    /// is checked, and only by shape count. The general property needs a
+    /// rendered-pixel oracle, not a unit test.
     #[test]
     fn every_snap_kind_has_a_non_empty_marker_and_the_derived_one_is_distinct() {
-        let kinds = [
-            SnapKind::Node,
-            SnapKind::Endpoint,
-            SnapKind::Center,
-            SnapKind::Midpoint,
-            SnapKind::Intersection,
-            SnapKind::DerivedCenterline,
-            SnapKind::SegmentCenterline,
-            SnapKind::Axis,
-        ];
-        for k in kinds {
+        let kinds = SnapKind::all();
+        // An empty or truncated list from the engine would make the loop below a
+        // green test that asserted nothing at all. Cheap to rule out, and this is
+        // the failure mode a test named "every" must not have.
+        assert!(
+            kinds.len() >= 8,
+            "`SnapKind::all()` returned {} kinds; this test claims coverage and a \
+             short list would make that claim vacuous",
+            kinds.len()
+        );
+        for k in kinds.iter().copied() {
             // NOT A THEME COLOUR: an arbitrary argument; this asserts geometry.
-            assert!(!snap_marker_shapes(Pos2::new(10.0, 10.0), k, Color32::RED, 4.0).is_empty());
+            assert!(
+                !snap_marker_shapes(Pos2::new(10.0, 10.0), k, Color32::RED, 4.0).is_empty(),
+                "{k:?} draws no marker, so that snap would be silent on screen"
+            );
         }
         // The derived centerline's glyph must not be visually confused with the
         // routine centerline tick (§2.3.1) — here proven by a different shape
