@@ -12,7 +12,15 @@ use super::*;
 // -- see `prefs::printing`'s header on why -- so the tests that build a
 // non-default `PrintPrefs` name them at their real home.
 use crate::dialogs::print::spooler::{Duplex, Orientation, PageSubset, PaperChoice, ScaleMode};
+// O196's three groups store the export windows' OWN types, identically, so the
+// tests that build a non-default `ExportPrefs` name them at their real homes --
+// two of which are the engine's, because a DXF's units and its text policy are
+// the engine's vocabulary and mirroring them here is what `exporting`'s header
+// forbids.
+use crate::app::actions::exporttext::{LineEndings, PageSeparator};
+use crate::app::actions::imageexport::{ImageFormat, PageScope};
 use crate::viewer::{FitMode, ViewState};
+use pdfcer_core::export::dxf::{DxfText, DxfUnits};
 
 /// ★ Every value round-trips through the file.
 ///
@@ -164,6 +172,40 @@ fn every_preference_round_trips_through_the_file() {
                     p.set("edit", false);
                     p.set("proof", true);
                     p
+                },
+                // ★★ O196's twelve keys, every one non-default, per this
+                // test's own rule. The second group whose parser and writer
+                // live outside `prefs::file` -- in `prefs::exporting`, together
+                // -- so this assertion is what proves the THIRD link of the
+                // delegation chain reaches both halves.
+                //
+                // ★ The two page scopes are set to OPPOSITE values, and that
+                // is the pair worth looking at: the image window ships
+                // `CurrentPage` and the text window ships `AllPages`, so a
+                // writer or parser that collapsed them onto one key would land
+                // each group on the other's default and still look plausible.
+                // Crossed over, it fails.
+                export: ExportPrefs {
+                    image: ExportImagePrefs {
+                        format: ImageFormat::Emf,
+                        scope: PageScope::AllPages,
+                        // Off the hundred, so a writer that rounded or
+                        // truncated to an integer would land on 601 or 600.
+                        dpi: 601.5,
+                        transparent: false,
+                        quality: 55,
+                    },
+                    text: ExportTextPrefs {
+                        scope: PageScope::CurrentPage,
+                        separator: PageSeparator::Marker,
+                        line_endings: LineEndings::Windows,
+                        byte_order_mark: true,
+                    },
+                    dxf: ExportDxfPrefs {
+                        units: DxfUnits::Millimetres,
+                        fit_arcs: false,
+                        text: DxfText::Omit,
+                    },
                 },
             };
             let (read_back, notes) = Prefs::parse(&original.write_to_string());
@@ -679,6 +721,40 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             p.set("read", true);
             p.set("drawing review", false);
             p
+        },
+        // ★ O196. A DIFFERENT set from the round-trip test above, per this
+        // test's own rule, and chosen for what it asks: does every token this
+        // writer can emit parse back cleanly? So the enums are the arms the
+        // other test does not use, and the numbers sit at the ENDS of their
+        // ranges -- which is where a writer's formatting breaks.
+        export: ExportPrefs {
+            image: ExportImagePrefs {
+                // The one format whose token the other test does not emit.
+                format: ImageFormat::Svg,
+                scope: PageScope::CurrentPage,
+                // ★ The very top of the control's range. A resolution this
+                // large is exactly where a writer that formatted through an
+                // exponent would start emitting `4.8e3`, which this module's
+                // own parser reads fine -- and which the file's comment block
+                // does not describe, so a hand-editor would meet a spelling
+                // pdfcer taught them nowhere.
+                dpi: MAX_EXPORT_DPI,
+                transparent: false,
+                // The bottom of the range, so both ends are exercised across
+                // the two numeric keys.
+                quality: MIN_JPEG_QUALITY,
+            },
+            text: ExportTextPrefs {
+                scope: PageScope::AllPages,
+                separator: PageSeparator::FormFeed,
+                line_endings: LineEndings::AsExtracted,
+                byte_order_mark: true,
+            },
+            dxf: ExportDxfPrefs {
+                units: DxfUnits::Inches,
+                fit_arcs: true,
+                text: DxfText::Entities,
+            },
         },
     };
     let (_, notes) = Prefs::parse(&prefs.write_to_string());

@@ -433,10 +433,31 @@ impl Prefs {
                 // single `match` below stays the one place a note is made. A
                 // second `match` per family is how one of them comes to report
                 // a bad value as an unknown key.
+                //
+                // ★ A THIRD joined them on 2026-09-13: the twelve
+                // `export_*` keys -- O196, the same complaint O166 made about
+                // the Print window, made about the three Export windows. Same
+                // arrangement for the same reason, and the chain is still flat:
+                // `offpage`, then `printing`, then `exporting`, each falling
+                // through on `NotMine`, all three reported by the one `match`
+                // below.
+                //
+                // ⚠ The chain is ORDER-INSENSITIVE and must stay that way. No
+                // two families claim a key, so which one is asked first cannot
+                // change an outcome -- and the moment that stops being true the
+                // file has two keys with one spelling, which is a defect in the
+                // vocabulary rather than in this chain. ⇒ If a family is ever
+                // added whose keys could collide, give it a prefix, not a
+                // position.
                 _ => {
                     let outcome = match offpage::parse_key(&mut prefs.off_page, key, value) {
                         printing::KeyOutcome::NotMine => {
-                            printing::parse_key(&mut prefs.print, key, value)
+                            match printing::parse_key(&mut prefs.print, key, value) {
+                                printing::KeyOutcome::NotMine => {
+                                    exporting::parse_key(&mut prefs.export, key, value)
+                                }
+                                mine => mine,
+                            }
                         }
                         mine => mine,
                     };
@@ -809,6 +830,12 @@ impl Prefs {
         // has answered nothing, because a preference nobody can discover is a
         // preference nobody has.
         offpage::write_block(&self.off_page, &mut out);
+
+        // The three Export windows' groups -- O196. Same arrangement, same
+        // reason, and written unconditionally for the same one: the comment
+        // blocks are how an operator learns that `export_image_format` exists
+        // and what may be written there.
+        exporting::write_block(&self.export, &mut out);
 
         out
     }

@@ -112,6 +112,12 @@ pub mod opening;
 /// answer is per mode at all* is the whole of the operator's request, and
 /// because it carries this group's file format — parser and writer
 /// together, on [`printing`]'s precedent. See its header.
+/// ★★ **What the three Export windows open with** -- `OPERATOR_REQUESTS.md`
+/// **O196**, 2026-09-13. Its own file for the reason [`printing`] has one: it
+/// carries this group's whole file format, parser and writer together, and the
+/// judgement about *which* of those windows' settings may be remembered is
+/// worth keeping. The DXF scale is the interesting omission; see its header.
+pub mod exporting;
 pub mod offpage;
 /// ★ Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
@@ -131,6 +137,14 @@ use std::path::PathBuf;
 
 pub use cache::PageCache;
 pub use chrome::{DEFAULT_UI_SCALE, MAX_UI_SCALE, MIN_UI_SCALE, UI_SCALE_STEP};
+// `pub`, unlike [`PrintPrefs`] below: every type these three groups hold --
+// `ImageFormat`, `PageScope`, `PageSeparator`, `LineEndings` and the engine's
+// own `DxfUnits` and `DxfText` -- is already `pub`, so no visibility chain
+// forces them down. Same storage decision, different constraint.
+pub use exporting::{
+    ExportDxfPrefs, ExportImagePrefs, ExportPrefs, ExportTextPrefs, MAX_EXPORT_DPI,
+    MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY,
+};
 pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
 pub use pastechords::PasteChords;
@@ -839,6 +853,21 @@ pub struct Prefs {
     /// argued in [`printing`]'s header: storing the real types rather than a
     /// mirrored set is what makes a new variant a compile error here instead of
     /// a silent round-trip to the default.
+    /// ★★ **What the three Export windows open with** -- O196.
+    ///
+    /// One field holding three groups, because a window reads only its own and
+    /// a fourth export window should add a struct rather than widen one. Read
+    /// by each dialogue's `open`, written back when Export is committed.
+    ///
+    /// `pub` where [`print`](Self::print) below is `pub(crate)`: these groups
+    /// hold only types that are already `pub`, so nothing forces them down.
+    ///
+    /// ⚠ The DXF **scale** is deliberately not in here, and that omission is
+    /// the most consequential decision in [`exporting`]. A remembered scale
+    /// would put yesterday's drawing's number in the box, looking exactly as
+    /// right as today's -- which is the defect that window exists to prevent.
+    pub export: ExportPrefs,
+
     pub(crate) print: PrintPrefs,
 }
 
@@ -914,6 +943,12 @@ impl Default for Prefs {
             // fresh `userdata` folder opens the Print window in the state every
             // previous build of pdfcer opened it in. Asserted, not assumed —
             // see `printing::tests::the_default_is_what_the_dialog_used_to_hard_code`.
+            // ★ Exactly what the three Export windows hard-coded before O196,
+            // so a fresh `userdata` folder opens each of them in the state every
+            // previous build of pdfcer opened it in. Asserted per window -- see
+            // `exporting::tests::the_image_default_is_what_the_dialog_used_to_hard_code`
+            // and its two siblings.
+            export: ExportPrefs::default(),
             print: PrintPrefs::default(),
         }
     }
