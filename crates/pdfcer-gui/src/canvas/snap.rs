@@ -551,6 +551,18 @@ mod tests {
     /// job was to catch a kind that renders nothing never looks at it. The two
     /// safeguards fail in the same instant because they were never independent.
     ///
+    /// ## ⇒ The general question, and it is not the one the name asks
+    ///
+    /// Not only *"does this guard cover the property it is named for?"* but
+    /// *"is that coverage **its own**, or borrowed from the current shape of a
+    /// neighbouring function?"* — **a borrowed guard has no owner, so nobody is
+    /// told when it is returned.** The commit that adds a `_ =>` arm to
+    /// [`snap_marker_shapes`] is a commit *about* `snap_marker_shapes`; it has
+    /// no reason to read this test, no gate names the dependency, and nothing
+    /// anywhere goes red on the day the protection stops existing. A guard that
+    /// reads its own subject fails loudly the moment its subject changes, which
+    /// is the only difference that matters.
+    ///
     /// Consuming `SnapKind::all()` makes this test's coverage its own property
     /// rather than a side effect of how the neighbouring function is written.
     /// `tools/gates/check-completeness-tests.py` had it registered as a FOREIGN
