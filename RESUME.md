@@ -32,9 +32,9 @@ drifting from a count is the defect this project has spent eight corrections on.
 | Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `3df0c72` — **level with the pin**, and the commit is the librarian's 546th filing. It read `4cb18e1` at 22:23 the previous evening and `5e17017` at 19:10 before that, which is exactly why this row is re-measured rather than quoted |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | `0.53.0` |
 | Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260914.1`, cut 2026-09-14 04:39 UTC, `prerelease=false`, `draft=false`, one asset `pdfcergui-20260914-0038-3df0c72-a227f94.zip` of 23,268,522 bytes, and it IS what `releases/latest` advertises — verified by reading the API back rather than by having passed the right flag. OneDrive slot **`pdfcer-gui1`** carries it; `pdfcer-gui2` still holds the 2026-09-13 18:38 build, which is the point of alternating slots. ★★ **4 commits unreleased** at 2026-09-14 02:10 — `git fetch --tags origin && git describe --tags` answers `v0.5.0-dev.20260914.1-4-g…`. ⚠ **This row drifts with every commit, including the one that edits this row**, so it is the one figure here that is stale by construction; re-run the command rather than reading the number. ★★★ **The order matters, and it is the order this release was cut in:** commit ⇒ `touch crates/pdfcer-gui/build.rs` ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ✓ **The stamp check is what proves the `touch` worked**: About read *"built 2026-09-14 04:36 UTC from a227f94; engine 0.53.0 at 3df0c72"* — the release commit, not the one before it. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. ⚠ `build.rs` has no `rerun-if-changed` on `.git/HEAD`, so the rebuild after the commit is a no-op and ships the *pre-commit* stamp unless you `touch` it between them |
-| Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **223** — one more than the last release: `set_scale_reads_the_group_it_is_about_to_overwrite`. ⚠ **the `$` is load-bearing and its absence answers 225.** `--list` prints a second small table, the `--exe` targets, whose rows are also two-space-indented lowercase words; without the end anchor the count silently picks up `pdfcer-gui` and `pdfcer-legacy` from it. That is a *count command* being wrong rather than a quoted answer being stale, which is a different defect and the harder one to see. ★ If a count here is about double what you expect, you counted lines: `--list` prints two per check plus an eight-line header, so a `wc -l` answers `2n + 8` |
+| Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **224** — one more than the last release, which had 223: `the_export_windows_open_on_the_settings_you_last_used`, which discharges the last item owed on O196 and is NOT yet in a shipped zip. ⚠ **the `$` is load-bearing and its absence answers 225.** `--list` prints a second small table, the `--exe` targets, whose rows are also two-space-indented lowercase words; without the end anchor the count silently picks up `pdfcer-gui` and `pdfcer-legacy` from it. That is a *count command* being wrong rather than a quoted answer being stale, which is a different defect and the harder one to see. ★ If a count here is about double what you expect, you counted lines: `--list` prints two per check plus an eight-line header, so a `wc -l` answers `2n + 8` |
 | Gates | `bash tools/gates/run-all.sh` | **53 passed, 0 failed, 0 skipped**, exit 0 — FOUR more than at the last release, and the four are two gates plus the self-test each of them carries: `check-region-names` and `check-test-temp-paths`. ⚠ **This cell said *two* until 2026-09-14**, because it was counted by remembering the gate that was interesting rather than by diffing the runner; `git diff v0.5.0-dev.20260913.4..HEAD -- tools/gates/run-all.sh` shows four added `run` lines and `FEATURES.md`'s twenty-ninth revision says forty-nine, which is 53 minus four. ★ What that gate is for: a `REGION_*` constant is `pub`, so **nothing in the toolchain fires when a region is declared and published by no one** — not `dead_code`, not clippy at `-D warnings`, not any other gate here. The symptom reaches a reader as a driven check reporting a control that is plainly on screen. It found three, all in `dialogs/export_image.rs`, all now real |
-| Unit tests | `cargo test --workspace` | **4,284 passing, 0 failed, 51 ignored, 4,335 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,335. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. ★ **The cross-count is also how you know a new test RAN**: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function — the summed figure moved by nothing and so did the listed one. ✓ **Two concurrent runs are safe as of `7b48dd0`**, and that is measured rather than assumed: the pre-fix source was rebuilt as a CONTROL and its test binary run twice at once — red 3 rounds of 3 — then the fixed binary, green 5 of 5, then the three affected test binaries in full, twice simultaneously. ★ The control named *different* victims than the failure that started it, which is the finding itself: the casualty is whichever test lost the race |
+| Unit tests | `cargo test --workspace` | **4,290 passing, 0 failed, 51 ignored, 4,341 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,341. ✓ Six more than the release, and the six are `export_remembered.rs`'s own, which is how their RUNNING was confirmed rather than their compiling. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. ★ **The cross-count is also how you know a new test RAN**: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function — the summed figure moved by nothing and so did the listed one. ✓ **Two concurrent runs are safe as of `7b48dd0`**, and that is measured rather than assumed: the pre-fix source was rebuilt as a CONTROL and its test binary run twice at once — red 3 rounds of 3 — then the fixed binary, green 5 of 5, then the three affected test binaries in full, twice simultaneously. ★ The control named *different* victims than the failure that started it, which is the finding itself: the casualty is whichever test lost the race |
 | Source files | `find crates -name '*.rs' \| wc -l` | 790 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 174 rows — wanted 35 / blocked 8 / unknown 0 / declined 14 / **shipped 117**. ⚠ **Rewrite the five headings from the walker's own printed figures, never by arithmetic** — that instruction is in the walker's output because the arithmetic has been got wrong seven times. |
 | Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | **46** — one more than at 01:07, and it is `done_G014_page_verbs_and_the_gesture_without_its_outcome_CONSUMED.md`. **G014 is consumed and nothing is owed either way.** Its §3 answers the addendum's UNRESOLVED row the way only this side could: not with feature-list prose but with **command ids**, because R8 makes reachability measurable — id in the catalogue **and** placed in the manifest. insert / extract / delete / rotate are named commands; **`reorder` is not a command at all** — the verb is carried by `pages.move_up` / `pages.move_down` and by the Pages panel's drag, so a by-name search for the word finds nothing and concludes wrongly. **G013 is now mirrored in this repository**, closing the thing this row warned about for a day: the borrowed-guard clause lives in `crates/pdfcer-gui/src/canvas/snap.rs`, in the doc comment above the `SnapKind::all()` completeness test that the note is about, and the `CheckStyle::all()` gap it logged was already an `ENGINE_BACKLOG.md` row. ★★★ **A declined offer still gets a `done_*` even though nothing is owed**, and that is a rule rather than politeness: a decline that lives only in a reply nobody consumed reads, six weeks later, as an open question, and the next session re-offers it. ⚠ **Re-`ls` this folder before quoting it** — it changes faster than any other input to this project, it is in no git repository, and nothing warns you. |
@@ -106,7 +106,7 @@ about the export windows' memory.** O196 ships carried by unit tests and one
 off-screen smoke launch, which is below this project's own bar; what the check
 has to do, and the four traps that make a naive one pass on a broken build,
 are at the end of the O196 row below. Saying so in the notes is cheaper than
-having it found.
+having it found. ✓ **Discharged 2026-09-14, AFTER that zip was cut** — the check exists, drove green over `fixtures/a1-titleblock.pdf` and was falsified by a narrow sabotage. This paragraph is therefore true of the SHIPPED release and stops being true at the next one; re-read it before carrying it into new notes.
 
 ⚠ **`build.rs` declares `rerun-if-changed` on `src`, `Cargo.toml` and
 `../../Cargo.lock` — and NOT on `.git/HEAD`.** So the rebuild that is supposed to
@@ -599,37 +599,58 @@ reported zero of three planted violations while printing PASS.
    measurement has to be scoped the way the LANGUAGE scopes it — by import — or
    it is measuring the wrong relationship and looks clean.
 
-   → **What remains on this row is the driven check**, on
-   `print_remembered.rs`'s two-launch control/seed pattern: launch once against
-   a reset preferences file to MEASURE the shipped defaults off the trace, SKIP
-   naming any seeded field that equals its default, then relaunch and compare.
-   The three Export-image regions now exist, so a check may press them.
+   ✓ **The driven check landed 2026-09-14: `export_remembered.rs`,
+   `the_export_windows_open_on_the_settings_you_last_used`.** Two launches on
+   `print_remembered.rs`'s control/seed pattern — reset the preferences file,
+   launch once to MEASURE this build's shipped defaults off the trace, require
+   every seeded value to differ from its measured default (SKIP naming any that
+   does not), then relaunch and compare. Driven green over
+   `fixtures/a1-titleblock.pdf` under `--no-input`: 12 of 12 came back.
 
-   ⚠⚠ **Four traps, and each of them produces a check that is GREEN on a build
-   with the feature ripped out.** (1) *"the window opened"* is satisfied by
-   every build this project has ever shipped — the assertion has to name a
-   value that only the remembering build can produce. (2) Asserting on a
-   `*-requested` event within one launch is a within-process claim and says
-   nothing about the file; the round trip is the subject, so it needs **two
-   launches**. (3) ★★★ **A hard-coded expectation with no control launch passes
-   when the seed equals the default — and here it does, field for field**,
-   because `ExportDxfPrefs::default()` is identical to `DxfOptions::default()`.
-   Measure the defaults off the first launch's trace and SKIP any field whose
-   seed equals its default, rather than asserting a literal. (4) Inside a
-   dialogue, use **`frame_of(&session, &trace, ui_rect, NAME)?`** and never
-   `session.frame()`: a dock draws only its active tab, so a whole-capture
-   `last()` returns a fossil, and that has already made three checks wrong with
-   zero app defects behind them. Registration is two lines in
-   `tools/ui-verify/src/checks/mod.rs`. ✓ **`ribbon.item.file.export_text` is
-   confirmed, not inferred** — `band_item(id)` in
-   `crates/egui-shell/src/ribbon/report.rs` is the only producer of that prefix
-   and is pinned by a stability-contract test, and the command sits on the File
-   tab at `crates/pdfcer-gui/src/shell/manifest/file.rs:275`. An earlier edition
-   of this line called it *"inferred by symmetry"*, which would have had the
-   next session go and measure something already measured. ⚠ The captured trace
-   under `tools/ui-verify/out/` shows the same thing and is **not** a citation:
-   that directory is in `.gitignore`, so a line number in it is a string that
-   matches on one machine.
+   ★★ **It needs no mouse, and that is the interesting part.** It reaches all
+   three windows through `PDFCER_DIAG_INVOKE`, which takes a comma-separated
+   list and rings one command per frame through the same `dispatch_command`
+   choke point a keystroke reaches — so **one launch opens all three windows**,
+   each emitting its own `-open` line as it is built. No ribbon click, no
+   overflow hazard, no File-tab activation, and it runs on a machine whose
+   desktop is in use. ⇒ **The three Export-image regions turned out not to be
+   needed after all**; a check that presses nothing cannot be blocked by a
+   control that is folded away.
+
+   ★ **Falsified before it was believed.** Only `export_text.rs`'s struct
+   literal was switched to `ExportTextPrefs::default()` — the narrow sabotage,
+   one window of three — and the check returned `RESULT: FAIL` naming **4 of
+   12**, the four text rows and nothing else, and selected the middle
+   escalation: *"Every failure is on ONE window's line and the other two
+   restored correctly … the fault is in that window's constructor."* Restored
+   from a file copy, never through git. ⚠ The all-twelve and the scattered
+   escalations were **not** driven and the module header says so rather than
+   letting two untested branches be inferred as tested.
+
+   **The four traps, and what each cost.** (1) and (2) were designed around:
+   the oracle is twelve token comparisons against measured defaults, and it is
+   two processes. (3) was the expensive one and is handled by measurement — the
+   control run reported `format=png scope=current dpi=300 transparent=1
+   quality=90`, `scope=all separator=form-feed endings=as-extracted bom=0`,
+   `units=inches arcs=1 text=entities`, and each is re-measured every run rather
+   than written into the check. (4) **does not bite**, and the header says why
+   rather than leaving the absence to look like an oversight: this check
+   measures no rect at all, so there is no frame to get wrong. An edit that
+   starts measuring one inherits `frame_of` the moment it does.
+
+   ★★★ **Two traps the four did not name, both found while building it.**
+   Three of the twelve are spelled `true`/`false` in the file and `1`/`0` in the
+   trace — the file wants a word a person can edit, a whitespace-split trace
+   field wants a digit — so the seed table carries a fifth column and a unit
+   test pins the translation; a table that assumed they agreed would have
+   reported three defects that do not exist. And `scope=` appears on **two**
+   events with **different** shipped defaults, so a row is identified by
+   `(event, field)` and never by `field`.
+
+   ⚠ **The DXF units row is dropped when the page is calibrated**, reported as
+   a note, and the pass line then says eleven rather than twelve. A check that
+   asserted its seed there would report a defect where the application is doing
+   the most important thing that window does.
 
    ✓ **O197 — the front page was selling the program short. BUILT and SHIPPED
    in `6be5ff9` + `c6ea38f`, released in `v0.5.0-dev.20260914.1`. NOT CLOSED —

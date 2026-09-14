@@ -1242,6 +1242,34 @@ written down when we discover it instead. ★ Only he closes a row.
 
 ---
 
+### Landed 2026-09-13/14, and the row stays open because only he closes one
+
+**Everything above this heading describes the defect as it was found.** It is
+left standing rather than rewritten, because the table of literals is the
+evidence for what changed.
+
+| what | where |
+|---|---|
+| twelve export preferences, read and written | `app/prefs/exporting.rs`, `ExportImagePrefs` / `ExportTextPrefs` / `ExportDxfPrefs` |
+| each window seeded from them | `dialogs/export_image.rs`, `dialogs/export_text.rs`, `dialogs/export_dxf.rs`, each `open(doc, remembered)` |
+| each window traces the values it **built with** | `export-image-open`, `export-text-open`, `export-dxf-open` |
+| the driven check | `tools/ui-verify/src/checks/export_remembered.rs` |
+
+**The DXF scale is deliberately not remembered**, and the reason is in
+`ExportDxfPrefs`' own field docs: a scale is a statement about *this drawing*,
+and a calibrated ce dimension group on the page overrules the remembered units
+for the same reason.
+
+**Driven and falsified 2026-09-14** against the release binary over
+`fixtures/a1-titleblock.pdf`, `--no-input`: twelve of twelve came back, and a
+narrow sabotage of one window's constructor produced `RESULT: FAIL` naming that
+window's four rows and nothing else. The check needs no mouse at all — it
+opens all three windows in one launch through `PDFCER_DIAG_INVOKE` and reads
+three trace lines — so it is the cheapest driven check in the suite and runs
+on a machine whose desktop is in use.
+
+---
+
 ## O197 — ★★★ **FILED 2026-09-13** — the landing page sells pdfcer short by reading as a CAD tool, when the PDF compatibility is the bigger feature
 
 > *"I think the readme and the git landing page is selling pdfcer-gui short by

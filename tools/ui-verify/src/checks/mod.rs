@@ -220,6 +220,17 @@ pub mod export_image_emf;
 /// Written 2026-09-04 and **NOT RUN** — another session owned the desktop. The
 /// module header says so in its own words rather than leaving an absent result
 /// to imply it.
+/// The other half of O196's evidence, and the cheapest driven check in the
+/// suite to run: it opens all three Export windows through
+/// `PDFCER_DIAG_INVOKE` in one launch and reads three trace lines, so it
+/// moves no pointer, presses no key, and runs under `--no-input`.
+///
+/// Two launches: a CONTROL over a reset preferences file, to MEASURE this
+/// build's shipped export defaults, then a seeded one. Any seeded value
+/// that turns out to equal its measured default is reported as a SKIP
+/// naming it, because that field would read back correctly whether the
+/// file was consulted or ignored.
+pub mod export_remembered;
 pub mod export_text;
 /// The same defect one `/Subtype` along: a certified document's FORM FIELDS.
 ///

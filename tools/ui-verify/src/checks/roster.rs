@@ -605,6 +605,16 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // shipped defaults actually are, then a second against a seeded file.
         // It is therefore among the most expensive checks in the suite, which
         // is the other reason it is not higher.
+        // Beside the Print window's twin because it is the same subject one
+        // menu along -- does a window open on what the operator last chose --
+        // and because a reader comparing the two verdicts is reading one
+        // question about six windows.
+        //
+        // It is also two launches, and for the same reason: the shipped
+        // defaults are MEASURED off a control process rather than asserted
+        // here. Unlike its twin it needs no input at all, so it is the one
+        // of the pair that still runs under --no-input.
+        Box::new(export_remembered::TheExportWindowsOpenOnTheSettingsYouLastUsed),
         Box::new(print_remembered::ThePrintWindowOpensOnTheSettingsYouLastUsed),
         // ★ Beside it because it is the same shape — two ribbon clicks into a
         // dialog — and because both are checks whose subject is a control that
