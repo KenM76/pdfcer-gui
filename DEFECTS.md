@@ -212,7 +212,7 @@ pairs of all five widget states in all three presets.
 
 ---
 
-## D3 — README claims two capabilities that FEATURES.md says are stubs
+## D3 — README claims two capabilities that FEATURES.md says are stubs — **STILL LIVE, RE-MEASURED 2026-09-13, and it is the ENGINE's README**
 
 **Severity:** high (it is a published claim) · **Fix:** edit three words
 
@@ -242,6 +242,46 @@ cryptographic verification — and should stay.
 This matters more than a normal doc error because the README's own
 selling point, two lines above, is that it *"says plainly what does and
 does not work today."*
+
+### ★★★ Re-measured 2026-09-13, and the first thing to settle is WHICH README
+
+This register was compiled against `D:\Dev\pdfcer`, so **`README.md:20-22`
+above is the ENGINE repository's README, not this project's.** That distinction
+had been lost: a standing task list carried an instruction to mark D3 resolved
+because Bates and PDF/A appear in neither `README.md` nor `DEVELOPING.md` — both
+true, and both about the wrong pair of files. ⇒ **A citation is a claim about a
+particular document, and a register entry that omits the repository is a
+citation waiting to be resolved against whichever file the reader has open.**
+Every `file:line` in this register means `D:\Dev\pdfcer`.
+
+**The engine's README still carries all three claims.** Line numbers have moved;
+the sentences have not:
+
+| claim | engine `README.md` | engine `docs/FEATURES.md` |
+|---|---|---|
+| Bates numbering | line 34, under **"Working today"** | `513` — unticked on core, CLI **and** GUI |
+| PDF/A validation and conversion | lines 36-37 | `515` — unticked on all three; `128` still calls `to-pdfa`, `validate-pdfa` and `bates-stamp` stubs that print *"not implemented"* |
+| n-up / booklet / poster imposition | lines 48-50, as a property of the application | `414` ticks the **CLI only**; `495` says the GUI surface is unbuilt and names what it would need |
+
+⇒ **Nothing here is ours to edit.** `D:\Dev\pdfcer` is read-only until fold-in,
+and a published capability claim is exactly the class the operator's own
+claim-sourcing rule says to escalate rather than improvise. It is written up as
+a hand-off; the fix is three words and a clause, and the escalation is the whole
+work. **Filed 2026-09-13 as `request_G014` on the shared channel**, with the
+three rows, the two commands that reproduce them, and an explicit alternative
+close: if any of the three HAS shipped since 2026-08-12, the wrong document is
+`FEATURES.md` and this project's acceptance criteria are stale -- which is worth
+learning now rather than at fold-in. ⚠ Watch for `reply_G014` with no
+`done_G014`; by the channel's own rule that shape means an answer nobody acted
+on.
+
+✓ **What HAS changed, and it is the useful half for O197.** This project's own
+`README.md` and `DEVELOPING.md` contain **no** occurrence of *Bates*, *PDF/A*,
+*PDFA* or *imposition* — measured by grep on 2026-09-13. So the landing-page
+rewrite inherits no correction on this point, and must not acquire one: the
+temptation when leading on **format compatibility** is to reach for the
+conformance vocabulary, and three of those words are unticked on every surface
+this project ships.
 
 ---
 

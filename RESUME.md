@@ -26,18 +26,18 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-13 19:10 (re-measured after the seventh release and the temp-path fix, not carried over) |
+| What | Command | Value, 2026-09-13 22:23 EDT (re-measured against the tree at `28f5389`, every row by its own command, nothing carried over) |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `5e17017` — **level with the tip of the engine's `main`**, and moved three commits since the last release. ★★★ **All three are documentation**: `git diff --stat f37598b..5e17017 -- '*.rs'` is EMPTY, and that diff is the measurement — not the fact that the two shas now match. ⇒ The question a pin row exists to answer is *may I write the sentence "the engine cannot do X"*, and the safe condition is that no CODE has landed since the pin. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. ★★★ And "level with head" is not "nothing is in flight": the request channel is not a git repository and no command in this table reads it |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `5e17017` — level with the pin, because the pin was taken at it. The three commits crossed were two librarian filings and a session-log entry |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `5e17017` — **one commit behind the tip of the engine's `main`**, which is now `4cb18e1`. ★★★ **That commit is documentation, and the diff is the measurement** — `git -C /d/Dev/pdfcer diff --stat 5e17017..main -- '*.rs'` is EMPTY. ⇒ The question a pin row exists to answer is *may I write the sentence "the engine cannot do X"*, and the safe condition is that **no CODE has landed since the pin**, not that the two shas match. That distinction is the row's whole content: six hours ago the two shas WERE equal, and nothing about what may safely be written changed when they stopped being. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. ★★★ And "no code since the pin" is not "nothing is in flight": the request channel is not a git repository and no command in this table reads it |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `4cb18e1` — **one ahead of the pin**, and the one is the librarian's 544th filing. It read `5e17017` at 19:10 the same evening, which is exactly why this row is re-measured rather than quoted |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | `0.53.0` |
-| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260913.4`, cut 2026-09-13 22:39 UTC, `prerelease=false`, `draft=false`, one asset `pdfcergui-20260913-1838-5e17017-34dde31.zip` of 23,253,157 bytes, and it IS what `releases/latest` advertises — verified by reading it back rather than by having passed the right flag. **1 commit unreleased**, counted after a `git fetch --tags origin`. ★★★ **The order matters:** commit ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. ⚠ `build.rs` has no `rerun-if-changed` on `.git/HEAD`, so the rebuild after the commit is a no-op and ships the *pre-commit* stamp — `touch crates/pdfcer-gui/build.rs` between them |
+| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260913.4`, cut 2026-09-13 22:39 UTC, `prerelease=false`, `draft=false`, one asset `pdfcergui-20260913-1838-5e17017-34dde31.zip` of 23,253,157 bytes, and it IS what `releases/latest` advertises — verified by reading it back rather than by having passed the right flag. ★★ **5 commits unreleased**, counted after a `git fetch --tags origin`; `git describe` answers `v0.5.0-dev.20260913.4-5-g28f5389`. **Three of the five change the program** — the export windows' memory in two parts, and the concurrent-`cargo test` fixture fix — so a release is owed and the standing instruction is to cut one at a good point. ★★★ **The order matters:** commit ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. ⚠ `build.rs` has no `rerun-if-changed` on `.git/HEAD`, so the rebuild after the commit is a no-op and ships the *pre-commit* stamp — `touch crates/pdfcer-gui/build.rs` between them |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **223** — one more than the last release: `set_scale_reads_the_group_it_is_about_to_overwrite`. ⚠ **the `$` is load-bearing and its absence answers 225.** `--list` prints a second small table, the `--exe` targets, whose rows are also two-space-indented lowercase words; without the end anchor the count silently picks up `pdfcer-gui` and `pdfcer-legacy` from it. That is a *count command* being wrong rather than a quoted answer being stale, which is a different defect and the harder one to see. ★ If a count here is about double what you expect, you counted lines: `--list` prints two per check plus an eight-line header, so a `wc -l` answers `2n + 8` |
-| Gates | `bash tools/gates/run-all.sh` | **51 passed, 0 failed, 0 skipped** — two more than the last release: `check-test-temp-paths` and its self-test. ★ One was RED when the release was assembled and it was right to be: `check-pin-citation`, naming the revision both this file and `FEATURES.md` were still quoting after the engine pin moved. That is the gate's whole purpose and the second release running it has caught this |
-| Unit tests | `cargo test --workspace` | **4,264 passing, 0 failed, 51 ignored, 4,315 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,315. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. ✓ **Two concurrent runs are safe again as of `7b48dd0`**, and that is measured rather than assumed: the pre-fix source was rebuilt as a CONTROL and its test binary run twice at once — red 3 rounds of 3 — then the fixed binary, green 5 of 5, then the three affected test binaries in full, twice simultaneously (3,424 + 537 + 260 each side). ★ The control named *different* victims than the failure that started it, which is the finding itself: the casualty is whichever test lost the race |
-| Source files | `find crates -name '*.rs' \| wc -l` | 787 |
+| Gates | `bash tools/gates/run-all.sh` | **53 passed, 0 failed, 0 skipped**, exit 0 — two more than at the last release, and the two are `check-region-names` and its self-test, added in `28f5389`. ★ What that gate is for: a `REGION_*` constant is `pub`, so **nothing in the toolchain fires when a region is declared and published by no one** — not `dead_code`, not clippy at `-D warnings`, not any other gate here. The symptom reaches a reader as a driven check reporting a control that is plainly on screen. It found three, all in `dialogs/export_image.rs`, all now real |
+| Unit tests | `cargo test --workspace` | **4,284 passing, 0 failed, 51 ignored, 4,335 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,335. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. ★ **The cross-count is also how you know a new test RAN**: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function — the summed figure moved by nothing and so did the listed one. ✓ **Two concurrent runs are safe as of `7b48dd0`**, and that is measured rather than assumed: the pre-fix source was rebuilt as a CONTROL and its test binary run twice at once — red 3 rounds of 3 — then the fixed binary, green 5 of 5, then the three affected test binaries in full, twice simultaneously. ★ The control named *different* victims than the failure that started it, which is the finding itself: the casualty is whichever test lost the race |
+| Source files | `find crates -name '*.rs' \| wc -l` | 790 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 174 rows — wanted 35 / blocked 8 / unknown 0 / declined 14 / **shipped 117**. ⚠ **Rewrite the five headings from the walker's own printed figures, never by arithmetic** — that instruction is in the walker's output because the arithmetic has been got wrong seven times. |
-| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | **41** — four moved during this session, and the last of them is ours. `reply_…keep-your-wording-and-your-control-fixture-is-the-finding` **declines an offer we made** (to adopt the CLI's phrasing verbatim) and asks for nothing; it is consumed as `done_control_fixture_reply_CONSUMED.md`. ★★★ **A declined offer gets a `done_*` even though nothing is owed**, and that is a rule rather than politeness: a decline that lives only in a reply nobody consumed reads, six weeks later, as an open question, and the next session re-offers it. Its §2 is worth reading before writing any check whose assertion is an absence. ⚠ **Re-`ls` this folder before quoting it** — it changes faster than any other input to this project, it is in no git repository, and nothing warns you. |
+| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | **42** — one more than at 19:10, and it is ours: `done_G013_slices_and_snapkind_CONSUMED.md`, the consumption note for the slices-and-`SnapKind` reply. ⚠ **Its substance is not mirrored anywhere in this repository yet**, and the request channel is in no git repository, so it exists in exactly one copy. The clause worth keeping is its §2a: *the question is not only whether a guard covers the property it is named for, but whether that coverage is **its own** or borrowed from a neighbouring function's current shape — a borrowed guard has no owner, so nobody is told when it is returned.* ★★★ **A declined offer still gets a `done_*` even though nothing is owed**, and that is a rule rather than politeness: a decline that lives only in a reply nobody consumed reads, six weeks later, as an open question, and the next session re-offers it. ⚠ **Re-`ls` this folder before quoting it** — it changes faster than any other input to this project, it is in no git repository, and nothing warns you. |
 | Registered commands | `grep -rn --include='*.rs' -E 'command\(' crates/pdfcer-gui/src/shell/commands/catalog/ \| grep -vE ':\s*(///\|//)' \| wc -l` | **161** — ★★★ **the obvious command is wrong, not merely its answer.** A raw `grep -rhoE 'command\('` over that directory returns **162**, and the extra is a line of prose inside a comment in `catalog/file.rs:556` that quotes the very pattern being searched for. The build's own `pdfcer-diag shell commands=` trace is the tie-breaker and says 161. |
 | Dockable panels | `grep -n 'pub const ALL' crates/pdfcer-gui/src/panels/mod.rs` | 13 |
 
@@ -530,12 +530,56 @@ reported zero of three planted violations while printing PASS.
    exists to prevent. ⇒ **The deliverable is that a Review click resolves the
    way he means, not that a control appears.** It is a capability-model question.
 
-   ◑ **O196 — found, not reported: three export windows forget every
-   setting.** Image, text and DXF export all open on hard-coded defaults every
-   time. ★★ The precedent is already built — `PrintDialog::open(doc, remembered)`
-   and its driven check, from his own O166. ⚠ **Do not fold this into O192.**
-   Reading no current value and remembering no previous value are different
-   defects and a fix for either does nothing for the other.
+   ✓ **O196 — the three export windows remember. BUILT, TESTED AND GATED in
+   `df1edf4` + `28f5389`. NOT RELEASED, and NOT CLOSED — closing is his.**
+   Twelve settings across Export image, Export text and Export to DXF now
+   round-trip through `userdata/preferences.txt` and seed the window the next
+   time it opens, on `PrintPrefs`'s own pattern from O166.
+
+   ⚠⚠⚠ **A correction, and it is about a quotation rather than a number.** The
+   first draft of this bullet opened with a sentence in quotation marks attributed
+   to him, about having to set a DXF export up again every time. **It is not
+   sourced.** `OPERATOR_REQUESTS.md` O196 is headed *"FOUND 2026-09-13, not yet
+   reported by the operator"* and argues at length why a row he never filed is on
+   the list; a grep of every `.md` and `.txt` here finds that sentence in exactly
+   two places and both are mine, this file and the commit message of `28f5389`.
+   ⇒ **The commit message of `28f5389` misattributes it and history is not being
+   rewritten for that** — it is recorded here instead, which is the only place a
+   future session will look. ★★★ The generalisation is the expensive part: **an
+   inherited session summary is not a source.** A number carried across a summary
+   is re-measured by standing rule; a QUOTATION carried across one has no such
+   rule, reads as the most authoritative sentence in the document, and cannot be
+   falsified by anybody who reads the code. Attribute only what a file on disk
+   says, and say which file.
+
+   ★★ **Two rulings are built into the code rather than remembered.** A DXF
+   page carrying its own calibration still overrules the remembered units, so a
+   metric habit cannot quietly turn an inch-calibrated sheet into a 25.4x error;
+   that ordering is two adjacent statements in `seeded_options`, which exists as
+   a pure function precisely so a test can put the question to it — `open` needs
+   a whole `EditSession` and is therefore unaskable. And the typed page range is
+   deliberately NOT remembered: *"12-40"* restored onto a nine-page document
+   opens a window whose Export button is already dead for a reason the operator
+   did not cause.
+
+   ★★★ **The half of this that was not the feature.** Writing the driven check
+   found that `dialogs/export_image.rs` declared `REGION_PAGES`, `REGION_QUALITY`
+   and every arm of `region_for_scope` — and **published none of them**. A region
+   constant is `pub`, so nothing in the toolchain can see this; the defect
+   reaches a reader as a driven check reporting that a control on screen does not
+   exist. `tools/gates/check-region-names.py` is the instrument for that class
+   now, falsified against the real pre-fix file. ⚠ **The measurement of it was
+   wrong three times first**, and that is the part worth carrying: a bare-name
+   search over the workspace discharged all three dead twins, because
+   `export_text.rs` declares its own healthy namesakes. A declaration-and-use
+   measurement has to be scoped the way the LANGUAGE scopes it — by import — or
+   it is measuring the wrong relationship and looks clean.
+
+   → **What remains on this row is the driven check**, on
+   `print_remembered.rs`'s two-launch control/seed pattern: launch once against
+   a reset preferences file to MEASURE the shipped defaults off the trace, SKIP
+   naming any seeded field that equals its default, then relaunch and compare.
+   The three Export-image regions now exist, so a check may press them.
 
 3. ★★★ **Work the two registers. All of it is `.rs` or markdown and none of
    it needs the desktop.** `SWEEP_REPAIRS.md` holds 10 rows — the four FAILs
@@ -709,6 +753,24 @@ marked closed. **Only Ken closes a row.**
     do not put a backslash in the payload at all.** Name the byte in words, pick
     a printable one, or build it with `chr(10)`. Then `python -c "import ast,io;
     ast.parse(io.open(p).read())"` before importing or running anything.
+  - ★★ **And the anchor itself is a third layer, found 2026-09-13.** This
+    crate's prose uses an em dash freely. Typing an ordinary hyphen where the
+    source has one produces a needle matching nothing, and in a terminal the
+    two are indistinguishable. ⇒ **Choose an anchor that contains no em dash at
+    all** rather than trying to reproduce one; when there is no choice, verify
+    with `grep ... | cat -A` and look for `M-bM-^@M-^T`. ★ Better still, anchor
+    on a line PREFIX and replace the whole line: a prefix such as `| Gates |`
+    contains no character this project has ever got wrong, and there is no
+    partial-row state to get half-right.
+- ⚠ **The memory index is full, and the next lesson written will fail the
+  gate.** `tools/gates/check-memory-index.sh` caps
+  `.claude/agent-memory/pdfcer-gui-engineer/MEMORY.md` at 24,000 bytes; it
+  measures **23,960** with **125** entries, so roughly **40 bytes** remain and a
+  row costs about 190. That cap is not arbitrary — the index is loaded whole
+  into every session and is truncated **from the end**, which drops the newest
+  rows, the ones a cold session most needs. ⇒ **Writing a lesson now means
+  shortening two or three existing hooks first.** Cut the hook, never the topic
+  file: the hook only has to decide relevance, and the detail is one link away.
 - **Do not start Phase 5 (text editing) early.** Deliberately last, `HANDOFF.md` §8.
 - **Do not build S6 deep zoom or tiling.** Measured as a 9× regression.
 
