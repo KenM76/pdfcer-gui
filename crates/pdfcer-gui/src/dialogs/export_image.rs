@@ -156,6 +156,7 @@ use egui::Ui;
 
 use crate::app::actions::Action;
 use crate::app::actions::imageexport::{ImageFormat, ImagePlan, PageScope, resolve_pages};
+use crate::app::prefs::{MAX_EXPORT_DPI, MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY};
 use crate::app::state::{OpenDoc, Status};
 use crate::text::export_image as t;
 
@@ -198,8 +199,38 @@ pub const fn region_for_format(format: ImageFormat) -> &'static str {
 }
 /// The region the resolution field publishes.
 pub const REGION_DPI: &str = "export-image.dpi"; // ui-text-exempt: trace region name, never displayed
+/// ★★ The region ONE page-scope radio publishes.
+///
+/// Same argument as [`region_for_format`], which states it in full and is
+/// not repeated here: a check that presses the group's rectangle plus an
+/// offset is a check that presses the wrong control the day a hint gains a
+/// line.
+///
+/// ★ These exist for O196. Until the export windows remembered anything, a
+/// driven check had nothing to assert about a radio beyond "it is drawn";
+/// now the question is which one is *selected on open*, and that cannot be
+/// asked of a group.
+#[must_use]
+pub const fn region_for_scope(scope: PageScope) -> &'static str {
+    match scope {
+        // ui-text-exempt: trace region names, matched by tools/ui-verify and
+        // never displayed.
+        PageScope::CurrentPage => "export-image.pages.current",
+        PageScope::AllPages => "export-image.pages.all",
+        PageScope::Typed => "export-image.pages.typed",
+    }
+}
+/// The region the page-scope radio GROUP publishes — all three together, plus
+/// the range box.
+pub const REGION_PAGES: &str = "export-image.pages"; // ui-text-exempt: trace region name, never displayed
 /// The region the transparency checkbox publishes.
 pub const REGION_TRANSPARENT: &str = "export-image.transparent"; // ui-text-exempt: trace region name, never displayed
+/// The region the JPEG quality field publishes.
+///
+/// ⚠ Published only while JPEG is selected, because the control is drawn
+/// only then — see [`ExportImageDialog::quality_group`]. A driven check that
+/// cannot find it has not found a defect; it has found a PNG.
+pub const REGION_QUALITY: &str = "export-image.quality"; // ui-text-exempt: trace region name, never displayed
 /// The region the Export button publishes.
 pub const REGION_EXPORT: &str = "export-image.export"; // ui-text-exempt: trace region name, never displayed
 
@@ -248,9 +279,27 @@ pub struct ExportImageDialog {
 }
 
 impl ExportImageDialog {
-    /// Open the window for the document on screen.
+    /// Open the window for the document on screen, seeded from what the last
+    /// export asked for.
+    ///
+    /// # ★★★ `remembered` — operator request **O196**, 2026-09-13
+    ///
+    /// > *"the export windows forget everything. every time I export a dxf I
+    /// > have to set it up again."*
+    ///
+    /// Five of the fields below were literals until that day. The membership
+    /// rule — **a setting is remembered only if it would still be the right
+    /// answer for a different document** — and the argument for every
+    /// inclusion and every omission live on
+    /// [`crate::app::prefs::ExportImagePrefs`]. Read that first; this is only
+    /// the seeding.
+    ///
+    /// ⚠ `range_text` is NOT seeded and is not a preference. A typed range
+    /// is a statement about *this document's* page numbering, and restoring
+    /// "12-40" onto a nine-page file would open the window in a state whose
+    /// Export button is already dead for a reason the operator did not cause.
     #[must_use]
-    pub fn open(doc: &OpenDoc) -> Self {
+    pub fn open(doc: &OpenDoc, remembered: &crate::app::prefs::ExportImagePrefs) -> Self {
         let page_index = doc.view.page_index;
         let page_count = doc.pages.len();
         // The same measurement the canvas and the print preview take, so the
@@ -263,42 +312,104 @@ impl ExportImageDialog {
             .fold((0.0_f32, 0.0_f32), |acc, (w, h)| {
                 (acc.0.max(w), acc.1.max(h))
             });
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed
-            format!("export-image-open page={page_index} pages={page_count}")
-        });
-        Self {
+        // ★★ **Five values come from the file, and the arguments for the
+        // shipped defaults went WITH them.** They used to be written here, as
+        // comments on literals. They now live on
+        // `ExportImagePrefs::default()`, because a comment about a value
+        // belongs with the value: leaving them here would have left this file
+        // explaining a 300 it no longer chooses, which is the shape of prose
+        // that is true on the day it is written and wrong a month later.
+        let dialog = Self {
             page_index,
             page_count,
             largest_pt,
-            format: ImageFormat::Png,
-            scope: PageScope::CurrentPage,
+            format: remembered.format,
+            scope: remembered.scope,
+            // Deliberately empty — see the note on this function.
             range_text: String::new(),
-            // 300, print grade. The same default the engine's `SvgOptions`
-            // takes and for the same reason it states: *"an embedded raster
-            // cannot be re-sampled later"*. A screen-grade default would make
-            // the common case (a drawing going into a document that will be
-            // printed) the case the operator has to remember to fix.
-            dpi: 300.0,
-            // ★ **Transparency ON by default**, and that is the operator's own
-            // instruction rather than a taste: *"there had better be full
-            // support (including transparency where supported!)"*. A default of
-            // white would make the feature he asked for the one he has to find.
-            transparent: true,
-            // `JpegOptions::default()`'s own 90, and the engine states why: it
-            // is where `jpeg-encoder` stops subsampling chroma, which for line
-            // art and text is the difference between crisp and smeared colour
-            // edges. Mirrored rather than read because `JpegOptions` is
-            // `#[non_exhaustive]` and this is a `u8` in a window, not an
-            // options struct.
-            quality: 90,
+            dpi: remembered.dpi,
+            transparent: remembered.transparent,
+            quality: remembered.quality,
             export_requested: false,
             close_requested: false,
+        };
+
+        // ★★★ **Traced from the BUILT dialog, and the position of these
+        // lines is the whole point of them.**
+        //
+        // `dialogs::print::PrintDialog::open` paid for this lesson on
+        // 2026-09-10 and states it at length; it is applied here rather than
+        // re-learned. In one line: **a trace emitted from `remembered` proves
+        // the preferences file was PARSED and says nothing about whether the
+        // window adopted a single one of those values.** A build whose struct
+        // literal above ignored `remembered` entirely — exactly the
+        // regression O196 exists to prevent — would print a fully seeded
+        // line and go green.
+        //
+        // Reading `dialog.*` closes that: if a future edit drops a
+        // `remembered` from one of the five assignments, this line changes and
+        // the driven check goes red, which it could not do before.
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "export-image-open page={} pages={} format={} scope={} \
+                 dpi={} transparent={} quality={}",
+                dialog.page_index,
+                dialog.page_count,
+                // ★ Stable lowercase tokens, never `{:?}`. This project's
+                // standing lesson, and the preferences file's own `*_key`
+                // functions are what produce them, so the token a check reads
+                // here and the token on disk cannot drift.
+                crate::app::prefs::exporting::image_format_key(dialog.format),
+                crate::app::prefs::exporting::page_scope_key_or(
+                    dialog.scope,
+                    crate::app::prefs::ExportImagePrefs::default().scope,
+                ),
+                dialog.dpi,
+                u8::from(dialog.transparent),
+                dialog.quality,
+            )
+        });
+        dialog
+    }
+
+    /// **This window's state, reduced to what a different document would
+    /// still want** — the producing half of `OPERATOR_REQUESTS.md` **O196**.
+    ///
+    /// The membership rule and the argument for every inclusion and every
+    /// omission live on [`crate::app::prefs::ExportImagePrefs`], which is the
+    /// type this returns; this function is only the projection. It is one
+    /// struct literal with **no `..Default::default()`**, so a field added to
+    /// `ExportImagePrefs` is a compile error here rather than a preference
+    /// written to disk as its own default and never actually remembered.
+    fn habits(&self) -> crate::app::prefs::ExportImagePrefs {
+        crate::app::prefs::ExportImagePrefs {
+            format: self.format,
+            scope: self.scope,
+            dpi: self.dpi,
+            // ⚠ Stored whatever the format, and that is the same decision
+            // the field itself documents: the checkbox goes dead under JPEG
+            // but the answer is kept, so an operator who glanced at the
+            // quality control and went back to PNG has not silently lost
+            // transparency — now across a restart as well as across a radio
+            // press.
+            transparent: self.transparent,
+            quality: self.quality,
         }
     }
 
     /// Draw it. Returns `false` when it should close.
-    pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
+    ///
+    /// Takes `&mut Prefs` for O196 alone: the Export press writes this
+    /// window's habits to the preferences file before the action is pushed.
+    /// See [`crate::dialogs::export_remembered`] for why it happens at the
+    /// press and not at the close.
+    pub fn show(
+        &mut self,
+        ctx: &egui::Context,
+        actions: &mut Vec<Action>,
+        prefs: &mut crate::app::prefs::Prefs,
+    ) -> bool {
         let (frame, ()) = crate::dialogs::host::Host::new(
             "export-image", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
@@ -314,11 +425,22 @@ impl ExportImageDialog {
         if std::mem::take(&mut self.export_requested)
             && let Some(plan) = self.plan()
         {
+            // ★★★ O196, and the POSITION is the decision: the habits are
+            // written when the operator presses Export, never when the window
+            // closes. Closing without exporting is how a person says *"not
+            // this"*. The argument is in
+            // [`crate::dialogs::export_remembered`], stated once for all three
+            // export windows.
+            crate::dialogs::export_remembered::remember_image(self.habits(), prefs);
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "export-image-requested format={:?} pages={} dpi={} transparent={} quality={}",
-                    plan.format,
+                    "export-image-requested format={} pages={} dpi={} \
+                     transparent={} quality={}",
+                    // A token, never `{:?}`: the same reduction the
+                    // preferences file performs, so a check reading this line
+                    // and a check reading the file cannot disagree.
+                    crate::app::prefs::exporting::image_format_key(plan.format),
                     plan.pages.len(),
                     plan.dpi,
                     u8::from(plan.transparent),
@@ -446,18 +568,32 @@ impl ExportImageDialog {
     /// grey the Export button from one answer rather than from three.
     fn pages_group(&mut self, ui: &mut Ui) -> Option<Vec<usize>> {
         ui.label(t::pages_heading());
-        ui.radio_value(
+        let start = ui.cursor();
+        // ★ Each radio publishes its OWN rectangle, for the reason
+        // [`region_for_scope`] states and [`Self::format_group`] twenty lines
+        // above already honours: a check that presses the group's rectangle
+        // plus a computed offset presses the wrong control the day the range
+        // hint gains a line.
+        //
+        // These three are also what makes O196 assertable at all. The question
+        // a remembered scope raises is *which radio is selected when the window
+        // opens*, and that question cannot be put to a group — only to the
+        // radio that answers it.
+        let response = ui.radio_value(
             &mut self.scope,
             PageScope::CurrentPage,
             t::pages_current(self.page_index.saturating_add(1)),
         );
-        ui.radio_value(
+        crate::diag::ui_rect(region_for_scope(PageScope::CurrentPage), response.rect);
+        let response = ui.radio_value(
             &mut self.scope,
             PageScope::AllPages,
             t::pages_all(self.page_count),
         );
+        crate::diag::ui_rect(region_for_scope(PageScope::AllPages), response.rect);
         ui.horizontal(|ui| {
-            ui.radio_value(&mut self.scope, PageScope::Typed, t::pages_range());
+            let response = ui.radio_value(&mut self.scope, PageScope::Typed, t::pages_range());
+            crate::diag::ui_rect(region_for_scope(PageScope::Typed), response.rect);
             // Typing in the box selects the radio. Without it an operator types
             // a range, presses Export and gets the current page — the classic
             // shape of this control getting it wrong, and one the print dialog
@@ -466,6 +602,12 @@ impl ExportImageDialog {
                 self.scope = PageScope::Typed;
             }
         });
+        // The union is taken HERE rather than after the hint, so the group's
+        // rectangle is what [`REGION_PAGES`] says it is: the three radios plus
+        // the range box. The hint below is a sentence *about* them, not one of
+        // them, and a region that quietly includes explanatory prose is a
+        // region a driven check can press and hit nothing.
+        crate::diag::ui_rect(REGION_PAGES, start.union(ui.cursor()));
         ui.weak(t::pages_range_hint());
 
         let pages = self.pages();
@@ -492,7 +634,17 @@ impl ExportImageDialog {
                     // resolution an operator could have meant. The ceiling is
                     // generous — the real limit is the pixel count, which is
                     // page-size dependent and is disclosed below.
-                    .range(1.0..=4800.0),
+                    //
+                    // Read from the constants rather than repeated as
+                    // literals. Those constants are what the preferences file
+                    // clamps a read value into, and while the two were written
+                    // out separately the file could refuse a resolution this
+                    // box will happily produce — which reaches the operator as
+                    // pdfcer forgetting a setting they had just made, the exact
+                    // complaint O196 answers.
+                    // `the_dragvalue_ranges_are_the_constants_the_file_clamps_to`
+                    // is the guard.
+                    .range(MIN_EXPORT_DPI..=MAX_EXPORT_DPI),
             );
             crate::diag::ui_rect(REGION_DPI, response.rect);
         });
@@ -562,7 +714,12 @@ impl ExportImageDialog {
             ui.label(t::quality_label());
             // The engine clamps rather than refusing, and says why; the control
             // holds the same range so the clamp is never reached from here.
-            ui.add(egui::DragValue::new(&mut self.quality).range(1..=100));
+            // The range is the preferences file's own, for the reason
+            // [`Self::resolution_group`] states in full.
+            let response = ui.add(
+                egui::DragValue::new(&mut self.quality).range(MIN_JPEG_QUALITY..=MAX_JPEG_QUALITY),
+            );
+            crate::diag::ui_rect(REGION_QUALITY, response.rect);
         });
         ui.weak(t::quality_hint());
     }
@@ -574,9 +731,14 @@ impl ExportImageDialog {
 /// ceremonial: every control in the window is a statement about a page, and the
 /// largest-page measurement has nothing to fold over on an empty document.
 #[must_use]
-pub fn open_for(status: &Status) -> Option<ExportImageDialog> {
+pub fn open_for(
+    status: &Status,
+    remembered: &crate::app::prefs::ExportImagePrefs,
+) -> Option<ExportImageDialog> {
     match status {
-        Status::Open(doc) if !doc.pages.is_empty() => Some(ExportImageDialog::open(doc)),
+        Status::Open(doc) if !doc.pages.is_empty() => {
+            Some(ExportImageDialog::open(doc, remembered))
+        }
         _ => None,
     }
 }

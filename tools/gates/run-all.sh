@@ -128,6 +128,7 @@ run "check-shipped-assets --self-test" bash "$HERE/check-shipped-assets.sh" --se
 run "check-string-gaps --self-test" bash "$HERE/check-string-gaps.sh" --self-test
 run "check-trace-names --self-test" python "$HERE/check-trace-names.py" --self-test
 run "check-orphan-docs --self-test" python "$HERE/check-orphan-docs.py" --self-test
+run "check-region-names --self-test" python "$HERE/check-region-names.py" --self-test
 run "check-doc-markup --self-test" python "$HERE/check-doc-markup.py" --self-test
 run "check-gate-input-scope --self-test" python "$HERE/check-gate-input-scope.py" --self-test
 run "check-memory-index --self-test" bash "$HERE/check-memory-index.sh" --self-test
@@ -307,6 +308,25 @@ run "check-trace-names" python "$HERE/check-trace-names.py"
 # fails the gate. `check-strong-text.sh` had carried a carve-out whose premise
 # had silently stopped being true, and that is the lesson taken literally.
 run "check-orphan-docs" python "$HERE/check-orphan-docs.py"
+
+# check-region-names, added 2026-09-13 - the class no compiler can see.
+#
+# A trace region name is a `pub const`, and `pub` suppresses `dead_code`. So a
+# name declared, documented and published by NOTHING compiles clean, passes
+# clippy at `-D warnings`, and passes every other gate here. On 2026-09-13 the
+# Export-image window had three of them, shipped across four releases.
+#
+# The symptom is worse than a missing rectangle: a driven check that presses
+# `export-image.pages.typed`, finds nothing and reports "the control is
+# missing" is describing a radio button drawn on screen every time the window
+# opens. The next session goes hunting a layout bug that does not exist.
+#
+# Its self-test carries eight cases because THREE earlier cuts of this rule
+# each looked like a working instrument and were each wrong - by 73, by 9, and
+# by 0. The last of those is the one worth remembering: a bare-identifier
+# search over the workspace let `export_text.rs`'s healthy `REGION_PAGES`
+# discharge `export_image.rs`'s dead twin of the same name.
+run "check-region-names" python "$HERE/check-region-names.py"
 
 # ★★★ `check-memory-index`, added 2026-09-13, and it is the gate above's twin
 # pointed at a folder nobody thought of as source.

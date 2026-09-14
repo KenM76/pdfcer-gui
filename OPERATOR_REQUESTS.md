@@ -1242,6 +1242,82 @@ written down when we discover it instead. ★ Only he closes a row.
 
 ---
 
+## O197 — ★★★ **FILED 2026-09-13** — the landing page sells pdfcer short by reading as a CAD tool, when the PDF compatibility is the bigger feature
+
+> *"I think the readme and the git landing page is selling pdfcer-gui short by
+> making it sound like it is geared just towards cad drawings. For example we
+> spent a huge amount of time making support for CYMK PDFs to the point where,
+> and we can't state this, [the industry print-conformance suite]'s test PDFs
+> open as well as they do with acrobat reader, and those have nothing to do
+> with cad. In fact I would say our pdf compatability is one of our biggest
+> features."*
+
+⚠ **One name in that quotation is masked, and the masking is the
+operator's own instruction being obeyed one step earlier than he meant it.**
+He named the licensed print-conformance suite;
+`tools/check-suite-name-absent.py` keeps that name out of this public
+repository entirely, contents and file names both (operator ruling,
+2026-08-25). Transcribing his sentence verbatim turned that gate red within a
+minute of this row being filed — which is the gate working, and it is
+recorded here rather than quietly repaired because the next person to write
+down something he said out loud will be one keystroke from the same place.
+The private map directory's `manifest.json` names the suite in full.
+
+**This is the second half of O191, arriving three hours after the first.** O191
+asked for the page to be *readable* and that was done. This says the page is now
+readable and **about the wrong product**. The two are independent: a concise,
+human, well-organised page that frames a general-purpose PDF application as a
+drafting accessory is worse than a dense one that frames it correctly, because
+a reader who decides in the first sentence that this is not for them never
+reaches the features.
+
+### ★★★ The clause that governs the rewrite, and it is a prohibition
+
+> *"and we can't state this"*
+
+He named the benchmark he believes pdfcer meets — the licensed
+print-conformance suite's own test files, against a named commercial reader
+— **and in the same breath forbade stating it.**
+That is not modesty, it is the claim-bearing-copy rule arriving from the
+operator's own side: a pass rate nobody has measured and published is not a fact
+a README may assert, and a comparison to a named commercial product is a claim
+with legal weight attached.
+
+⇒ So the rewrite gets the **belief** and not the **claim**. It may say what
+pdfcer renders, in specifics, with each specific true. It may not say *"as well
+as Acrobat"*, may not name the suite, and may not quote a pass rate. If a
+capability cannot be stated without a comparison, it is not yet stateable and
+is left out.
+
+⚠ This applies to every public surface, not only `README.md`: the release body,
+the portable zip's bundled docs, and the in-app About text are all read by the
+same person and all carry the same exposure.
+
+### What "our pdf compatibility" actually names
+
+Colour is the example he reached for and it is the right one: **DeviceCMYK,
+Separation and DeviceN, ICC-based spaces and the conversion behind them** are
+the work a general reader experiences as *"it opens and the colours are right"*
+and never as a feature. A print-industry PDF is CMYK end to end and has nothing
+to do with a drawing.
+
+The inventory of what may honestly be claimed is being taken against the engine
+rather than written from memory, for the reason this row exists: the previous
+copy was written from the shape of the project rather than from a measurement.
+
+### What must NOT be lost in the rewrite
+
+The CAD work is real, it is unusual, and it is the thing no other PDF
+application does — **ce dimensions**, group scales, the DXF export at a scale
+somebody can defend. Demoting it from *the frame* to *one strong section* is
+the ask. Deleting it is not.
+
+★★★ **Only Ken closes this row.** The test is whether the page reads right to
+the person it was written for, which is a measurement nobody here can take —
+O191's ruling, unchanged, and this row is the evidence for it.
+
+---
+
 ## O176 — ◑ **MEASURED 2026-09-12, NEEDS YOUR VERDICT** — not something you asked for: on a big sheet at fit zoom, a small form field is all grip and no body
 
 You did not ask for this row. It is here because a full drive of the shipped

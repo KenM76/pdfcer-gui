@@ -1048,8 +1048,11 @@ impl eframe::App for PdfcerApp {
             window: self.window,
             keymap,
             registry: &self.commands,
-            // O166. The Print window is the only dialog that writes a
-            // preference; everything else here is read-only about `Prefs`.
+            // O166 put this here; O173 and O196 have since added four more
+            // writers. The count, and why a prose count of a mutable
+            // reference's callers decays silently, are on `dialogs::Frame`'s
+            // own field -- this comment deliberately does not repeat the
+            // number, because repeating it is how the last one went stale.
             prefs: &mut self.prefs,
             // One look for all four marking routes — see the field.
             redact_appearance,

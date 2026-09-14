@@ -908,11 +908,6 @@ mod tests {
         }
     }
 
-    /// **A fresh install opens the dialog exactly as every previous build did.**
-    ///
-    /// The specification of [`PrintPrefs::default`], asserted rather than left
-    /// as a comment: deleting `preferences.txt` must be a way to reset pdfcer,
-    /// never a way to change what it does.
     /// ★★★ **Every remembered field is actually read back into the dialog.**
     ///
     /// The half of O166 that no compiler and no other test can see, and it is
@@ -996,6 +991,26 @@ mod tests {
         }
     }
 
+    /// **A fresh install opens the dialog exactly as every previous build did.**
+    ///
+    /// The specification of [`PrintPrefs::default`], asserted rather than left
+    /// as a comment: deleting `preferences.txt` must be a way to reset pdfcer,
+    /// never a way to change what it does.
+    ///
+    /// ⚠ **This doc comment spent 2026-09-10 to 2026-09-13 attached to the
+    /// test above**, because it was written immediately before that test's own
+    /// first `///` line with no item between them. Rustdoc concatenated the
+    /// two, and the reader of the O166 completeness test was told it asserted
+    /// a default.
+    ///
+    /// It is the second orphan found by hand on 2026-09-13; the first was
+    /// `Dialogs::open_export_dxf`'s, which had spent its whole life on
+    /// `open_shortcuts`. **Both were invisible to `check-orphan-docs.py`,
+    /// which was wired and green** — its title pattern admitted `/// **` and
+    /// not the starred titles this crate also writes, so it was reading 1,221
+    /// of 2,113 titles. Widening it to the whole convention surfaced eight
+    /// more. ⇒ *a gate keyed on a house convention is only as wide as the
+    /// author's memory of that convention on the day they wrote the regex.*
     #[test]
     fn the_default_is_what_the_dialog_used_to_hard_code() {
         let prefs = PrintPrefs::default();

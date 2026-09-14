@@ -99,6 +99,13 @@ pub mod export_dxf;
 /// ★★★ The Export-image window — a picture of the page in a format that can
 /// actually hold what is on it. `OPERATOR_REQUESTS.md` O120.
 pub mod export_image;
+/// The WRITING half of what the three export windows remember --
+/// `OPERATOR_REQUESTS.md` O196. Shared by all three because the argument
+/// (the no-op guard, the swallowed failure, the position of the call, the
+/// token-not-`{:?}` rule for the trace) is one decision made once; only the
+/// projection differs, and that stays in each window beside the fields it
+/// reads.
+mod export_remembered;
 /// ★★★ The Export-text window. Its header used to carry *"the half of the
 /// operator's ask that does not exist: no route from a text file back into a
 /// PDF"* — corrected 2026-09-07, when it started existing. It now carries the
@@ -707,10 +714,29 @@ pub struct Frame<'a> {
 
     /// The preferences file, mutable.
     ///
-    /// ★ Added 2026-09-10 for **O166**. Exactly one dialog writes to it — the
-    /// Print window, which persists the operator's last-used print settings
-    /// the moment they press Print. Everything else here reads the
-    /// application's state and answers through [`Self::actions`].
+    /// ★ Added 2026-09-10 for **O166**, for the Print window, which persists
+    /// the operator's last-used print settings the moment they press Print.
+    ///
+    /// **Five dialogs write to it** as of 2026-09-13: Print (O166), the
+    /// default-app offer (O173, which clears `ask_default_app` when the window
+    /// settles), and the three export windows (O196 — *"the export windows
+    /// forget everything"*). Everything else here reads the application's state
+    /// and answers through [`Self::actions`].
+    ///
+    /// ⚠ **This doc said "exactly one dialog writes to it" until 2026-09-13,
+    /// and that sentence was true for twelve hours.** It was written at 02:50
+    /// on 2026-09-10; the default-app dialog landed at 14:42 the same day and
+    /// wrote `ask_default_app` through this very field. Nothing noticed for
+    /// three days, and nothing could: a prose claim about **how many callers a
+    /// mutable reference has** is invisible to the compiler, to clippy and to
+    /// every test in the crate, so it decays silently from the moment the next
+    /// caller appears.
+    ///
+    /// ⇒ The count is therefore stated as a dated fact rather than as a rule,
+    /// and the rule that survives is the one that is actually enforceable: a
+    /// dialog writes a preference **at the moment the operator commits** —
+    /// presses Print, presses Export, answers the offer — never when its window
+    /// closes. That one can be checked by reading a call site.
     pub prefs: &'a mut crate::app::prefs::Prefs,
 
     /// ★★ **The redaction panel's chosen mark appearance**, added 2026-09-11
@@ -895,10 +921,11 @@ impl DialogsState {
             return;
         };
         let doc: &OpenDoc = doc;
-        // ★ The Print window is the one dialog here that WRITES a preference —
+        // ★ The Print window is why this function takes `&mut Prefs` at all —
         // O166, the operator's last-used print settings, persisted the moment
-        // he presses Print. That is why this function takes `&mut Prefs` at
-        // all; see `print::PrintDialog::remember`.
+        // he presses Print; see `print::PrintDialog::remember`. It is no longer
+        // the only writer, and the count and the reason the count went stale
+        // unnoticed are on `Frame::prefs`.
         if self.print.as_mut().map(|d| d.show(ctx, doc, window, prefs)) == Some(false) {
             self.print = None;
         }
@@ -931,16 +958,37 @@ impl DialogsState {
         if self.insert_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_image = None;
         }
-        if self.export_dxf.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+        // ★★★ `prefs` on all three export windows — O196, *"the export windows
+        // forget everything. every time I export a dxf I have to set it up
+        // again."* Each writes its own group at its own Export press; the
+        // guard against rewriting the file when nothing changed, and the
+        // argument for pressing rather than closing, are in
+        // `dialogs::export_remembered`.
+        if self
+            .export_dxf
+            .as_mut()
+            .map(|d| d.show(ctx, actions, prefs))
+            == Some(false)
+        {
             self.export_dxf = None;
         }
         if self.stamp_collection.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.stamp_collection = None;
         }
-        if self.export_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+        if self
+            .export_image
+            .as_mut()
+            .map(|d| d.show(ctx, actions, prefs))
+            == Some(false)
+        {
             self.export_image = None;
         }
-        if self.export_text.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+        if self
+            .export_text
+            .as_mut()
+            .map(|d| d.show(ctx, actions, prefs))
+            == Some(false)
+        {
             self.export_text = None;
         }
         if self.embed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {

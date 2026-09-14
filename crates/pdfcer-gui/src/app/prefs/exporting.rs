@@ -190,8 +190,8 @@ pub const MAX_JPEG_QUALITY: u8 = 100;
 /// Five fields, every one of them an answer to *"how does this operator export
 /// pictures"* rather than to *"what is in this document"*. `PartialEq` and not
 /// `Eq` because [`Self::dpi`] is an `f32`; the derive is load-bearing rather
-/// than decorative — `ExportImageDialog::remember` compares with `!=` and skips
-/// the file write when nothing moved.
+/// than decorative — [`crate::dialogs::export_remembered::remember_image`]
+/// compares with `!=` and skips the file write when nothing moved.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExportImagePrefs {
     /// Which of the four writers the export goes through.
@@ -233,8 +233,25 @@ impl Default for ExportImagePrefs {
         Self {
             format: ImageFormat::Png,
             scope: PageScope::CurrentPage,
+            // 300, print grade. The same default the engine's `SvgOptions`
+            // takes and for the reason it states: *an embedded raster cannot
+            // be re-sampled later*. A screen-grade default would make the
+            // common case — a drawing going into a document that
+            // will be printed — the case the operator has to
+            // remember to fix.
             dpi: 300.0,
+            // ★★ Transparency ON, and that is the operator's own
+            // instruction rather than a taste: *there had better be full
+            // support (including transparency where supported!)*. A default
+            // of white would make the feature he asked for the one he has to
+            // find.
             transparent: true,
+            // `JpegOptions::default()`'s own 90, and the engine states why:
+            // it is where `jpeg-encoder` stops subsampling chroma, which for
+            // line art and text is the difference between crisp and smeared
+            // colour edges. Mirrored rather than read because `JpegOptions`
+            // is `#[non_exhaustive]` and this is a `u8` in a window, not an
+            // options struct.
             quality: 90,
         }
     }

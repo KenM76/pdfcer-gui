@@ -91,7 +91,9 @@ impl PdfcerApp {
     /// carry their own note about why the file's **extension** is the decision.
     pub(in crate::app) fn dispatch_exchange(&mut self, id: &str, actions: &mut Vec<Action>) {
         match id {
-            "file.export_dxf" => self.dialogs.open_export_dxf(&self.status),
+            "file.export_dxf" => self
+                .dialogs
+                .open_export_dxf(&self.status, &self.prefs.export.dxf),
             // ★★★ **Export image — `OPERATOR_REQUESTS.md` O120, wired
             // 2026-09-04.** The operator asked the ENGINE side for it on
             // 2026-09-03; the engine shipped all of it the same day and sent a
@@ -105,7 +107,9 @@ impl PdfcerApp {
             // reason: an export reads the document and writes elsewhere, so
             // there is no mode in which it should be refused. Read mode
             // exporting a drawing is what a reading stance is FOR.
-            "file.export_image" => self.dialogs.open_export_image(&self.status),
+            "file.export_image" => self
+                .dialogs
+                .open_export_image(&self.status, &self.prefs.export.image),
             // ★★★ **Export text — wired 2026-09-04**, on the operator's ask:
             // *"also the engine can export PDFs as text. we should have
             // export/import for that."* A dialog rather than a bare picker,
@@ -124,7 +128,9 @@ impl PdfcerApp {
             // **nothing in the crate could create a page before, only copy
             // one**, which is why the absence lasted two days rather than one
             // afternoon.
-            "file.export_text" => self.dialogs.open_export_text(&self.status),
+            "file.export_text" => self
+                .dialogs
+                .open_export_text(&self.status, &self.prefs.export.text),
             // ★★★ **Import text as pages — wired 2026-09-07.** The other half.
             //
             // ★ A picker THEN a dialog, which is `file.insert_pages`' shape and

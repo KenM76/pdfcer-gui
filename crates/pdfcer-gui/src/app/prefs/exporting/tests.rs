@@ -351,6 +351,167 @@ fn every_field_of_every_group_is_both_written_and_parsed() {
     }
 }
 
+/// ★★★ **Every remembered field is actually read back into its window.**
+///
+/// The half of O196 that no compiler and no other test in this file can see,
+/// and the half most likely to rot. Ported from `super::super::printing`'s
+/// `every_remembered_field_is_read_back_by_the_print_dialog`, which found the
+/// shape first for O166, and generalised over the three groups.
+///
+/// # Why the writing half is free and the reading half is not
+///
+/// Each window's `habits()` is a struct literal with **no
+/// `..Default::default()`**, so *writing* a new preference is compiler-enforced:
+/// add a field to one of these groups and that function stops building.
+///
+/// The *reading* side has no such property. A window's `open` is a struct
+/// literal of the **dialog's** fields, and a field of `ExportImagePrefs` that
+/// nothing over there mentions compiles perfectly. The window opens on its
+/// hard-coded value while the preferences file dutifully records, writes and
+/// reloads a number nobody ever looks at.
+///
+/// Every other test in this module would still pass: the round trip works, the
+/// tokens are unique, the defaults match, `write_block` and `parse_key` both
+/// name the field. The only symptom is the operator saying *"it still doesn't
+/// remember the DXF units"*, months later — which is, word for word, the
+/// complaint this module exists to answer.
+///
+/// # ⚠ The DXF row points somewhere else, and that is the design
+///
+/// [`crate::dialogs::export_dxf::ExportDxfDialog::open`] does not mention
+/// `remembered.units` at all. It calls
+/// [`crate::dialogs::export_dxf::seeded_options`], which is where the ordering
+/// rule lives — the operator's habit first, the page's own calibration second —
+/// lifted out precisely so that rule could have a unit test.
+///
+/// So this table names, per group, **the function that actually reads
+/// `remembered`**. The two alternatives were both worse. Pointing every row at
+/// `open` reports a false failure for DXF. Searching the whole file lets a
+/// mention in a doc comment satisfy every row, and this project has been caught
+/// by exactly that: a gate keyed on a name, discharged by prose.
+///
+/// # What it does not prove
+///
+/// ⚠ It is a source-text check, so it proves the name is *mentioned* in the
+/// right function, not that it is used correctly. That is still the whole
+/// difference between a preference that is wired up and one that is silently
+/// inert. The driven `ui-verify` check is what proves the value survives a
+/// restart, and it is the only thing that can.
+#[test]
+fn every_remembered_field_is_read_back_by_its_dialog() {
+    let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let own = std::fs::read_to_string(src.join("app/prefs/exporting.rs"))
+        .expect("this module's own source");
+
+    // (struct declaration, dialog source, the reader's signature, the item
+    //  that follows the reader, how many fields the struct declares)
+    let groups: [(&str, &str, &str, &str, usize); 3] = [
+        (
+            "pub struct ExportImagePrefs {",
+            "dialogs/export_image.rs",
+            "pub fn open(doc: &OpenDoc, remembered:",
+            "    fn habits(&self)",
+            5,
+        ),
+        (
+            "pub struct ExportTextPrefs {",
+            "dialogs/export_text.rs",
+            "pub fn open(doc: &OpenDoc, remembered:",
+            "    fn habits(&self)",
+            4,
+        ),
+        (
+            "pub struct ExportDxfPrefs {",
+            "dialogs/export_dxf.rs",
+            "pub fn seeded_options(",
+            "pub fn open_for(",
+            3,
+        ),
+    ];
+
+    for (decl, dialog_path, reader, next_item, expected) in groups {
+        let fields = fields_of(&own, decl);
+        // A FLOOR rather than an equality, for the reason
+        // `every_field_of_every_group_is_both_written_and_parsed` states at
+        // length one section above: an equality would intercept an ADDED field
+        // and report "the declaration's shape changed" instead of the true
+        // finding, which is that nothing reads it. The floor is here only to
+        // catch a parser that stopped matching lines and would otherwise sweep
+        // an empty list and pass.
+        assert!(
+            fields.len() >= expected,
+            "the struct parser found only {} field(s) in `{decl}` where at least {expected} are declared — this test has gone blind rather than red",
+            fields.len()
+        );
+
+        let dialog = std::fs::read_to_string(src.join(dialog_path))
+            .unwrap_or_else(|_| panic!("the source of {dialog_path}")); // ui-text-exempt: test panic, never displayed
+        let (_, after) = dialog
+            .split_once(reader)
+            .unwrap_or_else(|| panic!("`{reader}` in {dialog_path}, verbatim")); // ui-text-exempt: test panic, never displayed
+        // Bounded at the next item, so a mention anywhere else in the file —
+        // including in a doc comment — cannot satisfy the assertion below.
+        let (body, _) = after
+            .split_once(next_item)
+            .unwrap_or_else(|| panic!("`{next_item}`, the item after `{reader}`")); // ui-text-exempt: test panic, never displayed
+
+        for field in fields {
+            assert!(
+                body.contains(&format!("remembered.{field}")),
+                "★ `{decl}`'s `{field}` is written to the preferences file and never read back: `{reader}` in {dialog_path} does not mention `remembered.{field}`, so the window opens on its hard-coded value and this preference is inert. Seed it there, or delete it from the group — a preference that is stored and ignored is worse than one that was never offered."
+            );
+        }
+    }
+}
+
+/// ★★ The two number boxes in the Export-image window name these constants
+/// rather than repeating their numbers.
+///
+/// # The rule this makes structural
+///
+/// The four bound constants at the top of [`super`] carry an instruction in
+/// their own doc comment: *"if a control's range changes, change it here in the
+/// same commit — the round-trip is only honest while the two agree."* That was
+/// a thing to remember, and a thing to remember has no instrument. Both boxes
+/// did in fact repeat their literals — `1.0..=4800.0` and `1..=100` — while the
+/// constants sat beside the clamp, so the two halves could drift apart in a
+/// single edit and nothing in the toolchain would notice.
+///
+/// # What drifting apart would cost
+///
+/// The preferences file clamps a read value into these constants. If a box were
+/// widened and the constants were not, an operator could drag the resolution to
+/// a number the box accepts, close pdfcer, and reopen it to find a different
+/// number — because the file clamped on the way back in. That is O196's
+/// complaint arriving through a different door: the window forgot what it was
+/// told, and nothing anywhere said so.
+///
+/// # Why the source text and not the values
+///
+/// There is no value to compare. The range lives inside a builder call and is
+/// consumed by egui, which exposes it again to nobody. What *can* be measured
+/// is whether the call names the constant, and here that is the whole of the
+/// rule rather than a proxy for it: a literal and a constant cannot both be
+/// written in the same position, so naming the constant is exactly the property
+/// wanted.
+#[test]
+fn the_dragvalue_ranges_are_the_constants_the_file_clamps_to() {
+    let dialog = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/dialogs/export_image.rs"),
+    )
+    .expect("the Export-image window's source");
+
+    for expected in [
+        ".range(MIN_EXPORT_DPI..=MAX_EXPORT_DPI)",
+        ".range(MIN_JPEG_QUALITY..=MAX_JPEG_QUALITY)",
+    ] {
+        assert!(
+            dialog.contains(expected),
+            "★ the Export-image window no longer writes `{expected}`, so one of its two number boxes has gone back to a literal range and the preferences file's clamp is now free to disagree with what the box will accept. Put the constant back in the range, or move the constant to follow the box — but do not leave them stated twice."
+        );
+    }
+}
+
 // ---------------------------------------------------------------------------
 // 4. The round trip, and the numeric rulings
 // ---------------------------------------------------------------------------

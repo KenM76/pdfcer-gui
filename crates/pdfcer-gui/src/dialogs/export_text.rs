@@ -89,8 +89,45 @@ use crate::text::export_text as t;
 
 /// The region this dialog publishes for its body.
 pub const REGION_BODY: &str = "dialog:export-text"; // ui-text-exempt: trace region name, never displayed
-/// The region the page controls publish.
+/// ★★ The region ONE page-scope radio publishes.
+///
+/// ★ These exist for `OPERATOR_REQUESTS.md` **O196**. Until the export windows
+/// remembered anything, a driven check had nothing to assert about a radio
+/// beyond *"it is drawn"*; now the question is which one is **selected on
+/// open**, and that cannot be asked of a group rectangle.
+///
+/// The alternative — pressing the group's rectangle plus an offset — is the
+/// check that presses the wrong control the day a hint gains a line, which
+/// `dialogs::export_image::region_for_format` states in full.
+#[must_use]
+pub const fn region_for_scope(scope: PageScope) -> &'static str {
+    match scope {
+        // ui-text-exempt: trace region names, matched by tools/ui-verify and
+        // never displayed.
+        PageScope::AllPages => "export-text.pages.all",
+        PageScope::CurrentPage => "export-text.pages.current",
+        PageScope::Typed => "export-text.pages.typed",
+    }
+}
+/// The region the page-scope radio GROUP publishes — all three together, plus
+/// the range box.
 pub const REGION_PAGES: &str = "export-text.pages"; // ui-text-exempt: trace region name, never displayed
+/// ★★ The region ONE separator radio publishes. Same argument as
+/// [`region_for_scope`], and the same reason: **which one is ticked on open**
+/// is now a question worth asking.
+#[must_use]
+pub const fn region_for_separator(separator: PageSeparator) -> &'static str {
+    match separator {
+        // ui-text-exempt: trace region names, matched by tools/ui-verify and
+        // never displayed.
+        PageSeparator::FormFeed => "export-text.separator.form-feed",
+        PageSeparator::Marker => "export-text.separator.marker",
+    }
+}
+/// The region the Windows-line-endings checkbox publishes.
+pub const REGION_LINE_ENDINGS: &str = "export-text.line-endings"; // ui-text-exempt: trace region name, never displayed
+/// The region the byte-order-mark checkbox publishes.
+pub const REGION_BOM: &str = "export-text.bom"; // ui-text-exempt: trace region name, never displayed
 /// The region the Export button publishes.
 pub const REGION_EXPORT: &str = "export-text.export"; // ui-text-exempt: trace region name, never displayed
 
@@ -107,11 +144,37 @@ pub struct ExportTextDialog {
     /// reason.
     page_count: usize,
     /// Which pages.
+    ///
+    /// # ★ Why this window opens on **every page** where the image window
+    /// opens on *this page only*
+    ///
+    /// The shipped value lives in [`crate::app::prefs::ExportTextPrefs`] as of
+    /// **O196** and the operator can now change it by exporting; the *argument*
+    /// stays here, because it is an argument about this window's verb and the
+    /// preferences file cites this file for it by name.
+    ///
+    /// The two verbs are asked for in different moods. A picture of a page is a
+    /// picture of *a* page — fifty PNGs is a directory nobody wanted, and the
+    /// image window's own multi-file naming rule exists because that scope is
+    /// the unusual one. The text of a document is asked for to search it, to
+    /// diff it, or to paste it into a specification, and all three want the
+    /// whole thing. The verb one group over that already answers *"the text of
+    /// THIS page"* is `file.copy_page_text`, and it is one keystroke.
     scope: PageScope,
     /// The typed range, kept across scope changes so switching to **Every
     /// page** and back does not lose what was typed.
+    ///
+    /// ⚠ **Not remembered between jobs**, and that is O196's one deliberate
+    /// omission here: a typed range is a statement about *this document's* page
+    /// numbering. See [`Self::open`].
     range_text: String,
     /// What goes between one page and the next.
+    ///
+    /// ★ The shipped default is the engine's own separator — see
+    /// `PageSeparator::FormFeed`. Defaulting to the marker would make the
+    /// departure from the clipboard's bytes the thing an operator has to notice
+    /// and undo, and the argument for that is now on
+    /// [`crate::app::prefs::ExportTextPrefs`] with the value it argues for.
     separator: PageSeparator,
     /// How lines end.
     line_endings: LineEndings,
@@ -124,45 +187,112 @@ pub struct ExportTextDialog {
 }
 
 impl ExportTextDialog {
-    /// Open the window for the document on screen.
+    /// Open the window for the document on screen, seeded from what the last
+    /// text export asked for.
+    ///
+    /// # ★★★ `remembered` — operator request **O196**, 2026-09-13
+    ///
+    /// > *"the export windows forget everything. every time I export a dxf I
+    /// > have to set it up again."*
+    ///
+    /// All four of this window's answers were literals until that day. The
+    /// membership rule — **a setting is remembered only if it would still be
+    /// the right answer for a different document** — and the argument for the
+    /// shipped value of each one live on
+    /// [`crate::app::prefs::ExportTextPrefs`]. Read that first; this is only
+    /// the seeding.
+    ///
+    /// ⚠ `range_text` is NOT seeded and is not a preference. A typed range is
+    /// a statement about *this document's* page numbering, and restoring
+    /// `12-40` onto a nine-page file would open the window in a state whose
+    /// Export button is already dead for a reason the operator did not cause.
     #[must_use]
-    pub fn open(doc: &OpenDoc) -> Self {
+    pub fn open(doc: &OpenDoc, remembered: &crate::app::prefs::ExportTextPrefs) -> Self {
         let page_index = doc.view.page_index;
         let page_count = doc.pages.len();
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed
-            format!("export-text-open page={page_index} pages={page_count}")
-        });
-        Self {
+        // ★★ **Four values come from the file, and the arguments for the
+        // shipped defaults went WITH them** — up to this struct's own field
+        // docs and to `ExportTextPrefs::default()`. They used to be written
+        // here, as comments on literals; leaving them here would have left this
+        // function explaining an `AllPages` it no longer chooses, which is the
+        // shape of prose that is true on the day it is written and wrong a
+        // month later.
+        let dialog = Self {
             page_index,
             page_count,
-            // ★ **Every page by default**, and this is the one place this
-            // window deliberately differs from the image export, which opens on
-            // *this page only*.
-            //
-            // The two verbs are asked for in different moods. A picture of a
-            // page is a picture of *a* page — fifty PNGs is a directory nobody
-            // wanted, and the image window's own multi-file naming rule exists
-            // because that scope is the unusual one. The text of a document is
-            // asked for to search it, to diff it, or to paste it into a
-            // specification, and all three want the whole thing. The verb one
-            // group over that already answers "the text of THIS page" is
-            // `file.copy_page_text`, and it is one keystroke.
-            scope: PageScope::AllPages,
+            scope: remembered.scope,
+            // Deliberately empty — see the note on this function.
             range_text: String::new(),
-            // The engine's own separator — see `PageSeparator::FormFeed`.
-            // Defaulting to the marker would make the departure from the
-            // clipboard's bytes the thing an operator has to notice and undo.
-            separator: PageSeparator::default(),
-            line_endings: LineEndings::default(),
-            byte_order_mark: false,
+            separator: remembered.separator,
+            line_endings: remembered.line_endings,
+            byte_order_mark: remembered.byte_order_mark,
             export_requested: false,
             close_requested: false,
+        };
+
+        // ★★★ **Traced from the BUILT dialog, and the position of these lines
+        // is the whole point of them.**
+        //
+        // `dialogs::print::PrintDialog::open` paid for this lesson on
+        // 2026-09-10 and states it at length; it is applied here rather than
+        // re-learned. In one line: **a trace emitted from `remembered` proves
+        // the preferences file was PARSED and says nothing about whether the
+        // window adopted a single one of those values.** A build whose struct
+        // literal above ignored `remembered` entirely — exactly the regression
+        // O196 exists to prevent — would print a fully seeded line and go
+        // green.
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "export-text-open page={} pages={} scope={} separator={} endings={} bom={}",
+                dialog.page_index,
+                dialog.page_count,
+                // ★ Stable lowercase tokens, never `{:?}`. This project's
+                // standing lesson, and the preferences file's own `*_key`
+                // functions are what produce them, so the token a check reads
+                // here and the token on disk cannot drift.
+                crate::app::prefs::exporting::page_scope_key_or(
+                    dialog.scope,
+                    crate::app::prefs::ExportTextPrefs::default().scope,
+                ),
+                crate::app::prefs::exporting::separator_key(dialog.separator),
+                crate::app::prefs::exporting::line_endings_key(dialog.line_endings),
+                u8::from(dialog.byte_order_mark),
+            )
+        });
+        dialog
+    }
+
+    /// **This window's state, reduced to what a different document would still
+    /// want** — the producing half of `OPERATOR_REQUESTS.md` **O196**.
+    ///
+    /// The membership rule and the argument for every inclusion and every
+    /// omission live on [`crate::app::prefs::ExportTextPrefs`], which is the
+    /// type this returns; this function is only the projection. It is one
+    /// struct literal with **no `..Default::default()`**, so a field added to
+    /// `ExportTextPrefs` is a compile error here rather than a preference
+    /// written to disk as its own default and never actually remembered.
+    fn habits(&self) -> crate::app::prefs::ExportTextPrefs {
+        crate::app::prefs::ExportTextPrefs {
+            scope: self.scope,
+            separator: self.separator,
+            line_endings: self.line_endings,
+            byte_order_mark: self.byte_order_mark,
         }
     }
 
     /// Draw it. Returns `false` when it should close.
-    pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
+    ///
+    /// Takes `&mut Prefs` for O196 alone: the Export press writes this window's
+    /// habits to the preferences file before the action is pushed. See
+    /// [`crate::dialogs::export_remembered`] for why it happens at the press
+    /// and not at the close.
+    pub fn show(
+        &mut self,
+        ctx: &egui::Context,
+        actions: &mut Vec<Action>,
+        prefs: &mut crate::app::prefs::Prefs,
+    ) -> bool {
         let (frame, ()) = crate::dialogs::host::Host::new(
             "export-text", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
@@ -178,13 +308,26 @@ impl ExportTextDialog {
         if std::mem::take(&mut self.export_requested)
             && let Some(plan) = self.plan()
         {
+            // ★★★ O196, and the POSITION is the decision: the habits are
+            // written when the operator presses Export, never when the window
+            // closes. Closing without exporting is how a person says *"not
+            // this"*. The argument is in
+            // [`crate::dialogs::export_remembered`], stated once for all three
+            // export windows.
+            crate::dialogs::export_remembered::remember_text(self.habits(), prefs);
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "export-text-requested pages={} separator={:?} endings={:?} bom={}",
+                    "export-text-requested pages={} separator={} endings={} bom={}",
                     plan.pages.len(),
-                    plan.separator,
-                    plan.line_endings,
+                    // Tokens, never `{:?}`: the same reduction the preferences
+                    // file performs, so a check reading this line and a check
+                    // reading the file cannot disagree. A `{:?}` on a
+                    // payload-carrying variant prints the payload too, and the
+                    // failure message then quotes the truth while the assertion
+                    // reports the opposite.
+                    crate::app::prefs::exporting::separator_key(plan.separator),
+                    crate::app::prefs::exporting::line_endings_key(plan.line_endings),
                     u8::from(plan.byte_order_mark)
                 )
             });
@@ -258,18 +401,22 @@ impl ExportTextDialog {
         // No `.strong()` anywhere in this window — R84 / DEFECTS.md D11.
         ui.label(t::pages_heading());
         let start = ui.cursor();
-        ui.radio_value(
+        // ★ Each radio's OWN rectangle, for O196 — see [`region_for_scope`].
+        let response = ui.radio_value(
             &mut self.scope,
             PageScope::AllPages,
             t::pages_all(self.page_count),
         );
-        ui.radio_value(
+        crate::diag::ui_rect(region_for_scope(PageScope::AllPages), response.rect);
+        let response = ui.radio_value(
             &mut self.scope,
             PageScope::CurrentPage,
             t::pages_current(self.page_index.saturating_add(1)),
         );
+        crate::diag::ui_rect(region_for_scope(PageScope::CurrentPage), response.rect);
         ui.horizontal(|ui| {
-            ui.radio_value(&mut self.scope, PageScope::Typed, t::pages_range());
+            let response = ui.radio_value(&mut self.scope, PageScope::Typed, t::pages_range());
+            crate::diag::ui_rect(region_for_scope(PageScope::Typed), response.rect);
             // Typing in the box selects the radio. Without it an operator types
             // a range, presses Export and gets every page — the classic shape of
             // this control getting it wrong, and one the print dialog already
@@ -302,17 +449,21 @@ impl ExportTextDialog {
     /// distinction rule 4 exists to keep visible.
     fn separator_group(&mut self, ui: &mut Ui) {
         ui.label(t::separator_heading());
-        ui.radio_value(
+        // ★ Each radio's OWN rectangle, for O196 — see
+        // [`region_for_separator`].
+        let response = ui.radio_value(
             &mut self.separator,
             PageSeparator::FormFeed,
             t::separator_form_feed(),
         );
+        crate::diag::ui_rect(region_for_separator(PageSeparator::FormFeed), response.rect);
         ui.weak(t::separator_form_feed_hint());
-        ui.radio_value(
+        let response = ui.radio_value(
             &mut self.separator,
             PageSeparator::Marker,
             t::separator_marker(),
         );
+        crate::diag::ui_rect(region_for_separator(PageSeparator::Marker), response.rect);
         // ★ Not `weak`. This is the one hint in the window that says pdfcer will
         // put words of its own into the operator's file, and a quiet grey line
         // is the thing an operator skips.
@@ -327,17 +478,17 @@ impl ExportTextDialog {
         // and diameter marks, and offering an encoding that cannot represent
         // them is offering a way to lose them silently.
         ui.weak(t::encoding_line());
-        ui.checkbox(&mut self.byte_order_mark, t::bom());
+        let response = ui.checkbox(&mut self.byte_order_mark, t::bom());
+        crate::diag::ui_rect(REGION_BOM, response.rect);
         ui.weak(t::bom_hint());
 
         // Read and written through the enum rather than mirrored into a local
         // `bool` — `dialogs::export_dxf`'s rule for `DxfText`: a shadow copy is
         // how a window comes to show one thing and write another.
         let mut windows = matches!(self.line_endings, LineEndings::Windows);
-        if ui
-            .checkbox(&mut windows, t::line_endings_windows())
-            .changed()
-        {
+        let response = ui.checkbox(&mut windows, t::line_endings_windows());
+        crate::diag::ui_rect(REGION_LINE_ENDINGS, response.rect);
+        if response.changed() {
             self.line_endings = if windows {
                 LineEndings::Windows
             } else {
@@ -370,9 +521,12 @@ impl ExportTextDialog {
 /// greys the control and this refuses the open, and a keymap or a restored
 /// layout can reach a command without going through the ribbon at all.
 #[must_use]
-pub fn open_for(status: &Status) -> Option<ExportTextDialog> {
+pub fn open_for(
+    status: &Status,
+    remembered: &crate::app::prefs::ExportTextPrefs,
+) -> Option<ExportTextDialog> {
     match status {
-        Status::Open(doc) if !doc.pages.is_empty() => Some(ExportTextDialog::open(doc)),
+        Status::Open(doc) if !doc.pages.is_empty() => Some(ExportTextDialog::open(doc, remembered)),
         _ => None,
     }
 }

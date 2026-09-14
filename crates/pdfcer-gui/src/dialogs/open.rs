@@ -568,13 +568,6 @@ impl DialogsState {
         self.page_size = page_size::PageSizeDialog::open(doc, pages);
     }
 
-    /// Open the Export-DXF window for the page on screen.
-    ///
-    /// **The dispatch target for the `file.export_dxf` command.** The two guards
-    /// [`Self::open_print`] documents apply, and the no-document one is real
-    /// rather than ceremonial: the window's scale suggestion is computed from
-    /// the document's dimension model at construction, so there is nothing to
-    /// build without one.
     /// Open the keyboard reference.
     ///
     /// **The dispatch target for `file.shortcuts`.** No document guard, unlike
@@ -601,20 +594,51 @@ impl DialogsState {
         self.stamp_collection = stamp_collection::open_for(status);
     }
 
-    pub fn open_export_dxf(&mut self, status: &Status) {
+    /// Open the Export-DXF window for the page on screen.
+    ///
+    /// **The dispatch target for the `file.export_dxf` command.** The two guards
+    /// [`Self::open_print`] documents apply, and the no-document one is real
+    /// rather than ceremonial: the window's scale suggestion is computed from
+    /// the document's dimension model at construction, so there is nothing to
+    /// build without one.
+    ///
+    /// ⚠ **This doc comment spent from the day the DXF window was written until
+    /// 2026-09-13 attached to [`Self::open_shortcuts`]**, two functions below,
+    /// because a blank `///` line was missing between it and that function's own
+    /// first line. `open_export_dxf` had none, and `open_shortcuts`'s rustdoc
+    /// told the reader it computed a scale suggestion from a dimension model.
+    /// Nothing catches this: it compiles, it renders, and it is wrong in the one
+    /// place — generated documentation — that nobody reads while editing.
+    ///
+    /// # `remembered` — O196
+    ///
+    /// Threaded through rather than read from a global: the window is seeded
+    /// from [`crate::app::prefs::ExportDxfPrefs`], and taking it as an argument
+    /// is what lets a unit test construct the window in a known state. Same
+    /// shape as [`Self::open_print`], which did this first.
+    pub fn open_export_dxf(
+        &mut self,
+        status: &Status,
+        remembered: &crate::app::prefs::ExportDxfPrefs,
+    ) {
         if self.export_dxf.is_some() {
             return;
         }
-        self.export_dxf = export_dxf::open_for(status);
+        self.export_dxf = export_dxf::open_for(status, remembered);
     }
 
     /// **The dispatch target for the `file.export_text` command**, with
-    /// [`Self::open_export_dxf`]'s two guards and for its reasons.
-    pub fn open_export_text(&mut self, status: &Status) {
+    /// [`Self::open_export_dxf`]'s two guards and for its reasons, and its
+    /// `remembered` argument for its reason too — O196.
+    pub fn open_export_text(
+        &mut self,
+        status: &Status,
+        remembered: &crate::app::prefs::ExportTextPrefs,
+    ) {
         if self.export_text.is_some() {
             return;
         }
-        self.export_text = export_text::open_for(status);
+        self.export_text = export_text::open_for(status, remembered);
     }
 
     /// Open the Export-image window for the open document.
@@ -624,11 +648,18 @@ impl DialogsState {
     /// real rather than ceremonial: the window measures the largest page at
     /// construction to promise a pixel count, and there is nothing to measure
     /// without one.
-    pub fn open_export_image(&mut self, status: &Status) {
+    ///
+    /// `remembered` is O196's, and is [`Self::open_export_dxf`]'s argument
+    /// applied unchanged.
+    pub fn open_export_image(
+        &mut self,
+        status: &Status,
+        remembered: &crate::app::prefs::ExportImagePrefs,
+    ) {
         if self.export_image.is_some() {
             return;
         }
-        self.export_image = export_image::open_for(status);
+        self.export_image = export_image::open_for(status, remembered);
     }
 
     /// Open the Embed-fonts window, and say so when there is nothing to open.
