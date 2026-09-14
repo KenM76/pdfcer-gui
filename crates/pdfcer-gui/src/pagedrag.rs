@@ -52,17 +52,46 @@
 //! therefore captured, and captured **with the slot it came from**, which is
 //! the pair that makes it meaningful later.
 //!
-//! ## ★ A drag between documents is a COPY
+//! ## ★ A drag between documents COPIES, and Shift makes it a move
 //!
 //! Stated here because this is the module every reader of the feature reaches
-//! first. The argument is in [`crate::text::doctabs::drag_landing_other`] and
-//! it is about undo, not about caution: a move is two edits in two documents
-//! with one undo stack each, and there is no ordering of them that makes one
-//! Ctrl+Z mean *"undo what I just did"*. Windows Explorer copies between
-//! volumes for the same reason.
+//! first, and stated as a **default rather than a design**, which it was not
+//! when this header was first written.
 //!
-//! Within one document the drag is the reorder it always was, and a reorder is
-//! one undoable command.
+//! The unmodified gesture copies. The argument is in
+//! [`crate::text::doctabs::drag_landing_other`] and it is about undo, not
+//! about caution: a move is two edits in two documents with one undo stack
+//! each, and there is no ordering of them that makes one Ctrl+Z mean *"undo
+//! what I just did"*. Windows Explorer copies between volumes for the same
+//! reason.
+//!
+//! **Holding Shift asks for the move anyway**, because an operator who wants
+//! the pages out of the source is entitled to say so, and Shift is the key
+//! that has meant *move* on this desktop since the mid-nineties.
+//! [`crate::pagedrag::wants_move`] samples it live at the drop rather than
+//! latching it at the press, so the caption changes under the operator's
+//! hand while the key is held
+//! ([`crate::text::doctabs::drag_landing_move`], which says *REMOVED* and
+//! names the source), and afterwards
+//! [`crate::text::doctabs::moved_out_of`] states the undo consequence in
+//! words. ⇒ **The disclosure is what makes the move offerable at all** — the
+//! undo argument above is still true of it, so the operator is told, before
+//! release and again after it.
+//!
+//! ⚠ This heading read *"A drag between documents is a COPY"* until
+//! 2026-09-14, and it was false **four hours and forty-four minutes after it
+//! was written**: `d829ae2` shipped the cross-document drag at 00:31 on
+//! 2026-08-20 with copy as the only behaviour, and `b28e320` added Shift at
+//! 05:15 the same morning. It then survived twenty-five days. Nothing a
+//! compiler or a gate can see was ever wrong — the modifier's own
+//! documentation sits further down this same file, on
+//! [`crate::pagedrag::wants_move`], and is correct and complete.
+//! ⇒ **A module header is a summary of code that keeps moving, and the
+//! commit that moves it edits the code, not the summary.**
+//!
+//! Within one document the drag is the reorder it always was, a reorder is one
+//! undoable command, and no modifier applies — there is nothing for it to
+//! select between.
 
 /// **A page drag in flight.**
 ///

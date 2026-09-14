@@ -16,10 +16,10 @@
 - [Smoke-launch offscreen when the desktop is blocked](feedback_smoke_launch_offscreen_when_the_desktop_is_blocked.md) — `PDFCER_DIAG_VIEWPORT` proves a surface is drawn, pointer untouched.
 - [Requests live in a file, not a conversation](feedback_operator_requests_live_in_a_file_not_a_conversation.md) — every ask goes in OPERATOR_REQUESTS.md at once; only Ken closes a row.
 - [A guard that stops repetition does not stop creep](feedback_a_guard_that_stops_repetition_does_not_stop_creep.md) — a measurement fed into a size needs a direction bound and a floor.
-- [A measurement of the wrong surface looks exactly like a broken one](feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one.md) — ask what a failing check SAMPLED, then what is broken.
+- [A measurement of the wrong surface looks like a broken one](feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one.md) — ask what a failing check SAMPLED, then what is broken.
 - [Disk AND RAM are tight — and the biggest item is not in `target/`](project_disk_is_tight_and_target_grows_unbounded.md) — one engine source tree per pin bump under `~/.cargo`, never collected.
 - [A backlog row is a record, not evidence](feedback_a_backlog_row_is_a_record_not_evidence.md) — verify absence claims against source.
-- [A fixture that defeats a default does not defeat a starting state](feedback_a_fixture_that_defeats_a_default_does_not_defeat_a_starting_state.md) — vacuous if the run already stands where the defect lands.
+- [A fixture defeating a default does not defeat a starting state](feedback_a_fixture_that_defeats_a_default_does_not_defeat_a_starting_state.md) — vacuous if the run already stands where the defect lands.
 - [A SKIP is not red, so a check can stop running unnoticed](feedback_a_skip_is_not_red_so_a_check_can_stop_running_unnoticed.md) — diff the SKIP set.
 - [A check that cannot fail is not evidence](feedback_a_check_that_cannot_fail_is_not_evidence.md) — falsify before quoting green; a SKIP calling itself expected is inert.
 - [Ken's sentences are reports, not measurements](feedback_kens_sentences_are_reports_not_measurements.md) — "up to 800%" named an old setting, not a threshold; measure his boundary.
@@ -35,10 +35,10 @@
 - [An absence claim is a claim about every route](feedback_an_absence_claim_is_a_claim_about_every_route.md) — grep before saving.
 - [Unit tests cannot see the chain in front of the verb](feedback_unit_tests_that_call_the_verb_cannot_see_the_chain_in_front_of_it.md) — eight green tests while the feature did 1 of 14.
 - [Grep the sibling crate before writing the missing half](feedback_grep_the_sibling_crate_before_writing_the_missing_half.md) — a mirrored enum means the other side is already implemented.
-- [A request for something shipped is a discoverability report](feedback_a_request_for_something_shipped_is_a_discoverability_report.md) — fix the route that failed him, and ship the literal ask too.
+- [A request for a shipped thing is a discoverability report](feedback_a_request_for_something_shipped_is_a_discoverability_report.md) — fix the route that failed him, and ship the literal ask too.
 - [The canvas is the primary surface, never a panel](feedback_the_canvas_is_the_primary_surface_never_a_panel.md) — if the engine can do it, clicking the object must reach it.
 - [A hand-written list inside a completeness test is the gap](feedback_a_hand_written_list_inside_a_completeness_test_is_the_gap.md) — a new module is invisible to the check built to find it.
-- [A temporary shim needs a tripwire that names its own deletion](feedback_a_temporary_shim_needs_a_tripwire_that_names_its_own_deletion.md) — `debug_assert` on the condition that makes it unnecessary.
+- [A temporary shim needs a tripwire naming its own deletion](feedback_a_temporary_shim_needs_a_tripwire_that_names_its_own_deletion.md) — `debug_assert` on the condition that makes it unnecessary.
 - [Adding a second route is an audit of the capability](feedback_adding_a_second_route_is_an_audit_of_the_capability.md) — twice in an afternoon the new door found a divergence the old one hid.
 - [A completeness question needs an instrument, not a document](feedback_a_completeness_question_needs_an_instrument_not_a_document.md) — "confirm you built every X" is a script keyed on their API.
 - [Write the row when he speaks, not when the work lands](feedback_write_the_row_when_he_speaks_not_when_the_work_lands.md) — three requests were built and never filed.
@@ -47,19 +47,19 @@
 - [The project is pdfcer-gui since 2026-09-03](project_the_project_is_pdfcer_gui_since_2026_09_03.md) — names, folders, repos; and the two references that deliberately did NOT move.
 - [A rename can blind an instrument silently](feedback_a_rename_can_blind_an_instrument_silently.md) — a hard-coded external path makes a rename a green check over nothing.
 - [A proxy condition survives one correction](feedback_a_proxy_condition_survives_one_correction.md) — corrected once for a stand-in, usually still using one; ask what it READS.
-- [A correctly-sourced value used for the wrong role passes every gate](feedback_a_correctly_sourced_value_used_for_the_wrong_role_passes_every_gate.md) — the gate forbids invented values, not wrong roles.
+- [A right value used for the wrong role passes every gate](feedback_a_correctly_sourced_value_used_for_the_wrong_role_passes_every_gate.md) — the gate forbids invented values, not wrong roles.
 - [A trace-grepping check passes on a build that crashed](feedback_a_trace_grepping_check_passes_on_a_build_that_crashed.md) — the oracle line is written before the panic.
-- [A harness with a bad input produces defects that do not exist](feedback_a_harness_with_a_bad_input_produces_defects_that_do_not_exist.md) — one wrong page index made six reports and four filed defects.
+- [A harness with a bad input invents defects](feedback_a_harness_with_a_bad_input_produces_defects_that_do_not_exist.md) — one wrong page index made six reports and four filed defects.
 - [Parallelism is the default, and it needs an ownership map](feedback_parallelism_is_the_default_and_it_needs_an_ownership_map.md) — nine tracks in one repo.
 - [Never ask — just add the feature](feedback_never_ask_just_add_the_feature.md) — placement, wording and scope are yours.
 - [A commit message can describe work that never landed](feedback_a_commit_message_can_describe_work_that_never_landed.md) — a `;` chain let a failed edit be followed by a truthful-looking commit.
 - [Smoke-launch before EVERY release — it is ninety seconds](feedback_smoke_launch_before_every_release_it_is_ninety_seconds.md) — off-screen, no focus.
 - [A driven failure is a claim about the check too](feedback_a_driven_failure_is_a_claim_about_the_check_too.md) — the first full sweep gave 7 harness defects.
-- [A window over the thing it describes takes that thing's gestures](feedback_a_window_over_the_thing_it_describes_takes_that_things_gestures.md) — `constrain_to` slides a pop-up onto its own anchor.
+- [A window over what it describes takes that thing's gestures](feedback_a_window_over_the_thing_it_describes_takes_that_things_gestures.md) — `constrain_to` slides a pop-up onto its own anchor.
 - [A uniform failure at every rung of a sweep is about the probe](feedback_a_uniform_failure_at_every_rung_of_a_sweep_is_about_the_probe.md) — the baseline rung is the control.
-- [An absence assertion is as good as when its baseline was taken](feedback_an_absence_assertion_is_only_as_good_as_when_its_baseline_was_taken.md) — green against a PLANTED defect the setup emitted first.
-- [An absence reported by a check is usually the panel going quiet](feedback_an_absence_reported_by_a_check_is_usually_the_panel_going_quiet.md) — a dock draws only its active tab; last() returns a fossil.
-- [When two things differ in two ways, the measured one is not the cause](feedback_when_two_things_differ_in_two_ways_the_measured_one_is_not_the_cause.md) — I blamed the difference with a column in a report.
+- [An absence assertion is as good as its baseline's date](feedback_an_absence_assertion_is_only_as_good_as_when_its_baseline_was_taken.md) — green against a PLANTED defect the setup emitted first.
+- [An absence reported by a check is usually a panel going quiet](feedback_an_absence_reported_by_a_check_is_usually_the_panel_going_quiet.md) — a dock draws only its active tab; last() returns a fossil.
+- [When two things differ in two ways, the measured one is not it](feedback_when_two_things_differ_in_two_ways_the_measured_one_is_not_the_cause.md) — I blamed the difference with a column in a report.
 - [A gate keyed on a name is discharged by prose](feedback_a_gate_keyed_on_a_name_is_discharged_by_prose.md) — 25 verbs scored "consumed" on doc comments.
 - [Never Debug-format a field a machine reads](feedback_never_debug_format_a_field_a_machine_reads.md) — a `{:?}` tuple made a check report the opposite of the truth while quoting it.
 - [A citation that supports my theory may be about a different document](feedback_a_citation_that_supports_my_theory_may_be_about_a_different_document.md) — two wrong diagnoses in a day.
@@ -69,27 +69,27 @@
 - ["Cheap to read" is not "no need to re-read"](feedback_cheap_to_read_is_not_no_need_to_reread.md) — a cache comment arguing cost was answering a staleness question.
 - [A disclosure has a subject](feedback_a_disclosure_has_a_subject_delete_it_when_the_subject_goes.md) — when the fix removes what it explained, delete it; never re-point it.
 - [A tripwire keyed on your own intention is not a tripwire](feedback_a_tripwire_keyed_on_your_own_intention_is_not_a_tripwire.md) — read the OTHER side's source, found through Cargo.lock.
-- [A contract you write for someone else's function is a claim to measure](feedback_a_contract_you_write_for_someone_elses_function_is_a_claim_to_measure.md) — a ported doc comment described the deleted code.
+- [A contract you write for another's function is a claim to measure](feedback_a_contract_you_write_for_someone_elses_function_is_a_claim_to_measure.md) — a ported doc comment described the deleted code.
 - [An unevidenced excuse is worse than silence](feedback_an_unevidenced_excuse_is_worse_than_silence.md) — a check explaining an absence it never measured reads as an answered question.
 - [Triage the reply channel — the engine fixes faster than we notice](feedback_triage_the_reply_channel_the_engine_fixes_faster_than_we_notice.md) — one triage found 8 claims of closed absences.
 - [An apparent omission may be an argued decision](feedback_an_apparent_omission_may_be_an_argued_decision.md) — open the module that owns it.
-- [A new test that does not raise the count did not run](feedback_a_new_test_that_does_not_raise_the_count_did_not_run.md) — three #[test] fns nested inside a fn compiled, reported nothing, ran zero times.
+- [A new test that does not raise the count did not run](feedback_a_new_test_that_does_not_raise_the_count_did_not_run.md) — three #[test] fns nested inside a fn ran zero times.
 - [Never kill pdfcer-gui by name — he uses it all day](feedback_never_kill_pdfcer_gui_by_name_he_uses_it_all_day.md) — his daily PDF reader; kill by PID, check the PATH, never `/IM`.
 - [Count a condition and you will reason about the other one](feedback_count_a_condition_and_you_will_reason_about_the_other_one.md) — two wrong diagnoses in a day from counting one half of an AND.
 - [An `||` between two required conditions asserts neither](feedback_an_or_between_two_required_conditions_asserts_neither.md) — it looks like tolerance of a rewording.
 - [A check whose input is convenient tests the assertion](feedback_a_check_whose_input_is_chosen_for_convenience_tests_the_assertion.md) — "what is typed does not matter" is a finding, not an excuse.
 - [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) — a refusal about the KIND should change what the surface offers.
 - [A disproof is a measurement too](feedback_a_disproof_is_a_measurement_too_and_the_dead_hypothesis_was_the_truth.md) - the truth was killed by a number read against the WINDOW, not the viewport.
-- [A launch failure blamed on a resource count needs a control binary](feedback_a_launch_failure_blamed_on_a_resource_count_needs_a_control_binary.md) - two wrong attributions before a 12h-old build failed too.
+- [A launch failure blamed on a resource count needs a control](feedback_a_launch_failure_blamed_on_a_resource_count_needs_a_control_binary.md) - two wrong attributions before a 12h-old build failed too.
 - [When a wobble is inside the framework, list the leaves by id](feedback_when_a_wobble_is_inside_the_framework_list_the_leaves_by_id.md) - five container probes stalled.
 - [A "still broken" report is first about which build and which pin](feedback_a_still_broken_report_is_first_a_question_about_which_build_and_which_pin.md) - three of four were engine deliveries never pinned.
 - [A gate whose evidence you write is blind to what you forget to write](feedback_a_gate_whose_evidence_you_write_is_blind_to_what_you_forget_to_write.md) — no CONSUMED note, no guard.
 - [An API-drift hit is sometimes a feature, not paperwork](feedback_an_api_drift_hit_is_sometimes_a_feature_not_paperwork.md) — the unaccounted engine counter was the missing half of a disclosure.
 - [A quotation of another file's count goes stale invisibly](feedback_a_verbatim_quotation_of_another_files_count_goes_stale_invisibly.md) — the changed file does not contain the number that went stale.
-- [An oracle built from the system under test needs independent calibration](feedback_an_oracle_built_from_the_system_under_test_needs_an_independent_calibration.md) — build the fixture from the spec first.
+- [An oracle built from the system under test needs calibration](feedback_an_oracle_built_from_the_system_under_test_needs_an_independent_calibration.md) — build the fixture from the spec first.
 - [A slack in screen units shrinks in the units he cares about](feedback_a_slack_in_screen_units_shrinks_in_the_units_he_cares_about.md) — an area sized in viewports has a zoom where it reaches nothing.
 - [A runner's sentinel is a claim about the runner](feedback_a_runners_sentinel_is_a_claim_about_the_runner.md) — 210 checks "swept" in under a minute, every chunk rc=2, log ending SWEEP-DONE.
-- [A tool that mutates the tree before stamping it reports its own dirt](feedback_a_tool_that_mutates_the_tree_before_stamping_it_reports_its_own_dirt.md) — `cargo update` earned the `-dirty`.
+- [A tool that mutates the tree before stamping reports its own dirt](feedback_a_tool_that_mutates_the_tree_before_stamping_it_reports_its_own_dirt.md) — `cargo update` earned the `-dirty`.
 - [`gh release create` tags remotely, so `git describe` goes stale](feedback_gh_release_create_tags_remotely_so_git_describe_goes_stale.md) — I told Ken "51 commits unreleased".
 - [A capability can change meaning under a stable signature](feedback_a_capability_can_change_meaning_under_a_stable_signature.md) - `is_editable` went from hard false to *is a path*.
 - [A refusal filtered on the opposite condition is never readable](feedback_a_refusal_filtered_on_the_opposite_condition_is_recorded_and_never_readable.md) - the symptom is SILENCE, which nobody reports.
@@ -107,9 +107,9 @@
 - [A fix that names its victims can still miss one](feedback_a_fix_that_names_its_victims_can_still_miss_one.md) — a guard on the write path does not cover the DELETE path.
 - [A stopped background task is a claim about the wrapper](feedback_a_stopped_background_task_is_a_claim_about_the_wrapper.md) — the sweep ran an hour after it was "killed".
 - [A gate whose input set comes from git measures the index](feedback_a_gate_whose_input_set_comes_from_git_measures_the_index.md) — green before the commit, red after it, nothing changed.
-- [A check's own gesture can satisfy the condition it was written to catch](feedback_a_checks_own_gesture_can_satisfy_the_condition_it_was_written_to_catch.md) — read the event's only emitter, not the fixture.
+- [A check's own gesture can satisfy the condition it catches](feedback_a_checks_own_gesture_can_satisfy_the_condition_it_was_written_to_catch.md) — read the event's only emitter, not the fixture.
 - [A capability claim needs the same citation as a limitation claim](feedback_a_capability_claim_in_product_copy_needs_the_same_citation_as_a_limitation_claim.md) — invented from the feature shape.
-- [A running sweep forbids the obvious use of its own ninety-five minutes](feedback_a_running_sweep_forbids_the_obvious_use_of_its_own_ninety_five_minutes.md) - editing any .rs or .toml aborts the sweep.
+- [A running sweep forbids the obvious use of its own 95 minutes](feedback_a_running_sweep_forbids_the_obvious_use_of_its_own_ninety_five_minutes.md) - editing any .rs or .toml aborts the sweep.
 - [A lesson in a docstring is not an instrument](feedback_a_lesson_in_a_docstring_is_not_an_instrument.md) — four instances, the generalisation sitting beside them; build the sweep.
 - [A register row outranks memory, so correcting the row is the work](feedback_a_register_row_outranks_memory_so_correcting_the_row_is_the_work.md) — a cold session reads RESUME first.
 - [A value cannot identify which producer made it](feedback_a_value_cannot_identify_which_producer_made_it.md) — three arms of one chain emit `(0,0)`; trace the DECIDER, not the number.
@@ -129,3 +129,4 @@
 - [A detector's scope is a claim](feedback_a_detectors_scope_is_a_claim.md) — one gate reported clean over three blind spots; falsify the widening.
 - [An injected file is a dated snapshot](feedback_an_injected_file_is_a_dated_snapshot.md) — 13 of 26 anchors from the in-context MEMORY.md were not on disk.
 - [A rewrite of a cell deletes what only that cell held](feedback_a_rewrite_of_a_cell_deletes_what_only_that_cell_held.md) — the re-stamp deleted the one copy of a finding the cell itself said had no copy.
+- [A gesture named without its outcome](feedback_a_gesture_without_its_outcome.md) — drag copies, Shift moves; the header was wrong 4h44m after it was written.

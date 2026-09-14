@@ -90,7 +90,8 @@ name* when a colour would destroy a spot ink.
 
 **Reorganise pages — across documents.**
 Insert, extract, rotate and delete pages. Open several documents at once and
-drag pages between them.
+drag pages between them — dragging copies them, holding Shift moves them, and
+the status line says which before you let go.
 
 **Redact so that it stays redacted.**
 The content is removed, not covered with a black rectangle that a text search
