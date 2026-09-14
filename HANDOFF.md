@@ -1069,6 +1069,36 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
   build system's staleness model is a **list someone wrote**, and anything not
   on that list is invisible to it no matter how obviously it changed the output.
 
+- ★★ **2026-09-14 — `BUILD-INFO.txt`'s "THE ENGINE HAS MOVED ON: N COMMIT(S)"
+  banner is a property of ONE ZIP, never of a OneDrive slot, and a warning
+  about it carried forward one release becomes a false claim about a file
+  anyone can open.**
+
+  `RESUME.md` carried a paragraph warning that `pdfcer-gui1`'s `BUILD-INFO.txt`
+  opened with that banner, with a correct explanation of why it was harmless.
+  It was true of the package that was in slot 1 on 2026-09-13. The next release
+  rotated a new package into that slot, `grep -i 'MOVED ON'` over both slots
+  found nothing, and the paragraph was left describing a file that no longer
+  existed.
+
+  ⇒ **The shape, which outlives the banner:** the number is computed at
+  PACKAGE time by comparing the pin against the engine's tip, and then it is
+  frozen into a text file. The slot is a **destination**, and a destination has
+  no properties — everything true of it is true of whatever was last copied
+  there. Any sentence of the form *"slot N says X"* has the shelf life of one
+  publish, so it is re-read rather than re-quoted, and it is the *two* slots'
+  `BUILD-INFO.txt` files that are the instrument:
+
+  ```bash
+  for s in 1 2; do head -9 "/c/Users/Ken/OneDrive/pdfcer-gui$s/BUILD-INFO.txt"; done
+  ```
+
+  This is the same family as the pin sentences under §7 — a claim that reads as
+  a standing property and is really a dated observation about one artifact —
+  and it is why the rotation is never steered by hand: `--slot` exists to
+  RETRACT a bad build, and passing it to steer a normal publish is how both
+  slots end up holding the same program with no fallback behind them.
+
 
 - ★★★ **2026-09-13 — a change to LAYOUT SLACK changes where a document
   OPENS, not only where it can be dragged, and the whole suite will stay
