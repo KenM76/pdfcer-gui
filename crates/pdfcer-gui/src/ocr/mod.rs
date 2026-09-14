@@ -633,6 +633,7 @@ pub struct Request {
 /// Written as a free function taking `&Request` for the same reason
 /// `render::worker::render_on_worker` is: a body that cannot reach `self` is a
 /// body that provably shares nothing with the UI thread.
+///
 /// ★★★ **Recognise every requested page, chaining the revisions.**
 ///
 /// # The shape, and why it is a fold rather than a map

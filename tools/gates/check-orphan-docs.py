@@ -42,6 +42,30 @@ reports **15** repaired in place, and one more was repaired across files
 four releases; the five in the harness never shipped, because the harness is
 not a product — which is exactly why nothing was ever going to notice them.
 
+★★ A SECOND COHORT, 2026-09-13, and it is counted separately on purpose.
+The two are not interchangeable. The fifteen above were found by a gate that
+could already see them. These four were found only after `DECOR` widened the
+title pattern to admit a decoration run, and they had been sitting in a tree
+the gate was reporting **clean** over:
+
+    grep -rc 'Moved here on 2026-09-13' crates tools --include='*.rs'
+
+reports **4** — one in `egui-shell` (`ribbon/plan/mod.rs`), three in
+`pdfcer-gui` (`app/tests.rs`, `canvas/handles.rs`, `text/panels/objects.rs`).
+**20 moved doc comments in total**, then, across the two cohorts.
+
+★ Three more repairs the same day left NO marker, and the absence is
+deliberate rather than a miscount. `app/markupband.rs`, `ocr/mod.rs` and
+`panels/mod.rs` were **missing paragraph breaks**: one item's doc with a bare
+`///` omitted between two of its own paragraphs. Nothing was misattributed, so
+there is no absorber to name and nothing for a later reader to follow. ⇒
+*this gate reports one SHAPE and that shape has two causes; the diagnosis has
+to come before the repair, because inserting a break into a real orphan
+silences the gate over a live defect and moving a paragraph that belonged
+where it was strands half a doc comment.* The discriminator is the one the
+heuristic section already states: a real orphan implies an UNDOCUMENTED item
+in the same file. All four moves had one; none of the three breaks did.
+
 The count is written beside the command that produces it on purpose. A bare
 number in prose has no oracle, and this project has corrected eight of them —
 one of which was in this file's own header. ⇒ *a statement that is accurate
@@ -100,8 +124,14 @@ Two structural limits, and the one it cannot close
 1. **An indented bold sentence inside a bullet list is not a title.**
    `pagesize.rs` has `///   **That asymmetry is the disclosure.**` as the last
    sentence of a `*` bullet. Closed precisely, by requiring **exactly one**
-   space between `///` and `**`: a title is never indented, a list continuation
-   always is.
+   space between `///` and the title: a title is never indented, a list
+   continuation always is.
+
+   ★ Re-checked when the decoration run was admitted on 2026-09-13, because
+   that widening moves the boundary the carve-out sits on. It still holds:
+   `DECOR` does not contain a space, so `///   ★ **...**` and
+   `///   **...**` both fail on the two extra spaces, and a bullet marker
+   (`*`, `-`) is not in `DECOR` either.
 
 2. **A bold sentence that merely begins at a line boundary is indistinguishable
    from a title.** `canvas/tool/arm.rs` documents `arm_text_edit` with
@@ -115,7 +145,9 @@ Two structural limits, and the one it cannot close
    semantic. So it goes on `ALLOWED` below rather than being papered over by a
    looser pattern that would also stop seeing real orphans.
 
-3. **★★★ The bold-title convention is ONE shape, and this gate sees only it.**
+3. **★★★ The gate sees the bold-title convention, and ONLY that convention.**
+   (Until 2026-09-13 it saw only the *undecorated* half of it -- see `DECOR`
+   below for what that cost and how it was found.)
    Not a tuning gap — a measured ceiling, established three ways on
    2026-09-12 so that nobody re-derives it:
 
@@ -201,9 +233,36 @@ ROOTS = ["crates", "tools"]
 SKIP_DIRS = ("target", "fixtures")
 CRLF = chr(13) + chr(10)
 
-# A COMPLETE bold sentence alone on a line, with EXACTLY one space after `///`.
+# The four characters this crate uses to decorate a title, and nothing else.
+#
+# Widened on 2026-09-13 from a regex that required the bold to be the first
+# thing after `/// `. That form matched 1,223 titles; this one matches 2,116,
+# so **893 titles -- 42% of the convention -- were out of the instrument's
+# scope**, and seven real seams were hiding behind them. Four were genuine
+# orphans (`plan/mod.rs`, `app/tests.rs`, `canvas/handles.rs`,
+# `text/panels/objects.rs`), three were missing paragraph breaks
+# (`app/markupband.rs`, `ocr/mod.rs`, `panels/mod.rs`).
+#
+# ★★★ AND THE GATE WAS GREEN THROUGHOUT. Not failing and ignored --
+# reporting `clean` over a shape it could not express, in the same words a
+# real all-clear uses. This is the third time this one instrument has done
+# that: once on `crates/` alone (77% of the tree), once on CRLF files (16%),
+# and now on decorated titles (42% of titles). ⇒ *a detector's scope
+# is a claim, and "no violations found" is not evidence for it -- only a
+# falsification against known-bad input is.*
+#
+# ★ The widening is deliberately narrow. A general "anything before the
+# `**`" prefix would re-admit ordinary prose and take the count back toward
+# the second draft's 717 false positives. The run must be these characters,
+# one or more, followed by exactly one space, then the bold.
+DECOR = "★⚠→⇒"
+
+# A COMPLETE bold sentence alone on a line, with EXACTLY one space after `///`
+# and an optional decoration run between the two.
 # That one space is limit 1 above: a title is never indented inside a list.
-TITLE = re.compile(r"^[ \t]*/// \*\*.+[.!?]\*\*[ \t]*$")
+TITLE = re.compile(
+    r"^[ \t]*/// (?:[" + DECOR + r"]+ )?\*\*.+[.!?]\*\*[ \t]*$"
+)
 
 # And the line above it must be a COMPLETED sentence — the last line of the doc
 # that lost its item. A fragment above means ordinary wrapping, not a seam.
@@ -320,6 +379,78 @@ def self_test() -> int:
     ).split(nl)
     if scan(wrapped):
         print("SELF-TEST FAIL: wrapped emphasis reported:", scan(wrapped))
+        ok = False
+
+    # ★★★ The DECORATED orphan -- the shape the gate was blind to until
+    # 2026-09-13, and the reason this block exists. Without it the widening
+    # is a claim in a comment: the regex could be reverted to its narrow form
+    # and every other assertion here would still pass.
+    decorated = (
+        "/// Which ends of a `/Line` carry an arrowhead." + nl
+        + "///" + nl
+        + "/// Absent for every other subtype, because nothing else has ends." + nl
+        + "/// ★★★ **The border line style — the eighth control.**" + nl
+        + "///" + nl
+        + "/// Its own paragraph." + nl
+        + "fn dash() {}" + nl
+    ).split(nl)
+    hits = scan(decorated)
+    if len(hits) != 1 or "eighth control" not in hits[0][1]:
+        print("SELF-TEST FAIL: decorated orphan not found:", hits)
+        ok = False
+
+    # Each decoration character on its own, because `DECOR` is a set and a
+    # test that only exercises one member does not measure the set.
+    for mark in "★⚠→⇒":
+        one = (
+            "/// A completed sentence that ends the doc that lost its item." + nl
+            + "/// " + mark + " **A title carrying one decoration mark.**" + nl
+            + "fn absorber() {}" + nl
+        ).split(nl)
+        if len(scan(one)) != 1:
+            print("SELF-TEST FAIL: decoration " + mark + " not admitted")
+            ok = False
+
+    # And the negative that keeps the widening narrow: decoration is NOT a
+    # general prefix. An ordinary word before the bold must still be invisible,
+    # or the gate returns to the second draft's 717 false positives.
+    prose_prefix = (
+        "/// A completed sentence that ends the doc that lost its item." + nl
+        + "/// Note **that this is emphasis inside a sentence.**" + nl
+        + "fn absorber() {}" + nl
+    ).split(nl)
+    if scan(prose_prefix):
+        print("SELF-TEST FAIL: a prose prefix was admitted:", scan(prose_prefix))
+        ok = False
+
+    # Limit 1 again, with decoration. An indented bullet continuation whose
+    # closing sentence is decorated AND bold must still pass -- the widening
+    # must not have opened the hole the exactly-one-space rule closed.
+    decorated_bullet = (
+        "/// * `lost_area` — the sheet shrank. Reversible here by Undo; not" + nl
+        + "///   reversible after a round trip through anything else." + nl
+        + "///   ★ **That asymmetry is the disclosure.**" + nl
+        + "/// * `crop_box_outside` — a `/CropBox` the new sheet no longer contains." + nl
+        + "fn sentences() {}" + nl
+    ).split(nl)
+    if scan(decorated_bullet):
+        print("SELF-TEST FAIL: decorated bullet continuation reported:",
+              scan(decorated_bullet))
+        ok = False
+
+    # A decorated mid-doc heading AFTER a paragraph break is the ordinary
+    # shape and must pass. This is the one the first draft aimed at.
+    decorated_ordinary = (
+        "/// **Arm the markup tool.**" + nl
+        + "///" + nl
+        + "/// Some prose that ends in a full stop." + nl
+        + "///" + nl
+        + "/// ★★ **Why pressing the armed button again retires the tool.**" + nl
+        + "fn arm() {}" + nl
+    ).split(nl)
+    if scan(decorated_ordinary):
+        print("SELF-TEST FAIL: decorated mid-doc heading reported:",
+              scan(decorated_ordinary))
         ok = False
 
     print("self-test:", "PASS" if ok else "FAIL")

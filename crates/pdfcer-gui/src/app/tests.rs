@@ -56,19 +56,6 @@ fn token_for(app: &PdfcerApp, id: &str) -> egui_shell::commands::HandlerToken {
         .handler
 }
 
-/// ★ **`selection.any` is published, and only when something is
-/// selected.**
-///
-/// The condition powers two surfaces the manifest has been carrying
-/// unwired: the contextual Format tab's *appearance*, and the enable state
-/// of the Delete inside it. It could not be published while the selection
-/// lived in `egui::Memory` — [`PdfcerApp::conditions`] has no
-/// `egui::Context` — so this asserts the consequence of the move rather
-/// than a new policy.
-///
-/// Both directions matter. Publishing it when nothing is selected would
-/// arm a **destructive** command over an empty operand list, which is
-/// defect D1's shape with the worst possible verb behind it.
 /// ★ **The hand tool and the armed region zoom report a pressed state.**
 ///
 /// The two controls that had none. Both halves are asserted: unarmed must
@@ -357,6 +344,29 @@ fn delete_on_a_form_interior_selection_removes_it_exactly_as_the_key_does() {
     ));
 }
 
+/// ★ **`selection.any` is published, and only when something is
+/// selected.**
+///
+/// The condition powers two surfaces the manifest has been carrying
+/// unwired: the contextual Format tab's *appearance*, and the enable state
+/// of the Delete inside it. It could not be published while the selection
+/// lived in `egui::Memory` — [`PdfcerApp::conditions`] has no
+/// `egui::Context` — so this asserts the consequence of the move rather
+/// than a new policy.
+///
+/// Both directions matter. Publishing it when nothing is selected would
+/// arm a **destructive** command over an empty operand list, which is
+/// defect D1's shape with the worst possible verb behind it.
+///
+/// ★ Moved here on 2026-09-13. It sat above `the_memory_backed_toggles_report_their_pressed_state`,
+/// run together with that item's doc comment — so it documented
+/// `the_memory_backed_toggles_report_their_pressed_state` and this item had none.
+///
+/// ★ It went unseen for as long as it did because the title that
+/// absorbed it opens with a decoration run, and until 2026-09-13
+/// `tools/gates/check-orphan-docs.py` could only express an
+/// undecorated title — 42% of this crate's titles were outside its
+/// scope while it reported clean. See that gate's `DECOR`.
 #[test]
 fn the_selection_condition_follows_the_selection() {
     let mut app = PdfcerApp::new();

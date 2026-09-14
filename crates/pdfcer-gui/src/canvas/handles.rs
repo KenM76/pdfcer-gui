@@ -916,31 +916,6 @@ impl GripSet {
         }
     }
 
-    /// **The rotate handle alone** — a selected **ce dimension**.
-    ///
-    /// ★★★ The combination that could not be spelled before this struct had two
-    /// fields, and the one that proves they had to be two.
-    ///
-    /// A ce dimension has **no scale verb and is never going to have one**.
-    /// `pdfcer-core` declined it outright rather than leaving it unbuilt, and
-    /// the argument is worth carrying here because it is the reason this
-    /// constructor is not a temporary shape:
-    ///
-    /// > It has no honest reading. Either the displayed value stays fixed while
-    /// > the geometry grows, so the dimension **lies about the drawing**; or
-    /// > both change, so **nothing was measured** and the operator has *drawn*
-    /// > a number rather than *taken* one.
-    ///
-    /// A **rotation** has no such problem, because a rotation is an isometry:
-    /// every distance is preserved, so the measured value is identical either
-    /// side of it *by construction*. That is what makes turning a dimension a
-    /// legitimate drafting operation while scaling one is not.
-    ///
-    /// ★★ If an operator wants a dimension to read a different number for the
-    /// same drawn line, the operation they want is `set_group_scale` — points
-    /// per unit — which already ships and lives on the Measure surface. This
-    /// canvas deliberately offers no handle for it: a scale that is a property
-    /// of a *measurement group* has no grip on one member of that group.
     /// ★★★ **Neither — a mark that can be MOVED and nothing else.**
     ///
     /// Added 2026-09-08 for the sticky note, `OPERATOR_REQUESTS.md` O155.
@@ -978,6 +953,41 @@ impl GripSet {
         }
     }
 
+    /// **The rotate handle alone** — a selected **ce dimension**.
+    ///
+    /// ★★★ The combination that could not be spelled before this struct had two
+    /// fields, and the one that proves they had to be two.
+    ///
+    /// A ce dimension has **no scale verb and is never going to have one**.
+    /// `pdfcer-core` declined it outright rather than leaving it unbuilt, and
+    /// the argument is worth carrying here because it is the reason this
+    /// constructor is not a temporary shape:
+    ///
+    /// > It has no honest reading. Either the displayed value stays fixed while
+    /// > the geometry grows, so the dimension **lies about the drawing**; or
+    /// > both change, so **nothing was measured** and the operator has *drawn*
+    /// > a number rather than *taken* one.
+    ///
+    /// A **rotation** has no such problem, because a rotation is an isometry:
+    /// every distance is preserved, so the measured value is identical either
+    /// side of it *by construction*. That is what makes turning a dimension a
+    /// legitimate drafting operation while scaling one is not.
+    ///
+    /// ★★ If an operator wants a dimension to read a different number for the
+    /// same drawn line, the operation they want is `set_group_scale` — points
+    /// per unit — which already ships and lives on the Measure surface. This
+    /// canvas deliberately offers no handle for it: a scale that is a property
+    /// of a *measurement group* has no grip on one member of that group.
+    ///
+    /// ★ Moved here on 2026-09-13. It sat above `move_only`,
+    /// run together with that item's doc comment — so it documented
+    /// `move_only` and this item had none.
+    ///
+    /// ★ It went unseen for as long as it did because the title that
+    /// absorbed it opens with a decoration run, and until 2026-09-13
+    /// `tools/gates/check-orphan-docs.py` could only express an
+    /// undecorated title — 42% of this crate's titles were outside its
+    /// scope while it reported clean. See that gate's `DECOR`.
     pub const fn rotate_only() -> Self {
         Self {
             resize: false,

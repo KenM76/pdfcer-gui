@@ -915,13 +915,6 @@ mod tests {
         );
     }
 
-    /// **★ A group narrower than [`GROUP_WRAP_WIDTH`] is left alone.**
-    ///
-    /// The half of the mockup's rule that is easy to lose: `max-width` is a
-    /// *trigger*. Wrapping every group would turn a two-control group into
-    /// a column of one control per row, which is narrower and is not a
-    /// ribbon. Most groups in a real manifest are under the cap, so this is
-    /// the common path and not the corner.
     /// ★★★ **A group that asks for two rows gets them, even though one fits.**
     ///
     /// `OPERATOR_REQUESTS.md` O97 — four square icon buttons that are a strip in
@@ -990,6 +983,23 @@ mod tests {
         );
     }
 
+    /// **★ A group narrower than [`GROUP_WRAP_WIDTH`] is left alone.**
+    ///
+    /// The half of the mockup's rule that is easy to lose: `max-width` is a
+    /// *trigger*. Wrapping every group would turn a two-control group into
+    /// a column of one control per row, which is narrower and is not a
+    /// ribbon. Most groups in a real manifest are under the cap, so this is
+    /// the common path and not the corner.
+    ///
+    /// ★ Moved here on 2026-09-13. It sat above `a_group_that_asks_for_rows_wraps_when_it_would_otherwise_fit`,
+    /// run together with that item's doc comment — so it documented
+    /// `a_group_that_asks_for_rows_wraps_when_it_would_otherwise_fit` and this item had none.
+    ///
+    /// ★ It went unseen for as long as it did because the title that
+    /// absorbed it opens with a decoration run, and until 2026-09-13
+    /// `tools/gates/check-orphan-docs.py` could only express an
+    /// undecorated title — 42% of this crate's titles were outside its
+    /// scope while it reported clean. See that gate's `DECOR`.
     #[test]
     fn a_group_that_fits_the_cap_stays_on_one_row() {
         for widths in [

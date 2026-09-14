@@ -317,6 +317,7 @@ const DASH_WIDTH: f32 = 88.0;
 /// deliberately left non-`#[non_exhaustive]` so callers can build it, and it is
 /// perfectly buildable here. What it cannot express is *"exactly one field, and
 /// the caller chose which"*, which is the invariant the dispatcher relies on.
+///
 /// ⚠ **Not `Copy` since 2026-09-06, and the engine's own note predicted it.**
 /// [`Self::Dash`] carries a `BorderDash`, which owns a `Vec<f64>`
 /// (`pdfcer-core` `annot_author.rs:157`), so the derive lost `Copy` the day the

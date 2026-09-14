@@ -390,19 +390,6 @@ pub fn quoted_text(text: &str, truncated: bool) -> String {
     quoted_text_preview(text, truncated, PANEL_TEXT_CHARS)
 }
 
-/// A font as a fragment: the typeface if the file names one, else the
-/// resource name, then the size.
-///
-/// `/BaseFont` is preferred over the `Tf` resource name because `F1` names
-/// nothing an operator can recognise — but the resource name is shown when
-/// that is all there is, rather than dropping the font entirely, since
-/// "which resource" is still the handle for a later edit.
-///
-/// The size is the `Tf` operand, **as the file states it** — see
-/// `pdfcer_core::vector::TextFont::size`, which documents why it is not
-/// scaled by a `Tm`/`cm`. It is written `10 pt` rather than `10.00 pt`
-/// because a type size is conventionally a whole number and the trailing
-/// zeros would read as a precision this value does not claim.
 /// ★★★ **THE SUBSET TAG IS STRIPPED HERE AND NOWHERE ELSE — 2026-09-04.**
 ///
 /// A subsetted font's `/BaseFont` is `AAAAAA+JetBrainsMono-Regular`: six
@@ -453,6 +440,29 @@ fn without_subset_tag(name: &str) -> &str {
     }
 }
 
+/// A font as a fragment: the typeface if the file names one, else the
+/// resource name, then the size.
+///
+/// `/BaseFont` is preferred over the `Tf` resource name because `F1` names
+/// nothing an operator can recognise — but the resource name is shown when
+/// that is all there is, rather than dropping the font entirely, since
+/// "which resource" is still the handle for a later edit.
+///
+/// The size is the `Tf` operand, **as the file states it** — see
+/// `pdfcer_core::vector::TextFont::size`, which documents why it is not
+/// scaled by a `Tm`/`cm`. It is written `10 pt` rather than `10.00 pt`
+/// because a type size is conventionally a whole number and the trailing
+/// zeros would read as a precision this value does not claim.
+///
+/// ★ Moved here on 2026-09-13. It sat above `without_subset_tag`,
+/// run together with that item's doc comment — so it documented
+/// `without_subset_tag` and this item had none.
+///
+/// ★ It went unseen for as long as it did because the title that
+/// absorbed it opens with a decoration run, and until 2026-09-13
+/// `tools/gates/check-orphan-docs.py` could only express an
+/// undecorated title — 42% of this crate's titles were outside its
+/// scope while it reported clean. See that gate's `DECOR`.
 #[must_use]
 pub fn font_label(font: &pdfcer_core::vector::TextFont) -> String {
     let name = without_subset_tag(

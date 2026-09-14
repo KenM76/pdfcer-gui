@@ -934,6 +934,7 @@ pub struct ObjectTreeUi {
     /// **not** been extended to meet it half way: it is still one `usize`,
     /// still page-scoped, still cleared by [`PanelsState::sync`] on any page
     /// or revision change, and still read by exactly one panel.
+    ///
     /// ★★★ **RETIRED 2026-08-26. Nothing in production writes or reads it.**
     ///
     /// This field's own docs used to end: *"It is deleted in the commit that
