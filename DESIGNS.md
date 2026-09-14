@@ -171,8 +171,22 @@ opened the print dialogue"*.
 - **Neither footer button publishes a `ui_rect`.** `Host::buttons` contains no
   `ui_rect` call at all, so a driven check has no way to *click* Print, Cancel
   or Keep-and-close today. ⇒ publish `dialog.buttons.accept` and
-  `dialog.buttons.cancel` from `Host::buttons` (which fixes this for all
-  fourteen dialogues at once, not just Print), plus one for the third button.
+  `dialog.buttons.cancel` from `Host::buttons`, plus one for the third button.
+
+  ★ **This reaches Print and nothing else — one call site, measured
+  2026-09-14.** An earlier draft of this line claimed it "fixes this for all
+  fourteen dialogues at once"; it does not, and the claim was reasoned from the
+  function's name rather than from its callers. `Host::buttons` is called
+  exactly once in the crate, from `dialogs/print/layout.rs`; every other hit for
+  the name is a doc comment. About, Diagnostics and OCR each hand-roll
+  `ui.button(t::close())` against their own `text::*` catalogue and are entirely
+  untouched by this work, so their footers stay unpressable by the harness.
+
+  Making that claim true is a separate job — migrating three hand-rolled footers
+  onto the host — and it is worth doing for the reason this project has found
+  twice in an afternoon: **adding a second route is an audit of the capability.**
+  It is not in O185's scope and is not blocking the driven check below, which
+  only needs Print.
 - **Nothing traces a dismissal.** There is no `print-close` and no event on
   `frame.closed`. ⇒ emit `print-dismissed reason=keep|revert|print
   saved=<bool> reverted=<bool>` from the single return at `mod.rs:1048`, which
@@ -191,6 +205,46 @@ The existing `the_print_window_opens_on_the_settings_you_last_used`
 (`print_remembered.rs`, `impl Check for
 ThePrintWindowOpensOnTheSettingsYouLastUsed`) deliberately never presses Print
 and is untouched by this.
+
+#### ✓ Built 2026-09-14 — `print_dismissal.rs`, and three departures from the letter above
+
+1. **One field, not two.** The paper policy, clicked as `print.paper` →
+   `print.paper.auto`. It is the only print setting with a published `ui_rect`,
+   and it is the only one that maps onto a clean two-state persisted token —
+   `paper_key` spells every hand-picked driver form and the device default
+   alike as `device`, and pdfcer's own policy as `match-pages`. A hand-picked
+   form would have been a gesture the oracle could not see.
+2. **Falsified in three directions, not two.** Cancel-wired-as-Keep and
+   Keep-wired-as-Cancel both go red on the cross-run assertion, each naming
+   *which* degenerate wiring it is; the **swapped** build — Cancel remembers,
+   Keep restores — goes red on "CANCEL KEPT THE CHANGE". Green on the real
+   build, with the two routes reopening on `device` and `match-pages`.
+3. ★★★ **Writing it found a defect in itself, and the defect was an assertion
+   that could not fire.** In the order first written — Cancel-restored,
+   Keep-kept, then the cross-run comparison — the comparison the module header
+   calls load-bearing was **unreachable**: the per-run guard establishes that
+   the window did not open on the value about to be clicked, so the two
+   absolute claims passing already implied the two reopens differed. Both
+   falsification runs still went red, which is how it survived them. ⇒ **A
+   falsification proves a check as a whole discriminates and says nothing about
+   whether each assertion inside it can be reached.** Fixed by testing the
+   comparison first.
+
+#### ⚠ The half this does not cover, recorded rather than left silent
+
+**`reverted=true` has no automated holder.** `Cancel` declines to write *and*
+puts back anything already written; only the first is driveable. The second
+needs `prefs.print` to differ from `opened_with`, and `PrintDialog::store` is
+the sole writer of that field, reached only from `remember` — which within one
+window's life runs only on a Print press. So the path needs **a spool the
+driver refuses**, and this suite may not press Print.
+
+An earlier draft of the check's header cited *"`remembered`'s unit tests"* as
+the holder. **There are none**, and neither has `export_remembered`, which has
+the same shape — a driven check is this layer's convention in this crate. The
+citation was corrected to an admitted gap, because a citation to a holder that
+does not exist is worse than a silence: the reader who checks it finds a
+plausible file and stops looking.
 
 ★ Cited by **symbol**, not by line. This sentence said `print_remembered.rs:238`
 and the 2026-09-13 repair of that check added seven lines above the line in

@@ -186,9 +186,6 @@ mod placement;
 /// written after and why the arithmetic is a free function.
 mod fit;
 
-/// How much a dialog's body must overflow its window before the window is
-/// grown to fit it. See [`Host::fit`], whose first version had no such floor
-/// and grew the About window from 560 px to 1,624 px in a few frames.
 /// Where the application window's handle is kept for [`Host::show`] to find.
 const OWNER_KEY: &str = "dialog-host-owner"; // ui-text-exempt: a memory key, never displayed.
 
@@ -366,6 +363,46 @@ pub struct Frame {
     /// close button, so a caller that treated them differently would give one
     /// of the three routes out a different meaning from the other two.
     pub closed: bool,
+}
+
+// ---------------------------------------------------------------------------
+// The footer's region names
+// ---------------------------------------------------------------------------
+//
+// Consumed by `tools/ui-verify`, which presses controls by name. They are
+// declared here, beside their only publisher, and they are GENERIC rather than
+// per-dialog on purpose -- see [`Host::footer`], which argues both that choice
+// and the one case it gives up.
+
+/// The region the affirmative footer button publishes -- Print, OK, Save.
+pub const REGION_ACCEPT: &str = "dialog.buttons.accept";
+
+/// The region the cancelling footer button publishes.
+///
+/// This is the button `dialogs.md` G4 makes indistinguishable from Escape and
+/// from the OS close button, so a driven check that presses it is measuring
+/// all three routes at once.
+pub const REGION_CANCEL: &str = "dialog.buttons.cancel";
+
+/// The region the optional third footer button publishes, when there is one.
+///
+/// Absent from the trace on every dialog that passes `None`, which is all of
+/// them but Print. An absent region is not a defect here; it is the R9 answer
+/// -- a route that does not exist renders nothing.
+pub const REGION_KEEP: &str = "dialog.buttons.keep";
+
+/// `response`, with `hover` attached to it when there is a sentence to attach.
+///
+/// An empty hover is the two-button caller's way of saying "no tooltip", which
+/// is not the same as an empty tooltip: `on_hover_text("")` still opens a
+/// box, and an empty box under the cursor reads as a surface that failed to
+/// load rather than one that had nothing to say.
+fn explained(response: egui::Response, hover: &str) -> egui::Response {
+    if hover.is_empty() {
+        response
+    } else {
+        response.on_hover_text(hover)
+    }
 }
 
 impl Host {
@@ -1009,9 +1046,28 @@ impl Host {
     /// **Draw a dialog's affirmative and cancelling buttons**, with Enter and
     /// Escape wired and the default drawn as the default.
     ///
-    /// Returns `(accepted, cancelled)`. Both can be `false`; neither pair of
-    /// them is ever `true` together, because Enter and Escape are different
-    /// keys and the two buttons are different rectangles.
+    /// The two-route convenience form of [`Host::footer`], which is where all
+    /// of the reasoning lives. Neither button carries a hover sentence and
+    /// there is no third route out; a dialog that wants either calls `footer`
+    /// directly.
+    ///
+    /// Returns `(accepted, cancelled)`.
+    pub fn buttons(ui: &mut egui::Ui, accept: &str, cancel: &str) -> (bool, bool) {
+        let (accepted, cancelled, _) = Self::footer(ui, (accept, ""), (cancel, ""), None);
+        (accepted, cancelled)
+    }
+
+    /// **Every route out of a dialog**, laid out right-to-left, with Enter
+    /// wired to the affirmative button and every button's rectangle published
+    /// for the driven harness.
+    ///
+    /// Each argument is `(label, hover)`. An **empty hover draws no tooltip**,
+    /// which is the case [`Host::buttons`] passes for both of its pair.
+    ///
+    /// Returns `(accepted, cancelled, kept)`. `kept` is always `false` when
+    /// `keep` is `None`, and no two of the three are ever `true` together:
+    /// they are three different rectangles and Enter belongs to exactly one of
+    /// them.
     ///
     /// # ★ The order is Cancel then Accept, right-aligned
     ///
@@ -1033,7 +1089,68 @@ impl Host {
     /// egui reports "a text edit has focus" without saying whether it is
     /// multi-line. Recorded as a known limit rather than guessed at — the fix
     /// is per-field and belongs with the field.
-    pub fn buttons(ui: &mut egui::Ui, accept: &str, cancel: &str) -> (bool, bool) {
+    ///
+    /// # ★★★ The third button, and why it is LEFTMOST rather than beside the default
+    ///
+    /// Added for **O185**, the print window's *Keep and close*. `dialogs.md`
+    /// G4 makes the OS close button, Escape and the cancel button deliberately
+    /// indistinguishable — one meaning for every route the window chrome
+    /// offers — so a dialog that owns persistent state cannot express *"keep
+    /// what I set, but do not act"* through any of them. That is the
+    /// `OK / Cancel / Apply` triad, and the third button is the only member of
+    /// it G4 does not already govern: it is a labelled control the operator
+    /// pressed **on purpose**, which is precisely the case G4 never
+    /// contemplated.
+    ///
+    /// It is drawn last in a `right_to_left` layout, so it lands **leftmost**,
+    /// furthest from the default. That is the correct position for the
+    /// least-used of the three and it keeps the accept/cancel pair in the
+    /// place muscle memory expects: adding a route out must not move the two
+    /// routes that were already there.
+    ///
+    /// ★ It is deliberately NOT bound to a key. Enter is the default's and
+    /// Escape is Cancel's; a third chord would be a gesture with no affordance
+    /// naming it, and the one thing worse than an undiscoverable button is an
+    /// undiscoverable key that means something different from the button
+    /// beside it.
+    ///
+    /// # ★★★ Every button publishes a `ui_rect`, and until 2026-09-14 none did
+    ///
+    /// `tools/ui-verify` presses controls by name. This function contained no
+    /// `crate::diag::ui_rect` call at all, so **no driven check could press
+    /// any dialog's Print, OK or Cancel** — the three most consequential
+    /// controls in the application were the ones the harness could not reach.
+    /// It was found while designing O185's check, which cannot exist without
+    /// them.
+    ///
+    /// The names are **generic** — `dialog.buttons.accept`, `.cancel`,
+    /// `.keep` — rather than per-dialog, because the labels are not: this
+    /// function is handed *"Print"*, *"Print — 3 sheets will be clipped"*,
+    /// *"OK"* or *"Save"* depending on the caller and the state, and a check
+    /// that had to know which would be asserting the label rather than
+    /// pressing the button.
+    ///
+    /// ⚠ **Two dialogs open at once share these three names**, and the last
+    /// one drawn wins the frame. Stated rather than guarded: the alternative
+    /// is threading a dialog identity through every caller to disambiguate a
+    /// case the driven checks never construct, and a name that is sometimes
+    /// qualified and sometimes not is worse than one that is never qualified.
+    /// A check that needs certainty asserts the dialog's own body region in
+    /// the same frame.
+    ///
+    /// ⚠ **And this reaches one dialog today, not fourteen.** `Host::buttons`
+    /// has exactly ONE call site in the crate — the print footer — measured
+    /// 2026-09-14. `about`, `diagnostics` and `ocr` hand-roll
+    /// `ui.button(t::close())` instead, so they remain unpressable by the
+    /// harness. That is a real gap and it is written down rather than implied;
+    /// closing it is moving those footers onto this function, not adding more
+    /// region names.
+    pub fn footer(
+        ui: &mut egui::Ui,
+        accept: (&str, &str),
+        cancel: (&str, &str),
+        keep: Option<(&str, &str)>,
+    ) -> (bool, bool, bool) {
         let ctx = ui.ctx().clone();
         // ★ THIS ASKS WHETHER A WIDGET IN THIS DIALOG HOLDS THE KEYBOARD, not
         // whether the operator is composing anywhere in the application, and
@@ -1066,6 +1183,7 @@ impl Host {
 
         let mut accepted = false;
         let mut cancelled = false;
+        let mut kept = false;
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             // ★★★ THE ACCENT, NOT THE SELECTION FILL — and the difference is
             // the operator's 2026-09-03 report about Print.
@@ -1116,15 +1234,26 @@ impl Host {
             // accent" and `check-theme-colors.sh` still has nothing to object
             // to.
             let (fill, text) = egui_shell::Theme::accent_pair(ui.ctx());
-            let default = egui::Button::new(egui::RichText::new(accept).color(text)).fill(fill);
-            if ui.add(default).clicked() || enter {
+            let default = egui::Button::new(egui::RichText::new(accept.0).color(text)).fill(fill);
+            let response = explained(ui.add(default), accept.1);
+            crate::diag::ui_rect(REGION_ACCEPT, response.rect);
+            if response.clicked() || enter {
                 accepted = true;
             }
-            if ui.button(cancel).clicked() {
+            let response = explained(ui.button(cancel.0), cancel.1);
+            crate::diag::ui_rect(REGION_CANCEL, response.rect);
+            if response.clicked() {
                 cancelled = true;
             }
+            if let Some((label, hover)) = keep {
+                let response = explained(ui.button(label), hover);
+                crate::diag::ui_rect(REGION_KEEP, response.rect);
+                if response.clicked() {
+                    kept = true;
+                }
+            }
         });
-        (accepted, cancelled)
+        (accepted, cancelled, kept)
     }
 }
 

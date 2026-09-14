@@ -1339,6 +1339,32 @@ impl DialogsState {
         {
             self.sign = None;
         }
+        // ★★★ DROPPED, NOT DISMISSED — and that is a decision about
+        // `OPERATOR_REQUESTS.md` **O185**, not an oversight.
+        //
+        // The print window gained three exits at O185, two of which WRITE: the
+        // *Keep and close* button saves the settings and Cancel puts back the
+        // ones the window opened with. Neither runs here. Dropping the window
+        // runs no exit at all, so the preferences file is left exactly as it
+        // was found.
+        //
+        // ★ Why that is right: the document's close is not a sentence about the
+        // printer. The operator did not press anything in this window; they
+        // pressed something several rooms away, and inventing an answer on
+        // their behalf would put a setting on disk nobody chose — or take one
+        // away.
+        //
+        // ⚠ It is NOT identical to Cancel, and the difference is on one
+        // reachable path. A Print press writes BEFORE it spools, deliberately,
+        // so a press the driver refused leaves the preferences holding what
+        // that press wrote. Cancel would put those back; closing the document
+        // leaves them. Making the two agree would mean threading
+        // `crate::app::prefs::Prefs` into this function — which exists
+        // precisely so that dropping a document-scoped window needs no
+        // arguments — for one path that ends with the operator's own settings
+        // saved rather than lost. If that ever stops being acceptable, the fix
+        // is a `restore` call here and a `&mut Prefs` parameter, not a special
+        // case somewhere else.
         self.print = None;
         self.ocr = None;
         self.diagnostics = None;

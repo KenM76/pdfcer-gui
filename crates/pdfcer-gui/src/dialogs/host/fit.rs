@@ -37,6 +37,20 @@ use egui::Vec2;
 
 use super::Host;
 
+/// How much a dialog's body must overflow its window before the window is
+/// grown to fit it.
+///
+/// See [`Host::fit`], whose first version had no such floor and grew the About
+/// window from 560 px to 1,624 px in a few frames. It is a floor in BOTH
+/// directions and that is the whole of its job: content within 8 pt of the
+/// inner rect is treated as fitting, so a one-pixel rounding difference
+/// between what egui laid out and what the compositor gave back cannot ask for
+/// a resize -- and a resize, once asked for, changes the very number that was
+/// measured.
+///
+/// ## Rule 15
+///
+/// A **window** size in points. Neither a ce dimension nor a pdf dimension.
 const FIT_MARGIN: f32 = 8.0;
 
 /// How many times one dialog may be grown to fit its content before the host

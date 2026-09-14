@@ -92,6 +92,7 @@
 //! to know which of two identically-sized forms the device would rather have.
 
 use super::spooler::{PaperChoice, PaperForm};
+use crate::text::print as t;
 
 /// How close two lengths must be, in points, to count as the same size.
 ///
@@ -370,6 +371,54 @@ pub(super) fn choose(forms: &[PaperForm], page_sizes: &[(f64, f64)]) -> AutoPape
         largest_page_pt,
         mixed,
     })
+}
+
+// ---------------------------------------------------------------------------
+// What the dialog asks this module, once the arithmetic is done
+// ---------------------------------------------------------------------------
+//
+// ★ These two lived in `print/mod.rs` until 2026-09-14, and the doc comment on
+// the first of them argued the placement: it reads `PrintDialog::auto_paper`,
+// which is a private field. That argument correctly ruled out [`super::tabs`],
+// a sibling. It did not rule out this file, which is a CHILD of `print` and can
+// see its parent's private items -- and which already owns the type both
+// functions match on, and already promises in its header to carry "everything
+// the disclosure line needs in order to say what happened and why."
+//
+// They moved when R2 bit. That is the rule working rather than a coincidence: a
+// file over the limit usually has something in it that belongs elsewhere, and
+// looking for the seam is how you find out which thing.
+
+impl super::PrintDialog {
+    /// **The disclosure sentence for auto paper selection**, for the paper tab.
+    ///
+    /// Keeping the four outcomes in one `match` is what stops a state from
+    /// silently having no sentence. A control with no line under it, where
+    /// every other state has one, reads as a control that failed.
+    ///
+    /// [`AutoPaper::NotChosen`] is unreachable from the caller — it only asks
+    /// when the operator picked auto — but it answers the no-basis sentence
+    /// rather than an empty string, for the same reason.
+    pub(super) fn auto_paper_line(&self) -> String {
+        match &self.auto_paper {
+            AutoPaper::Matched(m) => t::paper_auto_matched(&m.name, m.sheet_pt, m.largest_page_pt),
+            AutoPaper::TooBig(m) => t::paper_auto_too_big(&m.name, m.sheet_pt, m.largest_page_pt),
+            AutoPaper::NoBasis | AutoPaper::NotChosen => t::paper_auto_no_basis().to_owned(),
+        }
+    }
+
+    /// Does this job have more than one page size?
+    ///
+    /// `false` unless auto selection actually ran and found one, so the extra
+    /// sentence cannot appear beside a hand-picked sheet — where it would be
+    /// true but pointless, the operator having already chosen the sheet
+    /// themselves.
+    pub(super) fn auto_paper_is_mixed(&self) -> bool {
+        match &self.auto_paper {
+            AutoPaper::Matched(m) | AutoPaper::TooBig(m) => m.mixed,
+            AutoPaper::NoBasis | AutoPaper::NotChosen => false,
+        }
+    }
 }
 
 #[cfg(test)]

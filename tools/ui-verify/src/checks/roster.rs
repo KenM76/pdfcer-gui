@@ -616,6 +616,18 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // of the pair that still runs under --no-input.
         Box::new(export_remembered::TheExportWindowsOpenOnTheSettingsYouLastUsed),
         Box::new(print_remembered::ThePrintWindowOpensOnTheSettingsYouLastUsed),
+        // ★ Beside its twin because they are two halves of one subject: that
+        // one proves the settings SURVIVE a close, this one proves that WHICH
+        // close you took decides whether they should have. Run together they
+        // are the whole of O166 and O185; run apart, either reads as complete
+        // and is not.
+        //
+        // Two launches, like its twin, and for a related reason — but not the
+        // same one. That check needs a second process to measure the shipped
+        // defaults without asserting them; this one needs a second process
+        // because the two routes out of the window must be compared against
+        // each other, and an assertion both outcomes satisfy measures neither.
+        Box::new(print_dismissal::ThePrintWindowForgetsWhatCancelUndid),
         // ★ Beside it because it is the same shape — two ribbon clicks into a
         // dialog — and because both are checks whose subject is a control that
         // was drawn and did nothing.

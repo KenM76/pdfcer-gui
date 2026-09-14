@@ -177,6 +177,16 @@ mod commit;
 /// rule and the argument for every inclusion and every omission.
 mod remembered;
 
+/// Why the window is closing, and what that does to the remembered
+/// settings. Split out at O185 under R2; see the module header for why
+/// the seam is there and not somewhere cheaper.
+mod dismissal;
+
+// Re-exported so the footer can keep naming it `super::Dismissal`. The
+// enum is part of this module's vocabulary; only its argument lives
+// next door.
+pub(super) use dismissal::Dismissal;
+
 use egui::Ui;
 
 use crate::app::state::OpenDoc;
@@ -493,14 +503,48 @@ pub struct PrintDialog {
     /// action funnel exists to keep coherent. See `crate::app::actions`'
     /// header for what that funnel is for.
     commit_requested: bool,
-    /// Set by the footer's Close button, consumed by [`Self::show`].
+    /// Set by whichever footer button was pressed, consumed by [`Self::show`].
     ///
     /// A flag rather than a direct close for the same reason as
     /// [`Self::commit_requested`]: the footer runs inside the window's own
     /// closure, and the window is what owns whether it is still open. Routing
-    /// both closes — the button's and the title bar's — through one `open`
-    /// flag means there is one close path rather than two that can disagree.
-    close_requested: bool,
+    /// every close — the buttons', the title bar's and a successful spool's —
+    /// through one field means there is one close path rather than several
+    /// that can disagree.
+    ///
+    /// ★ It carries a REASON rather than a bare `true` since **O185**; see
+    /// [`Dismissal`] for why a boolean stopped being able to say enough. The
+    /// one route that never sets it is the window chrome, which arrives as
+    /// `frame.closed` and is mapped to [`Dismissal::Revert`] at the single
+    /// return.
+    dismissal: Option<Dismissal>,
+
+    /// **The settings this window opened with**, kept so [`Dismissal::Revert`]
+    /// can put them back. `OPERATOR_REQUESTS.md` **O185**.
+    ///
+    /// # ★★★ Why Cancel has to WRITE, rather than merely decline to write
+    ///
+    /// If reverting were only *"do not save"*, it would be indistinguishable
+    /// from what Close did before O185 and the word would be doing no work.
+    /// It earns its place on one reachable path, and that path is ordinary:
+    ///
+    /// > A spool the driver refuses **does not close the window**, and
+    /// > [`Self::remember`] has already run by then — it is called before
+    /// > `commit`, deliberately, so an operator whose plotter is offline does
+    /// > not lose the configuration they just built. So the operator can press
+    /// > Print, have it fail, change more settings, and press Cancel — at
+    /// > which point the preferences on disk are the ones that failed press
+    /// > wrote, not the ones this window opened with.
+    ///
+    /// Restoring is the only thing that makes *"they revert back to what they
+    /// were when we opened the print dialogue"* true on that path.
+    ///
+    /// ★ A clone rather than a borrow, and the cost is a `String` and twelve
+    /// scalars once per opening of the window. The alternative — holding a
+    /// reference into `Prefs` — would borrow the preferences file for the life
+    /// of the dialog, which is the same object [`Self::remember`] needs
+    /// mutably.
+    opened_with: crate::app::prefs::PrintPrefs,
 }
 
 impl PrintDialog {
@@ -633,7 +677,17 @@ impl PrintDialog {
             verdicts: verdicts::Verdicts::default(),
             outcome: None,
             commit_requested: false,
-            close_requested: false,
+            dismissal: None,
+            // ★ The snapshot, taken from what was HANDED IN rather than from
+            // `dialog.habits()` a line later. The two are not the same value
+            // and the difference is the whole point of the field: `habits()`
+            // reads the dialog, and the dialog has just resolved a remembered
+            // printer name that no longer exists to the Windows default. A
+            // snapshot taken from the dialog would therefore quietly PROMOTE
+            // that fallback to a saved preference the first time anybody
+            // pressed Cancel, which is a write nobody asked for on the one
+            // route that is supposed to write nothing new.
+            opened_with: remembered.clone(),
         };
 
         // ★★★ **Traced from the BUILT dialog, and the position of these
@@ -956,22 +1010,45 @@ impl PrintDialog {
             self.open_properties(window);
         }
 
+        // Whether the Print press below left the settings persisted. Read by
+        // the dismissal trace at the end of this function, which is the only
+        // place that reports what a close did to the settings.
+        //
+        // ★ The initial `false` is the answer for a window that closes without
+        // a Print press ever happening, and it is never the value reported: the
+        // only arm that reads this local is [`Dismissal::Printed`], which by
+        // construction cannot be reached unless the press below ran.
+        let mut saved_on_commit = false;
         // ★ The commit, performed here: after the window's closure has
         // returned and before the next frame begins. See
         // [`Self::commit_requested`] for why it is not done at the click site.
         if std::mem::take(&mut self.commit_requested)
             && let (Some(printer), Some(job)) = (printer_name, job)
         {
-            // ★★★ O166, and the position is the decision: **the settings are
-            // remembered when the operator presses Print, not when the window
-            // closes.**
+            // ★★★ O166 -- AND THE ARGUMENT THAT USED TO STAND HERE HAS BEEN
+            // OVERTURNED BY THE OPERATOR. It is quoted rather than deleted,
+            // because it was sound and somebody will think of it again.
             //
-            // Closing without printing is how a person says *"not this"* — they
-            // opened the window, changed the copy count, thought better of it,
-            // and cancelled. Persisting on close would make that abandoned
-            // configuration the state the next print opens in, which is the
-            // opposite of what cancelling means and is the behaviour no other
-            // print dialog on this machine has.
+            // It read: *"the settings are remembered when the operator presses
+            // Print, not when the window closes. Closing without printing is
+            // how a person says 'not this' -- they opened the window, changed
+            // the copy count, thought better of it, and cancelled. Persisting
+            // on close would make that abandoned configuration the state the
+            // next print opens in, which is the opposite of what cancelling
+            // means and is the behaviour no other print dialog on this machine
+            // has."*
+            //
+            // ★★ What it missed is that *close* was doing two jobs. O185, two
+            // days later: he sets a job up, closes the window to go and check
+            // something, comes back, and it is all gone. Both readings of
+            // "close" are real and the old design made one of them unsayable.
+            //
+            // The resolution is not to move this call. It is to give the
+            // window a fourth route -- *Keep and close* -- so that abandoning
+            // and pausing stop sharing a button. This call stays exactly where
+            // it was, and the reasoning below it is untouched, because the
+            // overturned half was about what CLOSE means and never about what
+            // PRINT means. See [`Dismissal`].
             //
             // ★ Before the spool rather than after it, and it is remembered
             // even when the spool FAILS. The settings are the operator's
@@ -979,7 +1056,12 @@ impl PrintDialog {
             // An operator whose plotter was offline would otherwise lose the
             // configuration they had just built at the exact moment they need
             // to press Print again.
-            self.remember(prefs);
+            //
+            // ⚠ That last property is exactly what makes [`Self::opened_with`]
+            // necessary: a failed press leaves the preferences file holding
+            // settings the window did not open with, and a Cancel after it has
+            // something real to put back.
+            saved_on_commit = self.remember(prefs);
             let outcome = self.commit(&printer, doc, &job, &page_sizes);
             // ★★★ A SUCCESSFUL PRINT CLOSES THE DIALOG — 2026-09-03, and until
             // this day it did not.
@@ -1030,22 +1112,17 @@ impl PrintDialog {
                     // The outcome is still stored, for the trace and for the
                     // frame that is already in flight. Nothing will draw it.
                     self.outcome = Some(outcome);
-                    self.close_requested = true;
+                    self.dismissal = Some(Dismissal::Printed);
                 }
                 None => self.outcome = Some(outcome),
             }
         }
-        // ★ Three routes out, one outcome — G4. The OS close button and
-        // Escape both arrive as `frame.closed`; the footer's own Close button
-        // sets `close_requested`. Treating any of them differently would give
-        // one route a different meaning from the other two, which is exactly
-        // the surprise the convention exists to prevent.
-        //
-        // ★ A successful commit joins them rather than getting a fourth route,
-        // for the same reason: "the job is away, the window is finished" is the
-        // same outcome as Close, and giving it its own path is how two exits
-        // come to differ.
-        !frame.closed && !std::mem::take(&mut self.close_requested)
+        // ★★ The way out is its own subject and its own file — see
+        // [`dismissal`], which owns the enum, the G4 argument, and the single
+        // decision about what a close does to the settings. This function's
+        // part is over: it hands across the one fact only it knows, which is
+        // whether the Print press above left the settings persisted.
+        self.dismiss(prefs, frame.closed, saved_on_commit)
     }
 
     /// Re-read everything that belongs to the selected device.
@@ -1165,44 +1242,6 @@ impl PrintDialog {
             device.paper = self.auto_paper.resolved();
         }
         device
-    }
-
-    /// **The disclosure sentence for auto paper selection**, for the paper tab.
-    ///
-    /// Lives here rather than in [`tabs`] because it reads [`Self::auto_paper`],
-    /// which is private to this module, and because keeping the four outcomes
-    /// in one `match` is what stops a state from silently having no sentence.
-    /// A control with no line under it, where every other state has one, reads
-    /// as a control that failed.
-    ///
-    /// [`autopaper::AutoPaper::NotChosen`] is unreachable from the caller — it
-    /// only asks when the operator picked auto — but it answers the no-basis
-    /// sentence rather than an empty string, for the same reason.
-    pub(super) fn auto_paper_line(&self) -> String {
-        match &self.auto_paper {
-            autopaper::AutoPaper::Matched(m) => {
-                t::paper_auto_matched(&m.name, m.sheet_pt, m.largest_page_pt)
-            }
-            autopaper::AutoPaper::TooBig(m) => {
-                t::paper_auto_too_big(&m.name, m.sheet_pt, m.largest_page_pt)
-            }
-            autopaper::AutoPaper::NoBasis | autopaper::AutoPaper::NotChosen => {
-                t::paper_auto_no_basis().to_owned()
-            }
-        }
-    }
-
-    /// Does this job have more than one page size?
-    ///
-    /// `false` unless auto selection actually ran and found one, so the extra
-    /// sentence cannot appear beside a hand-picked sheet — where it would be
-    /// true but pointless, the operator having already chosen the sheet
-    /// themselves.
-    pub(super) fn auto_paper_is_mixed(&self) -> bool {
-        match &self.auto_paper {
-            autopaper::AutoPaper::Matched(m) | autopaper::AutoPaper::TooBig(m) => m.mixed,
-            autopaper::AutoPaper::NoBasis | autopaper::AutoPaper::NotChosen => false,
-        }
     }
 
     /// Open the driver's own properties dialog and keep what it produces.

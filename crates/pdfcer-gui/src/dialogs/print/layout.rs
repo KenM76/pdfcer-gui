@@ -805,9 +805,11 @@ impl PrintDialog {
                 // than folded into `None` so the reason is where somebody
                 // looking for the missing receipt will find it.
                 //
-                // Since 2026-09-03 a successful commit sets `close_requested`,
-                // so this window is gone by the next frame and anything drawn
-                // here would be shown for at most one. The receipt — the page
+                // Since 2026-09-03 a successful commit closes the window — it
+                // sets [`super::Dismissal::Printed`], which since O185 is how
+                // that path says so — and this window is therefore gone by the
+                // next frame, so anything drawn here would be shown for at
+                // most one. The receipt — the page
                 // count, and the `Synthesised` disclosure when the driver held
                 // settings pdfcer does not model — goes to the application's
                 // disclosure row instead, where it OUTLIVES the dialog. See
@@ -839,18 +841,57 @@ impl PrintDialog {
                         .unwrap_or(super::verdicts::ClipClaim::None)
                         .commit_label()
                         .unwrap_or_else(|| t::commit().to_owned());
-                    let (accepted, cancelled) =
-                        crate::dialogs::host::Host::buttons(ui, &label, t::close());
+                    // ★★★ THREE ROUTES, NOT TWO — `OPERATOR_REQUESTS.md` **O185**.
+                    //
+                    // Until 2026-09-14 the footer offered Print and Close, and
+                    // the operator's complaint was that neither said the thing
+                    // he meant: *"I set the printer up, close the window to go
+                    // check something, and it's all gone."* Keeping and
+                    // abandoning were sharing one button, so the button had to
+                    // pick one, and whichever it picked was wrong half the
+                    // time.
+                    //
+                    // Each arm below sets a [`super::Dismissal`] rather than a
+                    // close flag. The reason is read once, at `show`'s single
+                    // return, which is the only place that knows all three.
+                    let (accepted, cancelled, kept) = crate::dialogs::host::Host::footer(
+                        ui,
+                        (&label, t::commit_hover()),
+                        (t::cancel(), t::cancel_hover()),
+                        Some((t::keep_and_close(), t::keep_and_close_hover())),
+                    );
                     if accepted {
                         self.commit_requested = true;
                     }
                     if cancelled {
-                        self.close_requested = true;
+                        self.dismissal = Some(super::Dismissal::Revert);
+                    }
+                    if kept {
+                        self.dismissal = Some(super::Dismissal::Keep);
                     }
                 }
                 None => {
-                    if ui.button(t::close()).clicked() {
-                        self.close_requested = true;
+                    // ★★ The same two meanings the job arm offers, minus the one
+                    // there is nothing to do. With no job there is nothing to
+                    // print, so the AFFIRMATIVE button is *Keep and close* —
+                    // which is why this is `buttons` and not `footer`: the
+                    // third route is not missing here, it has been promoted to
+                    // the first.
+                    //
+                    // ★ Leaving it as the bare Close it was until O185 would
+                    // reproduce that request in miniature. An operator who
+                    // opens Print on a document with no printable pages, fixes
+                    // the copy count and the tray, then closes, would find the
+                    // window had thrown the settings away — on the one arm
+                    // where there was never a Print press available to keep
+                    // them.
+                    let (kept, cancelled) =
+                        crate::dialogs::host::Host::buttons(ui, t::keep_and_close(), t::cancel());
+                    if kept {
+                        self.dismissal = Some(super::Dismissal::Keep);
+                    }
+                    if cancelled {
+                        self.dismissal = Some(super::Dismissal::Revert);
                     }
                 }
             }

@@ -590,6 +590,7 @@ pub mod preview_popout;
 pub mod print_auto_paper;
 pub mod print_clip_claim;
 pub mod print_dialog;
+pub mod print_dismissal;
 pub mod print_layout;
 pub mod print_paper;
 pub mod print_remembered;
