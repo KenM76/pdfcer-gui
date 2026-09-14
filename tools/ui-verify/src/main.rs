@@ -86,6 +86,56 @@ fn main() -> ExitCode {
 /// ★ `--allow-stale` covers this too, deliberately: one flag for *"yes, I mean
 /// to drive the older build"*, whichever binary is older, rather than a second
 /// flag nobody would remember.
+/// # ★★★ And `--list` is behind this guard, which it was not until 2026-09-14
+///
+/// `--help` and `--list` both used to return from [`run`] *above* this call, on
+/// the reasoning — written into the comment there — that they "answer without
+/// driving anything". That is sound about `--help`. It was wrong about `--list`
+/// for a reason that did not exist on the day the line was written:
+/// **`--list` became the authoritative COUNT command.**
+///
+/// `RESUME.md` names `ui-verify --list | grep -cE '^  [a-z0-9_]+$'` as the way
+/// to measure how many driven checks exist, and that figure is quoted into
+/// `FEATURES.md`'s revision header and into the GitHub release notes. So the
+/// one path this guard deliberately skipped was the one path whose output
+/// reaches a shipped document.
+///
+/// # ⚠ It bit on 2026-09-14
+///
+/// A check was added and committed. `ui-verify.exe` on disk was an hour older
+/// than that commit. `--list` answered **223** where the roster was **224** —
+/// cheerfully, with no complaint anywhere, because the binary was reporting the
+/// roster it had been COMPILED with. Nothing in the toolchain can notice that:
+/// the number is not wrong *about the binary*, it is wrong *about the tree*.
+/// It was caught only because a release rebuild happened to intervene between
+/// the measurement and the document.
+///
+/// # ★★ Why the fix is the ORDER and not a warning
+///
+/// Every softer option is defeated by the pipe the count command is used in:
+///
+/// * a warning on stderr is discarded by `2>/dev/null`, which the measuring
+///   session had in fact typed;
+/// * a warning in the `--list` header is invisible to `grep -c`, whose pattern
+///   matches only check-name lines;
+/// * a non-zero exit is swallowed, because in `a | b` the shell reports **b**'s
+///   status and `grep` succeeded at counting what it was given.
+///
+/// ⇒ Putting `--list` behind the refusal makes **stdout empty**, so the count
+/// command answers **0**. Zero is not a plausible roster size and cannot be
+/// mistaken for one; 223 can, and was.
+///
+/// # ★ The general shape, which outlives this instance
+///
+/// **A guard is placed against the uses that existed when it was written.**
+/// When a command later grows a second job, nothing re-asks which side of every
+/// guard it belongs on — not the compiler, not clippy, not a test, because
+/// nothing has changed about either the guard or the command. Re-ask it by
+/// hand, at the moment the second job appears.
+///
+/// ★ `--help` stays in front, deliberately. It prints the argument surface,
+/// which is compiled in but is not a measurement of the tree, and it is exactly
+/// what a reader reaches for when the tool has just refused them.
 fn refuse_if_self_is_stale(args: &[String]) -> Result<(), String> {
     if args.iter().any(|a| a == "--allow-stale") {
         return Ok(());
@@ -114,13 +164,15 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
         println!("{USAGE}");
         return Ok(ExitCode::SUCCESS);
     }
+    // ★ After `--help`, which describes the command line and cannot be wrong
+    // about anything a stale build would change, and before EVERY other path —
+    // INCLUDING `--list`, which used to sit above it. See
+    // [`refuse_if_self_is_stale`] and the section on why that move matters.
+    refuse_if_self_is_stale(args)?;
     if args.iter().any(|a| a == "--list") {
         list();
         return Ok(ExitCode::SUCCESS);
     }
-    // ★ After `--help` and `--list`, which answer without driving anything, and
-    // before every other path. See [`refuse_if_self_is_stale`].
-    refuse_if_self_is_stale(args)?;
 
     let mut profile_name = profile::PDFCER_GUI.name.to_owned();
     let mut exe: Option<PathBuf> = None;

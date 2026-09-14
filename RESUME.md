@@ -26,15 +26,15 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-14 00:40 EDT (re-measured against the tree this release is cut from, every row by its own command, nothing carried over. The *Last release* row was the one exception and was re-stamped at 00:45 once the tag existed) |
+| What | Command | Value, 2026-09-14 03:20 EDT (re-measured against the tree the FIFTH release of the day was cut from, every row by its own command, nothing carried over. The *Last release* row is the one exception and was re-stamped at 03:25 once the tag existed and `releases/latest` had been read back) |
 |---|---|---|
 | Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `7378c83` — **level with the tip of the engine's `main`**, which is `7378c83` too. ★★★ **Two shas being equal is not what makes a sentence safe; an empty code diff is** — `git -C /d/Dev/pdfcer diff --stat 3df0c72..7378c83 -- '*.rs'` is EMPTY, and the single commit that moved the pin here touched `docs/ROADMAP.md` and `docs/SESSION_LOG.md` and nothing else. ⇒ The question a pin row exists to answer is *may I write the sentence "the engine cannot do X"*, and the safe condition is that **no CODE has landed since the pin**, not that the two strings match. Twelve hours ago the pin was one commit behind and nothing about what may safely be written was any different. ⚠ The pin is a BRANCH pin and it has moved mid-session without a `cargo update`; re-read the lock in the same breath as quoting it. ★★★ And "no code since the pin" is not "nothing is in flight": the request channel is not a git repository and no command in this table reads it |
 | Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `7378c83` — **level with the pin**, and the commit is the librarian's 547th filing. It read `3df0c72` at 00:40 the same night, `4cb18e1` at 22:23 the previous evening and `5e17017` at 19:10 before that, which is exactly why this row is re-measured rather than quoted |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | `0.53.0` |
-| Last release | `git fetch --tags origin && gh release list --limit 3` | `v0.5.0-dev.20260914.1`, cut 2026-09-14 04:39 UTC, `prerelease=false`, `draft=false`, one asset `pdfcergui-20260914-0038-3df0c72-a227f94.zip` of 23,268,522 bytes, and it IS what `releases/latest` advertises — verified by reading the API back rather than by having passed the right flag. OneDrive slot **`pdfcer-gui1`** carries it; `pdfcer-gui2` still holds the 2026-09-13 18:38 build, which is the point of alternating slots. ★★ **4 commits unreleased** at 2026-09-14 02:10 — `git fetch --tags origin && git describe --tags` answers `v0.5.0-dev.20260914.1-4-g…`. ⚠ **This row drifts with every commit, including the one that edits this row**, so it is the one figure here that is stale by construction; re-run the command rather than reading the number. ★★★ **The order matters, and it is the order this release was cut in:** commit ⇒ `touch crates/pdfcer-gui/build.rs` ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ✓ **The stamp check is what proves the `touch` worked**: About read *"built 2026-09-14 04:36 UTC from a227f94; engine 0.53.0 at 3df0c72"* — the release commit, not the one before it. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *"51 commits unreleased"* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. ⚠ `build.rs` has no `rerun-if-changed` on `.git/HEAD`, so the rebuild after the commit is a no-op and ships the *pre-commit* stamp unless you `touch` it between them |
-| Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **224** — one more than the last release, which had 223: `the_export_windows_open_on_the_settings_you_last_used`, which discharges the last item owed on O196 and is NOT yet in a shipped zip. ⚠ **the `$` is load-bearing and its absence answers 225.** `--list` prints a second small table, the `--exe` targets, whose rows are also two-space-indented lowercase words; without the end anchor the count silently picks up `pdfcer-gui` and `pdfcer-legacy` from it. That is a *count command* being wrong rather than a quoted answer being stale, which is a different defect and the harder one to see. ★ If a count here is about double what you expect, you counted lines: `--list` prints two per check plus an eight-line header, so a `wc -l` answers `2n + 8` |
-| Gates | `bash tools/gates/run-all.sh` | **53 passed, 0 failed, 0 skipped**, exit 0 — FOUR more than at the last release, and the four are two gates plus the self-test each of them carries: `check-region-names` and `check-test-temp-paths`. ⚠ **This cell said *two* until 2026-09-14**, because it was counted by remembering the gate that was interesting rather than by diffing the runner; `git diff v0.5.0-dev.20260913.4..HEAD -- tools/gates/run-all.sh` shows four added `run` lines and `FEATURES.md`'s twenty-ninth revision says forty-nine, which is 53 minus four. ★ What that gate is for: a `REGION_*` constant is `pub`, so **nothing in the toolchain fires when a region is declared and published by no one** — not `dead_code`, not clippy at `-D warnings`, not any other gate here. The symptom reaches a reader as a driven check reporting a control that is plainly on screen. It found three, all in `dialogs/export_image.rs`, all now real |
-| Unit tests | `cargo test --workspace` | **4,290 passing, 0 failed, 51 ignored, 4,341 defined** — summed over 24 `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,341. ✓ Six more than the release, and the six are `export_remembered.rs`'s own, which is how their RUNNING was confirmed rather than their compiling. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. ★ **The cross-count is also how you know a new test RAN**: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function — the summed figure moved by nothing and so did the listed one. ✓ **Two concurrent runs are safe as of `7b48dd0`**, and that is measured rather than assumed: the pre-fix source was rebuilt as a CONTROL and its test binary run twice at once — red 3 rounds of 3 — then the fixed binary, green 5 of 5, then the three affected test binaries in full, twice simultaneously. ★ The control named *different* victims than the failure that started it, which is the finding itself: the casualty is whichever test lost the race |
+| Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | `v0.5.0-dev.20260914.2`, cut 2026-09-14 07:22 UTC, `prerelease=false`, `draft=false`, one asset `pdfcergui-20260914-0317-7378c83-2bb0b19.zip` of 23,270,105 bytes, and it IS what `releases/latest` advertises — verified by reading the API back rather than by having passed the right flag. OneDrive slot **`pdfcer-gui2`** carries it (`Built: 2026-09-14 03:17:14`); **`pdfcer-gui1`** still holds the 2026-09-14 00:38 build, which is the point of alternating slots and was confirmed by reading `BUILD-INFO.txt` out of **both**. ★★ **1 commit unreleased** as of 2026-09-14 04:05 — the `--list` staleness fix, which is a harness change and changes nothing an operator can see. ⚠ **This row drifts with every commit, including the one that edits this row**, so it is the one figure here that is stale by construction; re-run the command rather than reading the number. ★★★ **The order matters, and it is the order this release was cut in:** commit ⇒ `touch crates/pdfcer-gui/build.rs` ⇒ rebuild ⇒ re-drive `the_title_bar_carries_the_build_time` and `about_reports_the_build` against the **shipped** exe ⇒ off-screen smoke launch of it ⇒ `package-portable --no-build --no-update` ⇒ push ⇒ `gh release create`. Building before the commit ships an executable nobody measured; `--no-build` is what makes the packaged file the one that was just driven; `--no-update` is what stops the packaging script silently re-pinning the engine out from under a measured build. ✓ **The stamp check is what proves the `touch` worked**: About read *“built 2026-09-14 07:02 UTC from 2bb0b19; engine 0.53.0 at 7378c83”* — the release commit, not the one before it — and the title bar and the off-screen smoke launch both read the same stamp. ⚠ `about_reports_the_build` **SKIPS under `--no-input`** because it clicks a ribbon control; it was driven with input enabled, which is allowed only while he is away from the machine. ⚠⚠ **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in a tree that has not fetched answers with an older tag — that mistake put *“51 commits unreleased”* in a report where the answer was 21. ⇒ **And never pass `--prerelease`**: GitHub hides a pre-release from `releases/latest`, so the front page went on advertising a three-day-old zip while a new one sat in the list. ⚠ `build.rs` has no `rerun-if-changed` on `.git/HEAD`, so the rebuild after the commit is a no-op and ships the *pre-commit* stamp unless you `touch` it between them. ★ **`package-portable.py`'s own header argues AGAINST publishing this release** — a doc correction, a test added, an engine re-pin with no behavioural difference is its exact excluded list. He has read that argument and overruled it: *“always release the latest version when you are done work.”* Do not re-perform the cost-benefit |
+| Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **224** — level with the shipped release, which is `v0.5.0-dev.20260914.2`. The most recent addition is `the_export_windows_open_on_the_settings_you_last_used`, which discharged the last item owed on O196 and **is now in a shipped zip**. ⚠ **the `$` is load-bearing and its absence answers 225.** `--list` prints a second small table, the `--exe` targets, whose rows are also two-space-indented lowercase words; without the end anchor the count silently picks up `pdfcer-gui` and `pdfcer-legacy` from it. That is a *count command* being wrong rather than a quoted answer being stale, which is a different defect and the harder one to see. ★ If a count here is about double what you expect, you counted lines: `--list` prints two per check plus an eight-line header, so a `wc -l` answers `2n + 8`. ★★★ **And the binary on disk can answer an OLD count while every guard in the harness stays silent**: `ui-verify.exe` answered 223 for an hour after the commit that added the 224th. ⚠ **Not because the harness is unguarded** — `refuse_if_self_is_stale` compares the running `ui-verify.exe` against every `.rs` and `.toml` under `tools/ui-verify/` and has since it was written. **`--list` returned before reaching it**, by design, on the reasoning that `--help` and `--list` “answer without driving anything”. That reasoning is sound about DRIVING and the gap is that `--list` later became the authoritative **count** command, quoted into `FEATURES.md` and into release notes. ✓ **Closed 2026-09-14**: `--list` is now behind the guard, so a stale harness makes the count command print nothing and exit 2, and `grep -c` answers **0** — a number nobody can mistake for a roster. Rebuild the workspace before quoting this row |
+| Gates | `bash tools/gates/run-all.sh` | **53 passed, 0 failed, 0 skipped**, exit 0 — level with the shipped release. ⚠ **This cell said *two* more than the previous release until 2026-09-14, where the answer was four**, because it was counted by remembering the gate that was interesting rather than by diffing the runner. ⇒ **Count a gate change by diffing `run-all.sh`, never by recalling which gate felt new.** ★ The two newest are `check-region-names` and `check-test-temp-paths`, and each brought its own self-test, which is why the total moved by four. What `check-region-names` is for: a `REGION_*` constant is `pub`, so **nothing in the toolchain fires when a region is declared and published by no one** — not `dead_code`, not clippy at `-D warnings`, not any other gate here. The symptom reaches a reader as a driven check reporting a control that is plainly on screen. It found three, all in `dialogs/export_image.rs`, all now real |
+| Unit tests | `cargo test --workspace` | **4,293 passing, 0 failed, 51 ignored, 4,344 defined** — **three ahead of the shipped release**, which is `v0.5.0-dev.20260914.2`, and the three are the instrument in `tools/ui-verify/tests/list_is_behind_the_staleness_guard.rs`. Summed over **25** `test result:` lines — 25 rather than 24 because a new integration test is its own binary, so **a count of the result LINES is a second thing this row measures** — then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'` = 4,344. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. ★★★ **For a release the two methods are wired together rather than compared by eye**: the script that writes `FEATURES.md`'s test paragraph reads the `cargo test` transcript and sums it itself, takes the cross-count as an argument, and **refuses to write the document at all** if the two disagree or if anything failed. A number that reaches a shipped document by the same act that measures it cannot drift from it. ★ **The cross-count is also how you know a new test RAN**: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function — the summed figure moved by nothing and so did the listed one. ✓ **Two concurrent runs are safe as of `7b48dd0`**, and that is measured rather than assumed: the pre-fix source was rebuilt as a CONTROL and its test binary run twice at once — red 3 rounds of 3 — then the fixed binary, green 5 of 5, then the three affected test binaries in full, twice simultaneously. ★ The control named *different* victims than the failure that started it, which is the finding itself: the casualty is whichever test lost the race |
 | Source files | `find crates -name '*.rs' \| wc -l` | 790 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 174 rows — wanted 35 / blocked 8 / unknown 0 / declined 14 / **shipped 117**. ⚠ **Rewrite the five headings from the walker's own printed figures, never by arithmetic** — that instruction is in the walker's output because the arithmetic has been got wrong seven times. |
 | Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | **46** — one more than at 01:07, and it is `done_G014_page_verbs_and_the_gesture_without_its_outcome_CONSUMED.md`. **G014 is consumed and nothing is owed either way.** Its §3 answers the addendum's UNRESOLVED row the way only this side could: not with feature-list prose but with **command ids**, because R8 makes reachability measurable — id in the catalogue **and** placed in the manifest. insert / extract / delete / rotate are named commands; **`reorder` is not a command at all** — the verb is carried by `pages.move_up` / `pages.move_down` and by the Pages panel's drag, so a by-name search for the word finds nothing and concludes wrongly. **G013 is now mirrored in this repository**, closing the thing this row warned about for a day: the borrowed-guard clause lives in `crates/pdfcer-gui/src/canvas/snap.rs`, in the doc comment above the `SnapKind::all()` completeness test that the note is about, and the `CheckStyle::all()` gap it logged was already an `ENGINE_BACKLOG.md` row. ★★★ **A declined offer still gets a `done_*` even though nothing is owed**, and that is a rule rather than politeness: a decline that lives only in a reply nobody consumed reads, six weeks later, as an open question, and the next session re-offers it. ⚠ **Re-`ls` this folder before quoting it** — it changes faster than any other input to this project, it is in no git repository, and nothing warns you. |
@@ -69,44 +69,66 @@ seen the three releases cut since; the true figures were **21 commits** and
 **yesterday afternoon**. ⇒ **Any sentence containing *"commits unreleased"* or
 a release date gets a `git fetch --tags origin` immediately in front of it.**
 
-★★★ **`v0.5.0-dev.20260914.1` shipped 2026-09-14 04:39 UTC**, from commit
-`a227f94` on engine `3df0c72`. Two things in it reach the operator: **the
-three export windows now open on what he last used**, and **the front page
-stops selling the program as a CAD tool**. Verified as what `releases/latest`
-advertises — by reading the API back, not by having passed the right flag —
-`prerelease=false`, `draft=false`, one asset
-`pdfcergui-20260914-0038-3df0c72-a227f94.zip` of 23,268,522 bytes.
+★★★ **`v0.5.0-dev.20260914.2` shipped 2026-09-14 07:22 UTC**, from
+commit `2bb0b19` on engine `7378c838`, and **it is the first release of this
+project whose headline is that nothing an operator can see changed.** No
+capability, no fix to a reported defect, no behaviour anywhere that differs from
+the zip before it. Two things earned it, and both are this program telling the
+truth rather than doing something new: **the front page stopped naming a gesture
+without its outcome** — dragging pages between documents COPIES, Shift moves,
+and the sentence now says so — and **the check the fourth release admitted it
+owed was paid**. Verified as what `releases/latest` advertises by reading the API
+back, not by having passed the right flag: `prerelease=false`, `draft=false`, one
+asset `pdfcergui-20260914-0317-7378c83-2bb0b19.zip` of 23,270,105 bytes.
 
-⚠ **Nothing he can SEE changed with the engine bump**, and that is worth
-saying rather than leaving him to wonder. The pin moved `5e17017` ⇒ `3df0c72`,
-five commits, and `git -C /d/Dev/pdfcer diff --stat 5e17017..3df0c72 -- '*.rs'`
-is **empty** — all five are documentation. A pin bump in a release note reads
-like a behaviour change unless the diff is quoted beside it.
+★★★ **A release with nothing visible in it is one `package-portable.py`
+argues against shipping, and that argument is overruled.** Its header's excluded
+list is *"a documentation or comment change, a test added or a harness improved,
+an engine re-pin with no behavioural difference"* — which is this release,
+three for three. Ken has read that cost argument and ruled over it: *"always
+release the latest version when you are done work."* ⇒ **Do not re-perform the
+cost-benefit.** The fallback slot is what makes a bad build cheap; a build
+sitting only in `target/release` is worth nothing to him at all.
 
-★ **Both destinations, and the fallback survives.** **`OneDrive\pdfcer-gui1`**
-carries this build (2026-09-14 00:38:57, shell `a227f94`, engine `3df0c72`,
-source digest `bcc3b4b92cee`); **`pdfcer-gui2` still holds the 2026-09-13
-18:38 build** (shell `34dde31`, engine `5e17017`, digest `4a7b5f5466af`), which
-is the point of alternating slots. **The next package rotates into slot 2** —
-and the rotation works this out for itself from the two slots' timestamps, so
-pass `--slot` only to RETRACT, never to steer a normal build.
+⚠ **Nothing he can SEE changed with the engine bump either.** The pin moved
+`3df0c72` ⇒ `7378c838`, **one** commit, and
+`git -C /d/Dev/pdfcer diff --stat 3df0c72..7378c838 -- '*.rs'` is **empty** —
+it is the librarian's 547th filing. A pin bump in a release note reads like a
+behaviour change unless the diff is quoted beside it.
+
+★ **Both destinations, and the fallback survives.** **`OneDrive\pdfcer-gui2`**
+carries this build (`Built: 2026-09-14 03:17:14`, shell `2bb0b19`, engine
+`7378c83`); **`pdfcer-gui1` still holds the 2026-09-14 00:38 build**, which is
+the point of alternating slots. Both were confirmed by reading `BUILD-INFO.txt`
+out of **both** slots after packaging — that two-line read-back has now caught
+three distinct failures of that one script, and the tool's own report is not
+evidence about the tool's own effect. **The next package rotates back into slot
+1**, and the rotation works this out for itself from the two timestamps, so pass
+`--slot` only to RETRACT, never to steer a normal build.
 ⚠ His own install at `C:\Users\Ken\OneDrive\pdfcer\` is **not** touched by a
 publish and was not touched by this one.
 
 ⚠ **Neither slot's `BUILD-INFO.txt` carries a "THE ENGINE HAS MOVED ON"
-banner today**, and the previous edition of this block warned at length that
-`pdfcer-gui1`'s did. That sentence died with the package it described. ⇒ **The
-banner is computed at PACKAGE time against the pin, so it is a property of one
-zip and never of a slot** — re-read the file rather than carrying the warning
-forward.
+banner today.** ⇒ **The banner is computed at PACKAGE time against the pin, so
+it is a property of one zip and never of a slot** — re-read the file rather
+than carrying the warning forward.
 
-★★ **What was NOT measured for this release, recorded here because the public
-release notes say it too.** **223 driven checks exist and not one of them is
-about the export windows' memory.** O196 ships carried by unit tests and one
-off-screen smoke launch, which is below this project's own bar; what the check
-has to do, and the four traps that make a naive one pass on a broken build,
-are at the end of the O196 row below. Saying so in the notes is cheaper than
-having it found. ✓ **Discharged 2026-09-14, AFTER that zip was cut** — the check exists, drove green over `fixtures/a1-titleblock.pdf` and was falsified by a narrow sabotage. This paragraph is therefore true of the SHIPPED release and stops being true at the next one; re-read it before carrying it into new notes.
+✓ **The gap the FOURTH release disclosed is closed, and the disclosure was
+not deleted.** That release's notes said in as many words that 223 driven checks
+existed and not one was about the export windows' memory. There are **224** now
+and the new one is exactly that check. `FEATURES.md`'s thirtieth revision still
+carries the original admission, standing and unedited, with the thirty-first
+discharging it by name above — **a disclosure that is quietly deleted when its
+subject is fixed teaches the next reader nothing about what the gap cost.**
+
+★★ **What was NOT measured for THIS release**, recorded here because the
+public release notes say it too: **the full ninety-five-minute driven sweep.**
+The last complete one was 2026-09-13 and read 183 passed / 4 failed / 34 skipped
+over **221** checks — there are 224 now, so even that figure is not a
+statement about this build. The four failures were the same four by name for the
+third run running and every one of them a defect in the *check* rather than in
+the program. ⚠ Quoting *"224 checks"* without that sentence beside it reads as
+a claim this build does not support.
 
 ⚠ **`build.rs` declares `rerun-if-changed` on `src`, `Cargo.toml` and
 `../../Cargo.lock` — and NOT on `.git/HEAD`.** So the rebuild that is supposed to

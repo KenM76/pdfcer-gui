@@ -2145,6 +2145,55 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
   script incrementally, so editing it mid-run can change what the remaining half
   of the run does.
 
+---
+
+- **★★★ The harness is guarded against its own staleness on every path
+  except the one whose answer gets published.**
+
+  `ui-verify --list` returned from `run()` **above** `refuse_if_self_is_stale`
+  from the day that guard was written until 2026-09-14, on reasoning written
+  into the comment beside it: `--help` and `--list` *“answer without driving
+  anything”*. That is true, and it is the wrong question. **`--list` later
+  became the authoritative COUNT command** — `RESUME.md` names it, and its
+  answer is quoted into `FEATURES.md`'s revision header and into the GitHub
+  release notes. So the single path the guard deliberately skipped was
+  **the one path whose output reaches a shipped document.**
+
+  It bit the same day. A check was added and committed; `ui-verify.exe` on disk
+  was an hour older; `--list` answered **223** where the roster was **224**,
+  cheerfully, with nothing anywhere complaining. ★★ **The number was not
+  wrong about the binary — it was wrong about the tree**, which is why no
+  compiler, linter or gate can see it. It was caught only because a release
+  rebuild happened to fall between the measurement and the document.
+
+  ⇒ **Every softer fix is defeated by the pipe the command is used in.** A
+  warning on stderr is discarded by the `2>/dev/null` that session had in fact
+  typed. A warning in the `--list` header is invisible to `grep -c`, whose
+  pattern matches only check-name lines. A non-zero exit is swallowed, because
+  in `a | b` the shell reports **b**'s status and `grep` succeeded at counting
+  what it was handed. Only the ORDER works: behind the guard, stdout is empty
+  and the count command answers **0** — not a plausible roster size, which
+  223 very much is.
+
+  ★ **The general shape, and it is the part worth carrying:** *a guard is
+  placed against the uses that existed when it was written.* When a command
+  later grows a second job, nothing re-asks which side of every guard it
+  belongs on — not the compiler, not clippy, not a test, because nothing has
+  changed about either the guard or the command. **Re-ask it by hand, at the
+  moment the second job appears.**
+
+  The instrument is `tools/ui-verify/tests/list_is_behind_the_staleness_guard.rs`
+  and it drives a process rather than scanning the source, deliberately: the
+  fix now carries forty lines of doc comment naming `--list` and the guard in
+  one breath, and a gate keyed on a name is discharged by prose. It copies the
+  built harness to a pid-tagged scratch path, **sets the copy's mtime to the
+  epoch** — which makes it stale against the crate's real sources, since
+  `CARGO_MANIFEST_DIR` is baked in at compile time — and asserts three
+  things: a bare `--list` prints nothing and exits 2, `--help` still answers,
+  and `--allow-stale --list` still lists. The third is the control; without it
+  a `--list` broken outright would satisfy the other two. It was falsified by
+  putting the old order back: one test red, the two controls green.
+
 ## 11. The relationship with `D:\Dev\pdfcer`
 
 Another session works that repository live. It is **read-only** here.
