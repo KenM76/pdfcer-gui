@@ -1050,7 +1050,7 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
 ///
 /// | decline | shell refusal | why |
 /// |---|---|---|
-/// | [`ReflowDecline::RetryAfterSaveAndReopen`] | [`ReflowRefusal::PageAlreadyEdited`] | the one refusal the operator can act on |
+/// | [`ReflowDecline::RetryAfterSaveAndReopen`] | [`ReflowRefusal::PageAlreadyEdited`] | ⚠ **unreachable at engine `025d703d`** — it was *the one refusal the operator can act on* for seven days, and `G015` then deleted the guard that produced its only source error. The arm is mandatory (this `match` is compiler-proved complete over an exhaustive enum) and the sentence is retained; `check-unreachable-refusals` is what will notice if it ever comes back |
 /// | [`ReflowDecline::NotFound`] | [`ReflowRefusal::CannotTrace`] | *"glyphs cannot be traced back to their show operators"* is that sentence, verbatim |
 /// | [`ReflowDecline::NotReflowable`] | [`ReflowRefusal::EngineDeclined`] | permanent for this document; the operator did nothing wrong and can do nothing |
 /// | [`ReflowDecline::StructureForbids`] | [`ReflowRefusal::Other`] | reachable here only as a gate refusal, which this shell cannot describe more precisely than *"pdfcer could not, and nothing was changed"* |
@@ -1090,6 +1090,24 @@ fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -> ReflowRef
         // ★★★ NO WILDCARD. See the header: the wildcard that used to be here
         // would have swallowed `PageEditedThisSession` on the day it shipped.
         other => match other.decline() {
+            // ⚠ DEAD AT ENGINE `025d703d`, and mandatory anyway.
+            // `ReflowDecline` is exhaustive on purpose, so this arm has
+            // to exist; but `PageEditedThisSession` is the decline's
+            // sole source and `G015` removed its last constructor, so
+            // nothing an operator does reaches this line. Retained
+            // rather than `unreachable!()` — a panic here would turn a
+            // future engine reinstating the guard into a crash instead
+            // of a correct sentence, which is the wrong direction for a
+            // refusal path.
+            //
+            // ★★ The chain is two links and BOTH are watched, because a
+            // marker on the error alone would miss an engine that gave
+            // this decline a second, different producer:
+            //
+            // UNREACHABLE-FROM: pdfcer_core::text_edit::ReflowDecline::RetryAfterSaveAndReopen @ 025d703d
+            //
+            // (the other half sits on `ReflowRefusal::PageAlreadyEdited`'s
+            // own definition, and names the error rather than the decline).
             D::RetryAfterSaveAndReopen => ReflowRefusal::PageAlreadyEdited,
             D::NotFound => ReflowRefusal::CannotTrace,
             D::NotReflowable => ReflowRefusal::EngineDeclined,

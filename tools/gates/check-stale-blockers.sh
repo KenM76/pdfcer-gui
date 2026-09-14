@@ -37,8 +37,20 @@
 #
 # ## Exit codes
 #
-#   0  no contradiction found (or the request channel is not on this machine)
+# `--self-test` drives four hermetic cases and is what makes the widening
+# below falsifiable rather than merely asserted; see the block near the top
+# of the script body.
+#
+#   0  no contradiction found, having actually looked
 #   1  at least one row claims to be blocked on a request that has been answered
+#   2  SKIPPED — the channel is not on this machine, or it holds no
+#      consumption notes at all, so there was nothing to check against
+#
+# ★ Exit 2 corrected 2026-09-14. The paragraph below has always said this
+# gate SKIPs rather than passes when it cannot see its evidence — and the
+# code exited **0**, which `run-all.sh` counts as a PASS. The prose was
+# right, the statement was wrong, and nothing could see the difference
+# because the two sat forty lines apart in the same file.
 #
 # ## Skipping honestly
 #
@@ -50,13 +62,145 @@
 set -uo pipefail
 
 CHANNEL="${PDFCER_REQUEST_CHANNEL:-D:/Dev/FeatureRequests/pdfce_FeatureRequests/open}"
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ARCHIVE="$(dirname "$CHANNEL")/archive"
+
+# PDFCER_GATE_ROOT exists for --self-test and nothing else. The real run
+# always resolves the repository from this script's own location, so an
+# environment variable cannot quietly point the gate at an empty tree.
+ROOT="${PDFCER_GATE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+
+# ---------------------------------------------------------------------------
+# --self-test — four cases, each the only witness for one property.
+# ---------------------------------------------------------------------------
+#
+# ★★★ The `archived` case is the regression guard for 2026-09-14. Before that
+# date this gate globbed `open/*CONSUMED*.md`; the channel sweep moved every
+# consumption note to `archive/`, the glob matched nothing, and the gate went
+# permanently green over an evidence set of size zero. The `archived` case
+# returns 1 only if `archive/` is actually read, so narrowing the evidence set
+# back to `open/` turns this suite red instead of turning this gate blind.
+#
+# ⚠ Hermetic on purpose: a throwaway ROOT and a throwaway channel. A case
+# keyed on a real ⛔ row in FEATURES.md would be testing that row's wording,
+# and would evaporate the day somebody unblocks it.
+if [ "${1:-}" = "--self-test" ]; then
+  TMP="$(mktemp -d)"
+  trap 'rm -rf "$TMP"' EXIT
+  FAILURES=0
+
+  # A root carrying exactly one blocked row that names a request file.
+  mkdir -p "$TMP/root"
+  printf '%s\n' \
+    '| Deep zoom | ⛔ BLOCKED on `request_selftest_widget.md` | not yet |' \
+    > "$TMP/root/OPERATOR_REQUESTS.md"
+
+  note_body() {
+    printf '%s\n' '# done' '' '**Status:** consumed.' '' \
+      'Originally filed as: request_selftest_widget.md'
+  }
+
+  run_case() {  # <label> <expected-rc>  (channel already built)
+    local label="$1" expect="$2" out rc
+    out="$(PDFCER_GATE_ROOT="$TMP/root" PDFCER_REQUEST_CHANNEL="$TMP/ch/open" \
+           bash "${BASH_SOURCE[0]}" 2>&1)"; rc=$?
+    if [ "$rc" -ne "$expect" ]; then
+      echo "stale-blockers --self-test: FAIL — '$label' returned $rc, expected $expect"
+      printf '%s\n' "$out" | sed 's/^/    /'
+      FAILURES=$((FAILURES + 1))
+    fi
+  }
+
+  # empty  — a channel with no consumption notes has measured nothing.
+  rm -rf "$TMP/ch"; mkdir -p "$TMP/ch/open" "$TMP/ch/archive"
+  run_case "empty" 2
+
+  # clean  — notes exist, but none of them names this request.
+  rm -rf "$TMP/ch"; mkdir -p "$TMP/ch/open" "$TMP/ch/archive"
+  printf '%s\n' '# done' '' '**Status:** consumed.' '' 'Originally filed as: request_something_else.md' \
+    > "$TMP/ch/archive/2026-01-01-unrelated-done.md"
+  run_case "clean" 0
+
+  # archived — THE REGRESSION GUARD: the note is in archive/, not open/.
+  rm -rf "$TMP/ch"; mkdir -p "$TMP/ch/open" "$TMP/ch/archive"
+  note_body > "$TMP/ch/archive/2026-01-01-selftest-widget-done.md"
+  run_case "archived" 1
+
+  # open   — the original path still works.
+  rm -rf "$TMP/ch"; mkdir -p "$TMP/ch/open" "$TMP/ch/archive"
+  note_body > "$TMP/ch/open/done_selftest_widget_CONSUMED.md"
+  run_case "open" 1
+
+  if [ "$FAILURES" -ne 0 ]; then
+    echo "stale-blockers --self-test: FAIL — $FAILURES of 4 cases misbehaved."
+    exit 1
+  fi
+  echo "stale-blockers --self-test: clean — all 4 cases behaved (empty=SKIPPED,"
+  echo "                            clean, archived, open)."
+  exit 0
+fi
 
 if [ ! -d "$CHANNEL" ]; then
-  echo "check-stale-blockers: SKIP — the request channel is not at '$CHANNEL'."
-  echo "  Set PDFCER_REQUEST_CHANNEL to point at it. Reported as SKIP rather than"
-  echo "  PASS: this gate has not looked at anything."
-  exit 0
+  echo "check-stale-blockers: SKIPPED — the request channel is not at '$CHANNEL'."
+  echo "  Set PDFCER_REQUEST_CHANNEL to point at it. Reported as SKIPPED rather"
+  echo "  than PASS: this gate has not looked at anything."
+  exit 2
+fi
+
+# ---------------------------------------------------------------------------
+# THE EVIDENCE SET — and the afternoon it silently became empty.
+# ---------------------------------------------------------------------------
+#
+# ★★★ This gate used to glob `"$CHANNEL"/*CONSUMED*.md`, which is `open/` and
+# nothing else. On 2026-09-14 this project swept the channel — `open/` went
+# 48 → 4 — and all fifty-one consumption notes moved to `archive/`. **From
+# that moment the glob matched nothing**, a `grep` over an empty file list
+# never matches, and the gate could not go red however stale a row became. It
+# printed "OK — no row declares a blocker that has been closed" over an
+# evidence set of size **zero**, in the same suite run as the sweep that
+# emptied it.
+#
+# Two lessons, both of which this file now ENACTS rather than merely records:
+#
+#   1. **Tidying an input is a change to the instrument.** Nothing about
+#      archiving closed exchanges looks like touching a gate, and no check on
+#      either side connects the two — the channel is in no git repository, so
+#      its contents are invisible to all of them. The defence is that the
+#      gate reads BOTH folders, below, and stops caring where a note lives.
+#   2. **A check with an empty evidence set must not report PASS.** It has
+#      measured nothing. Below, an empty set is SKIPPED (exit 2) with the
+#      count stated, and the count is printed on GREEN runs too. A tally that
+#      can be zero is the only thing that makes a green verdict legible.
+#
+# A consumption note is recognised under BOTH naming schemes the channel has
+# used, because `archive/` holds both eras:
+#
+#   * `*CONSUMED*.md`            — the original `done_<topic>_CONSUMED.md`
+#   * `*-done.md`, `*-done-N.md` — the dated archive stem, which drops the word
+#   * any file whose opening lines carry `**Status:** … consumed`
+#
+# The third clause is the backstop for a scheme nobody has invented yet: the
+# status line is the thing that actually means "taken", and a filename is only
+# ever a shorthand for it.
+NOTES=()
+for f in "$CHANNEL"/*.md "$ARCHIVE"/*.md; do
+  [ -f "$f" ] || continue
+  b="$(basename "$f")"
+  case "$b" in
+    *CONSUMED*|*consumed*)            NOTES+=("$f"); continue ;;
+    done_*|*-done.md|*-done-[0-9].md) NOTES+=("$f"); continue ;;
+  esac
+  if head -12 "$f" | grep -qiE '^\*\*Status:.*consumed'; then
+    NOTES+=("$f")
+  fi
+done
+
+if [ "${#NOTES[@]}" -eq 0 ]; then
+  echo "check-stale-blockers: SKIPPED — the channel holds NO consumption notes."
+  echo "  Looked in '$CHANNEL' and '$ARCHIVE'. The only evidence this gate has"
+  echo "  that a blocker was closed is a note saying so, and there are none, so"
+  echo "  it cannot tell a clean tree from a blind one. SKIPPED, not PASS — see"
+  echo "  the note above about 2026-09-14."
+  exit 2
 fi
 
 # Documents that carry status rows. Deliberately a short, named list rather than
@@ -88,7 +232,8 @@ fi
 # the 2026-09-06 markup asks were wired here and no note was ever written, so
 # even with the file in this list the gate would still have passed. Writing the
 # CONSUMED note is the act that arms this check; see
-# `open/done_2026-09-06-markup-style-four-CONSUMED.md`.
+# `archive/2026-09-06-markup-style-four-CONSUMED.md` — archived 2026-09-14,
+# which is why this gate now reads both folders rather than just `open/`.
 DOCS=("OPERATOR_REQUESTS.md" "FEATURES.md" "GUI_ROADMAP.md" "ENGINE_BACKLOG.md")
 
 status=0
@@ -181,9 +326,11 @@ for doc in "${DOCS[@]}"; do
       # rows cite would otherwise be unrecoverable. That is a convention this
       # gate depends on; `done_2026-09-02-*-CONSUMED.md` carry it as an
       # "Originally filed as:" line.
-      if grep -qlF "$req" "$CHANNEL"/*CONSUMED*.md 2>/dev/null; then
+      note="$(grep -lF "$req" "${NOTES[@]}" 2>/dev/null | head -1)"
+      if [ -n "$note" ]; then
         echo "  $doc:$lineno claims to be blocked and names '$req',"
         echo "      which has been CONSUMED — the capability is wired on this side."
+        echo "      Evidence: $(basename "$note")"
         found=$((found + 1))
         status=1
       fi
@@ -215,5 +362,14 @@ if [ "$status" -ne 0 ]; then
   exit 1
 fi
 
+# ⚠ STATE THE EVIDENCE SET, NOT JUST THE VERDICT. On 2026-09-14 this gate
+# reported the line below over an evidence set of size zero and nobody could
+# tell, because "OK" is what it prints when it has looked and found nothing
+# AND what it printed when it had nothing to look at. The two readings are
+# now distinguishable from the output alone.
 echo "check-stale-blockers: OK — no row declares a blocker that has been closed."
+echo "  Evidence: ${#NOTES[@]} consumption note(s) across"
+echo "    $CHANNEL"
+echo "    $ARCHIVE"
+echo "  A zero there would be this gate going blind, and is reported as SKIPPED."
 exit 0

@@ -1576,9 +1576,52 @@ drawing a font editor with a face row for a clicked text object.
 half that was in the way: you can now reach it. Whether every reachable run can
 then be **edited** is O188's part of the row - a title block run that the
 exporter wrote as one lump is still one lump, and splitting it is separate work.
-Claim 2 remains as recorded above: (A) fixed, (B) with the engine, (C) a
-deferred engine capability that this shell still owes you an honest sentence
-about.
+Claim 2's three faults as they stood that morning: (A) fixed, (B) with the
+engine, (C) a deferred engine capability this shell still owed you an honest
+sentence about. **All three have moved since; the next section is the
+record.**
+
+### Claim 2 fault (B) DELIVERED by the engine, 2026-09-14 14:15 EDT — and measured on your file, not assumed
+
+`request_G015` landed upstream as engine commit `025d703d`, and this build's
+pin was moved onto it in the same commit that writes this paragraph. **The
+guard that told you that you had added text to a page you had just opened is
+gone.**
+
+★★★ **The measurement, because a delivery is a claim until it is driven.**
+The probe `can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed`
+was run against a scratch copy of `SW41177.pdf` — a copy, never your own
+file — before and after the pin moved. Page 0, the same sheet, the same
+block:
+
+| pin | what re-wrapping that paragraph answers |
+|---|---|
+| `7378c838` | *"text was added to this page this session … save and reopen before reflowing this page"* — **false**, and its remedy could not work |
+| `025d703d` | *"R-INV-4: font 'AQHZBV+CenturyGothic' is a composite (Type 0 / CIDFont) run; within-block reflow of composite/CJK fonts is deferred (FF-E)"* — **true**, and it names the thing that is actually in the way |
+
+⚠⚠ **What this is NOT.** Your paragraph on that sheet still does not
+re-wrap. (C) is unchanged and is real engine work that has not been done:
+re-wrapping text set in a composite font is a deferred feature, not a bug
+anyone has refused to fix. **What changed is that the program stopped
+blaming you and started naming the font.** That is worth shipping on its own
+— a refusal you can act on is a different thing from a refusal that sends you
+to save and reopen a file for no reason — but it is not the capability, and
+this row is not closed by it.
+
+★ **Fault (C)'s shell half is done and was done the day before**: the decline
+no longer lands as a generic sentence — `ReflowRefusal::FontIsComposite`
+words it, and the arm that produces it matches on the engine's own
+`RInvTrigger::Composite` discriminant rather than on the text of a message.
+So the sentence above is what you will actually read on screen.
+
+★★ **One durable thing came out of it that has nothing to do with your
+drawing.** The engine kept the error behind the deleted guard as a variant it
+no longer produces. That makes this shell's explanation of it dead text —
+correct to keep, invisible to every drift check we own, and the third time
+this project has been caught explaining a limitation that had already been
+removed. There is now a build gate that re-reads the engine's own source at
+the pinned revision on every commit and fails if a symbol we document as
+having no producer acquires one. It cannot happen silently a fourth time.
 
 ★★★ **Only Ken closes this row.**
 
@@ -8766,7 +8809,7 @@ So a line, a rectangle, a CAD drawing's every stroke: selectable, movable,
 deletable — and not recolourable. No shell control could exist yet because there
 is nothing for it to call.
 
-**Filed:** `open/request_a_paths_colour_cannot_be_changed_at_all.md`, asking for
+**Filed:** `request_a_paths_colour_cannot_be_changed_at_all.md`, asking for
 the verb **and its reader** — a swatch that cannot show the object's current
 colour is one that silently discards it on first touch — plus a named refusal
 for spot inks, because writing `DeviceRGB` over a named separation would look
@@ -9131,7 +9174,7 @@ the WO box. **1.156 is Helvetica's own bounding-box height** — the same number
 falls out of two boxes that differ by a factor of two, so it is the rule rather
 than a coincidence. Then it shrinks to fit the width.
 
-**Filed:** `open/request_auto_sized_field_text_is_a_flat_12pt_and_acrobat_fits_the_box.md`,
+**Filed:** `request_auto_sized_field_text_is_a_flat_12pt_and_acrobat_fits_the_box.md`,
 with both measurements and the derivation.
 
 **Status:** ✅ **FIXED** in `pdfcer-core` `Pass 215.0`, `d5d012e`.
@@ -9727,7 +9770,7 @@ are re-reports of rows already believed shipped).
 > you see as page 0 is committed to **a different sheet** and returns `Ok`.
 > Nothing refuses, nothing discloses.
 >
-> **Filed:** `open/request_edit_verbs_read_the_base_not_the_overlay.md`, with
+> **Filed:** `request_edit_verbs_read_the_base_not_the_overlay.md`, with
 > the reproduction attached, and indexed. `D:\Dev\pdfcer` is read-only to this
 > project so the fix is not ours to make.
 >
@@ -10406,7 +10449,7 @@ Two defects:
 > which its two siblings have always emitted.
 >
 > ⛔ **The fix is the engine's** and is filed:
-> `open/request_resizing_a_check_box_stretches_its_appearance.md`. It asks for
+> `request_resizing_a_check_box_stretches_its_appearance.md`. It asks for
 > two things — that a button's appearance be redrawn after a `/Rect` change, and
 > that `WidgetEdit` carry the same three scale answers `ResizeOptions` already
 > takes, so your Tool-row switches reach a form field at all.
@@ -13160,7 +13203,7 @@ is structural, not incidental: the direction census comes back empty and every
 branch is keyed on it. Asserted against a real drawing sheet.
 
 The engine request is filed —
-`open/request_extraction_drops_the_writing_direction.md` — asking for
+`request_extraction_drops_the_writing_direction.md` — asking for
 direction-aware segmentation and for the direction to be published. When that
 lands, the shell-side recovery becomes a fallback and then deletes.
 

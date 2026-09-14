@@ -444,7 +444,7 @@ is genuinely undetermined, state it and let the operator choose.
 > pdfcer team's own numbers it takes second and subsequent renders of a
 > page from ~700 ms to roughly fill cost — tens of milliseconds. It is
 > **not built**; they asked whether S6 depends on it and the answer is
-> filed in `open/request_reusable_parsed_handle.md`. **S6 should not start
+> filed in `request_reusable_parsed_handle.md`. **S6 should not start
 > until that is scheduled**, because switching to per-viewport regions
 > without it trades the smooth pan the operator praised for a 0.7 s
 > gesture.

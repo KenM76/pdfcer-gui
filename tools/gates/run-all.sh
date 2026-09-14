@@ -136,6 +136,12 @@ run "check-completeness-tests --self-test" python "$HERE/check-completeness-test
 run "check-unit-conversion --self-test" bash "$HERE/check-unit-conversion.sh" --self-test
 run "check-test-temp-paths --self-test" python "$HERE/check-test-temp-paths.py" --self-test
 run "check-patch-residue --self-test" python "$HERE/check-patch-residue.py" --self-test
+# ★ Added 2026-09-14, the day this gate was found reporting OK over an
+# evidence set of size zero. Its `archived` case is the regression guard: it
+# returns 1 only if the consumption notes in `archive/` are read, so narrowing
+# the evidence set back to `open/` turns this suite red instead of turning
+# that gate silently blind.
+run "check-stale-blockers --self-test" bash "$HERE/check-stale-blockers.sh" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
@@ -675,6 +681,40 @@ run "check-engine-api-drift" bash "$HERE/check-engine-api-drift.sh"
 # with?" and the honest answer was no. It is a report, not a policy: being
 # behind is fine, being behind without knowing is what fails here.
 run "check-ui-toolkit-drift" bash "$HERE/check-ui-toolkit-drift.sh"
+
+# ★★★ `check-unreachable-refusals`, added 2026-09-14, and it is the FOURTH
+# member of the drift family -- watching the one kind of drift the other
+# three structurally cannot see: a symbol that still EXISTS on the engine
+# side, with an unchanged signature, that has quietly stopped being produced.
+#
+# `check-engine-api-drift` enumerates every public item the engine GAINS. A
+# variant whose last constructor was deleted gains nothing, loses nothing
+# public, and is invisible to it. `check-pin-citation` watches that documents
+# quote the right pin, not what the pin means. And `cargo` is perfectly happy:
+# the arm still compiles, the test still passes, the sentence still renders.
+#
+# This shell keeps such sentences on purpose -- the `match` over
+# `ReflowDecline` is compiler-proved complete so the arm is MANDATORY, and
+# `unreachable!()` would turn a future engine reinstating the guard into a
+# crash on a refusal path. What was missing is any way to tell they are dead.
+#
+# ★★ Three times paid for. `PageAlreadyEdited`'s doc argued for a shell
+# forecast deleted nine days earlier; `PageSetChanged` went unreachable at the
+# engine's `Pass 257.0` and was found months later by a reader looking for
+# something else; and on the morning this gate was written `G015` deleted the
+# only producer of `ReflowApplyError::PageEditedThisSession` and said so in
+# its own commit message -- in a repository this one is forbidden to write to
+# and nobody is obliged to read.
+#
+# ★ It DIFFS rather than classifies. Deciding which of five lines mentioning
+# a variant is a constructor needs a parser, and a regex that guessed would be
+# confidently wrong on `matches!`, on `Err(X::Y) =>` and on a doctest. The
+# gate's claim is the smaller, honest one: the engine's code around a symbol
+# somebody wrote a "this cannot happen" paragraph about has moved. A human
+# reads the paragraph.
+#
+# Its --self-test runs inside the wrapper, for the reason stated there.
+run "check-unreachable-refusals" bash "$HERE/check-unreachable-refusals.sh"
 
 # ★★★ `check-pin-citation`, added 2026-09-11, and it is the THIRD member of
 # the drift family above -- but it watches a different kind of drift, and the

@@ -428,8 +428,15 @@ fn how_many_runs_actually_hit_the_ambiguity_refusal_and_is_the_remedy_real() {
 ///
 /// ⚠ A fresh session per cell is not an optimisation to remove. `edit_text`
 /// mutates, so a shared session would measure the Nth edit **on a document
-/// already edited N-1 times**, and `PageEditedThisSession` is a real refusal
-/// this file would then attribute to the cell.
+/// already edited N-1 times**: every cell after the first would be answered
+/// against bytes the previous cell rewrote, and a refusal caused by the run
+/// order would be filed against the cell.
+///
+/// ⚠ This paragraph used to name `PageEditedThisSession` as the concrete
+/// hazard. That citation died with `G015` (engine `025d703d`) — nothing
+/// constructs that error now. The discipline is unchanged and does not depend
+/// on it; a probe whose Nth measurement is taken on the output of its N−1th
+/// is measuring itself.
 #[test]
 #[ignore = "reads a file outside the repository, one document load per cell; run by hand"]
 fn which_cells_on_his_bom_sheet_does_the_engine_actually_refuse() {
@@ -1040,26 +1047,36 @@ fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
         Ok(report) => report,
         Err(e) => {
             println!("★★★ THE REFLOW ITSELF REFUSED — {e}");
-            // ★★★ THE PRE-WRITTEN EXPLANATION THAT STOOD HERE WAS WRONG, and it
-            // is replaced by what the run actually measured (2026-09-14).
+            // ★★★ THIS ARM HAS NOW CARRIED TWO WRONG EXPLANATIONS, and the
+            // second one was CORRECT when written. Both are recorded because
+            // the shape is the finding, not either sentence.
             //
-            // It said: "his report says reflow works, so a refusal here means
-            // the probe is reflowing a different block than he is, or his file
-            // has moved on." Neither. The refusal on the first frame after
-            // `File > Open`, with no edit made, is `PageEditedThisSession`
-            // — and `SW41177.pdf` page 0 natively carries EIGHT non-empty
-            // `/Contents` streams, which is what the engine's guard
-            // (`edit.rs:11445`) actually tests. A producer that splits page
-            // content across streams, as SolidWorks does and as ISO 32000-1
-            // 7.8.2 permits, is read as "text was added this session."
+            // v1 (a guess, printed as a conclusion): "his report says reflow
+            // works, so a refusal here means the probe is reflowing a
+            // different block than he is." It was never measured.
+            //
+            // v2 (measured, 2026-09-14 morning): the refusal on the first
+            // frame after `File > Open` is `PageEditedThisSession`, because
+            // `SW41177.pdf` page 0 natively carries EIGHT non-empty
+            // `/Contents` streams and the engine's guard tested exactly that
+            // — a structural count reported as a session fact. That
+            // measurement became `request_G015`.
+            //
+            // v3, and why v2 is now history: the engine agreed and **deleted
+            // the guard** (engine `025d703d`, 2026-09-14). Nothing constructs
+            // `PageEditedThisSession` any more. A refusal reaching this arm
+            // today is therefore SOMETHING ELSE, and the overwhelmingly
+            // likely something else on a CAD sheet is a composite
+            // (Type 0 / CIDFont) face, which reflow declines by name.
             //
             // — A probe's pre-written failure sentences are a hypothesis, and
             // a hypothesis printed as a conclusion is how a wrong cause gets
-            // believed. Say what was measured, or say nothing.
-            println!("    Page 0 of his file carries 8 native /Contents streams. If the sentence");
-            println!("    above is PageEditedThisSession on a session that has edited nothing,");
-            println!("    that is the engine misreading a producer-authored multi-stream page.");
-            println!("    See `how_many_content_streams_does_each_of_his_sheets_carry`.");
+            // believed. Print the engine's own words and the discriminant;
+            // let the reader attribute.
+            println!("    decline: {:?}", e.decline());
+            println!("    ⚠ Do NOT read this as the multi-stream guard: that guard was deleted");
+            println!("    by `G015` at engine 025d703d and nothing produces it now. On a CAD");
+            println!("    sheet the expected refusal is the composite-font one (R-INV-4).");
             return;
         }
     };
@@ -1138,22 +1155,39 @@ fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
 
 /// ★★★ **How many `/Contents` streams does each of his sheets carry?**
 ///
-/// The question exists because [`can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed`]
-/// found `reflow_block` refusing a **freshly loaded** file with *"text was
-/// added to this page this session"*, and nothing had been added. The engine's
-/// guard is a count, not a provenance check:
+/// ✅ **The defect this probe was written to quantify is FIXED.** Kept, and
+/// worth reading as a worked example of a measurement closing an engine
+/// defect, which is the shortest route this project has.
+///
+/// # What it found
+///
+/// [`can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed`] found
+/// `reflow_block` refusing a **freshly loaded** file with *"text was added to
+/// this page this session"*, and nothing had been added. The engine's guard
+/// was a count, not a provenance check:
 ///
 /// ```text
 /// page.contents.iter().skip(1).any(|id| … a non-empty stream …)
 /// ```
 ///
-/// ⇒ It reads *"this page has more than one non-empty content stream"* and
-/// **reports that as a session fact**. A producer that splits its page content
-/// across several streams — which ISO 32000-1 §7.8.2 explicitly permits, and
-/// which SolidWorks does — trips it on the first frame after `File > Open`.
+/// ⇒ It read *"this page has more than one non-empty content stream"* and
+/// **reported that as a session fact**. A producer that splits its page
+/// content across several streams — which ISO 32000-1 §7.8.2 explicitly
+/// permits, and which SolidWorks does — tripped it on the first frame after
+/// `File > Open`.
 ///
-/// This prints the count per page so the claim above is a number rather than a
-/// deduction, and so the eventual engine request can quote it.
+/// # What happened to it
+///
+/// This probe printed the per-page counts, `request_G015` quoted them, and the
+/// engine **deleted the guard** the same day (engine `025d703d`, 2026-09-14).
+/// Nothing constructs `ReflowApplyError::PageEditedThisSession` at this pin.
+///
+/// ⇒ So what follows is now a **structural census of his file**, not a
+/// refusal forecast: it says how many of his sheets a stream-sensitive engine
+/// path would have to handle, which is still the right number to have when the
+/// next such path appears. The claim that they are refused has been removed
+/// from the output, not softened — *a disclosure has a subject, and when the
+/// fix removes the subject the disclosure goes with it.*
 #[test]
 #[ignore = "reads a file outside the repository; run by hand"]
 fn how_many_content_streams_does_each_of_his_sheets_carry() {
@@ -1185,9 +1219,11 @@ fn how_many_content_streams_does_each_of_his_sheets_carry() {
         "\n⇒ {multi} of {} sheets carry more than one /Contents stream.",
         pages.len()
     );
-    println!("  Every one of those is refused by `reflow_block` on the first frame after open,");
-    println!("  with a sentence asserting the operator added text he did not add and a remedy");
-    println!("  (save and reopen) that cannot help — the streams are in the FILE.");
+    println!("  Until 2026-09-14 every one of those was refused by `reflow_block` on the");
+    println!("  first frame after open. `G015` deleted that guard at engine 025d703d, so the");
+    println!("  number above is now a structural census of his file rather than a count of");
+    println!("  refusals — which is the right thing to have when the next stream-sensitive");
+    println!("  engine path arrives.");
 }
 
 /// ★★★ **His exact sequence: edit first, then reflow, then edit again.**
@@ -1195,19 +1231,30 @@ fn how_many_content_streams_does_each_of_his_sheets_carry() {
 /// O198: *"Seems the reflow works with each line but still can't edit when the
 /// text has been reflowed."*
 ///
-/// The previous probe explains the first half of that sentence backwards — it
-/// found reflow refusing on open. This one finds the state in which it does
-/// work, because `edit_text`'s own report names it:
+/// ⚠⚠ **Step 1 is no longer a WORKAROUND, and the paragraph that said it was
+/// has been removed rather than softened.**
 ///
-/// > *"multi-stream page: 7 additional /Contents stream(s) were collapsed into
-/// > the first and emptied so the edit's byte offsets stay coherent."*
+/// What it said: the previous probe found reflow refusing on a freshly opened
+/// file, `edit_text`'s own report disclosed that it *"collapsed 7 additional
+/// /Contents stream(s) into the first"*, and that collapse happened to satisfy
+/// the guard — so the feature was *"unlocked by using a different feature
+/// first, and nothing tells him that"*. True on 2026-09-14 in the morning.
 ///
-/// ⇒ **A text edit collapses the page to one stream, which is precisely the
-/// condition `reflow_block`'s guard tests.** So on his drawings the feature is
-/// unlocked by using a different feature first, and nothing tells him that.
+/// `G015` deleted the guard the same day (engine `025d703d`). Reflow no longer
+/// needs a prior edit, and a workaround kept past its cause is how a shell
+/// grows a mechanism nobody can justify.
 ///
-/// Having reached the state where reflow runs, this then asks the question his
-/// sentence actually asks: **is the text still editable afterwards?**
+/// ⇒ **Step 1 is retained for a different and better reason**, which was
+/// always the more interesting half: O198's sentence is about the state
+/// *after* things have been done to the page, and this is the only probe that
+/// reaches it. It performs the operator's literal order — edit, then reflow,
+/// then edit again — and asks the question his sentence actually asks:
+/// **is the text still editable afterwards?**
+///
+/// ★ It is also the instrument that would notice a reinstated guard from the
+/// other side: if step 2 ever starts REQUIRING step 1 again, this probe is
+/// where that shows up as a difference between two runs rather than as a
+/// report from Ken.
 #[test]
 #[ignore = "reads a file outside the repository; run by hand"]
 fn his_sequence_edit_then_reflow_then_edit_again() {

@@ -546,6 +546,16 @@ fn a_named_cause_comes_from_a_named_engine_variant() {
 
 /// ★★★ **THE TRAP THE ENGINE WARNED ABOUT, MADE INTO AN ASSERTION.**
 ///
+/// ⚠⚠ **Read the name of this test as historical.** At engine `025d703d`
+/// `PageEditedThisSession` is no longer recoverable, because it is no
+/// longer PRODUCED: `G015` deleted the guard that constructed it, and the
+/// engine kept the variant on purpose so that dropping it would be this
+/// project's decision. The test is kept and still constructs the error by
+/// hand, which is the only way to reach the arm now — and that is exactly
+/// why it is kept. If a future engine reinstates the guard, the arm must
+/// already be right; a mapping deleted because it was briefly unreachable
+/// is how the remedy would be lost a third time.
+///
 /// `pdfcer-core` shipped `ReflowApplyError::PageEditedThisSession` on
 /// 2026-09-07, hours after `EngineDeclined` was added above, and the reply that
 /// announced it flagged a hazard in this shell's own code by name:
@@ -573,9 +583,11 @@ fn the_one_recoverable_refusal_keeps_its_remedy() {
     assert_eq!(
         got,
         ReflowRefusal::PageAlreadyEdited,
-        "`PageEditedThisSession` is the ONE reflow refusal an operator can act on. If this \
-         reads `Other` or `EngineDeclined`, a wildcard has come back and the remedy is \
-         unreachable — which is the defect corrected twice on 2026-09-07."
+        "`PageEditedThisSession` must keep its remedy. It is unreachable at engine \
+         `025d703d` (`G015` deleted its only producer) and the engine kept the variant, so \
+         this arm is the thing that has to be correct when a future engine reinstates the \
+         guard. If this reads `Other` or `EngineDeclined`, a wildcard has come back — \
+         which is the defect corrected twice on 2026-09-07."
     );
 
     // ★★ And the remedy must actually be IN the sentence. Reaching the right
@@ -820,7 +832,10 @@ fn each_engine_decline_reaches_a_refusal_that_suits_it() {
     }
     assert!(
         seen.contains(&ReflowRefusal::PageAlreadyEdited),
-        "the recoverable case must survive the walk: {seen:?}"
+        "the save-and-reopen case must survive the walk. ⚠ It is unreachable from an \
+         operator gesture at engine `025d703d` and is asserted anyway: this walk is over \
+         the DECLINE enum, which is exhaustive, so a decline losing its distinct outcome \
+         is the defect regardless of whether anything currently produces it: {seen:?}"
     );
 }
 

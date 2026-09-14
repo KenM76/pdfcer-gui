@@ -15,42 +15,60 @@
 //! Taking a different family because it is bigger would be re-deciding a
 //! decision on a criterion nobody chose.
 //!
-//! ## ★★★ One of these three is not like the others, and it is the whole reason
-//! ## this module has prose
+//! ## ★★★ The three verbs DO compose now, and the history of this paragraph
+//! ## is the reason it is an assertion rather than a sentence
 //!
-//! `CommitTextEdit` and `TextStyle` **accumulate**: they stage onto the session,
-//! and a page may take twenty of them.
+//! `CommitTextEdit` and `TextStyle` **accumulate**: they stage onto the
+//! session, and a page may take twenty of them. **So does `Reflow`, as of
+//! engine `025d703d`** — add text to a page, then re-wrap a paragraph on it,
+//! and the add survives.
 //!
-//! `Reflow` does not, and **the reason changed under us on 2026-09-06** — this
-//! paragraph was re-measured against engine `Pass 257.0` on 2026-09-14 and what
-//! it used to say is no longer true.
+//! ⚠⚠⚠ **This paragraph has said the opposite twice, and both times it was
+//! right when written and wrong by the time it was read.**
 //!
-//! It used to say: `reflow_block` plans against the **base** document, so it
-//! refuses a page this session has already rewritten, and one typed character
-//! trips it. `Pass 257.0` moved the planner onto the **session view** — the
-//! same graph every other read uses — and both "save and reopen" refusals went
-//! with it. An ordinary text edit no longer blocks a later reflow.
+//! | version | claim | true at | falsified by |
+//! |---|---|---|---|
+//! | 1 | reflow plans against the BASE document, so one typed character blocks it | engine `Pass 251.0` | `Pass 257.0` (2026-09-06) moved the planner onto the session view |
+//! | 2 | reflow still refuses a page carrying a non-empty EXTRA content stream, so **adding** text blocks it even though editing does not | engine `7378c838` | `G015` (2026-09-14) deleted the guard |
 //!
-//! **What still makes `Reflow` unlike its neighbours** is narrower and is worth
-//! stating precisely. `reflow_block` re-emits the page's FIRST content stream
-//! and the commit sweep empties every other one. `add_text` puts new text in a
-//! new stream. ★★★ So reflow refuses a page carrying a non-empty extra content
-//! stream — `ReflowApplyError::PageEditedThisSession` — because committing
-//! would silently delete text the operator can see. **Adding** text trips it;
-//! **editing** existing text does not, because that edit's own sweep has
-//! already consolidated the page.
+//! Version 2 was written on 2026-09-14 while correcting version 1, from the
+//! engine source, and it was accurate for about six hours. The guard it
+//! described was already known to be wrong — its condition was **structural**
+//! (*does `contents[1..]` hold a non-empty stream*), which ISO 32000-1 §7.8.2
+//! permits a producer to author and which SOLIDWORKS does routinely, so it
+//! fired on pages nobody had edited. That was `request_G015`, filed from
+//! `SW41177.pdf`, whose title sheet carries eight producer-authored streams and
+//! was refused with *"text was added to this page this session"* on a freshly
+//! opened file. The engine agreed and removed it.
 //!
-//! ★★ And the same guard fires on a page NO ONE edited, because the condition
-//! is structural rather than provenance-based: a producer that splits page
-//! content across streams (SOLIDWORKS does; ISO 32000-1 7.8.2 permits it) is
-//! read as "text was added this session". Filed as `request_G015`; see O198.
-//! Until it lands, the remedy sentence this shell shows is the engine's and is
-//! wrong on that one class of page, and there is nothing honest to substitute.
+//! ⇒ **Version 3 is a test, not a sentence.** `the_three_text_verbs_compose`
+//! below adds a run to `fixtures/paragraph.pdf` and then reflows the paragraph
+//! on the same page, in that order, and asserts the reflow is accepted and the
+//! added run is still on the page afterwards. The day the engine reintroduces a
+//! guard of either shape, that test goes red in the same commit that bumps the
+//! pin — which is the only mechanism that has ever caught this. *A limitation
+//! sentence is a citation, and a citation nobody re-measures is a claim about
+//! an engine that has moved.*
 //!
-//! ⇒ A reader who assumes the three behave alike will wire a reflow after an
-//! **add** and meet a refusal that looks like a bug. It is a correctness
-//! property, and the sentence saying so is as much the feature as the wrapping
-//! is.
+//! ## ★★ What is still worth knowing about `Reflow`'s shape
+//!
+//! `reflow_block` re-emits the page's **first** content object, and the commit
+//! sweep empties every other one — that has not changed and is not a defect.
+//! What changed is where the plan is read FROM: since `Pass 257.0` it is the
+//! session's graph, and `ContentStream::from_page` concatenates every
+//! `/Contents` entry, so an appended run is inside the plan's source and is
+//! carried through verbatim rather than dropped. The engine discloses the
+//! collapse in its own report — *"multi-stream page: N additional /Contents
+//! stream(s) were collapsed into the first"* — and
+//! `app::actions::textstyle::reflow` forwards that disclosure to the status
+//! line verbatim, which is the whole of what the operator is owed about it.
+//!
+//! ⚠ One refusal a reader WILL still meet on a CAD sheet, and it is unrelated
+//! to any of the above: a paragraph set in a **composite (Type 0 / CIDFont)**
+//! face is refused by name (`R-INV-4`, FF-E), and
+//! [`crate::text::textedit::ReflowRefusal::FontIsComposite`] words it. That is
+//! a deferred engine feature rather than a guard, and it is the answer to every
+//! reflow on `SW41177.pdf`.
 
 /// The verbs that re-shape a page's own text.
 #[derive(Debug, Clone, PartialEq)]
@@ -155,4 +173,110 @@ pub enum TextAction {
         /// The run's `/BaseFont`, which is the face the offer replaces.
         base_font: String,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    //! ★★★ The header's load-bearing claim, made falsifiable.
+    //!
+    //! This module exists for one assertion. See the table above for why a
+    //! prose claim here is not good enough: the paragraph it replaces has been
+    //! wrong twice in nine days, both times because an engine guard was removed
+    //! and nothing in this crate could notice.
+
+    /// ★★★ **Add, then reflow: the engine composes them, and the added run
+    /// survives.**
+    ///
+    /// # What this measures, precisely
+    ///
+    /// 1. `add_text` puts a new run on page 0 of `fixtures/paragraph.pdf`. On a
+    ///    single-stream page that necessarily creates a SECOND `/Contents`
+    ///    stream, which is exactly the condition the deleted guard tested.
+    /// 2. `reflow_block` is then asked to re-wrap block 0 — the fixture's one
+    ///    paragraph — in the same session, with no save in between.
+    /// 3. The reflow must be **accepted**, and the added text must still be
+    ///    extractable from the page afterwards.
+    ///
+    /// # ★★ Why all three steps, and why the third is not redundant
+    ///
+    /// Step 3 is the one that matters most and is the easiest to leave out. The
+    /// guard that was removed existed to prevent **silent data loss**, not to
+    /// prevent an error: its argument was that the plan read the base document,
+    /// which did not contain the appended run, and committing that plan ran a
+    /// sweep that emptied every extra stream. An engine that accepted the
+    /// reflow and dropped the added text would satisfy a test asserting only
+    /// `is_ok()` — and would be a far worse defect than the refusal.
+    ///
+    /// ⇒ So the acceptance and the survival are asserted separately, and the
+    /// failure messages say which happened.
+    ///
+    /// # ★ Why this fixture
+    ///
+    /// `fixtures/paragraph.pdf` is a flush-left six-line paragraph in
+    /// `Helvetica`, a simple (single-byte) face. That matters: a composite face
+    /// is refused by name (`R-INV-4`) whatever the stream layout, so a CAD
+    /// sheet cannot distinguish "the guard came back" from "the font is out of
+    /// scope" and would make this test permanently unable to fail for the
+    /// reason it was written.
+    #[test]
+    fn the_three_text_verbs_compose() {
+        use pdfcer_core::text_edit::{AddTextRequest, ReflowRequest};
+
+        const ADDED: &str = "composition probe";
+
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/paragraph.pdf");
+        let doc = pdfcer_core::document::Document::load(std::path::Path::new(path))
+            .expect("fixtures/paragraph.pdf must load");
+        let mut session = pdfcer_core::edit::EditSession::new(doc);
+
+        // --- 1. add a run, which creates the extra content stream -----------
+        let add = AddTextRequest::new(0, (72.0, 72.0), ADDED);
+        session
+            .add_text(&add)
+            .expect("adding a 12-pt Helvetica run to a plain fixture must be accepted");
+
+        // --- 2. reflow the fixture's one paragraph, same session -------------
+        let reflow = session.reflow_block(0, 0, &ReflowRequest::new());
+        let report = match reflow {
+            Ok(report) => report,
+            Err(e) => panic!(
+                "THE GUARD IS BACK, or a new one is. `reflow_block` refused a page that had \
+                 text added to it this session: {e}\n\
+                 \n\
+                 This is the exact behaviour `request_G015` had removed at engine 025d703d, and \
+                 the module header above states its absence as a property of the program. If \
+                 the engine has deliberately reinstated it, this test and that header are what \
+                 must change — together, and with the pin named."
+            ),
+        };
+
+        // --- 3. the added run must still be on the page ---------------------
+        //
+        // Read back through the session's own view rather than a saved file:
+        // the claim is about what the operator sees in an unsaved session,
+        // which is where the loss would have happened.
+        let view = session.view();
+        let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+        let text = pdfcer_core::text_extract::extract_page_view(
+            &view,
+            &pages[0],
+            0,
+            &pdfcer_core::text_extract::ExtractOptions::default(),
+        )
+        .expect("the page must still extract after a reflow");
+        let survived = text.runs.iter().any(|r| r.text.contains(ADDED));
+        assert!(
+            survived,
+            "SILENT DATA LOSS. The reflow was ACCEPTED (lines {} -> {}) and the run added \
+             before it is no longer on the page. That is the failure the removed guard \
+             existed to prevent, and it is worse than the refusal: nothing told the \
+             operator. Runs now on the page: {:?}",
+            report.lines_before,
+            report.lines_after,
+            text.runs
+                .iter()
+                .map(|r| r.text.as_str())
+                .collect::<Vec<_>>()
+        );
+    }
 }

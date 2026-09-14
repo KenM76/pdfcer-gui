@@ -61,8 +61,13 @@ fn rect() -> pdfcer_core::page_tree::Rect {
 ///   width.
 ///
 /// ⚠ A fresh session per attempt. A shared one measures the Nth resize on an
-/// annotation already resized N−1 times, and `PageEditedThisSession` is a real
-/// refusal this probe would then attribute to the kind.
+/// annotation already resized N−1 times — every row after the first would be
+/// answered against a page the previous row rewrote, and a refusal caused by
+/// the run order would be filed against the kind.
+///
+/// ⚠ This note used to name `PageEditedThisSession` as the concrete hazard.
+/// That citation died with `G015` (engine `025d703d`); nothing constructs that
+/// error now. The discipline never depended on it.
 #[test]
 #[ignore = "a measurement, not an assertion — run it and read the output"]
 fn which_markup_kinds_does_a_corner_drag_actually_resize() {

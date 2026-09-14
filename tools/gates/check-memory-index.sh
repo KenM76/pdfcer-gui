@@ -92,6 +92,23 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 MAX_HOOK=170     # bytes of prose after the link. Longest real hook: 115 chars.
 MAX_INDEX=24000  # bytes. Harness limit quoted above is 24.4 KB; this leaves a
                  # small margin so the gate goes red BEFORE truncation starts.
+NEAR_INDEX=2400  # bytes of headroom below which a GREEN run says so loudly.
+
+# ★★★ A PASS THAT DOES NOT SAY HOW CLOSE IT CAME IS A PASS THAT EXPIRES
+# WITHOUT WARNING. On 2026-09-14 this gate went red at 24,177 bytes, fifteen
+# hooks were shortened, and it went green again at **23,984** — sixteen bytes
+# of headroom. The next session to add one memory would have hit the same red
+# and re-derived the same remedy from scratch, because nothing green had ever
+# told it the budget was spent.
+#
+# ⚠ AND NEAR THE CEILING THE REMEDY CHANGES. "Shorten hooks" works while the
+# hooks are padded; at 135 memories they are already one clause each and the
+# next trim costs five bytes and a unit of meaning. Below NEAR_INDEX the
+# instruction is to **consolidate two entries whose lessons are the same
+# shape**, which buys ~200 bytes and loses nothing, or to accept that the
+# index needs a structural answer. Printing the headroom is what makes that
+# decision available to the session that has time for it rather than to the
+# one that is mid-commit.
 
 # ---------------------------------------------------------------------------
 # check_folder <dir> — all five rules against one agent's memory folder.
@@ -103,6 +120,7 @@ check_folder() {
 
     local size
     size=$(wc -c < "$idx" | tr -d ' ')
+    SIZES+=("$rel|$size")
     if [[ "$size" -gt "$MAX_INDEX" ]]; then
         echo "  OVERSIZE: $rel/MEMORY.md is $size bytes (max $MAX_INDEX)."
         echo "            Shorten hooks; the detail lives in the topic files."
@@ -230,6 +248,7 @@ fi
 
 RC=0
 TOTAL=0
+SIZES=()
 for d in "${FOLDERS[@]}"; do
     n=$(ls "$d" | grep -cE '\.md$' || true)
     TOTAL=$((TOTAL + n - 1))
@@ -254,4 +273,19 @@ fi
 
 echo "memory-index: clean — ${#FOLDERS[@]} folder(s), $TOTAL memories, every one"
 echo "              indexed, every link resolving, every hook inside $MAX_HOOK bytes."
+
+# ⚠ The headroom line prints on GREEN runs. See the NEAR_INDEX note above: a
+# budget nobody is told about is spent in silence, and the session that finds
+# out is always the one that has no time to fix it properly.
+for entry in "${SIZES[@]}"; do
+    rel="${entry%%|*}"; size="${entry##*|}"
+    head=$((MAX_INDEX - size))
+    if [[ "$head" -lt "$NEAR_INDEX" ]]; then
+        echo "              ⚠ $rel/MEMORY.md is $size bytes — only $head of $MAX_INDEX"
+        echo "                left. Shortening hooks is nearly exhausted at this size;"
+        echo "                CONSOLIDATE two entries of the same shape instead."
+    else
+        echo "              $rel/MEMORY.md: $size bytes, $head of $MAX_INDEX to spare."
+    fi
+done
 exit 0

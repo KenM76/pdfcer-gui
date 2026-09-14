@@ -1,0 +1,30 @@
+# unreachable-refusals.txt — the engine's use of every symbol this shell has
+# written a "this cannot happen" paragraph about.
+#
+# ★★★ THIS FILE IS NOT A LIST OF THINGS TO FIX. It is a photograph, taken at
+# a named engine revision, of every CODE line in the engine that mentions a
+# symbol some sentence in this shell depends on being DEAD. When the
+# photograph and the engine disagree, `check-unreachable-refusals` fails and
+# a human reads the paragraph the marker sits in.
+#
+# Written by `tools/gates/check-unreachable-refusals.py --update`, which is a
+# deliberate act performed AFTER reading the diff and correcting the prose —
+# never to make a red build green. Comments are stripped before a line is
+# recorded, so rewording the engine's documentation cannot move this file;
+# only its code can.
+#
+# Format:
+#   symbol <fully::qualified::Path>
+#     measured-at <engine revision>
+#     site <archive-relative path> | <normalised code line>
+
+symbol pdfcer_core::text_edit::ReflowApplyError::PageEditedThisSession
+  measured-at 025d703de07236efecbce5808a2c35b2b060e797
+  site crates/pdfcer-core/src/text_edit/reflow_apply.rs | PageEditedThisSession,
+  site crates/pdfcer-core/src/text_edit/reflow_apply.rs | Self::PageEditedThisSession => ReflowDecline::RetryAfterSaveAndReopen,
+
+symbol pdfcer_core::text_edit::ReflowDecline::RetryAfterSaveAndReopen
+  measured-at 025d703de07236efecbce5808a2c35b2b060e797
+  site crates/pdfcer-core/src/text_edit/reflow_apply.rs | RetryAfterSaveAndReopen,
+  site crates/pdfcer-core/src/text_edit/reflow_apply.rs | Self::PageEditedThisSession => ReflowDecline::RetryAfterSaveAndReopen,
+  site crates/pdfcer-core/src/text_edit/reflow_apply.rs | matches!(self.decline(), ReflowDecline::RetryAfterSaveAndReopen)

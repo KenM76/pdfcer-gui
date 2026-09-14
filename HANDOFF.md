@@ -2196,20 +2196,85 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 
 ## 11. The relationship with `D:\Dev\pdfcer`
 
-Another session works that repository live. It is **read-only** here.
+Another session works that repository live, in parallel, and answers most
+filings within the hour. It is **read-only** here, without exception, until
+fold-in day.
 
-The channel is `D:\Dev\FeatureRequests\pdfce_FeatureRequests\`. Five
-exchanges have completed, all answered within the hour. Two of them were
-defects found from this side; **one of my four claims in a filing was
-rejected, correctly** — `deletion_refusal` predicts deletion and matches
-its guard exactly; I had compared it against *flatten*, which was my own
-next item. Acting on it would have disabled a working Delete control, and
-core now carries a test whose stated job is to stop a future reader
-"correcting" a correct function on the strength of my report.
+The channel is `D:\Dev\FeatureRequests\pdfce_FeatureRequests\`. Its
+`INDEX.md` carried **241 rows** on 2026-09-14 — this section once said
+*“five exchanges have completed”*, which is a good measure of how long ago
+it was written and of why no prose in this file should be trusted for a
+count. **Re-measure; never quote.**
 
-The lesson is worth carrying: **verify a claim against their source before
-filing it**, and when a filing is wrong, record that it was wrong where the
-next reader will find it rather than deleting it.
+### 11.1 The founding lesson, and it has never stopped being the right one
+
+Early on, **one of four claims in a filing was rejected, correctly**.
+`deletion_refusal` predicts deletion and matches its guard exactly; I had
+compared it against *flatten*, which was my own next item. Acting on my
+report would have **disabled a working Delete control**, and the engine now
+carries a test whose stated job is to stop a future reader “correcting” a
+correct function on the strength of it.
+
+⇒ **Verify a claim against their source before filing it**, and when a
+filing is wrong, record that it was wrong where the next reader will find
+it rather than deleting it.
+
+### 11.2 Three findings the channel itself has produced since
+
+**(a) A delivery can reach you as a COMMIT before it reaches you as a
+reply.** `request_G015` was fixed in engine `025d703d` at 09:49 on
+2026-09-14 and **nothing was written into the channel**. This side found it
+hours later by reading the engine's `git log` while checking something
+else. The key scheme's own audit rule — *a `reply_G*` with no `done_G*` is
+an answer nobody acted on* — is structurally blind to the inverse. The
+engine's answer, in writing: *“the reply is the convention and I skipped
+it… your `git log` habit is a good backstop and I would keep it, but it
+should be a backstop.”* ⇒ **`git -C /d/Dev/pdfcer log --oneline -3 main` in
+the same breath as listing `open/`.** It is two seconds.
+
+**(b) `open/` is not a work count, and the audit that proved that regressed
+in three days.** On 2026-09-14 the folder held **48** files of which
+**44 were already closed** — worked, consumed, written up, several with a
+`done_*_CONSUMED.md` sitting in `open/` beside the very reply it closed.
+The sweep took it **48 → 4**. The channel README's invariant is *“a session
+lists `open/` and nothing else — EMPTY MEANS NOTHING IS OWED”*, and that
+invariant had been false for three days while `RESUME.md` quoted the file
+count as a work count.
+
+★★★ **It had already been fixed once, correctly, by this project.** A note
+in the folder records driving `open/` from **229 to 13** on 2026-09-11,
+carrying the exactly-right sentence *“a move without a row is not a close,
+it is a deletion that leaves a file behind.”* That pass was not wrong. It
+**ran as a sweep and was never adopted as a habit**, so every topic closed
+afterwards wrote its `done_*` into `open/` and stopped there. ⇒ **Closing
+is part of doing the work**: archive both files and write the `INDEX.md`
+row in the same sitting as the `done_*`.
+
+⚠ **No gate on either side can ever see this.** The folder is in no git
+repository — which is exactly why it regressed silently, and why the
+standing rule is that **nothing may exist only in the channel**. The durable
+record of every exchange is the `INDEX.md` row plus the code in one of the
+two repositories, never the file in the folder.
+
+**(c) A symbol that stops being PRODUCED is invisible to every
+signature-based drift instrument either side owns.** A public enum variant
+that nothing constructs any more gains nothing and loses nothing public, so
+an API-drift check sees no change — while every sentence in this shell that
+says *“the engine refuses X”* on the strength of it silently becomes false.
+Three limitation sentences here had already outlived their limitations, two
+found by accident months later. That is what `tools/gates/check-unreachable-refusals`
+exists for: it reads the **engine's source at the pinned revision** on every
+commit and diffs the comment-stripped code lines naming each symbol a
+`UNREACHABLE-FROM:` marker cites. It watches our sentences, not their API.
+
+### 11.3 What still crosses the boundary as a request, not a fix
+
+Unchanged and not negotiable: if the shell needs something `pdfcer-core` or
+`pdfcer-render` does not have, **write it up and hand it over**. A GUI
+project that starts editing the engine has stopped being a GUI project. The
+cost of a request is measured in minutes here — `G016` was filed and
+shipped inside an hour — and the cost of a local patch is a fold-in that
+does not apply.
 
 ---
 

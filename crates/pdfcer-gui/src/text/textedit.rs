@@ -320,7 +320,7 @@ pub const fn reflow_no_block() -> &'static str {
 /// | | decided by | variants |
 /// |---|---|---|
 /// | **before** the engine is called | the shell, from the caret | [`Self::NeedsCaret`], [`Self::NeedsExistingText`], [`Self::NoBlock`] |
-/// | **from the engine's answer**, since 2026-09-05 | `Pass 251.0` | [`Self::PageAlreadyEdited`] — it moved out of this column when the shell's over-broad `edit_epoch != 0` forecast was deleted; the engine now refuses the case that mattered (a page carrying a non-empty appended content stream) by name, and this variant words that answer |
+/// | **from the engine's answer**, 2026-09-05 to 2026-09-14 | `Pass 251.0`, then `G015` | [`Self::PageAlreadyEdited`] — ⚠ **this row has now emptied twice in nine days.** It moved INTO this column when the shell's over-broad `edit_epoch != 0` forecast was deleted and the engine began refusing the case by name; it moved OUT when `G015` deleted the engine's guard as well. The variant is unreachable at engine `025d703d` and is kept — see its own doc for the chain and for the gate that will say so when it stops being true |
 /// | **by** the engine | `pdfcer-core` | [`Self::PageSetChanged`], [`Self::Encrypted`], [`Self::CannotTrace`], [`Self::Other`] |
 ///
 /// The engine half used to reach the operator as
@@ -341,23 +341,65 @@ pub enum ReflowRefusal {
     /// The page carries a non-empty EXTRA content stream, so reflow would drop
     /// the text in it.
     ///
-    /// ★★★ **This is the ENGINE's answer now, not a shell forecast.** It
-    /// arrives as `ReflowApplyError::PageEditedThisSession`, is recognised by
-    /// its own discriminant in `app::actions::textstyle::reflow_refusal`, and
-    /// [`reflow_after_edit`] words it.
+    /// ⚠⚠⚠ **UNREACHABLE at engine `025d703d`, kept deliberately.** The
+    /// machine-readable claim, which `check-unreachable-refusals` re-measures
+    /// against the pinned engine source on every commit:
     ///
-    /// ★★ Until 2026-09-14 this comment described the SHELL's `edit_epoch != 0`
-    /// forecast and called it *"the only thing standing between the operator
-    /// and losing work he can see on the page"*. That forecast was deleted on
-    /// 2026-09-05, the day `Pass 251.0` made the engine refuse the case by
-    /// name; the sentence outlived the mechanism by nine days. **A doc comment
-    /// that argues for a guard is a claim the guard exists.**
+    /// UNREACHABLE-FROM: pdfcer_core::text_edit::ReflowApplyError::PageEditedThisSession @ 025d703d
     ///
-    /// ★ The hazard it named is real and unchanged: `reflow_block` writes into
-    /// the page's first content object and empties every other one, and text
-    /// added this session lives in one of those. What changed is only WHO
-    /// refuses — and, per `request_G015`, that the engine's test is structural,
-    /// so a producer-authored multi-stream page meets this too.
+    /// # ★★★ The chain, because the unreachability is two links long
+    ///
+    /// This variant is reached from exactly one arm of
+    /// `app::actions::textstyle::reflow_refusal`:
+    /// `ReflowDecline::RetryAfterSaveAndReopen`. That decline is produced by
+    /// exactly one error: `ReflowApplyError::PageEditedThisSession`. And as of
+    /// `G015` (engine `025d703d`, 2026-09-14) **nothing in the engine
+    /// constructs `PageEditedThisSession`** — the guard that did was deleted,
+    /// and the variant was kept on purpose so that dropping it would be this
+    /// project's decision rather than a side effect of the engine's fix.
+    ///
+    /// ⇒ So the arm stays (`ReflowDecline` is exhaustive and compiler-proved,
+    /// so an arm is mandatory), the variant stays, [`reflow_after_edit`]'s
+    /// sentence stays and is still tested — and **no operator can see any of
+    /// it at this pin.**
+    ///
+    /// # ★★ Why it is written down rather than merely true
+    ///
+    /// This is the **third** unreachable-but-kept refusal in this one enum
+    /// ([`Self::PageSetChanged`] is the second) and each of the first two was
+    /// found by a reader stumbling on it, months late, while looking for
+    /// something else. A sentence nobody has noticed is unreachable is worse
+    /// than a deleted one: it is quoted in reasoning about what the program
+    /// does, and it reads as measured because it compiles.
+    ///
+    /// ⇒ Hence the `UNREACHABLE-FROM:` marker above, which is an instrument
+    /// rather than a note. It names the engine symbol the claim depends on;
+    /// the gate resolves the engine through `Cargo.lock`, so it follows the
+    /// pin, and it goes RED the day that symbol gains a constructor — i.e.
+    /// the day this paragraph must be deleted. *A tripwire keyed on your own
+    /// intention is not a tripwire.*
+    ///
+    /// # ★ The hazard the variant was written for is real and has not gone
+    ///
+    /// `reflow_block` re-emits the page's first content object and the commit
+    /// sweep empties every other one. What changed is that the engine's
+    /// planner now reads the SESSION's graph (its `Pass 257.0`), so a run
+    /// appended this session is in the plan's source and survives the re-emit.
+    /// The guard had also been firing on pages nobody had edited, because its
+    /// condition was structural — *does `contents[1..]` hold a non-empty
+    /// stream* — which ISO 32000-1 §7.8.2 permits a producer to author and
+    /// which SOLIDWORKS does routinely. That was `request_G015`, filed from
+    /// `SW41177.pdf`, whose title sheet carries eight producer-authored
+    /// streams and was refused with *"text was added to this page this
+    /// session"* on a freshly opened file.
+    ///
+    /// ★ Earlier history, kept because the shape recurs: until 2026-09-14
+    /// this comment described the SHELL's `edit_epoch != 0` forecast and
+    /// called it *"the only thing standing between the operator and losing
+    /// work he can see on the page"*. That forecast was deleted on 2026-09-05,
+    /// the day `Pass 251.0` made the engine refuse the case by name; the
+    /// sentence outlived the mechanism by nine days. **A doc comment that
+    /// argues for a guard is a claim the guard exists.**
     PageAlreadyEdited,
     /// The engine's page-set guard: a page was added, removed or reordered, and
     /// reflow's planner is indexed against the base document's pages.
@@ -384,7 +426,10 @@ pub enum ReflowRefusal {
     /// `PageAlreadyEdited` back"*. Two landed:
     ///
     /// * `PageEditedThisSession` — the recoverable one, exactly as forecast.
-    ///   [`Self::PageAlreadyEdited`] is reached from it today.
+    ///   [`Self::PageAlreadyEdited`] was reached from it for seven days.
+    ///   ⚠ **Nothing constructs it at engine `025d703d`** (`G015` deleted the
+    ///   guard), so the forecast arrived, was honoured, and then expired —
+    ///   which is why the claim now carries a gate instead of a sentence.
     /// * `Refused(encoding::Refusal)` — carrying an `RInvTrigger`, which is how
     ///   [`Self::FontIsComposite`] tells `R-INV-4` from the other seven.
     ///
@@ -450,6 +495,11 @@ impl ReflowRefusal {
             Self::NeedsCaret => reflow_needs_caret(),
             Self::NeedsExistingText => reflow_needs_existing_text(),
             Self::NoBlock => reflow_no_block(),
+            // ⚠ UNREACHABLE at engine `025d703d` — `G015` deleted the only
+            // producer of `ReflowApplyError::PageEditedThisSession`, which is
+            // the only producer of the decline this variant is reached from.
+            // Kept for the same reason `PageSetChanged` below is kept, and
+            // watched by `check-unreachable-refusals` rather than by a reader.
             Self::PageAlreadyEdited => reflow_after_edit(),
             // ★ Deliberately the same remedy as `PageAlreadyEdited` and
             // deliberately not the same sentence: the operator did something
@@ -674,6 +724,32 @@ mod tests {
     /// A refusal naming a cause with no route is half a sentence — the rule
     /// `text::embed`'s blocker rows already follow — and *"save this file and
     /// open it again"* is not guessable from *"cannot reflow"*.
+    ///
+    /// ⚠⚠ **Both of this test's subjects are UNREACHABLE at engine `025d703d`**
+    /// and it is kept anyway. Said plainly so it is not mistaken for coverage
+    /// of something an operator can meet: `PageSetChanged` has been unreachable
+    /// since the engine's `Pass 257.0`, and `PageAlreadyEdited` since `G015`.
+    /// The test guards the two SENTENCES, which are deliberately retained
+    /// against a future engine reinstating either guard by name — and a
+    /// retained sentence with no test is how a retained sentence rots. What it
+    /// is NOT is evidence that either refusal can be produced.
+    ///
+    /// ★ **The two have DIFFERENT instruments for that question, and saying
+    /// "the gate covers it" would be wrong about one of them.**
+    ///
+    /// * `PageAlreadyEdited` is dead because of something in the ENGINE —
+    ///   nothing constructs `ReflowApplyError::PageEditedThisSession`. This
+    ///   side of the boundary cannot see that change happen, so it is watched
+    ///   by `tools/gates/check-unreachable-refusals`, which re-measures the
+    ///   engine source at the pinned revision on every commit.
+    /// * `PageSetChanged` is dead because of something in THIS crate — no arm
+    ///   of `app::actions::textstyle::reflow_refusal` produces it. That is a
+    ///   fact about a twelve-line function, and the instrument is the unit
+    ///   test beside it (`…::tests`, which asserts the `Unsupported` arm has
+    ///   not drifted back onto it). A gate is the wrong tool for a question
+    ///   `cargo test` already answers, and claiming one covers it would be an
+    ///   unevidenced excuse — which reads as an answered question, so nobody
+    ///   investigates.
     #[test]
     fn the_two_stale_plan_causes_name_the_remedy() {
         for why in [

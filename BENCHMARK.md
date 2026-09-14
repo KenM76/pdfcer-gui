@@ -359,7 +359,7 @@ Worked through for real sheet sizes:
 > correction is not read as bigger than it is: 6.9× on a HiDPI display is
 > still below `MAX_ZOOM`, still falls as sheets grow, and the region API
 > was still the right answer. The pdfcer team quoted the 3.4× figure back
-> in their reply; `open/request_reusable_parsed_handle.md` carries the
+> in their reply; `request_reusable_parsed_handle.md` carries the
 > correction to them.
 
 **So on the operator's own benchmark drawing, on a HiDPI display, zoom
