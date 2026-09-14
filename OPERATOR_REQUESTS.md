@@ -401,7 +401,7 @@ cannot be lowered to the clamp. That is now a RAG lesson of its own.
 
 ---
 
-## O185 — ◑ **FILED 2026-09-12, AND IT EXTENDS O166** — Print must remember, and must have a Cancel that actually reverts
+## O185 — ◑ **BUILT AND DRIVEN 2026-09-14 — PARTS 1 AND 2; PART 3 HE WITHDREW HIMSELF** — Print must remember, and must have a Cancel that actually reverts
 
 > *"The Print Dialogue window should remember the last settings that were used
 > when we press print or close. We should add a cancel button that doesn't save
@@ -423,6 +423,43 @@ cannot be lowered to the clamp. That is now a RAG lesson of its own.
    private key in the document catalogue that no other reader honours, which is
    precisely the thing he ruled out. ★ The row records the withdrawal so nobody
    re-proposes it in three weeks.
+
+### What was built, 2026-09-14 — parts 1 and 2, driven
+
+**The print window now has three ways out and they mean three different
+things.** *Print* spools and remembers. *Keep and close* remembers without
+printing. *Cancel* puts the settings back to what the window opened with — and
+the OS close button and the Escape key do exactly what Cancel does, because
+`ui-conventions/dialogs.md` G4 makes those three deliberately indistinguishable
+and the meaning they share has to be the safe one. Somebody who shuts a window
+in irritation should not inherit three hundred copies and the wrong tray.
+
+*Keep and close* is therefore the only route with no unlabelled twin: the only
+way to say *keep this* without sending a job, and a fourth, positively-chosen
+route that G4 never contemplated.
+
+**Driven**, two launches against the real binary: change the paper policy, leave
+by Cancel, reopen — the window opens on the original; change it again, leave by
+*Keep and close*, reopen — the window opens on the change. The check is
+`the_print_window_forgets_what_cancel_undid`, and it was falsified three ways -
+Cancel wired as Keep, Keep wired as Cancel, and the two swapped — each going red
+with the sentence that names which mis-wiring it found.
+
+★★★ **And writing that check found a defect in the check.** In the
+order first written, the cross-run comparison its own header calls load-bearing
+could never be reached: the per-run guard already implied it. Both falsification
+runs still went red, which is exactly how it survived them — the other two
+assertions caught both planted builds and reported them well. **A falsification
+proves a check as a whole discriminates; it says nothing about whether every
+assertion inside it can be reached.** The comparison is tested first now.
+
+⚠ **One half has no automated holder, and it is recorded rather than cited
+away.** `reverted=true` — a Cancel that genuinely put back values this window
+had already written — needs a Print the driver refused, which this suite may not
+be able to make. An earlier draft of the check's header cited a test module that
+does not exist; a citation to a holder that is not there is worse than an
+admitted gap, because the reader who checks it finds a plausible file and stops.
+
 
 ---
 
