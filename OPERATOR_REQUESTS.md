@@ -1312,6 +1312,27 @@ application does — **ce dimensions**, group scales, the DXF export at a scale
 somebody can defend. Demoting it from *the frame* to *one strong section* is
 the ask. Deleting it is not.
 
+### ★ Rewritten 2026-09-13 in `6be5ff9`. Not closed — read it and say.
+
+The title and lede no longer name drawings. The page now opens on **Why
+files look right in it** — the measured CMYK conversion, ink compositing when
+a file asks for it, transparency, and damaged files — and the CAD section
+follows it intact. The GitHub repository description and topics were rewritten
+too, because they are the other half of "the git landing page".
+
+★★★ **Every claim was sourced against the engine tree, and one of them was
+false.** The draft said *a page authored in CMYK is composited as ink*. It is
+not: the colorant buffer engages only for a page whose group DECLARES a
+subtractive blending space — 13 of 51 print-conformance files and 15 of
+4,012 external fixtures — and the sRGB path is the specified behaviour
+otherwise. ⇒ the front page now leads with the part that IS universal, the
+1,296-point measured conversion table every CMYK colour in the file goes
+through. Two other drafted figures were dropped after measurement disagreed
+with them.
+
+No comparison with any other program appears anywhere in it, by name or by
+implication — the prohibition above, obeyed literally.
+
 ★★★ **Only Ken closes this row.** The test is whether the page reads right to
 the person it was written for, which is a measurement nobody here can take —
 O191's ruling, unchanged, and this row is the evidence for it.
