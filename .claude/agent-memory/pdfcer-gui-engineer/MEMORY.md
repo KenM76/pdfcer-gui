@@ -19,7 +19,7 @@
 - [A measurement of the wrong surface looks like a broken one](feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one.md) — ask what a failing check SAMPLED, then what is broken.
 - [Disk AND RAM are tight — and the biggest item is not in `target/`](project_disk_is_tight_and_target_grows_unbounded.md) — one engine source tree per pin bump under `~/.cargo`, never collected.
 - [A backlog row is a record, not evidence](feedback_a_backlog_row_is_a_record_not_evidence.md) — verify absence claims against source.
-- [A fixture defeating a default does not defeat a starting state](feedback_a_fixture_that_defeats_a_default_does_not_defeat_a_starting_state.md) — vacuous if the run already stands where the defect lands.
+- [A fixture defeating a default does not defeat a starting state](feedback_a_fixture_that_defeats_a_default_does_not_defeat_a_starting_state.md) - plant it.
 - [A SKIP is not red, so a check can stop running unnoticed](feedback_a_skip_is_not_red_so_a_check_can_stop_running_unnoticed.md) — diff the SKIP set.
 - [A check that cannot fail is not evidence](feedback_a_check_that_cannot_fail_is_not_evidence.md) — falsify before quoting green; a SKIP calling itself expected is inert.
 - [Ken's sentences are reports, not measurements](feedback_kens_sentences_are_reports_not_measurements.md) — "up to 800%" named an old setting, not a threshold; measure his boundary.
@@ -78,11 +78,11 @@
 - [Count a condition and you will reason about the other one](feedback_count_a_condition_and_you_will_reason_about_the_other_one.md) — two wrong diagnoses in a day from counting one half of an AND.
 - [An `||` between two required conditions asserts neither](feedback_an_or_between_two_required_conditions_asserts_neither.md) — it looks like tolerance of a rewording.
 - [A check whose input is convenient tests the assertion](feedback_a_check_whose_input_is_chosen_for_convenience_tests_the_assertion.md) — "what is typed does not matter" is a finding, not an excuse.
-- [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) — a refusal about the KIND should change what the surface offers.
+- [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) - KIND vs FILE.
 - [A disproof is a measurement too](feedback_a_disproof_is_a_measurement_too_and_the_dead_hypothesis_was_the_truth.md) - the truth was killed by a number read against the WINDOW, not the viewport.
 - [A launch failure blamed on a resource count needs a control](feedback_a_launch_failure_blamed_on_a_resource_count_needs_a_control_binary.md) - two wrong attributions before a 12h-old build failed too.
 - [When a wobble is inside the framework, list the leaves by id](feedback_when_a_wobble_is_inside_the_framework_list_the_leaves_by_id.md) - five container probes stalled.
-- [A "still broken" report is first about which build and which pin](feedback_a_still_broken_report_is_first_a_question_about_which_build_and_which_pin.md) - three of four were engine deliveries never pinned.
+- [A "still broken" report is first about which build and which pin](feedback_a_still_broken_report_is_first_a_question_about_which_build_and_which_pin.md) - check the pin.
 - [A gate whose evidence you write is blind to what you forget to write](feedback_a_gate_whose_evidence_you_write_is_blind_to_what_you_forget_to_write.md) — no CONSUMED note, no guard.
 - [An API-drift hit is sometimes a feature, not paperwork](feedback_an_api_drift_hit_is_sometimes_a_feature_not_paperwork.md) — the unaccounted engine counter was the missing half of a disclosure.
 - [A quotation of another file's count goes stale invisibly](feedback_a_verbatim_quotation_of_another_files_count_goes_stale_invisibly.md) — the changed file does not contain the number that went stale.
@@ -123,10 +123,11 @@
 - [Falsify the gate on real files, the fix on a control binary](feedback_falsify_the_gate_against_the_real_files_and_the_fix_against_a_control_binary.md) - a self-test says nothing about the real call sites.
 - [A classification in a rule is where the next exception goes](feedback_a_rule_with_a_classification_in_it_is_where_the_next_exception_goes.md) - one token plus a written exemption, never an enumeration.
 - [An inherited session summary is not a source](feedback_an_inherited_session_summary_is_not_a_source.md) — a QUOTATION crossing a summary has no re-measure rule; it reached a commit message unsourced.
-- [Scope a use-measurement the way the language does](feedback_a_use_measurement_must_be_scoped_the_way_the_language_scopes_it.md) — 73, then 9, then 0, where the truth was 3; a namesake discharges a twin.
+- [Scope a use-measurement the way the language does](feedback_a_use_measurement_must_be_scoped_the_way_the_language_scopes_it.md) - a namesake discharges a twin.
 - [A falsification script's anchors rot](feedback_a_falsification_scripts_anchors_rot_and_a_rotted_one_reports_nothing.md) — it then plants nothing and reports green; the red leg must exit 101.
 - [A guarded capability is not a capability of the file](feedback_a_guarded_capability_is_not_a_capability_of_the_file.md) — the ink path reaches 15 files in 4,012; count how often the guard is true.
 - [A detector's scope is a claim](feedback_a_detectors_scope_is_a_claim.md) — one gate reported clean over three blind spots; falsify the widening.
 - [An injected file is a dated snapshot](feedback_an_injected_file_is_a_dated_snapshot.md) — 13 of 26 anchors from the in-context MEMORY.md were not on disk.
-- [A rewrite of a cell deletes what only that cell held](feedback_a_rewrite_of_a_cell_deletes_what_only_that_cell_held.md) — the re-stamp deleted the one copy of a finding the cell itself said had no copy.
+- [A rewrite of a cell deletes what only that cell held](feedback_a_rewrite_of_a_cell_deletes_what_only_that_cell_held.md) - it held the only copy.
 - [A gesture named without its outcome](feedback_a_gesture_without_its_outcome.md) — drag copies, Shift moves; the header was wrong 4h44m after it was written.
+- [A falsification proves the check, not each assertion inside it](feedback_a_falsification_proves_the_check_not_each_assertion.md) — ask of every `if`: what input reaches this line?
