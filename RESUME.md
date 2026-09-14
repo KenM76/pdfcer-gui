@@ -201,29 +201,71 @@ the day"* and it was the fourth. If you need the count, `gh release list`.
 
 ---
 
-## ★★★ The sweep ran again — 221 checks, same four failures for the third time, and the news is in the SKIP column
+## ★★★ The fifth sweep — 226 checks, and every verdict chased to ground was the CHECK
 
-**2026-09-13 10:16 to 11:51, taking the real cursor and keyboard for about
-ninety-five minutes.** The fourth full driven sweep in two days. It did not
-abort.
-
-⚠ **It measured the binary built at 10:16 that morning, and TWO RELEASES have
-been cut since.** The sentence here used to read *"against the binary that
-ships"* and was true for about three hours. ★ It is deliberately not written as
-a tag: the sweep ran from a working tree between two releases, so naming either
-one would be a citation I cannot support, and *"the build of 10:16"* is the
-strongest true statement available. ⇒ **A sweep tally is a fact about one
-executable, never about the program.** The figures below still stand as the
-last FULL reading; what they do not cover is the two releases since, each of
-whose commit message carries what WAS measured for it.
+**2026-09-14 17:30.** The fifth full driven sweep. It did not abort.
 
 ```
-=== SWEEP-DONE
-=== TALLY passed=183 failed=4 skipped=34 codes: rc=0 rc=1 rc=3
+226 swept   190 PASS   5 FAIL   31 SKIP
+```
+
+★★★ **The tally is the least interesting line here.** Four of those verdicts
+had never been chased — two FAILs nobody had diagnosed and two SKIPs that had
+never once produced a verdict in ANY recorded sweep — and **all four turned out
+to be defects in the check.** Zero program defects among them. Each is now
+green, each carries its measurement in its own module header, and the four
+together are one finding:
+
+| Check | What it accused the program of | What was actually true |
+|---|---|---|
+| `text_edit_on_a_real_drawing` | *"the shell built no plan"* on a click into his drawing | the shell built the **Add** plan he asked for by name on 2026-08-19, said so on its own trace line, and committed it. The point was 151 pt of blank title-block paper |
+| `export_image_writes_a_metafile` | *"the EMF radio drew and did not bind"* | it bound. The check compared `format=` against the enum's `Debug` spelling; O196 had correctly changed the emitter to the file token ten days after the check was written, and **the only machine reading that field had never been run** |
+| `measure_calibrates_by_picking_two_points` | — (SKIP, five baselines running) | pick B sat sixteen points past the right edge of the shared fixture. Fixed by `CanvasMapping::span_from`, which asks the mapping which side is reachable |
+| `set_scale_reads_the_group_it_is_about_to_overwrite` | — (SKIP, its only baseline) | same sixteen points. Then, once running, *"the clicks never reached `ScalePick`"* — while the trace three lines above read `measure-pick outcome=Promoted reason=derived-candidate-needs-confirm` |
+
+★★★ **The last row is the one to read twice, because a sibling check had
+already found it, documented it at length and solved it.**
+`measure_linear`'s header carries a full section on rule 4's confirming second
+click and a table of the three alternatives it rejected; the constant beside
+its event name is annotated, verbatim, `← click again`. Neither calibration
+check inherited a line of it, and the rule did not even change its event name
+to hide — it changed `kind=Linear` to `kind=Scale`, and that was enough.
+The loop now lives in `checks::picking::resolve_pick`, a new module, because
+`checks::driving` stood at **1,493 of R2's 1,500** and R2 says find the seam.
+
+⇒ **The two-point scale calibration — a capability the operator asked for by
+name — is DRIVEN for the first time, and it works end to end**: 399.08 pt
+measured against 400 pt clicked, the dialog re-opened on the real-length path,
+and the group's scale moved from 1:100 to 1:7.81. It had two committed checks
+and neither had ever produced a verdict.
+
+⚠ **A SKIP is not red.** That is how a capability with two checks went three
+days undriven with the suite green every time. **Diff the SKIP set by NAME,
+never by count** — the baselines below exist for exactly that.
+
+★ Since the sweep, four checks have been individually re-driven green on the
+current tree. **That is not a sweep.** The projected state is 194 / 3 / 29 and
+it is a projection; the last measured full reading is 190 / 5 / 31, and the
+three carried failures (`the_page_still_renders_at_every_decade_of_zoom`,
+`the_wheel_turns_pages_when_the_operator_asks_it_to`,
+`zooming_does_not_throw_away_where_the_operator_panned`) are unchanged from the
+2026-09-13 baseline and still have `SWEEP_REPAIRS.md` rows against them.
+
+⚠ **It measured a working tree, not a tag, and four of its checks have
+changed since.** The sweep ran from whatever was built that afternoon; a
+release was cut the same day and I cannot place the two in order to the hour,
+so *"the build the sweep ran against"* is the strongest true statement
+available and naming a tag would be a citation I could not support. ⇒ **A
+sweep tally is a fact about one executable, never about the program.** This one
+stands as the last FULL reading; what it does not cover is every commit since,
+each of whose message carries what WAS measured for it.
+
+```
+226 swept   passed=190   failed=5   skipped=31
 ```
 
 ★★★ **Verify the total before quoting any part of it.** Three ways, all
-agreeing on **221**: the tally's own arithmetic (183+4+34), the count of
+agreeing on **226**: the tally's own arithmetic (190+5+31), the count of
 DISTINCT check names carrying a verdict in the log
 (`grep -oE '^[[](PASS|FAIL|SKIP)[]] [a-z0-9_]+' | sort -u | wc -l`, which also
 proves nothing was counted twice), and the roster
@@ -232,14 +274,36 @@ exists is that a previous run aborted mid-way and printed a perfectly ordinary
 tally that described 160 checks — a count of what happened to run reads
 exactly like a count of the suite.
 
-### The diff, in both directions, against the 00:24 run
+### The diff, in both directions, against the 2026-09-13 11:51 run
 
 ```
-FAIL  new: (none)      gone: (none)     — the same four, by name, third sweep running
-SKIP  new: 5           gone: (none)
+FAIL  new: 1 (export_image_writes_a_metafile)   gone: (none)
+SKIP  new: 2   gone: 5
 ```
 
-The five that arrived in the SKIP set:
+The one new FAIL is the EMF check's **first-ever run** — it was committed unrun
+on 2026-09-04, deliberately and with that stated in its header, by a session
+that had been told not to take the desktop. Its own banner predicted the
+outcome: *"the first person to run it should expect to fix it rather than to
+read a verdict from it."* ★ **A check that has never run is not covered
+work; it is unmeasured work with a green-looking roster entry.**
+
+The two new SKIPs are the pair in the table above — one of them,
+`set_scale_reads_the_group_it_is_about_to_overwrite`, on its first sweep; the
+other, `measure_calibrates_by_picking_two_points`, had been skipping silently
+since 09-12. Five improved SKIP → PASS.
+
+#### Kept from the 2026-09-13 run: load can remove coverage without turning anything red
+
+That run's tally, kept because the finding under it is about the SWEEP and not
+about that build — it is `SWEEP_REPAIRS.md` R11, and it is still open:
+
+```
+=== SWEEP-DONE
+=== TALLY passed=183 failed=4 skipped=34 codes: rc=0 rc=1 rc=3
+```
+
+The five that arrived in that run's SKIP set:
 
 ```
 embedding_fonts_puts_a_program_in_the_document
@@ -255,7 +319,7 @@ had timed out waiting thirty seconds for a window to appear. That is a threshold
 on **how busy the machine is**, and the sweep was sharing this computer with a
 compile.
 
-⇒ **So the measured coverage of this build is 188 of 221, in two runs rather
+⇒ **So the measured coverage of THAT build was 188 of 221, in two runs rather
 than one**, and both numbers belong in any report. The five are not a
 regression, and they are not nothing either: **load can remove coverage from a
 sweep without anything turning red**, and the only instrument that sees it is
@@ -268,19 +332,40 @@ windows for 216 other checks in the same hour.
 a larger number moves the boundary without removing it. The defect is that the
 expiry is reported as a property of the platform rather than of the moment.
 
-★★★ **All four remaining failures are defects in the CHECK, not the program**,
-each written up with the line of its own evidence that refutes it —
-`SWEEP_REPAIRS.md`, rows R4, R6, R8 and R9. Read that file before investigating
-any FAIL in this suite. The clearest of the four: a check reported that *the
-shell built no plan* on a click into real text, and three lines above its own
+★★★ **Nearly every FAIL this suite has produced turned out to be a defect in
+the CHECK rather than in the program** — but read the next paragraph before
+you carry that anywhere, because the exception is the reason to keep chasing
+them. The written-up rows are `SWEEP_REPAIRS.md` **R4, R6, R8, R9, R10 and
+R11**; this session added `export_image_writes_a_metafile` and the two
+calibration checks, whose write-ups live in their own module headers, and
+**closed R6** — R6 IS `text_edit_on_a_real_drawing`, so the table above is
+three new findings and one repair, not four new ones. **Read
+`SWEEP_REPAIRS.md` before investigating any FAIL in this suite.**
+
+★★★ **THE EXCEPTION, and it is `SWEEP_REPAIRS.md` R3: a check bad enough to
+fail for its own reasons walked straight past a REAL PROGRAM DEFECT, and
+someone looked anyway.** R9's wrong fixture — a one-page document where the
+check needed several — put the shell in a state that exposed `wheel_toggle`
+copying ONE of its predicate's two clauses. On a one-page document that
+control draws, clicks, flips and can never act. ⇒ **"It is always the
+check" is a prior, never a verdict**, and a session that adopts it as a verdict
+stops reading at the first harness fault — which is precisely where R3 was
+lying.
+
+The best illustration of the ordinary case, from 2026-09-13: a check
+reported that *the shell built no plan* on a click into real text, and three lines above its own
 assertion the trace shows the shell detect no run under the click, convert the
 gesture to an Add, place the text and disclose the font substitution off-canvas
 exactly as rule 4 requires. Four correct behaviours read as silence, because the
 oracle greps three event names and `add-text` is not one of them.
 
-★★ **A list of four that does not move is a residue; a list of four that
-changes membership every run is a program coming apart.** This one has not
-changed membership in three sweeps.
+★★ **A list that does not move is a residue; a list that changes membership
+every run is a program coming apart.** It held membership for three sweeps,
+then gained one on the fifth — and the one it gained was a check running for
+the first time, which is the benign way for that list to grow and the only way
+worth welcoming. ⚠ **A residue is not a resolved list.** Three of these have
+sat unfixed for five sweeps precisely because a stable FAIL set reads as a
+known quantity; they are `SWEEP_REPAIRS.md` rows, not weather.
 
 ### ★★★ The sweep never drives the binary that ships, and it is not a rounding difference
 
@@ -313,7 +398,9 @@ its own revision is a far worse defect than a relink.
 ### The baselines, and the naming defect that has been fixed
 
 ```
-target/scratch/sweep-skips-2026-09-13-1151.txt   34   <- diff the NEXT sweep against these
+target/scratch/sweep-skips-2026-09-14-1730.txt   31   <- diff the NEXT sweep against these
+target/scratch/sweep-fails-2026-09-14-1730.txt    5
+target/scratch/sweep-skips-2026-09-13-1151.txt   34
 target/scratch/sweep-fails-2026-09-13-1151.txt    4
 target/scratch/sweep-skips-2026-09-13-0024.txt   29
 target/scratch/sweep-fails-2026-09-13-0024.txt    4
@@ -514,14 +601,49 @@ before building an instrument for it.
 
 **What is left, in order:**
 
-1. ★★★ **Run the full driven sweep.** The re-rank touches **every pick in the
-   program**, and the last complete sweep was 2026-09-13 — before it existed.
-   That is the blast-radius measurement and nothing else substitutes for it.
-   ⚠ Ninety-five minutes, taking the real cursor and keyboard, so only while he
-   is away; and **editing any `.rs` or `.toml` while it runs aborts every
-   remaining chunk** (markdown, `.sh`, `.py` and the scratchpad are safe).
-2. **Release.** Standing rule: finishing work is itself the trigger. The
-   procedure and its four traps are in the *Last release* row above.
+1. ✅ ★★★ **DONE 2026-09-14 17:30 — the full driven sweep ran and the
+   re-rank's blast radius is EMPTY.** `direct_hits_first` touches every pick
+   in the program, so nothing short of a sweep could answer this. 226 checks
+   drove it: **190 PASS, 5 FAIL, 31 SKIP**, and the one failure that was not
+   carried in from 2026-09-13 was a check running for the FIRST TIME on an
+   unrelated surface. ⇒ **No pick regressed.** Full reading, the
+   both-directions diff and what came of each chased verdict are in *The fifth
+   sweep* above — and four of those verdicts have since been chased to ground
+   and every one was the check.
+
+   ★★ **The two O198 checks need their own aim and the sweep cannot give it
+   to them.** Written here because re-deriving either costs a `find-text` run
+   and a reading of two headers, and because a worked example's path has
+   already rotted once in this project while its measured numbers went on
+   vouching for it:
+
+   ```bash
+   # ⚠ Drive a COPY — a run opens, types and may save. His drawing is not a fixture.
+   cp D:/dev/pdfTests/SW41177/SW41177.pdf target/scratch/docs/SW41177-ken.pdf
+
+   ui-verify --exe target/scratch/drive/pdfcer-gui.exe \
+     --pdf target/scratch/docs/SW41177-ken.pdf --doc-point 0,272.7,724.2 \
+     --check text_edit_on_a_real_drawing        # centre of `FAR SLOT`
+
+   ui-verify --exe target/scratch/drive/pdfcer-gui.exe \
+     --pdf target/scratch/docs/SW41177-ken.pdf --doc-point 0,1140,62 \
+     --check the_font_controls_are_live_on_the_drawing_you_open
+   ```
+
+   ⚠ A sweep is ninety-five minutes, takes the real cursor and keyboard, so
+   only while he is away — and **editing any `.rs` or `.toml` while it runs
+   aborts every remaining chunk** (markdown, `.sh`, `.py` and the scratchpad
+   are safe).
+2. ★★★ **Release — this is the next thing, and it is the ANSWER to O198.**
+   Every claim of his that has been fixed is fixed in a binary he is not
+   running. ⇒ **`text_edit_on_a_real_drawing` being green and his report
+   being accurate are the same state of the world one release apart**, which is
+   why the next step is to ship and not to investigate further. Standing rule:
+   finishing work is itself the trigger. The procedure and its four traps are in
+   the *Last release* row above. ⚠ Re-read that row first — a release was
+   already cut on 2026-09-14 carrying O198's first half, so what is newly
+   unreleased is the harness repairs and the export trace token, not the
+   hit-test fix.
 3. **Then the rest of claim 1**, which is `O188` — a title-block run the
    exporter wrote as one lump is still one lump, and splitting it is separate
    work. He can now REACH that text; he cannot yet take it apart.
