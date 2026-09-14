@@ -2281,10 +2281,25 @@ does not apply.
 ## 11b. ✅ TAKEN — the `3e73a02` ⇒ `4851316` bump, and the two since
 
 > ★★★ **VERDICT 2026-09-13, afternoon: this was taken, shipped and driven, and
-> the lock has moved twice more on top of it.** The pin is now **`f37598b`**,
-> and the engine's `main` is three DOCUMENTATION commits ahead of that — the
-> code diff against HEAD is empty, measured with
-> `git diff --stat f37598b..main -- ':!docs' ':!*.md'`. ⇒ **Do not read the
+> the lock has moved twice more on top of it.** *— and as measured THAT
+> afternoon, and only then:* the pin was **`f37598b`**,
+> and the engine's `main` was three DOCUMENTATION commits ahead of that — the
+> code diff against HEAD was empty, measured with
+> `git diff --stat f37598b..main -- ':!docs' ':!*.md'`.
+>
+> ⚠⚠⚠ **CORRECTION, 2026-09-14: BOTH HALVES OF THAT SENTENCE ARE NOW FALSE,
+> AND THE SECOND HALF IS THE DANGEROUS ONE.** The pin has moved twice since —
+> `f37598b` ⇒ `7378c83` ⇒ **`3f416fb`** — and the claim *“the code diff
+> against HEAD is empty”* stopped being true when `025d703d` landed, which
+> **removed the reflow refusal outright** rather than documenting it. A reader
+> who carried that clause forward would carry *“nothing has landed”* straight
+> past the commit that falsified a claim this shell had been repeating since
+> August. ⇒ **The live figures are the `Engine pin` and `Engine HEAD` rows in
+> `RESUME.md`, which have their commands printed beside them; nothing in this
+> file is re-measured.** ★ The sentence above is kept verbatim and scoped
+> rather than corrected in place, because a superseded figure sitting beside
+> its successor teaches the next reader that this file's numbers decay — which
+> is worth more than a silently right number. ⇒ **Do not read the
 > plan below as outstanding work.** It is kept because it is the reasoning
 > behind how the port was done, and a superseded plan with a dated verdict on
 > top is worth more than a deleted one. ⚠ The heading used to read *"planned

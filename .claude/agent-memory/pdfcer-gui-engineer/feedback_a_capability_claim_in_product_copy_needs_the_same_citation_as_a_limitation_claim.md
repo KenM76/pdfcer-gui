@@ -1,6 +1,6 @@
 ---
 name: a-capability-claim-in-product-copy-needs-the-same-citation-as-a-limitation-claim
-description: Verify every feature bullet in README/release copy against FEATURES.md row by row; "measure" does not imply area and angle, and the shape of a feature is not evidence of its parts.
+description: Verify every claim in operator- or public-facing copy against its source row by row — capability AND history. "Measure" does not imply area and angle; and a remembered release list had 3 of 6 facts wrong, one of them another release's headline. A correct SHAPE is what makes the invented specifics feel safe.
 metadata:
   type: feedback
 ---
@@ -135,3 +135,54 @@ steering the fix at the wrong target.
   used to say. A document corrected in the repo while the release note still
   carries the old claim is worse than either alone, because the two now disagree
   in public.
+
+---
+
+## ★★★ Second instance, 2026-09-14 — **history is product copy too, and a
+correct SHAPE is what makes the invented specifics feel safe**
+
+Restating `RESUME.md`'s release narrative after cutting the fourth release of
+the day, I added a one-line roll-up of the three earlier ones — times and
+headlines — **from recall**. Then I ran the query. Three of six facts were
+wrong:
+
+| | I wrote | The API says |
+|---|---|---|
+| `.1` | 01:24 UTC, *“rotate grip + the two O16x fixes”* | 04:39 UTC, *“The export windows finally remember what you last used”* |
+| `.2` | 07:22 UTC | 07:18 UTC |
+| `.3` | 10:56 UTC, *“redaction override + stamps”* | 11:14 UTC, *“Print: Cancel really cancels, and Keep and close really keeps”* |
+
+`.1`'s was not a mistimed fact, it was **a different release's headline**.
+
+**Three things made it feel safe, and each is the thing to distrust:**
+
+1. **It was inside a patch script whose own docstring listed the commands it
+   had re-measured.** The discipline covered the rows the script was written
+   for and not the paragraph added three functions below them. ⇒ *A
+   re-measurement note is about the lines it names, not about the file.*
+2. **The invented facts were HISTORY, not capability**, and history feels like
+   recall rather than like a claim. It is the same thing: a reader acts on
+   *“`.1` shipped the rotate grip”* exactly as they act on *“it measures
+   angles”*.
+3. **The SHAPE was remembered correctly** — four releases, ascending through
+   the day, each with a real headline — and every specific hung off that
+   correct shape. A wrong shape gets caught; a right shape with wrong
+   specifics does not.
+
+**How to apply:**
+
+- **Any list of past releases, commits, dates or headlines is a measurement.**
+  `gh api repos/<owner>/<repo>/releases --jq '.[]|[.tag_name,.published_at,.name]|@tsv'`
+  is two seconds and answers all three columns at once.
+- ⚠ **A release time is two different numbers and the word “cut” means
+  either.** The binary's `PDFCER_BUILD_TIME` and GitHub's `published_at` sit
+  twelve to twenty minutes apart on every release this project has made,
+  because packaging and the pre-flight re-drive are in between. `10:56` and
+  `11:14` were both true of the same release, of different events. **Label
+  which clock.** Half of that roll-up's “wrong” times were this, not recall.
+- Write the roll-up as a **table with the source named in its caption**. A
+  table invites the column-by-column check a sentence does not.
+
+Related: [[feedback_a_limitation_sentence_is_a_citation_with_an_hours_long_shelf_life]]
+— its mirror image, and the two together are the whole rule: **a claim about
+what the program can do, cannot do, or once did, all need the same citation.**

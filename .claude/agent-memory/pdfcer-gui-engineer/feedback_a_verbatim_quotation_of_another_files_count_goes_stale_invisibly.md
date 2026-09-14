@@ -29,3 +29,44 @@ a count, including one in the gate runner's own header.
 
 Related: [[a-limitation-sentence-is-a-citation-with-an-hours-long-shelf-life]],
 [[a-backlog-row-is-a-record-not-evidence]], [[cheap-to-read-is-not-no-need-to-reread]].
+
+---
+
+## ★★★ Eighth instance, 2026-09-14 — **the first where the carried-over figure
+licensed a CAPABILITY claim rather than merely counting something**
+
+`FEATURES.md`'s thirty-third revision header, stamped **14:40 EDT** and shipped
+to the operator six hours later, said the engine pin was
+
+> one documentation commit behind the tip of its `main` **and level with it in
+> every line of code**.
+
+`42b47f30` had landed on the engine's `main` at **14:31** — nine minutes
+earlier — and it touches `reflow_apply.rs`. The pin was two commits behind, not
+one, and not level in any sense. The clause was never measured for that header:
+it was carried over verbatim from `RESUME.md`'s `Engine HEAD` row, which had
+been measured earlier the same afternoon and was correct when IT was written.
+
+**What makes this one worse than the seven before it.** The previous instances
+were counts — a test total, a gate total, a check roster — where a wrong number
+is embarrassing and inert. This clause is the **licence** for every sentence in
+the document of the form *“the engine cannot do X”*. It is the one line a reader
+is entitled to lean on before believing a limitation, and it is the one that was
+wrong. ⇒ **Rank a carried-over figure by what rests on it, not by how wrong it
+is.** *“Level in every line of code”* was off by one commit of rustdoc and
+nothing the build does differed — and it is still the most dangerous instance
+so far, because of its position in the argument.
+
+**How to apply:**
+
+- **A clause that licenses other claims gets measured at the moment it is
+  written, never carried.** The command is `git -C <engine> log --oneline -6
+  main` and it takes two seconds; the temptation is that the row you are
+  copying from was itself measured *today*.
+- ⚠ **“Today” is not a freshness guarantee when the other repository is being
+  worked in parallel.** The engine session commits several times an hour. A
+  figure from ninety minutes ago is as stale as one from a week ago and feels
+  fresh, which is worse.
+- **Correct a published dated stamp by ANNOTATION, not by edit.** The header
+  was in his hands; the correction is bracketed and separately dated beside it.
+  A silently-right number teaches the next reader nothing about the decay.

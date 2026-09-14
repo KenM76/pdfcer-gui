@@ -27,3 +27,36 @@ whitespace delimiter in prose ("piped through `xargs` with a newline
 delimiter"). More generally, after editing a long single-line table cell,
 check the row count of the table, not just that the text is present. Related:
 [[a-verbatim-quotation-of-another-files-count-goes-stale-invisibly]].
+
+---
+
+## ★★ Second instance, 2026-09-14 — **a literal `|` inside an INLINE CODE SPAN
+inside a table cell still invents a column**
+
+Same family, one step subtler. The first instance was a literal newline. This
+one is a pipe, and the trap is that **the backticks do not protect it**:
+
+    | Unit tests | ... cross-counted by `cargo test --workspace -- --list | grep -cE ': test$'` = 4,361 ... |
+
+A Markdown renderer splits a table row on `|` **before** it parses inline code,
+so that cell becomes two and everything past the header's last boundary is
+**discarded**. The row still looks complete in an editor and in `git diff`; the
+only thing that sees it is a renderer or a checker that counts boundaries.
+
+`tools/gates/check-doc-markup.py` is the sole witness here and it said so
+exactly: *“this row has 4 cell boundaries where its header has 3 — a renderer
+DISCARDS everything past boundary 3.”*
+
+**How to apply:**
+
+- **In a table cell, DESCRIBE the pipeline instead of quoting it** — *“list the
+  tests and count the lines ending `: test`”* — and put the verbatim command
+  in a fenced block outside the table, where nothing is escaped.
+- If the command must be inline, escape it as `\|`. Prefer describing it: an
+  escaped pipe inside code renders as `\|`, which is then a command that does
+  not work if anyone copies it.
+- ⇒ **The general rule both instances share: a table cell is the one place in
+  Markdown where a command's own syntax is also the document's syntax.** Any
+  cell containing `|`, a newline, or a leading `-` is a hazard, and the cells
+  most likely to contain one are exactly the cells that quote how the number
+  beside them was measured.
