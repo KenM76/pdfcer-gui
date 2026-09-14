@@ -47,3 +47,29 @@ anchor is the whole repair.** An end-anchor, a `--include`, a `-w`, a
 prose beside it says, and each is the part a re-typing drops. If a count comes
 out slightly high, look for a second section of the same output rather than for
 a new item.
+
+---
+
+**Third instance, 2026-09-14, and the mechanism is neither a header nor a
+second table — it is the SHELL.** Counting this repository's Rust with
+`git ls-files '*.rs' | xargs wc -l | tail -1` answers **239,849**. The answer
+is **594,445**. `xargs` splits a 1,032-path argument list into several `wc`
+invocations to stay under the Windows command-line limit, each one prints its
+own `total`, and `tail -1` reads **the last batch only** — about 40% of the
+truth, in exactly the shape an answer comes in. There is no warning, no partial
+output, nothing on stderr; `wc` did its job perfectly, several times.
+
+It was caught only because the figure contradicted a stale row in the same
+document that said 576,229, and a *smaller* number where growth was expected is
+a contradiction. Had the drift gone the other way it would have been quoted.
+
+* **The general form, and it is a third distinct mechanism:** the first two
+  instances were about what the command's INPUT looks like (two lines per
+  record; a second table). This one is about what the shell does to the
+  command BETWEEN the pipe stages. ⇒ **Any pipeline containing `xargs` and an
+  aggregate is suspect** — `wc`, `sort -u | head`, `grep -c`, `du -c` — because
+  `xargs` is licensed to run the command more than once and every aggregate
+  then aggregates a fragment.
+* **The fix is not a bigger `-n`**; it is to stop aggregating in the shell.
+  A Python loop that opens each path and counts `b'\n'` cannot be batched, and
+  it is four lines.
