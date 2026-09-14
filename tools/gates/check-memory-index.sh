@@ -45,18 +45,57 @@
 # most needs — the ones written last — while continuing to display the oldest
 # ones, so nothing about the loaded text looks wrong.
 #
-# ★ The number 24.4 KB belongs to the harness, not to this repository, and it is
-# a cross-system citation with an unknown shelf life. It is quoted here with its
-# date and its source so that the next reader can re-measure it rather than
-# inherit it. **If this gate fails on SIZE, re-read the harness warning before
-# raising the constant** — and if the harness has changed its mind, change the
-# constant here and say so in the commit, do not delete the check.
+# ★★★ THAT CITATION IS NOW ARITHMETIC, MEASURED 2026-09-14, and the difference
+# matters: a borrowed number with an unknown shelf life gets re-guessed by every
+# session, while a conversion can be checked in one line.
 #
-# The lever that actually controls the size is the HOOK — the prose after the
-# link. Filenames are long and are not freely renameable (`[[wikilinks]]` in the
-# topic files point at them by slug), so the hook is the only slack there is.
-# A hook is a relevance decision, not a summary: the detail belongs in the file
-# the line points at, which is the whole reason that file exists.
+#   **25,411 bytes is exactly `git show dc5c0c3:…/MEMORY.md | wc -c`**, and the
+#   harness called that file `25.4KB`.
+#
+# ⇒ The harness's KB is **bytes ÷ 1000**, and it measures **this file**, not the
+# folder, not the topic files, not a rendering of them. So the ceiling is
+# **24,400 bytes**, `MAX_INDEX = 24000` leaves 400 bytes of deliberate margin,
+# and anyone doubting either number can re-derive both from one `wc -c` against
+# one harness warning. **If this gate fails on SIZE, shorten the index — do not
+# raise the constant**; and if the harness ever quotes a limit other than
+# 24.4 KB, change the constant here, say so in the commit, and keep the check.
+#
+# ⚠ AND DO NOT TRUST THE WARNING'S FRESHNESS. The `MEMORY.md` block injected
+# into a session, warning and all, is a SNAPSHOT taken earlier — the one quoted
+# above was **thirty-six hours stale**, describing a 25,411-byte file that had
+# already been cut to 23,987 (= 24.0 KB, under the limit, not truncated). A
+# session that believed it was minutes from renaming all 136 memory files to
+# claw back the filename bytes. **This gate is the live instrument. The prompt
+# is not.** See `feedback_the_injected_memory_warning_is_a_snapshot.md`.
+#
+# ★★ WHERE THE BYTES ACTUALLY ARE, measured 2026-09-14 over 135 rows:
+#
+#     titles 6,914   FILENAMES 8,942   hooks 6,900   markup 1,080
+#
+# This gate used to say *“the hook is the only slack there is.”* It is the
+# SMALLEST third, and the least compressible: rewriting the **36 fattest rows**
+# with intent — keeping every actionable clause, pushing counts and second
+# examples down into the topic file where they already live — freed **506
+# bytes, 14 a row**. A hook is a relevance decision, not a summary, and at one
+# clause each the next trim costs meaning rather than bytes.
+#
+# ⇒ THE LEVERS, IN THE ORDER THEY ARE NOW WORTH PULLING:
+#
+#   1. **Consolidate two entries of the same shape.** ~175 bytes each, loses
+#      nothing but a pointer, and the folder has several families (absence
+#      claims, stale citations, checks that cannot fail) whose members differ
+#      by less than a row's worth of meaning.
+#   2. **Write SHORTER FILENAMES for new memories.** 66 bytes is the current
+#      average and nothing needs it; the `name:` frontmatter carries the slug
+#      that `[[wikilinks]]` resolve against, and `MEMORY.md`'s title carries
+#      the prose. A 30-byte name costs the index half of a 60-byte one.
+#   3. **Renaming the existing 136** is the big win (≈4,000 bytes) and the one
+#      to resist: it rewrites 309 `[[wikilinks]]`, the `DOC_DRIFT.md` and
+#      `HANDOFF.md` citations, and every filename a past session ever grepped
+#      for. *Tidying an input changes every instrument that reads it.* Do it
+#      only when 1 and 2 are exhausted, and in a commit of its own.
+#   4. **Shortening hooks** — spent, see above. Listed last deliberately,
+#      because it is the one a session reaches for first.
 #
 # ═══════════════════════════════════════════════════════════════════════════
 # WHAT IT CHECKS
@@ -90,8 +129,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 
 MAX_HOOK=170     # bytes of prose after the link. Longest real hook: 115 chars.
-MAX_INDEX=24000  # bytes. Harness limit quoted above is 24.4 KB; this leaves a
-                 # small margin so the gate goes red BEFORE truncation starts.
+MAX_INDEX=24000  # bytes. The harness truncates at 24,400 — exactly, see the
+                 # conversion above — so this is a 400-byte margin, chosen so
+                 # the gate goes red BEFORE any entry is lost, and small enough
+                 # that it does not silently ration the index either.
 NEAR_INDEX=2400  # bytes of headroom below which a GREEN run says so loudly.
 
 # ★★★ A PASS THAT DOES NOT SAY HOW CLOSE IT CAME IS A PASS THAT EXPIRES
@@ -101,12 +142,13 @@ NEAR_INDEX=2400  # bytes of headroom below which a GREEN run says so loudly.
 # and re-derived the same remedy from scratch, because nothing green had ever
 # told it the budget was spent.
 #
-# ⚠ AND NEAR THE CEILING THE REMEDY CHANGES. "Shorten hooks" works while the
-# hooks are padded; at 135 memories they are already one clause each and the
-# next trim costs five bytes and a unit of meaning. Below NEAR_INDEX the
-# instruction is to **consolidate two entries whose lessons are the same
-# shape**, which buys ~200 bytes and loses nothing, or to accept that the
-# index needs a structural answer. Printing the headroom is what makes that
+# ⚠ AND NEAR THE CEILING THE REMEDY CHANGES — which was a prediction when it
+# was written this morning and is a measurement by this afternoon. "Shorten
+# hooks" works while the hooks are padded; **36 of the fattest rows, rewritten
+# carefully, yielded 14 bytes each.** Below NEAR_INDEX the instruction is the
+# lever list in the header: consolidate same-shape entries first, write shorter
+# filenames for new memories second, and treat a mass rename as a commit of its
+# own that must be argued for. Printing the headroom is what makes that
 # decision available to the session that has time for it rather than to the
 # one that is mid-commit.
 
@@ -123,7 +165,8 @@ check_folder() {
     SIZES+=("$rel|$size")
     if [[ "$size" -gt "$MAX_INDEX" ]]; then
         echo "  OVERSIZE: $rel/MEMORY.md is $size bytes (max $MAX_INDEX)."
-        echo "            Shorten hooks; the detail lives in the topic files."
+        echo "            Consolidate two entries of the same shape (~175 bytes),"
+        echo "            or shorten hooks — but hooks yield ~14 bytes a row now."
         rc=1
     fi
 
@@ -265,8 +308,10 @@ topic file it does not name is unreachable rather than merely unlinked. Add the
 one-line pointer; do not delete the file to make this pass.
 
 An OVERSIZE index is truncated from the END, which hides the NEWEST entries —
-exactly the ones a cold session needs. Shorten hooks. The hook decides
-relevance; the topic file carries the detail.
+exactly the ones a cold session needs. The remedy is NOT "shorten hooks"; that
+yields about 14 bytes a row now, measured. Consolidate two entries of the same
+shape, which frees a whole row and loses only a pointer — the header lists the
+levers in the order they are worth pulling.
 MSG
     exit 1
 fi
@@ -282,8 +327,10 @@ for entry in "${SIZES[@]}"; do
     head=$((MAX_INDEX - size))
     if [[ "$head" -lt "$NEAR_INDEX" ]]; then
         echo "              ⚠ $rel/MEMORY.md is $size bytes — only $head of $MAX_INDEX"
-        echo "                left. Shortening hooks is nearly exhausted at this size;"
-        echo "                CONSOLIDATE two entries of the same shape instead."
+        echo "                left (the harness truncates at 24400). Hook-shortening is"
+        echo "                SPENT: 36 rewritten rows freed 14 bytes each. CONSOLIDATE"
+        echo "                two entries of the same shape, and give new memories short"
+        echo "                filenames — filenames are 8,942 of these bytes."
     else
         echo "              $rel/MEMORY.md: $size bytes, $head of $MAX_INDEX to spare."
     fi
