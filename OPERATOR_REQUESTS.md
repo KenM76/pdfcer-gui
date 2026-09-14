@@ -1404,6 +1404,54 @@ O191's ruling, unchanged, and this row is the evidence for it.
 
 ---
 
+## O198 — ◑ **FILED 2026-09-14, AND IT SUBSUMES O181 AND O188** — every piece of text on the SolidWorks drawing must be editable, and the font/bold/italic controls and the properties fields are dead
+
+> *"I really need you to focus on finding ways to make all text editable on the
+> sw drawing that is in pdftests folder. Find a way to make it happen. Seems the
+> reflow works with each line but still can't edit when the text has been
+> reflowed. Also get the font selector and editing tools like old and italic
+> working. That entire area is always greyed out in the menu, and the properties
+> area is uneditable too. This is true even when I add a new line of text."*
+
+The drawing is `D:\dev\pdfTests\SW41177\SW41177.pdf` — SolidWorks-exported,
+1.8 MB. "old" is a typo for **bold**.
+
+**Four claims, and the fourth is the one that decides where to look first.**
+
+1. **Every piece of text on that drawing must be editable.** Not most of it,
+   not the pieces that happen to be one run. ★ *"find a way to make it
+   happen"* is an instruction about effort, not a request for a feasibility
+   report — a decline on this row needs a measurement behind it naming the
+   object it could not reach and why.
+2. **Reflow appears to work per line, and the text still cannot be edited after
+   it.** So whatever reflow produces is not reaching the editing path.
+3. **The font selector and the bold/italic controls are ALWAYS greyed.** His
+   word is *always* — which is a claim about a state he has never once seen
+   enabled, not about one selection.
+4. **The properties area is uneditable, INCLUDING FOR TEXT HE JUST ADDED.**
+   ★★★ This is the claim that kills the comfortable explanation. Text the
+   program authored itself, this session, with a font it chose, in a document
+   it is holding open, cannot be edited either. Whatever is wrong is therefore
+   NOT "CAD text is hard" — it is in the shell's own path between a selected
+   text object and the controls that are supposed to act on it.
+
+**What this row subsumes.** `O181` (the font list offers no installed fonts,
+and the Format tab's font group looks dead) and `O188` (the title block's text
+is one lump and he wants the pieces) are both inside this. They stay as their
+own rows because each has a separable deliverable, but this row is the one that
+says what DONE means: he opens that drawing, clicks any text on it, and can
+change it.
+
+⚠ **Measure before designing.** The first question is not how to split a CAD
+text run — it is what `is_editable`, the properties panel and the Format tab
+each actually READ, on (a) a fresh Add Text object and (b) a run off that
+drawing. Claim 4 says those two cases may share one cause, and a shared cause
+found first is most of this row.
+
+★★★ **Only Ken closes this row.**
+
+---
+
 ## O176 — ◑ **MEASURED 2026-09-12, NEEDS YOUR VERDICT** — not something you asked for: on a big sheet at fit zoom, a small form field is all grip and no body
 
 You did not ask for this row. It is here because a full drive of the shipped
