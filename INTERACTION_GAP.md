@@ -32,6 +32,12 @@ evidence is a launch trace in `D:/Dev/pdfcer-gui/evidence/audit/`.
 
 ## 1. THE HEADLINE
 
+> ### ★★★ CLOSED 2026-09-14 — this headline described the single largest gap in the program, and the engine shut it
+>
+> **Re-measured at engine pin `3f416fbd`.** The decomposer recurses into form XObjects, the hit test descends into the leaves and never returns a form as a first-click answer, line-picking walks the leaf list, and six form-scoped edit verbs let the shell move and delete what it finds there. The operator's own files are no longer mostly invisible to the object model.
+>
+> ⚠ **The section below is left standing verbatim, and it should be read.** It is the best written statement this project has of *why* the gap mattered, and the argument — not the measurement — is what the next container-shaped problem will be argued from. Every `file:line` in it is a citation of the code **as it stood on 2026-08-26**; none of them should be followed today.
+
 **On the operator's own files the object he is clicking does not exist in the
 program's object model at all** — the engine decomposes a page into a flat list
 in paint order and stops at the door of a form XObject
@@ -98,10 +104,10 @@ see because something upstream failed first.
 
 | Behaviour | Should (`HOW_IT_SHOULD_WORK` §) | Today (`file:line`) | Class |
 |---|---|---|---|
-| A click selects the smallest visible thing that painted the mark | §1, §2.2 | Returns the topmost bbox hit; on the the conformance suite’s composite page file that is the page-sized form #26 at every point tested | **(a)** |
-| Marks painted *inside* a form XObject are selectable | §2.6 | They are not in the object model: `pdfcer-core/src/vector/decompose.rs:2666-2672` emits the form and returns | **(a)** — engine |
-| Form XObjects are never a first-click target | §2.6, §9.2 | A form is `VectorObject::Image` and wins by paint order | **(a)** — engine |
-| Images and forms hit-tested against ink, not a box | §2.2, §9.3 | `pdfcer-core/src/vector/hit.rs:437` — one line, `page_bbox.inflate(tol).contains(point)` | **(a)** — engine |
+| A click selects the smallest visible thing that painted the mark | §1, §2.2 | ✅ **CLOSED 2026-09-14** — `hit_test_point_deep` skips forms (`vector/hit.rs:267`) and walks `model.leaves` (`:274`), and the Smart Selector resolves what is left by default. ~~Returns the topmost bbox hit~~ | **(d)** — was **(a)** |
+| Marks painted *inside* a form XObject are selectable | §2.6 | ✅ **CLOSED 2026-09-14** — they are in the object model, carry a `TargetId`, and are selectable, measurable and editable. ~~not in the object model~~ | **(d)** — was **(a)** engine |
+| Form XObjects are never a first-click target | §2.6, §9.2 | ✅ **CLOSED 2026-09-14** — `hit_test_point_deep` never emits a form, and the CLI's hit scope defaults to `Deep` for the same reason. ~~wins by paint order~~ | **(d)** — was **(a)** engine |
+| Images and forms hit-tested against ink, not a box | §2.2, §9.3 | ⚠ **HALF CLOSED, 2026-09-14, and the halves closed differently.** A **form** is no longer box-tested at all — not because the box test improved but because forms are excluded from the candidate list outright (`vector/hit.rs:267`), which is a **different fix from the one this row asked for**. A **raster image** still is: `vector/hit.rs:708`, `page_bbox.inflate(tolerance).contains(point)`, exactly as written. ★ Marking this row closed would be false and leaving it alone would be false — **a row naming two subjects can close for one of them**, and no verdict token says that, only prose | **(a)** — engine, for images |
 | Paths hit-tested against ink, winding-correct, curves flattened | §2.2 | Exactly this (`hit.rs:443-468`, `:502-513`) | **(d)** |
 | `paint = none` path hittable only near its geometry | §2.2 | Correct (`hit.rs:453-467`) | **(d)** |
 | Clicking blank paper deselects | §2.5 | Implemented (`canvas/selection/mod.rs:387-390`); unreachable on this file because the hit test says there *is* no blank paper | **(b)** |
@@ -457,7 +463,15 @@ looking at the recognised document"*.
 
 ---
 
-### 11. **[BLOCKED — pdfcer-core]** Decompose into form XObjects — **XL**
+### 11. ~~**[BLOCKED — pdfcer-core]**~~ **[✅ DELIVERED]** Decompose into form XObjects — **XL**
+
+> ### ★★★ DELIVERED — re-measured 2026-09-14 at engine pin `3f416fbd`
+>
+> **All three parts of the request below were built.** Part 1, the decomposer recurses and emits leaves with their own `TargetId`s. Part 2, each leaf carries its containment and the status line names it (`app/status/selected.rs`). Part 3, a form's own bbox is out of the first-click candidate list — `hit_test_point_deep`.
+>
+> ★ **This is the item this document called THE ONE CHANGE, and it is worth recording that the estimate was right.** It was sized **XL**, ranked above everything cheaper, and handed to the engine as a request rather than worked around in the shell. The shell wrote no fallback path, and therefore had none to delete when the real answer arrived.
+>
+> ⚠ **What a reader should take from the text below is the SHAPE of the request, not its content:** three numbered parts, each naming the function to change, the behaviour wanted, and the reason. That shape is why it came back built.
 
 **The engine request, in three parts, stated as §2.6 states them:**
 
@@ -632,6 +646,10 @@ do not let a rewrite trade it for speed.**
 ---
 
 ## 5. THE ONE CHANGE
+
+> ### ★★★ MADE. Re-measured 2026-09-14 at engine pin `3f416fbd`.
+>
+> **The one change this document asked for was made, and the reasoning below is the reason it was made rather than something cheaper.** Keep the section for that reasoning: it is a worked example of choosing a work item by *how much of the operator's own file it makes reachable* rather than by cost, and it is the argument to copy the next time a long list needs an order.
 
 > **Recurse into form XObjects, and stop a form from being the answer to a
 > click.** (Work item 11 — `pdfcer-core`.)

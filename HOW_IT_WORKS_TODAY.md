@@ -69,6 +69,12 @@ complete sequence is:
 That is eight steps, two of which require knowing a diagnosis the software
 never states.
 
+> ### ★★★ CLOSED 2026-09-14 — the paragraph below is the opening of this document and it describes a gap that no longer exists
+>
+> **Re-measured at engine pin `3f416fbd`.** The decomposer recurses into form XObjects. Marks painted inside one are in the object model, carry a `TargetId`, appear in the Objects panel, are hit-tested against ink, and are selectable, measurable and editable — the engine has six form-scoped verbs and the shell calls all six. A click on a mark inside a form selects **that mark**.
+>
+> ⚠ **This is the worst place in the file for a closed gap to be stated as the present**, because §0 is what a reader sees first and it sets how they read everything after it. It is corrected here and left standing below, because the eight-step walkthrough above is still the best record this project has of what the program felt like before the gap closed.
+
 **And on this file, step 8 still fails for most of the page.** The four form
 XObjects on page 1 contain the entire visible body — every test patch, every
 swatch, both Overprint panels, the manta-ray images, the right-hand the conformance suite’s composite page logo.
@@ -244,6 +250,12 @@ through the ladder: select, then descend.
 `descend` (`canvas/selection/mod.rs:814-857`): miss → clear; at Object → Part;
 at Part on the same object → Node; at Node → `return` (*"Nothing is below a
 point."*).
+
+> ### ⚠ SUPERSEDED 2026-09-14 — true of an image, false of a form
+>
+> **A form descends properly now.** `canvas/selection/mod.rs` carries the note *“A LEAF DESCENDS TOO, as of 2026-09-01”*; the enter-form arm is `canvas/clicking.rs:805`; the Smart Selector that makes it the default is on unless turned off. The paragraph below is accurate for a **raster image**, which genuinely has nothing beneath it, and that is why it is left standing rather than deleted.
+>
+> ★ Note what the original sentence got right and why it still matters: the complaint was never *“it does not descend”*, it was **“and silent”**. A rung that enters something with nothing in it must say so.
 
 **On an image or form XObject, descending is destructive and silent.**
 `part_kind` returns `None` for those (`panels/objects/provider.rs:343-349`), so
@@ -981,6 +993,12 @@ nothing consults is a lie told once per session."*
 
 Complete, working, wired features that the operator cannot reach; and gestures
 that look like they should work and do not.
+
+> ### ★★★ NO LONGER A DEAD END, 2026-09-14
+>
+> **Item 1 below is closed and was the largest single item in this document.** The decomposer recurses; form-interior objects are in the object model, carry a `TargetId`, appear in the Objects panel, are hit-tested against ink, are selectable, are measurable (`vector/linepick.rs:475` walks the leaves), and are editable through six form-scoped verbs the shell calls in full. Deleting **below** whole-object level inside a form is the one part that did not close, and the shell names that limit rather than showing a dead key.
+>
+> Left standing because a closed dead end is the most useful kind of entry in a list of dead ends: it is the only evidence the list is read.
 
 1. **Everything inside a form XObject.** The decomposer does not recurse
    (`decompose.rs:400-404`). Not in the object model, not in the Objects panel

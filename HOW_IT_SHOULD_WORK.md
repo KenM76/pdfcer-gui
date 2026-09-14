@@ -311,6 +311,14 @@ click even if it tried. Observed on a real SolidWorks drawing: a single click
 on a horizontal line in an orthographic view selected **that one path**, with a
 degenerate zero-height selection box, not the enclosing view and not the page.
 
+> ### ★★★ DELIVERED 2026-09-14 — all three, re-measured at engine pin `3f416fbd`
+>
+> **The three requirements below were written as a request and have all been met.** The decomposer recurses; a leaf carries its containment and the status line names it; a form is no longer a first-click candidate (`hit_test_point_deep` never emits one, and the CLI's hit scope defaults to `Deep`). On top of that the engine has since grown **six form-scoped edit verbs** — five moves and one whole-object delete, `edit.rs:14728`–`:14899` — and the shell calls all six.
+>
+> ⚠ **One thing did not arrive and is not on this list because nobody thought to ask for it:** there is no rotate or scale verb for anything inside a form. Translation and deletion only.
+>
+> The paragraphs below are left standing unedited. They are the record of what was asked for and why, and the *why* is what a future request for the missing rotate should be modelled on.
+
 **Three things this rule requires of the engine:**
 
 1. **The decomposer must recurse into form XObjects.** Today it does not:
@@ -1286,7 +1294,7 @@ observed. If a click resolves to an object whose bounds are the whole page,
 either it genuinely painted the whole page (in which case the hover outline
 said so first, and `Alt`+click gets past it) or the hit test is wrong.
 
-**9.2 A container must never be the answer to a first click.**
+**9.2 A container must never be the answer to a first click.** ✅ **SATISFIED as of 2026-09-14, engine pin `3f416fbd`** — `hit_test_point_deep` excludes forms from the candidate list rather than ranking them last, which is the stronger reading of this rule. ★ The rule itself is left exactly as written: **a normative sentence does not go stale**, and only the note beside it needed a date. It is recorded at all because a target-state rule carrying no indication of whether it was ever met is the one thing a reader of this file cannot act on.
 §2.6. A form XObject is producer packaging, not user intent. If a click returns
 a form XObject as a leaf, the decomposer failed to recurse.
 

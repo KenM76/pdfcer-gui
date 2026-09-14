@@ -12867,7 +12867,7 @@ first place.
 | # | Complaint | Status as of 2026-08-27 |
 |---|---|---|
 | 1 | Clicking an object selects the whole page instead | ✅ **CONFIRMED BY YOU, 2026-08-27** — *"I checked and clicking works."* Driven by the harness the same day, then used by you on your own file |
-| 2 | Double-clicking an object still selects the whole page | **partly** — a click now lands on the real object; a *double*-click on one inside a form does not descend into its subpaths, and cannot until the engine can edit inside a form. Said in words, not silently |
+| 2 | Double-clicking an object still selects the whole page | ~~**partly**~~ → **DONE, corrected 2026-09-14.** A click lands on the real object, and a double-click descends into a form-interior object's subpaths and nodes as well — `canvas/selection/mod.rs` carries the note *“A LEAF DESCENDS TOO, as of 2026-09-01”*. ⚠ What this cell said on 2026-08-27 — *“a double-click on one inside a form does not descend into its subpaths, and cannot until the engine can edit inside a form”* — was true then and is false now: the engine grew six form-scoped edit verbs and the shell calls all six. The condition the cell named as impossible is the condition that was met |
 | 3 | Selecting text does not change the Tool tab to that object's editable properties | **done** — the Properties panel reads the canvas selection, and the status bar names what is selected |
 | 4 | An inserted image cannot be resized by dragging | **done** — a press on an unselected object selects it and the same drag moves it; placement now arrives selected, so its grips are already up |
 | 5 | OCR does one page only — no page range, no multi-page selection | **done** — All pages / this page / a typed range, All being the default |
@@ -12908,10 +12908,21 @@ Consumed in three commits, each of which left the program working:
    back, which turns three of them red, including the one that says a click on
    blank paper inside a page-sized form must select **nothing**.
 3. **The surfaces stopped lying.** The status bar says *"Selected: Path ·
-   12.4 × 8.0 pt · inside a form"*; Delete on such a selection says *"That
-   object is inside a form — pdfcer cannot edit inside one yet"* instead of
+   12.4 × 8.0 pt · inside a form"*; ~~Delete on such a selection says *"That
+   object is inside a form — pdfcer cannot edit inside one yet"*~~ instead of
    doing nothing; a drag says the same instead of *"nothing selected"* while an
-   outline is on screen.
+   outline is on screen. ⚠⚠ **Corrected 2026-09-14: that quoted sentence is
+   retired, and Delete on a form-interior object now DELETES IT.**
+   `text/status/selection.rs` cites the words in a doc comment as *the old
+   sentence* and records why they were wrong — they led with containment,
+   which sent you to press Escape, which would not have helped. ★ This is
+   the **second** copy of that exact quotation found today; the other was in
+   `FEATURES.md`. ⇒ **A retired refusal string propagates further than a
+   retired capability claim**, because a refusal gets quoted verbatim: it is
+   short, it is the evidence that a silence was replaced by a sentence, and
+   it reads as a fact about the program rather than as a claim. Both copies
+   were written in triumph. The point the item was making — that the
+   surfaces stopped lying — stands; only the sentence they now say changed.
 
 **And the new button: "Select the form".** Since the hit test now excludes
 forms outright, a form had no route on the canvas at all — so it is offered as
@@ -12920,7 +12931,42 @@ the canvas right-click menu, greyed when the selection is not inside a form,
 and after pressing it the form is an ordinary object you can move, delete or
 copy. Everything drawn inside it moves with it.
 
-### ★★ What you will find that still does not work, said before you find it
+### ★★ ~~What you will find that still does not work, said before you find it~~ — ⚠⚠⚠ **ALL FOUR OF THESE ARE NOW FALSE**
+
+⚠⚠⚠ **CORRECTION, 2026-09-14, and it is the whole section.** Every one of
+the four sentences written here told you that you could not do something you
+**can** do. They were measured and true on 2026-08-27; three engine deliveries
+and several shell passes have landed on top of them since, and nobody came back
+to this table.
+
+★ **The staleness is not the finding — the KIND of sentence is.** A stale
+capability claim gets found the first time someone clicks the thing. A stale
+**refusal** gets found by nobody, because it is read once, believed, and then
+stops you trying — so ordinary use can never disprove it. ⇒ **A sentence that
+tells the operator he cannot do something carries the same re-measurement
+obligation as a release note, and a shorter shelf life than one.**
+
+Re-measured 2026-09-14 against engine pin `3f416fbd` and this working tree.
+Source read; nothing driven:
+
+| what this table said on 2026-08-27 | what is true today |
+|---|---|
+| *“You cannot edit an object inside a form”* | **False.** `pdfcer-core` grew six form-scoped verbs — `move_node_in_form` (`edit.rs:14728`), `move_nodes_in_form` (`:14755`), `move_handle_in_form` (`:14782`), `move_subpath_in_form` (`:14815`), `move_objects_in_form` (`:14853`) and `delete_objects_in_form` (`:14899`) — and the shell calls **all six**, at `app/actions/vector.rs:773`, `:851`, `:864`, `:876`, `:887` and `:910`. Text inside a form routes through `canvas/textedit/pin.rs` as `EditTarget::Form`. ★ The row's stated REASON inverted underneath it too: `is_editable()` is no longer a hard `false` for a form-interior leaf, it is `matches!(self.object, VectorObject::Path(_))` (`vector/decompose.rs:1373`) — the same signature now answering *“is this a path”*, which is the one shape of engine change no compiler reports |
+| *“Double-click will not descend into one”* | **False.** A double-click on a container enters it (`canvas/clicking.rs:805`), and once inside, a leaf descends like any other object — `canvas/selection/mod.rs` carries the note *“A LEAF DESCENDS TOO, as of 2026-09-01”* against this very row. The Smart Selector that makes this the default is **on** unless you turn it off (`canvas/smart.rs:146`) |
+| *“The measure tools cannot pick a line inside a form”* | **False since the engine's Pass 138.0.** `pick_line_in_page` walks `model.leaves` after `model.objects` (`vector/linepick.rs:475`), and the shell calls it for every measurement (`canvas/measure/mod.rs:833`). The 10,256 lines counted in the table below are pickable |
+| *“`pdfcer object-list --hit` still answers with the form”* | **False.** The CLI's hit scope defaults to `Deep` (`pdfcer-cli/src/main.rs:9277`), in its own words *“Descend into form XObjects; never name a form itself. The GUI's behaviour, and the default”*, and it calls `hit_test_point_deep`, which never emits a form |
+
+**Two real limits survive**, measured the same way and kept rather than swept
+up with the rest — a correction that overshoots is just the next wrong refusal:
+
+| | |
+|---|---|
+| **Deleting something INSIDE a form is whole-object only** | the engine's six form-interior verbs are five moves and one whole-object delete. There is no `delete_subpath_in_form`, `delete_node_in_form` or `delete_text_run_in_form` at this pin. So: move a node inside a form, yes; delete that node, no. The shell names the limit rather than showing you a key that does nothing — `canvas/deleting.rs`'s `InsideForm` reason |
+| **A text RUN inside a form has no hit test yet** | `canvas/target.rs:571` answers empty deliberately: the run-level hit test indexes the page's own list, so answering from it would hand back a different object's runs. You can select and edit a text object inside a form; you cannot click one run within it |
+
+★ **The four sentences as they were written on 2026-08-27, kept verbatim.** A
+superseded claim sitting beside its successor teaches the next reader that
+this file's refusals decay; a deleted one teaches nothing:
 
 | | |
 |---|---|
@@ -12970,6 +13016,23 @@ I guessed that a full-page path with `paint=none` was swallowing the clicks.
 It is not: the engine gives an unfilled, unstroked path a proximity band of the
 click tolerance alone, so it is selectable only within 6 px of its outline, and
 that is correct behaviour. I also said 29 objects; it is 28.
+
+> ★★★ **THE CAUSE DIAGNOSED BELOW WAS FIXED — re-measured 2026-09-14 at
+> engine pin `3f416fbd`.** The decomposer recurses into form XObjects; the
+> hit test descends into what it finds and never answers with a form; line
+> picking walks the leaf list; six form-scoped edit verbs move and delete
+> form-interior objects, and the shell calls all six. Everything the
+> paragraph below says is unreachable is reachable.
+>
+> ⚠ **This does not close the row**, which ends *“stays open until he has
+> used the result and said so”* — and only the operator closes a row. What is
+> corrected here is the technical claim inside the narrative, which is a
+> different thing from the row's status.
+>
+> ★ It is annotated even though the deliverables are two paragraphs below,
+> because that list says what was *planned*, not what *landed* — and anyone
+> arriving at a row in a file this size arrives by grep, reads the
+> diagnosis, and stops. Proximity is not a marking.
 
 **The real cause is worse and is one level down.** The engine decomposes a page
 into a flat list in paint order and **stops at the door of a form XObject** — it
@@ -16133,7 +16196,7 @@ is something you might reasonably try:
 |---|---|
 | **Annotations** — markup, form fields, ce dimensions | no transform verb at all. Translate only, or nothing. And a `/Rect`-based markup **cannot express a rotation**: the engine's own words, *"a rotated one has no spelling"* |
 | **Below whole-object level** — subpaths, nodes, Bézier handles | **translate only.** There is no rotate or scale for a node selection |
-| **Inside a placed block (form XObject)** | not addressable. The decomposer treats it as one object and does not recurse, so you can rotate the block but nothing within it |
+| **Inside a placed block (form XObject)** | ~~not addressable. The decomposer treats it as one object and does not recurse~~ → **still “no rotate”, but for a different reason, corrected 2026-09-14.** The decomposer **does** recurse now, and everything inside a placed block is selectable, measurable, movable and deletable. What is absent is a **rotate or scale verb** for anything inside one: the engine's six form-scoped verbs are five moves and one whole-object delete, with no `rotate_..._in_form` of any kind. So the answer is unchanged — you can rotate the block but nothing within it — and the reason under it is not. ★ That combination is the more dangerous half: **a right answer resting on a retracted premise**, which hands anyone who re-derives from the premise a wrong answer and a table that appears to agree with them |
 
 ### Nodes — better than expected
 
