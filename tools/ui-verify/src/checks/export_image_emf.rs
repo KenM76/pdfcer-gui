@@ -13,12 +13,42 @@
 //!
 //! > *"they get ticked when the GUI half is **driven**, not when it compiles."*
 //!
-//! ⚠ **THIS CHECK HAS NOT BEEN RUN.** It was written on 2026-09-04 in a session
-//! that was instructed not to launch the GUI — another track owned the desktop.
-//! It is committed unrun, deliberately and with that stated here rather than
-//! implied by an absent result: a check nobody has executed is a check whose
-//! own correctness is unmeasured, and the first person to run it should expect
-//! to fix it rather than to read a verdict from it.
+//! # ★★★ FIRST RESULT, 2026-09-14: GREEN, AND THE FIRST RUN FIXED THE CHECK
+//!
+//! This header carried a banner from 2026-09-04 to 2026-09-14 saying the check
+//! had never been run, that it was committed unrun deliberately, and that
+//! *"the first person to run it should expect to fix it rather than to read a
+//! verdict from it."* The banner is replaced rather than kept, because a
+//! warning whose subject is gone stops being a warning and starts being a
+//! false statement — and because the prediction in it was exactly right, in a
+//! way worth recording:
+//!
+//! 1. **The check was wrong; the program was not.** Step 5 compared the
+//!    `format=` field against the enum's `Debug` spelling, `Emf`. On
+//!    2026-09-13, commit `28f5389` (O196) had changed the emitter to the file
+//!    token, `emf` — correctly, and for this project's own standing reason,
+//!    *never `Debug`-format a field a machine reads*. Nothing went red,
+//!    because the only machine reading that field was this check and it had
+//!    never been run. The first sweep to run it duly reported *"the radio
+//!    drew and did not bind"* while quoting `format=emf` in the same sentence.
+//!    ★ **Changing a trace field's spelling is an edit to every reader of
+//!    that field, and an unrun check is a reader that cannot object.** See
+//!    [`EMF_KEY`], which now carries that history where the comparison is.
+//! 2. **With that corrected, the pipeline is whole.** 143,132 bytes on disk,
+//!    `iType == 1`, the `' EMF'` signature, a header whose `nBytes` equals the
+//!    file's length, **4,547 records**, and the shell's `bytes=` matching the
+//!    disk exactly. Driven against `fixtures/a1-titleblock.pdf`.
+//!
+//! —> So O120 is **driven**, which is the bar its own Status line set, and the
+//! operator's *"copy and paste vector graphics into word or inkscape"* has a
+//! measured answer rather than a compiled one.
+//!
+//! ⚠ One line of the apply arm was changed in the same commit and it is not
+//! cosmetic: `export-image page=N format=` was still `{:?}`, so one export
+//! printed `format=emf` and `format=Emf` forty lines apart. The next check
+//! anyone writes here is the obvious one — does the file match the plan? —
+//! and it would have compared those two and reported a disagreement that does
+//! not exist. Both lines, and `preferences.txt`, now share one vocabulary.
 //!
 //! # Why this needs driving rather than a unit test
 //!
@@ -91,6 +121,40 @@ const EXPORT: &str = "export-image.export";
 const OPENED: &str = "export-image-open";
 /// The trace the window emits on the press, carrying the plan.
 const REQUESTED: &str = "export-image-requested";
+/// The value [`REQUESTED`] carries in its `format=` field when the EMF radio
+/// is the one selected.
+///
+/// ★★★ **Lowercase, and sourced rather than chosen.** It is the FILE TOKEN,
+/// `pdfcer_gui::app::prefs::exporting::image_format_key(ImageFormat::Emf)` —
+/// the same string the preferences file stores, which is exactly why the
+/// emitter uses it: a check reading this trace and a check reading
+/// `preferences.txt` then cannot disagree about what EMF is called.
+///
+/// ⚠ **This constant was `"Emf"` until 2026-09-14 and the check was RIGHT to
+/// say so when it was written.** On 2026-09-04 the emitter read
+/// `format={:?}` — `Debug` on `ImageFormat`, which prints `Emf`. On
+/// 2026-09-13 commit `28f5389` replaced that with the token, correctly and
+/// for this project's own standing reason (*never `Debug`-format a field a
+/// machine reads*), and **broke the only machine reading the field without
+/// anything going red** — because this check had never been run. The first
+/// sweep to run it, on 2026-09-14, duly reported *"the radio drew and did not
+/// bind"* while quoting `format=emf` in the same sentence.
+///
+/// ★ The lesson generalises past this file: **changing a trace field's
+/// spelling is an edit to every reader of that field**, and an unrun check is
+/// a reader that cannot object to it.
+const EMF_KEY: &str = "emf";
+/// What the `format=` field held *before* 2026-09-13, i.e. `Debug` on the
+/// enum.
+///
+/// ★★ Kept as a SEPARATE diagnosis rather than folded into the comparison.
+/// Seeing this spelling again would mean the emitter had regressed to
+/// `{:?}` — a real defect, with a real one-line remedy, and **not remotely
+/// the same thing as a radio that failed to bind**. An assertion that lumps
+/// the two together produces the message this check produced today: a
+/// confident accusation against the program, quoting the evidence that
+/// clears it.
+const EMF_KEY_DEBUG_SPELLING: &str = "Emf";
 /// The trace the apply arm emits per file written.
 const WROTE: &str = "export-image";
 /// The environment seam that answers the save dialog.
@@ -290,9 +354,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- 5: ★★ the PRESS carried the format the radio selected -------------
     //
     // Link 2 of the module header. A build whose radio drew and did not bind
-    // its value would trace `format=Png` here, write PNG bytes, and name the
+    // its value would trace `format=png` here, write PNG bytes, and name the
     // file `.emf` — which opens in nothing and looks like a broken metafile
     // rather than like a broken radio.
+    //
+    // ⚠ The field is compared against [`EMF_KEY`], the token the emitter
+    // reduces the enum to, NOT against the enum's `Debug` spelling. Read that
+    // constant's documentation before touching this: getting it backwards is
+    // how this check spent its first-ever run accusing a radio that worked.
     let trace = session.trace()?;
     let Some(requested) = trace.last(REQUESTED) else {
         return Ok(Some(format!(
@@ -301,12 +370,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     report.note(format!("requested: `{}`", requested.raw));
-    if requested.get("format") != Some("Emf") {
+    let chosen = requested.get("format");
+    if chosen == Some(EMF_KEY_DEBUG_SPELLING) {
+        return Ok(Some(format!(
+            "the plan says format={EMF_KEY_DEBUG_SPELLING} — the enum's `Debug` spelling, \
+             which means the emitter in `dialogs::export_image` has gone back to \
+             `format={{:?}}` instead of `prefs::exporting::image_format_key`. The RADIO IS \
+             FINE and the export will be a metafile; what is broken is that the trace and \
+             `preferences.txt` now name the same format two different ways, so a reader of \
+             one cannot be checked against a reader of the other. This is the state that \
+             existed until 2026-09-13 and it is worth one line to restore: `{}`",
+            requested.raw
+        )));
+    }
+    if chosen != Some(EMF_KEY) {
         return Ok(Some(format!(
             "★ the EMF radio was clicked and the plan says format={}. The radio drew and did \
              not bind, so the file about to be written is not the format that was chosen — \
              and it will be named `.emf` regardless: `{}`",
-            requested.get("format").unwrap_or("<absent>"),
+            chosen.unwrap_or("<absent>"),
             requested.raw
         )));
     }

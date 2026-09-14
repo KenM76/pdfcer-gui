@@ -47,14 +47,61 @@
 //! one is to ask the engine where text is:
 //!
 //! ```text
-//! pdfcer find-text --needle PART D:/Dev/temp/pdfcer/SW41177.pdf
+//! # ⚠ Drive a COPY. A run opens the document, types into it and may save;
+//! # his drawing is not a fixture. `target/scratch/docs/` is where the copy goes.
+//! cp D:/dev/pdfTests/SW41177/SW41177.pdf target/scratch/docs/SW41177-ken.pdf
+//!
+//! pdfcer find-text --needle PART target/scratch/docs/SW41177-ken.pdf
 //!   match page=1 text="PART" rect=1187.45,1178.37,1215.82,1191.21
 //!
 //! ui-verify … --doc-point 0,1201,1185 --check text_edit_on_a_real_drawing
 //! ```
 //!
+//! (The rect above is what the engine prints today, re-measured 2026-09-14.
+//! The path beside it was `D:/Dev/temp/pdfcer/SW41177.pdf` until then and no
+//! such file exists — a worked example whose measurement was real and whose
+//! path had rotted, which is the more dangerous of the two failures because
+//! the numbers keep vouching for it.)
+//!
 //! A failure at a point sourced that way is the application's. A failure at a
 //! guessed point is nobody's.
+//!
+//! # ★★★ FIRST RESULT, 2026-09-14: GREEN — AND THAT IS O198'S FIRST CLAIM
+//!
+//! Driven against a copy of the operator's `SW41177.pdf` at
+//! `--doc-point 0,272.7,724.2` — the centre of `FAR SLOT`, whose rect came from
+//! `pdfcer find-text` and not from a guess:
+//!
+//! ```text
+//! text-edit-caret kind=Edit page=0 run=24 len=9
+//! edit-text-target … disposition=Pin
+//! ```
+//!
+//! The click resolved a run, the caret took keystrokes, the edit reached the
+//! engine, and **0 following operators were repositioned** — against **1,676**
+//! on the same drawing before the engine's `Pass 121.1`. So O198's
+//! *"still can't edit when the text has been reflowed"* **does not reproduce
+//! on this build**.
+//!
+//! ★ That is not a claim the operator was wrong. It is a claim about WHICH
+//! BUILD: he is running a published one that predates the fixes, and this
+//! check being green and his report being accurate are the same state of the
+//! world one release apart. **The release is the answer to O198**, not more
+//! investigation — which is why `RESUME.md` orders it that way.
+//!
+//! ⚠ AND THE SAME SWEEP SHOWED WHAT AN UNGUARDED AIM COSTS. Run with the
+//! sweep's shared `--pdf fixtures/a1-titleblock.pdf --doc-point 0,2000,320`,
+//! this check FAILED with *"the shell built no plan"* — false in every clause.
+//! The point is 151 pt of blank title-block paper; the shell converted the
+//! Edit draft to an Add draft, said so on its own trace line, and committed
+//! it. The `--- 4b` guard in `drive` is the repair, and the rule it enforces
+//! is written out IN THIS FILE, at step 6, where the identical mistake was
+//! corrected once before: **a check that asserts on the absence of a line
+//! must first ask whether a DIFFERENT line explains the absence.** That
+//! correction was about `edit-text-refused`; this one is about
+//! `text-edit-became-add`. ★ A rule written down beside one instance of
+//! itself does not generalise on its own — the next instance arrives wearing
+//! a different event name and reads as a new problem.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
 use crate::checks::save_copy::{click_command, click_tab};
@@ -115,6 +162,26 @@ const CARET_EVENT: &str = "text-edit-caret";
 const DECLINE_REGION: &str = "status-group:decline";
 
 const TARGET_EVENT: &str = "edit-text-target";
+
+/// `text-edit-became-add reason=no-run-under-the-click` — an Edit click that
+/// found no run, converted into an Add draft.
+///
+/// ★★★ **This line is the difference between a defect and an aim**, and the
+/// 2026-09-14 sweep filed the second as the first because nothing here read it.
+///
+/// It is raised by `canvas::textedit::place`, on the `Refusal::NoRun` arm and
+/// nowhere else. Only that refusal falls through to an origin; an encrypted
+/// document, a page that will not decompose, or a run the engine cannot address
+/// are all still reported, because those say *this cannot be done here* rather
+/// than *there is nothing here*. So its presence carries a precise claim:
+/// **the aim was not on text, and everything else was fine.**
+///
+/// ★ Quoted rather than merely detected. The conversion is a design the
+/// operator asked for by name, and a reader meeting this skip for the first
+/// time needs to see that the program ANNOUNCED what it did — otherwise the skip
+/// reads as the harness excusing a silence, which is a failure mode this
+/// project has already had to correct twice.
+const BECAME_ADD_EVENT: &str = "text-edit-became-add";
 
 /// How many following absolutely-placed `Tm`s one edit may reposition before
 /// this check calls it a defect.
@@ -368,6 +435,85 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let Some(line) = caret else {
         return Ok(Some(decline_message(&session, declined.as_deref())));
     };
+
+    // --- 4b: ★★★ DID THE CLICK LAND ON TEXT AT ALL? THE AIM GUARD ------------
+    //
+    // A caret is not evidence that the aim was on text, and on 2026-09-14 a
+    // full sweep proved it by accusing the program of building no plan while
+    // the program was building the plan the operator had asked for.
+    //
+    // The sweep hands every check `--pdf fixtures/a1-titleblock.pdf
+    // --doc-point 0,2000,320`. That fixture's page 1 carries fourteen text
+    // runs and EVERY ONE of them is at `x >= 1831.2, y <= 328.32`
+    // (`pdfcer extract-text --pages 1 --json`); the nearest to the aim is
+    // `DRAWING NO` at `x 2151.5-2186.5`. The point is a hundred and fifty
+    // points of blank title-block paper. The shell then did what
+    // `canvas::textedit::place` has done since 2026-08-19, at the operator's
+    // own request — *"How do I make new text when I click on the canvas and
+    // expect to edit there?"* — and turned the Edit draft into an Add draft:
+    //
+    // ```text
+    // text-edit-became-add reason=no-run-under-the-click
+    // text-edit-caret kind=Edit page=0 origin=1998.1,320.9 len=0
+    // add-text page=0 n=1 epoch=1 disclosures=...
+    // ```
+    //
+    // Every assertion below this point is about EDITING AN EXISTING RUN, so
+    // over an Add draft they describe something that is not there. Step 6
+    // duly reported *"no `edit-text`, `text-edit-commit` or
+    // `edit-text-refused` line followed — so the shell built no plan"*, which
+    // was false in every clause: the plan was built, committed and traced.
+    //
+    // ★★ The tell costs nothing to read and was already in hand.
+    // `Anchor::Run` prints `run=N`; `Anchor::Origin` prints `origin=x,y`.
+    // **A caret with no `run=` is by construction a click that resolved no
+    // run**, and on any document whose text the operator can see, that is the
+    // harness's aim rather than the program's behaviour.
+    //
+    // ★ SKIPPED, not failed, and for the reason
+    // `font_group::aimed_at_one_text_object` gives in its own header: a guard
+    // against a bad aim is only worth having if every check that can be handed
+    // a bad aim uses one. That function is the fuller instrument — it reads
+    // `properties-panel ... kind=` and `canvas-selection ... sel=` and can name
+    // the object kind — but it needs a selecting click this check does not
+    // make, and adding one would change the very gesture whose behaviour is
+    // the subject. This guard answers the same question from a line already
+    // read, which is why it is here and not there.
+    if line.get("run").is_none() {
+        let became = session
+            .trace()
+            .ok()
+            .and_then(|t| t.last(BECAME_ADD_EVENT).map(|l| l.raw.clone()));
+        let announced = match became {
+            Some(raw) => format!(", and it said so: `{raw}`"),
+            None => format!(
+                ", and traced no `{BECAME_ADD_EVENT}` line while doing it, which is \
+                 itself worth a look"
+            ),
+        };
+        return Err(Error::new(format!(
+            "the --doc-point (page {}, {:.1}, {:.1}) found NO RUN under the click, so the \
+             caret opened on bare page: `{}`. The shell converted the Edit draft into an \
+             Add draft{} — which is what it has done at the operator's request since \
+             2026-08-19: one text tool, click in text to edit it, click in space to start \
+             some. Every oracle below this point asserts something about EDITING AN \
+             EXISTING RUN and would be describing a draft that is not one. SKIPPED rather \
+             than failed: this says where the harness aimed, not what the program did. \
+             ★ To aim properly, ask the ENGINE where text is — `pdfcer find-text \
+             --needle WORD FILE.pdf` prints a rect per match and its centre is a point on \
+             text, and `pdfcer extract-text --pages N --json FILE.pdf` gives every run's \
+             bbox at once. ⚠ The sweep's shared `fixtures/a1-titleblock.pdf \
+             --doc-point 0,2000,320` will ALWAYS land here: that page's fourteen text runs \
+             all sit at x >= 1831.2, y <= 328.32. Trace: {}.",
+            target.page,
+            target.x,
+            target.y,
+            line.raw,
+            announced,
+            session.trace_path().display()
+        )));
+    }
+
     report.note(format!(
         "★ the click on real drawing text placed a caret: `{}`",
         line.raw

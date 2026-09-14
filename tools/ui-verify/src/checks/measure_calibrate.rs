@@ -58,8 +58,9 @@
 use crate::checks::driving::{
     SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
 };
+use crate::checks::picking;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, PageGeometry};
 use crate::error::{Error, Result};
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
@@ -253,17 +254,26 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "canvas at zoom {:.3}; picking two points {SPAN_PT:.0} pt apart",
         mapping.zoom
     ));
-    for (label, doc) in [
-        ("A", target),
-        (
-            "B",
-            DocPoint {
-                page: target.page,
-                x: target.x + SPAN_PT,
-                y: target.y,
-            },
-        ),
-    ] {
+    // ★★★ `span_from`, not `target.x + SPAN_PT`, and this check is the reason
+    // that function exists. It SKIPPED in EVERY recorded sweep -- 2026-09-12,
+    // 09-12b, 09-13a, 09-13b, 09-14 -- because the sweep aims at x=2000, the
+    // span put pick B at 2400, and `a1-titleblock.pdf` is 2383.937 wide.
+    // Sixteen points, and the operator's two-point calibration had never once
+    // been driven. A SKIP is not red, so nothing said so.
+    let span = mapping.span_from(target, SPAN_PT)?;
+    // ★★★ `picking::resolve_pick`, NOT a bare `click_at`. One click is not
+    // always one pick: a click that lands on a DERIVED snap candidate — a
+    // centreline pdfcer inferred rather than one the file states — is announced
+    // and not acted on, and the operator confirms it with a second click on the
+    // same point. That is rule 4's fuzzy-never-sneaky gate, it is deliberate,
+    // and a check that clicks once per pick silently loses pick B to it.
+    //
+    // ⚠ This check did exactly that on its first-ever completed run,
+    // 2026-09-14, and reported that the clicks never reached `ScalePick` while
+    // the trace three lines up read `measure-pick outcome=Promoted
+    // reason=derived-candidate-needs-confirm`. See `checks::picking`'s header
+    // for why the loop is shared rather than copied a third time.
+    for (label, doc) in [("A", target), ("B", span)] {
         let window = mapping.doc_to_window(doc)?;
         let screen = session.frame()?.to_screen(window);
         report.note(format!(
@@ -273,8 +283,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             screen.x(),
             screen.y()
         ));
-        driver.click_at(screen)?;
-        session.settle(14);
+        match picking::resolve_pick(&session, &driver, report, label, screen, 14)? {
+            Ok(resolved) => report.note(format!(
+                "pick {label} resolved in {} click(s): `{}`",
+                resolved.clicks, resolved.line.raw
+            )),
+            Err(failure) => return Ok(Some(failure.why)),
+        };
     }
 
     // --- 6: the dialog comes back, carrying a measurement ------------------

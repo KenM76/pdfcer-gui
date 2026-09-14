@@ -609,6 +609,84 @@ impl CanvasMapping {
         Ok(WindowPoint { x: wx, y: wy })
     }
 
+    /// **A second point `span_pt` away from `from` along x, on whichever side
+    /// of it is actually reachable.**
+    ///
+    /// # ★★★ The defect that bought this: two checks that never ran, ever
+    ///
+    /// Measured 2026-09-14 across every dated sweep baseline this repository
+    /// holds. `measure_calibrates_by_picking_two_points` — the check for the
+    /// two-point scale calibration **the operator asked for** — SKIPPED in all
+    /// five, and `set_scale_reads_the_group_it_is_about_to_overwrite` skipped on
+    /// its first. Both printed the same refusal:
+    ///
+    /// ```text
+    /// document point (2400, 320) is outside the page's crop box
+    ///   (0, 0) - (2383.937, 1683.78)
+    /// ```
+    ///
+    /// The sweep aims every check at `--doc-point 0,2000,320`; both checks put
+    /// their second pick at `x + 400`; the page is 2383.937 wide. **Sixteen
+    /// points of paper**, and a capability with two committed checks had never
+    /// once been driven.
+    ///
+    /// ⚠ **And a SKIP is not red**, so nothing objected for three days. The
+    /// check existed, was registered, was run by the sweep and was counted in
+    /// the tally — into the one column nobody reads.
+    ///
+    /// # Why a sign, and why here
+    ///
+    /// A span of `n` points measures `n` points in either direction, and every
+    /// assertion downstream is on the measured LENGTH, which is unsigned. So
+    /// there was never a reason to demand the right-hand side specifically; the
+    /// `+` was an assumption that the page continues, not a requirement of the
+    /// gesture. ★ **An aim that suits 224 checks and starves 2 is not a bad
+    /// aim** — it is a check asking more of its input than it needs.
+    ///
+    /// Reachability is decided by calling [`Self::doc_to_window`] rather than by
+    /// comparing against the crop box here. That is deliberate and it is
+    /// [`PageFrame`]'s own lesson: *the mapping is written once, in terms the
+    /// PDF actually uses, instead of open-coded as arithmetic at each site.* A
+    /// point can be unreachable for reasons that have nothing to do with the
+    /// crop box — scrolled out of view, on the wrong page — and this way all of
+    /// them are honoured by the one function that knows them.
+    ///
+    /// # Errors
+    ///
+    /// Neither `from + span_pt` nor `from - span_pt` is reachable. The message
+    /// carries the FIRST refusal verbatim, because that one names the geometry
+    /// and the caller needs to see it — a summary of two refusals is a third
+    /// account of a fact the first states exactly.
+    pub fn span_from(&self, from: DocPoint, span_pt: f64) -> Result<DocPoint> {
+        let mut first: Option<Error> = None;
+        for signed in [span_pt, -span_pt] {
+            let candidate = DocPoint {
+                page: from.page,
+                x: from.x + signed,
+                y: from.y,
+            };
+            match self.doc_to_window(candidate) {
+                Ok(_) => return Ok(candidate),
+                Err(why) => {
+                    if first.is_none() {
+                        first = Some(why);
+                    }
+                }
+            }
+        }
+        Err(Error::new(format!(
+            "no point {span_pt} pt from ({:.1}, {:.1}) along x is reachable on page {}: \
+             neither {:.1} nor {:.1}. The first refusal, verbatim, because it names the \
+             geometry: {}",
+            from.x,
+            from.y,
+            from.page,
+            from.x + span_pt,
+            from.x - span_pt,
+            first.map_or_else(|| "none".to_owned(), |e| e.to_string())
+        )))
+    }
+
     /// **The same conversion, for a point deliberately OUTSIDE the page box.**
     ///
     /// \ ★★★ Why this exists, and why it is a second entry point rather than a flag

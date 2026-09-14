@@ -197,6 +197,13 @@ pub mod load_anomalies;
 /// Putting a control where the pointer can hit it — scrolling a pane, raising a
 /// dock tab, bringing a control inside its panel's body. Split from
 /// [`driving`] on 2026-09-05 under R2; its header carries the seam.
+/// ★★★ **One click is not always one pick** — rule 4's confirming second
+/// click on a derived snap candidate, in one place. Split from [`driving`] on
+/// 2026-09-14 under R2 (it stood at 1,493 of 1,500). Its header carries the
+/// defect: two calibration checks blamed the routing for a promotion the
+/// application had already announced, while a sibling check had documented
+/// and solved the same thing months earlier.
+pub mod picking;
 pub mod reaching;
 /// The dropped-object disclosure, driven: a document pdfcer had to rebuild by
 /// scanning says in Document properties what the rebuild could NOT keep, and a

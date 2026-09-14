@@ -629,8 +629,19 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "export-image page={page_index} format={:?} bytes={} dpi={} transparent={}",
-                plan.format,
+                "export-image page={page_index} format={} bytes={} dpi={} transparent={}",
+                // ★★ The TOKEN, not `{:?}`, and for the reason the window
+                // states beside its own trace: this line and
+                // `export-image-requested` describe ONE format, forty lines
+                // apart in one export, and until 2026-09-14 they spelled it
+                // `Emf` and `emf`. A check that cross-checks the plan against
+                // the file — the obvious next one to write here, and
+                // `export_image_emf` already reads a field from each — would
+                // have found them unequal and reported that the window asked
+                // for one format and the writer produced another. All three
+                // readers (this, the window, `preferences.txt`) now share one
+                // vocabulary: `prefs::exporting::image_format_key`.
+                crate::app::prefs::exporting::image_format_key(plan.format),
                 produced.bytes.len(),
                 plan.dpi,
                 u8::from(plan.transparent)
