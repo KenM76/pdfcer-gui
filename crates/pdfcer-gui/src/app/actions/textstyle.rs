@@ -481,6 +481,88 @@ fn request(page: usize, pinned: crate::canvas::textedit::pin::Pinned) -> FormatR
 /// half-applies and says so: the operator sees some of their text change, has no
 /// way to tell how much, and the undo stack holds an unknown number of entries.
 pub(super) fn apply(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange) {
+    restyle(doc, page, runs, change);
+    resweep(doc, page);
+}
+
+/// ★★★ **Keep the operator's sweep alive across the edit that just happened**
+/// — `OPERATOR_REQUESTS.md` **O198**.
+///
+/// # The defect, in the operator's own gesture
+///
+/// Sweep three words. Press **Bold**: it applies. Press **Italic**: nothing
+/// happens, and nothing says why. The wash has also gone from the page.
+///
+/// Bold is an edit, `super::apply::vector_edit` bumps `edit_epoch` on success,
+/// and `TextSelection::live` is an equality test against that number. From the
+/// frame after Bold the selection reports itself stale: it paints nothing and
+/// `TextSelection::runs` hands back an empty list, so Italic's operand is empty
+/// and `restyle` above declines with `NoRun`. Every pair of presses needed a
+/// re-sweep in between, which is not a thing any editor in the class asks for.
+///
+/// # ★★ Why it is a re-resolution and not a re-stamp
+///
+/// `canvas::textsel`'s header §7 is emphatic that painting stored geometry
+/// against a moved revision is the one thing rule 4 forbids outright, and it is
+/// right: a restyle that changed a point size moves every glyph after it, so
+/// the old quads would wash the wrong pixels and a subsequent restyle could act
+/// on the wrong runs. So nothing is re-stamped. `textsel::reresolve` re-runs the
+/// whole resolution from the operator's two positions against a fresh
+/// extraction, and refuses unless the characters covered are identical. See its
+/// docs for the argument; this function is only the wiring and the borrow
+/// discipline.
+///
+/// # ★★ Called on EVERY exit of `restyle`, including the refusals
+///
+/// A gesture that applied eleven runs and then stopped left the document
+/// edited, so the selection is exactly as stale as a successful one. Wrapping
+/// `restyle` rather than appending to its tail is what makes that true without
+/// four call sites having to remember it — `restyle` has five early returns.
+///
+/// ★★ A no-op when nothing was swept, which is the whole clicked-object rung:
+/// that operand comes from `app::textoperand`'s `Cache`, whose stamp includes
+/// the epoch, so it re-resolves itself and needs nothing here.
+///
+/// # The cost, and why it is not a new one
+///
+/// One page extraction. `OpenDoc::page_text` is the shared cache and the edit
+/// has just invalidated it, so this call pays for a rebuild — but the canvas
+/// asks for the same extraction on its very next frame to hit-test the pointer,
+/// so the work happens either way and this only moves it earlier by a frame.
+fn resweep(doc: &mut OpenDoc, page: usize) {
+    let Some(previous) = doc.text_selection.take() else {
+        return;
+    };
+    // ★★ The `Ref` into the text cache and the `&mut doc.selection` write
+    // cannot overlap, so the whole read is a block that yields a value. This is
+    // the short-borrow discipline `app::cache::page_text`'s docs ask for, and
+    // holding the `Ref` across the assignment below does not compile — which
+    // is the borrow checker enforcing it rather than a convention doing so.
+    let renewed = {
+        let Some(text) = doc.page_text() else {
+            return;
+        };
+        let Some(page_ref) = doc.pages.get(page) else {
+            return;
+        };
+        let ctx = crate::canvas::textsel::PageContext {
+            text: &text,
+            page: page_ref,
+            index: page,
+            epoch: doc.edit_epoch,
+        };
+        crate::canvas::textsel::reresolve(&ctx, &previous)
+    };
+    let kept = renewed.is_some();
+    doc.text_selection = renewed;
+    crate::diag::trace(move || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("text-selection-resweep page={page} kept={kept}")
+    });
+}
+
+/// The restyle itself. See [`apply`], which is this plus the re-sweep.
+fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange) {
     // ★★★ THE OPERATOR'S POSTURE, SNAPSHOT BEFORE THE BORROW.
     //
     // `super::apply::vector_edit` takes `&mut doc`, so nothing inside the
@@ -984,6 +1066,27 @@ fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -> ReflowRef
         // Named by variant because the engine names it by variant, and because
         // its remedy — remove the protection — is narrower than its decline.
         E::Encrypted => ReflowRefusal::Encrypted,
+        // ★★★ Named by TRIGGER, not by variant, and the distinction is the
+        // whole safety of this arm. `ReflowApplyError::Refused` is documented
+        // as "the font-on-edit gate refused, by name (composite/CJK,
+        // R-INV-4)" and `reflow_apply::refuse_if_composite` is its only
+        // constructor today — but the payload is a general `encoding::Refusal`
+        // carrying any of eight `RInvTrigger`s, and a match on the VARIANT
+        // would silently start showing a composite-font sentence the first time
+        // the engine refuses a reflow for some other encoding reason.
+        //
+        // ★★ So the guard reads the engine's own discriminant, and anything
+        // else falls through to the funnel below and earns the honest general
+        // sentence. This costs one comparison and removes an entire class of
+        // "the sentence used to be true" defect. Filed under O198, 2026-09-14:
+        // the operator's drawing sets its body text in a CIDFont, so before
+        // this arm existed every reflow on that sheet answered with
+        // `EngineDeclined`'s "something about how this page was drawn".
+        E::Refused(refusal)
+            if refusal.trigger == pdfcer_core::text_edit::RInvTrigger::Composite =>
+        {
+            ReflowRefusal::FontIsComposite
+        }
         // ★★★ NO WILDCARD. See the header: the wildcard that used to be here
         // would have swallowed `PageEditedThisSession` on the day it shipped.
         other => match other.decline() {
@@ -1008,24 +1111,31 @@ mod tests;
 /// author for one fact — the rule `textstyle`'s synthesis disclosure already
 /// follows, and for the same reason.
 ///
-/// ★★ **The refusal is the interesting half.** Unlike every other verb in this
-/// module, `reflow_block` is planned against the base document and refuses a
-/// page this session has already edited. That is not a defect and it is not
-/// rare: one typed character makes it fire. The remedy is specific — save and
-/// reopen — and `vector_edit`'s error arm traces but does not word a refusal, so
-/// this one is worded here, before the funnel, on the one condition the shell
-/// can see without asking.
+/// ★★ **The refusal is the interesting half, and what causes it changed under
+/// us.** Unlike every other verb in this module, `reflow_block` does not
+/// accumulate: it re-emits the page's FIRST content stream and its commit sweep
+/// empties every other one, so it refuses a page carrying a non-empty EXTRA
+/// stream rather than silently deleting the text in it.
+///
+/// This comment said *"planned against the base document ... one typed
+/// character makes it fire"* until 2026-09-14. Engine `Pass 257.0` made both
+/// clauses false on 2026-09-06 by moving the planner onto the session view. The
+/// surviving trigger is narrower and worth stating exactly: **adding** text
+/// trips it, **editing** existing text does not, because that edit's own sweep
+/// has already consolidated the page.
+///
+/// ★★ It also fires on a page NO ONE edited — the guard tests a structural
+/// property, and a producer that splits page content across streams (SOLIDWORKS
+/// does) is read as "text was added this session". Filed as `request_G015`
+/// under O198. The engine's remedy sentence is wrong on that one class of page
+/// and there is nothing honest to substitute, so this shell forwards it.
+///
+/// ★ And the shell no longer FORECASTS any of this. Every engine-side refusal
+/// is worded after the attempt, by [`reflow_refusal`], from the engine's own
+/// discriminant. The pre-flight `edit_epoch` gate that used to stand at the top
+/// of this function was deleted on 2026-09-05; the body below records why, at
+/// length, because a deleted guard whose reason is lost gets reinvented.
 pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
-    // ★★★ Asked BEFORE the attempt, so the operator is told the remedy rather
-    // than shown a silence. `edit_epoch` is non-zero exactly when this session
-    // has changed the document, which is the shell-side shadow of the engine's
-    // own condition — it is broader (an edit to ANOTHER page also trips it) and
-    // deliberately so: a sentence that says *"save and reopen"* one page too
-    // eagerly costs a save, and one that says nothing costs an operator who
-    // thinks the feature is broken.
-    //
-    // ⇒ The engine's own refusal remains the backstop and is traced by the
-    // funnel. This is the wording, not the gate.
     // ★★★ **THE OVER-BROAD FORECAST IS GONE — deleted 2026-09-05 when the engine
     // closed the defect it existed to hide from.**
     //
@@ -1062,10 +1172,20 @@ pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
     // self-consistent, and no test of either able to see them disagree. The
     // engine owns the question; the shell words the answer.
     //
-    // ⚠ What replaces it is **nothing** — deliberately. The call below already
+    // ★ What replaces it is **nothing** — deliberately. The call below already
     // routes the engine's refusal through `record_reflow`, so the operator now
-    // meets the specific sentence instead of the blanket one, and gets it only
-    // when it applies.
+    // meets the specific sentence instead of the blanket one.
+    //
+    // ★★ **"...and gets it only when it applies" stood here until 2026-09-14
+    // and was wrong.** The engine's guard is structural, not provenance-based:
+    // it fires on any page whose `/Contents` array holds a second non-empty
+    // stream, including one the producer authored that way. His own drawing's
+    // page 0 carries EIGHT, so he met *"text was added to this page this
+    // session"* on the first frame after `File > Open`. Filed as
+    // `request_G015`. Narrowing it HERE is still refused for the reason two
+    // paragraphs up — two predicates over one model is the shape that ships
+    // silent disagreement — so the sentence stays the engine's until the
+    // engine changes it.
     // ★★★ **The cropbox is supplied, and supplying it is the whole of the
     // overflow disclosure.**
     //

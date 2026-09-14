@@ -200,13 +200,26 @@ pub fn pinned_tail_disclosure(reason: Reason) -> String {
     )
 }
 
-/// Why reflow declined on a page this session has already changed.
+/// Why reflow declined on a page carrying text this session ADDED.
 ///
-/// ★★★ The remedy is the sentence, not the refusal. `reflow_block` is planned
-/// against the **base** document — it needs provenance the staging buffer does
-/// not carry — so it refuses a page whose content object this session has
-/// rewritten, by name, rather than mis-splicing. One typed character is enough
-/// to trip it.
+/// ★★★ The remedy is the sentence, not the refusal. `reflow_block` re-emits the
+/// page's FIRST content stream and its commit sweep empties every other one,
+/// so a page carrying a non-empty EXTRA stream is refused by name rather than
+/// having the text in that stream silently deleted.
+///
+/// ★★ **Re-measured 2026-09-14; what stood here was two revisions out of
+/// date.** It said `reflow_block` is planned against the **base** document and
+/// that *"one typed character is enough to trip it"*. Engine `Pass 257.0`
+/// (2026-09-06) moved the planner onto the session view and both clauses went
+/// with it: an ordinary text EDIT no longer trips this, because that edit's own
+/// sweep has already consolidated the page. Adding text does.
+///
+/// ★ The guard is also structural rather than provenance-based, so it fires on
+/// a page NOBODY edited if the producer split its content across streams —
+/// `request_G015`, O198, measured on a sheet carrying eight. The sentence below
+/// is then false about the cause and its remedy does not work. It is still the
+/// engine's sentence and this shell will not invent a better one; see
+/// `app::actions::textstyle::reflow` for why a second predicate here is refused.
 ///
 /// ★★ It says **save and reopen**, in those words, because that is the whole of
 /// what an operator has to do and it is not guessable from *"cannot reflow"*.
@@ -325,40 +338,90 @@ pub enum ReflowRefusal {
     /// The caret is in a run the block recogniser does not group into a
     /// paragraph — a title-block cell, a dimension label, an isolated note.
     NoBlock,
-    /// This session has already changed the document.
+    /// The page carries a non-empty EXTRA content stream, so reflow would drop
+    /// the text in it.
     ///
-    /// ★★★ **This gate is load-bearing and it is NOT merely conservative.**
-    /// See [`reflow_after_edit`]'s own note: `EditSession::reflow_block` plans
-    /// from the **base** document and then writes the result into the page's
-    /// first content object, *emptying every other one*. Text added this
-    /// session lives in one of those other content objects, so a reflow that
-    /// ran would **silently delete it**. The engine's own guard does not cover
-    /// that case — it only refuses when the *first* content object was
-    /// rewritten — so this forecast is the only thing standing between the
-    /// operator and losing work he can see on the page.
+    /// ★★★ **This is the ENGINE's answer now, not a shell forecast.** It
+    /// arrives as `ReflowApplyError::PageEditedThisSession`, is recognised by
+    /// its own discriminant in `app::actions::textstyle::reflow_refusal`, and
+    /// [`reflow_after_edit`] words it.
+    ///
+    /// ★★ Until 2026-09-14 this comment described the SHELL's `edit_epoch != 0`
+    /// forecast and called it *"the only thing standing between the operator
+    /// and losing work he can see on the page"*. That forecast was deleted on
+    /// 2026-09-05, the day `Pass 251.0` made the engine refuse the case by
+    /// name; the sentence outlived the mechanism by nine days. **A doc comment
+    /// that argues for a guard is a claim the guard exists.**
+    ///
+    /// ★ The hazard it named is real and unchanged: `reflow_block` writes into
+    /// the page's first content object and empties every other one, and text
+    /// added this session lives in one of those. What changed is only WHO
+    /// refuses — and, per `request_G015`, that the engine's test is structural,
+    /// so a producer-authored multi-stream page meets this too.
     PageAlreadyEdited,
     /// The engine's page-set guard: a page was added, removed or reordered, and
     /// reflow's planner is indexed against the base document's pages.
     PageSetChanged,
     /// The engine declined and gave no cause this shell may act on.
     ///
-    /// ★★★ **Added 2026-09-07, replacing a mapping that named a cause the
-    /// engine can no longer produce.** `ReflowApplyError::Unsupported(String)`
-    /// carries **ten** distinct refusals in one variant — everything from
-    /// *"text was added to this page this session … save and reopen"* (which
-    /// has a remedy) to *"the block's CTM has a degenerate (zero) scale"*
-    /// (which does not) — with no discriminant to tell them apart, and this
-    /// shell will not parse another crate's prose to guess.
+    /// ★★★ **Added 2026-09-07 for the causes `ReflowApplyError` does not
+    /// discriminate, and it has narrowed twice since.**
+    /// `ReflowApplyError::Unsupported(String)` packs the remainder into one
+    /// variant with no discriminant — from *"the block's CTM has a degenerate
+    /// (zero) scale"* to a producer quirk with no name — and this shell will
+    /// not parse another crate's prose to guess which.
     ///
-    /// So the sentence says the one thing true of every case and **offers no
-    /// remedy**. That is deliberately worse than the old wording in exactly one
-    /// of the ten cases and better in the other nine, where the old wording
-    /// sent the operator hunting for a page reordering that never happened.
+    /// So the sentence says the one thing true of every remaining case and
+    /// **offers no remedy**. Vague, deliberately: the alternative is a remedy
+    /// that is wrong most of the time, which is what the wording before it did
+    /// when it sent the operator hunting for a page reordering that never
+    /// happened.
     ///
-    /// ⇒ Filed at the engine; when a discriminant lands, the one recoverable
-    /// case gets [`Self::PageAlreadyEdited`] back — whose sentence is already
-    /// written and already tested — and this variant narrows to what is left.
+    /// ★★ **The two narrowings, because this paragraph asked for them and then
+    /// did not notice they arrived** (corrected 2026-09-14). It used to say the
+    /// engine carries *"ten distinct refusals in one variant"* and to promise
+    /// that *"when a discriminant lands, the one recoverable case gets
+    /// `PageAlreadyEdited` back"*. Two landed:
+    ///
+    /// * `PageEditedThisSession` — the recoverable one, exactly as forecast.
+    ///   [`Self::PageAlreadyEdited`] is reached from it today.
+    /// * `Refused(encoding::Refusal)` — carrying an `RInvTrigger`, which is how
+    ///   [`Self::FontIsComposite`] tells `R-INV-4` from the other seven.
+    ///
+    /// ★ The forecast was right and the count is stale, which is the ordinary
+    /// way a doc comment goes wrong: it described the other crate's shape, the
+    /// other crate changed shape, and nothing in this one failed to compile.
     EngineDeclined,
+    /// The paragraph is drawn in a **composite (Type 0 / CIDFont)** font, and
+    /// within-block reflow of composite text is a deferred engine feature
+    /// (`R-INV-4`, FF-E).
+    ///
+    /// # ★★★ Why this earns its own variant instead of the honest general one
+    ///
+    /// Because the engine named it, and because on a real drawing it is not the
+    /// exception. `SW41177.pdf` — the 36-sheet SOLIDWORKS set `O198` is about
+    /// — sets its body text in `AQHZBV+CenturyGothic`, a CIDFont, so
+    /// [`Self::EngineDeclined`]'s *"something about how this page was drawn"*
+    /// was the answer to **every** reflow the operator attempted on it. A
+    /// sentence that vague, shown that consistently, reads as the feature being
+    /// broken rather than as one font class being out of scope.
+    ///
+    /// ★★ **The engine hands this over structurally, so no prose is parsed.**
+    /// `ReflowApplyError::Refused` carries an `encoding::Refusal` whose
+    /// `trigger` is an `RInvTrigger`, and `reflow_apply`'s `refuse_if_composite`
+    /// is the ONLY site in that module that constructs one — always with
+    /// `RInvTrigger::Composite`. The mapping matches on the trigger anyway, not
+    /// on the variant, so if the engine ever widens that gate to another
+    /// `R-INV-*` this sentence stops being shown rather than becoming wrong.
+    /// *A tripwire keyed on the other side's data survives the other side
+    /// changing; one keyed on our reading of it does not.*
+    ///
+    /// ★ **It offers no remedy because there is none.** Not "choose another
+    /// font" — re-setting the face of a whole CAD paragraph to make a re-wrap
+    /// possible would change how the drawing looks, which is a far larger act
+    /// than the one that was asked for. R9's rule holds: say what happened and
+    /// stop.
+    FontIsComposite,
     /// The document is encrypted, which reflow refuses outright.
     Encrypted,
     /// The engine could not trace the paragraph's lines back to the operators
@@ -413,6 +476,24 @@ impl ReflowRefusal {
             Self::EngineDeclined => {
                 "pdfcer will not re-wrap this paragraph. Something about how this page was drawn \
                  stops it doing so safely, and your document has not been changed."
+            }
+            // ★★ Names the FONT as the cause, which is the one thing the
+            // generic sentence could not do and the one thing that tells the
+            // operator not to keep trying other paragraphs on the same sheet.
+            // It does not name the face: `AQHZBV+CenturyGothic` is a subset tag
+            // plus a name, it is on no menu he can reach, and it would read as
+            // a thing to go and fix. The face IS carried in the
+            // `reflow-block-refused ... detail=` trace, where debugging wants
+            // it: the funnel Display-formats the engine error, and
+            // `ReflowApplyError::Refused` is `#[error(transparent)]` over a
+            // `Refusal` whose message opens `R-INV-4: font '<base_font>' ...`.
+            // ★ Verified by reading both sides, 2026-09-14 — an earlier draft
+            // of this comment named `reflow-declined`, which is the SHELL-side
+            // decline trace and carries no font at all.
+            Self::FontIsComposite => {
+                "pdfcer cannot re-wrap this paragraph: it is drawn in a font that stores more \
+                 than one byte per character, and re-wrapping that kind of text is not built \
+                 yet. Your document has not been changed."
             }
             Self::Encrypted => {
                 "This document is encrypted, so pdfcer cannot re-write its text. Remove the \

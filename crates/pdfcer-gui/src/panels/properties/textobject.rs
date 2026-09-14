@@ -20,10 +20,10 @@
 //!
 //! ★★★ **The other two were already built**, which was measured rather than
 //! assumed and is recorded in O89 in place of the sentences that said
-//! otherwise. The Properties panel's *"press T and sweep"* sentence has existed
-//! since 2026-08-29 (`super::text`'s `route`, whose sentence is
-//! `crate::text::panels::properties::text_object_route` and now lives on this
-//! section), and every one of the five Font commands' tooltips has ended
+//! otherwise. The Properties panel's *"press T and sweep"* sentence existed
+//! from 2026-08-29 until 2026-09-14, when O198 made the route it named
+//! unnecessary and it was deleted; and every one of the five Font commands'
+//! tooltips has ended
 //! *"Sweeping text with the Text tool (T) chooses what it applies to"* since
 //! the group shipped. What was NOT true was O89's third row — *"the greyed
 //! button saying so on hover"* — for exactly **one** of the five controls: the
@@ -62,22 +62,39 @@
 //! differ only where another object's show operators interleave inside this
 //! one's `BT`…`ET`, which §9.4's grammar forbids.
 //!
-//! ## ★★★ Why COLOUR and not the other four Font controls
+//! ## ★★★ Why COLOUR is the only control still drawn here
 //!
-//! Face, size, bold and italic are **not** offered on an object selection, and
-//! that is a decision rather than an omission. Each of the four needs a
-//! *reading of one run* to be honest — which typeface, what size, whether a
-//! real bold face covers *these characters* — and a whole text object has no
-//! single answer to any of them. `EditSession::preview_style_resolution` and
-//! `preview_font_resources` are both per-run by construction, and their own
-//! invariants forbid a shell from re-deriving a page-level answer.
+//! ★★★ **CORRECTED 2026-09-14, and the correction is the whole of
+//! `OPERATOR_REQUESTS.md` O198.** What stood here from 2026-09-05 until then,
+//! in summary: face, size, bold and italic are *not* offered on an object
+//! selection, because each needs a reading of ONE run to be honest and a
+//! whole text object has no single answer to any of them; so colour got a
+//! working control and the other four got a sentence naming the route to the
+//! Text tool.
 //!
-//! Colour is the one property where *"they disagree"* is itself a displayable
-//! answer, because the whole product class already has a control that says it:
-//! the indeterminate swatch. So colour gets a working control here and the
-//! other four get `crate::text::panels::properties::text_object_route`, which
-//! was re-aimed in place to name the four things it is the route *to* rather
-//! than claiming nothing about these words can be changed.
+//! ⇒ **The premise was true and the conclusion did not follow.** "No single
+//! answer" is an argument about what a control may *display*, and this
+//! project's own product class answers it with an indeterminate presentation
+//! rather than by withholding the control. It is not an argument about what a
+//! press may *apply*: `format_text` takes a run list, the object's run list
+//! is exact, and applying one face to nine runs is precisely what a hand
+//! sweep across the same words does. The operator, 2026-09-14: *"the
+//! properties area is uneditable too. This is true even when I add a new line
+//! of text."*
+//!
+//! So [`super::text::section`] now draws face, size, bold and italic for a
+//! clicked object as well as for a sweep, reading the first run for its
+//! read-back, and the route sentence is **deleted** rather than re-aimed —
+//! every clause of it had become false.
+//!
+//! ★★ **Colour stays here, and only colour.** It is the one property whose
+//! disagreement this shell must act on rather than merely render: a run
+//! painted in a `/Separation` gets **no swatch at all**, which [`Colour`]
+//! decides by looking at every run in the object. `super::text`'s own colour
+//! row reads the FIRST run and would report a nine-run object's ink from one
+//! of them — so that section draws its colour row only for a swept operand
+//! and defers to this one for an object. Exactly one Colour control is on
+//! screen in any frame.
 //!
 //! ## ★★★ The spot-ink guard survives the object route
 //!
@@ -165,20 +182,23 @@ pub const SWATCH_REGION: &str = "properties.textobject.swatch";
 ///
 /// ★ Its own name, because *"the section said something about this text"* must
 /// not pass in the state where what it said is *"there is no control here"*.
-/// The same argument [`super::text::ROUTE_REGION`] makes about its own state.
+/// The same argument every other region here makes about its own state.
 // ui-text-exempt: trace region name, never displayed
 pub const INK_REGION: &str = "properties.textobject.ink";
-/// The region of the route sentence — the way to the other four Font controls.
-///
-/// ★★★ **Spelled `properties.text.route`, which is `super::text`'s old name,
-/// and that is deliberate.** The sentence moved from that module to this one
-/// when the object state gained a working control; the *surface* did not move,
-/// and `tools/ui-verify/src/checks/font_group.rs` finds it by this name. A
-/// rename would have been a harness break dressed as tidiness — and a driven
-/// check that stops finding a region reports the feature as missing, which is
-/// the exact wrong story to tell about the thing O89 asked for.
-// ui-text-exempt: trace region name, never displayed
-pub const ROUTE_REGION: &str = "properties.text.route";
+// ★★★ `ROUTE_REGION` and the sentence it named were DELETED on 2026-09-14.
+//
+// It read *"To change the font, size, bold or italic of these words, press T
+// for the Text tool and sweep across them"*, and `OPERATOR_REQUESTS.md` O198
+// made every clause of it false: face, size, bold and italic now act on the
+// clicked object through `app::textoperand`, from this panel and from the
+// ribbon band alike. A disclosure has a subject, and when the fix removes the
+// subject the disclosure goes with it — leaving it in place would have been
+// the application telling the operator to go and do something it had just
+// done for him.
+//
+// ⚠ `tools/ui-verify/src/checks/font_group.rs` found the surface by the
+// string `properties.text.route` and was updated in the same commit. A driven
+// check left aiming at a deleted region reports the feature as missing.
 
 /// What this object's text is painted in, as the control has to draw it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -313,9 +333,21 @@ pub fn section(
     draft: &mut TextObjectDraft,
     actions: &mut Vec<Action>,
 ) -> bool {
-    // A swept range takes precedence: `super::text::section` draws the full
-    // five-control editor for it, and drawing both would put two Colour
-    // controls with different operands one above the other.
+    // ★★★ **The gates are one call since 2026-09-14**, and it is the same
+    // call `super::text::section` above made a frame-instant earlier:
+    // `app::textoperand` answers *which runs would a restyle act on* with a
+    // live swept range first and the single selected text object second. Four
+    // hand-written gates lived here — no annotation, exactly one object, the
+    // object is text, no sweep in progress — and every one of them is now a
+    // clause of that resolver, stated once. `OPERATOR_REQUESTS.md` O198.
+    //
+    // ★★ A **swept** operand means the section above owns the whole editor
+    // including its Colour row, so this one stands down. Drawing both would put
+    // two Colour controls with different operands one above the other, which is
+    // a way to recolour the wrong thing while looking straight at it.
+    let Some((page, object)) = crate::app::textoperand::selected_text_object(doc) else {
+        return false;
+    };
     if doc
         .text_selection
         .as_ref()
@@ -323,35 +355,17 @@ pub fn section(
     {
         return false;
     }
-    if doc.selection.annot().is_some() {
-        return false;
-    }
-    let page = doc.view.page_index;
-    let objects = doc.selection.object_indices_on(page);
-    let [object] = objects.as_slice() else {
-        return false;
-    };
-    let object = *object;
-    if !is_text(doc, page, object) {
-        return false;
-    }
     if !draft.sync(doc, page, object) {
         // Text by kind, and nothing could be read from it — a page whose fonts
-        // will not decode. Saying nothing here would be the silently-missing
-        // control defect this section exists to end, so the route sentence
-        // still stands and the colour row does not.
-        ui.heading(t::heading());
-        route(ui);
-        crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
-        ui.separator();
-        return true;
+        // will not decode. `super::text::section` above has already drawn the
+        // heading and the one sentence that says so, because its own read of
+        // the same object failed for the same reason; a second heading here
+        // would be the panel saying it twice.
+        return false;
     }
     let Some(read) = draft.read.as_ref() else {
         return false;
     };
-
-    ui.heading(t::heading());
-    ui.label(t::covers(read.runs.len()));
 
     let mut chosen: Option<[u8; 3]> = None;
     ui.horizontal(|ui| {
@@ -409,45 +423,12 @@ pub fn section(
         }
     }
 
-    route(ui);
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
+    // ★ The separator for the WHOLE text block, this section and the editor
+    // above it. `super::text::section` draws its own only when it owns the
+    // Colour row, which is exactly when this section did not draw at all.
     ui.separator();
     true
-}
-
-/// The route to the four controls this section does not offer.
-///
-/// ★ Drawn in **both** states — with a working swatch and without one — because
-/// it is not the colour control's excuse. It is the answer to *"how do I change
-/// the font"*, which is a live question the moment an operator has found the
-/// colour and wants the rest.
-fn route(ui: &mut Ui) {
-    let said = ui.label(
-        egui::RichText::new(crate::text::panels::properties::text_object_route())
-            .small()
-            .weak(),
-    );
-    crate::diag::ui_rect_visible(ROUTE_REGION, said.rect, ui.clip_rect());
-}
-
-/// Is the selected object text?
-///
-/// ★ Asked through `panels::objects::summary::object_kind`, which is the same
-/// classification the Objects panel row and the read-only object section use,
-/// so what this section calls text and what the panel beside it calls text
-/// cannot disagree. [`super::text::route`] asked it the same way, and this is
-/// that function's body: the gate moved here with the section it gates.
-fn is_text(doc: &OpenDoc, page: usize, object: usize) -> bool {
-    use crate::canvas::target::CanvasTargetProvider as _;
-    doc.page_objects().is_some_and(|provider| {
-        provider
-            .page_objects_model(page)
-            .and_then(|model| model.objects.get(object))
-            .is_some_and(|o| {
-                crate::panels::objects::summary::object_kind(o)
-                    == crate::panels::objects::summary::ObjectKind::Text
-            })
-    })
 }
 
 #[cfg(test)]

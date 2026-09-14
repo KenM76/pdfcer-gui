@@ -21,16 +21,36 @@
 //! `CommitTextEdit` and `TextStyle` **accumulate**: they stage onto the session,
 //! and a page may take twenty of them.
 //!
-//! `Reflow` does not. `EditSession::reflow_block` plans against the **base**
-//! document — it re-extracts and re-recognises the page to get provenance the
-//! staging buffer does not carry — and therefore **refuses a page this session
-//! has already rewritten**, by name, rather than mis-splicing base-relative byte
-//! offsets into a stream that has moved.
+//! `Reflow` does not, and **the reason changed under us on 2026-09-06** — this
+//! paragraph was re-measured against engine `Pass 257.0` on 2026-09-14 and what
+//! it used to say is no longer true.
+//!
+//! It used to say: `reflow_block` plans against the **base** document, so it
+//! refuses a page this session has already rewritten, and one typed character
+//! trips it. `Pass 257.0` moved the planner onto the **session view** — the
+//! same graph every other read uses — and both "save and reopen" refusals went
+//! with it. An ordinary text edit no longer blocks a later reflow.
+//!
+//! **What still makes `Reflow` unlike its neighbours** is narrower and is worth
+//! stating precisely. `reflow_block` re-emits the page's FIRST content stream
+//! and the commit sweep empties every other one. `add_text` puts new text in a
+//! new stream. ★★★ So reflow refuses a page carrying a non-empty extra content
+//! stream — `ReflowApplyError::PageEditedThisSession` — because committing
+//! would silently delete text the operator can see. **Adding** text trips it;
+//! **editing** existing text does not, because that edit's own sweep has
+//! already consolidated the page.
+//!
+//! ★★ And the same guard fires on a page NO ONE edited, because the condition
+//! is structural rather than provenance-based: a producer that splits page
+//! content across streams (SOLIDWORKS does; ISO 32000-1 7.8.2 permits it) is
+//! read as "text was added this session". Filed as `request_G015`; see O198.
+//! Until it lands, the remedy sentence this shell shows is the engine's and is
+//! wrong on that one class of page, and there is nothing honest to substitute.
 //!
 //! ⇒ A reader who assumes the three behave alike will wire a reflow after an
-//! edit and meet a refusal that looks like a bug. It is a correctness property
-//! with a real remedy — **save and reopen** — and the sentence saying so is as
-//! much the feature as the wrapping is.
+//! **add** and meet a refusal that looks like a bug. It is a correctness
+//! property, and the sentence saying so is as much the feature as the wrapping
+//! is.
 
 /// The verbs that re-shape a page's own text.
 #[derive(Debug, Clone, PartialEq)]
@@ -39,15 +59,21 @@ pub enum TextAction {
     /// **O54**.
     ///
     /// Raised by `edit.reflow_block` and by nothing else.
-    /// **`canvas::textedit::reflow`'s header is the argument** — the short of it
-    /// is that this verb does NOT accumulate like its neighbours: it is planned
-    /// against the *base* document and refuses a page this session has already
-    /// rewritten, by name, rather than mis-splicing. One typed character trips
-    /// it, and the remedy is to save and reopen.
+    /// **This module's header is the argument** — the short of it is that this
+    /// verb does not accumulate like its neighbours: it refuses a page carrying
+    /// a non-empty EXTRA content stream, because it re-emits the first one and
+    /// the commit sweep empties the rest. Adding text trips it; editing text
+    /// does not. (Corrected 2026-09-14: this said "planned against the base
+    /// document" and "one typed character trips it" for eight days after engine
+    /// `Pass 257.0` made both false.)
     ///
-    /// ★ It carries a BLOCK index, not a run. That mapping is made in exactly
-    /// one place, against the caret's own block recognition rather than the
-    /// engine's relaxed one, because the two segment a page differently.
+    /// ★★★ It carries a BLOCK index, not a run, and the index is numbered in
+    /// **the engine's relaxed recognition** — `reflow_recognition_options()`,
+    /// the list `reflow_block` itself builds — never the caret's. That mapping
+    /// is made in exactly one place, `canvas::textedit::reflow::block_of_run`,
+    /// whose header carries the measurement: on the operator's own drawing the
+    /// two recognitions number the same paragraph 106-of-144 and 49-of-70. This
+    /// doc comment asserted the opposite until 2026-09-14, and so did the code.
     Reflow {
         /// The 0-based page.
         page: usize,

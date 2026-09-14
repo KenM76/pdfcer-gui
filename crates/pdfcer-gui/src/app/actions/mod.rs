@@ -315,8 +315,10 @@ mod action;
 /// stable object id, so none needs a page to locate one.
 pub mod annot;
 /// The verbs that re-shape a page's own text. Its header carries the reason
-/// reflow is not like its neighbours: it is planned against the BASE document
-/// and refuses a page this session has already rewritten.
+/// reflow is not like its neighbours: it re-emits the page's FIRST content
+/// stream and the commit sweep empties the rest, so it refuses a page carrying
+/// a non-empty extra stream. (Corrected 2026-09-14: this said "planned against
+/// the BASE document", which engine `Pass 257.0` made false on 2026-09-06.)
 pub mod text;
 pub mod write;
 /// ★★ The verbs whose subject is a **form XObject** — the shared drawing a CAD

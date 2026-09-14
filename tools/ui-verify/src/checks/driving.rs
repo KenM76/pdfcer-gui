@@ -803,6 +803,112 @@ pub fn shell_trace(session: &Session) -> Result<Trace> {
     Trace::read(session.trace_path(), SHELL_TRACE_PREFIX)
 }
 
+/// The event name under which a ribbon control publishes **whether it was drawn
+/// pressable**, in both crates.
+///
+/// ★★★ **Until 2026-09-14 this harness could not measure greying at all**, and
+/// the gap had a shape: `ui_rect` publishes a rectangle for every control,
+/// enabled or not, deliberately, because the consumer's question is *where is
+/// this control* and a greyed control is still drawn somewhere. So a check
+/// could prove the five Font controls were on the band and could not prove that
+/// any one of them could be pressed. `font_group` said so in its own header and
+/// then wrote the word *"greyed"* into a note it had not measured.
+///
+/// ★★ That is the exact sentence `OPERATOR_REQUESTS.md` O198 claim 3 makes —
+/// *"get the font selector and editing tools like [bold] and italic working.
+/// That entire area is always greyed out in the menu"* — reported against a
+/// build in which every published condition passes and every region is present.
+/// Nothing this harness could read distinguished that report from a healthy
+/// frame, so the reply to it could only be an opinion.
+pub const ENABLEMENT_EVENT: &str = "ribbon-item-enablement";
+
+/// What the last enablement line said about one control.
+///
+/// ★★ **Two predicates, because one renderer has two.** `enabled` is the
+/// registered command's own `enabled_when` evaluated against the published
+/// conditions — the thing every ordinary control on the band is greyed by.
+/// `live` is present only when the renderer applies a SECOND test of its own
+/// before calling `add_enabled_ui`, which `pdfcer-gui`'s font band does: it
+/// re-reads the document to resolve the selection's actual face, and greys on
+/// whether that read-back produced anything.
+///
+/// ★ So `enabled: true, live: Some(false)` is a control greyed while every
+/// condition says it should not be. That state has a name here,
+/// [`Enablement::disagrees`], because a check that merely asserts *"pressable"*
+/// reports it identically to an honest refusal — and the two want opposite
+/// fixes. See [`Enablement::pressable`] for the one a check usually wants.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Enablement {
+    /// `enabled=` — the command's predicate over the published conditions.
+    pub enabled: bool,
+    /// `live=` — the renderer's own second test, when it has one.
+    pub live: Option<bool>,
+}
+
+impl Enablement {
+    /// Whether the control was actually drawn pressable.
+    ///
+    /// A renderer with no second test is `live: None`, which must read as
+    /// *"nothing further to satisfy"* rather than as *"not live"*: the two
+    /// ordinary command controls in the Font group have no read-back and a
+    /// harness treating their missing field as `false` would report the whole
+    /// group dead on a frame in which half of it works.
+    #[must_use]
+    pub fn pressable(self) -> bool {
+        self.enabled && self.live.unwrap_or(true)
+    }
+
+    /// Whether the two predicates DISAGREE about this control.
+    ///
+    /// ★★ The interesting failure, and the one a bare `pressable()` assertion
+    /// hides. An `enabled=0` control is a surface honestly reporting that its
+    /// precondition is unmet, which R9 requires it to explain on hover. An
+    /// `enabled=1 live=0` control is a surface saying one thing in its
+    /// conditions and another in its pixels, and the operator can only see the
+    /// pixels.
+    #[must_use]
+    pub fn disagrees(self) -> bool {
+        self.enabled && self.live == Some(false)
+    }
+}
+
+/// Every control's LAST enablement line, from both crates' traces at once.
+///
+/// ★★★ **Both prefixes, merged by physical line number.** The two crates write
+/// to the same stderr under different markers ([`SHELL_TRACE_PREFIX`] and the
+/// application's own), and [`Trace::parse`] filters on one. A check that asked
+/// only the shell would see two of the Font group's five controls and miss the
+/// three custom ones; a check that asked only the application would see the
+/// other three. Either answer is worse than none, because a partial group reads
+/// exactly like a measured group.
+///
+/// ★★ Merged on [`crate::trace::TraceLine::lineno`], which is the line's
+/// position in the shared file, so "last" means last **in the run** rather than
+/// last within whichever prefix happened to be read second. The event is
+/// emitted on change, so the last line is the current state — with the change
+/// log's standing weakness that a control which stopped being drawn leaves its
+/// final answer standing. A check that cares must also assert the region.
+pub fn enablement(session: &Session) -> Result<std::collections::BTreeMap<String, Enablement>> {
+    let app = session.trace()?;
+    let shell = shell_trace(session)?;
+    let mut lines: Vec<(usize, String, Enablement)> = app
+        .events(ENABLEMENT_EVENT)
+        .chain(shell.events(ENABLEMENT_EVENT))
+        .filter_map(|l| {
+            let id = l.get("id")?.to_owned();
+            let enabled = l.get("enabled")? == "1";
+            let live = l.get("live").map(|v| v == "1");
+            Some((l.lineno, id, Enablement { enabled, live }))
+        })
+        .collect();
+    lines.sort_by_key(|(lineno, _, _)| *lineno);
+    let mut out = std::collections::BTreeMap::new();
+    for (_, id, state) in lines {
+        out.insert(id, state);
+    }
+    Ok(out)
+}
+
 /// Render a list of names for a reason string, or say plainly that there were
 /// none.
 ///

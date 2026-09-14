@@ -231,6 +231,16 @@ pub mod status;
 /// `mod.rs` answers *what is the application and how is it built* and
 /// `surfaces.rs` answers *what does it draw*.
 pub mod surfaces;
+/// ★★★ **Which runs a Format command acts on** - one answer, two gestures.
+///
+/// `OPERATOR_REQUESTS.md` O198. The five Format ▸ Font controls and the
+/// Properties font editor were each gated on a swept text range, which the
+/// only mode that shows them cannot produce. This module widens the operand
+/// to include *the single selected text object*, by the byte-span join the
+/// object colour swatch has used since O89 - so an object selection and a
+/// sweep become the same gesture with the same operand. See its header for
+/// the deadlock, and for why the cheap half is a separate function.
+pub(crate) mod textoperand;
 /// ★ **The one-line tool status** — `OPERATOR_REQUESTS.md` O123.
 ///
 /// The strip the right dock reserves above its columns, naming what is armed

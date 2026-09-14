@@ -135,6 +135,7 @@ run "check-memory-index --self-test" bash "$HERE/check-memory-index.sh" --self-t
 run "check-completeness-tests --self-test" python "$HERE/check-completeness-tests.py" --self-test
 run "check-unit-conversion --self-test" bash "$HERE/check-unit-conversion.sh" --self-test
 run "check-test-temp-paths --self-test" python "$HERE/check-test-temp-paths.py" --self-test
+run "check-patch-residue --self-test" python "$HERE/check-patch-residue.py" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
@@ -391,6 +392,27 @@ run "check-memory-index" bash "$HERE/check-memory-index.sh"
 # renders correctly, and a gate that reports correct files is a gate that gets
 # carved out until it means nothing. The asymmetry IS the finding.
 run "check-doc-markup" python "$HERE/check-doc-markup.py"
+
+# ★★★ `check-patch-residue`, added 2026-09-14 - the gate that audits the
+# TOOL that writes this repository, rather than anything the repository says.
+#
+# Nearly every source edit here is applied by a short Python script. Two of
+# those scripts' habits have silently corrupted committed source: a helper that
+# translates an ASCII marker into a star does not know what a word is, and a
+# backslash is eaten by a quoted heredoc, eaten again by a non-raw string, and
+# not decoded at all by a raw one.
+#
+# ★★ Measured the day it was written: the word ASSERTION had been shipping
+# as `A<star><star>ERTION` in a ui-verify check, and STALENESS as
+# `STALENE<star><star>` in a canvas module, for days. Both compile. Both pass
+# fmt, clippy, every test and every other gate in this file, because the damage
+# is inside prose and no machine downstream has an opinion about prose.
+#
+# The undecoded-escape half is checked in `.rs` ONLY. The same sequence is
+# correct in Python - it is how the patch scripts spell their own markers - and
+# ambiguous in Markdown, which may be quoting Python. Rust is the one language
+# walked in which it cannot be right.
+run "check-patch-residue" python "$HERE/check-patch-residue.py"
 
 # ★★★ `check-gate-input-scope`, added 2026-09-13 — the gate that audits the
 # other gates' INPUT SETS, because the same defect has now been written four

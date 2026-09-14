@@ -227,6 +227,23 @@ fn every_predicate_names_a_documented_condition() {
         // question so the control cannot be enabled while the press would
         // decline.
         "selection.text",
+        // ★★★ **A restyle has an operand** — the union of a swept range and
+        // a single selected text object. `OPERATOR_REQUESTS.md` O198.
+        //
+        // Deliberately NOT a synonym for `selection.text` above, and the
+        // difference is the whole of the operator's report that the Font group
+        // was *"always greyed out"*: a swept range can only be made by a press
+        // the text gate accepts, and in Edit mode — the only mode that shows
+        // the Font group — the Select tool's press resolves an object instead.
+        // Spelling the five Font commands as `selection.text` therefore greyed
+        // them in the one place they are visible.
+        //
+        // Published by `PdfcerApp::conditions` from
+        // `app::textoperand::selected_text_object`, which is the cheap half of
+        // the same resolver the commands' arms use for the operand — so the
+        // control cannot be enabled while the press would find nothing to act
+        // on.
+        "selection.text_runs",
         // ★ **A vertex run ready to be committed** — `measure.finishable`'s
         // twin, and the second condition here about a **gesture in progress**.
         //

@@ -66,6 +66,13 @@
 //! `properties.text.route` did not draw, which was *also* right, and the check
 //! called it O37's complaint coming back. It was not. It was the aim.
 //!
+//! (★ `properties.text.route` is the region this check asserted **at the
+//! time**. O198 deleted the sentence behind it on 2026-09-14, because the
+//! controls it routed around now act on a click; the region asserted in its
+//! place is [`TEXT_STYLE_REGION`]. The narrative above is left in its original
+//! terms because it is a record of what happened, not a description of what
+//! the check does now.)
+//!
 //! ★ The answer was in the trace the check was already holding:
 //! `pdfcer-diag properties-panel object=832 kind=Path notes=0`. So
 //! [`aimed_at_one_text_object`] now reads that line, plus
@@ -82,7 +89,13 @@
 //!
 //! Phase 1: the precondition above, then the regions `ribbon.tab.format`,
 //! `ribbon.group.format.font`, the five `ribbon.item.format.*`, and
-//! `properties.text.route`.
+//! `properties.text` with `properties.text.face` inside it.
+//!
+//! ★★ That last pair replaced `properties.text.route` on 2026-09-14. The
+//! check used to prove that a clicked text object produced a **sentence**
+//! telling the operator to sweep; O198 made the font editor itself draw for a
+//! click, so the check now proves the editor. The state driven is identical --
+//! one click, nothing swept -- and only the expected answer changed.
 //!
 //! Phase 2: `text-style-applied … applied=N` **and** the `format-text` label
 //! `vector_edit` writes when the edit reached the engine — the same two-line
@@ -102,11 +115,11 @@ use crate::trace::Trace;
 
 /// The mode whose canvas may select page content, and the only mode the Font
 /// group is drawn in — `mode.edit_content` is its `visible_when`.
-const MODE: &str = "edit";
+pub(super) const MODE: &str = "edit";
 /// The contextual Format tab's strip region.
-const FORMAT_TAB: &str = "ribbon.tab.format";
+pub(super) const FORMAT_TAB: &str = "ribbon.tab.format";
 /// The Font group's captioned band.
-const FONT_GROUP: &str = "ribbon.group.format.font";
+pub(super) const FONT_GROUP: &str = "ribbon.group.format.font";
 /// The Bold control, which is the one this check presses.
 const BOLD_ITEM: &str = "ribbon.item.format.bold";
 /// Every control the Font group must draw, in manifest order.
@@ -117,15 +130,71 @@ const BOLD_ITEM: &str = "ribbon.item.format.bold";
 /// reserves its space — which is the defect `COLOUR_SWATCH` shipped with for
 /// the whole of v0.1.0, invisible because a gap in a band looks like a gap in a
 /// band. Only naming all five catches it.
-const FONT_ITEMS: [&str; 5] = [
+pub(super) const FONT_ITEMS: [&str; 5] = [
     "ribbon.item.format.font",
     "ribbon.item.format.font_size",
     "ribbon.item.format.bold",
     "ribbon.item.format.italic",
     "ribbon.item.format.font_colour",
 ];
-/// The Properties panel's sentence for a text object with nothing swept.
-const ROUTE_REGION: &str = "properties.text.route";
+/// Every Font-group control's COMMAND id, in the same order as [`FONT_ITEMS`].
+///
+/// # ★★ `pub(super)` since 2026-09-14, and the sibling is the point
+///
+/// This module PINS its fixture: it opens `fixtures/paragraph.pdf` at a
+/// measured point and ignores `--pdf` and `--doc-point`, because its subject
+/// is a discoverability route and a route needs a known page.
+/// `font_group_real` is the twin that does the opposite -- it honours the aim
+/// and drives whatever drawing the operator names -- and it shares these two
+/// lists, the aim guard and the enablement renderer rather than copying them.
+///
+/// ★ Copying would have been the ordinary move and it is the one this
+/// repository has already paid for nine times over in private `click_tab`
+/// helpers: a shared list diverges silently, and a group measured against a
+/// stale copy of its own membership reports a measured group.
+///
+/// # ★★★ A second list, because a region and an enablement are different facts
+///
+/// [`FONT_ITEMS`] holds published REGION names (`ribbon.item.format.bold`) and
+/// answers *where is this control*. These are the ids the same five controls
+/// are registered under, and they are what the enablement event is keyed by,
+/// because that event is about a COMMAND rather than about a rectangle.
+///
+/// ★★ The two lists are asserted to line up by
+/// [`the_two_font_lists_describe_the_same_five_controls`], which exists because
+/// a check that read four regions and five enablements, or five regions and
+/// four enablements, would report a measured group either way. The pairing is
+/// `ribbon.item.` + the id, and it is spelled out rather than computed so that
+/// a rename on either side is a compile-visible edit to a literal instead of a
+/// silently-still-passing concatenation.
+pub(super) const FONT_COMMANDS: [&str; 5] = [
+    "format.font",
+    "format.font_size",
+    "format.bold",
+    "format.italic",
+    "format.font_colour",
+];
+
+/// The Properties panel's **font editor**, drawn for a clicked text object
+/// since O198 (2026-09-14).
+///
+/// ★★★ THIS CONSTANT REPLACED `ROUTE_REGION`, AND THE SWAP IS THE WHOLE POINT.
+///
+/// Until 2026-09-14 this check asserted that a clicked text object produced
+/// `properties.text.route`: a sentence telling the operator to press T and
+/// sweep, because the face, size, bold and italic controls could not act on a
+/// click. O198 made them act on a click, so the sentence was deleted and this
+/// check now asserts the thing the sentence was apologising for. A check left
+/// aiming at a deleted region reports a shipped feature as missing, which is
+/// worse than no check at all.
+pub(super) const TEXT_STYLE_REGION: &str = "properties.text";
+/// The face control inside the font editor.
+///
+/// ★★ Asserted ALONGSIDE the section, not instead of it, for the reason
+/// `FONT_ITEMS` gives about the ribbon band: a section that draws its heading
+/// and then returns before any control is the exact shape of the regression
+/// this check exists to catch, and a section-level region cannot see it.
+pub(super) const FACE_ROW_REGION: &str = "properties.text.face";
 /// The `text-style-applied` summary line.
 const STYLE_EVENT: &str = "text-style-applied";
 /// The `text-style-declined` line.
@@ -210,7 +279,10 @@ impl Check for TheFormatTabOffersFontControlsForSweptText {
 /// tab appeared exactly as it should; then `properties.text.route` did not
 /// draw, exactly as it should, because there was no text selected to describe.
 /// This check reported that as a defect in `panels::properties::text::route`
-/// and it cost a day. The correct `--doc-point` for this fixture is
+/// and it cost a day. (Both names are historical: O198 deleted the route
+/// sentence on 2026-09-14. The guard below is unaffected -- it reads
+/// `properties-panel ... kind=`, which is about the SELECTION and not about
+/// whatever the panel decides to draw for it.) The correct `--doc-point` for this fixture is
 /// `0,1140,62` (`RESUME.md`'s aim table), a 5 pt title-block run.
 ///
 /// ★ The trace had the answer on the same frame the check was already reading:
@@ -235,7 +307,11 @@ impl Check for TheFormatTabOffersFontControlsForSweptText {
 /// its absence after a settled click means `object_indices_on` came back empty
 /// — no page-content object under the pointer — which is an aim problem of its
 /// own and is reported as one.
-fn aimed_at_one_text_object(session: &Session, trace: &Trace, target: DocPoint) -> Result<()> {
+pub(super) fn aimed_at_one_text_object(
+    session: &Session,
+    trace: &Trace,
+    target: DocPoint,
+) -> Result<()> {
     let aim = format!(
         "the --doc-point (page {}, {:.1}, {:.1})",
         target.page, target.x, target.y
@@ -513,41 +589,53 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note("★ clicking a piece of text raised the contextual Format tab");
 
-    // ★★ The Properties panel's sentence, read BEFORE the ribbon tab is
+    // ★★ The Properties panel's font editor, read BEFORE the ribbon tab is
     // clicked, because clicking a tab does not disturb the panel and reading it
-    // first keeps the two surfaces independent. This is the sentence the
-    // module `panels::properties::text`'s header claimed existed for weeks and
-    // did not: `section` returned before drawing anything whenever there was no
-    // sweep, so the panel said nothing at all in exactly this state.
-    if driving::declared(&trace, ui_rect, ROUTE_REGION).is_none() {
-        let shot = ctx.out("font_group.no-route-sentence.png");
+    // first keeps the two surfaces independent.
+    //
+    // ★★★ THIS IS THE PANEL HALF OF O198, AND IT IS AN ASSERTION ABOUT A CLICK.
+    //
+    // Nothing has been swept at this point in the run: the check clicked once
+    // on a piece of text. Before 2026-09-14 that state drew a sentence telling
+    // the operator to go and sweep; `app::textoperand` now resolves the clicked
+    // object's byte span into the run indices the five Font verbs take, so the
+    // face, size and weight rows draw and act. If either region is missing, the
+    // operand resolver returned nothing for an object the precondition above
+    // already proved is text.
+    let missing = [TEXT_STYLE_REGION, FACE_ROW_REGION]
+        .into_iter()
+        .find(|region| driving::declared(&trace, ui_rect, region).is_none());
+    if let Some(region) = missing {
+        let shot = ctx.out("font_group.no-text-style-section.png");
         if crate::capture::window_to_png(&session, &shot).is_ok() {
             report.artifact(shot);
         }
         return Ok(Some(format!(
-            "★ A PIECE OF TEXT IS SELECTED AND THE PROPERTIES PANEL DOES NOT SAY HOW TO CHANGE \
-             IT: no `{ROUTE_REGION}` region.\n\
-             This is O37's own complaint. `panels::properties::text::route` draws the heading \
-             and one sentence naming the Text tool and its chord whenever the selected object \
-             is text and nothing is swept. ★ The two candidates this message used to lead with \
-             are ALREADY RULED OUT by the precondition above, which read the trace and found \
-             `properties-panel … kind=Text` over a selection of exactly one: the object IS text \
-             by `summary::object_kind` — the same call `route` makes — and it is not a \
-             multi-selection. What is left. (1) **The section returned before drawing**, which \
-             is what it did for the whole of the feature's first week. (2) **`route` and \
-             `object_section` disagree about the operand**: they read the same \
-             `object_indices_on(view.page_index)`, so a selection of a text object inside a \
-             form XObject is a `TargetId::Leaf` that BOTH drop — the tab appears (its condition \
-             counts leaves) and neither the sentence nor the panel's kind line does, so this \
-             candidate would show as a missing `properties-panel` line, not a `kind=Path` one. \
-             (3) **The region was drawn and not declared**: `diag::ui_rect_visible` withholds a \
-             rect whose section is less than 60 % inside its clip, which is what a Properties \
-             pane taller than its dock slot produces — the screenshot beside this report \
-             settles that one by eye. Trace: {}.",
+            "★★ A PIECE OF TEXT IS SELECTED AND THE PROPERTIES PANEL DRAWS NO FONT EDITOR: no \
+             `{region}` region.\n\
+             `panels::properties::text::section` opens by asking \
+             `app::textoperand::Cache::resolve` which runs a restyle would act on, and returns \
+             without drawing when the answer is nothing. ★★ The two candidates this message \
+             would otherwise lead with are ALREADY RULED OUT by the precondition above, which \
+             read the trace and found `properties-panel ... kind=Text` over a selection of \
+             exactly one: the object IS text by `summary::object_kind`, and it is not a \
+             multi-selection. What is left. (1) **The object's byte span holds no placeable \
+             show operator**, so `canvas::textedit::pin::object_text` found no runs - the one \
+             direction in which the condition `selection.text_runs` and the operand are \
+             allowed to disagree, and it is documented as harmless because the verbs decline. \
+             Look for a `text-operand-resolved ... runs=0` line in the trace; if it is there, \
+             this is a fixture problem and not a defect. (2) **The resolver was never called**, \
+             which shows as no `text-operand-resolved` line at all. (3) **The region was drawn \
+             and not declared**: `diag::ui_rect_visible` withholds a rect whose section is less \
+             than 60 % inside its clip, which is what a Properties pane taller than its dock \
+             slot produces - the screenshot beside this report settles that one by eye. \
+             Trace: {}.",
             session.trace_path().display()
         )));
     }
-    report.note("★★ the Properties panel named the route: the Text tool, and the key that arms it");
+    report.note(
+        "★★★ the Properties panel drew the font editor for a CLICKED text object, with nothing swept",
+    );
 
     // The Format tab is contextual and is not the active tab merely by
     // appearing — the band draws whichever tab is active, so its contents are
@@ -603,7 +691,62 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    report.note("★★ the Font group drew all five controls with nothing swept — greyed, and there");
+    // ★★★ **The enablement half, added 2026-09-14, and this note used to be a
+    // guess.** It read *"all five controls with nothing swept — greyed, and
+    // there"*, and `greyed` was never measured: a region says a control DREW.
+    // This module's own header states that limit and the note asserted past it
+    // anyway, which is exactly how an unevidenced excuse reads as an answered
+    // question. `OPERATOR_REQUESTS.md` O198 claim 3 is the operator reporting
+    // that these five are *"always greyed out"*, so the honest assertion is the
+    // opposite one, measured: with one text object clicked and NOTHING swept,
+    // every one of the five must be pressable.
+    let states = driving::enablement(&session)?;
+    let unpressable: Vec<&str> = FONT_COMMANDS
+        .into_iter()
+        .filter(|id| !states.get(*id).is_some_and(|s| s.pressable()))
+        .collect();
+    if !unpressable.is_empty() {
+        let shot = ctx.out("font_group.greyed.png");
+        if crate::capture::window_to_png(&session, &shot).is_ok() {
+            report.artifact(shot);
+        }
+        return Ok(Some(format!(
+            "★★★ THE FONT GROUP DREW ALL {} OF ITS CONTROLS AND {} OF THEM COULD NOT BE PRESSED: {}.\n\
+             That is `OPERATOR_REQUESTS.md` O198 claim 3 reproducing — *\"the font selector and \
+             editing tools ... that entire area is always greyed out in the menu\"* — on a frame \
+             in which exactly one text object is selected and nothing is swept, which is the \
+             state O198 made these controls act in.\n\
+             What each one said: {}.\n\
+             ★★ READ THE TWO NUMBERS BEFORE BLAMING EITHER SIDE. `enabled=0` is the command's \
+             own predicate over the published conditions refusing, and points at \
+             `app::conditions` and the `selection.text_runs` join. `enabled=1 live=0` is the \
+             renderer refusing AFTER the condition agreed, and points at `app::fontband`'s \
+             second predicate — the `resolved(doc, draft)` read-back — which is a text \
+             extraction that can come back empty for a font the extractor cannot resolve while \
+             every condition about the selection stays true. A missing entry altogether means \
+             the control never published an enablement, which for the three custom ones means \
+             `app::fontband::draw` returned before its report.\n\
+             Trace: {}.",
+            FONT_COMMANDS.len(),
+            unpressable.len(),
+            list_of(&unpressable),
+            describe(&states),
+            session.trace_path().display()
+        )));
+    }
+    let disagreeing: Vec<&str> = FONT_COMMANDS
+        .into_iter()
+        .filter(|id| states.get(*id).is_some_and(|s| s.disagrees()))
+        .collect();
+    report.note(format!(
+        "★★★ all {} Font controls were drawn PRESSABLE with nothing swept: {}",
+        FONT_COMMANDS.len(),
+        describe(&states)
+    ));
+    debug_assert!(
+        disagreeing.is_empty(),
+        "unreachable: a disagreeing control is not pressable"
+    );
 
     // =======================================================================
     // PHASE 2 — arm the text tool, sweep, and press the ribbon's Bold.
@@ -743,9 +886,51 @@ fn list_of(names: &[&str]) -> String {
     driving::list_str(names)
 }
 
+/// Render the five controls' enablement for a failure message.
+///
+/// ★ One line, both numbers, every id — including the ones that PASSED. A
+/// message that lists only the offenders leaves a reader unable to tell
+/// *"three of five are dead"* from *"three of five never reported"*, and those
+/// two want different investigations. `live=?` marks a control whose renderer
+/// has no second predicate, which is not the same as one whose second predicate
+/// said no.
+pub(super) fn describe(states: &std::collections::BTreeMap<String, driving::Enablement>) -> String {
+    FONT_COMMANDS
+        .into_iter()
+        .map(|id| match states.get(id) {
+            None => format!("{id}=NEVER-REPORTED"),
+            Some(s) => format!(
+                "{id}: enabled={} live={}",
+                u8::from(s.enabled),
+                match s.live {
+                    None => "?".to_owned(),
+                    Some(live) => u8::from(live).to_string(),
+                }
+            ),
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// ★★ The region list and the command list describe the same five controls.
+    ///
+    /// Two hand-written lists over one set is the shape a completeness check
+    /// goes blind in: a sixth control added to the band and to one list reads as
+    /// a measured group from either end. The pairing is mechanical — a region
+    /// is `ribbon.item.` followed by the command id — so it can be asserted
+    /// even though neither list is derived from the other.
+    #[test]
+    fn the_two_font_lists_describe_the_same_five_controls() {
+        let paired: Vec<String> = FONT_COMMANDS
+            .into_iter()
+            .map(|id| format!("ribbon.item.{id}"))
+            .collect();
+        assert_eq!(paired, FONT_ITEMS.to_vec(), "{paired:?}");
+    }
 
     /// The trace of the state the check is FOR: one text object clicked with
     /// the Select tool, nothing swept.

@@ -1,13 +1,28 @@
 //! `clicking_text_offers_its_colour` — **O89's object route, driven.**
 //!
-//! ⚠⚠⚠ **THIS CHECK HAS NOT BEEN RUN.** It was written on 2026-09-05 in a
-//! session whose instructions forbade launching the GUI and forbade running
-//! `ui-verify`, because the harness takes the whole desktop and the operator
-//! may be at his keyboard. It compiles, it is registered, and **no line below
-//! has been observed against a running binary.** Do not read a green suite as
-//! evidence about this check until somebody has watched it fail against a build
-//! with the object route removed — the falsification table at the foot of this
-//! header says exactly how.
+//! # ★★ First driven 2026-09-14, and it found something on its first run
+//!
+//! This header carried a three-warning banner saying **"THIS CHECK HAS NOT BEEN
+//! RUN"** from 2026-09-05 to 2026-09-14: it was written in a session whose
+//! instructions forbade launching the GUI, so no line below had been observed
+//! against a running binary. That is no longer true and the banner is deleted
+//! rather than softened, because a warning that has stopped applying is read as
+//! a warning that still does.
+//!
+//! What the first run produced, and it is worth keeping because two of the
+//! three findings were about this check rather than about the program:
+//!
+//! 1. **A real defect.** The Properties panel opened on the three *When you
+//!    resize something* switches, which draw whenever the Select tool is armed
+//!    and therefore nearly always. The colour swatch was at y 783-807 in a
+//!    viewport ending at 766. `panels::properties::tool::Slot` is the fix, and
+//!    `OPERATOR_REQUESTS.md` O198 is the operator's report of it.
+//! 2. **A wrong sentence in this file**, corrected below: the failure message
+//!    said the colour row had *"grown a fourth arm that draws nothing"*. It had
+//!    not. It had drawn, off the bottom of its clip.
+//! 3. **A mechanism that existed and was not called.** `driving::clipped_away`
+//!    was added on 2026-09-12 after the identical confusion in `restyle_text`.
+//!    This branch did not use it, so the fix did not carry.
 //!
 //! # The defect
 //!
@@ -27,15 +42,23 @@
 //!
 //! # ★★★ Why this check is not a subset of `font_group`
 //!
-//! `font_group`'s phase 1 asserts that the panel drew a **sentence** —
-//! `properties.text.route` — telling the operator to press `T`. That sentence
-//! still exists and this check asserts it too, in the same state, because it is
-//! still the route to the four controls the object state does not offer.
+//! `font_group`'s phase 1 asserts that the panel drew the **face row** for a
+//! clicked text object. This check asserts, in the same state, that the
+//! **colour** row drew as well, that its control OPENS, and that a pick reaches
+//! the engine. A build that drew the face row and lost the colour control
+//! passes `font_group` completely and is the exact program the operator
+//! complained about.
 //!
-//! What is new, and what only this check covers, is that in that same state
-//! there is now **a control that works**. A build that kept the sentence and
-//! lost the control passes `font_group` completely and is the exact program the
-//! operator complained about.
+//! ★★ CORRECTED 2026-09-14 (O198). Until that day this section said the two
+//! checks differed because `font_group` asserted a *sentence* --
+//! `properties.text.route`, telling the operator to press `T` -- and this one
+//! asserted a control. The sentence is deleted: `app::textoperand` resolves a
+//! clicked object's runs, so the face, size and weight controls act on the
+//! click and there is nowhere to send anybody. The division of labour survived
+//! the deletion unchanged, because it was never really about the sentence: this
+//! check owns the **colour** row, which is the one control that does not follow
+//! the other four, since a nine-run object's ink cannot be reported from run 0
+//! and pdfcer refuses a screen colour over a named ink.
 //!
 //! # The oracle, in the order it is read
 //!
@@ -44,7 +67,7 @@
 //! | 0 | the click left **one text object** selected | the harness aimed wrong — **SKIP**, never fail |
 //! | 1 | `properties.textobject` drew | the section is gone, or returned before drawing |
 //! | 2 | `properties.textobject.swatch` **or** `properties.textobject.ink` drew | the colour row drew neither a control nor its refusal |
-//! | 3 | `properties.text.route` drew | the sentence to the other four controls was lost with the move |
+//! | 3 | the four `properties.text.*` style rows drew | the clicked object did not resolve to an operand, so the other four controls are missing |
 //! | 4 | clicking the swatch opened `properties.textobject.swatch.picker` | the control is drawn and inert — this project's founding defect |
 //! | 5 | a pick then a close traced `text-style-applied` **and** `format-text` | the gesture decided to act and the action never reached the engine |
 //!
@@ -73,19 +96,27 @@
 //!
 //! # ★★★ THE FALSIFICATION TABLE — what to break, and what must go red
 //!
-//! Written here because the check has not been run and the next session has to
-//! be able to prove it is not vacuous without re-deriving how.
+//! ★★ Still unexercised as of 2026-09-14. The check itself has now been driven
+//! and is green on the pinned fixture, but **no row below has been watched go
+//! red**, so nothing yet proves it is not vacuous. Those are two different
+//! claims and the difference is the whole of this project's
+//! *a-check-that-cannot-fail-is-not-evidence* rule: a green run says the
+//! program did something, a watched plant says the check would have noticed if
+//! it had not. Keep the table until a session has spent the twenty minutes.
 //!
 //! | plant | expected failure |
 //! |---|---|
 //! | `panels::properties::textobject::section` returns `false` immediately | step 1: no `properties.textobject` region |
+//! | `app::textoperand::Cache::resolve` returns `None` | step 3: no `properties.text.face` region — added 2026-09-14 with the step |
 //! | `classify` always returns `Colour::Ink { .. }` | step 2 records the ink sentence, step 4 is skipped — so **also** plant a text fixture in RGB, or the plant is invisible |
 //! | the `Colour::Agreed`/`Mixed` arms draw a plain `ui.label` instead of the swatch | step 2 passes on the label's region? **No** — the label publishes no region, so step 2 fails. That is why the two states publish two names |
 //! | `swatch::show` never opens the popup | step 4: no `.picker` region |
 //! | `swatch::show` returns `None` unconditionally | step 5: no `text-style-applied` |
 //! | the section raises no `Action::TextStyle` | step 5: `text-style-applied` present, `format-text` absent — the two-line oracle earning its keep |
 
-use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
+use crate::checks::driving::{
+    SHELL_DIAG_ENV, click_mode_segment, clipped_away, declared, declared_names, list,
+};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
@@ -106,12 +137,29 @@ const PICKER: &str = "properties.textobject.swatch.picker";
 /// The sentence drawn INSTEAD of a control over an ink pdfcer will not
 /// overwrite.
 const INK: &str = "properties.textobject.ink";
-/// The sentence naming the route to the four controls the object state does not
-/// offer.
+/// The four controls the object state used to send the operator away to reach,
+/// and now draws itself.
 ///
-/// ★ Spelled `properties.text.route`, which is where it lived before the
-/// section moved. The surface did not move; only the module that draws it.
-const ROUTE: &str = "properties.text.route";
+/// ★★★ THIS REPLACED A CONSTANT CALLED `ROUTE`, AND THE REPLACEMENT IS O198.
+///
+/// `ROUTE` was spelled `properties.text.route`: a sentence saying *"press T for
+/// the Text tool and sweep across them"*, which was the only surface in the
+/// program that told an operator how to reach the face, size, bold and italic
+/// controls for text they had clicked. O198 (2026-09-14) removed the reason for
+/// it -- `app::textoperand` resolves a clicked text object's byte span into the
+/// run indices the five Font verbs take -- so the sentence was deleted and the
+/// controls themselves are what this step now asserts.
+///
+/// ★★ Asserted as a LIST rather than as the section region, for the reason
+/// `font_group`'s `FONT_ITEMS` gives: a section that draws its heading and
+/// returns before any control publishes the section region and nothing else,
+/// which is exactly the regression this step exists to catch.
+const STYLE_ROWS: [&str; 4] = [
+    "properties.text.face",
+    "properties.text.size",
+    "properties.text.bold",
+    "properties.text.italic",
+];
 /// The Properties pane's tab header, so the pane can be brought to the front.
 ///
 /// ★★ Not optional. The dock draws only the ACTIVE tab's body, so a pane behind
@@ -153,10 +201,16 @@ impl Check for ClickingTextOffersItsColour {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
+        // ⚠ **This note used to say the check had never been run.** It had,
+        // by then, twice — and it printed that sentence on the operator's own
+        // report, directly above a result it was telling him to distrust. The
+        // residual doubt is real but much narrower than the old wording, and
+        // naming it narrowly is the point: the check runs, the check is green,
+        // and no plant has been watched go red.
         report.note(
-            "⚠ THIS CHECK HAS NEVER BEEN RUN — written 2026-09-05 in a session forbidden to \
-             launch the GUI. Read its module header's falsification table before trusting a \
-             green result from it.",
+            "⚠ no row of this check's falsification table has been watched go red — it \
+             has been driven and is green, which is not the same as being known to \
+             notice. See this check's module header for the table.",
         );
         match drive(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
@@ -398,10 +452,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              `summary::object_kind`, the same call the section gates on. What is left. (1) \
              `panels::properties::textobject::section` returned before drawing — it returns \
              `false` for a live text SELECTION (deliberately: the swept-text editor owns that \
-             state), so a stale sweep from an earlier gesture would suppress it. (2) The \
-             expensive read failed: `pin::object_text` answers `None` when the object's runs \
-             cannot be pinned, in which case the section still draws the heading and the route \
-             sentence — so this absence is NOT that. (3) The region was drawn and not declared: \
+             state, Colour row included), so a stale sweep from an earlier gesture would \
+             suppress it. (2) `TextObjectDraft::sync` could not read the object — a page \
+             whose fonts will not decode — in which case `panels::properties::text::section` \
+             above has already drawn the heading and the sentence saying so, and this section \
+             stands down deliberately rather than saying it twice. Look for `properties.text` \
+             in the list below: present without `properties.textobject` is that case and is \
+             NOT a defect. (3) The region was drawn and not declared: \
              `diag::ui_rect_visible` withholds a rect less than 60 % inside its clip, which is \
              what a Properties pane taller than its dock slot produces. The screenshot beside \
              this report settles (3) by eye. Regions declared: {}. Trace: {}.",
@@ -419,14 +476,43 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         if crate::capture::window_to_png(&session, &shot).is_ok() {
             report.artifact(shot);
         }
+        // ★★★ **ASK WHETHER IT DREW OFF THE EDGE BEFORE SAYING IT DID NOT
+        // DRAW.** Until 2026-09-14 this branch went straight to the sentence
+        // below, and on its first real run it wrote that sentence about a
+        // swatch which had drawn perfectly at y 783-807 in a viewport ending at
+        // 766. `diag::ui_rect_visible` withholds the rect and publishes
+        // `ui-rect-clipped ... shown=0.00` instead, so a check reading only
+        // `ui-rect` sees an absence. The two have opposite fixes: a missing
+        // control is a renderer defect, an unreachable one is a LAYOUT defect,
+        // and this project has now confused them twice.
+        let clipped: Vec<String> = [SWATCH, INK]
+            .into_iter()
+            .filter_map(|name| clipped_away(&trace, ui_rect, name))
+            .collect();
+        if !clipped.is_empty() {
+            return Ok(Some(format!(
+                "★★★ THE COLOUR ROW DREW AND IS OFF THE EDGE OF THE PANEL: {}.\n\
+                 This is NOT a missing control. The application measured the rectangle it was \
+                 about to publish against the clip it had, found too little of it inside, and \
+                 declined to publish — which is the layout defect `OPERATOR_REQUESTS.md` O198 \
+                 calls *\"the properties area is uneditable\"*, seen from the trace side. Look \
+                 at what is ABOVE it in the screenshot beside this report: a section that draws \
+                 with no reference to the selection, sitting above the sections that describe \
+                 it, is O75's defect and `panels::properties::tool::Slot` is where that \
+                 decision is made. Trace: {}.",
+                clipped.join(" | "),
+                session.trace_path().display()
+            )));
+        }
         return Ok(Some(format!(
             "★ THE SECTION DREW AND ITS COLOUR ROW DREW NEITHER A CONTROL NOR A REFUSAL: \
-             neither `{SWATCH}` nor `{INK}`.\n\
+             neither `{SWATCH}` nor `{INK}`, and neither was reported clipped.\n\
              Those two are the section's ONLY honest outcomes and they are exhaustive by \
              construction — `classify` returns `Agreed`, `Mixed` or `Ink`, the first two draw \
-             the swatch and the third draws the sentence. A frame with neither means the match \
-             grew a fourth arm that draws nothing, which is the placeholder shape R9 forbids: \
-             an operator sees a heading, a count, and a blank where the colour should be. \
+             the swatch and the third draws the sentence. With the clipped case ruled out \
+             above, a frame with neither means the match grew a fourth arm that draws nothing, \
+             which is the placeholder shape R9 forbids: an operator sees a heading, a count, \
+             and a blank where the colour should be. \
              Regions declared: {}. Trace: {}.",
             list(&declared_names(&trace, ui_rect, "properties.textobject")),
             session.trace_path().display()
@@ -446,23 +532,37 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         );
     }
 
-    // --- 3. the route to the other four controls survived -------------------
-    if declared(&trace, ui_rect, ROUTE).is_none() {
+    // --- 3. the other four controls are on screen, on the click -------------
+    //
+    // ★★★ THIS STEP INVERTED ON 2026-09-14, AND THE INVERSION IS THE FEATURE.
+    //
+    // It used to assert a SENTENCE telling the operator where to go for the
+    // face, size, bold and italic controls. It now asserts the CONTROLS. The
+    // gesture driven is unchanged -- one click on a piece of text, nothing
+    // swept -- and only the expected answer moved, which is what a check should
+    // look like when a workaround is deleted rather than relocated.
+    if let Some(row) = STYLE_ROWS
+        .into_iter()
+        .find(|row| declared(&trace, ui_rect, row).is_none())
+    {
         return Ok(Some(format!(
-            "★ THE COLOUR CONTROL IS THERE AND THE ROUTE TO THE OTHER FOUR IS GONE: no \
-             `{ROUTE}` region.\n\
-             `crate::text::panels::properties::text_object_route` names the Text tool and its \
-             chord, and it is the ONLY surface in the program that tells an operator how to \
-             reach the face, size, bold and italic controls for text they clicked. It moved \
-             module on 2026-09-05 — from `panels::properties::text::route` to \
-             `panels::properties::textobject` — keeping its region SPELLING precisely so this \
-             assertion and `font_group`'s would keep working. An absence here most likely means \
-             the move dropped the `ui_rect_visible` call. Regions declared: {}. Trace: {}.",
+            "★★ THE COLOUR CONTROL IS THERE AND THE OTHER FOUR ARE NOT: no `{row}` region.\n\
+             Since O198 a clicked text object resolves through `app::textoperand` into the run \
+             indices the five Font verbs take, and `panels::properties::text::section` draws \
+             the face, size and weight rows over that operand -- the same rows a swept range \
+             gets. ★★ The colour row being present proves the selection, the mode, the panel \
+             and the tab are all right, so the fault is downstream of all four. What is left. \
+             (1) **`Cache::resolve` answered nothing**, which shows as a \
+             `text-operand-resolved ... runs=0` line or as no such line at all. (2) **A row \
+             drew and did not declare**: `diag::ui_rect_visible` withholds a rect less than \
+             60 % inside its clip, which a Properties pane taller than its dock slot produces. \
+             (3) **The row is genuinely absent**, which after O198 is a regression and not a \
+             design. Regions declared: {}. Trace: {}.",
             list(&declared_names(&trace, ui_rect, "properties.")),
             session.trace_path().display()
         )));
     }
-    report.note("★ the route to the face, size and weight controls is still on screen");
+    report.note("★★ the face, size and weight controls drew for the clicked text, with no sweep");
 
     let Some(swatch_rect) = swatch else {
         // The fixture's text is a named ink and the program correctly refused a

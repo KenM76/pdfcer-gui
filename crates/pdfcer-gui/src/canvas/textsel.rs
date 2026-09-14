@@ -749,7 +749,64 @@ pub fn sweep(
     selection
 }
 
+/// ★★★ **Re-resolve a selection against the revision that just replaced it**
+/// — `OPERATOR_REQUESTS.md` **O198**, the bold-then-italic half.
+///
+/// The operator, 2026-09-14: *"get the font selector and editing tools like
+/// bold and italic working."* One of the several things wrong with that area
+/// was that a restyle worked exactly ONCE per sweep. Pressing Bold is an edit;
+/// an edit bumps [`crate::app::state::OpenDoc::edit_epoch`];
+/// [`TextSelection::live`] then answers `false`, the wash vanishes and
+/// [`TextSelection::runs`] returns an empty list, so pressing Italic
+/// immediately afterwards restyled nothing and the operator had to re-sweep the
+/// same words between every pair of presses.
+///
+/// # ★★★ THE STALENESS RULE IS NOT RELAXED. THE GEOMETRY IS REBUILT.
+///
+/// Module header §7 rejects two wrong answers, and this is neither of them.
+/// It does **not** re-stamp the old selection with a new epoch — that is
+/// "draw the old geometry anyway", and a restyle that changed a point size
+/// moves every glyph after it, so the stored quads would wash the wrong pixels.
+/// It does not re-resolve on a timer or per frame either. It re-runs the FULL
+/// resolution — a fresh extraction, a fresh range, fresh quads, fresh text —
+/// from the two positions the operator's own gesture set, at exactly one
+/// moment: immediately after an edit that claimed not to change the text.
+///
+/// # ★★★ THE GUARD, AND WHY IT IS THE COVERED CHARACTERS
+///
+/// A restyle changes how text looks and never what it says. So the covered
+/// string is an invariant the caller can check, and this function checks it:
+/// **if the re-resolved selection does not cover character-for-character what
+/// the old one covered, `None` is returned and the selection is dropped**, as
+/// it was before this function existed.
+///
+/// That is what makes this safe against the thing module header §7 is really
+/// afraid of — a `(run, byte)` position naming different glyphs after the run
+/// indices renumber. If the engine ever splits, merges or re-orders runs on a
+/// restyle, the covered text moves and this declines. The shell does not have
+/// to know whether `format_text` renumbers; it measures.
+///
+/// ★★ It is deliberately NOT a check that the run ORDINALS are unchanged. A
+/// producer that re-emits a title block as two operators instead of three has
+/// renumbered nothing the operator can see, and the characters are the thing
+/// the operator swept.
+///
+/// # Returns
+///
+/// `None` when the positions no longer resolve to anything, when they resolve
+/// to different characters, or when the page carries no extractable text. The
+/// caller assigns the result, so `None` is "drop it" — the pre-existing
+/// behaviour, reached by measurement instead of by assumption.
 #[must_use]
+pub fn reresolve(ctx: &PageContext<'_>, previous: &TextSelection) -> Option<TextSelection> {
+    if previous.page != ctx.index {
+        return None;
+    }
+    let model = model(ctx);
+    let renewed = resolve(&model, ctx, previous.anchor, previous.focus)?;
+    (renewed.text == previous.text).then_some(renewed)
+}
+
 pub fn drag(ctx: &PageContext<'_>, from: Pos2, to: Pos2) -> Option<TextSelection> {
     let model = model(ctx);
     let anchor = hit(&model, ctx, from)?;

@@ -132,9 +132,14 @@ fn arm(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id: &str) {
 /// Takes `&Status` rather than `&mut OpenDoc`: this resolves an operand and
 /// raises an [`Action`]. The document is changed by
 /// `crate::app::actions::textstyle::reflow`, one funnel later, which is where
-/// the *"save and reopen"* refusal lives — that one is about the session's
-/// history and this one is about the caret, and they are deliberately not
-/// merged.
+/// every ENGINE-side refusal is worded — the added-text guard, the encrypted
+/// document, the composite font. Those are about the page and the session; this
+/// one is about the caret, and they are deliberately not merged.
+///
+/// ★ Reworded 2026-09-14: it used to call the engine's set *"the save and
+/// reopen refusal"*, singular, which had been one of several since
+/// `Pass 257.0` and stopped being the interesting one entirely once O198 showed
+/// the commonest refusal on a real CAD sheet is the composite-font one.
 fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
     use crate::text::textedit::ReflowRefusal;
 

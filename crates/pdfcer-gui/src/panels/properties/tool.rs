@@ -33,18 +33,28 @@
 //! (`canvas::textedit::pen`, `canvas::measure`, `canvas::scaling`). This is a
 //! move, and it is written as one so that a diff shows a move.
 //!
-//! ## ★★ Where it sits in the panel, and why FIRST
+//! ## ★★ Where it sits in the panel, and why it is now TWO places
 //!
-//! At the top of the body, above every selection-scoped section. Two reasons:
+//! [`Slot`] decides, per block, and the two answers have different reasons.
+//!
+//! **[`Slot::AboveTheSelection`]** — the text pen and the circular measure's
+//! pick list — for the two reasons this section has always given:
 //!
 //! 1. **It is where the operator's eye already goes.** These controls sat in
 //!    the top-right corner of the window, in the Tool panel's own stack. The
 //!    panel changed; the corner did not.
 //! 2. **An armed tool is the more immediate subject.** When somebody has armed
 //!    the text pen, the question they are about to ask is *what size?*, not
-//!    *what is that path's line width?* — and when nothing is armed but Select,
-//!    this section is three switches that state how the next resize behaves,
-//!    which is still a statement about the next gesture.
+//!    *what is that path's line width?*
+//!
+//! **[`Slot::BelowTheSelection`]** — the three resize switches — because
+//! reason 2 is false for them and was believed anyway until 2026-09-14. This
+//! header used to finish that sentence *"and when nothing is armed but Select,
+//! this section is three switches that state how the next resize behaves, which
+//! is still a statement about the next gesture."* It is a statement about the
+//! next gesture, and it was above a description of the CURRENT one, on screen
+//! whenever Select is armed, which is nearly always. `Slot`'s own doc carries
+//! the photograph and the clipped rectangles. `OPERATOR_REQUESTS.md` O198.
 //!
 //! ## ★★★ It is deliberately NOT part of `something_drew`
 //!
@@ -153,16 +163,102 @@ pub fn block_for(tool: CanvasTool) -> Option<Block> {
     }
 }
 
-/// Draw whichever of the armed tool's settings apply, and say whether anything
-/// was drawn.
+/// Where in the panel a [`Block`] belongs.
 ///
-/// Returns `false` when the armed tool has no settings — which is most of them,
-/// and is the honest shape rather than a heading with nothing under it (R9).
-pub(super) fn section(ui: &mut Ui) -> bool {
+/// # ★★★ Added 2026-09-14, and the measurement that forced it
+///
+/// Every block drew at the TOP of the panel, above every selection-scoped
+/// section, on this module's own two reasons: the controls had been in the
+/// top-right corner before O123 moved them, and *"an armed tool is the more
+/// immediate subject"*. The first reason is about muscle memory and is still
+/// good. The second is true of the text pen and the circular measure, and it is
+/// **false of the resize switches**, because [`block_for`] hands those back for
+/// `CanvasTool::Select` — the RESTING state — so they are on screen whenever
+/// an operator is doing the ordinary thing of clicking at objects.
+///
+/// ★★ What that cost, photographed by `ui-verify clicking_text_offers_its_colour`
+/// on 2026-09-14 in an 1100 x 800 window with one text object clicked:
+///
+/// > The Properties panel's whole visible height was *When you resize
+/// > something*, its three switches and its five-line note. Under them, half
+/// > clipped, the first two rows of the text editor
+/// > (`properties.text.bold ... shown=0.46 floor=0.60`). The Colour swatch was
+/// > at y 783-807 in a viewport ending at 766 — `shown=0.00`, off the bottom,
+/// > reachable only by scrolling past a preference the operator had not asked
+/// > about to reach the controls for the thing he had just clicked.
+///
+/// ★ **That is `OPERATOR_REQUESTS.md` O75 recreated in a different block.** His
+/// sentence then was *"the Properties section is always showing the This
+/// document properties instead of just the properties of the objects I am
+/// editing"*, and the rule it left behind is the one applied here: a section
+/// that draws with no reference to the selection must not sit above the
+/// sections that describe it. His O198 sentence — *"the properties area is
+/// uneditable"* — is what that looks like from outside when the editable part
+/// is below the fold.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Slot {
+    /// Above every selection-scoped section, at the top of the panel.
+    ///
+    /// For blocks that describe **the stroke about to be drawn**. Somebody who
+    /// has armed the text pen has no selection and is about to ask *what size*;
+    /// somebody mid-way through a circular fit is asking *which points*. In
+    /// both cases the armed tool really is the more immediate subject, and in
+    /// both cases nothing below is competing for the space.
+    AboveTheSelection,
+    /// Below everything, at the foot of the panel.
+    ///
+    /// For blocks that are a **standing preference** rather than a description
+    /// of anything. The reading order this produces is the one `RIBBON_IA.md`
+    /// §5.6 asks a properties surface for, with one clause added at the end:
+    /// what you can change about this thing, then what is true of it, then how
+    /// the next gesture will behave.
+    BelowTheSelection,
+}
+
+/// Which [`Slot`] a block draws in.
+///
+/// ★★ A function rather than a `match` inside the draw call, for
+/// [`block_for`]'s reason stated again: the placement is a DECISION, it is the
+/// decision this module got wrong until 2026-09-14, and a decision that needs a
+/// `Ui` to observe is a decision no unit test can put a question to.
+#[must_use]
+pub fn slot_of(block: Block) -> Slot {
+    match block {
+        Block::TextPen | Block::MeasurePoints => Slot::AboveTheSelection,
+        Block::ScaleSwitches => Slot::BelowTheSelection,
+    }
+}
+
+/// The armed tool's settings, drawn above the selection-scoped sections.
+///
+/// Returns `false` when the armed tool has no settings, or has some that belong
+/// at the foot of the panel — which is the honest shape rather than a heading
+/// with nothing under it (R9). See [`Slot`] for the split and why it exists.
+pub(super) fn armed_section(ui: &mut Ui) -> bool {
+    section_in(ui, Slot::AboveTheSelection)
+}
+
+/// The standing preferences, drawn at the foot of the panel.
+///
+/// ★ Called AFTER `object_section`, which is the only section that can say
+/// *"nothing is selected"*. That ordering is deliberate and is the one thing
+/// about this call that is easy to get backwards: these switches are not a
+/// description of a selection, so they must not be able to push one off the
+/// screen, and they must not read as though they were describing whatever the
+/// panel just said. Last is the only position that is true in both states.
+pub(super) fn preferences_section(ui: &mut Ui) -> bool {
+    section_in(ui, Slot::BelowTheSelection)
+}
+
+/// Draw the armed tool's block if it belongs in `slot`, and say whether it did.
+fn section_in(ui: &mut Ui, slot: Slot) -> bool {
     let ctx = ui.ctx().clone();
     let Some(block) = block_for(crate::canvas::tool::selected(&ctx)) else {
         return false;
     };
+    if slot_of(block) != slot {
+        return false;
+    }
     match block {
         Block::ScaleSwitches => scale_switches(ui, &ctx),
         Block::TextPen => text_pen(ui, &ctx),
@@ -387,7 +483,7 @@ mod tests {
     /// ★★★ **Every control the Tool panel held is reachable from a tool this
     /// section actually draws for.**
     ///
-    /// Asserted against [`block_for`] — **the function [`section`] dispatches
+    /// Asserted against [`block_for`] — **the function [`section_in`] dispatches
     /// on**, not a copy of its `match`. That distinction is the test: a mirror
     /// in this module would go on passing while the shipped decision drifted,
     /// which is the shape of the defect that let three scale switches compile,
@@ -447,5 +543,43 @@ mod tests {
             3,
             "one of the three moved control blocks is unreachable: {reached:?}"
         );
+    }
+
+    /// ★★★ **The resting tool's block draws BELOW the selection, and the two
+    /// authoring tools' blocks draw above it** — `OPERATOR_REQUESTS.md` O198.
+    ///
+    /// This is the unit half of the placement decision, and it is worth a test
+    /// for the reason the placement was wrong for three weeks: the rule is not
+    /// *"tool settings go at the top"*, it is *"a block that draws with no
+    /// reference to the selection must not sit above the sections that describe
+    /// it"*, and the two read identically until you notice that `Select` — the
+    /// RESTING state — is a tool. `Block::ScaleSwitches` is therefore on screen
+    /// whenever an operator is doing the ordinary thing of clicking at objects,
+    /// which is exactly when the sections below it matter most.
+    ///
+    /// ★★ Asserted through [`slot_of`], the function [`section_in`] dispatches
+    /// on, rather than against a copy of its `match` — `block_for`'s own test
+    /// gives the reason at length and it is the same reason.
+    #[test]
+    fn the_resting_tools_block_is_the_only_one_below_the_selection() {
+        assert_eq!(slot_of(Block::ScaleSwitches), Slot::BelowTheSelection);
+        assert_eq!(slot_of(Block::TextPen), Slot::AboveTheSelection);
+        assert_eq!(slot_of(Block::MeasurePoints), Slot::AboveTheSelection);
+    }
+
+    /// ★★ **Exactly one block occupies the foot of the panel.**
+    ///
+    /// A second one would stack two unrelated standing preferences under
+    /// whatever the panel had just said about the selection, and — because
+    /// `section_in` draws at most one block per call — the second would simply
+    /// never appear. That is the `scale_switches` defect again in the other
+    /// slot: a control that compiles, reads correctly and draws nothing.
+    #[test]
+    fn one_block_and_only_one_draws_at_the_foot_of_the_panel() {
+        let below: Vec<Block> = [Block::ScaleSwitches, Block::TextPen, Block::MeasurePoints]
+            .into_iter()
+            .filter(|b| slot_of(*b) == Slot::BelowTheSelection)
+            .collect();
+        assert_eq!(below, vec![Block::ScaleSwitches], "{below:?}");
     }
 }

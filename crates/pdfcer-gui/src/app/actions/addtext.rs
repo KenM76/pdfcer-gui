@@ -114,6 +114,16 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
     let page = placed.page;
     let (req, promoted) = request(&placed, crop);
     let lines = req.text.split('\n').count();
+    // ★★★ The epoch is read BEFORE the verb, because it is how this arm learns
+    // whether the verb SUCCEEDED.
+    //
+    // `vector_edit` returns `()`. It bumps `doc.edit_epoch` on `Ok` and does
+    // not on a refusal, so the pair of readings either side of it is the one
+    // honest success signal available here without changing the funnel's
+    // signature for one caller. Selecting after a refusal would put handles
+    // round whatever object happens to be last on the page — an object the
+    // operator did not create and did not ask for.
+    let before = doc.edit_epoch;
     vector_edit(doc, "add-text", page, lines, |session| {
         session.add_text(&req).map(|report| {
             let mut notes = report.disclosures;
@@ -122,6 +132,89 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
             }
             notes
         })
+    });
+    if doc.edit_epoch != before {
+        select_what_was_authored(doc, page);
+    }
+}
+
+/// ★★★ **The text arrives SELECTED** — `OPERATOR_REQUESTS.md` **O198**, and
+/// the half of it that is about text the operator typed himself.
+///
+/// The operator, 2026-09-14: *"the font selector and editing tools like bold
+/// and italic ... that entire area is always greyed out in the menu, and the
+/// properties area is uneditable too. **This is true even when I add a new line
+/// of text.**"*
+///
+/// That last sentence is the one that rules out every "CAD text is hard"
+/// explanation, and its cause is here rather than anywhere near a font.
+/// `CommitAddText` authored an object and selected **nothing**. With nothing
+/// selected, `selection.formattable` is unpublished, so the contextual Format
+/// tab does not appear at all; the operator had just typed a line of text and
+/// the ribbon had no Font group on it to be greyed.
+///
+/// # ★★ The same convention `InsertImage` follows, for the same reason
+///
+/// `super::apply`'s image arm carries the long-form argument, written when the
+/// operator reported *"if I add an image I expect to click on it to resize but
+/// dragging doesn't resize"* — which was never about resizing: the image
+/// arrived unselected, so his first press landed on unselected paper and
+/// `gesture::meaning` read it as a marquee. Every one of the eight applications
+/// surveyed for `HOW_IT_SHOULD_WORK.md` leaves a newly placed object selected.
+/// Text is not an exception to that; it was simply written before the rule was.
+///
+/// # ★★ Why the LAST object, and why the model is rebuilt rather than counted
+///
+/// `add_text` appends one `BT` ... `ET` to the page's content, so the authored
+/// object is last in paint order and therefore the decomposition's final index.
+/// `AddTextReport` carries no object index, so there is nothing better to read;
+/// see the hand-off in `D:/Dev/FeatureRequests/pdfce_FeatureRequests/` if that
+/// ever changes.
+///
+/// ★★ The count is taken from the model rebuilt AFTER the edit, never from a
+/// count kept before it: the edit invalidated the cache, `page_objects()`
+/// rebuilds against the new epoch, and a remembered count would be a count of
+/// the page as it was. The `Ref` is dropped in the same statement that reads
+/// the length, because `select_placed` wants `&mut doc.selection` and holding
+/// the borrow across it does not compile — the borrow checker enforcing the
+/// short-borrow discipline `app::cache`'s docs ask for.
+///
+/// # ★★ The two ways this declines, and why each is silence rather than a guess
+///
+/// - **The page will not decompose.** `page_objects()` answers `None` and the
+///   selection is left alone. The text is on the page; what is missing is the
+///   shell's ability to NAME it, and inventing an index would put handles round
+///   whatever sits at that position.
+/// - **The authored page is not the viewed page.** `page_objects()` builds for
+///   `doc.view.page_index` and for nothing else, so an index taken from it is
+///   only meaningful for that sheet. A caret is always on the viewed page
+///   today, so this is a guard against a future gesture rather than a live
+///   case — but it is the kind of mismatch that selects a plausible wrong
+///   object rather than failing, which is why it is checked rather than
+///   assumed.
+fn select_what_was_authored(doc: &mut OpenDoc, page: usize) {
+    if page != doc.view.page_index {
+        crate::diag::trace(move || {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("add-text-unselected page={page} reason=not-the-viewed-page")
+        });
+        return;
+    }
+    let count = doc
+        .page_objects()
+        .map(|provider| provider.page_objects().objects.len());
+    let Some(last) = count.and_then(|n| n.checked_sub(1)) else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "add-text-unselected reason=no-object-model".to_owned()
+        });
+        return;
+    };
+    doc.selection
+        .select_placed(page, crate::canvas::target::TargetId::Object(last as u64));
+    crate::diag::trace(move || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("add-text-selected page={page} object={last}")
     });
 }
 

@@ -117,16 +117,26 @@ pub fn ink_present(affected: usize, total: usize) -> String {
     }
 }
 
-// ★★★ THE ROUTE SENTENCE IS NOT HERE, AND ITS ABSENCE IS DELIBERATE.
+// ★★★ THE ROUTE SENTENCE IS NOT HERE, AND THERE IS NO LONGER A ROUTE TO NAME.
 //
-// *"press T for the Text tool and sweep across them"* is
-// `super::properties::text_object_route`, where it has lived since 2026-08-29.
-// It was **re-aimed in place** when this section shipped rather than re-written
-// here, because a second sentence saying nearly the same thing on the same
-// panel state is exactly the drift `SALVAGE.md` forbids — and because that one
-// carries a test (`the_text_route_sentence_names_the_bound_chord`) asserting it
-// names whatever chord the shipped manifest binds to `view.tool_text`. A copy
-// here would have had the wording and none of the guard.
+// Until 2026-09-14 this comment pointed at `super::properties::text_object_route`,
+// a sentence that told the operator to *"press T for the Text tool and sweep
+// across them"* in order to reach the font controls for a clicked text object.
+// O198 deleted that sentence, because the thing it routed around was a defect
+// rather than a design: clicking a text object now resolves its runs through
+// `crate::app::textoperand`, so the face, size, bold and italic controls are
+// live on the click and there is nowhere to send anybody.
+//
+// ★★ What survives here is the COLOUR refusal above, and it is a different
+// kind of sentence. It is not a route around a missing capability; it is a
+// disclosure that pdfcer will not repaint a CMYK or spot-colour run with a
+// screen colour, which is true no matter how the operator reached the control.
+// The sweep it suggests is a narrower operand, not a workaround.
+//
+// ★★ Its test, `the_text_route_sentence_names_the_bound_chord`, went with it.
+// That test was the only reader of `view.tool_text`'s chord outside the keymap,
+// so if a future string ever writes a chord into prose again, restore it from
+// git rather than re-deriving the idea.
 
 /// ★★ Drawn where the swatch would be when the object's runs **disagree**.
 ///

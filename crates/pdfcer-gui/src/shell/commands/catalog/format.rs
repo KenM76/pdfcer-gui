@@ -156,9 +156,12 @@ pub(super) fn band() -> Vec<Command> {
         // -------------------------------------------------------------------
         // The Font group — `RIBBON_IA.md` §5.8's "Text run" row.
         //
-        // ★★★ **All five are `enabled_when("selection.text")` and NOT
-        // `selection.any`**, and getting that backwards would grey them in
-        // exactly the state where they work.
+        // ★★★ **All five are gated on TEXT RUNS and NOT on `selection.any`**,
+        // and getting that backwards would grey them in exactly the state where
+        // they work.
+        //
+        // The condition naming those runs was `selection.text` from 2026-08-27
+        // until 2026-09-14, and the argument written for it then was this:
         //
         // `EditSession::format_text` locates its operand by a pinned byte span
         // into a decoded content buffer, keyed on a **run** of the page's text
@@ -166,6 +169,43 @@ pub(super) fn band() -> Vec<Command> {
         // index — and nothing in either crate maps between the two index
         // spaces. So the swept range is the operand, and the swept range is
         // what `selection.text` reports.
+        //
+        // ★★★ **CORRECTED 2026-09-14 — the condition is now
+        // `selection.text_runs`, and the paragraph above is why it had to
+        // change.** `OPERATOR_REQUESTS.md` O198: *"That entire area is always
+        // greyed out in the menu."*
+        //
+        // Every sentence above is still true about the **operand**: the engine
+        // wants runs, `selection.any` is a paint-order index, and no mapping
+        // between the two index spaces existed in either crate. What was false
+        // was the unstated last step — *therefore a swept range is the only way
+        // to name runs*. The map exists and has shipped since O89:
+        // `canvas::textedit::pin::object_text` joins an object's `BT`...`ET`
+        // **byte span** to the provenance span of every glyph in the same
+        // buffer, which is the same containment test the pinned edit path
+        // already stakes every restyle on. The object colour swatch in
+        // `panels::properties::textobject` had been using it, alone, for weeks.
+        //
+        // ★★★ **And the old spelling was unreachable in the only mode that
+        // draws these five.** `canvas::textsel::gate::takes_the_press` is
+        // `tool.is_text() || (Select && !caps.edit_content)`, so in Edit the
+        // Select tool resolves an object and never a range; in Read and Review
+        // it does resolve a range, but the `visible_when: "mode.edit_content"`
+        // three paragraphs down means there is no Font group there to enable.
+        // The capability, the operand and the control were each correct and no
+        // sequence of gestures joined them.
+        //
+        // ⚠ That is the shape of defect a green suite cannot see (R1): every
+        // unit test of `format_text` passes a run list in directly, and the
+        // condition's own test asserts the name is documented, not that anything
+        // can set it. It took the operator saying *"always"*.
+        //
+        // `selection.text_runs` is the union — swept range, or the single
+        // selected text object — published from the cheap half of
+        // `app::textoperand`, which is the same resolver
+        // `app::dispatch::format` derives the operand from. One rule, one
+        // place; see that module's header for why the expensive half may never
+        // be called from here.
         //
         // ★★ **Greyed rather than absent when there is no sweep**, which is R9
         // read carefully. The capability is present — this build has
@@ -252,8 +292,8 @@ pub(super) fn band() -> Vec<Command> {
         // the first two and its own font-name and size boxes carry no icon; the
         // swatch's entire face IS the colour, and a glyph over it would cover the
         // one thing the control exists to report.
-        command("format.font", t::format_font(), 803).enabled_when("selection.text"),
-        command("format.font_size", t::format_font_size(), 804).enabled_when("selection.text"),
+        command("format.font", t::format_font(), 803).enabled_when("selection.text_runs"),
+        command("format.font_size", t::format_font_size(), 804).enabled_when("selection.text_runs"),
         // ★ `bold` — a capital B stroked at 4 rather than the set's 2.5, so the
         // picture says HEAVIER, which is the thing the label cannot. The asset's
         // own comment carries the weight argument and the two axes that keep it
@@ -262,7 +302,7 @@ pub(super) fn band() -> Vec<Command> {
         // minimum of 0.211.
         command("format.bold", t::format_bold(), 805)
             .with_icon("bold")
-            .enabled_when("selection.text"),
+            .enabled_when("selection.text_runs"),
         // ★ `italic` — a slanted capital I with OFFSET serifs, which is the cue
         // that keeps it clear of `text-select`'s bare centred I-beam (0.737 at
         // 16 px; its closest neighbour anywhere is `measure-angle` at 0.719, and
@@ -271,8 +311,9 @@ pub(super) fn band() -> Vec<Command> {
         // 12° reads as a rendering bug at 16 px.
         command("format.italic", t::format_italic(), 806)
             .with_icon("italic")
-            .enabled_when("selection.text"),
-        command("format.font_colour", t::format_font_colour(), 807).enabled_when("selection.text"),
+            .enabled_when("selection.text_runs"),
+        command("format.font_colour", t::format_font_colour(), 807)
+            .enabled_when("selection.text_runs"),
         // -------------------------------------------------------------------
         // The Markup group — `RIBBON_IA.md` §5.8's "Markup annotation" row,
         // registered 2026-09-06 on the operator's *"getting full editing

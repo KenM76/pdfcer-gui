@@ -1448,6 +1448,138 @@ each actually READ, on (a) a fresh Add Text object and (b) a run off that
 drawing. Claim 4 says those two cases may share one cause, and a shared cause
 found first is most of this row.
 
+### Claim 2 measured and root-caused, 2026-09-14 - it is THREE faults, not one
+
+*"Seems the reflow works with each line but still can't edit when the text has
+been reflowed."* The clause that turned out to carry the finding is **"seems"**:
+reflow works near the top of a sheet and stops working further down, which is
+exactly what a numbering that drifts produces.
+
+**(A) Ours, and FIXED.** `canvas::textedit::reflow::block_of_run` answered
+*"which paragraph did he click in"* correctly and then numbered the answer in
+**the wrong list**. The engine's `reflow_block` takes an integer index, throws
+away everything the caller knew, re-extracts the page and re-recognises it with
+a RELAXED configuration - one that merges ragged-left lines the caret's own
+recognition splits apart. Two different lists, two different lengths. Measured
+on page 0 of his drawing, on the run under *"USE SPACERS"*:
+
+```
+caret recognition : block 106 of 144
+reflow recognition: block  49 of  70
+```
+
+So 74 of that page's 144 indices are simply out of range and are refused
+outright; the ones below 70 that sit past the first disagreement are **worse** -
+the engine accepts them and silently re-wraps a paragraph he never clicked in.
+The lookup now recognises with the engine's own `reflow_recognition_options()`,
+which is the only list `reflow_block` will ever build. It has a behavioural test
+on a committed fixture where the two numberings genuinely disagree, and that
+test was falsified before it was trusted.
+
+★ **Why it shipped, because this is the part worth keeping.** There was a driven
+check over reflow and it was green. Its fixture is a flush-left six-line
+paragraph, which **both** recognitions call *block 0 of 1* - so the check passed
+identically whichever list the shell used. *A fixture that cannot distinguish
+two answers is not a check of which one shipped.* That is now written into the
+check's own header so the next author does not trust it further than it goes.
+
+**(B) The engine's, and FILED as `request_G015`.** With the right index, page 0
+still refuses - with *"text was added to this page this session ... save and
+reopen before reflowing this page"*, **on the first frame after you open the
+file, before you have touched anything.** The guard tests a structural property
+(does the page have more than one content stream) and SolidWorks wrote that
+sheet with **eight**. Measured across the set: 1 of 36 sheets. Two things are
+wrong with it - the sentence blames you for something you did not do, and its
+remedy cannot work, because the streams are in the file and survive a save and
+reopen. There is an accidental workaround, and it is absurd enough that I will
+not offer it to you: making one unrelated text edit on the page collapses the
+eight streams into one, after which reflow is allowed. Filed with the
+measurement, the guard's source, and a preferred fix that keeps the protection
+the guard was written for.
+
+**(C) A capability gap that is nobody's defect.** With (A) fixed and (B)
+bypassed, his paragraph is *still* refused - the body face on that sheet is
+`AQHZBV+CenturyGothic`, a composite (Type 0 / CIDFont) font, and within-block
+reflow of composite fonts is a deferred engine feature. It is correctly named
+and correctly worded by the engine. What is left to decide here is what the
+SHELL says: right now this lands as a generic decline, and it deserves to say
+that the font is the reason, because on his drawing it is the reason for most of
+the sheet.
+
+★★★ **So claim 2 is half-answered.** The index defect is real, was ours, and is
+gone. Whether reflow then WORKS on that drawing depends on (B) landing and on
+(C) being either implemented upstream or disclosed honestly. **Do not read the
+fix as the row.**
+
+### Claims 3, 4 and most of 1 measured and FIXED, 2026-09-14 - they were ONE defect
+
+*"That entire area is always greyed out in the menu, and the properties area is
+uneditable too. This is true even when I add a new line of text."* Three dead
+surfaces, and they were never three faults. **Every one of the five Font
+controls, every Properties text field and every restyle verb in this shell is
+gated on the same condition: is a TEXT object selected.** A pick that cannot
+produce a text selection switches all of them off at once - which is exactly
+how a capability that is registered, enabled by its own conditions and green on
+every pinned fixture reaches you as *"that entire area is always greyed out"*.
+
+Claim 4 is what pointed at it. Text the program authored itself, this session,
+cannot plausibly be *unsupported*; but it can perfectly well be **not the thing
+that got selected when you clicked it**.
+
+**What was measured.** Nine aims on page 1 of your drawing, one per distinct
+font size on the sheet (5, 6, 8, 9, 10, 11.8, 12, 13.2 and 16 pt), each aim two
+units inside the run's own box. Driven against the real binary:
+
+> **Eight of nine clicks on text selected a path** - the same path nearly every
+> time, page object 5,899 of 5,903, very nearly the last thing painted on the
+> sheet.
+
+Then the same question asked headlessly at four tolerances, which is what
+separated *"the text is missing"* from *"the text is losing"*:
+
+|tolerance|frontmost candidate is the text|
+|---|---:|
+|0.0 pt|**9 of 9**|
+|1.0 pt|9 of 9|
+|4.0 pt|6 of 9|
+|8.0 pt|**4 of 9**|
+
+The text was in the candidate list at 9 of 9 aims at every tolerance. It was
+never absent. **It was being out-ranked by slack.** A path counts as hit within
+half its scaled line width PLUS the click tolerance; a text object counts as hit
+on its box inflated by the same tolerance. On a title block a label sits one to
+three points from its own cell rule, the rule is painted afterwards, and the
+sheet is 1,584 pt wide so a few screen pixels of tolerance is several points of
+paper. The rule wins the tie it should never have been in.
+
+**The fix, and the rule it enforces.** When more than one candidate survives
+under the pointer, the picker now asks again at tolerance zero and splits the
+list into exact hits and near misses, exact first, paint order preserved inside
+each group.
+
+> **Slack is a tie-breaker of last resort. It may promote a candidate over
+> *nothing*. It may never promote one over a candidate that needed no slack.**
+
+That is what every editor in this class does, which is why none of them needs a
+modifier key to click a label on a busy drawing. It adds and removes nothing -
+both groups are subsets of the list already returned - so the *"N objects here"*
+count and the length of an Alt-cycle are unchanged. It knows nothing about text:
+the partition is exact-versus-inexact, and text wins on your title block as a
+consequence of where the pointer was, not because text is privileged. A genuine
+overlap is still decided by paint order, because there you did click the line.
+
+**Result, driven on your own file, same nine aims: 9 of 9 PASS** (was 1 of 9),
+each reporting all five Font controls drawn pressable and the Properties panel
+drawing a font editor with a face row for a clicked text object.
+
+★★ **What this does NOT finish.** Claim 1 said *all* the text, and this is the
+half that was in the way: you can now reach it. Whether every reachable run can
+then be **edited** is O188's part of the row - a title block run that the
+exporter wrote as one lump is still one lump, and splitting it is separate work.
+Claim 2 remains as recorded above: (A) fixed, (B) with the engine, (C) a
+deferred engine capability that this shell still owes you an honest sentence
+about.
+
 ★★★ **Only Ken closes this row.**
 
 ---

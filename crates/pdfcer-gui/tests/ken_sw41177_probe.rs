@@ -942,3 +942,408 @@ fn does_the_face_the_refusal_names_actually_unblock_his_edit() {
         Err(e) => println!("★★★ SECOND ATTEMPT STILL REFUSED — {e}"),
     }
 }
+
+/// ★★★ **O198's second claim, driven at the engine: *"Seems the reflow works
+/// with each line but still can't edit when the text has been reflowed."***
+///
+/// # What the claim is, read carefully
+///
+/// The operator reflows a block on his own drawing — and reports that the
+/// reflow itself lands — and then finds the text will not take an edit. Two
+/// mechanisms could produce that sentence and they have opposite repairs:
+///
+/// 1. **The engine refuses the edit after its own reflow.** `reflow_block`
+///    re-emits the block's content object, so every byte offset in the page
+///    moves. Anything planning against a pre-reflow measurement is naming
+///    bytes that have gone. If the engine itself cannot edit a stream it just
+///    re-wrapped, no arrangement of shell operands fixes it and the finding is
+///    a request, not a patch.
+/// 2. **The shell hands it something stale.** The pin the shell sends is a
+///    byte span into a decoded content buffer, measured from an extraction
+///    cached on `(page, edit_epoch)`. The epoch moves on a reflow, so the
+///    cache should rebuild — but *should* is the word this project has been
+///    burnt by, and the only honest instrument is the one that measures.
+///
+/// ⇒ This probe removes the shell from the picture entirely. One
+/// [`EditSession`], `reflow_block` then `edit_text`, both located the way the
+/// engine's own tests locate things. **If this succeeds the engine composes
+/// and the defect is ours; if it refuses, the sentence it refuses with is the
+/// report.**
+///
+/// ★ It prints rather than asserts, like every probe in this file, because the
+/// answer is a measurement of somebody else's crate on a file that is not in
+/// this repository. An assertion here would be a test of the operator's disk.
+#[test]
+#[ignore = "reads a file outside the repository; run by hand"]
+fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
+    use pdfcer_core::text_edit::{
+        BlockRecognitionOptions, EditOptions, EditRequest, EditableTextModel, ReflowRequest,
+        TextPosition,
+    };
+
+    let Some(mut session) = session() else { return };
+
+    // --- 1. locate his run, and the block it belongs to --------------------
+    //
+    // ★ Provenance is not optional here: `reflow_block` answers
+    // `ReflowApplyError::NoProvenance` without it, and the block index must be
+    // numbered in the list `reflow_block` ITSELF builds, which is
+    // `reflow_recognition_options()` and never the caret's default — see the
+    // module header of `canvas::textedit::reflow` for the measurement. Send an
+    // index from the other list and the engine either refuses it as out of
+    // range or silently re-wraps a paragraph the operator never clicked in.
+    let (run_index, block, run_text) = {
+        let view = session.view();
+        let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+        let text = pdfcer_core::text_extract::extract_page_view(
+            &view,
+            &pages[0],
+            0,
+            &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+        )
+        .expect("page 0 extracts with provenance");
+        let Some((i, run)) = text
+            .runs
+            .iter()
+            .enumerate()
+            .find(|(_, r)| r.text.contains(HIS_TEXT))
+        else {
+            println!("his line is not on page 0 any more");
+            return;
+        };
+        // The ENGINE's recognition, because `reflow_block` resolves the integer
+        // it is given against `reflow_recognition_options()` and nothing else.
+        // This probe used the caret's default recognition until 2026-09-14 and
+        // printed block 106 where the engine has 70 blocks — the shell had the
+        // same defect and it is corrected in `canvas::textedit::reflow`.
+        let model = EditableTextModel::recognize(
+            &text,
+            &pdfcer_core::text_edit::reflow_recognition_options(),
+        );
+        let Some(block) = model.block_at(TextPosition::new(i, 0)) else {
+            println!("★★ run {i} is in NO recognised block, so there is nothing to reflow.");
+            println!("   That is a finding on its own: the shell's Reflow control declines");
+            println!("   with reason=run-not-in-a-block for exactly this, and on a CAD sheet");
+            println!("   it may be the common case rather than the exception.");
+            return;
+        };
+        (i, block, run.text.clone())
+    };
+    println!("run {run_index} is block {block}: {run_text:?}");
+
+    // --- 2. reflow that block ----------------------------------------------
+    //
+    // The request the shell sends, minus the cropbox: `with_page_cropbox` only
+    // adds an overflow DISCLOSURE and cannot change whether the edit below is
+    // accepted, and leaving it off keeps this probe about the one question.
+    let report = match session.reflow_block(0, block, &ReflowRequest::new()) {
+        Ok(report) => report,
+        Err(e) => {
+            println!("★★★ THE REFLOW ITSELF REFUSED — {e}");
+            // ★★★ THE PRE-WRITTEN EXPLANATION THAT STOOD HERE WAS WRONG, and it
+            // is replaced by what the run actually measured (2026-09-14).
+            //
+            // It said: "his report says reflow works, so a refusal here means
+            // the probe is reflowing a different block than he is, or his file
+            // has moved on." Neither. The refusal on the first frame after
+            // `File > Open`, with no edit made, is `PageEditedThisSession`
+            // — and `SW41177.pdf` page 0 natively carries EIGHT non-empty
+            // `/Contents` streams, which is what the engine's guard
+            // (`edit.rs:11445`) actually tests. A producer that splits page
+            // content across streams, as SolidWorks does and as ISO 32000-1
+            // 7.8.2 permits, is read as "text was added this session."
+            //
+            // — A probe's pre-written failure sentences are a hypothesis, and
+            // a hypothesis printed as a conclusion is how a wrong cause gets
+            // believed. Say what was measured, or say nothing.
+            println!("    Page 0 of his file carries 8 native /Contents streams. If the sentence");
+            println!("    above is PageEditedThisSession on a session that has edited nothing,");
+            println!("    that is the engine misreading a producer-authored multi-stream page.");
+            println!("    See `how_many_content_streams_does_each_of_his_sheets_carry`.");
+            return;
+        }
+    };
+    println!(
+        "reflow applied: lines {}->{}",
+        report.lines_before, report.lines_after
+    );
+    for d in &report.disclosures {
+        println!("  disclosure: {d}");
+    }
+
+    // --- 3. re-measure the pin AFTER the reflow -----------------------------
+    //
+    // ★★★ This is the step the whole probe exists for. The reflow rewrote the
+    // content object, so a span measured in step 1 names bytes that have
+    // moved. Re-extracting is what the shell's `(page, edit_epoch)` cache key
+    // is supposed to make happen automatically — and measuring it here says
+    // whether a correct shell COULD succeed, independently of whether ours
+    // does.
+    let after = {
+        let view = session.view();
+        let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+        pdfcer_core::text_extract::extract_page_view(
+            &view,
+            &pages[0],
+            0,
+            &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+        )
+        .expect("page 0 re-extracts after the reflow")
+    };
+    let Some((i, run)) = after
+        .runs
+        .iter()
+        .enumerate()
+        .find(|(_, r)| r.text.contains(HIS_TEXT))
+    else {
+        println!("★★★ HIS TEXT IS NOT IN THE PAGE AFTER THE REFLOW.");
+        println!("    That is a data-loss finding, not an editability one, and it outranks");
+        println!("    everything else in this file.");
+        return;
+    };
+    println!("after the reflow he is run {i}: {:?}", run.text);
+    let model = EditableTextModel::recognize(&after, &BlockRecognitionOptions::default());
+    let Some(pin) = pdfcer_gui::canvas::textedit::pin::of_run(&model, i) else {
+        println!("★★★ NO PIN AFTER THE REFLOW for run {i}.");
+        println!("    `pin::of_run` returns None when the run carries no provenance — so the");
+        println!("    re-emitted stream produced glyphs the extraction cannot trace back to a");
+        println!("    show operator. The shell's pinned route is then unavailable by");
+        println!("    construction, and THIS is his defect. It is the engine's to fix:");
+        println!("    a re-wrapped stream must be as traceable as the one it replaced.");
+        return;
+    };
+    println!("  pin span   : {:?}", pin.span);
+    println!("  pin target : {:?}", pin.target);
+
+    // --- 4. the edit, in the shape the shell actually sends -----------------
+    let mut req = EditRequest::whole_operator(0, pin.span, "#2 USE SPACER 8 9 10 11 IF REQUIRED.");
+    req.target = pin.target;
+    match session.edit_text(&req, &EditOptions::default()) {
+        Ok(report) => {
+            println!(
+                "★ ACCEPTED AFTER A REFLOW — operators_spanned={}",
+                report.operators_spanned
+            );
+            println!("  ⇒ the engine composes reflow with edit. Any failure he sees is OURS.");
+        }
+        Err(e) => {
+            use pdfcer_core::text_edit::RefusalClass as _;
+            println!("★★★ REFUSED AFTER A REFLOW — {e}");
+            println!("    kind: {:?}", e.refusal_kind());
+            println!("  ⇒ the engine does not compose reflow with edit. File it; do not");
+            println!("    work around it in the shell.");
+        }
+    }
+}
+
+/// ★★★ **How many `/Contents` streams does each of his sheets carry?**
+///
+/// The question exists because [`can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed`]
+/// found `reflow_block` refusing a **freshly loaded** file with *"text was
+/// added to this page this session"*, and nothing had been added. The engine's
+/// guard is a count, not a provenance check:
+///
+/// ```text
+/// page.contents.iter().skip(1).any(|id| … a non-empty stream …)
+/// ```
+///
+/// ⇒ It reads *"this page has more than one non-empty content stream"* and
+/// **reports that as a session fact**. A producer that splits its page content
+/// across several streams — which ISO 32000-1 §7.8.2 explicitly permits, and
+/// which SolidWorks does — trips it on the first frame after `File > Open`.
+///
+/// This prints the count per page so the claim above is a number rather than a
+/// deduction, and so the eventual engine request can quote it.
+#[test]
+#[ignore = "reads a file outside the repository; run by hand"]
+fn how_many_content_streams_does_each_of_his_sheets_carry() {
+    let Some(session) = session() else { return };
+    let pages = session.pages().expect("a page tree");
+    let mut multi = 0usize;
+    for (i, page) in pages.iter().enumerate() {
+        let non_empty = page
+            .contents
+            .iter()
+            .filter(|id| {
+                matches!(
+                    session.value(**id),
+                    Some(pdfcer_core::object::Object::Stream(s)) if s.data_span.len > 0
+                )
+            })
+            .count();
+        if page.contents.len() > 1 {
+            multi += 1;
+        }
+        if i < 6 || page.contents.len() > 1 {
+            println!(
+                "page {i}: {} /Contents entries, {non_empty} of them non-empty",
+                page.contents.len()
+            );
+        }
+    }
+    println!(
+        "\n⇒ {multi} of {} sheets carry more than one /Contents stream.",
+        pages.len()
+    );
+    println!("  Every one of those is refused by `reflow_block` on the first frame after open,");
+    println!("  with a sentence asserting the operator added text he did not add and a remedy");
+    println!("  (save and reopen) that cannot help — the streams are in the FILE.");
+}
+
+/// ★★★ **His exact sequence: edit first, then reflow, then edit again.**
+///
+/// O198: *"Seems the reflow works with each line but still can't edit when the
+/// text has been reflowed."*
+///
+/// The previous probe explains the first half of that sentence backwards — it
+/// found reflow refusing on open. This one finds the state in which it does
+/// work, because `edit_text`'s own report names it:
+///
+/// > *"multi-stream page: 7 additional /Contents stream(s) were collapsed into
+/// > the first and emptied so the edit's byte offsets stay coherent."*
+///
+/// ⇒ **A text edit collapses the page to one stream, which is precisely the
+/// condition `reflow_block`'s guard tests.** So on his drawings the feature is
+/// unlocked by using a different feature first, and nothing tells him that.
+///
+/// Having reached the state where reflow runs, this then asks the question his
+/// sentence actually asks: **is the text still editable afterwards?**
+#[test]
+#[ignore = "reads a file outside the repository; run by hand"]
+fn his_sequence_edit_then_reflow_then_edit_again() {
+    use pdfcer_core::text_edit::{
+        BlockRecognitionOptions, EditOptions, EditRequest, EditableTextModel, ReflowRequest,
+        TextPosition,
+    };
+
+    let Some(mut session) = session() else { return };
+
+    // --- 1. one ordinary text edit, to collapse the page to one stream ------
+    let first = EditRequest::find_replace(0, "SPACERS", "SPACER");
+    match session.edit_text(&first, &EditOptions::default()) {
+        Ok(report) => println!(
+            "step 1 — edit accepted, {} operator(s), {} extra stream(s) emptied",
+            report.operators_spanned, report.extra_objects_emptied
+        ),
+        Err(e) => {
+            println!("step 1 — THE FIRST EDIT REFUSED: {e}");
+            return;
+        }
+    }
+
+    // --- 2. reflow the block that text lives in -----------------------------
+    let block = {
+        let view = session.view();
+        let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+        let text = pdfcer_core::text_extract::extract_page_view(
+            &view,
+            &pages[0],
+            0,
+            &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+        )
+        .expect("page 0 extracts with provenance");
+        let Some((i, _)) = text
+            .runs
+            .iter()
+            .enumerate()
+            .find(|(_, r)| r.text.contains("SPACER"))
+        else {
+            println!("step 2 — the edited text is not on the page");
+            return;
+        };
+        // ***** THE MEASUREMENT THIS PROBE EXISTS FOR *****
+        //
+        // Two recognitions, one run. `reflow_block` resolves the integer it is
+        // given against `reflow_recognition_options()` -- a RELAXED config that
+        // merges ragged-edged lines the default splits apart. The shell computes
+        // its index with `BlockRecognitionOptions::default()`, on the stated
+        // reasoning that the caret was placed against that segmentation.
+        //
+        // Both sentences are true and they do not compose: the integer is not a
+        // description of a paragraph, it is an INDEX INTO THE ENGINE'S OWN LIST.
+        // Printing both is what turns that from an argument into a number.
+        let caret_model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+        let engine_model = EditableTextModel::recognize(
+            &text,
+            &pdfcer_core::text_edit::reflow_recognition_options(),
+        );
+        let caret_block = caret_model.block_at(TextPosition::new(i, 0));
+        let engine_block = engine_model.block_at(TextPosition::new(i, 0));
+        println!(
+            "step 2 - run {i}: caret recognition says block {caret_block:?} of {}, \
+             reflow recognition says block {engine_block:?} of {}",
+            caret_model.blocks().len(),
+            engine_model.blocks().len()
+        );
+        match engine_block {
+            Some(b) => b,
+            None => {
+                println!("step 2 - the edited run is in no recognised block");
+                return;
+            }
+        }
+    };
+    match session.reflow_block(0, block, &ReflowRequest::new()) {
+        Ok(report) => println!(
+            "step 2 — ★ REFLOW ACCEPTED after a text edit: lines {}->{}",
+            report.lines_before, report.lines_after
+        ),
+        Err(e) => {
+            println!("step 2 — reflow still refused after the edit: {e}");
+            return;
+        }
+    }
+
+    // --- 3. edit the reflowed text ------------------------------------------
+    let (i, pin, run_text) = {
+        let view = session.view();
+        let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+        let text = pdfcer_core::text_extract::extract_page_view(
+            &view,
+            &pages[0],
+            0,
+            &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+        )
+        .expect("page 0 re-extracts after the reflow");
+        let Some((i, run)) = text
+            .runs
+            .iter()
+            .enumerate()
+            .find(|(_, r)| r.text.contains("SPACER"))
+        else {
+            println!("step 3 — ★★★ THE TEXT IS GONE AFTER THE REFLOW. Data loss outranks this.");
+            return;
+        };
+        let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+        match pdfcer_gui::canvas::textedit::pin::of_run(&model, i) {
+            Some(p) => (i, p, run.text.clone()),
+            None => {
+                println!(
+                    "step 3 — ★★★ NO PIN after the reflow for run {i} ({:?})",
+                    run.text
+                );
+                println!("  The re-emitted stream yields glyphs with no traceable show operator,");
+                println!("  so the shell's pinned route is unavailable BY CONSTRUCTION and this");
+                println!("  is his defect.");
+                return;
+            }
+        }
+    };
+    println!(
+        "step 3 — run {i} after the reflow: {run_text:?}, pin {:?}",
+        pin.span
+    );
+    let mut req = EditRequest::whole_operator(0, pin.span, "#2 USE SPACER 8 9 10 11 IF REQUIRED.");
+    req.target = pin.target;
+    match session.edit_text(&req, &EditOptions::default()) {
+        Ok(report) => println!(
+            "step 3 — ★ ACCEPTED: the engine composes edit → reflow → edit ({} operator(s))",
+            report.operators_spanned
+        ),
+        Err(e) => {
+            use pdfcer_core::text_edit::RefusalClass as _;
+            println!("step 3 — ★★★ REFUSED AFTER THE REFLOW: {e}");
+            println!("  kind: {:?}", e.refusal_kind());
+        }
+    }
+}

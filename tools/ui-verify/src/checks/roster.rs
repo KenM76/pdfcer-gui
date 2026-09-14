@@ -760,6 +760,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(std14_face::TheFaceChooserOffersAFaceTheDocumentDoesNotContain),
         Box::new(refused_character_face::ARefusedCharacterOffersAFaceThatCanTypeIt),
         Box::new(font_group::TheFormatTabOffersFontControlsForSweptText),
+        // ★★ Immediately after its twin, and the adjacency is the point: the two
+        // assert the same two surfaces, one on a pinned fixture and one on
+        // whatever `--pdf` names. A reader comparing their two lines in a sweep
+        // report gets the diagnosis for free. SKIPs without `--pdf` and
+        // `--doc-point`, deliberately — it has no fixture to fall back on.
+        Box::new(font_group_real::TheFontControlsAreLiveOnTheDrawingYouOpen),
         // ★ After `font_group`: same state, and that one asserts the sentence
         // while this asserts the control. Read a sentence failure first.
         Box::new(colour_clicked_text::ClickingTextOffersItsColour),

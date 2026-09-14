@@ -81,6 +81,38 @@ pub(crate) fn render_item_at(
     }
 }
 
+/// Report that `id` is enabled or not, but only when the answer has changed.
+///
+/// ★★★ **On change, never per frame.** An unconditional emit is forty-odd lines
+/// a frame at sixty frames a second, which is not a log anybody reads; it is
+/// also the difference between a diagnostic left permanently on and one that
+/// gets switched off. The previous answer is kept in `egui`'s own temp data
+/// under an id derived from the command's, so it lives exactly as long as the
+/// context does and costs nothing when tracing is off.
+///
+/// ★★ **The first frame always emits**, because there is no previous answer to
+/// match — which is what a harness needs, since a check that clicks and then
+/// greps cannot rely on having been present for a transition it did not cause.
+///
+/// ★ This function knows nothing about what any id MEANS, which is R7: it
+/// reports that a control registered under some id was drawn pressable or not.
+/// Whether `format.bold` should have been is the application's business.
+fn report_enablement(ctx: &egui::Context, id: &str, enabled: bool) {
+    if !crate::verify::enabled() {
+        return;
+    }
+    let key = egui::Id::new(("egui-shell/ribbon/enablement", id));
+    let previous: Option<bool> = ctx.data(|d| d.get_temp(key));
+    if previous == Some(enabled) {
+        return;
+    }
+    ctx.data_mut(|d| d.insert_temp(key, enabled));
+    crate::verify::event(report::ENABLEMENT_EVENT)
+        .kv("id", id)
+        .kv("enabled", u8::from(enabled))
+        .emit();
+}
+
 /// Draw one command control, honouring its enable predicate and its
 /// selected condition.
 pub(crate) fn render_command(
@@ -94,6 +126,7 @@ pub(crate) fn render_command(
         return;
     };
     let enabled = command.is_enabled(ctx.conditions);
+    report_enablement(ui.ctx(), &command.id, enabled);
     let selected = ctx.conditions.is_set(&selected_condition(&command.id));
 
     // ★ The three sizes — `RIBBON_SCALING.md`, and `sizing`'s header for the

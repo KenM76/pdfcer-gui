@@ -342,6 +342,22 @@ pub struct TextStyleDraft {
     /// this module: it can only fire for a combined request, and this shell
     /// never issues one.
     italic_outlook: Option<StyleForecast>,
+    /// ★★★ **Which runs the controls act on when the operator CLICKED the text
+    /// instead of sweeping it** — `OPERATOR_REQUESTS.md` O198, and the reason
+    /// this struct is shared rather than duplicated.
+    ///
+    /// Every field above describes *one run*, read once per stamp. This one
+    /// describes *which runs there are at all*, and it is here rather than in
+    /// `app::textoperand` because this draft is the one object the ribbon's
+    /// Font band and this panel already hold a **single shared instance** of.
+    /// A cache of its own would mean two 392 ms extractions on one click and
+    /// two answers free to disagree about what the operator selected.
+    ///
+    /// — It is `pub(crate)` in effect through [`Self::operand`] rather than
+    /// directly, because the stamp is the whole value of the thing: a reader
+    /// that took the runs without going through the resolver would get an
+    /// answer from before the last edit.
+    objects: crate::app::textoperand::Cache,
 }
 
 // ★★★ `FaceChoice` was DEFINED HERE until 2026-08-29 and now lives in
@@ -376,6 +392,22 @@ use style::{bold_hint, italic_hint};
 use super::face::FaceChoice;
 
 impl TextStyleDraft {
+    /// ★★★ **Which runs a restyle would act on** — swept, or the single
+    /// selected text object. `OPERATOR_REQUESTS.md` O198.
+    ///
+    /// The one question both font surfaces ask before anything else, delegated
+    /// to [`crate::app::textoperand`] so that the ribbon band, this panel, the
+    /// five commands' `enabled_when` and `app::dispatch::format`'s operand
+    /// derivation cannot answer it four ways. See that module's header for the
+    /// deadlock this widening exists to break.
+    ///
+    /// — `&mut self` because the object rung is stamped — the resolution runs
+    /// once per `(page, object, edit epoch)` and is remembered, misses
+    /// included. See [`crate::app::textoperand::Cache`].
+    pub(crate) fn operand(&mut self, doc: &OpenDoc) -> Option<crate::app::textoperand::Operand> {
+        self.objects.resolve(doc)
+    }
+
     /// Re-read from the document when the stamp has moved; otherwise keep what
     /// is on screen.
     ///
@@ -595,26 +627,56 @@ impl TextStyleDraft {
 ///
 /// Returns whether it drew, so [`super::body_sections`] knows the panel is
 /// already saying something about a selection.
+///
+/// # ★★★ It draws for a CLICKED text object too, since 2026-09-14
+///
+/// `OPERATOR_REQUESTS.md` O198: *"the properties area is uneditable too. This
+/// is true even when I add a new line of text."* Until then this section
+/// required `doc.text_selection` — a range swept with the Text tool — which
+/// is unreachable in Edit mode, so the operator clicking his own text found
+/// four controls that were simply not there. The operand now comes from
+/// [`crate::app::textoperand`], which answers with a sweep if there is one and
+/// otherwise with the single selected text object.
+///
+/// ★ **The Colour row is the one control that does NOT follow.** For a clicked
+/// object it stays with [`super::textobject`], which draws the row immediately
+/// below this section, because a whole object can hold runs painted in
+/// different inks and that section is the one that classifies them —
+/// `Mixed` gets an indeterminate swatch and a `/Separation` gets **no swatch at
+/// all**, which is the finding its header calls *"a click away from a destroyed
+/// plate"*. This section's colour row reads the FIRST run and would report a
+/// nine-run object's ink from one of them.
+///
+/// ⚠ So exactly one of the two draws a Colour control in any frame, and the
+/// separator is drawn by whichever section is last: this one for a sweep, and
+/// [`super::textobject`] for an object.
 pub fn section(
     ui: &mut Ui,
     doc: &OpenDoc,
     draft: &mut TextStyleDraft,
     actions: &mut Vec<Action>,
 ) -> bool {
-    // ★ The staleness gate is inside `runs`, not here — a stale run ordinal
-    // restyles the WRONG text, so the check lives with the data rather than
-    // with each of its readers.
-    // ★ `false`, not a sentence. The object-selection state belongs to
-    // [`super::textobject`] since 2026-09-05 — see the block below where
-    // `route` used to be.
-    let Some(selection) = doc.text_selection.as_ref() else {
+    // ★ The staleness gate is inside the resolver, not here — a stale run
+    // ordinal restyles the WRONG text, so the check lives with the data rather
+    // than with each of its readers.
+    //
+    // ★ `false`, not a sentence. Nothing text-shaped is selected, and a panel
+    // that explained its own silence in that state would be explaining it on
+    // most frames of most sessions.
+    let Some(operand) = draft.operand(doc) else {
         return false;
     };
-    let runs = selection.runs(doc.edit_epoch);
+    let page = operand.page;
+    let runs = operand.runs;
     let Some(&first) = runs.first() else {
         return false;
     };
-    let page = selection.page;
+    // ★ Whether the Colour row below belongs to this section. See the header:
+    // a clicked object's ink is classified by [`super::textobject`], which can
+    // tell `Mixed` from `Agreed` from a spot ink and refuses a swatch over the
+    // third. A sweep has no such problem — every run in it was swept
+    // deliberately — so this section keeps its own row for that case.
+    let owns_colour = operand.source == crate::app::textoperand::Source::Swept;
 
     if !draft.sync(doc, page, first) {
         // The selection is real and the run would not pin. Saying nothing here
@@ -633,10 +695,14 @@ pub fn section(
     face_row(ui, doc, draft, page, &runs, actions);
     size_row(ui, draft, page, &runs, actions);
     weight_row(ui, draft, page, &runs, actions);
-    colour_row(ui, draft, page, &runs, actions);
+    if owns_colour {
+        colour_row(ui, draft, page, &runs, actions);
+    }
 
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
-    ui.separator();
+    if owns_colour {
+        ui.separator();
+    }
     true
 }
 

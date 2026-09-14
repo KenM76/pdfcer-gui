@@ -511,8 +511,8 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // "Helvetica-Bold" — so `app::fontband` parks theirs on
         // `PdfcerApp::font_change` and this takes it.
         //
-        // ★ **The page and the runs are derived here for all five**, from
-        // `doc.text_selection`, and that is the point of routing the custom
+        // ★ **The page and the runs are derived here for all five**, through
+        // `app::textoperand::resolve`, and that is the point of routing the custom
         // controls through a command at all. The alternative — the renderer
         // building a whole `Action::TextStyle` because it already has the
         // document in hand — would put the *"which runs does a restyle act
@@ -555,31 +555,37 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
             let Status::Open(doc) = &app.status else {
                 return;
             };
-            // ★★ The **same three questions** `panels::properties::text` and
-            // `app::fontband` ask, in the same order and through the same
-            // methods: a text selection exists, it is live against this
-            // document's edit epoch, and it covers at least one run. `runs`
-            // owns the staleness gate — a stale run ordinal restyles the
-            // WRONG text, so the check lives with the data rather than with
-            // each of its readers.
+            // ★ The **one** derivation of *which runs a restyle acts on*,
+            // asked of `app::textoperand` so that this arm, the five commands'
+            // `enabled_when` and both font surfaces cannot disagree. It answers
+            // with a live swept range if there is one, and otherwise with the
+            // single selected text object resolved through its byte span.
             //
-            // A stale or absent selection raises nothing and says nothing,
-            // and that is deliberate rather than an omission: the ribbon
-            // control is greyed on `selection.text` in exactly this state, so
-            // an operator cannot reach here by clicking. The route that can is
-            // a chord, and a chord pressed with nothing swept is the operator
-            // asking a question, not making a mistake worth a sentence in the
-            // status bar.
-            let Some(selection) = doc.text_selection.as_ref() else {
+            // ★★★ **The object rung is why the press costs something here and
+            // nowhere else.** Resolving an object operand runs one page
+            // extraction with provenance capture — 392 ms on the operator's
+            // benchmark sheet — and this is the correct place to pay it: once
+            // per gesture, on the frame the operator pressed something. The
+            // condition that lit the control asked the cheap half; the draft
+            // caches in `app::fontband` and `panels::properties::textobject`
+            // answer the per-frame read-back. See `app::textoperand`'s header.
+            //
+            // ★ `runs` owns the staleness gate for the swept rung — a stale
+            // run ordinal restyles the WRONG text, so the check lives with the
+            // data rather than with each of its readers.
+            //
+            // A missing operand raises nothing and says nothing, and that is
+            // deliberate rather than an omission: the ribbon control is greyed
+            // on `selection.text_runs` in exactly this state, so an operator
+            // cannot reach here by clicking. The route that can is a chord, and
+            // a chord pressed with nothing selected is the operator asking a
+            // question, not making a mistake worth a sentence in the status bar.
+            let Some(operand) = crate::app::textoperand::resolve(doc) else {
                 return;
             };
-            let runs = selection.runs(doc.edit_epoch);
-            if runs.is_empty() {
-                return;
-            }
             actions.push(crate::app::actions::Action::TextStyle {
-                page: selection.page,
-                runs,
+                page: operand.page,
+                runs: operand.runs,
                 change,
             });
         }

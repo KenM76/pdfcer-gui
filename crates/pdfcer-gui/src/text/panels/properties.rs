@@ -553,64 +553,32 @@ pub const fn text_unreadable() -> &'static str {
     "pdfcer cannot tell exactly which piece of text this is, so it will not offer to change it — a change might land on different text that reads the same."
 }
 
-/// Shown under [`text_heading`] when a piece of TEXT is selected as an object
-/// and nothing has been swept.
-///
-/// ★★★ **The sentence this module's own header claimed existed and did not.**
-///
-/// `panels::properties::text`'s header has said since it shipped:
-///
-/// > That is a real gap and it is named rather than hidden: clicking a text
-/// > object with the Select tool does not raise this section; sweeping across
-/// > the text does. **The empty state says so in those words**, because an
-/// > operator who cannot find a control assumes it is missing.
-///
-/// There was no empty state. `section` returned `false` before drawing
-/// anything whenever `doc.text_selection` was `None`, which is exactly the
-/// state that paragraph describes — so the panel said nothing at all, and the
-/// operator it was written for concluded the feature was missing. That is O37's
-/// *"nothing on screen tells you to press T"*, and it was a documented
-/// intention that no code carried.
-///
-/// # ★★ Why it names the tool and the KEY, when nothing else in this file does
-///
-/// `crate::text::tool`'s rule 2 forbids a tip and requires a statement of fact,
-/// and this is one: the Text tool is what selects a range of words, and `T`
-/// arms it. It is also the one place in the application where the operator is
-/// **demonstrably** looking for this control — they have just clicked the text
-/// they want to change — so the route belongs here rather than in a tooltip on
-/// a control they have not found.
-///
-/// The chord is written into the sentence rather than fetched from the keymap
-/// because this file has no `MenuHost` to ask. That is a real duplication and
-/// it is bounded: `shell::manifest`'s keymap binds `T` to `view.tool_text`, and
-/// `the_text_route_sentence_names_the_bound_chord` fails if the two ever part.
-///
-/// # ★★★ RE-AIMED 2026-09-05 — it used to say *"how these words look"*, and
-/// # that became false the day it was written
-///
-/// `OPERATOR_REQUESTS.md` **O89**: *"I don't see where I am able to edit the
-/// color of text, vectors, etc."* The answer built for it,
-/// `crate::panels::properties::textobject`, puts a **working colour control on
-/// the clicked text object** — so *"to change how these words look, press T"*
-/// now stands directly above a control that changes how these words look
-/// without pressing anything.
-///
-/// ⇒ Corrected in place rather than left beside the new control, because a
-/// sentence that contradicts the widget under it is worse than no sentence:
-/// this project's own rule is that when prose an earlier session wrote becomes
-/// wrong, it is corrected where it stands and dated, so there are not two
-/// answers on screen.
-///
-/// ★ It now names the four properties that genuinely still need the sweep —
-/// font, size, bold, italic — and `crate::panels::properties::textobject`'s
-/// header carries why those four cannot have a whole-object control and colour
-/// can: each of them needs a reading of **one run** to be honest, and *"they
-/// disagree"* is a displayable answer for a colour and for nothing else.
-#[must_use]
-pub const fn text_object_route() -> &'static str {
-    "To change the font, size, bold or italic of these words, press T for the Text tool and sweep across them. Clicking picks the shape they are drawn in, which is not the same thing."
-}
+// ★★★ `text_object_route` WAS HERE, AND IT IS DELETED RATHER THAN MOVED
+//
+// It read: *"To change the font, size, bold or italic of these words, press T
+// for the Text tool and sweep across them. Clicking picks the shape they are
+// drawn in, which is not the same thing."*
+//
+// Written 2026-08-29 for O37's *"nothing on screen tells you to press T"*,
+// re-aimed 2026-09-05 when O89 gave the clicked object a working colour
+// control, and **deleted 2026-09-14** when `OPERATOR_REQUESTS.md` O198 gave
+// it a working font, size, bold and italic control as well. Every clause of
+// the sentence had become false: clicking now picks the words as well as the
+// shape, and the four properties it named are editable without arming
+// anything.
+//
+// ★★ **A disclosure has a subject, and when the fix removes the subject the
+// disclosure goes with it.** The alternative — re-aiming it a second time at
+// whatever was still missing — is how an application ends up narrating its
+// own history to an operator who only wanted to change some text. The whole
+// of what this sentence used to route to is now one click away, and a
+// sentence explaining a route to a thing already on screen is noise.
+//
+// ⚠ Its test, `the_text_route_sentence_names_the_bound_chord`, went with it,
+// and so did the only reader of `view.tool_text`'s chord outside the keymap.
+// If a future sentence writes a chord into its prose, that test is worth
+// restoring from git — including its comment about why `contains("T")` passed
+// for the wrong reason.
 
 // ★★★ `text_face_label`, `text_face_none` and `text_face_ambiguous` were HERE
 // until 2026-08-29 and now live in [`super::face`], with the two group headings
@@ -1018,59 +986,6 @@ pub fn text_hint_faces_tried(tried: &[(&str, Option<char>)]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// ★★★ **The route sentence names the chord the keymap actually binds.**
-    ///
-    /// [`text_object_route`] writes `T` into its prose because this module has
-    /// no `MenuHost` to ask, which is a real duplication of the keymap and the
-    /// kind that rots silently: rebinding the text tool would leave one
-    /// sentence in the application telling the operator to press a key that
-    /// does something else, and nothing would fail.
-    ///
-    /// So the duplication is **bounded** rather than merely admitted. This
-    /// reads the shipped manifest's keymap, finds whatever chord is bound to
-    /// `view.tool_text`, and asserts the sentence contains it. Rebinding to
-    /// `Y` fails here and the failure names the sentence.
-    ///
-    /// ★ It asserts the **chord in the sentence**, not the sentence in full,
-    /// deliberately: the copy is a design surface and must stay free to be
-    /// reworded, while the one fact it borrows from somewhere else must not
-    /// drift. Pinning the whole string would turn every rewording into a test
-    /// edit and teach the next person to update the literal without reading it.
-    #[test]
-    fn the_text_route_sentence_names_the_bound_chord() {
-        let shell = crate::shell::manifest::built_in();
-        let keymap = shell.keymap.as_ref().expect("the manifest binds keys");
-        let chord = keymap
-            .iter()
-            .find(|(_, id)| *id == "view.tool_text")
-            .map(|(chord, _)| chord)
-            .expect("the text tool is bound to something");
-        // ★★ The needle is `press <chord> `, not the bare chord, and the
-        // difference is the whole worth of this test.
-        //
-        // Every pointer-tool chord in this manifest is a **single letter**, and
-        // this sentence is forty words of English. `contains("A")` would be
-        // satisfied by the `A` in "change"; `contains("T")` is satisfied by the
-        // "To" the sentence opens with, so the first draft of this test passed
-        // for a reason that had nothing to do with the keymap. It was found by
-        // rebinding the tool to `Y` and watching it fail — which proved only
-        // that `Y` is a rare letter.
-        //
-        // Anchoring on the phrase the sentence actually uses makes the check
-        // ask what it means to ask: *does the instruction name the key?* A
-        // rewording that drops the word "press" fails here, which is correct —
-        // the sentence would no longer be an instruction naming a key, and
-        // this test would no longer be able to tell whether it named the right
-        // one.
-        let sentence = text_object_route();
-        let needle = format!("press {chord} ");
-        assert!(
-            sentence.contains(&needle),
-            "the text tool is bound to `{chord}`, so the route sentence should \
-             say {needle:?}, and it says: {sentence}"
-        );
-    }
 
     /// **Every field label is a bare noun phrase with no trailing colon.**
     ///

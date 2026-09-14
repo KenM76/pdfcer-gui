@@ -439,7 +439,7 @@ fn body_sections(
     // the time, so folding it in would collapse the document section for ever
     // and suppress *"nothing is selected"* for ever. That is O75 answered
     // backwards.
-    let _drew_tool = tool::section(ui);
+    let _drew_tool = tool::armed_section(ui);
     // ★★ The markup restyle section, first among the selection-scoped ones.
     //
     // Before the ce-dimension section and before the object one, because the
@@ -478,11 +478,20 @@ fn body_sections(
     // `doc.selected_field`, which the object and annotation selections neither
     // set nor read. See `app::state::SelectedField` for why they are separate.
     let drew_form_field = formfield::section(ui, doc, state, actions);
-    // ★ Before geometry, after markup. The order is the selection's: this
-    // section and `geometry` describe different KINDS of selection (a text
-    // sweep, an object) and never both draw, so the placement is about reading
-    // order rather than precedence — the restyle controls sit with the other
-    // "change how this looks" rows and above the read-only facts.
+    // ★★ Before geometry, after markup. The restyle controls sit with the other
+    // "change how this looks" rows and above the read-only facts, which is the
+    // order `RIBBON_IA.md` §5.6 asks a properties surface to use.
+    //
+    // ★★★ CORRECTED 2026-09-14 (O198). This note used to say that this section
+    // and `geometry` "describe different KINDS of selection (a text sweep, an
+    // object) and never both draw", so the placement was reading order rather
+    // than precedence. The first half is now false: since O198 a **clicked**
+    // text object resolves through `app::textoperand` into runs, so this
+    // section draws for an object selection as well, and `geometry` draws for
+    // the same selection in the same frame. The conclusion is unchanged and the
+    // reason is better than it was — they are not competing for one slot, they
+    // are two paragraphs about one object, and "what you can change about how
+    // it looks" reads before "where it is".
     let drew_text = text::section(ui, doc, state.text_style_mut(), actions);
     // ★★★ **The clicked-text colour, directly under the swept-text editor** —
     // `OPERATOR_REQUESTS.md` O89, piece 1.
@@ -528,13 +537,20 @@ fn body_sections(
         || drew_form_field
         || drew_text
         // ★★ Part of the predicate, and not for symmetry. A selected text
-        // object used to make `text::route` speak and therefore counted; that
-        // sentence now belongs to `textobject::section`, so omitting this term
-        // would put *"Pick a row in the Objects panel"* under a live colour
-        // control for a selected label. (Before 2026-09-05 the same omission
-        // collapsed the panel to "This document" instead — O75 re-created by
-        // the fix for O89. The term is load-bearing either way; only the wrong
-        // sentence it prevents has changed.)
+        // object makes the COLOUR row speak, and omitting this term would put
+        // *"Pick a row in the Objects panel"* under a live colour control for a
+        // selected label. (Before 2026-09-05 the same omission collapsed the
+        // panel to "This document" instead — O75 re-created by the fix for O89.
+        // The term is load-bearing either way; only the wrong sentence it
+        // prevents has changed.)
+        //
+        // ★★ Since O198 the term is also no longer the only thing standing
+        // between a clicked label and that sentence: `drew_text` above is true
+        // in the same state, because the face, size and weight rows now draw
+        // for a clicked object too. Keeping this one is still right — the two
+        // sections are independently removable, and a predicate that relies on
+        // a sibling drawing is a predicate that breaks when the sibling is
+        // gated on something new.
         || drew_text_object
         // ★★★ And so is the PAINT section, which was `let _ = drew_paint;`
         // until 2026-09-05.
@@ -567,6 +583,23 @@ fn body_sections(
     // call, which is the whole of what O75 needed it for; what has gone is the
     // second consumer, not the predicate.
     let _drew_object = object_section(ui, doc, something_drew);
+    // ★★★ **THE STANDING PREFERENCES, LAST** — `OPERATOR_REQUESTS.md` O198,
+    // and this line is a MOVE rather than an addition.
+    //
+    // The three *When you resize something* switches drew at the top of this
+    // function until 2026-09-14, in the `tool::section` call twenty lines up.
+    // They are on screen whenever the Select tool is armed, which is the
+    // resting state, so in an ordinary dock slot they were the entire visible
+    // height of the panel: a driven click on a text object photographed the
+    // font editor half clipped and the Colour swatch below the viewport
+    // altogether. See `tool::Slot` for the measurement.
+    //
+    // ★ The rule is O75's, restated: a section that draws with no reference to
+    // the selection must not sit above the sections that describe it. `tool`
+    // now answers WHICH of its blocks that applies to, through `tool::slot_of`,
+    // so the text pen and the measure pick list keep the top of the panel and
+    // only the standing preference moved.
+    let _drew_preferences = tool::preferences_section(ui);
 }
 
 /// The focused page object's read-only facts.

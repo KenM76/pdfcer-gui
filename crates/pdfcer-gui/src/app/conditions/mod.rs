@@ -484,6 +484,51 @@ impl PdfcerApp {
             {
                 set.set("selection.text");
             }
+            // ★★★ **There is an operand for a restyle** — whether it was
+            // swept or clicked. `OPERATOR_REQUESTS.md` O198.
+            //
+            // # Why `selection.text` could not stay the Font group's condition
+            //
+            // It names a *swept range*, and a swept range cannot be made in the
+            // only mode that shows the Font group. `canvas::textsel::gate`'s
+            // `takes_the_press` answers `tool.is_text() || (Select && !caps
+            // .edit_content)`, so in Edit the Select tool's press resolves an
+            // **object** and never a range; in Read and Review it does resolve a
+            // range, but there the group is hidden because its visibility is
+            // `mode.edit_content`. Two correct halves and no way through — the
+            // operator's *"that entire area is always greyed out"*.
+            //
+            // — **This is a union of two gestures, not a second condition for
+            // one of them.** `app::textoperand` answers *"which runs would a
+            // restyle act on?"* with a swept range first and the single selected
+            // text object second, and every consumer — the five commands'
+            // `enabled_when`, `app::fontband`'s read-back, `app::dispatch::
+            // format`'s operand derivation — reads that one resolver. A
+            // condition that said something narrower or wider than the resolver
+            // would put the ribbon and the verb back into disagreement, which is
+            // the failure `selection.bounds` exists to prevent for zoom.
+            //
+            // # ★★★ Why the object half asks the CHEAP question
+            //
+            // Resolving the object operand for real costs one page extraction
+            // with provenance capture — **392 ms on the benchmark sheet** —
+            // and this runs every frame. `selected_text_object` answers *is
+            // there an object-shaped operand* by reading the already-built
+            // decomposition and one `ObjectKind`, with no glyphs touched. The
+            // expensive half is paid on the press, and by the draft caches the
+            // two font surfaces already hold.
+            //
+            // ⚠ The two questions can disagree in exactly one direction: a
+            // text object whose byte span contains no show operator the
+            // provenance walk can place — a pathological case this crate has
+            // not observed — would light the control and then resolve to
+            // nothing. The verbs all decline harmlessly on `None`, and the
+            // alternative is the 392 ms in the frame loop, which O74 forbids.
+            if set.is_set("selection.text")
+                || crate::app::textoperand::selected_text_object(doc).is_some()
+            {
+                set.set("selection.text_runs");
+            }
             // ★★★ **The Format tab has a subject** — either kind of
             // selection, and it is deliberately NOT a synonym for either.
             //

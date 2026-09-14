@@ -823,3 +823,95 @@ fn each_engine_decline_reaches_a_refusal_that_suits_it() {
         "the recoverable case must survive the walk: {seen:?}"
     );
 }
+
+/// ★★★ **A composite-font reflow refusal names the FONT, and does so from the
+/// engine's own discriminant rather than from its prose.**
+///
+/// # Why this test exists, and what it is really guarding
+///
+/// `O198`: the operator's 36-sheet SOLIDWORKS drawing sets its body text in
+/// `AQHZBV+CenturyGothic`, a composite (Type 0 / CIDFont) face. Within-block
+/// reflow of composite text is a deferred engine feature (`R-INV-4`, FF-E), so
+/// **every** reflow he attempted on that sheet was refused — and until
+/// 2026-09-14 the sentence he got was [`ReflowRefusal::EngineDeclined`]'s
+/// *"something about how this page was drawn stops it doing so safely"*. True,
+/// honest, and useless: it gave him no way to know that trying the paragraph
+/// next to it was pointless for exactly the same reason.
+///
+/// # ★★ The assertion that matters is the SECOND one
+///
+/// Reaching `FontIsComposite` from a composite refusal is the easy half and a
+/// match on the `Refused` variant alone would satisfy it. What this test also
+/// pins is that a `Refused` carrying **any other** trigger does NOT reach that
+/// sentence, because the engine's payload is a general `encoding::Refusal`
+/// over eight `RInvTrigger`s and only one of them is about composite fonts.
+/// `reflow_apply::refuse_if_composite` is the sole constructor today; a variant
+/// match would start lying the day a second one appears, silently and with no
+/// compile error, which is the precise shape of the wildcard defect corrected
+/// twice on 2026-09-07 and recorded in the tests above.
+///
+/// ★ *A tripwire keyed on the other side's data survives the other side
+/// changing; one keyed on our reading of it does not.*
+#[test]
+fn a_composite_font_refusal_says_it_is_the_font() {
+    use crate::text::textedit::ReflowRefusal;
+    use pdfcer_core::text_edit::ReflowApplyError as E;
+    use pdfcer_core::text_edit::{RInvTrigger, Refusal};
+
+    // The refusal as `reflow_apply::refuse_if_composite` actually builds it:
+    // trigger `Composite`, no character (the whole run is the problem, not one
+    // code), the real `/BaseFont` off his drawing, the engine's own message,
+    // and an EMPTY remedy list — there is no standard-14 face that makes a
+    // composite run re-wrappable, and the engine says so by sending none.
+    let composite = E::Refused(Refusal::new(
+        RInvTrigger::Composite,
+        None,
+        "AQHZBV+CenturyGothic",
+        "R-INV-4: font 'AQHZBV+CenturyGothic' is a composite (Type 0 / CIDFont) run; \
+         within-block reflow of composite/CJK fonts is deferred (FF-E)",
+        Vec::new(),
+    ));
+    assert_eq!(
+        super::reflow_refusal(&composite),
+        ReflowRefusal::FontIsComposite,
+        "a composite refusal must reach the sentence that names the font as the cause; if this \
+         reads `EngineDeclined` the mapping has collapsed back to the vague answer O198 was \
+         filed about"
+    );
+
+    // ★★★ The falsification. Same engine VARIANT, different TRIGGER.
+    let other_trigger = E::Refused(Refusal::new(
+        RInvTrigger::TargetAbsent,
+        Some('o'),
+        "Times-Bold",
+        "R-INV-1: character U+006F 'o' has no code in font 'Times-Bold'",
+        Vec::new(),
+    ));
+    assert_ne!(
+        super::reflow_refusal(&other_trigger),
+        ReflowRefusal::FontIsComposite,
+        "a non-composite `Refused` reached the composite sentence, so the arm is matching on \
+         the variant rather than on `RInvTrigger`. The operator would be told his font stores \
+         more than one byte per character when the engine said nothing of the kind."
+    );
+
+    // And the sentence has to carry the two things the variant promises: the
+    // font named as the cause, and the standing guarantee that nothing was
+    // written. It must NOT offer a remedy — there is none, and R9 forbids
+    // inventing one.
+    let line = ReflowRefusal::FontIsComposite.line();
+    assert!(
+        line.contains("font"),
+        "the composite sentence must name the font as the cause: {line:?}"
+    );
+    assert!(
+        line.contains("has not been changed"),
+        "every refusal sentence must tell the operator nothing was written: {line:?}"
+    );
+    for invented in ["choose", "try", "instead", "Save this file"] {
+        assert!(
+            !line.contains(invented),
+            "the composite sentence offers a remedy that does not exist ({invented:?}): {line:?}"
+        );
+    }
+}

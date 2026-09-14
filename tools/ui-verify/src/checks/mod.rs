@@ -641,8 +641,13 @@ pub mod clipboard_annotation;
 pub mod clipboard_mode;
 pub mod clipboard_text;
 /// ★★★ **O89's object route** — the colour control on the text you CLICKED,
-/// where `font_group` asserts only the sentence telling you to sweep. ⚠ **NOT
-/// RUN**; its header carries the falsification table and the reason.
+/// where `font_group` asserts only the sentence telling you to sweep.
+///
+/// First driven 2026-09-14 and RED on its first run, over a real layout defect:
+/// the swatch drew below the fold of a Properties panel whose first section is
+/// three always-on switches. ★★ Its falsification table is still unexercised,
+/// which is a narrower claim than the **NOT RUN** label this comment carried
+/// until then — driven-and-green is not the same as known-to-notice.
 pub mod colour_clicked_text;
 /// ★★★ **The operator's own MAX_PIXMAP_EDGE failure, driven** — zoom past the
 /// ceiling and assert the page still renders.
@@ -683,6 +688,22 @@ pub mod fit_places_the_view;
 /// press T"*, observed in the state before anything is swept, because that is
 /// the state an operator is in when they need them.
 pub mod font_group;
+/// ★★★ **The same two surfaces as `font_group`, on the document the operator
+/// names** — his SolidWorks drawing rather than a committed fixture.
+///
+/// The twin above pins `fixtures/paragraph.pdf` on purpose, because its subject
+/// is a discoverability route and a route has to be asserted on a page whose
+/// contents are known. This one honours `--pdf` and `--doc-point` and has no
+/// fallback, because its subject is the opposite question: does the route
+/// survive a 36-sheet export whose faces are subset, whose labels are 5 pt and
+/// whose first page carries 5,899 paths against 4 text objects.
+///
+/// ★★ Read as a PAIR. Green here and red there is a fixture problem; red here
+/// and green there is something about real drawings; both red is a regression.
+/// That diagnosis is why there are two checks rather than one parameterised
+/// one — `OPERATOR_REQUESTS.md` O198 is an operator reporting a feature that
+/// was green on a fixture and unusable on his file.
+pub mod font_group_real;
 /// ★★ **Redaction** — the one operation in this program that cannot be undone,
 /// and the only check in the suite whose verdict is a **byte scan of a file on
 /// disk** rather than a trace field or a pixel. The application's own absence

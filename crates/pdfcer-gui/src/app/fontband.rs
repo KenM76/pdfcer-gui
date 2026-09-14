@@ -147,6 +147,7 @@ pub(super) fn draw(
     // asks.
     let ready = enabled.then(|| resolved(doc, draft)).flatten();
     let live = ready.is_some();
+    report_enablement(id, enabled, live);
 
     let mut invoked = false;
     let response = ui
@@ -183,6 +184,52 @@ pub(super) fn draw(
     invoked.then_some(command.handler)
 }
 
+/// Report whether this control was drawn pressable, on CHANGE only.
+///
+/// # ★★★ Two numbers, because this module greys on the SECOND one
+///
+/// `enabled` is the registered command's own predicate — the thing every other
+/// control on the band is greyed by, and the thing the condition tests assert.
+/// `live` is `resolved(doc, draft).is_some()`, a read-back that runs a text
+/// extraction with provenance capture (392 ms on the operator's benchmark
+/// sheet), and it is what actually reaches `add_enabled_ui` eleven lines above.
+///
+/// So `enabled=1 live=0` is **a control greyed while every condition in the
+/// shell says it should not be**, and there is no other line in the trace from
+/// which that state can be inferred: the rect report says the control drew, the
+/// condition report says the condition holds, and the control is grey. It is
+/// the precise shape of `OPERATOR_REQUESTS.md` O198 claim 3 — *"that entire
+/// area is always greyed out in the menu"* — reported about a build whose
+/// every condition test passes, and until 2026-09-14 nothing outside this
+/// process could see it.
+///
+/// ★★ Emitted under [`egui_shell::ribbon::report::ENABLEMENT_EVENT`], the same
+/// event name the shell's own command controls use, so **one grep finds all
+/// five of the Font group's controls** even though two of them are rendered by
+/// `egui-shell` and three by this module. The prefix differs (`pdfcer-diag`
+/// against `egui-shell-diag`) because the two crates have separate trace
+/// channels; the event token, which is what a check greps for, does not.
+/// The `live=` field is additive, so a consumer reading only `id=` and
+/// `enabled=` is unaffected by it.
+///
+/// ★ **Keyed per id, valued on the two numbers.** That is why the id goes in
+/// the KEY rather than the value: [`crate::diag::trace_on_change`] suppresses a
+/// repeat of the same value under the same key, and these three controls draw
+/// one after another in the same frame. One shared key would see three
+/// different values every frame and emit every one of them, sixty times a
+/// second, which is the failure that function exists to prevent.
+fn report_enablement(id: &str, enabled: bool, live: bool) {
+    if !crate::diag::enabled() {
+        return;
+    }
+    // ui-text-exempt: diagnostic trace key, never displayed.
+    let key = format!("{} id={id}", egui_shell::ribbon::report::ENABLEMENT_EVENT);
+    crate::diag::trace_on_change(&key, || {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("enabled={} live={}", u8::from(enabled), u8::from(live))
+    });
+}
+
 /// The command each custom kind draws the control for.
 ///
 /// One place, so that the kind → id mapping cannot be spelled one way in the
@@ -203,26 +250,37 @@ fn command_for(kind: &str) -> Option<&'static str> {
 /// The page and the runs the controls would act on, and the draft synced to
 /// them — or `None` when there is nothing to act on.
 ///
-/// ★ It asks the **same** three questions `panels::properties::text::section`
-/// asks, in the same order: a text selection exists, it is live against this
-/// document's edit epoch, and its first run pins. A control that used a looser
-/// test would be live at exactly the moment pressing it declined, which is the
-/// disagreement `selection.bounds` was invented to prevent for
-/// zoom-to-selection.
+/// ★★★ **The operand is now either gesture**, `OPERATOR_REQUESTS.md` O198.
+/// Until 2026-09-14 this read `doc.text_selection` directly, which meant the
+/// five controls were live only for a swept range — and a swept range cannot
+/// be made in Edit, the only mode that draws them. See
+/// `app::textoperand`'s header for the whole deadlock; the short version is
+/// that the band was greyed in every reachable state and the operator said so.
 ///
-/// The `selection.text` condition already covers the first two, and this
-/// re-asks them anyway: a condition is a hint published for the ribbon's
+/// ★ It asks the **same** questions `panels::properties::text::section` asks,
+/// in the same order: an operand resolves, and its first run pins. A control
+/// that used a looser test would be live at exactly the moment pressing it
+/// declined, which is the disagreement `selection.bounds` was invented to
+/// prevent for zoom-to-selection.
+///
+/// The `selection.text_runs` condition already covers the first of those, and
+/// this re-asks it anyway: a condition is a hint published for the ribbon's
 /// benefit, and it is evaluated a frame's worth of state earlier than the
-/// draw. Only the third — does the run pin? — is genuinely new information,
+/// draw. Only the second — does the run pin? — is genuinely new information,
 /// and it is the one that cannot be published as a condition because answering
 /// it costs 392 ms.
+///
+/// ⚠ `&mut TextStyleDraft` is load-bearing twice over now: the draft holds
+/// the per-run read-back AND the stamped memory of the object rung, which is
+/// what keeps a per-frame call off the 392 ms path. See
+/// `crate::app::textoperand::Cache` for why that storage lives on the draft
+/// the two font surfaces share rather than in the resolver.
 fn resolved(doc: Option<&OpenDoc>, draft: &mut TextStyleDraft) -> Option<(usize, Vec<usize>)> {
     let doc = doc?;
-    let selection = doc.text_selection.as_ref()?;
-    let runs = selection.runs(doc.edit_epoch);
-    let &first = runs.first()?;
-    draft.sync(doc, selection.page, first).then_some(())?;
-    Some((selection.page, runs))
+    let operand = draft.operand(doc)?;
+    let &first = operand.runs.first()?;
+    draft.sync(doc, operand.page, first).then_some(())?;
+    Some((operand.page, operand.runs))
 }
 
 /// The trace region the ribbon's face chooser publishes its POPUP under.

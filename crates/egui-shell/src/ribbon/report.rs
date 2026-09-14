@@ -65,6 +65,40 @@ pub type RectSink<'a> = dyn FnMut(&str, Rect) + 'a;
 /// that also carries a dock's or a status bar's.
 pub const PREFIX: &str = "ribbon";
 
+/// The trace event name under which a control publishes **whether it was drawn
+/// pressable**.
+///
+/// ★★★ **A rect cannot answer "is it greyed", and this repository needed it to.**
+/// Every control publishes a rectangle whether enabled or not, deliberately:
+/// the question a consumer asks is *where is this control*, and a control that
+/// is greyed is still a control that was drawn somewhere. That rule is right,
+/// and it leaves a hole the exact shape of an operator saying *"that entire
+/// area is always greyed out"* — a harness could prove the five font controls
+/// were on screen and could not prove that one of them could be pressed. The
+/// join (predicate, conditions, renderer, this frame) had no oracle outside the
+/// process at all, so it was asserted by a unit test that re-evaluates the
+/// predicate against the conditions, which is the two halves agreeing with each
+/// other rather than the shipped frame answering.
+///
+/// ★★ It is a separate LINE rather than a field on the rect report because
+/// [`RectSink`] is `FnMut(&str, Rect)` and is consumed by three other surfaces
+/// in two crates. Widening that signature to carry one boolean that only
+/// command controls have would put an `Option<bool>` on every group caption and
+/// every mode segment for ever.
+///
+/// ★★ It lives HERE, beside the rect names, rather than beside the renderer
+/// that emits it, because it is the same kind of thing those names are: a
+/// spelling a harness in another repository greps for, and therefore a
+/// stability contract rather than an implementation detail. That is also what
+/// makes it reachable from an application drawing a custom control of its own.
+///
+/// ★ The line is emitted **on change**, not per frame, and carries `id=` and
+/// `enabled=0|1`. An application that renders a custom item itself is expected
+/// to emit the same event for it, and may ADD fields; `pdfcer-gui`'s font band
+/// appends `live=` because it greys on a second predicate of its own, and the
+/// disagreement between the two is the measurement worth having.
+pub const ENABLEMENT_EVENT: &str = "ribbon-item-enablement";
+
 /// The name under which one ribbon **tab button** is published.
 #[must_use]
 pub fn tab(tab_id: &str) -> String {
