@@ -4,16 +4,14 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`b2f54228`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`0b48b3e2`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** One line of text can be dragged on its own: pick
-a line inside a block of text, drag it, and the lines under it stay where they
-are. Right-click names the line rather than the block it sits in. Where a line
-cannot be moved the refusal says which of two reasons applies — the line carries
-no position of its own and inherits one from the line above, or moving it would
-drag the next line with it — because the two need different things from the
-operator. Deleting one line inside a block is not wired: the engine carries the
-three verbs, this shell calls none of them.
+**What is new in this build.** A link that names a point on a page — the shape
+every Word table-of-contents entry has — now jumps to that point and leaves the
+magnification exactly where the operator set it. If the spot is already on
+screen sideways, the horizontal position is held where they were looking rather
+than re-centred. A bookmark that names a rectangle, which is what SolidWorks
+drawings export, still frames that rectangle as before.
 
 **Scope.** This shell only. `pdfcer-core` and `pdfcer` capabilities live in
 `D:\Dev\pdfcer\docs\FEATURES.md`, whose `gui` column is this project's
