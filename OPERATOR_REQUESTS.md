@@ -160,6 +160,65 @@ Three requirements, not one:
 3. **A budget.** "As many as we can" is a memory question, and a scanned
    multi-page document is the worst case for it, which is why he saw it there.
 
+
+### Measured, 2026-09-15 — the request side is visibility-bound; the cache side already is not
+
+`render::settle::fill_strip` (`crates/pdfcer-gui/src/render/settle.rs:1064`)
+builds its candidate set from `doc.strip_visible` and nothing else. Every
+`filter`/`find` in the function scans that set, so **a page that is not on
+screen is never ordered**, at any zoom, in any document. That is the whole of
+what he is reporting: a page becomes a candidate at the moment it becomes
+visible, which is the moment he is already looking at it, and a scanned sheet
+is the worst case because its raster is an image the size of the page.
+
+The eviction side does **not** have the same bound.
+`StripRasters::retain(current, budget)` (`render/strip.rs:306`) drops the page
+**furthest from `current` by `page.abs_diff(current)`** until the texel budget
+is met — visibility is not consulted anywhere in it. So a raster for a page two
+ahead of the one being read is already a first-class citizen of the cache; it is
+simply never asked for.
+
+That asymmetry is what makes this small, and it also dictates the shape:
+
+- **The prefetch order must be the exact reverse of the eviction order.**
+  `retain` evicts by `abs_diff(current)` descending, so the band must be
+  ordered by `abs_diff(current)` ascending. Any other order prefetches a page
+  that `retain` prefers to drop, and the two mechanisms grind against each
+  other for as long as he keeps scrolling.
+- **Precedence is structural, not a priority number.** The existing visible
+  scan runs first and unchanged; the band is consulted only when that scan
+  returns `None`. A visible page with no raster therefore cannot be behind a
+  prefetch in the queue, because the prefetch was never issued. Requirement 2
+  is then a property of the control flow rather than a rule something has to
+  honour.
+- **The budget is what is left of the strip's texels**, per his *"as many as we
+  can"*: stop offering band candidates once `strip_rasters.texels()` has reached
+  `prefs.page_cache.texels()`. Without that guard the worker renders a page
+  which the next frame's `retain` immediately evicts, for ever.
+- **`strip_page_orderable` still gates every candidate**, for O186's reason:
+  above the renderer's pixmap ceiling a whole-sheet order cannot be placed, and
+  asking anyway is what painted a raster-size error across a neighbouring sheet.
+- **`settling` still suppresses everything.** A band ordered mid-wheel would
+  rasterize the document once per notch, which is the failure the 150 ms commit
+  exists to prevent.
+- **`RenderWorker` stays single-slot.** Its own header argues the case — a
+  second in-flight render is always a superseded first one — and prefetch does
+  not disturb it, because the band is only reached when the worker is idle *and*
+  every visible page is already filled. `cancel_and_wait` keeps its invariant
+  untouched.
+
+**What this does not cover, and it is deliberate.** `fill_strip` returns early
+when `strip_visible` is empty, which is the single-page arrangement: there the
+strip cache is cleared outright and paging with PageDown renders from nothing.
+His words are *"as I scroll"*, so the strip is the subject; the single-page case
+is a second, separate question and is not being folded in silently.
+
+**The disclosure this owes (rule 4).** A prefetched page renders exactly as a
+page he scrolled to — same path, same raster, no marking of any kind. What is
+owed off-canvas is the count: a `trace_changed` slot saying how many band pages
+are resident, so a driven check can assert the band filled rather than infer it
+from a timing.
+
 ## O202 — **FILED** — form objects have no way to set their colour, before or after placement
 
 > *"the forms objects have no way to edit their colour before or after

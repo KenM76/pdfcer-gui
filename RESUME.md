@@ -49,11 +49,16 @@ row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
 1. **O201 — a scanned page is not there until he scrolls onto it.** He waits at
-   every page of a multipage scan. `render::settle::fill_strip` asks for one
-   visible page per frame and `RenderWorker` has a single slot, so nothing is
-   ever rendered ahead. Visible pages keep absolute precedence; the
-   ahead-of-scroll work is what is left of the `StripRasters` texel budget, and
-   `RenderWorker::cancel_and_wait` is the invariant a prefetch must not break.
+   every page of a multipage scan. Measured: `render::settle::fill_strip` builds
+   its candidate set from `doc.strip_visible` and nothing else, so a page off
+   screen is never ordered at any zoom — the single `RenderWorker` slot is not
+   the cause and does not need changing. `StripRasters::retain` already evicts by
+   `page.abs_diff(current)` with no reference to visibility, so the cache is
+   already prefetch-shaped; **a band must therefore be ordered by that same
+   distance ascending**, or it prefetches what eviction prefers to drop. Visible
+   pages keep absolute precedence structurally — the band is consulted only when
+   the existing visible scan returns `None`. The argument is in
+   `OPERATOR_REQUESTS.md` O201.
 2. **O204 — Tab inside a form walks the ribbon instead of the fields.** The key
    belongs to whatever he last clicked: the next field in a form, the next object
    on the canvas, Shift+Tab backwards. `canvas::keys` returns early on
