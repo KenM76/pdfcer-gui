@@ -61,12 +61,18 @@
 //! word on one of those is not a defect the operator reports; it is one he finds
 //! later, in a document he has already sent.
 //!
-//! So the pin comes off only when [`super::page_occurrences`] says the text
-//! appears exactly once, and that function's header carries the argument for why
-//! a count over extracted text is a **conservative** stand-in for a count over
-//! operator text: every way the two can differ pushes the count up, so `n == 1`
-//! means the engine has at most one candidate. The proxy can refuse a safe edit;
-//! it cannot license an unsafe one.
+//! So the pin does not come off at all. [`EditRequest::spanning_from`] starts the
+//! span search **at the pinned operator** rather than at the first operator on
+//! the page, with every other guard unchanged: `find` says *what*, the pin says
+//! *which one*, and the run reached is the one the caret is in.
+//!
+//! ⚠ Counting the occurrences and dropping the pin when the text is unique is
+//! **not** a weaker version of this and must not be reintroduced as a fallback.
+//! `find_anchor` tries a **single-operator** match across the whole page before
+//! the spanning search runs at all, so a single-operator twin anywhere on the
+//! sheet beats a spanning occurrence above it — dropping the pin can make the
+//! clicked run *unreachable*, not merely ambiguous. [`super::Plan::occurrences`]
+//! carries the engine's own ruling.
 //!
 //! ## ★★★ The two fixtures, and why the second one is the important one
 //!
@@ -76,8 +82,8 @@
 //!
 //! | fixture | shape | what it holds down |
 //! |---|---|---|
-//! | `per-glyph-operators.pdf` | one per-glyph run `ABC`, unique on the page | the pin comes off and the edit **lands** |
-//! | `per-glyph-twice.pdf` | the **same** per-glyph run `ABC`, twice | the pin stays on and the edit is **refused** |
+//! | `per-glyph-operators.pdf` | one per-glyph run `ABC`, unique on the page | the pin and the flag go out together and the edit **lands** |
+//! | `per-glyph-twice.pdf` | the **same** per-glyph run `ABC`, twice | the **clicked** occurrence changes and the other does not |
 //!
 //! ⚠ **Without the second, the guard is untestable in the only direction that
 //! matters.** A build that dropped the pin unconditionally would satisfy every
@@ -88,9 +94,10 @@
 //!
 //! ★★ [`the_engine_would_have_edited_the_wrong_one`] is what makes that concrete:
 //! it asserts, against the engine directly, that an unpinned request on
-//! `per-glyph-twice.pdf` **succeeds** — so the refusal below is a decision this
-//! shell took, not a limitation it inherited. Without it a reader could believe
-//! the guard was decoration over something the engine would have refused anyway.
+//! `per-glyph-twice.pdf` **succeeds**, on whichever occurrence it reaches first.
+//! So the pin below is choosing between two edits the engine would both have
+//! made — without this a reader could believe it was decoration over something
+//! the engine disambiguated anyway.
 
 #![cfg(test)]
 // ---------------------------------------------------------------------------
@@ -198,8 +205,8 @@ fn the_fixtures_runs_are_written_one_glyph_per_operator() {
     }
 }
 
-/// ★★★ **HIS TYPO. The pin comes off on a unique run, and the correction
-/// lands.**
+/// ★★★ **HIS TYPO. The pin stays on, the span search starts at it, and the
+/// correction lands.**
 ///
 /// Driven through the real [`super::plan`] rather than by hand-building an
 /// `EditRequest`, because the claim is about **what the shell decides**. A test
@@ -210,21 +217,17 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     let doc = crate::app::state::open_local_fixture(UNIQUE);
     let planned = super::plan(&doc, 0, 0, RUN, FIXED);
 
-    // ★★★ **THE PIN NOW STAYS ON, AND THIS ASSERTION USED TO SAY THE
-    // OPPOSITE.** Until 2026-09-08 it read `pinned_span.is_none()` with the
-    // comment *"THE WHOLE FIX … the pin must come OFF"*, licensed by
-    // `occurrences == Some(1)`.
+    // ★★★ **THE PIN STAYS ON**, and the obvious simplification here is to
+    // drop it because this fixture holds the run only once.
     //
-    // `Pass 272.0`'s `EditRequest::spanning_from` retired both. The span
-    // search starts at the pinned operator instead of at the first operator
-    // on the page, so the pin no longer has to be traded away to reach a
-    // split run.
-    //
-    // ⚠ And the engine's reply said the old fallback was never as safe as it
-    // read: `find_anchor` tries a **single-operator** match across the whole
-    // page before the spanning search runs, so a single-operator twin
-    // anywhere on the sheet beats a spanning occurrence above it. Dropping
-    // the pin could make the clicked run *unreachable*, not merely ambiguous.
+    // `EditRequest::spanning_from` starts the span search at the pinned
+    // operator rather than at the first operator on the page, so the pin does
+    // not have to be traded away to reach a split run. And trading it away was
+    // never as safe as it reads: `find_anchor` tries a **single-operator**
+    // match across the whole page before the spanning search runs, so a
+    // single-operator twin anywhere on the sheet beats a spanning occurrence
+    // above it — dropping the pin can make the clicked run *unreachable*, not
+    // merely ambiguous.
     assert!(
         planned.request.pinned_span.is_some(),
         "★★★ THE PIN MUST STAY ON. It is what makes the edit address THIS run, and \

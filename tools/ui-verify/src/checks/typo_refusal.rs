@@ -42,7 +42,7 @@
 //!
 //! | gesture | what must happen |
 //! |---|---|
-//! | correct the typo in text the document arrived with | the commit **lands**, `occurrences=1 pinned=false` on the plan's own line, and **no `⊗` slot draws** |
+//! | correct the typo in text the document arrived with | the commit **lands**, `pinned=true span_from_pin=1` on the plan's own line, and **no `⊗` slot draws** |
 //! | commit text pdfcer itself wrote | the edit lands **and no `⊗` slot draws after it** |
 //!
 //! The second row is the whole reason this file is long. The oracle for the
@@ -55,7 +55,7 @@
 //!
 //! ## ★★★ THE ASSERTION THAT CARRIES THE VERDICT IS NOT "THE EDIT LANDED"
 //!
-//! It is `edit-text-pin … occurrences=1 pinned=false`, and the distinction is
+//! It is `edit-text-pin … pinned=true span_from_pin=1`, and the distinction is
 //! the difference between a working program and a dangerous one.
 //!
 //! The pin is the **only** disambiguator `EditRequest` carries — there is no
@@ -69,10 +69,23 @@
 //! ⇒ So a build that dropped the pin **unconditionally** would land this edit,
 //! satisfy a naive assertion for ever, and be exactly the build that must never
 //! ship. The plan's own line is what tells the two apart, and this check reads
-//! it. `canvas::textedit::Plan::occurrences` carries the reasoning;
+//! it.
+//!
+//! The shipped mechanism keeps the pin and narrows the search instead:
+//! [`EditRequest::spanning_from`](pdfcer_core::text_edit::EditRequest::spanning_from)
+//! starts the span search **at the pinned operator** rather than at the first
+//! operator on the page, with every other guard unchanged. `find` says *what*;
+//! the pin says *which one*.
+//!
+//! ⚠ Counting the occurrences and dropping the pin when the text is unique is
+//! **not** a weaker version of the same thing and must not be reintroduced as a
+//! fallback — `find_anchor` tries a single-operator match across the whole page
+//! before the spanning search runs at all, so an unpinned request cannot reach a
+//! spanning run whenever a single-operator twin exists anywhere on that page.
+//! `canvas::textedit::Plan::occurrences` carries the engine's own ruling;
 //! `canvas::textedit::glyphwall` holds it as unit tests over two authored
 //! fixtures — one where the run is unique and the edit must land, one where it
-//! appears twice and the edit must be refused **by name**.
+//! appears twice and the **clicked** occurrence must be the one that changes.
 //!
 //! ## The oracle, and its one honest weakness
 //!
@@ -101,6 +114,25 @@
 //!
 //! ⚠ **Copy his file to scratch and drive the copy.** The edit under test writes
 //! to the document; never point this at OneDrive.
+//!
+//! ### Reaching the spanning decision without his file
+//!
+//! His document is not in this repository, and on any ordinary whole-operator
+//! run the plan takes the other branch — `pinned=true span_from_pin=0` — which is
+//! correct but exercises nothing this check was written for. The repository owns
+//! a fixture of exactly his shape:
+//!
+//! ```text
+//! --pdf fixtures/per-glyph-twice.pdf --doc-point 0,84.3,703.8
+//! ```
+//!
+//! — the centre of the **first** of two identical per-glyph `ABC` runs,
+//! `find-text` box `[72.00, 697.36, 96.67, 710.20]`. Two occurrences is the point:
+//! it is the page on which dropping the pin would edit the wrong one.
+//!
+//! ★ The driven check can only read the trace, so it asserts the *decision*
+//! (`pinned=true span_from_pin=1`). Which occurrence actually changed is asserted
+//! by `canvas::textedit::glyphwall` against the same fixture, by position.
 //!
 //! ## ★★ Why the caret is expected to be OFFERED, not withheld
 //!
@@ -435,25 +467,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
 
+    // A refusal here is a FAILURE, not an outcome to categorise.
     //
-    // Until today this check required the commit to be **refused**, and then
-    // asserted that the refusal was disclosed and correctly categorised. That
-    // was the honest thing to assert while it was true: the shell sent the run's
-    // whole text as `find` **beside a provenance pin**, and `Pass 256.0`'s
-    // contract says *"a pinned request never spans"* — so the request was
-    // confined to the one show operator the pin named, which on his line holds a
-    // single character, and a thirty-six character `find` could not match inside
-    // it. He reported it as *"if I try to edit the edit is not accepted."*
+    // The defect he reported was a refusal: the shell sent the run's whole text
+    // as `find` beside a provenance pin, and `Pass 256.0`'s contract says *"a
+    // pinned request never spans"*, so the request was confined to the one show
+    // operator the pin named — which on his line holds a single character. The
+    // shell now keeps the pin and sets `span_from_pin`, so the span search starts
+    // at that operator and the cross-operator matcher reaches the run.
     //
-    // The shell now drops the pin when the run spans operators **and** the text
-    // occurs exactly once on the page (`canvas::textedit::Plan::occurrences`),
-    // which lets the engine's cross-operator matcher reach it. So the refusal is
-    // gone and this arm asserts the correction instead.
-    //
-    // ⚠ **A check that still accepted the refusal would be describing a program
-    // that no longer exists**, and worse: it would go on passing on a build
-    // where the fix had been reverted, which is the single regression this file
-    // is now the only driven instrument for.
+    // ⚠ A check that accepted the refusal would go on passing on a build where
+    // that was reverted, and this file is the only driven instrument for it.
     if let Some(refused) = trace.events(REFUSED_EVENT).last() {
         let refusal_raw = refused.raw.clone();
         let shot = ctx.out("typo-refusal-still-refused.png");
@@ -468,13 +492,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "★★★ HIS TYPO STILL CANNOT BE CORRECTED. The caret was placed on the run he \
              reported, `Ctrl+Enter` committed, and the engine refused: `{refusal_raw}`.\n\
              ★ READ THE PLAN'S OWN LINE FIRST — it says which half is wrong: {pin}.\n\
-             · `pinned=true` with `one_operator=false` is the defect he reported, returned. \
+             · `span_from_pin=0` with `one_operator=false` is the defect he reported, returned. \
              `Pass 256.0`: *a pinned request never spans*, so a `find` sent beside a pin is \
              confined to one show operator, and his producer writes one glyph per operator. \
-             `canvas::textedit::plan` must drop the pin when `occurrences == 1`.\n\
-             · `occurrences=` greater than 1 is the AMBIGUITY GUARD firing, and that is \
-             correct behaviour on a page holding the same words twice — but not on this one. \
-             Re-aim, or check `canvas::textedit::page_occurrences`.\n\
+             `canvas::textedit::plan` must set `EditRequest::span_from_pin` whenever the run \
+             is written across more than one.\n\
+             · `pinned=false` is the pin having been dropped, which is the other way to get \
+             here and the dangerous one — `find_anchor` tries a single-operator match across \
+             the whole page first, so an unpinned `find` cannot reach a spanning run at all \
+             when a single-operator twin exists on that page.\n\
              · no `edit-text-pin` line means the plan read no provenance at all, so nothing \
              was measured and the pin was never even a decision.\n\
              ★★ `canvas::textedit::glyphwall` holds this as unit tests over two authored \
@@ -511,46 +537,83 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // A build that dropped the pin unconditionally passes the assertion above
     // for ever and is exactly the dangerous one: on a page holding the same
     // words twice it would silently correct whichever the engine reached first,
-    // on a signed quotation. So the plan's own line must show that the pin came
-    // off *because the text was counted and found unique*, not by default.
+    // on a signed quotation. So the plan's own line must show that the pin was
+    // still ON when the request went out, and that the span search was told to
+    // START there.
+    //
+    // ⚠ Neither field alone says it. `Pass 256.0`: a pinned request never
+    // spans — so a pin without the flag is the refusal he reported, and the
+    // flag without a pin has nothing to anchor to. `span_from_pin` is the
+    // complement of `one_operator` by construction in `canvas::textedit::plan`,
+    // so reading all three is also a check on the emitter.
     let pin_line = trace.events("edit-text-pin").last();
-    let counted = pin_line
-        .and_then(|l| l.get("occurrences"))
-        .map(str::to_owned);
     let pinned = pin_line.and_then(|l| l.get("pinned")).map(str::to_owned);
-    match (counted.as_deref(), pinned.as_deref()) {
-        (Some("1"), Some("false")) => {
+    let spanning = pin_line
+        .and_then(|l| l.get("span_from_pin"))
+        .map(str::to_owned);
+    let one_op = pin_line
+        .and_then(|l| l.get("one_operator"))
+        .map(str::to_owned);
+    match (pinned.as_deref(), spanning.as_deref(), one_op.as_deref()) {
+        (Some("true"), Some("1"), Some("false")) => {
             report.note(
                 "★★★ and it landed for the RIGHT reason: `edit-text-pin` reports \
-                 `occurrences=1 pinned=false` — the run spans show operators, the text occurs \
-                 once on the page, and the pin was dropped BECAUSE it was counted unique. On a \
-                 page with two candidates the same code keeps the pin and refuses",
+                 `pinned=true span_from_pin=1 one_operator=false` — the run is written across \
+                 several show operators, the pin stayed ON, and the span search was told to \
+                 start AT it. On a page holding the same words twice the same code edits the \
+                 one that was clicked rather than the first one on the page",
             );
         }
-        (Some(n), Some(p)) => {
+        (Some("true"), Some("0"), Some("true")) => {
+            report.note(
+                "★★ it landed, and the pin was kept — but on a WHOLE-OPERATOR run: \
+                 `edit-text-pin` reports `pinned=true span_from_pin=0 one_operator=true`, so \
+                 the pin alone names the operator and `find` is dropped. That is the correct \
+                 plan for this shape, and it is the shape most producers write. ⚠ It is NOT \
+                 the shape his defect was about, so this launch did not exercise the spanning \
+                 decision. Aim at a per-glyph run to reach it — see this module's Aim section",
+            );
+        }
+        (Some("false"), _, _) => {
             return Ok(Some(format!(
-                "★★★ THE EDIT LANDED BUT THE GUARD DID NOT DECIDE IT. `edit-text-pin` reports \
-                 `occurrences={n} pinned={p}`, and the only combination that licenses an \
-                 unpinned request is `occurrences=1 pinned=false`.\n\
-                 ⚠ `pinned=false` with any other count is the dangerous build: the pin is the \
-                 ONLY disambiguator `EditRequest` carries — there is no occurrence index — so \
-                 dropping it on a page holding the same words twice hands the choice to the \
-                 engine's scan order. This document is a signed quotation. A wrong edit here \
-                 is one he finds later, in a file he has already sent.\n\
-                 See `canvas::textedit::Plan::occurrences` and the guard test \
-                 `glyphwall::a_typo_that_appears_twice_on_the_page_is_refused_rather_than_guessed`. \
-                 Trace: {}.",
+                "★★★ THE EDIT LANDED BUT THE PIN WAS DROPPED: `{}`.\n\
+                 ⚠ This is the dangerous build. The pin is the ONLY disambiguator \
+                 `EditRequest` carries — there is no occurrence index on it — so an unpinned \
+                 request on a page holding the same words twice hands the choice to the \
+                 engine's left-to-right scan. This document is a signed quotation. A wrong \
+                 edit here is not a defect he reports; it is one he finds later, in a file he \
+                 has already sent.\n\
+                 ★ The shipped mechanism keeps the pin: `EditRequest::spanning_from` starts \
+                 the span search at the pinned operator. `canvas::textedit::Plan::occurrences` \
+                 carries the engine's own ruling that counting occurrences is NOT a weaker \
+                 version of the same thing, and \
+                 `glyphwall::a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked` \
+                 holds it as a unit test. Trace: {}.",
+                pin_line.map_or("— no `edit-text-pin` line at all", |l| l.raw.as_str()),
                 session.trace_path().display()
             )));
         }
-        _ => {
+        (Some(p), s, o) => {
+            return Ok(Some(format!(
+                "★★★ THE EDIT LANDED AND THE PLAN'S OWN LINE DOES NOT ADD UP: `pinned={p} \
+                 span_from_pin={} one_operator={}`. `span_from_pin` is the complement of \
+                 `one_operator` by construction in `canvas::textedit::plan`, so either the \
+                 emitter and the decision have drifted apart or a field changed spelling. In \
+                 both cases this check is reading something other than the decision it was \
+                 written to judge, and its green on other runs means less than it looks. \
+                 Trace: {}.",
+                s.unwrap_or("— absent"),
+                o.unwrap_or("— absent"),
+                session.trace_path().display()
+            )));
+        }
+        (None, _, _) => {
             return Ok(Some(format!(
                 "★★ THE EDIT LANDED AND THE PLAN SAID NOTHING ABOUT WHY. No `edit-text-pin` \
-                 line carrying both `occurrences=` and `pinned=`, so this check cannot tell a \
-                 build that counted the occurrences from one that drops the pin \
-                 unconditionally — and those two are a working program and a silent \
-                 wrong-edit waiting to happen. The trace field is the whole instrument here; \
-                 `canvas::textedit::plan` writes it. Trace: {}.",
+                 line carrying `pinned=`, so this check cannot tell a build that kept the pin \
+                 from one that drops it unconditionally — and those two are a working program \
+                 and a silent wrong-edit waiting to happen. The trace field is the whole \
+                 instrument here; `canvas::textedit::plan` writes it. Trace: {}.",
                 session.trace_path().display()
             )));
         }
