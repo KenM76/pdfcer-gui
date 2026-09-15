@@ -1,2353 +1,766 @@
-# pdfcer GUI — defect register
+# pdfcer-gui — defect register
 
-**Compiled:** 2026-08-12, against `D:\Dev\pdfcer` at the release build
-dated 2026-08-12 19:54 (`target/release/pdfcer-gui.exe`).
+What this project's defects taught it, and what is still wrong. Read it before
+changing a surface it names; the gates read several of its entries by number.
 
-Every entry below was verified against source at the quoted `file:line`,
-or observed directly by driving the built binary. Screenshots are in
-`evidence/`. Nothing here is inferred from documentation alone.
+Every entry is one of three kinds, and its heading says which:
 
-Ordering is by *cost to the user divided by cost to fix*, not by severity.
+- **RULE** — repaired in this codebase, and the repair left a rule that a gate
+  or a test now enforces. The entry states the rule and its mechanism and names
+  the enforcer. Nothing about the incident survives.
+- **OPEN** — still present in this codebase, verified at the `file:line` quoted.
+- **CONSTRAINT** — an upstream or engine property this shell has to design
+  around. It will not be "fixed" here.
 
----
+Defects that were only ever properties of the GUI this project replaces are not
+here. Git has them.
 
-## D1 — The Delete key stops working the moment you click the canvas
+D-numbers are stable because the gates and the source cite them by number
+(`grep -rn 'DEFECTS.md D[0-9]' crates/ tools/`). Numbers are not reused.
 
-**Severity:** critical · **Fix:** one line · **Regression dated:** 2026-08-10
-
-This is the defect reported as *"I can't even click on an object and
-delete it by hitting the delete key."* It is real, it is not a
-discoverability problem, and the selection half works perfectly.
-
-### Causal chain
-
-1. **Click-select works with no gating.** With no tool armed the canvas
-   falls to the modeless branch (`main.rs:17010-17041`) which hit-tests
-   and assigns `doc.canvas_selection` (`main.rs:22123-22173`, applied at
-   `22614`). No `editing_enabled` check, no armed-tool requirement, no
-   Objects-panel requirement. The object visibly selects.
-
-2. **`editing_enabled` is not the culprit.** It defaults to `true`
-   (`main.rs:3624`), with the comment *"Editing starts ON… a new
-   operator who finds every tool inert would reasonably conclude it is
-   broken."* That instinct was right. It is not what is blocking Delete.
-
-3. **The canvas grabs egui keyboard focus on every click**
-   (`main.rs:16891-16895`):
-   ```rust
-   if image_response.clicked() || canvas::primary_drag_started(&image_response) {
-       image_response.request_focus();
-   }
-   ```
-   Deliberate, and reasonable — §1.4 wanted the canvas to be a real Tab
-   stop rather than an inert image. Because the widget is recreated every
-   frame its id stays live, so the focus never lapses.
-
-4. **The keyboard guard tests the wrong thing** (`main.rs:13777`):
-   ```rust
-   let typing = ctx.egui_wants_keyboard_input();
-   ```
-   In egui 0.35 that is **not** "a text field is focused". Verified in
-   the vendored source at
-   `egui-0.35.0/src/context.rs:2884-2886`:
-   ```rust
-   pub fn egui_wants_keyboard_input(&self) -> bool {
-       self.memory(|m| m.focused().is_some())
-   }
-   ```
-   — *any* focused widget, including the canvas itself. The doc comment
-   directly above it says *"egui is currently listening on text input
-   (e.g. typing text in a `TextEdit`)"*, which is what the name and the
-   comment both promise and what the implementation does not deliver.
-   This is an egui API footgun, not a careless read.
-
-5. **So the binding is never installed** (`main.rs:13875-13878`):
-   ```rust
-   if (!tool_active || canvas_delete_target) && !typing {
-       pressed(Modifiers::NONE, Key::Delete, Action::DeleteSelection);
-       pressed(Modifiers::NONE, Key::Backspace, Action::DeleteSelection);
-   }
-   ```
-   `tool_active == false` and `canvas_delete_target == true` are both
-   satisfied. `typing == true` from step 4. The branch never runs.
-
-6. **The deletion logic downstream is correct and simply unreachable.**
-   `Action::DeleteSelection` (`main.rs:11205-11290`) → `delete_selected_object()`
-   (`main.rs:5250-5310`). Pass 47.0 had already removed an earlier
-   `active_tool() == VectorEdit` gate here. That fix is intact; nothing
-   calls it.
-
-> **Root cause.** `collect_keyboard_actions` guards its unmodified-key
-> bindings with a predicate that means "any widget has focus" rather
-> than "a text field has focus", and the canvas takes focus on the very
-> click that selects the object — so from the first canvas click onward
-> the Delete key is permanently suppressed.
-
-### Blast radius
-
-The same `!typing` guard also suppresses, after any canvas click:
-
-| Keys | Lost function | Line |
-|---|---|---|
-| `PageDown` / `PageUp` | Next / previous page | `13780-13782` |
-| `Home` / `End` | First / last page | `13787-13790` |
-| `[` / `]` | Rotate page | `13849-13852` |
-
-So page navigation by keyboard is dead too, for the same reason and
-from the same click.
-
-### Why it was never caught
-
-`collect_keyboard_actions` has exactly one test
-(`main.rs:28338-28375`), which builds a bare `egui::Context::default()`
-with **no widgets** — therefore `memory.focused()` is `None` and
-`typing` is always `false`. The single property that breaks in the real
-app is structurally absent from the only harness that exercises the
-function. Object deletion is covered at the `Action` level, never
-through the key.
-
-The regression is self-declared in its own commit message: `e46c3a8`,
-2026-08-10, *"a focused text field keeps its unmodified keys —
-analysis-confirmed, NOT empirically verified."* It landed two days after
-Pass 47.0 fixed the same key by a different route.
-
-### Fix
-
-**Primary** — `main.rs:13777`:
-```rust
-let typing = ctx.text_edit_focused();
-```
-This preserves `e46c3a8`'s intent exactly. `text_edit_focused()`
-(`egui-0.35.0/src/context.rs:2889-2895`) resolves the focused id and
-checks whether a `TextEditState` exists for it. A `DragValue` in
-keyboard-edit mode registers its `TextEdit` under the *same* id it
-focuses, so property-bar drag values still count as typing.
-
-**Secondary, required alongside** — `main.rs:13341-13348`. Once `typing`
-stops masking it, the `canvas_delete_target` escape hatch becomes
-reachable while a text tool is armed with a stale `canvas_selection`,
-which would steal forward-delete from the caret. The comment at
-`main.rs:13872-13874` already promises this cannot happen (*"The text
-tools are deliberately NOT given this hole"*) but nothing enforces it:
-```rust
-Status::Open(doc) => !matches!(
-        doc.active_tool(),
-        Some(CanvasTool::TextEdit | CanvasTool::AddText)
-    ) && (doc.selected_dimension.is_some()
-        || doc.entered.is_some_and(|e| e.subpath.is_some())
-        || !doc.canvas_selection.is_empty()),
-```
-
-**Test that would have caught it, and should be added:** drive
-`collect_keyboard_actions` through a context where a widget holds focus
-(`ctx.memory_mut(|m| m.request_focus(id))`) and assert `Key::Delete`
-still yields `Action::DeleteSelection` when
-`CanvasKeys { delete_target: true, tool_active: false, .. }`.
-
-### Two workarounds, until it lands
-
-Both work today and both explain why this survived dev testing (egui's
-default is `SurrenderFocusOn::Clicks`):
-
-- Click the object, then click **any ribbon or panel chrome** — that
-  surrenders canvas focus without clearing the selection — then Delete.
-- Select from the **Objects panel** tree row instead of the canvas. A
-  plain `Button` never calls `request_focus`, so Delete works at once.
+Every `file:line` is in this workspace. `D:\Dev\pdfcer` is the engine, and it is
+read-only from here (`DEVELOPING.md` §1): an engine defect is written up and
+handed over, never applied.
 
 ---
 
-## D2 — Section headings and dock tab labels are invisible in the default theme
+## Standing rules
 
-**Severity:** high · **Fix:** small · **Evidence:** `evidence/crop_settings.png`, `evidence/crop_tabs_left.png`
+### D1 — RULE: "is the operator typing?" is asked in exactly one place
 
-Every collapsible section heading in the Settings dialog — *Appearance,
-Theme, Colour, Images and transparency, Copying and extracting text,
-Pages and printing, Saving files* — renders near-white on light grey. So
-do the dock tab labels "Pages" and "Objects". At 1× they are simply not
-readable.
+`ctx.egui_wants_keyboard_input()` means *any widget has focus*, not *a text
+field has focus* — it is `memory().focused().is_some()`, whatever its name and
+doc comment promise. The canvas takes focus on the click that selects an object,
+so a guard spelled that way suppresses every unmodified key from the first
+canvas click onward.
 
-### Cause
+`ctx.text_edit_focused()` is the right half, and it is only half: this shell's
+canvas caret is deliberately not a widget, so `text_edit_focused()` is `false`
+for an operator who is visibly mid-word. Both claimants are asked, once, in
+`canvas::textedit::composing`.
 
-`theme.rs:434-444` loops over all five widget states setting
-`corner_radius`, `bg_stroke` and `fg_stroke`. Then:
+Enforced by `tools/gates/check-typing-guard.sh`. It is a source gate rather than
+a test because a `Context` built in a test has no canvas draft and no focused
+field, so both spellings answer identically for every input a test can produce.
 
-```rust
-v.widgets.inactive.weak_bg_fill = p.panel;     // 447
-v.widgets.hovered.weak_bg_fill  = p.surface;   // 448
-v.widgets.active.weak_bg_fill   = p.accent;    // 449
-v.widgets.active.fg_stroke = Stroke::new(1.0, p.label_backdrop); // 450
-```
+### D2 — RULE: a foreground is assigned for the fill it is painted on
 
-`label_backdrop` is `rgba(250,250,250,220)` (`theme.rs:290`). Pairing it
-with the accent is correct — light text on an accent fill. But only
-`weak_bg_fill` is assigned the accent. **`widgets.active.bg_fill` is
-never set at all.** Widgets that paint their background with `bg_fill`
-rather than `weak_bg_fill` — `egui_tiles` tab buttons, `CollapsingHeader`
-headers — get the near-white foreground on a light background.
+Assigning `widgets.active.weak_bg_fill` the accent while leaving
+`widgets.active.bg_fill` unset gives every widget that paints from `bg_fill` —
+`egui_tiles` tab buttons, `CollapsingHeader` headers — a near-white foreground on
+a light background. `theme::Theme::write_style` sets both
+(`crates/egui-shell/src/theme/mod.rs:1395`).
 
-### Why CI did not catch it
+A gate over source can only say a colour is a named role; it cannot say what the
+text landed on. `check-theme-colors.sh` asks the first question,
+`check-plate-colour.sh` asks the second (a plate colour used as a foreground must
+have its matching fill), and `theme::contrast` renders the `(fg_stroke, bg_fill)`
+pairs of all five widget states in all three presets and measures them.
 
-Two tests look adjacent to this and neither covers it:
+### D3 — RULE: a `file:line` citation names its repository
 
-- `text_contrasts_with_its_background_in_every_preset` (`theme.rs:521`)
-  checks `text` against `surface`/`panel` and `text_muted` against
-  `surface`. It never tests `label_backdrop`.
-- `label_plates_stay_page_facing_not_chrome_facing` (`theme.rs:553`)
-  *asserts `label_backdrop` stays light* — correct for its stated
-  purpose (labels sit over the white page) — without checking what is
-  actually behind it in chrome.
+A citation is a claim about a particular document. A register entry that omits
+which repository it means gets resolved against whichever file the reader has
+open, and can be closed as fixed while the claim is still live somewhere else.
+Every citation in this file is in this workspace unless it says otherwise.
 
-`tools/check-theme-colors.sh` bans raw `Color32` literals outside
-`theme.rs`. It never measures a rendered pair. The gate is structural,
-not perceptual.
-
-### Fix
-
-Either set `v.widgets.active.bg_fill = p.accent` alongside line 449, or
-stop overriding `active.fg_stroke` and let the accent-filled case handle
-itself. Then add a test that asserts every place `label_backdrop` is
-used as a foreground has the accent as its background — or, more
-robustly, a contrast assertion over the actual `(fg_stroke, bg_fill)`
-pairs of all five widget states in all three presets.
-
----
-
-## D3 — README claims two capabilities that FEATURES.md says are stubs — **STILL LIVE, RE-MEASURED 2026-09-13, and it is the ENGINE's README**
-
-**Severity:** high (it is a published claim) · **Fix:** edit three words
-
-`README.md:20-22` lists under **"Working today"**:
-
-> …markup annotations; redaction (mark, review and apply); **Bates
-> numbering; PDF/A validation and conversion**; digital-signature
-> inspection…
-
-`FEATURES.md:29-31` states:
-
-> `to-pdfa`, `validate-pdfa`, `sign` and `bates-stamp` exist in
-> `pdfcer --help` as **stubs that print "not implemented"**. Not
-> ticked anywhere; listed under *Planned*.
-
-Confirmed at `FEATURES.md:224-225`, where both Bates numbering and PDF/A
-conformance are unticked on core, CLI **and** GUI.
-
-The same sentence claims printing *"with page placement, orientation,
-duplex, copies and n-up/booklet/poster imposition"*. Imposition is real
-in the CLI but `FEATURES.md:164` says it has **"No GUI surface at
-all"**, and the sentence is describing the application.
-
-`digital-signature inspection` is accurate — inspection only, no
-cryptographic verification — and should stay.
-
-This matters more than a normal doc error because the README's own
-selling point, two lines above, is that it *"says plainly what does and
-does not work today."*
-
-### ★★★ Re-measured 2026-09-13, and the first thing to settle is WHICH README
-
-This register was compiled against `D:\Dev\pdfcer`, so **`README.md:20-22`
-above is the ENGINE repository's README, not this project's.** That distinction
-had been lost: a standing task list carried an instruction to mark D3 resolved
-because Bates and PDF/A appear in neither `README.md` nor `DEVELOPING.md` — both
-true, and both about the wrong pair of files. ⇒ **A citation is a claim about a
-particular document, and a register entry that omits the repository is a
-citation waiting to be resolved against whichever file the reader has open.**
-Every `file:line` in this register means `D:\Dev\pdfcer`.
-
-**The engine's README still carries all three claims.** Line numbers have moved;
-the sentences have not:
-
-| claim | engine `README.md` | engine `docs/FEATURES.md` |
-|---|---|---|
-| Bates numbering | line 34, under **"Working today"** | `513` — unticked on core, CLI **and** GUI |
-| PDF/A validation and conversion | lines 36-37 | `515` — unticked on all three; `128` still calls `to-pdfa`, `validate-pdfa` and `bates-stamp` stubs that print *"not implemented"* |
-| n-up / booklet / poster imposition | lines 48-50, as a property of the application | `414` ticks the **CLI only**; `495` says the GUI surface is unbuilt and names what it would need |
-
-⇒ **Nothing here is ours to edit.** `D:\Dev\pdfcer` is read-only until fold-in,
-and a published capability claim is exactly the class the operator's own
-claim-sourcing rule says to escalate rather than improvise. It is written up as
-a hand-off; the fix is three words and a clause, and the escalation is the whole
-work. **Filed 2026-09-13 as `request_G014` on the shared channel**, with the
-three rows, the two commands that reproduce them, and an explicit alternative
-close: if any of the three HAS shipped since 2026-08-12, the wrong document is
-`FEATURES.md` and this project's acceptance criteria are stale -- which is worth
-learning now rather than at fold-in. ⚠ Watch for `reply_G014` with no
-`done_G014`; by the channel's own rule that shape means an answer nobody acted
+The related standing rule is the operator's: a published capability claim is
+sourced or escalated, never improvised. A claim about the engine's surfaces is
+filed on the shared channel; a `reply_` with no `done_` is an answer nobody acted
 on.
 
-✓ **What HAS changed, and it is the useful half for O197.** This project's own
-`README.md` and `DEVELOPING.md` contain **no** occurrence of *Bates*, *PDF/A*,
-*PDFA* or *imposition* — measured by grep on 2026-09-13. So the landing-page
-rewrite inherits no correction on this point, and must not acquire one: the
-temptation when leading on **format compatibility** is to reach for the
-conformance vocabulary, and three of those words are unticked on every surface
-this project ships.
+### D5 — RULE: a list that must agree with a table is derived from the table
 
----
+A hand-maintained keyboard reference with a doc comment telling you to
+hand-maintain it disagrees with the keymap. `crate::text::shortcuts` holds only
+the wording; every chord and every count comes from the registry
+(`text/shortcuts.rs:47-55`), so a binding added tomorrow is listed without anyone
+remembering to list it.
 
-## D4 — Text editing: three separate problems behind one complaint
+### D6 — RULE: capability is derived from the manifest, not from a mode's name
 
-Reported as *"text editing is weird and doesn't just edit the existing
-box and move the text correctly as you type plus flow to the next line
-doesn't work."* All three parts are correct. They have different causes
-and very different costs.
+A boolean "editing on" master toggle and a string comparison on `"read"` both
+produce the failure where a surface says editing is off while a gesture still
+edits. `app::modes::capability` derives capability from **the mode's tab list in
+the manifest** (`app/modes/capability.rs`), so the ribbon and the canvas read one
+sentence and the hole is unrepresentable rather than guarded.
 
-### D4a — The edit unit is one PDF show-text operator, not a text box
+Three things a gesture gate cannot close on its own, each found by asking what
+*survives* rather than what is refused: a click is not a drag, so gating presses
+alone leaves the commonest canvas gesture ungated; an armed tool outlives a mode
+switch, because it lives in `egui::Memory`; and a selection outlives it too,
+leaving grips on a page in Read.
 
-**Architectural limit, honestly documented.** Editing genuinely is
-in-place on the canvas — there is a real blinking caret painted in PDF
-space (`main.rs:17820-17830`), keystrokes are consumed as raw
-`egui::Event::Text` (`main.rs:18227-18243`), and no `TextEdit` widget is
-in the typing path. But `PendingEdit` pins to one run
-(`main.rs:2386-2400`): *"a commit may only span ONE run (§4.4)"*, and a
-`TJ` array is one operator.
+Driven by `ui-verify`'s `read_mode_refuses_canvas_edits`, which clicks page
+content in Read and asserts no selection, clicks *the same point* in Edit and
+asserts one — so Read's silence is proven to be a refusal rather than a miss —
+then re-enters Read and asserts the selection is dropped.
 
-So a visual paragraph split across several `Tj` runs — the ordinary
-output of CAD title blocks, Word and LibreOffice — must be edited run by
-run. Dragging a selection across runs sets `cross_run`, which **silently
-disables the whole typing loop** (`main.rs:18227`,
-`canvas.rs:1489-1510`) behind this notice (`ui_text.rs:5770`):
+### D9 — RULE: do not compensate in the file for a renderer's defect
 
-> *"This selection spans more than one text run … pdfcer's first-cut
-> editor edits one run at a time. Narrow the selection to edit or format
-> it."*
+Markup opacity is written as the annotation's `/CA` alone (§12.5.2), with the
+appearance stream's `ExtGState` left at `1.0` (`canvas/markup/pen.rs:283`,
+`:476`). Writing `/ca` into the appearance to make it look right in one viewer
+makes it half as opaque as intended in every other viewer, permanently, in
+documents that outlive the bug.
 
-**Second contributor to "weird":** while composing, what you see is not
-your glyphs. It is ghost text in an egui proportional font over a
-translucent mask (`main.rs:17868-17899` — *"NEVER a re-raster; the real
-glyphs appear only after a real commit"*). You type in the wrong
-typeface at the wrong widths, then it snaps to reality on Accept.
+Nor does a control ship before the capability behind it: a control that visibly
+does nothing is not a partial feature (`RIBBON_IA.md` P3).
 
-**To change it:** a multi-run edit request in core that groups runs into
-a line or block and re-emits them as a set, plus dropping the
-`cross_run` typing lock.
+### D10 — RULE: a theme that is built is not a theme that is installed
 
-> **Status 2026-08-15 — still architectural, but it now refuses in
-> words.** This shell's editor is still one-run; the multi-run request
-> does not exist in `pdfcer-core` and was not built. What changed is the
-> failure mode: a selection spanning runs is declined by a sentence on
-> the status row (`text::textedit::spans_runs`, via
-> `actions::record_note`) rather than by a keyboard that silently stops
-> responding. The ghost text is also gone — not replaced with a better
-> ghost, but with a caret and an extent bracket that claim only what the
-> shell can honestly know before a commit. The argument for why a
-> *prettier* ghost would be the wrong fix rather than a deferred one is
-> in `canvas::textedit::preview`.
+`Theme::apply` does two things — it writes the `egui` style, and it stashes the
+theme under a context id so `Theme::of(ctx)` can reach the roles that have
+nowhere to live in `egui`'s `Style` (the content backdrop, the label plate).
+Skipping the call leaves framework chrome painting from one palette and every
+`egui` widget from another, with every source gate green. It is called once per
+frame from `app::frame` (`app/frame.rs:274`), per frame rather than at startup so
+a theme change takes effect with no restart and no cache to invalidate.
 
-### D4b — Nothing moves as you type; two cases move wrongly on commit
+The only oracle that can say a theme is installed is a driven measurement of the
+running window: `ui-verify --check settings_theme_takes_effect` expands the
+Appearance group, clicks **Dark**, and measures the window body before and after.
 
-> **Both wrong cases FIXED 2026-08-15** in this shell —
-> `canvas::textedit::disposition`, a pure
-> `choose(text_matrix, ctm, alignment) -> Reason` consulted at the single
-> commit site (`app/actions/apply.rs`, `Action::CommitTextEdit`).
-> Rotation is rung 1 and outranks alignment; non-left alignment is
-> rung 2. **"Nothing moves as you type" is NOT fixed** — see the
-> measurement and the engine blocker below.
->
-> The line numbers in the prose below are **stale**: the engine's edit
-> code has since moved into `text_edit/`. `FollowerDisposition` and its
-> doc comment are now `text_edit/edit.rs:295`; the unguarded
-> `emit_tm([*a,*b,*c,*d,*e + delta,*f])` is `text_edit/edit.rs:1505`.
-> The claims themselves were re-verified against that source before the
-> fix landed; only the addresses moved.
->
-> **The honest limit.** A *single-line* right-aligned block still
-> reflows, because the engine's `infer_alignment` reports
-> `SingleLineDefault` when it has only one line to compare — alignment is
-> inferred from the agreement of several lines' edges, and one line
-> cannot disagree with itself. Multi-line right/centre/justified blocks —
-> the CAD title-block case — are pinned correctly.
->
-> **Why this refuses rotation less harshly than `reflow_apply` does.**
-> `Pin` is *correct* under rotation, not merely less wrong: it writes no
-> follower `Tm` at all, and its compensating `TJ` acts in text space,
-> i.e. along the rotated baseline. The ported guard
-> (`check_uniform_axis_aligned`, `MTX_EPS = 1e-6`, taken verbatim rather
-> than re-chosen) therefore selects `Pin` for rotated text instead of
-> refusing the edit. The argument is written out in `disposition.rs`.
+Still worth someone's judgement: the ribbon's group captions measure about
+4.2:1, which clears this project's 3.0 floor (WCAG AA for *large* text) and would
+fail the 4.5:1 that their ~10 pt size implies. Re-measure with
+`ui-verify --check ribbon_group_captions_legible`.
 
-The metrics path is **correct**: advance widths come from real font
-metrics — `/Widths` for simple fonts, `/W` + `/DW` for composite
-(`text_extract/font.rs:687-700`) — and §9.4.4 is implemented properly
-(`edit.rs:1950-1967`) with `Tc`, `Tw` and `Tz` all tracked, `Tw`
-correctly restricted to single-byte code 32. The 500/1000 fallback is
-the third rung only and is disclosed. `TJ` kerning numbers are preserved
-verbatim (`edit.rs:1983-2036`), not dropped.
+### D11 — RULE: no `RichText::strong()` without an explicit colour beside it
 
-But: **there is no re-layout per keystroke.** `main.rs:18208-18210` —
-*"Typing → build/extend the `PendingEdit` (§6.1). **No core call per
-keystroke.**"* Real layout runs once, in `commit_text_edit_draft`. So
-"as you type", nothing moves at all. That alone accounts for much of the
-complaint.
+`egui` has no role for emphasised text — `strong_text_color()` returns
+`widgets.active.text_color()`, the **active-widget** foreground, which this
+theme fills with `on_accent` because `widgets.active` is the accent-filled state.
+So `.strong()` on an ordinary panel is near-white on light grey, and it survives
+`override_text_color`. There is no colour it can resolve to that is correct on
+both an accent fill and a panel.
 
-Two cases are then genuinely **wrong** on commit:
+`tools/gates/check-strong-text.sh` enforces the narrow form: `.strong()` is a
+defect **unless an explicit `.color()` is within two code lines of it.** That
+admits the legitimate uses — ribbon and dock tab labels, drawn *on* the accent
+fill, where R84 wants the weight because weight survives greyscale and
+colour-vision deficiency — and refuses everything else.
 
-1. **Right-aligned, centred and justified text moves the wrong way.**
-   `FollowerDisposition::Pin` exists precisely *"for a justified /
-   right-aligned tail that must not move"* (`edit.rs:301-303`), but the
-   GUI always passes `EditOptions::default()` — i.e. `Reflow` — at
-   `main.rs:12438`, its only call site. Alignment is never detected on
-   the edit path.
-2. **Rotated or skewed text is shifted along the wrong axis.** The
-   follower shift adds the advance delta straight to the translation
-   component: `emit_tm([*a, *b, *c, *d, *e + delta, *f])`
-   (`edit.rs:1503`), with **no rotation guard**. The reflow path does
-   refuse rotated text (`reflow_apply.rs:757-760`); the edit path does
-   not. This bites rotated CAD title-block text specifically.
+Two mechanisms the gate had to learn, both still load-bearing:
 
-There is also **no collision or margin-fit check anywhere in the edit
-path** — the response to an overrun is a disclosure string
-(`edit.rs:1527-1534`), not a re-layout.
+- The window is measured in **code lines, not source lines**, so a well-commented
+  pairing is not failed while a terse one passes. A gate that punishes
+  explanation trains people to delete it.
+- Weight and colour must be **one decision**, not two independent `if`s.
+  `ribbon::tabs` nests them (`crates/egui-shell/src/ribbon/tabs.rs:404-437`) so
+  the weight cannot be reached without the colour having been stated; two
+  parallel conditions let a hand-built cue struct produce a bare `.strong()`.
 
-**To change it:** re-measure and re-render the draft with real metrics
-per keystroke; detect alignment and select `Pin` for right/centre/
-justified tails; port the rotation guard `reflow_apply` already has.
+`ui.spinner()` resolves its colour the same way and is covered by the same gate.
 
-**Per-keystroke re-layout: measured, and blocked on the engine.**
-Release build, median of 5, via `canvas::textedit::cost`:
+### D12 — RULE: ask whether the glyph drawn is the substitution mark
 
-| document | extract (prov.) | recognize+align | plan+save | total |
-|---|---:|---:|---:|---:|
-| `tail-alignment` (3 lines) | 0.12 ms | 0.01 ms | 0.36 ms | **0.49 ms** |
-| `SW41177` p1 (SolidWorks sheet) | 32.07 ms | 0.16 ms | 70.54 ms | **102.77 ms** |
-| `ncored-benchmark` A3 | 356.53 ms | 2.79 ms | — | **356+ ms** |
+`epaint`'s `Fonts::has_glyph` does not ask *"is this codepoint drawable?"* It asks
+*"is this codepoint drawn by a face other than the one that supplies the
+substitution mark?"* — so every character whose first supporting face in the
+fallback chain is that face is reported missing and draws perfectly. The clinching
+reading is that `has_glyph(Monospace, 'A')` is `false`.
 
-102.77 ms on the operator's own sheets is six frames. The blocker is
-**not** the arithmetic: `plan_edit`/`EditPlan` already computes
-`advance_delta` before any write — exactly the number wanted — but it is
-`pub(crate)`. Every public route either performs a full incremental save
-or mutates the undo log, which is why "plan+save" dominates the table.
+`icons::glyphs::GlyphProbe` is the correct predicate: lay the character out and
+compare the glyph actually drawn against a fingerprint of the substitution mark.
+`GlyphProbe::new` fingerprints that mark from **three** mutually unrelated
+unassigned codepoints across three planes and panics unless all three agree, so a
+future font set covering one fails at construction rather than silently reporting
+everything drawable.
 
-**This is a feature request for the engine**, and the smallest one that
-unblocks it: a dry run — `measure_edit(&Document, &EditRequest) ->
-Result<f64, _>`, or simply making `plan_edit` public. With it, the cost
-falls to the middle column: extraction is already cached per
-`(page, edit_epoch)`, and typing bumps no epoch.
+The gate `icons::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph` reads
+every `.rs` under `text/` **from source** and checks every codepoint in every
+operator-visible literal, so a string added tomorrow is covered. It skips the
+braced test item and **resumes** (see D13), and a file it cannot parse is a hard
+refusal by name, never a quiet zero.
 
-**Debouncing was rejected, not overlooked.** A re-layout that arrives
-150 ms after you stop typing is a *second* surprise, and D4a's lesson is
-that this feature's sin is showing the operator something the document
-will not say. Until the draft can move truthfully on every keystroke, it
-does not move at all — and the caret and extent bracket that *are* drawn
-promise nothing about widths.
+The quarantine mechanism is kept with nothing in it: each entry asserts its
+codepoint is *still* undrawable **and** still present in the catalog, so fixing
+the string makes the gate fail telling you to delete the entry. A quarantine that
+outlives its reason is how an exception becomes a convention.
 
-### D4c — Reflow is unreachable in the sequence a user actually performs
+Two lessons under this number, both general:
 
-Reflow is implemented and shipped. It is blocked by three gates in a row.
+- *"The gate went red"* and *"the thing the gate names is broken"* are different
+  claims, and only the first is measured until somebody looks. Inferring from a
+  tool's answer without asking what question the tool answers is the same class
+  as inferring from documentation.
+- A codepoint shipping in the launch screen went unseen because the gate looked
+  only at the status bar. Point a predicate at everything it is true of.
 
-**By design it never happens while typing.** Decision 015 §3.3 and
-standing rule **R75**: *"Within-block re-wrap is never automatic on
-edit; it is an operator-invoked action producing a DERIVED preview
-accepted/rejected before any mutation."* The reasoning — that reflow
-invents line breaks the file never stated — is sound and should not be
-overturned. But it means the line simply grows past the margin and you
-must go and press a button.
+### D13 — OPEN: `check-ui-strings.sh` stops scanning at the first column-0 `#[cfg(test)]`
 
-**Gate 1.** The "Reflow paragraph…" button is disabled *while you are
-typing*: `reflow_button_enabled` is `target.is_some() && !pending_is_some`
-(`main.rs:2462-2464`). You must Accept first.
+The truncation is deliberate — test assertion messages are prose nobody renders,
+and they were the largest source of the noise floor this gate was written to
+remove. The **assumption** underneath it is not: nothing requires the test module
+to be last, and where it is not, every non-test item after it is unscanned **and
+the gate reports clean**. `#![cfg(test)]` on a whole file exits the same way and
+is correct.
 
-**Gate 2 — the serious one.** Having accepted, reflow then refuses
-outright (`edit.rs:4279-4285`):
-```
-"the page's content was already edited this session; reflow is planned
- against the base content, so save and reopen before reflowing this page"
-```
-And the **preview still renders**, because it is computed from
-`state.page_text` against the base document (`main.rs:18501-18520`). So
-you see a correct-looking ghost, click Accept, and only then are refused
-(`main.rs:18660-18669`). Edit text → reflow is a dead end that requires
-save-and-reopen.
+The convention that makes the limit safe — test module last — is the thing to
+hold. Candidates:
 
-**Gate 3 — an open filed defect.** Pass 33.0 (`ROADMAP.md:43419`). Even
-on a fresh open, the auto-detected wrap width is wrong after an
-overflowing edit, because the block bbox is a union over its lines and
-the one over-long line has already widened it (`reflow.rs:605`:
-`req.wrap_width.unwrap_or_else(|| old_bbox.width())`). Measured on the
-project's own fixture: a 156 pt block became 930 pt and the re-wrap ran
-text off a 612 pt page. Only the *disclosure* option shipped; the
-roadmap says plainly that *"an operator who does not read the disclosure
-still gets a re-wrap to a width they never chose."*
-
-**Additional refusals that hit real CAD and Word content hard**
-(`reflow_apply.rs`): text inside a form XObject (`:658`), more than one
-font resource in the block (`:669`), rotated or skewed `Tm`/CTM
-(`:757`), more than one text-matrix scale — i.e. **mixed font sizes**
-(`:768`), and composite/CID fonts.
-
-**And a tokenisation limit that matters more than any of them**
-(`reflow.rs:42-54`): word breaks are found at **real U+0020 space glyphs
-only**. Producers that position words with `Td`/`TJ` offsets instead of
-emitting a space glyph — extremely common in CAD output — present reflow
-with one unbreakable word, so nothing wraps at all.
-
-**To change it:** pick option (b) or (d) for Pass 33.0's wrap width;
-make reflow plannable against staged session content so Gate 2
-disappears; treat `DerivedWordSpace` as a break opportunity; relax the
-uniform-font and uniform-size refusals.
-
-### Why the tests do not catch any of this
-
-`fixtures/synthetic/reflow/reflow.pdf` is 5 pages of one paragraph each,
-Courier, emitted as **one `Tj` per line with real space glyphs and a
-uniform font and size** (`tools/gen-reflow-fixtures.py:114-124`). The
-most complex text-edit fixture, `tm_follower.pdf`, has **two** runs on
-one line. No fixture has a paragraph split across many runs, mixed sizes
-or fonts in a block, rotated text, or words separated by positioning
-rather than space glyphs. Every condition that fails in the field is
-absent by construction.
-
----
-
-## D5 — The keyboard-shortcuts reference omits six live bindings
-
-`ui_text::shortcuts_reference()` (`ui_text.rs:5143-5158`) lists 14
-chords. Missing: **Ctrl+F** (Find), **Ctrl+P** (Print), **Ctrl+E** (Edit
-text), **Ctrl+Shift+E** (Add text), **F11** (full screen), **Ctrl+H**
-(read mode). The doc comment immediately above it
-(`ui_text.rs:5138-5141`) says it *must* be kept in step with
-`collect_keyboard_actions`.
-
-**Fix:** derive the list from `collect_keyboard_actions`, or add a test
-asserting the two agree. A hand-maintained list with a comment telling
-you to hand-maintain it has already failed once.
-
----
-
-## D6 — Review mode does not actually block object deletion — **CLOSED 2026-08-14**
-
-> **★ Closed 2026-08-14, and by a different mechanism than either the
-> original analysis or the 2026-08-12 supersession expected.**
->
-> The supersession below was right that the `Editing on` master toggle had to
-> go, and right that "delete the gate sites" was the fix for *that* toggle. It
-> was wrong to conclude there was nothing left to enforce. The operator asked
-> for a genuinely read-only stance on 2026-08-14 — *"in read mode the document
-> shouldn't allow editing"* — and `MODES_AND_PANELS.md` had already specified
-> it as a **named, visible mode** rather than a hidden boolean, which is
-> exactly what `RIBBON_IA.md` §5.4 said a real read-only state would have to
-> be.
->
-> What shipped is `app::modes::capability`, and the mechanism is the part
-> worth carrying: capability is derived from **the mode's tab list in the
-> manifest**, not from the string `"read"`. The ribbon and the canvas
-> therefore read one sentence, and the failure this defect describes — a
-> surface that says editing is off while a gesture still edits — is
-> unrepresentable rather than merely guarded. The hole this entry predicted
-> could not be reopened by forgetting a check, because there is no check to
-> forget.
->
-> **It was verified the way this project says to verify**: `ui-verify`'s
-> `read_mode_refuses_canvas_edits` drives the real window, clicks page content
-> in Read and asserts no selection, clicks *the same point* in Edit and
-> asserts one — so Read's silence is proven to be a refusal rather than a
-> miss — then re-enters Read and asserts the selection is dropped.
->
-> Three things the gesture gate could not close on its own, each found by
-> asking what *survives* rather than what is refused: a click is not a drag
-> (gating presses alone leaves the commonest canvas gesture ungated); an armed
-> tool outlives a mode switch, because it lives in `egui::Memory`; and a
-> selection outlives it too, leaving eight resize handles on a page in Read.
->
-> The analysis below is kept for the reason the supersession kept it.
-
-> **Superseded 2026-08-12.** The operator's decision is to remove the
-> `Editing on` master toggle entirely and work the way other editors do
-> (`RIBBON_IA.md` §5.4, `GUI_ROADMAP.md` Phase 1.7). With no review mode
-> there is nothing to enforce, so the fix becomes *delete the four gate
-> sites*, not *add the missing fifth*. The analysis below is kept
-> because it documents the inconsistency, and because **if D1 ships
-> before Phase 1.7 the hole is briefly live** — sequence them together
-> or land 1.7 first.
-
-**Latent today; becomes live the moment D1 is fixed.**
-
-Neither `Action::DeleteSelection` (`main.rs:11205`) nor
-`delete_selected_object` (`main.rs:5250`) checks `doc.editing_enabled`.
-With editing toggled **off**, a canvas selection plus Delete still
-rewrites the content stream. Every other authoring surface does check
-(`main.rs:7095`, `8169`, `8194`, `16920`).
-
-`main.rs:3225-3235` states the guarantee this breaks: *"no gesture able
-to change it by accident."* Add the check before shipping D1's fix,
-or the fix turns a dormant hole into a live one.
-
----
-
-## D7 — Documentation drift
-
-Three items, all small, all in files the project treats as authoritative.
-
-**D7a.** `ROADMAP.md:43419` (Pass 33.0) states as a load-bearing
-correction: *"**There is no on-canvas caret at all.** Text entry is a
-**panel field**, not an overlaid editable widget."* This is false —
-`main.rs:17820-17830` paints a blinking caret in PDF space, and the Pass
-14.3 comment at `main.rs:16904` says *"the canvas is its own
-caret/selection surface."* It appears to have been written to rebut a
-third-party guess and over-corrected. It should be fixed, because
-`ROADMAP.md` is declared to win any disagreement.
-
-**D7b.** `FEATURES.md:73` marks reflow `[x]` on core, CLI and GUI with
-no caveat, while Pass 33.0 is open and the session gate (D4c, Gate 2)
-exists. At minimum it needs a footnote.
-
-**D7c.** `FEATURES.md:119` says form flatten has no GUI surface. It does
-— `Action::FlattenForm` at `main.rs:4701`, pushed by a button in the
-Forms panel at `main.rs:8112-8116`. The doc understates the build.
-
----
-
-## D11 — `RichText::strong()` is unusable in this theme, and six labels used it
-
-**Found 2026-08-14, by looking at a screenshot**, while building the
-tab-order view: a page heading drawn with `.strong()` came out near-white on
-a light panel.
-
-### The mechanism, which is a conflation in `egui` rather than a mistake here
-
-```rust
-// egui: style.rs
-pub fn strong_text_color(&self) -> Color32 {
-    self.widgets.active.text_color()      // == widgets.active.fg_stroke.color
-}
+```sh
+grep -rn '^#\[cfg(test)\]' crates/*/src --include=*.rs
 ```
 
-`egui` has **no separate role for emphasised text** — it borrows the *active
-widget* foreground. `egui-shell`'s theme sets that to `palette.on_accent`
-(`theme/mod.rs:624`), which is correct and necessary: `widgets.active` is the
-**accent-filled** state, and text on an accent fill must be `on_accent`.
-
-So in any theme whose active state is accent-filled — which is every theme
-this project ships — **`.strong()` on an ordinary panel is near-white on light
-grey.** The two uses cannot both be served by one colour, and `egui` gives
-only one.
-
-It also survives `override_text_color`, which the theme sets to
-`palette.text`: `.strong()` wins.
-
-### Why no gate saw it
-
-The contrast gate renders **pairs** — a foreground against the fill it is
-painted on — and by that measure `on_accent` on `accent` is exactly right. It
-has no way to know a `.strong()` label landed on a *panel* instead. This is
-`D2` reached from the opposite direction: D2 was a foreground with no fill
-assigned; this is a foreground assigned for a fill the text is not on.
-
-### Fixed
-
-Five panel labels drop `.strong()` and render as plain text — strictly better,
-since the emphasis they were asking for was invisible: `panels/comments`,
-`panels/properties` (×3), `panels/signatures`.
-
-The sixth is a different case and takes the ribbon-tab fix instead:
-`dialogs/print/mod.rs`'s selected tab is a `Button::selectable`, so it had
-**both** halves of the problem — the plate filled from `selection.bg_fill`
-(the translucent canvas tint, 27 % alpha) and the label from `on_accent`. It
-now paints `accent` + `on_accent` explicitly, exactly as `ribbon::tabs` does.
-
-**Verified for the panels, argued for the dialog.** The five panel labels are
-the observed case. The print dialog's tab was fixed by identical mechanism
-rather than by a second screenshot — the ribbon tab with the same two bugs was
-photographed before and after, and this is that fix applied to the one other
-`Button::selectable` + `.strong()` pair in the codebase. Someone opening the
-print dialog should confirm it.
-
-### The rule that follows
-
-**Do not use `RichText::strong()` in this application.** There is no colour it
-can resolve to that is correct on both an accent fill and a panel. Emphasis
-belongs to layout and wording, or to an explicit `palette` colour chosen for
-the surface the text is actually on.
-
-### ★ The rule was broken again three days later, and now there is a gate
-
-**2026-08-17.** The Settings window was built and its seven group headings and
-thirteen setting titles used `.strong()`. On screen they were pale grey on pale
-grey while the radio labels beneath them read normally — the same picture as
-the six labels above, in a window whose whole job is to be read.
-
-It was found the same way, by capturing the running program, and the person who
-wrote it had read this entry. That is the finding worth keeping: **this rule was
-written down, in the file whose purpose is to stop repeats, and the document did
-not stop it.** A rule that lives only in prose is enforced exactly as often as
-somebody remembers to read the prose.
-
-So `tools/gates/check-strong-text.sh` now enforces it, and the exact form it
-enforces is narrower and more useful than the prose:
-
-> `.strong()` is a defect **unless an explicit `.color()` is within two code
-> lines of it.**
-
-That admits the two legitimate uses — `egui-shell`'s ribbon and dock tab labels,
-which are drawn *on* the accent fill, where `on_accent` is correct and R84 wants
-the weight because weight survives greyscale and colour-vision deficiency — and
-refuses everything else.
-
-**Its first real run found a third instance**, latent, in
-`egui-shell/src/ribbon/tabs.rs`: the weight and the colour were applied under
-two independent `if`s, so a `TabCues` with `emphasised_text` and not `filled`
-produced a bare `.strong()`. Unreachable through this crate's own `tab_cues`,
-which derives all four cues from one flag — and reachable by anyone building
-the struct by hand, which its own tests do. The guarantee rested on a
-coincidence between two lines. It is now nested, so the weight cannot be reached
-without the colour having been stated.
-
-The gate also had to learn something in that run: it measures its window in
-**code lines, not source lines**, because the safest shape of the fix had four
-lines of comment between the colour and the weight. A gate that failed a
-well-documented pairing while passing a terse one would push the next person to
-delete the explanation.
-
----
-
-## D10 — The theme system is built, tested, gated, and never installed
-
-**Found 2026-08-14, by measuring pixels.** A `ui-verify` check needed to know
-what colour a pressed ribbon button is, sampled it, and got
-`#90D1FF` — which is `egui`'s stock `visuals.selection.bg_fill`, not the
-`quiet` preset's composited `#C1CFE6`. The unpressed fill measured `#E6E6E6`,
-`egui`'s `widgets.inactive.weak_bg_fill`, where the preset specifies `#E8E8EA`.
-
-`egui_shell::theme::Theme::apply` (`theme/mod.rs:456`) **is never called from
-`pdfcer-gui`.** The only mention of `egui_shell::theme` in the whole crate is
-inside a test module in `icons/paint.rs`. Three presets, a palette, a
-role-per-colour discipline, a rendered-pair contrast gate over all five widget
-states, and its own self-test — compiled into the binary, never handed to the
-`Context`.
-
-### It is worse than "the colours are egui's defaults"
-
-`apply` does two things, and the second is the one that bites:
-
-```rust
-ctx.all_styles_mut(move |style| Self::write_style(style, &p, &m, preset));
-ctx.data_mut(|d| d.insert_temp(egui::Id::new(Self::CTX_ID), *self));
-```
-
-The stash is how `Theme::of(ctx)` — called by `ribbon/render.rs:210`,
-`dock/mod.rs:472` and the splitter — reaches roles that have nowhere to live in
-`egui`'s `Style`, such as the content backdrop and the label plate. With
-`apply` never called, `Theme::of` returns the **default** theme, so the
-framework's own chrome paints from one palette while every `egui` widget paints
-from another.
-
-`apply`'s doc comment describes precisely this and calls it the thing the
-module exists to prevent:
-
-> a dark theme with light-theme overlays, which is the two-thirds-of-a-theme
-> failure this module exists to prevent, **and no test would see it**.
-
-It was right. No test saw it.
-
-### Why every guard missed it
-
-- **The theme gate (`check-theme-colors`) passes**, correctly. It asserts every
-  colour is a **named role in the theme module** rather than a literal at a
-  call site. That is a property of the source, and it is true. Whether the
-  resulting theme is ever *installed* is a different question that no grep can
-  ask.
-- **The contrast gate passes**, because it renders pairs *from the theme* and
-  measures those. It never asks the running application what it actually drew.
-- **`FEATURES.md` ticked the row**, which is the part that stings: this file's
-  own bar is *"a row is ticked only when an operator can reach it in a real
-  build."* Three themes an operator cannot reach were ticked for the whole of
-  their shipped life — the exact failure the bar was written against, in the
-  document that wrote it.
-
-### Blast radius
-
-Everything the operator has ever seen in this shell is `egui`'s stock light
-style. There is also **no way to choose a preset**: the settings dialog is one
-of the unsalvaged Class-B surfaces, so even once `apply` is wired, the preset is
-whatever the code picks until that dialog lands.
-
-Note this also means **every screenshot in `evidence/`, and every legibility and
-contrast assertion `ui-verify` has ever made against the running binary, was
-measured against the wrong palette.** The assertions were not wrong — the
-contrast they measured was real — but they were measuring `egui`, not pdfcer.
-
-### ★ CLOSED 2026-08-17 — both halves, and the second is proved in pixels
-
-The first half was fixed on 2026-08-14 by calling `apply`. **The second half —
-*"there is also no way to choose a preset"* — was closed on 2026-08-17 when the
-Settings window landed.** `dialogs::settings::appearance` is the chooser; the
-per-frame install reads the token from the draft when the window is open and
-from the live settings otherwise, so a theme takes effect *as you click it* and
-Cancel puts it back.
-
-The evidence is `ui-verify --check settings_theme_takes_effect`, which drives
-the real binary with no document open, expands the Appearance group, clicks
-**Dark**, and measures the window's own body before and after:
-
-```text
-window body Rgb { r: 232, g: 232, b: 234 } -> Rgb { r: 45, g: 49, b: 54 }
-                (#E8E8EA — quiet's panel)      (mean channel drop 183)
-```
-
-That is the only oracle that could have said so. Every cheaper one was
-available throughout D10's shipped life and every one was green — the theme
-gate asserts a property of the *source*, the contrast gate renders pairs *from
-the theme* and never asks the application what it drew, and `FEATURES.md`
-ticked the row. D10's own summary was *"No test saw it."* One does now.
-
-### Fix
-
-Call `Theme::apply` once per frame from the application's update, which is what
-its doc prescribes (*"applied every frame rather than once at startup so a theme
-change takes effect immediately, with no restart and no cache to invalidate"*).
-
-### ★ Measured consequence: the ribbon's group captions were below the floor
-
-Established after the fix, by driving the **two packaged builds** and comparing
-— `ui-verify --check ribbon_group_captions_legible`, the same check against
-each binary:
-
-| build | measured | verdict |
-|---|---|---|
-| `pdfcergui-20260813-2248` (pre-theme) | **2.82:1 – 2.89:1** | **FAIL** — all five captions below the 3.0 floor |
-| `pdfcergui-20260814-0735` (themed) | 4.14:1 – 4.26:1 | PASS |
-
-So every group caption in every build this project has shipped was rendering
-below its own stated contrast floor, and installing the theme fixed it as a
-side effect rather than by design. The foreground moved `#959595 → #737374`
-against a background that also moved `#F8F8F8 → #F2F2F3`.
-
-**The check existed the whole time and would have caught it.** It is not one of
-the eight CI gates because it needs a display and drives the real cursor and
-keyboard — which is a legitimate reason, and it is also why nothing ran it
-between the theme landing unwired and today. Recorded rather than fixed by
-adding it to `run-all.sh`: a gate that cannot run headlessly would report
-SKIPPED, and *"told you nothing rendered as green"* is the exact failure that
-harness exists to remove.
-
-**Still worth someone's judgement:** 4.2:1 clears the 3.0 floor, which is WCAG
-AA for **large** text. A group caption is ~10 pt, i.e. small text, where AA asks
-**4.5:1**. The captions pass the bar this project set and would fail the bar
-their size implies. Not changed here — the palette is the theme's to decide and
-the contrast gate's floor is a deliberate constant — but the next person to
-touch either should know the margin is 0.3, not comfortable.
-
----
-
-## D9 — Every imported reduced-opacity markup renders solid — **FIXED 2026-08-14**
-
-> **Closed.** `pdfcer-render` now reads §12.5.2 `/CA` and composites the
-> annotation's appearance through a scratch pixmap at that alpha — engine
-> commit `a84bdc3`, carried by the `pdfcergui-20260814-0735-e8e9881-9c81b04`
-> build. `alpha >= 1.0` short-circuits, so the common path allocates nothing.
->
-> Their commit records why it jumped their queue, and it is this document's
-> argument returned: *"reported by the `pdfcer-gui` session, which correctly
-> ranked it as a **fidelity defect in the current product** rather than a
-> prerequisite of a future authoring control."* The entry below is kept
-> because the reasoning is the durable part — a question asked about
-> *authoring* that turned out to be about *viewing*.
->
-> Still open, and unchanged: **do not compensate.** When markup opacity
-> authoring lands, write `/CA` alone and leave the appearance stream's
-> `ExtGState` at `1.0`.
-
-**Found 2026-08-14, on the pdfcer side, by asking a question about
-authoring.** Not observed here first — which is the notable part, and the
-reason it is written down rather than left in the request channel.
-
-`pdfcer-render` **does not read an annotation's `/CA`** (§12.5.2 constant
-opacity) at all. Their measurement, quoted from
-`archive/2026-08-14-markup-opacity-reply.md`:
-
-> ```
-> grep '/CA' in pdfcer-render        -> ONE hit, interpret.rs:2050
->                                      and it is ExtGState /CA (stroking alpha)
-> annotation paint path (annot.rs)  -> ZERO reads of the annotation dict's /CA
-> ```
->
-> `paint_appearance` interprets the form XObject straight into the page
-> pixmap. Nothing consults the annotation's constant alpha.
-
-### Why it costs more than it looks
-
-The question that uncovered it was about markup **this shell would author**,
-and in that framing it is a Phase 6 prerequisite. It is not. **This shell is
-a viewer before it is an editor, and the defect is shipping in that role
-today.**
-
-Reduced opacity is the house style for a shaded area or a fill placed over a
-drawing — the whole point being that the drawing underneath stays readable.
-Markup arriving from Bluebeam and Acrobat uses it constantly, and the stated
-audience is drawing review. Rendered solid, it does not read as "the opacity
-is wrong"; it reads as **the markup covered the drawing**, and the drawing is
-what the operator opened the file for.
-
-### Status
-
-**Filed and scheduled on the pdfcer side as its own piece of work**, deliberately
-not folded into the opacity feature — their words: *"it is a correctness bug
-with a blast radius wider than this request and it should not be discovered
-later as 'the opacity feature also changed how imported markup looks'."* The
-fix is a real change to `paint_appearance` (composite the appearance through a
-scratch pixmap at alpha rather than interpreting it into the page), not a line.
-
-### What this shell must NOT do about it
-
-**Do not compensate.** When markup opacity authoring lands, write `/CA` alone
-and leave the appearance stream's `ExtGState` at `1.0`. Writing `/ca` into the
-AP would make the markup look right in pdfcer and **half as opaque as intended
-in every other viewer, permanently, in documents that outlive the bug**. That
-is encoding a render defect into the file format. The full three-way table is
-in the archived reply.
-
-Nor should the Style group draw an Opacity control before the renderer lands:
-a control that visibly does nothing in the application you are using is not a
-partial feature (`RIBBON_IA.md` P3).
-
-### Not measured
-
-How much of the operator's own corpus carries reduced-opacity markup is
-**unknown and is not asserted anywhere**. If that number would change
-anyone's priority, it needs counting on a real corpus rather than estimating.
-
----
-
-## D8 — Housekeeping
-
-A stale worktree at
-`D:\Dev\pdfcer\.claude\worktrees\agent-ad491473a5659e3eb\` contains an
-older `main.rs` in which `editing_enabled` defaults differently and a
-test asserts `!doc.editing_enabled` (line 23274). It pollutes repo-wide
-greps and will mislead the next investigation. Delete it.
-
----
-
-## Not defects — deliberate choices worth re-examining anyway
-
-These are working as designed. They are listed because the design is
-what generates the complaint.
-
-| Behaviour | Where | Why it reads as broken |
-|---|---|---|
-| Zoom buttons pin the page's **top-left**, not the centre or the cursor | observed; `viewer.rs` ladder | Every mainstream viewer zooms about the centre or the pointer. Zooming in loses your place. Note this is about the *anchor*, not the smoothness — the whole-page-texture model is a deliberate and well-judged trade, see `GUI_ROADMAP.md` § Rendering. |
-| The status bar opens with a substitute-glyph census | `main.rs:15576-15960` | The first thing a user reads is the app talking about itself. Excellent information, wrong prominence — put it behind the disclosure triangle that is already there. |
-| Dock layout resets every launch | `dock.rs:50-67` — disclosed in-app | Being told your layout will be lost is better than losing it silently, and worse than keeping it. |
-| No context menus anywhere | `grep context_menu` → 0 hits | Right-click is where users look for Delete after the keyboard fails them. Fixing D1 without adding these leaves the second-choice path also missing. |
-
----
-
-## D12 — the glyph gate asked `egui` the wrong question — **CORRECTED 2026-08-14**
-
-> ### ★★ Correction, 2026-08-14 — `⚠` draws. It always did.
->
-> **The diagnosis below is wrong, and the thirteen sentences it condemns
-> render correctly.** The heading used to read *"`⚠` has no glyph in this
-> font stack, so thirteen shipped sentences draw `□`"*. It is kept, struck
-> through in substance rather than deleted, because the wrong claim
-> travelled: it was quoted into
-> `app::status::tests::every_glyph_the_status_bar_draws_has_a_glyph`'s doc
-> comment and into `text::status::edit_disclosure_line`, and a reader who
-> finds only the correction will not know why those two files talk the way
-> they do.
->
-> **What is actually broken is the gate's predicate, not the font stack.**
-> `epaint 0.35`'s `Fonts::has_glyph` (`epaint-0.35.0/src/text/font.rs:720`)
-> is:
->
-> ```rust
-> pub fn has_glyph(&mut self, c: char) -> bool {
->     // TODO(emilk): this is a false negative if the user asks about the
->     // replacement character itself 🤦‍♂️
->     self.resolve_face(c) != self.cached_family.replacement_face_key
-> }
-> ```
->
-> It does not ask *"is this codepoint drawable?"* It asks *"is this
-> codepoint drawable by a face other than the one that happens to supply
-> `epaint`'s substitution mark `◻` (U+25FB)?"* — and answers **false** for
-> every codepoint whose first supporting face in the fallback chain is that
-> one. Upstream's `TODO` names a single instance; the real blast radius is
-> every character that face supplies first.
->
-> For `FontFamily::Proportional` the chain is
-> `[Ubuntu-Light, NotoEmoji-Regular, emoji-icon-font]`, and **`◻` and `⚠`
-> have the same supplier — `NotoEmoji-Regular`.** So `⚠` is reported
-> missing and drawn perfectly.
->
-> **The mechanism reproduces the original's own two lists exactly, 31 for
-> 31**, which is what makes it the mechanism rather than a theory. Reading
-> the four bundled charmaps directly:
->
-> | original verdict | real supplier |
-> |---|---|
-> | "available" — `✱ ⚑ ⚐ ☞ ⊗ ⏺ ◊ ★ ☆ ! ○ ■ • · † ‡ № ¶` | all `Ubuntu-Light` or `emoji-icon-font` — **never** NotoEmoji |
-> | "absent" — `⚠ ‼ ℹ ❗` | **`NotoEmoji-Regular`. All four draw.** |
-> | "absent" — `▲ △ ● ◆ □ ✓ ✗ ⓘ ※` | genuinely absent. That half was right. |
->
-> The clinching reading is that `has_glyph(Monospace, 'A')` is **false**:
-> the monospace chain starts with `Hack`, which supplies both `◻` and `A`.
-> A predicate that denies the letter A is not a fact about a font.
->
-> **Corrected measurement**, `FontFamily::Proportional`, by laying each
-> character out and comparing the glyph actually drawn:
->
-> - **Drawable:** `⚠ ‼ ℹ ❗ ✱ ⚑ ⚐ ☞ ⊗ ⏺ ◊ ★ ☆ ! ○ ■ • · † ‡ № ¶ — … × “ ” − ° ⏴ ⏵ ⏷`
-> - **Absent:** `▲ △ ● ◆ □ ✓ ✗ ⓘ ※ ▸ ◀ ▶ ▾ � (U+FFFD)`, and all CJK.
->
-> **Consequences of the correction:**
->
-> 1. `crates/pdfcer-gui/src/text/forms.rs`'s `⚠` sentences are **fine** and
->    need no edit. There are **fourteen** of them, not thirteen — counted as
->    string literals opening with the mark, `grep -c '"⚠'`; the original's
->    thirteen appears to have missed one. They are the only `⚠` in the whole
->    catalog.
-> 2. The assertion at
->    `crates/pdfcer-gui/src/panels/forms/tab_order/mod.rs:672`
->    (`s.starts_with('⚠')`) was never at risk. Unchanged, still passing.
-> 3. The edit-disclosure line's `⚑` was chosen under the wrong reading.
->    **Deliberately left alone** — it draws, it is shipped, and re-opening a
->    settled copy decision on the strength of a corrected diagnosis is churn.
-> 4. The operator's 2026-08-14 instruction — *keep the `⚠` mark, add font
->    coverage* — is satisfied with **no font added and no dependency added**,
->    because the coverage was never missing. See "Fixed" below.
->
-> **The lesson, which is the durable part.** This entry was filed on a
-> failing test, and the test really did fail — but *"the gate went red"* and
-> *"the thing the gate names is broken"* are different claims, and only the
-> first was measured. The original text's own standard, three lines up in
-> this file, is *"Nothing here is inferred from documentation alone"*; the
-> failure here was subtler and more ordinary — inferring from a **tool's
-> answer** without asking what question the tool was answering. The
-> substitution box was never photographed. One screenshot of the Forms panel
-> would have closed this on the day it was opened.
-
-### The original entry, kept — *wrong from the second paragraph onward*
-
-**Found 2026-08-14, by measurement rather than by looking.** A new status-bar
-line was drafted with `⚠` to match the forms convention, and the existing gate
-`every_glyph_the_status_bar_draws_has_a_glyph` **failed** on it.
-
-Nothing in this workspace installs fonts, so `egui`'s bundled set is the whole
-set, and it cannot draw **U+26A0**. `crates/pdfcer-gui/src/text/forms.rs`
-carries `⚠` in **thirteen** sentences — including
-`forms_fill_autosize_note` and `forms_fill_unencodable_note`, which are drawn
-in the status bar two lines from where the new one goes — and every one of them
-renders as a tofu box today, in the Forms panel and in the bar.
-
-> *Wrong on every count in that paragraph. The sentence count is fourteen,
-> not thirteen. `egui`'s bundled set is indeed the whole set — and it draws
-> U+26A0 perfectly well.*
-
-This is **D2's shape, fourth sighting**: a thing that is built, tested and
-shipped, whose visible result nobody looked at. A unit test on the *string* is
-satisfied by any string; only asking the font whether it can draw the codepoint
-catches it. The gate that caught it already existed and was never pointed at
-`text/forms.rs`.
-
-> *★ This paragraph is the part that survives, and it turned out to be truer
-> than its author knew. "Nobody looked at the visible result" was the real
-> defect — including here, where nobody looked at the visible result of the
-> gate's own verdict. And "only asking the font whether it can draw the
-> codepoint catches it" is exactly right; the mistake was believing
-> `has_glyph` was that question.*
-
-**Measured available** in the bundled stack: `✱ ⚑ ⚐ ☞ ⊗ ⏺ ◊ ★ ☆ ! ○ ■ • · † ‡ № ¶`
-**Measured absent**: `⚠ ▲ △ ● ◆ □ ✓ ✗ ‼ ℹ ⓘ ※ ❗`
-
-> *Both lists are `has_glyph` output. See the correction's table: the first
-> is accurate, the second contains four false positives — `⚠ ‼ ℹ ❗`.*
-
-**Not fixed**, deliberately, because it is wider than it looks: thirteen
-strings, plus an assertion at
-`crates/pdfcer-gui/src/panels/forms/tab_order/mod.rs:672` that tests
-`s.starts_with('⚠')` and would silently stop matching. The new edit-disclosure
-line uses `⚑`, measured present, rather than joining the convention.
-
-> *The caution was well judged even though the premise was false. Had this
-> entry been "fixed" as written, fifteen correct sentences would have been
-> rewritten to work around a bug in a test.*
-
-**The fix that would prevent a fifth sighting** is not a substitution: it is
-pointing the existing glyph gate at *every* `text/` module rather than at the
-status bar alone, so a codepoint the stack cannot draw fails at the gate rather
-than in front of the operator.
-
-> *★★ Right, and it paid off on its first run — see below. This sentence is
-> the reason the entry was worth filing at all.*
-
-### Fixed 2026-08-14
-
-**No dependency added. No font data added. No catalog string changed.**
-
-| what | where |
-|---|---|
-| A correct predicate — lay the character out, compare the glyph actually drawn against a three-sentinel fingerprint of the substitution mark | `crates/pdfcer-gui/src/icons/glyphs.rs` — `GlyphProbe` |
-| The **widened gate**: reads every `.rs` under `crates/pdfcer-gui/src/text/` from source, extracts every operator-visible literal, and checks every codepoint | `icons::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph` |
-| The gate's self-test, on a planted unrenderable codepoint with comment and test-module decoys | `icons::glyphs::tests::the_gate_catches_a_planted_unrenderable_codepoint` |
-| The status-bar gate, repointed at the correct predicate and its doc comment corrected | `crates/pdfcer-gui/src/app/status.rs` |
-
-The gate reads **source** rather than a hand-written list of labels, so a
-string added tomorrow is covered without anyone remembering to add it. That is
-`D5`'s lesson applied: *"a hand-maintained list with a comment telling you to
-hand-maintain it has already failed once."*
-
-Three fail-open shapes were designed out, each with its own test:
-
-- **A sentinel that stopped being a sentinel.** `GlyphProbe::new` fingerprints
-  the substitution mark from **three** unrelated unassigned codepoints across
-  three planes and panics unless all three agree. If a future font set covers
-  one, the probe fails at construction instead of silently reporting every
-  codepoint as drawable.
-- **`D13`'s truncation bug, not repeated.** `check-ui-strings.sh` stops
-  scanning at the first column-0 `#[cfg(test)]`, so anything below a mid-file
-  test module is unscanned while the gate prints clean. This scanner skips
-  exactly the braced item and **resumes**;
-  `a_mid_file_test_module_does_not_blind_the_scanner` proves it on the shape
-  that defeats the shell gate.
-- **A file that could not be parsed being silently skipped.** A raw string is
-  a hard refusal that fails the gate by name, never a quiet zero.
-
-### ★ The fifth sighting happened anyway — the widened gate found two on its first run
-
-Both are **live tofu today**, both in `crates/pdfcer-gui/src/text/`, which is
-not the territory of the work that found them. They are **quarantined in the
-gate and reported here, not fixed.** The quarantine is self-tightening: the
-gate asserts each entry is *still* undrawable **and** still present in the
-catalog, so fixing the strings makes the gate fail telling you to delete the
-entry.
-
-| codepoint | where | what the operator sees |
-|---|---|---|
-| **`▸` U+25B8** — the menu-path separator | `text/mod.rs:125`, `text/commands.rs:722, 767, 1079` | `Choose File □ Open` — and `text/mod.rs:125` is the **empty-canvas message, the first sentence a new operator ever reads.** `›` U+203A, `>` and `→` all draw. |
-| **`�` U+FFFD** | `text/panels/objects.rs:639` | The sentence *"Some characters … are shown as `�`"* names a mark the application cannot draw. It reads correctly only by accident: `epaint` substitutes `◻` **both** for the character in this sentence and for the undecodable characters the sentence is about, so the two happen to match. A coincidence of two bugs, not a design. |
-
-`▸` is the more serious of the two by a distance, and it is the vindication of
-this entry's closing argument: the codepoint had been shipping in the launch
-screen the whole time, the old gate could not see it because it looked only at
-the status bar, and the *corrected* diagnosis of `⚠` is what got the gate
-pointed somewhere it could find it.
-
-### ★ Both verdicts were photographed, not only computed
-
-The mistake this entry records is *trusting a tool's answer without looking at
-the result*, so neither half of the correction is left resting on another
-assertion. Driving the release binary
-(`target/release/pdfcer-gui.exe`, 2026-08-14 12:27, `PDFCER_DIAG=1`):
-
-| what was opened | what was on screen |
-|---|---|
-| `qpdf/qtest/qpdf/button-set-broken-out.pdf` — a 15-field form with `/NeedAppearances` | The Forms panel drew **two `⚠` sentences as amber warning triangles**: *"⚠ This form asks viewers to draw field values themselves…"* and *"⚠ 2 field(s) have no drawn appearance in this document…"*. Two of the fourteen this entry condemned. Neither is a box. |
-| the binary with **no argument** | The empty canvas read *"No document open. Choose File **□** Open, press Ctrl+O, or start pdfcer with a PDF path."* — the `▸` tofu, live. |
-
-Corroborated at the pixel level by dumping the glyphs `egui` actually
-rasterizes into its own font atlas at 48 pt: `⚠` is a filled triangle
-enclosing an exclamation mark, 43×38 px; `▸` is a hollow 30×30 square, which
-is `◻` — the substitution mark, not the separator.
-
-`D:\Dev\temp\pdfcer\SW41177.pdf` was opened first, as directed, and reached the
-Forms panel — but it carries **no** interactive fields, so its panel correctly
-draws the *"this document has no interactive form fields"* sentence and no `⚠`
-at all. It could not have settled the question either way, which is why a form
-fixture was opened as well. Recording that rather than reporting the first
-screenshot as if it had confirmed something.
-
----
-
-## D13 — A mid-file `#[cfg(test)]` silently switches the ui-strings gate off for the rest of the file
-
-**Found 2026-08-14.** `tools/gates/check-ui-strings.sh` stops scanning a file at
-the first column-0 `#[cfg(test)]` — its own header records this as a deliberate
-limit, on the reasoning that test code below it is not operator-facing. The
-limit is sound; the **assumption** is not. Nothing requires the test module to
-be last, and where it is not, every non-test item after it is unscanned **and
-the gate reports clean**.
-
-Proven rather than argued: a violation planted after line 262 of
-`crates/pdfcer-gui/src/panels/forms/edit.rs` **passes the gate**.
-
-Three files are affected today:
-
-| file | non-test items below the test module |
-|---|---|
-| `panels/forms/edit.rs` | 7, including `pub fn apply` |
-| `canvas/guides.rs` | 6 |
-| `panels/layers.rs` | 5 |
-
-This is the **`check-file-size` fail-open class again** — the same shape as
-PORT CHANGE 1 in `check-ui-strings.sh`'s own header, where a flat glob scanned
-three files out of forty and printed the same output a clean run prints. *"Found
-no violations"* and *"looked at almost nothing"* remain byte-identical.
-
-**Not fixed** — the three files are outside the territory of the work that found
-this, and the fix is the gate's, not theirs. Two candidate fixes, and the second
-is better: scan the whole file and exclude only items *inside* a `mod tests`
-block; or keep the early exit and add a gate assertion that the test module is
-the **last** thing in the file, which is a convention this codebase already
-follows nearly everywhere and which a self-test can prove it catches.
-
----
-
-## D14 — Every freehand ink stroke authored two points — **FIXED 2026-08-14, same session**
-
-**Found by driving the binary; invisible to a green suite by construction.**
-
-`canvas::markup::ink::sync` read the in-flight pointer trail *after*
-`GestureState::update` had already advanced. `update` drops its own drag on
-the frame it reports `Complete` — so on **exactly** the frame the release
-arrived, `active()` answered `None`, and the accumulated trail was discarded a
-few lines before the arm that commits it. A freehand stroke hundreds of points
-long authored an annotation with **two**.
-
-### Why no test could see it
-
-Every unit test calls `drag` directly. **None of them can see the order in
-which `canvas::interact` calls two functions**, because that order is a
-property of a call site and a call site's effect is only observable in a
-running frame. This is `HANDOFF.md` §2's recurring shape — the same one that
-produced the icon painter that was never passed to the ribbon, and the
-page-text extraction paid at open rather than on the gesture.
-
-### How it was found
-
-The trace line, on a drag the harness had made hundreds of points long:
-
-```
-markup-commit kind=Ink page=0 raw=2 kept=2
-```
-
-`raw=` is printed beside `kept=` **for this reason**: a build whose
-simplification did nothing, and a build whose trail was empty, produce
-otherwise identical lines. Without the pair the number would have read as a
-successful simplification of a two-point drag.
-
-### Fix
-
-Read the trail **before** the gesture machine advances. Recorded at
-`canvas/markup/ink.rs` §2 with the measured symptom, so the ordering is stated
-where the next reader will meet it rather than rediscovered.
-
-### The general lesson
-
-**A diagnostic that prints only its output cannot distinguish "worked" from
-"had nothing to work on."** Print the input beside it. That is cheap, and it
-is what turned an invisible defect into a one-line read.
-
----
-
-## D15 — `ocrs` collapses on a sparse clean page, which is the shape of a drawing sheet
-
-**Found 2026-08-14 while building the OCR fixture. Not a pdfcer defect — an
-upstream characteristic this project has to design around, and it matters here
-more than for most consumers.**
-
-A first OCR fixture of **two words on an otherwise empty page** produced a
-detection result of *the whole page as one rectangle*. The probability map was
-dumped and inspected: it was **perfect** — four clean blobs, four connected
-components counted by hand. The failure was downstream, in thresholding.
-
-`ocrs`'s `text_threshold` defaults to **0.2**. The measured background on that
-page ran **0.148–0.208** — so the threshold sat inside the noise floor and the
-whole page crossed it.
-
-### Why this is not an academic edge case here
-
-**A drawing sheet is exactly that shape**: a small title block, a handful of
-dimension callouts, and a very large expanse of empty paper. `SW41177.pdf` and
-the A1 benchmark are both far sparser than the scanned prose OCR engines are
-tuned for. An operator OCR-ing a scanned drawing is the *most likely* user of
-this feature and is walking into the worst case for it.
-
-### What was done, and what deliberately was not
-
-The **fixture was changed**, not the threshold. Tuning a recogniser's internals
-to make a test pass is how a shell starts carrying an engine's opinions: the
-number would be ours, the failure would still be theirs, and the next `ocrs`
-release would silently disagree with us.
-
-### What remains
-
-Unquantified on real scanned material, because **there is none in the tree**.
-If a scanned drawing ever arrives, this is the first thing to measure — and if
-it reproduces, the honest fix is upstream or a documented refusal, not a magic
-number in `pdfcer-gui`.
-
----
-
-## D16 — Ctrl+S saved the file and then killed the application — **FIXED AND DRIVEN 2026-08-29**
-
-**Present in the shipped build.** Every in-place save of a document opened from
-disk wrote the file correctly and then panicked the process. Introduced
-2026-08-20 with `file.save`; found 2026-08-29 by an agent wiring an unrelated
-guard into that arm, **not** by a test, **not** by the audit that session was
-running, and not by any of the 105 driven checks.
-
-### The code
-
-`PdfcerApp::apply` matches the action **twice**: once before the "is a document
-open" guard, for the handful of actions that must answer differently with
-nothing open, and once after it for everything else. Every arm in the first
-match ends with `return`.
-
-`Action::Save`'s did not.
-
-```rust
-Action::Save => {
-    match &mut self.status { … }          // saved, correctly
-}                                         // ← no `return`
-…
-_ => {}
-}                                          // first match ends
-let Status::Open(doc) = &mut self.status else { … };
-match action {
-    …
-    | Action::Save                         // ← and here it is again
-    | Action::SaveCopy
-    | Action::Find(_) => unreachable!("handled before the document guard"),
-```
-
-`SaveCopy` and `Find`, its two neighbours in the first match, both return.
-
-### ★★★ The class, which is what makes it worth a number
-
-**A fall-through arm whose later twin asserts unreachability. Both halves
-type-check and neither is wrong on its own.**
-
-- The `unreachable!` is **correct**: the arm *is* handled earlier, and the
-  assertion documents a real invariant.
-- The earlier arm is **correct** except for one keyword, and it reads correctly:
-  it does the work, it traces, it records the epoch.
-
-Nothing about either site is suspicious in isolation, and a reviewer reading
-either one alone would approve it. The compiler cannot help: falling out of a
-`match` arm into the following statements is ordinary control flow.
-
-⇒ The general form: **when one `match` is split into a pre-guard pass and a
-post-guard pass over the same value, `return` is load-bearing in every arm of
-the first, and the second pass's `unreachable!` converts a missing one from a
-silent double-handle into a crash.** The crash is the better outcome — it is at
-least loud — but only if somebody presses the key.
-
-### ★★ Why no test and no driven check caught it
-
-- `PdfcerApp::apply` is called with `&mut self` on a real application; the unit
-  suite exercises actions through smaller seams.
-- **No driven check drives a save.** `save_in_place` and `save_copy` have unit
-  tests that call `crate::app::save::save_in_place(doc)` **directly** — which is
-  the function that works. The defect is in the arm that calls it.
-- The gap is the same one recorded twice this week for gestures: *which check
-  drives this?* For `Ctrl+S`, the answer was **none**, and R1 exists for exactly
-  that answer.
-
-### The verification, both directions
-
-Driven offscreen (`PDFCER_DIAG_VIEWPORT` + `PDFCER_DIAG_INVOKE=file.save`) against
-a scratch copy of `fixtures/a1-titleblock.pdf`, so the operator's pointer and
-focus were untouched:
-
-| build | result |
-|---|---|
-| fixed (this commit) | `save-in-place outcome=ok`, `save-epoch-recorded epoch=0`, **process alive after 8 s** |
-| the `return` removed again, deliberately | `save-in-place outcome=ok`, `save-epoch-recorded epoch=0`, then `panicked at apply.rs:333`, **exit code 101** |
-
-★ The falsification is the half that matters: the fix was re-broken on purpose
-and the crash came back, so the pass is a measurement of *this* change rather
-than of something else that moved.
-
-★★ Note the order in the trace — **the file is written before the panic.** No
-work was lost; the application simply died immediately afterwards, which is why
-the symptom is *"pdfcer disappears when I press Ctrl+S"* rather than *"my save
-did not happen"*.
-
----
-
-## D17 — The signature warning's *Save anyway* was inert, so no signed document could be saved at all — **FIXED AND DRIVEN 2026-08-29**
-
-**Present for one day.** The guard that stands between a structural edit and a
-signed document's next revision shipped 2026-08-28 and was found by driving the
-next morning (`an_invalidating_save_is_warned_about`, sweep
-`evidence/sweep-20260829/main.txt`). It stopped the save correctly and then
-**never let it through**: an operator on a signed document could cancel the
-question and nothing else. That is worse than the silence it replaced — the
-feature turned a working save into no save.
-
-### What the trace showed
-
-`target/ui-verify-main/signature-save.trace.txt`, in order:
-
-```text
-pages-deleted removed=1 …              the save is structural
-signature-asked pending=Copy           the guard held it and the window drew
-viewport-inner id="2DBB" rect=…        the dialog is its own OS window
-ui-rect name=signature.proceed … viewport="2DBB"
-…
-ui-rect-gone name=dialog:signature     ← the press LANDED: the window closed
-                                       ← and no `signature-confirmed`, ever
-```
-
-★ The first suspicion was the harness — the button's rectangle is published in
-the **child viewport's own frame**, and this project's record
-(`a_child_viewports_ui_rects_are_relative_to_ITS_origin`) is six checks clicking
-hundreds of points from the control they named. The trace rules it out in one
-line: the window **closed**. Only the proceed button, Cancel or the ✕ can do
-that, and the other two also close it without an answer — so the press was
-delivered and the answer was lost afterwards.
-
-### The code
-
-`dialogs::signature::SignatureDialog::show` returns *"should I still be on
-screen?"*, and pressing the proceed button is exactly what makes it answer
-`false`:
-
-```rust
-open && !self.cancelled && !self.confirmed
-```
-
-Its owner read that `false` as *"this dialog is finished"*:
-
-```rust
-if self.signature.as_mut().map(|d| d.show(ctx)) == Some(false) {
-    self.signature = None;          // ← with the answer still inside it
-}
-```
-
-But this window deliberately **does not act**. It parks the answer, and
-`PdfcerApp::resume_after_signature` performs it — later in the same frame —
-because writing over the operator's own file must have exactly one route.
-The dialog was therefore destroyed, with the confirmation in it, three call
-frames before the drain looked; `take_signature_answer` found an empty slot and
-returned `None`.
-
-### ★★★ The class
-
-**A slot whose occupant carries a value the owner has not collected, retired on
-a signal that means "stop drawing me" rather than "I am empty".**
-
-Every part is individually correct. `show` correctly wants to close.
-`take_confirmation` correctly returns the answer when asked. `resume_after_
-signature` correctly performs whatever it is given. **The defect is entirely in
-the lifetime between them, and a lifetime is not a value any assertion over
-either half can name** — which is why `dialogs/signature.rs`'s own headless
-tests, which assert the engine's verdict *and* that `ask_for` builds the window,
-all pass on the broken build. It is the whole-link failure class
-`PROJECT_PLAN.md` §4 built the driving harness for, and the check's own header
-had listed this exact outcome as row 3 of the builds it must fail against.
-
-### The fix
-
-One predicate and one rule, in `dialogs/mod.rs`:
-
-```rust
-const fn retire(open: bool, answered: bool) -> bool { !open && !answered }
-```
-
-A dialog is dropped only when it is off screen **and** holding nothing.
-`SignatureDialog::answered()` and `UnsavedDialog::answered()` are the second
-input. The invariant it creates is stated at `retire`: *every caller of
-`DialogsState::show` must drain the parked answers in the same frame* — there
-is one caller, `app::frame`, and it drains both immediately after, so a
-retained-because-answered dialog lives for zero frames.
-
-### ★★ Its twin was fixed in the same change, unprompted
-
-`dialogs::unsaved` parks an answer the same way, two lines above, through the
-same branch. **Nothing in the harness clicks it** — no check presses *Close
-without saving* — so it was carrying the identical defect with no red run to
-advertise it. Its symptom would have been worse: a *Close without saving* that
-closes the question and leaves the document open, which reads as the whole
-application ignoring the operator.
-
-⇒ The general form: **when a driven check finds a defect in one member of a
-matched pair, the pair is the unit of repair.** Fixing only the observed half
+and read what follows each hit's closing brace. Two candidate fixes, and the
+second is better: scan the whole file and exclude only items *inside* a `mod
+tests` block; or keep the early exit and add a gate assertion that the test
+module is the last thing in the file, which a self-test can prove it catches.
+
+`icons::glyphs`' own scanner does not repeat this — it skips exactly the braced
+item and resumes, proven by
+`a_mid_file_test_module_does_not_blind_the_scanner`.
+
+This is the fail-open class `check-file-size.sh` records: *"found no violations"*
+and *"looked at almost nothing"* are byte-identical output.
+
+### D14 — RULE: a diagnostic prints its input beside its output
+
+A line that prints only what a stage produced cannot distinguish *"worked"* from
+*"had nothing to work on"*. `markup-commit kind=Ink raw=2 kept=2` says both; with
+`kept=` alone, a build whose trail was empty and a build whose simplification did
+nothing are the same line.
+
+The defect it caught, which is why the pairing exists: a gesture machine drops its
+own drag on the frame it reports `Complete`, so anything reading the in-flight
+trail *after* `update` reads nothing. Read the trail **before** the machine
+advances (`canvas/markup/ink.rs` §2).
+
+No unit test can see the order in which a frame calls two functions — that is a
+property of a call site, and a call site's effect is only observable in a running
+frame.
+
+### D16 — RULE: `return` is load-bearing in every arm of a split `match`
+
+When one `match` over a value is split into a pre-guard pass and a post-guard
+pass — the handful of actions that must answer with nothing open, then everything
+else — an arm in the first pass that falls through runs the second pass too.
+Where the second pass spells that case `unreachable!("handled before the document
+guard")` (`app/actions/apply.rs:387`, `:396`), the missing keyword is a panic
+rather than a silent double-handle.
+
+Both halves type-check and neither is wrong alone: the `unreachable!` documents a
+real invariant, and the earlier arm reads correctly because it does the work,
+traces, and records the epoch. Falling out of a `match` arm into the following
+statements is ordinary control flow, so the compiler has no opinion.
+
+The crash is the better outcome, but only if somebody presses the key — which is
+R1's whole subject. A save that writes the file and then dies reads to the
+operator as *"pdfcer disappears when I press Ctrl+S"*, not as a lost save.
+
+### D17 — RULE: retire a dialog only when it is off screen **and** holding nothing
+
+`dialogs::retire(open, answered)` is `!open && !answered`
+(`dialogs/mod.rs:307`). A window that parks its answer rather than acting — because
+writing over the operator's own file must have exactly one route — answers *"stop
+drawing me"* on the press that fills it, and an owner reading that as *"I am
+empty"* destroys it with the answer inside, three call frames before the drain
+looks.
+
+The invariant `retire` creates: **every caller of `DialogsState::show` drains the
+parked answers in the same frame.** There is one caller, `app::frame`, and it
+drains immediately after, so a retained-because-answered dialog lives for zero
+frames.
+
+The defect is entirely in the lifetime between three individually correct
+functions, and a lifetime is not a value any assertion over either half can name.
+Headless tests of the dialog's verdict and of its construction both pass on the
+broken build.
+
+Its general form, and the reason `unsaved` was repaired in the same change with
+nothing red to advertise it: **when a driven check finds a defect in one member
+of a matched pair, the pair is the unit of repair.** Fixing only the observed half
 leaves the survivor looking deliberate.
 
-### The verification
-
-Driven, on the real binary, against `fixtures/signed-two-pages.pdf`:
-
-```text
-[PASS] an_invalidating_save_is_warned_about
-  · the save is structural: pages-deleted removed=1 freed=2
-  ★ the save was held and the window drew: signature-asked pending=Copy
-  ★★ no file was written while the question was on screen
-  ★ the operator authorised it: signature-confirmed pending=Copy
-  ★ the write ran: save-copy … bytes=1973 … deleted=2 epoch=1
-  ★★★ 1973 bytes of PDF reached target/ui-verify-sig\signed-copy.pdf
-```
-
-The guard now blocks **and** releases, which is the whole claim, and the two
-halves are asserted in one run so a build that never writes cannot satisfy the
-absence in the middle.
-
----
-
-## D18 — Every resize runs `1/zoom` too fast, because the drag's travel arrives in a different space from the box it is measured against
-
-**Severity:** high · **Fix:** one line, plus a doc comment · **Found:** 2026-08-29,
-while proving which side of `shift_constrains_a_resize` was wrong · **FIXED AND
-VERIFIED 2026-08-29.** `PageMapping::page_vec_to_screen` is the conversion, and
-the Resize arm names the space at the call site rather than leaving it to a doc
-comment two files away. Re-run on `polyline-nodes.pdf`: `resize-commit
-sx=1.1654 sy=1.4410` where the same class of drag previously committed
-`sx=1.5200 sy=5.9439`. `resize_scales_a_shape`, `shift_constrains_a_resize` and
-`rotate_handle_turns_a_selection` all PASS. Three unit tests on the conversion
-pair, including the degenerate-zoom case, which answers `Vec2::ZERO` rather than
-a NaN — a NaN displacement reaching a content stream is a corrupted file, a zero
-one is a gesture that did nothing. **Was: not fixed
-here** — see *Why this entry is a record rather than a change*.
-
-At any zoom below 1.0 a grip drag scales the object by far more than the
-pointer moved, and the grabbed corner runs away from the hand. At the zoom the
-sweep runs at — 0.2955 — a 60 px drag on a 390.6 × 41.0 px box committed
-`sx=1.5200 sy=5.9439` and left the south-east corner **143 px** beyond the
-cursor on both axes. The gesture works, commits, undoes and announces itself
-correctly. It is simply the wrong size, and it is exactly right at zoom 1.0,
-which is where every unit test lives.
-
-### The contract, quoted from the module that owns it
-
-`crates/pdfcer-gui/src/canvas/resizing.rs`, on `Frame`:
-
-```rust
-/// How far the pointer has travelled since then, in screen points.
-pub delta: Vec2,
-...
-/// The selection's grip box in screen space, or `None` if there is no
-/// outline to have grabbed.
-pub bounds: Option<egui::Rect>,
-```
-
-and `factors` divides the first by the second:
-
-```rust
-let sx = if dw == 0.0 { 1.0 } else { (w + dw) / w };
-```
-
-Two quantities, one ratio, one stated space. The ratio is only meaningful
-because both operands are promised to be in it.
-
-### Where the promise is broken
-
-**`bounds` keeps it.** `interact.rs`'s `GestureOutcome::Resize` arm takes it
-from `pressing::grabbable` → `overlay::grip_box`, which is
-`mapping.rect_to_screen(union)` — screen space, as documented, and the same
-rectangle the selection outline is drawn from.
-
-**`delta` does not.** The gesture machine works in **page** space by design.
-`interact.rs` builds its `PointerFrame` as
-
-```rust
-pos: screen_pos.map(|p| map.to_page(p)),
-press_origin: ctx.input(|i| i.pointer.press_origin()).map(|p| map.to_page(p)),
-```
-
-and `gesture::Drag::outcome` answers `let delta = self.latest - self.origin;`.
-So `GestureOutcome::Resize.delta` is a **page-space** displacement, and the
-Resize arm hands it straight to a field documented as screen points. The
-committed factor is therefore
-
-```text
-s = 1 + (d_screen / zoom) / extent_screen      instead of      1 + d_screen / extent_screen
-```
-
-— every factor's distance from unity inflated by `1/zoom`.
-
-### Measured three times, on two different verbs, in one sweep
-
-All from `evidence/sweep-20260829/`, on `SW41177.pdf` at `zoom=0.2955`. The
-selection box for the first two is `[[316.4 580.8] - [707.0 621.8]]`, i.e.
-390.6 × 41.0 px.
-
-| trace | drag, screen px | committed | what the contract predicts | what the mismatch predicts |
-|---|---|---|---|---|
-| `resize.trace.txt` | 60 × 60 | `sx=1.5200 sy=5.9439` | 1.1536 / 2.4634 | **1.5197 / 5.9512** |
-| `shift-constrains.trace.txt` | 90 × 12 | `sx=1.7799 sy=1.9888` | 1.2304 / 1.2927 | **1.7798 / 1.9902** |
-| `scale-switch.trace.txt` | 23 × 14 on a 94 × 54 box, `resize-annot-commit` | `sx=1.8282 sy=1.8775` | 1.2447 / 1.2593 | **1.8282 / 1.8775** |
-
-The third is a **markup annotation**, through `resize_annotation` rather than
-`transform_objects`, so this is not confined to page content: the mismatch is
-above the branch and reaches all three destinations — page content, markup, and
-a form field's box.
-
-### The visible symptom is `drag-moves` D8, which this module claims
-
-`resizing`'s own conventions table says:
-
-> D8 grab-point: the pivot is the OPPOSITE corner, so the grabbed corner tracks
-> the pointer and the far one stays still.
-
-It does not. In `resize.trace.txt` the pointer released at window (767, 682)
-and the outline's south-east corner landed at (910.1, 824.9). An operator
-dragging a corner at a fitted zoom watches the shape shoot past their cursor.
-
-### ★★ Why a green suite never said so
-
-1. **Every unit test in `resizing.rs` is the zoom-1.0 case.** `factors(Grip::SouthEast, box_100x50(), Vec2::new(50.0, 25.0))` passes a box and a delta that are trivially in the same space, so the mismatch is unobservable by construction. The tests are correct and prove nothing about the wiring.
-2. **`resize_scales_a_shape` asserts that a resize HAPPENED**, not that it matched the pointer. It passes on this build and would pass on any inflation factor.
-3. **The one check that compares a committed factor against a number the harness chose** was `shift_constrains_a_resize`, and it compares `locked.sx` against `free.sx` — both inflated by the same constant, which cancels.
-
-⇒ The general form, and it is the fourth time this project has met it: **a ratio
-whose two operands come from different call paths has no test unless something
-asserts the ratio against a number chosen outside the program.** Every assertion
-here was of the shape "the same quantity twice", and a common factor is
-invisible to all of them.
-
-### The fix
-
-One line, and there is a choice of which line:
-
-- **At the call site** — `interact.rs`'s `GestureOutcome::Resize` arm converts
-  the page-space delta back to screen before it becomes `Frame::delta`, so the
-  field matches its documented space and nothing in `resizing` moves. Smallest
-  diff; keeps a conversion the shell does twice.
-- **In the space `Frame` speaks** — take `bounds` from
-  `selection.outline_union()` (page space) instead of `grip_box`, restate both
-  doc comments as page space, and drop the `map.to_page(anchor_screen)` hop
-  under `grip.pivot(bounds)`, which then already holds a page point. Fewer
-  conversions and one fewer chance to do one twice, which is
-  `canvas::mapping`'s standing argument — but it moves the pivot arithmetic and
-  needs the annotation and form-field branches re-read.
-
-Either way the doc comments are part of the fix, not decoration: the field said
-screen points and the caller passed page points for however long this has been
-here, and the next reader gets whichever sentence is left standing.
-
-### Why this entry is a record rather than a change
-
-The session that found it was scoped to two driven checks and explicitly
-forbidden from running the rest of the suite, and this change moves the numbers
-that every resize-related check asserts on across all three destinations. It
-also lands in `canvas/interact.rs`, which other agents had open at the time.
-**A behaviour change of this reach that cannot be verified in the run that makes
-it is the thing this project's rules exist to prevent**, so the evidence is
-filed and the change is not made. It wants its own pass, with
-`resize_scales_a_shape`, `shift_constrains_a_resize`,
-`the_line_weight_switch_reaches_the_resize`, `widget_move` and the annotation
-resize checks all re-run against it.
-
-★ A note for that pass: `the_line_weight_switch_reaches_the_resize` SKIPPED in
-this same sweep reporting *"a non-uniform drag"*, and D18 is **not** the cause —
-its travel is equal fractions of the shape (23.5 and 13.5 px) which the driver
-rounds to 23 and 14 integer cursor pixels, and 23/94 ≠ 14/54 whatever space the
-ratio is taken in. What D18 does is **multiply that rounding error by 3.4**,
-turning a 0.0146 spread into a 0.0493 one. Fixing D18 will not make that check
-pass; it will make its failure smaller, which is worse. That check needs a
-travel the driver can hit exactly.
-
----
-
-## D19 — The Delete key's annotation gate read a selection that had been moved off the document, so it was `false` on every frame of the program's life — **FIXED AND DRIVEN 2026-08-29**
-
-**Severity:** critical · **Fix:** one argument · **Shipped:** 2026-08-28,
-found by driving on 2026-08-29, open for about eighteen hours.
-
-This is R83's own subject surviving the change that closed R83, on the one
-surface of the three that could not be checked by reading the code.
-
-### What the operator would have met
-
-Open a certified drawing. Click a comment. The Properties panel says, correctly
-and permanently:
-
-> this document carries a certification signature whose permissions are
-> enforced (ISO 32000-1 §12.8.4, /Perms /DocMDP, P=2); structural page changes
-> are not among the changes it permits, so pdfcer refuses rather than silently
-> breaking it
-
-The Format tab's *Delete* is withheld. The canvas menu's *Delete* is withheld.
-Then press the **Delete key** — and the comment does not go, nothing is said,
-**and the sentence disappears**, because the selection was cleared by a delete
-that never happened. The one surface that cannot be undrawn was also the one
-surface that never asked.
-
-### Causal chain
-
-1. `canvas::keys` grew the gate on 2026-08-28. Its annotation rung reads
-   `Keys::annot_delete_refused` and, when set, writes
-   `canvas-delete-declined … reason=annot-delete-refused` and returns without
-   raising the action. That code is correct and has eleven unit tests.
-
-2. `canvas::interact` fills that field, at what was `interact.rs:1242`:
-
-   ```rust
-   annot_delete_refused: crate::panels::properties::annotdelete::refuses_selected(doc),
-   ```
-
-3. `refuses_selected` asks `doc.selection.annot()`.
-
-4. **`canvas::interact` opens by moving the selection off the document**, at
-   `interact.rs:342`:
-
-   ```rust
-   let mut selection = std::mem::take(&mut doc.selection);
-   ```
-
-   and puts it back at `interact.rs:1493`. Every line between those two — which
-   is the whole canvas frame, step 2 included — sees a
-   `SelectionState::default()` on `doc`.
-
-⇒ `doc.selection.annot()` was `None`, `is_some_and` short-circuited, and the
-flag was **`false` for every document, on every frame, always**. The Delete key
-raised `AnnotAction::Delete`, `EditSession::delete_annotation` refused it,
-`app::actions::apply::vector_edit`'s `Err` arm wrote
-`delete-annotation-refused` to the trace and — by that arm's own recorded
-decision — said nothing to the operator, and `actions::annots::delete` cleared
-the selection afterwards regardless, because it clears after the funnel rather
-than on success.
-
-### ★★★ Why nothing in the crate could have caught it
-
-Every unit test of the ladder sets `annot_delete_refused` **by hand** — that is
-the design, and a good one: `canvas_keys` takes no `&OpenDoc` so that its tests
-can exercise the whole Delete/Escape rung order without opening a file. So no
-test in `canvas::keys` is downstream of the call that was wrong.
-
-And the panel's own test asserted
-`refuses_selected(&doc) == doc.selection.annot().is_some()`, which on a
-freshly-opened fixture is `false == false` — true of the fixed build and true
-of the broken one.
-
-The **only** instrument that could see it was a real keystroke into a real
-window with a real selection, which is `ui-verify`'s `annot_delete_gate` phase
-D, driven for the first time on 2026-08-29. R1, exactly as written: *a
-capability is not verified until the running binary has been driven through
-it.*
-
-### The fix, and why it is structural rather than a comment
-
-`annotdelete::refuses(doc, selection)` takes the selection **by argument**, so a
-caller holding a detached one cannot silently ask about the wrong one.
-`refuses_selected(doc)` survives as its one-line wrapper for
-`app::conditions`, which runs in the panel pass where the document's selection
-is intact. `canvas::interact`'s line becomes:
-
-```rust
-annot_delete_refused: crate::panels::properties::annotdelete::refuses(doc, &selection),
-```
-
-99 characters, so `interact.rs` stays on R2's 1,500-line ceiling exactly where
-it was.
-
-The regression test is
-`annotdelete::fixtures::the_gate_reads_the_selection_it_is_given`: it puts the
-square in a **detached** `SelectionState`, leaves `doc.selection` empty, and
-asserts `refuses` still says yes — which is precisely the state
-`canvas::interact` asks from, and which the broken build answers `false` to.
-Both directions are asserted, so a gate that refused unconditionally fails it
-too.
-
-### ★★ The generalisation, which is not about annotations
-
-> **A convenience overload that reaches for state through a long path is a trap
-> when any caller holds that state detached.** The path `doc.selection` reads
-> like a fact about the document; inside a canvas frame it is a fact about a
-> temporary.
-
-`std::mem::take` on a field for the duration of a function is a common and
-sound Rust idiom, and it silently changes what every helper called from inside
-that window can see. The remedy is to make the borrow explicit in the
-signature, not to remember.
-
-### The verification
-
-The first run reported the failure as *"the keystroke did not reach
-`canvas::keys` at all — check that the canvas had focus"* while the trace
-carried `delete-annotation-refused` four rows above the region the same phase
-went on to read. The check was right that the gate was broken and wrong about
-every word of why, because it read only the line it hoped for.
-
-Phase D now names all three lines the key can produce, and presses **until the
-trace shows the key was heard** (`driving::press_until_traced`) so that a key
-that never arrived is a SKIP rather than an accusation.
-
----
-
-## D20 — Every real redaction was refused, because an embedded font's own `name` table counted as a leak — **FIXED 2026-09-04, NOT DRIVEN**
-
-**Severity:** critical · **Fix:** one classification · **Reported:** 2026-09-04,
-by the operator · **Files:** `crates/pdfcer-gui/src/redact/proof.rs`,
-`crates/pdfcer-gui/src/redact/mod.rs`, `crates/pdfcer-gui/src/dialogs/redact.rs`
-
-### What the operator said
-
-> *"I really hate how when I search for text to redact, or select a text object
-> on the screen to redact, pick the text to redact, then click apply redaction
-> it refuses to redact anything because it always finds text that wasn't
-> redacted, and it always finds all of the text is found that I selected. …
-> What is the purpose of a redaction tool that refuses every time to do any
-> work?"*
-
-Every clause of that was a measurement and every clause was correct.
-
-### The reproduction, on a fixture in this repository
-
-`fixtures/a1-titleblock.pdf`, marking the word `construction`:
-
-```text
-REFUSED: VerificationFailed { survivors: [" construction"] }
-```
-
-Nothing was written. The removal had **succeeded** — 13 characters deleted from
-1 content stream, 1 mark applied, 0 retained. What refused it was
-`redact::proof`'s own absence check, and what it found was object 9: a stream
-with `/Length1 19092` and no `/Type`, i.e. an **embedded TrueType font
-program**. JetBrains Mono's `name` table describes its own stylistic sets as
-*"Classic construction"* and *"Closed construction"*.
-
-A font's description of its own letterforms had vetoed the operator's
-redaction, and would have vetoed any redaction of any ordinary English word on
-any document with an embedded font — which is every document anybody opens.
-
-### The cause: an inverted classification, not a broken measurement
-
-`proof::prove` ran two halves over the finished bytes:
-
-| where the removed string still occurred | verdict |
-|---|---|
-| in **any decoded stream** | **REFUSE**, write nothing |
-| in the **raw bytes only** | disclose as a residual, acknowledgement-gated |
-
-The prose defending the first row said *"a decoded stream is content a renderer
-or a text extractor will read back"*. That is true of a content stream and
-false of most streams in a real file — font programs, image samples, ICC
-profiles, object-stream containers, attachments.
-
-★ **The two halves applied opposite rules to the same evidence.** The raw-byte
-half already knew that a byte run in a place nothing draws is a coincidence
-pdfcer cannot rule out — `MIN_VERIFIABLE_LEN` exists entirely because of it.
-The decoded half took the identical coincidence and, merely because it happened
-to sit inside a `/FlateDecode` stream rather than beside one, gave it the
-harshest verdict in the module instead of the mildest.
-
-### The fix
-
-Every stream is still decoded and still searched — narrowing the sweep would
-hide evidence. What changed is the **verdict** a blob can produce. `role_of`
-classifies each decoded stream, and only a **content-bearing** one can refuse:
-a page content stream, a form XObject (which is what an annotation appearance
-stream is), a tiling pattern, a Type 3 glyph procedure. Everything else is
-promoted into the disclosure list **with the site named**, so nothing that used
-to refuse now passes silently.
-
-The operator now gets what he asked for: the redaction is applied, the leftover
-is named in the same sentence, and the acknowledgement gate — not a refusal —
-stands between him and the write.
-
-### ★★ Why the test suite did not catch it, which is the transferable part
-
-Every unit test in `redact/` ran on `assemble`d fixtures: a handful of objects,
-uncompressed streams, `/Helvetica`, no embedded font. `tools/ui-verify`'s
-`checks::redaction` — the one check that drives the real binary — generates its
-own fixture and its header says what it is: *"Two pages, uncompressed"*, two
-ASCII strings, a Base-14 font.
-
-Those fixtures are right for what they assert (*"every byte in this file is one
-the suite put there"*) and they share one property that turned out to decide
-everything: **there is nothing in them for a coincidence to hide in.** So the
-feature had a unit suite and a driven check, and neither had ever seen a
-document a person would open.
-
-⇒ **The fixture that exercises the feature and the fixture that resembles the
-operator's work are not the same fixture, and a suite needs both.**
-`redact::tests::a_real_drawing_sheet_with_an_embedded_font_is_applied_rather_than_refused`
-is the second, and it runs the whole pipeline — mark, apply, write, re-extract
-— on `fixtures/a1-titleblock.pdf`, with `FOUNDATION` as a negative control so a
-build that blanked the page fails it.
-
-### The falsification
-
-Five plants, each restored:
-
-| plant | what it broke | which test went red |
-|---|---|---|
-| 1 | `/Length1` counts as drawn content again (the defect) | the font test, the site table, **and the real-sheet test**, the last with `VerificationFailed { survivors: [" construction"] }` |
-| 2 | opaque hits dropped on the floor (the *dangerous* fix — stop refusing, and stop telling) | the font test and the real-sheet test. ★ On the synthetic fixtures the residual merely degraded to `RawBytes`; **only the real-document test saw `[]`**, because a real font program is compressed and the plaintext is not in the raw bytes. The dangerous fix is invisible to a suite of uncompressed fixtures. |
-| 3 | `/Subtype /Form` classified opaque | `the_sweep_reaches_a_stream_that_is_not_page_content` |
-| 4 | the content-stream guard removed from the disclosure half | `a_survivor_in_drawn_content_is_not_also_listed_as_a_residual` |
-| 5 | the Type 3 `/CharProcs` walk removed | `a_tiling_pattern_and_a_type3_glyph_procedure_are_drawn_content` |
-
-### Not driven
-
-The GUI was **not launched and `ui-verify` was not run** — the operator was at
-his keyboard and a watchdog kills GUI processes on sight. `checks::redaction`
-gained a phase E2 that asserts the new destination control is drawn; that phase
-has never executed. Everything above was proven headlessly.
-
----
-
-## D21 — Reflow answered every press, in the slot that reads as a footnote about an earlier edit — **FIXED 2026-09-04, NOT DRIVEN**
-
-`OPERATOR_REQUESTS.md` **O127**, defect 3. The operator:
-
-> *"I also haven't seen the reflow option actually work with anything when I
-> press it."*
-
-### The finding, and it is not the one anybody expected
-
-**`edit.reflow_block` was not silent. It answered him every single time.**
-
-All four of its shell-side refusals — no caret, caret on bare page, run not in a
-recognised block, session already edited — called
-`crate::app::actions::record_note`. That is the **disclosure** channel, which the
-status bar draws as:
-
-> `⚑ About your last edit: <sentence>`
-
-…truncated to 45 % of the remaining bar width (`NOTES_WIDTH_FRACTION`), with the
-full text on hover only. For a press where **nothing had happened**, in the past
-tense, labelled as a note about a *previous* edit.
-
-`app::status::decline`'s own header had already ruled on this exact swap, for two
-other sentences, in these words:
-
-> *"an operator who reads 'About your last edit' after a gesture that did nothing
-> has been told a small lie confidently."*
-
-⇒ ★★★ **A sentence in the wrong slot is indistinguishable, from the operator's
-chair, from no sentence at all.** That is the second time this project has proved
-it and it is the transferable part. The engine's own refusal was worse again: it
-collapsed into `Declined::EditRefused`'s nine cause-free words — *"That change
-was refused, and the document is unchanged"* — for four causes with four
-different remedies.
-
-### The fix
-
-`crate::text::textedit::ReflowRefusal`, eight variants with eight sentences, all
-routed through `decline::record_reflow` so they wear `⊗` and mean *nothing
-happened*. The engine's `ReflowApplyError` is mapped into the same enum through
-`Result::inspect_err` **inside** the funnel's closure — which works because
-`vector_edit` takes the decline floor *before* running it, and
-`BeforeTheVerb::refused` fills the slot only `if slot.is_none()`. Reflow is the
-first verb to use that mechanism for its own wording. The tooltip now leads with
-the two preconditions, before the press, per R9.
-
-### ⚠ The gate that was deliberately NOT removed, and why
-
-`app::actions::textstyle::reflow` refuses whenever `doc.edit_epoch != 0` — any
-edit at all, anywhere. That is far broader than the engine's own condition
-(`state.contains_key(&page.contents[0])`), and removing it was drafted and
-**rejected**:
-
-`EditSession::add_text` appends a **new** content stream and never touches
-`contents[0]`, so it does not trip the engine's guard. A reflow then plans from
-the base document and writes the result into `contents[0]` through
-`text_edit_command`, whose first-edit branch **empties every other `/Contents`
-entry** — the one holding the operator's added text. It returns `Ok`.
-
-⇒ Lifting the shell's forecast would trade a control that refuses too often for a
-control that silently deletes work. It is filed as
-`request_added_content_is_duplicated_by_the_next_content_edit.md` §6 and stays
-until the engine can be asked.
-
-### Not driven
-
-The GUI was **not launched and `ui-verify` was not run** — another session held
-the desktop. Proven headlessly: five new unit tests in `text::textedit`, each
-falsified.
-
----
-
-## D22 — Enter answered "can this make a new line?" by finishing the edit — **FIXED 2026-09-04, NOT DRIVEN**
-
-`OPERATOR_REQUESTS.md` **O127**, defect 2:
-
-> *"also can the enter key create new lines when we are editing or creating
-> text?"*
-
-Enter inserted a line break in a **dragged box** and **committed** in the other
-two drafts. So the answer to his question, pressed with his fingers, was an edit
-finishing under him — which looks like success and answers a different question.
-
-### ★★ The half that was missing even where Enter worked
-
-A box draft could hold two lines and the caret could not reach the second one.
-`blocks::step` returns `false` for anything but `Anchor::Run`, and the arrow arm
-had **no fallback** — so Up and Down did **nothing at all** in a multi-line box,
-and Home and End jumped to the ends of the *whole draft* rather than of the line.
-Shipping the line break without those four would have been a multi-line editor
-you cannot move around in.
-
-### What it is now
-
-Enter means **one thing everywhere**: a new line. `Ctrl+Enter` commits every
-draft, so commit is never mouse-only. Escape still abandons and clicking away
-still commits, both unchanged. Where a line break cannot go — a caret in an
-existing show operator — Enter **declines in words** and leaves the draft alive,
-because that is the FILE's rule and not a shortcoming to hide: `edit_text`
-re-encodes into the run's own font, a line feed has no code in any standard
-encoding, and the engine refuses it by name.
-
-The decision is `canvas::textedit::keys::enter_means`, a pure function, so *"the
-whole interaction, not half of it"* is a claim four unit tests check rather than a
-sentence in a comment.
-
-### ★ Multi-line reaching the engine — read, not assumed
-
-| path | a `\n` |
-|---|---|
-| boxed `add_text` | a **hard paragraph break**, each paragraph wrapped independently. Intact. |
-| point `add_text` | a **named refusal** — no code in any standard encoding |
-| `edit_text` | a **named refusal**, same reason |
-
-So a clicked draft that gains a line break is promoted to a **boxed** request at
-the commit — `app::actions::addtext` — with the box taken from the page's own
-crop box: the click across to the right edge, and down to the bottom. Nothing is
-invented (`canvas::textedit::place`'s *"a click would have to invent a width"*
-still holds), and the promotion is disclosed under rule 4. A **one-line** click
-still takes the point path byte for byte.
-
-### Not driven
-
-`tools/ui-verify/src/checks/enter_newline.rs` was written and **not executed** —
-another session held the desktop. It is registered anyway, on the precedent
-`left_rail`, `properties_tool` and `protect` set: a check that is not in the list
-is a check nobody will ever run.
-
----
-
-## D23 — A link arrives at the right place and the zoom that framed it lands a frame later, about a page that is no longer on screen — **FIXED AND DRIVEN 2026-09-06**
-
-> ★★★ **FIXED 2026-09-06, verified by driving the binary.**
-> `a_link_goes_to_the_page_it_names` was RED and is now GREEN; the six-check
-> bookmark/zoom/fit family was green before and is green after, with identical
-> numbers. **The fix is one file** —
-> `crates/pdfcer-gui/src/canvas/destination.rs`, `arrive_step` — and it was
-> falsified by restoring that file byte-for-byte and watching the check go red
-> again. The whole account is in **THE FOURTH READING** at the end of this
-> entry.
->
-> ⚠ **Three of the four readings below are wrong and they are kept on purpose.**
-> The sequence is the useful part: every one of them was articulate, every one
-> was reasoning backwards from where the view ended up, and the one that is
-> right is the one that read a trace line that contradicts *itself*.
-
-**A clickable table of contents is a page of dead text.** Click a link, the view
-goes to the right place for a moment, and comes back.
-
-### Measured, not inferred
-
-`a_link_goes_to_the_page_it_names` in `tools/ui-verify`, on
-`fixtures/goto-actions.pdf`, driven against the released binary. It reports:
-
-> **THE LINK WENT TO THE WRONG PAGE: 0 → 0, where 3 was named** (page 4,
-> 1-based). It landed on page 0, which is the signature failure: a destination
-> that could not be resolved, defaulted to index 0, and navigated anyway.
-
-★ **That last sentence is the check's hypothesis and it is WRONG**, which is why
-this entry exists rather than a one-line fix. Everything upstream is correct:
-
-| link in the chain | measured |
-|---|---|
-| the engine resolves the destination | `pdfcer list-links` → `index=2 … dest=page target=4 view=FitH` |
-| the shell reads all four links | `page-links page=0 links=4 unresolvable=0 named=0` |
-| the click reaches the link | `link-click page=0 index=2 kind=page` |
-| the view **moves** | `canvas-pos at=-19.3,-7.7` → `at=-8.0,1844.3` |
-| and then moves **back** | → `at=-8.0,724.3`, where it stays |
-
-So the destination is resolved, the jump happens, and **something after it
-re-places the view**. Nothing defaulted to zero; the check's "defaulted to index
-0" reading is an inference from the endpoint, and the endpoint is a *second*
-scroll rather than a failed first one.
-
-⇒ **A check that names a cause is naming a hypothesis.** This one's message is
-well-written and would have sent a reader to `DestinationReader` — three layers
-above where the evidence points. Read the trace, not the verdict.
-
-### ★★★ CORRECTION, same evening — the destination ARRIVES, and both earlier suspects are refuted
-
-The section below blamed the `Fit(Width)` between the page jump and the
-destination scroll. **That is wrong**, and the line that disproves it was in the
-trace the whole time:
-
-```text
-destination-arrive page=3 framed=true pending=Point { page: 3, left: None, top: Some(540.0) }
-```
-
-`canvas::destination::arrive` compares the parked destination's page against the
-view's and **drops** a mismatch. It matched. The fit did not prevent the
-arrival, the page turn worked, and the region was framed. So the check's
-*"defaulted to index 0"* and this entry's *"the fit re-places the view"* are
-**two wrong causes for one symptom**, arrived at from the endpoint in both
-cases.
-
-⇒ **Twice now the articulate explanation was reasoning backwards from where the
-view ended up.** The evidence that settles it is not at the end of the trace; it
-is the pair of frames in the middle.
-
-### ★★★ THIRD READING, and this one is arithmetic rather than narrative
-
-Two hypotheses were already wrong here — the check's *"defaulted to index 0"*
-and this entry's *"the fit re-places the view"*. So this one is stated with the
-numbers that force it, and it is still labelled a **lead**, not a verdict.
-
-`canvas::zoom::frame_rect` plans the framing against **`last_frame(ctx)` — the
-PREVIOUS frame's canvas**. `arrive` runs during the canvas draw, before that
-frame's own `canvas` trace line is emitted. So the geometry it plans against is
-one frame stale, and one frame stale is exactly the frame before the page turn
-and the fit landed:
-
-| trace line | frame | zoom | offset | page |
-|---|---|---|---|---|
-| 211 | the one `frame_rect` actually reads | 0.7277 | `584.3` | **0** |
-| 300 | the frame `arrive` runs on | 0.7647 | `2436.8` | **3** |
-| 317 | after the zoom lands | 3.1200 | `1316.6` | **0** |
-
-`doc.zoom_anchor` is therefore built from `offset_before = 584.3` — a **page 0**
-offset — and `display_before` from the 0.7277 display. `consume_anchor` solves
-that faithfully on the next frame and puts the view back where the anchor says,
-which is page 0, magnified 3.12×. The mechanism is working exactly as designed
-on an input taken one frame too early.
-
-⇒ **`last_frame` is a lie during the frame that changed the view.** Anything
-that plans geometry inside a draw, after the queue has already moved the
-document, is planning against the state the operator was in before their own
-gesture.
-
-Note the shape of the near-miss: `consume_anchor` already carries a one-frame
-grace (`AnchorStep::Hold`, the `waited` flag) for the *output* side of this
-problem — the display not having settled when the anchor is solved. The
-**input** side has no equivalent.
-
-### ⚠ Why this is a lead and not a fix
-
-`frame_rect` is shared by the zoom marquee, `view.zoom_selection` and every
-bookmark, so changing when it reads its geometry moves three surfaces at once —
-and `viewer`'s zoom-anchor code is R128 territory. The two obvious repairs
-(defer `arrive` a frame when the page changed; give `frame_rect` the current
-frame's geometry) are **not** equivalent and one of them re-creates the
-feedback loop.
-
-**The oracle exists and is cheap**: `a_link_goes_to_the_page_it_names`, plus the
-bookmark family, driven. Whoever takes it should run both before and after and
-compare `off=` across the three frames above.
-
-### What actually happens, frame by frame
-
-| frame | trace | reading |
-|---|---|---|
-| N | `destination-arrive page=3 framed=true` | the destination is resolved and framed |
-| N | `canvas-zoom to=rect requested=3.1200 applied=3.1200 clamped=false` | `zoom_to_rect` decides 3.12× and **raises** `ZoomTo` |
-| N | `canvas … zoom=0.7647 page=3 … off=[484.0 2436.8]` | the canvas still draws at the OLD zoom, correctly on **page 3** |
-| N+1 | `canvas … zoom=3.1200 page=0 … off=[476.0 1316.6]` | the zoom lands — and the view is now on **page 0** |
-
-`zoom_to_rect` scrolls **this** frame and raises a zoom that is applied on the
-**next** one. When it lands it magnifies about the viewport anchor as it is
-then, which is no longer the anchor the framing was computed against, and 3.12×
-of error puts the destination four pages away.
-
-★★ **The `/XYZ` arm three branches above describes this exact failure, in
-advance, and is talking about source order rather than frame order:**
-
-> *"`zoom` first, because the scroll is expressed in the zoom that will be in
-> force when it lands. Reversing them scrolls to a point and then magnifies
-> about a different anchor, which puts the destination off screen by however
-> much the zoom changed."*
-
-Every word applies. The ordering it prescribes is honoured in the source — and
-defeated by a one-frame lag between deciding a zoom and applying it. ⇒ **An
-ordering argument written about statements is not a claim about frames**, and an
-action queue turns the second into the first only when everything in it lands
-together.
-
-⚠ `arrive` discards `zoom_to_rect`'s return value (`let _ = …`), so whatever it
-reports about the framing it achieved is thrown away at the one call site that
-could act on it. Worth reading before changing anything.
-
-### The earlier suspect, kept because it was reasonable and is refuted above
-
-`app::actions::destination::actions_for` pushes, in order:
-
-```rust
-out.push(Action::GoToPage(page_index));
-…
-DestView::FitH { .. } => {
-    out.push(Action::Fit(crate::viewer::FitMode::Width));
-    out.push(Action::GoToDestination(Point { page: page_index, … }));
-}
-```
-
-**`Action::Fit` stopped being a pure zoom on 2026-09-05.** O28 — *"a fit now
-**places the view**, not just the scale. It pins the axes whose extent it
-decided and keeps the operator's position on the rest, clamped to the page."*
-That is correct for a fit the operator asked for, and it is exactly wrong in the
-middle of a navigation: the `Fit(Width)` between the page jump and the
-destination scroll pins the vertical axis, and the jump is vertical.
-
-The `XYZ` arm above it carries a comment that is the same insight one step short
-of this one — *"`zoom` first, because the scroll is expressed in the zoom that
-will be in force when it lands. Reversing them scrolls to a point…"* — written
-when a fit only changed the scale. It has since grown a second effect and the
-ordering argument was not revisited.
-
-### Why no test sees it
-
-Every unit test over `actions_for` asserts **which actions are raised**, and the
-right actions *are* raised, in an order that was right when it was written. The
-defect is what one of them does to another's result, one apply-loop later. Only
-a driven run that reads `canvas-pos` across frames can see the view arrive and
-leave.
-
-### What to check first
-
-Whether `Fit` should take a "do not place" variant for the navigation path, or
-whether `GoToDestination` should simply come last and win. **Do not reorder by
-eye** — `viewer`'s fit code has a recorded feedback loop (R128) and the
-`canvas-pos` trace is the only oracle that has ever settled a question in it.
-
----
-
-### ★★★★ THE FOURTH READING — the frame record is about **another sheet**, and one trace line says so on its own
-
-**Fixed 2026-09-06.** The third reading above is refuted too, and it is
-refuted by reading the code it names:
-
-> `zoom::remember_frame` is called in `canvas::present` at the point the
-> layout settles, and `canvas::interact` — which contains the `arrive` call —
-> is called **after** it, on the same frame. So `last_frame(ctx)` inside
-> `arrive` is **this** frame's record, not the previous one. "`last_frame` is
-> a lie during the frame that changed the view" is the right instinct pointed
-> at the wrong noun.
-
-★ And `place_centred` never reads `frame.offset` at all — it *synthesises*
-`offset_before` from the frac, the display and the viewport. So the third
-reading's whole table of stale offsets is about a field the framing path does
-not consult. The `584.3` it identifies as "a page 0 offset read one frame too
-early" is simply the fitted view's own offset before the click, on trace line
-211, where nothing has happened yet.
-
-#### What the trace actually says, and it contradicts itself in one line
-
-Driven 2026-09-06 against the released build, `fixtures/goto-actions.pdf`,
-third link (`/FitH`, target page 4). Three consecutive lines:
-
-```text
-destination-arrive page=3 framed=true pending=Point { page: 3, left: None, top: Some(540.0) }
-canvas-zoom to=rect requested=3.1200 applied=3.1200 clamped=false
-canvas rect=[[296.0 -1678.7] - [764.0 -1073.0]] zoom=0.7647 page=3 pages=4 off=[484.0 2436.8] sel=0 display=continuous visible=1 drawn=0
-```
-
-On that last line `page=` is `doc.view.page_index` and `rect=` is the **acting
-page's** rectangle (`canvas::trace::layout`). They disagree:
-
-| what the line says | what it means |
-|---|---|
-| `page=3` | the view has turned to page 3 |
-| `off=[484.0 2436.8]` | the scroll offset is at page 3's position |
-| `rect=[[296.0 −1678.7] …]` | the page being drawn starts **1,844 px above the viewport** |
-| `visible=1` | exactly **one** page was laid out this frame |
-
-1,844 px is not a coincidence: at zoom 0.7647 the strip's row pitch is
-`(792 + 12) × 0.7647 = 614.8`, so `3 × 614.8 = 1844.5` — and the position line
-beside it reads `canvas-pos at=-8.000,1844.312`. The rectangle being drawn is
-**page 0's**, seen from page 3's scroll position. The one page laid out was
-the wrong one.
-
-⇒ **The scroll offset moves on the frame the page turns. The strip's visible
-set does not.** `canvas::strip` chooses which pages to lay out from the offset
-the frame *inherited*, before `canvas::offset::decide` forces the new one. So
-for exactly one frame the canvas is scrolled to the destination and still
-drawing the page it left.
-
-#### Why that is fatal, in one hop
-
-`zoom::CanvasFrame` is written from that layout, so its `page`, `extent`,
-`display` and `map` are all about **page 0**. `frame_rect` plans against it;
-`place_centred` stamps `page: 0` into the anchor; `consume_anchor` solves it
-exactly; and `offset::decide` converts the answer through
-`strip_offset_for(anchor.page = 0, …)` — page 0's origin in the strip.
-
-★★ The arithmetic is not merely *similar* across the defect and the fix, it is
-**identical**. Both runs solve a page-local offset of `1316.6`. The defective
-run adds it to page 0's origin (`0`) and reports `off=1316.6 page=0`; the
-fixed run adds it to page 3's origin (`3 × (792 + 12) × 3.12 = 7525.4`) and
-reports `off=8842.0 page=3`. Nothing about the zoom, the anchor, the clamp or
-the fit was ever wrong. **The framing was handed a frame about the wrong
-sheet.**
-
-#### The fix — a bounded HOLD on the destination path, and NOT a change to `frame_rect`
-
-`canvas::destination::arrive_step`, a pure function with six unit tests beside
-it:
+### D18 — RULE: a ratio's two operands are asserted to be in one space
+
+`canvas::resizing::Frame` divides a pointer travel by a grip box. The gesture
+machine works in **page** space by design; `grip_box` is screen space, the same
+rectangle the outline is drawn from. Handing the page-space delta to a field
+documented as screen points inflates every factor's distance from unity by
+`1/zoom` — invisible at zoom 1.0, which is where every unit test lives.
+`PageMapping::page_vec_to_screen` is the conversion, and the Resize arm names the
+space at the call site rather than leaving it to a doc comment two files away.
+
+A degenerate zoom answers `Vec2::ZERO` rather than a NaN: a NaN displacement
+reaching a content stream is a corrupted file, a zero one is a gesture that did
+nothing.
+
+The general form: **a ratio whose two operands come from different call paths has
+no test unless something asserts the ratio against a number chosen outside the
+program.** Every assertion available here was of the shape *"the same quantity
+twice"* — a resize happened; the locked factor equals the free factor — and a
+common factor cancels in all of them.
+
+### D19 — RULE: state a helper reads is passed by argument, not reached through `self`
+
+`canvas::interact` opens by `std::mem::take`ing the selection off the document and
+puts it back at the end, which is a sound Rust idiom and silently changes what
+every helper called from inside that window can see. A predicate that reaches for
+`doc.selection` answers about a `default()` for the whole canvas frame.
+
+`annotdelete::refuses(doc, selection)` takes the selection by argument
+(`canvas/interact.rs:1161`); `refuses_selected(doc)` survives as its one-line
+wrapper for `app::conditions`, which runs in the panel pass where the document's
+selection is intact. The regression test puts the object in a **detached**
+`SelectionState`, leaves `doc.selection` empty, and asserts `refuses` still says
+yes — both directions, so a gate that refused unconditionally fails it too.
+
+**A convenience overload that reaches for state through a long path is a trap
+when any caller holds that state detached.** `doc.selection` reads like a fact
+about the document; inside a canvas frame it is a fact about a temporary. The
+remedy is to put the borrow in the signature, not to remember.
+
+Two consequences that outlive the fix: a gate whose input is filled at a call site
+is not tested by any test of the gate, because every such test sets the input by
+hand; and a driven check that presses a key must press **until the trace shows the
+key was heard** (`driving::press_until_traced`), so a key that never arrived is a
+SKIP rather than a confident accusation against code that is fine.
+
+### D20 — RULE: only content-bearing streams can refuse a redaction
+
+Every stream in the finished bytes is decoded and searched — narrowing the sweep
+hides evidence. What a hit can *produce* depends on where it is: only a page
+content stream, a form XObject (which is what an annotation appearance stream
+is), a tiling pattern or a Type 3 glyph procedure can refuse the write.
+`redact::proof::role_of` classifies them. Everything else — font programs, image
+samples, ICC profiles, object-stream containers, attachments — is promoted into
+the disclosure list **with the site named**, behind the acknowledgement gate, so
+nothing that used to refuse now passes silently.
+
+The mechanism: a byte run in a place nothing draws is a coincidence pdfcer cannot
+rule out. That is why `MIN_VERIFIABLE_LEN` exists for the raw-byte half, and the
+decoded half must apply the same reading to the same evidence. Without it, an
+embedded font's own `name` table vetoes any redaction of any ordinary English
+word on any document carrying an embedded font.
+
+**The fixture that exercises the feature and the fixture that resembles the
+operator's work are not the same fixture, and a suite needs both.** Fixtures
+assembled so that every byte is one the suite put there are right for what they
+assert and share the property that there is nothing in them for a coincidence to
+hide in. `redact::tests::a_real_drawing_sheet_with_an_embedded_font_is_applied_rather_than_refused`
+runs the whole pipeline — mark, apply, write, re-extract — on
+`fixtures/a1-titleblock.pdf`, with a negative control so a build that blanked the
+page fails it.
+
+The dangerous repair is the one that stops refusing *and* stops telling. It is
+invisible to uncompressed fixtures, where a dropped hit merely degrades to a raw-
+byte residual; only a real document, whose font program is compressed, shows the
+empty list.
+
+### D21 — RULE: a refusal is worded in the slot that means "nothing happened"
+
+The disclosure channel draws as *"About your last edit: …"*, truncated, past
+tense, about a *previous* edit. A refusal routed there after a press where nothing
+happened tells the operator a small lie confidently. **A sentence in the wrong slot
+is indistinguishable, from the operator's chair, from no sentence at all.**
+
+`crate::text::textedit::ReflowRefusal` carries one sentence per cause, routed
+through `app::status::decline::record_reflow` so they read as *nothing happened*.
+The engine's `ReflowApplyError` is mapped into the same enum through
+`Result::inspect_err` **inside** the funnel's closure, which works because
+`vector_edit` takes the decline floor *before* running it and `BeforeTheVerb`
+fills the slot only if it is empty. A single collapsed refusal — nine cause-free
+words for four causes with four different remedies — is the failure this
+replaces.
+
+The tooltip leads with the preconditions, before the press, per R9.
+
+**A workaround kept past its cause rots, and it is not inert while it rots.** The
+shell's pre-flight `edit_epoch` gate forecast an engine refusal, was correct when
+written, and cost the operator reflow on every page he had touched — including the
+ones that were always safe. It is gone, and it was **deleted rather than
+narrowed**: narrowing it would have been a second implementation of the engine's
+own predicate, in a second crate, over the same `/Contents` list — two
+self-consistent predicates over one model, with no test of either able to see them
+disagree. The engine owns the question; the shell words the answer
+(`app/actions/textstyle.rs:1156`).
+
+### D22 — RULE: one key, one meaning, everywhere
+
+Enter means a new line in every text draft. `Ctrl+Enter` commits, so commit is
+never mouse-only; Escape abandons and clicking away commits. Where a line break
+cannot go — a caret inside an existing show operator — Enter **declines in words**
+and leaves the draft alive, because that is the file's rule and not a shortcoming
+to hide: `edit_text` re-encodes into the run's own font, a line feed has no code
+in any standard encoding, and the engine refuses it by name.
+`canvas::textedit::keys::enter_means` is a pure function, so *"the whole
+interaction, not half of it"* is checked rather than asserted in a comment.
+
+The half that is easy to miss: a multi-line draft needs caret motion. Up, Down,
+Home and End must reach lines, not just the ends of the whole draft; shipping the
+line break without them is a multi-line editor you cannot move around in.
+
+A clicked draft that gains a line break is promoted to a **boxed** request at the
+commit, with the box taken from the page's own crop box — the click across to the
+right edge and down to the bottom. Nothing is invented, and the promotion is
+disclosed. A one-line click still takes the point path byte for byte.
+
+### D23 — RULE: geometry is planned against a frame record about the right page
+
+The scroll offset moves on the frame the page turns; the strip's visible set does
+not, because `canvas::strip` chooses which pages to lay out from the offset the
+frame *inherited*. So for exactly one frame the canvas is scrolled to the
+destination and still drawing the page it left, and `zoom::CanvasFrame` — written
+from that layout — describes the wrong sheet. Anything that then frames a rect
+stamps the wrong page into its anchor, and the solver honours it exactly.
+
+`canvas::destination::arrive_step` is the gate (`canvas/destination.rs:213`):
 
 | condition | step |
 |---|---|
-| the view is on another sheet | `Drop` — the pre-existing guard, unchanged |
-| the frame record is about the destination's page | `Frame` — the ordinary case, and the only one that existed before |
-| it is about another page, or there is no record yet | `Hold`, up to `MAX_WAIT_FRAMES` (4), then `Drop` |
+| the view is on another sheet | `Drop` |
+| the frame record is about the destination's page | `Frame` |
+| it is about another page, or there is no record yet | `Hold`, up to `MAX_WAIT_FRAMES`, then `Drop` |
 
-`arrive` now **reads** the parked destination instead of `take()`ing it, holds
-it for the frame the layout is behind, and calls `ctx.request_repaint()` so a
-reactive shell cannot leave it parked until the operator jogs the mouse.
-
-★ **This is D23's repair (a), and repair (b) is the one that would have hurt.**
-`frame_rect` is shared by the zoom marquee, `view.zoom_selection` and every
-bookmark; the only "fresher" geometry available inside the draw is geometry the
-draw is still deciding, and feeding a layout back into a fit-to-viewport zoom
-is **R128** exactly. The gate added here asks a question — *"is the frame
-record about my page?"* — that is true on the first frame for every other
-caller, because a marquee and a selection are by construction on the page being
-drawn. Nothing outside the destination path changed.
-
-★★ It is also the missing half of a symmetry the third reading spotted:
-`consume_anchor` already carried a one-frame grace (`AnchorStep::Hold`) for the
-**output** side of this problem. `ArriveStep` is the same shape for the
-**input** side, bounded for the same reason — a destination held for ever would
-be spent later on an unrelated layout change, as a view springing to a bookmark
+`arrive` **reads** the parked destination rather than taking it, and calls
+`ctx.request_repaint()` so a reactive shell cannot leave it parked until the
+operator jogs the mouse. The hold is bounded because a destination held for ever
+is spent later on an unrelated layout change — a view springing to a bookmark
 clicked a minute ago.
 
-#### Driven, before and after
+The repair is on the destination path and **not** in `frame_rect`, which is shared
+by the zoom marquee, `view.zoom_selection` and every bookmark: the only fresher
+geometry available inside a draw is geometry the draw is still deciding, and
+feeding a layout back into a fit-to-viewport zoom is R128 exactly. The gate's
+question — *"is the frame record about my page?"* — is true on the first frame for
+every other caller, because a marquee and a selection are by construction on the
+page being drawn.
 
-Same binary, same fixture, one run at a time.
+Four lessons kept, each one general:
 
-| | `a_link_goes_to_the_page_it_names` | final `canvas` line |
-|---|---|---|
-| **before** | **FAIL** — *"THE LINK WENT TO THE WRONG PAGE: 0 → 0, where 3 was named"* | `zoom=3.1200 page=0 off=[476.0 1316.6]` |
-| **after** | **PASS** — *"the view moved from page 0 to page 3"* | `zoom=3.1200 page=3 off=[476.0 8842.0]` |
+- **A check that names a cause is naming a hypothesis.** Read the trace, not the
+  verdict.
+- **A trace that reports an intent and calls it an outcome will be believed.**
+  `destination-arrive page=3 framed=true` was true and useless; the line now
+  carries `step=`, `frame_page=` and `waited=`.
+- **An ordering argument written about statements is not a claim about frames.**
+  Source order is honoured and still defeated by a one-frame lag between deciding
+  a zoom and applying it, unless everything in the queue lands together.
+- A check that passes against a defect may be structurally unable to find it. The
+  bookmark fixture's targets are on the sheet already showing, so they take
+  `Frame` on their first frame.
 
-The fixed run's own trace shows the gate doing exactly one frame of work:
+Open design question, not a bug: a `/FitH` destination raises both a fit and a
+point, and `arrive` frames a point as a 150 pt box
+(`geometry::DESTINATION_CONTEXT_PT`), which can override the fit the same
+destination asked for. §12.3.2.2 says `/FitH` means *fit the width and put `top`
+at the top edge*, and Acrobat keeps the current magnification for an `/XYZ` with a
+null zoom. `canvas::destination`'s header argues for the framing deliberately
+(*"adding a second scroll-to-a-point solver would be two answers to one
+question"*), so this wants its own driven pass: it would move every `/XYZ` and
+`/FitH` bookmark.
 
-```text
-destination-arrive page=3 step=Hold  frame_page=Some(0) waited=0 framed=false …
-canvas rect=[[296.0 -1678.7] - [764.0 -1073.0]] zoom=0.7647 page=3 … visible=1 drawn=0
-destination-arrive page=3 step=Frame frame_page=Some(3) waited=1 framed=true  …
-canvas rect=[[296.0 165.8] - [764.0 771.5]]     zoom=0.7647 page=3 … visible=1 drawn=1
+### D24 — RULE: a keystroke is not a harness step while a dock panel is open
+
+A chord is routed through whatever holds keyboard focus, and an open panel holds
+it. In a harness a chord after a panel open is **intermittent** — the same step
+arrives on one run and never on the next — which is the worst available property,
+because every failure it produces is a confident, specific accusation against code
+that is fine. The remedy is not a longer wait or a retry loop: **click the
+command** (for the select tool, `ribbon.item.view.tool_select`) instead of
+pressing its chord.
+
+`tools/ui-verify/src/input.rs:148,1030` records the focus-follows-click mechanism.
+
+OPEN: checks that still press a chord after opening a panel have not all been
+converted. Find candidates with
+
+```sh
+grep -rln 'panel' tools/ui-verify/src/checks/*.rs | xargs grep -ln 'press_chord\|press('
 ```
 
-One `Hold`. On the next frame the strip has laid page 3 out at the top of the
-viewport and the framing is planned against it.
+and read each one's step order.
 
-**The family that could have been broken silently**, driven before and after,
-all six PASS both times and with the same numbers — the bookmark check reports
-`0.382 → 0.766` in both runs:
+---
 
-`a_bookmark_lands_on_the_detail_it_names`,
-`a_link_it_cannot_follow_says_so_instead_of_jumping`,
-`a_fit_command_puts_the_page_on_screen`,
-`zooming_does_not_throw_away_where_the_operator_panned`,
-`a_pan_keeps_the_fit_and_the_resize_keeps_the_position`,
-`zooming_back_out_keeps_the_view`.
+## Constraints
 
-★ The bookmark fixture's detail bookmarks are all on the sheet already showing,
-so they take `ArriveStep::Frame` on their first frame — which is why that check
-passed against the defect and is exactly why it could not have found it.
+### D4 — CONSTRAINT: the edit unit is one show-text operator
 
-**Falsified**: `canvas/destination.rs` restored byte-for-byte from a copy,
-rebuilt, driven — `FAIL … THE LINK WENT TO THE WRONG PAGE: 0 → 0, where 3 was
-named` — then restored from the fixed copy and driven green again.
+`PendingEdit` pins to one run, and a `TJ` array is one operator. A visual
+paragraph split across several `Tj` runs — the ordinary output of CAD title
+blocks, Word and LibreOffice — is edited run by run. A selection spanning runs is
+**declined in a sentence** (`crate::text::textedit::spans_runs`) rather than by a
+keyboard that silently stops responding, and the caret and extent bracket claim
+only what the shell can honestly know before a commit — no ghost glyphs in a
+substitute typeface at the wrong widths. `canvas::textedit::preview` carries the
+argument for why a prettier ghost is the wrong fix rather than a deferred one.
 
-#### ⚠ What was NOT fixed here, and is a separate question
+Lifting it needs a multi-run edit request in the engine that groups runs into a
+line or block and re-emits them as a set.
 
-A `/FitH` destination raises `Fit(Width)` **and** a `Point`, and `arrive`
-frames a point as a 150 pt box (`geometry::DESTINATION_CONTEXT_PT`) — which on
-this fixture magnifies to 312 %, overriding the fit the same destination asked
-for. §12.3.2.2 says `/FitH` means *fit the width and put `top` at the top edge*,
-and Acrobat keeps the current magnification for an `/XYZ` with a null zoom.
-`canvas::destination`'s header argues for the framing deliberately (*"adding a
-second scroll-to-a-point solver would be two answers to one question"*), so
-this is a design question, not a bug found in passing — but it is the reason a
-correctly-arriving link still lands closer than the document asked for. It
-would move every `/XYZ` and `/FitH` bookmark, so it wants its own driven pass.
+**Nothing moves as you type, and that is deliberate.** There is no core call per
+keystroke; real layout runs once, at commit. The blocker is not the arithmetic —
+`plan_edit`/`EditPlan` already computes `advance_delta` before any write — but its
+visibility: it is `pub(crate)`, and every public route either performs a full
+incremental save or mutates the undo log. The engine request is a dry run,
+`measure_edit(&Document, &EditRequest) -> Result<f64, _>` or simply making
+`plan_edit` public (`canvas/textedit/cost.rs:88-91`). Re-measure the cost with
+`canvas::textedit::cost`; on the operator's own sheets the current route is
+multiple frames per keystroke.
 
-#### ⚠ A note on the trace vocabulary, because it cost most of the diagnosis
+Debouncing was rejected, not overlooked: a re-layout that arrives after you stop
+typing is a *second* surprise, and this feature's sin is showing the operator
+something the document will not say. Until the draft can move truthfully on every
+keystroke, it does not move at all.
 
-`destination-arrive page=3 framed=true` was **true and useless**: `page=` was
-the view's intent, not the geometry's, and the line read as a success on the
-frame that failed. It now carries `step=`, `frame_page=` and `waited=` — the
-three fields that make it possible to tell an arrival from a mis-aimed one
-without arithmetic on the `canvas` line beside it. ⇒ **A trace that reports an
-intent and calls it an outcome will be believed.**
+**Disposition on commit** is `canvas::textedit::disposition` — a pure
+`choose(text_matrix, ctm, alignment) -> Reason` consulted at the single commit
+site. Rotation is rung 1 and outranks alignment; non-left alignment is rung 2.
+`Pin` is *correct* under rotation rather than merely less wrong: it writes no
+follower `Tm` at all and its compensating `TJ` acts in text space, along the
+rotated baseline, so the ported guard selects `Pin` for rotated text instead of
+refusing the edit. A **single-line** right-aligned block still reflows, because
+alignment is inferred from the agreement of several lines' edges and one line
+cannot disagree with itself.
+
+**Reflow is operator-invoked, never automatic on edit** (Decision 015 §3.3, R75):
+re-wrap invents line breaks the file never stated. Its refusals that hit real CAD
+and Word content are text inside a form XObject, more than one font resource in
+the block, rotated or skewed `Tm`/CTM, mixed font sizes, and composite/CID fonts.
+The limit that matters more than any of them is tokenisation: word breaks are
+found at **real U+0020 space glyphs only**, and producers that position words with
+`Td`/`TJ` offsets instead — extremely common in CAD output — present reflow with
+one unbreakable word. Treating a derived word space as a break opportunity is the
+change that would matter.
+
+The auto-detected wrap width is taken from the block bbox, which is a union over
+its lines, so one over-long line has already widened it. An operator who does not
+read the disclosure gets a re-wrap to a width they never chose.
+
+**Fixture gap, still true:** no fixture has a paragraph split across many runs,
+mixed sizes or fonts in a block, rotated text, or words separated by positioning
+rather than space glyphs. Every condition that fails in the field is absent by
+construction.
+
+### D15 — CONSTRAINT: `ocrs` collapses on a sparse clean page
+
+`TextDetectorParams::default()` sets `text_threshold: 0.2`, under upstream's own
+comment that *"ideally the threshold would be 0.5 as a neutral value"*. On a page
+that is mostly empty paper the measured background straddles it, so the whole page
+binarises as text and detection returns one rectangle. The probability map is
+fine; the failure is downstream, in thresholding
+(`crates/pdfcer-gui/src/ocr/fixture.rs:157-182`).
+
+**A drawing sheet is exactly that shape** — a small title block, a handful of
+callouts, a very large expanse of empty paper — so an operator OCR-ing a scanned
+drawing is the most likely user of this feature and walks into its worst case.
+
+The **fixture** was changed, not the threshold. Tuning a recogniser's internals to
+make a test pass is how a shell starts carrying an engine's opinions: the number
+would be ours, the failure would still be theirs, and the next `ocrs` release
+would silently disagree.
+
+Unquantified on real scanned material, because there is none in the tree. If a
+scanned drawing arrives, measure this first; if it reproduces, the honest fix is
+upstream or a documented refusal, not a magic number here.
+
+### D32 — CONSTRAINT: engine line-number citations rot, and a rotted one protects its claim
+
+`pdfcer-core/src/edit.rs` is tens of thousands of lines and **grows at the head**,
+so every hard-coded line citation into it drifts downward and nothing in this
+repository detects it.
+
+```sh
+grep -rnoE '(edit|document|page_tree|text_extract|settings|pageops)\.rs:[0-9]+' crates/ tools/ | wc -l
+```
+
+A rotted citation does not merely fail to support its claim: the reader who checks
+it finds plausible code at that address and stops. The worked example is a
+`style.dash` guard whose cited range has become embedded-file-stream and name-tree
+documentation — the substance still right, only the address wrong, which is
+precisely why it is invisible.
+
+**Cite by symbol name, or pair the line with the engine pin.** OPEN: the existing
+citations have not been swept; a sample of eight all landed on unrelated code.
+
+---
+
+## Open defects
+
+### D25 — OPEN: `dock.<side>.body_min` is a trace region nothing consumes
+
+Published at `crates/egui-shell/src/dock/mod.rs:803` and documented at
+`crates/egui-shell/src/dock/overflow_probe.rs:20`. Delete the publication and the
+lines in `draw_side` that feed it.
+
+Do **not** delete `overflow_probe` itself or `RESIZE_FLOOR_PT`
+(`crates/pdfcer-gui/src/canvas/fit.rs:128`): both hold a measured floor the dock's
+overflow behaviour depends on.
+
+### D26 — OPEN: `canvas.selection-outline` is published twice per frame with two rectangles
+
+`crates/pdfcer-gui/src/canvas/overlay.rs:374` publishes the turned-grip frame at
+loop entry; `overlay.rs:439` publishes `grip_box`; `canvas/forms/selecting.rs:269`
+is a third site. Each carries a documented argument for using the shared region
+name and each argument is individually sound, which is why nothing has caught it:
+a harness reading the trace gets whichever was published last.
+
+The shared-name decision needs **re-deciding**, not just renaming — the consumers
+are `canvas/handles.rs:84`, `canvas/overlay/anchors.rs:275` and
+`canvas/painting.rs:474`.
+
+### D27 — OPEN: `MAX_MAX_ZOOM_PERCENT` is a trillion where its own comment says a hundred billion
+
+`crates/pdfcer-gui/src/app/prefs/mod.rs:204` declares `1e12`. The doc comment
+immediately above it (`:186-195`) calls the value *"a hundred billion percent,
+which is the deepest zoom the page has been confirmed to actually DRAW at"* and
+says it is *"set an order of magnitude inside the confirmed-working range rather
+than at the edge of it"* — and records the measurement it rests on: drawn at
+8.6e9x, not drawn at 1e10x. The literal is at the edge, not inside it, and
+contradicts the measurement it sits on.
+
+`DEFAULT_MAX_ZOOM_PERCENT` aliases it (`:176`), so a fresh install ships at the
+disputed rung.
+
+### D28 — OPEN: `viewpos.rs:195` quotes a jump size for the wrong extent
+
+`crates/pdfcer-gui/src/canvas/viewpos.rs:195` reads `// 2,048-pixel jumps.` for a
+trillion-percent zoom. 2,048 is the `f32` ulp at about 2.05e10 — the extent
+`viewer/ceiling.rs` actually drove, which is 2.6 **billion** percent on a Letter
+sheet. At a trillion percent the extent is 7.92e12 and the ulp is 2^19 = 524,288
+px, so the comment is wrong by 256x.
+
+Repair: quote the content **extent**, not a zoom, since the ulp is a property of
+the extent.
+
+### D29 — OPEN: the sub-pixel hand-over threshold is stated as a stale percentage
+
+The predicate is `longest * zoom > SUB_PIXEL_CONTENT_EXTENT`
+(`crates/pdfcer-gui/src/viewer/ceiling.rs:291`) and the constant is `1_048_576.0`
+= 2^20 (`ceiling.rs:50`) — about 132,000 % on US Letter and about 86,000 % on a
+large sheet. Four prose sites still say *"about two million percent"* or
+*"~1,000,000 %"*, which was right for 2^24:
+
+- `crates/pdfcer-gui/src/canvas/deep.rs:6,8-9`
+- `crates/pdfcer-gui/src/viewer/ceiling.rs:10`
+- `tools/ui-verify/src/checks/zoom_keeps_place.rs` and
+  `tools/ui-verify/src/checks/zoom_out_keeps_place.rs` — in their `detects:`
+  lines, so the stale figure prints in **every sweep report**.
+
+Repair: cite `SUB_PIXEL_CONTENT_EXTENT` rather than restating a derived
+percentage. A percentage derived from a constant is a claim that decays the moment
+the constant moves, and `ceiling.rs:53` records the move in the same file whose
+header was never updated.
+
+### D30 — OPEN: "five panel tabs" is written where the rail declares six
+
+`RailFold::Never` now holds `view.panel_pages`, `view.panel_bookmarks`,
+`view.panel_layers`, `view.panel_signatures`, `markup.comments` and `file.fonts`
+(`crates/pdfcer-gui/src/shell/manifest/rail.rs:119-182`). Live prose sites:
+
+| site |
+|---|
+| `crates/egui-shell/src/dock/rail.rs:62`, `:808`, and the assertion string at `:1043` |
+| `crates/egui-shell/src/manifest/rail.rs:68` |
+| `crates/pdfcer-gui/src/shell/manifest/rail.rs:22` |
+| `crates/pdfcer-gui/src/shell/manifest/mod.rs:278` |
+| `crates/pdfcer-gui/src/app/rail.rs:4` |
+| `tools/ui-verify/src/checks/left_rail.rs:34`, `:74`, `:230`, `:329` |
+| `tools/ui-verify/src/checks/reaching.rs:157` |
+
+Re-measure with `grep -rn 'five panel\|all five panels' crates/ tools/`.
+
+This is the shape where **the file that changed does not contain the number that
+went wrong**. The rule the count is protecting is the real content — the rail may
+never fold this group — so state the rule and let the count come from the
+manifest.
+
+### D31 — OPEN: "the engine cannot create a document" is false
+
+`crates/pdfcer-gui/src/app/blank.rs:9` heads a section *"1. The engine cannot
+create a document, and that is deliberate"*, echoed at
+`crates/pdfcer-gui/src/app/lifecycle.rs:366-367`. The engine has
+`pdfcer-core/src/text_edit/placetext.rs:1375`, `pub fn blank_document(`.
+
+The claim is load-bearing: it is the stated reason this shell synthesises blanks
+from a 443-byte template asset rather than asking the engine. Either the reason
+changes or the sentence does.
+
+### D33 — OPEN: `wheel_toggle` copies one of its predicate's two clauses
+
+`crates/pdfcer-gui/src/app/status/page_box.rs:234` guards on
+`doc.view.display.is_continuous()` alone. The authoritative predicate is
+`canvas::paging::flips_pages` (`crates/pdfcer-gui/src/canvas/paging.rs:69-70`):
+
+```rust
+doc.prefs.wheel_paging.flips() && !doc.view.display.is_continuous() && doc.pages.len() > 1
+```
+
+Consequence: on a single-page document the wheel-paging toggle draws, highlights
+and accepts clicks and can never act. `paging.rs`'s own header states why there is
+one spelling — two would eventually differ, and the frame where they did would
+either scroll *and* page at once or do neither.
+
+### D34 — OPEN: the redaction search-and-mark route is not driven
+
+Redaction is the one operation that cannot be undone, and R1 makes the driven
+harness the only oracle that counts. The mark-by-search route needs a query typed
+into a field, and synthetic keystrokes do not reach the target window from the
+session that writes them on this machine — so its rule is unit-tested and the
+field itself is verified by nothing.
+`tools/ui-verify/src/checks/redaction.rs:85` says so in its header rather than
+leaving it to be discovered.
+
+### D35 — OPEN: an author-imposed signing refusal publishes no named region
+
+A refused signing emits only `sign-applied written=0`
+(`crates/pdfcer-gui/src/app/actions/sign.rs:150`), which proves *a* refusal and not
+*which* one. The wording is covered by unit tests over `worded()`
+(`app/actions/sign.rs:283`) and by nothing driven. A named region on the failure
+label closes it in about ten lines.
+
+### D36 — OPEN: `/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize
+
+`MediaBoxChange` has a field for `/CropBox` overhang and none for the other three
+(`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:3151-3171`). Measured: a
+`/BleedBox [10 10 1000 1000]` survives a resize to 595x842 with no disclosure, so
+a press or CAD export gets one overhang reported and three not.
+
+`FEATURES.md:1136` records that the three boxes are left byte-identical without
+drawing the consequence. This is an engine gap and is **not** in
+`ENGINE_BACKLOG.md`; it belongs there.
+
+### D37 — OPEN: raster images are box-hit-tested, not alpha-tested
+
+`D:\Dev\pdfcer\crates\pdfcer-core\src\vector\hit.rs:708` dispatches
+`VectorObject::Image(i) => i.page_bbox.inflate(tolerance).contains(point)`, while
+the Path and Text arms call real geometry predicates. So a click anywhere in a
+transparent image's bounding box selects the image, and a click on visible ink
+underneath it loses.
+
+This is the half-closed row of form recursion: the deep hit test descends into
+form XObjects correctly, and the leaf predicate for an image never tightened.
+
+### D38 — OPEN: `summary::describe_object` runs per visible row on every frame with no cache
+
+Called inside the row map at `crates/pdfcer-gui/src/panels/objects/mod.rs:797` and
+`:829`. Its own doc (`panels/objects/summary.rs:395`) states it counts every
+anchor of every subpath — which is why the cheap classifier `object_kind`
+(`summary.rs:405`) was split out of it and is used at `mod.rs:333`. On the
+benchmark CAD sheet the heaviest objects carry several thousand anchors each, so a
+scroll over those rows re-counts them every frame. Re-measure with `BENCHMARK.md`'s
+sheet.
+
+### D39 — OPEN: two driven checks were reported unable to detect their own defect and never identified
+
+An adversarial review of nine author-written driven checks found three that cannot
+detect the defect they exist for and one that cannot pass at all. That review's own
+addendum referenced two **further** unrun checks with the same property, and
+neither was ever named.
+
+Re-run the review over `git log 539835f^..HEAD` before trusting that part of the
+suite.
+
+---
+
+## Do not weaken
+
+- `resize_scales_a_shape` targets a **page-sized** selection deliberately: it is
+  the regression test for the floating-scrollbar defect. Narrowing its target to
+  something more convenient silently retires that coverage.
+- `overflow_probe` and `RESIZE_FLOOR_PT` hold a measured floor the dock's
+  overflow behaviour depends on. See D25.

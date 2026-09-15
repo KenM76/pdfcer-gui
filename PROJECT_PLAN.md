@@ -1,447 +1,493 @@
-# pdfcer GUI rebuild — project plan
+# pdfcer-gui — project charter
 
-**Status:** ★ **BUILT AND SHIPPING.** This file was written on 2026-08-13 as a
-proposal and opened with *"Nothing has been built"*; it said so for thirteen
-days after that stopped being true, which is the drift this project has now
-corrected in three separate documents. Last reconciled against the tree on
-**2026-08-26**.
-
-The shell is a working application the operator uses on real drawings, published
-as a portable build. **159 capabilities are ticked in `FEATURES.md`**, the stage
-table below is current, and the only stages still open are the last two — the
-parity audit and the fold-in, both of which are deliberate scheduling decisions
-rather than unfinished work.
-
-★★ What has NOT changed is the governing rule: `D:\Dev\pdfcer` remains
-**read-only** until fold-in day. Every engine change since has gone through the
-request channel and come back as a released revision.
-**Written:** 2026-08-12
-
-The charter for the `pdfcer-gui-engineer` agent
-(`.claude/agents/pdfcer-gui-engineer.md`). Read with `SALVAGE.md` (what
-carries over), `GUI_ROADMAP.md` (phase order), `RIBBON_IA.md` (the shell
-spec), `DEFECTS.md` (what was wrong), `BENCHMARK.md` (measured
-performance).
+The charter for this workspace: what it is, where it sits relative to the engine,
+the invariants every stage honours, what "done" means, and the runbook for
+folding the result into the engine repository. Read it before changing the
+topology, the dependency form, or the stage order. `DEVELOPING.md` is the
+day-to-day engineering guide; `FEATURES.md` is authoritative for what is built.
 
 ---
 
 ## 1. What this project is
 
-A new `pdfcer-gui` crate, built in `D:\Dev\pdfcer-gui\`, that replaces
-`D:\Dev\pdfce\crates\pdfce-gui\` when it is at least as capable and
-substantially more usable.
+The `pdfcer` GUI, built in its own Cargo workspace at `D:\Dev\pdfcer-gui\`,
+against the `pdfcer` engine at `D:\Dev\pdfcer\`. It is the only GUI the engine
+has: the engine's workspace is `pdfcer-core`, `pdfcer-render`, `pdfcer-cli`,
+`pdfcer-print`, `pdfcer-fetch` and produces the `pdfcer` CLI binary alone.
 
-**It is not a rewrite.** Per `SALVAGE.md`, about 45 % of the old crate's
-49,837 code lines come across with little or no change, and most of the
-rest is one file — `main.rs`, 25,005 lines — whose *contents* mostly
-move rather than get rewritten. The genuinely new work is the shell:
-ribbon IA, selection model, context menus, properties panel.
+The genuinely new work is the shell — ribbon information architecture, selection
+model, context menus, properties panel, dock. Substantial parts of the body
+behind it were salvaged from a predecessor GUI crate and re-verified rather than
+rewritten (R3).
 
-### Why a separate project rather than refactoring in place
+### Why a separate workspace rather than a crate inside the engine
 
-Three reasons, in order of weight:
+1. **The engine keeps shipping.** A GUI mid-rebuild inside the engine's
+   workspace makes every intermediate state the shipping state, with no fallback.
+2. **The module split cannot be done incrementally without churn.** Breaking a
+   25,005-line file into a module tree touches essentially every line; done in
+   place, that is a series of commits that make `git blame` useless.
+3. **`cargo test` and the licence audit stay honest.** The engine's workspace
+   membership is what `cargo-about` reads to generate its notice file and what
+   its `cargo tree` separation checks read. A GUI crate in that graph changes
+   both answers.
 
-1. **The working program keeps working.** pdfcer ships. The operator uses
-   `pdfcer-gui.exe` on real drawings. Refactoring in place means every
-   intermediate state is the shipping state, and there is no fallback on
-   a bad day. Here the old GUI is untouched until the swap.
-2. **The module split cannot be done incrementally without churn.**
-   Breaking a 25,005-line file into ~40 modules touches essentially every
-   line. Done in place, that is a series of enormous commits that make
-   `git blame` useless and review impossible.
-3. **The IA change is a break, not an evolution.** Seven tabs replacing
-   six, commands changing tabs, a contextual tab appearing, the master
-   editing toggle removed. There is no sensible half-migrated ribbon.
-
-### The cost, stated honestly
-
-**Divergence.** While this runs, `pdfcer-core` keeps moving and the old
-GUI may gain fixes. Mitigated by §2's path dependency (you always build
-against current core) and §6's rule that the old GUI is frozen for
-*features* during the project — bug fixes to it are fine and get
-replayed into the new shell via `SALVAGE.md`.
+**The cost is divergence.** `pdfcer-core` keeps moving. §2's dependency form is
+the mitigation: a build always resolves against a real engine commit, and a
+breaking change surfaces at compile time rather than at fold-in.
 
 ---
 
 ## 2. Topology
 
 ```
-D:\Dev\pdfcer-gui\                    ← this project, its own cargo workspace
-├── .claude\agents\
-│   └── pdfcer-gui-engineer.md
-├── Cargo.toml                      ← workspace, three members
+D:\Dev\pdfcer-gui\                  this workspace
+├── Cargo.toml                      workspace root; five members
 ├── crates\
-│   ├── egui-shell\                 ← REUSABLE shell framework. Knows nothing
-│   │                                  about PDF. Extracted to its own repo at
-│   │                                  or before fold-in. See SHELL_FRAMEWORK.md
-│   └── pdfcer-gui\                  ← THE ARTEFACT. Folds in verbatim.
-│       ├── Cargo.toml
-│       └── src\
+│   ├── egui-shell\                 the REUSABLE shell framework. Knows nothing
+│   │                               about PDF. Extracted to its own repository
+│   │                               at or before fold-in. See SHELL_FRAMEWORK.md
+│   ├── pdfcer-gui\                 the application
+│   ├── native-window\              Win32 window ownership
+│   └── native-clipboard\           the ordered clipboard transaction
 ├── tools\
-│   ├── ui-verify\                  ← built first; folds in as pdfcer/tools/
-│   └── gates\                      ← CI gates, incl. the fixed ui-strings gate
-├── fixtures\                       ← GUI-specific fixtures only
-└── *.md                            ← the planning docs
+│   ├── ui-verify\                  drives the release binary
+│   └── gates\                      the CI gates; run-all.sh runs every one
+├── fixtures\                       built by tools/gen-*.py, each with PROVENANCE.md
+└── *.md                            the reference documents
 
-D:\Dev\pdfcer\                       ← READ-ONLY until fold-in
-└── crates\{pdfcer-core, pdfcer-render, pdfcer, pdfcer-gui}
+D:\Dev\pdfcer\                      READ-ONLY from here
+└── crates\{pdfcer-core, pdfcer-render, pdfcer-cli, pdfcer-print, pdfcer-fetch}
 ```
 
-**Dependency direction:** `pdfcer-gui/crates/pdfcer-gui` depends on
-`pdfcer-core` and `pdfcer-render` **by relative path**:
+`native-window` and `native-clipboard` are separate crates for one structural
+reason: `pdfcer-gui` carries `#![forbid(unsafe_code)]`, `forbid` cannot be
+relaxed from the inside, and Win32 window ownership and clipboard placement are
+both `unsafe`. They are split from each other by subject, not convenience.
+
+### The engine dependency is a `file://` git dependency on a branch
 
 ```toml
-pdfcer-core   = { path = "../../../pdfcer/crates/pdfcer-core" }
-pdfcer-render = { path = "../../../pdfcer/crates/pdfcer-render" }
+pdfcer-core   = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
+pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
+pdfcer-print  = { git = "file:///D:/Dev/pdfcer", branch = "main" }
 ```
 
-This is deliberate and has one important consequence: **you always build
-against the live engine.** If `pdfcer-core` changes under you, you find
-out at compile time rather than at fold-in. That is the right trade — a
-vendored copy would hide divergence until the worst possible moment.
+**Do not "simplify" these to `path = `.** A path dependency compiles the
+engine's *working tree*, and another session edits that tree live; a build then
+either fails on somebody's half-written function or — worse — succeeds, and
+produces a binary no commit describes. The `file://` + `branch` form resolves
+**committed history only**, so:
 
-The crate is named `pdfcer-gui` and its directory is `crates/pdfcer-gui`,
-identical to the target. **Fold-in is therefore a directory swap** for
-that crate, and pdfcer's root `Cargo.toml` needs no edit for it.
+- the engine tree's cleanliness is irrelevant, and `BUILD-INFO.txt` can always
+  name the commit a build came from;
+- unpushed engine commits are still reachable, which a GitHub remote pin is not;
+- `Cargo.lock` records an exact revision, so picking up new engine work is a
+  deliberate `cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print`
+  rather than something that happens silently under a rebuild.
 
-**`egui-shell` folds in differently, on purpose.** It is extracted to
-its own repository (`D:\Dev\egui-shell`) and consumed by pdfcer as a path
-or git dependency — *not* copied into `crates/`. The directive was that
-this work be reusable by other projects, and a crate living inside
-pdfcer's tree is not reusable in any practical sense. That adds one line
-to pdfcer's root `Cargo.toml` at fold-in and is the only edit it needs.
-The purity gate (`tools/gates/check-shell-purity.sh`) is what keeps the
-extraction cheap: if it stays green throughout, extraction is a `git mv`.
+`pdfcer-print` takes no `default-features = false` because it declares no
+features; the flag would be a claim about a feature set that does not exist.
+
+Rust links all three statically, so the release binary already carries the
+engine. There is no integration step before shipping, and a packaged build is
+self-contained. What the git form does cost: **source cloned from GitHub will
+not build** without `D:\Dev\pdfcer` present.
+
+### There is exactly one claimant for "where is the engine"
+
+`crates/pdfcer-gui/Cargo.toml`'s git URL — the same answer the compiler used.
+`tools/engine_path.py` reads it there and refuses rather than returning a
+default, so an instrument that cannot find the engine is loud. Nothing else in
+this repository may hard-code the path: three instruments once did, a rename
+rewrote the literals, and a gate reported `PASS: all 0 uncalled verbs` having
+examined nothing.
 
 ### Version pinning
 
-`rust-toolchain.toml` is copied from pdfcer and kept identical. Any
-dependency the new crate adds must already be in pdfcer's lockfile, or it
-is a decision that goes to the operator — pdfcer's dependency posture is
-deliberate (all-permissive licences, no GPL PDF engines, a pinned
-`skrifa` matched to epaint's).
+`rust-toolchain.toml` pins an exact patch channel and is kept identical to the
+engine's. A dependency this workspace adds that is not already in the engine's
+lockfile is an operator decision, not a convenience: the engine's dependency
+posture is deliberate — all-permissive licences, no GPL PDF engines, `skrifa`
+pinned to epaint's. `about.toml`'s `accepted` list is permissive-only, so a
+copyleft dependency entering the graph makes `cargo about` fail and name the
+crate.
 
 ---
 
-## 3. Module architecture
+## 3. Module architecture and the invariants
 
-The answer to a 25,005-line file. **No file over 1,500 lines**, gated in
-CI from the first commit.
+**No source file over 1,500 lines** (R2), gated by
+`tools/gates/check-file-size.sh` from every commit. When a file approaches the
+limit, find the seam; do not raise the limit. `DEVELOPING.md` §2 has the current
+tree layout.
 
-```
-crates/pdfcer-gui/src/
-├── main.rs                 eframe bootstrap ONLY. Target < 150 lines.
-├── app/
-│   ├── mod.rs              PdfcerApp — the one owner of state
-│   ├── state.rs            open/save/close, parked docs, password prompt
-│   ├── frame.rs            panel composition order (load-bearing — see below)
-│   ├── actions.rs          the Action enum + dispatch
-│   ├── keyboard.rs         the keyboard map
-│   ├── status.rs           status-bar narration
-│   └── find.rs
-├── shell/
-│   ├── ribbon/
-│   │   ├── model.rs        tabs, groups, ownership — ONE source of truth
-│   │   ├── render.rs       band rendering, mandatory group captions
-│   │   └── tabs/           file.rs view.rs pages.rs edit.rs markup.rs
-│   │                       measure.rs tools.rs format.rs
-│   ├── qat.rs
-│   ├── docbar.rs           document switcher
-│   └── dock.rs             panel host + persistence
-├── panels/
-│   ├── pages/ objects/ properties/ bookmarks/ layers/
-│   ├── signatures/ fonts/ comments/ forms/ redact/ batch/
-├── canvas/
-│   ├── mod.rs viewport.rs input.rs
-│   ├── selection.rs        ← Phase 1 lives here
-│   ├── handles.rs          ← and here
-│   ├── context_menu.rs     ← and here
-│   └── overlay.rs
-├── tools/
-│   ├── text/ vector/ measure/ markup/ form_field/
-├── render/
-│   ├── worker.rs raster.rs texture_cache.rs
-│   └── display_list.rs     ← BENCHMARK.md's biggest win
-├── theme/ icons/ text/     (text/ = the split ui_text catalog)
-└── dialogs/
-```
+`pdfcer-gui` has a **library target**. `src/main.rs` reads `argv`, carries the
+`windows_subsystem` attribute (a property of the binary, which cannot move) and
+calls `pdfcer_gui::run`. Everything else is in `src/lib.rs`'s module tree, so
+`tools/ui-verify` and integration tests can `use pdfcer_gui::…` instead of going
+through the process boundary for a unit-level question, and `cargo doc` has
+something to document. Argument handling stays in the binary because anything
+answerable without a window must be answered before one exists — a terminal
+invocation must never open a window it then has to be told to close.
 
-### Invariants carried forward from the old GUI
+### The invariants
 
-These are the good parts and they are not up for renegotiation:
+These govern the program and are not up for renegotiation.
 
-- **Actions, not mutations.** No path from a widget to a `Document`.
-  Everything is an `Action` applied after the frame draws. This is why
-  the undo log is coherent.
-- **Panel composition order is load-bearing** for both geometry and Tab
-  focus. Document it where it is written, as the old GUI does.
-- **Fixed-height status and find panels** — content-driven heights
-  re-fit the page on every click. Already-measured defect, already
-  solved, do not re-open.
-- **One `EditSession` command log**, bounded depth, undo tooltips naming
-  the specific operation.
+- **Actions, not mutations.** No code path runs from a widget to a `Document`.
+  Every gesture produces an `Action`, actions are collected while the frame is
+  drawn, and they are applied after it in one place. Four things fall out of it:
+  a coherent undo log (one gesture, one action, one command-log entry); the
+  borrow checker stops fighting an immediate-mode toolkit that is reading the
+  document to draw the widget that wants to change it; ordering between two
+  actions raised in one frame is explicit; and every state change is greppable.
+  Retrofitting it is expensive — every widget written under another discipline
+  has to be found and rewritten, and the ones missed are exactly the invisible
+  holes in the history.
+- **Panel composition order is load-bearing** for both geometry and Tab focus.
+  `app::frame` is the one file that answers "what happens, in what order, sixty
+  times a second": theme before any widget, keyboard before any widget can
+  consume a key, dialogs after the docks so they paint over rather than under,
+  the zoom anchor after the commands that raise one, rasterize last so it
+  measures a settled frame. Document the order where it is written.
+- **A panel whose size feeds a fit-to-viewport computation has a fixed size**
+  (R128). `FitMode::Page`/`FitMode::Width` recompute zoom from the canvas
+  viewport every frame they are active, so one extra status line on frame N
+  produces a smaller fit scale on frame N+1 — a page that visibly shrinks across
+  frames, and click coordinates that go stale between capture and render. The
+  symptom reads as a selection bug and gets investigated in the selection code,
+  where nothing is wrong. Two defences, both required: the caller passes
+  `exact_size` (`default_height` is only a starting value, `min_height`/
+  `max_height` bound a range the panel still varies inside, and
+  `resizable(false)` only stops the operator dragging the edge); and the content
+  cannot grow anyway — one allocated row, disclosure drawn on the same row with
+  elision and hover, no `CollapsingHeader` anywhere, whose entire behaviour is to
+  change its own height.
+- **The application's content area is not inside a dock compartment.** The dock
+  draws side panels; the application draws its canvas in whatever remains. That
+  is the other half of R128, respected by omission.
+- **One `EditSession` command log**, bounded depth, undo tooltips naming the
+  specific operation.
 - **The ribbon picks the activity; the sidebar holds its controls.**
-- **No placeholders.** Unavailable renders nothing; greying is for
-  *temporarily* unavailable and always explained on hover.
-- **Nothing floats over the canvas.**
+- **No placeholders** (R9). An unavailable capability renders nothing. Greying is
+  reserved for *temporarily* unavailable and is always explained on hover. This
+  applies to enum variants and to prose as much as to labels: an `Action` variant
+  nothing can honour is a placeholder.
+- **Floating is two independent settings, not one law.** *Floating panels*
+  (Off · Allowed, default Allowed) governs whether the operator may tear a panel
+  out. *App initiative* (Never · Ask · Allowed, default **Never**) governs
+  whether the application may float a surface over the canvas on its own — tool
+  option boxes, transient property bars, notifications. The second carries the
+  original complaint (an accept/reject box that appeared over the drawing and
+  moved on every zoom), and its default preserves that outcome as shipped
+  behaviour while making it a choice. Both are per-operator, not per-document.
 
 ---
 
-## 4. Build order
+## 4. Build stages
 
-Each stage produces a **runnable program**. There is never a period
-where the crate is a pile of modules that does not launch.
+Each stage produces a **runnable program**. There is never a period where the
+crate is a pile of modules that does not launch. `FEATURES.md` is authoritative
+for which stages are behind us.
 
 | Stage | Contents | Gate to pass |
 |---|---|---|
-| ✅ **S0 — Skeleton** | Workspace, three crates, CI gates, bootstrap, `diag`. Opens a PDF, renders page 1 via salvaged `render_worker` + `raster` + `viewer`. | **DONE 2026-08-13.** Renders the benchmark drawing in 1,193 ms; 6/6 gates green; 113 tests pass. Theme and icons deferred to S2 (both are ribbon/panel-facing). |
-| ✅ **S1 — ui-verify** | The harness, before any UI is built. Drives the release binary, scripts input, captures the window, asserts on the trace **and** pixels. | **DONE 2026-08-13.** `delete_key_after_canvas_click` and `settings_headings_legible` both **FAIL against the old binary** — the acceptance criterion. `ribbon_group_captions_legible` reports SKIPPED pending §4.3 requirement 2, never a false pass. |
-| ✅ **S2 — Shell** | Ribbon per `RIBBON_IA.md` — all seven tabs, groups, captions, ownership test. QAT, status bar with editable page box, dock with persistence. Commands wired where they already exist. | Every command in the IA's migration map reachable. — **DONE.** Ribbon, tabs, QAT, theme and icons all shipped; the band has since gained the full width ladder (re-wrap → collapse → scroll) documented in `RIBBON_SCALING.md`. |
-| ✅ **S3 — Panels** | Pages (grid thumbnails), Objects, Properties, Bookmarks, Layers, Signatures, Fonts, Comments, Forms. Salvaged bodies, new hosting. **Plus the flexible-dock foundation** — see §4.2. | `FEATURES.md` gui column: every panel-reachable capability works; layout survives a restart. |
-| | **Done 2026-08-13.** Dock + layout persistence (7,274 lines, 130 tests): columns per side, stacks, tabs, reserved-space tab overflow (**the two-pane cap is retired** — nine panels in one stack, tested), per-item fail-soft loading, named workspaces, scoped reset. Built **without `egui_tiles`** — decision recorded in `MODES_AND_PANELS.md` Part 2. Six panels salvaged and wired. **571 tests, 6/6 gates.** Verified in the running app on the benchmark drawing: left dock Bookmarks∣Layers, right dock Objects reporting **129,758 objects — 129,515 paths, 242 text, 1 form**. | |
-| ✅ **S3b — Modes** | The Read / Review / Edit selector (`MODES_AND_PANELS.md` Part 1), built on S3's named-workspace mechanism. | All three modes render; switching preserves undo and unsaved work; a signed document opens in Read with a reason. — **DONE.** Read / Review / Edit ship as one control, tab sets nested by capability, `Ctrl+1/2/3`. |
-| ✅ **S4 — Selection** | `GUI_ROADMAP` Phase 1. Context menus, handles, `/Rect` move-and-resize, object clipboard, Format contextual tab. Editing master toggle removed. | Place a rectangle → click away → click it → drag → resize → type a width → recolour → right-click → delete. Every step. — **DONE.** Handles, move/resize/rotate, node editing, object clipboard, context menus and the Format contextual tab are all in `FEATURES.md` and driven by `ui-verify`. |
-| ✅ **S5 — Tools** | Text, vector, measure, markup, forms, redact — salvaged and rehosted. Includes Phase 5a text correctness fixes. | Parity with the old GUI on all tool capabilities. — **DONE.** Text, vector, measure, markup, forms and redaction all rehosted, with disclosure surfaces the old shell did not have. |
-| ✅ **S6 — Viewer** | Phase 3: cursor-anchored zoom, hand tool, zoom-to-selection/region, recent files, rulers/grid. | ui-verify: anchor drift under 3 px. — **DONE, and past the original scope.** Cursor-anchored zoom, hand tool, zoom to selection and region, rulers, grid and guides — plus deep zoom to 10¹² % on an `f64` anchor, which was not in this plan. |
-| ◑ **S7 — Parity audit** | Line-by-line `FEATURES.md` gui column audit against the old GUI. Fill every gap or get an operator decision to drop it. | §7.1 checklist complete. — **STARTED 2026-09-04; re-measured 2026-09-05 and the shape of the answer changed.** |
-| | **The gap has a number for the first time: ~90 rows read `[x] core` and `[ ] gui`** in the engine's own `docs/FEATURES.md`. That table is a machine-readable statement of what the engine has and this shell does not, and until 2026-09-04 nothing on this side read it. ★★★ **This stage was always going to be a document; it is being built as an INSTRUMENT instead** — `ENGINE_BACKLOG.md` triages every row as *wanted*, *declined with the argument*, or *blocked on something named*, and `tools/gates/check-engine-backlog.sh` fails the build when a row appears that is in none of those states. A document answers "what is missing today"; a gate answers "what appeared since". ★★ The provocation was O120: the operator asked the ENGINE session for PNG/JPEG/SVG export, the engine shipped it the same day and sent a note, and this shell built nothing and filed no row — for a day, invisibly. `check-verb-coverage.sh` catches a new *verb* within hours; nothing caught a new *capability announced in prose*. | |
-| | **★★ RE-MEASURED 2026-09-05, and the first number was wrong in the direction that matters.** The triage now accounts for **97** rows, not ~90, and reads **79 shipped · 11 wanted · 5 declined · 2 blocked · 0 unknown**. So the engine's own `[ ]` column was stale on **eighty-one per cent** of the rows it was consulted about — this shell already had them. ⇒ **The parity gap is a fifth of what the first measurement implied**, and the instrument is what found that rather than a reading. ★ The correction went back to the engine as a request rather than being fixed locally; that tree is read-only to us. | |
-| **S8 — Fold-in** | §7. | Ships. |
+| **S0 — Skeleton** | Workspace, crates, CI gates, bootstrap, `diag`. Opens a PDF and renders page 1 through `render/worker`, `render/raster` and the viewer. | Renders the benchmark drawing; every gate green; tests pass. |
+| **S1 — ui-verify** | The harness, before any UI is built. Drives the release binary, scripts input, captures the window, asserts on the trace **and** the pixels. | Its founding checks fail when pointed at a binary carrying the defects they were written for. A check whose precondition is absent reports SKIPPED, never a false pass. |
+| **S2 — Shell** | Ribbon per `RIBBON_IA.md` — every tab, group, caption, ownership test. QAT, status bar with editable page box, dock with persistence, theme, icons. | Every command in the IA's migration map reachable; the band's full width ladder (re-wrap, collapse, scroll) per `RIBBON_SCALING.md`. |
+| **S3 — Panels** | Pages, Objects, Properties, Bookmarks, Layers, Signatures, Fonts, Comments, Forms — salvaged bodies, new hosting — plus the flexible-dock foundation (§4.2). | Every panel-reachable capability in `FEATURES.md` works; layout survives a restart. |
+| **S3b — Modes** | The Read / Review / Edit selector (`MODES_AND_PANELS.md` Part 1), built on S3's named-workspace mechanism, on `Ctrl+1/2/3`. | All three modes render; switching preserves undo and unsaved work; a signed document opens in Read with a stated reason. |
+| **S4 — Selection** | Context menus, handles, move/resize/rotate, node editing, object clipboard, the Format contextual tab. No editing master toggle. | Place a rectangle, click away, click it, drag, resize, type a width, recolour, right-click, delete. Every step, driven. |
+| **S5 — Tools** | Text, vector, measure, markup, forms, redact — salvaged and rehosted, with the disclosure surfaces the predecessor lacked. | Parity on all tool capabilities. |
+| **S6 — Viewer** | Cursor-anchored zoom, hand tool, zoom to selection and region, recent files, rulers, grid, guides. | Anchor drift under 3 px, driven. |
+| **S7 — Parity audit** | `ENGINE_BACKLOG.md`: a written verdict on every capability the engine has that this shell does not reach. | §7.1 complete, and `bash tools/gates/check-engine-backlog.sh` green. |
+| **S8 — Fold-in** | §7. | Ships from the engine repository. |
 
-### 4.1 S0 prerequisite — `check-ui-strings.sh` fails open on a module tree
+**S7 is an instrument, not a document.** The engine's own `docs/FEATURES.md` is
+a table whose first three columns are `core | cli | gui`; a row reading `[x]`
+under `core` and `[ ]` under `gui` is the engine stating in a machine-readable
+place that it has something this shell does not. `ENGINE_BACKLOG.md` gives every
+such row a verdict — *wanted*, *declined with the argument*, or *blocked on
+something named* — and `tools/gates/check-engine-backlog.sh` fails the build when
+a row appears in none of those states. A document answers "what is missing
+today"; a gate answers "what appeared since".
 
-**Verified 2026-08-12.** The gate that enforces "every operator-visible
-string lives in the catalog" scans with a **flat, non-recursive glob**:
+**Never retype a count out of that register.** `bash
+tools/gates/check-engine-backlog.sh` prints the row and entry totals on every
+run, and `python tools/walk-engine-backlog.py` prints the five verdict headings
+(`--check` fails when a heading disagrees; `--write` is the only supported way to
+move one). The headings went wrong seven times while the walk existed only as
+prose, and the seventh was a commit that honoured the rule and still moved the
+numbers by arithmetic rather than by re-walking. A walk described in prose is a
+walk that will be replaced by arithmetic.
 
-```bash
-# D:\Dev\pdfcer\tools\check-ui-strings.sh:76
-for file in "$SRC_DIR"/*.rs; do
-```
+**A capability announced in an API has a gate. A capability announced in prose
+does not.** `tools/gates/check-verb-coverage.sh` reads the engine's API and fails
+when this shell names none of a new verb, within hours. A capability the engine
+ships and describes in a note reaches nobody unless somebody reads the note —
+which is the asymmetry `check-engine-backlog.sh` exists to close.
 
-`src/*.rs` does not match `src/app/state.rs`. The moment the first
-subdirectory exists, the gate stops seeing almost the entire crate —
-**and reports success**, because finding nothing looks exactly like
-finding no violations. It would print `ui-strings: clean` while checking
-a handful of files.
+**What lands after fold-in, in the engine repository, as ordinary work:** page
+display modes, live layout while typing, reflow reachability, multi-run text
+editing, the remaining markup kinds, area and angular measure, the display list,
+OCR, comparison. They are improvements, not prerequisites.
 
-This is the single strongest convention gate in the project, and the
-module split in §3 would silently switch it off.
+### 4.1 A gate that finds nothing prints what a clean gate prints
 
-I checked every sibling gate for the same shape. The rest are fine:
+This is the failure mode every gate in `tools/gates/` is built against, and it is
+the reason the runner is a script rather than a list of steps in CI YAML.
 
-| Gate | Method | Recursive? |
-|---|---|---|
-| `check-ui-strings.sh` | `for file in "$SRC_DIR"/*.rs` | ❌ **flat** |
-| `check-theme-colors.sh` | `find "$GUI_SRC" -name '*.rs'` | ✅ |
-| `check-bypass-paths.sh` | `find ./crates -name '*.rs'` | ✅ |
-| `check-disclosure-channel.sh` | `grep -rn … crates/pdfcer-gui/src/` | ✅ |
-| `check-settings-consumed.py`, `check-shipped-assets.py`, `check-one-commit-per-command.py` | `rglob` | ✅ |
-| `check-commits-filed.py`, `check-passes-filed.py` | `walk` | ✅ |
+- **A grep over source fails silently.** A pattern that stops matching, a path
+  that stops resolving, and a `find` that walks an empty tree all print exactly
+  what a clean run prints. A gate whose glob is flat (`for file in "$SRC_DIR"/*.rs`)
+  stops seeing a module tree the moment the first subdirectory exists — and
+  reports success. Scan recursively.
+- **Every gate that is a grep over source carries a `--self-test`** that plants a
+  violation and asserts the gate catches it. The self-tests run *first*, before
+  any gate is trusted: a gate that cannot detect its own planted violation has no
+  verdict worth reading, and finding that out after a green run is finding it out
+  too late.
+- **SKIPPED is not PASSED.** `run-all.sh` has three states: `0` pass, `1` fail,
+  `3` at least one gate was skipped because its precondition was absent. Skips
+  are printed in their own block with their reasons. CI must not go green on a
+  gate set that did not fully run, and the machine does not get to decide that a
+  skip was expected.
+- **A sweep that omits a gate is byte-indistinguishable from a green one.** Run
+  the runner, never a hand-typed list.
+- **A `pub const` nothing uses is invisible to the whole toolchain** — `pub`
+  suppresses `dead_code`. `check-region-names.py` is why a declared trace region
+  must be reached by something.
 
-**The fix is one line** — `find "$SRC_DIR" -name '*.rs'`, with the
-`ui_text.rs` exclusion generalised to the catalog *directory* once
-`ui_text.rs` is split (§9, Q4).
+### 4.2 Panel flexibility — what is left, and the order it must come in
 
-**But it is a change to `D:\Dev\pdfcer\tools\`, which this project may not
-write to.** So it is a hand-off to `pdfcer-engineer`, filed as its own
-Pass in the pdfcer repo, and it must land **before S0**. It is also worth
-doing regardless of this project: the gate is currently one refactor away
-from silently protecting nothing.
+Full analysis in `MODES_AND_PANELS.md` Part 2. Built: layout persistence, two
+columns per side, vertical resizable stacks, tabs within a stack with a reserved
+overflow menu (which is what retired the two-panes-per-side cap), named
+workspaces as the mode selector, per-scope layout reset, collapse to an icon
+rail, and tear-out to a floating window.
 
-### 4.2 Panel flexibility and modes — where each piece lands
+Two items remain, and they are ordered:
 
-Full analysis in `MODES_AND_PANELS.md` Part 2. Sequenced into the stages:
+| Item | Why it is next, or why it is blocked |
+|---|---|
+| **Fit-zoom cache (R128)** | Convert the fit computation from recompute-every-frame to cached-recompute-on-explicit-trigger. Its own landing. Prerequisite for anything that makes the canvas rect user-variable. |
+| **Cross-dock drag, via one wide tree** | The real unlock, and it puts the canvas inside a resizable pane, which fires R128 directly. Blocked on the fit-zoom cache. |
 
-| Capability | Stage | Cost | Note |
-|---|---|---|---|
-| Layout **persistence** | **S3** | 2–3 days | Foundation for everything, including modes. Drop `default-features = false` on `egui_tiles`; write `userdata/layout.json` beside `settings.txt`; trigger from `Behavior::on_edit`. R15's settings partition already landed to unblock this. |
-| Two columns per side; tab-overflow menu | **S3** | ~1½ days | The overflow menu is what safely retires the current two-panes-per-group cap. |
-| **Named workspaces → Read/Review/Edit** | **S3b** | 3–4 days | Modes *are* named workspaces. |
-| Collapse to icon rail | **S6** | ~1 week | Mostly icons, tooltips and AccessKit names. Budget the harness-coordinate re-baseline. |
-| **Fit-zoom cache (R128)** | **S6** | own landing | Prerequisite for anything that makes the canvas rect user-variable. |
-| **Tiled rendering** | **S6** | 1–2 weeks | *Promoted 2026-08-13 from post-fold-in.* It is what lifts the zoom ceiling — the A1 benchmark caps at 3.4× on HiDPI under whole-page raster. See `BENCHMARK.md` § "The zoom ceiling". |
-| Cross-dock drag, via one wide tree | **post-fold-in** | 1–2 weeks | The real unlock, but it puts the canvas in a resizable pane. Do R128 first. |
-| Tear-out to a floating window | **post-fold-in** | 1 week cut-down / 2–4 weeks full | Start with a stationary "Float this panel…" command, not drag-to-tear. |
+Tear-out was built as a **command, not a drag** — "Float this panel…" on a tab's
+secondary menu. That captures most of the value at a fraction of the cost, dodges
+the focus-gated `StartDrag` primitive, and sidesteps the ambiguous-drag-handle
+failure mode, which is the most-reported docking complaint in the product used as
+the benchmark. A drag-to-tear gesture can be added on top without changing the
+model, because the model's question is *where is this panel and where did it come
+from* and a drag is only one way of answering it. A floated panel remembers where
+it came from, and docking it back puts it there.
 
-**Calibration note.** "As flexible as Inkscape" is a **floor**.
-Inkscape is best-in-class on multi-column docking and tear-out, but has
-**no named workspaces, no in-app layout reset, and no per-dock
-collapse** — the last a regression from its own 1.0, still open five
-releases later. pdfcer already beats it on all three: the mode selector
-*is* named workspaces, and `Action::ApplyResetLayout` with per-scope
-checkboxes is a better reset than any product surveyed. The target is
-Inkscape's flexibility plus Photoshop's and Affinity's layout
-management. Twelve specific failure modes to design against are tabulated
-in `MODES_AND_PANELS.md` Part 2.
-
-### 4.2b Known structural item — `pdfcer-gui` has no `lib.rs`
-
-Modules are declared in `main.rs`, so the crate is a binary with no
-library target. Consequences, none urgent, all compounding:
-
-- `ui-verify` and any integration test cannot `use pdfcer_gui::…`; every
-  assertion has to go through the process boundary even when it is
-  really a unit-level question.
-- `cargo doc` documents a binary, so the module docs this project
-  insists on are not browsable.
-- `main.rs` becomes the one file every new module must touch, which is a
-  contention point for parallel work and the one place a merge conflict
-  is guaranteed.
-
-**Fix:** a `lib.rs` holding the module tree and a `main.rs` reduced to
-`fn main() { pdfcer_gui::run() }`. Cheap in isolation, but it changes
-visibility on every module, so it wants a quiet moment rather than a
-mid-stage one. **Do it at the S2→S3 boundary**, before the panel modules
-multiply.
-
-> ✅ **Done 2026-08-13**, at the boundary as planned. `main.rs` went from
-> 154 lines to 12 and now holds only `argv` handling plus the
-> `windows_subsystem` attribute, which is a property of the binary and
-> cannot move. 103 tests unaffected. Argument parsing deliberately stayed
-> in the binary: anything answerable without a window must be answered
-> before one exists, so a terminal invocation never opens a window it
-> then has to be told to close.
+**Calibration.** "As flexible as Inkscape" is a **floor**. Inkscape is
+best-in-class on multi-column docking and tear-out and has no named workspaces,
+no in-app layout reset and no per-dock collapse. The target is Inkscape's
+flexibility plus Photoshop's and Affinity's layout management. Twelve specific
+failure modes to design against are tabulated in `MODES_AND_PANELS.md` Part 2.
 
 ### 4.3 What the application owes the harness
 
-Discovered by **building** `ui-verify` at S1, not by reading code. Each
-is a small change in `pdfcer-gui` that removes a harness workaround, and
-each must land before the check that needs it can stop being a
-workaround.
+Three contracts `pdfcer-gui` honours so that `tools/ui-verify` needs no
+workarounds. Each was discovered by *building* the harness, not by reading code.
 
-| # | Requirement | Why | Lands |
-|---|---|---|---|
-| 1 | **Trace the canvas layout unconditionally**, at least once per document open | The old binary traces it only on pointer events, so the harness cannot aim until it clicks and cannot click until it can aim. It currently works around this with one documented layout-probe click. One line removes it. | S2 |
-| 2 | **Trace `ui-rect name=… rect=…`** per named UI region — ribbon group captions, settings headings, panel bodies | A rect measured on the frame it is reported for stays correct under every layout change. A fraction hard-coded in the harness is stale the first time a panel is resized — exactly the hazard §4.2 prerequisite 1 names. This is what un-skips `ribbon_group_captions_legible`. | S2 |
-| 3 | **Trace a page object count** | Strictly better evidence than a `delete-objects` event: it measures the property the check is about rather than the verb meant to change it. | S2 |
+| # | Requirement | Why |
+|---|---|---|
+| 1 | **Trace the canvas layout unconditionally**, at least once per document open | Tracing it only on pointer events means the harness cannot aim until it clicks and cannot click until it can aim. |
+| 2 | **Trace `ui-rect name=… rect=…`** per named UI region — ribbon group captions, settings headings, panel bodies | A rect measured on the frame it is reported for stays correct under every layout change. A fraction hard-coded in the harness is stale the first time a panel is resized. |
+| 3 | **Trace a page object count** | It measures the property a check is about, rather than the verb meant to change it — strictly better evidence than a `delete-objects` event. |
 
-**Three prerequisites that belong in S1, not later**, because every
-capability above invalidates the assumption each one rests on:
+Three standing prerequisites that every capability above would otherwise
+invalidate:
 
-1. **`ui-verify` scripts document-space coordinates**, never absolute
-   screen coordinates. User-rearrangeable panels make widths arbitrary
-   at runtime, and the RAG records this exact class producing a
-   filed-then-retracted false coordinate-space defect.
-2. **`ui-verify` has a screenshot oracle** for layout and clipping. Two
-   recorded cases where a traced rect was correct and the control was
-   still clipped out of its pane.
-3. **Every new dockable surface gets a reachability test** that excises
-   the harness driver and asserts the state-changing assignment survives
-   — three panels shipped unreachable in real builds for their entire
-   lifetime with all gates green.
+1. **Scripts are written in document-space coordinates, never absolute screen
+   coordinates.** Two reasons, and the second is the expensive one. Every screen
+   coordinate in this application is variable — multi-column docks, overflow
+   menus, workspaces, collapse, tear-out each move where the canvas begins, and a
+   harness that says `click at 819,513` has to be re-baselined by hand after every
+   layout change, which in practice means the checks quietly stop testing
+   anything. And **a stale screen coordinate is symptom-identical to a broken
+   coordinate conversion**: the trace shows a hit test returning nothing, which is
+   exactly what a genuinely broken document-to-screen conversion looks like. This
+   project has already filed and retracted a false coordinate-space defect from
+   that confusion.
+2. **The harness has a screenshot oracle** for layout and clipping. There are
+   recorded cases where a traced rect was correct and the control was still
+   clipped out of its pane.
+3. **Every new dockable surface gets a reachability test** that excises the
+   harness driver and asserts the state-changing assignment survives. Three panels
+   once shipped unreachable in real builds, for their entire lifetime, with all
+   gates green.
 
-**Phase 4 (page display modes), Phase 5b–d (text), Phase 6 (markup),
-Phase 7 (measure), and the display list all land *after* fold-in**, in
-the pdfcer repo, as ordinary Passes. They are improvements, not
-prerequisites — and holding fold-in for them would keep the old GUI in
-front of the operator for months longer than necessary.
+A seam exists for what OS input cannot reach: `PDFCER_DIAG_INVOKE` (a command
+invoked once, consumed on the first frame that reads it), `PDFCER_DIAG_OPEN_PATH`
+(a native file picker is a hard wall for synthetic input), `PDFCER_DIAG_DROP_PATH`
+(a drop originates in Explorer and cannot be synthesised at all), and
+`PDFCER_DIAG_VIEWPORT` (a real, laid-out, invisible window — which cannot be
+driven by OS input, so a headless run reads its trace and presses nothing).
+Without these, a feature would be implemented, unit-tested, and never once
+exercised in a running window, which is the state R1 exists to forbid.
 
 ---
 
 ## 5. What "done" means
 
-Fold-in is gated on **parity plus the defects fixed**, not on the whole
-roadmap.
+Fold-in is gated on **parity plus the defects fixed**, not on the whole roadmap.
 
-**Required:**
-1. Every `FEATURES.md` `gui`-column capability works. No regressions.
-2. `DEFECTS.md` D1–D8 fixed, each with a regression test, and D1/D2 with
-   a `ui-verify` assertion specifically.
-3. `RIBBON_IA.md` implemented, including the Format tab and the
+1. Every `gui`-column capability in `FEATURES.md` works, with no regression (R6).
+2. Every known defect closed with a named regression test — and the two founding
+   defects (the Delete key dying the moment the canvas is clicked; section
+   headings and dock tab labels invisible in the default theme) with a
+   `ui-verify` assertion specifically, because each was a defect a passing test
+   suite could not see.
+3. `RIBBON_IA.md` implemented, including the Format contextual tab and the
    properties panel.
-4. **`MODES_AND_PANELS.md` implemented** — the Read/Review/Edit
-   selector, and panel layout that survives a restart.
-5. All pdfcer CI gates green (§7.2).
-6. No file over 1,500 lines.
-7. `ui-verify` suite green, and it demonstrably detects the two founding
-   defects when pointed at the old binary.
+4. `MODES_AND_PANELS.md` implemented — the Read/Review/Edit selector, and panel
+   layout that survives a restart.
+5. All gates green in the engine workspace after the move (§7.2).
+6. No source file over 1,500 lines.
+7. The `ui-verify` suite green, and demonstrably able to detect the two founding
+   defects when pointed at a binary that has them.
 
-**Explicitly not required:** continuous scroll, multi-run text editing,
-the missing markup kinds, area/angular measure, the display list, OCR,
-comparison — and, from the panel work, **cross-dock drag and tear-out to
-a floating window**. All post-fold-in.
+**Explicitly not required:** continuous scroll, multi-run text editing, the
+missing markup kinds, area and angular measure, the display list, OCR,
+comparison, cross-dock drag. All post-fold-in.
 
 ---
 
-## 6. Rules while the project runs
+## 6. Rules while this workspace is separate
 
-1. **`D:\Dev\pdfcer\` is read-only.** The governing rule.
-2. **The old GUI is feature-frozen** by agreement — bug fixes are fine
-   and get replayed into the new shell, tracked in `SALVAGE.md`.
-3. **Engine needs go to `pdfcer-engineer`** as a written hand-off, land
-   in pdfcer as their own Pass, and are picked up via the path dependency.
-4. **Re-sync deliberately.** At each stage boundary, rebuild against
-   current `pdfcer-core` and record the commit built against.
-5. **Docs stay current in the same commit as the code**, per the
-   documentation-first rule.
+1. **`D:\Dev\pdfcer` is read-only.** The governing rule. Cargo *reads* that
+   repository and clones from it into `~/.cargo/git/`; it writes nothing there,
+   and builds into this workspace's `target/`. **Do not `cd` into the engine tree
+   to build** — that is the one way this arrangement can breach the rule.
+2. **Engine needs are written up and handed to the operator**, land in the engine
+   repository as their own work, and are picked up by a deliberate `cargo update`
+   of the three engine crates. Nothing is applied there from here.
+3. **Re-sync deliberately.** At each stage boundary, `cargo update` the engine
+   crates and record the revision built against.
+4. **Docs stay current in the same commit as the code.**
+5. **A UI change is done when it has been asserted in `tools/ui-verify` against
+   the running binary** (R1) — not when a test passes.
 
 ---
 
 ## 7. Fold-in procedure
 
-Executed once, deliberately, with the operator present. Not by an agent
-acting alone.
+Executed once, deliberately, with the operator present. Not by an agent acting
+alone.
+
+Fold-in is an **addition, not a swap**: the engine workspace has no GUI crate to
+remove. It brings this workspace's crates into `D:\Dev\pdfcer`, registers them as
+workspace members, and converts the three `file://` git dependencies into
+ordinary path dependencies.
+
+`egui-shell` folds in **differently, on purpose.** It is extracted to its own
+repository (`D:\Dev\egui-shell`) and consumed by the engine as a path or git
+dependency — *not* copied into `crates/`. A crate living inside another project's
+tree is not reusable in any practical sense, and reusability is the whole point of
+the split. `tools/gates/check-shell-purity.sh` is what keeps the extraction cheap:
+while it stays green, extraction is a `git mv`. The failure it catches is not a
+crash but one `use pdfcer_core::PageSize` in a layout helper, added because it was
+convenient — which makes the standalone repository not compile, inverts the
+dependency the architecture rests on, and is invisible to every other gate.
 
 ### 7.1 Pre-flight
 
-- [ ] `FEATURES.md` gui column audited row by row, new vs old.
-- [ ] Both binaries driven side by side on the benchmark drawing and on
-      a form-heavy, a signed, and an encrypted document.
-- [ ] `DEFECTS.md` D1–D8 each closed with a named test.
-- [ ] `ui-verify` green; confirmed to fail against the old binary.
-- [ ] Performance no worse: first render, zoom-settle, memory, measured
-      per `BENCHMARK.md`'s method.
-- [ ] Operator has personally used the new GUI on real work and signed
-      off.
+- [ ] `FEATURES.md` `gui` column audited row by row.
+- [ ] `ENGINE_BACKLOG.md` complete: every live `[x] core` / `[ ] gui` row in the
+      engine's `docs/FEATURES.md` carries a verdict, and
+      `bash tools/gates/check-engine-backlog.sh` is green.
+- [ ] Driven on the benchmark drawing
+      (`D:\Dev\pdfTests\ncored-benchmark-cad-drawing.pdf`) and on a form-heavy, a
+      signed and an encrypted document.
+- [ ] Every known defect closed with a named test.
+- [ ] `ui-verify` green; confirmed to fail against a binary carrying the founding
+      defects.
+- [ ] Performance no worse — first render, zoom-settle, memory — measured by
+      `BENCHMARK.md`'s method.
+- [ ] Operator has personally used the build on real work and signed off.
+- [ ] `egui-shell` extracted to `D:\Dev\egui-shell` and building standalone.
 
-### 7.2 Gates — all green in the pdfcer workspace after the swap
+### 7.2 Gates
 
-```
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
+In this workspace, before the move:
+
+```sh
+cargo build --release
 cargo test --workspace
-tools/check-ui-strings.sh
-tools/check-theme-colors.sh
-tools/check-settings-consumed.py
-tools/check-disclosure-channel.sh
-tools/check-bypass-paths.sh
-tools/check-shipped-assets.py
-tools/check-fmt-excluded.py
+bash tools/gates/run-all.sh
 ```
 
-Plus pdfcer's filing gates — `check-passes-filed.py`,
-`check-commits-filed.py`, `check-one-commit-per-command.py` — which
-means the fold-in is filed as Passes in `ROADMAP.md` like any other work.
+In the engine workspace, after the move — and the sweep is the runner, never a
+hand-typed list, because `tools/run-gates.sh` is derived from the CI workflow
+rather than remembered:
 
-### 7.3 The swap
+```sh
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+bash tools/run-gates.sh
+```
 
-```bash
+The engine's filing gates (`check-passes-filed.py`, `check-commits-filed.py`,
+`check-one-commit-per-command.py`) are part of that run, which means the fold-in
+is filed in `docs/ROADMAP.md` like any other work there.
+
+### 7.3 The move
+
+```sh
 cd /d/Dev/pdfcer
-git checkout -b gui-rebuild-foldin
-git tag pre-gui-rebuild                      # the rollback point
-git rm -r crates/pdfcer-gui
-cp -r /d/Dev/pdfcer-gui/crates/pdfcer-gui crates/pdfcer-gui
-cp -r /d/Dev/pdfcer-gui/tools/ui-verify tools/ui-verify
-# path deps become workspace deps in crates/pdfcer-gui/Cargo.toml
+git checkout -b gui-foldin
+git tag pre-gui-foldin                                   # the rollback point
+
+cp -r /d/Dev/pdfcer-gui/crates/pdfcer-gui        crates/pdfcer-gui
+cp -r /d/Dev/pdfcer-gui/crates/native-window     crates/native-window
+cp -r /d/Dev/pdfcer-gui/crates/native-clipboard  crates/native-clipboard
+cp -r /d/Dev/pdfcer-gui/tools/ui-verify          tools/ui-verify
+cp -r /d/Dev/pdfcer-gui/tools/gates              tools/gates
+cp -r /d/Dev/pdfcer-gui/fixtures                 fixtures/gui
+```
+
+Then four edits, and no others:
+
+1. **Engine root `Cargo.toml`** — add `crates/pdfcer-gui`,
+   `crates/native-window`, `crates/native-clipboard` and `tools/ui-verify` to
+   `[workspace] members`, and add `egui-shell` to `[workspace.dependencies]`
+   pointing at `D:\Dev\egui-shell`.
+2. **`crates/pdfcer-gui/Cargo.toml`** — replace the three
+   `git = "file:///D:/Dev/pdfcer"` lines with `path = "../pdfcer-core"`,
+   `path = "../pdfcer-render"`, `path = "../pdfcer-print"`, keeping each line's
+   `default-features` setting exactly as it is; replace `version = "0.1.0"` with
+   `version.workspace = true`, since the crate is versioned by the workspace it
+   folds into.
+3. **`tools/engine_path.py`** — the engine is now the containing repository; the
+   derivation collapses to the workspace root. It must still refuse rather than
+   return a default.
+4. **The CI workflow** — add the gate jobs from `tools/gates/`, and keep
+   `check-ci-parity.py` satisfied so `run-gates.sh` stays derived from it.
+
+Then:
+
+```sh
 cargo build --release && cargo test --workspace
 ```
 
-Then §7.2 in full, then the documentation:
+and §7.2 in full, then the documentation:
 
-- `docs/ARCHITECTURE.md` §12 — a dated decision record for the rebuild.
-- `docs/ROADMAP.md` — the fold-in filed as Passes.
-- `docs/FEATURES.md` — gui column re-audited against reality.
-- `docs/SESSION_LOG.md` — the append-only record.
-- `README.md` — the `DEFECTS.md` D3 corrections (Bates, PDF/A,
-  imposition) land here if they have not already.
-- `.claude/agents/pdfcer-gui-engineer.md` moves in, or is retired and its
-  standing rules merged into `pdfcer-engineer.md`.
+- `docs/ARCHITECTURE.md` — the decision record for the GUI's arrival.
+- `docs/ROADMAP.md` — the fold-in filed.
+- `docs/FEATURES.md` — `gui` column re-audited against reality.
+- `README.md` — any capability claim this project corrected.
+- This workspace's reference documents move alongside the crates they describe.
 
 ### 7.4 Rollback
 
-`git reset --hard pre-gui-rebuild`. The old GUI is intact in git and in
-`D:\Dev\pdfcer` until the merge is pushed. **Keep `D:\Dev\pdfcer-gui` on
-disk for at least one release cycle after fold-in.**
+`git reset --hard pre-gui-foldin`. **Keep `D:\Dev\pdfcer-gui` on disk for at
+least one release cycle after fold-in.**
 
 ---
 
@@ -449,31 +495,29 @@ disk for at least one release cycle after fold-in.**
 
 | Risk | Mitigation |
 |---|---|
-| **Scope creep** — the roadmap is Phase 0–7, fold-in needs only parity. | §5 states what is *not* required. Everything else lands after, in pdfcer. |
-| **Core divergence** during a long build. | Path dependency compiles against live core; re-sync at every stage boundary; old GUI feature-frozen. |
-| **Salvaged code carries its bugs across.** | R3: every salvaged file is read in full and re-verified, and its `DEFECTS.md` fixes applied at salvage time, not later. |
-| **The rebuild loses hard-won correctness** that lives in details nobody remembers. | The doc comments are the memory, and R5 requires carrying them across with the code. Never salvage by pasting a snippet. |
-| **ui-verify is flaky** — OS-driven input tests often are. | Assert on `PDFCER_DIAG` first and pixels second; keep pixel assertions to contrast thresholds and presence, not exact images. |
-| **It never ships** — the classic rewrite failure. | Every stage is runnable; fold-in is gated on parity, not perfection; S7 is a hard audit rather than a judgement call. |
-| **egui version skew** between the two workspaces. | Same `rust-toolchain.toml`; no dependency not already in pdfcer's lockfile without an operator decision. |
+| **Scope creep** — the roadmap is far larger than parity. | §5 states what is *not* required. Everything else lands afterwards, in the engine repository. |
+| **Core divergence** during a long build. | The git dependency compiles against a real engine commit; `cargo update` at every stage boundary; a breaking change surfaces at compile time. |
+| **Salvaged code carries its bugs across.** | R3: every salvaged file is read in full and re-verified, and its known defects fixed at salvage time, not later. |
+| **The rebuild loses hard-won correctness** living in details nobody remembers. | The doc comments are the memory; carry them across with the code. Never salvage by pasting a snippet. |
+| **`ui-verify` is flaky** — OS-driven input tests often are. | Assert on the `PDFCER_DIAG` trace first and pixels second; keep pixel assertions to contrast thresholds and presence, not exact images. |
+| **It never ships** — the classic rewrite failure. | Every stage is runnable; the workspace already packages a portable build with the engine statically linked; fold-in is gated on parity, not perfection; S7 is a hard audit rather than a judgement call. |
+| **egui version skew** between the two workspaces. | The same `rust-toolchain.toml`; no dependency not already in the engine's lockfile without an operator decision; `UI_TOOLKIT_PINS.md` and `check-ui-toolkit-drift.sh`. |
+| **`egui-shell` quietly learns what a PDF is**, and extraction is cancelled on the day it is attempted. | `check-shell-purity.sh` from every commit. Add an extension point, not an exception (R7). |
 
 ---
 
 ## 9. Open questions for the operator
 
-1. **Timeline and appetite.** S0–S7 is a substantial build. Is this a
-   continuous push, or something that runs alongside pdfcer work? It
-   changes how hard the feature-freeze in §6.2 has to be.
-2. **Git.** Should `D:\Dev\pdfcer-gui` be its own repo, a branch of pdfcer,
-   or untracked working space? The plan assumes its own repo. A branch
-   would make the fold-in a merge instead of a copy, which is tidier in
-   history but means the old GUI and new live in one tree.
-3. **Feature freeze on the old GUI.** §6.2 assumes it. Acceptable?
-4. **`ui_text.rs` split.** 7,912 lines breaks R2 and must be split into
-   a `text/` module directory. That requires the §4.1 gate fix to also
-   generalise its single-file exclusion to a directory. Both changes are
-   one hand-off to `pdfcer-engineer`; confirm you want them filed as a
-   pdfcer Pass before S0 starts.
-5. **The three still-open roadmap questions** — Save semantics,
-   comparison, and how much of multi-run text editing — do not block
-   fold-in but do shape S2 and S5.
+1. **Does fold-in still happen?** The engine has already removed its GUI crate
+   and this workspace ships a self-contained portable build, so the outcome
+   fold-in was meant to deliver — a shipping GUI in front of the operator —
+   arrives without it. The remaining arguments for it are one repository, one CI
+   run, one filing discipline; the argument against is that the separation is
+   what keeps the engine's licence audit and workspace-separation checks
+   unambiguous.
+2. **`egui-shell`'s destination.** Its own public repository, or a private one?
+   §7 assumes a repository at `D:\Dev\egui-shell` either way, but the licence
+   posture and the notice obligations differ.
+3. **The three open scope questions in `GUI_ROADMAP.md`** — comparison, how much
+   of multi-run text editing, and whether the phased plan's remaining phases are
+   wanted at all — do not block fold-in but do shape what follows it.

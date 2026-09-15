@@ -1,130 +1,189 @@
-# UI_TOOLKIT_PINS.md — which egui this shell is built against, and why
+# UI toolkit pins
 
-**The register `tools/gates/check-ui-toolkit-drift.sh` reads.** One row per
-egui-family crate named in `[workspace.dependencies]`. A row is required when
-the pinned version is behind the published one, or when a pin resolves to no
-consumer at all.
+Which egui this shell is built against, why each pin stands, and what moving one
+costs. `tools/gates/check-ui-toolkit-drift.sh` reads the register table; the
+prose is for whoever is deciding whether to bump.
 
-> **This file never argues for upgrading.** It records what is true and why the
-> decision stands. Being a release behind is normal and often correct; being a
-> release behind *without knowing* is the defect, and it is the one this file
-> and its gate exist to make impossible.
+This file never argues for upgrading. Being a release behind is normal and often
+correct; being a release behind *without knowing* is the defect, and it is the
+one this file and its gate make impossible.
 
----
+## Why the pins cannot move on their own
 
-## Why the pins cannot move on their own — read this before assuming `cargo update` covers it
+`egui = { version = "0.35", … }` is `^0.35` in semver: `>=0.35.0, <0.36.0`. So
+`cargo update` resolves the newest `0.35.x` and reports everything current —
+truthfully, about a question nobody meant to ask. It cannot reach 0.36, ever,
+and no amount of updating will report that 0.36 exists.
 
-`Cargo.toml` says `egui = { version = "0.35", … }`. That is `^0.35` in semver:
-**`>=0.35.0, <0.36.0`**. So `cargo update` resolves the newest `0.35.x` and
-reports everything current — truthfully, about a question nobody meant to ask.
-It **cannot** reach 0.36, ever, and no amount of updating will tell you 0.36
-exists.
+`pdfcer-core`, `pdfcer-render` and `pdfcer-print` are the opposite case: **path**
+dependencies onto `D:\Dev\pdfcer\`, which move whenever that repository does and
+need a drift gate because they change under you. egui needs one because it
+changes only when somebody edits this file, and otherwise nothing watches
+whether anybody should.
 
-⇒ That is different in kind from `pdfcer-core`, `pdfcer-render` and
-`pdfcer-print`, which are **path** dependencies onto `D:\Dev\pdfcer\` and move
-whenever that repository does. Those needed a *drift* gate because they change
-under you. egui needed one for the opposite reason: it changes only when
-somebody edits this file, and nothing was watching whether anybody should.
-
----
+Ask of every dependency: *what would tell me it moved?* For a path dependency, a
+diff. For a git pin, a hash. For a caret version requirement, nothing at all —
+which is the one that needs an instrument.
 
 ## The register
 
+Pinned is what `Cargo.lock` resolved; published is `MAJOR.MINOR` from
+`cargo search <crate> --limit 1`.
+
 | crate | pinned | published | status |
 |---|---|---|---|
-| `egui` | **0.35.0** | 0.36 | **deliberately behind** — see *The 0.36 measurement* |
-| `eframe` | **0.35.0** | 0.36 | **deliberately behind** — moves with `egui`, same row |
-| `egui_tiles` | 0.16.0 | 0.17 | ★ **pinned but unused — no consumer, absent from `Cargo.lock`** |
+| `egui` | 0.35.0 | 0.36 | deliberately behind — see the 0.36 migration below |
+| `eframe` | 0.35.0 | 0.36 | deliberately behind — one decision with `egui`, never bumped apart |
+| `egui_tiles` | 0.16.0 | 0.17 | pinned but unused — no consumer, absent from `Cargo.lock` |
 
----
+### The row shape is the contract
 
-## ★ `egui_tiles` — pinned, published, and not in the build at all
+The gate greps these rows, not the prose around them: an argument in a paragraph
+that happens to contain the right version number is a gate discharged by
+narrative.
 
-`[workspace.dependencies]` carries `egui_tiles = "0.16.0"`. **No crate in this
-workspace depends on it**, so Cargo never resolves it and it does not appear in
-`Cargo.lock`.
+- **Cell 1** is the crate, bare or in backticks.
+- **Cell 3** carries the published `MAJOR.MINOR` whenever crates.io is ahead of
+  the lock. That is the assertion.
+- **A pin that resolves to nothing** must carry `unused`, `not used` or
+  `no consumer` somewhere in its row.
+- Never widen a row past the header's four cells. `check-doc-markup.py` fails
+  the build on that, because an unescaped `|` truncates a row silently.
 
-That is not an oversight. `crates/egui-shell/src/dock/mod.rs` states the
-decision in its own words — the dock is hand-built, and `float.rs` records the
-reason it had to be: *"`egui_tiles`' arena handles are unusable for
-persistence"*, so a floating panel that must survive a restart could not be one
-of its tiles. The pin is a **reservation**, left in place from the S3 plan.
+### What the gate checks, and what it refuses to decide
 
-Two consequences worth stating rather than leaving to be found:
+```sh
+bash tools/gates/check-ui-toolkit-drift.sh
+```
 
-- **`MODES_AND_PANELS.md` sourced its per-capability feasibility verdicts to
-  "egui 0.35 / egui_tiles 0.16".** Half of that platform is not in the binary.
-  The verdicts that turned on what `egui_tiles` could do are therefore about a
-  library this shell does not link — which is exactly why the dock was
-  hand-built, so the verdicts led to the right answer by a route their own
-  citation does not describe. Corrected 2026-09-08.
-- **A published `egui_tiles` 0.17 is of no consequence to this build**, and
-  the gate must not be able to make it look like one. Hence this row.
+It prints the versions `Cargo.lock` actually resolved, so read its output rather
+than trusting the `pinned` column: the manifest states a **requirement**, the
+lock states a **fact**, and they answer different questions.
 
-⇒ **The pin stays** rather than being deleted, because deleting it would erase
-the record of a considered choice and the next person would reach for
-`egui_tiles` again. If it is still unused at fold-in, delete it *then*, with a
-line in `PROJECT_PLAN.md` saying so.
+| Part | Network | Asserts |
+|---|---|---|
+| A0 | no | every egui-family pin in `[workspace.dependencies]` resolves in `Cargo.lock`, or its row declares it unused |
+| A | no | a document that names a crate version names the one the lock resolved |
+| B | yes | crates.io's newest release is either the pinned one or has a register row |
 
----
+The crate list is derived by scanning `[workspace.dependencies]` for names
+beginning `egui` or `eframe` without a `path =`, never hard-coded — so adopting
+`egui_extras` or `egui_plot` brings it under the gate with no edit to the gate,
+and it will then demand a row here.
 
-## The 0.36 measurement — 2026-09-08
+Three behaviours worth knowing before the gate surprises you:
 
-Measured rather than estimated, in a scratch copy of the manifest, restored
-afterwards. `egui`/`eframe` 0.35 → 0.36, `egui_tiles` 0.16 → 0.17:
+- **It never fails for being behind.** It fails for being behind *unrecorded*.
+- **It matches on `MAJOR.MINOR`.** egui publishes patches often, and a gate that
+  went red on every patch would train everybody to edit this file without
+  reading it. A new minor is the event that deserves a decision.
+- **crates.io unreachable prints SKIP, not PASS.** A check that quietly
+  downgrades to the half it could do is how a gate stops running unnoticed.
 
-| | result |
+Part A binds one document today: `MODES_AND_PANELS.md` names the toolkit its
+capability verdicts were measured against, and a bump that leaves that heading
+behind turns a measured verdict into an unsourced one. Moving a pin means moving
+that heading in the same commit.
+
+## `egui_tiles` — pinned, and not in the build at all
+
+No crate in this workspace depends on it, so Cargo never resolves it and it does
+not reach `Cargo.lock`. A published `egui_tiles` 0.17 is therefore of no
+consequence to this binary, and its register row is what stops the gate making
+it look like one.
+
+The dock is hand-built on `egui` directly, in `crates/egui-shell/src/dock/`. The
+reason it had to be: a dock layout here is a plain value that round-trips to a
+file, and `egui_tiles`' arena handles are not stable identities across a
+restart, so a floating panel that must survive one could not be one of its tiles.
+`dock/float.rs` carries the consequence — a float's home is an **address**, four
+`usize`s, rebuilt rather than resolved when it goes stale.
+
+Any feasibility verdict elsewhere in the documentation that turns on what
+`egui_tiles` can do is a verdict about a library this shell never links.
+
+**The pin stays**: deleting it erases the record of a considered choice, and the
+next person reaches for `egui_tiles` again. If it is still unused at fold-in,
+delete it then, with a line in `PROJECT_PLAN.md` saying so.
+
+## The 0.36 migration
+
+Re-derive the cost rather than trusting a figure: bump `egui`/`eframe` to 0.36
+and `egui_tiles` to 0.17 in `Cargo.toml`, then restore.
+
+```sh
+cargo check --workspace --all-targets
+git checkout Cargo.toml Cargo.lock
+```
+
+Two API changes reach this tree. The dock, the ribbon, the panels, the canvas
+and `wgpu` compile untouched, and `egui-shell` is untouched entirely.
+
+### 1. `DroppedFile::path` is a method, not a field
+
+It returns `&Path` in 0.36, where in 0.35 it is a field of type
+`Option<PathBuf>`. One call site: `crates/pdfcer-gui/src/app/filedrag.rs`, which
+collects `i.raw.dropped_files` through `.filter_map(|f| f.path.clone())`.
+
+A semantic change hides in the type. The option is gone, so a dropped file always
+has a path — true on native, false on web, and this shell is native-only, which
+makes the new shape correct here. But a `filter_map` that silently becomes a
+`map` is a behaviour change wearing a compile error's clothes, and it deserves a
+driven check rather than a sight-read. Two already exist: `dropped_file` and
+`drop_onto_thumbnails`.
+
+### 2. `RawInput::modifiers` is removed
+
+Modifiers travel on the events instead of on the frame. Every site in this tree
+that sets the field is `#[cfg(test)]` code building a synthetic frame:
+
+| File | What it builds |
 |---|---|
-| total compile errors, `--workspace --all-targets` | **11, across 6 files** |
-| distinct causes | **2** |
-| the dock, the ribbon, the panels, the canvas, `wgpu` | **compiled untouched** |
+| `crates/pdfcer-gui/src/app/keyboard.rs` | a `key_press` builder, and one test that mutates the field directly |
+| `crates/pdfcer-gui/src/app/status.rs` | a `key_press` builder |
+| `crates/pdfcer-gui/src/canvas/textedit/keys.rs` | a clipboard-frame builder and an arrow-key driver |
+| `crates/pdfcer-gui/src/canvas/textsel/clipboard.rs` | three frames carrying `Event::Copy` under `Modifiers::COMMAND` |
+| `crates/pdfcer-gui/src/canvas/dimdrag/tests.rs` | a drag driver |
+| `crates/pdfcer-gui/src/canvas/moving/nudge/tests.rs` | a nudge driver |
 
-The two causes:
+### Why the small change is the risky one
 
-1. **`egui::DroppedFile::path` became a method returning `&Path`**, where it
-   was a field of type `Option<PathBuf>`. One call site
-   (`app/filedrag.rs:165`). ⚠ **Note the semantic change hiding in the type**:
-   the option is gone, so a dropped file always has a path. That is true on
-   native and was not on web, and this shell is native-only — but a
-   `filter_map` that silently becomes a `map` is a behaviour change wearing a
-   compile error's clothes, and it deserves a driven check rather than a
-   sight-read.
+Nothing the compiler flags is shipped code, and that is the hazard rather than
+the reassurance.
 
-2. **`egui::RawInput::modifiers` was removed** — 10 of the 11 errors, in
-   `app/keyboard.rs`, `app/status.rs`, `canvas/textedit/keys.rs`,
-   `canvas/textsel/clipboard.rs`, and two test harnesses. Modifiers now travel
-   on the events rather than on the frame.
+`app::keyboard::commands` matches each chord against the modifiers carried by its
+own `Event::Key`, never against `InputState::modifiers`. Those are different
+clocks: the frame-level state is as of the **end of the frame**, an event carries
+the state as of the **keystroke**, and they disagree whenever the modifier is
+released inside a long frame — the operator taps `Ctrl+Z` in fifty milliseconds
+while the application is rasterizing a dense CAD sheet, and the chord matches
+nothing. Reading the frame snapshot there is a defect this project has already
+shipped, and it presented as harness flakiness rather than as a bug.
 
-★★★ **The second one is not mechanical, and it is the reason this is not a
-same-day bump.** `D:/dev/rag/egui/` already carries
-`a_chord_matcher_must_read_the_key_events_own_modifiers_not_the_frames.md` —
-this project has *already had a defect* from reading frame-level modifiers
-where event-level ones were meant. egui 0.36 removes the frame-level field
-outright, which is upstream enforcing the same rule.
-
-⇒ So the migration is small but lands squarely on the code path this project
-has already got wrong once, and on the two files that hold the keyboard guard
-whose earlier defect (`egui_wants_keyboard_input` vs `text_edit_focused`) is
-one of the two founding defects in `DEFECTS.md`. **A green `cargo check` is not
-a report of working software here** — R1 applies with unusual force.
+The regression test that pins the fix constructs exactly that disagreeing frame:
+a `Ctrl+Z` key event carrying `Modifiers::COMMAND`, then `RawInput::modifiers`
+set empty before the frame ends. **0.36 removes the field that test needs**,
+which is upstream enforcing the same rule — and it means the bump rewrites the
+harnesses that prove the keyboard path right at the same moment it changes the
+platform beneath them. A green `cargo check` is not a report of working software
+here; R1 applies with unusual force.
 
 ### The decision, and what would change it
 
 **Stay on 0.35 until the bump can be verified by driving the binary.** The
 operator uses `pdfcer-gui.exe` daily as his PDF reader; an unverified keyboard
-change ships a dead Delete key to his working machine, which is the exact
-defect this whole rebuild was founded on.
+change ships a dead Delete key to his working machine.
 
 What the bump needs, when the machine is free:
 
-1. The 11 mechanical fixes.
-2. The full `tools/ui-verify` sweep — every chord, every modifier-bearing
-   gesture (`Ctrl`-drag, `Ctrl`+`Shift`-drag on markup nodes, `Shift`-marquee,
-   the clipboard chords).
-3. A driven check on **drag-and-drop of a file onto the window**, for cause 1.
+1. The mechanical fixes the scratch `cargo check` above enumerates.
+2. The full `tools/ui-verify` sweep — `chords`, and every modifier-bearing
+   gesture: `Ctrl`-drag and `Ctrl`+`Shift`-drag on markup nodes, `Shift`-extended
+   selection and marquee, `Alt` on measure and vertex routing, `Shift` on page
+   drag, and the clipboard chords.
+3. A driven check on dropping a file onto the window, for change 1.
 4. A screenshot comparison of the dock and the ribbon, because a minor egui
-   release moves layout and this project's standing rule is that layout defects
-   have exactly one oracle.
+   release moves layout and a layout defect has exactly one oracle.
 
-Estimated at well under a day of work and rather more than that of verification
-— which is the correct ratio for this change, not a complaint about it.
+The work is well under a day and the verification rather more, which is the
+correct ratio for this change.

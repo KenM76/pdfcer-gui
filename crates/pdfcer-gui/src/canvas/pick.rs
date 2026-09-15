@@ -148,6 +148,23 @@
 //!
 //! When link picking lands, the default flips here and nowhere else.
 //!
+//! ### Four more classes are INERT, and their tooltips do not say so
+//!
+//! [`PickClass::Markup`], [`PickClass::CeDimension`], [`PickClass::FormField`]
+//! and [`PickClass::Characters`] are read by nothing on the pick path, so
+//! switching one off changes no click. [`PickFilter::allows`] is consulted at
+//! exactly three points — the `Part` rung, the `Node` rung, and the object
+//! class of the topmost hit, all in [`crate::canvas::input`]. The annotation
+//! pick (`selection::annot::under_pointer`) is called with no filter argument
+//! at all, and the character sweep's gate (`canvas::textsel::gate`) is decided
+//! by the armed tool and the mode's capabilities alone. Unlike
+//! [`PickClass::Link`], whose tooltip is honest about being inert, these four
+//! promise that clicks will pass through.
+//!
+//! The rule: **a row is inert until an `allows` call reads it.** Wire the
+//! consumer in the same change that adds the row, or the popup becomes the
+//! *"visible control, silently inert"* failure it exists to replace.
+//!
 //! ## What this module does NOT do
 //!
 //! It never draws, never touches egui, never reads a pointer, never reaches a

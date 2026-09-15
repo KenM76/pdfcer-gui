@@ -1,897 +1,223 @@
-# EDITABLE_SURFACES.md — every verb `pdfcer-core` implements, and where the operator reaches it
+# Editable surfaces
 
-**Written 2026-08-28, in answer to a question this project could not answer from
-its own documents:**
+Every verb `pdfcer-core` implements and where the operator reaches it: a written
+reason for each one nothing here calls, and the contract each wired one carries.
+Read it before wiring an engine capability, before concluding one is missing,
+and when `check-verb-coverage.sh` fails.
 
-> *"confirm that you have built every editable surface into the GUI that has
-> been implemented in pdfcer"*
+## The instrument
 
-`FEATURES.md` says what the GUI does. `NO_SURFACE.md` lists compiled-in values
-with no control. `GUI_ROADMAP.md` says what is planned. **None of the three is
-keyed on the engine's verb list**, so none of them could answer *"is there a
-verb `pdfcer-core` implements that nothing in this shell calls?"*
-
-The answer was **yes, twelve times**, and the pattern in the misses matters more
-than the count: three were capabilities the engine had shipped **in answer to
-this shell's own requests**, which this shell then never consumed, and **two
-were settings the operator could change that were honoured by nothing**.
-
-⇒ *A reply arriving is not a capability landing.* The engine session runs in
-parallel and answers within the hour; its answers sat unread while this
-project's own doc comments still recorded the capability as blocked.
-
----
-
-## ★★★ The instrument, and why this file is not a hand-written list
-
-`tools/verb-coverage.py`. It parses `impl EditSession` out of
-`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs`, takes every `pub fn` declared in
-it, and greps `crates/pdfcer-gui/src` for each name.
+`tools/verb-coverage.py` parses `impl EditSession` out of the **locked**
+revision of `crates/pdfcer-core/src/edit.rs`, takes every `pub fn`, and searches
+`crates/pdfcer-gui/src` for a call-shaped occurrence of each name.
 
 ```
-python tools/verb-coverage.py            # the misses, one per line
+python tools/verb-coverage.py            # the uncalled verbs, one per line
 python tools/verb-coverage.py --all      # every verb with its occurrence count
+bash tools/gates/check-verb-coverage.sh  # the gate: every uncalled verb owes a row here
 ```
 
-**Re-run it before quoting any number in this file.** The engine moves daily —
-five of the rows below were written on the day the verb behind them shipped —
-and a register that is trusted rather than re-measured becomes the seventh
-stale blocker in a project that has already found six.
+Run it before quoting any count. No number in this file is a count, deliberately.
 
-### What the measurement is worth, stated plainly
+**What a measurement is worth.** A hit means a call-shaped occurrence of the
+name exists, not that a reachable operator route leads to it; a call site behind
+a condition nothing sets is a hit here and dead in the running program. A miss
+is stronger: no such occurrence means nothing here calls it. A miss is not
+automatically a gap — roughly half are session queries or alternate spellings of
+a verb the shell calls in another form.
 
-- **A hit means the NAME appears**, not that a reachable operator route calls
-  it. A call site behind a condition nothing sets is a hit here and dead in the
-  running program. Only `tools/ui-verify` answers that question.
-- **A miss is stronger**: no occurrence of the identifier means nothing here
-  calls it, full stop.
-- **A miss is not automatically a gap.** Roughly half are session queries or
-  alternate spellings of a verb the shell calls in another form. That is what
-  the table below is for: **every miss owes a reason**, and a reason that is
-  merely *"not built"* is a reason to go and look.
+**A hit must be call-shaped, with comments blanked first.** Both filters are
+needed and neither subsumes the other: the first kills prose, the second kills
+aspirational examples. Without them, an argument *about* a verb in a doc comment
+scores as a call, and a whole subsystem can be discharged against a paragraph
+that happens to spell its name.
 
----
+**The gate reads table rows only.** Its rule is that the register must name each
+uncalled verb in backticks on a line beginning with `|`. The restriction is
+load-bearing and not a detail of implementation: the gate cannot read English,
+so prose *about* a verb is indistinguishable from prose *accounting for* one,
+and an introduction naming verbs in backticks can silence the instrument on a
+change that wired nothing. Put the name in the row or it does not count.
 
-## The state at the end of 2026-08-29 (re-measured after the preview work)
+**The lock, not the working tree.** A verb present in the engine's worktree and
+absent from the locked revision is not callable from here. The tool prints those
+under `COMING` and keeps the two facts apart: *nothing here calls it* and *we
+could not call it if we wanted to*.
 
-**157 `EditSession` verbs. 147 named somewhere in the shell. 10 named nowhere.**
-At the start of the audit it was 135 / 22.
-
-★★★ **Measured against the LOCKED revision, not the engine's working tree**, and
-the distinction earned itself within a day. The first cut of the tool read
-`edit.rs` off disk and reported `move_outline_item` and `set_outline_open` as
-gaps — bookmark reorder, re-parent and open state, which the engine's own note
-had said did *not* ship. They were **uncommitted work in the engine session's
-worktree**, which that project edits continuously while this one runs. (It also
-reported 159 verbs and 12 misses for the same reason; the numbers above are the
-lock's.)
-
-⇒ A verb in the worktree and not in the lock **is not callable from here**, and
-a register listing it would send the next session to write a call that does not
-compile while looking like a capability we were behind on. The tool prints those
-under `COMING` and keeps the two facts apart: *"nothing here calls it"* and
-*"we could not call it if we wanted to."* Both are worth knowing; they are not
-the same thing.
-
-★ `move_outline_item` and `set_outline_open` are the two to pick up the moment
-the engine commits them — they are bookmark **reorder, re-parent and open
-state**, which is the half the Bookmarks panel is still missing and which that
-panel's own doc comment currently records as unbuilt on the engine's side.
-
-The twelve gaps this audit found, and what happened to each:
-
-| Verb | Engine Pass | Status |
-|---|---|---|
-| `set_markup_note` / `clear_markup_note` | 154.0 | ✅ the Comments panel writes notes |
-| `add_markup_with` (opacity) | 81.1 | ✅ Markup ▸ Style ▸ Opacity, one undo entry |
-| `set_outline_title` / `delete_outline_item` | 156.0 | ✅ Bookmarks rename and remove |
-| `set_quad_point_order` | — | ✅ the fourth settings funnel — **it was a live defect** |
-| `delete_pages_with` | — | ✅ the separation policy reaches the delete — **also a live defect** |
-| `rotate_annotation` | 155.0 | ✅ a ninth grip on the selection box |
-| `rotate_dimension` | 159.0 | ✅ the same grip, routed by kind |
-| `attach_file` / `detach_file` | — | ✅ Edit ▸ Insert ▸ Attachments, with extraction |
-| `unshare_form` | — | ✅ *"Give this page its own copy"*, seven worded refusals |
-| `delete_field_group` / `field_group_deletion_preview` | — | ✅ Forms ▸ Field groups, previewed before the press |
-| `signature_impact_of_save` / `changes_structure` | — | ✅ a window before an invalidating save, a note after a preserved one |
-| `copy_annotations` | 120.x | ⬜ **open** — asked of the engine; the interim loss is closed |
-
-**Seven driven checks were written for this work and none has run.** A wired
-verb is not a verified one; see the caveat at the top.
-
-### ★★★ The two that were live defects rather than missing features
-
-**`set_quad_point_order`.** `Settings::quad_point_order` was parsed, defaulted,
-validated, persisted, drawn in the Settings window — and honoured by nothing,
-because every session was opened with `EditSession::new(doc)`, which takes the
-engine's default.
-
-⇒ ★★ **The lesson is about the shape of the guard, not the field.**
-`app::settings` exists precisely to prevent this class and a `syn` check
-enforces it — and both were built around **option constructors**. A setting
-delivered by a **setter on the session** is invisible to that shape, and the
-check reported green for the whole life of the shell. `Settings::separations`
-was the same defect one file along: chosen by the operator, reported in the
-disclosure after a page delete, and never passed to the verb that would act on
-it.
-
-The fix is a fourth funnel (`SettingsExt::open_session`) with `EditSession::new`
-on the check's forbidden list. **A guard shaped around one delivery mechanism
-cannot see a second one, and the way to find the second is to ask what the
-engine offers rather than to re-read the guard.**
-
-### ★★ And one defect the audit did not find, which is worth saying
-
-`Ctrl+S` **saved the file and then panicked the application** — every time,
-since 2026-08-20, in the shipped build. It was found by an agent wiring the
-signature guard into that arm, not by this register and not by any of the 105
-driven checks. `DEFECTS.md` D16 carries the class.
-
-⇒ A verb-coverage sweep answers *"is every capability reachable?"* It does not
-answer *"does the route work?"*, and the two questions need different
-instruments. This one is cheap; the other is `tools/ui-verify` and it needs the
-operator's machine.
-
----
-
-## The misses, each with its reason
-
-**Currently 41, at lock `03f6004` (2026-09-05, and read the next sentence
-before comparing it with anything).** ⚠ **That number is not comparable with the
-12 this line carried at lock `04f7ec0`**, and not because the engine grew by
-twenty-nine verbs: `tools/verb-coverage.py` was tightened on 2026-09-05 to count
-only **call-shaped** matches with comments blanked, so verbs that had always been
-uncalled stopped being scored as consumed by prose about them. Roughly half the
-jump is the instrument getting better eyesight rather than the shell falling
-behind — the section at the foot of this file accounts for the twenty-six that
-had no row at all. This heading used to carry the
-number — *"The 13 remaining misses"* — and the number went stale twice while the
-prose under it stayed true, which is the failure this file warns about in its
-own opening: **re-run the instrument before quoting a count.** So the count now
-lives in one line that says which lock it was measured at, and the heading does
-not carry it.
-
-★ **There are more rows below than there are misses, on purpose.** A row is
-written when a verb becomes a miss and it is *not deleted when the verb stops
-being one* — `copy_attachment` and `paste_attachment` were wired the day their
-row was written and both rows are still here, marked SHIPPED. The reason is that
-the argument is the valuable part: a row saying *why* a verb was left alone for
-a fortnight is what stops the next session re-deriving the same conclusion, or
-worse, reversing it without knowing one was ever reached. The gate only ever
-asks whether a name is **present**; it does not ask that the section be a
-snapshot, and it should not.
-
-### Not gaps — session queries the shell has no use for
+## Session queries the shell has no use for
 
 | Verb | Why nothing calls it |
 |---|---|
 | `into_document` | Consumes the session to get the base document back. This shell's session lives as long as the tab does. |
-| `authored_source` | A `base ++ staging` memcpy — ~14 MB per call on the benchmark document. Its own doc comment says it is for `pageops` callers that serialise a whole file anyway and is *"completely unacceptable on a render loop"*. |
+| `authored_source` | A base-plus-staging memcpy, tens of MB per call on a real drawing. Its own doc comment scopes it to callers that serialise a whole file anyway and rules it out on a render loop. |
 | `dirty_set` | What the writer would emit as an incremental update. The shell never needs to know before saving; the writer asks it. |
-| `dimension_rects` | Hit-testing ce dimensions from their `/Rect`s. This shell hit-tests through the **decomposition**, which resolves the object under the pointer for every kind at once. Two hit tests would be two answers to one question. |
+| `dimension_rects` | Hit-tests ce dimensions from their `/Rect`s. This shell hit-tests through the decomposition, which resolves the object under the pointer for every kind at once. Two hit tests would be two answers to one question. |
+| `info_bytes` | `panels::docprops` reads every `/Info` field through `info_text`, which returns text plus an `exact` flag. When `exact` is false, re-encoding the string would not reproduce the document's own bytes, so the panel must not write the field back and says so on the row. Raw bytes have no operator meaning and would discard the one flag stopping this shell from replacing a `/Title` with its own guess at it. |
 
-### ★★★ The five the GATE found, 2026-09-01 — three cut verbs and the attachment clipboard
+## Alternate spellings and superseded forms
 
-`tools/gates/check-verb-coverage.sh` is new on this date, and it exists because
-`set_button_action` shipped on 2026-08-30 and was consumed on 2026-09-01: the
-instrument existed and nobody ran it. **A tool that must be remembered is a tool
-that will be forgotten.** The gate now fails the build when a verb is named
-neither in the shell nor in this file — and on its first honest run it named
-these five, all of which had been silently uncovered.
-
-| Verb | Why nothing calls it |
-|---|---|
-| `cut_objects` (context) / `cut_annotations` | ⛔ **Deliberate, argued in code.** `canvas::clipboard::cut` is copy-then-`DeleteSelection`, and the reason is in its own comment: routing the delete through the shell's funnel means it lands one `EditSession` command and one undo entry *by the same mechanism as every other edit*, and it leaves `canvas::clipboard` changing no document — which is what lets its refusals be unit-tested without one. The engine's ordering property (copy first, so a selection that cannot be carried is refused with nothing deleted) is honoured by the `?` on the copy. |
-| `cut_field` | ◑ **A workaround, and it costs one undo entry too many.** `canvas::fieldclip::cut` is copy + `FieldAction::DeleteWidget`, and `DeleteWidget` is deliberate rather than incidental: the operator pointed at **a box**, and `cut_field` removes the whole *field* — on a field with three widgets that is not what was asked. So the two verbs are genuinely different acts. What is *not* deliberate is the undo cost, and it has the same cause as the button-action one filed the same day: `EditSession::coalesce_last` is private, so a shell cannot fold two commands into one. See `request_placing_a_button_with_an_action_costs_two_undos.md`. |
-| `copy_attachment` / `paste_attachment` | ✅ **SHIPPED 2026-09-01, the same day this row was written.** Copy and Cut on every document-level row, Paste at the top of the panel — drawn only when the clipboard holds one, per R9. Driven by `an_attachment_moves_between_two_open_documents`, which crosses a document boundary deliberately: a same-document round trip exercises every line and does not test the defect. |
-| `cut_attachment` | ⛔ **Deliberate, and the same argument `cut_objects` gets.** The panel's Cut is `copy_attachment` in the widget followed by an `AttachmentAction::Detach` through the funnel. The copy half is `&self` and commits nothing, so that is **one** `EditSession` command and one `Ctrl+Z` — the fold `cut_attachment` performs with the private `coalesce_last` buys nothing here. The widget route also lets the copy **fail before the delete is raised**, which is the ordering `cut_objects`' own doc comment insists on. |
-
-⇒ ★★ Note what the three attachment verbs have in common with the button
-action: **the engine shipped them and this shell said nothing about them
-either way.** That is precisely the silence the gate exists to break — a verb
-nobody has written a sentence about is indistinguishable from a verb nobody
-noticed.
-
-### ★★★ The two the GATE found, 2026-09-04 — encryption AUTHORING landed, and this is the fourth time
-
-`cargo update -p pdfcer-core` moved the lock from `e27c3b4` to `04f7ec0` and the
-gate went red on the next run with two names:
-
-> **191 `EditSession` verbs (lock `04f7ec0`), 179 named somewhere in the shell,
-> 12 named nowhere** — of which ten already had a row in this file, and
-> `set_encryption` and `set_permissions` had nothing anywhere.
-
-★★★ **This is O108's own request coming back answered, and nobody would have
-noticed.** On 2026-09-03 the security audit measured `pdfcer-core` from its own
-side and reported the finding that changed the shape of the ask: *"Every one of
-them is READ-SIDE. `pdfcer-core` has **no** `encrypt_document`, no
-`set_password`, no `remove_encryption`, **no `set_permissions`**, no
-`sign_document`."* A Security tab was therefore scoped as an **information**
-tab, and the authoring half was filed at the engine as
-`request_a_document_cannot_be_encrypted_or_have_its_permissions_set.md`.
-
-The engine's reply
-(`reply_signature_integrity_first_then_encryption_and_your_two_sentences.md`)
-ranked it second of three and closed with one line: *"Encryption authoring
-(`Pass 5.4`) is next in the queue; nothing you need to change for it yet."*
-**It is no longer next in the queue. It is in the lock.** And unlike the
-signature-validation half, which arrived with a `★ UPDATE, same day` written
-into the reply naming the entry point, this one landed with **no reply file, no
-note, and no announcement** — the capability simply appeared in `edit.rs` under
-`// -- encryption authoring (Pass 5.4, ISO 32000-2:2020 §7.6) --`.
-
-⇒ ★★ So the count is now **four**: `set_button_action` (two days), the three
-attachment verbs (silent), and this. Every one of them is a capability the
-engine shipped *because this shell asked for it*, and every one of them sat
-unconsumed because **an addition on the other side of a boundary is silent by
-construction**. The gate is the only thing in this project that made a noise
-this time, and it is the only thing that was keyed on the engine's API.
-
-| Verb | Why nothing calls it — and note the reason this is NOT "should not call" |
-|---|---|
-| `set_encryption` | ⏸ **Real, unwired, and AWAITING AN OPERATOR RULING ON SCOPE.** It is a save transform, not an undoable edit: `(&EncryptionSettings, &SaveOptions) -> (Vec<u8>, SaveReport)`, writing AES-256 `/R` 6 and nothing else, refusing `AlreadyEncrypted` and `SignedDocument` by name. Wiring it means authoring a password dialog, a permission-bit chooser and a save path that is a full rewrite — which is a **new surface**, not a call site, and O108's tab was deliberately scoped read-side when the engine had no authoring half. That scope decision is the operator's and it is now stale. Surfaced to him as **O119**. |
-| `set_permissions` | ⏸ **The same ruling, and it carries a precondition the shell must show first.** `(&mut self, &EncryptionSettings, &SaveOptions)` re-keys an already-encrypted document — `/P` is bound into `/Perms` by Algorithm 10 and cannot be edited in place, so it is a fresh full encrypt under a fresh file key. It is therefore **owner-only**, refusing `NotOwner { opened_as: AuthKind }`. Surfaced as **O119** with `set_encryption`, because they are one operator question. |
-
-★★★ **The wording of those two rows is the point of this whole gate.** *"A verb
-this shell should not call"* and *"a capability that landed, is real, and is
-waiting on a decision that is not mine to make"* are different sentences, and
-the gate's own message says the difference is the entire mechanism: silence
-reads as the first when it is very often the second. These two are the second.
-Neither row is a refusal, neither is a deferral on technical grounds, and
-neither should be read as this project having declined encryption authoring —
-it has declined nothing. It has **asked**.
-
-#### ★★ And a false hit beside them: `remove_encryption`
-
-Not in the gate's list, and it should have been. `remove_encryption` shipped in
-the same `Pass 5.4` block, is the third verb of the same family, and is called
-**nowhere** — `python tools/verb-coverage.py --all` scores it `1`, and that one
-occurrence is a **doc comment** in `text::security::auth_line` quoting the
-engine's instruction to surface `AuthKind` *"because `remove_encryption` will
-refuse a user-authenticated session"*.
-
-⇒ ★★★ **This is exactly the defect O108 recorded in the other instrument, one
-tool along.** `tools/security-coverage.py` reported `load_with_password` as
-*reached* on the strength of a single sentence in a doc comment — *"which would
-have recorded the single most important missing capability in this whole area as
-already built"* — and was fixed by stripping comment-only lines before
-searching. `tools/verb-coverage.py` **has not had that fix**, so it is blind in
-precisely the way its sibling was, and the blindness is worst on exactly the
-verbs this register talks about most: a verb argued about in prose here or in a
-doc comment there scores a hit and leaves the gate.
-
-★ It is not fixed in this pass **deliberately**, because tightening the
-instrument changes what the gate reports and that is a change to make on its own
-and measure on its own, not as a rider on a documentation entry. It is named
-here so the next session does not rediscover it, and `remove_encryption` is
-named here so that when the instrument *is* fixed, this row is already written
-and the gate does not go red for a verb that was known about all along.
-
-### ★★★ The four the GATE found, 2026-09-05 — the undo-preserving redaction, and all four are WIRED
-
-The lead bumped the lock to **`pdfcer-core` v0.38.0 (`b01964f`)** and the gate
-went red on the next run with four names, all of one family:
-
-> **197 `EditSession` verbs (lock `b01964f`), 184 named somewhere in the shell,
-> 13 named nowhere** — of which nine already had a row in this file, and
-> `apply_redactions_deferred`, `cancel_pending_redaction`,
-> `has_pending_redaction` and `save_applying_redaction` had nothing anywhere.
-
-**All four are now called**, so none of them needs a row here to keep the gate
-green. They get one anyway, because the *arrangement* is the part worth
-recording and because one of them is the second half of a request this project
-filed — `Pass 250.2`, `41095eb`, the undo-preserving variant our own
-`request_apply_redactions_into_the_session.md` asked for in the first place.
-
-| Verb | Where it is called, and why exactly there |
-|---|---|
-| `apply_redactions_deferred` | `crate::redact::stage_into_session`, and **nowhere else** — pinned by `redact::sealed`. It arms the removal and touches nothing: base, overlay and the whole undo/redo stack survive. |
-| `has_pending_redaction` | Four places, and they are four different questions rather than one repeated: `app::save::write_copy` (which writer runs), `app::save::has_unsaved_edits` (is this document dirty), `redact::prepare_redaction_apply` (refuse the second report by name), `redact::stage_into_session` (refuse the second arming). It is a query, so it is deliberately **not** in the monopoly's table. |
-| `save_applying_redaction` | `crate::redact::save_applying_pending`, and **nowhere else** — pinned. It is the only save that succeeds while a removal is armed, and it takes `&self`, which is what makes undo survive the save. |
-| `cancel_pending_redaction` | `crate::redact::cancel_staged_redaction`, and **nowhere else** — pinned, even though it removes nothing. It *disarms* a removal, which is the same surface seen from behind. |
-
-#### ★★★ …and one verb that STOPPED being called: `has_applied_redaction`
-
-The movement worth recording, because it is the shape this register exists for
-and the gate cannot see it.
-
-`has_applied_redaction` is `Pass 250.1`'s disclosure signal — *"a redaction has
-been collapsed into this session"* — and on 2026-09-04 it was a live term of
-`app::save::has_unsaved_edits`. On 2026-09-05 it stopped being one, because this
-shell stopped collapsing: `Pass 250.2`'s staging replaced `Pass 250.1`'s
-finalizing route entirely rather than joining it, so the flag that verb reads is
-**`false` for the life of every session this shell now creates.** A term that
-can never be true is worse than an absent one, because it reads as a guard.
-
-★ **It is still called, and the call is an assertion rather than a use.**
-`app::save::tests` and `redact::tests` both assert `!has_applied_redaction()`,
-and that is deliberate: it is the tripwire for a build in which something has
-reached the engine's *other* apply verb by a route `redact::sealed`'s call
-counts did not see. If that assertion ever goes red, the monopoly is broken
-somewhere the syntax sweep cannot reach.
-
-⇒ ★ **The gate reads it as `named`, and that is the `remove_encryption`
-blindness two sections above, from the other direction.** A verb whose only
-remaining call sites are negative assertions in a test suite scores a hit on
-`tools/verb-coverage.py` exactly as a verb mentioned once in a doc comment does.
-The instrument is not wrong to report it; the row is here so that the day
-somebody tightens the instrument, the reason is already written down and the
-gate does not go red for a verb that was known about all along.
-
-#### ⚠ AND ONE HAZARD THIS PASS INTRODUCED, NAMED RATHER THAN IMPLIED
-
-**`EditSession::set_encryption` does not consult the pending-redaction flag, and
-`crate::protect::prepare` calls it on the OPEN session.**
-
-`crates/pdfcer-gui/src/protect/mod.rs:675` — `Job::SetPassword` calls
-`doc.session.set_encryption(&settings, &options)`, which serialises base plus
-the dirty set through the encrypting encoder. The engine guards
-`to_incremental_bytes` (`edit.rs:8348`) and `to_full_bytes` (`edit.rs:8374`)
-against a pending redaction and **does not guard this one**. So an operator who
-arms a removal and then uses File ▸ Security ▸ `Encrypt…` gets an encrypted file
-containing the un-redacted content *and* the `/Redact` marks — a marked file
-that looks finished, which is the single most-cited real-world redaction
-failure.
-
-★ **It was not reachable before this pass.** Under `Pass 250.1`'s collapse the
-content was already gone by the time the operator could reach the Security
-window, so this is a hazard the deferred route brings with it.
-
-★ **It was not fixed in this pass, and the reason is scope rather than
-judgement.** The guard belongs as a `protect::Refusal` variant, which is
-`protect/mod.rs`, `dialogs/protect.rs`, `text::security` and two test files —
-four files belonging to no track that was running, edited in a session that owned
-neither. It is written here instead of being fixed quietly, because a boundary
-defect that is not reported is one that stays. **The honest fix is the engine's**:
-`set_encryption` should return `RedactionPending` the way its two siblings do,
-and the shell's guard is the belt to that braces.
-
-> ### ✅ THE ENGINE FIXED IT — `Pass 250.3`, released in v0.39.0, 2026-09-05
->
-> Filed at 02:23 and answered the same day. `set_encryption` now refuses a
-> pending redaction by name, exactly as `to_incremental_bytes` and
-> `to_full_bytes` do.
->
-> ⚠ **NOT yet in our lock**, and everything above is therefore still true of the
-> build this repository compiles today. It becomes false the moment the bump
-> lands — `RESUME.md` carries it as the first queued job.
->
-> ★★ **Annotated rather than deleted, and annotated NOW rather than when the
-> bump lands**, because a limitation sentence is a citation with an hours-long
-> shelf life and this project has been caught by exactly this class three times
-> in two days: prose that was true when written, describing an engine that has
-> since moved, read later as a statement about the present. The paragraph above
-> is a **dated measurement**; this note is what stops it being read as a
-> standing fact.
->
-> ★ The shell-side `protect::Refusal` variant it argues for is **still worth
-> building** — the engine's refusal is the braces and ours is the belt, and the
-> operator meets ours with a sentence in his own terms rather than an error
-> code. It is no longer urgent, and it is no longer the only thing standing
-> between him and an encrypted file full of un-redacted content.
-
-
-### ★★★ The three the ENGINE BUMP brought, 2026-09-06 — v0.41.0, and two of them changed what the shell SAYS rather than what it can do
-
-The lead bumped the lock to **`pdfcer-core` v0.41.0 (`f9bc7c8`)**, which carries
-`Pass 256.0`, `Pass 256.1` and `Pass 257.0`. None of the three adds an
-`EditSession` verb, so `check-verb-coverage.sh` had nothing to say about any of
-them — which is the point of this section. **Two of the three were capabilities
-this shell was already calling the verb for and getting the wrong answer from,
-and the third made a sentence in this shell false.** A gate keyed on verb names
-is structurally blind to all three.
-
-| Pass | What it changed | What this shell does about it |
-|---|---|---|
-| **257.0** — session verbs plan against the session graph | Every text-edit planner takes `&DocumentView<'_>`; `EditSession` verbs pass `self.view()`. A `/Font` authored by `format_text` this session is now resolvable by the next `edit_text`. | **Consumed by deletion.** `canvas::textedit::facewall`'s tripwire went red on the first run after the bump and now asserts the SUCCESS. `text::panels::face::refused_char_blocked` kept its state and lost its cause — see below. The only *signature* change, `text_edit::forms::invocation_set` losing its leading `&Document`, is at `app::actions::xobject::fanout`. |
-| **256.0** — `edit_text` matches a `find` across consecutive show operators | A run written one glyph per operator is editable by `find`, **provided the request is not pinned**. | **This is what fixed his typo**, and the shell's half was to stop sending the pin. `canvas::textedit::plan`, guarded by `Plan::occurrences`. |
-| **256.1** — `/ToUnicode` collisions refuse per CHARACTER, not per font | A composite font with two CIDs mapping to one character used to be refused wholesale (`R-INV-4`). Now every unambiguous character edits and only the colliding one refuses, carrying `RInvTrigger::Ambiguous`. | **Consumed 2026-09-06.** `app::status::decline::textedit::refused_char_kind` reads `Refusal::trigger`; `text::textedit::EditRefusal::FontHasTwoGlyphsFor` is the sentence. |
-
-#### ★★★ Why 256.1 was worth consuming when the remedy did not change
-
-Both refusals arrive as `RefusalKind::UnsupportedFont` and both are answered by
-the same control — the face offer in the Properties panel. So the *route* needed
-nothing. What needed changing is that the shell was **saying something false**:
-
-> *"The font here was built with only the letters your page already prints."*
-
-On an ambiguous character that is the opposite of the truth. The letter is on his
-page, in that font, drawn two different ways, and pdfcer is declining to choose
-between two glyphs rather than failing to find one. An operator given the old
-sentence would go hunting for a missing letter that is in front of him.
-
-⇒ **A capability landing can make an existing sentence wrong without making any
-verb call wrong**, and nothing in this project's gate set can see that happen.
-It was caught by reading the reply, which is the mechanism `RESUME.md` already
-names — *"a reply arriving is not a capability landing"* — running in the other
-direction.
-
-★ `ToUnicodeCMap::partial_inverse()`, `CompositeEncoding::ambiguous_chars()` and
-`PartialInverse` are **not** called here and do not need to be: they are the
-engine's own internals for producing the refusal, and the disclosure of a font's
-first eight ambiguous characters rides on `EditReport` for a UI that wants to
-warn before the keystroke. This shell warns after it, which is the honest
-position while nothing is asking for the other.
-
-### ★★★ The one COMING, 2026-09-06 evening — `place_text`, and it is the first verb entered here BEFORE the lock could call it
-
-`tools/verb-coverage.py` prints it under **COMING**, not among the misses, and
-that is this file's own 2026-08-29 distinction doing its job: *"nothing here
-calls it"* and *"we could not call it if we wanted to"* are two facts, and this
-is the second one. Re-measured in the session that wrote this section, with the
-pin deliberately held at `d2ea5de` while a release is packaged on it:
-
-```
-208 EditSession verbs (lock d2ea5de), 171 named somewhere in the shell, 37 named nowhere.
-COMING (1): in the engine's WORKING TREE and not in the locked revision — place_text
-```
-
-⇒ **`check-verb-coverage.sh` is green today and goes red on the first `cargo
-update`**, because the gate is keyed on the lock and the verb is not in it. The
-row is written now, ahead of the bump, for the reason the header of the misses
-section already gives: *the argument is the valuable part*, and it is worth the
-same whether or not a gate is currently asking for it. ★ This is also the first
-time this register has been able to write a row **before** a capability became
-reachable — every previous section here was written after a gate went red, which
-is one bump too late by construction.
-
-| Verb | Engine Pass | Status |
-|---|---|---|
-| `place_text` | 252.0 (`cd3933c`, 2026-09-06 20:26) | ⬜ **A gap, and it is COMING rather than missed.** `EditSession::place_text(text, &PageTemplate, InsertPosition)` at `crates/pdfcer-core/src/edit.rs:11017` — in the engine's `HEAD` (`e1bdb6c`) and **not** in the lock, so nothing here can call it yet. It is the return journey of File ▸ Export ▸ Text: a plain-text file paginated into as many pages as it needs and spliced into the open document, which this shell has no route for at all — a drawing register or a revision schedule can leave pdfcer as text and cannot come back. **It already carries an `ENGINE_BACKLOG.md` row**, under `wanted` in the Text section, and that row holds the full API surface and the argument; this entry exists because `check-verb-coverage.sh` reads **this** file and nothing else, so a row in the sibling register does not discharge it — which is worth knowing in itself, since the same capability now owes two documents an entry for two different reasons. ★★ **Three facts a wiring session should not have to re-derive.** **(1)** `text_edit::blank_document` is the primitive underneath it and **nothing in the engine could create a page before, only copy one** — so this is the first verb in this register that *makes* a document rather than editing one, and it still routes through `Document::from_bytes`, so there is exactly one way a document comes into existence. **(2)** The **one undo entry** is `CommandKind::PlaceText { pages }`, and the engine's own doc at `edit.rs:10953-10960` says the fold is *checked, not assumed*: past `MAX_UNDO_DEPTH` — more than 255 non-blank pages — every page is still placed and only the grouping fails, reported as `PlaceTextReport::coalesced == false` with `undo_entries` carrying the real count. ⇒ A surface that promises one `Ctrl+Z` without reading `coalesced` is promising something the engine has already warned it about, and this is precisely the class of claim this register exists to stop being re-derived wrongly. **(3)** The refusals are the operator-facing half and two of them are **pre-emptible rather than reportable**: `PlaceTextError::NoColumn` and `::PageTooShort` mean the chosen margins leave no room on the chosen sheet, which is a *chooser* problem answerable before the press; `::NoPageToInsertBeside` is an append into a document with no page to splice beside. Under the default `Unmappable::Refuse` a character the face cannot encode refuses the whole import and names every one, which is R8b Rule 4's shape and not a defect to work around. ⚠ **Not built, and named rather than implied**: it needs a File ▸ Import entry, a `PageTemplate` chooser (his sheets are A1, not Letter) and an `InsertPosition` control — and the Pages panel already knows how to ask that last question for a page insert, so it should be read before a second way of asking it is invented. |
-
-
-### ★★★ The one the ENGINE BUMP brought, 2026-09-10 — v0.50.0, and it is the SMALLER half of the capability
-
-`cargo update` moved the lock from `369d4de` (v0.49.0) to `d4a4e3b` (v0.50.0 +
-3 commits) and `check-verb-coverage.sh` went red with exactly one verb.
-Re-measured in the session that wrote this section:
-
-```
-221 EditSession verbs (lock d4a4e3b), 180 named somewhere in the shell, 41 named nowhere.
-```
-
-| Verb | Engine Pass | Status |
-|---|---|---|
-| `set_named_pages` | 288.0 (`554897e`, 2026-09-10) | ⬜ **A gap, deliberately deferred, and it is the half an operator wants LAST.** `EditSession::set_named_pages(names: Vec<Object>)` writes the catalog's `/Names` → `/Pages` name tree, which is what makes an ordinary PDF *a stamp collection Acrobat will recognise*. One undo entry, `CommandKind::SetNamedPages`. ★★★ **Why it is not the thing to build first, stated so a future session does not reverse the order by accident.** Pass 288.0 has two halves. The READING half — `stamp_file::read`, `StampCollection`, `StampEntry` — lets pdfcer *use the stamps his firm already has*: a company APPROVED block with a logo and a signature line, which is not in ISO 32000-1 Table 181 and never will be, and which `TextAnnotSpec::Stamp` cannot express because it takes a `StampName` enum with no free-label escape hatch. The AUTHORING half — this verb — lets pdfcer *build a new collection out of pages*. A drawing office has the first problem and does not yet have the second, so wiring the writer before the reader would ship a tool for making stamps into a shell that still cannot show one. ★★ **Three facts a wiring session should not re-derive.** **(1)** `names` is the **flattened** tree — alternating name string and page reference — and the engine requires it **already sorted lexicographically**, because §7.9.6 permits a conforming reader to binary-search it. Handing it document order produces a file Acrobat mis-indexes rather than one it rejects, which is the worst failure shape available. **(2)** The category name is **not** this verb's business: it is the file's `/Info` `/Title`, set through `EditSession::set_info_field`, and the engine split them on purpose. **(3)** An existing `/Names` dictionary keeps its other trees — Acrobat's own `Dynamic.pdf` carries `/JavaScript` **and** `/Pages`, so a wholesale replacement would silently delete the document-level JavaScript that makes its dynamic stamps work. The engine already preserves this; a shell that reimplemented the write would not. ⚠ **Refusals**: `EditError::DocumentEncrypted` on an encrypted document, `EditError::NotADictionary` on a missing or malformed catalog. **It already carries an `ENGINE_BACKLOG.md` row** under `wanted`, holding the full API surface, the page-order-is-not-name-tree-order finding, the `#`-prefix dynamic-stamp finding and the `/PieceInfo` red herring; this entry exists because `check-verb-coverage.sh` reads **this** file and nothing else, so a row in the sibling register does not discharge it. |
-
-### Not gaps — alternate spellings of a verb the shell already calls
+The shell calls a different door onto the same body. Nothing is missing.
 
 | Verb | What the shell calls instead |
 |---|---|
-| `rotate_page_by` | `rotate_pages(&[…], delta)` — the same act for a set rather than for one page, which is what the Pages panel's selection is. |
-| `search_and_mark_redactions` | `search_and_mark_redactions_styled` — the styled variant, because a redaction mark whose appearance the operator cannot choose is a mark they cannot see against their own drawing. |
-| `mark_redactions_by_pattern` | `mark_redactions_by_pattern_styled`, for the same reason. |
-| `search_and_mark_redactions_by_pattern` | `search_and_mark_redactions_by_pattern_styled`, and this one MOVED into this table on 2026-09-11 rather than having always been here. The shell called the plain form until engine `Pass 296.3` (`5943beb`) made the styled form the single implementation and the plain one a delegate that supplies `RedactAppearance::default()`. Two reasons to switch, and the second is the one that mattered: the operator chooses the redaction fill and overlay text, so a default appearance is wrong on his drawing; and the styled form is the one whose `RedactionMarking` this shell reads **both** fields of. ★★★ Before that Pass the pattern route discarded `diagnostics`, and the `None` we substituted did not read as *unknown* downstream - it collapsed to `unreadable = 0`, so the pattern route did not merely stay quiet, it asserted the whole page had been read, and a pattern pass run after a literal one **overwrote a true warning already on screen**. |
-| `copy_annotations` | ⚠ **This one is a real fidelity gap and is listed again below.** The shell calls `copy_objects`, which does not carry annotations, and round-trips a copied markup through `MarkupSpec` instead. |
-| `move_annotation_vertex` | `reshape_annotation(id, VertexEdit::Move { .. }, modified)` — and the third argument is the whole reason. The three wrappers are one line each and pass `modified: None`, so **none of them can stamp `/M`**: the engine reads no clock on purpose (determinism — the same edit on the same file produces the same bytes) and says the shell that knows the time supplies it. A reviewer's comment whose shape changed and whose modification date did not is a comment that lies about when it was last touched, so `app::actions::annots::reshape` calls the planner directly with `app::clock::pdf_date_utc()`. ★ `AnnotationReshape::mod_date_written` reports whether the stamp landed, and it is in the trace. |
-| `insert_annotation_vertex` | `reshape_annotation(id, VertexEdit::Insert { .. }, modified)`, for the reason above. |
-| `remove_annotation_vertex` | `reshape_annotation(id, VertexEdit::Remove { .. }, modified)`, for the reason above. |
-| `set_annotation_flags` | ⬜ **ARRIVED 2026-09-07 in `fad0d2d`, NOT WIRED, and the verdict is *build it next*, not *decline it*.** It writes `/F` — `Hidden`, `Print`, `Locked`, `LockedContents`, `NoView` — with `AnnotationFlagsChange { before, after, subtype }` and a `CommandKind::SetAnnotationFlags` of its own, so it is one undo step and reports what it moved. ★★★ **This shell already has the reading half and already has a recorded defect it closes.** `AnnotFlags::locked_contents` has been readable since 2026-09-05 and is deliberately unconsumed, with `ENGINE_BACKLOG.md` naming the consequence in the operator's terms: *"that editor today offers to rewrite a note the file says may not be rewritten."* That is a **correctness** row, not a convenience one — pdfcer currently ignores a flag the file sets and every other reader honours. ⇒ So the order is: honour `LockedContents` on the way in (refuse the edit, worded, R9-style greying with a hover reason), and only then offer `set_annotation_flags` as the way to clear it. Offering the writer first would let an operator unlock a comment without ever being told it was locked, which is the same *"fix the symptom, keep the surprise"* shape rule 4 forbids. ⚠ Deliberately **not** started in the same tick it arrived: it wants a surface decision — a Lock item on the annotation context menu, a Properties row, or both — and `RIBBON_IA.md` is the spec for that, not this session. |
+| `rotate_page_by` | `rotate_pages(&[...], delta)` — the same act for a set rather than for one page, which is what the Pages panel's selection is. |
+| `add_text_annotation`, `add_text_annotation_with` | `add_text_annotation_reporting`, at `app/actions/textannot.rs:409`. This shell always holds a `MarkupNote` (author name, UTC `/M`) and the pen's opacity to pass on every sticky note, text box and stamp, and it needs the new annotation's id back. The plain verb is the `_with` form under `MarkupOptions::default()`; the `_with` form discards the report. |
+| `delete_dimension_group` | `delete_dimension_group_with(group, policy)` at `app/actions/dimensions.rs:946`, for both policies including `Refuse` — which is what the no-argument verb does internally. The ce-dimension-group dialog always has a policy, because what happens to the members is the operator's decision and it is asked before the press. One call site rather than two, so the default policy has one claimant. |
+| `move_annotation_vertex`, `insert_annotation_vertex`, `remove_annotation_vertex` | `reshape_annotation(id, VertexEdit::…, modified)` at `app/actions/annots/vertexnodes.rs:96`. The third argument is the whole reason: the three wrappers are one line each and pass `modified: None`, so none of them can stamp `/M`. The engine reads no clock on purpose — determinism, so the same edit on the same file produces the same bytes — and says the shell that knows the time supplies it. A reviewer's comment whose shape changed and whose modification date did not is a comment that lies about when it was last touched. `AnnotationReshape::mod_date_written` reports whether the stamp landed. |
+| `move_ink_point`, `insert_ink_point`, `remove_ink_point` | `reshape_ink(annot, &InkEdit::…, modified)`, for the identical reason: each wrapper passes `modified: None`. **These score as hits through a name collision** — `app::actions::annots` has private helpers of the same three names, which are the shell's doors onto the one engine body. |
+| `find_text` | `search_text`. `find_text` passes `with_wildcards(true)`, so `#` matches any ASCII digit and `?` matches every character on the page — a defect this shell's Find bar refuses to ship. `find/mod.rs:12` carries the table, and `tests::the_default_search_is_literal` and `tests::a_wildcard_search_is_only_ever_asked_for_explicitly` fail the moment anybody reaches for the shorter verb. |
+| `find_text_with` | `search_text`, at `find/mod.rs:977`. `find_text_with` now delegates to it, so the scan and the hits are identical, and `search_text` additionally returns the extraction diagnostics that say whether a zero-result answer can be trusted. `Results::unsearchable_fonts` is built from them, at the cost of holding a `TextDiagnostics` that was previously computed and thrown away. |
+| `search_and_mark_redactions`, `mark_redactions_by_search_with`, `mark_redactions_by_search_styled` | `search_and_mark_redactions_styled(query, options, appearance)` at `app/actions/redact.rs:473`. It is the superset on every axis: the operator chooses the redaction fill and overlay text, so a default appearance is wrong on his drawing; the options these verbs exist to accept are already being passed; and only this verb distinguishes the two causes of an empty result. That distinction is not a nicety on this operation — *the term is not in the document* and *the document's text was never recoverable as Unicode* look identical, and the second fails in the direction nobody catches: the operator asked for every occurrence of a name to be removed, the run reported success, the file still contains it, and both populations render perfectly. |
+| `search_and_mark_redactions_by_pattern`, `mark_redactions_by_pattern`, `mark_redactions_by_pattern_styled` | `search_and_mark_redactions_by_pattern_styled` at `app/actions/redact.rs:469`, for the same two reasons. The plain form discards `diagnostics`, and the `None` substituted downstream does not read as *unknown* — it collapses to `unreadable = 0`, so the pattern route does not merely stay quiet, it asserts the whole page was read, and a pattern pass run after a literal one overwrites a true warning already on screen. |
+| `preview_style_resolution` | `preview_style_ladder`, which runs the same planner `format_text` runs, walks the page's content once and stages nothing. `preview_style_resolution` previews the R90 **synthesis gate**, which stopped being the same question as *what will pressing Bold do* the moment a rung existed that binds a standard-14 sibling: `Helvetica-Bold` needs no font file, so it is by construction not on the page and the gate cannot see it. The visible effect was two instruments disagreeing by construction — the tooltip promised thickened letters and the status line afterwards reported a real `Helvetica-Bold`, on a CAD title block. Bold and Italic are probed **separately**, because `gate_synthesis` is all-or-nothing per combined request and these are two single-axis requests. |
+| `changes_structure` | `signature_impact_of_save(SaveMode::Incremental)` joined against `signature_census`, at `dialogs/signature.rs:316`. `SignatureImpact::documentation_basis` answers the structural question and the impact question together; asking both verbs would be a second walk for a number the first walk already had. `SaveMode` is deliberately not a parameter there: `file.save_copy` has promised an appended update since the day it was registered, and the honest response to an input where incremental is impossible is to refuse and say so, never to fall back to a rewrite. |
 
-### ★★ The preview and refusal queries — six closed 2026-08-29, one declined
+## Declined, with the argument
 
-These are `&self`, side-effect-free, and **share one body with the verb they
-describe**, so `preview(..).is_ok()` *is* the predicate rather than a second
-implementation that agrees until somebody changes one.
+### The cut family
+
+The engine's cut verbs fold a copy and a delete into one command. This shell
+performs the two halves itself in every case, and the reason is the same each
+time: the copy half is `&self` and commits nothing, so the pair is already **one
+`EditSession` command and one `Ctrl+Z`**, and the fold buys nothing. Where a
+shell route genuinely does land two entries, `EditSession::coalesce_last(count,
+kind)` is public and folds them after the fact — `app/actions/forms/author.rs:268`
+does exactly that — so the fold is never the reason to reach for a cut verb.
+
+| Verb | Why nothing calls it |
+|---|---|
+| `cut_objects`, `cut_annotations` | `canvas::clipboard::cut` is copy-then-`DeleteSelection`. Routing the delete through the shell's funnel lands one command and one undo entry *by the same mechanism as every other edit*, and leaves `canvas::clipboard` changing no document — which is what lets its refusals be unit-tested without one. The engine's ordering property, copy first so a selection that cannot be carried is refused with nothing deleted, is honoured by the `?` on the copy. |
+| `cut_selection` | The same argument extended to a mixed selection: `copy_selection` plus `Action::DeleteSelection` at `canvas/clipboard.rs:936`. The refuse-before-deleting contract is honoured **ahead of** the copy by `canvas::cutgate::blocker`, and that ordering is stronger than the verb's — it lets `Ctrl+X` over an annotation the clipboard cannot carry refuse the *whole gesture*, instead of leaving the operator with the annotation still on the page and a copy of it on the clipboard. |
+| `cut_attachment` | The panel's Cut is `copy_attachment` in the widget followed by an `AttachmentAction::Detach` through the funnel. The widget route lets the copy fail before the delete is raised, which is the ordering `cut_objects` insists on. |
+| `cut_pages` | `pages.cut` is `copy_pages` then `PageAction::DeletePages`, argued at `app/dispatch/pageclip.rs:48`. The constraint is structural rather than stylistic: the clipboard lives in `egui::Memory` and the action applier has no `egui::Context`, so a single-call cut could not put its own clip anywhere. Costs one extra page-tree walk; the undo entry count stays at one. The copy runs first and unconditionally, so a cut whose delete is refused leaves the sheets on the clipboard rather than losing them. |
+| `cut_outline_item` | The identical reason, stated at `panels/bookmarks/clip.rs:74`. The engine's verb *is* `copy_outline_item` followed by `delete_outline_item`; the panel performs those two in that order, and `BookmarkAction::Delete` already drops the selection, warns how many descendants travel and lands one undo entry. The copy's success **gates** the delete, so a cut whose copy half failed cannot silently become a delete — the failure an operator would discover by pasting. |
+| `cut_field` | A workaround that costs one undo entry too many, and the deliberate half is not the cost. `canvas::fieldclip::cut` is copy plus `FieldAction::DeleteWidget`, because the operator pointed at **a box** and `cut_field` removes the whole *field* — on a field with three widgets that is not what was asked. The two verbs are genuinely different acts. The undo cost is the residue, and the fold that clears it is `EditSession::coalesce_last(2, CommandKind::DeleteFormField)` after the delete commits, in the shape `app/actions/forms/author.rs:268` already uses on the authoring path. |
+
+### Singular verbs this shell only ever needs plural
+
+| Verb | Why nothing calls it |
+|---|---|
+| `delete_object` | `app/actions/vector.rs:831` calls `delete_objects`, which resolves **every** index before planning, so one stale or duplicated entry refuses the whole call rather than deleting the prefix that happened to resolve. A loop would be N undo entries for one Delete and — the correctness half — each call re-splices the content stream, so the second index is planned against byte offsets the first already invalidated. The engine's own guidance states it as a rule: never loop the singular verbs over a selection. |
+| `move_object` | The same ruling, one verb along. A released move-drag raises `MoveObjects` and reaches `move_objects(page, &objects, dx, dy)` with the whole selection. There is no second claimant: the Object rung's resize and rotate both go to `transform_objects`, and the deeper rungs have `move_subpath`, `move_node` and `move_nodes` of their own. |
+
+### Verbs the engine calls on this shell's behalf
+
+| Verb | Why nothing calls it |
+|---|---|
+| `delete_dimension` | `delete_annotation` **routes** a ce dimension to it, so a front end needs no `match`: a `/PieceInfo` sidecar record backs the dimension, and leaving it would keep a record the annotation no longer supports. `format.delete` and the canvas Delete key reach it through `app/actions/annots.rs:88`. One consequence worth knowing: a delegated route runs the **destination's** gate, and `delete_dimension` keeps the strict one because it also rewrites the catalog sidecar — so on a `/P 3` document a ce dimension is refused while every other annotation deletes. That is the standard's answer, delivered by the funnel's decline channel. |
+| `move_dimension` | Declined for the drag on the engine's own instruction, with the two-row table at `canvas/dimdrag.rs:16`. Dragging a ce dimension is `place_dimension`, which writes `offset` and `text_along` only, so **no drag, however far, can alter the printed number**; `move_dimension` translates the measured points and would take the ce dimension off the feature it annotates. **The residual, named rather than left inside a half-promise:** nothing in this shell translates a ce dimension's measured points, so a ce dimension does not travel with page objects moved under it. Whoever builds the *move the ce dimension with the geometry* gesture should correct `dimdrag.rs`'s closing sentence in the same commit. |
+
+### Guards the engine already owns
+
+| Verb | Why nothing calls it |
+|---|---|
+| `embed_refusal` | `embed_fonts` runs it itself before any mutation and returns the refusal as an `Err`, so a pre-flight here would be a second implementation of a guard the engine owns — argued at `app/actions/fonts.rs:34`. **The residual, named:** it is a pure query safe to call every frame, so a *window* gated on it would be R83 work this surface has not done. On an encrypted or certified drawing the Embed-fonts window still opens, the operator chooses donor faces, and the decline arrives from the funnel afterwards. |
+| `unembed_refusal` | The same ruling, the same file at `fonts.rs:72`, the same residual. Note what the engine deliberately leaves **out** of it: PDF/A. Unembedding genuinely breaks ISO 19005 conformance, but that is a consequence the operator may knowingly accept rather than a structural impossibility — the core reports it and the shells gate on it. This shell's gate is the sentence in `dialogs::unembed`, read before the press, so even wired this query would not be where the PDF/A decision lives. |
+| `paste_preview` | Declined, not unbuilt. There is a recorded decision against it on `edit.paste`'s registration: `enabled_when("doc.pages")` rather than a selection condition, because what is selected changes every click and a control that greys and un-greys under the pointer is harder to aim at than one that answers in a sentence when pressed. The cost is per frame and real — the clip lives in `egui::Memory` as a `Vec<u8>` and `read()` clones it, so a condition backed by this query would clone that vector *and* run `ObjectClip::from_bytes` on every frame the ribbon draws. And the answer is already delivered on the path that has it: `paste_objects` returns the same `PasteOutcome` and its disclosures reach the status bar. |
+| `paste_pages` | Declined so the disclosures have exactly one wording. The verb is `Document::from_bytes(clip.bytes)` then `insert_pages`; `app/actions/pages.rs:851` does precisely that and hands the result to `insert_from_view` — the one function that reports `orphaned_widgets`, `orphaned_widgets_unrecoverable`, the dropped source outline and the two page-label facts, then moves the view to what landed. A fourth copy would be a second wording of the most consequential disclosure in that file: orphaned widgets produce a document that looks right and is not. |
+
+### Deliberate absences
+
+| Verb | Why nothing calls it |
+|---|---|
+| `add_named_destination` | Nothing in this shell constructs a `Destination`: the one authoring call passes `Destination::Page { view: DestView::Fit }` and cannot pass anything else, because there is no destination chooser. The engine agrees that is right — a destination chooser offering fits pdfcer cannot write would be a control whose options are mostly refusals. The **reading** side already resolves named destinations, so the Bookmarks panel navigates them in CAD and Word exports today. |
+| `field_defaults` | *Make another field like this one* is already how this shell behaves: `FormDefaults::next` carries the previous field's settings forward, with the **name** the one thing that deliberately does not carry. What the verb adds is copying from any *named* field rather than the last one placed, which is a chooser. An operator call, not a hole. |
+| `set_named_pages` | Subsumed by `stamp_file::name_stamp_pages`, which this shell calls at `stamps/write.rs:210` and which owns the name tree alone. Three reasons not to reach past it, each a way to produce a file that loads and is wrong. **(1)** `names` is the flattened tree — alternating name string and page reference — and must already be sorted lexicographically, because §7.9.6 permits a conforming reader to binary-search it; handing it document order produces a file Acrobat mis-indexes rather than one it rejects, which is the worst failure shape available. The sort happens inside the engine helper, where the requirement is documented. **(2)** The category name is not this verb's business: it is the file's `/Info` `/Title`, set through `EditSession::set_info_field` one line earlier. **(3)** An existing `/Names` dictionary keeps its other trees — Acrobat's own dynamic stamps carry `/JavaScript` alongside `/Pages`, so a wholesale replacement would silently delete the document-level JavaScript that makes them work. Refusals: `EditError::DocumentEncrypted` on an encrypted document, `EditError::NotADictionary` on a missing or malformed catalog. |
+
+## Gaps
+
+Real capabilities this shell does not reach. Each is `wanted` unless its row
+says otherwise.
+
+**The three in-form deletes owe a disclosure their page-content twins do not.**
+They return `FormSurgeryOutcome`, whose `invocations` count says how many pages
+the shared stream is drawn on. On a SolidWorks set the title block **is** a
+form, drawn on every sheet, so deleting one line out of it deletes it from every
+sheet — and that is a sentence the operator is owed before the press, not after.
+`delete_objects_in_form` already puts that count in front of the operator, and
+the pattern to copy is its.
 
 | Verb | Status |
 |---|---|
-| `rename_refusal` / `deletion_refusal` | ✅ **Wired 2026-08-28** — the Forms properties pane withholds Rename and both Deletes and puts a sentence in their place |
-| `field_group_deletion_preview` | ✅ Wired — Forms ▸ Field groups, previewed before the press |
-| `signature_impact_of_save` / `changes_structure` | ✅ Wired — a window before an invalidating save |
-| `annotation_deletion_refusal` | ✅ **Wired 2026-08-29** — `format.delete` is *not drawn* on a certified or encrypted document, and the Properties panel says why |
-| `annotation_deletion_preview` | ✅ **Wired 2026-08-29** — the collateral of a delete, stated before the press, memoised on `(id, epoch)` |
-| `preview_style_resolution` | ✅ **Wired 2026-08-29** — Bold and Italic say which face they will use, or that the press will be refused |
-| `paste_preview` | ⛔ **Declined, with the argument below.** Not "not built" |
+| `transform_preview` | **The confession is already written**, at `canvas/resizing.rs:172`. The engine distinguishes two refusals and gives an instruction for each: `SingularTransform` means *this drag* is degenerate, so offer the handle and refuse on release — which `is_usable` does; `DegenerateCtm` means the object can never be transformed at all, for which the instruction is *do not offer a handle*. The shell offers one, and the operator finds out by dragging it. Small — a singular CTM is a producer emitting `0 0 0 0 x y cm` — and real. Not built because the preview **decomposes the page**, seconds on a six-figure-object drawing in a debug build, so the engine's advice is to call it on selection change and gesture start. That means a cache keyed on page, edit epoch and selection, in `app::cache::FormRunCache`'s shape, rather than a line of code. |
+| `set_annotation_flags` | **The missing half is the writer, not the guard.** It writes `/F` — `Hidden`, `Print`, `Locked`, `LockedContents`, `NoView` — reporting `AnnotationFlagsChange { before, after, subtype }` in one `CommandKind::SetAnnotationFlags`, so it is one undo step and says what it moved. Wire all three fields or the receipt is a guess: `before` and `after` are what make an honest one, and `subtype` is there because a flag means different things on a `/Widget` than on a `/Text`. The guard is already enforced end to end — `write_markup_note`, the shared body of `set_markup_note` and `clear_markup_note`, refuses a locked-contents annotation with `EditError::AnnotationContentsLocked` (Table 165 bit 10, **not** bit 8 `Locked`, which restricts near-opposite things), and both verbs reach it through `actions::funnel::vector_edit`, whose `Err` arm is the decline channel. So an operator who edits a locked note meets a sentence the frame it is refused. Two things are missing on top of that. **No control in this shell sets or clears bit 10**, so a lock can be met and neither made nor lifted. And nothing reads `AnnotFlags::locked_contents`, so the decline arrives cause-less — `text::status::edit_declined_by_engine`, which names no cause because `EditError` exposes no discriminant a front end may switch on — where the flag would let the editor grey with a hover reason ahead of the press. The verb refuses a `/Widget` by name, so the Forms surfaces must not grow a Lock control out of it. The surface decision — a Lock row on the annotation context menu, a Properties row, or both — is `RIBBON_IA.md`'s. |
+| `delete_text_run_in_form` | **The one of the three an operator has actually asked for.** His text is inside the title-block form on every sheet rather than in the body of the drawing. `MoveTextRun` and `MoveTextRunInForm` are wired and the delete half is not, so the move/delete asymmetry is currently **ours**. Route: a `DeleteSubject::TextRunInForm` arm carrying `leaf` instead of `object`, the `is_leaf()` guard at `canvas/deleting.rs:289` lifted above the arm rather than deleted, and the R83 pre-check `text_run_delete_would_move_next` asked on the leaf's run list rather than the page object's. |
+| `delete_subpath_in_form` | The same guard at `canvas/deleting.rs:326`, the same two-line fix. The delete twin of `move_subpath_in_form`, which this shell has wired — so a line inside a drawing view can be dragged but not removed, which is exactly the trap read from the operator's side. |
+| `delete_node_in_form` | The same guard. It owes a **second** sentence on top of the one below: `delete_node`'s page-content twin returns a non-empty `PlannedEdit::disclosures` when the deletion discarded a curve, and the in-form verb plans through the same `plan_delete_node`, so it produces the same list — which `vector_edit_on_page` already records without anything being written by hand. `ManyNodes` applies unchanged: there is still no plural delete. |
+| `replace_ink_stroke`, `move_ink_stroke`, `remove_ink_stroke` | **The whole-stroke grain, and the natural home for two things this shell does not have yet.** The engine built them on this shell's own argument, that per-point anchors on a 400-point stroke are unusable as a UI regardless of what the engine offers, and drew the line: anchor density and decimation are the shell's, both grains are the engine's. Today every point of every stroke is an anchor. `canvas::annotnodes::ink`'s header carries the three reasons decimation was not done in the same change, the first being that a decimated anchor set is a **second index space** and the mapping back to a stroke-and-point address is derived-twice geometry. When it is done, `replace_ink_stroke` is the verb — simplify once, then edit per-point — and the engine offers a core-side `simplify` so there is one simplifier in the ecosystem rather than a third copy beside `canvas::markup::ink`'s. `remove_ink_stroke` is a *Remove this stroke* menu row nobody has asked for; `move_ink_stroke` is a per-stroke nudge whose gesture — which stroke, without a press on a point? — has no design. Take the density row first. |
 
-⇒ Each is R9 and R83 quality work rather than a missing capability: the verb
-runs either way, and the difference is whether the operator learns the answer
-before the gesture or from a refusal after it.
+### Not `EditSession` verbs, found by the API-drift gate
 
-#### ★★★ `annotation_deletion_refusal` — the forms defect, one `/Subtype` along
+`tools/gates/check-engine-api-drift.py` reads undo-stack kinds and error
+variants, which `check-verb-coverage.sh` is structurally blind to.
 
-The 2026-08-28 audit found that **`deletion_refusal` (the forms one) was
-consulted by nothing**: it appeared in this crate only inside three comments in
-`panels::forms`, arguing correctly about which query *Flatten* should ask, while
-Rename, Delete field and Delete this box asked none.
-
-**The annotation half was the same defect and was still open.** On a certified
-or encrypted drawing this shell drew *three* live Delete controls — the Format
-tab's, the canvas object menu's, and the Delete key — and every press reached
-`delete_annotation`, was refused, and landed in `actions::apply::vector_edit`'s
-`Err` arm, **which writes one line to the trace and says nothing to the
-operator**.
-
-⇒ ★★★ **And it was worse than a silence.** `actions::annots::delete` clears the
-selection *after* the funnel rather than on success, so the press removed the
-Properties panel's own description of the annotation — the surface where the
-explanation lives. A refused gesture that destroys its own explanation is the
-worst shape this class can take, and no unit test in the crate could have found
-it, because every one of its halves is separately correct.
-
-**The fix**, following the forms pattern rather than inventing a second one:
-
-* `selection.delete_permitted`, published by `app::conditions`, carries
-  `format.delete`'s **`visible_when`** on the Format tab and on the canvas
-  object menu — *absence*, not greying, because a certification signature is
-  neither temporary nor arguable (R9);
-* `panels::properties::annotdelete` draws the **sentence** that replaces it,
-  from `annotdelete::gate` — the *one* derivation the condition also asks, so a
-  control cannot be withheld for one reason while a panel explains another;
-* `canvas::keys` and `dispatch::format` consult the same gate before raising
-  the action, so the selection survives the press and the sentence stays on
-  screen.
-
-★★ **The sentence is in a panel and deliberately not in `status::decline`.** A
-decline reports *a gesture just failed* and must be repeatable; this is a
-**standing property of the open document**, true from the moment it was opened
-and whether or not anything was pressed. Delivering it only after a press is the
-one moment R83 exists to get ahead of.
-
-#### ★ `annotation_deletion_preview` — and what was done about its cost
-
-The query walks the page's whole `/Annots` looking for `/IRT` referrers —
-O(annotations) per call. **The old shell gated it on hover, one row at a time**,
-because its Comments panel would otherwise have paid O(rows × walk) per frame.
-
-This shell does better, and the reason it can is structural rather than clever:
-**it is not a list.** There is one selected annotation, so the worst case is one
-call per frame — and even that is not paid, because the answer is memoised on
-`(annotation id, edit epoch)`. In steady state the cost is one `Option`
-comparison per frame and no engine call at all. A hover gate would have been
-cheaper only in the frames where the answer is not wanted, and it would have hidden
-the fact behind a gesture the operator has no reason to make.
-
-#### ★★ `preview_style_resolution` — and a claim of this project's that it retires
-
-Bold and Italic are *"buttons that apply, not switches that reflect"* and
-**still do not grey**; the engine's instruction is unchanged. What changed is
-the hover, which used to hand the operator a conditional (*"if this page carries
-a real bold face…"*) and now evaluates it: which face will be used, or that the
-letters will be thickened, or — the interesting one — that **the press will be
-refused**.
-
-That third answer is `app::actions::textstyle`'s own retracted claim, previewed.
-`gate_synthesis` prefers a face by *family* and gates synthesis off; the face it
-names may map none of the run's characters, and `set_font` then refuses it too.
-Neither verb reaches bold. The shell can now predict it by comparing
-`preview_style_resolution`'s `selector` against `preview_font_resources`'
-accepted list — **two engine-issued selectors, compared for equality**, not the
-coverage test re-implemented.
-
-⇒ ★★ That retires this project's own note that *"greying would mean predicting a
-refusal that depends on a per-run glyph-coverage test this shell cannot run"*.
-It can. The buttons still do not grey, and the reason has changed from *we
-cannot know* to *knowing is not a reason to withhold*: the engine has a queued
-fix that turns this case into ordinary synthesis, and **a control withheld on
-the strength of a defect that is about to be fixed is a control that stays
-withheld for months after it starts working**. A stale sentence is corrected in
-one line.
-
-#### ⛔ `paste_preview` — declined, and this is the argument rather than a gap
-
-Not "not built". Three reasons, and the first is decisive on its own.
-
-1. **There is a recorded decision against it**, on `edit.paste`'s registration:
-   *"`enabled_when("doc.pages")` rather than a selection condition: what is
-   selected changes every click, and a control that greys and un-greys under the
-   pointer is harder to aim at than one that answers in a sentence when
-   pressed."* The engine's case for the verb is quoted from **the requesting
-   shell**, which wanted to grey a menu item; this shell decided not to have one.
-2. **The cost is per frame and real.** The clip lives in `egui::Memory` as a
-   `Vec<u8>`, and `read()` clones it out. A condition backed by `paste_preview`
-   would clone that vector *and* run `ObjectClip::from_bytes` — magic check,
-   version, a length-prefixed COS parse — on every frame the ribbon draws, to
-   produce an answer the recorded decision says must arrive as a sentence on
-   press. That is precisely the shape the decision declined.
-3. **The answer is already delivered**, on the path that has it: `paste_objects`
-   returns the same `PasteOutcome` and its disclosures reach the status bar.
-
-⇒ ★★ What *is* worth doing here is a different job with a different name: the
-funnel's `Err` arm is silent for **every** verb, which is what made the
-annotation delete a silence. Wording it is `FEATURES.md`'s "Worded decline" row
-and a decision about placement, not a consumer for this query.
-
-#### The fixtures this work had to author, and why none existed
-
-`tools/gen-certified-fixture.py` builds two files that differ in **exactly one
-dictionary** — the catalog's `/Perms`:
-
-* `fixtures/certified-comments.pdf` — an enforced certification at `/P 2`;
-* `fixtures/threaded-comments.pdf` — the same document without it.
-
-Both carry a `/Square` markup with a `/Popup` companion and one `/IRT` reply, so
-the collateral has two clauses rather than one. Nothing in `fixtures/` could
-drive either branch: `signed-two-pages.pdf` is *deliberately* an approval
-signature — no `/Reference`, no `/Perms` — so the gate is open on it, and no
-fixture carried a markup annotation at all.
-
-★ The pair is one document on purpose. A check comparing "withheld here" against
-"offered there" across two *different* documents varies two things at once and
-cannot say which caused the difference. `tools/ui-verify`'s `annot_delete_gate`
-drives both and asserts the difference is the dictionary.
-
-##### `fixtures/certified-nested-form.pdf` — certified AND nested, 2026-08-29
-
-★ **This repository's fixture provenance lives in the generator's docstring**,
-not in a `PROVENANCE.md` — every file in `fixtures/` is byte-authored by a
-committed `tools/gen-*.py` whose header carries what it builds, why each
-structural choice, and what the fixture is for. The engine's corpus uses a
-`PROVENANCE.md` because its fixtures come from several sources; this one's do
-not. The entries below are the index, and each points at the header that is the
-record.
-
-`tools/gen-certified-nested-fixture.py` builds one file, and it exists because
-of an **intersection nothing occupied**:
-
-| needed | had | short by |
-|---|---|---|
-| certified | `fixtures/certified-comments.pdf`, `fixtures/threaded-comments.pdf`, `D:/Dev/pdfcer/…/forms/certified-p2-form.pdf` | all three are **flat** — no dots in any field name, so `AcroForm::groups` is empty |
-| nested | `D:/Dev/pdfcer/…/forms/nested-form.pdf` | **uncertified** — no `/Perms`, no signature, every gate open |
-
-`tools/ui-verify`'s `structural_refusals_are_sentences_not_controls` asserts
-that a certified document's Field-groups section lists its grouping nodes and
-draws **no** Delete-group control (R9). On a flat form
-`panels::forms::groups::section` returns before drawing anything, so that
-assertion was true of a section that never drew — `crate::checks` rule 4
-exactly. The check went vacuous → SKIP → conditional-with-a-note over three
-revisions, and none of them was the fix; the fix was the file.
-
-It is `nested-form.pdf`'s field tree (`Personal` ▸ `Personal.Address` ▸ three
-terminals, `Personal.Name` one level shallower on purpose) under
-`certified-p2-form.pdf`'s certification: `/Perms << /DocMDP >>` on the catalog
-and a `/Type /Sig` whose `/Reference` names `/DocMDP` with **`/P 2`**.
-
-★★★ **`/P 2`, and the reason is R162.** `/P 1` refuses *everything* — filling as
-well as restructuring — so a check written against it *"passes whether or not
-those gates differ at all"* (the engine's own `PROVENANCE.md`). At `/P 2` the
-two gates disagree **on one file**: `EditSession::fill_refusal` answers `None`
-and `EditSession::deletion_refusal` answers `Some`. That puts the control group
-*inside* the document, which is why this fixture needs no uncertified twin the
-way the annotation pair does — a run that finds no Delete-group control has
-found a *withheld* control rather than a dead panel, because the fill controls
-beside it are still live.
-
-★★ **Verified with the engine, not by eye.** A fixture that loads and whose
-`AcroForm::groups` is empty makes the check pass while testing nothing, which is
-worse than the SKIP it replaces. So the four properties are pinned by a unit
-test beside the fixture's users
-(`crates/pdfcer-gui/src/app/actions/forms/delete.rs`,
-`the_certified_nested_fixture_is_both_certified_and_nested`): it loads,
-`deletion_refusal` is `Some`, `AcroForm::groups` is exactly
-`["Personal.Address", "Personal"]` (post-order, deepest first), and
-`fill_refusal` is `None`. Cross-checked against `pdfcer`: `list-fields`
-reports the four terminals, `list-signatures` reports
-`signatures=1 certifications=1`, `delete-field` exits 9 naming `P=2`, and
-`fill-field` exits 0.
-
-### ⬜ / ⛔ What is left, and why
-
-| Verb | Reason |
+| Item | Status |
 |---|---|
-| `copy_annotations` | ⬜ **Open, and narrowed.** The object clipboard copied a markup by reading it into a `MarkupSpec` and authoring a new one, so everything a spec cannot express was lost — and on 2026-08-28 that came to include the note, the author, the date and the opacity, all of which this shell had just learned to author. `carried_options` closes those four. The general fix (`copy_annotations` → `ObjectClip` → `paste_objects`) is **asked of the engine rather than assumed**, because it is not known whether a `/Popup`, an `/IRT` reply chain or an `/RC` rich-text body survive that path either, and a paste that silently orphans a reply is worse than the loss it replaces. ⇒ The general form: **a copy implemented as a re-author loses ground every time the authoring side gains a key**, silently, in a direction no screenshot can see. |
-| `add_named_destination` | ⛔ **Not a gap — a deliberate absence, and the engine agrees.** Nothing in this shell constructs a `Destination`: the one authoring call passes `Destination::Page { view: DestView::Fit }` and cannot pass anything else, because there is no destination chooser. The engine's own note says why that is right: *"a destination chooser offering fits pdfcer cannot write would be a control whose options are mostly refusals."* The **reading** side already resolves named destinations, so the Bookmarks panel navigates them in CAD and Word exports today. |
-| `field_defaults` | ⛔ **Not a gap.** *"Make another field like this one"* is already how this shell behaves — `FormDefaults::next` carries the previous field's settings forward, with the **name** the one thing that deliberately does not carry. What the verb adds is copying from *any named* field rather than the last one placed, which is a chooser. An operator call, not a hole. |
+| `pdfcer_core::edit::CommandKind::MoveTextRun` | **Consumed opaquely, and deliberately nothing else.** This shell holds a `CommandKind` as a value and never matches a variant of it for an operator-facing purpose: `app::actions::history` asks `undo_kind` whether there is anything to undo and writes the kind to the diagnostic channel. The tooltip that *would* name it is an argued gap and it is not one variant wide — writing *Undo move one line of text* is a `CommandKind` to `&'static str` catalogue, and the blocker is that `egui_shell::CommandRegistry` exposes `get`, `iter` and `register` and no mutable accessor, with `PdfcerApp::commands` built once. When the registry gains a `get_mut`, the catalogue lands dozens of rows at once, not one. Recorded rather than exempted, because an exemption would say this shell will never hold it. |
+| `pdfcer_core::vector::edit::VectorEditError::DegenerateTextMatrix` | **`wanted`, and it needs no engine ask.** `plan_move_text_run` raises it when the run's own `Tm` is singular, so a page-space drag has no unambiguous text-space pre-image. The shell's pre-check does not cover it by construction: `text_run_move_refusal` answers the two §9.4.2 cases, `TextRunHasNoPositionOfItsOwn` and `MoveWouldMoveNextRun`, and is asked *before* the press, whereas a singular matrix is discovered *during* planning and comes back through `vector_edit_on_page`'s `Err` arm as a cause-less decline. `TextRun::text_matrix` and `Matrix::inverse` are both public and the shell already reads text matrices on the caret path, so the refusal could be worded ahead of the press in the shape the other two have. **What is not measured is whether the state is reachable**, and R9 forbids shipping a sentence for a condition that cannot occur: a singular `Tm` collapses the run's ink to zero area, so its `bounds` are degenerate and a canvas pick may never land on it. The measurement that settles it is a fixture carrying `0 0 0 0 100 700 Tm (X) Tj`, opened, with the Objects panel asked whether the run is listed and the Points tool asked whether it can be entered. |
 
----
+## Coming — in the engine's working tree, not the lock
 
-## ★★★ The twenty-one the TIGHTENED gate found, 2026-09-05 — an argument in a comment is not an entry in the register
+Not callable from here, so not on the gate's list. The row is written ahead of
+the bump because the argument is the valuable part.
 
-`tools/verb-coverage.py`'s `gui_hits` scored a verb consumed when its **name
-appeared anywhere** under `crates/pdfcer-gui/src`, comments included. The
-`remove_encryption` section above named that blindness and deliberately did not
-fix it, on the grounds that tightening an instrument is a change to make and
-measure on its own. It was made on 2026-09-05, and the case that forced it is
-the worst one yet: `pdfcer-core` shipped **`pdfcer_core::sign`**, 101 public
-items, an entire digital-signing subsystem written in answer to *this shell's
-own* request, and this gate scored `EditSession::sign` **consumed** because the
-word *sign* occurs in `app/actions/bookmarks.rs` in a doc table about the
-arithmetic **sign of `/Count`**. A capability the operator asked for was
-discharged by a comment about positive and negative numbers.
-
-A hit must now be **call-shaped** — the name followed by `(`, no identifier
-character before it — with comments blanked first. Both filters are needed and
-neither subsumes the other: the first kills prose, the second kills aspirational
-examples. Read `gui_hits`' own docstring before re-litigating either.
-
-The gate then said:
-
-> **203 `EditSession` verbs (lock `03f6004`), 162 named somewhere in the shell,
-> 41 named nowhere.**
-
-Twenty-three of the forty-one had no row anywhere when this section was started.
-(It was twenty-six an hour earlier: the track wiring the markup-vertex verbs
-landed three rows for its own verbs in the *alternate spellings* table above
-while this was being written, which is the register working as intended and is
-why a count in this file always names the moment it was taken.)
-
-**Twenty-one of the twenty-three are below. The other two are deliberately not
-here, and are deliberately not spelled in backticks anywhere on this page:**
-
-- ⚠ **delete\_node was held back on a MIS-ATTRIBUTION, corrected 2026-09-05
-  the same evening.** It was withheld as *"being wired by the vertex track"*.
-  It is not, and could not be: `EditSession::delete_node` (`edit.rs:12148`)
-  removes a node from a **vector path in the page's content stream**. The
-  vertex track's verbs are `reshape_annotation` and its three convenience
-  wrappers, which edit a markup **annotation's** `/Vertices`. Two unrelated
-  capabilities, and what joined them was that this shell's own private helpers
-  in `app/actions/annots.rs` happen to be named `move_node` and `remove_node`.
-  ★ **A name collision inside our own crate deferred a real gap for an evening.**
-  It now has a row of its own below, as a gap, beside its twin `delete_subpath`.
-- **sign** is a 101-item subsystem this build does not even compile:
-  `crates/pdfcer-gui/Cargo.toml` takes `pdfcer-core` with
-  `default-features = false` and forwards only `jpx`/`ocrs`, stripping the
-  default-on `signing` feature. It gets an `ENGINE_BACKLOG.md` row **and** a
-  row below, because the two documents answer different questions: the backlog
-  asks *"what did the engine ship that we want?"* and this file asks *"why does
-  the shell not call this verb?"*. The answer to the second is short and is not
-  a decision anyone made.
-
-⚠ ★★★ **The backtick discipline in those two bullets is load-bearing, and the
-first draft of this section got it wrong.** `check-verb-coverage.sh`'s rule is
-*"`EDITABLE_SURFACES.md` must mention it by name, in backticks"* — a fixed-string
-`grep -qF` for the backticked name, anywhere in the file. So a paragraph written
-to say *"this verb is somebody else's and has no row here"* **discharges the gate
-for it** if it spells the name the way this register spells verbs. The first
-version of the six lines above did exactly that, and the gate went from naming
-five unexplained verbs to `PASS: all 41`, on a change that wired nothing. Two
-names left the failure list because a sentence disclaiming them was written.
-
-⇒ **The gate cannot read English and must not pretend to** — its own header says
-so, and calls that weakness deliberate. The corollary nobody had written down is
-that **the weakness runs in both directions**: prose *about* a verb is
-indistinguishable from prose *accounting for* a verb, so a register can silence
-the instrument by discussing what it is not covering. Spelling the two names in
-bold rather than in backticks keeps them on the failure list where their own
-tracks will meet them.
-
-### ★★★ What the split says, and it is not what a gate failure usually says
-
-**Four are gaps. Seventeen are verbs this shell should not call.** That ratio is
-the finding, because of *where* the seventeen reasons already were: **twenty of
-the twenty-one had their argument written out, in full, in a doc comment inside
-this crate.** `cut_pages`' is a paragraph in `app/dispatch/pageclip.rs` ending
-*"Recorded here so the next reader does not rediscover the constraint by
-trying"*. `find_text`'s is a table under the heading *"The trap, stated first
-because it is the whole reason this module is written the way it is"*.
-`transform_preview`'s is a note whose first line is **"THE PREFLIGHT IS NOT
-BUILT, AND THIS IS THE NOTE THAT SAYS SO."**
-
-⇒ ★★ So the tightening did not mostly find unconsidered verbs. It found
-**considered verbs whose consideration was filed where the register could not
-see it** — and, because the old instrument counted that prose as a call, filed
-in the one place that also switched the gate off. The three "not built" notes in
-that set had been true and unactioned for days precisely because writing them
-down felt like discharging them.
-
-★★★ **And the exception is the whole point.** `set_media_boxes` is the one verb
-of the twenty-one with **no sentence anywhere in this crate about why it is not
-called** — and it is the largest of the four gaps. The verb nobody had written a
-sentence about is the capability nobody had noticed. That is the gate's own
-message, arriving as data rather than as advice.
-
-### The gaps — three of them CLOSED 2026-09-05
-
-⚠ **This section was headed "The four gaps" and the count was already stale when
-it was written**, which is the failure mode this whole register exists to catch,
-arriving in the register itself: the table under it listed **six** rows. Three of
-those six were the same defect three times — `delete_text_run`, `delete_subpath`
-and `delete_node`, each with its MOVE twin wired and itself called by nothing —
-and they are now wired, so what is left below is **`sign`, `set_media_boxes` and
-`transform_preview`**. The heading no longer carries a number, deliberately: a
-number in a heading is a claim nothing checks, and this one was wrong on the day
-it was typed.
-
-★★ One further gap was found while closing the three and is recorded here
-because nothing else in this file is keyed on it: **the Part and Node rungs
-INSIDE a form XObject still cannot delete.** `canvas::deleting`'s `part_rung`
-and `node_rung` both test `entry.object.is_leaf()` before anything else and
-return `Refusal::InsideForm`, which the status row states, pointing at what does
-work (Escape out to the whole shape, then Delete).
-
-★★★ **THE SENTENCE THAT USED TO FOLLOW WAS TRUE FOR NINE DAYS AND IS NOW
-FALSE.** Verbatim: *"`pdfcer-core`'s six `*_in_form` verbs are five moves and
-one whole-object delete; there is no `delete_subpath_in_form`,
-`delete_node_in_form` or `delete_text_run_in_form`."* The clause *"and that is
-an engine gap rather than a shell one"*, which the paragraph above used to
-carry, goes with it. `G017`'s second row shipped **all three** on
-2026-09-14, and they are in the revision this build is already linked against:
-`delete_text_run_in_form`, `delete_subpath_in_form` and `delete_node_in_form`,
-at `edit.rs:15000`, `:15030` and `:15062` of the locked engine.
-
-★★ **The engine's reason for building them is worth carrying, because it is
-an argument this shell should be making about its own surfaces.** From
-`delete_text_run_in_form`'s doc comment: *"An asymmetry in one direction is a
-gap; an asymmetry that runs the opposite way inside a different container is a
-trap, because the operator learns a rule on page content and it stops being
-true when the same content is inside a title block"* (`R245`). On a SolidWorks
-set **the title block IS a form**, drawn on every sheet, so the container the
-trap lives in is the one his drawings are full of.
-
-⇒ **The gap therefore did not close — it MOVED, from the engine to this
-shell, and it got easier.** The verbs exist and are called by nothing. What
-stands between them and the operator is not a seam: it is two `is_leaf()`
-guards and three missing `DeleteSubject` arms. The comment above the first
-guard still gives the old justification in as many words — *"a form-interior
-part has no delete verb of any kind"* — which is the same stale-citation
-shape this register was built to catch, now sitting in source rather than in
-prose.
-
-⚠ **And the wiring owes a DISCLOSURE that the page-content twins do not.**
-The in-form family returns `FormSurgeryOutcome`, whose `invocations` count says
-how many pages the shared stream is drawn on; the engine's own doc says *"a
-shell should show it"*. Deleting one line out of a title block deletes it from
-**every sheet**, and that is a sentence the operator is owed BEFORE the press,
-not after — the same shape the whole-object `delete_objects_in_form` already
-puts a count in front of.
-
-| Verb | Engine Pass | Status |
-|---|---|---|
-| `delete_text_run_in_form` | `G017` second row, 2026-09-14 | ★★ **`wanted`, and the one of the three that O198 actually needs.** His request is about text on a SolidWorks sheet, and that text is inside the title-block form on every sheet but the body of the drawing. `MoveTextRun` / `MoveTextRunInForm` shipped in this shell on 2026-09-15 and the delete half did not, so the move/delete asymmetry `R245` names is currently **ours**. Route: a `DeleteSubject::TextRunInForm` arm carrying `leaf` instead of `object`, the `is_leaf()` guard in `part_rung` lifted above the arm rather than deleted, and the R83 pre-check (`text_run_delete_would_move_next`) asked on the leaf's run list rather than the page object's. |
-| `delete_subpath_in_form` | `G017` second row, 2026-09-14 | ★★ **`wanted`, same guard, same two-line fix.** The delete twin of `move_subpath_in_form`, which this shell HAS wired since `Pass 188.0` — so a line inside a drawing view can be dragged but not removed, which is exactly the trap read from the operator's side. |
-| `delete_node_in_form` | `G017` second row, 2026-09-14 | ★★ **`wanted`, same guard.** ★ It is the one that will owe a **second** sentence on top of the `invocations` count: `delete_node`'s page-content twin returns a non-empty `PlannedEdit::disclosures` when the deletion discarded a curve, and the in-form verb plans through the same `plan_delete_node`, so it will produce the same list — which `vector_edit_on_page` already records without anything being written by hand. ★ `ManyNodes` applies unchanged: there is still no plural delete. |
-
-| Verb | Engine Pass | Status |
-|---|---|---|
-| `delete_text_run` | 32.0 | ✅ **WIRED 2026-09-05, and DRIVEN — one label off a sheet whose 237 share a text object.** The Part rung on a text object reaches it through `VectorAction::DeleteTextRun`, routed by `canvas::deleting::subject`, which the Delete **key** and the ribbon's `format.delete` both ask. ⚠ **Wired is not reachable, and for one commit these were different things**: the key inherited `canvas::interact`'s conditional decomposition, which was gated on a list of gesture outcomes, and a keystroke is not one — so the key declined `NoObjectModel` while the ribbon (which asks for the model unconditionally) worked. `canvas::modelneed` fixed it; `deleting_a_label_leaves_the_other_labels_alone` PASSES on `SW41177.pdf` at `0,1140,62`, **18 runs → 17, page objects 5,903 unchanged**. ★★ **The operator reaches that rung with the Points tool (`A`), not with a double-click** — O70 gave the double-click on text to the caret, so `canvas::clicking` opens a caret and returns before the ladder is touched; the node-tool branch is the one route that descends on text. Before this, Delete over a selected label traced `canvas-delete-declined … reason=no-verb-for-rung` and nothing happened, silently. ★ The R83 pre-condition is **no longer dead**: `text_run_delete_would_move_next` is asked ahead of the press, and a run whose successor inherits its position is refused with the remedy in words (*delete the later label first*) rather than with the engine's cause-less decline — `EditError` is `Display` output and `check-ui-strings.sh` exclusion 3 forbids routing it to a surface, so pre-empting is the only way the operator can be told what to do. Disclosures: **always empty**, measured — `plan_delete_text_run` returns `Vec::new()` on both arms. ⚠ **These are pdf dimensions** (R8b Rule 15): page content pdfcer reads and must not silently alter. |
-| `delete_subpath` | — (`move_subpath`, Pass 28.0, calls it *"the companion to `delete_subpath`"*) | ✅ **WIRED 2026-09-05, and DRIVEN — one line out of a drawing view.** `deleting_a_line_leaves_the_rest_of_the_shape_alone` PASSES on `fixtures/hole-in-a-big-object.pdf` at `0,336,500` — **41 subpaths → 40, page objects 1 unchanged**; that fixture is one path object holding a circle and forty unrelated segments, which is the shape of his own export. ⚠ It first SKIPPED on `polyline-nodes.pdf`, whose single object holds ONE subpath: the delete was correct and the check could not tell a right build from a wrong one, which is the fixture guard working rather than a defect. `VectorAction::DeleteSubpath`, from the same rung its twin `move_subpath` has been draggable from since Pass 28.0. On the measured CAD export where **one path object holds 1,194 subpaths**, *"delete this line"* is what an operator means and the only Delete previously offered removed the whole view. Disclosures: **always empty**, measured — both arms of `plan_delete_subpath` return `Vec::new()`. ★ It is still the sole `EditSession` verb in `edit.rs` with **no doc comment at all**, which remains the best account of why it was read past for a fortnight; the shell's own `VectorAction::DeleteSubpath` now carries the explanation the engine did not. |
-| `delete_node` | — (`move_node` / `move_nodes`, Pass 28.0) | ✅ **WIRED 2026-09-05, DRIVEN, and it is the one of the three that owes a SENTENCE.** `deleting_a_point_leaves_the_rest_of_the_line_alone` PASSES on `fixtures/polyline-nodes.pdf` at `0,150,260` — **6 anchors → 5, page objects unchanged**, `disclosures=none` because the anchor it picked sits on no curve. `VectorAction::DeleteNode`, from the Node rung. ★★★ `delete_node` returns `PlannedEdit::disclosures` **non-empty when deleting the point discarded a curve** — *"The curve that ran into this point was removed along with it, so the shape now goes straight from the point before to the point after."* — which is a shape change re-adding a point cannot undo, and the engine's doc says rule 4 forbids letting the operator find that out from a diff: *"the caller must surface these."* The surfacing is **structural rather than hand-written**: the arm returns the list from `vector_edit_on_page`'s closure and the funnel records every verb's disclosures to the status bar's row, stamped with the epoch the edit produced. A `record_note` beside it would have been a second mechanism for one sentence — the one that later forgets to retire itself. ★ A multi-anchor selection is **refused by name** (`Refusal::ManyNodes`) rather than looped: there is no `delete_nodes`, each excision renumbers, and acting on the entered one alone is the `selected_nodes_on` defect. ⚠ It is **not** the markup-annotation vertex verb; this shell's private `move_node` / `remove_node` in `app/actions/annots.rs` belong to `reshape_annotation`'s family and share nothing with it but a name. |
-| `preview_font_resources_for` | 142.2 (shipped 2026-09-05, **in answer to this shell's own request of that morning**) | ⬜ **A gap that is one argument wide, and the surface it closes already apologises for being open.** `preview_font_resources` coverage-tests the characters **already in** the run; `_for` takes a `candidate` string and tests the characters the operator is **about to type**, through the same gate `set_font` applies, embedded-subset floor included. That is exactly the caveat `panels::properties::refusedchar`'s header states in its own words — *"the offer is UNTESTED against the character, and says so"* — and the sentence `text::panels::face::refused_char_untested` exists to carry. ★ The call site is **one**: `canvas::textedit::pin.rs:425` passes `(page, "", Some(span))`, and the engine's doc says an empty `candidate` behaves exactly as the old verb, so the change is additive by construction. ⚠ **Not built here, and named rather than implied**: it retires an operator-facing sentence and re-words a chooser, so it needs its own driven check (the face list must be seen to *shrink* for a character a page face cannot hold) and it is not this track's subject. Verdict **wanted**, not declined — the engine built it because we asked. |
-| `sign` | 10.7 / 10.8 / 10.9 | ✅ **WIRED AND DRIVEN 2026-09-06 — File > Security > `Sign…`.** `crate::sign` is the model, `crate::dialogs::sign` the window, `crate::app::actions::sign` the one arm that calls `EditSession::sign`. ★★★ **The first thing that had to happen was a MANIFEST edit, not a UI one.** `crates/pdfcer-gui/Cargo.toml` took `pdfcer-core` with `default-features = false` and forwarded only `jpx` and `ocrs`, so the engine's default-on `signing` feature was stripped and all 101 public items were **absent from the binary** — nothing failed to compile, no test went red, and this row said so for a day. That is the JPX incident repeating three days after the comment warning about it was written into the very manifest that repeated it. ⇒ **A warning does not protect a code path written after it**, and the mechanism that replaces it is `tools/gates/check-forwarded-features.sh`: it reads the ENGINE's own `default = [...]` and fails when a name in it is neither forwarded nor refused here in writing. Falsified both ways — the real 2026-09-05 omission, and a feature declared but left out of `default`. ★★ **The operator's route, end to end:** open the document, File tab, `Sign…`; choose a `.pfx`/`.p12`, type its passphrase, press *Open certificate* — and **nothing below the identity is drawn until the container has actually opened**, because signing is an act of identity and the only guard is the operator reading whose certificate came out of the file; then `/Reason`, `/Location`, visible-or-not, a destination (a new `-signed.pdf` by default, replace behind one acknowledgement, atomic temp-then-rename), and *Sign and save…*. `/Name` is **never offered**: the engine falls back to the certificate subject, and a free-text name beside a certificate is a second unverifiable claim about who signed. ★★★ **Invisible is the DEFAULT**, and it is a decision rather than a copy of the engine's: a visible signature's appearance is *"a thin frame only — no text"* in this first cut, and an empty rectangle stamped on one of his CAD sheets is indistinguishable from a defect. The visible option is offered, with the box's contents and its measurements (180 × 60 pt, 36 pt in from the bottom-right) stated **before** it is chosen — R8b Rule 4, since the box is applied content. ★★ **Both engine refusals are SHOWN, not discovered** — an encrypted document and one carrying a pending redaction get a sentence with the remedy **instead of a form** (R9), and both are reachable in one session because this shell ships Encrypt… and deferred redaction. ★★★ **Verified from the FILE, not from a trace**: `tools/ui-verify`'s `a_document_can_be_signed_and_the_signature_is_in_the_file` writes a signed PDF, then opens it in a **fresh process** and reads the Signatures panel — `signature-row field="Signature1" integrity=verified`. Falsified by flipping one byte of the output: phase A's trace stayed **identical** (`self_verified=1`) and phase D read `digest-mismatch`, which is exactly the *"traces perfectly and does nothing"* class this project has shipped before. ★★★ **EXTENDED 2026-09-06 when the pin moved to `d6b998f` (v0.42.0), and the closing sentence this row used to carry is the lesson.** It read: *"Still the engine's: certifying (`/DocMDP`) signatures, signing into a pre-placed field, an appearance stream with words in it, and a reserve an operator can widen."* **Three of those four had already shipped upstream when it was written** — `Pass 10.12`, `10.13` and `10.14` landed the same afternoon as the wiring — which is the sixth recurrence of this project's most expensive shape: a sentence about what the engine cannot do is a dated citation with a shelf life measured in hours. ★★ **What that cost, specifically:** `crate::text::sign::placement_note` told the operator *"the box is an empty frame: pdfcer does not yet draw your name or the date inside it"*, and `Pass 10.14` composes his CN, the date, the reason and the location into it in Helvetica. The falsehood **under-promised**, so nothing could report it — no screen looked wrong, no test was asserting the claim, and an operator who found his own name in the box would have been pleasantly surprised and filed nothing. What caught it was that the string's doc comment carried its own expiry: the engine commit, the measurement (`git merge-base --is-ancestor`, never a changelog) and the instruction *"when the pin moves past `f9bc7c8`, re-read this string first"*. ⇒ **A claim about the engine gets a date and a successor, and where it CAN be an assertion it becomes one** — `the_box_is_described_as_carrying_the_name_and_the_date` now names both stale wordings so neither can come back out of git history. ★★★ **Signing INTO a box the sender placed** (`Pass 10.13`) is the half an operator receiving a drawing for approval actually needs, and it is now the third placement option. The window lists the document's empty `/FT /Sig` fields, and `crate::sign::Placement` grew a third arm rather than gaining a flag — so `visible` and `field_name`, which the engine refuses together by name, **cannot both be sent**, and the page controls RETIRE with a sentence saying the sender chose the position. ★★ **Two enforcement families come with it and both are the AUTHOR'S rules:** a `/Lock` (Table 233) on the chosen box is honoured as a `/FieldMDP` reference and genuinely freezes fields the author nominated — disclosed **beside the box, before the press**, because consent given after the file is written is not consent — and `/SV` (Table 234) is enforced in FULL, with anything pdfcer cannot evaluate refused rather than skipped. ⇒ **The engine is deliberately stricter than Acrobat, so the operator will meet refusals on documents Acrobat signs**, and `crate::text::sign::author_imposed` is the one wording for all of them: it names whoever prepared the document BEFORE it names pdfcer, quotes the engine's message verbatim because that message carries the satisfying values, admits the strictness as a choice, and offers two remedies that do not require pdfcer to change. Get that sentence wrong and a working feature reads as a defect. ★ **Certifying** (`Pass 10.12`) is a radio pair inside this same window rather than a second ribbon command — the two acts share every field on the form and differ in one value — with each Table 254 level drawn by its plain meaning, nothing defaulted silently, and the option **absent with a sentence** on a document that cannot carry one. ★★ **Driven, phases E and F:** a fresh process reads the signature back through the Signatures panel under the author's own field name `SignHere`, which is the one fact that distinguishes *signed the sender's box* from *created a new box beside it*. Falsified by dropping `field_name`: phases A–D stayed **green** and phase F read `Signature1`. ⚠ Still the engine's: a reserve an operator can widen, and a `/Kids` (non-merged) signature field, which `SignApplyError::FieldHasKids` refuses by name and this shell lists with that reason rather than hiding. |
-| `set_media_boxes` | — (shipped 2026-08-18 beside `set_media_box` and `pdfcer_core::paper`) | ⬜ **A gap: an open drawing's sheets cannot be resized, at all.** `set_media_box` is called exactly once, on a brand-new blank document's page 0 (`app/blank.rs:334`). The plural verb — written for the drawing-set case, *"a sheet set is resized as a set"*, one undo entry however many sheets, refusals raised before anything is committed — is called nowhere, because there is no `pages.resize` command: the Pages tab has insert, cut, copy, paste, delete, extract, move and rotate, and no size. ★ The chooser is **already built and unreachable**: `dialogs::new_document` offers `PaperSize::ALL`, both orientations and a custom size, and can only be opened while creating a file. This is the row that had no sentence anywhere. |
-| `transform_preview` | 113.1 | ⬜ **A gap this shell has already written the confession for**, at `canvas/resizing.rs:172` — *"THE PREFLIGHT IS NOT BUILT, AND THIS IS THE NOTE THAT SAYS SO."* The engine distinguishes two refusals and gives the shell an instruction for each: `SingularTransform` means *this drag* is degenerate (offer the handle, refuse on release — `is_usable` does this), and `DegenerateCtm` means the object can never be transformed **at all**, for which the instruction is *do not offer a handle*. The shell offers one, and the operator finds out by dragging it. Small — a singular CTM is a producer emitting `0 0 0 0 x y cm` — and real. Not built because the preview **decomposes the page**: ~4 s on the 129,758-object benchmark in a debug build, so the engine's own advice is to call it on selection change and gesture start, which means a cache keyed on `(page, edit epoch, selection)` in `app::cache::FormRunCache`'s shape rather than a line of code. |
-| `reshape_ink`, `reshape_ink_preview` | 278.0 (`c8a6697`, shipped 2026-09-09 **in answer to this shell's request of the evening before**, `request_an_ink_stroke_has_readable_vertices_and_no_way_to_edit_them.md`) | ✅ **WIRED 2026-09-09, NOT YET DRIVEN — O158, *"the draw a line that follows the pointer tool — I can't edit the nodes that make it."*** `canvas::annotnodes::geometry` grew one `match` arm (`b"Ink"`) and an `/Ink` now draws one anchor per point of every stroke; `canvas::annotnodes::ink::StrokeTable` converts the canvas's flat anchor index to the engine's `(stroke, point)` address and back, keeps the preview from drawing a segment between two strokes, and makes *insert after a stroke's last point* extend that stroke (the engine's rule). `canvas::annotnodes::Plan` is the seam that asks `reshape_ink_preview` every frame for an ink and `reshape_annotation_preview` for everything else, so the polygon path is byte-identical. The release raises `AnnotAction::{MoveInkPoint, InsertInkPoint, RemoveInkPoint}` and `app::actions::annots::reshape_ink` calls `EditSession::reshape_ink` with a `/M` stamp, traces `ink-reshape-applied id=… edit=… stroke=… points=…→… stroke_points=…→… rect=…→… was_pdfces=…`, and **discloses `InkForecast::appearance_was_pdfces == false`** on the status line through `text::markup::ink_redrawn_straight` — the one sentence the engine's reply said not to drop. The right-click rows (`markup.add_node`, `markup.remove_node`) work on an ink through the same `Plan`, with `InkStrokeWouldBreachPointFloor` greying *Remove this point* exactly as `ReshapeWouldBreachVertexFloor` does for a triangle. All five new `EditError` variants are worded (`text::markup::NodeEditRefusal::{StrokeWouldLeaveTooFew, PointNotFound, WouldLeaveNothing}` plus two that fall to existing sentences). ⚠ **Not driven**: the desktop was in use. A `ui-verify` check owes the seven links `markup_node_edit.rs` enumerates, on a freehand stroke — draw with the Freehand tool, select, aim at `canvas.markup-node.N` for an N inside the **second** stroke of a two-stroke fixture, drag with the real mouse, read `markup-node-move … address=1/0 family=ink` and `ink-reshape-applied stroke=1`, clear the selection, and count ink in a box that was blank before. | <!-- old-name-exempt: `appearance_was_pdfces` is the ENGINE's own field name, quoted verbatim -->
-| `move_ink_point`, `insert_ink_point`, `remove_ink_point` | 278.0 | ⛔ **Alternate spellings of a verb already called.** Each is `reshape_ink(annot, &InkEdit::…, None)` — `modified: None`, so none can stamp `/M`. This shell calls `reshape_ink` directly for the reason `reshape` states for the vertex trio: *"the wrappers are one-liners that pass `modified: None`, so they can never stamp `/M`; this shell knows the time and the engine reads no clock, on purpose."* `app::actions::annots::{move_ink_point, insert_ink_point, remove_ink_point}` are the shell's three doors onto the one body. |
-| `replace_ink_stroke`, `move_ink_stroke`, `remove_ink_stroke` | 278.0 | ⬜ **Not called — the whole-stroke grain, and the natural home for two things this shell does not have yet.** The engine built them on this shell's own sentence (*"per-point anchors on a 400-point stroke are unusable as a UI regardless of what the engine offers"*) and then said *"anchor density and decimation are yours; both grains are ours."* Today every point of every stroke is an anchor — `canvas::annotnodes::ink`'s header carries the three reasons decimation was not done in the same change, the first being that a decimated anchor set is a **second index space** and the mapping back to `(stroke, point)` is derived-twice geometry. When it is done, `replace_ink_stroke` is the verb (*"simplify once, then edit per-point"*), and the engine offered a core-side `simplify` so there is one simplifier in the ecosystem rather than a third copy beside `canvas::markup::ink`'s. `remove_ink_stroke` is a *"Remove this stroke"* menu row nobody has asked for; `move_ink_stroke` is a per-stroke nudge whose gesture (which stroke, without a press on a point?) has no design. Verdict **wanted**, on the density row first. |
-
-### ⛔ The seventeen this shell should not call
-
-| Verb | Engine Pass | Status |
-|---|---|---|
-| `add_text_annotation` | 6.2 | ⛔ **Alternate spelling, and the plain door can never be the right one here.** `app/actions/textannot.rs:172` calls `add_text_annotation_with`, because this shell has a `MarkupNote` (the operator's author name, a UTC `/M`) **and** the pen's opacity to pass on every sticky note, text box and stamp — and the plain verb is `_with` under `MarkupOptions::default()`. Exactly the relation `add_markup`/`add_markup_with` has two tables up, where the `_with` door is the one that shipped. |
-| `cut_pages` | 171.0 | ⛔ **Declined, argued in code at `app/dispatch/pageclip.rs:48`, and the constraint is structural rather than stylistic:** the clipboard lives in `egui::Memory` and the action applier has no `egui::Context`, *"so a single-call cut could not put its own clip anywhere."* `pages.cut` is `copy_pages` then `PageAction::DeletePages` — one extra page-tree walk, and the undo entry count stays at **one**, which is the property the engine's verb exists to guarantee. ★ The copy runs first and unconditionally, so a cut whose delete is refused leaves the sheets on the clipboard rather than losing them. |
-| `cut_outline_item` | 172.0 | ⛔ **Declined for the identical reason, stated at the site** — `panels/bookmarks/clip.rs:74`. The engine's verb *is* `copy_outline_item` followed by `delete_outline_item`; the panel performs those two in that order, and `BookmarkAction::Delete` already drops the selection, warns how many descendants travel and lands one undo entry. The copy's success **gates** the delete (`take(…) && cut.clicked()`), so a cut whose copy half failed cannot silently become a delete — the failure an operator would discover by pasting. |
-| `cut_selection` | 168.0 | ⛔ **Declined — `cut_objects`' argument, already in this register, extended to the mixed selection.** `canvas::clipboard::cut` is `copy_selection` + `Action::DeleteSelection`; the copy is `&self` and commits nothing, so *"the cut is one undo entry because only one half of it is an edit"* (`canvas/clipboard.rs:936`). ★ The engine's refuse-before-deleting contract is honoured **ahead of** the copy rather than inside it, by `canvas::cutgate::blocker` (`clipboard.rs:990`), and that ordering is stronger than the verb's: it is what lets `Ctrl+X` over an annotation the clipboard cannot carry refuse the *whole gesture*, instead of leaving the operator with the annotation still on the page and a copy of it on the clipboard. |
-| `paste_pages` | 171.0 | ⛔ **Declined so the disclosures have exactly one wording.** The verb is `Document::from_bytes(clip.bytes)` then `insert_pages`; `app/actions/pages.rs:1080` does precisely that and hands the result to `insert_from_view` — the one function that reports `orphaned_widgets`, `orphaned_widgets_unrecoverable`, the dropped source outline and the two page-label facts, and then moves the view to what landed. Its own comment says why a fourth copy was refused: it *"would have been a second wording of the most consequential disclosure in this file"* — the orphaned widgets the engine flagged as *"the one that produces a document that looks right and is not."* |
-| `delete_object` | decision 011 §2.5 op 2 | ⛔ **The singular of a verb this shell only ever needs plural, and looping it is a documented hazard.** `app/actions/vector.rs:77`: `delete_objects` resolves **every** index before planning, so one stale or duplicated entry refuses the whole call rather than deleting the prefix that happened to resolve. A loop would be N undo entries for one Delete and — the correctness half — each call re-splices the content stream, so the second index is planned against byte offsets the first already invalidated. `docs/core-api/02` states it in a box: *"Never loop the singular verbs over a selection."* |
-| `move_object` | decision 011 §2.5 op 1 | ⛔ **The same ruling, one verb along** — `app/actions/vector.rs:106`. A released move-drag raises `MoveObjects` and reaches `move_objects(page, &objects, dx, dy)` with the whole selection, for the identical two reasons. ★ And there is no second claimant: the Object rung's resize and rotate both go to `transform_objects`, and the deeper rungs have `move_subpath`, `move_node` and `move_nodes` of their own. |
-| `delete_dimension` | 25.6 | ⛔ **It is called — by the engine, on this shell's behalf.** `delete_annotation` **routes** a **ce dimension** to `delete_dimension` (`edit.rs:25327`, `AnnotationDeletionRoute::Dimension`) exactly so a front end needs no `match`: *"a `/PieceInfo` sidecar record backs it; leaving it would keep a dimension the annotation no longer supports."* So `format.delete` and the canvas Delete key over a selected ce dimension reach it through `app/actions/annots.rs:66`, and `annots.rs:16` records that `delete` is the one verb in that file carrying **no** ce-dimension routing obligation of its own. ★ One consequence worth knowing: a delegated route runs the **destination's** gate, and `delete_dimension` keeps the strict one because it also rewrites the catalog sidecar — so on a `/P 3` document a ce dimension is refused while every other annotation deletes. The standard's answer, not pdfcer's preference, delivered to the operator by the funnel's decline channel. |
-| `move_dimension` | 25.5 | ⛔ **Declined for the drag on the engine's own instruction** — `canvas/dimdrag.rs:16` carries the two-row table. Dragging a **ce dimension** is `place_dimension`, which writes `offset` and `text_along` only, so **no drag, however far, can alter the printed number**; `move_dimension` translates the measured points and would take the ce dimension off the feature it annotates. ⚠ **The residual, named rather than left inside a half-promise:** that header ends *"remains available only where the operator has said they mean it"*, and **no such surface exists**. Nothing in this shell translates a ce dimension's measured points, so a ce dimension does not travel with page objects moved under it. Declined verb, real remainder; whoever builds the *"move the ce dimension with the geometry"* gesture should correct that sentence in the same commit. |
-| `delete_dimension_group` | — (the safe door over `delete_dimension_group_with`) | ⛔ **Alternate spelling, and this shell always holds the argument the plain door lacks.** `app/actions/dimensions.rs:935` calls `delete_dimension_group_with(group, policy)` for **both** policies, `Refuse` included — which is exactly what the no-argument verb does internally. One call site rather than two, *"because the difference between them is a value this variant already carries, and a `match` here would be a second place for the default policy to be decided"* (`dimensions.rs:901`). The engine's pair exists for callers with no policy to express; the ce-dimension-group dialog always has one, because what happens to the members is the operator's decision and it is asked before the press. |
-| `find_text` | — | ⛔ **Refused deliberately, and two tests keep it refused.** It passes `with_wildcards(true)`, so `#` matches any ASCII digit and `?` matches **every character on the page** — the defect the old shell's Find bar shipped with, fixed in the front end because the verb's pattern behaviour is its documented contract. `find/mod.rs:12` carries the table, and `tests::the_default_search_is_literal` and `tests::a_wildcard_search_is_only_ever_asked_for_explicitly` fail the moment anybody reaches for the shorter verb. |
-| `find_text_with` | — | ⛔ **Superseded by a strict superset, and the header naming it is now its only mention.** The Find bar called it until `pdfcer-core` v0.11.0 shipped `search_text` — which `find_text_with` now delegates to, so the scan and the hits are identical — and which additionally returns the extraction diagnostics that say whether a zero-result answer can be trusted. `find/mod.rs:815`; `Results::unsearchable_fonts` is built from them, and the only cost is holding a `TextDiagnostics` that was previously computed and thrown away. |
-| `mark_redactions_by_search_with` | — | ⛔ **Subsumed twice over.** The shell calls `search_and_mark_redactions_styled` (`app/actions/redact.rs:193`) **with** a `TextSearchOptions`, so the options this verb exists to accept are already being passed; and that verb is a superset of this one on the appearance and the diagnostics as well. |
-| `mark_redactions_by_search_styled` | — (the `_styled` verbs, `a7210a4`, 2026-08-17, shipped in answer to this shell's filing) | ⛔ **Declined for the one verb that also hands back the diagnostics, and on this operation that is not a nicety** — `app/actions/redact.rs:166`. Both run the identical scan and author the identical marks. Only `search_and_mark_redactions_styled` distinguishes the two causes of an empty result: *the term is not in the document*, and *the document's text was never recoverable as Unicode, so no term could ever have matched it*. For a search that ambiguity wastes a minute; **for a redaction it fails in the direction nobody catches** — the operator asked for every occurrence of a name to be removed, the run reported success, the file still contains it, and both populations render perfectly. |
-| `embed_refusal` | 67.0 phase E | ⛔ **Declined as a duplicate guard, argued at `app/actions/fonts.rs:34`:** `embed_fonts` runs it itself *"before any mutation"* and returns the refusal as an `Err`, so a pre-flight here would be a second implementation of a guard the engine already owns. ⚠ **The residual, named:** it is a pure query safe to call every frame, so a *window* gated on it would be R83 work this surface has not done — on an encrypted or certified drawing the Embed-fonts window still opens, the operator chooses donor faces, and the decline arrives from the funnel afterwards. Quality work on an existing surface, not a missing capability. |
-| `unembed_refusal` | 67.0 phase B | ⛔ **The same ruling, the same file (`fonts.rs:72`), the same residual.** ★ And note what the engine deliberately leaves **out** of it: PDF/A. Unembedding genuinely breaks ISO 19005 conformance, *"but it is a consequence the operator may knowingly accept, not a structural impossibility. The core reports it and the shells gate on it."* This shell's gate on that is the sentence in `dialogs::unembed`, read before the press — so even wired, this query would not be where the PDF/A decision lives. |
-| `info_bytes` | — | ⛔ **Session query, superseded by the sibling that carries the disclosure.** `panels::docprops` reads every `/Info` field through `info_text` (`docprops/mod.rs:269`), which returns `InfoText { text, exact }`, and `exact` is the whole reason: when it is `false`, re-encoding the string would **not** reproduce the document's own bytes, so the panel must not write the field back and says so on the row. Raw bytes have no operator meaning and would discard the one flag stopping this shell from replacing a `/Title` with pdfcer's guess at it. ★ The name has been in this crate all along — in that module's header, arguing that an old blocker had cleared — which is precisely the prose the tightened instrument stopped counting as a call. |
-
----
-
-### ★★★ The two the API-DRIFT gate found, 2026-09-15 — both belong to the move that shipped the same day, and one of them is a refusal the operator can reach
-
-Neither is an `EditSession` verb, so neither could have been found by
-`check-verb-coverage.sh`: they are an **undo-stack kind** and an **error
-variant**, and `tools/gates/check-engine-api-drift.py` is the instrument that
-reads those. They arrived in the same engine window as `G017`'s
-`move_text_run`, which this shell wired on 2026-09-15 — so the drift report
-is not a list of strangers, it is the rest of a capability we took half of.
-
-| Item | Verdict |
+| Verb | Status |
 |---|---|
-| `pdfcer_core::edit::CommandKind::MoveTextRun` | ★★ **Consumed opaquely, and the one place where naming it would matter is blocked in a crate this work may not touch.** This shell holds a `CommandKind` as a **value** and never matches a variant of it for an operator-facing purpose: `app::actions::history` asks `undo_kind` to answer *is there anything to undo* and writes the kind to the diagnostic channel (`undo kind=…`), which is where the operation is currently named. ★★★ **The tooltip that WOULD name it is a known, argued gap and it is not one variant wide.** `text::commands::edit_undo`'s header states it: writing *"Undo move one line of text (Ctrl+Z)"* is a `CommandKind → &'static str` catalogue and nothing more, and the blocker is `egui_shell::CommandRegistry` exposing `get`, `iter` and `register` and **no mutable accessor**, with `PdfcerApp::commands` built once. So the answer to this arrival is *nothing, deliberately* — and when the registry gains a `get_mut`, the catalogue lands **45 rows at once**, not one. ★ Recorded rather than exempted because an exemption would say *this shell will never hold it*, and that is the opposite of true. |
-| `pdfcer_core::vector::edit::VectorEditError::DegenerateTextMatrix` | ★★ **`wanted`, reachable in principle on the drag this shell shipped this week, and it currently arrives as a CAUSE-LESS decline.** `plan_move_text_run` raises it when the run's own `Tm` is singular, so a page-space drag has no unambiguous text-space pre-image — the engine's words, worth keeping: *"A `0 0 0 0 0 0 Tm` is a real thing producers emit."* ★★★ **The shell's pre-check does not cover it, by construction.** `text_run_move_refusal` answers the two §9.4.2 cases (`TextRunHasNoPositionOfItsOwn`, `MoveWouldMoveNextRun`) and is asked *before* the press; a singular matrix is discovered *during* planning, so it comes back through `vector_edit_on_page`'s `Err` arm as `text::status::edit_declined_by_engine` — true, not silent, and carrying no remedy. ⇒ **And this one needs no engine ask, which is why it is `wanted` rather than `blocked`:** `TextRun::text_matrix` is public, `Matrix::inverse` is public, and the shell already reads text matrices on the caret path (`canvas::textedit::disposition`). The refusal could be worded ahead of the press, in the shape the other two already have. ⚠ **What is NOT measured is whether the state is REACHABLE**, and R9 forbids shipping a sentence for a condition that cannot occur: a singular `Tm` collapses the run's ink to zero area, so its `bounds` are degenerate and a canvas pick may never land on it. **The measurement that settles it** is a fixture carrying `0 0 0 0 100 700 Tm (X) Tj`, opened, with the Objects panel asked whether the run is listed and the Points tool asked whether it can be entered. Until that is run, building the sentence would be guessing at which side of R9 it falls on. |
+| `text_object_split_plan`, `split_text_object` | **Split one text object into several**, at a `SplitGranularity` of `Run` or `Line`. The plan verb comes first and mutates nothing; the surgery takes the run indices to split before. **The disclosure lives on the plan, not on the surgery**, and that division is the part to get right: `SplitGranularity::Line` is an **inference** — an untagged content stream does not say where its lines are (§14.8), so the engine decides from consecutive baselines which runs the producer meant as one line, and rule 4 requires that be disclosed. `Run` infers nothing, one show operator to one object, and discloses nothing. So a shell that shows a preview before committing has its sentence from the plan call, and the surgery guesses nothing and returns an empty disclosure list. **Object indices renumber unconditionally**: any index greater than the split target gains n, and there is no `remap` helper for this direction, so a selection held across the call must be re-resolved. `text_split_refusal` is exported so the same guard the verb runs can grey the command or word a hint before the operator commits, which is what stops the two coming to disagree. Refusals are whole-split and pre-mutation: `EmptySplit`, `TextRunOutOfRange`, `SplitAtObjectStart`, `SplitRunInheritsPosition`, `SplitAtLineShowOperator`, `SplitInsideMarkedContent`. The text on a CAD drawing is **pdf dimensions** — page content the exporter wrote; this re-frames how it is stored and does not re-measure it. |
 
----
+## Wired, and the row records a contract
 
-## What this register does NOT cover, said so nobody reads it as complete
+These verbs are called. The rows survive because each carries a rule a wiring
+session would otherwise re-derive, or reverse.
+
+| Verb | The contract |
+|---|---|
+| `set_quad_point_order`, `delete_pages_with` | **A setting delivered by a setter on the session is invisible to a guard shaped around option constructors.** Both were parsed, defaulted, validated, persisted and drawn in the Settings window, and honoured by nothing, because every session was opened with `EditSession::new(doc)` — which takes the engine's default. The fix is a fourth funnel, `SettingsExt::open_session` at `app/settings.rs:223`, with `EditSession::new` on the check's forbidden list outside that file. The way to find the next one is to ask what the engine offers, not to re-read the guard. |
+| `set_encryption`, `set_permissions`, `remove_encryption` | Wired at `protect/mod.rs:737`, `:749` and `:747`. `set_permissions` re-keys an already-encrypted document: `/P` is bound into `/Perms` by Algorithm 10 and cannot be edited in place, so it is a fresh full encrypt under a fresh file key, and therefore **owner-only**, refusing `NotOwner { opened_as: AuthKind }`. All three refuse a pending redaction by name; `EncryptError::RedactionPending` is mirrored into `protect`'s own `Clone` enum and worded, which is what stands between an operator and an encrypted file containing un-redacted content plus the `/Redact` marks — a marked file that looks finished. The mirror is a private copy rather than the engine's type because `EncryptError` is `#[non_exhaustive]`, not `Clone`, and carries an io-shaped error that cannot sit in a dialog's state across frames. Its `From` impl is therefore *required* to carry a wildcard: exhaustiveness is real on the near side and impossible on the far one. |
+| `apply_redactions_deferred`, `save_applying_redaction`, `cancel_pending_redaction` | Each is called from exactly one place, pinned by `redact::sealed`: `stage_into_session`, `save_applying_pending` and `cancel_staged_redaction`. `apply_redactions_deferred` **arms** a removal and touches nothing — base, overlay and the whole undo/redo stack survive. `save_applying_redaction` is the only save that succeeds while a removal is armed, and it takes `&self`, which is what makes undo survive the save. `cancel_pending_redaction` is pinned too even though it removes nothing: disarming a removal is the same surface seen from behind. |
+| `has_pending_redaction` | A query, so deliberately **not** in the monopoly's table. Its call sites are four different questions rather than one repeated: `app::save::write_copy` (which writer runs), `app::save::has_unsaved_edits` (is this document dirty), `redact::prepare_redaction_apply` (refuse the second report by name), `redact::stage_into_session` (refuse the second arming). |
+| `has_applied_redaction` | **Called only as an assertion, and that is the point.** This shell stages and never collapses, so the flag is `false` for the life of every session it creates. `app::save::tests` and `redact::tests` both assert it is false, as the tripwire for a build in which something has reached the engine's *other* apply verb by a route `redact::sealed`'s call counts did not see. A term that can never be true is worse than an absent one if it is read as a guard; as an assertion it is the guard. |
+| `delete_text_run` | Reached through `VectorAction::DeleteTextRun` from the Part rung on a text object, routed by `canvas::deleting::subject`, which both the Delete key and `format.delete` ask. **The operator reaches that rung with the Points tool, not with a double-click** — a double-click on text opens a caret and returns before the ladder is touched, so the node-tool branch is the one route that descends on text. The R83 pre-condition `text_run_delete_would_move_next` is asked ahead of the press: a run whose successor inherits its position is refused with the remedy in words — *delete the later label first* — rather than with the engine's cause-less decline, because `EditError` is `Display` output and may not be routed to a surface. Disclosures are always empty, measured: `plan_delete_text_run` returns `Vec::new()` on both arms. These are **pdf dimensions**: page content pdfcer reads and must not silently alter. |
+| `delete_subpath` | `VectorAction::DeleteSubpath`, from the same rung its twin `move_subpath` is draggable from. On a measured CAD export one path object holds over a thousand subpaths, so *delete this line* is what an operator means and a whole-object delete is not it. Disclosures always empty, measured: both arms of `plan_delete_subpath` return `Vec::new()`. It is the sole `EditSession` verb in `edit.rs` with no doc comment at all; the shell's own `VectorAction::DeleteSubpath` carries the explanation the engine did not. |
+| `delete_node` | `VectorAction::DeleteNode`, from the Node rung, **and it is the one of the three that owes a sentence.** `PlannedEdit::disclosures` is non-empty when deleting the point discarded a curve — the shape now goes straight from the point before to the point after — which is a change re-adding a point cannot undo, and rule 4 forbids letting the operator find that out from a diff. The surfacing is structural rather than hand-written: the arm returns the list from `vector_edit_on_page`'s closure and the funnel records every verb's disclosures to the status row, stamped with the epoch the edit produced. A `record_note` beside it would be a second mechanism for one sentence, and the one that later forgets to retire itself. A multi-anchor selection is refused by name as `Refusal::ManyNodes` rather than looped: there is no `delete_nodes`, each excision renumbers, and acting on the entered one alone is a known defect. It is **not** the markup-annotation vertex verb — this shell's private `move_node` and `remove_node` in `app/actions/annots.rs` belong to `reshape_annotation`'s family and share nothing with it but a name — a collision the instrument cannot see, so a miss on this family is read against the private helpers first. |
+| `sign` | Wired at `crate::app::actions::sign`, with `crate::sign` the model and `crate::dialogs::sign` the window. **The first thing that had to happen was a manifest edit, not a UI one:** `crates/pdfcer-gui/Cargo.toml` took `pdfcer-core` with `default-features = false` and forwarded only `jpx` and `ocrs`, so the engine's default-on `signing` feature was stripped and all 101 public items were absent from the binary — nothing failed to compile and no test went red. The mechanism that replaces the comment warning about it is `tools/gates/check-forwarded-features.sh`, which reads the **engine's** own `default = [...]` and fails when a name in it is neither forwarded nor refused here in writing. `/Name` is never offered: the engine falls back to the certificate subject, and a free-text name beside a certificate is a second unverifiable claim about who signed. Nothing below the identity is drawn until the container has actually opened, because the only guard on an act of identity is the operator reading whose certificate came out of the file. **Invisible is the default**, and that is this shell's decision rather than the engine's. Signing into a sender-placed field is a third `crate::sign::Placement` arm rather than a flag, so `visible` and `field_name` — which the engine refuses together — cannot both be sent. A `/Lock` on the chosen box is honoured as a `/FieldMDP` reference and disclosed **beside the box, before the press**, because consent given after the file is written is not consent; `/SV` is enforced in full, with anything pdfcer cannot evaluate refused rather than skipped. The engine is deliberately stricter than Acrobat, so the operator will meet refusals on documents Acrobat signs — `crate::text::sign::author_imposed` is the one wording for all of them, and it names whoever prepared the document before it names pdfcer. Get that sentence wrong and a working feature reads as a defect. Still the engine's: a reserve an operator can widen, and a `/Kids` signature field, which `SignApplyError::FieldHasKids` refuses by name and this shell lists with that reason rather than hiding. |
+| `set_media_boxes`, `set_media_box` | `pages.resize` reaches `set_media_boxes` at `app/actions/pagesize.rs:371`; `set_media_box` is called once, on a brand-new blank document's page 0. The plural verb is the drawing-set case — a sheet set is resized as a set, one undo entry however many sheets, refusals raised before anything is committed. |
+| `place_text` | `Action::ImportText` at `app/actions/importtext.rs:185`, reached from `dialogs::import_text` and nowhere else. `text_edit::blank_document` is the primitive underneath it, and it is the first verb here that **makes** a document rather than editing one — it still routes through `Document::from_bytes`, so there is exactly one way a document comes into existence. **The one-undo-entry fold is checked, not assumed:** past `MAX_UNDO_DEPTH`, more than 255 non-blank pages, every page is still placed and only the grouping fails, reported as `coalesced == false` with `undo_entries` carrying the real count. A surface that promises one `Ctrl+Z` without reading `coalesced` is promising what the engine has already warned it about. Two refusals are **pre-emptible rather than reportable** — `PlaceTextError::NoColumn` and `PageTooShort` mean the chosen margins leave no room on the chosen sheet, which is a chooser problem answerable before the press. Under the default `Unmappable::Refuse` a character the face cannot encode refuses the whole import and names every one. The module is mostly disclosure by design: six of `PlaceTextReport`'s fields are judgements the import made about the operator's own file, each invisible in the result — a paragraph split across a page break looks like a paragraph he wrote that way, and a collapsed tab looks like a space he typed. |
+| `copy_annotations` | Called from `canvas::annotclip`. The re-author route it replaced lost everything a `MarkupSpec` cannot express, silently, in a direction no screenshot can see — which is the general form worth keeping: **a copy implemented as a re-author loses ground every time the authoring side gains a key.** |
+| `preview_font_resources_for` | `canvas/textedit/pin.rs:446`. `preview_font_resources` coverage-tests the characters already in the run; `_for` takes a `candidate` string and tests the characters the operator is about to type, through the same gate `set_font` applies, embedded-subset floor included. An empty `candidate` behaves exactly as the plain verb, so the change was additive by construction. |
+| `reshape_ink`, `reshape_ink_preview` | `canvas::annotnodes::Plan` is the seam: it asks `reshape_ink_preview` every frame for an ink and `reshape_annotation_preview` for everything else, so the polygon path is byte-identical. `canvas::annotnodes::ink::StrokeTable` converts the canvas's flat anchor index to the engine's stroke-and-point address and back, keeps the preview from drawing a segment between two strokes, and makes *insert after a stroke's last point* extend that stroke. `app::actions::annots::reshape_ink` stamps `/M` and **discloses** through `text::markup::ink_redrawn_straight` when the engine reports the appearance was redrawn straight rather than preserved — the one sentence the engine's reply said not to drop. `InkStrokeWouldBreachPointFloor` greys *Remove this point* exactly as `ReshapeWouldBreachVertexFloor` does for a triangle. <!-- old-name-exempt: the engine field is `appearance_was_pdfces` --> |
+| `rename_refusal`, `deletion_refusal`, `annotation_deletion_refusal`, `annotation_deletion_preview`, `field_group_deletion_preview`, `signature_impact_of_save` | The preview and refusal queries: `&self`, side-effect-free, and **sharing one body with the verb they describe**, so `preview(..).is_ok()` *is* the predicate rather than a second implementation that agrees until somebody changes one. The pattern they are wired to follow, set by the annotation delete: `selection.delete_permitted`, published by `app::conditions`, carries `format.delete`'s `visible_when` on both the Format tab and the canvas object menu — **absence, not greying**, because a certification signature is neither temporary nor arguable (R9); `panels::properties::annotdelete` draws the sentence that replaces it from the *same* derivation the condition asks, so a control cannot be withheld for one reason while a panel explains another; and `canvas::keys` and `dispatch::format` consult that gate before raising the action, so the selection survives the press and the sentence stays on screen. That last clause is the one that cost the most: clearing the selection *after* the funnel rather than on success made a refused gesture destroy its own explanation. The sentence lives in a panel and deliberately not in `status::decline`, because a decline reports that a gesture just failed and must be repeatable, whereas this is a **standing property of the open document**, true from the moment it was opened. `annotation_deletion_preview` walks the page's whole `/Annots` for `/IRT` referrers, so it is memoised on annotation id and edit epoch; there is one selected annotation rather than a list, so the steady-state cost is one `Option` comparison per frame and no engine call. |
+| `set_markup_note`, `clear_markup_note`, `add_markup_with`, `set_outline_title`, `delete_outline_item`, `rotate_annotation`, `rotate_dimension`, `attach_file`, `detach_file`, `unshare_form`, `delete_field_group`, `copy_attachment`, `paste_attachment` | Wired. Two rules survive from wiring them. **`add_markup_with` is the door that shipped**, not `add_markup`: this shell always holds opacity and a `MarkupNote` to pass, which is the same relation `add_text_annotation_reporting` has to its two plainer spellings. And an attachment crossing a **document boundary** is the case that exercises the clipboard — a same-document round trip runs every line and tests nothing. |
+
+## Surface rules that no verb row carries
+
+**A font's subset prefix is stripped consistently or not at all.**
+`AAAAAA+SpaceGrotesk-Bold` and `SpaceGrotesk-Bold` name **different** font
+objects in a PDF, so stripping the six-letter subset tag for display makes two
+distinct fonts read as one. The constraint is the consistency, not the
+stripping: strip it in the row and keep it in Properties, or do not strip it at
+all, but never in one surface and not the other — then the same font reports two
+different names on the same screen and neither surface is wrong.
+
+**Guides are inert without rulers.** Turning on the Guides preference does not
+let an operator place a guide: a guide is dragged out of a ruler gutter, and
+`canvas::guides::ruler_drag` registers nothing when the rulers are hidden
+(`app/prefs/opening.rs:192-205`). Rulers, grid and guides all ship off
+(`viewer/mod.rs:488-490`), so an operator who uses guides needs **two** switches
+on, and the preference copy is the only place that says so. The one override is
+a document that has remembered guides: `OpenDoc::assemble` reads
+`canvas::guides::opening`, whose rule is that the presence of the work is the
+preference, and that wins over the preference.
+
+## What this register does not cover
 
 - **`pdfcer-render` and `pdfcer-print`.** This is the editing surface only.
-- **Verbs on other engine types** — `MarkupNote`, `NewTextField`,
-  `FieldEdit`, `MarkupStyle` and their builders. The tool scopes itself to
-  `impl EditSession` deliberately: those types are *operands*, and an unused
-  builder means a field of an operand the shell never sets, which is a
-  different and much longer question.
-- **Whether a wired verb is reachable.** See the caveat at the top. A hit is a
-  name, not a route. `tools/ui-verify` is the instrument for reachability, and
-  the standing rule stands: **a capability is not verified until the running
-  binary has been driven through it.**
+- **Verbs on other engine types** — `MarkupNote`, `NewTextField`, `FieldEdit`,
+  `MarkupStyle` and their builders. The tool scopes itself to `impl EditSession`
+  deliberately: those types are *operands*, and an unused builder means a field
+  of an operand the shell never sets, which is a different and much longer
+  question.
+- **Whether a wired verb is reachable.** A hit is a name, not a route.
+  `tools/ui-verify` is the instrument for reachability, and the standing rule
+  stands: a capability is not verified until the running binary has been driven
+  through it.

@@ -40,10 +40,8 @@ file, and adding a section that reproduced pdfcer's own MIT grant a second
 time under a heading saying "third party" would make the notice say something
 false.
 
-The engine's copy of that checker records the day check 4 first ran and
-flagged the GUI icon set: *"That was a false positive, and a gate that fires
-on a correct state is one people learn to ignore."* This directory is the
-second instance of the same correct state.
+The exemption is deliberate rather than incidental: a gate that fires on a
+correct state is one people learn to ignore.
 
 ## The file, and exactly what is in it
 
@@ -88,7 +86,7 @@ at:
    `git add` time — and the `*.pdf binary` rule there is what protects this
    file. Do not remove it.
 
-## ★ What would change this
+## What would change this
 
 Any file added here that is **not** own work — a template exported from
 another application, a sample document, a stationery PDF from a vendor —

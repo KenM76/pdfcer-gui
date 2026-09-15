@@ -833,17 +833,17 @@ pub(super) const ZOOM_REGION: &str = include_str!("assets/zoom-region.svg");
 pub(super) const ZOOM_SELECTION: &str = include_str!("assets/zoom-selection.svg");
 
 // ===========================================================================
-// The 2026-08-21 pass — the selection filter's rows (O17)
+// The selection filter's rows
 // ===========================================================================
 //
-// Five glyphs authored for `canvas::pick`'s eleven-row popup. The other six
-// rows reuse icons the set already had (`text-select`, `image`, `show-points`,
-// `markup`, `ruler`, `form-field`), because reuse of an ICON is free while
-// reuse of an ASSET is not: `tests::only_the_folder_asset_is_shared` holds
-// `folder.svg` as the set's one shared file and every other asset to exactly
-// one `Icon`. These five exist because no glyph in the set meant what their
-// row means — see each file's embedded comment for which neighbour it had to
-// stay distinguishable from, and why.
+// Five glyphs for `canvas::pick`'s eleven-row popup. The other six rows reuse
+// icons the set already had (`text-select`, `image`, `show-points`, `markup`,
+// `ruler`, `form-field`), because reuse of an ICON is free while reuse of an
+// ASSET is a decision: `icons::catalog::tests::only_the_documented_assets_are_shared`
+// holds every asset to exactly one `Icon` unless the pair is listed in
+// `SHARED_PAIRS` with its argument. These five exist because no glyph in the
+// set meant what their row means — see each file's embedded comment for which
+// neighbour it had to stay distinguishable from, and why.
 
 /// `pick-text.svg` — the art for [`super::Icon::PickText`].
 ///

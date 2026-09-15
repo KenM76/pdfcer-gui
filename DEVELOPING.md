@@ -25,10 +25,17 @@ A replacement GUI for the `pdfcer` PDF engine, built as two crates:
 plus two small platform crates (`native-window`, `native-clipboard`) and the
 verification harness in `tools/ui-verify`.
 
-`pdfcer-gui` depends on `pdfcer-core` and `pdfcer-render` **by path** into
-`D:\Dev\pdfcer`, and Rust links them statically. The release binary therefore
-already carries the engine; there is no integration step to perform before
-shipping.
+`pdfcer-gui` depends on `pdfcer-core`, `pdfcer-render` and `pdfcer-print` as
+**git dependencies on the `main` branch** of `file:///D:/Dev/pdfcer`, and Rust
+links them statically. The release binary therefore already carries the engine;
+there is no integration step to perform before shipping.
+
+A branch pin moves on its own. `Cargo.lock` records the resolved sha, so the
+build is reproducible until someone runs `cargo update -p pdfcer-core`, but the
+engine's **source** under `D:\Dev\pdfcer` changes under this repository at any
+time, with no command run here. Two consequences bind everything below: run
+`cargo update` for the three engine crates before a build that is meant to
+carry the latest engine, and never cite the engine by line number (§5.1).
 
 **`D:\Dev\pdfcer` is read-only from here.** Engine changes are written up and
 handed to the operator, never applied. See `PROJECT_PLAN.md` §7.
@@ -63,9 +70,18 @@ mockups/          HTML mockups of the ribbon, the window and the modes
 
 ```sh
 cargo build --release
-cargo test --workspace
+CARGO_BUILD_JOBS=2 cargo test --workspace
 bash tools/gates/run-all.sh
 ```
+
+**The job count on the test suite is not optional.** The workspace builds more
+than twenty test binaries, the `pdfcer-gui` one alone linking tens of megabytes
+of debug object. At cargo's default of one job per core, that many linkers run
+at once, each holding well over a gigabyte, and the machine runs out of memory.
+A run killed that way leaves orphaned `cargo`/`rustc`/`link` processes still
+holding the memory, which must be killed before a retry. For the same reason,
+run one cargo job at a time — never chain the gates, the tests and a build into
+a single background command.
 
 `run-all.sh` runs fmt, clippy and every gate in `tools/gates/`. It has three
 states, not two: `0` pass, `1` fail, `3` a gate was **skipped** because its
@@ -92,7 +108,13 @@ cargo run --release -q -p ui-verify -- --list      # the registered checks
 ```
 
 The full sweep takes about ninety-five minutes and aborts if any `.rs` or
-`.toml` in the tree is edited while it runs. Markdown edits are safe.
+`.toml` in the tree is edited while it runs — the staleness guard walks the
+source root and considers only those two extensions. Markdown, `.sh` and `.py`
+edits are therefore safe during a sweep, **with one exception**:
+`tools/ui-verify/sweep-full.sh` is the script bash is currently executing, and
+bash reads a running script incrementally from a byte offset rather than loading
+it whole. Editing it mid-sweep makes the live run execute shifted bytes from the
+middle of a command. Leave that one file alone until `=== SWEEP-DONE`.
 
 ### Packaging
 
@@ -144,6 +166,34 @@ authors; **pdf dimensions** are CAD-exported page content pdfcer reads and must
 not silently alter. They have opposite properties. This applies in code,
 comments, commits and specifications.
 
+### 4.1 Registering a command carries six obligations
+
+R8 makes command registration the only way the GUI learns a capability exists,
+so registration is the seam where a new feature either arrives whole or arrives
+as a button that does nothing. Six things must be true, and each fails loudly.
+The first five check that the registration is internally consistent; the sixth
+is the only one that asks whether the command *does* anything.
+
+1. **The registry size.** `shell::commands::ledger` asserts a literal
+   `registry().len()`, conditioned on the `signing` feature. Beside it, the
+   icon-coverage test asserts the identity `named + refused == total` — a
+   property, not two more literals that can drift apart.
+2. **The ribbon shape.** `shell::manifest`'s shape test asserts the ordinary-tab
+   count, the contextual-tab count, and the total group count across all tabs.
+3. **Removal from `PLANNED`.** A command named in `shell::manifest::registers::PLANNED`
+   is struck from it when it is registered; `DIRECTED` and `PLANNED` are
+   asserted disjoint.
+4. **Regenerating the RON.** `shell/ron/built_in.ron` is generated. Rewrite it
+   with `cargo test -p pdfcer-gui rewrite_built_in_ron -- --ignored`; the
+   round-trip test fails until you do.
+5. **A `KNOWN` entry** in `shell::commands::tests::KNOWN` for any new
+   `enabled_when` condition name, walked by the predicate test.
+6. **Reachability.** The command must be named by a literal arm of
+   `PdfcerApp::dispatch_command`, claimed by one of its guard arms, or listed in
+   `shell::commands::reach::SCAFFOLDED` with a written reason.
+   `shell::commands::reach` parses the dispatcher and asserts this. It is what
+   stops a fully-registered, fully-consistent command from being inert.
+
 ## 5. Documentation and comment standard
 
 The whole standard in one sentence: **write what the program is, never what it
@@ -182,6 +232,16 @@ narrate the *what*.
 - Quotations of the operator, of other documents' prose, or of past findings.
 - Justifications for a file split that cite line counts or gate pressure.
 - Restatement of the code on the next line.
+- **Line numbers in citations of the engine.** Cite `pdfcer-core`,
+  `pdfcer-render` and `pdfcer-print` by symbol — a function, a type, a method,
+  a doc heading — never by `file.rs:NNNN`. The engine is a branch dependency
+  (§1), so its source is split and edited under this repository with no command
+  run here, and a line citation drifts downward until it names unrelated code or
+  no code at all. `EditSession::set_text_run` survives a rewrite of the engine's
+  file layout; `edit.rs:4211` does not — and a rotted citation is
+  indistinguishable from a good one at the moment a reader checks it. A line
+  citation of a file *inside* this repository is fine; it is the moving external
+  pin that makes the engine different.
 
 **Keep, always:**
 

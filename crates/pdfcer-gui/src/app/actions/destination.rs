@@ -38,6 +38,23 @@
 //! | `FitV { left }` | fit the height | fit height, then scroll so `left` is at the left |
 //! | `FitR { rect }` | fit a rectangle | frame that rectangle — the same act the zoom marquee performs |
 //!
+//! ## The `FitH` and `FitV` rows state the intent, not the outcome — a live defect
+//!
+//! Both raise two actions, and the second overrides the first. After
+//! `Action::Fit(..)` comes `Action::GoToDestination(Point { .. })`, but a
+//! `Point` is never scrolled to: `canvas::destination::arrive` turns it into a
+//! `DESTINATION_CONTEXT_PT`-square region through
+//! `canvas::geometry::pdf_point_to_canvas_region` and hands that to
+//! `canvas::zoom::zoom_to_rect`, which raises its own `ZoomTo`. The
+//! magnification the fit chose is discarded and replaced by whatever framing
+//! 150 pt of paper requires — on a large sheet, several hundred percent. A link
+//! or bookmark that resolves correctly and arrives on the right page still
+//! lands magnified far past the view the destination asked for.
+//!
+//! This is a design change rather than a local fix: there is one framing solver
+//! and it takes a rectangle, so giving the destination path a second
+//! scroll-to-a-point route would move every `/XYZ` arrival too.
+//!
 //! ★★ **`null` is not zero.** Table 151 lets `left`, `top` and `zoom` each be
 //! null, meaning *"leave this one as it is"* — and the standard states the
 //! `0`-means-null equivalence **only for `zoom`**, never for the coordinates.

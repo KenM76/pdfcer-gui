@@ -74,6 +74,16 @@
 //!
 //! Steps 2 and 3 do nothing at all when the strip is empty, which is every
 //! frame of every single-page session.
+//!
+//! **A consequence that surprises every driven check written against step 3:**
+//! the strip prefetch only has work to do after a *discontinuity*. Because step
+//! 2 rehomes the outgoing current page's texture into the strip cache, a smooth
+//! continuous scroll makes every page it passes current in turn, and so fills
+//! the cache as it travels. The step-3 scan then never finds a visible page
+//! that is both not-current and unrastered, and emits no request. A check that
+//! wants to observe strip rastering must create the discontinuity deliberately
+//! — set the page number, or Ctrl+End. Scrolling to a page is precisely the
+//! gesture that guarantees the page is already cached.
 
 use std::time::{Duration, Instant};
 

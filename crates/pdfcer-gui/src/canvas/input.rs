@@ -149,6 +149,27 @@ pub(super) fn probe(
 /// The front-most target at `point` whose CLASS the operator has left
 /// switched on.
 ///
+/// # The engine's precision is not uniform across object kinds
+///
+/// `pdfcer_core`'s `object_hit` scores each kind differently, and the shell
+/// inherits the asymmetry whole:
+///
+/// - **Path** — tested against its ink: bounding-box reject, then fill interior
+///   under the object's own winding rule, then stroke/outline proximity.
+/// - **Text** — tested against each run's bounds.
+/// - **Image** (inline image or image XObject) — tested as its page bounding
+///   box inflated by the tolerance. No alpha, no `/SMask`, no clip, no
+///   geometry.
+///
+/// So a mostly transparent picture takes every click inside its rectangle, and
+/// it does so at both depths, because page objects and form leaves are scored
+/// by the same function. Paint order is back-to-front, so such an image masks
+/// everything beneath it.
+///
+/// A **form XObject** is never a candidate: the deep pick skips
+/// `ImageSource::Form` because a form's `/BBox` is an extent declaration rather
+/// than ink, and only its leaves compete.
+///
 /// # ★ Why this is not `hit_test` with a predicate bolted on
 ///
 /// [`CanvasTargetProvider::hit_test`] is defined as the head of

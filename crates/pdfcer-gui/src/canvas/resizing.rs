@@ -734,13 +734,22 @@ pub(crate) fn decline(reason: Refusal) {
         format!("resize-declined reason={reason:?}")
     });
     crate::app::actions::record_note(
-        // ★ Epoch zero rather than the document's, and this is the one place in
-        // the crate that does it. A refusal changed nothing, so there is no
-        // edit for it to be about; `record_note` keys on the epoch so a
-        // disclosure retires when the document moves past it, and a refusal
-        // must retire on the operator's NEXT act instead. Passing the live
-        // epoch would leave "you cannot resize text" on screen through forty
-        // subsequent edits.
+        // Epoch zero rather than the document's, and this is the one place in
+        // the crate that does it. **It is a live defect, and the sentence it
+        // was meant to produce is never seen.**
+        //
+        // `crate::app::actions::last_edit_disclosure` is an EQUALITY filter —
+        // it returns the slot only while `d.epoch == epoch`, and the status bar
+        // passes `doc.edit_epoch`. A note stamped `0` is therefore readable
+        // only while the document's epoch is still zero, which is until its
+        // first edit. From the first edit onward every resize refusal is
+        // recorded and invisible, for the life of the session.
+        //
+        // The intended behaviour — retire on the operator's next act rather
+        // than on the next document change — cannot be expressed by a fixed
+        // epoch at all, because the filter has no ordering. A refusal that must
+        // reach the operator is stamped with the current epoch like every other
+        // note; retiring it sooner needs a mechanism, not a sentinel.
         0,
         crate::text::resizing::refusal(reason).to_owned(),
     );

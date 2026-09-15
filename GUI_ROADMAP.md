@@ -1,32 +1,39 @@
 # pdfcer GUI — roadmap
 
-**Written:** 2026-08-12
-**Companions:** `RIBBON_IA.md` (where commands live), `DEFECTS.md` (what
-is broken, with `file:line`), `mockups/ribbon.html` (what it looks
-like), `evidence/` (screenshots of both pdfcer and the comparison
-product).
+What is not yet built in this shell, the order it gets built in and the reason
+for that order, and the scope questions that need the operator's ruling; read by
+whoever picks up the next piece of work.
 
 ---
 
-## The thesis
+## How the order is chosen
 
-pdfcer's engine is ahead of its shell. The Objects panel, the Fonts
-panel and the spec-ambiguity Settings dialog are things no competing
-product has, and the parsing underneath them is demonstrably better. On a
-shared test file the comparison product reported `Pages -`, `Page Size -`
-and every metadata field blank, while pdfcer read it correctly.
+Order by what the operator reaches for, never by what most recently arrived in
+the engine channel. The engine's replies are an input to *how* a thing gets
+built; they are never an input to *which* thing gets built next. Among items the
+operator weights equally, cheapest first — a shipped small thing is worth more
+than a scheduled large one.
 
-What is missing is not capability. It is the layer of ordinary
-conventions a user brings with them: click a thing and press Delete;
-right-click for options; find page operations under something called
-Pages; zoom without losing your place; type and watch the text move.
-Each of those is individually small. Together they are the difference
-between a tool that feels like an inspector's instrument and one that
-feels unfinished.
+Two consequences decide sequencing more often than cost does:
 
-So the roadmap is ordered by **how much user-visible behaviour each unit
-of work buys**, not by architectural interest. Phase 0 is four days of
-work that removes the two worst impressions the product currently makes.
+- **A capability's presence is expressed by registering its command.** A ribbon
+  item naming an unregistered command is dropped from the merged manifest with a
+  `CapabilityAbsent` skip; it is never drawn inert. "Build the surface now and
+  wire it later" is therefore not an available ordering.
+- **An unavailable capability renders nothing.** Greying is reserved for a
+  *temporarily* unavailable capability and is always explained on hover. Several
+  items below are blocked on a **consumer** rather than on a condition: flipping
+  a manifest condition to reveal a control over a code path that does not exist
+  is exactly what that rule prevents.
+
+Three registers divide the work between them, and duplicating a row across two
+of them is how they drift apart:
+
+| Register | Holds |
+|---|---|
+| `RESUME.md` | which operator request is next, in the operator's order |
+| `FEATURES.md` | row-level status for every shipped and planned capability |
+| this document | what remains, grouped by what it waits for, and the open scope questions |
 
 ---
 
@@ -35,542 +42,364 @@ work that removes the two worst impressions the product currently makes.
 **Every GUI change needs a verification that drives the running binary,
 not only a test that passes.**
 
-Two defects in `DEFECTS.md` were invisible to a green test suite and
-obvious within thirty seconds of using the app:
+`tools/ui-verify/src/lib.rs` cites this section by name, because the rule is the
+reason that crate exists. Two defects were invisible to a fully green test suite
+and obvious within thirty seconds of using the application:
 
-- **D1** — the Delete key. The only test of `collect_keyboard_actions`
-  builds a bare `egui::Context` with no widgets, so the focused-widget
-  condition that breaks the real app cannot occur in the harness. The
-  regression commit says so itself: *"analysis-confirmed, NOT
-  empirically verified."*
-- **D2** — invisible headings. Two theme tests sit adjacent to the bug
-  and neither measures a rendered foreground/background pair.
+- **The Delete key.** The only test of the keyboard collector built a bare
+  `egui::Context` with no widgets, so the focused-widget condition that breaks
+  the real application could not occur in the harness.
+- **Invisible headings.** Two theme tests sat adjacent to the bug and neither
+  measured a rendered foreground/background pair. A screenshot audit separately
+  found **two ribbon groups rendering with no caption at all** — caught by a
+  screenshot, not by a test.
 
-The project already has the ingredients: `PDFCER_DIAG=1` emits a
-`key=value` stderr trace, and the 2026-08-08 screenshot audit found two
-ribbon groups rendering with no caption at all — caught by a screenshot,
-not a test.
+Those are the two findings that justified building the harness. It launches the
+release binary, opens a fixture, drives a scripted sequence through the OS,
+captures the window, and asserts on both the `PDFCER_DIAG` trace and the pixels.
+The smallest useful set it started from, and which `tools/ui-verify/src/checks`
+still names as its founding three:
 
-**Proposal.** A `tools/ui-verify/` harness that launches the release
-binary, opens a fixture, drives a scripted sequence via the OS, captures
-the window, and asserts on both the diag trace and the pixels. Start
-with the smallest useful set:
-
-1. Click an object on the canvas → assert selection non-empty → press
-   Delete → assert the object count dropped. (This is D1's regression
-   test, and it must run through the real event loop.)
+1. Click an object on the canvas, assert selection non-empty, press Delete,
+   assert the object count dropped — through the real event loop.
 2. Screenshot each ribbon tab and assert every group has a caption whose
    rendered contrast against its background exceeds a threshold.
 3. Screenshot the Settings dialog and assert the same for every section
    heading.
 
-This costs perhaps two days and it is the highest-leverage item on the
-whole list, because it changes what "done" means for every phase below.
+The suite is far larger now; `tools/ui-verify/src/checks/mod.rs` is the list and
+the additions are this same rule applied to each new surface as it lands. A
+capability with no check that drives it is not done.
 
 ---
 
-## Phase 0 — Stop the bleeding
+## The phase numbers the source cites
 
-**Target: one week. Nothing here is architectural.**
+Module headers across both crates cite this document by phase number, and
+several quote a row's own words. The work is built; the numbers are live
+identifiers, so they are kept here with what they named.
 
-| # | Work | Ref | Size |
-|---|---|---|---|
-| 0.1 | `let typing = ctx.text_edit_focused();` | D1 | 1 line |
-| 0.2 | Exclude text tools from the `canvas_delete_target` hole | D1 | ~6 lines |
-| 0.3 | Check `editing_enabled` in `Action::DeleteSelection` | D6 | ~3 lines |
-| 0.4 | Keyboard test through a focused context | D1 | small |
-| 0.5 | Set `widgets.active.bg_fill = accent`; add a rendered-pair contrast test | D2 | small |
-| 0.6 | README: remove Bates and PDF/A from "Working today"; qualify imposition as CLI | D3 | 3 lines |
-| 0.7 | Derive `shortcuts_reference()` from `collect_keyboard_actions`, or test they agree | D5 | small |
-| 0.8 | Fix `ROADMAP.md` Pass 33.0's "no on-canvas caret" claim; footnote `FEATURES.md:73`; correct `FEATURES.md:119` | D7 | 3 edits |
-| 0.9 | Delete the stale worktree under `.claude/worktrees/` | D8 | 1 command |
-| 0.10 | Status-bar diagnostics collapse by default | — | small |
-
-**0.1–0.4 must ship together.** Fixing the Delete key without 0.3 turns
-a dormant review-mode hole into a live one.
-
-**Why 0.10 is here.** The first line a user reads today is *"This page:
-119 bundled substitute glyph(s), 0 operator-supplied glyph(s)…"*. The
-disclosure triangle already exists; it should start closed. The
-information is genuinely valuable and stays one click away.
-
----
-
-## Phase 1 — Make selection mean something
-
-**Target: three to four weeks. The largest usability return in the plan.**
-
-Right now, selecting an object produces a highlighted tree row and no
-way to act on it. Everything a user would try next — right-click, drag a
-handle, press Delete, change the colour — either does nothing or does
-not exist. Phase 0 fixes the keyboard path; this phase builds the rest.
-
-| # | Work | Notes |
+| Cited as | What it named | State |
 |---|---|---|
-| 1.1 | **Context menus** | Canvas, thumbnail rail, Objects tree, Comments list, annotations. `grep context_menu` currently returns zero hits across the crate. Each carries Cut/Copy/Paste/Delete plus its type's commands. |
-| 1.2 | **Move and resize anything carrying a `/Rect`** | `FEATURES.md:208`. One row unblocks markup, form widgets, redaction marks, links and ce dimensions at once. Highest structural leverage in the backlog. |
-| 1.3 | **Selection handles and cursor feedback** | Eight handles plus move, per the convention every drawing tool shares. Cursor changes over a handle, over a movable object, over the canvas. |
-| 1.4 | **Object clipboard** | Cut / Copy / Paste / Paste in place for canvas objects. |
-| 1.5 | **Properties panel** | Decided: **both** surfaces ship, panel first. It holds the full property set including editable X/Y/W/H, which is how `/Rect` resize becomes reachable by typing a number rather than dragging. The tab's contents are a subset, so building the tab first would mean writing the editors twice. |
-| 1.6 | **`Format` contextual tab** | The mid-gesture subset — colour, width, style, align, delete. Appears on selection, disappears on deselect. |
-| 1.0 | **Two deferred deadlines fall due here** — both were deferred *with a stated rule*, and S4 is the commit the rule names. **(a)** `PanelsState`'s decomposition and font caches move onto `OpenDoc`, deleting `DocKey` and its `Arc`-address ABA hazard: an identity key exists only because a cache outlived what it described. **(b)** `RenderKey` gains `annotations` and `layers_generation`, because *"the key ships in the same commit as its control"* and the Layers visibility checkbox is now due. | in progress 2026-08-13 |
-| 1.7 | **Remove the `Editing on` master toggle** | Decided: *"make it work the same way other programs do."* Delete `editing_enabled` (`main.rs:3235`, `3624`), the ribbon toggle (`ribbon_ui.rs:721-736`) and the four gate sites (`7095`, `8169`, `8194`, `16920`). **This supersedes D6** — with no review mode there is nothing to enforce. If a read-only mode is ever wanted it should be a *document* state with a visible badge, not a hidden global switch. |
+| Phase 1 | Make selection mean something — context menus first, then the selection model below | built |
+| 1.2 | *"move and resize anything carrying a `/Rect`"* (`FEATURES.md:208`) — markup, form widgets, redaction marks, links and ce dimensions unblocked by one row | built, and extended to content-stream objects |
+| 1.3 | *"Eight handles plus move, per the convention every drawing tool shares."* | built |
+| Phase 2 | Rebuild the ribbon — seven tabs, specified in `RIBBON_IA.md`. Its rules stand: P1a (the quick-access toolbar and status bar are shortcut surfaces), P2 (the ribbon picks the activity, the sidebar holds its controls), **P3 (no placeholders)**, P4 (mandatory group captions), P5 (nothing floats over the canvas) | built |
+| Phase 3 | Viewer conventions — cursor-anchored zoom, **3.2** a hand tool and space-to-pan, **3.3** an editable page-number box (*"Reaching page 37 of 42 currently means the thumbnail rail or 36 keystrokes."*), zoom to selection and to a marquee region, a recent-files list, a persisted dock layout, a thumbnail rail that reflows to a grid | built |
+| Phase 4 | Page display modes — single stays the default; continuous, facing and facing-continuous are chosen on View and remembered per document. **4.3** is scroll-driven current-page tracking: greatest visible area wins, lowest index breaks a tie, and a press outranks the scroll | built |
+| Phase 5 | Text editing — see *Text editing* below for what is left of it | partly built |
 
-### ✅ Move and node editing are unblocked — indices are safe across `move_*`
+---
 
-**Answered 2026-08-13.** `request_stable_object_identity.md` asked whether a
-paint-order index survives an edit. It does, for the family that matters,
-and the answer is **proved by a test that decomposes, edits, and
-decomposes again** rather than read off the planner:
+## Rules that decide what gets written next
 
-| family | mechanism | renumbers? |
+These govern how the program behaves. They are here because an engineer who does
+not know them writes something that compiles, passes, and is wrong.
+
+### Index stability across edits
+
+Two families of edit, two behaviours. Mixing them up corrupts a document
+silently, because the next gesture edits a different object than the one on
+screen.
+
+| Family | Members | What it does to indices |
 |---|---|---|
-| `move_object` · `move_objects` · `move_subpath` · `move_node` · `move_nodes` · `move_handle` | rewrites operator **operands** in place | **NO** |
-| `delete_object` · `delete_objects` · `delete_subpath` · `delete_node` · `delete_text_run` | excises byte **spans** | **YES** |
+| `move_*` | `move_object`, `move_objects`, `move_subpath`, `move_node`, `move_nodes`, `move_handle` | Rewrites operator **operands** in place. Nothing renumbers, so a held index still names the same object afterwards. |
+| `delete_*` | `delete_object`, `delete_objects`, `delete_subpath`, `delete_node`, `delete_text_run` | Excises byte **spans**. Everything after the excision renumbers, so every held index is stale the moment the call returns. |
 
-A move changes numbers *inside* existing operators, so no operator is added
-or removed and every other object keeps its exact fingerprint at its exact
-index. **So build move and node editing against indices — the selection
-survives them unchanged.** No token, no invalidation.
+After a delete, remap held indices through
+`pdfcer_core::vector::remap_index_after_delete`. It answers `None` for *it is
+gone* and never a different object's index, and it handles unsorted and
+duplicated input. Carrying an index across a delete without it is the defect.
 
-For the delete case, `pdfcer_core::vector::remap_index_after_delete(i, &deleted)`
-returns `None` for "it is gone" and never a different object's index. It
-handles unsorted and duplicated input, which matters because a shell
-unioning two overlapping selections would otherwise shift a survivor twice.
+### Selection is identity, not position
 
-**Still blocked, but on a different thing:** the eight resize grips have no
-verb. `EditSession` has the whole `move_*` family and **no scale or resize
-verb at all** — so resize is blocked on a *capability*, not on identity, and
-that is a separate request when the grips are built.
+The operator's requirement, in force: *"if I select a node or something for a
+tool, I should be able to pan and zoom out without losing my first selection."*
 
-Also noted for whoever builds them: **reorder and paste do not exist yet**,
-and when they do they must be checked against that same test file and the
-table above extended. A new verb that renumbers without saying so re-opens
-this hazard exactly.
+> **Navigation is not an edit. Panning, zooming, changing fit mode, rotating the
+> view, switching page-display mode and changing ribbon tab must never alter the
+> selection.**
 
-### Selection survives navigation — an invariant, not a feature
+Selection is held as page, object index, sub-path and node — never as a point or
+a rectangle. From that:
 
-**Operator requirement, 2026-08-13:** *"if I select a node or something
-for a tool, I should be able to pan and zoom out without losing my first
-selection."*
+- **Navigation does not clear it.** A page change, a zoom, a scroll and a
+  re-render all leave it intact.
+- **A completed click on empty space clears it; a press does not.** A press that
+  becomes a drag is a marquee or a move, and clearing on press makes both
+  gestures begin by destroying their own operand.
+- **Identity is re-resolved, not discarded, when the page is decomposed again**
+  after an edit. Discarding it is what makes a selection appear to evaporate for
+  no reason the operator can see.
 
-> **Navigation is not an edit. Panning, zooming, changing fit mode,
-> rotating the view, switching page-display mode and changing ribbon tab
-> must never alter the selection.**
+### Coordinate spaces
 
-This has to be stated as an invariant because the natural implementation
-loses it in three separate ways, each of which looks reasonable in
-isolation:
+PDF user space is y-**up**. Image space and screen space are y-**down**. Every
+conversion between them is a place a sign error hides, and a sign error in a hit
+test reads as *the click missed*.
 
-1. **Selection stored in screen coordinates.** Zoom changes the mapping,
-   so the stored point stops naming the thing it named. Selection must be
-   held as *object identity* — page + object index + sub-path + node —
-   never as a position. The `canvas-pointer` trace already reports
-   `screen=/page=/pdf=` together precisely because those three are
-   different spaces and conflating them is the classic defect here.
+Hit-test and snap `tolerance` is a radius in **page** space, not in pixels. It
+has to be derived from a pixel slop at the current zoom, or deep zoom gets a
+tolerance the size of a room.
 
-   **Core confirms this is a live trap, from the other side.** Per
-   `D:\Dev\FeatureRequests\pdfce_FeatureRequests\README.md`: *"Every
-   hit-test and snap `tolerance` is a PAGE-space radius, and nothing
-   checks it. Pass raw screen pixels and it compiles, runs, and merely
-   drifts with zoom"* (`hit.rs:118-120`). The screen→page conversion is
-   the shell's job. So the same confusion breaks selection persistence
-   **and** silently changes hit tolerance with zoom — a selection that
-   survives a zoom but was made with a tolerance 8× too large is not a
-   fix. Convert once, at the boundary, and keep page space inward.
+### Whole-page rendering is the default, and tiling is refused
 
-   Related, and equally silent: **PDF user space is y-UP; image and
-   screen space are y-DOWN.** The page looks perfect until someone
-   selects a line and gets a different one.
-2. **Selection cleared by a click that was really a drag.** A pan gesture
-   begins with a press on the canvas. If press-on-empty clears the
-   selection, every pan that starts on blank paper destroys it. The clear
-   must be driven by a *completed click* with no drag, not by a press.
-3. **Selection invalidated by re-decomposition.** The object provider
-   rebuilds on page change and on edit. A rebuild triggered by zoom — or
-   by a continuous-scroll page change that is not a page *change* in the
-   operator's sense — must not drop the selection. Identity must be
-   re-resolved against the new decomposition rather than discarded.
+The canvas rasterises a whole page. A generation counter plus a settle debounce
+abandons superseded renders mid-flight, so a rapid run of zoom steps starts a
+generation per step and completes exactly one — the last — while the operator
+sees the previous texture linearly scaled. That is why zoom and pan feel the way
+they do; it is cheaper than a tile cache rather than a compromise against one.
 
-A multi-select and an entered sub-path/node level must survive the same
-operations. Escape is the only thing that ascends the selection ladder,
-and it is already specified that way.
+Tiling is **cancelled**, on measurement rather than on taste: the cost of a
+region render is almost entirely area-independent, so a one-point region costs
+about what a hundred-thousand-pixel region costs, and a three-by-three ring is a
+ninefold regression. Deep zoom is served instead by **one region per viewport**
+— `pdfcer_render::render_page_region`, called from
+`crates/pdfcer-gui/src/render/worker.rs` — with a whole-page-to-region
+crossover. Tiling survives only as a way to bound memory on an enormous
+viewport, never to save time.
 
-**Acceptance:** select a node, zoom out three rungs, pan across the
-sheet, switch to Continuous, come back, switch ribbon tab — the node is
-still selected and still the entered level. Add this to `ui-verify` as
-its own check; it is exactly the kind of property that unit tests pass
-and a running application fails.
+The interpretation floor cannot be parallelised: a content stream is a state
+machine where the save and restore operators, the transform, colour and clip all
+accumulate, so an operator cannot be interpreted without the state every
+operator before it left behind. Driving several region calls across cores
+multiplies that floor instead of dividing it.
 
-**Acceptance for the phase:** place a rectangle, click away, click it
-again, drag it, resize it, type an exact width, change its colour,
-right-click it, delete it. Every step of that sequence fails today.
+### Reflow stays operator-invoked
+
+Automatic re-wrap on edit invents line breaks the file never stated. Reflow is
+made *reachable*, never silent.
+
+### Applied content renders exactly as saved content will render
+
+Fuzzy, never sneaky. Nothing provisional is painted on the canvas; disclosure
+lives off-canvas — the status line, a results panel, a report, a properties
+field. A pre-commit affordance that is *the cursor* is welcome and is not an
+exception to this.
+
+### Never write a bare "dimension"
+
+A *ce dimension* is one pdfcer authors. A *pdf dimension* is CAD-exported page
+content pdfcer reads and must not silently alter. A sentence that says only
+"dimension" is ambiguous in the one place the ambiguity is expensive.
+
+### `egui-shell` never learns what a PDF is
+
+The shell crate owns the ribbon, the dock, modes, layout persistence, the theme
+and the command registry, and knows nothing about documents. Anything that has
+to know what a page is belongs in `pdfcer-gui`.
 
 ---
 
-## Phase 2 — Rebuild the ribbon
+## Text editing — the largest remaining block
 
-**Target: two to three weeks. Specified in full in `RIBBON_IA.md`.**
+Fixtures first, then the shell-side work, then the engine-blocked items: the
+engine-blocked items cannot start, and the fixtures decide whether any of the
+rest can be believed.
 
-| # | Work |
+### Fixtures, before anything else here
+
+The generated text fixtures are single-run by construction: one show operator
+per line, real space glyphs, uniform font and uniform size
+(`tools/gen-reflow-fixture.py`, `tools/gen-textedit-fixtures.py`). Every
+condition that fails in the field is absent. Add a multi-run paragraph, mixed
+sizes within one block, rotated text, and words separated by positioning rather
+than by space glyphs — first, so the work below has something to fail against.
+
+### Live layout while typing — blocked on the engine
+
+The draft is drawn as ghost text in a proportional font over a translucent mask,
+and real layout runs once on commit. You type at the wrong widths and it snaps
+to reality on Accept. Re-measuring per keystroke is the fix, and the measurement
+of whether it can be afforded already exists:
+
+```sh
+cargo test -p pdfcer-gui --lib canvas::textedit::cost -- --ignored --nocapture
+```
+
+That test is `#[ignore]`d by design and reports a per-keystroke cost for a small
+synthetic block, a real drawing sheet and the dense benchmark drawing. Roughly
+16 ms is one frame and roughly 50 ms is felt as lag; read the figures from the
+run, never from prose.
+
+**What blocks it:** the engine computes the advance delta inside its edit
+planner before any write, and neither the planner nor its plan type is public. A
+public *measure this edit* entry point — or making the planner and its plan
+public — is the whole of what this waits on.
+
+**A cheap approximation is refused.** Summing `ExtractedGlyph::advance` over the
+draft works only for characters the page already shows; a character it does not
+show has no width there, so the approximation is silently wrong for exactly the
+input that motivates the feature. **Debouncing is refused too**: a re-layout
+appearing a moment after you stop typing is a second, later surprise rather than
+a fix for the first one.
+
+### Reflow reachability
+
+Reflow re-wraps a block to the block's own extent, at an alignment inferred from
+glyph positions, with leading taken from the block's own median baseline gap.
+The engine's reflow request carries a wrap width, an alignment and a leading
+override, and this shell passes none of the three — it supplies only the page
+crop box, which is what buys the *your paragraph now ends below the bottom of
+the sheet* disclosure. Exposing any of the three is shell-only work; whether to
+is an open question below.
+
+Two refusals remain, and both are the engine's:
+
+| Refusal | What it takes to lift |
 |---|---|
-| 2.1 | Adopt amendment **P1a** — the QAT and status bar are shortcut surfaces and may mirror a tab command. Unblocks a File tab with Open/Save and a View tab with zoom. |
-| 2.2 | Seven tabs: File · View · Pages · Edit · Markup · Measure · Tools |
-| 2.3 | **Pages tab** — surface the page operations that already work but live only in the thumbnail rail and the Batch pane |
-| 2.4 | **View tab gets view controls** — page display modes, view rotation, read mode, full screen, targeted zooms, and the new **Render** group |
-| 2.5 | Relabel `Aa` → **Edit text**, `I⁺ Aa` → **Add text**, `Obj` → **Edit objects**; label the two unlabelled rotate icons |
-| 2.6 | Move: copy-text → Edit, Redact → Edit, rotate page → Pages, Fonts panel → File ▸ Document, reset layout → View ▸ Window |
-| 2.7 | Rename Review → **Markup** |
-| 2.8 | Update the group-ownership test and the `RibbonTab::groups()` source of truth |
+| A word boundary realised as a derived word space rather than as a real space glyph is not a break opportunity, so CAD output that positions words with text-positioning offsets presents one unbreakable word and nothing wraps | tokenisation in the engine's reflow planner |
+| The font resource and the text matrix must be uniform across the block | relaxing the uniformity checks in the engine's reflow applier |
 
-**What does not change:** P2 (ribbon picks the activity, sidebar holds
-its controls), P3 (no placeholders), P4 (mandatory group captions), P5
-(nothing floats over the canvas). Those rules are good and this phase
-keeps every one of them.
+The shell's half is already done: every engine-side refusal is worded **after**
+the attempt, from the engine's own discriminant, never forecast. A shell-side
+pre-flight guard over the same model is refused on principle — two predicates
+over one model is the shape that ships silent disagreement, and no test of
+either can see them disagree.
 
----
+### Cross-run editing — blocked on the engine
 
-## Phase 3 — Viewer conventions
+An edit request pins to one show-text operator, and a text array is one
+operator, so a paragraph split across several runs must be edited run by run.
+**This is not silently disabled**: a caret landing where two runs meet refuses
+*in a sentence*, on the status bar, naming what to do instead.
 
-**Target: two to three weeks. Small items, disproportionate effect.**
-
-| # | Work | Why |
-|---|---|---|
-| 3.1 | **Cursor-anchored zoom** | Zoom buttons currently pin the page's top-left, so zooming in loses your place. The comparison product treats this as a measured metric with a published budget — under 3 px of anchor drift. That is a reasonable bar. |
-| 3.2 | **Hand tool + space-to-pan** | There is no hand tool at all; panning is middle-drag only. |
-| 3.3 | **Editable page-number box** | Reaching page 37 of 42 currently means the thumbnail rail or 36 keystrokes. |
-| 3.4 | **Zoom to selection; marquee zoom to region** | Neither exists. Both are core drafting-review gestures. |
-| 3.5 | **Recent files** | `grep -i recent` finds nothing anywhere in the crate. |
-| 3.6 | **Persist dock layout** | Requires turning on `eframe`'s `persistence` and `egui_tiles`' `serde` features. The in-app notice saying the layout will be lost can then be deleted. |
-| 3.7 | **Thumbnail rail reflows to a grid and narrows** | It reserves ~390 px of a 1936 px window to show one thumbnail. See `evidence/pdfcer_max.png`. |
+Lifting it needs a multi-run edit request in the engine that groups runs into a
+line or a block and re-emits them as a set. It is the correct end state and the
+most expensive item in this document. How much of it to build is an open
+question below.
 
 ---
 
-## Phase 4 — Page display modes
+## Measure — the takeoff set
 
-**Target: four to six weeks. The only genuinely architectural item in
-the first half of this plan.**
+The dimension-group model — named groups carrying a shared scale and a drafting
+standard — is the differentiator here, and nothing below should dilute it.
 
-**Single page stays the default.** Paging one sheet at a time is the
-right model for drafting review and the existing navigation is good.
-Continuous becomes a *mode you choose* on the View tab, for the case
-where the document is a 40-page specification rather than a sheet set.
-
-| # | Work | |
-|---|---|---|
-| 4.1 | `ViewState` holds a page *range* rather than one `page_index` (`viewer.rs:90-98`) | ✅ **and the answer was that a range is not a field.** Which pages are on screen falls out of where they are laid out and where the viewport is, so `viewer::strip` computes it and `page_index` stays one index — now meaning *the page the operator is looking at*, derived from the scroll under a continuous mode |
-| 4.2 | Object provider serves more than the current page (`object_provider.rs:392-399` currently returns nothing for any other page) | ✅ **without changing the provider.** Pressing on a page makes it current before the hit test runs, so the provider is still asked for one page and it is still the right one. One decomposition per `(page, epoch)`, unchanged |
-| 4.3 | Scroll-driven current-page tracking; find-navigation stops assuming a page change is never a scroll | ✅ Greatest visible area wins, lowest index breaks a tie. Find's two-frame reveal was **not** modified: the canvas converts the strip offset into the one-page-at-the-origin world that solve is written for, and converts the answer back |
-| 4.4 | Four modes on View ▸ Page display: Single · Continuous · Facing · Facing continuous | ✅ A radio, with the active position rendering pressed through the `selected:` convention |
-| 4.5 | Mode persists **per document**, not globally — opening a drawing set must not inherit a report's setting | ✅ `page-display.txt`, a third store beside `layout.ron` and `recent.txt`. Read mode's continuous default applies only when a document has no remembered choice |
-
-**Done.** The estimate above ("four to six weeks", "the only genuinely
-architectural item in the first half of this plan") was right about the
-shape and wrong about the size: the architectural weight turned out to be
-in *what is rasterized and when*, not in the view state. The four modes
-are a strip layout; the affordable part is that only visible pages
-rasterize, one at a time, nearest first.
-
----
-
-## Phase 5 — Text editing
-
-**Target: staged. See `DEFECTS.md` D4 for the full diagnosis.**
-
-Split by cost, because the three complaints have very different prices.
-
-### 5a — Correctness bugs (days)
-
-| # | Work |
+| Item | What it waits for |
 |---|---|
-| 5a.1 | Detect alignment on the edit path; pass `FollowerDisposition::Pin` for right/centre/justified tails. The variant exists (`edit.rs:301-303`); the GUI never uses it (`main.rs:12438`). |
-| 5a.2 | Add the rotation guard to the edit path. `reflow_apply.rs:757-760` already has one; `edit.rs:1503` shifts rotated `Tm` along the wrong axis. This bites rotated CAD title-block text. |
-| 5a.3 | Fixtures that reproduce both: a right-aligned paragraph, a rotated title-block string. |
+| **Angular** | Shell only. The engine's dimension kinds carry an angular variant and author it; this shell registers no command and arms no tool. The absent-command register still records this as needing an engine verb, which is stale. |
+| **Area** | An engine verb. The dimension kinds are linear, circular, angular and perimeter; there is no area kind to author. |
+| **Count tool and takeoff schedule** | An engine verb plus a schedule surface. The larger of the two remaining takeoff items. |
+| **Aligned** | Nothing. It is a *constraint* on a linear pick rather than a tool, so it belongs on a property control and not as another armable kind. |
 
-### 5b — Live layout while typing (one to two weeks)
+---
 
-Today the draft is ghost text in an egui proportional font over a
-translucent mask, and real layout runs once on commit
-(`main.rs:17868-17899`, `18208-18210`). You type in the wrong typeface at
-the wrong widths and it snaps to reality on Accept. Re-measure and
-re-render the draft with the real metrics per keystroke. The metrics
-path is already correct — this is about calling it more often.
+## Shell surfaces with no route to a capability that exists
 
-### 5c — Reflow reachability (two to three weeks)
+Each is small, independently shippable, and can fill a gap in any sprint.
 
-| # | Work |
+| Capability | What it waits for |
 |---|---|
-| 5c.1 | **Decide Pass 33.0.** Options (b) median line width or (d) refuse-to-auto-detect. Only the disclosure shipped, and the roadmap admits *"an operator who does not read the disclosure still gets a re-wrap to a width they never chose."* |
-| 5c.2 | **Plan reflow against staged session content.** Today it refuses after any edit and demands save-and-reopen, *after* showing a correct-looking preview (`edit.rs:4279-4285`, `main.rs:18660-18669`). This is the single most confusing sequence in the product. |
-| 5c.3 | Treat `DerivedWordSpace` as a break opportunity. Reflow currently breaks only at real U+0020 glyphs (`reflow.rs:42-54`), so CAD output that positions words with `Td`/`TJ` offsets presents one unbreakable word and nothing wraps. |
-| 5c.4 | Relax the uniform-font and uniform-size refusals (`reflow_apply.rs:669`, `:768`). |
+| Imposition in the print dialog | Sheet composition lifted into `pdfcer-print` so both shells share one implementation, including the mutual-exclusion guard that is CLI-local today. A control before that is an affordance for something that cannot happen. |
+| Insert blank page | A size-and-count dialog. The engine inserts blank pages already. |
+| Unencrypted-wrapper warning | A surface. The engine can tell that an otherwise unencrypted document carries encrypted embedded files; nothing on screen says so. |
 
-**R75 is not in question.** Automatic re-wrap on edit would invent line
-breaks the file never stated. Keep it operator-invoked; make it
-*reachable*.
+Two capabilities are **built and undriven** — they exist, they are registered,
+and no check in `tools/ui-verify` drives them. Until one does, a UI change is
+not done:
 
-### 5d — Multi-run editing (large, schedule separately)
+- Page export to PNG, JPEG, SVG and EMF.
+- Sheet resize, which changes the **paper** and does not move, scale or reflow
+  one byte of page content — an A1 drawing put on A4 is cropped, not shrunk, and
+  the dialog states that rule and measures the overhang before anything is
+  committed.
 
-`PendingEdit` pins to one show-text operator (`main.rs:2386-2400`), so a
-paragraph split across several `Tj` runs must be edited run by run, and
-a cross-run selection silently disables typing altogether. Fixing this
-means a multi-run edit request in core that groups runs into a line or
-block and re-emits them as a set. It is the correct end state and it is
-the most expensive item in this document.
+List what the harness actually registers rather than trusting this paragraph,
+and rebuild it first, because a stale harness prints nothing and an empty
+listing reads as an empty roster:
 
-### Fixtures, before any of the above
-
-Every current text fixture is synthetic and single-run: one `Tj` per
-line, real space glyphs, uniform font and size
-(`tools/gen-reflow-fixtures.py:114-124`). Every condition that fails in
-the field is absent by construction. Add fixtures with a multi-run
-paragraph, mixed sizes in a block, rotated text, and words separated by
-positioning rather than space glyphs — **first**, so the work above has
-something to fail against.
+```sh
+cargo run --release -q -p ui-verify -- --list
+```
 
 ---
 
-## Phase 6 — Markup completeness
+## Rendering — what remains, in priority order
 
-Six of ten markup kinds are deferred (`canvas.rs:255-262`): Ink,
-Polygon, PolyLine, Underline, StrikeOut, Squiggly. **Cloud** is not on
-that list and matters most for this audience — revision clouds are table
-stakes on a drawing markup.
+1. **A display list, built once and replayed at any scale** — engine side. A
+   zoom change currently re-walks every operator on the page although only the
+   transform moved; replaying a display list turns a zoom re-render into fill
+   alone. It is a larger win than more cores, it applies at every zoom, and it
+   composes with parallel fill.
+2. **A reusable parsed handle** — engine side, and **deep zoom via per-viewport
+   regions should not start before it is scheduled**. Without it, second and
+   subsequent renders of a page pay full parse cost, and switching to regions
+   trades the smooth pan the operator values for a gesture-length stall.
+3. **A thread pool for thumbnails and adjacent-page prerender** — shell side,
+   and it needs no interpreter change. Pages are independent; the render worker
+   is single-slot by design and a pool is a different structure beside it.
+   Adjacent-page prerender is cheap, independent of render strategy, and makes
+   paging through a sheet set feel instant.
+4. **Find off the dispatch path** — shell side. Find cancels the render worker
+   and then runs the whole-document scan synchronously in dispatch
+   (`crates/pdfcer-gui/src/find/mod.rs`). On a large document that is a visible
+   stall, and it has nothing to do with rasterisation.
+5. **A maximum zoom derived from measured performance** — not from `f32`
+   numerics, which hold sub-pixel accuracy three orders of magnitude past any
+   plausible viewing zoom, and not from the pixmap allocation guard.
+6. **Anchor decimation for ink annotations** — every point of every stroke is an
+   anchor today, so a dense stroke makes node-grab the hot spot. It resurfaces
+   as selection gets richer.
 
-Also: markup cannot carry `/Contents` note text, and the Style group
-sets width, fill and opacity for nothing (only colour exists). Both are
-small once Phase 1 has given selection meaning.
+Two controls that were once proposed here now exist as preferences: a
+raster-scale quality multiplier, and the zoom settle delay. Three others do not
+exist and are not merely unbuilt — a render-strategy radio has no tiled path to
+select, an antialias control has no engine knob to turn, and a floating-panel
+setting has no floating mode in the dock.
 
----
-
-## Phase 7 — Measure completeness
-
-| Item | Cost |
-|---|---|
-| **Two-line dimensioning** | Shell only — core and CLI shipped and measured, `pick_line` has no caller. Cheapest real feature in the backlog. |
-| **Area** and **Angular** | The conspicuous absences for takeoff work. |
-| Count tool and a takeoff schedule | Larger; the comparison product has one worth studying. |
-
-The **dimension-group** model — named groups carrying a shared scale and
-drafting standard — is better than what the comparison product offers
-and nothing here should dilute it.
-
----
-
-## Standing backlog — shell-only work
-
-These exist in `pdfcer-core` and/or `pdfcer` and need a GUI surface,
-not an engine. Any of them can fill a gap in any sprint; each is small
-and independently shippable.
-
-| Capability | Status |
-|---|---|
-| Attachments panel | core ✓ CLI ✓ GUI ✗ — no surface at all |
-| Page image export (PNG/JPEG/TIFF, DPI picker) | core ✓ GUI ✗ |
-| Canvas text selection and copy | core ✓ GUI ✗ (`FEATURES.md:70`) |
-| Imposition in the print dialog | CLI ✓ GUI ✗ — needs sheet composition lifted into `pdfcer-print` |
-| Insert blank page | core ✓ GUI ✗ |
-| Push-button field creation | CLI ✓ GUI ✗ |
-| Move a form widget | core ✓ CLI ✓ GUI ✗ — folds into Phase 1.2 |
-| Script-driven-field census | core ✓ CLI ✓ GUI ✗ |
-| Unencrypted-wrapper warning | core ✓ CLI ✓ GUI ✗ |
-
----
-
-## Rendering — a choice to expose, not a weakness to fix
-
-**Corrected 2026-08-12, and now measured — see `BENCHMARK.md`.** An
-earlier draft of this document called the whole-page raster a weakness
-and proposed replacing it with a tile cache. That was inferred from
-architecture, not measured — exactly the failure mode the standing rule
-above exists to prevent — so it is corrected here rather than quietly
-edited out.
-
-The operator's report was that pdfcer's zoom and pan felt *faster and
-more pleasant* than the tiled competitor's. Measured on a 5.6 MB dense
-vector site plan, that is correct, and the reason is sharper than
-"smoothness versus throughput":
-
-> **Six rapid zoom clicks (1.0 → 4.0) started six render generations and
-> completed exactly one — the last.** Total cost 1 899 ms, versus roughly
-> 11 s if every step had rendered. Generations 3–7 were superseded by
-> the generation counter and abandoned mid-flight by the cancellation
-> token, while the user saw the previous texture linearly scaled.
-
-So the original claim — *"no tile cache, so zooming re-rasterizes the
-entire page"* — is misleading. It re-rasterizes the entire page **once,
-at the destination**. The generation counter plus the 150 ms
-`ZOOM_SETTLE` debounce (`main.rs:367`, `raster.rs:639-647`) already
-solve the problem a tile cache would have been introduced to solve, by a
-cheaper route: don't render what the user is scrolling past.
-
-pdfcer also uses **2.5× less memory** on the same file — 170–231 MB in
-one process against 569 MB across five for the tiled competitor, which
-spends the difference on crash isolation.
-
-So the plan is not to replace whole-page rendering. It is to **expose
-the trade**, which is R169 applied to rendering: where the right answer
-is genuinely undetermined, state it and let the operator choose.
-
-### New: View ▸ Render group
-
-| Control | Today | Proposed |
-|---|---|---|
-| **Strategy** | whole page, hard-coded | Whole page *(default)* · Tiled progressive |
-| **Raster scale** | derived from zoom × `pixels_per_point` | exposed as a quality multiplier |
-| **Settle delay** | `ZOOM_SETTLE = 150 ms` constant | exposed; lower on fast machines, higher on huge sheets |
-| **Thin lines** | ✅ **2026-09-05** | CAD hairline rendering, one pixel per stroke at any zoom. **View ▸ Display ▸ Line weights**, on by default. AutoCAD's `LWDISPLAY` convention (thick → thin), NOT Acrobat's *enhance thin lines* (thin → thick) — they are opposites. Canvas only; every export keeps the real widths. |
-| **Antialias** | — | text and vector, independently |
-
-> ### ⛔ Corrected 2026-08-13 — the answer came back, and it is not tiling
->
-> `render_page_region` shipped (`Pass 74.0`), so the zoom ceiling is gone:
-> `MAX_PIXMAP_EDGE` now guards the **returned pixmap**, and at scale 32 a
-> region renders in 1.07 s where the whole page would be 3.8 GiB and
-> impossible.
->
-> But the measurement that came with it kills the tile ring. **A 1 × 1
-> *point* region — two pixels — costs 691 ms on the benchmark drawing**,
-> against 699 ms for a 120,701-pixel region: ~99 % of the cost is
-> area-independent. A 3 × 3 ring is a **9× regression**.
->
-> **S6 is therefore one region per viewport, not a tile grid.** Tiling
-> survives only as a way to *bound memory* on an enormous viewport, never
-> to save time. And N region calls must not be driven across cores —
-> without a shared display list that multiplies the interpretation floor
-> instead of dividing it.
->
-> **The optimisation that does pay is a reusable parsed handle**: by the
-> pdfcer team's own numbers it takes second and subsequent renders of a
-> page from ~700 ms to roughly fill cost — tens of milliseconds. It is
-> **not built**; they asked whether S6 depends on it and the answer is
-> filed in `request_reusable_parsed_handle.md`. **S6 should not start
-> until that is scheduled**, because switching to per-viewport regions
-> without it trades the smooth pan the operator praised for a 0.7 s
-> gesture.
->
-> Also settled: **`MAX_ZOOM` comes from performance, not numerics.**
-> Sub-pixel accuracy holds to ~5,000× — three orders of magnitude past any
-> plausible viewing zoom — so picking the limit from `f32` would repeat the
-> exact error `MAX_PIXMAP_EDGE`'s original justification made.
-
-The tiled path was scoped as a *feature to offer* rather than a rewrite
-to survive, to be built only once someone had a sheet where whole-page
-genuinely hurt.
-
-**That sheet has been found, and it is the benchmark drawing.**
-*Amended 2026-08-13.* The operator asked to zoom further than other
-software allows, and `BENCHMARK.md` § "The zoom ceiling" works out what
-actually stops it: a whole-page raster's edge scales with zoom against a
-16,384 px allocation guard, so the A1 benchmark drawing caps at **6.9×
-on a 1× display and 3.4× on HiDPI** — not the nominal 8×, and worse the
-larger the sheet. Raising `MAX_ZOOM` changes nothing; the strategy is
-the binding limit.
-
-A tile's pixel size is fixed by the tile, not by the zoom, so tiling
-removes the ceiling. **It is therefore a scheduled requirement, not an
-option** — while whole-page remains the better default for *motion*,
-which is why the choice stays exposed rather than replaced.
-
-`PDFCER_DIAG` already emits `render-async-done gen=N ms=M outcome=…`,
-which is most of a performance harness. Adding page complexity —
-operator count, path count, resource count — to that line would make it
-a complete one, and would let the decision about a tiled path be made
-from data rather than from architecture diagrams. That is the next step,
-not the tile cache.
-
-### Would more processes help? No — see `BENCHMARK.md`
-
-Measured with `tools/render-profile`: at scale 0.25, where fill is
-negligible, the render still costs **0.74 s**. That floor is **148,517
-paint operations walked through a sequential state machine** at ~5 µs
-each, and it is 89 % of the cost at fit-page zoom.
-
-- **Processes buy crash isolation, not speed.** pdfcer is one binary;
-  threads share memory for free, while processes would ship a
-  multi-megabyte pixmap across a pipe per render.
-- **The dominant cost cannot be parallelised at all.** A content stream
-  is a state machine — `q`/`Q`, `cm`, colour, clip all accumulate — so
-  operator *N* cannot be interpreted without the state from 1…*N*−1.
-- **Parallel band fill would buy 1.11× at 1× zoom and 1.64× at 2×** on
-  ten cores. Real, but not where the money is.
-
-**The bigger win is not parallelism.** `render_page(doc, page, scale)`
-(`pdfcer-render/src/lib.rs:165`) retains nothing between calls, so every
-zoom change re-walks all 148,517 operators although only the transform
-changed. A **display list built once and replayed at any scale** turns a
-zoom re-render into fill alone — ~90 ms at 1× instead of ~830 ms. Bigger
-than ten cores, applies at every zoom, and composes with parallel fill.
-
-**Where threads pay today, with no interpreter changes:** pages are
-independent, so thumbnails (currently 2 per frame, serialised on one
-worker — `main.rs:392`) and adjacent-page prerender parallelise cleanly.
-
-Priority: display list → thread pool for thumbnails/prerender → parallel
-band fill → processes only if crash isolation is wanted for its own sake.
-
-### Still worth doing regardless
-
-- **Find extracts the whole document's text synchronously** in the
-  dispatch loop (`main.rs:9779-9812`). On a large document this is a
-  visible stall and it has nothing to do with rasterization.
-- **The node-grab hot spot** is already measured at 6,681 anchors in a
-  single path object (`vector_edit_tool.rs:692-733`) and was already
-  rescoped once. It will resurface as selection gets richer in Phase 1.
-- **Adjacent-page prerender** is cheap, independent of strategy, and
-  makes paging through a sheet set feel instant. Worth doing under
-  either model.
-
-The off-thread worker with its generation counter and
-between-operator cancellation token stays exactly as it is. It is good
-work, it is measured — 28.9 ms to cancel versus 10,367 ms to let a
-render finish — and nothing here changes it.
+Processes are not on this list. They buy crash isolation, not speed: this is one
+binary, threads share memory for free, and processes would ship a
+multi-megabyte pixmap across a pipe per render.
 
 ---
 
 ## Explicitly not on this roadmap
 
-Named so the omissions are decisions rather than oversights.
+Named so the omissions read as decisions rather than oversights.
 
 | Not doing | Why |
 |---|---|
-| **A Home tab** | Would mirror commands across tabs and re-create the Pass 47.1 defect. P1a gives the QAT and status bar the shortcut role instead. |
-| **Automatic reflow on edit** | R75. Reflow invents line breaks the file never stated. Make it reachable, not silent. |
-| ~~**Ribbon customisation**~~ | **Now in scope, 2026-08-13.** `ribbon.rs:42-52` deferred it because *"a customisable ribbon that also forgets itself would be worse than none"* — an objection about persistence, and persistence is now the first thing built. `SHELL_FRAMEWORK.md` makes the ribbon a serializable manifest, which delivers customisation and cross-project reuse with one mechanism. |
-| **OCR** | ✅ **SHIPPED 2026-08-14** as `file.ocr` — **File ▸ Recognise**, not Tools ▸ Recognise, because Tools is not in Read's tab list and the operator asked for OCR in Read (`RIBBON_IA.md` §5.7 now carries that ruling). The model ships with credit: 12,240,008 B of `ocrs` weights in the package, the CC-BY-SA-4.0 section in `THIRD_PARTY_LICENSES.md` naming **Robert Knight** and linking the deed, and a `check-shipped-assets` gate proven to bite on each half separately. Find offers OCR only when the document has no extractable text — never on a merely-empty search. Saves to a new file (`<stem>-recognised.pdf`), never the source. **Two caveats that are not going away**: recognition quality on real scans is unproven because no scanned PDF exists in the tree, and `ocrs` collapses on sparse clean pages — the shape of a drawing sheet — see `DEFECTS.md` D15. |
-| **JavaScript execution** | Standing refusal. |
-| **Document comparison** | The one absence an AEC reviewer names first, and a large build. Deliberately deferred past Phase 5 — see Q4. |
-| **i18n / CJK chrome coverage** | Decision 002 chose English-only with no locale detection. A real ceiling on adoption, but not a defect and not this year's work. |
+| **A Home tab** | It would mirror commands across tabs. The quick-access toolbar and the status bar carry the shortcut role instead, which is where undo and redo live. |
+| **Automatic reflow on edit** | Reflow would invent line breaks the file never stated. Make it reachable, not silent. |
+| **Tiled rendering** | Cancelled on measurement: region cost is area-independent, so a tile ring is a regression rather than a win. |
+| **JavaScript execution** | Standing refusal. Detection is a different thing and ships: a document that would reach outside itself says so on open, off-canvas. |
+| **Provisional styling painted on the canvas** | The canvas shows what the saved file will show. Disclosure goes off-canvas. |
+| **i18n and CJK chrome coverage** | English-only, no locale detection. A real ceiling on adoption, not a defect, and not this year's work. |
 
 ---
 
-## Questions
+## Open questions
 
-### Answered 2026-08-12
+Each needs an operator ruling. Each names what it blocks.
 
-| Question | Answer | Lands in |
-|---|---|---|
-| `Editing on` master toggle | **Remove it** — work the way other programs do. Selection and Delete always live; tools arm and disarm. | Phase 1.7 |
-| Format tab or properties panel | **Both**, panel first — the tab's contents are a subset. | Phase 1.5–1.6 |
-| Continuous scroll | **An option, not a replacement.** Single page stays the default; the four modes sit together on View. | Phase 4 |
-| Whole-page vs. tiled rendering | **Neither wins outright.** Whole-page stays the default because it measured better; tiled becomes an opt-in beside it, with quality and settle exposed. | Phase 2.4 + Rendering |
+**Document comparison — build it, or rule it out of scope?** It is the feature
+an AEC reviewer asks for first and it is a large build. *Blocks:* a phase of its
+own and probably a view mode of its own. Nothing else waits on it, which is why
+it can sit here unanswered without stalling anything.
 
-### Still open
+**How much of cross-run text editing?** Is *edit one run at a time, refused in a
+sentence when the caret lands on a seam* an acceptable resting state for another
+year, or is this the thing that has to be right? *Blocks:* whether a multi-run
+edit request is filed with the engine and scheduled at all, and therefore
+everything else about multi-run editing.
 
-**Q1 — Save semantics.** Is autosave plus true in-place `Save` wanted,
-or is `Save a copy` the permanent model? A File tab whose Save group
-holds only "Save a copy…" is honest but unusual, and the dependency is
-already documented (`FEATURES.md:62`). Affects Phase 2.
+**Does the operator get to choose a re-wrap width, alignment and leading?** The
+engine's reflow request carries all three as overrides and this shell passes
+none of them, so a re-wrap uses the block's own extent, an inferred alignment
+and a measured leading. Those are defensible defaults, not choices the operator
+made. *Blocks:* whether Format grows three reflow controls, and whether the
+inferred alignment needs a visible readout.
 
-**Q2 — document comparison.** Worth building, or out of scope? It is the
-feature an AEC reviewer asks for first and it is a large build. If yes,
-it needs its own phase and probably its own view mode.
+**Is area takeoff worth an engine request?** There is no area dimension kind to
+author, so unlike angular this cannot be reached from the shell. The alternative
+is for the shell to author a polygon with a measured caption, which is a second
+measurement model beside ce dimensions and dilutes the dimension-group model.
+*Blocks:* the whole Measure quantity group, which is absent as a group because
+every command in it is absent.
 
-**Q3 — how much of Phase 5d?** Multi-run text editing is the most
-expensive item here. Is "edit one run at a time, clearly disclosed" an
-acceptable resting state for another year, or is this the thing that has
-to be right?
-
-*(The former Q4 — locating the benchmark drawing — is answered.
-`D:\Dev\pdfTests\ncored-benchmark-cad-drawing.pdf`, measured in
-`BENCHMARK.md`.)*
+**Which scale does a ce-dimension tolerance apply to?** A dimension group carries
+a shared scale and a drafting standard; a tolerance stated in drawing units and
+one stated in page units differ by that scale, and the wrong choice prints a
+plausible number. *Blocks:* tolerance authoring in the dimension-group editor.

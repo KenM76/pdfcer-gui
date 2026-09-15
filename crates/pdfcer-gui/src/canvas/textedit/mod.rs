@@ -668,6 +668,14 @@ pub(crate) fn store(ctx: &egui::Context, draft: Draft) {
 /// `crate::canvas::tool::retire_forbidden` calls when the mode loses
 /// `edit_content`. Returns `bool` for the reason `measure::abandon` does: the
 /// ladder rung above it needs to know whether this rung consumed the key.
+///
+/// # `text-edit-abandon` is not evidence that an edit was lost
+///
+/// A successful commit runs `keys::commit_into` and then tears the draft down
+/// through this same path, so the trace line is emitted on the happy path too.
+/// The evidence that a commit happened is the published action — `add-text` or
+/// `edit-text`. A driven check must assert on that, never on the absence of
+/// `text-edit-abandon`.
 pub fn abandon(ctx: &egui::Context) -> bool {
     let had = read(ctx).is_some();
     ctx.data_mut(|d| d.remove::<Draft>(egui::Id::new(DRAFT_MEMORY_KEY)));

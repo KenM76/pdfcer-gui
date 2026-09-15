@@ -231,6 +231,19 @@ pub(super) fn group(
 /// — *flipping is on* — where two `selectable_label`s would present them as
 /// equals and cost twice the width in a 24-point bar. The tooltip carries
 /// both sentences, and the settings window carries the full argument for each.
+///
+/// # The guard here is narrower than the wheel's, and that is a live defect
+///
+/// [`crate::canvas::paging::flips_pages`] is the predicate the wheel actually
+/// reads, and it requires a non-continuous display **and** more than one page.
+/// This function returns early on the display mode alone. On a one-page
+/// document the control therefore draws, accepts the click, and flips a
+/// preference the wheel can never honour — a setting that is visibly on and
+/// provably inert.
+///
+/// The rule this is an instance of: any control offering a choice must be
+/// gated on the same predicate the behaviour reads, never on a subset of it,
+/// so the two cannot disagree.
 fn wheel_toggle(ui: &mut egui::Ui, doc: &OpenDoc, wheel_paging: &mut WheelPaging) {
     if doc.view.display.is_continuous() {
         return;

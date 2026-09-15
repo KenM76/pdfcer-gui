@@ -4,6 +4,12 @@
        8x8 diagonal cut at the SAME top-right corner the page-fold motif uses, plus a
        single horizontal "label slot" bar at 2/3 height (y=26). Deliberately NOT
        upload/download art — that pair stays reserved for import/export. -->
+  <!-- Deliberately OUTSIDE the save family's shared body. save-as, save-copy and
+       save-compact all carry the square body with a shutter (M8 8h26l6 6v26H8z plus
+       M15 8v9h14V8) and differ only by one interior mark. This glyph carries neither.
+       Do not redraw it to match them in a consistency pass, and do not normalise
+       their three interiors toward each other: at 16 px the distinguishing marks are
+       the only thing separating four otherwise identical icons. -->
   <path d="M8 10a2 2 0 0 1 2-2h22l8 8v22a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
   <path d="M15 26h18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
 </svg>
