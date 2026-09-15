@@ -1,10 +1,6 @@
 //! # `canvas::textsel::clipboard` — the two chords, and the one place this
 //! shell writes the clipboard
 //!
-//! Split out of [`super`] on 2026-08-14, when the text-markup work pushed that
-//! file past **R2** (no `.rs` file over 1,500 lines). The seam is not an
-//! arbitrary cut at a line number; it is the one the module had already drawn
-//! in prose, and the two halves change for different reasons:
 //!
 //! | half | answers | changes when |
 //! |---|---|---|
@@ -20,19 +16,12 @@
 //! belongs beside the clipboard contract it enforces, not inside the module
 //! that resolves ranges.
 //!
-//! Everything here is re-exported flat from [`super`], so every existing call
-//! site still writes `textsel::copy` and `textsel::pending_key` and nothing
-//! outside `canvas/` learns that the module was split — the same courtesy
-//! `shell::commands::mapping`'s split extended to its callers, and for the same
-//! reason: a file-size rule that rewrites unrelated call sites is a rule that
-//! manufactures diffs.
 
 use super::{PageContext, TextSelection, select_all};
 
 /// One of the two keyboard verbs a text selection has, as read off the frame's
 /// input **before** anything expensive is fetched.
 ///
-/// See [`pending_key`] for why the read is split from the act.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextKey {
     /// `Ctrl+A` — select every character on the page.
@@ -66,11 +55,6 @@ pub enum TextKey {
 /// caller, and this one was missing — because the expensive value was being
 /// fetched in order to answer a question that did not need it.
 ///
-/// So the read is split from the act. This function touches nothing but
-/// `egui::InputState`; `canvas::interact` fetches the extraction only when it
-/// answers `Some`, and a reading canvas nobody is typing at costs one input read
-/// per frame. **The extraction now happens on the first text gesture rather than
-/// on the first frame** — which is when the operator asked for it.
 ///
 /// # The guard
 ///
@@ -92,8 +76,6 @@ pub enum TextKey {
 /// script.
 #[must_use]
 pub fn pending_key(ui_ctx: &egui::Context) -> Option<TextKey> {
-    // ★★ A canvas draft claims these chords too, 2026-08-20 — widened from
-    // `text_edit_focused()`, which is false for an operator typing on the page.
     //
     // Ctrl+C mid-word must not copy the page's text selection: the operator is
     // composing, and the selection they made before the caret landed is not
@@ -106,9 +88,6 @@ pub fn pending_key(ui_ctx: &egui::Context) -> Option<TextKey> {
         // ★★★ COPY IS READ AS AN EVENT, NOT AS A KEY, AND THAT DISTINCTION IS
         // THE WHOLE OF DEFECT O18.
         //
-        // This function used to ask `i.key_pressed(egui::Key::C)`. In a real
-        // window that is **permanently false**, because of fifteen lines of
-        // `egui-winit-0.35.0/src/lib.rs`:
         //
         // ```rust
         // if is_cut_command(modifiers, active_key)   { events.push(Event::Cut);   return; }
@@ -123,11 +102,6 @@ pub fn pending_key(ui_ctx: &egui::Context) -> Option<TextKey> {
         // sends — which is exactly how a dead path stays certified, and is why
         // those tests now inject `Event::Copy` instead.
         //
-        // ★ `app::keyboard` recorded this same finding on 2026-08-20, under a
-        // heading in capitals, and fixed itself. Nobody asked who ELSE read the
-        // signal — the answer was one grep away, and it was this file. The
-        // operator lost a working Ctrl+C for a day because a lesson was written
-        // down instead of being applied.
         if i.events.iter().any(|e| matches!(e, egui::Event::Copy)) {
             return Some(TextKey::Copy);
         }
@@ -144,9 +118,6 @@ pub fn pending_key(ui_ctx: &egui::Context) -> Option<TextKey> {
 
 /// **Act on the chord [`pending_key`] found.**
 ///
-/// Split from the read for the cost reason that function's header records; this
-/// half is the one that needs the page's extraction, and it is reached only on
-/// the frames where there is something to do with it.
 ///
 /// Handled here rather than in [`crate::canvas::keys`] because both verbs need
 /// that extraction, and `canvas_keys` is deliberately a *document-free* function
@@ -226,12 +197,6 @@ mod tests {
 
     /// ★ **A frame with no chord costs one input read and nothing else.**
     ///
-    /// The regression test for the defect that shipped and was caught by driving
-    /// the binary: `canvas::interact` used to fetch the page's extraction in
-    /// order to *discover* that no chord had been pressed, which built it on the
-    /// first frame of every reading canvas — 392 ms at open on the benchmark
-    /// drawing. [`pending_key`] is the cheap half that made the gate possible,
-    /// and its `None` on an idle frame is the whole of what the gate rests on.
     ///
     /// It is asserted at the level of the **predicate** rather than by counting
     /// extractions, because that is where the property lives: the caller's `if
@@ -276,8 +241,6 @@ mod tests {
 
         // Frame 2: the field holds focus and Ctrl+C is pressed.
         //
-        // ★ `Event::Copy`, which is what winit actually sends — not the key
-        // event this test used to inject. See `pending_key`.
         let input = egui::RawInput {
             events: vec![egui::Event::Copy],
             modifiers: egui::Modifiers::COMMAND,
@@ -311,10 +274,6 @@ mod tests {
     /// worked at all.
     #[test]
     fn the_text_chords_reach_an_unfocused_canvas() {
-        // ★★ THE TWO CHORDS ARRIVE IN TWO DIFFERENT SHAPES, and injecting the
-        // wrong one is how O18 shipped: this loop used to send `Event::Key {
-        // key: C }` for copy, which winit never sends, so it certified a path
-        // that could not fire in the running application for a single frame.
         //
         // Copy is intercepted by `egui-winit` and arrives as `Event::Copy`
         // with no key event; Ctrl+A is not intercepted and arrives as an

@@ -10,9 +10,6 @@
 //!
 //! ## Two files, and where the seam is
 //!
-//! This was one file until 2026-08-18, when the paper-selection work would
-//! have carried it past R2's 1,500-line limit. It split on a seam that was
-//! already there:
 //!
 //! | file | subject | changes when |
 //! |---|---|---|
@@ -25,16 +22,6 @@
 //!
 //! ## ★ The defect this file carried for the whole of v0.1.0, recorded
 //!
-//! This header used to open with the sentence *"`pdfcer-print` is NOT a
-//! dependency of this crate"* and then set out, in full, the two edits that
-//! would make the build print: add the manifest line, then fill the four
-//! holes below. **The manifest line landed and the four holes were never
-//! filled.** `pdfcer-print` sat in `Cargo.toml` and in `Cargo.lock`, was
-//! compiled and linked into every shipped binary, and no source file in the
-//! crate contained the identifier `pdfcer_print` outside a doc comment. So
-//! [`list_printers`] kept returning a refusal, the dialog kept rendering
-//! *"This build cannot reach a print device"*, and the commit button was
-//! never drawn.
 //!
 //! The operator's report was *"the print dialogue didn't work"*, and it was
 //! exactly right. Two things are worth carrying forward from it:
@@ -327,9 +314,6 @@ pub(crate) struct JobSpec {
 pub(crate) enum PaperChoice {
     /// Say nothing about paper.
     ///
-    /// **Not "Letter" and not "whatever page 1 is"** — genuinely silent. The
-    /// device prints on whatever its own Windows settings name, which is what
-    /// this build did exclusively until 2026-08-18 and is still the default.
     ///
     /// When a [`super::device::DriverConfig`] is also held, this means "the
     /// sheet that configuration holds", since the configuration is amended
@@ -817,13 +801,6 @@ pub(crate) fn plan(
 
     // 1. CAPABILITIES, ★ FOR THE SHEET THIS JOB WILL ACTUALLY USE.
     //
-    //    `printer_caps` — the function this used to call — opens an
-    //    information DC with the device's DEFAULT `DEVMODE` and reports the
-    //    geometry of whatever sheet THAT names. Every placement below is
-    //    computed against it. So the moment paper became choosable, a job
-    //    asking for A3 on a Letter-default device would have been PLANNED for
-    //    Letter and PRINTED on A3 — the preview and the paper describing
-    //    different sheets, with no clip reported and nothing to explain it.
     //
     //    That is the same failure as the un-turned geometry described on
     //    [`DeviceGeometry`], arriving through a second dimension. The engine

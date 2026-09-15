@@ -30,10 +30,6 @@ use crate::canvas::resizing::Refusal;
 
 /// The sentence for a refusal to resize.
 ///
-/// One function over the enum rather than one per variant, so a variant added
-/// to [`Refusal`] is a compile error here instead of a drag that refuses
-/// silently — which is what the grips did for their whole life until
-/// 2026-08-19.
 #[must_use]
 pub const fn refusal(reason: Refusal) -> &'static str {
     match reason {
@@ -41,8 +37,6 @@ pub const fn refusal(reason: Refusal) -> &'static str {
             "Select something first. Click a shape on the page, then drag one of the squares \
              around it to resize it."
         }
-        // ★★★ TWO SENTENCES WERE DELETED HERE ON 2026-08-20, AND BOTH WERE THE
-        // OPERATOR'S COMPLAINT.
         //
         // They said:
         //
@@ -170,14 +164,6 @@ mod tests {
     /// A refusal that does not say what to do instead is a shrug with a capital
     /// letter — `text::commands`' own rule.
     ///
-    /// ★★ This test used to assert TWO of them, and the other one is gone with
-    /// its sentence. `ManyObjects` said *"select just the one you want"*, which
-    /// was a real alternative to a real limit until `transform_objects` took a
-    /// slice on 2026-08-20. **The assertion outliving the limit is the hazard
-    /// worth naming here**: a test that pins a refusal's wording is a test that
-    /// will keep that refusal alive through the release that made it false,
-    /// which is what happened to the engine's own `NoMatch` message twice
-    /// before it was split.
     #[test]
     fn the_refusal_with_an_alternative_offers_it() {
         assert!(refusal(Refusal::NothingSelected).contains("Click"));

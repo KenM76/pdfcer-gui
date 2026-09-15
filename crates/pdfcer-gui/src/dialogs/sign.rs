@@ -82,15 +82,6 @@
 //!
 //! ## ★ The section headings are NOT `.strong()`
 //!
-//! `crate::dialogs::protect`'s §6, taken rather than re-argued and caught by
-//! `tools/gates/check-strong-text.sh` on the first draft of this file exactly
-//! as it was on that one. egui has no separate role for emphasised text, so
-//! `.strong()` resolves to the **accent-filled widget** colour — pale text on a
-//! pale panel (`DEFECTS.md` D11). The hierarchy here is carried by layout and
-//! wording instead: a rule and a gap between sections, headings that are
-//! phrases (*"Your certificate"*, *"What the signature will say"*, *"On the
-//! page"*) rather than one-word captions, and the muted `.small()` notes below
-//! them to contrast against.
 //!
 //! ## 4. What comes back
 //!
@@ -676,10 +667,6 @@ impl SignDialog {
 
     /// **Open the chosen certificate, so the operator can see whose it is.**
     ///
-    /// §1 — and note what it does on failure: it clears [`Self::identity`] as
-    /// well as setting the error. A second attempt with a wrong passphrase must
-    /// not leave a previously opened identity standing behind an error message
-    /// that says the opposite.
     fn open_identity(&mut self) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
@@ -956,10 +943,6 @@ impl SignDialog {
 
 /// The single-token name of a refusal, for a trace line.
 ///
-/// ★ `const`, and spelled here rather than derived, because
-/// **`{:?}` on a domain type is what produced two false failure reports on
-/// 2026-09-05**: a check parses these tokens, and a `Debug` rendering is a
-/// spelling nobody chose and any refactor may change.
 #[must_use]
 const fn refusal_token(refusal: Option<Refusal>) -> &'static str {
     match refusal {

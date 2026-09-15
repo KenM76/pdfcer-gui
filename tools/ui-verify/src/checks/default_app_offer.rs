@@ -233,12 +233,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("the offer opened and declared its body");
 
-    // ★★★ These three are published through `diag::ui_rect_visible`, which
-    // stays silent when the rect has been clipped out of its own viewport — so
-    // a declaration IS the visibility assertion, and no size has to be guessed
-    // at anywhere in this file. That is the whole of the operator's rule of
-    // 2026-09-10 — *"those buttons should always be available"* — expressed as
-    // something a harness can read.
     for (region, what) in [
         (ACTION, "the button that performs the changeover"),
         (LATER, "the button that declines this time"),

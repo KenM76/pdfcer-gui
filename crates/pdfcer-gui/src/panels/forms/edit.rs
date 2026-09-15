@@ -504,22 +504,6 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
             //    bump above is what `render::settle` reads, through
             //    `OpenDoc::page_texture_epoch`.
             //
-            //    ★ This used to also assign `page_texture = None`, which
-            //    blanked the page between the fill and the next raster. A form
-            //    fill cannot change the page SET, so the old raster is an older
-            //    picture of the same sheet and belongs on screen until the new
-            //    one lands. See `actions::apply::vector_edit`.
-            // ★ Stamped with the epoch bumped two lines above, NOT the one the
-            // fill ran against. The panel shows a disclosure only while it
-            // describes the revision on screen, and the revision on screen from
-            // now until the next edit is this one — so an undo silences the
-            // sentence by moving the epoch past it, with nothing anywhere that
-            // has to remember to clear it. A disclosure stamped with the *old*
-            // epoch would be invisible from the moment it was written.
-            // ★ Read before the move. `disclosed` is consumed by the call
-            // below, and both values are `Copy`, so this costs nothing and
-            // keeps the trace's numbers the SAME ones the operator's sentence
-            // is built from — rather than a second derivation that could drift.
             let disclosed_size = disclosed.as_ref().and_then(|d| d.applied_autosize);
             let disclosed_bound = disclosed.as_ref().and_then(|d| d.applied_autosize_bound);
             record_fill_disclosure(disclosed.map(|d| FillDisclosure {
@@ -529,9 +513,6 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 //
-                // ★★★ `autosize=` and `bound=` added 2026-09-07, and the reason
-                // is `place.rs`'s standing rule: **a trace line must carry the
-                // number a wrong build would get wrong.**
                 //
                 // The bound is the whole subject. A build that reported the
                 // size and dropped the bound — which is what this shell did
@@ -678,7 +659,6 @@ impl Applied {
 ///
 /// # ⚠⚠⚠ And a worked example of the trap, committed by this very function
 ///
-/// The first draft of this doc comment read:
 ///
 /// > *"The `match` is exhaustive and must stay that way. `AutoFitBound` is
 /// > **not** `#[non_exhaustive]`, so a new variant upstream is a compile error

@@ -3,13 +3,7 @@
 //!
 //! # What this is for
 //!
-//! `OPERATOR_REQUESTS.md` **O48**, answered *"yes to all three"* on 2026-08-28.
-//! It was raised by this project rather than by him, from a limit found while
-//! wiring Remove-embedded-fonts:
 //!
-//! > **Removing fonts does not make the file smaller.** pdfcer saves by adding
-//! > your changes to the end of the file and leaving the earlier version
-//! > intact, so the outlines stop being used and are still there.
 //!
 //! §7.5.6's update section is *appended*, so every space-reclaiming operation
 //! pdfcer has produced a file that was very slightly **larger**. Only a full

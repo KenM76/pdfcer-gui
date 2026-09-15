@@ -9,10 +9,6 @@
 //! parses the dispatcher's `match`, classifies its arms and reports any
 //! registered command no arm can reach. That logic has been stable for weeks.
 //!
-//! What grows is this: every time a family of commands is split out of
-//! `app/dispatch.rs` into its own module — six times now — a guard is added
-//! here, with the paragraph explaining what moved and why. Each is short; six
-//! of them, with the argument each carries, took the parent past 1,500 lines.
 //!
 //! ⇒ Two subjects, two rates of change, which is this project's test for a
 //! seam. The checker changes when the *checking* changes; this changes when the
@@ -82,12 +78,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::panels::claims(id) {
         return Some("claims");
     }
-    // ★ The two Security commands — O119 — claimed by exactly the shape above
-    // and for the same reason: `app::dispatch::security` was split out under R2
-    // on 2026-09-04 (`dispatch.rs` was at 1,496 lines before the feature
-    // existed), and a guard written as a method on `self` would be invisible to
-    // this reader, so `file.encrypt` and `file.permissions` would read as
-    // unrouted controls that trace `command-unimplemented`.
     //
     // ★★ It needs no new entry in [`EVALUATED_GUARDS`], and that is worth
     // stating rather than leaving to be noticed: the guard is also called
@@ -98,10 +88,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::security::claims(id) {
         return Some("claims");
     }
-    // ★★★ **The File ▸ Export band, split out on 2026-09-07** — the same shape
-    // `security::claims` above and for the same reason, and the entry is here
-    // rather than beside `DISPATCH_PAGES_SRC` because of a mistake worth
-    // recording.
     //
     // The first attempt registered `exchange` as a second SOURCE FILE, the way
     // `pages` and `measure` are, and every test in this module failed with
@@ -118,14 +104,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::exchange::claims(id) {
         return Some("claims");
     }
-    // ★ The three markup-POINT commands, claimed by the same shape as the two
-    // above and for the same reason: `app::dispatch::markupnodes` was split out
-    // under R2 on 2026-09-06 (`dispatch.rs` stood at exactly 1,500 lines before
-    // the two node verbs existed), and a guard written as a method on `self`
-    // would be invisible to this reader, so `markup.finish` — which used to be
-    // a literal arm and is now behind a module — plus `markup.add_node` and
-    // `markup.remove_node` would all read as unrouted controls that trace
-    // `command-unimplemented`.
     //
     // ★★ It needs no new entry in [`EVALUATED_GUARDS`], for the reason spelled
     // out at `security::claims` above: that list is a set of FUNCTION NAMES read
@@ -135,10 +113,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::markupnodes::claims(id) {
         return Some("claims");
     }
-    // ★ The four Arrange commands — Bring to front and its three siblings — in
-    // `app::dispatch::arrange` since 2026-09-06. Everything the entry above says
-    // applies unchanged, including why it needs no `EVALUATED_GUARDS` edit: the
-    // guard is named `claims`, which that list already holds.
     //
     // ★★ Written in the SAME edit as the module, per this file's own header. The
     // four commands would otherwise all have reported unreachable in one run —
@@ -156,8 +130,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::panels::Panel::from_command_id(id).is_some() {
         return Some("from_command_id");
     }
-    // ★ The Pages tab's arms, which live in `app::dispatch::pages` since that
-    // file was split out under R2 on 2026-08-18.
     //
     // This one differs from every entry above in a way worth naming: the others
     // guard on a *mapping* that also produces the operand (a `MarkupKind`, a
@@ -174,20 +146,9 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::pages::handles(id) {
         return Some("handles");
     }
-    // ★ The third membership-test guard, added 2026-08-28 with
-    // `dispatch::routes` — the commands that perform nothing and raise
-    // `Action::Command` at something that does. Everything the paragraph above
-    // says about `pages::handles` applies unchanged, with one improvement worth
-    // naming: `routes` has **one** mapping rather than a list beside a match,
-    // and its `handles` is defined as `target(id).is_some()`. So the two
-    // statements that could grow apart are one statement, which is what that
-    // paragraph asks for as the eventual fix.
     if crate::app::dispatch::routes::handles(id) {
         return Some("handles");
     }
-    // ★ The font commands, in `app::dispatch::fonts` since 2026-08-28, when
-    // wiring `tools.embed_fonts` took `dispatch.rs` past 1,500 lines for the
-    // fifth time. Everything the `pages::handles` paragraph says applies.
     //
     // ★★ **It failed closed here too, and by name**, which is now the fourth
     // time this checker has caught a split the moment it happened: moving the
@@ -198,10 +159,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::fonts::handles(id) {
         return Some("handles");
     }
-    // ★ `dispatch::batch`, split out 2026-08-31 when `tools.merge_files` was
-    // wired (`OPERATOR_REQUESTS.md` O68). Everything the `pages::handles`
-    // paragraph says applies unchanged, mitigation included: `batch::dispatch`
-    // ends in `unreachable!` naming the id.
     //
     // ★★ Added in the SAME commit as the arm, deliberately. This checker has
     // failed closed five times on exactly this — a new `dispatch::*` module is
@@ -212,9 +169,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::batch::handles(id) {
         return Some("handles");
     }
-    // ★ `dispatch::navigate`, split out 2026-08-31 when `view.smart_select`
-    // (`OPERATOR_REQUESTS.md` O70) took `dispatch.rs` past 1,500 lines for the
-    // seventh time. It carries the five controls of View ▸ Navigate.
     //
     // ★★ **Written in the same edit as the module**, per the paragraph above —
     // and this one still went red first, because the arms were MOVED before
@@ -226,29 +180,13 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::navigate::handles(id) {
         return Some("handles");
     }
-    // ★ The Settings commands, in `app::dispatch::settings` since 2026-08-28,
-    // when this file crossed 1,500 lines for the third time in one session.
     //
-    // ★★ It carries an id `routes` used to own — `tools.font_folders` — so this
-    // is also the one split where a command MOVED between two guard-arm modules
-    // rather than out of the parent. `routes`' `ROUTED` list shrank to one in
-    // the same commit, and `every_route_points_at_a_registered_command_that_is_
-    // not_itself` is what would have failed had it not.
     if crate::app::dispatch::settings::handles(id) {
         return Some("handles");
     }
-    // ★ `dispatch::text`, split out 2026-08-28 with paragraph reflow. Same
-    // shape, same reason, one difference worth naming: this one's `dispatch`
-    // cannot trace an "unrouted" line for a member it does not know, because it
-    // has exactly one member. If it grows a second, it owes that trace.
     if crate::app::dispatch::text::handles(id) {
         return Some("handles");
     }
-    // ★ The second membership-test guard, added 2026-08-20 with
-    // `dispatch::textcopy`. Everything the paragraph above says about
-    // `pages::handles` applies to it unchanged — including the mitigation: its
-    // partner `dispatch` traces `textcopy-unrouted` on a member it does not
-    // know, rather than doing nothing.
     //
     // Both resolve to the string `"handles"` because that is the **guard's own
     // spelling** in `dispatch.rs`, which is what
@@ -258,10 +196,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::textcopy::handles(id) {
         return Some("handles");
     }
-    // ★★ The guard added 2026-08-29 with `dispatch::clipboard`, when
-    // `edit.paste_duplicate` (O58) took `dispatch.rs` past 1,500 lines for the
-    // FOURTH time. Everything the `pages::handles` paragraph says applies
-    // unchanged.
     //
     // ★★★ **And it failed closed for the fifth time, which is the point of
     // recording each one.** The instant the three clipboard arms moved out of
@@ -281,11 +215,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::clipboard::handles(id) {
         return Some("handles");
     }
-    // ★★ The guard added 2026-08-29 with `dispatch::pageclip` — O59 item 2, the
-    // page clipboard. Sixth `handles` module, and **it failed closed for the
-    // sixth time**: the instant `pages.copy`, `pages.cut` and `pages.paste`
-    // were registered, this checker reported all three as controls an operator
-    // can press that trace `command-unimplemented` and do nothing.
     //
     // ⇒ Which is the mechanism working exactly as it should, and is also the
     // recurring cost of it: **a hand-written list inside a completeness test is
@@ -295,20 +224,9 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::pageclip::handles(id) {
         return Some("handles");
     }
-    // ★ The third membership-test guard, added 2026-08-24 with
-    // `dispatch::zoom`, when O29's third fit mode took `dispatch.rs` past
-    // 1,500 lines. Everything the `pages::handles` paragraph above says
-    // applies unchanged, mitigation included: its partner `dispatch` ends in
-    // an `unreachable!` naming the id, so a member of `handles` missing from
-    // the match panics loudly rather than silently doing nothing.
     if crate::app::dispatch::zoom::handles(id) {
         return Some("handles");
     }
-    // ★ The fourth membership-test guard, added 2026-08-27 with
-    // `dispatch::format`, when the form-XObject work took `dispatch.rs` past
-    // 1,500 lines for the third time. Everything the `pages::handles`
-    // paragraph above says applies unchanged, mitigation included: its partner
-    // `dispatch` ends in an `unreachable!` naming the id.
     //
     // ★★ **It failed closed, again, and by name.** The moment the three
     // `format.*` arms moved out of the parent, this checker reported

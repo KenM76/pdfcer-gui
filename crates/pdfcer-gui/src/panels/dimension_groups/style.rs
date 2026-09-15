@@ -122,10 +122,6 @@ const ARROW_LENGTH_RANGE: std::ops::RangeInclusive<f64> = 1.0..=30.0;
 /// paragraph is the record of that being a decision rather than an omission.
 pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Vec<Action>) {
     crate::diag::ui_rect(REGION, ui.max_rect());
-    // ★ The heading itself is the FOLD's caption, not a label here — see
-    // `super::section`. Drawing it twice was the first draft and it read as a
-    // section inside a section. The hint stays: a fold caption is four words
-    // and the sentence under it is what says these are *defaults*.
     ui.label(t::appearance_hint());
     ui.add_space(4.0);
 
@@ -245,13 +241,6 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
 ///
 /// # Why the checkbox and the editor are one function
 ///
-/// Because the pair is the *representation of an `Option`*, and splitting them
-/// would let a future property draw one without the other. Ticking the box has
-/// to seed a value — you cannot edit `None` — and the seed is the factory
-/// default rather than zero, so the first frame after ticking shows the value
-/// that was already in force. Clearing it restores **inheritance**, not the
-/// previously-inherited value frozen in place, which is the engine's
-/// deliberate divergence from the reference tool (`style.rs:269-278`).
 ///
 /// # Why the editor is drawn only when the box is ticked
 ///

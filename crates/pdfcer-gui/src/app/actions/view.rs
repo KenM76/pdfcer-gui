@@ -1,10 +1,6 @@
 //! # `app::actions::view` — **the verbs that move the operator, not the
 //! document**
 //!
-//! Fit, zoom, the three page steps, and a bookmark's destination. Split out of
-//! `app::actions::apply` under R2 on 2026-09-01, and the seam is a real one
-//! rather than a line count: **every other arm in that match changes a PDF, and
-//! none of these does.**
 //!
 //! ## ★★ Why that distinction is worth a file
 //!

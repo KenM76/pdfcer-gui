@@ -1,21 +1,8 @@
 //! # `text::textedit` — every sentence the text-editing tool shows
 //!
-//! Consumed by `crate::canvas::textedit` and by the `Action::CommitTextEdit`
-//! apply arm. Split out of [`super`] rather than added to it for the reason the
-//! catalog's header gives: it is split by **area** from the first commit, so the
-//! split never has to be done as a migration.
 //!
 //! ## Two things here are load-bearing rather than cosmetic
 //!
-//! **★★ [`shares_the_line_note`] is a DISCLOSURE, and it was a refusal until
-//! 2026-08-19.** `DEFECTS.md` D4a records that the old shell handled a
-//! cross-run selection by setting a flag that *"silently disables the whole
-//! typing loop"* — the operator pressed keys and nothing happened. This shell
-//! replaced the silence with a sentence, which was the right first move and the
-//! wrong final one: **it still refused**, and on a CAD sheet, where a table row
-//! is one show operator per cell, it refused nearly every click. The operator
-//! reported text editing as not working twice, weeks apart, and was right both
-//! times. The refusal is gone; the sentence stayed and changed tense.
 //!
 //! **[`pinned_tail_disclosure`] is owed under rule 4.** When the follower
 //! disposition is `Pin`, the text after the edit does not make room, so a longer
@@ -33,12 +20,6 @@ use pdfcer_core::text_edit::BlockAlignment;
 // The commit-refusal family, re-exported
 // ===========================================================================
 //
-// ★★ It lives in `super::editrefusal` since 2026-09-06 (R2), and it is
-// re-exported rather than moved-and-rewired for one reason: **the split is a
-// fact about file size, not about the shell's vocabulary.** Twenty call sites
-// spell these `crate::text::textedit::…`, that spelling is right — the caret's
-// refusals are a text-edit subject — and rewriting them all would have turned a
-// mechanical obligation into a diff nobody could review.
 pub use super::editrefusal::{
     EditRefusal, RefusedCharacter, font_has_two_glyphs_for, font_lacks_the_character,
     run_cannot_take,
@@ -59,8 +40,6 @@ pub const fn refusal(reason: Refusal) -> &'static str {
             "pdfcer cannot read any text on this page. If it is a scan, run Tools > OCR first — \
              editing needs real text, not a picture of it."
         }
-        // ★★★ THIS SENTENCE USED TO SAY SOMETHING ELSE, AND IT WAS RETIRED ON
-        // 2026-08-20.
         //
         // It read: *"This text is inside a block placed by the program that
         // made the drawing, and pdfcer cannot edit inside one yet — only read
@@ -98,9 +77,6 @@ pub const fn refusal(reason: Refusal) -> &'static str {
              nothing here to edit in place. Use Add text to put new text over it, or change it \
              in the program the drawing came from."
         }
-        // ★★★ `Pass 280.0`, 2026-09-09. The caret declines to open because
-        // the run's alphabet came back **empty** — not because the run is
-        // missing, and not because one character is.
         //
         // The three obligations `Refusal::NoAnchor`'s sentence set are met the
         // same way, and the second is the hard one here:
@@ -133,11 +109,6 @@ pub const fn refusal(reason: Refusal) -> &'static str {
 
 /// ★★ The multi-run **disclosure** — what `spans_runs()` used to refuse.
 ///
-/// Until 2026-08-19 this sentence's ancestor was a *refusal*: a click whose
-/// visual line was made of more than one show operator placed no caret at all,
-/// and the sentence told the operator to *"click directly on the word you want
-/// to change"* — advice that could not work, because the refusal was about the
-/// **line**, not about where on it they clicked.
 ///
 /// On a SolidWorks sheet — one show operator per table cell, one per title-block
 /// field — that refused nearly every click. The operator reported the feature as
@@ -207,12 +178,6 @@ pub fn pinned_tail_disclosure(reason: Reason) -> String {
 /// so a page carrying a non-empty EXTRA stream is refused by name rather than
 /// having the text in that stream silently deleted.
 ///
-/// ★★ **Re-measured 2026-09-14; what stood here was two revisions out of
-/// date.** It said `reflow_block` is planned against the **base** document and
-/// that *"one typed character is enough to trip it"*. Engine `Pass 257.0`
-/// (2026-09-06) moved the planner onto the session view and both clauses went
-/// with it: an ordinary text EDIT no longer trips this, because that edit's own
-/// sweep has already consolidated the page. Adding text does.
 ///
 /// ★ The guard is also structural rather than provenance-based, so it fires on
 /// a page NOBODY edited if the producer split its content across streams —
@@ -317,17 +282,7 @@ pub const fn reflow_no_block() -> &'static str {
 ///
 /// # ★★ The two halves, and why both are here
 ///
-/// | | decided by | variants |
-/// |---|---|---|
-/// | **before** the engine is called | the shell, from the caret | [`Self::NeedsCaret`], [`Self::NeedsExistingText`], [`Self::NoBlock`] |
-/// | **from the engine's answer**, 2026-09-05 to 2026-09-14 | `Pass 251.0`, then `G015` | [`Self::PageAlreadyEdited`] — ⚠ **this row has now emptied twice in nine days.** It moved INTO this column when the shell's over-broad `edit_epoch != 0` forecast was deleted and the engine began refusing the case by name; it moved OUT when `G015` deleted the engine's guard as well. The variant is unreachable at engine `025d703d` and is kept — see its own doc for the chain and for the gate that will say so when it stops being true |
-/// | **by** the engine | `pdfcer-core` | [`Self::PageSetChanged`], [`Self::Encrypted`], [`Self::CannotTrace`], [`Self::Other`] |
 ///
-/// The engine half used to reach the operator as
-/// `crate::text::status::edit_declined_by_engine` — nine words, no cause, no
-/// remedy — because `funnel::vector_edit`'s error arm traces the detail and
-/// shows the generic line. These four are what that generic line was standing
-/// in for, and each names a different thing to do next.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ReflowRefusal {
     /// No caret at all: the operator pressed Reflow with nothing composing.
@@ -349,14 +304,6 @@ pub enum ReflowRefusal {
     ///
     /// # ★★★ The chain, because the unreachability is two links long
     ///
-    /// This variant is reached from exactly one arm of
-    /// `app::actions::textstyle::reflow_refusal`:
-    /// `ReflowDecline::RetryAfterSaveAndReopen`. That decline is produced by
-    /// exactly one error: `ReflowApplyError::PageEditedThisSession`. And as of
-    /// `G015` (engine `025d703d`, 2026-09-14) **nothing in the engine
-    /// constructs `PageEditedThisSession`** — the guard that did was deleted,
-    /// and the variant was kept on purpose so that dropping it would be this
-    /// project's decision rather than a side effect of the engine's fix.
     ///
     /// ⇒ So the arm stays (`ReflowDecline` is exhaustive and compiler-proved,
     /// so an arm is mandatory), the variant stays, [`reflow_after_edit`]'s
@@ -393,25 +340,12 @@ pub enum ReflowRefusal {
     /// streams and was refused with *"text was added to this page this
     /// session"* on a freshly opened file.
     ///
-    /// ★ Earlier history, kept because the shape recurs: until 2026-09-14
-    /// this comment described the SHELL's `edit_epoch != 0` forecast and
-    /// called it *"the only thing standing between the operator and losing
-    /// work he can see on the page"*. That forecast was deleted on 2026-09-05,
-    /// the day `Pass 251.0` made the engine refuse the case by name; the
-    /// sentence outlived the mechanism by nine days. **A doc comment that
-    /// argues for a guard is a claim the guard exists.**
     PageAlreadyEdited,
     /// The engine's page-set guard: a page was added, removed or reordered, and
     /// reflow's planner is indexed against the base document's pages.
     PageSetChanged,
     /// The engine declined and gave no cause this shell may act on.
     ///
-    /// ★★★ **Added 2026-09-07 for the causes `ReflowApplyError` does not
-    /// discriminate, and it has narrowed twice since.**
-    /// `ReflowApplyError::Unsupported(String)` packs the remainder into one
-    /// variant with no discriminant — from *"the block's CTM has a degenerate
-    /// (zero) scale"* to a producer quirk with no name — and this shell will
-    /// not parse another crate's prose to guess which.
     ///
     /// So the sentence says the one thing true of every remaining case and
     /// **offers no remedy**. Vague, deliberately: the alternative is a remedy
@@ -419,11 +353,6 @@ pub enum ReflowRefusal {
     /// when it sent the operator hunting for a page reordering that never
     /// happened.
     ///
-    /// ★★ **The two narrowings, because this paragraph asked for them and then
-    /// did not notice they arrived** (corrected 2026-09-14). It used to say the
-    /// engine carries *"ten distinct refusals in one variant"* and to promise
-    /// that *"when a discriminant lands, the one recoverable case gets
-    /// `PageAlreadyEdited` back"*. Two landed:
     ///
     /// * `PageEditedThisSession` — the recoverable one, exactly as forecast.
     ///   [`Self::PageAlreadyEdited`] was reached from it for seven days.
@@ -501,19 +430,6 @@ impl ReflowRefusal {
             // Kept for the same reason `PageSetChanged` below is kept, and
             // watched by `check-unreachable-refusals` rather than by a reader.
             Self::PageAlreadyEdited => reflow_after_edit(),
-            // ★ Deliberately the same remedy as `PageAlreadyEdited` and
-            // deliberately not the same sentence: the operator did something
-            // different to get here, and a sentence that named the wrong cause
-            // would send them looking for an edit they did not make.
-            // ⚠ UNREACHABLE at engine `527b1523` and kept deliberately. Both
-            // engine cases it was written for — *"the page's content was
-            // already edited this session"* and *"the page set was changed this
-            // session"* — were removed by `Pass 257.0` on 2026-09-06, and until
-            // 2026-09-07 `reflow_refusal` mapped every `Unsupported` here, so
-            // this sentence was shown for ten causes and correct for none of
-            // them. It is kept rather than deleted because the guard it
-            // describes is real PDF behaviour that a future engine may reinstate
-            // by name, and because the sentence is already tested.
             Self::PageSetChanged => {
                 "Reflowing a paragraph needs the pages as they were when you opened the file, and \
                  pages have been added, removed or reordered since. Save this file and open it \
@@ -527,19 +443,6 @@ impl ReflowRefusal {
                 "pdfcer will not re-wrap this paragraph. Something about how this page was drawn \
                  stops it doing so safely, and your document has not been changed."
             }
-            // ★★ Names the FONT as the cause, which is the one thing the
-            // generic sentence could not do and the one thing that tells the
-            // operator not to keep trying other paragraphs on the same sheet.
-            // It does not name the face: `AQHZBV+CenturyGothic` is a subset tag
-            // plus a name, it is on no menu he can reach, and it would read as
-            // a thing to go and fix. The face IS carried in the
-            // `reflow-block-refused ... detail=` trace, where debugging wants
-            // it: the funnel Display-formats the engine error, and
-            // `ReflowApplyError::Refused` is `#[error(transparent)]` over a
-            // `Refusal` whose message opens `R-INV-4: font '<base_font>' ...`.
-            // ★ Verified by reading both sides, 2026-09-14 — an earlier draft
-            // of this comment named `reflow-declined`, which is the SHELL-side
-            // decline trace and carries no font at all.
             Self::FontIsComposite => {
                 "pdfcer cannot re-wrap this paragraph: it is drawn in a font that stores more \
                  than one byte per character, and re-wrapping that kind of text is not built \
@@ -820,12 +723,6 @@ mod tests {
     /// The whole point of the module: the old shell's answer to the cross-run
     /// case was no sentence at all.
     ///
-    /// ⚠ **This list was two variants long until 2026-09-09 and the enum was
-    /// four.** `NoAnchor` and `NoUsableEncoding` were both reachable, both
-    /// carried a sentence, and neither had ever been measured by the check
-    /// written to measure exactly that. A hand-written list inside a
-    /// completeness sweep is the gap it was built to find — this project's
-    /// standing finding, and this is its fourth recurrence.
     ///
     /// ★ It is tolerable here for the same one reason [`EditRefusal`]'s
     /// `EVERY` gives: [`refusal`]'s own `match` is exhaustive, so a fifth

@@ -3,8 +3,6 @@
 //!
 //! # What was wrong
 //!
-//! **Ken, 2026-08-29:** *"wire the request. ctrl v for paste as new. ctrl shift
-//! v for paste as duplicate."*
 //!
 //! Before this, `Ctrl+C` over a selected form field did **nothing** — and not
 //! by refusal. There was no path at all: `canvas::clipboard::copy` reads
@@ -21,14 +19,6 @@
 //! things standing between those functions and the operator's keyboard, and
 //! **every one of them has been a real defect on this project**:
 //!
-//! | | the failure it would hide |
-//! |---|---|
-//! | the **three-rung fork** in `dispatch::clipboard` | a text draft or an empty content selection taking the chord first |
-//! | the **binding** | fourteen declared shortcuts turned out never to have been dispatched, 2026-08-18 |
-//! | `Ctrl+Shift+V` **reaching egui at all** | winit derives modifier state from key events; a synthesised `VK_SHIFT` is not always recognised (`sys::vk::LSHIFT`'s note) |
-//! | the **mode gate** | a form field is content, so Read refuses both chords — a check that stayed in Read would report the gate as a clipboard defect |
-//! | the **action queue** | `FieldAction::Paste` drains at end of frame; a variant with no arm traces nothing and does nothing |
-//! | the **engine's merge** | the duplicate paste's entire claim is that `add_text_field` merges on a matching `/T`. Nothing in this shell can prove that; only the running engine can |
 //!
 //! ★ The last row is the one that matters most. This shell **asserts to the
 //! operator** that a duplicate paste keeps the original's font, colour and
@@ -112,9 +102,6 @@ const PASTE_LINE: &str = "fieldclip-paste";
 
 /// The ENGINE-side line, which is the one that proves the document changed.
 ///
-/// ★★ `fieldclip-paste` says the shell RAISED a paste; this says `paste_field`
-/// returned `Ok`. They were one line apart on 2026-08-29 and the gap between
-/// them is exactly where a missing action arm hides.
 const APPLIED_LINE: &str = "paste-field-applied";
 
 /// Where the first field is placed, as page fractions.
@@ -191,8 +178,6 @@ pub struct AFormFieldCanBeCopiedAndPastedBothWays;
 
 /// ★★★ The same three chords under the **Acrobat** paste order — O58.
 ///
-/// Ken, 2026-08-29: *"let's make it an option to have it swap to match Acrobat
-/// or work the way we have it now."*
 ///
 /// # Why this is a second check and not an extra phase of the first
 ///
@@ -556,11 +541,6 @@ fn drive_order(
     }
     // ★★★ WHAT it was called, not just that there is one more.
     //
-    // The naming rule was wrong until 2026-08-29 — it produced `Text1 2` from
-    // `Text1`, a space separator plus no awareness that the base was already
-    // numbered — and a check counting NAMES would have passed against it
-    // unchanged. Acrobat's sourced convention is a plain numeric suffix
-    // continuing an existing number, so `Text1` -> `Text2`.
     //
     // ★ The assertion is on the SHAPE rather than the literal: it forbids the
     // two spellings that are wrong for a stated reason — a space (which breaks

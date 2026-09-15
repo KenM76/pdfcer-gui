@@ -6,10 +6,7 @@
 //! share the concept, and a feature that calls the same thing a *category*
 //! in one place and a *set* in the other has already lost the operator.
 //!
-//! ## ★★★ The hardest sentence in here is GONE — 2026-09-10
 //!
-//! This header used to open with a section called *"the hardest sentence in
-//! here, and what it must not say"*, and its subject was this:
 //!
 //! > pdfcer can **make** a stamp collection and cannot **use** one — placing a
 //! > custom stamp needs an engine verb that does not exist (`ENGINE_BACKLOG.md`,
@@ -411,12 +408,6 @@ pub fn properties_stamp_page(page_number: usize) -> String {
 ///
 /// # ★★ It is now a claim, and it was not before
 ///
-/// This sentence used to be written defensively, because `page_index: None`
-/// carried two opposite truths at once: a name pointing outside the document,
-/// and a page tree that could not be read at all. Engine `Pass 290.1`
-/// (2026-09-10) split them — see [`crate::stamps::page_tree_unreadable`] — so
-/// this row is only ever drawn when the first is true, and the other case has
-/// its own words in [`properties_stamp_page_unreadable`].
 ///
 /// ⚠ **Still not *"this stamp is broken"*, and that is not leftover caution.**
 /// A collection legitimately outlives the document it was cut from; Acrobat
@@ -552,16 +543,6 @@ pub const fn gallery_dynamic_note() -> &'static str {
 /// It carries neither the stamp's label nor the loader's own words, and each
 /// omission is a rule rather than a shortcut.
 ///
-/// - **The label**, because [`crate::app::status::decline::Declined`] is
-///   `Copy` and one `String` in one variant would take that from every other
-///   decline in the enum. The label was also the weaker half of the sentence:
-///   the operator picked that stamp and dragged that rectangle two seconds ago.
-/// - **The loader's words**, because `check-ui-strings.sh`'s exclusion 3 says
-///   in as many words that an error type's `Display` is *"not permission to
-///   route UI text through an error type"*. `pdfcer_core`'s account of why a
-///   file would not parse belongs in the trace line, which keeps it verbatim,
-///   and the first draft of this module put it in parentheses in front of the
-///   operator.
 ///
 /// # ★ Two variants, because the DIAGNOSIS differs
 ///

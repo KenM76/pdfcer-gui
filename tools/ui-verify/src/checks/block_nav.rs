@@ -3,7 +3,6 @@
 //!
 //! # What this is for
 //!
-//! The operator, 2026-08-21:
 //!
 //! > *"there was an acrobat feature in the original pdfcer-gui that attempted to
 //! > reassemble individual lines into paragraphs and the cursor would move to

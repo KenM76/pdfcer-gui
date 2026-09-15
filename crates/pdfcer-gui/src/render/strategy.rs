@@ -71,13 +71,6 @@
 /// # ★★★ The middle column is the budget; the right column is what SURVIVES
 /// the snap
 ///
-/// This table said *"up to half a screen in any direction"* against `0.5` until
-/// 2026-09-04, and that sentence was **false in two of the four directions** —
-/// not because the overscan was not bought, but because [`region_for`]'s snap
-/// spent it all on one side. The measurement and the operator report that
-/// exposed it are in that function's header; the correction is recorded here
-/// because this is the number a future reader will reach for when they want a
-/// bigger margin, and reaching for it would have been the wrong fix.
 ///
 /// ★★ The right-hand column is now a **guarantee at the worst grid phase**
 /// rather than a best case, which is the only form of it worth writing down:
@@ -147,8 +140,6 @@ pub enum Strategy {
 ///
 /// # Why the tier has two ceilings now
 ///
-/// The operator, 2026-08-26: *"seems I get different results depending on Zoom
-/// level … up to 474 % they are mismatched, but at 579 % they match."*
 ///
 /// A page whose group declares a subtractive blending space (§11.4.7) is
 /// composited in a four-colorant buffer at 20 bytes a pixel. Above a ceiling
@@ -226,7 +217,6 @@ pub enum Ink {
 /// `RenderError::BadRasterSize { width, height }` and the caller will have a
 /// refusal to explain instead of a picture.
 ///
-/// # Why this is a separate function from [`for_page`], added 2026-09-12
 ///
 /// Because two different callers need two different questions answered, and
 /// until O186 they were both asking [`for_page`] — which is the *union* of this
@@ -241,8 +231,6 @@ pub enum Ink {
 ///   in one page's coordinate space — so for a strip page `Region` is not an
 ///   alternative tier, it is *"there is nothing I can order"*.
 ///
-/// ★★★ Asking [`for_page`] there was **O186's raster error**. The operator,
-/// 2026-09-12, on his 36-page drawing set at a deep zoom:
 ///
 /// > *"I think this sometimes results in similar error to 'This page could not
 /// > be drawn. requested raster size 50411508x32619210 is empty or exceeds
@@ -377,7 +365,6 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 ///
 /// # ★★★ The snap moves the WINDOW, and it must move it about its CENTRE
 ///
-/// **Operator, 2026-09-04:**
 ///
 /// > *"the canvas does a fading around the edges on stuff shown at the edges of
 /// > the view. I don't want this. it should render true."*
@@ -389,7 +376,6 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// exactly as saved content will render"* is violated the moment the same
 /// content is on screen at two fidelities at once.
 ///
-/// ## What the snap used to do, and the arithmetic that made it visible
 ///
 /// The origin was floored onto the grid and the window was then laid out
 /// *forwards* from there:
@@ -707,9 +693,7 @@ mod tests {
     /// ask for at most three distinct rasters — the one it started in, and one
     /// for each grid line it crosses.
     ///
-    /// # ★★★ This test used to pin a PHASE, and the phase is not the property
     ///
-    /// Until 2026-09-04 it read:
     ///
     /// ```text
     /// let base = region_for((1000.0, 1000.0, 1800.0, 1600.0));
@@ -912,8 +896,6 @@ mod tests {
     ///
     /// > | `0.5` | **4×** | at least a quarter screen in every direction |
     ///
-    /// *In every direction* is the clause under test, and it is the clause the
-    /// operator's report of 2026-09-04 is about —
     ///
     /// > *"the canvas does a fading around the edges on stuff shown at the
     /// > edges of the view. I don't want this. it should render true."*
@@ -1138,8 +1120,6 @@ mod tests {
             switch * 100.0
         );
 
-        // ★ And the pixmap ceiling is a long way above it — the gap is the
-        // band that used to come back with approximate colours.
         assert_eq!(
             for_page(A4, switch - 0.02, Ink::Subtractive(None)),
             Strategy::WholePage,

@@ -110,11 +110,6 @@ pub fn non_navigation(action: &str) -> String {
 ///
 /// ## ★ Why the file is worth its own sentence
 ///
-/// The engine began resolving a `/Launch` action's file specification on
-/// 2026-09-06, having previously resolved one for `/GoToR` and discarded it
-/// here — the same key, the same question, answered in one case only. The
-/// operator case that drove it is one this audience has: a table-of-contents
-/// PDF whose entries open the other drawings in a folder.
 ///
 /// Before this, such a link said *"this is a Launch action"* and stopped,
 /// which tells an operator that something exists and nothing about it. The

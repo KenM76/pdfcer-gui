@@ -22,14 +22,6 @@
 //! enough to be worth stating, because a later hand "tidying" them would undo
 //! a decision that was reasoned:
 //!
-//! | control | tab | why not the other one |
-//! |---|---|---|
-//! | odd/even subset | **Pages & Layout** | It is a *selection* question — it narrows the same set the range radios narrow, and the two compose (`1-10` + Odd prints five sheets). Put under Copies it sits beside Reverse and reads as a delivery option, which is what an operator hand-feeding a duplex job would reasonably but wrongly assume. |
-//! | orientation | **Pages & Layout** | It is a statement about how the page meets the sheet — the same question the sizing radios answer. |
-//! | reverse | **Copies & Finishing** | It is a *delivery* question: it changes nothing about which pages print, only the order they land in the tray, and the reason to want it is a printer that stacks face-up. Same class as collation, so an operator fixing "my stack comes out backwards" looks in one place. |
-//! | tray | **Copies & Finishing** | A request to the *driver* about hardware, like duplex — not arithmetic pdfcer performs. It is about which *stack* a sheet is pulled from, which is a feed question, where paper is a *shape* question. |
-//! | paper | **Pages & Layout** | Same reasoning as orientation, and it arrived on 2026-08-18 for the same reason: it is a statement about the sheet the page meets. An operator whose A1 drawing came out on A4 and one whose landscape drawing came out portrait are looking for the same thing. |
-//! | DPI | **Comments & Resolution** | Both halves of that tab are about the **pixels** rather than the paper: the scope decides what is in the bitmap and the resolution decides how much of it survives. |
 //!
 //! The **printer selector stays outside the tabs** — see
 //! [`super::PrintDialog::options_column`] for why that one is not a setting
@@ -149,10 +141,6 @@ impl PrintRange {
 /// twice). Both fall out of treating the text as a *sequence* the operator
 /// wrote rather than as a set, and both match the CLI.
 ///
-/// Page numbers are one-based — the numbers printed on the paper — and any
-/// number outside the document refuses the whole spec rather than being
-/// clamped. Clamping would turn a typo into a job.
-/// ★ `pub(crate)` since 2026-08-18, so `dialogs::insert_pages` shares it.
 ///
 /// The argument above was made about the GUI and the CLI. It is the same
 /// argument between two GUI surfaces and stronger: an operator who learned this
@@ -297,13 +285,7 @@ pub(super) fn pages_layout(
         }
     }
 
-    // ★ WHICH PAPER — a control now, where a sentence used to be.
     //
-    // The sentence it replaces said, correctly at the time, that paper came
-    // from the printer's own Windows settings and *"pdfcer cannot change it"*.
-    // `pdfcer-print` shipped `PaperSelection` on 2026-08-18 and that stopped
-    // being true. See `crate::text::print::sheet_from_driver` for why an
-    // expiring disclosure is a class of defect worth naming.
     //
     // It sits beside orientation because they are one decision: both are
     // statements about the sheet the page is going to meet, and an operator
@@ -361,7 +343,6 @@ pub(super) fn pages_layout(
                     default.rect,
                 );
 
-                // ★ AUTO, second — operator request O167, 2026-09-10.
                 //
                 // The two entries above the separator are pdfcer's two
                 // *policies* — "say nothing" and "work it out from the pages"
@@ -481,7 +462,6 @@ pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
         ui.add_space(8.0);
     }
 
-    // ★ THE TRAY CHECKBOX, removed 2026-08-17 and restored 2026-08-18.
     //
     // It was removed because it did nothing:
     // `DeviceSettings::pick_tray_by_page_size` was a field `pdfcer-print`
@@ -528,7 +508,6 @@ pub(super) fn comments_resolution(
     resolution: Option<JobResolution>,
 ) {
     ui.label(t::comments_heading());
-    // ★ Four options, and there used to be one.
     //
     // Carried across with its history: `RenderOptions` once carried a single
     // `bool`, so the dialog offered a single honestly-labelled toggle rather

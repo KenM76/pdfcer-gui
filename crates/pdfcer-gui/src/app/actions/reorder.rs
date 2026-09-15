@@ -244,8 +244,6 @@ pub(super) fn arrange(doc: &mut OpenDoc, page: usize, id: ObjId, to: ArrangeTo) 
 /// The list to hand the engine, or `None` when there is nothing to do and the
 /// reason has already been said.
 ///
-/// Split out of [`arrange`] because the two halves are different subjects: this
-/// decides *what order*, and its caller decides *what to say about the result*.
 fn plan(doc: &OpenDoc, page: usize, id: ObjId, to: ArrangeTo) -> Option<Vec<ObjId>> {
     let page_ref = doc.pages.get(page)?;
     let all = pdfcer_core::annot::page_annotations(&doc.session.graph(), page_ref.id);

@@ -150,14 +150,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         ));
     }
 
-    // ★★ LIVE MODE — built 2026-08-17, after this check had SKIPPED for the
-    // whole life of the project.
     //
-    // The reason it skipped was correct when written and had gone stale twice
-    // over: *"the new application has no Settings dialog at S2"* — it has had
-    // one since 2026-08-17 — and *"neither known binary accepts a scripted way
-    // in"*, which stopped being the blocker the moment the dialog landed with
-    // a ribbon control that can be clicked.
     //
     // That is worth a sentence rather than a quiet deletion, because a SKIP
     // whose reason has expired is the most comfortable kind of untested code:
@@ -212,12 +205,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // is the ordering mistake that would report "no headings declared" about a
     // dialog that had not been asked to appear yet.
     let trace = session.trace()?;
-    // ★★ THE DIALOG'S OWN WINDOW. Settings became a real OS window on
-    // 2026-08-21, and a capture of the application shows the page where the
-    // dialog used to be — while the contrast sampler goes on sampling and
-    // reports a confident 1.51:1 about a piece of the drawing. **A measurement
-    // of the wrong surface is indistinguishable from a measurement of a broken
-    // one**, which is the worst failure a check of this kind can have.
     let frame = crate::checks::driving::frame_of(&session, &trace, ui_rect, "dialog:settings")?;
     let png = ctx.out("settings_headings.png");
     let image = crate::capture::frame_to_png(&session, &frame, &png)?;
@@ -289,8 +276,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // palette never assigned — so it would show on every heading at once, not
     // on the seventh.
     //
-    // ★★★ **ATTEMPTED AND REVERTED on 2026-08-28, and the attempt is recorded
-    // because the estimate above turned out to be exactly right.**
     //
     // `driving::scroll_to` had just been written for the form-field pane, so
     // "a real piece of work" looked like it had become an import. It had not.
@@ -318,12 +303,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // `driving::scroll_to`, which is now shared and does work on dock panels —
     // three callers in `form_field` rely on it.
     //
-    // **What is still unmeasured, and it is not a legibility gap:** five of the
-    // seven groups have never been observed by anything, so *"does this group
-    // draw at all"* has no instrument. That was found when a new group was
-    // added below the fold on 2026-08-28 and nothing could say whether it
-    // existed. It is a coverage gap wearing a legibility gap's clothes and it
-    // wants its own check, not a bigger version of this one.
     report.note(format!(
         "measures the {} heading(s) currently IN VIEW; the dialog scrolls and this check does not drive the scroll, so headings below the fold are not measured. D2 was a theme-wide foreground/background pairing and would show on the first heading as readily as the last",
         trace_regions.matched.len()
@@ -342,7 +321,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 /// **Get the Settings dialog on screen**, by whichever route this window
 /// offers.
 ///
-/// # ★★★ THREE routes, and this file knew about two until 2026-08-27
 ///
 /// `file.settings` is the first item of the *pdfcer* group, which is the LAST
 /// group on the File tab. At the shipped 1100 pt window width that group does

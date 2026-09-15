@@ -43,11 +43,6 @@
 ///
 /// # Why this line exists at all
 ///
-/// The operator, 2026-08-26: *"when I click on one of the objects all I get is
-/// the page selected."* He was right, and nothing on screen said so — the
-/// selection outline round a page-sized object looks exactly like *"the page
-/// is selected"*, which is a state this program does not have. This is the
-/// sentence that turns that into a diagnosis.
 ///
 /// # The wording
 ///
@@ -79,11 +74,6 @@ pub fn selection_one_unsized(kind: &str) -> String {
 ///
 /// # The sentence this whole change exists to make sayable
 ///
-/// The operator, 2026-08-26: *"when I click on one of the objects all I get is
-/// the page selected."* He was clicking a real object; a page-sized form
-/// XObject wrapped it, the form's `/BBox` won every hit test, and **nothing on
-/// screen said the word "form" anywhere**. The selection outline round the page
-/// edge looked exactly like a state this program does not have.
 ///
 /// The engine now descends into forms, so the click lands on the object he
 /// meant. This clause is what stops the *next* question — *"why can I select
@@ -157,16 +147,9 @@ fn inside_forms(nesting: usize) -> String {
 ///
 /// # The sentence this replaced, and why it had to go
 ///
-/// Until 2026-09-11 this was a single `&'static str`:
 ///
 /// > *"That object is inside a form — pdfcer cannot edit inside one yet"*
 ///
-/// It was true when it was written — `pdfcer-core` v0.14.0, 2026-08-27, when
-/// `FormLeaf::is_editable` was `false` for every leaf the engine produced and
-/// no verb could reach inside a container at all. **`Pass 188.0` shipped six
-/// form-scoped geometry verbs and this shell wired every one of them**, so by
-/// the time the sentence was read again it was telling the operator that a
-/// thing they had already been doing for ten days could not be done.
 ///
 /// `TextStyleRefusal::line` below states the rule this violates, and it states
 /// it about exactly this species of mistake: *a refusal sentence that states a
@@ -274,11 +257,6 @@ pub fn selection_many(count: usize) -> String {
 ///
 /// # The gap this closes
 ///
-/// The Part rung has existed since 2026-09-05 and **no surface said the
-/// operator was on it.** The outline shrinks from the whole title block to
-/// one line of it, and that is the entire signal: the status bar went on
-/// naming the object's kind and the object's size, which are now both facts
-/// about something bigger than what Delete would remove.
 ///
 /// ⇒ That is the failure mode this module's header is organised around,
 /// one rung down: *reporting the wrong thing is worse than reporting
@@ -401,15 +379,7 @@ pub fn selection_with_depth(line: &str, taken: usize, of: usize) -> String {
 /// this surface (a bad page index, an empty request) or is not improved by
 /// being subdivided.
 ///
-/// # ★★ It stopped being `Copy` on 2026-09-11, and the reason is a feature
 ///
-/// One variant now owns a list of face names the engine computed, so the enum
-/// holds a `Vec<String>` and cannot be `Copy`. Three doc comments in
-/// [`crate::app::status::decline`] used to argue that this type is `Copy`
-/// *"so that `Declined` stays `Copy` and `Declined::line` stays
-/// `&'static str`"*, and both halves of that sentence have now been overtaken:
-/// `Declined::line` became a [`std::borrow::Cow`] on 2026-09-10 for O141's
-/// *"pdfcer cannot type a `q`"*, and the `Copy` half went here.
 ///
 /// ★ What the argument was actually protecting is intact and is worth naming
 /// so it is not lost with the derive: **the engine's prose must not reach the
@@ -432,9 +402,6 @@ pub enum TextStyleRefusal {
     ///
     /// # ★★★ Why this variant carries data when none of its neighbours do
     ///
-    /// Because it is the one refusal in this enum an operator can act on
-    /// *immediately*, and until 2026-09-11 the shell knew the remedy and said
-    /// nothing.
     ///
     /// `pdfcer-core`'s `Pass 274.0` made this refusal end on a **working**
     /// remedy instead of on *"choose a font that covers it"*, and `Pass 279.0`
@@ -467,7 +434,6 @@ pub enum TextStyleRefusal {
     /// The operator's `style_policy` is `Refuse` and the only way to satisfy
     /// this request was to fake the weight or the slant.
     ///
-    /// # ★★★ Raised by the ENGINE since 2026-09-11 — and it used to be ours
     ///
     /// This doc comment said the opposite until the automatic style ladder was
     /// wired, and the correction is worth keeping because the reasoning was
@@ -532,8 +498,6 @@ impl TextStyleRefusal {
             Self::Unpinnable => {
                 "pdfcer could not tell exactly which piece of text that is, so it changed nothing rather than risk restyling a different one that reads the same."
             }
-            // ★★★ Remedy first, and it names the list the operator is looking
-            // at — and it is the SECOND wording, corrected on 2026-08-29.
             //
             // It read: *"pdfcer can only switch text to a font this page already
             // carries. Pick one of the faces in the list."* That was true and
@@ -642,14 +606,7 @@ fn join_or(parts: &[String]) -> String {
 ///
 /// # ★★ Why the shell has to choose this word at all now
 ///
-/// Until 2026-09-11 every sentence in this group took a `style: &str` that came
-/// straight off `FormatError::RealFaceAvailable`, and the shell never had to
-/// own it. The automatic ladder ([`FormatRequest::set_style`]) reports a
-/// [`StyleSynthesis`] instead, so the word is chosen on this side — and the
-/// catalog is the only place in this crate where an operator-facing word may be
-/// written at all (`check-ui-strings.sh`).
 ///
-/// # ★★★ It DELEGATES, and the first draft of it did not
 ///
 /// [`StyleSynthesis::axes`] is a public `const fn` on the engine's own type,
 /// written for precisely this: its doc says *"for sentences about a style that
@@ -704,15 +661,6 @@ fn axes(bold: bool, italic: bool) -> &'static str {
 ///
 /// # ★★★ Why this is a PAIR again, and what it cost to be one sentence
 ///
-/// It was a pair before 2026-09-11, keyed on
-/// `FormatError::RealFaceAvailable { same_family, .. }`. Adopting the automatic
-/// ladder deleted that error — rung 1 binds the face directly — and
-/// [`StyleLadder`] as shipped on 2026-08-30 carried `requested`, `bound`,
-/// `rung`, `synthesised` and `passed_over` and **no `same_family`**. The
-/// engine's matching rule (`family_stem`) is private and engine invariant R74
-/// forbids `pdfcer-gui` re-deriving it by name, so the shell could not recover
-/// the answer: **the better verb carried less information than the two it
-/// replaced.**
 ///
 /// What stood here instead named both `/BaseFont`s — *"was set in Calibri and
 /// is now set in Times-Bold"* — a fact the shell was entitled to state, needing
@@ -761,11 +709,6 @@ pub fn text_style_used_sibling_face(bold: bool, italic: bool, to: &str) -> Strin
 /// attached, and the reason is what tells the operator whether to accept it or
 /// to add a face to the drawing.
 ///
-/// ★ It does **not** name the old face. It used to, because naming both was
-/// the shell's substitute for knowing the family relationship; now that
-/// [`StyleLadder::same_family`] answers the question directly, the old name
-/// adds a second `/BaseFont` to read and no information. See
-/// [`text_style_used_sibling_face`] for the whole history.
 ///
 /// [`StyleLadder::same_family`]: pdfcer_core::text_edit::StyleLadder::same_family
 #[must_use]
@@ -779,7 +722,6 @@ pub fn text_style_used_other_family(bold: bool, italic: bool, to: &str) -> Strin
 /// Disclosure, **ladder rung 2**: the standard-14 sibling of this text's own
 /// family was bound, and nothing was embedded.
 ///
-/// # ★★★ The rung that was unreachable from this shell until 2026-09-11
 ///
 /// There was no sentence for this because there was no outcome for it. This
 /// shell asked for bold with `set_synthetic`, whose gate only ever looks at
@@ -838,13 +780,6 @@ pub fn text_style_already_that_way(bold: bool, italic: bool) -> String {
 ///
 /// # ★★★ It still does not name the faces pdfcer tried, and the reason CHANGED
 ///
-/// It used to be unable to. `StyleLadder::passed_over` was a `Vec<String>` of
-/// pre-formatted `"BaseFont (the whole refusal message)"` pairs, and splitting
-/// on the space before the bracket would have been a locator for the engine's
-/// message format living in a GUI — filed as
-/// `request_style_ladder_passed_over_is_prose_a_shell_has_to_parse.md`, and
-/// `Pass 295.0` shipped `Vec<PassedOver>` with `base_font`, `reason` and a
-/// structured `refusal` carrying the offending character.
 ///
 /// ★★ **The structure landed and this sentence still does not use it, which is
 /// a decision and not an oversight.** `FormatReport::disclosures` already
@@ -890,8 +825,6 @@ pub const fn text_style_faked_warning() -> &'static str {
     "pdfcer faked that weight or slant — no real face on this page could show this text that way, so the letters are thickened or shaped artificially rather than set in a genuine bold or italic face."
 }
 
-// ★★★ `text_style_faked_instead(face)` WAS HERE until 2026-09-11, and it is
-// deleted rather than kept, because **its subject is gone**.
 //
 // It said: *"This page carries {face}, but it has no shape for one or more
 // characters in this text, so pdfcer thickened or slanted the letters
@@ -939,9 +872,6 @@ pub fn text_style_multi(count: usize) -> String {
     )
 }
 
-// ★★★ `text_style_used_other_family` WAS DELETED AND RESTORED ON THE SAME DAY,
-// 2026-09-11, and the round trip is recorded because the reasoning on the way
-// down is what got it back.
 //
 // It was deleted in the morning because **the flag it was chosen by did not
 // exist on the automatic route** — not because the distinction stopped
@@ -995,11 +925,6 @@ pub fn text_style_multi(count: usize) -> String {
 /// below a subpath to descend into. Reusing it would send him looking for a
 /// rung that does not exist.
 ///
-/// The remedy this one names is the one that now works: **zoom in**. Since
-/// 2026-08-31 the cap counts what is on screen rather than what the path
-/// contains, so magnifying the area genuinely makes the dots appear — which it
-/// did not before, and which is why this sentence could not have been written
-/// honestly until the cull shipped.
 ///
 /// ★ It lives here rather than beside its sibling in `text::status` because
 /// that module is at 1,482 lines against R2's 1,500. The seam is noticed

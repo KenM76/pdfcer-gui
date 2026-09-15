@@ -3,7 +3,6 @@
 //!
 //! # The reports
 //!
-//! `OPERATOR_REQUESTS.md` O24e and O24f, 2026-08-22:
 //!
 //! > *"if I am zoomed out to about page size, pan the cells to the center of
 //! > the screen, then start to zoom, the page snaps back to near the center
@@ -71,12 +70,6 @@ const STAGE: usize = 8;
 ///
 /// # ★★ A CAP, not a count — the loop climbs until the zoom SATURATES
 ///
-/// The operator, 2026-08-22: *"can you test up to maximum zoom please?"* So the
-/// run does not stop at a chosen depth; it keeps rolling until a whole stage
-/// fails to increase the zoom, which is the application saying it has reached
-/// its ceiling. With the default maximum of 10¹² % that is a long climb — eight
-/// notches multiply the zoom by roughly five, so from a page-fit 76 % it takes
-/// about fifteen stages.
 ///
 /// ★ The cap exists only so that a build broken in the *other* direction — one
 /// that climbs by an epsilon for ever — ends the run instead of wedging the
@@ -96,12 +89,6 @@ const MAX_STAGES: usize = 24;
 // the ceiling, so a saturating climb crosses them on the way — but the guard
 // checks rather than assumes.
 //
-// ⚠ Neither figure is a zoom. Both are a bound on a PRODUCT —
-// `page_height × zoom` in pixels — so the percentage depends on the sheet in
-// front of the operator, and the deep one has already moved once: O49 cut
-// `SUB_PIXEL_CONTENT_EXTENT` from 2^24 to 2^20 on 2026-08-28, and every
-// restatement of the old 2,118,000 % in this crate outlived it. Cite the
-// constant; the percentages here are for a reader's sense of scale only.
 
 /// How far the anchored page point may drift **per wheel notch**, as a
 /// fraction of the page width currently visible.
@@ -283,7 +270,6 @@ const SETTLE_ROUNDS: usize = 24;
 /// Read [`held`] repeatedly until two consecutive reads agree exactly, so the
 /// reading is of a **settled** view rather than of one still in flight.
 ///
-/// # ★★★ The probe defect this closes, measured on 2026-09-11
 ///
 /// `zooming_does_not_throw_away_where_the_operator_panned` failed sporadically
 /// — three runs of the same binary failed at 2826 %, at 5150 %, and not until
@@ -568,12 +554,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ★★★ REFUSE TO PASS A RUN THAT NEVER LEFT ONE TIER.
     //
-    // Half of what this check is for is the HAND-OVER between the `f32` scroll
-    // offset and the `f64` anchor, and a run that stayed on one side of it has
-    // not tested that at all. The same guard as `deep_pan`'s
-    // `REGION_TIER_REQUIRED`, for the same reason: on 2026-08-22 a check
-    // reported PASS twice against a binary with the defect deliberately put
-    // back in, because it never reached the tier it was named after.
     if tiers.len() < 2 {
         return Err(Error::new(format!(
             "every reading was on tier `{}` — the run never crossed the boundary between the f32 \

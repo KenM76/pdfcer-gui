@@ -45,15 +45,6 @@
 //!
 //! # Why the last two are here at all
 //!
-//! Both pin a defect of the same *shape*, and it is a shape that no test in
-//! this crate could previously see: **the plan reserved space the renderer
-//! never drew.** [`super::plan::GROUP_PADDING`] budgeted 12 pt per group from
-//! the day the planner was written; nothing drew a point of it, every test
-//! passed, and the only evidence was a screenshot in which a group's box and
-//! its first control began at the same x. `MODES_AND_PANELS.md` is blunt about
-//! that class — *layout/clipping defects have exactly one oracle, a rendered
-//! screenshot* — and the response to a defect an oracle found is a test that
-//! would have found it too, not a note saying the oracle exists.
 //!
 //! So both assert against **drawn rectangles**: the inset is measured as the
 //! distance from a group's published box to the leftmost control published

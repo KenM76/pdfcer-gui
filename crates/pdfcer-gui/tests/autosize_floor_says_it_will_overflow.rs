@@ -10,8 +10,6 @@
 //! produced it"* — and stops shrinking at a legibility floor rather than
 //! rendering something unreadable.
 //!
-//! Until 2026-09-07 this shell read the chosen **size** and discarded the
-//! **bound**, so an operator whose field was too small was told:
 //!
 //! > *"⚠ "FullName" asks for an automatic text size and pdfcer chose 4.0 pt.
 //! > Another program filling this field may choose differently."*

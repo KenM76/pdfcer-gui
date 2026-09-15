@@ -3,8 +3,6 @@
 //!
 //! # The report
 //!
-//! `OPERATOR_REQUESTS.md` O186, 2026-09-12. The operator, describing what
-//! happens when he keeps Ctrl+wheeling in at a very deep zoom:
 //!
 //! > *"the canvas will just stop zooming in"*
 //!
@@ -12,10 +10,6 @@
 //!
 //! # What is wrong — the theory this check was written against, and what it measured
 //!
-//! ★★★ **Read both halves.** The first run of this check, on 2026-09-13,
-//! overturned the first half. The theory is kept rather than deleted because it
-//! is still true, still fixed, and it is how a reader gets from the operator's
-//! sentence to the measurement — but it is **not** what he hit.
 //!
 //! ## The theory: an unclamped deep anchor
 //!
@@ -750,14 +744,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  gestures that need no drawn page."
             ),
         };
-        // ★★★ The cause sentence is chosen from the TRACED TIER, never stated
-        // unconditionally. An earlier draft ended this verdict with "the f64
-        // `DeepAnchor`'s page point is off the sheet and nothing confined it"
-        // no matter what the trace said — and the falsification run printed
-        // that sentence immediately after printing "deep tier NOT reached",
-        // contradicting itself in one paragraph and naming the wrong module to
-        // go and read. A verdict that asserts a cause it did not measure sends
-        // the next reader to the wrong file with confidence.
         let cause = if climb.saw_deep {
             "The f64 `DeepAnchor`'s page point is off the sheet and nothing confined it to a \
              placement from which the page is visible."

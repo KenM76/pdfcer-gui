@@ -35,11 +35,6 @@ pub struct Error {
     /// a precondition: no binary, no fixture, no window, input disabled. That
     /// convention is right for those, and it was silently wrong for one case.
     ///
-    /// On 2026-09-03 an outside reviewer found that `pdfcer ▸ Keyboard
-    /// shortcuts` **aborted the process**, and
-    /// `dialogs_open_in_their_own_window` — which drives that exact dialog —
-    /// had been reporting PASS. The line it greps for is written before the
-    /// panic, so a crash after the evidence is invisible to it.
     ///
     /// The guard for that lives in `Session::trace`, and if it returned an
     /// ordinary `Err` the crash would have become a **SKIP**. This project's

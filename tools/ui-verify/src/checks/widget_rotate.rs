@@ -84,8 +84,6 @@ const APPLIED: &str = "rotate-widget-applied";
 
 /// The properties panel's own body, for scrolling.
 ///
-/// ★★★ The first version of this check did not scroll, and that is why it
-/// reported the feature as inert on 2026-08-30 while the feature worked.
 ///
 /// The properties panel on a selected form field is well over a thousand points
 /// of content in a dock slot a few hundred tall. The rotation row sits with the
@@ -224,9 +222,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- scroll the rotation row into view ----------------------------------
     //
-    // ★★ The region is published only when it is VISIBLE, since 2026-08-30. So
-    // its absence here is not "the button does not exist" — it is "the button is
-    // below the fold", which is a different finding and has a different remedy.
     let panel = declared(&session.trace()?, ui_rect, PANEL_BODY);
     let mut button = declared(&session.trace()?, ui_rect, ROTATE_RIGHT_REGION);
     let mut turns = 0;

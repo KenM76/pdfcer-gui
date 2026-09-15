@@ -26,13 +26,6 @@
 //! > after the triangle is pressed, the panel says the document holds exactly
 //! > as many bookmarks as it did a moment ago, and draws **one row fewer**.
 //!
-//! Both halves are needed and neither alone is evidence. `bookmarks-panel
-//! items=` counts what `read_outline` read — every item at every level,
-//! collapsed branches included — so it proves the collapse **did not delete
-//! anything**. The row count proves the panel **honours `/Count`'s sign**,
-//! which it did not do before this feature: the walk used to recurse
-//! unconditionally, so a triangle that wrote the sign into the file would have
-//! changed nothing on screen and read as a control that does not work.
 //!
 //! A build that wrote the sign and kept drawing the children passes every unit
 //! test about the tree, passes the funnel-line assertion below, and fails this.
@@ -104,12 +97,6 @@ use crate::trace::{Trace, TraceLine};
 
 /// The mode the Bookmarks panel is **authored** in.
 ///
-/// ★★★ **Was `read`, and that made this check permanently unrunnable —
-/// corrected 2026-09-05 on the first sweep that ever executed it.** The full
-/// argument is on `bookmark_edit::MODE`; in one line: Read mounts the panel and
-/// deliberately withholds the authoring row, and `bookmark_add`'s second half
-/// asserts that absence and passes, so this check's set-up phase — which
-/// authors three bookmarks to drag — could never begin. Review authors.
 const MODE: &str = "review";
 /// Supplied at launch. **Nothing**, deliberately: [`MODE`]'s default dock
 /// already mounts Bookmarks, and `view.panel_bookmarks` is a TOGGLE, so
@@ -201,14 +188,6 @@ fn census(session: &Session) -> Result<Option<usize>> {
 /// before any row, so the lines after the last census are exactly the last
 /// frame's rows.
 ///
-/// **The visibility filter.** `bookmark-row` is a diagnostic line, not a
-/// `ui_rect`: the panel writes one per row per frame **whether or not the row
-/// is inside the visible scroll area**, because the listing has to be provable
-/// from a trace without anybody clicking. `bookmark_edit` learned that the
-/// expensive way on 2026-08-29 — its aim landed three thousand points below the
-/// panel, off the window entirely, and it then reported that the
-/// Selected-bookmark block never appeared. The panel was right; the aim was
-/// three metres low.
 ///
 /// ⇒ The general form, and this suite has now met it three times: **a trace
 /// line written for every item is not a list of the items you can click.** The

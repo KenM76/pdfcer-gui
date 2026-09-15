@@ -18,8 +18,6 @@
 //! exactly the state this shell shipped in for the day between the two:
 //! `Refusal::InsideForm`, a worded decline, honest and useless.
 //!
-//! It was honest because no verb existed. `pdfcer-core` Pass 188.0 shipped six
-//! (2026-08-31), and `move_objects_in_form` is the first wired.
 //!
 //! ## ★★★ The oracle, and why `n=` is half of it
 //!
@@ -267,8 +265,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         moved.raw
     ));
 
-    // ★★ **And the operator watched the SHAPE move, not a box round it** —
-    // O70's last owed item, 2026-09-01.
     //
     // `canvas::shapes` read `PageObjects::objects` by paint-order index, so a
     // drag inside a container fell back to the outline ghost: the box followed

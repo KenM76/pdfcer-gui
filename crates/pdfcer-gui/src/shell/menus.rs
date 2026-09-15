@@ -84,21 +84,7 @@
 //!
 //! # The menus, and why each holds what it holds
 //!
-//! ⚠ This heading read *"The four menus"* until 2026-09-06 and the table under
-//! it listed four while [`built_in`] returned eight. That is this project's
-//! recurring shape — **a prose count beside the thing it counts, decaying while
-//! a test pins the truth one screen down** — and it is why the heading no
-//! longer carries a number at all. [`CONTEXTS`] is the count, and
-//! `tests::the_catalog_defines_exactly_the_documented_contexts` is what makes
-//! it true.
 //!
-//! | Context id | Right-click site | Items | The reasoning |
-//! |---|---|---|---|
-//! | [`CANVAS_OBJECT`] | a selected object on the page | `view.zoom_selection`, `format.properties`, `format.select_text_line`, `format.select_form`, `format.unshare_form`, `format.delete` | ★ The Items column was **wrong** until 2026-08-28 — it had never been updated for `format.select_form`, added the previous day, which is this project's recurring shape of a prose claim beside the thing it describes decaying while a test pins the truth one screen down. The two form commands arrived with the form-XObject work: `format.select_form` because a click now reaches *inside* a form and the container has to be reachable on purpose, and `format.unshare_form` because O53 forbids a command existing only on the ribbon — and because the operator who needs it is mid-gesture, about to type into a title block, and the pointer is where they are looking. Zoom to selection is here because **SolidWorks and Acrobat both reach it by right-click** and only Inkscape binds a key for it — operator instruction of 2026-08-14 to match those three; see the registration site for why no chord was invented. Then §5.8 lists Delete in **every** selection type's row. It is the one command in that section that exists (see `manifest::DIRECTED`), and it is wired: `PdfcerApp::dispatch_token` reads `SelectionState::deletable_objects_on`, the same rule the Delete key reads. **`format.properties` joined them on 2026-08-18**, with the ce-dimension properties section: a selected ce dimension's group, measurement, style overrides and radius/diameter switch are otherwise reachable only by noticing that a contextual tab appeared or by opening a dock panel by name, and the operator's report was *"I click and can't figure out how to enable some of the basic stuff."* It sits above Delete because the destructive row is last in every menu here. **`format.select_text_line` joined on 2026-09-14** (O188(A)) and is the only row here that is absent rather than greyed when it does not apply: it descends to ONE LINE of a multi-line text object, a rung that until then was reachable only by arming the Points tool with a chord nobody had been told about. It is a re-aim, not an edit, which is why `DESIGNS.md` §6.2's ban on a context-menu item does not reach it — see the registration site. |
-//! | [`CANVAS_MARKUP`] | a selected markup shape on the page | `format.properties`, `markup.add_node`, `markup.remove_node`, `edit.cut`, `edit.copy`, `edit.paste`, `format.delete` | ★★★ **The sixth canvas context, 2026-09-06, and the reason it is not [`CANVAS_OBJECT`] is that four of that menu's five rows are meaningless on an annotation.** `format.select_form` and `format.unshare_form` are about page content inside a form XObject; a markup annotation is not page content and is never inside one, so both would resolve, draw and do nothing — the *live and silently inert* class this project's `DEFECTS.md` is made of. What replaces them is the pair the operator asked for by name: *"I also can't edit or delete nodes of a markup shape once it is drawn."* See the block comment at the registration for the order, and [`crate::canvas::annotnodes::menu`] for why one of them can be greyed and the other absent on the very same shape. |
-//! | [`CANVAS_EMPTY`] | blank page, or the paper beside the drawing | `view.zoom_fit_page`, `view.zoom_fit_width`, `view.zoom_fit_height`, `view.zoom_actual` | The four **named** zoom levels, all of which have a live dispatch arm today. A right-click on paper is about the *view*, because there is no object to be about. |
-//! | [`DOCK_TAB`] | a panel tab in the dock | `view.reset_layout` | The only registered command that acts on the dock. The **command** is wired (`PdfcerApp::dispatch_command` calls `Modes::reset` with `ResetScope::All`); the **menu** still cannot be attached — see the warning below. |
-//! | [`OBJECTS_ROW`] | a row in the Objects panel | `file.properties` | The Properties panel is *where an object row is described*; right-clicking a row focuses it and this is the command that puts the description on screen — which it now does: `PdfcerApp::show_panel` activates the panel, mounting it first if the operator's arrangement no longer holds it. |
 //!
 //! ## ★ `dock.tab` — the note below described a gap that CLOSED
 //!
@@ -193,11 +179,6 @@ pub const CANVAS_READ_OBJECT: &str = "canvas.read-object";
 
 /// ★★★ Right-click on the page **with a caret placed in existing text**.
 ///
-/// The third canvas menu, added 2026-08-28 with paragraph reflow. It is keyed
-/// on the *caret*, not on a selection, and that is the whole reason it is a
-/// separate context: while the operator is editing text there is no selected
-/// object, so [`CANVAS_OBJECT`] never resolves and [`CANVAS_EMPTY`] would
-/// offer four zoom levels to somebody with a cursor blinking in a paragraph.
 ///
 /// ⇒ **Without this, reflow would be reachable only from the ribbon**, and the
 /// standing rule is that anything the engine can do to a thing on the page is
@@ -207,11 +188,6 @@ pub const CANVAS_TEXT: &str = "canvas.text";
 
 /// ★★★ Right-click on the page **over a form field**.
 ///
-/// The fourth canvas menu, added 2026-08-28. Keyed on `doc.selected_field`,
-/// which is neither a `SelectionState` entry nor a caret — a `/Widget` is
-/// deliberately not an annotation selection — so none of the other three ever
-/// resolved for one, and a right-click on a text box offered *"zoom to fit
-/// width"*.
 ///
 /// ⇒ `OPERATOR_REQUESTS.md` **O53**: *"always always always I need objects on
 /// the canvas to be clickable and editable as one would expect."* A context
@@ -221,11 +197,6 @@ pub const CANVAS_FIELD: &str = "canvas.field";
 
 /// ★★★ Right-click on the page **over a selected markup shape**.
 ///
-/// The sixth canvas menu, added 2026-09-06. Keyed on the **annotation
-/// selection** — `SelectionState::annot` with
-/// [`AnnotKind::Markup`](crate::canvas::selection::AnnotKind::Markup) — which is
-/// neither a content selection nor a caret nor a field, so none of the other
-/// five ever resolved for one.
 ///
 /// # ★★ Why not just widen [`CANVAS_OBJECT`]
 ///
@@ -421,9 +392,6 @@ pub fn built_in() -> Menus {
         // ★ **Zoom to selection is here because that is where two of the three
         // reference applications put it.**
         //
-        // Operator instruction, 2026-08-14: *"make your best educated guesses
-        // to match what inkscape, acrobat, and SolidWorks do."* Applied to the
-        // open question of how `view.zoom_selection` is reached:
         //
         // | | how it is reached |
         // |---|---|
@@ -456,8 +424,6 @@ pub fn built_in() -> Menus {
         // that cannot be undone by looking somewhere else.
         .with(Menu::new(CANVAS_OBJECT).with_items([
             Item::command("view.zoom_selection"),
-            // ★ The right-click route to the Properties panel, added 2026-08-18
-            // with the ce-dimension properties section.
             //
             // It is here because it is where the operator actually looks. A ce
             // dimension's group, its measured value, its eleven inherited-or-
@@ -470,8 +436,6 @@ pub fn built_in() -> Menus {
             // Above Delete, which stays last: the destructive row is last in
             // every menu in this file, deliberately.
             Item::command("format.properties"),
-            // ★ The right-click route to the container, added 2026-08-27 with
-            // the form-XObject descent.
             //
             // It matters more here than on the ribbon, and the reason is where
             // the operator's hand is: they have just clicked something inside a
@@ -479,10 +443,6 @@ pub fn built_in() -> Menus {
             // right-click it. A control on a contextual tab three inches away
             // is the correct *second* home, not the first one they will find.
             //
-            // Greyed rather than absent when the selection is not inside a
-            // form, by the same R9 reading the catalog entry argues.
-            // ★★★ **The discoverable route to ONE LINE of a text block**, added
-            // 2026-09-14 for `OPERATOR_REQUESTS.md` O188(A).
             //
             // The operator asked to *"move the individual text blocks"* inside
             // a grouped block of text *"and have the ability to delete them"*.
@@ -525,8 +485,6 @@ pub fn built_in() -> Menus {
             // do nothing.
             Item::command("format.select_text_line").shown_when(RUN_SELECT_OFFERED),
             Item::command("format.select_form"),
-            // ★★★ The right-click route to *"give this page its own copy"*,
-            // added 2026-08-28 with the form-XObject unshare.
             //
             // **O53's ruling is why it is here at all**: a command must not
             // exist only on the ribbon. That rule is doing more work for this
@@ -572,10 +530,6 @@ pub fn built_in() -> Menus {
         // should also allow us to select images so we can copy and paste them
         // … outside of the pdfcergui."*
         //
-        // Copy became reachable there by chord on 2026-08-31 and by nothing
-        // else, which is a feature only somebody who was told about it can
-        // use. Acrobat Reader puts *Copy Image* on the right-click and that is
-        // where a hand goes.
         //
         // TWO rows, and the shortness is the design. Every other row of
         // `canvas.object` edits — Delete, unshare, re-aim, the Properties
@@ -653,13 +607,6 @@ pub fn built_in() -> Menus {
         // R83 forms defect, left open for a day by the fix that closed the
         // first.**
         //
-        // `canvas.object`'s `format.delete` two menus above has carried
-        // `DELETE_PERMITTED` since 2026-08-29; this one carried nothing. On an
-        // ordinary certified fillable form that made the menu's Delete drawn,
-        // live and undimmed over a widget the engine will not remove — and the
-        // press cleared `doc.selected_field`, which took away the Properties
-        // panel's sentence that had been correctly explaining the refusal. A
-        // refused gesture that destroys its own explanation.
         //
         // It is the SAME condition as `canvas.object`'s, deliberately, and it
         // is correct for both because `app::conditions` publishes it from a
@@ -674,8 +621,6 @@ pub fn built_in() -> Menus {
         // -------------------------------------------------------------------
         // canvas.markup — a placed markup shape's menu.
         //
-        // ★★★ **The sixth canvas context, 2026-09-06.** The operator's report of
-        // 2026-09-05 is the whole commission:
         //
         //   "I also can't edit or delete nodes of a markup shape once it is
         //    drawn."
@@ -722,14 +667,6 @@ pub fn built_in() -> Menus {
         // So: what is it (`format.properties`) · the two node verbs, which are
         // why this menu exists · the clipboard · Delete.
         //
-        // Separators between the three groups because they are three KINDS of
-        // verb, which is what a rule is punctuation for. The menu engine
-        // collapses a leading, trailing or doubled rule (`plan::collapse`), so
-        // on a shape with no node rows — a `/Square`, a `/Circle`, a text mark
-        // — the two rules around them become one and the menu reads as though
-        // the group was never written. (An `/Ink` stroke was on that list
-        // until `pdfcer-core` `Pass 278.0`, 2026-09-09; its points now take
-        // both rows, per stroke.)
         //
         // ## ★★★ The two node rows: `shown_when` AND greying, on one row
         //
@@ -754,10 +691,6 @@ pub fn built_in() -> Menus {
         //
         // ## The clipboard rows
         //
-        // Three, and they are the three that exist. `canvas::annotclip` shipped
-        // the lossless annotation route on 2026-09-05, and `edit.cut`,
-        // `edit.copy` and `edit.paste` are all registered, all wired through
-        // `dispatch::clipboard`, and all reach an annotation operand.
         //
         // ★ `edit.paste_duplicate` is deliberately absent even though it is
         // registered: over a markup clipboard `dispatch::clipboard` falls it
@@ -817,14 +750,6 @@ pub fn built_in() -> Menus {
         // in the registry, it is listed in `manifest::PLANNED`, and inventing
         // one here would name an id that resolves to nothing.
         //
-        // `view.reset_layout` is what is left, and it is not a consolation
-        // prize: "put the panels back where they started" is the single most
-        // likely thing an operator wants from a right-click on a panel tab
-        // after closing it, it is registered, and it is reachable from
-        // View ▸ Window as well — which a menu is allowed to mirror, because
-        // context menus are not tabs.
-        // -------------------------------------------------------------------
-        // ★★★ **The three per-panel layout verbs joined it on 2026-09-04.**
         //
         // Each is `shown_when` a condition the tab handler sets PER TAB — see
         // `crate::app::surfaces`, which corrects the frame's condition set
@@ -905,10 +830,6 @@ pub fn built_in() -> Menus {
         // covers. It goes in the day somebody has fifteen drawings open and
         // says so.
         //
-        // **Move to a new window**, which the operator asked for on 2026-08-20,
-        // is absent under R9: a row for a capability the build does not have is
-        // a placeholder. It is registered nowhere, so `Menu::attach` cannot
-        // draw it even if this list named it.
         .with(Menu::new(DOCUMENT_TAB).with_items([
             Item::command("file.close"),
             Item::command("view.close_other_documents"),
@@ -1107,13 +1028,6 @@ impl<'a> MenuHost<'a> {
 
     /// The same correction, for **several** conditions at once.
     ///
-    /// ★★ Added 2026-08-28 with the `canvas.field` menu, and it exists so the
-    /// second caller could not be written as a two-step. [`Self::with_condition`]
-    /// returns an owned `ConditionSet` rather than a builder, so correcting two
-    /// conditions meant taking the result and mutating it — which puts half the
-    /// correction inside this type's documented contract and half outside it,
-    /// where the next reader will not find the argument above for why the
-    /// correction is needed at all.
     ///
     /// ⇒ Both conditions the canvas corrects are *the same fact one frame
     /// later*, and they should arrive by the same route. `with_condition`

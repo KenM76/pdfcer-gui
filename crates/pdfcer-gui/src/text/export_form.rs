@@ -1,8 +1,5 @@
 //! # `text::export_form` — the words form-data export says
 //!
-//! `file.export_form_data`, wired 2026-08-27. Its verb is
-//! [`crate::app::actions::export::form_data`], whose header carries the design;
-//! this file carries the copy.
 //!
 //! ## ★★★ The sentence this module exists for
 //!

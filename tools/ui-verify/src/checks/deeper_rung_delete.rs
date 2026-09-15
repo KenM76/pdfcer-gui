@@ -1,13 +1,6 @@
 //! `deeper_rung_delete` — **Delete removes ONE line, ONE label or ONE corner
 //! point, and leaves the rest of the object standing.**
 //!
-//! Three checks, one file, one drive shape. They are the driven half of the
-//! 2026-09-05 work that wired `EditSession::delete_subpath`,
-//! `delete_text_run` and `delete_node` — three verbs whose **move** twins had
-//! been wired for a fortnight, so on a CAD export a line could be entered,
-//! selected and dragged, and could not be removed. Delete at the Part and Node
-//! rungs traced `canvas-delete-declined … reason=no-verb-for-rung` and did
-//! nothing at all, silently.
 //!
 //! # ★★★ THE ASSERTION THAT MATTERS IS "THE OTHERS SURVIVE"
 //!
@@ -60,29 +53,6 @@
 //! A check that has never been seen to fail is not evidence. The plant, and the
 //! proof that the plant landed, in order:
 //!
-//! 1. **Copy the file aside first.** `cp crates/pdfcer-gui/src/canvas/deleting.rs
-//!    /tmp/deleting.rs.bak`. **Never `git checkout` to undo it** — this project
-//!    runs parallel tracks and that discards another track's uncommitted work.
-//! 2. **Plant the defect this exists to catch**, in
-//!    `canvas::deleting::part_rung`: replace the `Some(PartKind::Run)` arm's
-//!    body with the Object-rung verb —
-//!    `Ok(DeleteSubject::Objects { page, objects: vec![object] })`. That is the
-//!    pre-2026-09-05 behaviour with the decline removed, i.e. the bug
-//!    `Pass 32.0` was written against.
-//! 3. **Prove the plant is in the artifact, not just in the source.** Rebuild
-//!    (`cargo build --release -p pdfcer-gui`), then
-//!    `grep -c delete-text-run-applied target/release/pdfcer-gui.exe` — the
-//!    planted build should report **0** for the text-run label, because the arm
-//!    that writes it is now unreachable. `touch` the source if the build is
-//!    skipped; a stale binary is the commonest cause of a falsification that
-//!    "did not reproduce".
-//! 4. **Require the check's own `[FAIL]` line.** The exit code is *not* the
-//!    verdict — a SKIP exits the same way a PASS does, and every one of these
-//!    three SKIPs on a fixture that cannot exercise it. Grep the report for
-//!    `[FAIL] deleting_a_label_leaves_the_other_labels_alone`. It must say the
-//!    object count fell.
-//! 5. **Restore from the byte copy**, `cp /tmp/deleting.rs.bak …`, rebuild, and
-//!    confirm the check passes again.
 //!
 //! ★ A falsification that produces a SKIP has proved nothing. If step 4 finds
 //! `[SKIP]`, the fixture is wrong before the plant is wrong — see the table
@@ -90,14 +60,6 @@
 //!
 //! # Fixtures — pinned in [`Rung::fixture`], not passed on the command line
 //!
-//! ★★★ **This was a table addressed to a human typing a command line, and
-//! the sweep does not type command lines.** Every row below was correct on
-//! the day it was written and stayed correct, and on 2026-09-12 all three
-//! rungs nevertheless ran against one shared A1 sheet that satisfies none of
-//! them — because `drive` read `--pdf` and `--doc-point`, and the table was
-//! prose. See [`Rung::fixture`] for what that cost and what each rung now
-//! pins. The rows are kept because the *measurements* in them are the
-//! justification for the pins:
 //!
 //! | check | fixture | point | why |
 //! |---|---|---|---|
@@ -105,13 +67,6 @@
 //! | line | `fixtures/hole-in-a-big-object.pdf` | `0,336,500` | needs a path object holding **several** subpaths. Measured: **41** — a circle and forty unrelated segments in ONE object, which is the shape of the operator's own export |
 //! | point | `fixtures/polyline-nodes.pdf` | `0,150,260` | needs a subpath with **three or more** anchors — `delete_node` refuses one that would leave fewer than two, correctly. Measured: **6** |
 //!
-//! ⚠ The label row used to name `D:/Dev/pdfTests/SW41177/SW41177.pdf` at
-//! `0,1140,62` — **18 runs** on a page of **5,903** objects, and a fine
-//! measurement. It is an operator file outside this repository: no other
-//! machine has it, nothing in CI can fetch it, and a check that cannot run
-//! without it is a check that only ever runs here. The measurements taken
-//! against it are quoted throughout this module and remain valid; the
-//! *dependency* is gone.
 //!
 //! ★★★ **The line rung's fixture was WRONG in the first version of this table
 //! and the check said so rather than passing.** It named `polyline-nodes.pdf`
@@ -127,7 +82,6 @@
 //! needs, which is the standing rule: a check that cannot establish its
 //! precondition must not report on the property beyond it.
 //!
-//! # ✅ DRIVEN 2026-09-05 — and the first run found two things
 //!
 //! All three **PASS**. What the first run found, in the order it found it:
 //!
@@ -211,19 +165,7 @@ impl Rung {
 
     /// The file-name stem this rung's artefacts are written under.
     ///
-    /// ★★★ **One per rung, and the reason is a recorded failure.** The three
-    /// checks in this module are three `Check` implementations over one
-    /// `drive` body, and until 2026-09-11 that body named its trace
-    /// `deeper_rung_delete.trace.txt` — one literal, shared by all three.
-    /// They launch three separate processes, so the third to run overwrote the
-    /// first two, and every failure message printed an `artifact:` line
-    /// pointing at **another check's run**.
     ///
-    /// That is worse than having no artefact. A trace from the wrong process
-    /// is internally consistent, looks exactly like evidence, and reads as a
-    /// coherent story about the wrong thing: the 2026-09-11 sweep's point-rung
-    /// failure was first diagnosed from the label rung's trace, and the
-    /// diagnosis was confidently wrong in both directions at once.
     ///
     /// ⇒ **An artefact path must be a function of the check, never of the
     /// module.** `tools/gates/check-artifact-paths.sh` enforces that no two
@@ -266,9 +208,6 @@ impl Rung {
     ///
     /// # The measurement that put this here
     ///
-    /// This check was written assuming one double-click enters the Part rung
-    /// on any object, as it does on a path. Driven for the first time on
-    /// 2026-09-05 against `SW41177.pdf` at `0,1140,62`, it reported
     ///
     /// ```text
     /// [SKIP] the ladder is at `Object` and this check needs `Part`
@@ -332,20 +271,8 @@ impl Rung {
     }
     /// The document this rung must run against, and where on it to click.
     ///
-    /// # Why this is code and why it used to be a table
     ///
-    /// The header of this module has carried a correct fixture table since
-    /// 2026-09-05: one row per rung, each naming a document, a point, and the
-    /// measured part count that justifies the pair. It was prose, and `drive`
-    /// read `--pdf` and `--doc-point`.
     ///
-    /// So on the 2026-09-12 full driven sweep - which hands all 211 chunked
-    /// checks one shared A1 sheet and one shared aim - all three rungs ran
-    /// against a document their own header already said they could not use.
-    /// The point rung reported `points_before=4 points_after=4`, a true
-    /// sentence about an object that was never its subject; the label rung
-    /// selected a path and complained about the rung it landed on. Neither
-    /// mentioned a fixture, because neither knew it had one.
     ///
     /// ⇒ **Knowledge a check cannot run without belongs in the check.** A
     /// fixture table in a doc comment is a note to a human about to type a
@@ -354,20 +281,6 @@ impl Rung {
     ///
     /// # The three, and what was measured about each
     ///
-    /// * **Label** — `fixtures/paragraph.pdf` at `0,120,704`. One `BT`…`ET`
-    ///   block holding **six** `Tj` operators at 12 pt on a 612 × 792 page;
-    ///   the aim is inside the first line, whose baseline is 700 and whose
-    ///   cap height at that size reaches about 708. ★ This row used to name
-    ///   `D:/Dev/pdfTests/SW41177/SW41177.pdf`, an operator file **outside
-    ///   this repository** that no sweep on another machine could find, and
-    ///   that this project's own read-only rule forbids depending on.
-    /// * **Line** — `fixtures/hole-in-a-big-object.pdf` at `0,336,500`. One
-    ///   path object holding **41** subpaths: a circle and forty unrelated
-    ///   segments, which is the shape of the operator's own CAD export and
-    ///   the reason this rung exists.
-    /// * **Point** — `fixtures/polyline-nodes.pdf` at `0,150,260`. A subpath
-    ///   with **six** anchors, against a floor of three — `delete_node`
-    ///   correctly refuses to leave a subpath with fewer than two.
     ///
     /// ⚠ A rung whose fixture is missing must FAIL, not SKIP. All three are
     /// committed to this repository; an absent one is a broken checkout, not
@@ -475,12 +388,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
     })?;
     // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // Each rung needs a particular KIND of object - a text object holding
-    // several show operators, a path holding several subpaths, a subpath
-    // holding several anchors - and there is no arbitrary document on which
-    // all three exist. `Rung::fixture` holds the three pairs and the
-    // measurement behind each, including what a shared aim cost on
-    // 2026-09-12.
     let (pdf, target) = rung.fixture();
     if !pdf.is_file() {
         return Ok(Some(format!(
@@ -678,10 +585,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
 
     // --- 4: the verdict -----------------------------------------------------
     let Some(line) = after.events(rung.applied()).nth(applied_before) else {
-        // ★ Two very different silences, and they must not wear the same
-        // sentence. The pre-2026-09-05 build declined by name and did nothing;
-        // a build that reached the Object rung's verb instead removed the whole
-        // object and looks, from a count alone, like a working delete.
         let declined = after
             .events("canvas-delete-declined")
             .last()

@@ -402,12 +402,7 @@ fn the_real_corrupt_file_is_caught() {
         "one page was removed from the structure: {audit:?}"
     );
 
-    // ★★★ **THE SKIP FIRED, AND IS NOW AN ASSERTION — 2026-09-05.**
     //
-    // This branch used to `println!("SKIP: …")` and return the moment the engine
-    // began updating every ancestor. It did, within hours of being reported —
-    // `Pass 251.1`, `e4cefcd` — and on the bump to `pdfcer-core b1033ab` this
-    // test walked the **real written bytes** and found every node consistent.
     //
     // ⇒ So the hopeful skip becomes a **standing assertion that the fix is
     // still there.** A `println!` inside a passing test is not evidence of
@@ -490,14 +485,6 @@ fn a_document_that_arrived_broken_gets_the_sentence_that_does_not_offer_undo() {
     // unconditionally would pass the assertion above.
     let blamed = refusal_sentence("x.pdf", &audit, None);
     assert!(blamed.contains("Ctrl+Z"), "{blamed}");
-    // ★★ The distinction is asserted by what each sentence OFFERS, not by whose
-    // fault it says the damage is. Both attributions were deleted on 2026-09-05
-    // when `Pass 251.1` made *"this is a fault in pdfcer"* false — see
-    // `text::pagetree`'s header. **Undo is the discriminator and always was**:
-    // the pre-existing sentence must never offer it, because an operator who
-    // empties his undo stack against a refusal his own tool promised undo would
-    // fix has lost his work as well as his time. Asserting the blame words
-    // instead would have pinned the most perishable clause in the sentence.
     assert!(
         !blamed.contains("already disagreed with itself when you opened it"),
         "an audit with no base file to consult must NOT claim the file arrived broken — that is a statement it has no evidence for: {blamed}"

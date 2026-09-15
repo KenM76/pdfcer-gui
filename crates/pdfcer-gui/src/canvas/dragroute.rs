@@ -1,7 +1,5 @@
 //! # `canvas::dragroute` — which of THREE move verbs one drag reaches
 //!
-//! Split out of [`super::interact`] under **R2** on 2026-08-28, when the
-//! annotation drag took that file past 1,500 lines for the second time.
 //!
 //! ## ★★★ The seam is a subject, and it is the one this project got wrong
 //!
@@ -149,8 +147,6 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
     // only for content, so the `else` is a statement of that rather
     // than a precedence.
     //
-    // ★★★ THREE verbs share one gesture as of 2026-08-28, not two, and
-    // the third is why the annotation branch stopped being a dead end.
     //
     // `dimdrag` answers for a ce dimension and `None` for everything
     // else -- so before `annotdrag` existed, an annotation selection

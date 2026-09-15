@@ -8,10 +8,6 @@
 //! > *"a double click should bring me further down the chain, until a double
 //! > click reaches the bottom and lets me edit the nodes."*
 //!
-//! **Until**. The chain has to end at the nodes wherever it started, and until
-//! 2026-09-01 it ended one rung early for anything painted inside a form
-//! XObject — not by a rule, but because the two deeper rungs were addressed by
-//! a page paint-order index that a leaf does not have.
 //!
 //! ## ★★ What had to change together, and why the order was forced
 //!
@@ -156,12 +152,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- A: on a stroke inside the container --------------------------------
     //
-    // ★★★ **THE LADDER LOST A RUNG ON 2026-09-01, AND THAT IS THE FIX.**
     //
-    // This step used to click, then double-click, and require a `smart-enter`
-    // line before going on. That was right when a first click on anything
-    // inside a form resolved to the FORM — so the operator had to enter the
-    // container before they could reach what was in it.
     //
     // ⇒ Resolving to the container is now refused when the container holds
     // essentially everything on the page (`container_is_worth_selecting`),

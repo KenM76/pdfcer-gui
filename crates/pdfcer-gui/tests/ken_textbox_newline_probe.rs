@@ -194,12 +194,6 @@ fn what_does_a_newline_become_in_a_freetext_annotation() {
                 println!("\n=== {label}: ACCEPTED as {id:?} ===");
                 // ★★★ **The APPEARANCE stream, not the page text.**
                 //
-                // A `/FreeText`'s words are drawn by its own `/AP`; the page's
-                // content stream never mentions them. The first draft of this
-                // probe called `page_text` and printed the FIXTURE's own title
-                // block for both cases — "no difference", arrived at by
-                // measuring nothing. Same trap as the `Z` in the font probe:
-                // an instrument pointed at the wrong subject reports calmly.
                 use pdfcer_core::graph::ObjectGraph as _;
                 let graph = session.graph();
                 let Some(pdfcer_core::object::Object::Dict(dict)) = session.value(id).cloned()

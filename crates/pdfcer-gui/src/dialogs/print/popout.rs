@@ -2,10 +2,6 @@
 //!
 //! # What this is, in the operator's words
 //!
-//! > *"also the preview should be adjustable size, and even better if it has
-//! > the option to pop out into its own resizeable window - closing the window
-//! > pops it back into place on the print window."* — 2026-09-03,
-//! > `OPERATOR_REQUESTS.md` **O112**.
 //!
 //! Ask 1 — the draggable splitter — shipped the same day. This file is ask 2.
 //!
@@ -34,12 +30,6 @@
 //!
 //! # ★★★ What the print dialog draws while the preview is out: NOTHING
 //!
-//! Not a greyed rectangle. Not a *"the preview is in another window"* card. Not
-//! an outline where it used to be. The column collapses and the options take
-//! the room — see `layout::Columns::split`, whose popped arm returns a preview
-//! width of exactly zero and hands the whole content width to the options, and
-//! `layout::tests::popping_the_preview_out_collapses_its_column_and_gives_the_
-//! room_away`, which asserts all three parts of that.
 //!
 //! R9 is what forbids the stub, and the reason is not tidiness: a placeholder
 //! occupying the space teaches the operator that this dialog has a dead region

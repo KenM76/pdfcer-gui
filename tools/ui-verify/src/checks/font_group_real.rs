@@ -25,7 +25,6 @@
 //! 1584 × 1224 pt rather than 612 × 792, and the objects the harness must hit
 //! are two screen pixels tall at fit zoom.
 //!
-//! # ★★★ FIRST RESULT, 2026-09-14: GREEN, AND THAT IS THE ANSWER TO O198
 //!
 //! Driven at `--doc-point 0,1140,62` against a build carrying the uncommitted
 //! `panels::properties::tool::Slot` change. Every assertion held:
@@ -71,14 +70,6 @@
 //! | question | *is the route there at all* | *does it survive HIS file* |
 //! | a red result means | the program regressed | the program regressed **or** this file breaks it |
 //!
-//! ★★ The second row of that last cell is the whole reason to have both. A
-//! measurement taken only on a fixture answers *"the feature exists"*, which was
-//! never the operator's question: the feature existed, was green, and he could
-//! not use it. A measurement taken only on his drawing cannot tell a regression
-//! from an aim, which is the mistake that cost this project a day on
-//! 2026-08-28. Two checks, two claims, and a reader who compares them gets the
-//! diagnosis for free — green here and red there is a fixture problem, red here
-//! and green there is something about real drawings.
 //!
 //! # ★★ What is shared, and why it is shared rather than copied
 //!

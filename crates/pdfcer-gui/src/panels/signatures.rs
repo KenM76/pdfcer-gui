@@ -1,9 +1,6 @@
 //! # `panels::signatures` — three facts about each digital signature, reported
 //! separately and never merged
 //!
-//! Salvaged from the old shell's `panels_structure.rs` as a coverage-only
-//! report, and **rewritten on 2026-09-05** when `pdfcer-core`'s `Pass 10.1`–
-//! `10.5` made the other two facts answerable.
 //!
 //! ## ★★★ THE RULE THIS PANEL EXISTS TO KEEP
 //!
@@ -179,7 +176,6 @@ pub fn body(
                 trust_line(ui, verdict, report.as_ref().and_then(|r| r.as_ref().ok()));
 
                 crate::diag::trace(|| {
-                    // ★★★ **`field_token`, not `{:?}` — corrected 2026-09-06.**
                     //
                     // This line read `field={:?}` over an `Option<String>`, so it
                     // emitted `field=Some("SignHere")` — quotes, brackets and all
@@ -368,11 +364,6 @@ fn labelled(ui: &mut egui::Ui, label: &str, said: &str) {
 
 /// The signature field's name as one trace token, or `none`.
 ///
-/// ★★ Exists because the call site used to write `field={:?}` over an
-/// `Option<String>`, emitting `field=Some("SignHere")` into a `key=value`
-/// trace that readers split on whitespace. **Never Debug-format a value a
-/// machine reads** — the third instance in this project in one week, and the
-/// only one that had not yet cost a false failure report.
 ///
 /// ★ `none` rather than an empty string, matching every other token helper
 /// here: an empty value after `=` is indistinguishable from a truncated line,

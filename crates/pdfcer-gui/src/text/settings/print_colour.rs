@@ -1,9 +1,6 @@
 //! # `text::settings::print_colour` — the copy for the two print-ready colour
 //! controls, and the field wash
 //!
-//! Split out of [`super::look`] on 2026-09-02 under R2, when that file crossed
-//! the 1,500-line ceiling and neither of the day's two additions could land
-//! without a seam.
 //!
 //! ## What is here, and why these three together
 //!

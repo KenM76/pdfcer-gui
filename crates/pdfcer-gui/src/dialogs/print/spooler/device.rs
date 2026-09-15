@@ -7,14 +7,6 @@
 //! device**: which printers exist, what each one can do, which sheets it
 //! offers, and what its driver currently holds.
 //!
-//! The two change for different reasons, which is the test R2 asks for when
-//! a file comes due for splitting. A change to how a job is *laid out* — a
-//! new scale mode, an imposition tab, a different resolution ceiling — never
-//! touches this file. A change to how a device is *interrogated* — a paper
-//! list, a properties dialog, a tray capability — never touches the
-//! placement arithmetic next door. They were one file until 2026-08-18, and
-//! the split happened because the paper work would have carried the total
-//! past the 1,500-line limit; the seam was already there.
 //!
 //! ## What is still true of both halves
 //!

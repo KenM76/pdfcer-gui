@@ -1,9 +1,5 @@
 //! # `canvas::geometry` tests — the arithmetic, pinned
 //!
-//! Split out of `canvas/geometry.rs` on 2026-08-31 under **R2**. The parent
-//! reached 1,409 of the 1,500-line ceiling and `OPERATOR_REQUESTS.md` O78
-//! needed one more function plus its documentation plus its theorems, which
-//! would not fit.
 //!
 //! ★ The seam is the one this crate has taken four times already
 //! (`app/state`, `app/prefs`, `canvas/interact`): the parent answers *"what is
@@ -62,10 +58,6 @@ fn an_unscrollable_canvas_refuses_to_pan_rather_than_rubber_banding() {
 /// ★★ **The far edge is now a whole viewport PAST the page**, which is
 /// `OPERATOR_REQUESTS.md` O23 stated as a number.
 ///
-/// This test asserted `200.0` — `display - viewport` — from the day it was
-/// written until 2026-08-21, and it was right to: the clamp stopped at the
-/// page's own edge and the module's header recorded that as a known
-/// limitation waiting on a UX call. The call was made:
 ///
 /// > *"I should also be able to move the view of the corner of the page to
 /// > the center of the screen, or even all the way vertically to the
@@ -233,10 +225,6 @@ fn zooming_in_from_fit_page_moves_the_view_even_though_the_offset_starts_pinned(
 /// ★★ **The offset handed to the scroll area never leaves its range** —
 /// and after O24e that range is the pasteboard's, not the page's.
 ///
-/// The assertion used to be made against [`zoom_anchor_offset`], which
-/// clamped to `display - viewport`. That is the range a page has when the
-/// scroll content is the page and nothing else, and it stopped being true
-/// when the pasteboard landed — see that function for what it cost.
 #[test]
 fn the_offset_never_leaves_the_scrollable_range() {
     // Zooming OUT far enough that the page no longer fills the viewport.
@@ -294,12 +282,6 @@ fn the_offset_never_leaves_the_scrollable_range() {
 /// ★★★ **The anchor solve is unclamped; the SCROLL OFFSET is clamped** —
 /// and the two are different values in different spaces.
 ///
-/// This test used to assert that [`zoom_anchor_offset`] saturated at
-/// `display - viewport`, the range a page has when the scroll content is
-/// the page and nothing else. The pasteboard (O23, 0.0) made that false, and
-/// the stale clamp became `OPERATOR_REQUESTS.md` **O24e**: at a fit-page
-/// zoom the page is no larger than the viewport, the range collapsed to
-/// `[0, 0]`, and every zoom threw away whatever the operator had panned to.
 ///
 /// ★ The behaviour the old test was protecting is real and still wanted —
 /// an anchor near an edge must saturate rather than scroll into nothing.
@@ -369,14 +351,6 @@ fn the_scroll_offset_saturates_at_the_pasteboard_edge_not_at_the_page_edge() {
 /// ★ **The split solve is the closed form it replaced**, checked against
 /// the original expression rather than against itself.
 ///
-/// `zoom_anchor_offset` used to compute
-/// `off0 + u*(d1-d0) + (margin1 - margin0)` inline. It now composes
-/// [`anchor_screen_pos`] with [`offset_holding_anchor_at`] so that
-/// zoom-to-region can reuse the second half with a different target. This
-/// pins the equivalence over a spread of shapes — including the
-/// page-smaller-than-viewport case the margin term exists for, and the
-/// over-range case that used to be clamped here — so a future edit to either
-/// cannot silently change what Ctrl+wheel does.
 #[test]
 fn the_split_solve_is_the_closed_form_it_replaced() {
     fn closed_form(off0: f32, d0: f32, d1: f32, v: f32, u: f32) -> f32 {
@@ -794,9 +768,6 @@ fn the_return_leg_clamps_and_survives_a_nan() {
     let strip = (612.0_f32, 4000.0_f32);
     let page = (612.0_f32, 792.0_f32);
     let out = strip_offset((99_000.0, 99_000.0), (0.0, 0.0), strip, page, v, (0.0, 0.0));
-    // ★ The ceiling is the CONTENT's range, not the strip's — O23. On x this
-    // used to be 0.0, because a strip narrower than the viewport had nowhere
-    // to scroll; there is now a pasteboard either side of it.
     assert_eq!(
         out,
         (
@@ -976,9 +947,6 @@ fn the_opening_seed_centres_a_large_page_and_is_a_no_op_for_a_small_one() {
 
 // ---- the pasteboard's overhang term — O23's second half ------------
 //
-// The operator, 2026-09-11: *"how do I view and edit objects that are off of
-// the page?"* The first half of O23 made them reachable and visible; these
-// pin the half that makes them **editable**, which means zoomable-to.
 //
 // Every number below is the one measured on the real canvas: a 470 px-wide
 // viewport, a 200 pt sheet, and an object 100 pt off its left edge.
@@ -1056,13 +1024,6 @@ fn an_object_off_the_page_can_be_centred_at_every_zoom() {
 /// fraction branch and nothing else**. This is the regression guard for the
 /// 99 % case.
 ///
-/// ★ It used to assert that the value was `v * PASTEBOARD_FRACTION` exactly,
-/// and was titled *"keeps exactly the old pasteboard"*. O186 made that false on
-/// purpose — see [`MIN_SHEET_ON_SCREEN`] — so what it asserts now is the thing
-/// it was always *for*: that the overhang term does not bite until the content
-/// genuinely reaches further than the fixed slack. [`pasteboard_rule`] is the
-/// independent restatement, so this still cannot be satisfied by
-/// [`pasteboard`] agreeing with itself.
 #[test]
 fn a_page_with_nothing_off_it_takes_the_fixed_pasteboard_branch() {
     for v in [1.0_f32, 470.0, 578.3, 2000.0] {
@@ -1237,9 +1198,6 @@ fn without_an_overhang_the_top_of_the_range_is_the_strip_itself() {
                  {overlap} pt of sheet on screen, wanted {sliver}"
             );
         }
-        // ★ `lo` used to be `-viewport` exactly — the placement that put the
-        // strip's first point on the viewport's last one. It is now that, plus
-        // the sliver.
         assert_eq!(lo, sliver - viewport, "strip {strip} viewport {viewport}");
     }
 }
@@ -1307,10 +1265,6 @@ fn a_short_strips_range_is_centred_on_the_centring_margin() {
 /// this function was written for, clamped the way
 /// [`crate::canvas::deep::confine`] clamps it, in **both** directions.
 ///
-/// Measured 2026-09-12 on `ncored-benchmark-cad-drawing.pdf`: an A1 sheet
-/// 1684.27 pt tall at a zoom of 539.7, an `f64` anchor that had walked to
-/// 1684.32 pt — **0.05 pt of paper past the end of the sheet** — and a canvas
-/// that published `canvas-unavailable reason=nothing-visible` as a result.
 ///
 /// ★★ The two things this pins that a one-sided test would not:
 ///
@@ -1425,10 +1379,6 @@ fn the_draft_longhand_range_was_wrong_in_the_two_ways_measuring_it_found() {
     // degenerate canvas). Raise `MIN_SHEET_ON_SCREEN` past half a viewport
     // without that `min` and the draft's dead case comes back to life.
     //
-    // ★ `<= 0.0`, not `< 0.0`. On a 1.0 pt viewport the bound is exactly zero,
-    // and an earlier draft of this repair asserted strictly-negative and failed
-    // on that row — a reminder that the degenerate viewport is where the
-    // sliver stops being the constant and starts being half the canvas.
     for viewport in [1.0_f32, 470.0, 800.0, 1.0e4] {
         let pb = pasteboard(viewport, 0.0);
         assert_eq!(pb, pasteboard_rule(viewport));

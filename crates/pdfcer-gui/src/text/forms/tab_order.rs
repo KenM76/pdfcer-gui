@@ -1,9 +1,5 @@
 //! # `text::forms::tab_order` — every word the Tab-order section shows
 //!
-//! Split out of [`super`] when R2's 1,500-line limit was reached, and the seam
-//! was chosen rather than found: this is the one block in the forms catalog
-//! whose sentences are about **the sequence a form is filled in** rather than
-//! about a field's value, its refusals or its formatting.
 //!
 //! It is also the block that grew, which is why it was the one to move. When
 //! `EditSession::adopt_widget` shipped, the sentence about widgets no field
@@ -218,17 +214,12 @@ pub fn tab_order_tabs_on_ancestor(name: &str) -> String {
 /// Widgets on this page that no listed field claims — the heading over the
 /// rows that can now do something about it.
 ///
-/// # ★ This sentence used to end in a guess, and the guess has been replaced
-/// by a route
 ///
 /// The old wording finished *"if the form declares entries pdfcer could not
 /// read, these may be theirs"* — a speculation offered because there was
 /// nothing better to offer. Nothing could be done with an unclaimed widget, so
 /// the only honest thing left was to speculate about where it came from.
 ///
-/// `EditSession::adopt_widget` shipped 2026-08-19, so an unclaimed widget is
-/// now a **chore with a button** rather than a curiosity with a theory. The
-/// sentence says what the boxes are; the rows below it do the rest.
 ///
 /// The inline-field-roots note is still one line away in
 /// [`forms_inline_field_roots_note`] and is still not re-counted here — two
@@ -404,11 +395,6 @@ pub const fn tab_order_register_name_is_a_path() -> &'static str {
 /// operator who typed `Address..City` to use no dots would be a true sentence
 /// that solves a problem he does not have.
 ///
-/// ⚠ This became reachable on 2026-09-12. The engine reported that making the
-/// rule askable exposed `adopt_widget` ACCEPTING `a..b` where `rename_field`
-/// refused it — two behaviours across three enforcement sites, unreported.
-/// Routing all three through one predicate closed it, and this surface is the
-/// one that inherited the new refusal.
 #[must_use]
 pub const fn tab_order_register_name_has_a_bare_dot() -> &'static str {
     "That name has a dot with nothing beside it. Remove the dot, or put a name on both sides of it."

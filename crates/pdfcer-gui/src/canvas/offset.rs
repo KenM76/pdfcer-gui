@@ -1,8 +1,5 @@
 //! # `canvas::offset` — who decides where the view is, this frame
 //!
-//! Split out of [`super`] under **R2** on 2026-08-24. It is the one subject in
-//! `canvas::show` that is genuinely a *decision procedure* rather than a
-//! drawing step, and it had grown to six ranked sources.
 //!
 //! ## ★★★ The ranking, and why it is the whole of the subject
 //!
@@ -83,28 +80,12 @@ pub(super) struct Frame {
 /// frame being decided. The seed fires on index `1`, the **second** frame; see
 /// the open-seed arm for the four bisecting runs that argued against index `0`.
 ///
-/// ★★★ **Named rather than written as a literal because it has a second
-/// reader**, and that reader is a decline rather than a fire:
-/// [`crate::canvas::fit::placement`]'s resize arm must not preserve a "centre"
-/// measured from a frame the seed has not placed yet. Before 2026-09-13 that
-/// arm relied on `zoom::last_frame` being `None` for the first frames of a
-/// document, which is a *proxy* for "not seeded yet" and stopped being true
-/// the moment the pasteboard narrowed enough for frame 0 to draw a sliver of
-/// sheet: the resize arm then outranked the seed, preserved the un-placed
-/// corner of the pasteboard, and the seed — a one-shot — never got its turn.
-/// The document opened with the page off the bottom-right of the canvas and
-/// stayed there. Two readers of one number, so the number has one definition.
 pub(super) const SEED_FRAME: u8 = 1;
 
 /// **Which arm of the ranked chain won this frame, and what it produced.**
 ///
 /// # Why the winner is returned and not merely the number
 ///
-/// This module's whole design is that it *decides* and does not *apply*, so
-/// that "which source owns the view this frame?" has one answer in one place.
-/// Until 2026-09-13 that answer was unobservable from outside: [`decide`]
-/// returned a bare `Option<Vec2>` and every caller, every trace and every
-/// `ui-verify` check saw only the number.
 ///
 /// ★★★ That cost a full session of diagnosis. A regression placed a freshly
 /// opened multi-page document off the bottom-right corner, the published
@@ -326,16 +307,11 @@ pub(super) fn decide(
             (vp.x, vp.y),
             overhang,
         );
-        // ★★★ **A PAN NO LONGER LEAVES THE FIT**, as of 2026-08-31, and the
-        // reversal is recorded here rather than in a commit message because
-        // the line it removes was written to the operator's own words.
         //
-        // `OPERATOR_REQUESTS.md` **O55**, 2026-08-28:
         //
         // > *"if the canvas window is resized the pdf should resize to match
         // > unless the person has changed the zoom **or panned around**."*
         //
-        // `OPERATOR_REQUESTS.md` **O78**, 2026-08-31:
         //
         // > *"unless I have manually changed the zoom after clicking one of
         // > the preset options, the pdf should maintain whichever option was
@@ -386,9 +362,6 @@ pub(super) fn decide(
     } else if doc.canvas_frames == SEED_FRAME {
         // ★★★ SEED ON THE SECOND FRAME, NOT THE FIRST.
         //
-        // O23. `ScrollArea` starts its offset at zero, which used to mean the
-        // strip's top-left and now means the CONTENT's — one pasteboard above
-        // and left of the page — so the view has to be placed once.
         //
         // ★ Doing that on the FIRST frame is what broke the two previous
         // attempts, and it took four bisecting runs to see. Forcing an offset

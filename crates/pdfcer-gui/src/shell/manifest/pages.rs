@@ -82,10 +82,6 @@ pub(super) fn tab() -> Tab {
             // command they came for under four they did not is how a
             // discoverability fix fails to fix anything.
             //
-            // `Replace…` is **N** and would sit after Extract.
-            // ---------------------------------------------------------------
-            // ---------------------------------------------------------------
-            // ★★ Clipboard — O59 item 2, 2026-08-29.
             //
             // Its own band rather than three more entries in Organise, and the
             // reason is the same one that put Delete first in that band: an
@@ -109,10 +105,6 @@ pub(super) fn tab() -> Tab {
                 "page-clipboard",
                 ribbon::group_pages_clipboard(),
                 [
-                    // ★ All three large, 2026-09-04 — the mockup's page
-                    // Clipboard group is three big controls and nothing else.
-                    // Whole group promoted, so the Cut / Copy / Paste triad
-                    // an operator reaches for by position keeps its order.
                     large("pages.cut"),
                     large("pages.copy"),
                     large("pages.paste"),
@@ -126,10 +118,6 @@ pub(super) fn tab() -> Tab {
                     command("pages.extract"),
                     command("pages.move_up"),
                     command("pages.move_down"),
-                    // ★★★ `pages.split` was HERE until 2026-08-31 — O68.
-                    // Unregistered with `tools.split_files`; see
-                    // `catalog::tools` for the argument. R9: nothing is drawn
-                    // until the boundary chooser exists.
                     command("pages.merge_into"),
                 ],
             ),
@@ -143,7 +131,6 @@ pub(super) fn tab() -> Tab {
             // *only* rotate was what made the absence of every other page
             // operation loudest.
             //
-            // ★★★ Crop is still **N**. **Resize is not** — 2026-09-06.
             //
             // `pages.resize` is the third control in this band and the first
             // that changes a page's *paper* rather than its orientation, which

@@ -12,12 +12,6 @@
 //! [`crate::viewer::deep::DeepAnchor`] takes over, holding a page point in
 //! `f64` and the screen pixel it sits under.
 //!
-//! ⚠ **The threshold bounds a PRODUCT, so it is not a zoom and has no single
-//! percentage.** 2^20 px of extent is about 132,000 % on US Letter and about
-//! 44,000 % on an A1 sheet. Every earlier draft of this paragraph quoted a
-//! percentage instead, and each went stale twice over: once when O49 cut the
-//! constant from 2^24 to 2^20 on 2026-08-28, and permanently, because the
-//! figure depends on the sheet in front of the operator. Cite the constant.
 //!
 //! Two mechanisms means **two hand-overs**, and the whole of this module's
 //! subject is the seam: seeding the anchor on the way in, restating it on
@@ -128,8 +122,6 @@ pub(super) fn track(
         // ★★★ THE ZOOM ANCHOR IS CONSUMED AT THIS TIER TOO —
         // `OPERATOR_REQUESTS.md` **O24f**.
         //
-        // It used to be consumed only on the shallow branch, and both halves
-        // of that were wrong at once:
         //
         // 1. **On the way in**, the seed below read `doc.last_scroll_offset` —
         //    the PREVIOUS frame's settled offset, recorded before this frame's
@@ -149,12 +141,6 @@ pub(super) fn track(
         // so he was standing precisely on the tier boundary, and a defect that
         // begins at a tier boundary is a defect in the tier hand-over.
         //
-        // ⚠ Do not read that percentage as current. O49 cut the constant to
-        // 2^20 on 2026-08-28, which moves the boundary to about 132,000 % on
-        // Letter — and it is a bound on `longest_page_pt × zoom`, so there is
-        // no percentage that is right for every sheet. The figure above is kept
-        // because it is what identified the seam, not because it still locates
-        // it.
         //
         // ★ Consumed unconditionally, not only when seeding. An anchor left
         // pending here would fire on whatever frame the operator next dropped

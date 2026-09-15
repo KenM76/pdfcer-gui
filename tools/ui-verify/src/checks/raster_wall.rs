@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! `OPERATOR_REQUESTS.md` **O186**, 2026-09-12, on his 36-sheet drawing set:
 //!
 //! > *"At deeper zooms I am still experiencing the cursor jumping, and at some
 //! > point it sometimes repositions to where the object area I was zooming into
@@ -20,11 +19,6 @@
 //! One paragraph, and it contains two findings that turned out to have nothing
 //! to do with each other:
 //!
-//! | half | what it is | where it is checked |
-//! |---|---|---|
-//! | **the raster error** | `render::settle::fill_strip` ordered a whole-page raster for every **visible** page at the **current** page's deep raster scale. A strip page is handed `region: None` by construction, so above the pixmap ceiling that order cannot be filled and the engine refuses it. | **part A**, below |
-//! | **the stop** | once the rasterizer's own wall is met, the zoom must *clamp* and say so on the status bar, rather than leaving an error sentence across the drawing | **part B**, below |
-//! | **the cursor jump** | `canvas::deep.rs`'s `DeepAnchor` is seeded, restated and panned and **never clamped**, so it can be carried off the sheet and the canvas draws nothing at all — a terminal state, because both wheel handlers sit below the early return that produces it | **not here.** O186 stage 1. — **FIXED 2026-09-13** (`canvas::geometry::MIN_SHEET_ON_SCREEN` keeps 32 pt of sheet on screen at both ends of the pasteboard, and `canvas::escape` restores the wheel above the blank-frame early return, so the state is no longer terminal); this check still *notes* it if it reaches it and points at the owner |
 //!
 //! ★★★ **The sheet that could not be drawn was never the sheet he was looking
 //! at.** `50411508 × 32619210` is `1224 × 792` pt at scale `41185.87`, and
@@ -84,13 +78,6 @@
 //!
 //! # ★★★ The window is NARROW, and getting that wrong made the check flaky
 //!
-//! This section used to read *"With `fixtures/four-pages.pdf` the window is
-//! wide … both are far below the zoom at which the growing gap pushes the
-//! neighbour off screen."* That was reasoned from the design, not measured, and
-//! it is **false**. Two runs on 2026-09-12, minutes apart, one passed and one
-//! SKIPPED with *"the strip never reported a visible page it could not order"* —
-//! and the only difference was where a plain wheel notch happened to leave the
-//! seam.
 //!
 //! The **lower** bound of part A's window is the engine's.  [`FIXTURE`]'s pages
 //! are `2383.937 × 1683.78`, `612 × 792`, `612 × 792` and `306 × 396`, and
@@ -177,20 +164,7 @@
 //! and the history of that sentence is worth a paragraph because it is an
 //! argument about when an exemption expires.
 //!
-//! It used to be exempt. The reasoning was sound at the time: at that zoom the
-//! canvas is in the `DeepAnchor` tier, O186 was open, and a blank frame there
-//! would have been O186's defect rather than this one — so asserting it would
-//! have made one check red for two unrelated reasons. The exemption was
-//! **named, loudly**, rather than dropped, because a bound a run could not
-//! measure and does not mention reads as a bound that was measured and held.
 //!
-//! O186 was fixed on 2026-09-13 (`canvas::geometry::MIN_SHEET_ON_SCREEN`), and
-//! that retires the exemption rather than merely weakening it: a blank frame at
-//! saturation is no longer a known-open defect this check would be duplicating
-//! — it is a **regression in a guarantee that now holds**, and this check
-//! reaches it by a different trajectory than `off_sheet.rs` does (a straight
-//! climb at the seam, not an aim off the sheet). Two independent routes to the
-//! same guarantee is coverage, not duplication.
 //!
 //! ⚠ The failure message names O186 and points at `geometry::pasteboard`, so a
 //! reader who finds *only* this check red is not sent hunting in the rasterizer
@@ -233,11 +207,6 @@ const FIXTURE: &str = "fixtures/four-pages.pdf";
 ///
 /// # ★★★ Why a repository fixture cannot serve — measured, not assumed
 ///
-/// The second check needs the rasterizer to refuse a scale. On 2026-09-12 a run
-/// against [`FIXTURE`] spent 160 Ctrl+wheel notches climbing to a zoom of
-/// **10,000,000,000** — a trillion percent, the figure the operator named in his
-/// own report — and the engine did not refuse once: zero `raster-limit`, zero
-/// `bad-raster-size`, zero failed renders, all the way up.
 ///
 /// That is not a defect, it is the region tier working. Above
 /// `viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT` the canvas asks for the VISIBLE
@@ -277,7 +246,6 @@ const MODE: &str = "review";
 /// Fixed rather than maximised so the seam band below means the same thing on
 /// every machine.
 ///
-/// # ★★★ Why it is TALL, measured 2026-09-12
 ///
 /// The height is not cosmetic — it is the whole of part A's measuring window.
 /// The run parks the pointer in the gap between two pages and climbs; the gap
@@ -383,10 +351,6 @@ const ROW_GAP_PT: f32 = 12.0;
 ///
 /// # ★★★ Just BELOW the middle, and the asymmetry is the whole reason
 ///
-/// This was `(0.30, 0.70)` — centred and generous — on the argument that *"the
-/// further it is from the middle the sooner one of the two pages reaches an
-/// edge"*. That argument treats the two pages as interchangeable and they are
-/// not. Measured 2026-09-12 against [`FIXTURE`]:
 ///
 /// * The page **above** the seam is the E-size sheet, and by the time any of
 ///   this matters its top edge is tens of thousands of points off the top of the
@@ -563,8 +527,6 @@ impl Check for TheStripNeverOrdersARasterItCannotFill {
 ///
 /// # ★★★ Why this is a SEPARATE check, decided by driving rather than by taste
 ///
-/// It was one check with the other for as long as that was a guess. Driving it
-/// on 2026-09-12 settled it: **the two halves cannot share a document.**
 ///
 /// The first half needs several pages of differing sizes in one strip. This half
 /// needs the rasterizer to REFUSE, and on a repository fixture it never does —
@@ -607,10 +569,6 @@ impl Check for TheRasterWallStopsTheZoomInsteadOfPaintingAnError {
 // Reading the trace, and getting onto the seam
 // ---------------------------------------------------------------------------
 //
-// Both halves were carved out of this file on 2026-09-12, when it reached 1,614
-// physical lines against R2's limit of 1,500. The split is along the line
-// between *reading* and *acting*, which is also the line along which the two
-// halves can be reasoned about independently — each file's header says why.
 //
 // What stays in THIS file is the part whose content is its order: the two
 // `part_*` sequences, the two `drive_*` wrappers, and the constants, which stay
@@ -679,13 +637,6 @@ fn part_a(
         if let Some((page, line, at)) = first_bad_raster_after(&trace, mark) {
             // ★★★ THREE ROUTES TO ONE SENTENCE, and the report has to say which.
             //
-            // Measured on 2026-09-12 in this very check: the first refusal it
-            // ever caught was NOT the neighbour defect it was written for. The
-            // frame before it said `canvas-unavailable reason=nothing-visible`,
-            // and a page with no visible part gets no region — so the request
-            // degenerated to the whole sheet and could not be filled. A report
-            // that had named `fill_strip` would have sent the next reader to the
-            // wrong function, which is how one defect costs two investigations.
             //
             // So the attribution is made from the trace rather than assumed: the
             // blank frame is looked for FIRST, because it is upstream of both of
@@ -1115,10 +1066,6 @@ fn part_b(
         state.zoom * 100.0,
         ceiling.to
     ));
-    // ★★★ ASSERTED since 2026-09-13, having been an explained exemption before
-    // it. See the module header for why the exemption expired: O186 is fixed, so
-    // a blank frame at saturation is a regression in a live guarantee rather
-    // than a second open defect this check would be double-reporting.
     if state.drawn == 0 {
         return Ok(Some(format!(
             "part B climbed to the learned ceiling {:.2} ({:.0} %) and the saturated frame drew \
@@ -1297,13 +1244,6 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
     }
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
-    // ★★★ The rasterizer's wall IS a caught panic, and this check walks into it
-    // on purpose. Measured 2026-09-12: a render worker panics inside tiny-skia
-    // (`pipeline/lowp.rs:350`, `index out of bounds: the len is 2991081 but the
-    // index is 510221756928`), `pdfcer-render` catches it and hands back a
-    // `RasterizerLimit` refusal, and the canvas learns a ceiling from it. That
-    // refusal is the whole subject of the operator's fourth clause, so there is
-    // no way to observe the clause without provoking the panic.
     //
     // Without this declaration the harness reports A THREAD PANICKED and fails
     // the check on a run whose own trace shows the feature working perfectly —

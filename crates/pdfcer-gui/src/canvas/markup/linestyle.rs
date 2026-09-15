@@ -1,11 +1,6 @@
 //! # `canvas::markup::linestyle` — solid or dashed, on all three surfaces that
 //! ask
 //!
-//! `RIBBON_IA.md` §5.8's Markup row lists eight controls. Seven shipped on the
-//! morning of 2026-09-06; **Line style** was the eighth, and it was the only
-//! entry in the whole row with *"no engine verb at all"*. That stopped being
-//! true the same afternoon, when `pdfcer-core` answered this shell's own
-//! request with three halves rather than the one it asked for:
 //!
 //! | half | engine | what it means here |
 //! |---|---|---|
@@ -13,8 +8,6 @@
 //! | **author** | `MarkupOptions::dash` (`edit.rs:4782`) | [`super::pen::Pen::dash`] and the Markup ▸ Style chooser |
 //! | **restyle** | `MarkupStyle::dash: Option<StyleEdit<BorderDash>>` (`edit.rs:4422`) | the Format ▸ Markup chooser and the Properties panel row |
 //!
-//! (All engine line numbers in this file were read from
-//! `D:\Dev\pdfcer\crates\pdfcer-core\` at pin `95a936e` on 2026-09-06.)
 //!
 //! ## ★★★ Why one module and not three controls
 //!
@@ -329,15 +322,6 @@ impl DashReading {
 ///
 /// # ★★★ Why this is a SECOND reader of a key the engine already reads
 ///
-/// Because the engine's reader is not public. `annot_author::read_border_dash`
-/// is `pub(crate)` (`D:\Dev\pdfcer\crates\pdfcer-core\src\annot_author.rs:840`,
-/// read 2026-09-06), and `spec_from_dict` does **not** carry the dash: a dash
-/// cuts across `MarkupSpec`'s variants rather than belonging to any one of them,
-/// so it travels in `AppearanceOptions` beside the spec instead of inside it
-/// (`annot_author.rs:1633-1673`). There is therefore no public route from an
-/// annotation dictionary to *"is this mark dashed, and how"* — and a control
-/// that cannot show the current value is a control that shows an invented one,
-/// which is the `fontband::size` defect this project has already paid for.
 ///
 /// ⇒ So this is the copy, and it is **written down as a copy** rather than
 /// presented as a reading. The table below is transcribed from
@@ -486,13 +470,6 @@ mod tests {
     /// a stray minus sign would produce a chooser entry that silently drew a
     /// solid line, with no error anywhere.
     ///
-    /// ★ **It is paired with a positive control**, and that is deliberate: the
-    /// engine's own reply of 2026-09-06 records that its first foreign-appearance
-    /// test asserted `!appearance_rebaked` and **passed with the whole feature
-    /// disabled**. An assertion that `dash()` is `Some` for every dashed variant
-    /// would be vacuous if `dash()` returned `Some` for everything, so the
-    /// solid arm asserting `None` sits beside it — the two together say the
-    /// function discriminates rather than merely answering.
     ///
     /// Falsified by changing [`LineStyle::LongDash`]'s pattern to `[0.0, 0.0]`,
     /// which turned the `is_some` assertion red, and by giving

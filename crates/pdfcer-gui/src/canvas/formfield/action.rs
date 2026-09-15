@@ -38,11 +38,6 @@
 //! `Pass 212.0`) and lives in `panels::forms::button`, which converts INTO this
 //! type rather than the other way round.
 //!
-//! ⇒ **That was true for four hours.** `Pass 212.0` shipped
-//! `EditSession::button_action` on 2026-09-01, so this model now serves two
-//! surfaces: the placement dialog, where the current action is known to be
-//! *none* because the button does not exist yet, and `panels::forms::button`,
-//! where it is read from the document.
 //!
 //! ★ The engine shipped **four** states where three were asked for, and the
 //! fourth is the one that makes the row honest. `panels::forms::button`'s
@@ -424,11 +419,6 @@ mod tests {
     /// module served the PLACEMENT path only, and the Forms panel had no row
     /// for a button already in the document.
     ///
-    /// `Pass 212.0` shipped `EditSession::button_action` on 2026-09-01, hours
-    /// after the request, and the four steps that test named were carried out:
-    /// the test deleted, the row added (`panels::forms::button`),
-    /// `ButtonActionState::Foreign` consumed so a script is named rather than
-    /// silently offered for replacement, and the request closed.
     ///
     /// ★★ Kept as a headstone rather than deleted outright, because the shape
     /// paid out for the fifth time in three days and the count is the

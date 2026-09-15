@@ -3,11 +3,6 @@
 //!
 //! # ★★★ The defect
 //!
-//! `OPERATOR_REQUESTS.md` O108. Found 2026-09-03 by
-//! `tools/security-coverage.py` — an instrument keyed on `pdfcer-core`'s own API
-//! rather than on any document of ours — while answering the operator's
-//! question *"can we get all of the encryption and signature features that have
-//! been implemented in the engine under one new tab?"*
 //!
 //! **An encrypted PDF could not be opened at all.** The shell detected the case
 //! perfectly and had nowhere to type a password:
@@ -210,13 +205,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: the right one opens it -----------------------------------------
     //
-    // ★★★ **CLICK THE FIELD FIRST — corrected 2026-09-05, on this check's first
-    // run.** Phase B pressed the Open button, and pressing a button moves
-    // keyboard focus to it. `PasswordPrompt::reject` then clears the box (it
-    // does, and correctly — the operator must not have to select and delete a
-    // wrong password), so phase C typed `userpw` into a field that was no longer
-    // focused, submitted an EMPTY password, and read the second rejection as the
-    // right password being refused:
     //
     // ```text
     // password-rejected attempt=1 reason=wrong
@@ -261,9 +249,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★★ "THE PROMPT CLOSED" IS NOT ASSERTED, AND THE REASON IS A FINDING
     // ABOUT THIS HARNESS RATHER THAN A GAP IN THE CHECK.
     //
-    // The obvious assertion is `declared(&trace, ui_rect, BODY).is_none()` —
-    // the region retired, so the window is gone. It does not work, and it does
-    // not work for EVERY dialog in this application. Measured 2026-09-03:
     //
     //   grep -c 'ui-rect-gone name=dialog:' target/ui-verify/*.trace.txt
     //   -> 0 in every trace in the directory, across the whole suite.

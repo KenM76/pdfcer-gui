@@ -1,6 +1,5 @@
 //! # `dialogs::host` — a dialog is an OS WINDOW
 //!
-//! ## The operator's report, 2026-08-20
 //!
 //! > *"Print dialogue box doesn't pop up in its own movable window. It is
 //! > locked within the boundaries of the program's window. Like, I just assume
@@ -57,20 +56,6 @@
 //! [`Host::buttons`] draws the pair and owns all three obligations, because a
 //! caller that had to remember them would forget one:
 //!
-//! - **Enter** activates the affirmative action — but **not while a text field
-//!   has focus and wants the key**, which is why the check asks
-//!   `ctx.text_edit_focused()` first. A multi-line field would otherwise lose
-//!   the ability to type a newline the moment it sat in a dialog.
-//! - **Escape** is equivalent to Cancel *and* to the close button, so all three
-//!   routes out are one outcome.
-//! - The affirmative button is **drawn** as the default, from the theme's
-//!   **accent** and the foreground the theme pairs with it
-//!   (`Theme::accent_pair`), so the operator knows what Enter will do before
-//!   pressing it. A default nobody can see is not a default; it is a surprise.
-//!   ★ This sentence said *"the theme's own selection fill"* until 2026-09-03,
-//!   and that was the defect rather than a description of it: `selection_fill`
-//!   is a 27 %-opacity canvas tint, so the default button rendered **paler than
-//!   an ordinary button** and read as disabled. See [`Host::buttons`].
 //!
 //! ## G6 — it remembers where it was left
 //!
@@ -115,7 +100,6 @@
 //!
 //! ## What this does NOT fix, said so it is a decision
 //!
-//! ## G3 — OWNED BY THE APPLICATION WINDOW, as of 2026-08-21
 //!
 //! This section read *"filed as a gap rather than papered over"* for a day. The
 //! gap said: `eframe 0.35`'s `ViewportBuilder` has no owner or parent option —
@@ -410,11 +394,6 @@ impl Host {
     ///
     /// # Why a constant, and why it lives on the host
     ///
-    /// The operator's 2026-09-03 report — *"the print button that is so far off
-    /// in the corner it is touching the edge the window"* — was true of all
-    /// fourteen dialogs, because the `Ui` egui hands a viewport callback is the
-    /// window's root and nothing pads it. The main window never showed it: its
-    /// `CentralPanel` brings egui's own inner margin.
     ///
     /// One number, owned here, so that fourteen dialogs cannot pick fourteen
     /// values and so that nobody has to remember to pad theirs.
@@ -464,13 +443,6 @@ impl Host {
     ///
     /// # ★★★ Why this exists: A16c
     ///
-    /// Because until 2026-09-04 a dialog could not say where it wanted to
-    /// open, so a caller that computed a position had nowhere to put it and
-    /// wrote `let _ = pos;` instead. `dialogs/host/placement.rs`'s header
-    /// carries the full account; the short version is that the sticky-note
-    /// dialog opened in the corner of the window on every one of the dozens of
-    /// times a markup session opens it, having computed a better answer and
-    /// thrown it away.
     ///
     /// # What the host promises about the position, and what it does not
     ///
@@ -530,8 +502,6 @@ impl Host {
         mut add: impl FnMut(&mut egui::Ui) -> R,
     ) -> (Frame, R) {
         let owner = owner(ctx);
-        // ★★★ `FnMut`, NOT `FnOnce` — and the difference was a CRASH that took
-        // the operator's unsaved work. Fixed 2026-09-03 (evening).
         //
         // `show_viewport_immediate` takes `impl FnMut` because egui reserves
         // the right to call a viewport's callback **more than once in a
@@ -540,9 +510,6 @@ impl Host {
         // size it has just learned. A `Grid` or a wrapped table doing its own
         // sizing is enough.
         //
-        // This function used to take `FnOnce`, move it into an `Option`, and
-        // `expect("viewport callback ran twice")` on the second call. The
-        // comment defending that read:
         //
         // > the honest signature for a dialog body, which draws once per frame
         // > and may consume what it captures [...] a second call would `expect`
@@ -612,10 +579,6 @@ impl Host {
         if opened_at == now {
             // A fresh opening has not been engaged with yet.
             ctx.data_mut(|d| d.remove::<bool>(self.engaged_key));
-            // ★★★ AND IT HAS NOT BEEN FITTED YET EITHER — the operator's
-            // *"the second time I place a stamp the window is too small to
-            // show the Add button"*, 2026-09-10, and it was this line's
-            // absence.
             //
             // `fit_key` and `budget_key` live in `egui::Memory`, keyed on the
             // dialog's id string, exactly as the remembered POSITION does. The
@@ -830,12 +793,6 @@ impl Host {
                     // refused* — which look identical from the operator's chair and have
                     // opposite fixes.
                     //
-                    // Named `dialog-refocus` on 2026-09-11. It shipped in release
-                    // binaries as `TMPASK` — a name typed while chasing a focus bug and
-                    // meant to come back out, which survived this project's rename
-                    // and eight appearances per dialog in captured traces several
-                    // sessions had read. Mechanism 3 of
-                    // `tools/gates/check-trace-names.py` exists because of this line.
                     crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed.
                         format!(
@@ -869,8 +826,6 @@ impl Host {
                 !child.text_edit_focused() && child.input(|i| i.key_pressed(egui::Key::Escape));
             frame.closed = escape || child.input(|i| i.viewport().close_requested());
 
-            // ★★★ THE WINDOW'S OWN BACKGROUND, and its absence was a defect
-            // that shipped for an hour on 2026-08-21.
             //
             // The `Ui` egui hands a viewport callback is the child window's
             // ROOT — the same position `eframe::App::ui` occupies for the main
@@ -889,8 +844,6 @@ impl Host {
             // screenshot.**
             ui.painter()
                 .rect_filled(ui.max_rect(), 0.0, ui.visuals().panel_fill);
-            // ★★★ THE INNER MARGIN, AND ITS ABSENCE WAS THE OPERATOR'S
-            // "TOUCHING THE EDGE" — 2026-09-03.
             //
             // His words, about Print: *"the print button that is so far off in
             // the corner it is touching the edge the window."* It was, and so
@@ -955,7 +908,6 @@ impl Host {
     /// **Put the body in its own scrolling space and pin the footer to the
     /// bottom of the window**, so the buttons are reachable at any size.
     ///
-    /// # ★★★ The operator's rule, verbatim, 2026-09-10
     ///
     /// > *"Those buttons should always be available, and if there isn't size
     /// > for all the features they get scrolled in their own space."*
@@ -1114,7 +1066,6 @@ impl Host {
     /// undiscoverable key that means something different from the button
     /// beside it.
     ///
-    /// # ★★★ Every button publishes a `ui_rect`, and until 2026-09-14 none did
     ///
     /// `tools/ui-verify` presses controls by name. This function contained no
     /// `crate::diag::ui_rect` call at all, so **no driven check could press
@@ -1138,13 +1089,6 @@ impl Host {
     /// A check that needs certainty asserts the dialog's own body region in
     /// the same frame.
     ///
-    /// ⚠ **And this reaches one dialog today, not fourteen.** `Host::buttons`
-    /// has exactly ONE call site in the crate — the print footer — measured
-    /// 2026-09-14. `about`, `diagnostics` and `ocr` hand-roll
-    /// `ui.button(t::close())` instead, so they remain unpressable by the
-    /// harness. That is a real gap and it is written down rather than implied;
-    /// closing it is moving those footers onto this function, not adding more
-    /// region names.
     pub fn footer(
         ui: &mut egui::Ui,
         accept: (&str, &str),
@@ -1185,18 +1129,11 @@ impl Host {
         let mut cancelled = false;
         let mut kept = false;
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            // ★★★ THE ACCENT, NOT THE SELECTION FILL — and the difference is
-            // the operator's 2026-09-03 report about Print.
             //
             // His words: *"it looks greyed out as though it doesn't do anything
             // even when I hit print — but it is working, so after many clicks I
             // checked the printer and of course there was a dozen jobs there."*
             //
-            // This used to read `visuals.selection.bg_fill` +
-            // `strong_text_color()`, sourced from the theme rather than from a
-            // literal — so it satisfied `check-theme-colors.sh` and looked
-            // correct in review. **It was the right rule applied to the wrong
-            // role.** `egui-shell`'s theme sets
             //
             //     v.selection.bg_fill = p.selection_fill
             //                         = Color32::from_rgba_unmultiplied(90, 140, 220, 70)
@@ -1292,10 +1229,6 @@ mod tests {
     /// ★ **A host with nothing remembered reports nothing**, so the first open
     /// is placed rather than restored.
     ///
-    /// Asserted against a real `Context` rather than a field, because as of
-    /// 2026-08-21 the position is not a field: it lives in `egui::Memory`, and
-    /// the property worth holding is *what the host answers*, not where it
-    /// keeps it. See the module header for why the memory moved.
     #[test]
     fn a_fresh_host_remembers_no_position() {
         let ctx = egui::Context::default();

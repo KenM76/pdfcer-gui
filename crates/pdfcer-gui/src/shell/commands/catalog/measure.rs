@@ -1,8 +1,5 @@
 //! # `shell::commands::catalog::measure` — the Measure tab — ce dimensions and the scale they are read at
 //!
-//! One band of [`super::all`]'s catalogue. Split out of [`super`] under **R2**
-//! on 2026-08-28, when the Attachments command took that file to 1,495 of its
-//! 1,500 lines and the next command registered would have broken the rule.
 //!
 //! ## ★★★ The split is per TAB, and the reason it was refused before is gone
 //!
@@ -41,10 +38,6 @@ use crate::text::commands as t;
 /// This band's commands, in ribbon order.
 pub(super) fn band() -> Vec<Command> {
     vec![
-        // ★★★ **THE FIVE-WAY SHARE OF `measure` ENDED 2026-09-04**, with art
-        // adopted from the outside review of 2026-09-03. Read this before the
-        // per-command notes below, because each of those notes used to argue
-        // FOR the share and each has been rewritten.
         //
         // Until now `measure.linear`, `measure.radius_diameter`,
         // `measure.perimeter`, `measure.length` and `measure.two_line` all drew
@@ -106,7 +99,6 @@ pub(super) fn band() -> Vec<Command> {
         command("measure.radius_diameter", t::measure_radius_diameter(), 601)
             .with_icon("measure-radius")
             .enabled_when("doc.pages"),
-        // ★ **Perimeter** - the operator's ask of 2026-08-20.
         //
         // Its glyph is an irregular CLOSED quadrilateral drawn DASHED, and both
         // halves are load-bearing. Closed is the word on the label — this is a
@@ -127,10 +119,6 @@ pub(super) fn band() -> Vec<Command> {
         command("measure.perimeter", t::measure_perimeter(), 604)
             .with_icon("measure-perimeter")
             .enabled_when("doc.pages"),
-        // ★ **Length**, 2026-08-20 - the same gesture that never closes. It is
-        // a separate control rather than an option on Perimeter because
-        // "Perimeter" says CLOSED, and nobody measuring a pipe run would reach
-        // for it. See `MeasureKind::PathLength` for the argument.
         //
         // Now a meandering OPEN run with a short upright tick standing off each
         // end: *this thing, from here to here, is how long* — the sentence the
@@ -203,18 +191,7 @@ pub(super) fn band() -> Vec<Command> {
         // a straight line leave it greyed, correctly — there is no circle in
         // them to commit.
         //
-        // # The icon refusal that stood here is DISCHARGED — 2026-09-04
         //
-        // This registration and `catalog::markup`'s `markup.finish` carried the
-        // same sentence, word for word, in two files: *"There is no check-mark,
-        // tick or accept glyph in the set, and no existing key means 'complete
-        // this gesture'."* That was a true statement about the catalogue and it
-        // is no longer true — `check` was adopted from the outside review of
-        // 2026-09-03 — so the refusal is **spent rather than overturned**, the
-        // same way [`crate::icons::Icon::Pages`] and the Attachments paperclip
-        // record. The note is rewritten rather than deleted because the reader
-        // who finds a bare `.with_icon("check")` here with no history will
-        // eventually re-derive the wrong lesson from it.
         //
         // What in it was load-bearing and still is:
         //
@@ -270,12 +247,6 @@ pub(super) fn band() -> Vec<Command> {
         command("measure.set_scale", t::measure_set_scale(), 610)
             .with_icon("set-scale")
             .enabled_when("doc.pages"),
-        // §8.2 also assigned `icon-ring.svg` here, and that half remains a
-        // **recorded deviation**: two concentric circles read as a target or
-        // a radio button at 16 px, not as a list of named things. The row was
-        // written at reservation depth before the Measure surface existed and
-        // states no reasoning to weigh against. That deviation is unchanged and
-        // still stands — what changed on 2026-09-04 is the substitute.
         //
         // ★ **The borrow of `list` ended**, and what it was costing is worth
         // stating because the borrow was defensible right up until it was not.

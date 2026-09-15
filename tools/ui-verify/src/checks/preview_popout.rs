@@ -3,17 +3,9 @@
 //!
 //! # ⚠ THIS CHECK HAS NEVER BEEN RUN
 //!
-//! Written and registered on 2026-09-05 with the operator at his machine.
-//! `ui-verify` drives the real cursor and takes the whole desktop, so it could
-//! not be run, and **no window was rendered while the feature it covers was
-//! built.** Everything below is an assertion that has not yet fired in either
-//! direction. Treat it as unverified until a sweep says otherwise, and read the
-//! "what a first run will probably teach it" section at the bottom before
-//! believing a red.
 //!
 //! # The request
 //!
-//! `OPERATOR_REQUESTS.md` **O112**, 2026-09-03:
 //!
 //! > *"also the preview should be adjustable size, and even better if it has
 //! > the option to pop out into its own resizeable window - closing the window

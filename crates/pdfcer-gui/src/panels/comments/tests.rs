@@ -1,10 +1,5 @@
 //! # `panels::comments::tests` — the Comments panel's own assertions
 //!
-//! Split out of [`super`] on 2026-09-05, when that file reached **1,670
-//! lines** against R2's ceiling of 1,500. The seam is the cheapest honest one
-//! available and it is the same one `redact`, `save` and `text::redact` took
-//! the day before: **the module is the panel, and this is what is asserted
-//! about it.**
 //!
 //! ★ Chosen over splitting the drawing code because the drawing genuinely is
 //! one surface — a row is a header, a note, a byline and two controls laid out
@@ -24,12 +19,6 @@
 ///
 /// # The defect, and how it was actually found
 ///
-/// On 2026-09-05 the Delete button and the note editor were both drawn,
-/// **live and effective, in Read** — the mode whose entire stated posture
-/// is *the document is not yours to alter*. `deletable` asked
-/// `EditSession::annotation_deletion_refusal`, which answers *"would the
-/// engine refuse this document?"* (encrypted, certified) and says nothing
-/// whatever about the operator's stance. Nothing else asked either.
 ///
 /// It was found by launching the release binary **off screen** on the
 /// comment fixture and reading its trace:
@@ -380,13 +369,6 @@ fn a_ce_dimension_row_says_ce_dimension_and_still_says_line() {
 ///
 /// # Why this guard exists at all, which is not obvious
 ///
-/// `add_reply`'s own doc comment lists `EditError::MarkupNoteEmpty` among its
-/// errors, so the natural conclusion is that the engine refuses a blank reply
-/// and this shell need not. **Measured 2026-09-06 against the pinned engine at
-/// `d2ea5de`: that variant does not exist.** The identifier occurs exactly once
-/// in the crate and the occurrence is that doc line; `MarkupNote::validate`
-/// (`edit.rs:4731`) checks only the `/M` date's §7.9.4 shape. An empty reply is
-/// therefore **authored**, not refused.
 ///
 /// ⇒ So the decision is this shell's, and it is deliberately the opposite of
 /// the one the note editor makes: `AnnotAction::SetNote` permits an empty note
@@ -506,10 +488,6 @@ fn a_malformed_thread_resolves_to_something_real_rather_than_hanging() {
 /// moved that check one line later would draw a live Post control in Read, with
 /// the count assertion above still green.
 ///
-/// ⇒ **That is not a hypothetical**: the stance check being in the wrong place
-/// relative to a branch is the exact shape of the 2026-09-05 defect this
-/// panel's whole instrument exists for, where Delete and the note editor were
-/// both drawn, live and effective, in Read.
 ///
 /// # The positive control
 ///

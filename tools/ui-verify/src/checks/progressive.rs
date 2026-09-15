@@ -2,7 +2,6 @@
 //!
 //! # The report
 //!
-//! The operator, 2026-08-26:
 //!
 //! > *"the screen should never be blank while waiting to render when zooming
 //! > out - there should be at least a low resolution zoom of the newly panned
@@ -180,12 +179,6 @@ fn capture(session: &Session, ctx: &CheckContext, name: &str) -> Result<crate::i
 ///
 /// ## ★★★ Why ink and not uniformity, and what the first version got wrong
 ///
-/// The first draft of this check asked whether the canvas was *near-uniform*,
-/// which is the standard blankness test in this harness and is **blind to this
-/// defect by construction**. Driven on a real CAD sheet it passed, and the
-/// capture shows exactly why: the area a raster does not cover is drawn as the
-/// page's own white, and a drawing is mostly white anyway. Every band of every
-/// capture measured ~90 % one colour whether it held content or not.
 ///
 /// So "blank" here does not mean "uniform", it means **the drawing is not
 /// there**. Counting ink is what distinguishes them: a band of a CAD sheet with

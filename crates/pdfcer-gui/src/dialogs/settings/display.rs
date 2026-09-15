@@ -12,28 +12,7 @@
 //! when this shell was commissioned"* — which is a stronger statement of intent
 //! than a status mark, and is why they were emitted despite carrying no `G`.
 //!
-//! They were registered, drawn, and inert. Checked against the engine on
-//! 2026-08-17, **five of the seven have nothing behind them**:
 //!
-//! - **Render strategy** — there is no tiled-progressive path in this shell.
-//!   `pdfcer_render::render_page_region` exists, so it is buildable, but that is
-//!   a rendering architecture and not a setting.
-//! - **Thin lines** and **Antialiasing** — `RenderOptions` had neither field.
-//!   `interpret.rs` sets `anti_alias: true` as a literal at two call sites.
-//!   ⚠ **The thin-lines half expired on 2026-09-05** and is corrected here
-//!   rather than left standing: the operator asked for that control back by
-//!   name (`OPERATOR_REQUESTS.md` **O137**), the engine shipped
-//!   `RenderOptions::stroke_display` the same day (`Pass 254.0`), and it is now
-//!   `view.line_weights` on **View ▸ Display** — deliberately not a setting in
-//!   this window. It is a reading aid he flips several times while reading one
-//!   sheet, which is an activity, and it is per **document** so two open
-//!   drawings can disagree. `crate::text::commands::view_line_weights` carries
-//!   the whole argument and says where a persisted default would go if he asks
-//!   for one. Antialiasing is still real and still unasked-for.
-//! - **Floating panels** — `egui-shell`'s dock has no floating mode.
-//! - **App initiative** — *nothing in this build opens a surface unasked*. The
-//!   specified default is **Never**, and it is already true by construction, so
-//!   the control would exist to switch off a behaviour pdfcer does not have.
 //!
 //! `DIRECTED`'s own doc comment anticipated this outcome and named the remedy:
 //! *"if it turns out to be wrong, the fix is deleting eight rows from one list
@@ -171,13 +150,6 @@ pub fn zoom_settle(ui: &mut Ui, prefs: &mut Prefs) {
 ///
 /// # Why this is offered at all, when a fit command already exists
 ///
-/// View ▸ Zoom has *Fit page* and *Fit width*, so an operator can already get
-/// any of these three in one click. What they cannot do is get it **without**
-/// the click, on every document, forever — and `viewer::remembered` persists
-/// the page-display arrangement and nothing else, deliberately. This is the
-/// difference between a command and a preference, and it is the whole content
-/// of the operator's 2026-08-17 report: the capability was there and the
-/// *default* was not settable.
 ///
 /// # A radio group, not a dropdown
 ///
@@ -213,8 +185,6 @@ pub fn opening_fit(ui: &mut Ui, prefs: &mut Prefs) {
 /// 24-point bar has no room for. Both write the same field, so neither can
 /// **Which chord pastes a form field as a new one, and which as a duplicate.**
 ///
-/// `OPERATOR_REQUESTS.md` **O58**. Ken, 2026-08-29: *"let's make it an option to
-/// have it swap to match Acrobat or work the way we have it now."*
 ///
 /// # ★ Here rather than on a keyboard-shortcuts page, and there is no keyboard page
 ///

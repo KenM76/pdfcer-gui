@@ -3,7 +3,6 @@
 //!
 //! # What this is for
 //!
-//! `OPERATOR_REQUESTS.md` **O54(b)**, 2026-08-28:
 //!
 //! > *"I think the paragraph reflow was implemented ages ago in the pdfcer core,
 //! > so we should have that option too."*
@@ -47,27 +46,7 @@
 //!
 //! ## ★★★ What this check deliberately does NOT do, and what it CANNOT see
 //!
-//! It never types. That was once a hard constraint and **is no longer one**:
-//! until engine `Pass 257.0` (pinned here 2026-09-05) `reflow_block` planned
-//! against the **base** document and refused a page the session had already
-//! rewritten, so a check that typed one character first exercised the refusal
-//! rather than the reflow. The planner now reads the session view and the two
-//! "save and reopen" refusals are gone. The sequence stays *click, press*
-//! because that is the shortest path to this check's subject, not because
-//! typing would break it — a distinction worth keeping, because the old
-//! sentence read as a prohibition on extending this file.
 //!
-//! ★★★ **What it cannot see, stated so the next author does not trust it too
-//! far.** `fixtures/paragraph.pdf` is a flush-left six-line paragraph, which
-//! both block recognitions — `BlockRecognitionOptions::default()` and the
-//! engine's relaxed `reflow_recognition_options()` — call *block 0 of 1*. So
-//! this check passes identically whichever one
-//! `canvas::textedit::reflow::block_of_run` uses, and on 2026-09-14 it was
-//! green while the shell used the wrong one and reflow was unreachable on most
-//! of a real CAD sheet (O198). The recognition question has its own instrument
-//! now, in that module's tests, on `fixtures/tail-alignment.pdf` where the two
-//! numberings actually disagree. **A fixture that cannot distinguish two
-//! answers is not a check of which one shipped.**
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, declared, declared_names, list};
 use crate::checks::text_selection::aim;
@@ -230,8 +209,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     let driver = Driver::new(session.window());
 
-    // ★★★ **SELECT THE EDIT TAB — added 2026-09-05, on the first run this check
-    // ever had.**
     //
     // `PDFCER_DIAG_INVOKE=mode.edit,edit.text` sets the MODE and arms the tool,
     // and neither of those selects a ribbon TAB. The band was still showing

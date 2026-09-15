@@ -9,10 +9,6 @@
 //! one got a resize cursor, a drag that felt like it was working, and no
 //! change: `DEFECTS.md` D4a's shape exactly.
 //!
-//! They commit as of 2026-08-19, built out of `move_nodes` because `pdfcer-core`
-//! still has no scale verb — see `crate` `canvas::resizing` for why *scaling a
-//! path is moving every one of its nodes*, and for the four cases that are
-//! still refused, in words.
 //!
 //! # ★ Why this cannot be a unit test
 //!
@@ -60,12 +56,6 @@ const COMMIT_EVENT: &str = "resize-commit";
 const DECLINED_EVENT: &str = "resize-declined";
 /// The trace label `vector_edit` traces when the edit reached the engine.
 ///
-/// ★★ **This was `move-nodes` until 2026-08-20**, and the change is the point
-/// rather than a rename. A resize was built out of `move_nodes` — *scaling a
-/// path IS moving every one of its nodes* — because `pdfcer-core` had no scale
-/// verb at all. `Pass 113.0` shipped `transform_objects`, which wraps each
-/// object in `q <cm> … Q` and therefore works on **text, pictures and several
-/// objects at once**, none of which a node-move can express.
 ///
 /// ★ The stale constant did not make this check pass wrongly; it made it FAIL
 /// against a build where the resize had just got better — reporting *"the
@@ -118,13 +108,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check and its two siblings drag one of the eight selection grips,
-    // and that gesture can only be measured where the selection outline is
-    // big enough on screen for the grips not to overlap each other. The sweep
-    // hands every check one shared aim point chosen for the majority, and on
-    // 2026-09-12 two of these three FAILED under it - each printing several
-    // paragraphs that named application functions as the likely cause. Every
-    // one of those functions was correct.
     //
     // ⇒ `fixture::grip_gesture_target` holds the point and the reason. A
     // check whose subject cannot exist under an arbitrary aim must not be
@@ -277,7 +260,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  Trace: {}.",
                 session.trace_path().display()
             ),
-            // ★★★ **WHAT IT AIMED AT, BEFORE WHAT IT FOUND — 2026-09-08.**
             //
             // A run against `a1-titleblock.pdf` at `0,300,500` failed here and
             // cost most of an hour, because the message below describes a

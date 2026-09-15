@@ -19,12 +19,6 @@
 //! | **written** | where the file went, whether it replaced the open one, and what is still in it | a file |
 //! | **write failed** | why no file appeared | nothing |
 //!
-//! ★★★ **`staged` is new on 2026-09-05** and it is the state a document is in
-//! after the default destination has been confirmed (`Pass 250.2`). Its body is
-//! [`staged`]'s, and that module's header carries the seam and the one decision
-//! worth reading — that it quotes **no numbers**, because the removal re-runs at
-//! save and a measurement taken at the moment of consent is stale by the time
-//! this phase is drawn.
 //!
 //! There is deliberately no *ready* state. Opening this dialog **runs the whole
 //! removal** — see §2 — so by the time anything is drawn the numbers on screen
@@ -46,13 +40,6 @@
 //! disclosive and practically a program that quietly shipped a partially
 //! redacted document.
 //!
-//! ★★★ **2026-09-04 — the destination is the operator's, not this dialog's.**
-//! This section used to end by arguing that the write must always be to a new
-//! file. The operator overruled that: *"why does it have to save to a new file
-//! right away? Why can't it just wait on saving until I choose to save over the
-//! existing file or save as a new file?"* [`Destination`] carries the whole
-//! argument and what survives of the old ruling (the safe default, and
-//! [`suggested_path`] never proposing the source).
 //!
 //! ★★★ **CORRECTED the same evening.** That paragraph ended, at midday, by
 //! naming *"the one half of his request the engine cannot express — deferring
@@ -89,33 +76,6 @@
 //!
 //! Four gates, and each closes a different failure:
 //!
-//! 1. **[`crate::text::redact::confirm_checkbox`]** — always present. Its
-//!    wording targets the exact misunderstanding the feature exists to prevent:
-//!    that applying removes the *marks* rather than the *content*.
-//! 2. **[`crate::text::redact::residual_acknowledgement_checkbox`]** — present
-//!    **only when the report has residuals**. Showing it always would make it a
-//!    box operators tick without reading, which is how every acknowledgement in
-//!    a program becomes worthless. It is also enforced below the UI, at
-//!    [`crate::redact::PreparedRedaction::write_to`], because a greyed control
-//!    is a drawing decision and not a mechanism.
-//! 3. ★ **[`crate::text::redact::overwrite_acknowledgement_checkbox`]** —
-//!    present **only when the operator has chosen to replace the open file**
-//!    (2026-09-04). A different fact from gate 1: that one is about the
-//!    *content*, this one is about the *document*. Somebody can have taken in
-//!    that the text is going for good without noticing that the file they
-//!    opened is going with it. Conditional for gate 2's reason — a box that is
-//!    always there is a box that is always ticked.
-//! 4. **A control whose label is the consequence** — never "OK", never
-//!    "Apply". One label per destination, and the punctuation is part of the
-//!    claim: *"Permanently remove & save as…"* on the new-file destination,
-//!    where the ellipsis promises the picker that really is coming;
-//!    *"… & replace `<name>` now"* on the replace destination, which names the
-//!    file and drops the ellipsis because no further question follows; and
-//!    *"Set up the removal — it happens when I save"* on the default, which
-//!    promises nothing further because no file is involved and **claims no
-//!    immediate removal, because there is none**. An ellipsis on a control that
-//!    asks nothing more is a lie the operator acts on, and so is a label
-//!    claiming a removal that has not happened.
 //!
 //! ★★★ …and, between the destination choice and the button, **a disclosure
 //! rather than a gate**: [`crate::text::redact::removal_happens_at_save`], drawn
@@ -124,13 +84,6 @@
 //! too, and four acknowledgements is a form, which is filled in rather than
 //! read. What the operator is owed here is the FACT, before the click.
 //!
-//! ★★★ **CORRECTED 2026-09-05.** That sentence used to be
-//! `undo_will_be_cleared`, naming the number of undo steps the click would
-//! destroy, and the paragraph argued at length that he was owed the count
-//! before he committed. He was. `Pass 250.2` preserves the whole undo log, so
-//! there is no count and the sentence would be false — and what has replaced it
-//! is a *more* surprising fact rather than a lesser one: **the page does not
-//! change.** The disclosure's argument is unchanged; only its subject moved.
 //!
 //! And a fourth thing that is an absence: **no keyboard shortcut, and no Enter
 //! binding.** The footer says so in words rather than leaving it to be noticed.
@@ -146,8 +99,6 @@
 //! between the two — which on this dialog means an irreversible operation
 //! reached by a gesture the operator made at a disabled control.
 //!
-//! ## 5. ★★★ CORRECTED 2026-09-04 (evening) — this dialog pushes an `Action`
-//! on exactly one of its three destinations
 //!
 //! What stood here at midday, and it was right about the world it described:
 //!
@@ -161,12 +112,6 @@
 //! write-now destinations are unchanged and still push nothing: they produce
 //! bytes on disk and leave the session alone.
 //!
-//! ★★ **2026-09-05: it is now two of five presses, not one of three.** The
-//! deferred destination arms rather than removes (`Pass 250.2`), and the
-//! [`Phase::Staged`] phase's *call the removal off* control disarms — and both
-//! reach `EditSession` through the same funnel for the same reason, which is
-//! that the engine's verbs take `&mut EditSession` and `Arc::get_mut` is the
-//! funnel's second step.
 //!
 //! | press | what it changes | route |
 //! |---|---|---|
@@ -185,17 +130,6 @@
 //! on drawing the marks and the content underneath them while the file those
 //! bytes came from contains neither.
 //!
-//! ★★★ The reason that used to be given for it — *"`EditSession` has no verb
-//! that could"* — is no longer true, and the staleness is now a **consequence
-//! of the destination the operator chose** rather than a limit of the program.
-//! It is still not tidied away by swapping the session underneath, and the old
-//! argument for refusing that manoeuvre stands untouched: a swap discards the
-//! whole undo log without saying so, and `crate::app::save::save_as` refuses it
-//! for the same reason. An operator who wants the open document to change now
-//! has a control that says so. One who chose to write a file gets a file, and
-//! the divergence is **disclosed** rather than hidden, in
-//! `crate::text::redact::applied_clean`'s replace form, which tells him by name
-//! which file to reopen. Rule 4: report separately, and do not pretend.
 //!
 //! ## 6. It is document-scoped, and closing the document discards the bytes
 //!
@@ -206,10 +140,6 @@
 
 mod staged;
 
-// ★ The three report-body disclosures that read the engine's report and gate
-// nothing — the sweep counts, the clean census, and the engine's own notes.
-// Their own file since 2026-09-09; see its header for the seam and for what was
-// being discarded before it existed.
 mod disclosures;
 
 use std::path::{Path, PathBuf};
@@ -287,13 +217,6 @@ const REGION_DESTINATION_NEW_FILE: &str = "redact-apply-destination-new-file"; /
 /// [`REGION_CONFIRM`]'s top and fail if the disclosure ever moves below the
 /// button it is meant to precede.
 ///
-/// ★★ **Renamed from `redact-apply-undo-note` on 2026-09-05**, with
-/// `tools/ui-verify/src/checks/redaction.rs` in the same commit. The old name
-/// described the sentence that used to live here — *"this clears your undo
-/// history"* — and `Pass 250.2` made that false; a region name that still said
-/// `undo` would have aimed a harness at a sentence about undo and found one
-/// about staging, which is the shape of a check that passes while measuring
-/// something else. The geometry assertion it carries is unchanged.
 const REGION_STAGING_NOTE: &str = "redact-apply-staging-note"; // ui-text-exempt: trace region name, never displayed
 
 /// Height kept clear below the report for the checkbox and button rows.
@@ -525,16 +448,7 @@ impl RedactDialog {
         // this frame does not enable the confirm control until the next one.
         let ready = self.ready_to_confirm();
 
-        // ★ ITS OWN OS WINDOW as of 2026-08-21, and of every dialog in this
-        // directory this is the one where being able to move it off the
-        // document matters most: the report lists what will be REMOVED, and
-        // checking it against the page underneath was impossible while the
-        // window covered that page.
         //
-        // ★ The dialog region is published from inside the callback now — the
-        // window response it used to come from no longer exists, and
-        // `dialogs::host` tags what is published with this viewport so the
-        // harness can convert it.
         let (frame, ()) = crate::dialogs::host::Host::new(
             "redact-apply", // ui-text-exempt: a viewport key, never displayed.
             t::apply_title(),
@@ -622,14 +536,6 @@ impl RedactDialog {
     /// page instantly. A property that load-bearing is asserted headlessly
     /// rather than left to a reading of the draw order.
     ///
-    /// ★★★ **What it says was inverted on 2026-09-05.** It used to be
-    /// `undo_will_be_cleared(self.undo_depth)` — the price of `Pass 250.1`'s
-    /// collapsing verb, the number of undo steps the click would destroy — and
-    /// there is no such price any more. What replaced it is not a smaller
-    /// version of the same warning: it is the opposite fact, that **nothing
-    /// happens on screen**, which is more surprising than the loss it replaces
-    /// and is the one thing an operator cannot work out by looking. See
-    /// [`t::removal_happens_at_save`].
     ///
     /// `None` on the two write-now destinations, and that is a claim rather
     /// than an omission: those routes do produce a file at the click, so a
@@ -750,11 +656,6 @@ impl RedactDialog {
         // role — never fine print, never below the counts. It is the one
         // sentence a reader who takes in nothing else must take in.
         //
-        // ★★ Three forms since 2026-09-04 (evening), one per destination, and
-        // the match is exhaustive rather than an `if replacing` with an else:
-        // this is the sentence that says what happens to the operator's file,
-        // and a fourth destination that fell through to the wrong arm here
-        // would be a false claim in the one place a false claim is worst.
         let permanence = match destination {
             Destination::OpenDocument => t::permanence_statement_deferred(),
             // ★ Content goes, no file moves — a combination neither neighbour
@@ -794,12 +695,6 @@ impl RedactDialog {
                 // of one question, and the engine counts them apart precisely
                 // so a shell can say which half a number came from.
                 disclosures::sweep(ui, report);
-                // ★★★ What happened to the raster images, stated even though it
-                // is a success. `pdfcer-core` v0.26.0 destroys the covered
-                // samples and re-encodes; before 2026-09-03 it refused the
-                // document instead. A report that lists glyphs removed and says
-                // nothing about an overwritten photograph has quietly picked
-                // which irreversible act is worth mentioning.
                 if report.images_cleared > 0 || report.images_removed > 0 {
                     ui.add_space(4.0);
                     ui.label(t::images_destroyed(
@@ -902,13 +797,6 @@ impl RedactDialog {
         // mis-aimed click lands on the wrong one. Drawn only when there is an
         // original to replace — see `can_replace_original`.
         //
-        // ★★★ THREE choices since 2026-09-04 (evening), and the first of them
-        // is drawn UNCONDITIONALLY — which is the change that made this block
-        // stop being wrapped in `can_replace_original()`. A document created in
-        // this session has no file to replace, but it certainly has a session
-        // to redact into, and the old shape hid the whole destination group
-        // from it and silently forced a save-as. The *replace* row is what
-        // depends on there being a file; the group is not.
         ui.label(t::destination_heading());
         ui.add_space(2.0);
         let mut choice = self.destination;
@@ -946,13 +834,6 @@ impl RedactDialog {
 
         // ★★★ **The staging disclosure, ABOVE the confirm control.**
         //
-        // ★★★ CORRECTED 2026-09-05. This block used to draw
-        // `undo_will_be_cleared(depth)` — the price of `Pass 250.1`'s
-        // collapsing verb — and the comment that stood here argued at length
-        // that the operator was owed the step count before he committed. He was.
-        // There is no step count any more: `Pass 250.2` preserves the whole
-        // undo log, so the sentence would be false and the argument for showing
-        // it has become an argument for showing something else.
         //
         // What is drawn instead is the fact that replaces it, and it is more
         // surprising rather than less: **the page does not change**. He presses
@@ -1005,9 +886,6 @@ impl RedactDialog {
             ui.add_space(4.0);
         }
         let ack = ui.checkbox(&mut self.acknowledged, t::confirm_checkbox());
-        // ★★★ `ui_rect_visible`, changed 2026-09-08 when a fourth destination
-        // made this dialog 124 px taller and pushed this checkbox below the
-        // scroll fold at the harness'''s window size.
         //
         // Published unconditionally it was a **fossil**: the region appeared in
         // the trace while the control was scrolled out of view, so a driven
@@ -1076,7 +954,6 @@ impl RedactDialog {
 
     /// **Send the redacted bytes to the destination the operator chose.**
     ///
-    /// ★★★ CORRECTED 2026-09-04. This method's doc comment used to read:
     ///
     /// > *"It asks, every time, and the suggestion is never the file that was
     /// > opened — see [`suggested_path`]. There is no 'save over the original'
@@ -1089,12 +966,6 @@ impl RedactDialog {
     /// a *prohibition*: [`suggested_path`] still never proposes the source file.
     /// What is gone is the refusal to write the branch at all.
     ///
-    /// ⚠ **Corrected 2026-09-05.** This paragraph said *"[`Destination::NewFile`]
-    /// is still the default"* — and by then [`DEFAULT_DESTINATION`] two hundred
-    /// lines above it read [`Destination::OpenDocument`], moved on 2026-09-04.
-    /// **One file asserting two different defaults about itself**, which is
-    /// worse than a stale sentence in a document nobody reads: this is the
-    /// paragraph a future session consults *before* changing the default.
     ///
     /// ★ The claim it was making is still true of the mechanism, and that is
     /// why it survived a rewrite of the surrounding argument: both defaults are
@@ -1123,8 +994,6 @@ impl RedactDialog {
         let Phase::Prepared(prepared) = &self.phase else {
             return;
         };
-        // ★★★ THE DEFERRED ROUTE, 2026-09-04 (evening). Nothing is written and
-        // nothing here touches a file system.
         //
         // It leaves through the ACTION FUNNEL rather than being performed here,
         // and that reverses §5 of this file's header for one destination — the
@@ -1161,7 +1030,6 @@ impl RedactDialog {
             self.close_requested = true;
             return;
         }
-        // ★★★ **APPLY NOW — the operator's 2026-09-08 report.**
         //
         // It leaves through the action funnel for the same reason the staging
         // branch above does, and more strongly: this one replaces the open
@@ -1186,11 +1054,6 @@ impl RedactDialog {
             let marks = prepared.report.marks_applied;
             let pages = prepared.report.pages_redacted;
             let size = prepared.byte_len();
-            // ★★ The prepared redaction is MOVED out of the phase and carried
-            // whole. Not its bytes: `PreparedRedaction::bytes` is private
-            // "deliberately and load-bearingly", and the first draft of this
-            // branch cloned it — which would have put the buffer on the action
-            // queue unproven, restoring exactly the surface §2.1 forbids.
             //
             // `into_verified_document` is the second sanctioned exit, shaped
             // like `write_to`: same two gates, same order, and it hands back a
@@ -1327,9 +1190,6 @@ fn file_name_of(path: &Path) -> String {
 /// `PreparedRedaction::write_to` emits, which is where a reader who needs it
 /// will look.
 ///
-/// ★ Moved here on 2026-09-12. It sat above `file_name_of`, run
-/// together with that item's doc comment — so it documented `file_name_of`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 #[must_use]
 fn outcome_line(
     path: &Path,

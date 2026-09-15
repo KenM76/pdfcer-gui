@@ -3,7 +3,6 @@
 //!
 //! # Why this check exists
 //!
-//! The operator, 2026-08-20:
 //!
 //! > *"can I please have a save button like every other program in existence
 //! > has? We're on week two of this and just have a save as button."*

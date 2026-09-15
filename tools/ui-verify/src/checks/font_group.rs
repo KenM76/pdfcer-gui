@@ -3,10 +3,6 @@
 //!
 //! # What this is for, and how it differs from `restyle_text`
 //!
-//! `restyle_text` drives the **panel** route: sweep, find the *This text*
-//! section in the Properties dock, press its Bold. This drives the **ribbon**
-//! route, which shipped on 2026-08-27 as `RIBBON_IA.md` §5.8's Font group, and
-//! it also drives the half of O37 that is not a capability at all.
 //!
 //! O37 shipped with an admission written into its own row:
 //!
@@ -54,24 +50,8 @@
 //! after a sweep and therefore no Font group — a whole feature with no surface,
 //! which is exactly the shape of defect this project exists to catch.
 //!
-//! ## ★★★ THE PRECONDITION, added 2026-08-28 after this check cried wolf
 //!
-//! Every phase-1 oracle is a sentence about **a text object**, and this check
-//! shipped without ever asking whether it had one. The 2026-08-28 sweep drove
-//! the whole suite at one `--doc-point 0,300,500`; on `SW41177.pdf` that point
-//! is inside a drawing view, and the page carries **5,899 paths against 4 text
-//! objects**, so the click selected a 318 × 262 pt path. The Format tab
-//! appeared — `selection.formattable` is the union of *any* object selection
-//! with a live text selection, so it was right to — and then
-//! `properties.text.route` did not draw, which was *also* right, and the check
-//! called it O37's complaint coming back. It was not. It was the aim.
 //!
-//! (★ `properties.text.route` is the region this check asserted **at the
-//! time**. O198 deleted the sentence behind it on 2026-09-14, because the
-//! controls it routed around now act on a click; the region asserted in its
-//! place is [`TEXT_STYLE_REGION`]. The narrative above is left in its original
-//! terms because it is a record of what happened, not a description of what
-//! the check does now.)
 //!
 //! ★ The answer was in the trace the check was already holding:
 //! `pdfcer-diag properties-panel object=832 kind=Path notes=0`. So
@@ -91,11 +71,6 @@
 //! `ribbon.group.format.font`, the five `ribbon.item.format.*`, and
 //! `properties.text` with `properties.text.face` inside it.
 //!
-//! ★★ That last pair replaced `properties.text.route` on 2026-09-14. The
-//! check used to prove that a clicked text object produced a **sentence**
-//! telling the operator to sweep; O198 made the font editor itself draw for a
-//! click, so the check now proves the editor. The state driven is identical --
-//! one click, nothing swept -- and only the expected answer changed.
 //!
 //! Phase 2: `text-style-applied … applied=N` **and** the `format-text` label
 //! `vector_edit` writes when the edit reached the engine — the same two-line
@@ -139,7 +114,6 @@ pub(super) const FONT_ITEMS: [&str; 5] = [
 ];
 /// Every Font-group control's COMMAND id, in the same order as [`FONT_ITEMS`].
 ///
-/// # ★★ `pub(super)` since 2026-09-14, and the sibling is the point
 ///
 /// This module PINS its fixture: it opens `fixtures/paragraph.pdf` at a
 /// measured point and ignores `--pdf` and `--doc-point`, because its subject
@@ -180,13 +154,6 @@ pub(super) const FONT_COMMANDS: [&str; 5] = [
 ///
 /// ★★★ THIS CONSTANT REPLACED `ROUTE_REGION`, AND THE SWAP IS THE WHOLE POINT.
 ///
-/// Until 2026-09-14 this check asserted that a clicked text object produced
-/// `properties.text.route`: a sentence telling the operator to press T and
-/// sweep, because the face, size, bold and italic controls could not act on a
-/// click. O198 made them act on a click, so the sentence was deleted and this
-/// check now asserts the thing the sentence was apologising for. A check left
-/// aiming at a deleted region reports a shipped feature as missing, which is
-/// worse than no check at all.
 pub(super) const TEXT_STYLE_REGION: &str = "properties.text";
 /// The face control inside the font editor.
 ///
@@ -210,14 +177,6 @@ const CANVAS_SELECTION_EVENT: &str = "canvas-selection";
 /// The Properties panel's report of the object it is describing —
 /// `properties-panel object=N kind=K notes=M`.
 ///
-/// ★★★ **The precondition's oracle, and it is the right one because it is the
-/// SAME read.** `panels::properties::mod::object_section` writes this line from
-/// `object_indices_on(view.page_index).first()` classified by
-/// `summary::object_kind`, which is exactly the pair
-/// `panels::properties::text::route` guards on. So a `kind=Text` here means
-/// `route`'s own guard saw text, and any later absence of the sentence is the
-/// program's and not the aim's — which is the whole distinction this check was
-/// unable to draw before 2026-08-28.
 const PANEL_EVENT: &str = "properties-panel";
 /// The `kind=` value [`PANEL_EVENT`] carries for a page-content text object —
 /// `summary::ObjectKind::Text` under `{:?}`.
@@ -271,19 +230,6 @@ impl Check for TheFormatTabOffersFontControlsForSweptText {
 ///
 /// # ★★★ Why this exists, written on the day it was needed
 ///
-/// The 2026-08-28 sweep ran every driven check at a single
-/// `--doc-point 0,300,500`. On `SW41177.pdf` that point is inside a drawing
-/// view, not a label, and the page carries 5,899 paths against 4 text objects,
-/// so the click selected a 318 × 262 pt path. `selection.formattable` is the
-/// union of *any* object selection with a live text selection, so the Format
-/// tab appeared exactly as it should; then `properties.text.route` did not
-/// draw, exactly as it should, because there was no text selected to describe.
-/// This check reported that as a defect in `panels::properties::text::route`
-/// and it cost a day. (Both names are historical: O198 deleted the route
-/// sentence on 2026-09-14. The guard below is unaffected -- it reads
-/// `properties-panel ... kind=`, which is about the SELECTION and not about
-/// whatever the panel decides to draw for it.) The correct `--doc-point` for this fixture is
-/// `0,1140,62` (`RESUME.md`'s aim table), a 5 pt title-block run.
 ///
 /// ★ The trace had the answer on the same frame the check was already reading:
 /// `pdfcer-diag properties-panel object=832 kind=Path notes=0`. Nothing new had
@@ -422,12 +368,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check needs a click or a sweep that lands IN TEXT. On 2026-09-12
-    // it was handed the sweep's shared aim, which on `a1-titleblock.pdf`
-    // lands on a path - and that sheet is 2383.9 × 1683.8 pt carrying 123
-    // characters, so its tallest glyph is 2.4 screen pixels at fit zoom and
-    // no aim on it would have been reliable either. Sixteen checks reported
-    // sixteen plausible reasons for that one fact.
     //
     // `fixture::text_point_target` holds the document, the point, and the
     // measurement behind both. Read its doc comment before changing either.
@@ -502,14 +442,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // which is indistinguishable, from here, from a panel that had nothing to
     // say about the selection.
     //
-    // ★★ That distinction is the whole of this check's subject, and it nearly
-    // cost a false bug report. Measured 2026-09-03: the canvas traced
-    // `selection-set page=0 object=0 via=press` — something WAS selected — and
-    // no `properties-panel` line followed. Read alone that says "the panel does
-    // not describe what the canvas selected", which is a defect in the
-    // application. The dock listing says otherwise: `dock.body.file.properties`
-    // was absent from the run entirely while `dock.tab.file.properties` — the
-    // tab HEADER — was present. The pane was behind another tab.
     //
     // ⇒ An absent `properties-panel` line means "selected nothing" ONLY once
     // the pane is in front. Establishing that is this check's job, not the
@@ -546,16 +478,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★★ THE PRECONDITION, BEFORE ANY ORACLE — what did the click actually
     // select?
     //
-    // Every assertion below this line is a sentence about **a text object**,
-    // and none of them means anything if the click landed on a path. The
-    // 2026-08-28 sweep is what proved that: it drove the whole suite at one
-    // `--doc-point 0,300,500`, which on `SW41177.pdf` is a drawing view and not
-    // a label, and this check reported *"A PIECE OF TEXT IS SELECTED AND THE
-    // PROPERTIES PANEL DOES NOT SAY HOW TO CHANGE IT"* about a selection that
-    // was a 318 × 262 pt **Path**. The trace said so on the same frame —
-    // `properties-panel object=832 kind=Path` — and the check never read it.
-    // `panels::properties::text::route` was right to stay silent and was
-    // blamed for a day.
     //
     // ★ Note where the guard has to sit: **before** the Format tab is asserted,
     // not after. The tab's `visible_when` is `selection.formattable`, which is
@@ -595,13 +517,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // ★★★ THIS IS THE PANEL HALF OF O198, AND IT IS AN ASSERTION ABOUT A CLICK.
     //
-    // Nothing has been swept at this point in the run: the check clicked once
-    // on a piece of text. Before 2026-09-14 that state drew a sentence telling
-    // the operator to go and sweep; `app::textoperand` now resolves the clicked
-    // object's byte span into the run indices the five Font verbs take, so the
-    // face, size and weight rows draw and act. If either region is missing, the
-    // operand resolver returned nothing for an object the precondition above
-    // already proved is text.
     let missing = [TEXT_STYLE_REGION, FACE_ROW_REGION]
         .into_iter()
         .find(|region| driving::declared(&trace, ui_rect, region).is_none());
@@ -691,15 +606,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★★★ **The enablement half, added 2026-09-14, and this note used to be a
-    // guess.** It read *"all five controls with nothing swept — greyed, and
-    // there"*, and `greyed` was never measured: a region says a control DREW.
-    // This module's own header states that limit and the note asserted past it
-    // anyway, which is exactly how an unevidenced excuse reads as an answered
-    // question. `OPERATOR_REQUESTS.md` O198 claim 3 is the operator reporting
-    // that these five are *"always greyed out"*, so the honest assertion is the
-    // opposite one, measured: with one text object clicked and NOTHING swept,
-    // every one of the five must be pressable.
     let states = driving::enablement(&session)?;
     let unpressable: Vec<&str> = FONT_COMMANDS
         .into_iter()

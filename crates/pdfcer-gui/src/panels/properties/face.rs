@@ -1,10 +1,5 @@
 //! # `panels::properties::face` — the face chooser, once, for both surfaces
 //!
-//! One control, drawn in two places: the Properties panel's *This text* section
-//! ([`super::text::section`]) and the ribbon's Format ▸ Font group
-//! ([`crate::app::fontband`]). Until 2026-08-29 they were two copies of one
-//! loop, and the copies had already begun to differ in the way this project
-//! keeps finding — a face offered in one surface and not the other.
 //!
 //! ★ That divergence is the reason this module exists at all, and it is worth
 //! stating as a rule rather than as a tidy-up: **a control drawn twice is a
@@ -61,7 +56,6 @@
 //! ⇒ **The shell change is the chooser and nothing else.** Nothing in this
 //! module allocates an object, writes a dictionary, or knows the shape of one.
 //!
-//! ## ★★★ The standard-14 rows ARE coverage-tested now — 2026-09-08
 //!
 //! Every [`FaceOrigin::OnThisPage`] row has been through `set_font`'s own
 //! acceptance test for **this run's characters** — that is what
@@ -102,9 +96,6 @@
 //! tempting shortcut was one afternoon's work and would have been wrong on the
 //! first day the encoding rule changed.
 //!
-//! ⚠ It sat unconsumed for **two days** after it shipped, with this header
-//! still asserting the absence. Found by the 2026-09-07 reply triage, not by
-//! any gate. See `RESUME.md`.
 //!
 //! ★ The old `carried` filter is subsumed, and more exactly. It compared
 //! *shortened* names against the page's entries; `Std14Presence::OnPage` is the
@@ -265,7 +256,6 @@ pub(crate) fn choices(
         })
         .collect();
 
-    // ★★★ THE FOURTEEN COME FROM THE ENGINE'S SURVEY NOW — 2026-09-08.
     //
     // Until today this walked `Std14::ALL` locally, filtered it against a
     // `carried` list this function built by shortening `preflight.entries`, and
@@ -286,12 +276,6 @@ pub(crate) fn choices(
     // ⇒ So all three re-derivations are deleted, and the rows are now as exact
     // as the `accepted()` half above them.
     //
-    // ★★ `is_accepted()` rather than a `match`. `FontAcceptance` is
-    // `#[non_exhaustive]` and the engine added that accessor precisely so a
-    // shell need not pattern-match it — *"a yes/no that does not require
-    // pattern-matching a `#[non_exhaustive]` enum"*. Matching here would give
-    // this shell a wildcard arm that silently swallows a future refusal kind,
-    // which is the trap that bit three times on 2026-09-07.
     //
     // ⚠ A REFUSED face is now ABSENT rather than offered, which is a real
     // behaviour change and the right one: it makes this half behave exactly
@@ -470,16 +454,7 @@ mod tests {
     /// A real [`FontPreflight`] for `fixtures/paragraph.pdf`, whose page
     /// carries exactly one standard-14 face (`Helvetica`) and no other font.
     ///
-    /// ★★★ **THE TESTS BELOW USED TO BUILD NO PREFLIGHT AT ALL, AND THAT IS THE
-    /// FINDING WORTH KEEPING.**
     ///
-    /// Both of them re-implemented [`choices`]' algorithm *inside their own
-    /// bodies* — walking `Std14::ALL`, filtering against a hand-written
-    /// `carried` list — and asserted on their own reimplementation. **Neither
-    /// ever called `choices`.** So on 2026-09-08, when `choices` was rewritten
-    /// to read the engine's `standard_14` survey and three local re-derivations
-    /// were deleted, **both tests passed unchanged** — and were then testing
-    /// code that no longer exists.
     ///
     /// The reason given at the time was honest and real: `FontPreflight` is
     /// `#[non_exhaustive]` and cannot be built with a struct literal outside

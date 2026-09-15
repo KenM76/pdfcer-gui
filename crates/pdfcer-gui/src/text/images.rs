@@ -27,18 +27,7 @@
 //!
 //! ## ★ It IS previewed now, and the request that got it is worth the paragraph
 //!
-//! This section used to say the resolution could not be shown before the
-//! commit, because `NewImage` offered `placed_rect()` as a pure preview and
-//! nothing for the resolution — and computing `pixels / (points / 72)` locally
-//! would have been the second derivation `placed_rect()`'s own doc warns
-//! about: *"re-deriving the arithmetic in the GUI is how a preview and a result
-//! drift apart."*
 //!
-//! Filed 2026-08-19, shipped the same day: `NewImage::effective_dpi()` and
-//! `below_screen_resolution()`, pure, and — the part that was actually asked
-//! for — **`add_image` now calls them instead of repeating them**, so the
-//! preview and the outcome cannot disagree. The engine deleted its own copy of
-//! the formula and pinned the equality with a test.
 //!
 //! ★ **And the four-line version this shell nearly wrote would have been
 //! wrong.** Under `ImageFit::Contain` the placed rectangle is the *letterboxed*
@@ -246,10 +235,6 @@ pub const fn fit_hint(fit: ImageFit) -> &'static str {
 /// 4000-pixel photo in a 2-inch box wastes megabytes, and a 100-pixel logo
 /// across a page plots soft.
 ///
-/// Taken from `NewImage::effective_dpi()` and `below_screen_resolution()` —
-/// **the same calls `add_image` makes to build its own disclosure**, since
-/// 2026-08-19. Nothing here computes a resolution, and after the commit the
-/// operator is told the same figure by the same producer.
 #[must_use]
 pub fn dpi_preview(effective_dpi: (f64, f64), below_screen_resolution: bool) -> String {
     let (dx, dy) = effective_dpi;

@@ -1,8 +1,5 @@
 //! # `dialogs::sign::sections` — the five sections of the Sign form
 //!
-//! Split out of [`super`] under **R2** on 2026-09-06, when `Pass 10.12`'s
-//! certification option and `Pass 10.13`'s pre-placed-field list took
-//! `dialogs/sign.rs` past the 1,500-line ceiling.
 //!
 //! ## The seam, and why it is a real one rather than a cut at a line number
 //!
@@ -264,10 +261,6 @@ impl SignDialog {
         }
 
         match self.place {
-            // ★★★ R8b Rule 4: what the box contains, said whichever arm is
-            // selected — a note that appeared only once *draw a box* was picked
-            // would arrive one press too late. ★ The sentence was CORRECTED on
-            // 2026-09-06 when the pin moved; see `text::sign::placement_note`.
             Place::Nothing | Place::Box => {
                 ui.add_space(4.0);
                 ui.label(egui::RichText::new(t::placement_note()).color(

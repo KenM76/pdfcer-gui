@@ -3,12 +3,6 @@
 //!
 //! # 1. Why this file exists, and what the seam actually is
 //!
-//! `dialogs/mod.rs` had grown to 1,535 lines and tripped R2 (no source file
-//! over 1,500 lines) on 2026-09-05, with three concurrent tracks each having
-//! added a dialog to it. R2's own rule is that reaching the ceiling is the
-//! signal to *find the seam*, not to raise the limit — and the seam here was
-//! already visible in the shape of the `impl` block, which had for weeks
-//! contained two families of method that share a receiver and nothing else:
 //!
 //! | family | job | where it lives now |
 //! |---|---|---|
@@ -281,12 +275,6 @@ impl DialogsState {
     ///
     /// # ⚠ This is the FALLBACK, and [`Self::deliver_scale_length`] is the road
     ///
-    /// It used to be the only path, and being the only path was a defect: the
-    /// window was destroyed when the operator pressed *Measure it on the
-    /// drawing…* and rebuilt from defaults here, so the unit, the ratio and
-    /// the number style they had already chosen were silently discarded. The
-    /// window is no longer closed for a pick, so the ordinary route is now a
-    /// delivery into a window that never went away.
     ///
     /// ★★ It is kept rather than removed even though this application can no
     /// longer reach it, because removing it would make the two-point gesture's
@@ -515,15 +503,6 @@ impl DialogsState {
     /// to say something about it before the window opens, and the difference is
     /// worth stating because the two windows look alike.
     ///
-    /// Insert-pages reads its source because *"how many pages does it have?"*
-    /// is a question the window must answer and cannot ask the operator — a
-    /// dialog offering *"pages 1-N"* with no N is a control with nothing in it.
-    /// Nothing this window asks depends on the file's contents: the sheet, the
-    /// margin, the face, the size and the position are all decisions about the
-    /// *output*, and every fact about the *input* — how many pages it became,
-    /// what was split, what could not be written — is knowable only by running
-    /// the import, which `place_text` does after planning and refusing with
-    /// nothing created.
     ///
     /// ⇒ So the file is read exactly once, in the apply arm.
     /// `dialogs::import_text`'s header carries the same argument from the
@@ -602,13 +581,6 @@ impl DialogsState {
     /// the document's dimension model at construction, so there is nothing to
     /// build without one.
     ///
-    /// ⚠ **This doc comment spent from the day the DXF window was written until
-    /// 2026-09-13 attached to [`Self::open_shortcuts`]**, two functions below,
-    /// because a blank `///` line was missing between it and that function's own
-    /// first line. `open_export_dxf` had none, and `open_shortcuts`'s rustdoc
-    /// told the reader it computed a scale suggestion from a dimension model.
-    /// Nothing catches this: it compiles, it renders, and it is wrong in the one
-    /// place — generated documentation — that nobody reads while editing.
     ///
     /// # `remembered` — O196
     ///
@@ -695,16 +667,7 @@ impl DialogsState {
         if self.embed.is_some() {
             return None;
         }
-        // ★★★ ONE sentence now, and the branch that used to be here was
-        // FALSIFIED by O47 rather than simplified away.
         //
-        // It read: with no folders configured, say *"pdfcer has no font folders,
-        // so it cannot embed anything."* True until 2026-08-28. Since the
-        // operator answered O47 with *"yes"*, pdfcer's own standard-14 faces
-        // answer when nothing of theirs can — so a document with a missing
-        // Helvetica and no folders at all now **opens the window** instead of
-        // declining, and the only thing a decline can mean is that there was
-        // nothing to do.
         //
         // ⇒ A decline message is a claim about why, and the reasons a program
         // declines change under it. This one would have kept telling operators

@@ -331,7 +331,6 @@ pub const fn cancel() -> &'static str {
 // disclosure this section carried for one morning is deleted; the shape of the
 // correction is kept, because the shape is the useful part.**
 //
-// # What was measured here on 2026-09-06, and it was correct when written
 //
 // At `pdfcer-core` v0.42.0 (`821ab47`, the pin this shell then took):
 //
@@ -506,14 +505,6 @@ pub fn note_clear_disclosure(subtype: &str, appearance_rebaked: bool) -> Option<
 /// anywhere useful. The sentence names the cause and the count, so the act is
 /// attributable to the program that performed it.
 ///
-/// ⚠ `panels::forms` has said this for a form field since the day the engine
-/// reported it, through `forms_fill_unencodable_note`. An annotation went
-/// through the same substitution **in silence** until 2026-09-10, purely
-/// because the placing path called the entry point that returns an id and
-/// drops the outcome. Two routes into one capability and only one of them
-/// disclosing is the shape this project has a standing rule about — adding a
-/// second route is an audit of the capability, and this is what the audit
-/// found.
 ///
 /// ★ A separate sentence from the forms one rather than a shared helper, for
 /// this module's standing reason: the two describe different acts on

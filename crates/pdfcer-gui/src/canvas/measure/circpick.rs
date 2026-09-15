@@ -1,7 +1,5 @@
 //! # `canvas::measure::circpick` — the radius/diameter tool's point set
 //!
-//! Split out of [`super::pick`] on 2026-09-03 under **R2** (no `.rs` file over
-//! 1,500 lines), and the seam is real rather than convenient.
 //!
 //! ## ★ What makes this a different subject from the picks beside it
 //!
@@ -16,7 +14,6 @@
 //! anything to a two-click machine, and a reader looking for either subject was
 //! finding both.
 //!
-//! ## ★★★ It picked whole OBJECTS until 2026-09-03
 //!
 //! The measurement, the operator's report and the argument for the change are
 //! all on [`CircularPick`] itself, because that is where a reader arrives.
@@ -80,7 +77,6 @@ pub struct CircPoint {
 /// the substrate's general object selection (ui-spec §3.1). The fit re-runs
 /// live on every change; Finish authors a [`DimensionKind::Circular`].
 ///
-/// # ★★★ It picked whole OBJECTS until 2026-09-03, and that was the defect
 ///
 /// `OPERATOR_REQUESTS.md` O105, in the operator's words:
 ///

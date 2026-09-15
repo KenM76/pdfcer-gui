@@ -4,10 +4,6 @@
 //!
 //! # What this is about
 //!
-//! Until 2026-08-14, `canvas::textsel::takes_the_press` gave a press its text
-//! meaning only *"when the select tool is active and the mode cannot select
-//! content"* — Read ✓, Review ✓, **Edit ✗**. Two things followed, and the second
-//! is the one that made a fix urgent:
 //!
 //! 1. a reviewer could sweep text and an editor could not, which is an
 //!    inversion;

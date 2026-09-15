@@ -32,15 +32,6 @@
 //! roughly square, a text button is a word wide, and the reserved rectangle
 //! separates them without a screenshot.
 //!
-//! **There is no menu equivalent, and this is the whole difficulty.** A menu
-//! row is justified to the body width — that is what makes the chord column a
-//! column — so every row measures exactly the same whether its icon slot holds
-//! a glyph, holds a blank, or does not exist at all. `menu.item.<context>.<id>`
-//! proves a row was drawn and says nothing about what is in it. A harness
-//! reading only those rectangles could not have caught this defect, and did
-//! not: `right_clicking_a_form_field_opens_its_menu` had been asserting on
-//! menu row rects since 2026-08-28, through the whole period every one of those
-//! rows was bare.
 //!
 //! ⇒ So `egui_shell::menu::report::icon` was added with the fix, and it is
 //! published **only from the branch that calls the application's painter**:

@@ -1,8 +1,5 @@
 //! # `canvas::cursor` — pdfcer's own crosshair, because the platform's is invisible
 //!
-//! One public function, [`crosshair`], returning an RGBA bitmap for
-//! `egui::Context::set_cursor_image`. It exists because of an operator report
-//! on 2026-08-18:
 //!
 //! > *"The crosshairs when over the canvas are white making it hard to see
 //! > them."*
@@ -27,9 +24,6 @@
 //!
 //! ## ★ Why two tones rather than the inversion the operator expected
 //!
-//! The report guessed at the mechanism — *"I assume they change based on if
-//! they are over a black or white or grey object"* — and that guess describes
-//! how this used to work and no longer does anywhere.
 //!
 //! XOR/inverting cursors were a real facility: a monochrome cursor with an AND
 //! mask and an XOR mask, where the XOR bits inverted whatever was underneath.
@@ -186,7 +180,6 @@ pub fn crosshair(pixels_per_point: f32) -> CustomCursorImage {
 ///
 /// # ★★ Why the cursor has an angle at all
 ///
-/// The operator, 2026-08-26, on a vertical stamp in a title block:
 ///
 /// > *"In Adobe when I hover over it the I cursor re-orients itself to match
 /// > the text orientation […] as it is now the I cursor doesn't reorient."*
@@ -318,11 +311,6 @@ pub fn ibeam(pixels_per_point: f32, tilt: Tilt) -> CustomCursorImage {
 /// entries, and a shared one would need a compound key for no saving. The cost
 /// of getting a compound key wrong is handing back the wrong glyph.
 ///
-/// ★ Keyed by `(size, tilt)` since 2026-08-26. **A cache keyed only by size
-/// would be worse than no cache at all**: the first angle asked for would be
-/// stored and every later angle would silently receive it, so the cursor would
-/// appear to reorient once and then never again — a defect that looks like the
-/// feature half-working rather than like a cache bug.
 ///
 /// Unbounded, and that is safe rather than lucky: [`Tilt`] quantises to five
 /// degrees and folds into a half turn, so there are at most 36 angles, and in
@@ -399,11 +387,6 @@ fn render_ibeam(size: u32, scale: f32, tilt: Tilt) -> CustomCursorImage {
     // | 0° / 90° | 1.0 | 0.5 | one pixel — exactly the columns the upright version drew |
     // | 45° | 0.707 | 0.354 | one pixel per anti-diagonal: a clean 1-px staircase |
     //
-    // The first draft used `0.5 × (|cos| + |sin|)` — the pixel's full projected
-    // width — and it is 41 % too big at 45°: the ASCII preview showed a
-    // three-pixel-thick core where the upright glyph has a hairline, which
-    // defeats the whole reason the core is a hairline (see below). That is why
-    // `preview::ibeam_ascii` exists.
     let spread = 0.5 * cos.abs().max(sin.abs());
     let mut bar = |width: i32, white: bool| {
         let half = (width / 2) as f32;
@@ -597,9 +580,6 @@ static LAST_APPLIED: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32
 /// # ★★ The I-beam is here for the SAME reason the crosshair is, reported
 /// the same way, three weeks apart
 ///
-/// 2026-08-18: *"the crosshairs when over the canvas are white making it hard
-/// to see them."* 2026-08-19: *"the I cursor turns white for text selection so
-/// I cant see it on a white background."*
 ///
 /// One cause. `IDC_IBEAM` is a **monochrome** stock cursor exactly as
 /// `IDC_CROSS` is, coloured by the operator's pointer scheme, and a white
@@ -913,10 +893,6 @@ mod tests {
             "a different scale is a different bitmap"
         );
     }
-
-    // =======================================================================
-    // ★★ The tilt — the operator's 2026-08-26 report
-    // =======================================================================
 
     /// The quantiser folds, rounds and refuses nonsense.
     ///

@@ -23,13 +23,6 @@
 //! | [`super`] | **what an operator can ask for**, and what each request must carry to remain resolvable after the frame that raised it | a new command with a new operand |
 //! | here | **what happens when one is granted**, and the ordering that makes a mutation safe | a new engine verb, or a change to the cancel-mutate-bump-invalidate protocol |
 //!
-//! It is the same seam `app/mod.rs` has been split along four times —
-//! `dispatch.rs` (*what does this verb do*), `conditions.rs` (*what is true
-//! right now*), `gating.rs` (*what may this mode do*), `panels.rs` — and the
-//! same one `app/state.rs` was split along to produce `lifecycle.rs`. The test
-//! for whether a split was along a seam is whether the tests came with it, and
-//! they did: both tests below drive [`vector_edit`], and neither reads the
-//! [`Action`] enum at all.
 //!
 //! ## What did NOT move, and why
 //!
@@ -108,13 +101,6 @@ impl PdfcerApp {
             // `super::document`, one function each, with the two guards they
             // share and the table that orders them.
             //
-            // Moved there on 2026-08-19 when this file crossed R2's 1,500-line
-            // gate. The seam was already drawn in prose above — *"the actions
-            // that are about WHICH document is open"* — and it is a real one:
-            // everything below acts ON the open document, and these four decide
-            // WHICH document is open, or whether there is one. Different
-            // subject, different failure mode. An arm below can be wrong about
-            // a page; one of these can be wrong about an afternoon's work.
             //
             // They stay listed here, by name, rather than behind a single
             // catch-all, because this `match` is the one place a reader can see
@@ -218,10 +204,6 @@ impl PdfcerApp {
             // reasons: each asks a signature question that must run before the
             // document guard, and each returns rather than falling through.
             //
-            // Their bodies are in `crate::app::actions::saving`, split out on
-            // 2026-09-02 under R2 — the same seam `destination` and `view`
-            // already are. Nothing about a save is decided in this file, which
-            // is this arm's whole shape: it is routing.
             Action::Save | Action::SaveCopy | Action::SaveAs => {
                 super::saving::apply(self, &action);
                 return;
@@ -265,11 +247,6 @@ impl PdfcerApp {
             // ★★ Matched HERE — above the `Status::Open` guard below —
             // because a **preference** is not a document action.
             //
-            // Split into `super::prefs` under R2 on 2026-09-12. Its header
-            // carries the four properties every member shares; the one that
-            // decides the position of this arm is the first: the Find bar is
-            // reachable with nothing open, so a preference dropped by the
-            // guard would stick most of the time and vanish the rest.
             //
             // ⚠ The arm hands over `&mut self.prefs` and nothing else. That
             // is the enforcement of the seam rather than a courtesy: a future
@@ -402,23 +379,12 @@ impl PdfcerApp {
             // the payload is a two-armed list of this crate's own sentences
             // rather than a `Declined`.
             //
-            // ★★ The `InsideFormRefusal::NotAPath` constant that used to be
-            // spelled out here moved into `record_canvas`, beside the arm it
-            // belongs to, where the reason it is a constant can be stated. An
-            // apply arm naming a refusal KIND was an apply arm holding a fact
-            // about the file, which is the thing this action is careful not to
-            // let the canvas do.
             Action::DeclineOnCanvas(what) => crate::app::status::decline::record_canvas(what),
             Action::ZoomBy(factor) => doc.view.zoom_by(factor, max_zoom),
             Action::ZoomIn => doc.view.zoom_in(max_zoom),
             Action::ZoomOut => doc.view.zoom_out(max_zoom),
             // ★★ **The seven view verbs**, in one arm and one function.
             //
-            // Fit, zoom, the three page steps and a bookmark destination
-            // are one subject — *where the operator is looking* — and none
-            // of them touches the document. Split under R2 on 2026-09-01,
-            // and the seam is a real one rather than a line count: every
-            // other arm in this match changes a PDF.
             Action::Fit(_)
             | Action::ZoomTo(_)
             | Action::NextPage
@@ -516,9 +482,6 @@ impl PdfcerApp {
                         )
                     })
                 });
-                // ★★★ **And it arrives SELECTED** — 2026-08-26, closing the
-                // operator's *"if I add an image I Expect to click on it to
-                // resize but dragging doesn't resize."*
                 //
                 // He was right about the symptom and it was never the resize: a
                 // driven check had already proved a selected image resizes from
@@ -566,12 +529,6 @@ impl PdfcerApp {
             //
             // ★★★ **A completed recognition, applied as one edit.**
             //
-            // See `Action::ApplyOcr` for why the dialog cannot do this itself
-            // and why the whole run is one command. What is worth reading here
-            // is the shape: this is an ordinary `vector_edit`, identical to the
-            // seventeen above it, which is the entire point of the engine Pass
-            // that made it possible. Recognition used to be the one capability
-            // in this program that was not an edit.
             Action::ApplyOcr { pages } => {
                 // The borrowed view the engine's slice wants, built here so the
                 // owned `OcrPage`s outlive it. `page` for the trace is the
@@ -614,15 +571,6 @@ impl PdfcerApp {
             // ★ The `Option` is `markup::Refusal::Mismatched` arriving at the
             // only place it can: a kind holding another family's geometry.
             //
-            // Unconstructible from a gesture — `markup::action` refuses the pair
-            // before an `Action` exists — and handled rather than unwrapped,
-            // because an `Action` is plain data that a test can build and a
-            // future undo/redo surface could replay. Declining by name beats a
-            // panic in the frame that is trying to draw, and it emphatically
-            // beats authoring a shape nobody asked for.
-            // ★★★ **EVERY ANNOTATION VERB, IN ONE ARM** — moved out on
-            // 2026-09-05 under **R2**, when the three node verbs took this file
-            // past 1,500 lines.
             //
             // The seam is this file's own, stated in its header and drawn
             // twice already (`super::pages`, `super::annots`): **this file
@@ -652,13 +600,6 @@ impl PdfcerApp {
                     // ★★★ `add_markup_with`, not `add_markup` — ONE verb and ONE
                     // undo entry for a translucent mark.
                     //
-                    // This is the engine's own argument, and it is a defect
-                    // argument rather than a convenience one. Authoring at an
-                    // opacity used to take two calls (author, then restyle), and
-                    // that is two undo entries: *"an operator who draws a
-                    // translucent highlight and presses Ctrl+Z once gets an
-                    // OPAQUE highlight, not no highlight. That is a state they
-                    // never asked for and cannot have created any other way."*
                     //
                     // ★ `opacity_option()` answers `None` at fully opaque, which
                     // writes no `/CA` at all — so a build whose operator never
@@ -690,22 +631,6 @@ impl PdfcerApp {
             // ★ Placing a text-bearing annotation CHANGES NOTHING. It opens the
             // dialog, and the words decide whether anything is authored.
             //
-            // It is in this file rather than handled at the canvas, because the
-            // canvas may not reach `PdfcerApp` — everything a gesture wants the
-            // application to do arrives here as an `Action`, and "open a
-            // window" is no exception to that just because it touches no
-            // document.
-            // ★ Selecting a form field changes no document — it is view
-            // state, and it deliberately does NOT reach `vector_edit`, bump the
-            // epoch or invalidate a page. It is here rather than mutated at the
-            // canvas because that is this shell's one rule: everything a
-            // gesture wants the application to do arrives as an `Action`.
-            // ★ The form-field family, and it is routed in THREE arms rather
-            // than one. The enum moved to `super::forms` on 2026-08-27 under
-            // R2; the bodies had lived there since the family shipped. What
-            // could not follow is the two verbs that need application state
-            // this file holds and `&mut OpenDoc` does not — `self.dialogs`,
-            // `self.form_defaults` and `self.status`.
             //
             // ★★ And they cannot be handed to a router either, for a borrow
             // reason worth stating because it is invisible until you try it:
@@ -790,9 +715,6 @@ impl PdfcerApp {
                     icon,
                 },
                 &text,
-                // ★ This kind's own pen, not the shape pen — read
-                // `self.pen.ink` until 2026-09-06, which made a sticky note
-                // shape-red where Acrobat's is violet. `PenSlot::of_text_annot`.
                 self.pen.text_annot_colour(kind),
                 self.pen.opacity_option(),
             ),
@@ -872,18 +794,6 @@ impl PdfcerApp {
             // returns the request and the options together so a caller cannot
             // take one without the other.
             //
-            // ★ The disclosure list is the engine's own, PLUS one this shell
-            // adds. `EditReport::disclosures` already says a reflowed line may
-            // overrun its margin; it says nothing at all about a pinned one,
-            // because from the engine's side pinning is what was asked for. But
-            // a pinned tail does not make room, so a longer replacement grows
-            // into it — and rule 4 forbids letting the operator discover that
-            // from a diff. `plan`'s reason is what decides whether the sentence
-            // is appended, so the disclosure and the disposition cannot disagree.
-            // ★ Replace text a producer already put on the page. The body is
-            // `super::textcommit`, split out 2026-09-12 under R2; its header
-            // carries why six decisions had accumulated in an arm whose job is
-            // to route, and why the two neighbouring commit verbs stayed here.
             Action::CommitTextEdit {
                 page,
                 run,
@@ -934,13 +844,6 @@ impl PdfcerApp {
                     })
                 });
             }
-            // ★★★ Moved to [`super::addtext`] on 2026-09-04 under **R2**, and
-            // the seam is [`super::funnel`]'s: this file ROUTES, and placing
-            // text now DECIDES — a clicked caret that holds a line break has no
-            // width, and something has to say where the second line ends. That
-            // module's header carries the whole argument, including why the
-            // width is read off the operator's own sheet rather than invented,
-            // and why a one-line click still takes the point path untouched.
             Action::CommitAddText {
                 page,
                 origin,
@@ -980,15 +883,6 @@ impl PdfcerApp {
                     // > or pages view should snap back to center of the
                     // > canvas."*
                     //
-                    // The line above is why it has to be said out loud. That
-                    // suppression is correct — without it the strip would
-                    // scroll to the current page on its first frame — but it
-                    // left the scroll offset the OLD arrangement had settled on
-                    // in force over a layout that no longer describes it.
-                    // Measured 2026-09-12 by driving the shipped build:
-                    // scrolled 480 pt in Continuous, switched to Single, and
-                    // the page was drawn 431 pt above the middle of the canvas
-                    // with about half of it off the top edge.
                     //
                     // ★★ Only for a **non-continuous** target, and the gate is
                     // read from the mechanism rather than chosen: under a
@@ -1079,44 +973,14 @@ impl PdfcerApp {
             }
             // ★ The three REDACTION arms live in `super::redact`.
             //
-            // Moved there on 2026-08-18 under rule R2, and the seam is a real
-            // one rather than a line count: they are the only arms whose
-            // subject is *marking content for removal*, they share a vocabulary
-            // (`RedactAppearance`, the census, the mark ids) that nothing else
-            // in this file uses, and their comments carry the argument for the
-            // one operation pdfcer cannot undo. Moving the arms without their
-            // reasoning would have been the split this project warns about.
             Action::Redact(
                 redaction @ (RedactAction::BySearch { .. }
                 | RedactAction::WholePage { .. }
                 | RedactAction::RemoveMark { .. }
-            // ★★★ …and, since 2026-09-04, the one that ARMS a removal (and,
-            // since 2026-09-05, disarms it). It is routed here beside the three
-            // marking arms rather than into a module of its own because it is
-            // the other half of their subject — the module's header used to say
-            // "nothing in this file removes anything", and the correction is in
-            // that file rather than in a fourth location a reader would have to
-            // find.
                 | RedactAction::Pending(_)
-            // ★★★ …and, since 2026-09-08, the one that APPLIES the removal into
-            // the open document — the operator's report that the dialog offered
-            // only a "don't apply yet" button. Same module for the same stated
-            // reason: it is the other half of arming.
                 | RedactAction::ApplyNow { .. }
-            // ★★★ …and, since 2026-09-11, the one that marks everything drawn
-            // OUTSIDE the sheet — `pdfcer_core::offpage`'s census turned into
-            // marks. Beside the other three for the plainest version of the
-            // reason: it is a fourth marking route, it shares their appearance,
-            // their funnel and their review list, and the only thing it does
-            // differently is touch more than one page.
                 | RedactAction::OffPage { .. }),
             ) => {
-                // ★ Settings travel with it since 2026-09-08: `ApplyNow`
-                // builds a NEW `EditSession`, and
-                // `app::settings::tests::no_call_site_builds_its_own_options`
-                // exists because a session built with `EditSession::new`
-                // silently discards every setting the operator chose. That test
-                // caught this arm on the day it was written.
                 super::redact::apply(doc, redaction, &self.settings);
             }
             // ★ Its own module, not a fourth arm in `redact`: it is the only
@@ -1124,20 +988,7 @@ impl PdfcerApp {
             Action::Redact(RedactAction::Selection { appearance }) => {
                 super::redactsel::mark_selection(doc, &appearance);
             }
-            // ★ Every page verb, routed. The bodies have lived in
-            // `super::pages` since page operations shipped; the ENUM and these
-            // arms joined them on 2026-08-19 under R2, when image placement
-            // pushed this file past 1,500 lines.
             //
-            // The cut is along the seam that module's header already draws —
-            // *"a page index is a position, not an identity"* — and it is what
-            // took the panel-selection consequences with it: a delete clears
-            // the picks, a reorder remaps them, a rotation leaves them alone.
-            // Those three answers to one edit are the whole subject over there,
-            // and they were the only part of it living here.
-            // ★ The separation policy travels from the settings store, which
-            // this scope can see and `pages::apply` cannot. See `pages::delete`
-            // for the promise it was until 2026-08-28.
             Action::Page(action) => {
                 super::pages::apply(doc, &mut self.panels, action, self.settings.separations);
             }
@@ -1213,13 +1064,6 @@ impl PdfcerApp {
             Action::UnembedFonts { request } => super::fonts::unembed(doc, &request),
             // ★ The bookmark family — add, rename, delete-with-its-subtree.
             //
-            // One line, like `Action::Dimension` and `Action::Page` above it.
-            // The three arms moved into `super::bookmarks` under R2 on
-            // 2026-08-28, and its header carries what a reader needs first:
-            // every verb names its operand by `ObjId` because an outline is
-            // renumbered by every edit to it, and `/Count` is two different
-            // quantities whose SIGN carries open-or-closed (§12.3.3), which is
-            // why none of them describes itself by diffing a count.
             Action::Bookmark(action) => super::bookmarks::apply(doc, action),
             // ★ The attachment family — attach, remove, save one out.
             //
@@ -1247,9 +1091,6 @@ impl PdfcerApp {
             // whole argument for the command, which `Action::SelectAllOnPage`
             // points here for.
             //
-            // The operator, 2026-09-01: *"we should be able to select things off
-            // the side of the page, especially since I sometimes drop objects
-            // there, and when I do I can't get them back."*
             //
             // He is describing a ONE-WAY DOOR. `canvas::present` allocates the
             // page's own rectangle as the interaction area, and its comment
@@ -1403,43 +1244,13 @@ impl PdfcerApp {
 /// surfacing**: a disclosure belongs on an operator-visible surface, and the
 /// status line is `app::status`'s to own, not this module's to invent.
 ///
-/// ## ★ The outstanding half, discharged 2026-08-14
 ///
-/// The paragraph above used to end *"That is the outstanding half"*, and it is
-/// no longer outstanding. The list is now **recorded as well as traced** — as
-/// an [`EditDisclosure`] stamped with the epoch this edit produced — and
-/// [`crate::app::status`] draws it in the bar beside the fill disclosure it
-/// copies, on the row that may not grow (R128).
 ///
 /// Three things about that, each a decision:
 ///
-/// - **The trace is unchanged, not replaced.** It is the record of what
-///   happened; the bar is what an operator reads *now* and loses at the next
-///   edit. A disclosure that survives only on screen is one the next reader of
-///   `PDFCER_DIAG` cannot audit, and one that survives only in the trace is the
-///   defect this section used to name.
-/// - **This module still does not draw anything**, which is why the split is
-///   at a recorded value rather than at a formatted line. Everything an
-///   operator sees — the framing, the mark, the eliding, the hover — is
-///   decided in `app::status` and `text::status`, exactly as the original
-///   sentence said it must be.
-/// - **The stamp is the epoch bumped one line above, not the one the edit ran
-///   against.** The revision on screen from now until the next edit is the new
-///   one, so an undo silences the sentence by moving the epoch past it, with
-///   nothing anywhere remembering to clear it. Stamping the old epoch would
-///   produce a disclosure that was invisible from the moment it was written —
-///   which is the failure mode `crate::panels::forms::edit::apply`'s ★ comment
-///   records for the fill precedent.
 ///
 /// # Why the cached texture is dropped
 ///
-/// Nothing else notices an edit. `settle_and_rasterize` compares the cached
-/// texture against the page index and the raster scale, and an edit changes
-/// neither — so without this the page would keep showing the object where it
-/// used to be until the operator zoomed or paged away. Dropping it forces a
-/// re-raster on the same frame (step 4 runs after step 3), and
-/// `RenderWorker::spawn` waits a bounded number of milliseconds inline, so a
-/// page that rasterizes quickly never shows a gap at all.
 ///
 /// The *right* fix is for the texture's key to carry a content generation, so
 /// staleness is a property of the key rather than something each mutating arm
@@ -1456,16 +1267,6 @@ impl PdfcerApp {
 /// `EditSession::add_text` reports `text_edit::AddTextError`, and neither
 /// converts into the first.
 ///
-/// The three ways out were: a second copy of the four-step protocol for each new
-/// error type, which is the exact thing this function exists to prevent; a
-/// `map_err` to a string at every call site, which would put the *formatting* of
-/// a refusal in five places; or one bound. The bound is `Display`, which is the
-/// only capability the error branch below actually uses — it puts the message on
-/// the trace and declines. Nothing here inspects a variant, so nothing here
-/// needed to know the type.
-/// ★ The edit funnel moved to [`super::funnel`] on 2026-08-30 under R2, and is
-/// re-exported here so that every call site written as `apply::vector_edit`
-/// still resolves.
 ///
 /// Kept as a re-export rather than updating forty call sites: the move is about
 /// where the code *lives*, and rewriting every caller would have made a

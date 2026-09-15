@@ -25,8 +25,6 @@
 //!
 //! ## ★★★ The half a canvas cannot see, and it is why this needed an engine Pass
 //!
-//! `pdfcer-core` shipped `move_annotation` on 2026-08-28 (`Pass 149.0`) and its
-//! note is the reason this module does not simply rewrite a `/Rect`:
 //!
 //! > A move has two halves and **only one of them shows up in a render.**
 //! >
@@ -159,11 +157,6 @@ pub fn grab_box(
     let (_, outline) = eligible(selection)?;
     // ★★★ **The TURNED frame when there is one** — `OPERATOR_REQUESTS.md` O147.
     //
-    // `AnnotSelection::oriented` is `Some` only when the mark's appearance
-    // carries a rotation that `/Rect` therefore cannot describe. It is read
-    // here, at the one place that answers *"what can be grabbed and where"*, so
-    // the painter and the hit test cannot disagree about it — the pair that
-    // `Grabbable`'s own header records going wrong on 2026-08-20.
     Some(selection.annot().and_then(|a| a.oriented).map_or_else(
         || crate::canvas::handles::GripFrame::Upright(map.rect_to_screen(outline)),
         |quad| crate::canvas::handles::GripFrame::Turned(quad.map(|p| map.to_screen(p))),

@@ -142,7 +142,6 @@ pub const VIEWPORT_INNER_EVENT: &str = "viewport-inner";
 
 /// **The frame a declared region's coordinates are relative to.**
 ///
-/// # ★★★ Why a region needs this at all, as of 2026-08-20
 ///
 /// Every `ui-rect` rectangle is relative to **the viewport that drew it**.
 /// There was one viewport until `crate::checks` was written and until this
@@ -239,7 +238,6 @@ pub fn declared_in(trace: &Trace, ui_rect: &str, name: &str) -> Option<(LRect, O
 
 /// **The frame to convert a named region against**, whichever window drew it.
 ///
-/// # ★★★ Why almost every dialog-driving check needed this on 2026-08-21
 ///
 /// The idiom every check used was:
 ///
@@ -297,14 +295,6 @@ pub fn frame_of(
 /// exactly wrong for one in motion, and the difference is invisible — a stale
 /// coordinate is a number, not an error.
 ///
-/// Measured, on `dimension_groups_panel_makes_a_group`, 2026-08-19: raising a
-/// dock panel changes the **dock's own** layout, and it lands over several
-/// frames. The check read a fold heading at `x=786..1009, y=610`, the dock
-/// then re-laid out, and by the time the click was injected the panel's left
-/// edge had moved past the point being aimed at — so the click landed **on the
-/// canvas** and the check reported the fold as broken. Adding settle time did
-/// not fix it, because the motion is triggered by the very act being measured
-/// rather than by the passage of time.
 ///
 /// > **A harness that reads a coordinate and then acts on it owns the interval
 /// > between the two.** The only honest way to close that interval is to watch
@@ -353,13 +343,6 @@ pub fn stable_rect(
 /// answers `None` for a caret that drew perfectly, and the check reports the
 /// feature missing.
 ///
-/// That is not hypothetical either. It is exactly what happened on
-/// 2026-08-19: `pages_drag_shows_where_it_lands` failed with *"NO
-/// `panel-pages-drop-caret` region was ever published"* while the trace
-/// carried `ui-rect name=panel-pages-drop-caret rect=[[258.0 239.1] - [262.0
-/// 331.9]]` four lines above the release. The indicator worked. The check was
-/// reading a change log as a snapshot in the other direction — asking for
-/// presence *now* about a thing whose whole nature is to be gone now.
 ///
 /// # What this asks instead, and why the anchor is required rather than optional
 ///
@@ -400,11 +383,6 @@ pub const UI_RECT_CLIPPED_EVENT: &str = "ui-rect-clipped";
 ///
 /// # ★★★ What this is for, and it is a fix for a failure MESSAGE
 ///
-/// `crate::diag::ui_rect_visible` publishes a region only when at least 60 %
-/// of it is inside the clip. Until 2026-09-12 it was silent about the other
-/// case, and a check reading the trace could not tell a region that never
-/// drew from one that drew and overflowed. They have completely different
-/// fixes.
 ///
 /// Measured that day: `restyling_selected_text_reaches_the_document` reported
 /// the Properties panel as saying nothing about a 12-character selection, and
@@ -454,14 +432,6 @@ pub fn clipped_away(trace: &Trace, ui_rect: &str, name: &str) -> Option<String> 
 /// so a row that was deleted leaves its last declaration standing for ever, and
 /// counting names therefore counts rows that are gone.
 ///
-/// That is not hypothetical. On 2026-08-19 the Manage-groups check reported
-/// *"the round trip did not close: 1 row before, 2 after the delete"* over a
-/// trace containing `dimension-group-delete id=1`, `delete-dimension-group
-/// epoch=3` **and** `ui-rect-gone name=dimension-groups.draw_into.1`. The
-/// delete had worked, at every level, and the check said it had not — a
-/// confident, specific, entirely wrong defect report about a feature that was
-/// correct, produced by a helper being used outside the job its own doc comment
-/// names.
 ///
 /// So: **[`declared_names`] to say what was seen, this to say what is there.**
 /// If a check compares two numbers, it wants this one.
@@ -507,13 +477,6 @@ pub fn declared_names(trace: &Trace, ui_rect: &str, prefix: &str) -> Vec<String>
 /// If the captured stderr cannot be read at all.
 /// The control that holds the groups a narrow ribbon could not fit.
 ///
-/// ★★ The name is a fossil that was kept on purpose. Until 2026-08-25 this was
-/// a `⏷ N more` **dropdown**; it is now the **right scroll arrow**, and
-/// `egui-shell`'s `ribbon::overflow` explains at length why the published name
-/// did not change with the mechanism — four checks name it and what they assert
-/// about it is still true. What *is* no longer true is the mental model a
-/// reader brings to the word "overflow", and that cost this project three false
-/// SKIPs. See [`declared_or_in_overflow`].
 pub const OVERFLOW: &str = "ribbon.overflow";
 
 /// The arrow that scrolls the band back towards its **first** group.
@@ -548,28 +511,8 @@ const MAX_BAND_SCROLLS: usize = 32;
 ///
 /// # ★★★ The overflow is a SCROLL, not a menu — and this helper did not know
 ///
-/// Corrected 2026-09-03, and the shape is the one this project keeps meeting:
-/// **prose and mechanism agreed when the prose was written, and then the
-/// mechanism changed underneath it.**
 ///
-/// This helper was written against the `⏷ N more` **dropdown**: click it once
-/// and *everything* hidden appears at once, so one click is the whole search.
-/// On 2026-08-25 the dropdown became a Word-style `›` arrow on the operator's
-/// instruction, and one click now moves the band by **exactly one group**
-/// (`egui-shell`'s `ribbon::band` — `set_first(.., scrolled + 1)`). The helper
-/// kept clicking once, and — the part that actually bit — looked at the band
-/// **bare** afterwards, having searched collapsed groups only at the band's
-/// starting position. So the hole was *any command needing a collapsed group
-/// opened at a stop past the first*, which is a superset of "two or more
-/// scrolls" and is what the three checks below actually met. Either way the
-/// command was reported absent, with a confident message naming it.
 ///
-/// It was measured on 2026-09-02: `about_reports_the_build`,
-/// `shortcuts_reference_is_live` and `properties_metadata_round_trips` all
-/// SKIPPED reporting a lost command, on a File tab whose **Document** and
-/// **pdfcer** groups were two and three scroll stops away. All three were worked
-/// around with `session.maximize()` — a workaround that is fine for those three
-/// and does nothing for the next check to meet this.
 ///
 /// ⇒ The published *name* being a stability contract is right, and it is
 /// exactly what made this survive: nothing renamed, nothing failed to compile,
@@ -638,13 +581,6 @@ pub struct BandSearch {
     /// Whether the item only became visible when a **collapsed group's popup**
     /// was opened, as opposed to being on the band at that stop.
     ///
-    /// ★★★ With [`Self::scrolls`], this is the pair that says *"the old
-    /// single-click search could not have completed this run"*, and it is the
-    /// pair rather than either half. Measured 2026-09-03: at 1,100 pt the File
-    /// tab's About sits **one** scroll away and **inside a collapsed group** —
-    /// so a `scrolls >= 2` assertion alone would have skipped, and a
-    /// `found_in_popup` assertion alone would be satisfied by a popup at the
-    /// band's starting position, which the old code searched perfectly well.
     ///
     /// The old order was: popups at stop 0, one scroll, then a **bare** look at
     /// the band. Anything needing a popup at any stop past the first was
@@ -709,8 +645,6 @@ pub fn search_the_band(
 /// Look for `name` with the band where it is standing, opening every collapsed
 /// group on it in turn.
 ///
-/// ★★★ A COLLAPSED GROUP IS A THIRD PLACE A COMMAND CAN BE, and until
-/// 2026-08-26 the caller knew about two.
 ///
 /// S3 gave the band a middle rung: when it runs short of width a whole group
 /// folds into a single captioned button, its items reachable through that
@@ -806,13 +740,6 @@ pub fn shell_trace(session: &Session) -> Result<Trace> {
 /// The event name under which a ribbon control publishes **whether it was drawn
 /// pressable**, in both crates.
 ///
-/// ★★★ **Until 2026-09-14 this harness could not measure greying at all**, and
-/// the gap had a shape: `ui_rect` publishes a rectangle for every control,
-/// enabled or not, deliberately, because the consumer's question is *where is
-/// this control* and a greyed control is still drawn somewhere. So a check
-/// could prove the five Font controls were on the band and could not prove that
-/// any one of them could be pressed. `font_group` said so in its own header and
-/// then wrote the word *"greyed"* into a note it had not measured.
 ///
 /// ★★ That is the exact sentence `OPERATOR_REQUESTS.md` O198 claim 3 makes —
 /// *"get the font selector and editing tools like [bold] and italic working.
@@ -937,13 +864,6 @@ pub fn list_str(names: &[&str]) -> String {
 ///
 /// # ★★★ Why it is resolved at COMPILE time and never from `--source-root`
 ///
-/// Corrected 2026-09-05, the first time a check that used it was ever run, and
-/// it is the single most expensive mistake this harness has made about its own
-/// inputs. `--source-root` defaults to `crates` because its job is the
-/// **staleness** comparison -- which tree's mtimes decide whether the binary is
-/// older than the sources it was built from. It is not a repository root and
-/// never was. Joining `fixtures` onto it produced `crates/fixtures/<name>.pdf`,
-/// a directory that does not exist, and the checks that used it reported:
 ///
 /// ```text
 /// [SKIP] -> the fixture crates/fixtures/<name>.pdf is missing
@@ -971,8 +891,6 @@ pub fn list_str(names: &[&str]) -> String {
 /// Checks that pin their own documents ignore `--pdf` by design, and that is
 /// surprising enough to be worth restating at the point it bites.
 ///
-/// ★ This function replaced five byte-identical copies on 2026-09-13. Do not
-/// write a sixth.
 pub fn repo_fixture(name: &str, method: &str) -> Result<std::path::PathBuf> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
@@ -1139,13 +1057,7 @@ pub const VIEW_TAB: (&str, &str) = ("ribbon.tab.view", "view");
 /// # ★★★ Why this exists: a keystroke is not a harness primitive with a raised
 /// panel on screen
 ///
-/// A check that authors something with a markup or measure tool has to disarm
-/// before it can select what it just made — with a tool armed, a click on the
-/// page is a PICK rather than a selection. Every such check used to do that
-/// with a key: `V` (the `view.tool_select` chord) or Escape.
 ///
-/// On 2026-08-28 that cost `the_line_weight_switch_reaches_the_resize` three
-/// failed runs out of six, and the measurements are worth keeping:
 ///
 /// | attempt | result |
 /// |---|---|
@@ -1302,13 +1214,6 @@ pub const PRESS_TRIES: usize = 4;
 /// header records a bare `V` arriving **zero times in six** runs with a dock
 /// panel raised.
 ///
-/// A check that presses once, measures nothing, and reports a defect has
-/// reported a defect about a program it never spoke to. That is strictly worse
-/// than reporting nothing, because it is a confident accusation naming a
-/// specific line — and this suite has now produced one of those (`annot_delete_gate`
-/// phase D on 2026-08-29 said *"the keystroke did not reach `canvas::keys` at
-/// all"* about a keystroke whose effect was four lines further up the same
-/// trace). ⇒ A press that cannot be shown to have landed is a **SKIP**.
 ///
 /// # ★★ The caller owes two things, and both are contracts rather than advice
 ///

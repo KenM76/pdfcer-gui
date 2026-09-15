@@ -4,9 +4,6 @@
 //!
 //! # Why this exists when two text checks already pass
 //!
-//! `text_edit_pins_an_aligned_tail` and `add_text_takes_real_keystrokes` both
-//! pass, and the operator's report on 2026-08-19 was *"text editing on canvas
-//! still doesn't work"* — twice, weeks apart.
 //!
 //! **Both of those checks drive a fixture this repository generated.**
 //! `tail-alignment.pdf` is 924 bytes with three lines of text placed by a
@@ -57,16 +54,10 @@
 //! ui-verify … --doc-point 0,1201,1185 --check text_edit_on_a_real_drawing
 //! ```
 //!
-//! (The rect above is what the engine prints today, re-measured 2026-09-14.
-//! The path beside it was `D:/Dev/temp/pdfcer/SW41177.pdf` until then and no
-//! such file exists — a worked example whose measurement was real and whose
-//! path had rotted, which is the more dangerous of the two failures because
-//! the numbers keep vouching for it.)
 //!
 //! A failure at a point sourced that way is the application's. A failure at a
 //! guessed point is nobody's.
 //!
-//! # ★★★ FIRST RESULT, 2026-09-14: GREEN — AND THAT IS O198'S FIRST CLAIM
 //!
 //! Driven against a copy of the operator's `SW41177.pdf` at
 //! `--doc-point 0,272.7,724.2` — the centre of `FAR SLOT`, whose rect came from
@@ -144,14 +135,6 @@ const CARET_EVENT: &str = "text-edit-caret";
 ///
 /// ★★ This is a SECOND COPY of a string, and nothing enforces the pair.
 ///
-/// The constant it mirrors is `app::status::decline::REGION_DECLINE`, private
-/// to that module and unreachable from here — the harness is a separate crate
-/// and must not depend on the GUI's internals, which is the property that lets
-/// it drive a *shipped binary* rather than a test build. So the duplication is
-/// structural rather than lazy, and there is no gate for it. (An earlier draft
-/// of this comment cited `check-trace-names.sh`, which **does not exist**;
-/// naming a gate that is not there is the same defect as a doc comment citing
-/// a renamed test, and this project fixed four of those this morning.)
 ///
 /// ★★★ What makes the duplication tolerable is the DIRECTION it fails in.
 /// Rename the region in the application and this check stops matching, so it
@@ -166,8 +149,6 @@ const TARGET_EVENT: &str = "edit-text-target";
 /// `text-edit-became-add reason=no-run-under-the-click` — an Edit click that
 /// found no run, converted into an Add draft.
 ///
-/// ★★★ **This line is the difference between a defect and an aim**, and the
-/// 2026-09-14 sweep filed the second as the first because nothing here read it.
 ///
 /// It is raised by `canvas::textedit::place`, on the `Refusal::NoRun` arm and
 /// nowhere else. Only that refusal falls through to an origin; an encrypted
@@ -193,8 +174,6 @@ const BECAME_ADD_EVENT: &str = "text-edit-became-add";
 /// rest of the stream — which is true wherever it happens and on whatever
 /// document.
 ///
-/// The number that earned it, measured by the engine on this operator's own
-/// benchmark drawing on 2026-08-20 (`Pass 121.1`):
 ///
 /// | | `followers_repositioned` | changed pixels | bounding box |
 /// |---|---|---|---|
@@ -400,10 +379,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the strangest of the three.
     // ★★★ `InsideForm` WAS A SKIP FOR ONE DAY. IT IS NOW A FAILURE.
     //
-    // On 2026-08-20 this branch reported SKIPPED with a long argument about why
-    // an absent capability is neither a pass nor a defect —
-    // `SHELL_FRAMEWORK.md` §5b's `CapabilityAbsent` applied to a driven check.
-    // It ended:
     //
     // > *"The day the engine gains form editing, this branch stops being
     // > reached and the check goes green on its own — there is nothing to
@@ -438,19 +413,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4b: ★★★ DID THE CLICK LAND ON TEXT AT ALL? THE AIM GUARD ------------
     //
-    // A caret is not evidence that the aim was on text, and on 2026-09-14 a
-    // full sweep proved it by accusing the program of building no plan while
-    // the program was building the plan the operator had asked for.
     //
-    // The sweep hands every check `--pdf fixtures/a1-titleblock.pdf
-    // --doc-point 0,2000,320`. That fixture's page 1 carries fourteen text
-    // runs and EVERY ONE of them is at `x >= 1831.2, y <= 328.32`
-    // (`pdfcer extract-text --pages 1 --json`); the nearest to the aim is
-    // `DRAWING NO` at `x 2151.5-2186.5`. The point is a hundred and fifty
-    // points of blank title-block paper. The shell then did what
-    // `canvas::textedit::place` has done since 2026-08-19, at the operator's
-    // own request — *"How do I make new text when I click on the canvas and
-    // expect to edit there?"* — and turned the Edit draft into an Add draft:
     //
     // ```text
     // text-edit-became-add reason=no-run-under-the-click
@@ -561,8 +524,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(4);
     }
     session.settle(10);
-    // ★★★ **CTRL+ENTER, NOT ENTER — corrected 2026-09-05, on the first sweep
-    // that ran this check after the chord changed under it.**
     //
     // `enter_makes_a_second_line_and_control_enter_commits` is the check that
     // owns this contract, and it passes: in a text draft **Enter means NewLine
@@ -591,10 +552,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ★★ A REFUSAL IS ASKED ABOUT FIRST, AND THE REASON IS WHY.
     //
-    // Until 2026-08-20 this check tested only for the ABSENCE of a commit line
-    // and, on finding none, reported *"THE COMMIT NEVER REACHED THE ENGINE."*
-    // On the operator's own drawing that sentence was **false**: the commit
-    // reached the engine perfectly and the engine REFUSED it —
     //
     //   edit-text-refused page=0 n=1
     //     detail=text to edit ("p") was not found in an editable run on the page
@@ -625,12 +582,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // back with twenty-one spaces in it — so the engine refuses **cleanly**,
     // which is the designed outcome and the safe one.
     //
-    // ⇒ On the sweep of 2026-08-29 this check met exactly that case and reported
-    // *"This is a `pdfcer-core` verdict and belongs in a request"*. It does not.
-    // Nothing in the trace said which path had been taken, so neither the check
-    // nor its reader could tell the two apart — `edit-text-pin` was added for
-    // this, and it answered `one_operator=false find_len=30` on the very first
-    // run.
     //
     // ★ Note the distinction the old note blurred: it said *"this point is on a
     // single-run line"*, and a **run** is not an **operator**. One run, two
@@ -651,7 +602,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             pin.raw
         )));
     }
-    // ★★★ **A REFUSAL IS NOW A PASS OR A FAIL, NOT A SKIP — O116, 2026-09-04.**
     //
     // Until today this arm skipped and quoted the engine's verdict, on the
     // ground that a `pdfcer-core` refusal is not this shell's defect. That was

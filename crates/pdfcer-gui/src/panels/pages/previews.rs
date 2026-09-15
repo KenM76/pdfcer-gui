@@ -18,8 +18,6 @@
 //! Page 3 needed more than 2.0 s to draw and was skipped. Raise the …
 //! ```
 //!
-//! ★★★ **The tick is the operator's and nothing else may write it** —
-//! `OPERATOR_REQUESTS.md` O151, 2026-09-08:
 //!
 //! > *"the drawing page previews checkbox should never automatically turn
 //! > off. You can add a box next to the checkbox to enter a timeout value."*
@@ -61,14 +59,6 @@ const BUDGET_REGION: &str = "panel-pages-budget"; // ui-text-exempt: trace regio
 /// second control, a second disclosure) does not change the signature and
 /// therefore the call site.
 ///
-/// ★ `actions` joined it on 2026-09-12 (**O187**) and is the exception that
-/// proves the sentence above: both controls now have a **persisted** half
-/// living in `PdfcerApp::prefs`, which no panel widget can reach. Every
-/// change to either raises one
-/// [`PrefAction::PagePreviews`](crate::app::actions::prefs::PrefAction::PagePreviews)
-/// carrying **both** current values, so the gesture *“turn previews off and
-/// set a limit for when I turn them back on”* costs one whole-file write
-/// rather than two.
 pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
     // ★★★ THE PREVIEWS ROW — a checkbox and the time limit beside it (O151).
     //
@@ -90,12 +80,6 @@ pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
             .on_hover_text(t::previews_tooltip());
         if checkbox.changed() {
             pages.cache.force_on(previews_on);
-            // ★ The live half is the line above; this is the file. O187,
-            // 2026-09-12 — before it, an operator who cleared this tick
-            // because previews were slow on their sheet set met them again
-            // on the next launch, which is O151's complaint with a longer
-            // fuse. The budget is carried unchanged so one gesture is one
-            // write; see the action's own doc.
             persist(pages, actions);
         }
         let _ = crate::diag::ui_rect_visible(PREVIEWS_REGION, checkbox.rect, ui.clip_rect());
@@ -116,10 +100,6 @@ pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
         //
         // ★★★ THE DRAFT, AND WHY THIS CONTROL IS NOT WRITTEN THE OBVIOUS WAY.
         //
-        // The obvious way — seed a local from `cache.budget()` every frame,
-        // commit on `changed()` — was the first draft of this file and it had
-        // two independent defects, neither of which any unit test in this
-        // crate could have seen:
         //
         //   1. **A drag would have committed nothing, ever.** `DragValue`
         //      accumulates the pointer's motion into the borrowed value
@@ -140,16 +120,7 @@ pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
         // ⇒ Both go away with a draft that outlives the frame but not the
         // interaction, and a commit on `ended` rather than on `changed`.
         //
-        // ★★★ **THE RANGE STARTS AT ZERO, AND ZERO IS NOT A SMALL NUMBER** —
-        // `OPERATOR_REQUESTS.md` **O187**, 2026-09-12: *“setting it to 0 should
-        // set it to infinity (never time out)”*.
         //
-        // It used to start at `MIN_PAGE_BUDGET`, so `0` was simply unreachable.
-        // Reaching it is half the fix; the other half is that the box then
-        // stops showing a quantity and shows
-        // `crate::text::pages::previews_budget_never` instead, because `≤ 0.0 s`
-        // beside a grid of blank tiles reads as *give up immediately* — the
-        // opposite instruction, in the operator's most likely reading.
         //
         // ⚠ The formatter carries the prefix and the suffix itself rather than
         // leaving them on the widget, because egui wraps them around whatever a

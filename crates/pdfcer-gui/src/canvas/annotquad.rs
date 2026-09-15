@@ -3,24 +3,10 @@
 //!
 //! ## The operator's sentence this module exists to answer
 //!
-//! > *"the box outlined when an object is selected should be in the same angled
-//! > orientation as the object."* — 2026-09-07, `OPERATOR_REQUESTS.md` **O147**
 //!
-//! The selection outline used to be drawn from `/Rect`, and §12.5.2 requires
-//! `/Rect` **upright**: an annotation turned 30° was therefore bounded by an
-//! axis-aligned rectangle visibly larger than the mark inside it, with the mark
-//! floating in the middle at an angle the box did not share.
 //!
 //! ## ★★★ THIS MODULE WAS A WORKAROUND FOR ONE DAY, AND IS NOW A THIN ADAPTER
 //!
-//! It shipped on the morning of 2026-09-07 carrying **its own reader of the
-//! appearance `/Matrix`** and **its own implementation of ISO 32000-1
-//! §12.5.5's placement algorithm**, because `pdfcer_core::annot::Annotation`
-//! modelled no rotation and `pdfcer-render`'s placement was `pub(crate)`. That
-//! was filed the same morning
-//! (`request_an_annotations_rotation_angle_cannot_be_read.md`), including an
-//! addendum arguing that a public `appearance_placement` would be a better
-//! shape than the field we had asked for.
 //!
 //! **`Pass 155.2` shipped that afternoon and gave us both**, and the engine's
 //! reply answered the addendum in as many words: *"you were right that it is
@@ -67,9 +53,6 @@
 //!
 //! ## ⚠⚠ PDFCER HAS **TWO** ROTATION CONVENTIONS, AND THIS IS THE BOUNDARY
 //!
-//! Confirmed by the engine on 2026-09-07 (`note_2026-09-07-both-rotation-readers-now-point-at-each-other.md`,
-//! engine `a4939fa`, doc-only) after this shell reported the signed-`atan2`
-//! defect below:
 //!
 //! | reader | range | why |
 //! |---|---|---|
@@ -94,10 +77,6 @@
 //! called less is the one that drifts, silently, because both are individually
 //! correct.
 //!
-//! ★ `panels::properties::widgetedit::rotation_row` is the other side of this
-//! boundary and already `rem_euclid`s for the same reason. Audited 2026-09-07:
-//! it is correct, and `canvas::rotating`'s unit tests already exercise negative
-//! angles (`-170`, `-190`). This module was the only one-sided reader.
 //!
 //! ## What is deliberately NOT done here
 //!
@@ -135,16 +114,6 @@ pub struct OrientedBox {
     /// The rotation the appearance `/Matrix` expresses, in **degrees
     /// anticlockwise**, normalised by **this module** into `[0, 360)`.
     ///
-    /// ⚠⚠ **THE ENGINE DOES NOT NORMALISE, AND THIS COMMENT SAID IT DID FOR
-    /// TWENTY MINUTES.** `Annotation::appearance_rotation_degrees` returns the
-    /// `atan2` of the matrix directly, so a mark turned a quarter turn
-    /// clockwise reads **`-89.15`**, not `270.85`. The first version of this
-    /// adapter copied its old doc comment across unchanged — the local
-    /// implementation it replaced *did* apply `rem_euclid` — and shipped a
-    /// [`Self::is_upright`] whose range test `(0.1..=359.9)` therefore answered
-    /// **`true` for every clockwise rotation**, so the selection outline went
-    /// back to being axis-aligned on exactly the turn an operator makes most
-    /// often.
     ///
     /// It was caught by `tools/ui-verify`'s `rotating_a_markup_turns_it` on the
     /// first driven run after the pin moved, with `turned=0` beside a trace
@@ -198,9 +167,6 @@ impl OrientedBox {
 /// **Where `annot`'s artwork actually sits**, or `None` when the question has
 /// no honest answer for it.
 ///
-/// A thin adapter over `pdfcer_render::annot::appearance_placement` and
-/// `Annotation::appearance_rotation_degrees` — see the module header for what
-/// this used to be and why it is not that any more.
 ///
 /// `None` is a **correct** answer, not a failure, and the engine lists its
 /// causes: no `/Rect`, no reachable appearance stream, no readable `/BBox`, or

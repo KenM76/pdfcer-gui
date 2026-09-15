@@ -6,22 +6,7 @@
 //!
 //! ## ★★★ Why this window exists, and why it is mostly a sentence
 //!
-//! The engine has been able to do this since **2026-08-18**.
-//! `EditSession::set_media_boxes` — written for the drawing-set case, one undo
-//! entry however many sheets, refusals raised before anything is committed —
-//! was called by nothing for nineteen days, because no command reached it. And
-//! a complete size chooser already existed and could not be opened:
-//! [`crate::dialogs::new_document`] offers every entry in `PaperSize::ALL`,
-//! both orientations and a custom size, and opens **only while creating a
-//! file**. An operator with a document open could not reach any of it.
 //!
-//! ★ [`crate::app::blank`]'s §3a has known this the whole time; its comments
-//! say in as many words that *"pdfcer-core answered it on 2026-08-18 —
-//! `EditSession::set_media_box`, `set_media_boxes` and a `pdfcer_core::paper`
-//! table"*. **Writing it down was mistaken for acting on it.** That is the
-//! fourth instance of the pattern found this week and it is recorded here
-//! rather than in a session log because this file is where a reader will next
-//! be standing when it matters.
 //!
 //! ## ★★★ THE DESIGN DECISION: this window's real product is a MEASUREMENT
 //!
@@ -30,11 +15,6 @@
 //!
 //! > **An A1 drawing put on A4 paper is CROPPED, not SHRUNK.**
 //!
-//! Every other page-size control the operator has ever used — Word,
-//! LibreOffice, a print dialog's Fit-to-page — reflows or scales. He will
-//! arrive here expecting *"print it smaller"* and, on his own title-block
-//! sheet, the thing he would lose is the title block: measured 2026-09-06, it
-//! sits at x 1831–2207 pt and an A4 sheet stops at 595.28.
 //!
 //! A window that let him find that out from the result would be *"fuzzy, never
 //! sneaky"*'s purest failure — he would get exactly what he asked for and
@@ -700,10 +680,6 @@ impl PageSizeDialog {
         };
         crate::diag::ui_rect(REGION_OUTCOME, response.rect);
 
-        // ★★ The bound on the promise, on screen and permanently. A sheet whose
-        // *drawing* fits can still lose a sticky note: measured 2026-09-06, an
-        // annotation keeps its `/Rect` across a resize exactly as content keeps
-        // its coordinates. A bound nobody can read is not a bound.
         ui.label(egui::RichText::new(t::annots_not_counted()).small().weak());
 
         if !self.would_change() {

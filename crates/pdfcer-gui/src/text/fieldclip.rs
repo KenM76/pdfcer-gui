@@ -1,12 +1,6 @@
 //! # `text::fieldclip` - the sentences the FORM-FIELD clipboard can say
 //!
-//! ## ★★★ This file lost half its job on 2026-08-29, and that was the win
 //!
-//! It used to carry two families: the refusals, and a **loss note** listing
-//! which properties a paste could not carry - the font, the alignment, the
-//! default value, the calculation, the border colours. That list existed
-//! because the paste **re-authored** through `New*Field`, a spec that can only
-//! express geometry and a dozen booleans.
 //!
 //! `Pass 167.0` shipped `pdfcer_core::formclip` and every one of those
 //! properties now travels. The loss note is **deleted**, not softened, on the
@@ -68,15 +62,6 @@ pub fn refusal(reason: &Refusal) -> String {
         // ★★★ THE ENGINE'S OWN WORDS, and this variant replaced two of this
         // shell's.
         //
-        // It used to say *"signature fields cannot be copied"* and *"a radio
-        // button needs its own export value"*. Both were true when written and
-        // one stopped being true within the hour: `formclip` copies an UNSIGNED
-        // signature field normally - which hands this shell signature-field
-        // authoring it never had, since there is still no `add_signature_field`
-        // - and refuses a SIGNED one at the copy, because what would travel is
-        // the baked "signed by" artwork into a file nobody signed. The engine
-        // declines to make that object rather than making it and warning about
-        // it, which is the posture redaction takes.
         //
         // ⇒ Passing the engine's sentence through is not laziness. Its refusals
         // are written by the party that knows why, kept current by the party
@@ -121,8 +106,6 @@ pub const fn brings_a_script() -> &'static str {
 /// **A name whose group is already an ordinary field** — refused, with the
 /// reason and the remedy.
 ///
-/// ★★★ This guards **silent data loss**, measured on 2026-08-29 against
-/// `pdfcer` at engine `3ac9dd7`:
 ///
 /// ```text
 /// field "Text" = "K. Mantle"        then   add a field named "Text.2"
@@ -135,16 +118,7 @@ pub const fn brings_a_script() -> &'static str {
 /// discards its `/FT`, its `/V` and its widget's field-ness. The engine reports
 /// success and says nothing.
 ///
-/// # ★★★ CORRECTED 2026-09-11 — THE LOSS ABOVE CANNOT HAPPEN ANY MORE, AND
-/// THAT IS WHY THE WORDING CHANGED
 ///
-/// The measurement above stands as history and is left in place deliberately:
-/// it is what the request was built on. It is no longer what happens. The
-/// engine refuses this act at `place_new_field_deferred`, a single choke point
-/// all five `add_*` verbs and `paste_field` reach, before a byte is staged into
-/// the document and before any undo entry exists. Nothing is destroyed, and the
-/// request — `archive/2026-08-29-request_a_dotted_name_silently_swallows_an_…`
-/// — is closed.
 ///
 /// So the old sentence had become **false in the operator's direction**, which
 /// is the worst way for a refusal to be wrong. It said *"Using this name would
@@ -243,15 +217,6 @@ pub fn name_is_a_path(supplied: &str) -> String {
 /// nothing. So a paste of something pdfcer holds in its own memory would depend
 /// on whether the operator had recently copied text in some other application.
 ///
-/// ⇒ **It was found by driving, not by reading**, on 2026-08-29: the whole
-/// field clipboard was written, unit-tested, gate-clean and shipped-looking, and
-/// the first driven run reported `fieldclip-copy` present and `fieldclip-paste`
-/// absent with nothing between them. The RAG entry
-/// `egui_winit_swallows_ctrl_c_x_v_so_a_keymap_binding_for_them_is_dead_on_arrival.md`
-/// predicted exactly this and it still happened, because the field path is a
-/// *new* copy path and the marker lives at each copy site rather than in one
-/// place. That is the finding worth keeping: **a documented platform trap does
-/// not protect a code path that did not exist when it was documented.**
 ///
 /// # The wording
 ///
@@ -272,9 +237,6 @@ pub fn os_marker(field: &str) -> String {
 ///
 /// # ★★★ NO SEPARATOR, and above all NO DOT
 ///
-/// Corrected 2026-08-29 from `Drawn By 2` (a space) after reading the Acrobat
-/// reference `forms__field_copy_paste_and_duplication.md`. Two things it
-/// settles, and the second is a correctness matter rather than a taste one.
 ///
 /// **1. The convention is a plain numeric suffix.** Acrobat's bulk duplication
 /// ("Create Multiple Copies") auto-names its copies `Date1`, `Date2`, `Date3`,

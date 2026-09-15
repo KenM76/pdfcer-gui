@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-10, in the same sentence as O166:
 //!
 //! > *"we also need the option to auto select paper size based on the page
 //! > sizes in the pdf."*
@@ -26,13 +25,6 @@
 //! | `paper=Form(8)` | its answer was turned into a request the driver will see |
 //! | ★ `largest=` fits `sheet=` | **the sheet has something to do with this document** |
 //!
-//! A build that resolved auto to the first form in the driver's list would
-//! emit the first three, correctly, and be completely wrong. The operator's
-//! words were *"based on the page sizes in the pdf"*, and only the fourth row
-//! is about the pages. That is why `largest=` was added to `print-plan` on
-//! 2026-09-10 — while writing this check, which is the fifth time in this
-//! project that sitting down to write a driven check found a trace that could
-//! not tell apart the two states the check existed for.
 //!
 //! So the assertion is the **invariant**, not the value:
 //!
@@ -99,7 +91,6 @@
 //! (`auto=nobasis`), and it is a state the *application* declared, not one the
 //! harness inferred.
 //!
-//! # ★★★ Falsified, not merely green (2026-09-10)
 //!
 //! *"A check that cannot fail is not evidence"* is a standing lesson in this
 //! project, and this check was made to fail on purpose before it was believed.
@@ -250,11 +241,6 @@ const PAPER_DEVICE: &str = "print.paper.item.0";
 /// from `printer_caps_for`'s device context, and a driver may round the two
 /// differently.
 ///
-/// ⚠ **It is a ceiling on wrongness, not a tolerance on the comparison.** It
-/// is never used to abandon a verdict; see the module header for why the
-/// original SKIP band was removed. 6 pt is about 2 mm, two orders of magnitude
-/// below the 246 pt that separates A4 from A3 — the sheet-from-the-front-of-
-/// the-list defect this check exists for misses by hundreds of points.
 ///
 /// ⚠ **If the application's `FIT_TOLERANCE_PT` grows, this must grow with
 /// it**, or a correct `matched` starts failing here. The two cannot be shared:
@@ -612,15 +598,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // ★★★ The verdict is ASYMMETRIC, and the asymmetry is the finding.
     //
-    // `matched` and `toobig` make opposite claims and only one of them is
-    // allowed to overhang. An earlier version of this check compared
-    // `clearance.abs()` against a band and SKIPped inside it, on the theory
-    // that a small disagreement was driver noise — and its first driven run
-    // SKIPped on -0.60 pt, which is not noise at all but the application's
-    // declared 2 pt tolerance doing exactly its job on a CAD drawing whose
-    // producer wrote A3 as a clean 1191x842. See the module header. A harness
-    // that renders the application's stated behaviour as "I could not tell"
-    // produces a verdict nobody investigates, every single run.
     match after.auto.as_str() {
         "matched" if clearance > -OVERHANG_PT => {
             report.note(format!(
@@ -797,12 +774,6 @@ fn plan_field(session: &Session, key: &str) -> Option<String> {
 
 /// Parse a `WxH` size token, or `None` for `none` and anything unparseable.
 ///
-/// ★ The application writes these with [`autopaper::size_token`], two decimal
-/// places and no whitespace, deliberately so that this function can be four
-/// lines rather than string surgery over a `Debug` tuple. `sheet=` used to be
-/// `Some((1190.4, 841.68))` and was changed on 2026-09-10 for exactly that
-/// reason — this project has already shipped a driven check that reported the
-/// opposite of the truth because it was parsing a `Debug` spelling.
 fn size(token: &str) -> Option<(f64, f64)> {
     let (w, h) = token.split_once('x')?;
     Some((w.parse().ok()?, h.parse().ok()?))

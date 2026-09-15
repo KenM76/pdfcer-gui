@@ -11,15 +11,6 @@
 //! it will want the name. `Markup` is also the term this project's
 //! audience uses; Bluebeam and every drafting office call it that.
 //!
-//! ★★ **The FIRST of those three landed on 2026-09-06 — resolving comments.**
-//! `pdfcer-core` `Pass 253.1` shipped `/State` and `/StateModel` (§12.5.6.3),
-//! and `crate::panels::comments::reviewstate` now reads a comment's review
-//! status, filters the work list by it, and records one through
-//! `EditSession::add_review_state`. **The tab keeps its name.** `RIBBON_IA.md`
-//! is a settled spec and one arrival of three does not move it — comparing
-//! revisions and tracking changes are still absent, and a tab renamed on a
-//! third of the promise would be making the claim this paragraph exists to
-//! avoid.
 //!
 //! Note that the *mode* called Review is a different thing and the
 //! collision is deliberate rather than accidental: Review mode is the
@@ -47,17 +38,9 @@
 //!
 //! # ★ ONE of ten markup kinds is missing, and it is the one that matters most
 //!
-//! **Cloud** — revision clouds. It is the one this audience will name first: it
-//! is AEC table stakes, and it is the only markup kind blocked on the **engine**
-//! (`MarkupSpec::Cloud`, accepted 2026-08-14, not started). It is in
-//! [`super::PLANNED`], alongside `markup.line`, which is a *style* of the
-//! existing Arrow rather than a kind.
 //!
 //! ## The count, and what each correction to it taught
 //!
-//! This paragraph said **six** until 2026-08-14, then **three**, and now one.
-//! Both corrections are kept rather than deleted, because the shape of the
-//! unblocking is the useful part and it was the same shape twice:
 //!
 //! > **the count that mattered was never the count of kinds, it was the count of
 //! > gestures.**
@@ -98,11 +81,6 @@ pub(super) fn tab() -> Tab {
             // ---------------------------------------------------------------
             // Shapes.
             //
-            // ★ **Six kinds and an ending as of 2026-08-14**, where this band
-            // held three and the module header explained why. Polyline, Polygon
-            // and Ink moved out of `PLANNED` when the canvas grew the two
-            // gestures they were waiting for; **Cloud** is the only shape still
-            // absent, and it is the only one blocked on the engine.
             //
             // `markup.finish` sits **with the tools rather than in a group of
             // its own**, and the argument is `manifest::measure`'s for
@@ -145,10 +123,6 @@ pub(super) fn tab() -> Tab {
             // Text markup — markup that attaches to words already on the
             // page.
             //
-            // ★ **Four controls as of 2026-08-14**, where this band held one
-            // and its comment explained why. Underline, Strikeout and
-            // Squiggly moved out of `PLANNED` when the canvas gained a
-            // text-selection gesture, which was their only blocker.
             //
             // Splitting Highlight out of Shapes was right then and is right
             // now, for a reason the four controls together make plain: a
@@ -179,9 +153,6 @@ pub(super) fn tab() -> Tab {
                 "notes",
                 ribbon::group_markup_notes(),
                 [
-                    // ★ All three large, 2026-09-04 — the mockup's Notes
-                    // group is three big controls and nothing else, so the
-                    // whole group is promoted and no order changes.
                     large("markup.text_box"),
                     large("markup.sticky_note"),
                     large("markup.stamp"),
@@ -196,19 +167,9 @@ pub(super) fn tab() -> Tab {
                 ribbon::group_markup_style(),
                 [Item::custom(super::COLOUR_SWATCH)],
             ),
-            // ---------------------------------------------------------------
-            // ★★★ **Arrange** — which mark is drawn on top, 2026-09-06.
             //
             // ## An amendment to `RIBBON_IA.md` §5.5, to be reflected back
             //
-            // §5.5 names five groups — Shapes, Text markup, Notes, Style,
-            // Comments — and this is a **sixth**. `RIBBON_IA.md` is a settled
-            // spec and the standing rule is to propose rather than improvise;
-            // the operator's directive of 2026-09-06 suspends that for this work
-            // by name (*"never ask — placement, wording and scope are yours"*),
-            // so the group is placed and the reasoning is recorded HERE for the
-            // doc edit to be made from. **Do not read the absence of a §5.5 row
-            // as this group being unplanned.**
             //
             // ## Why a group of its own rather than four rows in Style
             //

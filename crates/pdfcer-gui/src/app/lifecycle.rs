@@ -160,14 +160,6 @@ impl PdfcerApp {
     /// > fatal, and if the user can intervene in a decision that should always
     /// > be an option along with them not having to intervene."*
     ///
-    /// Three obligations. Two of them shipped here on 2026-09-09: the document
-    /// opens (**not fatal**), and nothing has to be answered before it does
-    /// (**intervention is not required**). The third — **intervention is
-    /// possible** — had no route at all: `crate::panels::docprops` printed
-    /// *"pdfcer kept /UseOutlines and left /UseOC"* and there was nowhere to
-    /// say *use the other one*. A disclosure the operator cannot act on is the
-    /// difference between being told and being asked, and the engine went to
-    /// the trouble of carrying **both** values precisely so this could exist.
     ///
     /// # ★★ Why it is a re-load rather than an edit, in the engine's words
     ///
@@ -271,7 +263,6 @@ impl PdfcerApp {
         password: Option<&crate::secret::Secret>,
         options: LoadOptions,
     ) -> Option<crate::dialogs::password::Rejection> {
-        // ★★ ONE loading verb now, where there used to be two.
         //
         // `Document::load(p)` is `load_with_options(p, None, LoadOptions::new())`
         // and `load_with_password(p, pw)` is the same with a password — the
@@ -299,11 +290,6 @@ impl PdfcerApp {
         let incoming = match loaded {
             Ok(doc) => match pdfcer_core::page_tree::pages(&doc) {
                 Ok(pages) => {
-                    // ★ `open_session`, not `EditSession::new` — the settings
-                    // funnel. A bare `new` takes the engine's defaults and
-                    // silently discards the operator's `quad_point_order`,
-                    // which is what it did here until 2026-08-28.
-                    // `app::settings`' fourth funnel carries the argument.
                     let mut open = OpenDoc::new(path, self.settings.open_session(doc), pages);
                     // ★ Assigned here and nowhere else. `OpenDoc::assemble`
                     // starts it at `LoadOptions::new()` for the two dozen test
@@ -338,7 +324,6 @@ impl PdfcerApp {
                 message: err.to_string(),
             },
         };
-        // ★ A **new tab**, since 2026-08-19, rather than a replacement.
         //
         // Note what did not have to change: `adopt` below is unchanged and
         // still runs on exactly the same schedule, because `park_and_adopt`
@@ -380,16 +365,6 @@ impl PdfcerApp {
     ///
     /// # What it does NOT do
     ///
-    /// **It does not change the mode.** An operator in Read who presses
-    /// `Ctrl+N` gets a blank sheet they can look at and not author on, and
-    /// stays in Read. None of the three reference applications has a mode
-    /// system to consult, so standing instruction 4's head-count is empty here
-    /// and this shell's own rule decides: the chord/mode gate
-    /// (`crate::app::modes::capability::offers_command`, operator decision
-    /// 2026-08-14) **refuses** a command a mode does not offer rather than
-    /// switching modes to allow it. Silently moving the operator's workspace
-    /// out from under them would be the same decision made the other way, in
-    /// the one place it is least expected.
     ///
     /// Read is nevertheless the right mode to offer this in, and not by
     /// tolerance: standing instruction 5 is *"Read may produce a new document;
@@ -581,12 +556,6 @@ impl PdfcerApp {
         // ★ Forget the panels' own view state, because a NEW DOCUMENT is
         // open and none of it describes anything any more.
         //
-        // This is the second half of deleting `panels::DocKey`. The caches it
-        // used to guard now live on `OpenDoc` and die with it, but what is
-        // left on `PanelsState` — which object rows are expanded, which row
-        // the Properties panel is describing — hangs off the *application*
-        // and therefore does outlive a document. Those are paint-order
-        // indices: positions on one page of one revision, not identities.
         //
         // The old answer was to give the cache a document identity and
         // compare it every frame, which is what needed an `Arc` address and
@@ -644,8 +613,6 @@ impl PdfcerApp {
 
         // ★ **The page-display mode this document opens in.**
         //
-        // Two sources, in this precedence, and the order is the operator's
-        // requirement of 2026-08-12 rather than a convenience:
         //
         // 1. **what this document was last shown in**, from
         //    `viewer::remembered` — *"so a sheet set does not inherit a
@@ -655,12 +622,6 @@ impl PdfcerApp {
         //    `MODES_AND_PANELS.md`'s "Read defaults to continuous scroll;
         //    Review and Edit default to single page" lives.
         //
-        // The two are genuinely different questions and the `Option` between
-        // them carries the difference: `None` from the store means "nobody has
-        // chosen for this document", which in Read mode must become
-        // continuous. A store that returned `Single` for an unknown document
-        // would silently invert the operator decision of 2026-08-13, and it is
-        // exactly the collapse `remembered::recall`'s own docs refuse.
         //
         // Placed here, in the one function that opens documents, for the same
         // reason the recent-list call is: `argv` reaches this without an
@@ -680,9 +641,6 @@ impl PdfcerApp {
         // continuous while `file.new` in Edit shows it single-page, with no
         // code here saying anything about `file.new` at all.
         let ribbon_mode = self.ribbon.mode().unwrap_or_default().to_owned();
-        // ★★★ **The middle tier, added 2026-08-31** — `OPERATOR_REQUESTS.md`
-        // O80: *"it should remember my page display preferences from my last
-        // closing of the program."*
         //
         // It already did, per document. What it could not do was answer for a
         // document it had never seen, so a choice made on one drawing meant
@@ -693,11 +651,6 @@ impl PdfcerApp {
         // than from `doc.prefs`, because `doc.prefs` is a snapshot taken when
         // the document opened and this decision is being made AS it opens.
         let default_display = self.prefs.default_page_display;
-        // ★★★ **Off-page display, resolved for the mode this document opens
-        // in** — the operator's request of 2026-09-11: *"by default, read
-        // doesn't show off page items, review and edit do show off page
-        // items … their preference is remembered for each read review edit
-        // modes."*
         //
         // TWO tiers, not three, and the missing one is the point:
         // `crate::app::prefs::offpage` holds the operator's answer PER MODE
@@ -722,8 +675,6 @@ impl PdfcerApp {
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     "page-display mode={} source={} ribbon-mode={ribbon_mode}",
                     display.id(),
-                    // ★★★ **THREE tiers, and this line reported TWO** until
-                    // 2026-09-02.
                     //
                     // The resolution above is
                     // `remembered.or(default_display).unwrap_or(mode rule)` --
@@ -869,15 +820,7 @@ impl PdfcerApp {
             crate::diag::trace(|| "close nothing-open".to_owned());
             return;
         }
-        // ★ **Closes the ACTIVE TAB**, since 2026-08-19, rather than emptying
-        // the application.
         //
-        // The forgetting this function used to do inline — the panels' view
-        // state, the find hits, the de-duplicated trace slots — moved to
-        // `crate::app::documents::PdfcerApp::close_slot`, because switching to
-        // another document has to forget exactly the same three things and two
-        // copies of that list is how one of them comes to be missed. That
-        // module's §4 carries the table and the reason each entry is on it.
         //
         // Everything this function's own docs say about what closing must
         // *not* forget — the recent list, the dock arrangement, the mode — is
@@ -1056,14 +999,6 @@ impl PdfcerApp {
     /// **Save the open document over its own file, and record which revision
     /// is now on disk.**
     ///
-    /// The body of the `Action::Save` arm, lifted out of
-    /// `crate::app::actions::apply` on 2026-08-28 so that the signature
-    /// warning's answer can resume **the same save** rather than re-raise the
-    /// action. `resume_after_unsaved`'s own header carries the argument in its
-    /// general form: re-raising would meet the guard again and put the
-    /// operator in a loop they could only leave by pressing Cancel, and a
-    /// *"but not this time"* flag on the action would put a second, invisible
-    /// meaning on a value the funnel's whole discipline says is plain data.
     ///
     /// So there is one implementation with two callers, and what the second
     /// caller skips is exactly the guard it has just answered.
@@ -1295,17 +1230,9 @@ impl PdfcerApp {
     /// > discard — and the action is applied afterwards or not at all. It is
     /// > never applied underneath the save.
     ///
-    /// ★ `file.new` joined the list on 2026-08-14 by **reusing this
-    /// predicate**, not by growing a second rule beside it. A New replaces the
-    /// open document exactly as an Open does, so the question it has to ask is
-    /// the same question, and the day this function reads a real save
-    /// subsystem all three arms grow their confirmation together.
     ///
     /// # Why it answers `false`, and why that is not a stub
     ///
-    /// ★ **`file.save_copy` was wired on 2026-08-14 and this still answers
-    /// `false`**, which is worth stating explicitly because the obvious reading
-    /// — "there is a save now, so this must sometimes be true" — is wrong.
     ///
     /// The predicate asks *"is a save **in flight**"*: is there a moment at
     /// which the bytes on disk are a partial revision and the `EditSession` the

@@ -1,7 +1,5 @@
 //! # `render::region` — turning "what is on screen" into "what to rasterize"
 //!
-//! `OPERATOR_REQUESTS.md` **O24**, and the failure that forced it into the
-//! canvas on 2026-08-22:
 //!
 //! > *"I got a requested raster size 14580x18868 is empty or exceeds
 //! > MAX_PIXMAP_EDGE when I got to 2382% zoom."*
@@ -39,7 +37,6 @@
 //!
 //! ## ★★★ `/Rotate` — O174, and why a y flip alone was never enough
 //!
-//! The operator, 2026-09-10, on `A-591.pdf`:
 //!
 //! > *"this pdf causes problems zooming past about 1600% — the view appears to
 //! > jump to another location and when I pan back to where something is visible
@@ -160,11 +157,6 @@ impl PageFrame {
     ///
     /// # THE EXACT CROP EXTENT, NOT THE PIXMAP'S SIZE
     ///
-    /// It used to be the pixmap's size: `page_extent_pts` called
-    /// `pdfcer_render::page_device_geometry(page, 1.0)` and returned its `u32`
-    /// width and height. That was chosen so the shell's idea of a page and the
-    /// renderer's idea of a pixmap came from one function -- a good instinct
-    /// aimed at the wrong quantity, because `page_device_geometry` **ceils**:
     ///
     /// ```text
     /// w = ((urx - llx) * scale).ceil()
@@ -200,11 +192,6 @@ impl PageFrame {
     /// zoom** -- because the numerator is bounded by one *device* pixel while
     /// the denominator grows with the magnification.
     ///
-    /// That is strictly better than what the ceiled extent gave, where the
-    /// same far-edge error was `zoom * frac` -- ten points at 1040%, and
-    /// unbounded above. Stretch-to-fit costs a fraction of a device pixel; it
-    /// used to cost a fraction of a *canvas* point, and those two only look
-    /// alike at 100%.
     ///
     /// # Degenerate pages
     ///
@@ -552,15 +539,6 @@ mod tests {
     /// * by [`PageFrame::extent_pts`], which says how *big* the page is, and
     ///   therefore how big the rect the shell lays out for it is.
     ///
-    /// From 2026-08 to 2026-09-10 they disagreed. `extent_pts`'s ancestor
-    /// returned `page_device_geometry`'s ceiled pixmap size, so on the
-    /// operator's A1 sheet the conversion put the bottom edge at 1683.78 while
-    /// the layout drew the page 1684 tall. Nothing in the suite could see it,
-    /// because a disagreement of 0.22 pt is under half a pixel at 100 % and
-    /// every fixture measured a whole number anyway — and
-    /// `render::region::region_on_screen` then multiplied the ratio by the
-    /// page's on-screen height, which at 1040 % is 17,509 pt, and painted the
-    /// region raster 2.3 pt from where it belonged.
     ///
     /// So the assertion is not "the extent is 2383.937". It is that the two
     /// definitions agree, on every rotation, on an offset crop box, and on a

@@ -388,7 +388,6 @@ const VISIBLE_FRACTION: f32 = 0.6;
 ///
 /// `true` when at least [`VISIBLE_FRACTION`] of `rect` survives `clip`.
 ///
-/// # Why this is split out of [`ui_rect_visible`]
 ///
 /// Because *a change to a diagnostic channel is exactly the kind that can be
 /// green and wrong*, and the only way to write a test that fails on the wrong

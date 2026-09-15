@@ -7,12 +7,6 @@
 //! > *"I really need you to focus on finding ways to make all text editable on
 //! > the sw drawing that is in pdftests folder. Find a way to make it happen."*
 //!
-//! On 2026-09-14 the driven check
-//! `the_font_controls_are_live_on_the_drawing_you_open` was pointed at nine
-//! runs of text on page 1 of `SW41177.pdf` — one per distinct font size on the
-//! sheet, chosen by walking the engine's own `extract-text --json` rather than
-//! by picking two and calling it a series. **Eight of the nine clicks selected
-//! a `Path`.** The trace said the same thing every time:
 //!
 //! ```text
 //! pdfcer-diag properties-panel object=5899 kind=Path notes=0

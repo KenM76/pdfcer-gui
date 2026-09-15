@@ -446,12 +446,6 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     );
     // ★ The literals, and they are now the ONLY copy of these numbers.
     //
-    // This block used to end "update that sentence together", pointing at
-    // `catalog`'s `## Coverage` heading. It drifted anyway — a fifth time,
-    // to *86 of 101 named, 15 refused* against a registry of 94 — because a
-    // test cannot enforce a comment. The heading no longer carries numbers
-    // and this is where they live: a literal that fails loudly beats a
-    // sentence that is wrong quietly.
     //
     // Failing here means the registry changed. Read the diff, decide
     // whether the new command should have a glyph, and move the number
@@ -866,10 +860,6 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // neighbours they warned about, and each registration now records which
     // ones. **What ended was the supply problem, not the argument.**
     //
-    // ★ The paragraphs above are kept rather than deleted. A refusal that
-    // was right for six weeks and then stopped applying is a more useful
-    // thing for the next reader to find than a gap where it used to be —
-    // and two of them have NOT been discharged and must not be:
     //
     //   · `view.zoom_actual` — argued against BY NAME in the icon ui-spec
     //     §3.2. No supply of art touches that.

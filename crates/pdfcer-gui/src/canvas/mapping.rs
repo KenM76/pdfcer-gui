@@ -363,10 +363,6 @@ impl PageMapping {
 ///
 /// # ★ Why this lives here rather than with the forms code that wrote it
 ///
-/// It was `canvas::forms::boxes::widget_canvas_rect` until 2026-08-18, because
-/// filling a form on the page was the first thing that needed to know where an
-/// annotation is drawn. It is not about widgets and never was: it takes any
-/// `/Rect` and answers where the rasterizer put it.
 ///
 /// It moved when annotation **selection** arrived and needed the same answer
 /// for stamps, notes and ce dimensions. Calling it in place would have made
@@ -386,12 +382,6 @@ impl PageMapping {
 /// bound below is what makes both work — a two-corner version would produce an
 /// inside-out rectangle for one of them and silently never hit anything.
 ///
-/// Through [`crate::viewer::pdf_space_to_canvas`], which inverts nothing and
-/// invents nothing: it applies `pdfcer_render::page_device_geometry`'s own
-/// transform, the one the rasterizer used to draw the page. That is what makes
-/// the box land on the pixels the operator is pointing at *by construction*
-/// rather than by two formulas agreeing, and it is why `/Rotate` needs no
-/// branch here — the rotation is already inside the transform.
 ///
 /// **All four corners, then bound them.** Two corners are enough while the
 /// transform is a scale, a flip and a quarter-turn, which is every case a

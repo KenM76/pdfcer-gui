@@ -1,9 +1,5 @@
 //! # `canvas::dimdrag` tests — the placement arithmetic and the corner verbs
 //!
-//! Split out of [`super`] under **R2** on 2026-09-05, when the add-a-corner and
-//! remove-a-corner verbs took that file past 1,500 lines. The seam is the one
-//! `canvas::keys::tests` took: [`super`] is the rules, and this is the
-//! enumeration of them.
 //!
 //! ## ★★ Two kinds of test live here and they cost very different things
 //!
@@ -174,10 +170,6 @@ fn no_drag_moves_a_perimeter_vertex() {
     }
     assert_eq!(closed, c0, "and the ring is still a ring");
 }
-
-// ===========================================================================
-// Adding and taking away a corner — 2026-09-05
-// ===========================================================================
 
 /// A real document with one perimeter ce dimension authored into it.
 ///
@@ -535,10 +527,6 @@ fn the_points_tool_gives_ctrl_and_ctrl_shift_their_meanings() {
 
 /// ★★★ **The mode gate, entered EXPLICITLY.**
 ///
-/// `canvas::tool::capabilities` falls back to `Capabilities::FULL` for an unset
-/// `Context`, so a test that never stores a set runs as though it were in Edit
-/// — which is how a live Delete button shipped in Read on 2026-09-05. Every
-/// case below stores the set it is about.
 ///
 /// The three rows are the whole of the Node arm's rule:
 ///

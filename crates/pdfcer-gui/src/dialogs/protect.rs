@@ -1,8 +1,5 @@
 //! # `dialogs::protect` — the window behind **Encrypt…** and **Permissions…**
 //!
-//! `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04: *"yes add encryption
-//! and permissions"*, under the standing instruction *"Always add new features.
-//! never ask. just do."*
 //!
 //! This is the `Ui` half of the feature. Everything that can be decided without
 //! one — what the document says today, which jobs it may be offered, which

@@ -742,12 +742,6 @@ pub fn save_in_place(doc: &OpenDoc) -> bool {
 
 /// Write the copy and record the outcome on both channels.
 ///
-/// Split from [`save_copy`] only so that the picker and the write are separable
-/// in the reading as well as in the testing: everything here is what happens
-/// *once a destination exists*, and it is the half that has a failure worth
-/// wording.
-/// Returns whether the bytes reached the disk — see [`save_copy`] for the
-/// caller that turns that answer into *may this document be destroyed*.
 fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
     // Before the write, for [`signature_note`]'s reason.
     let signature = signature_note(doc);
@@ -1120,15 +1114,6 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
     //    healthy 34-page document while the root still declares 36. The audit
     //    reads `/Count` raw and compares.
     //
-    // ★ Ungated, and NOT free: 1.78 ms on his 1.8 MB drawing set, 3.51 ms on
-    // the 129,758-object CAD sheet — which on the first of those is MORE than
-    // `to_incremental_bytes` cost to build the bytes it is checking. Measured
-    // rather than assumed, and the first draft of this comment guessed and was
-    // wrong. It stays on every save because a few milliseconds is invisible
-    // inside a gesture that opens a file dialog and writes megabytes to disk.
-    // `crate::pagetree` §9 has the table and the argument for why a *"has the
-    // page count changed this session?"* gate was rejected on correctness
-    // grounds as well as on cost.
     let audit = crate::pagetree::audit_saved_bytes(&bytes);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
@@ -1420,11 +1405,6 @@ fn suggested_path(doc: &OpenDoc) -> PathBuf {
 ///
 /// # ★★ Why it never writes in place
 ///
-/// Because it destroys things the original still has: the earlier revision, and
-/// every digital signature (§12.8.1). A command that could overwrite the
-/// operator's file with a copy that has lost both is one keystroke from a loss
-/// nothing can undo — so this offers only [`files::pick_save_path`], and the
-/// window says *"this always writes a new one"* before the picker opens.
 ///
 /// ★ The suggested name is [`suggested_path`]'s, shared with save-a-copy: the
 /// operator's own file with a suffix, in its own folder. A second naming scheme

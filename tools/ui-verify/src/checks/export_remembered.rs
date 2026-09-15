@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-13:
 //!
 //! > *"the export windows forget everything. every time I export a dxf I have
 //! > to set it up again."*
@@ -96,15 +95,6 @@
 //! export-dxf-open page=0 groups=0 suggestion=uncalibrated scale=1 units=millimetres arcs=0 text=omit
 //! ```
 //!
-//! Every token is produced by the **preferences file's own** `*_key` function
-//! rather than by `{:?}` — this project's standing rule about Debug-formatting
-//! a field a machine reads — and all three lines are emitted from the **built
-//! dialog** rather than from the `remembered` handed into the constructor.
-//! That second property is what `print_remembered` paid for on 2026-09-10: a
-//! trace emitted from the input to a construction proves *parsing* and says
-//! nothing about *adoption*. All three export dialogs were written with that
-//! lesson already applied, and each carries it in its own words at the trace
-//! block rather than by reference.
 //!
 //! # ★★ Why the seed table has five columns where `print_remembered`'s has three
 //!

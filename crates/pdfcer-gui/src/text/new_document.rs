@@ -137,8 +137,6 @@ pub fn size_entry(name: &str, size_pt: (f64, f64)) -> String {
 
 /// **Is this sheet DEFINED in inches?**
 ///
-/// ★★ Operator request, 2026-08-20: *"please add imperial sizes too — we use
-/// imperial units — then select B size."*
 ///
 /// The sizes were already there. `PaperSize::ALL` has carried Letter, Legal,
 /// Tabloid, Executive and ANSI A–E since before this dialog was written, and
@@ -181,8 +179,6 @@ fn inches(pt: f64) -> String {
     // ★★★ Round ONCE, in sixteenths, then split — rather than truncating to a
     // whole inch and rounding the remainder separately.
     //
-    // The separate-rounding shape cannot represent a carry, and this function
-    // held it until 2026-09-13:
     //
     //     pt = 719.5  ->  9.993055... in
     //                     whole      = 9
@@ -298,12 +294,6 @@ pub fn sheet_summary(width_pt: f64, height_pt: f64) -> String {
 ///
 /// # The refusal is the shell's, and it is made BEFORE the engine's
 ///
-/// `EditSession::set_media_box` normalizes and then refuses a degenerate
-/// rectangle by name (`EditError::MediaBoxDegenerate`), so a zero-width sheet
-/// cannot reach a file whatever this dialog does. That refusal is the right
-/// backstop and the wrong operator experience: it arrives *after* the
-/// document has been created and failed, as a `Status::Failed` where a working
-/// document used to be.
 ///
 /// So the dialog checks first and simply does not offer Create. The engine's
 /// guard stays where it is — a shell-side check that replaced it would be the
@@ -330,12 +320,6 @@ pub fn sheet_summary(width_pt: f64, height_pt: f64) -> String {
 /// it** — the page-size range included. So this is 1.7-era portability advice
 /// with no 2.0 successor, and pdfcer is choosing to honour it.
 ///
-/// The choice is defensible on its own terms rather than on the standard's: a
-/// New command exists to make a sheet somebody will work on, 5 m covers every
-/// drafting size that exists by a factor of four (A0 is 1,189 mm, ANSI E is
-/// 1,118 mm), and a page beyond it is one that widely-deployed readers have
-/// historically refused to open. An operator who genuinely needs a 10 m banner
-/// is not served by a *New* dialog either way.
 ///
 /// Sourced from `D:\Dev\Rag-Specialized\PDF_Spec\iso32000\iso32000__annex__c.md`,
 /// which carries both the 1.7 text and the measured 2.0 delta. It is written
@@ -388,11 +372,6 @@ mod imperial_tests {
     /// ★★ **Every US and ANSI sheet reads in inches, and every ISO one in
     /// millimetres.**
     ///
-    /// The operator's report of 2026-08-20 was *"please add imperial sizes
-    /// too"*, and every size he wanted was already in the list — labelled in
-    /// millimetres. `ANSI B — 279 × 432 mm` is the sheet he calls B, described
-    /// in units his office does not use, which is indistinguishable from its
-    /// not being there.
     ///
     /// So this asserts the labelling directly, on the two sizes that matter
     /// most to him and on one from each family, because the failure it guards
@@ -524,9 +503,6 @@ mod tests {
 
     /// ★★★ A sheet just under a whole inch used to read `9 1/1`.
     ///
-    /// `inches` truncated to a whole inch and rounded the remainder separately,
-    /// and that shape cannot represent a carry. Measured against the code as it
-    /// stood on 2026-09-13:
     ///
     /// ```text
     ///     719.5 pt = 9.993055... in
@@ -535,10 +511,6 @@ mod tests {
     ///       printed   "9 16/16" -> reduced -> "9 1/1"
     /// ```
     ///
-    /// It shipped on 2026-08-20 with the imperial sizes and never showed,
-    /// because Letter, Legal, Tabloid and the ANSI/ARCH sheets are all exact
-    /// multiples of a sixteenth. `sheet_summary` calls this for **any** size an
-    /// operator types, so it was reachable the whole time.
     ///
     /// The test asserts three things the old shape could not satisfy together:
     /// the carry case, the exact case, and a genuine fraction still reducing.

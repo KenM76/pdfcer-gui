@@ -724,12 +724,6 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::rotating::R
 ///
 /// # `/M` is always written, and it is a modification date
 ///
-/// §12.5.6.4 Table 170 defines `/M` as the date the annotation was **modified**,
-/// and this call modifies it — so leaving it alone would leave a comment whose
-/// date describes an earlier version of its own text. `crate::app::clock` is
-/// the only place this shell reads a wall clock and its header carries the
-/// whole argument for UTC; `None` there means the system clock is before 1970,
-/// and omitting `/M` beats writing a comment dated 1969.
 ///
 /// # TWO disclosures, and they are about opposite things
 ///

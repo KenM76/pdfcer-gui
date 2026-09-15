@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-11, `OPERATOR_REQUESTS.md` O175:
 //!
 //! > *"in our view ribbon area we need an option to show the stuff that is off
 //! > page or not (and when not showing the stuff that is off page there

@@ -20,13 +20,6 @@
 //! different question in the ribbon (*what is selected?*, not *what am I about
 //! to draw?*).
 //!
-//! ⚠ **Five became six on the afternoon of 2026-09-06** and the counts above
-//! were corrected with it. `format_line_style` is the sixth — `RIBBON_IA.md`
-//! §5.8's *Line style*, which was the only entry in that eight-control row with
-//! **no engine verb at all** until `MarkupStyle::dash` shipped that afternoon.
-//! The R2 arithmetic in the paragraph above is left at its original figures on
-//! purpose: it is the record of a decision taken at a particular size, not a
-//! running measurement of this file.
 //!
 //! ## ★★★ Every tooltip below has to read correctly in TWO states
 //!
@@ -214,14 +207,6 @@ pub const fn format_arrowheads() -> CommandText {
 ///
 /// # ★★★ Why the tooltip says what LEAVING IT ALONE does
 ///
-/// Because that is the one thing about this control an operator cannot see, and
-/// it is the thing the engine changed on 2026-09-06. Before that Pass a dashed
-/// mark was **silently solidified** by anything that re-baked its appearance —
-/// a colour change, a resize, a dragged vertex — so a dash in the operator's
-/// file was a value they could lose by touching a different control. It is now
-/// preserved: a restyle that does not mention the dash keeps one, including a
-/// dash pdfcer never authored
-/// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4396-4425`).
 ///
 /// ⇒ So the sentence a hover most needs to carry is *your producer's dash is
 /// safe*. An operator marking up a consultant's drawing has no other way to

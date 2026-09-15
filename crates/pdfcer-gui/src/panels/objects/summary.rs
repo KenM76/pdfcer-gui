@@ -150,15 +150,7 @@ pub enum ObjectKind {
 
 /// The SHAPE an object with a zero-extent bounding box actually is.
 ///
-/// Split out of [`ObjectNote::DegenerateBounds`] so the readout can name the
-/// real thing — "a horizontal rule" reads very differently from "a vertical
-/// rule", and both read very differently from "a single point".
 ///
-/// Named after the shape rather than after which axis is zero
-/// (`ZeroWidth`/`ZeroHeight`/`ZeroBoth`, the first draft) because that is
-/// how the operator will describe what they are looking at, and because a
-/// same-prefix variant set is a clippy `enum_variant_names` error in a
-/// `-D warnings` build.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Degeneracy {
     /// Zero width, non-zero height.

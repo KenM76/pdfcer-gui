@@ -435,11 +435,6 @@ impl TextRole {
 ///
 /// # ★★ Why this replaced two plain fields
 ///
-/// [`Pair`] used to carry `state: WidgetState` and `fill: FillKind`, which
-/// is a complete description of a pair **if and only if** every pair comes
-/// from the widget matrix. The moment a non-widget pair joins the list,
-/// those two fields are a lie with no `None` to tell it with: a body-text
-/// pair has no widget state and no fill kind.
 ///
 /// The alternative — a parallel list of "other" pairs with their own
 /// failure type — was rejected because it splits the one thing this module

@@ -113,12 +113,6 @@ const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "bmp", "tif", "tiff"];
 ///
 /// # ★ Why the extension and not the bytes
 ///
-/// Because the answer is used to decide **which of two commands to raise**, and
-/// both of them read the file properly afterwards: `Action::Open` runs the
-/// parser, and the insert path runs `image_import`, which sniffs the real magic
-/// bytes and refuses a mislabelled file with its own message. Sniffing here
-/// would mean reading every dropped file twice and would put a second, weaker
-/// opinion about file types in front of two that are already correct.
 ///
 /// A `.pdf` that is not a PDF therefore produces the *parser's* error, which is
 /// the specific one, rather than "pdfcer does not accept this kind of file",

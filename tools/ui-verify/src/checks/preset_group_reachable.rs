@@ -18,15 +18,7 @@
 //! Neither of them, and nothing else, answers the question this check exists
 //! for: **can the operator actually get to it?**
 //!
-//! # ★★★ It asserts the HEADING, not the row, and the first draft got that wrong
 //!
-//! The first version of this check demanded the `settings.presets` region — the
-//! row itself — and **failed on a correct build**. The presets live in a
-//! `CollapsingHeader` that ships **CLOSED, deliberately, since 2026-08-26**:
-//! expanded, ten radios plus a detail block is about 730 pt in a scroll area
-//! roughly 620 pt tall, and it pushed *every other setting and every other group
-//! heading below the fold*. The check's own failure text would have sent
-//! somebody to undo that decision.
 //!
 //! ★★ That is the second time in one session a check I wrote was wrong rather
 //! than the code, and both had the same shape: **a measurement aimed at the
@@ -202,12 +194,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ★ The row's state line is NOT asserted, and the absence is deliberate.
     //
-    // `preset::row` runs only while the group is expanded, and the group ships
-    // closed. Demanding `settings-preset` here would be demanding the group be
-    // open — which is the mistake the first draft of this check made in the
-    // other direction. It is read opportunistically instead: if a future build
-    // opens the group by default, the line appears and is reported, and this
-    // check does not have to change to notice.
     if let Some(state) = trace.last(STATE) {
         report.note(format!(
             "the group is expanded and the row reported its state: `{}`",

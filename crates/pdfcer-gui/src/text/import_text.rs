@@ -1,6 +1,5 @@
 //! # `text::import_text` — every word the **Import text as pages** window says
 //!
-//! The other half of the operator's 2026-09-04 ask:
 //!
 //! > *"also the engine can export PDFs as text. we should have export/import
 //! > for that."*
@@ -58,10 +57,6 @@ pub const fn window_title() -> &'static str {
 
 /// The standing sentence at the top of the window.
 ///
-/// ★★ It names the **two inventions** and nothing else. Everything countable —
-/// how many pages, what was split, what could not be written — is a fact about
-/// this file and belongs in the receipt, where it can be a number instead of a
-/// warning.
 #[must_use]
 pub const fn standing_note() -> &'static str {
     "This makes new pages and adds them to the document — it does not change any page you \

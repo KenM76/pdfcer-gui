@@ -2,9 +2,6 @@
 //!
 //! ## ★★★ This file OUTLIVED the panel it was written for
 //!
-//! It was `every word the Tool panel says`. `OPERATOR_REQUESTS.md` **O123**
-//! dissolved that panel on 2026-09-04, and the copy went three ways rather than
-//! away:
 //!
 //! | what | who says it now |
 //! |---|---|
@@ -112,7 +109,6 @@ pub const fn put_down_hint() -> &'static str {
 /// state, and the panel speaks the first vocabulary — `text::commands`' rule
 /// that a label is the operator's word and an id is the format's.
 ///
-/// ## ★★★ The second sentence, added 2026-09-05, and why it is unconditional
 ///
 /// This tool has **two** subjects, not one — see
 /// `canvas::tool::retire_forbidden`'s Node arm for the table. The first is an
@@ -133,15 +129,7 @@ pub const fn put_down_hint() -> &'static str {
 /// ⇒ The wording therefore says *a measurement you have drawn*, which is true
 /// in both modes and locates the subject without a mode word in it.
 ///
-/// ## ★★★ The THIRD subject, added 2026-09-15, and it was missing for ten
-/// days
 ///
-/// This tool is also the one existing route to **one line of a block of
-/// text**: arm it, single-click a title block, and the selection narrows to
-/// the run under the pointer, which Delete then removes on its own. That has
-/// worked since 2026-09-05 and **this sentence did not say so**, which made
-/// it a capability with no route an operator could find — `OPERATOR_REQUESTS`
-/// O188(A), in his terms: *a route he can find before failing is owed*.
 ///
 /// ⇒ The primary answer to O188(A) is a **right-click row**
 /// (`format.select_text_line`), because it needs no tool armed in advance
@@ -265,11 +253,6 @@ pub const fn text_annot_instruction(kind: TextAnnotKind) -> &'static str {
 /// ★ What a release does for a text-bearing annotation, which is NOT what it
 /// does for a shape.
 ///
-/// The distinction `CanvasTool` was split for: *"A markup band authors on
-/// release, from geometry alone. These cannot: releasing produces an empty box,
-/// and an empty box is not an annotation."* An operator who does not know that
-/// reads a release-that-authors-nothing as a broken tool — which is the same
-/// failure shape as the text-editing complaint that produced this panel.
 #[must_use]
 pub const fn text_annot_release() -> &'static str {
     "Nothing is added to the page until you accept what you have typed."
@@ -337,12 +320,6 @@ pub fn measure_perimeter_live(vertices: usize, length: &str) -> String {
 ///
 /// # ★★ Why the SIZE is in it, and why that is the whole ask
 ///
-/// `OPERATOR_REQUESTS.md` O105: *"selecting more points around a hole doesn't
-/// always get it to narrow down to the size of the hole."* An operator adding
-/// points to a fit is watching a number converge, and until 2026-09-03 there
-/// was no number to watch — the fitted circle was drawn on the canvas and its
-/// value appeared only once the dimension had been placed. So the tool could
-/// not be steered: every correction was a commit-and-undo.
 ///
 /// The count is in it for the reason it is in the perimeter's sentence — it is
 /// the only thing on screen that says *whether the last click registered at
@@ -496,15 +473,6 @@ pub const fn measure_instruction(kind: MeasureKind) -> &'static str {
         // "then where the dimension line should sit" would wait for a third
         // click that never comes.
         //
-        // ★★ The second sentence is a promise about the WINDOW, in the one
-        // place an operator can read it: the Set-scale window has just
-        // disappeared off the screen, and everything they had already typed
-        // into it went with it as far as they can tell. It did not -- the
-        // window is hidden rather than closed and comes back with every entry
-        // still in it (`dialogs::scale::ScaleDialog::hidden`) -- but a
-        // correctness property nobody can see is not reassurance. Before
-        // 2026-09-13 the fear was also justified, which is why the sentence
-        // could not have been written then.
         MeasureKind::Scale => {
             "Click each end of something whose real length you know. \
              The Set-scale window comes back with your entries still in it."
@@ -773,8 +741,6 @@ pub const fn form_kind_hint(kind: crate::canvas::formfield::FormFieldKind) -> &'
 /// records the seam being noticed rather than trimmed. This module already
 /// owns the tool panel's sentences, and this sentence is about a tool.
 ///
-/// # ★★★ WHERE THIS NOW FIRES, corrected 2026-09-05 — and it had become a
-/// misdirection
 ///
 /// The gate above it changed. `retire_forbidden`'s Node arm and
 /// `app::dispatch::navigate`'s `view.tool_node` arm both read

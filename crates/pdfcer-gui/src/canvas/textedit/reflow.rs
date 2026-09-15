@@ -14,8 +14,6 @@
 //!
 //! ## ★★★ THE RECOGNITION IS THE ENGINE'S, AND THIS MODULE HAD IT BACKWARDS
 //!
-//! **Corrected 2026-09-14, against the operator's own drawing (O198).** What
-//! stood here until that date was an argument, and it was a good one:
 //!
 //! > The block recognition must match the one the caret was placed against —
 //! > `BlockRecognitionOptions::default()`, the same as [`super::plan`]'s. *"The
@@ -166,9 +164,6 @@ mod tests {
     /// ★★★ **THE BEHAVIOURAL ONE: the index this returns must be an index the
     /// engine accepts, on a fixture that is in this repository.**
     ///
-    /// The assertion above is a source scan, and a source scan is what was
-    /// available on 2026-09-14 at the moment the defect was found. It is not
-    /// what should have caught it. This is.
     ///
     /// `fixtures/tail-alignment.pdf` carries right-aligned text — flush right
     /// edges, ragged left — which is the exact shape the two recognitions

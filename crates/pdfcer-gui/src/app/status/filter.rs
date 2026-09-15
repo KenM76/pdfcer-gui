@@ -80,10 +80,6 @@ pub(super) fn show(ui: &mut egui::Ui, filter: &mut PickFilter) -> egui::Response
 
     // ★★★ NO MANUAL TOGGLE HERE, AND THE ABSENCE IS THE FIX.
     //
-    // This function shipped on 2026-08-21 with an `if response.clicked() {
-    // Popup::toggle_id(..) }` above the call below, and **the button did
-    // nothing at all**. The operator: *"I see a Select button, but this should
-    // be a menu that pops up."*
     //
     // `Popup::menu` is defined as `from_toggle_button_response`, which is
     // `egui-0.35.0/src/containers/popup.rs:228`:
@@ -297,8 +293,6 @@ mod tests {
 
     /// ★★★ **CLICKING SELECT OPENS THE POPUP.**
     ///
-    /// This is the test that did not exist on 2026-08-21, and its absence is why
-    /// a button that did nothing at all reached the operator:
     ///
     /// > *"I see a Select button, but this should be a menu that pops up."*
     ///

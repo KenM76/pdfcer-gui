@@ -3,8 +3,6 @@
 //!
 //! # The defect
 //!
-//! Reported 2026-08-26, and it is the largest single complaint in
-//! `OPERATOR_REQUESTS.md`:
 //!
 //! > *"There are obviously more than one item on the page, but when I click on
 //! > one of the objects all I get is the page selected. When I double click on
@@ -38,13 +36,6 @@
 //!
 //! # The oracle
 //!
-//! `canvas-selection` gained a **`first=`** field on 2026-08-27, for this
-//! check. Before it the line carried `sel=` (a count) and `level=` (a rung),
-//! and neither can distinguish the defect from the fix: selecting the
-//! page-sized form and selecting the square inside it both produce
-//! `sel=1 level=Object`. A check reading that line would have passed against
-//! the broken build — which is this harness's own stated worst outcome, a
-//! green result reporting nothing.
 //!
 //! `first=` is `object:N`, `leaf:N` or `none`. The kind is spelled out rather
 //! than implied, because `objects[7]` and `leaves[7]` are different things in

@@ -92,18 +92,6 @@ pub(super) fn tab() -> Tab {
             // set, and the choice persists per document so opening a
             // drawing set does not inherit a report's setting.
             //
-            // ★ **All four are present as of Phase 4**, and the note that
-            // used to sit here — *"the build behind them is larger than it
-            // looks: the viewer holds a single page index, and the object
-            // provider returns nothing for any page but the current one"* —
-            // was right and is discharged. The page range turned out not to
-            // be a field at all: `viewer::strip` computes which pages are
-            // on screen from where they are laid out and where the viewport
-            // is, and `view.page_index` keeps its single index, now meaning
-            // *"the page the operator is looking at"* — derived from the
-            // scroll position under a continuous mode. The provider still
-            // serves one page, and it is still the right one, because
-            // pressing on a page makes it current before the hit test runs.
             //
             // The order is the scale it describes: fewest pages on screen
             // first, most last. Under P1a a radio's positions are ordered by
@@ -130,26 +118,8 @@ pub(super) fn tab() -> Tab {
                     icon_only("view.page_facing_continuous"),
                 ],
             ),
-            // ---------------------------------------------------------------
-            // ★ Render — DELETED 2026-08-17, and this comment is the record.
             //
-            // It held five commissioned knobs — strategy, quality, settle,
-            // thin lines, antialiasing — all registered, all drawn, all inert.
-            // Checked against the engine on 2026-08-17:
             //
-            //   strategy    no tiled-progressive path exists in this shell
-            //   thin lines  `RenderOptions` has no such field
-            //               ⚠ TRUE THEN, FALSE SINCE 2026-09-05. The engine
-            //               shipped `stroke_display` (`Pass 254.0`) the day this
-            //               shell asked, because the operator asked for the
-            //               control back by name (O137). It is BACK — but in the
-            //               **Display** group below, not here, and the move is the
-            //               interesting part: this group was settings, and a
-            //               stroke-width display convention is a thing he flips
-            //               while reading. Deleting the group was still right.
-            //   antialias   `interpret.rs` sets `anti_alias: true` as a literal
-            //   quality     REAL — moved to Settings ▸ Drawing the page
-            //   settle      REAL — moved to Settings ▸ Drawing the page
             //
             // The two that were real are **settings**, and a settings window
             // now exists to hold them. `RIBBON_IA.md` §6 lists what deliberately
@@ -157,15 +127,6 @@ pub(super) fn tab() -> Tab {
             // operator sets once and forgets is not an activity, which is what
             // P2 says a ribbon tab picks.
             //
-            // The group is deleted rather than shipped empty, because an empty
-            // captioned band is a caption offering nothing — the placeholder P3
-            // forbids, and the same call made for Edit ▸ Clipboard on
-            // 2026-08-14. `crate::app::prefs`' header carries the evidence for
-            // each of the five verdicts.
-            // ---------------------------------------------------------------
-            // ---------------------------------------------------------------
-            // Navigate — what a drag on the page does. **Two items**, since
-            // 2026-08-14.
             //
             // Its own group rather than two more buttons in Zoom, because a
             // tool is a MODE the page is in and a zoom level is an action
@@ -209,7 +170,6 @@ pub(super) fn tab() -> Tab {
                 // read a single label.
                 [
                     icon_only("view.tool_select"),
-                    // ★★★ **Withheld outside Edit, 2026-08-31 — O69.**
                     //
                     // The operator: *"I'm still not entirely clear how to
                     // reliably get to a point where I can edit nodes. It seems
@@ -294,21 +254,7 @@ pub(super) fn tab() -> Tab {
                     command("view.zoom_region"),
                 ],
             ),
-            // ---------------------------------------------------------------
-            // Display — what is drawn over and beside the page, and (since
-            // O137, 2026-09-05) whether strokes are drawn at the widths the
-            // file declares. The old `view.thin_lines` was a Render-group
-            // entry and was inert; its successor `view.line_weights` is HERE,
-            // because it is a thing the operator flips while reading rather
-            // than a value set once — see that command's own note.
             //
-            // ★ **Rulers, grid and guides were N and are now built**, which
-            // completes `RIBBON_IA.md` §5.2's Display row and the last unbuilt
-            // line of `FEATURES.md`'s Phase 3. The note that used to sit here
-            // is discharged rather than reworded, and the three entries are
-            // removed from `super::PLANNED` — where `view.guides` carried the
-            // condition it was waiting on, *"needs a per-document store to
-            // survive a reopen"*, which `crate::canvas::guides` now is.
             //
             // ORDER: rulers, grid, guides — which is the specification's, and
             // is also a dependency order the operator can feel. A grid is read
@@ -354,11 +300,6 @@ pub(super) fn tab() -> Tab {
                     // still reads cheapest-first, with one more rung on
                     // the end.
                     //
-                    // ⚠ It is also the only one whose state is remembered
-                    // PER MODE, so an operator moving between Read and
-                    // Edit will see this button change with the mode while
-                    // its five neighbours hold. That is the operator's own
-                    // request (2026-09-11) and is disclosed in the tooltip.
                     icon_only("view.off_page"),
                 ],
             ),
@@ -370,8 +311,6 @@ pub(super) fn tab() -> Tab {
             // `Pages` panel command: the thumbnails are the rail's first
             // pane, not an independently toggleable panel.
             //
-            // ★★★ **Two sentences were struck here on 2026-08-28, and both had
-            // been false for a while.** They read:
             //
             // > ~~`Forms` is likewise not a panel toggle today; the forms
             // > surface is reached from Edit ▸ Forms. Both are in PLANNED.~~
@@ -394,14 +333,6 @@ pub(super) fn tab() -> Tab {
                 "panels",
                 ribbon::group_view_panels(),
                 [
-                    // ★★★ `view.sidebar` was the FIRST item here until
-                    // 2026-08-31 — `OPERATOR_REQUESTS.md` O68's sweep. The
-                    // command is unregistered, so this item would be dropped
-                    // at load anyway (an item naming an unregistered command
-                    // is not drawn, which is R8's mechanism); it is deleted
-                    // rather than left to be silently dropped, because a
-                    // manifest is the SPEC and a spec naming something that
-                    // does not exist is a lie a reader has to discover.
                     //
                     // There is no sidebar rail in this build — there is a
                     // dock, and every dock panel below already has its own
@@ -414,8 +345,6 @@ pub(super) fn tab() -> Tab {
                     command("view.panel_pages"),
                     command("view.panel_bookmarks"),
                     command("view.panel_layers"),
-                    // ★★★ **Objects and Signatures SWAPPED, 2026-09-05**, and
-                    // the reason is which side had an argument.
                     //
                     // The order was `… layers, signatures, objects, forms` and
                     // nothing anywhere said why signatures came fourth — the
@@ -428,28 +357,8 @@ pub(super) fn tab() -> Tab {
                     // what surfaced it; nothing before it compared item order
                     // at all.
                     //
-                    // ⚠ The mockup's own Panels band ALSO holds Properties,
-                    // Comments and Fonts, and those three did **not** move the
-                    // product. Each already appears on another tab
-                    // (`format.properties` on Format ▸ Selection,
-                    // `markup.comments` on Markup ▸ Comments, `file.fonts` on
-                    // File ▸ Document), so adding them here violates
-                    // `RIBBON_IA.md` P1 — one command on at most one tab —
-                    // which `Shell::validate` enforces. And an invalid manifest
-                    // is not a local failure: `Capabilities::for_mode` answers
-                    // `FULL` when the shell is absent, so the whole build
-                    // would silently grant every authoring capability to every
-                    // mode. Those three moved on the MOCK side; see
-                    // `RIBBON_IA.md`'s 2026-09-05 divergence ledger.
                     command("view.panel_objects"),
                     command("view.panel_signatures"),
-                    // ★ Last, and on this tab at all, because the operator
-                    // answered `crate::app::modes`' open question on
-                    // 2026-08-14: Read fills forms. Read is shown `file` and
-                    // `view` alone, so a fill verb the mode can reach had to
-                    // live on one of the two — and the Forms panel is a
-                    // panel, so it belongs beside the other panel toggles
-                    // rather than in a group of its own.
                     //
                     // Last in the group rather than in panel-name order:
                     // this one is a *capability* the other five are not — it
@@ -530,13 +439,6 @@ pub(super) fn tab() -> Tab {
                     // gentler remedy is *below* the harsher one trains people
                     // to reach past it.
                     command("view.dock_all_panels"),
-                    // ★★ The two auto-hide commands, 2026-09-05, immediately
-                    // before Reset layout and after the float recovery — the
-                    // same two-tier order that pair already established: the
-                    // remedies that cost the operator nothing they arranged
-                    // come before the one that costs them the arrangement.
-                    // Hiding a strip is reversible by the control beside it;
-                    // Reset layout is not reversible at all.
                     //
                     // ⚠ This takes View ▸ Window from six items to eight, so
                     // the group goes from 2 × 3 to 3 × 3 and `mockups/

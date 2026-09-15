@@ -8,10 +8,6 @@
 //! > *"always always always I need objects on the canvas to be clickable and
 //! > editable as one would expect given our research of other programs."*
 //!
-//! Click, drag, grips and Delete all reached a form field by 2026-08-28. The
-//! **right-click** did not: `canvas::menus` chose between an object menu and a
-//! view menu, and a `/Widget` is neither — it is not in `SelectionState` at all
-//! — so right-clicking a text box offered *"zoom to fit width"*.
 //!
 //! ## ★★★ Why this check is the FIRST of its kind, which is the finding
 //!
@@ -59,14 +55,6 @@
 //! | C | **right-click it** | `canvas-menu context=canvas.field` |
 //! | D | …and the menu had something in it | a `menu.item.canvas.field.*` region per row, inside `menu.body.canvas.field` |
 //!
-//! ★★★ **D's oracle was `canvas-menu-invoked` and that was a misreading**, kept
-//! here because the misreading is instructive. `MenuHost::attach_with` returns
-//! *"the commands the operator CHOSE"*, and the line is written only when that
-//! vector is non-empty — so it reports an ACTIVATION, not an offer, and a check
-//! that opens a menu and presses nothing can never see it. The rows' own
-//! published rects are the offer, they name which commands were drawn, and they
-//! exist for the same reason this check does: `MenuHost::attach_with` began
-//! reporting them on 2026-08-28 precisely so a harness could see a menu.
 //!
 //! ★ Steps A and B are `widget_move`'s, identical in shape including the
 //! Escape — see that file for why the placement tool staying armed is recorded
@@ -368,11 +356,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `offers_anything`; a menu whose every item is DISABLED resolves its
     // context correctly and never opens.
     //
-    // Not hypothetical — it is how this feature was built. Both items were
-    // gated on `selection.any`, which is false while a form field is selected,
-    // so the popup would not have appeared and step C would still have passed.
-    // ★★★ THE ORACLE IS THE MENU'S OWN PUBLISHED ROWS, NOT `canvas-menu-invoked`,
-    // AND THE SWAP IS A CORRECTION — 2026-08-29.
     //
     // This phase read `canvas-menu-invoked` and its comment said that line is
     // *"written only when the resolved menu `offers_anything`"*. It is not.
@@ -387,12 +370,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // selecting click changed nothing and the check stopped before ever reaching
     // this line. Two independent defects, the second hidden behind the first.
     //
-    // ⇒ The right oracle was added on the same day the menu was: since
-    // 2026-08-28 `MenuHost::attach_with` reports every row's rect through
-    // `crate::diag::ui_rect` as `menu.body.<context>` and
-    // `menu.item.<context>.<command id>`. Those regions ARE the menu having
-    // something in it — they exist only for rows that were laid out — and they
-    // name WHICH commands were offered, which `canvas-menu-invoked` never did.
     //
     // ★ Admissible as evidence because phase C proved the menu resolved on this
     // very frame (`canvas-menu context=canvas.field`): the absence below can

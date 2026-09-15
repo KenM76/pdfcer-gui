@@ -163,13 +163,6 @@ pub(super) fn section(ui: &mut Ui, doc: &OpenDoc) {
 
             // ★★★ Why no page number is shown, said ONCE and above the list.
             //
-            // `page_index` used to be `None` in two opposite situations that
-            // pdfcer could not tell apart; engine `Pass 290.1` split them, and
-            // `crate::stamps::page_tree_unreadable` is the half that is a fact
-            // about the DOCUMENT rather than about any stamp. It belongs here,
-            // once, rather than repeated down every row: the cause is the same
-            // for all of them, and a per-row repetition reads as twelve
-            // separate faults.
             let unreadable = crate::stamps::page_tree_unreadable(&collection);
             if let Some(why) = unreadable {
                 ui.label(

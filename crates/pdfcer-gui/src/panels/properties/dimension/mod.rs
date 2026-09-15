@@ -65,11 +65,6 @@
 //!
 //! ## What the operator cannot do here, and why each is stated on screen
 //!
-//! | | why |
-//! |---|---|
-//! | ~~change the group~~ | ★ **closed 2026-08-19.** It was *"no engine verb; filed"* — filed on the 18th, shipped on the 19th, and it is a picker now. What it gained with the verb is a **disclosure**: `set_dimension_group` re-measures, so the number changes |
-//! | change the scale | **by refusal** — `StyleOverrides` has no scale field, asserted structurally, because a member measuring at a different scale from its group would print a number nothing on the page discloses |
-//! | drag the extension lines | the gap and overshoot are standard-derived, not per-ce-dimension fields; new core work, named in §C.11 item 3 |
 //!
 //! The scale row is **not** disclosed in words, deliberately: an absent control
 //! for a thing that is *correctly* group-scoped needs no apology, and the
@@ -147,8 +142,6 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         return true;
     };
 
-    // --- the facts ------------------------------------------------------
-    // ★ A PICKER, not a readout, as of 2026-08-19.
     //
     // It was a readout with a sentence saying the group *"cannot be changed
     // afterwards"*, which was true and was filed the same day
@@ -229,7 +222,6 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 
 /// **Say something other than the measurement**, without changing it.
 ///
-/// `EditSession::set_dimension_label`, shipped 2026-08-30.
 ///
 /// # ★★★ It does NOT destroy the measurement, and that is the whole design
 ///

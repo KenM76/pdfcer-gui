@@ -3,7 +3,6 @@
 //!
 //! ## The report this exists for
 //!
-//! Operator, 2026-08-19:
 //!
 //! > *"The measuring tools themselves don't give me any indication of what is
 //! > being selected either when I use them. I should be able to hover over a
@@ -94,12 +93,6 @@ pub(in crate::canvas) struct Entity {
     /// for the trace so a reader can tie a highlight to the object the pick
     /// will name.
     ///
-    /// ★ A [`HitTarget`] rather than a bare `usize` since 2026-08-27. A page
-    /// has two object lists — its own content stream's, and the objects
-    /// painted from inside its form XObjects — and no integer distinguishes
-    /// them. While this was a `usize` the hover highlight could not describe a
-    /// line inside a form **at all**, which on a CAD sheet wrapped in a form
-    /// is every line on the drawing.
     pub target: HitTarget,
     /// The straight run the pick would use, page space, when there is one.
     pub segment: Option<(Point, Point)>,
@@ -137,12 +130,6 @@ pub(in crate::canvas) fn resolve(
     query: Point,
     tolerance: f64,
 ) -> Option<Entity> {
-    // ★★ **The DEEP hit test**, since 2026-08-27. `hit_test_point` sees a form
-    // XObject as one opaque box bounded by its `/BBox`, which is a clipping
-    // extent (8.10.1) and not a claim about ink — so on a drawing wrapped in a
-    // form it highlighted the wrapper, page-sized, for every pointer position
-    // on the sheet. `hit_test_point_deep` excludes forms outright and answers
-    // with what is drawn inside them.
     //
     // The consequence for THIS module is worse than for selection, and it is
     // the reason the change had to come here too rather than only to the pick:

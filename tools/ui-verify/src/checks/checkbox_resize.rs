@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! `OPERATOR_REQUESTS.md` **O76**, 2026-08-31:
 //!
 //! > *"Form shape outlines of checkboxes and such scale when I drag them
 //! > larger."*

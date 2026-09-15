@@ -473,10 +473,6 @@ pub(super) fn read_arms(src: &str, consts: &BTreeMap<String, String>) -> Result<
 
 /// Classify one arm pattern into [`Arms`].
 ///
-/// Split from [`read_arms`] because `Pat::Or` recurses into it once per
-/// alternative — `"pages.rotate_left" | "pages.rotate_right"` is one arm and
-/// two ids — and writing that inline would put the classification rule in two
-/// places.
 fn collect_pattern(
     pat: &syn::Pat,
     consts: &BTreeMap<String, String>,

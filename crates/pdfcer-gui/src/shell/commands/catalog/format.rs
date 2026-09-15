@@ -1,8 +1,5 @@
 //! # `shell::commands::catalog::format` — the Format contextual tab — what changes about the selection
 //!
-//! One band of [`super::all`]'s catalogue. Split out of [`super`] under **R2**
-//! on 2026-08-28, when the Attachments command took that file to 1,495 of its
-//! 1,500 lines and the next command registered would have broken the rule.
 //!
 //! ## ★★★ The split is per TAB, and the reason it was refused before is gone
 //!
@@ -42,16 +39,6 @@ use crate::text::commands as t;
 pub(super) fn band() -> Vec<Command> {
     vec![
         //
-        // The tab is visible when `selection.any` and the command inside it
-        // is enabled by the same condition. That is not redundant: the tab
-        // and its contents are evaluated independently, and a Format tab
-        // that appeared with a greyed Delete would be the placeholder P3
-        // forbids, arriving through a mismatch rather than a decision.
-        // ===================================================================
-        // ★★ `selection.actionable`, not `selection.any`, since 2026-08-28.
-        // Both commands can act on a selected FORM FIELD, which is not in
-        // `SelectionState` — see `app::conditions` for why that is a second
-        // condition rather than a widening of the first.
         command("format.delete", t::format_delete(), 800)
             .with_icon("delete")
             .enabled_when("selection.actionable"),
@@ -178,9 +165,6 @@ pub(super) fn band() -> Vec<Command> {
         command("format.select_text_line", t::format_select_text_line(), 815)
             .with_icon("pick-part")
             .enabled_when(crate::shell::menus::RUN_SELECT_OFFERED),
-        // ★★★ **The "option" half of decision 076**, registered 2026-08-28
-        // after `EDITABLE_SURFACES.md` found `EditSession::unshare_form`
-        // implemented in the engine and named nowhere in this crate.
         //
         // `RIBBON_IA.md` §5.8 is what puts it here. That section's table gives
         // the **Vector object** row as `Stroke · Fill · Winding rule · Node
@@ -193,10 +177,6 @@ pub(super) fn band() -> Vec<Command> {
         // belongs in the **selection** group beside the two commands that are
         // also about *the thing you just clicked and what encloses it*.
         //
-        // It is not in §5.8's table, because that table was written on
-        // 2026-08-12 and this verb did not exist in the engine until this
-        // month. §5.8's amendment convention is followed: the placement is
-        // argued from the section's stated principle rather than from a row.
         //
         // ★★ **`selection.in_form`, the same predicate as `select_form` one
         // line above, and that is the correct answer rather than a convenient
@@ -233,8 +213,6 @@ pub(super) fn band() -> Vec<Command> {
         // and getting that backwards would grey them in exactly the state where
         // they work.
         //
-        // The condition naming those runs was `selection.text` from 2026-08-27
-        // until 2026-09-14, and the argument written for it then was this:
         //
         // `EditSession::format_text` locates its operand by a pinned byte span
         // into a decoded content buffer, keyed on a **run** of the page's text
@@ -243,10 +221,6 @@ pub(super) fn band() -> Vec<Command> {
         // spaces. So the swept range is the operand, and the swept range is
         // what `selection.text` reports.
         //
-        // ★★★ **CORRECTED 2026-09-14 — the condition is now
-        // `selection.text_runs`, and the paragraph above is why it had to
-        // change.** `OPERATOR_REQUESTS.md` O198: *"That entire area is always
-        // greyed out in the menu."*
         //
         // Every sentence above is still true about the **operand**: the engine
         // wants runs, `selection.any` is a paint-order index, and no mapping
@@ -304,10 +278,7 @@ pub(super) fn band() -> Vec<Command> {
         // registry, and because the custom renderer draws the registered label
         // rather than a second copy of it. See `manifest::CUSTOM_BACKED`.
         //
-        // ★★★ **The refusal that covered all five was CORRECTED on 2026-09-04,
-        // and "corrected" is the load-bearing word — it was not discharged.**
         //
-        // What stood here from 2026-08-27 until then, verbatim:
         //
         // > **No icons on any of the five.** Word draws `B` and `I` as glyphs
         // > and this build has no such art; `icons/assets/PROVENANCE.md`
@@ -322,30 +293,7 @@ pub(super) fn band() -> Vec<Command> {
         // one of them was ever the operator's. Splitting them is the whole
         // content of this pass:
         //
-        // * *"this build has no such art"* is a statement about **supply**, and
-        //   the operator has ruled on supply — repeatedly, and by name here. The
-        //   standing ruling of 2026-08-06 is carried in `Icon::Back`'s doc
-        //   comment: a missing glyph is **AUTHORED**, not worked around, because
-        //   working around it *"spends the operator's affordance to protect the
-        //   font stack; an icon costs one asset and keeps both."* On 2026-09-04
-        //   he quoted it back at this very pair: *"if bold and italics have no
-        //   art in the set, why weren't they made automatically as I have
-        //   instructed to be done for anything that a glyph is missing for on
-        //   multiple occasions?"* So the supply half is **corrected**, and the
-        //   two commands below name `bold` and `italic`.
-        // * *"a machine-drawn substitute would make PROVENANCE.md false"* was
-        //   never a claim about supply and it is **untouched**. It is answered
-        //   the way the 2026-09-04 icon batch answered it for eleven other
-        //   refusals: the asking happened, and the art is drawn in the §3 style
-        //   contract with its ruling embedded, exactly as
-        //   `icons/assets/PROVENANCE.md` requires of every future asset.
         //
-        // ★★ This is **not a new capability**. `format.bold` and
-        // `format.italic` did on 2026-08-26 precisely what they do now; what
-        // changed is that a control which was bare because nobody had drawn its
-        // picture stopped being bare. Recording that distinction is the point of
-        // the pass — see the coverage counters in `super::super`, which move as a
-        // correction and say so.
         //
         // ★ The general lesson, and it is the second time in three days this
         // project has paid for it (`edit.select_all` was the first): **a refusal
@@ -387,22 +335,7 @@ pub(super) fn band() -> Vec<Command> {
             .enabled_when("selection.text_runs"),
         command("format.font_colour", t::format_font_colour(), 807)
             .enabled_when("selection.text_runs"),
-        // -------------------------------------------------------------------
-        // The Markup group — `RIBBON_IA.md` §5.8's "Markup annotation" row,
-        // registered 2026-09-06 on the operator's *"getting full editing
-        // working for the Markup tools."*
         //
-        // ★★★ **The five reasons this row was `PLANNED` were all one claim, and
-        // it had been false for eighteen days.** `manifest::format`'s header
-        // said `EditSession` had no verb that modified an annotation and that
-        // the canvas selection could not address one.
-        // `EditSession::set_markup_style` shipped 2026-08-18;
-        // `canvas::selection::annot::AnnotTarget` landed the same day; and
-        // `panels::properties::markup` has raised `Action::SetMarkupStyle`
-        // since 2026-08-19. The header is corrected there, at length, because
-        // the mistake is worth more than the correction: **a blocker is a
-        // measurement with a date**, and this one outlived what made it true by
-        // the whole of the feature's cost.
         //
         // ★★ **All five are `enabled_when(MARKUP_RESTYLABLE)`, which is the
         // SAME condition the manifest gives them as `shown_when`** — deliberate,
@@ -426,17 +359,6 @@ pub(super) fn band() -> Vec<Command> {
         // it has to anyway: the shell evaluates no predicate, draws no greying
         // and shows no tooltip for an `Item::Custom`.
         //
-        // ★ **No icons on any of the five, and the refusal is STRUCTURAL rather
-        // than about supply** — which is the distinction this project has now
-        // paid for twice (`edit.select_all`, then `format.bold`/`format.italic`
-        // on 2026-09-04). A refusal reading "no art exists" has an expiry date
-        // and the operator's standing ruling is that the art gets **drawn**.
-        // This is the other kind: two colour swatches, two drag fields and a
-        // combo box are drawn by `Ui::color_edit_button_srgb`,
-        // `egui::DragValue` and `egui::ComboBox`, and **none of those widgets
-        // has an icon slot**. There is nowhere to put a glyph, not nowhere to
-        // get one, and no amount of drawing touches it. The three Font controls
-        // beside them refuse on the identical ground.
         //
         // ★ And a swatch's entire face IS the colour it reports; a glyph over
         // it would cover the one thing the control exists to say.
@@ -444,12 +366,6 @@ pub(super) fn band() -> Vec<Command> {
         command("format.fill", t::format_fill(), 810).enabled_when(MARKUP_RESTYLABLE),
         command("format.line_width", t::format_line_width(), 811).enabled_when(MARKUP_RESTYLABLE),
         command("format.opacity", t::format_opacity(), 812).enabled_when(MARKUP_RESTYLABLE),
-        // ★ The eighth control of `RIBBON_IA.md` §5.8's Markup row, and the last
-        // to arrive: it read **⛔ no engine verb exists** until `MarkupStyle::dash`
-        // shipped on the afternoon of 2026-09-06. No icon, for the structural
-        // reason above — a `ComboBox` has no icon slot — and `enabled_when` for
-        // the same predicate as the five beside it, because a line style is a
-        // markup restyle like every other.
         command("format.line_style", t::format_line_style(), 814).enabled_when(MARKUP_RESTYLABLE),
         command("format.arrowheads", t::format_arrowheads(), 813).enabled_when(MARKUP_RESTYLABLE),
     ]

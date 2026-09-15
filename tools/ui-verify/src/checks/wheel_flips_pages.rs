@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! `OPERATOR_REQUESTS.md` O30, 2026-08-24:
 //!
 //! > *"when in single page view there should be an option on screen near the
 //! > button to scroll or flip through pages, or the current way it is now when
@@ -342,12 +341,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "ribbon.item.view.page_continuous",
     )?;
     session.settle(20);
-    // ★★★ `live_names`, not `declared` — the `ui-rect` trace is a CHANGE LOG,
-    // so a region declared before the mode switch is still in the file for
-    // ever and `declared` would keep finding its fossil. `live_names` is the
-    // helper written for exactly this question, and its own doc comment
-    // carries the incident that produced it: on 2026-08-19 a check reported
-    // that a delete had not worked, over a trace containing the deletion.
     //
     // ★ A first draft of this check used `declared_since` with an EVENT COUNT
     // where that helper wants a LINE NUMBER, and it reported this control as

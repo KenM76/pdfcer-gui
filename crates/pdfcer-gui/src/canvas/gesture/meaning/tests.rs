@@ -1,7 +1,5 @@
 //! # `canvas::gesture::meaning` tests — the precedence table, driven as a table
 //!
-//! Split out of [`super`] under **R2** on 2026-08-28, when the form-field drag
-//! took that file past 1,500 lines.
 //!
 //! ## ★★ The seam is the ordinary one, and the half it leaves behind is the
 //! interesting one
@@ -69,12 +67,6 @@ use crate::canvas::textedit::TextEditKind;
 ///   the armed-zoom branch, where a press would rubber-band a zoom region
 ///   under an I-beam.
 ///
-/// Over the whole capability lattice rather than the three shipped modes,
-/// for the reason this module's other tests are: a mode is a manifest entry
-/// and can be customized, and the rule is about the flags.
-/// ★★ **This test asserted `drag.is_none()` until 2026-08-21**, and the
-/// sentence it carried — *"a caret is placed, not dragged"* — was true of
-/// the gesture and wrong about the tool.
 ///
 /// The operator: *"I should be able to make it multi line."* Multi-line
 /// needs a width to wrap against, because a PDF has no paragraph and each
@@ -281,16 +273,6 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
 /// gating three of them would look exactly like gating all four right up
 /// until someone dragged a grip.
 ///
-/// ★ **The bare press is no longer `NOTHING`, and that is the text-selection
-/// row arriving.** It used to assert *"no marquee-select, and no selecting
-/// click either"* against `PressMeaning::NOTHING`, which was the right
-/// assertion while Read had no press meaning at all — and would be the wrong
-/// one now, because it would pass on a build that had silently taken text
-/// selection away again. What must remain true is the thing the operator
-/// actually asked for: the press means **text**, never
-/// [`DragKind::Marquee`], so nothing on the page can be selected as
-/// *content*. That is asserted by naming the variant rather than by
-/// asserting an absence.
 ///
 /// The region-zoom row is the one that would be easy to get wrong in the
 /// other direction: marquee-**zoom** is navigation, it is armed
@@ -425,8 +407,6 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
 /// have one primary button with two meanings and no rule to choose between
 /// them — which is the ambiguity `CanvasTool::Text` exists to remove.
 ///
-/// ★ **Two tools now, where this used to walk `Select` alone**, and the
-/// difference is the point rather than extra coverage:
 ///
 /// * with **Select**, the guarantee is the original one — exclusive *by
 ///   construction*, because `takes_the_press` and `content_gesture` read the
@@ -865,13 +845,6 @@ fn review_mode_places_markup_but_refuses_content() {
 /// REVIEW** — the mode markup is authored in and the mode `edit_content` is
 /// false in.
 ///
-/// This is the assertion that would have failed against every build before
-/// 2026-08-28, and it would have failed **silently**: the handle sits outside
-/// the annotation's `/Rect`, so `markup_body` is false and the markup rung
-/// below could not claim the press; it fell through to `caps.edit_content`,
-/// which Review does not have, and the drag became `None`. The operator drew a
-/// shape in the one mode that draws shapes, saw nine handles, grabbed the
-/// ninth, and nothing happened anywhere.
 #[test]
 fn a_markups_rotate_handle_turns_it_in_review() {
     let review = Capabilities {
@@ -999,14 +972,6 @@ fn without_an_annotation_the_handle_is_still_the_content_rotate() {
 /// ★★★ **A press on one of a markup's RESIZE GRIPS scales it — in Review,
 /// where the content branch does not run.**
 ///
-/// The 2026-09-05 defect, as an assertion. `markup_grip` is the press
-/// `canvas::pressing` measures on the outer half of a corner grip: `grip` says
-/// NE and `markup_body` says false, because the grip is *centred on* the box's
-/// corner and only half of its live area is inside. With the arm gated on the
-/// body alone that press fell through to `caps.edit_content` — absent in
-/// Review — and produced **no drag at all**: no resize, no decline, no trace
-/// line. `the_line_weight_switch_reaches_the_resize` failed on it, and its own
-/// message blamed `resize_annotation` refusing.
 ///
 /// ★ Driven at screen (532, 493) against a box declared
 /// `[[443.3 493.1] - [531.0 578.8]]` — one point outside its right edge and a

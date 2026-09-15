@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-01, `OPERATOR_REQUESTS.md` O92:
 //!
 //! > *"we should be able to select things offside of the page, especially since
 //! > I sometimes drop objects there, and when I do I can't get them back."*
@@ -15,9 +14,6 @@
 //! tracked as the same defect as O88: the band only took what it completely
 //! surrounded.
 //!
-//! O88's crossing window shipped on 2026-09-02. **This check is the question of
-//! whether it also closed O92**, asked by driving it rather than by reasoning
-//! about it.
 //!
 //! # ★★★ Why the assertion is `hits == 1` and why that is airtight
 //!
@@ -90,8 +86,6 @@ const RIBBON_MODE: &str = "edit";
 /// (`marquee_table`'s own lesson), and so that the grey is wide enough to aim
 /// into.
 ///
-/// ## ⚠ This read `view.zoom_fit_page` until 2026-09-10, and the check had
-/// stopped running
 ///
 /// Measured that day, while writing the sibling `off_page_press`: **this check
 /// was reporting SKIP on every run**, and had been for an unknown length of
@@ -113,13 +107,6 @@ const RIBBON_MODE: &str = "edit";
 /// the margin — `geometry::content_extent` does that, at any zoom — it was only
 /// what happened to leave some.
 ///
-/// ★★★ `mode.edit` is named FIRST, and it is not decoration. Since
-/// 2026-09-11 the display of off-sheet content is a per-mode preference and
-/// **Read ships with it OFF** — the operator's request: *"by default, read
-/// doesn't show off page items, review and edit do show off page items."*
-/// This check's whole subject is off the sheet, so without an explicit mode it
-/// would run in whatever mode the shell opens in, find nothing, and report a
-/// defect that is a correctly-implemented setting.
 ///
 /// Edit rather than Review because that is the mode this check's gestures
 /// belong in anyway, and because a mode named explicitly cannot drift when a

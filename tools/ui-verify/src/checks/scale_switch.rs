@@ -52,7 +52,6 @@
 //! | C | open the Tool panel, click the *Scale line weight* switch | `resize-modifiers stroke=true` |
 //! | D | drag a corner grip **proportionally** | `resize-annotation-applied … stroke=true` |
 //!
-//! ## ★★★ IT WAS FLAKY, AND THE CURE WAS TO STOP TYPING — 2026-08-28
 //!
 //! This check passed its real assertion — `resize-annotation-applied …
 //! stroke=true`, the switch reaching the engine — and also failed three runs
@@ -300,15 +299,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // active tab, so the switches may be perfectly correct and simply not the
     // tab on screen.
     //
-    // ★★ The previous version of this block pressed a RIBBON TOGGLE to open the
-    // Tool panel, and the comment it carried is worth keeping because the lesson
-    // outlived the panel: `PDFCER_DIAG_INVOKE` pressed `view.panel_tool` at launch
-    // on the assumption that it OPENED the panel. It did not — it flipped it — and
-    // the dock layout is written to disk, so whether this check started with the
-    // panel open depended on what the previous check had left behind. It became
-    // reliably wrong on 2026-08-31 by a FIX rather than a break: O80 wired
-    // `LayoutStore::flush` to an exit hook that had never existed, and making
-    // persistence work surfaced the latent order-dependence.
     //
     // ⇒ The rule that came out of it is unchanged and is why this block still
     // exists: **a driven check that depends on persisted state must normalise at
@@ -357,10 +347,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- A: draw a rectangle ------------------------------------------------
     //
-    // ★ The mapping is taken NOW, after the Tool panel has opened and settled.
-    // A rect computed before the dock's width changed would aim at the page as
-    // it used to sit — the harness-coordinate hazard, which this project has
-    // already met once and written up.
     let corner = |f: (f64, f64)| DocPoint::new(0, f.0 * page.width_pt, f.1 * page.height_pt);
     let from = aim(ctx, &session, page, corner(SHAPE.0))?;
     let to = aim(ctx, &session, page, corner(SHAPE.1))?;
@@ -380,7 +366,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: put the pen down ------------------------------------------------
     //
-    // ★★★ **A RIBBON CLICK, NOT A KEYSTROKE — 2026-08-28.**
     //
     // This step was `V`, then one Escape, then five polled Escapes, and it made
     // the check fail three runs out of six. The evidence, from six runs:
@@ -545,9 +530,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★★★ **UNIFORM TO WITHIN ONE SCREEN PIXEL, not `uniform=true`** —
-    // corrected 2026-09-05, the first time this check ever got far enough to
-    // read this line.
     //
     // The travel is expressed as a fraction of the shape, so both scale factors
     // are `1 + GRIP_TRAVEL_OF_SHAPE` **in arithmetic**. What the application

@@ -564,16 +564,7 @@ impl Default for FindState {
             options: FindOptions::default(),
             results: None,
             focus_wanted: false,
-            // ★ The behaviour every build before 2026-09-09 had.
             zoom_on_jump: true,
-            // ★ NOT the behaviour every build before 2026-09-12 had, and
-            // that is the one deliberate default reversal in this struct.
-            // Shipped, the query went to the engine verbatim; O180 is the
-            // report that an invisible character from a clipboard then
-            // decided the answer in silence. Defaulting to `false` would
-            // leave the defect in place for everyone who never opens
-            // Settings, which is everyone. The disclosure row is what keeps
-            // the new default from being its own silence.
             trim_query: true,
         }
     }
@@ -924,7 +915,6 @@ pub fn apply(state: &mut FindState, doc: &mut OpenDoc, request: FindRequest) {
 /// for `""` would put the second sentence in front of an operator who had
 /// merely cleared the box.
 fn search(state: &mut FindState, doc: &mut OpenDoc) {
-    // ★★★ THE ONE PLACE THE TYPED QUERY BECOMES A NEEDLE — O180, 2026-09-12.
     //
     // `state.query` keeps exactly what was typed, so the box still shows it
     // and the caret still behaves; only the value handed to the engine is
@@ -967,13 +957,6 @@ fn search(state: &mut FindState, doc: &mut OpenDoc) {
     // `find_text` passes `with_wildcards(true)`, and a Find bar built on it
     // matches every character on the page when the operator types `?`.
     //
-    // ★★ `search_text` rather than `find_text_with` since `pdfcer-core` v0.11.0.
-    // It runs the IDENTICAL scan and returns the IDENTICAL hits —
-    // `find_text_with` now delegates to it — and additionally hands back the
-    // extraction diagnostics that say whether a zero-result answer can be
-    // trusted. See `Results::unsearchable_fonts`. There is no behavioural
-    // difference in the matching and no new failure mode; the only cost is
-    // holding a `TextDiagnostics` that was previously computed and discarded.
     let found = session.search_text(&query, &options.to_core());
     let unsearchable_fonts = found.diagnostics.type3_fonts_without_to_unicode
         + found.diagnostics.identity_fonts_without_to_unicode;

@@ -1,11 +1,6 @@
 //! # `ocr::job` — **a recognition running on a thread, and the two ways to end
 //! it early**
 //!
-//! Split out of `ocr::mod` on 2026-09-01 under R2, and the seam is a real one
-//! rather than a line count: this file is about **running** a recognition —
-//! starting it, watching it, and telling it to stop — while its parent is about
-//! **recognising**, which is a different subject with different tests and a
-//! different reason to change.
 //!
 //! ## What lives here
 //!

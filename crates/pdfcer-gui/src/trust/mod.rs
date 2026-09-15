@@ -42,13 +42,6 @@
 //! > an anchor set that silently went stale is worse than one that was never
 //! > imported.
 //!
-//! A snapshot has no way to say how old it is that an operator will ever read.
-//! A live read has one that costs nothing: the file's **modification time**,
-//! which is Adobe's own record of when it last refreshed AATL/EUTL. So
-//! [`Store::modified`] is carried everywhere the anchors are, and every surface
-//! that names the store names its date. ★ On the machine this was written on,
-//! that date is **2024-05-27** — sixteen months stale — which is exactly the
-//! condition a "1,780 anchors imported ✓" badge would have hidden.
 //!
 //! ## 2. Off by default, and the opt-in is the engine's own setting
 //!

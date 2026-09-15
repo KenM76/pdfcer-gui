@@ -10,13 +10,6 @@
 //!
 //! ## ★ Why these four are not four more arms in `apply.rs`
 //!
-//! Rule R2's own justification decides it, exactly as it decided the
-//! `apply.rs` split from `actions.rs`: *"the value of the limit is that the
-//! file has to have a single subject."* `apply.rs`'s subject is **the
-//! cancel–mutate–bump–invalidate protocol** — what happens when a request to
-//! change the document is granted, and the ordering that makes it safe. That
-//! protocol is the same for every verb and changes only when the protocol
-//! changes.
 //!
 //! This file's subject is a different one, and it is the reason page verbs
 //! could not simply be four more `vector_edit` calls:
@@ -763,12 +756,6 @@ pub(super) fn insert_from_file(
 
 /// **The half of an insert that does not care where the source came from.**
 ///
-/// Split out of [`insert_from_file`] because a page dragged from one open
-/// document into another reaches exactly this engine call by a second route.
-/// The callers differ in one thing — where the
-/// `DocumentView` comes from, a file on disk or a parked `EditSession` — and
-/// everything after that point is identical: the same verb, the same
-/// disclosure, the same navigation to what arrived.
 ///
 /// Sharing it is not merely tidy. `crate::text::pages::inserted` reports six
 /// facts about what did and did not come across (orphaned widgets, of which

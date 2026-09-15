@@ -97,8 +97,6 @@ pub const REGION_EXPORT: &str = "export-dxf.export"; // ui-text-exempt: trace re
 ///
 /// # Why this exists rather than a `{:?}` on the suggestion
 ///
-/// The `-open` trace used to print `suggestion={suggestion:?}`, and that line
-/// had two faults that only matter now that a driven check reads it.
 ///
 /// **It is this project's standing lesson about `Debug` in a machine-read
 /// field.** `Calibrated` carries a scale, a unit, a group name and an agreement
@@ -170,7 +168,6 @@ impl ExportDxfDialog {
     /// clone sixty times a second for an answer that cannot change while a
     /// modal window is up.
     ///
-    /// # ★★★ `remembered` — operator request **O196**, 2026-09-13
     ///
     /// > *"the export windows forget everything. **every time I export a dxf I
     /// > have to set it up again.**"*
@@ -224,11 +221,6 @@ impl ExportDxfDialog {
             close_requested: false,
         };
 
-        // ★★★ **Traced from the BUILT dialog**, which is where the print
-        // window's 2026-09-10 lesson puts it: a trace emitted from `remembered`
-        // proves the preferences file was PARSED and says nothing about whether
-        // the window adopted a single one of those values. Here it would also
-        // have said nothing about the ordering rule, which is the whole risk.
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
@@ -281,13 +273,6 @@ impl ExportDxfDialog {
         actions: &mut Vec<Action>,
         prefs: &mut crate::app::prefs::Prefs,
     ) -> bool {
-        // ★ ITS OWN OS WINDOW as of 2026-08-21. The size below is an opening
-        // bid rather than a measurement: this dialog was `resizable(false)`
-        // with no declared size, so egui sized it to its content and no number
-        // for it existed anywhere. `dialogs::host` grows the window to fit what
-        // the body actually draws — see [`crate::dialogs::host::Host::fit`] for
-        // why that is safer than thirteen guessed numbers, and for the two
-        // guards that keep it from oscillating.
         let (frame, ()) = crate::dialogs::host::Host::new(
             "export-dxf", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),

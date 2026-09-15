@@ -1,11 +1,5 @@
 //! `text::commands::tests` — the properties every command's copy must hold.
 //!
-//! Split out of [`super`] under **R2** on 2026-09-04, when the four
-//! panel-layout verbs took that file to 1,501 lines. The seam is the
-//! standard one this tree already uses for `panels/tests.rs` and
-//! `app/actions/tests.rs`: **the assertions about a catalog are a different
-//! subject from the catalog**, and the catalog is the half a reader opens to
-//! find out what a control says.
 //!
 //! Nothing moved but the module wrapper. Every test below is byte-identical
 //! to what it was, de-indented by one level, so a failure here reads exactly
@@ -35,9 +29,6 @@ fn all() -> Vec<CommandText> {
         file_export_image(),
         file_stamp_collection(),
         file_export_form_data(),
-        // Moved from the Edit block below on 2026-08-14 with the commands
-        // themselves; this list is in tab order for the same reason the
-        // catalog is.
         file_copy_page_text(),
         file_copy_document_text(),
         file_print(),
@@ -116,10 +107,6 @@ fn all() -> Vec<CommandText> {
         measure_length(),
         measure_perimeter(),
         measure_radius_diameter(),
-        // `measure_two_line` was registered on 2026-08-14 and was not
-        // added here, so for one day the label-uniqueness and
-        // tooltip-is-a-sentence rules were being asserted over a list that
-        // did not contain it. Both new Measure entries are here.
         measure_two_line(),
         measure_finish(),
         measure_set_scale(),
@@ -131,9 +118,6 @@ fn all() -> Vec<CommandText> {
         tools_unembed_fonts(),
         tools_render_diagnostics(),
         format_delete(),
-        // The Markup ▸ Arrange group, 2026-09-06. In tab order, like the rest of
-        // this list — they sit between Style and Comments on the Markup tab, and
-        // the list is in tab order for the same reason the catalog is.
         markup_bring_to_front(),
         markup_bring_forward(),
         markup_send_backward(),

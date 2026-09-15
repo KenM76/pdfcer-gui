@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Operator, 2026-08-19:
 //!
 //! > *"The measuring tools themselves don't give me any indication of what is
 //! > being selected either when I use them. I should be able to hover over a
@@ -182,11 +181,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★ SWEPT, not aimed, and the reason is that a single --doc-point
     // cannot know where ink is.
     //
-    // The first draft computed one screen position from `--doc-point` and moved
-    // there. It landed 135 pt from where the arithmetic said, on blank paper,
-    // and reported the feature missing — a **confident, wrong defect report**,
-    // which is the failure this suite has produced four times in a day by
-    // trusting a derived coordinate over the trace.
     //
     // The honest instrument is the one `text_selection` already uses: try
     // points until one has something under it, and say how many were tried. A
@@ -292,12 +286,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // permanently. A highlight which never changes is a decoration, and it
     // would satisfy every assertion above.
     //
-    // ★ The first draft asserted the highlight RETIRED over blank paper, and
-    // that premise was wrong for the documents this application is for: a CAD
-    // sheet has a drawing border, so the corner is not blank, and at this zoom
-    // the catch radius is 33 pt of page. The check failed against a build that
-    // was working — the fifth confident-wrong report this suite has produced in
-    // a day by asserting something it had assumed rather than measured.
     //
     // What can be asserted without assuming anything about the fixture is that
     // the answer *depends on the pointer*: two positions far apart must not

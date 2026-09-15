@@ -4,7 +4,6 @@
 //!
 //! # The request this closes
 //!
-//! `OPERATOR_REQUESTS.md` **O172**, 2026-09-10:
 //!
 //! > *"add our own custom stamps and use them, preferrably exactly the same way
 //! > acrobat does"*
@@ -100,9 +99,6 @@
 //!
 //! # Rule 15
 //!
-//! [`BOX_PT`] is a **pdf dimension** — a length in the CAD-exported page's own
-//! coordinate space, used to aim the pointer. Nothing here authors a ce
-//! dimension.
 //!
 //! # Phases
 //!
@@ -227,13 +223,6 @@ const RESTORED_CUSTOM: &str = "custom";
 
 /// The token the second opening must report.
 ///
-/// ★ **The space in it is the assertion.** The shell QUOTES this value
-/// because the category name holds a space, and `trace::parse_fields` tracks
-/// quoting and hands the value back with the quotes stripped -- measured on
-/// 2026-09-10, when this constant was first written with the quotes left in and
-/// the check failed against a line whose value was exactly right. So the quoting
-/// is doing its job precisely when this constant does NOT mention it: an
-/// unquoted emission would arrive here truncated at `custom:Site`.
 const REMEMBERED_TOKEN: &str = "custom:Site Review/Issued";
 
 /// How many times a click is repeated before it is called unheard.
@@ -331,11 +320,6 @@ fn armed_tool(session: &Session) -> Result<Option<String>> {
 /// **Arm the stamp tool from the Markup tab — but only if it is not already
 /// armed.**
 ///
-/// `stamp_dialog_reopen::arm_stamp`'s body and its reasoning: the ribbon item
-/// is a **toggle**, and a defensive second click on an already-armed tool puts
-/// it down. That was a real driven failure on 2026-09-10, and its lesson — *a
-/// driven failure is a claim about the check too* — is why this reads the state
-/// before it acts.
 ///
 /// ⚠ **Second copy, deliberately not folded yet.** `driving`'s own rule is that
 /// a third copy is the point at which folding becomes worth doing *on its own
@@ -414,8 +398,6 @@ fn click_until_traced(
 
 /// **How many sentences the funnel recorded**, read from the joined text.
 ///
-/// # ⚠ `disclosures=` is NOT a count, and this check's first driven run
-/// proved it - 2026-09-10
 ///
 /// `actions::funnel` writes the sentences THEMSELVES, joined by ` | `, and
 /// the literal word `none` when there are none:

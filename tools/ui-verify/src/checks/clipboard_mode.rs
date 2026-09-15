@@ -1,7 +1,6 @@
 //! `a_paste_review_may_not_do_says_so` — **the other side of the driven
 //! sweep's finding A1: the chord gets through, and the refusal is a sentence.**
 //!
-//! ## ⚠ WRITTEN 2026-09-05 AND **NOT RUN BY THE SESSION THAT WROTE IT**
 //!
 //! Said here, in its own header, rather than left for an absent result to
 //! imply. That session worked headlessly by instruction: another track held the
@@ -13,7 +12,6 @@
 //!
 //! ## What this is for
 //!
-//! The sweep of 2026-09-05 found, as its first failure:
 //!
 //! ```text
 //! chord-command      chord="Ctrl+C" id=edit.copy  via=clipboard-event
@@ -55,11 +53,6 @@
 //! ⇒ So this check asserts **three things that must all hold at once**, and
 //! none of the three is redundant:
 //!
-//! | # | assertion | the build it fails on |
-//! |---|---|---|
-//! | 1 | no `chord-not-offered` for `edit.paste` in Review | the build that shipped until 2026-09-05 — the chord never reaches the dispatcher |
-//! | 2 | `command-declined … reason=mode-cannot-paste-here` | a build that opened the gate and also dropped the *effect* gate, i.e. Review silently pasting a drawing's geometry into somebody else's sheet |
-//! | 3 | the `⊗` decline region is on screen | a build that opened the gate, kept the effect gate, and left the refusal in the trace where no operator can read it |
 //!
 //! ★ Assertion 2 is the one that would be tempting to drop as "internal". It is
 //! not: without it, assertion 1 alone passes on a build where **paste

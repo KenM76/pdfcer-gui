@@ -127,7 +127,6 @@ pub const fn tab_reason_needs_password() -> &'static str {
 /// The active document leads in every form, because that is what every
 /// application in the class does and what a truncated taskbar button keeps.
 ///
-/// # ★★★ …unless read mode is on, in which case the WAY OUT leads — 2026-09-05
 ///
 /// The operator's report:
 ///
@@ -186,7 +185,6 @@ pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>
 
 /// **The day this build was made**, for the window title.
 ///
-/// # ★★★ Why the title, of all places — 2026-09-01
 ///
 /// The operator spent part of a morning reporting a defect that had been fixed,
 /// against a build he did not know was old:
@@ -211,9 +209,6 @@ pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>
 /// window list. If a report can be about the wrong build, the build has to be
 /// on the outside of the window.
 ///
-/// ★★★ **The day AND the local time** — 2026-09-02, on the operator's ask:
-/// *"add the local compilation time to the top bar at the end of the date you
-/// added."*
 ///
 /// It was the date alone, on the reasoning that a title is read at a glance and
 /// the question is *"is this today's?"*. That reasoning was incomplete, and the
@@ -227,10 +222,6 @@ pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>
 ///
 /// `PDFCER_BUILD_TIME` has two producers and they disagree about zone:
 ///
-/// | producer | stamp | zone |
-/// |---|---|---|
-/// | `tools/package-portable.py` | `2026-09-02 06:25 +0100` | **local** — Python knows the offset |
-/// | `build.rs`'s fallback | `2026-09-02 06:25 UTC` | UTC, and labelled so |
 ///
 /// A packaged build's time is local, so the offset adds nothing to somebody
 /// standing in that zone and is dropped. A dev build's is UTC, and showing
@@ -465,12 +456,6 @@ mod title_stamp_tests {
 
     /// ★★★ **A packaged build shows the time and drops the offset.**
     ///
-    /// The operator's ask (2026-09-02) and the common case: `package-portable`
-    /// stamps local time with a numeric offset, and the offset is noise to
-    /// somebody standing in that zone. What matters is that **the minutes are
-    /// there** — two of his reports have been closed by *"you were running an
-    /// old build"*, and on a day with several publishes the date alone cannot
-    /// separate them.
     #[test]
     fn a_packaged_stamp_shows_the_local_time_without_its_offset() {
         assert_eq!(

@@ -145,10 +145,6 @@ pub struct Driver {
     target: Option<WindowHandle>,
     /// ★★ **The window the last pointer action put the focus in.**
     ///
-    /// A keystroke goes to whatever has keyboard focus, and what has keyboard
-    /// focus is whatever was last clicked — that is the model on the real
-    /// desktop, and until 2026-08-21 this harness could ignore it because the
-    /// application had exactly one window.
     ///
     /// It now has one per open dialog, and the failure without this field is
     /// specific: a check clicks a field inside a dialog (which raises the
@@ -166,8 +162,6 @@ pub struct Driver {
 impl Driver {
     /// Take the pointer, remembering where it was.
     ///
-    /// `target` is the window every action is aimed at. It is required for
-    /// keystrokes and used to raise before pointer actions.
     #[must_use]
     pub fn new(target: Option<WindowHandle>) -> Self {
         Self {
@@ -267,7 +261,6 @@ impl Driver {
     /// step: a released-and-pressed pointer is *n* gestures, not one.
     pub fn drag(&self, from: ScreenPoint, to: ScreenPoint) -> Result<()> {
         self.raise_and_confirm()?;
-        // ★★★ **Both endpoints, and this was missing until 2026-09-11.**
         //
         // See [`Self::confirm_uncovered`] for the whole argument. It had been
         // wired into `click_at` and `right_click_at` and into no verb that
@@ -609,13 +602,6 @@ impl Driver {
     ///
     /// # ★ Why a check wants this rather than the status bar's `+`
     ///
-    /// Zoom-to-cursor keeps the point under the pointer fixed, so a check can
-    /// put the pointer on the content it cares about **once** and keep
-    /// rolling — the content stays under it all the way down. The `+` button
-    /// zooms about the viewport centre, which on a page whose interesting
-    /// detail is off-centre magnifies blank paper. The operator's own words,
-    /// 2026-08-22: *"Right now you are just zooming into a blank area on the
-    /// canvas."*
     pub fn scroll_at_held(
         &self,
         p: ScreenPoint,
@@ -682,8 +668,6 @@ impl Driver {
     ///
     /// If a character has no mapping, or a keystroke cannot be delivered.
     pub fn type_ascii(&self, text: &str) -> Result<()> {
-        // ★★★ **CAPSLOCK INVERTS SHIFT, AND THE OPERATOR'S MACHINE HAD IT ON —
-        // 2026-09-05.**
         //
         // The whole incident is written up on [`crate::sys::caps_lock_is_on`].
         // In one line: with the latch on, "press the letter key with no Shift"
@@ -722,9 +706,6 @@ impl Driver {
                 '0'..='9' => {
                     self.press(ch as u16)?;
                 }
-                // ★★ SPACE — added 2026-09-07, and it is worth a note because
-                // its absence had been shaping test data rather than being
-                // reported.
                 //
                 // `a_field_too_small_for_its_text_says_so` needs to type a long
                 // realistic value into a form field — a person's name, an
@@ -781,9 +762,6 @@ impl Driver {
     /// Modifiers are released by [`sys::key_stroke_with`] on every path; see
     /// its docs for why that is not merely tidy.
     ///
-    /// ★ Moved here on 2026-09-12. It sat above `type_ascii`, run
-    /// together with that item's doc comment — so it documented `type_ascii`
-    /// and this function had none. See `tools/gates/check-orphan-docs.py`.
     pub fn press_chord(&self, modifiers: &[u16], vk: u16) -> Result<()> {
         self.raise_and_confirm()?;
         sys::key_stroke_with(modifiers, vk);
@@ -796,10 +774,6 @@ impl Driver {
     ///
     /// # ★★★ Why z-order cannot be the answer
     ///
-    /// Because the raise is about to change it. Before 2026-08-21 the
-    /// application had one window and this question did not exist; it now has
-    /// one per open dialog, and the sequence that broke six checks in a single
-    /// suite run is:
     ///
     /// 1. the check aims at a control inside a dialog, correctly;
     /// 2. `click_at` raises **the main window**, because that is the target;
@@ -847,7 +821,6 @@ impl Driver {
 
     /// **Refuse to aim at a coordinate that is not on the screen.**
     ///
-    /// # ★★★ The third silent-clamp finding, 2026-09-06
     ///
     /// `SetCursorPos` does not fail for a point beyond the desktop. It moves
     /// the pointer to the nearest edge, returns success, and the click is
@@ -945,8 +918,6 @@ impl Driver {
         self.focus.set(Some(w));
         sys::raise_window(w);
         std::thread::sleep(MOVE_SETTLE);
-        // ★★★ **ONE RETRY, and the whole-suite measurement is why** —
-        // 2026-09-01.
         //
         // A full sweep of 127 checks reported 45 of them SKIPPED on *"could not
         // be brought to the front"*, and every one of them passed when re-run
@@ -1014,9 +985,6 @@ impl Driver {
     ///
     /// **Bring the target to the front and PROVE it got there**, or refuse.
     ///
-    /// ★★ Every input method uses this, and until 2026-08-20 only the keyboard
-    /// ones did. The pointer methods called the fire-and-forget `raise` below,
-    /// and the consequence is the reason this doc comment exists:
     ///
     /// > **A click sent to a window that is not in front goes to whatever
     /// > window IS, and the check then reports the feature as broken.**
@@ -1030,19 +998,10 @@ impl Driver {
     /// or the reverse, and every failure it produces is a confident, specific
     /// accusation against code that is fine.
     ///
-    /// Measured on 2026-08-20: `markup_rectangle_arms_from_the_ribbon` and
-    /// `insert_image_places_a_picture` both reported the ribbon as unresponsive
-    /// — *"the click on `ribbon.tab.markup` produced no `ribbon-tab-activated`"*
-    /// — over a build in which the ribbon works, and both had passed in a full
-    /// suite an hour earlier. The old build reproduced it too, which is what
-    /// ruled the application out.
     ///
     /// The message this returns is deliberately long. Whoever meets it is one
     /// step from diagnosing a feature that was never clicked.
     ///
-    /// ★ Moved here on 2026-09-12. It sat above `window_owning`, run
-    /// together with that item's doc comment — so it documented `window_owning`
-    /// and this function had none. See `tools/gates/check-orphan-docs.py`.
     fn raise_and_confirm(&self) -> Result<()> {
         // ★ The window the last pointer action focused, if any, and the
         // application's own window otherwise. A keystroke follows the focus.
@@ -1082,11 +1041,6 @@ impl Driver {
 
     /// Bring the focused window — or the application's own — to the front.
     ///
-    /// ★ `focus` first, and that ordering is the whole of the 2026-08-21 fix:
-    /// a keystroke belongs to whatever the last pointer action focused, which
-    /// since dialogs became real OS windows is frequently not the application's
-    /// main window. Raising the main window here takes focus AWAY from the
-    /// dialog a check just clicked into, and the characters land on the page.
     fn raise(&self) {
         if self.application_has_the_foreground() {
             // ★★★ LEAVE IT ALONE. Raising here would take focus away from a
@@ -1131,7 +1085,6 @@ impl Driver {
 
     /// **Refuse to click a point another window is sitting on.**
     ///
-    /// ★★★ The lesson of 2026-08-20, and it cost an afternoon.
     ///
     /// `SetForegroundWindow` succeeding means the target has **focus**. It says
     /// nothing about what is **drawn over it** — an always-on-top window sits
@@ -1172,18 +1125,9 @@ impl Driver {
         if owner == target {
             return Ok(());
         }
-        // ★ A DIALOG OF THE SAME APPLICATION IS NOT A COVER. As of 2026-08-21
-        // the application has one window per open dialog, and a click aimed
-        // into one legitimately lands on a window that is not the target. The
-        // guard is about a FOREIGN window — `osk.exe` is the recorded case —
-        // so the question it should have been asking all along is *whose
-        // process owns what is on top*, not *which handle*.
         if self.window_owning(p) == Some(owner) {
             return Ok(());
         }
-        // ★★★ **"OUTSIDE THE WINDOW" AND "COVERED BY ANOTHER WINDOW" ARE
-        // DIFFERENT DIAGNOSES**, and this guard reported both as the second
-        // until 2026-08-27.
         //
         // If the point is not within the target's own client rectangle at all,
         // then whatever owns it — the desktop (`Progman`), a File Explorer
@@ -1226,10 +1170,6 @@ impl Driver {
                 )));
             }
         }
-        // ★★ **Name the window**, added 2026-08-27. The message used to say
-        // only that the point belonged to "another window" and then guess that
-        // it was `osk.exe` — and on the day this was written the on-screen
-        // keyboard was not running, which left the SKIP unactionable.
         //
         // `sys::describe_foreground`'s own docs already record the rule, from
         // the day a stray `OpenWith.exe` dialog made nine checks skip: *"a

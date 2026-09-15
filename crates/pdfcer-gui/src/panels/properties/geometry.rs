@@ -67,7 +67,6 @@
 //! predict. Re-seeding on the epoch makes that unrepresentable rather than
 //! merely unlikely.
 //!
-//! ## ★★★ 2026-09-06 — THE SECOND SUBJECT: A SELECTED MARKUP
 //!
 //! This section drew **nothing at all** over a selected annotation, and said
 //! why, in a comment at the head of [`section`] which is reproduced here in
@@ -227,9 +226,6 @@ pub const MIN_EXTENT_PT: f64 = 0.25;
 pub struct GeometryDraft {
     /// What the draft describes: `(page, subject, edit epoch)`.
     ///
-    /// `None` before the first seed. See the module header for why the epoch
-    /// is a member and not an optimisation, and [`Subject`] for why the middle
-    /// member became an enum on 2026-09-06.
     stamp: Option<(usize, Subject, u64)>,
     /// Left edge, PDF user-space points.
     pub x: f64,
@@ -477,9 +473,6 @@ fn near(a: f64, b: f64) -> bool {
     (a - b).abs() < 0.1
 }
 
-// ===========================================================================
-// ★★★ THE ARITHMETIC, SHARED BY BOTH SUBJECTS — 2026-09-06
-// ===========================================================================
 //
 // [`plan`] serves a page-content object and [`annot_plan`] serves a markup
 // annotation, and the two engine verbs behind them take **different shapes**:
@@ -674,9 +667,7 @@ pub fn annot_plan(draft: &GeometryDraft, bounds: Bounds) -> AnnotPlan {
 /// surface is silence rather than four greyed spinners: the fields are not
 /// *temporarily* unavailable, they have no subject.
 ///
-/// # ★★★ The annotation fork, and the comment that used to be here
 ///
-/// Until 2026-09-06 this function's first act was:
 ///
 /// ```text
 /// // An annotation's geometry is its `/Rect`, which no verb in this build
@@ -730,8 +721,6 @@ pub fn section(
     // describes its orientation and this panel does not invent one.
     draft.sync(page, Subject::Object(object), doc.edit_epoch, bounds, None);
 
-    // ★★★ `ui_rect_visible`, not `ui_rect` — 2026-08-26, and the same lesson
-    // `dialogs::settings::widgets::group` learned for its headings.
     //
     // The Properties panel is a `ScrollArea`, and in an ordinary dock layout
     // this section is taller than the slot it gets. A rect published for a
@@ -851,13 +840,6 @@ pub fn section(
     ui.separator();
     // ★ Published HERE, at the end, and that placement is the fix.
     //
-    // `ui.min_rect()` after the section has drawn is what it actually occupies.
-    // Before it draws, `min_rect` is empty and `max_rect` is the space
-    // *available* — which in a scroll area is the remaining viewport, and which
-    // is what this used to publish: a rect ending at 762 while its own Apply
-    // button laid out at 776. A region that does not contain its own controls
-    // is not a region, and a check dividing it into quarters to find a field
-    // would have been dividing the wrong box.
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
     true
 }
@@ -1070,10 +1052,6 @@ mod tests {
         d.sync(0, Subject::Object(1), 1, b, None);
         assert!((d.x - 0.0).abs() < 1e-9);
     }
-
-    // =======================================================================
-    // The ANNOTATION arm — 2026-09-06
-    // =======================================================================
 
     /// A `/Rect`-shaped box for the annotation assertions below.
     fn rect(x0: f64, y0: f64, x1: f64, y1: f64) -> Bounds {

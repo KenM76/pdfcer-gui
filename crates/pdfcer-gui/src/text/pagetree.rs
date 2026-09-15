@@ -85,15 +85,7 @@
 //! [`crate::pagetree::refusal_sentence`], from structured data — a second audit
 //! of the file on disk — and never by inspecting a message.
 //!
-//! ★★★ **THE BLAME CLAUSE IS GONE — 2026-09-05, and its removal closed a
-//! residual this header had predicted.**
 //!
-//! Both ordinary sentences used to end *"This is a fault in pdfcer, it has been
-//! reported, and pdfcer will not write a file it knows is damaged."* Every
-//! clause of that was true when written: `delete_pages` updated the immediate
-//! parent's `/Count` and no ancestor, it had been reported that morning, and
-//! the refusal was the only thing between the operator and a file Acrobat opens
-//! with blank pages at the end.
 //!
 //! **`Pass 251.1` fixed it the same day.** So on this engine the sentence
 //! blames pdfcer for damage pdfcer did not do — and the operator meets that
@@ -105,13 +97,6 @@
 //! the sentence's least useful clause and its most perishable, and this header
 //! already carried a paragraph predicting exactly that it would go stale.
 //!
-//! ★ That also closes the residual this paragraph used to name: the interior
-//! sentence was *wrong* for a file that **arrived** with an interior-only
-//! disagreement, because it blamed pdfcer for somebody else's writer, and
-//! `refusal_sentence` could not switch to the pre-existing wording (that one
-//! needs the root's two numbers, and an interior-only case has none). **With no
-//! attribution in either sentence there is nothing left to be wrong about.** A
-//! clause deleted is a clause that cannot drift.
 //!
 //! ⚠ `save_refused_pre_existing` **keeps** its attribution, and must: its whole
 //! job is to say *pdfcer did not do this and undo will not help*, which is a

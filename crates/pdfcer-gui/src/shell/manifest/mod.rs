@@ -114,8 +114,6 @@ use egui_shell::manifest::{Group, Item, ItemSize, Mode, Shell};
 /// rather than written down twice. See [`super::menus`] for what is in
 /// **Point the two form-field paste chords at the operator's chosen order.**
 ///
-/// `OPERATOR_REQUESTS.md` **O58**. Ken, 2026-08-29: *"let's make it an option to
-/// have it swap to match Acrobat or work the way we have it now."*
 ///
 /// # What it does, and what it deliberately does not
 ///
@@ -199,13 +197,6 @@ pub fn built_in() -> Shell {
         // Modes are declared before tabs so this list reads as the summary
         // of the ribbon that follows.
         //
-        // **Pages is in Review.** Operator decision, 2026-08-13, reversing
-        // an earlier draft that excluded it on the reasoning that delete,
-        // extract and merge are structural. Reviewing a drawing set means
-        // rotating a sheet to read it, extracting the two pages you were
-        // asked about, and inserting a marked-up revision — all reviewer
-        // work. The stance that matters is *the page content is not yours
-        // to alter*, and page operations do not alter content.
         //
         // The contextual Format tab is in NO mode's list, and is present
         // in all three. See `format.rs`.
@@ -248,10 +239,6 @@ pub fn built_in() -> Shell {
         // -------------------------------------------------------------------
         // THE TRAILING REGION — `OPERATOR_REQUESTS.md` O122.
         //
-        // The operator, 2026-09-04: *"beside our read-review-edit buttons at
-        // the top there should be an open in acrobat button."* The far right of
-        // the tab-strip row, past the mode selector, which is a region
-        // `egui-shell` grew for this and which nothing else uses.
         //
         // ★★★ `shown_when("acrobat.available")` is the whole of R9 for this
         // control, and it is the reason the command is registered
@@ -304,15 +291,6 @@ pub fn built_in() -> Shell {
         //
         // ★ THIS KEYMAP IS THE ONLY PLACE A CHORD IS BOUND TO A MEANING.
         //
-        // `crate::app::keyboard::commands` reads it at run time and hands the
-        // command id to `PdfcerApp::dispatch_command` — the same dispatcher a
-        // ribbon click reaches — so a chord cannot disagree with the control
-        // that shares its command. It used to: this file bound `Ctrl+0` to
-        // `view.zoom_actual` and `Ctrl+2` to `mode.review` while
-        // `app::keyboard` bound the same two chords to fit page and fit
-        // width and got there first, because nothing dispatched this keymap
-        // at all. Two operator-visible surfaces named the chords, and both
-        // were lying.
         //
         // The list below is therefore load-bearing rather than explanatory,
         // and `app::keyboard::tests::no_chord_has_two_owners` enforces it:
@@ -370,17 +348,6 @@ pub fn built_in() -> Shell {
         // -------------------------------------------------------------------
         // ★ Ctrl+N — the universal chord, bound the day its command landed.
         //
-        // Acrobat, Inkscape and SolidWorks all bind Ctrl+N to New, as does
-        // every other document application; there was nothing to decide here
-        // beyond whether it was allowed to be bound at all, and the rule in
-        // `crate::app::keyboard::commands`' header says it is: *"a chord here
-        // dispatches a command, and a command with no dispatch arm would trace
-        // `command-unimplemented` on a keypress that used to do nothing
-        // quietly. They land with their commands."* `file.new` has an arm, so
-        // the chord lands with it — and `Key::N` joins `DERIVED`'s spelling
-        // table in the same edit, because a chord this file binds and that
-        // table cannot spell is a chord no keypress delivers. That is the
-        // defect `Ctrl+O` sat in for the whole life of the ribbon.
         .with_binding("Ctrl+N", "file.new")
         // ★ Ctrl+Alt+N — Inkscape's own chord for the same split, which is the
         // split this pair copies: Ctrl+N makes a document, Ctrl+Alt+N chooses
@@ -394,27 +361,13 @@ pub fn built_in() -> Shell {
         // the File band, so a layout that cannot spell it loses nothing.
         .with_binding("Ctrl+Alt+N", "file.new_from_template")
         .with_binding("Ctrl+O", "file.open")
-        // ★ **Ctrl+P**, 2026-08-20, on the operator's report: *"still no ctrl+c,
-        // ctrl+v, ctrl+x or ctrl+p shortcuts that were requested ages ago"*.
         //
-        // The other three were bound and are not the whole of what he means (see
-        // `dispatch`'s clipboard arms - they reach markup and refuse page content,
-        // which is an engine gap filed on 2026-08-20). **This one was simply
-        // absent**, and it is the single most universal chord in any document
-        // application. It went unnoticed because Print has a ribbon control, a QAT
-        // slot and a menu row, so every surface that lists commands showed it and
-        // only the keyboard did not.
         //
         // The lesson is the file-size one in a different suit: a fact that is true
         // in four places and false in the fifth is invisible to anything that
         // checks one place. `keymap_offers_the_chords_a_document_application_must`
         // is the gate, and it asserts the LIST rather than this line.
         .with_binding("Ctrl+P", "file.print")
-        // ★★★ **Ctrl+S is SAVE**, 2026-08-20. It was bound to Save-a-copy, so
-        // the most reflexive chord in computing opened a file dialog every
-        // time. Save-a-copy takes Ctrl+Shift+S, which is where every other
-        // program in this class puts Save-as.
-        // ★★★ `Ctrl+A`, and it must NOT steal from a text edit.
         //
         // `canvas::textsel::clipboard` already answers `Ctrl+A` with
         // `TextKey::SelectAll` while a text selection or caret owns the
@@ -427,7 +380,6 @@ pub fn built_in() -> Shell {
         .with_binding("Ctrl+Z", "edit.undo")
         .with_binding("Ctrl+Y", "edit.redo")
         .with_binding("Ctrl+Shift+Z", "edit.redo")
-        // ★★ **The four pointer tools on bare letters**, 2026-08-19.
         //
         // `V` `A` `T` `H` is not a preference — it is the layout Illustrator,
         // Photoshop, InDesign, Figma, Affinity and Inkscape (which uses `S`/`N`
@@ -455,13 +407,7 @@ pub fn built_in() -> Shell {
         .with_binding("Ctrl+X", "edit.cut")
         .with_binding("Ctrl+C", "edit.copy")
         .with_binding("Ctrl+V", "edit.paste")
-        // ★ Ctrl+Shift+V, the operator's own choice, 2026-08-29. Unbound
-        // before this and unclaimed by egui, so there is no collision to
-        // resolve. The convention it follows is the one Word, Excel and every
-        // browser use for "paste, but differently": the same key with Shift.
         .with_binding("Ctrl+Shift+V", "edit.paste_duplicate")
-        // ★★★ **Ctrl+D — `edit.duplicate`, 2026-09-06.** A second copy of the
-        // selected comment, offset, without touching the clipboard.
         //
         // ★★ **The chord was FREE and was measured to be free**, not assumed:
         // no `D` appears in this keymap in any form, `app::keyboard::OWNED`
@@ -485,7 +431,6 @@ pub fn built_in() -> Shell {
         .with_binding("H", "view.tool_hand")
         .with_binding("Ctrl+E", "edit.text")
         .with_binding("Ctrl+Shift+E", "edit.add_text")
-        // ★★ **The document chords**, 2026-08-19 with the tab strip.
         //
         // `Ctrl+Tab` / `Ctrl+Shift+Tab` to cycle and `Ctrl+W` to close: the
         // three every tabbed application on this desktop has bound, and
@@ -502,13 +447,6 @@ pub fn built_in() -> Shell {
         .with_binding("Ctrl+Tab", "view.next_document")
         .with_binding("Ctrl+Shift+Tab", "view.previous_document")
         .with_binding("Ctrl+W", "file.close")
-        // ★ Was bound to `edit.copy_page_text` until 2026-08-14. The COMMAND
-        // moved to File ▸ Export and the chord followed it here, in the same
-        // edit, because this keymap is the only place a chord is bound to a
-        // meaning: a binding left pointing at the old id would not fail the
-        // build — an unknown id is a disclosed skip, not an error — it would
-        // simply make `Ctrl+Shift+C` do nothing, which is the silent failure
-        // this block's header is entirely about.
         //
         // The move is what makes the chord work in **Read**: the gate in
         // `crate::app::modes::capability::offers_command` lets a chord reach a
@@ -520,10 +458,6 @@ pub fn built_in() -> Shell {
         .with_binding("]", "pages.rotate_right")
         .with_binding("Alt+Up", "pages.move_up")
         .with_binding("Alt+Down", "pages.move_down")
-        // ★★★ **The four Arrange chords**, 2026-09-06 — the bracket keys with a
-        // modifier, which is the same four chords Illustrator, InDesign,
-        // Photoshop, Acrobat's comment menu and Bluebeam all ship. There was
-        // nothing to decide beyond whether they were free, and they are.
         //
         // ★★ **Measured, not assumed**, and the measurement is what makes them
         // safe to take next to the two lines above:
@@ -607,18 +541,7 @@ pub fn built_in() -> Shell {
 /// of one condition is a defect whose only symptom is a menu row that is
 /// greyed while the thing it acts on is plainly selected.
 ///
-/// # ★★ It STOPPED being the Format tab's `visible_when` on 2026-08-27,
-/// and that is the whole reason it is now a literal
 ///
-/// It used to read `pub const SELECTION_ANY: &str = format::VISIBLE_WHEN;`,
-/// with a doc comment naming three surfaces that shared one condition. That
-/// was true and it stopped being true when the Format tab grew a **Font**
-/// group: the tab now carries controls for two different kinds of selection --
-/// a page object, addressed by paint-order index, and a swept text range,
-/// addressed by run -- so *"is the Format tab about anything?"* is a strictly
-/// wider question than *"is an object selected?"*. The tab's condition moved
-/// to `selection.formattable`; this one stayed where it was and kept its two
-/// honest readers.
 ///
 /// ★ The alias is what made the drift dangerous rather than merely untidy.
 /// Changing [`format::VISIBLE_WHEN`] in place would have silently retargeted
@@ -807,11 +730,6 @@ pub const MARKUP_DASH: &str = "markup_dash"; // ui-text-exempt: a custom-item ki
 /// gives up the rename check for every other command — or satisfied by
 /// putting a second, redundant button on the tab.
 ///
-/// So the exception is **data**, exactly as [`PLANNED`] and [`DIRECTED`] are:
-/// enumerable, tested in both directions (the id is registered, and the kind
-/// really appears in the manifest), and carrying its reason. A command listed
-/// here whose custom item was deleted fails the suite rather than becoming an
-/// unreachable command with a note explaining why it used to be fine.
 ///
 /// # The bar for an entry
 ///
@@ -831,10 +749,6 @@ pub const CUSTOM_BACKED: &[(&str, &str, &str)] = &[
          path and returns this command's token. Same shape as `file.open`, whose operand comes \
          from a file dialog: the picker asks, the command acts.",
     ),
-    // -----------------------------------------------------------------------
-    // The Format ▸ Font group, 2026-08-27. Three entries, and each clears
-    // the bar above for the same reason in a different shape: the command
-    // needs an OPERAND that a button cannot ask for.
     //
     // ★ They are drawn this way because the alternative for each is absurd
     // in exactly the way `file.recent`'s is: a button per font on the page, a
@@ -873,16 +787,7 @@ pub const CUSTOM_BACKED: &[(&str, &str, &str)] = &[
          run painted in CMYK or a spot colour the swatch is replaced by a sentence, which is a \
          second thing a button has no way to express.",
     ),
-    // -----------------------------------------------------------------------
-    // The Format ▸ Markup group, 2026-09-06 — `RIBBON_IA.md` §5.8's *Markup
-    // annotation* row, and the operator's ask of the same day: *"getting full
-    // editing working for the Markup tools."*
     //
-    // ★★★ The two blockers `manifest::format`'s header recorded against this
-    // row are BOTH stale, and the header said so for eighteen days after they
-    // were gone: `EditSession::set_markup_style` shipped 2026-08-18, and the
-    // canvas selection has addressed an annotation since the same day
-    // (`canvas::selection::annot::AnnotTarget`). What remained was work.
     //
     // ★ Every entry clears the bar for one reason in a different shape — the
     // command needs an OPERAND a button cannot ask for — and the alternative
@@ -990,14 +895,7 @@ pub(super) fn icon_only(id: &str) -> Item {
 
 /// A command drawn **large** — icon above label, spanning the band's rows.
 ///
-/// ★★★ **The restriction relaxed on 2026-09-04, and the rule that replaced it
-/// is narrower than "anywhere".**
 ///
-/// It used to read *"used only for a group whose single item it is"*, on the
-/// grounds that `sizing`'s layout rule hoists Large items to the front of
-/// their group, so promoting one item of a multi-item group would silently
-/// re-order what `RIBBON_IA.md` settled — and the ribbon IA is not this
-/// file's to amend.
 ///
 /// That reasoning is intact. What changed is that `mockups/pdfcer-shell.html`
 /// is now a specification of this band rather than a sketch of it, the
@@ -1027,8 +925,6 @@ pub(super) fn large(id: &str) -> Item {
     Item::command(id).sized(ItemSize::Large)
 }
 
-// ===========================================================================
-// The two registers — MOVED, 2026-08-27
 //
 // `PLANNED` (every command `RIBBON_IA.md` specifies that this manifest does
 // not emit, and why) and `DIRECTED` (the ones emitted despite carrying no `G`
@@ -1064,10 +960,6 @@ mod tests {
     /// ★★★ **Every `Large` item already leads its group**, so promoting one
     /// never reorders the band.
     ///
-    /// This is the rule that replaced [`super::large`]'s old *"only for a
-    /// group whose single item it is"* restriction on 2026-09-04, when
-    /// `mockups/pdfcer-shell.html` became this band's specification and a
-    /// great many controls became Large.
     ///
     /// # Why the rule needs a test rather than a sentence
     ///
@@ -1164,12 +1056,6 @@ mod tests {
     /// - [`crate::shell::ron`]'s header (groups **and** key bindings);
     /// - [`crate::text::ribbon`]'s header.
     ///
-    /// ★★ …and it happened AGAIN on 2026-08-27, in both directions at once.
-    /// The literal below said 32 while four of the five prose sites said
-    /// "thirty-one" and the fifth said "thirty-two" — so the sentences had
-    /// been out of step with the number *and with each other* for an unknown
-    /// stretch, and the Format tab's new Font group took it to 33. All five
-    /// were re-measured against `built_in()` and rewritten together.
     ///
     /// ⇒ The instruction above — **failing here means editing prose** — is
     /// necessary and is not sufficient, because it only fires when the count
@@ -1177,13 +1063,6 @@ mod tests {
     /// that catches that is re-measuring the sentence rather than trusting it,
     /// which is why they are enumerated by path below.
     ///
-    /// ★ It went back **32 → 31** on 2026-08-14, and the same five sites were
-    /// edited with it. The cause was a *deletion*, which is the direction that
-    /// makes this test most valuable: the two text-copy commands moved to
-    /// File ▸ Export, Edit ▸ Clipboard was left with no members, and an empty
-    /// group is a captioned band offering nothing — the placeholder P3
-    /// forbids. Deleting it is what the rule requires; editing the number in
-    /// six places is what this test makes unavoidable.
     ///
     /// The keymap is counted here for the same reason: `ron`'s header
     /// argues that the format can express *the real ribbon* and then lists
@@ -1257,10 +1136,6 @@ mod tests {
 
     /// ★★ **The chords every document application has, asserted as a LIST.**
     ///
-    /// Added 2026-08-20, on the operator: *"still no ctrl+c, ctrl+v, ctrl+x or
-    /// ctrl+p shortcuts that were requested ages ago."* Three of the four were
-    /// bound. `Ctrl+P` was not, and had not been since the manifest was
-    /// written.
     ///
     /// # Why the whole list, and not a line for the one that was missing
     ///
@@ -1423,11 +1298,6 @@ mod tests {
                 // ★ Before Reset layout: the cheap remedy above the
                 // destructive one. See the manifest's own note at the item.
                 "view.dock_all_panels",
-                // The two auto-hide toggles, 2026-09-05. Before Reset
-                // layout and after the float recovery, which is the
-                // two-tier order that pair established: reversible
-                // remedies first, the one that discards the operator's
-                // arrangement last.
                 "view.ribbon_auto_hide",
                 "view.rail_auto_hide",
                 "view.reset_layout",

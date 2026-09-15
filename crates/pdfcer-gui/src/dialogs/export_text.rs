@@ -1,12 +1,10 @@
 //! # `dialogs::export_text` — the words on the page, in a file anything can
 //! read
 //!
-//! `file.export_text`, registered and wired 2026-09-04 on the operator's ask:
 //!
 //! > *"also the engine can export PDFs as text. we should have export/import
 //! > for that."*
 //!
-//! ## ✅ THE IMPORT EXISTS NOW — 2026-09-07, and this section is the record
 //!
 //! It read:
 //!
@@ -19,11 +17,6 @@
 //! > trip. R9: a placeholder is worse than an absence, because an absence is
 //! > honest and a placeholder is a promise."*
 //!
-//! Every word of that was true for two days, and **the absence was filed rather
-//! than shrugged at**. `pdfcer-core` `Pass 252.0` shipped `place_text` and the
-//! `blank_document` primitive underneath it on 2026-09-06 — *"nothing in the
-//! crate could create a page before, only copy one"*, which is why the gap was
-//! two days wide and not one afternoon.
 //!
 //! ⇒ [`crate::dialogs::import_text`] is the window R9 forbade drawing until
 //! there was something behind it. **This window still says nothing about the
@@ -34,10 +27,6 @@
 //!
 //! ## ★★ The default writes the CLIPBOARD's own bytes
 //!
-//! `file.copy_document_text` has been putting
-//! `extract_document_view(…).plain_text()` on the clipboard since 2026-08-20.
-//! With every control in this window left where it opens, the file this writes
-//! is that string, byte for byte.
 //!
 //! Every control that departs from it — the page-marker separator, Windows line
 //! endings, the byte-order mark — is **opt-in**, and every one of them is named
@@ -190,7 +179,6 @@ impl ExportTextDialog {
     /// Open the window for the document on screen, seeded from what the last
     /// text export asked for.
     ///
-    /// # ★★★ `remembered` — operator request **O196**, 2026-09-13
     ///
     /// > *"the export windows forget everything. every time I export a dxf I
     /// > have to set it up again."*
@@ -210,13 +198,6 @@ impl ExportTextDialog {
     pub fn open(doc: &OpenDoc, remembered: &crate::app::prefs::ExportTextPrefs) -> Self {
         let page_index = doc.view.page_index;
         let page_count = doc.pages.len();
-        // ★★ **Four values come from the file, and the arguments for the
-        // shipped defaults went WITH them** — up to this struct's own field
-        // docs and to `ExportTextPrefs::default()`. They used to be written
-        // here, as comments on literals; leaving them here would have left this
-        // function explaining an `AllPages` it no longer chooses, which is the
-        // shape of prose that is true on the day it is written and wrong a
-        // month later.
         let dialog = Self {
             page_index,
             page_count,
@@ -233,14 +214,6 @@ impl ExportTextDialog {
         // ★★★ **Traced from the BUILT dialog, and the position of these lines
         // is the whole point of them.**
         //
-        // `dialogs::print::PrintDialog::open` paid for this lesson on
-        // 2026-09-10 and states it at length; it is applied here rather than
-        // re-learned. In one line: **a trace emitted from `remembered` proves
-        // the preferences file was PARSED and says nothing about whether the
-        // window adopted a single one of those values.** A build whose struct
-        // literal above ignored `remembered` entirely — exactly the regression
-        // O196 exists to prevent — would print a fully seeded line and go
-        // green.
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(

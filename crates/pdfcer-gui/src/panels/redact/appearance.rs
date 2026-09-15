@@ -5,10 +5,6 @@
 //!
 //! ## ★ This shipped as three `None`s, and the reason it did is worth keeping
 //!
-//! `NO_SURFACE.md` listed fill, overlay text and quadding as three tunables
-//! with no control, and the obvious task was to add three controls. Reading
-//! what consumed each value said otherwise, and on 2026-08-17 all three were
-//! recorded **blocked** rather than unbuilt:
 //!
 //! * `fill` was honoured only when the shell built the spec itself.
 //!   `EditSession::author_text_matches` hard-coded `fill: None`, so every mark
@@ -216,10 +212,6 @@ impl Appearance {
 
     /// Whether the operator has asked for a caption at all.
     ///
-    /// Used to decide whether the justification control and the legibility
-    /// warning are drawn — neither has anything to say about a redaction with
-    /// no caption, and drawing them anyway is how a panel accumulates controls
-    /// that do nothing.
     #[must_use]
     pub fn has_overlay(&self) -> bool {
         !self.overlay_text.trim().is_empty()
@@ -263,11 +255,6 @@ pub fn show(ui: &mut egui::Ui, state: &mut crate::panels::PanelsState) {
 
 /// The controls themselves, over a borrowed [`Appearance`].
 ///
-/// Split from [`show`] so the layout can be exercised without a
-/// `PanelsState` — and, more usefully, so the *order* of the controls is
-/// readable in one screen. It is: what covers it, what is written on it, how
-/// that is lined up. Each depends on the one before, and two of the three
-/// disappear when the one before makes them meaningless.
 fn controls(ui: &mut egui::Ui, appearance: &mut Appearance) {
     // ---- the fill --------------------------------------------------------
     ui.horizontal(|ui| {

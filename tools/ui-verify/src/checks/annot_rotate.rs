@@ -3,12 +3,6 @@
 //!
 //! # What this is for
 //!
-//! `pdfcer-core` `Pass 155.0` gave this shell `rotate_annotation` and
-//! `Pass 159.0` gave it `rotate_dimension`. Before 2026-08-28 an annotation
-//! had **eight** grips and no ninth: `pressing::grabbable` handed a selected
-//! markup `GripSet::scale_only()`, so no rotate handle was painted and none
-//! was hit-tested. The operator could move a stamp and scale it and could not
-//! turn it.
 //!
 //! ## ★★★ Why this cannot be a unit test, and what it is really guarding
 //!
@@ -34,7 +28,6 @@
 //! no-op with nothing said anywhere. That is this project's founding defect
 //! shape exactly: a grip that is dragged, released, and does nothing.
 //!
-//! ## ★★★ LINK 4b IS WHAT THE FIRST DRIVEN RUN ACTUALLY FOUND — 2026-08-29
 //!
 //! It was added to the table *after* that run, and it is here because the run
 //! is the only reason anybody knows it exists. Link 4 was **already correct**:
@@ -392,12 +385,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3b: rule the OFF-CANVAS cause out ----------------------------------
     //
-    // ★★ `checks::rotate` earned this branch on 2026-08-21 (O22) and its
-    // lesson is adopted rather than re-derived: **a confident, specific, wrong
-    // accusation is worse than a vague one**, because it is actionable and it
-    // aims somebody at the wrong file. A handle above the top of the canvas is
-    // clipped away and the press lands on the ribbon; the symptom is identical
-    // to a routing failure and the file to fix is a different one.
     //
     // ★ Here it uses the handle's OWN declared rect rather than a mirrored
     // stem constant, so it measures what is actually on screen.
@@ -588,8 +575,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 8: IS THE OUTLINE NOW DRAWN AT THE MARK'S OWN ANGLE? ---------------
     //
-    // The operator, 2026-09-07: *"the box outlined when an object is selected
-    // should be in the same angled orientation as the object."*
     //
     // ★★ Asserted here rather than in a check of its own, deliberately. Getting
     // a turned annotation on screen costs a draw, a mode change, a select and a

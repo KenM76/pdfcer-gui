@@ -68,13 +68,6 @@ const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never 
 /// is simply not on screen. A region that is absent because it is on another
 /// tab looks exactly like one that is absent because the feature is missing.
 ///
-/// ★★★ **The oracle moved on 2026-09-04, and the new one is strictly better.**
-/// `OPERATOR_REQUESTS.md` O123 dissolved the Tool panel, so `tool.armed` no
-/// longer exists. Its replacement is the *Put this tool down* button in the
-/// right dock's permanent strip — and that button is drawn **only when
-/// something other than `CanvasTool::Select` is armed**, because a put-down
-/// beside the resting state would be a control whose press changes nothing
-/// (`crate::app::toolstatus`, R9).
 ///
 /// ⇒ So its presence is a stronger claim than the old armed block's was: the
 /// block drew for any armed tool *and* sat inside a panel an operator could
@@ -119,12 +112,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check needs a click or a sweep that lands IN TEXT. On 2026-09-12
-    // it was handed the sweep's shared aim, which on `a1-titleblock.pdf`
-    // lands on a path - and that sheet is 2383.9 × 1683.8 pt carrying 123
-    // characters, so its tallest glyph is 2.4 screen pixels at fit zoom and
-    // no aim on it would have been reliable either. Sixteen checks reported
-    // sixteen plausible reasons for that one fact.
     //
     // `fixture::text_point_target` holds the document, the point, and the
     // measurement behind both. Read its doc comment before changing either.

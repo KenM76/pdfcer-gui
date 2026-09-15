@@ -19,7 +19,6 @@
 //! written beside the first and under the same rules rather than filed by
 //! whichever group looked closest.
 //!
-//! ## ★★★ The second sentence arrived on 2026-09-05, and the prediction held
 //!
 //! [`line_weights_off`] — *the canvas is deliberately not showing what will
 //! print* — is a state exactly as [`page_catching_up`] is: live while a toggle

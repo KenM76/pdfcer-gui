@@ -682,10 +682,6 @@ impl DimensionGroupsUi {
 
     /// The new-group controls proper, inside their fold.
     ///
-    /// Split from [`Self::add_group`] rather than written as a closure body so
-    /// that `self` is borrowed once, by a method call, instead of captured by a
-    /// closure that also needs `actions` — which is the borrow the compiler
-    /// refuses.
     fn add_group_body(&mut self, ui: &mut Ui, actions: &mut Vec<Action>) {
         ui.horizontal_wrapped(|ui| {
             ui.label(t::new_name_label());

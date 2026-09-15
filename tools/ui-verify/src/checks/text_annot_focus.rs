@@ -1,6 +1,5 @@
 //! `text_annot_focus` — **the dialog takes the keyboard without being clicked.**
 //!
-//! The operator, 2026-08-18:
 //!
 //! > *"adding text does bring up a window and a prompt, but it doesn't type
 //! > anything in the box when I type and nothing gets added."*

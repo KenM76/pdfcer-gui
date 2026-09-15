@@ -2,12 +2,6 @@
 //!
 //! ## The seam
 //!
-//! Split from [`crate::canvas::interact`] under R2. It is the seam the file was
-//! always going to split along rather than the cheapest one to reach:
-//! `interact`'s subject is *one frame of canvas interaction* — read the pointer,
-//! advance the gesture machine, decompose if a hit test needs it, route the
-//! outcome, re-resolve, draw — and this is one of the outcomes it routes,
-//! carrying a third of its lines.
 //!
 //! [`crate::canvas::pressing`] already owns the companion question, *what would
 //! a press land on*. This owns *what does a completed click do about it*, and
@@ -55,29 +49,6 @@
 //! it is the row that had no single home until the ladder was extracted into a
 //! file whose header could state it.
 //!
-//! - C1 ink-not-bounding-box: NOT THIS FILE — `ObjectModelProvider::subpath_hits`
-//!   and `selection::annot::under_pointer` decide it, and the outstanding
-//!   `/Square` case is `OPERATOR_REQUESTS.md` O14 row 8.
-//! - C2 unfilled-interior-belongs-behind: NOT THIS FILE — same two places, same
-//!   open row.
-//! - C3 topmost-wins: `super::input::probe` returns the front-most target and
-//!   rung 8 hands it to `SelectionState::click` unchanged; rung 3's
-//!   `under_pointer` walks `/Annots` in paint order for the same reason.
-//! - C4 tolerance-in-screen-units: `map.tolerance()` — the frame's one mapping,
-//!   so it is constant at every zoom. Passed, never re-derived.
-//! - C5 segments-clamp: NOT THIS FILE — the provider's distance tests.
-//! - C6 empty-space-deselects: **answered here, twice.** Rung 8's
-//!   `SelectionState::click` clears on a miss, and the `annot_hit.is_none()`
-//!   guard above the ladder clears the annotation selection on a miss in the
-//!   modes that have one — which had to be explicit, because an annotation
-//!   selection is a second store that rung 8 cannot see.
-//! - C7 drawn-outline-is-the-live-target: NOT THIS FILE — the painters and
-//!   `dimdrag::vertex_at`/`handles::grip_at` own the drawn-vs-target pair, and
-//!   that corpus row records the 2026-08-20 defect where they disagreed.
-//! - C8 priority-is-stated: **this module.** The eight rungs above, in one
-//!   place, in order, each with the reason it sits where it does — and each
-//!   reachable only through this one function, so a press cannot mean different
-//!   things depending on which path ran first.
 
 use crate::app::actions::forms::FieldAction;
 use egui::Pos2;
@@ -92,11 +63,6 @@ use crate::canvas::input::probe;
 ///
 /// # What this closes
 ///
-/// The operator, 2026-08-26: *"when I click on one of the objects all I get is
-/// the page selected."* The engine already computed the whole front-to-back
-/// list of what a click is over; this shell took the first entry and discarded
-/// the rest, so anything underneath anything was unreachable at every point,
-/// for ever.
 ///
 /// `Alt`+click at the same place now steps one deeper each time and wraps —
 /// which is Illustrator's *Select Behind* (`Ctrl`+click there) and Figma's
@@ -289,8 +255,6 @@ pub fn click(
         } else {
             None
         };
-    // ★★★ **A CLICK ON A COMMENT OPENS ITS POP-UP — in every mode, Read
-    // included.** `crate::canvas::notepopup`, 2026-09-05.
     //
     // The operator: *"I could add a yellow sticky note but even in read mode I
     // don't think I could figure out how to read it."*
@@ -376,11 +340,6 @@ pub fn click(
     // the information the ladder made you perform two gestures to reach
     // was in the very first click all along.
     //
-    // ★ **The text tool's kind is decided by the CLICK, not by which
-    // ribbon command was pressed**, as of 2026-08-19. `CanvasTool::Text`
-    // in a mode that can author now places a caret; `textedit::click`
-    // falls back to a fresh origin when the point names no run. The
-    // operator's report is why:
     //
     // > *"How do I edit text when on the canvas? I get a box and the I
     // > cursor, but I can't type anything. How do I make new text when I
@@ -469,14 +428,6 @@ pub fn click(
     //
     // # Why a miss falls through rather than swallowing the click
     //
-    // Because this arm must be **additive**. A click that hits no
-    // annotation has to mean exactly what it meant before — text in
-    // Review, content in Edit — or adding annotation selection would
-    // have taken away text selection in the same stroke. `annot_hit`
-    // is therefore computed ahead of the ladder and this arm is an
-    // `if let`, so a miss is not a branch at all.
-    // ★★★ **A LINK UNDER THE POINTER IS FOLLOWED** — the operator's question,
-    // 2026-09-01: *"does a clickable table of contents work?"*
     //
     // It did not. There was no link-following code path anywhere in this shell,
     // because until the engine shipped `outline::DestinationReader` a link's
@@ -554,13 +505,6 @@ pub fn click(
     // here would make text selection unreachable on exactly the drawings this
     // program is for.
     //
-    // ★ In **Edit** this arm is skipped and the ordinary content ladder below
-    // handles images along with everything else — with grips, a marquee and the
-    // rest. Two behaviours, one for each stance, rather than one behaviour that
-    // is wrong in one of them.
-    // ★★★ **…AND TEXT UNDER THE POINTER STILL WINS** — 2026-09-01, hours after
-    // the arm above shipped, on the operator's report: *"I can't seem to copy
-    // and paste text we have OCRed."*
     //
     // The narrowness chosen above — images only — was designed against a CAD
     // sheet, where a path is under the pointer almost everywhere and allowing
@@ -682,9 +626,6 @@ pub fn click(
     } else if let crate::canvas::tool::CanvasTool::Form(kind) = active_tool {
         // ★★ A CLICK places a form control at its conventional size.
         //
-        // The operator, 2026-08-26: *"I should be able to click on the canvas
-        // to place the position or drag a box for size"*. Both, and this is the
-        // first half.
         //
         // Unlike the sticky note one arm below, the size here is a REAL promise
         // about what is drawn: a `/Widget`'s `/Rect` is its extent, not a
@@ -726,22 +667,6 @@ pub fn click(
         // click-placed kind added later takes this path without an
         // edit and a kind that stops being click-placed leaves it.
         //
-        // The rect is a small square hung from the point. A `/Text`
-        // marker is fixed-size and `NoZoom` — the format discards the
-        // rect's extent — so the size here is not a promise about what
-        // is drawn; what matters is the **UPPER-LEFT** corner, which is
-        // where a conforming reader puts the marker (ISO 32000-1
-        // 12.5.3: *"the annotation's position shall be determined by the
-        // coordinates of the upper-left corner of its annotation
-        // rectangle"*). ★ Until 2026-09-09 this square grew UPWARD from
-        // the click, on the strength of the engine's own `Sticky` doc
-        // comment naming the lower-left — a sentence the engine has since
-        // struck through and corrected. The click is now the corner a
-        // reader anchors to, so the marker lands where the operator
-        // pointed in Acrobat as well as in pdfcer's own raster (which
-        // defers the `NoZoom` placement and fills the rect — both readers
-        // now agree on the top-left). `STICKY_PT` is documented at its
-        // definition.
         if !kind.is_dragged()
             && let Some(page) = doc.current_page()
             && let Some((at, _)) = super::markup::band::endpoints(point, point, page)
@@ -970,13 +895,6 @@ pub fn click(
 ///
 /// # ★★★ The one question that keeps the Read-mode image arm off a scan
 ///
-/// Added 2026-09-01 on the operator's report — *"I can't seem to copy and paste
-/// text we have OCRed"* — hours after the image arm shipped. That arm was
-/// narrowed to images because a CAD sheet has a path under the pointer almost
-/// everywhere and allowing paths would have made text unreachable. The case it
-/// did not anticipate is the one where the narrowing does not help at all: **a
-/// scanned page IS one image**, edge to edge, so every click hits it, and an OCR
-/// layer is invisible text lying exactly on top of it.
 ///
 /// ⇒ The document class where selecting text matters most was the one where the
 /// arm swallowed it.

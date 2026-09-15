@@ -1,9 +1,5 @@
 //! # `canvas::textannot` — the three markup kinds that carry WORDS
 //!
-//! Text box, sticky note and stamp. The operator asked for the revisioning set
-//! to be finished on 2026-08-18, and these are the three that were registered,
-//! drawn on the Markup tab, and had no dispatch arm for the whole life of the
-//! project.
 //!
 //! ## ★ Why they were left out, and why that was right at the time
 //!
@@ -128,12 +124,6 @@ impl TextAnnotKind {
 ///
 /// # ★ The ENGINE's names, not a list of my own
 ///
-/// The first draft of this module invented seven upper-case strings —
-/// `APPROVED`, `REVISED`, `VOID` and so on — and it was wrong in a way worth
-/// recording, because it looked entirely reasonable. `TextAnnotSpec::Stamp`
-/// does not take a free label: it takes a [`StampName`], which is **ISO
-/// 32000-1 Table 181's standard stamp set**, plus an *optional* label that
-/// overrides the name's default text.
 ///
 /// Inventing strings would have authored `/Name /Draft` — the enum's default —
 /// on every stamp regardless of what it said, so a reader other than pdfcer
@@ -200,12 +190,6 @@ pub const STICKY_ICONS: &[StickyIcon] = &[
 ///
 /// # ★★★ `Comment`, not the engine's `Note` default — and it is MEASURED
 ///
-/// `ACROBAT_DEFAULTS.md`'s non-colour table reads *"default sticky-note icon —
-/// **`Comment`** — `cAnnot` `tnoteIcon`"*, taken from Acrobat's own registry
-/// hive on this machine. The operator's instruction of 2026-09-06 was to *"make
-/// sure you've used the same default colours and style look for these things as
-/// Adobe"*, and the icon is the same class of answer as the violet `/C` that
-/// instruction already moved.
 ///
 /// The difference from `StickyIcon::default()` is deliberate and is the same
 /// difference [`DEFAULT_STAMP`] carries: `Note` is the right default for a
@@ -268,14 +252,7 @@ pub const DEFAULT_STAMP: StampName = StampName::Approved;
 ///
 /// # ★★ Every variant pairs its size with `StampFit::GrowToText`, and the REASON changed
 ///
-/// `StampFit` has three values — widen the box, shrink the words, cut the
-/// words off at the edge — and every variant below reaches exactly one of
-/// them, the engine's default `GrowToText`. That is an argued decision, and
-/// **the argument changed on 2026-09-10**, which is worth stating rather than
-/// quietly editing: the conclusion is the same and the reason behind it is
-/// completely different.
 ///
-/// ## ⚠ What this paragraph used to say, and why it is no longer true
 ///
 /// Until `pdfcer-core` `Pass 291.0` the other two policies were *unofferable*,
 /// not merely unoffered. Both decide something the operator did not ask for —
@@ -439,12 +416,6 @@ impl StampSize {
 ///
 /// # ★ It is not a size the operator sees
 ///
-/// A `/Text` annotation's marker is drawn at a **fixed size** and carries
-/// `NoZoom`/`NoRotate`, so the reader paints the same icon however big the
-/// rect is, anchored at the rect's **upper-left** corner (ISO 32000-1 12.5.3).
-/// ⚠ `TextAnnotSpec::Sticky`'s documentation used to say *lower-left*; the
-/// engine struck that through on 2026-09-09 and `canvas::clicking` hangs the
-/// square DOWN from the click accordingly.
 ///
 /// So this number decides nothing about the picture. What it must be is
 /// **non-degenerate** — a zero-area rect is refused by the engine's geometry
@@ -533,9 +504,6 @@ pub fn spec(
     rect: Rect,
     text: &str,
     stamp: StampName,
-    // ★ By reference since 2026-09-07: `StickyIcon::Other` owns its bytes, so
-    // the type is no longer `Copy` and a by-value parameter would move the
-    // caller's value out of a struct it is still using.
     icon: &StickyIcon,
     // ★ The operator's label-size choice, following `stamp` and `icon` down
     // the same route. Meaningless for the two kinds that are not stamps and
@@ -571,8 +539,6 @@ pub fn spec(
             // operator's second sentence outside the box they drew, which is
             // the same class of defect as a control laid out below its pane.
             //
-            // ★★★ **SUPPLIED, never read back — and that distinction is a
-            // trap the engine named in writing on 2026-09-06:**
             //
             // > `TextAnnotSpec::FreeText::multiline` from the reader is ALWAYS
             // > `false` and you must not believe it. §12.5.6.6 gives the
@@ -606,8 +572,6 @@ pub fn spec(
             border: Some(Color::Rgb(r, g, b)),
             border_width: 1.0,
         },
-        // ★★★ **THE ICON IS HARDCODED, and as of 2026-09-05 that is a
-        // measured gap rather than an unexamined default.**
         //
         // §12.5.6.4 Table 172 defines **seven** — `/Comment`, `/Key`,
         // `/Note`, `/Help`, `/NewParagraph`, `/Paragraph`, `/Insert` — and
@@ -644,9 +608,6 @@ pub fn spec(
         // no placeholder. The note gets `/Note`, which is what every sticky
         // this program has ever authored carries.
         //
-        // ---------------------------------------------------------------
-        // ★★ **RE-MEASURED 2026-09-06: route 1's blocker is GONE, and route
-        // 3 is no longer the recommendation.**
         //
         // The paragraph above is kept verbatim rather than rewritten, because
         // what changed is a *measurement* and the correction is the useful
@@ -679,13 +640,6 @@ pub fn spec(
         // 5. `dialogs/textannot.rs`: the radio group at `:399-405` again, over
         //    `STICKY_ICONS`, gated on `Sticky` as the stamp's is on `Stamp`.
         //
-        // **Not done here, and the reason is ownership rather than
-        // difficulty.** This was measured by the 2026-09-06 note-editing track,
-        // which owns items 1 and 2 and neither of items 3 and 5;
-        // `dialogs/textannot.rs` was outside its grant entirely, and the tree
-        // was red from six concurrent tracks at the time. Landing a
-        // five-file signature change across three other tracks' files while
-        // the build is broken is how a reconciliation becomes expensive.
         //
         // ★ R9 still holds and that has not changed: nothing is drawn. The
         // seven icons are `pdfcer_core::annot_author::StickyIcon`'s, which is
@@ -693,17 +647,7 @@ pub fn spec(
         // note tool offers — so the gallery needs no list of ours, the way
         // `STAMPS` needed one.
         //
-        // The **editing** half of this — changing a placed note's icon or
-        // colour — is the engine's and is filed:
-        // `request_a_sticky_notes_icon_and_colour_cannot_be_changed.md`,
-        // re-measured against v0.42.0 on 2026-09-06 and **still unanswered**
-        // (no `/C` read in `annot.rs`, no icon read, no set verb).
         //
-        // ---------------------------------------------------------------
-        // ★★★ **BUILT, 2026-09-06 (afternoon). Both halves.** Everything
-        // above is kept verbatim, because the two corrections it already
-        // carries are the useful part of it and a third erasure would leave
-        // a reader with a conclusion and no working.
         //
         // What changed, in the order the paragraphs above predicted it:
         //
@@ -747,17 +691,7 @@ pub fn spec(
             icon: icon.clone(),
             contents: text.to_owned(),
             color: Color::Rgb(r, g, b),
-            // Closed, and ★ the REASON changed on 2026-09-05 even though the
-            // value did not.
             //
-            // It used to read: *"a popup that opened itself on every sticky
-            // would cover the drawing the note is about — and
-            // `MODES_AND_PANELS.md`'s nothing-floats-over-the-canvas stance is
-            // only relaxed for Find."* The first half stands. The second half
-            // is now out of date: `crate::canvas::notepopup` floats a window
-            // over the canvas, deliberately, and its header carries the
-            // argument — a pop-up is **chrome**, the same class of thing as a
-            // selection handle, and nothing about it reaches the page.
             //
             // So the value survives on the first half alone, which is the
             // stronger half anyway: pdfcer collects the note's words in a
@@ -820,14 +754,6 @@ pub fn spec(
                 // ★★★ **The operator's own choice, and this field exists because a
                 // compiler asked for it.**
                 //
-                // Engine `Pass 287.0` made `style` required, so this line had to
-                // be written to build at all — and **that is exactly the moment a
-                // feature gets silently declined.** The reflex is to reach for
-                // whatever reproduces the old behaviour, and here that spelling is
-                // available and named: `font_size: None` is documented as *"derive
-                // it from the box height as builds before Pass 287.0 did"*. It
-                // compiles, passes every test, and quietly keeps the defect the
-                // operator reported on 2026-09-09.
                 //
                 // [`StampSize`] carries the answer instead, and its header holds
                 // the argument: why the default is the derived size rather than
@@ -1246,14 +1172,6 @@ mod tests {
             // The exhaustive arm: every variant must be named, and every
             // variant named must be in the list.
             //
-            // ★★★ **`Other` is named and answers `false`** — added 2026-09-07
-            // with `pdfcer-core` `Pass 253.5`. It is a real variant with a real
-            // meaning (an icon name §12.5.6.4 permits and pdfcer does not
-            // model, carried verbatim), and it must NOT be in `STICKY_ICONS`:
-            // that list is the *gallery the operator picks from*, and there is
-            // no such thing as picking "some other name" from a list. The
-            // properties panel offers the file's own `Other` as an entry
-            // separately, from the document rather than from this list.
             //
             // ⚠ A wildcard here instead would compile and would also silently
             // swallow an eighth STANDARD icon, which is the exact failure this
@@ -1294,18 +1212,7 @@ mod tests {
     /// ★★★ **A sticky note authors the icon the operator chose — and no other
     /// kind is given one.**
     ///
-    /// The positive half is the whole feature: before 2026-09-06 this argument
-    /// did not exist and every note pdfcer ever placed carried `/Note`.
     ///
-    /// ★★ The negative half is asserted **beside** it rather than alone, which
-    /// is the methodology note of 2026-09-06: *"a negative assertion is vacuous
-    /// when the thing that would produce the positive is absent."* Asserting
-    /// only that a text box carries no icon would pass on a [`spec`] that had
-    /// stopped threading the argument at all — it would pass on the code this
-    /// change replaced. The sticky arm proves the operand arrives; the other two
-    /// arms prove it stops where §12.5.6.4 stops, which is also where
-    /// `set_text_annot_style` refuses it by name
-    /// (`EditError::StylePropertyNotApplicable`).
     #[test]
     fn only_a_sticky_note_is_given_an_icon_and_it_is_the_chosen_one() {
         for chosen in STICKY_ICONS {

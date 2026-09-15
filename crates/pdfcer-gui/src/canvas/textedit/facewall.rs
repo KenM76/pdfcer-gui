@@ -52,7 +52,6 @@
 //! text afterwards. Without it, a failure above could be a fixture that cannot
 //! take the edit at all, and the report would name the wrong subject.
 //!
-//! ## ★★★ What it measured, 2026-09-05
 //!
 //! **The engine's.** One session refuses; two sessions succeed; the fixture,
 //! the request, the face and the character are the same in both.
@@ -93,14 +92,7 @@
 //! usable face; and when the retype is refused it says so
 //! (`text::panels::face::refused_char_blocked`).
 //!
-//! ⚠ **Both halves survive the fix, and only one of them changed.** The
-//! re-apply is now the whole route — it lands on the fixture this module drives,
-//! not just on a document that happened to carry a second usable face. The
-//! refusal sentence kept its state and lost its *cause*: it used to name the
-//! save-and-reopen remedy measured below, and that remedy is now a remedy for
-//! nothing. See the section at the foot of this header.
 //!
-//! ## ★★★ THE ENGINE SHIPPED THE FIX — 2026-09-06, engine v0.41.0
 //!
 //! [`the_engine_types_into_a_face_it_just_swapped_in`] is the same test with its
 //! assertion inverted. It went red on the first run after the pin moved to
@@ -112,8 +104,6 @@
 //! `EditSession` verb passes `self.view()`, and with no `&Document →
 //! &DocumentView` coercion the class is now a **compile error**.
 //!
-//! ### The three-step plan this header used to carry, and the one step of it
-//! that was WRONG
 //!
 //! It said: (1) delete the test; (2) delete
 //! `text::panels::face::refused_char_blocked` and the `retried` arm of
@@ -289,8 +279,6 @@ fn page_text(session: &EditSession) -> String {
 /// **succeeds** — in both request shapes, with no save and no reopen between
 /// them.
 ///
-/// # What this test asserted until 2026-09-06, and why the inversion is the
-/// design working rather than the design failing
 ///
 /// It asserted the **refusal**: that the `/Font` object `format_text` had just
 /// allocated lived only in the session overlay, that `edit_text` planned with

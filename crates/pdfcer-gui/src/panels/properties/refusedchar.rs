@@ -278,9 +278,6 @@ pub struct RefusedCharUi {
 impl RefusedCharUi {
     /// Advance the state machine for this frame, and answer what to draw.
     ///
-    /// Split from [`section`] so the transitions can be read — and tested —
-    /// without a frame. Every arm is one of the four rows in the module header's
-    /// table.
     fn advance(&mut self, epoch: u64) -> bool {
         if let Some(next) = PENDING.with_borrow_mut(Option::take) {
             self.shown = Some(next);

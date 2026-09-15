@@ -3,7 +3,6 @@
 //!
 //! # The request
 //!
-//! `OPERATOR_REQUESTS.md` **O67**, 2026-08-31:
 //!
 //! > *"I should be able to drag and drop documents into the thumbnails section
 //! > of another pdf to import the pages."*

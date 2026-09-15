@@ -2,8 +2,6 @@
 //!
 //! ## What this closes
 //!
-//! **Ken, 2026-08-29:** *"wire the request. ctrl v for paste as new. ctrl shift
-//! v for paste as duplicate."* — `OPERATOR_REQUESTS.md` **O58**.
 //!
 //! Before this module there was **no path at all** from a selected form field
 //! to `Ctrl+C`. Not a lossy one, not a refused one — none. The reason is two
@@ -182,15 +180,6 @@ pub enum Refusal {
 ///    representation loses nothing, and it is the same one a private OS
 ///    clipboard format will take.
 ///
-/// ★ This used to add *"unlike `ObjectClip`, whose `to_bytes` drops its
-/// annotations"*, and **that stopped being true on 2026-08-29** — clip format
-/// version 2 carries them, and `annotations_survive_serialisation()` now
-/// answers `true` for every clip. Corrected here rather than deleted, because
-/// the contrast was the reason this field is bytes and a reader who finds the
-/// claim elsewhere should know it expired rather than that it was wrong. It is
-/// the third stale absence-claim about `pdfcer-core` this project has corrected
-/// in a week: **an absence claim about a crate you do not build has a shelf
-/// life**, and what catches it is reading the reply, not re-deriving the claim.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ClippedField {
     /// `FieldClip::to_bytes` — magic `PDFCERFLD…`, versioned, count-guarded.
@@ -529,12 +518,6 @@ fn split_trailing_number(base: &str) -> (&str, u32) {
 
 /// Read `doc.selected_field` into a clip, without touching the clipboard.
 ///
-/// ★ Almost all of what this used to do is now one `copy_field` call. The
-/// previous version read a `forms::Field`, mapped its type to a
-/// `FormFieldKind`, decoded four text strings, translated eleven flags and
-/// assembled a `Draft` — about eighty lines, every one of them a chance to
-/// disagree with the engine about what a field is. What remains is the two
-/// facts the *shell* owns: which widget the operator clicked, and where it is.
 fn read_selected(doc: &OpenDoc) -> Result<ClippedField, Refusal> {
     let selected = doc
         .selected_field

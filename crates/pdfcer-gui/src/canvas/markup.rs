@@ -29,7 +29,6 @@
 //!
 //! ---
 //!
-//! ## ★ THE SHAPE OF THIS MODULE CHANGED ON 2026-08-14, AND THIS IS WHY
 //!
 //! Until Ink, PolyLine and Polygon landed, this file held **one** family of
 //! markup and its gesture together: the two-point rubber band, its preview, its
@@ -159,27 +158,10 @@
 //! remaining Phase 6 kinds are absent for reasons that are each different rather
 //! than one blanket "later":
 //!
-//! | kind | where it is |
-//! |---|---|
-//! | Rectangle · Ellipse · Arrow · Highlight | here, gestured by [`band`] |
-//! | ~~Polygon · PolyLine · Ink~~ | **Built 2026-08-14**, gestured by [`vertex`] and [`ink`] |
-//! | ~~Underline · StrikeOut · Squiggly~~ | **Built 2026-08-14**, in [`text`], and they are still not variants of [`MarkupKind`] — see below |
-//! | ~~Revision cloud~~ | **Built 2026-08-19.** Was *"blocked on the engine — `/BE` is never written"*, which stopped being true when `MarkupSpec::Cloud` shipped and nothing in this shell noticed for weeks. See [`MarkupKind::Cloud`]. |
-//! | Plain line | The engine has `MarkupSpec::Line` and this shell spends it on Arrow. A second command differing only in its `/LE` is a Style question, not a kind. |
-//! | Note · text box · sticky · stamp | Text-bearing, not geometric. A different gesture (place, then type) and a different spec type (`TextAnnotSpec`). |
 //!
 //! ### ★ The boundary this enum draws was RESTATED when the three new kinds
 //! ### arrived, and the restatement is the useful part
 //!
-//! It used to read: *"a variant belongs in this enum when this rubber band can
-//! draw it"*, and on that boundary Polygon, PolyLine and Ink were excluded in
-//! terms — *"adding the variants now would put states into the type that no
-//! `GestureOutcome` can reach."* That was exactly right **while the band was the
-//! only gesture**, and it is the wrong boundary now, because the thing it was
-//! really protecting was never the band: it was the pair of properties
-//! `shell::commands::mapping` and `app::conditions` actually assert, namely that
-//! **every variant has a command that arms this tool and a `selected:` condition
-//! that lights while it is armed.**
 //!
 //! So the boundary is now stated as the property that is tested:
 //!
@@ -198,14 +180,6 @@
 //!
 //! ## ★ The three text-markup kinds live in [`text`], and the boundary holds
 //!
-//! Underline, strikeout and squiggly shipped on 2026-08-14, and they are in a
-//! submodule with an enum of their own rather than three variants here — which
-//! is the boundary above being *applied* rather than being made an exception to,
-//! under the new wording as much as the old. Their commands act at once and
-//! **arm no tool at all**, so a `MarkupKind` variant would be a tool nothing can
-//! arm, a pressed state that never lights, and a
-//! [`crate::canvas::tool::CanvasTool`] state no
-//! [`GestureOutcome`](crate::canvas::gesture::GestureOutcome) can reach.
 //!
 //! [`text`]'s own header carries the interaction decision — *select first, then
 //! mark*, which is Acrobat's — and the mode intersection it produces.
@@ -258,13 +232,6 @@ pub mod ink;
 /// ★★★ **Solid or dashed** — `/BS` `/S` and `/D` (§12.5.4, Table 166), as the
 /// four choices this shell offers and the one reading it can only report.
 ///
-/// `RIBBON_IA.md` §5.8's *Line style*, the eighth of that row's eight controls
-/// and the only one that had **no engine verb at all** until the afternoon of
-/// 2026-09-06. Three surfaces read it — the pen that authors, the Format ▸
-/// Markup band and the Properties panel that restyle — and the module header
-/// says why it is one list rather than three, why there is no phase control, and
-/// why the shell refuses an unusable pattern by *offering only valid ones*
-/// rather than by validating an entry it never takes.
 pub mod linestyle;
 /// Which markup gesture one drag reaches — band, freehand trail, or the
 /// line-grouped quads of a highlight that found text. Split out of
@@ -274,10 +241,6 @@ pub mod route;
 /// ★★★ **Acrobat's own markup colours, measured** — the ten values Adobe
 /// authors comments in, and the grid the Style swatch offers them from.
 ///
-/// The data half of the operator's ask of 2026-09-06: *"make sure you've used
-/// the same default colours and style look for these things as Adobe."* Every
-/// number in it was read out of Acrobat DC's own tool-defaults registry rather
-/// than chosen here; the module header carries the reading and the evidence.
 pub mod palette;
 
 /// ★ The colour and width the next markup is authored with — the **Style**
@@ -467,11 +430,6 @@ impl MarkupKind {
 /// The default border/stroke width, in PDF points, every geometric markup is
 /// authored with.
 ///
-/// ★ **No longer what a markup is authored at** — 2026-08-17. The pen control
-/// landed and [`pen::Pen::width_pts`] is the value [`spec`] writes; this
-/// constant survives as the **nominal** width, and it has exactly one consumer
-/// left: [`ink::SIMPLIFY_TOLERANCE_PTS`], which derives a simplification
-/// tolerance from a quarter of it.
 ///
 /// That consumer is deliberately NOT re-pointed at the live pen, and the reason
 /// is worth stating because the opposite looks obviously right. The tolerance
@@ -682,10 +640,6 @@ const CLOUD_INTENSITY: f64 = 1.0;
 /// belongs to the surface that will set the pen colour too.
 #[must_use]
 pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<MarkupSpec> {
-    // ★ The pen is a PARAMETER as of 2026-08-17, and this is the seam
-    // `MarkupKind::rgb`'s own doc comment named in advance: *"give it a colour
-    // and a width from the document's markup state and nothing else in the
-    // module changes."* Nothing else in this module did.
     let (r, g, b) = pen.colour_for(kind);
     let color = Color::Rgb(r, g, b);
     let width = pen.width_pts;
@@ -709,10 +663,6 @@ pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<Mark
                     // under it.
                     interior: None,
                     border_width: width,
-                    // ★ `/BE` — the CLOUDY border, which `pdfcer-core` gained on
-                    // 2026-08-18 (Pass 82.0). `None` is a plain rectangle,
-                    // which is what this tool has always drawn and what the
-                    // Markup ▸ Shapes ▸ Rectangle control promises.
                     //
                     // Named explicitly rather than absorbed by a struct update,
                     // for the reason `to_engine_settings` states about the same

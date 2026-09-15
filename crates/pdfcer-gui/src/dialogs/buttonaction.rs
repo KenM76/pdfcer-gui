@@ -15,11 +15,6 @@
 //! convergence of the product class **is** the spec. So: one drop-down, the
 //! parameters for the chosen behaviour under it, and nothing else.
 //!
-//! What is **not** copied is Acrobat's disclosure, which was measured on this
-//! machine on 2026-08-26 through UI Automation and names **scheme and host
-//! only**, says nothing about the payload, and pre-ticks *remember this site*.
-//! Copying that would be a regression against what pdfcer can say. See
-//! `text::buttonaction`'s header.
 //!
 //! ## ★★ Why the parameters are held even when they are not shown
 //!

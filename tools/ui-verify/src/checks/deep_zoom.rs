@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! `OPERATOR_REQUESTS.md` O24, 2026-08-22:
 //!
 //! > *"I got a requested raster size 14580x18868 is empty or exceeds
 //! > MAX_PIXMAP_EDGE when I got to 2382% zoom."*
@@ -59,10 +58,6 @@ const RENDER_EVENT: &str = "render-async-done";
 /// the check exercises the whole range rather than a point in the middle of it,
 /// and would catch a build that renders at 25,000 % and fails at 2,000,000 %.
 ///
-/// ★ Saturating also makes the check independent of where the ceiling happens
-/// to be. It moved twice on 2026-08-22 — first when the region tier removed the
-/// raster limit, then when the positional cap replaced it — and a press count
-/// tuned to reach a particular zoom would have needed retuning both times.
 const PRESSES: usize = 60;
 
 /// The zoom this check has to exceed to be testing anything, as a multiplier.

@@ -87,9 +87,6 @@ pub fn pdf_date_utc() -> Option<String> {
 
 /// **A moment as `YYYY-MM-DD`, UTC** — the calendar date and nothing else.
 ///
-/// Added 2026-09-05 for [`crate::trust`], which has to print the modification
-/// time of the operator's Acrobat trust store so an anchor set that silently
-/// went stale is visible rather than merely old.
 ///
 /// # Why a second formatter rather than trimming [`pdf_date_utc`]
 ///

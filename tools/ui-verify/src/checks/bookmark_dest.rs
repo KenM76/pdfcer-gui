@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-01:
 //!
 //! > *"in Acrobat clicking on the nested bookmarks in the drawing package takes
 //! > you to a zoomed in area of the page for the drawing bookmark that was

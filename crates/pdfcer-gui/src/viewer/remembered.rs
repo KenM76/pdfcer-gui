@@ -1,6 +1,5 @@
 //! # `viewer::remembered` — the page-display choice, per document, on disk
 //!
-//! The operator's requirement, 2026-08-12, and `GUI_ROADMAP.md` 4.5:
 //!
 //! > *"Mode persists **per document**, not globally — opening a drawing set
 //! > must not inherit a report's setting."*
@@ -150,11 +149,6 @@ pub fn default_path() -> Option<PathBuf> {
 
 /// **The display mode remembered for `document`, if any.**
 ///
-/// `None` means *"this document has no remembered choice"*, and the caller
-/// answers it with [`PageDisplay::default_for_mode`] — the per-mode default,
-/// which is where "Read opens continuous" lives. It deliberately does **not**
-/// mean "single page": collapsing the two would make a fresh document in Read
-/// mode open paged, which is the operator decision of 2026-08-13 inverted.
 ///
 /// Never fails. A missing file, an unreadable one and a corrupt one all answer
 /// `None`, because every one of them means the same thing to the caller —
@@ -335,10 +329,6 @@ mod tests {
 
     /// ★ **A sheet set does not inherit a report's setting.**
     ///
-    /// The operator's requirement of 2026-08-12, stated as the scenario they
-    /// described rather than as an API exercise: two documents, two different
-    /// modes, and each remembers its own across a "restart" (a fresh read of
-    /// the same file).
     #[test]
     fn a_sheet_set_does_not_inherit_a_reports_setting() {
         let dir = temp_dir("per-document");

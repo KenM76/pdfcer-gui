@@ -1,11 +1,5 @@
 //! # icons::catalog::mapping — every [`Icon`] resolved to its asset and its key
 //!
-//! Three total functions over [`Icon`], separated from the enum next door
-//! because of R2 and because they answer a different question. `catalog/mod.rs`
-//! says **what a glyph means and why it exists**; this file says **which bytes
-//! it draws and what string names it**. A reader arriving to add an icon needs
-//! the first; a reader chasing "why did this ribbon button draw nothing" needs
-//! the second, and the two searches were previously the same 1,167-line file.
 //!
 //! ## Why the split fell here and not somewhere else
 //!
@@ -92,7 +86,6 @@ impl Icon {
         Icon::InsertPages,
         Icon::FontFolders,
         Icon::Redact,
-        // The 2026-08-14 pass, in the enum's own order.
         Icon::Print,
         Icon::Export,
         Icon::Settings,
@@ -122,18 +115,14 @@ impl Icon {
         Icon::PageExtract,
         Icon::FormFlatten,
         Icon::ManageList,
-        // The 2026-08-21 pass — the selection filter's rows (O17).
         Icon::PickText,
         Icon::PickPath,
         Icon::PickPart,
         Icon::PickFormXObject,
         Icon::PickLink,
-        // Orphaned by breaking their aliases (2026-09-04); kept so the
-        // catalogue-wide tests still walk the art.
         Icon::Document,
         Icon::Convert,
         Icon::SelectAll,
-        // The 2026-09-04 batch — see `super`'s note on the enum.
         Icon::ApplyRedactions,
         Icon::Attachment,
         Icon::Accept,
@@ -171,15 +160,6 @@ impl Icon {
         Icon::SaveCopy,
         Icon::UnembedFonts,
         Icon::WheelFlip,
-        // ★★★ CORRECTED 2026-09-05. This comment read *"the five with no
-        // ribbon control yet … the other four are art before button"*, and by
-        // the end of 2026-09-04 **all five were named by a registered
-        // command**: `edit.copy_as_vector` (token 408, Edit ▸ Clipboard),
-        // `file.encrypt` and `file.permissions` (126 / 127, File ▸ Security),
-        // `file.export_image` (File ▸ Export) and `file.open_in_acrobat` (the
-        // ribbon's trailing item). The art landed in the morning and the
-        // buttons landed in the afternoon; the sentence describing the gap was
-        // written between them and outlived it by hours.
         //
         // ⇒ **A sentence about what has not been built yet is a dated
         // citation, not a fact**, and on this project its shelf life has twice

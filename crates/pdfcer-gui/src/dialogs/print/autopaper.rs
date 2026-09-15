@@ -1,7 +1,5 @@
 //! # `dialogs::print::autopaper` — pick the sheet from the pages
 //!
-//! Operator request **O167**, 2026-09-10: *"we also need the option to auto
-//! select paper size based on the page sizes in the pdf."*
 //!
 //! ## What this module is, and what it deliberately is not
 //!
@@ -204,12 +202,6 @@ pub(super) fn outcome_token(outcome: &AutoPaper) -> &'static str {
 ///
 /// # ⚠ Why this exists rather than `{:?}` on the tuple
 ///
-/// `sheet=` was `{:?}` until 2026-09-10 and printed `Some((1190.4, 841.68))`.
-/// That survived only because `tools/ui-verify`'s splitter tracks bracket
-/// depth; every consumer still had to do string surgery to get a number out,
-/// and this project has already shipped a driven check that **reported the
-/// opposite of the truth** because it was parsing a `Debug` tuple. A field a
-/// machine reads gets a spelling chosen for the machine.
 ///
 /// Two decisions inside it:
 ///
@@ -320,13 +312,6 @@ pub(super) fn choose(forms: &[PaperForm], page_sizes: &[(f64, f64)]) -> AutoPape
         !(same || turned)
     });
 
-    // ★ The page reported as "largest" is the one covering the most paper, and
-    // it is REPORTED rather than used to choose. Note that it is not always
-    // the page that constrains the choice: a 100 x 2000 roll page beats a
-    // 900 x 900 square on the axis that matters even though the square covers
-    // more paper. The sheet is therefore chosen by testing *every* page
-    // against *every* sheet, below, and this value exists only for the
-    // sentence under the combo.
     let largest_page_pt = page_sizes
         .iter()
         .copied()
@@ -377,13 +362,6 @@ pub(super) fn choose(forms: &[PaperForm], page_sizes: &[(f64, f64)]) -> AutoPape
 // What the dialog asks this module, once the arithmetic is done
 // ---------------------------------------------------------------------------
 //
-// ★ These two lived in `print/mod.rs` until 2026-09-14, and the doc comment on
-// the first of them argued the placement: it reads `PrintDialog::auto_paper`,
-// which is a private field. That argument correctly ruled out [`super::tabs`],
-// a sibling. It did not rule out this file, which is a CHILD of `print` and can
-// see its parent's private items -- and which already owns the type both
-// functions match on, and already promises in its header to carry "everything
-// the disclosure line needs in order to say what happened and why."
 //
 // They moved when R2 bit. That is the rule working rather than a coincidence: a
 // file over the limit usually has something in it that belongs elsewhere, and

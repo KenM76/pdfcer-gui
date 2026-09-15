@@ -127,11 +127,6 @@ pub mod markupband;
 /// ★ The per-frame update — `eframe`'s entry point, and the one order the
 /// frame's eleven steps may happen in.
 ///
-/// Split out of this file on 2026-08-17 at rule R2's ceiling. The seam is the
-/// question each half answers: this file is *what the application is*, that one
-/// is *what happens sixty times a second*. Almost every comment in it is about
-/// sequence, which is the class of bug that needs a file of its own to be
-/// visible.
 pub mod frame;
 pub mod gating;
 pub mod keyboard;
@@ -206,10 +201,6 @@ pub mod settings;
 /// **More than one document open at once** — the tab arithmetic behind the
 /// document strip, and what switching between documents forgets.
 ///
-/// The operator's request of 2026-08-19. See that module's header for why the
-/// active document stayed on its own field rather than becoming
-/// `documents[active]`, and for the invariant that makes `Status::Empty` mean
-/// "no documents" rather than "one empty document".
 pub mod documents;
 
 /// The **document tab strip** — the surface `documents` is drawn on.
@@ -226,10 +217,6 @@ pub mod status;
 /// **The three regions the application draws** — the ribbon band, the docks
 /// and the central area.
 ///
-/// Split out on 2026-08-20 along the seam this file's own header had already
-/// drawn in prose. See that module's header; the one-line version is that
-/// `mod.rs` answers *what is the application and how is it built* and
-/// `surfaces.rs` answers *what does it draw*.
 pub mod surfaces;
 /// ★★★ **Which runs a Format command acts on** - one answer, two gestures.
 ///
@@ -280,13 +267,6 @@ const DOCK_SLOT: &str = "dock"; // ui-text-exempt: trace slot name, never displa
 
 /// The whole application state.
 ///
-/// One field at S0. It will grow — settings, the command log, the dock
-/// layout, the parked documents — and the discipline that keeps it
-/// comprehensible is that every field carries a doc comment saying what it
-/// is for and, where it is not obvious, why it is *here* rather than inside
-/// [`state::OpenDoc`]. The rule of thumb: state that dies with the document
-/// lives on `OpenDoc`; state that outlives it lives here.
-/// ## ★ No `Default`, as of 2026-08-17
 ///
 /// It derived one until the settings store arrived, and nothing in the
 /// workspace ever called it — checked, not assumed. Removing it is the right
@@ -304,11 +284,6 @@ pub struct PdfcerApp {
     /// What, if anything, is open — **the document the operator is looking
     /// at**, when several are open.
     ///
-    /// Unchanged in meaning by the multi-document work of 2026-08-19, and
-    /// deliberately so: every panel, the canvas, the status bar and the
-    /// condition set read this one field and none of them had to learn that
-    /// other documents exist. [`documents`]' header carries the argument for
-    /// keeping it a field rather than folding it into a vector.
     pub status: Status,
 
     /// **The other open documents**, in tab order with the active one removed.
@@ -691,14 +666,6 @@ pub struct PdfcerApp {
 
     /// Where [`Self::settings`] is written, resolved once at start-up.
     ///
-    /// Cloned from `pdfcer_core::settings::resolve_store()`, which is memoised
-    /// per process — and that memoisation is a **correctness** property rather
-    /// than a performance one. This project's own 2026-08-13 report found the
-    /// symptom: two callers in one process disagreeing, the layout store
-    /// resolving `Portable` while the recent list resolved `PlatformFallback`,
-    /// so two files meant to sit beside each other did not. Holding the answer
-    /// here as well means the settings window's store-location line and the
-    /// save path cannot diverge even within one frame.
     pub settings_store: pdfcer_core::settings::StoreLocation,
 
     /// ★ **The colour and width the next markup is authored with.**
@@ -847,9 +814,6 @@ impl PdfcerApp {
         let mut commands = egui_shell::commands::CommandRegistry::new();
         crate::shell::commands::register(&mut commands);
 
-        // ★★★ THE MERGE RUNS BEFORE THE VALIDATION, AND UNTIL 2026-09-06 IT
-        // DID NOT RUN AT ALL — which would have cost the whole ribbon on the
-        // first build compiled without an optional capability.
         //
         // The comment on this constructor already said the merge resolves
         // every item against the registry and that *"resolution is what makes
@@ -995,9 +959,6 @@ impl PdfcerApp {
             dock,
         } = startup;
 
-        // ★★★ THE RIBBON TAKES THE RESTORED MODE, and until 2026-09-06 it did
-        // not — so *"open in the mode you were last in"* had been dead since
-        // the day it shipped.
         //
         // `RibbonState` was set to the manifest's **first** mode a few dozen
         // lines above, because an unset mode makes the shell show every tab.
@@ -1019,14 +980,6 @@ impl PdfcerApp {
         // binary off screen against a `layout.ron` holding `mode: Some(
         // "review")`, twice, once on a profile written fresh for the purpose.
         //
-        // ★ Why this is the operator's defect and not a tidy-up. `modes/mod.rs`
-        // `assemble` carries the whole argument for remembering the mode, from
-        // his own report of 2026-08-26 — *"I can't figure out how to click on
-        // objects to edit them"* — and ends: *"Someone who spent an afternoon
-        // in Edit came back the next morning to a program that had silently
-        // forgotten."* That is precisely what has been happening. It bites
-        // markup hardest, because markup is authored in **Review** and the
-        // program reopened in Read every time.
         //
         // The `or_else` keeps the original behaviour for the three declines
         // `assemble` documents — no stored id, an id the manifest no longer
@@ -1082,12 +1035,6 @@ impl PdfcerApp {
         } else {
             pdfcer_core::settings::resolve_store()
         };
-        // ★ Was followed by `app::settings::colour_default(&mut settings)`
-        // between 11:00 and 13:00 on 2026-08-28 — a shell-side seed that forced
-        // `CmykIntent::Calibrated` while the engine still defaulted to
-        // `NeutralBlack`. `Pass 153.0` moved the engine's own default and the
-        // seed's `debug_assert_ne!` tripwire fired on the first build after the
-        // `cargo update`, exactly as its own documentation said it would.
         //
         // ⇒ Deleted rather than left, per the rule that a shell which keeps
         // overriding a default it agrees with is a second source of truth
@@ -1162,11 +1109,6 @@ impl PdfcerApp {
             recent_choice: None,
             font_change: None,
             markup_change: None,
-            // ★★★ Seeded from the preference file, once, here — O187,
-            // 2026-09-12, and for the reason the `find` block below states at
-            // length: the live value lives on a type the app owns outright
-            // (`ThumbnailCache`), so the file is consulted at construction
-            // and `PrefAction::PagePreviews` writes back the other way.
             //
             // ⚠ `force_on` is the ONLY writer of the tick, and this call
             // is one of three, none of which is really an exception to
@@ -1176,14 +1118,6 @@ impl PdfcerApp {
             // `ThumbnailCache::on` could go back to a plain `bool`: there is
             // still exactly one party deciding.
             //
-            // ★★★ THIS SEED IS NOT SUFFICIENT ON ITS OWN, and for three
-            // hours on 2026-09-12 it was all there was. Opening a document
-            // calls `PanelsState::forget_document`, which is
-            // `*self = Self::default()` — so the two values below were
-            // overwritten before the Pages panel drew once, on every launch,
-            // because pdfcer is always started on a file. That function now
-            // carries them across its own reset; read its body before
-            // changing anything here.
             panels: {
                 let mut panels = crate::panels::PanelsState::default();
                 let pages = panels.pages_mut();
@@ -1195,22 +1129,9 @@ impl PdfcerApp {
                     ));
                 panels
             },
-            // ★ Seeded from the preference file, once, here — not synced
-            // every frame the way `smart_select` is. The difference is where
-            // the live value lives: `smart_select`'s lives in `egui::Memory`
-            // because the canvas reads it from places that hold a context and
-            // nothing else, so it has to be pushed in each frame. This one
-            // lives on `FindState`, which the app owns outright, so the file
-            // is only ever consulted at construction and `PrefAction::FindZoom`
-            // writes back the other way. O163, 2026-09-09.
             find: {
                 let mut find = crate::find::FindState::default();
                 find.set_zoom_on_jump(prefs.find_zoom_on_jump);
-                // ★ The same argument, one preference later — O180,
-                // 2026-09-12. Read here and written back by
-                // `save_settings` rather than by an action, because this
-                // one is ticked in the Settings window and that window
-                // already owns a commit path.
                 find.set_trim_query(prefs.find_trim_query);
                 find
             },
@@ -1300,8 +1221,6 @@ pub fn configure_context(ctx: &egui::Context) {
 /// other modules build on — which is why the module is `pub(crate)` rather
 /// than private.
 ///
-/// Split out under **R2** on 2026-08-28. Same seam as `app::prefs`, taken in
-/// the same commit and for the same reason.
 #[cfg(test)]
 pub(crate) mod tests;
 
@@ -1322,8 +1241,6 @@ pub(crate) mod tests;
 /// treats the **ribbon** as authoritative — so the restored mode lived exactly
 /// one frame and was then thrown away.
 ///
-/// The effect on the operator is the one `modes::assemble`'s header was
-/// written to prevent, quoting his own report of 2026-08-26:
 ///
 /// > Someone who spent an afternoon in Edit came back the next morning to a
 /// > program that had silently forgotten.

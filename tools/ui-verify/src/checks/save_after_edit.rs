@@ -3,8 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-01: *"can you try doing an edit and save? I did this and
-//! pressed ctrl+s to save and it closed."*
 //!
 //! ## ★★★ Why the existing coverage could not see this
 //!
@@ -220,9 +218,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: …and the DOCUMENT is still open, on the same page, same zoom ----
     //
-    // ★★★ **THIS is `OPERATOR_REQUESTS.md` O65**, and it is the half that was
-    // fixed on 2026-08-31 and marked NOT DRIVEN — then reported again by the
-    // operator on 2026-09-01 against the build that carried the fix.
     //
     // His words the first time: *"I can't edit it unless I save the document
     // first, at which point it closes the document after saving."* The chain

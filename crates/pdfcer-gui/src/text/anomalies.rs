@@ -79,22 +79,12 @@ pub fn key_name(key: &[u8]) -> String {
 
 /// One PDF value, short enough to sit inside a sentence.
 ///
-/// # ★★★ This used to be twenty-six match arms, and the engine took them
 ///
 /// [`pdfcer_core::object::Object`] had no `Display`, only `Debug`, and `Debug`
 /// on a `Dict` is a whole object graph. So this shell wrote the sentence-sized
 /// rendering itself: scalars shown exactly, containers named rather than
 /// expanded. That asymmetry is still the design — it is just no longer ours.
 ///
-/// `Pass 296.2` (`90576a8`, consumed 2026-09-11) put `Display` on `Object` and
-/// on `Name`, **with the contract this file had arrived at**, because the
-/// argument for it was the one that decided the request: the type is
-/// `#[non_exhaustive]`, so the catch-all arm below rendered *"a value this
-/// build does not recognise"* — and **adding a variant in the engine would
-/// have quietly made every shell say that about it, with nothing red
-/// anywhere**. A rendering that degrades silently on the consuming side is a
-/// correctness problem, not a tidiness one, and it belongs where the variant
-/// is added.
 ///
 /// The engine improved on two arms while it was there, and both are visible in
 /// what an operator now reads:
@@ -146,13 +136,6 @@ pub fn subject(object: Option<ObjId>) -> String {
 ///
 /// # ★★ Why it names the panel
 ///
-/// The bar answers *"is there something I should know?"* and has room for
-/// nothing else — **R128** caps it at one elided row. The clause list is a
-/// census, so the operator who reads it knows *that* pdfcer chose and *how many
-/// times*, and the next question is always *which*. The recovered-index line
-/// beside it settled this shape on 2026-08-26 and points at the same panel for
-/// the same reason; two disclosure lines that sent the operator to two different
-/// places would be worse than either.
 #[must_use]
 pub fn status_line(clauses: &[String]) -> String {
     format!(
@@ -243,14 +226,6 @@ pub const fn heading() -> &'static str {
 /// here; saying so is what keeps the disclosure from behaving like a prompt,
 /// which decision 059 and the engine's own notice both forbid by name.
 ///
-/// ★★★ **Corrected 2026-09-10.** This doc used to end *"and no control that
-/// would repair it"*, which was true when it was written and stopped being true
-/// the day [`reread_first_button`] landed under these rows. The sentence itself
-/// did not need changing and has not changed — *"the document is complete and
-/// usable as it is"* is exactly what a control **underneath** must not
-/// contradict, and it is what makes pressing the button a choice rather than a
-/// repair. What needed changing was the doc's claim about the shell, and a
-/// stale limitation sentence is a defect in whoever believes it.
 #[must_use]
 pub const fn note() -> &'static str {
     "Other programs open this file too, and make their own choices in the same \
@@ -271,11 +246,6 @@ pub const fn tooltip() -> &'static str {
 /// > *"...and if the user can intervene in a decision that should always be an
 /// > option along with them not having to intervene."*
 ///
-/// The document opens (not fatal) and nothing has to be answered first
-/// (intervention not required); this is the sentence that makes intervention
-/// *possible*. Until 2026-09-10 the panel said what pdfcer had chosen and
-/// offered no way to choose otherwise, which is the difference between being
-/// told and being asked.
 ///
 /// # ★★ Why it names the VALUE and not the policy
 ///
@@ -346,14 +316,6 @@ pub const fn reread_tooltip() -> &'static str {
 /// *"what if it is the wrong one?"* — as far as this build can: he can see both
 /// values and judge.
 ///
-/// ★★★ **And, since 2026-09-10, take the other one.** Choosing it is a re-load
-/// rather than an edit — the engine is explicit that *"a decision made during
-/// parsing is not a value that can be edited afterwards"* — and the button that
-/// performs that re-load is drawn directly under these rows by
-/// `crate::panels::docprops`. This row is what makes it meaningful: without both
-/// values on screen, *use the first value instead* is a button an operator has
-/// no basis to press. (This paragraph used to say the ask *"is filed in
-/// `ENGINE_BACKLOG.md`"*. It was, as rows 280 and 281; both are wired.)
 ///
 /// ★ "left" rather than "discarded" or "threw away". The discarded value is
 /// still in the file and still visible to any other reader; pdfcer did not

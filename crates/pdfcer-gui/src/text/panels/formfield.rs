@@ -267,10 +267,6 @@ pub fn delete_refused() -> String {
 ///
 /// # ★★★ Why this takes the engine's refusal rather than a boolean
 ///
-/// It used to be one sentence — *type a name with no dots in it* — shown for
-/// every reason the box was not yet usable, because the panel's gate was a
-/// two-clause shell-side model (`!is_empty() && !contains('.')`) and the only
-/// thing it could report was that one of the two had failed.
 ///
 /// That sentence was **wrong for the commonest case**. A freshly selected
 /// field opens this panel with an empty box; hovering the greyed button then
@@ -313,11 +309,6 @@ pub fn rename_disabled(refusal: &pdfcer_core::forms_author::FormAuthorError) -> 
         // different rule from the one above with a different remedy, so it gets
         // its own sentence rather than being folded into the dot one.
         //
-        // ⚠ Unreachable from this box until 2026-09-12 and wired anyway: the
-        // engine reported that making the rule askable exposed `adopt_widget`
-        // and `sign` ACCEPTING `a..b` where `rename_field` refused it. One
-        // predicate now serves all three, so what a shell can be shown here is
-        // decided by the engine and not by which verb it happened to call.
         F::EmptyNameSegment { .. } => "That name has a dot with nothing beside it. Remove the dot, or put a name on both sides of it.".to_owned(),
         // ★★ The catch-all does not guess. Reaching here means the engine refused
         // for a reason this shell has not met, and a wrong reason in a hover is
@@ -372,14 +363,6 @@ pub fn delete_box_hover() -> String {
 /// > ~~Required, read-only, the tooltip and the border can only be set when a
 /// > field is placed. To change one, delete this field and place a new one.~~
 ///
-/// `EditSession::edit_field` and `edit_widget` landed on **2026-08-26**, the
-/// same day this sentence was written, three commits before the revision the
-/// shell compiles against — and the engine wrote a full pane design brief into
-/// the request channel saying so. Nothing consumed it, so for a day the program
-/// told an operator to **delete their field and start again** for a capability
-/// it already had. Delete-and-replace loses the field's name, its filled value
-/// and its place in the tab order, every one of which an FDF import or a
-/// filling script keys on.
 ///
 /// The function is **kept and rewritten** rather than deleted, because there is
 /// still something true to say in the same place: the properties that remain
@@ -398,8 +381,6 @@ pub fn not_editable_note() -> String {
         .to_owned()
 }
 
-// ===========================================================================
-// The editable properties — `EditSession::edit_field`, consumed 2026-08-27
 //
 // ★★ Every hover answers "what does this DO to the document", never "what is
 // this called". `crate::text::tool`'s rule 2 — a sentence states a fact about
@@ -592,11 +573,6 @@ pub const fn label_default_value_hint() -> &'static str {
 /// ★★★ The hover carries the fact the label cannot: **this is what Reset
 /// restores**, and a field with no default is emptied by it.
 ///
-/// That is §12.7.5.3's behaviour and it is correct — the reason it is worth
-/// saying is that pdfcer could not *write* a default value until 2026-09-08, so
-/// every form pdfcer authored had a Reset button that blanked everything. An
-/// operator who met that would reasonably conclude Reset was broken. It was
-/// not; there was nothing to restore.
 ///
 /// ⚠ It does **not** promise the field is currently filled in with this value.
 /// `/V` and `/DV` are separate: a field can show one thing and reset to
@@ -639,10 +615,6 @@ pub const fn quadding_name(q: pdfcer_core::vartext::Quadding) -> &'static str {
         Q::Right => "Right",
     }
 }
-
-// ===========================================================================
-// The BOX — `EditSession::edit_widget`, consumed 2026-08-27
-// ===========================================================================
 
 /// The heading over the widget-scoped properties.
 ///
@@ -752,8 +724,6 @@ pub const fn label_caption_hint() -> &'static str {
     "The words on a button"
 }
 
-// ===========================================================================
-// The BORDER and the VISIBILITY — `Pass 146.0`, consumed 2026-08-27
 //
 // ★★★ Filed at 22:40 as *"a widget's border can be written and not read, so a
 // properties control would lie"*, shipped by the engine within the hour, and

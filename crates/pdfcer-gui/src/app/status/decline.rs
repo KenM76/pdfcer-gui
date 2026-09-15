@@ -153,11 +153,7 @@ pub(crate) enum Declined {
     /// outline they can see on screen, which is the most confusing shape a
     /// message can have.
     ///
-    /// This became reachable on 2026-08-27, when a click started reaching
-    /// inside form XObjects. Before that a form-interior object could not be
-    /// selected at all, so no verb could be asked about one.
     ///
-    /// # ★★★ The payload arrived on 2026-09-11, and it arrived late
     ///
     /// This variant carried no payload and its sentence said *"pdfcer cannot
     /// edit inside one yet"*. `pdfcer-core`'s `Pass 188.0` shipped six
@@ -191,21 +187,11 @@ pub(crate) enum Declined {
     /// reasoning for keeping the engine's own prose OFF the status bar is on
     /// that enum.
     ///
-    /// # ★★ This paragraph used to say the payload is `Copy`, and it was the
-    /// # reason the whole enum was
     ///
     /// It read: *"It is a `Copy` enum rather than a `String` so this whole type
     /// stays `Copy` and `Declined::line` stays `&'static str`."* **Both halves
     /// are now overtaken, and neither by accident.**
     ///
-    /// `Declined::line` stopped being `&'static str` on 2026-09-10, when O141's
-    /// *"pdfcer cannot type a `q` into this text"* needed to name the
-    /// character; that arm's own docs record that the generic wording had been
-    /// defended in three separate places as a design choice when it was a
-    /// return type. And `Copy` went on 2026-09-11, when
-    /// [`crate::text::status::TextStyleRefusal::FaceLacksCharacters`] took the
-    /// engine's `Refusal::remedy_faces` — the faces that *would* show the run
-    /// — which is a `Vec<String>`.
     ///
     /// ★ The rule the old sentence was really protecting survives untouched:
     /// **no engine prose on this bar.** What travels is a list of `/BaseFont`
@@ -230,13 +216,6 @@ pub(crate) enum Declined {
     TextStyle(crate::text::status::TextStyleRefusal),
     /// **A rotation did not happen** — the ninth handle, 2026-08-28.
     ///
-    /// The payload is [`crate::text::rotating::RotateRefusal`], modelled on
-    /// [`Self::TextStyle`]'s and for the reason that outlived the modelling:
-    /// it keeps the engine's own prose off the status bar. (It cited
-    /// `Copy`-ness too, until [`Self::TextStyle`] stopped being `Copy` on
-    /// 2026-09-11 to carry a remedy the operator can act on. This one has no
-    /// such payload and stays a fieldless `Copy` enum — which now costs
-    /// nothing either way, since the enum around it is `Clone`.)
     ///
     /// # ★★★ Why this variant exists for a gesture that should never refuse
     ///
@@ -275,13 +254,6 @@ pub(crate) enum Declined {
     /// **"Give this page its own copy" did not happen** — the form-XObject
     /// verb, 2026-08-28.
     ///
-    /// The payload is [`crate::text::unshare::UnshareRefusal`], modelled on
-    /// [`Self::TextStyle`]'s and [`Self::Rotate`]'s and for the reason that
-    /// outlived the modelling: it keeps the engine's own diagnostic prose off
-    /// the status bar. (The `Copy` half of that argument is gone — see
-    /// [`Self::TextStyle`], which stopped being `Copy` on 2026-09-11 to carry
-    /// a remedy an operator can act on. This refusal has no such remedy to
-    /// carry.)
     ///
     /// # ★★★ Why this refusal matters more than any other in this enum
     ///
@@ -382,15 +354,7 @@ pub(crate) enum Declined {
     /// is that **the name is already on screen** — the operator typed it
     /// seconds ago and it is still in the field they typed it into.
     ///
-    /// ⚠ This paragraph used to open *"It is a `Copy` enum"*. That was never
-    /// the reason and is not even true: this enum derives
-    /// `Clone, Debug, PartialEq, Eq` and has carried non-`Copy` payloads since
-    /// `CustomStampUnavailable` arrived. The argument that matters survives the
-    /// correction intact — and see `FieldPathCrossesTerminal` immediately
-    /// below, which is the case where it does **not** hold and so does carry
-    /// its name.
     ///
-    /// # ★★ TWO raisers since 2026-09-12, from two different engine variants
     ///
     /// | engine variant | verb | the fact |
     /// |---|---|---|
@@ -412,9 +376,6 @@ pub(crate) enum Declined {
     /// engine decides. It is also the common case: rename `Rev1` to `Rev2` on
     /// a form that has a `Rev2`.
     ///
-    /// ⚠ It reached the operator as the funnel floor's generic *"That change
-    /// was refused"* from the day the rename surface shipped until
-    /// 2026-09-12, because `actions::forms::rename` mapped only `Ok`.
     FieldNameTaken,
     /// ★★★ **A field name was refused because a dot in it points through a
     /// field that already exists** — `FormAuthorError::FieldPathCrossesTerminal`,
@@ -444,11 +405,6 @@ pub(crate) enum Declined {
     ///
     /// # ★★★ This replaced a shell-side pre-check, and the difference matters
     ///
-    /// Until 2026-09-11 `actions::forms::group_is_a_field` modelled the
-    /// engine's rule here and refused **before** calling the verb, because at
-    /// the time the engine did not refuse at all and the act silently destroyed
-    /// the existing field. The engine has refused since `2026-08-30`, at a
-    /// single choke point all six authoring routes reach.
     ///
     /// The pre-check was then not merely redundant — it was **wrong**, and in
     /// the direction a duplicate model always goes wrong. It refused on any
@@ -574,12 +530,6 @@ pub(crate) enum Declined {
     },
     /// **A resize was refused because the annotation is a fixed-size marker.**
     ///
-    /// `EditError::ResizeFixedSizeMarker` (`Pass 277.0`, 2026-09-09): a `/Text`
-    /// sticky note, or any annotation whose `/F` sets `NoZoom`, is drawn by a
-    /// conforming reader at one size whatever its `/Rect` says, anchored at
-    /// the rect's upper-left corner (ISO 32000-1 12.5.3, 12.5.6.4). There is
-    /// nothing for a factor to scale, and the engine offers **no override**
-    /// because a reader would ignore the result rather than distort it.
     ///
     /// ★ Reachable from this shell, which is why it is worded: the sticky's
     /// canvas grips are move-only, but the Properties panel's geometry
@@ -649,14 +599,6 @@ pub(crate) enum Declined {
     ///   verb with **no field selected**, where there is no properties section
     ///   drawing a sentence at all.
     ///
-    /// ⇒ Before 2026-08-29 that residue was **silence**:
-    /// `crate::app::actions::apply::vector_edit`'s `Err` arm wrote one line to
-    /// the trace and, by its own recorded decision, said nothing to the
-    /// operator. (Since O116 it words [`Self::EditRefused`], which names no
-    /// field and no gate — the floor, not this sentence.) R83's rule is not
-    /// *gate the controls*, it is **a refusal must
-    /// be a sentence, never a silence** — so the verb still owes the sentence
-    /// for the case the forecast missed.
     ///
     /// ★★ It is deliberately **not** the wording the Properties panel draws.
     /// That one is a standing *description* of the document, drawn from the
@@ -688,11 +630,6 @@ pub(crate) enum Declined {
     /// > *"I also can't edit or delete nodes of a markup shape once it is
     /// > drawn."*
     ///
-    /// The payload is [`crate::text::measure::VertexEditRefusal`], modelled on
-    /// [`Self::TextStyle`]'s and [`Self::Rotate`]'s and for the reason that
-    /// outlived the modelling: it keeps the engine's own diagnostic prose off
-    /// the status bar. (The `Copy` half is gone — see [`Self::TextStyle`],
-    /// 2026-09-11.)
     ///
     /// # ★ Why a gesture with a preflight still needs a decline
     ///
@@ -750,12 +687,6 @@ pub(crate) enum Declined {
     ///
     /// # ★ It is also raised where there was never a gesture
     ///
-    /// `annotnodes::explain_unreshapable` raises it when the operator arms the
-    /// **Points tool** over a shape that shows no anchors at all — a rectangle,
-    /// an ellipse. (A freehand mark's points are editable since 2026-09-09.) R9 says an unavailable capability renders
-    /// nothing, and *nothing* is also what a build that forgot to draw the
-    /// anchors renders. The operator cannot tell those apart by looking, so the
-    /// absence is stated.
     ///
     /// # Retired by the operator's next act
     ///
@@ -972,11 +903,6 @@ pub(crate) enum Declined {
     /// ★★★ **Enter was pressed in text that is already on the page, where a
     /// line break cannot go** — `OPERATOR_REQUESTS.md` **O127**, defect 2.
     ///
-    /// Enter means *a new line* in every draft this shell has; in an existing
-    /// show operator the FILE forbids one, so it declines by name instead. It
-    /// used to **commit**, silently — the operator asked *"can the enter key
-    /// create new lines?"* and was answered by an edit finishing under him.
-    /// See `decline/textedit.rs`.
     EnterCannotSplit,
     /// ★★★ **A cut or a paste the active MODE does not do** — 2026-09-05, and
     /// it is the second half of the defect the driven sweep found as A1.
@@ -1023,12 +949,6 @@ pub(crate) enum Declined {
     ///
     /// # What this replaces, and it is not a silence
     ///
-    /// [`Self::EditRefused`] was already reaching him — O116 shipped it on
-    /// 2026-09-04 and a driven run on his own file confirms the `⊗` slot draws
-    /// one frame after the refusal. What he read was *"That change was refused,
-    /// and the document is unchanged."* True, complete about the document, and
-    /// **silent about the one thing he wanted**: why, and whether he can do
-    /// anything.
     ///
     /// ⇒ So this is not the founding defect class a second time. It is the
     /// *next* rung of it: a sentence that says nothing actionable is not the
@@ -1273,10 +1193,6 @@ pub(crate) fn recorded_for_test() -> Option<Declined> {
 /// predicate is false on the frame it is written is **recorded and never
 /// readable**, and a test that stops at the store cannot tell the two apart.
 ///
-/// That is not hypothetical. `format.select_form`'s refusal was in exactly
-/// that state from the day the verb shipped until 2026-09-11 — see
-/// [`crate::text::status::InsideFormRefusal::NoContainingForm`] — with a
-/// green test asserting the recording.
 ///
 /// ★ `live` is `pub(super)` and stays that way: the bar is the one reader.
 /// This is a `#[cfg(test)]` widening, so it cannot become a second reader in
@@ -1316,9 +1232,6 @@ pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
 
 /// One decline, one sentence — [`Declined::line`]'s catalog mapping.
 ///
-/// Split out on 2026-09-10 for R2; the module's own header carries why this
-/// half and not [`Declined::still_true`] — which has since been split out
-/// too, into `fresh`.
 mod line;
 
 /// ★ **The funnel's floor**, split out under R2 when this file reached 1,530
@@ -1326,12 +1239,6 @@ mod line;
 /// the one part of this module that answers a question about somebody else's
 /// protocol rather than about what a decline is.
 ///
-/// ⚠ This doc comment was attached to `mod line;` from 2026-09-10 until
-/// 2026-09-12. The `line` split inserted its own doc block **above** this one
-/// instead of below it, which made two paragraphs about two different modules
-/// into one doc comment on the first of them and left `mod floor;` with none.
-/// Valid Rust, no warning, and wrong — recorded because the next split will be
-/// made by somebody inserting a doc block near this line.
 mod floor;
 /// Re-exported so that the one caller — `crate::app::actions::funnel` — still
 /// says `decline::before_the_verb()`. The split is about where the code lives; a

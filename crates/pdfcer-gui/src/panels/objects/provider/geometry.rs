@@ -1,9 +1,5 @@
 //! # `provider::geometry` — **the same questions, asked of either index space**
 //!
-//! `OPERATOR_REQUESTS.md` **O70**, 2026-09-01. Everything here answers *"what
-//! is inside this thing?"* for a [`TargetId`] rather than for a page
-//! paint-order index, which is what lets the Part and Node rungs be offered for
-//! something painted inside a form XObject.
 //!
 //! ## ★★ Why a module rather than more methods in [`super`]
 //!
@@ -50,10 +46,6 @@ impl ObjectModelProvider {
     // ★★★ THE SAME FOUR QUESTIONS, ASKED OF EITHER INDEX SPACE
     // ===================================================================
     //
-    // `OPERATOR_REQUESTS.md` O70, 2026-09-01. Everything below this line
-    // answers *"what is inside this thing?"* for a `TargetId` rather than for
-    // a page paint-order index, which is what lets the Part and Node rungs be
-    // offered for something painted inside a form XObject.
     //
     // ## Why they are additions rather than changed signatures
     //
@@ -111,13 +103,6 @@ impl ObjectModelProvider {
     ///
     /// # ★★★ The engine's own guard, called rather than copied
     ///
-    /// [`pdfcer_core::vector::edit::text_run_move_refusal`] is the pre-check
-    /// `plan_move_text_run` itself runs, exported for this purpose on
-    /// 2026-09-14 (`G017`). Calling it — rather than reading `positioned_by`
-    /// here and reaching the same conclusion — is what makes
-    /// [`crate::canvas::moving::eligible`] and the engine structurally unable
-    /// to disagree, which is the whole of obligation 3 in `canvas::moving`'s
-    /// header: *a ghost is drawn if and only if the release would commit*.
     ///
     /// ★★ **It does not promise success.** A singular `Tm` or CTM is
     /// discovered during planning, from geometry, not from the run's

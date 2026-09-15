@@ -3,15 +3,6 @@
 //!
 //! ## ★★★ THESE SHRANK ON PURPOSE, AND THE DELETION IS THE FINDING
 //!
-//! This file held **twelve** tests on the morning of 2026-09-07. Seven of them
-//! asserted the behaviour of a §12.5.5 placement implementation this module
-//! carried itself — a shear reports no angle, a mirror is not a half turn, a
-//! collapsed matrix has no placement, an unresolvable `/AS` is declined, a
-//! single-entry state is not ambiguous, a missing `/Matrix` is the identity,
-//! the angle comes back anticlockwise and normalised. Every one of them was a
-//! good test of code that **should not have existed**, and `Pass 155.2` took
-//! the code away that afternoon (`pdfcer_render::annot::appearance_placement`,
-//! `Annotation::appearance_rotation_degrees`).
 //!
 //! **They were deleted with their subject, not ported.** Re-asserting the
 //! engine's own contract from here would be this shell keeping a private
@@ -201,11 +192,6 @@ fn a_quarter_turn_is_not_upright_even_though_its_rect_fits() {
 /// a correct answer rather than a failure, because the caller then keeps
 /// `/Rect`, which for such an annotation is where the mark is.
 ///
-/// The negative control for the whole module. Asked of an object id that names
-/// no annotation on this page, which is the cheapest way to reach the `None`
-/// arm without building a malformed document — and the engine's own tests cover
-/// the interesting `None` cases (no `/BBox`, a degenerate transform, an
-/// unresolvable `/AS`) that this shell used to duplicate.
 #[test]
 fn an_annotation_that_is_not_there_has_no_placement() {
     let (doc, _) = turned(0.0);
@@ -222,13 +208,6 @@ fn an_annotation_that_is_not_there_has_no_placement() {
 
 /// ★★★ **THE TRIPWIRE FIRED, AND THIS IS WHAT IT BECAME.**
 ///
-/// It was written on the morning of 2026-09-07 as
-/// `the_engine_still_has_no_rotation_field`: it read `pub struct Annotation`
-/// out of the **pinned** engine checkout and failed the moment the engine grew
-/// a `rotation`, `appearance_matrix` or `matrix` field — which is exactly what
-/// happened, hours later, on the first `cargo update` after `Pass 155.2`
-/// shipped. It named the field, said what to delete, and pointed at the request
-/// to close.
 ///
 /// **It is kept, inverted**, because the workaround it guarded is gone and the
 /// opposite hazard is now the live one: this module must go on being a thin

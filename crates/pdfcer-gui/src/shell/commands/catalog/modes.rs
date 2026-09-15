@@ -1,8 +1,5 @@
 //! # `shell::commands::catalog::modes` — the mode selector — Read, Review, Edit
 //!
-//! One band of [`super::all`]'s catalogue. Split out of [`super`] under **R2**
-//! on 2026-08-28, when the Attachments command took that file to 1,495 of its
-//! 1,500 lines and the next command registered would have broken the rule.
 //!
 //! ## ★★★ The split is per TAB, and the reason it was refused before is gone
 //!

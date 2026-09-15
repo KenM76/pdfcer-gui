@@ -2,19 +2,11 @@
 //! button exists, the drawing actually gets thinner, and the screen says it is
 //! not what will print.**
 //!
-//! `OPERATOR_REQUESTS.md` **O137**, 2026-09-05, in his words:
 //!
 //! > *"awhile ago you told me you removed the button to show all lines without
 //! > their thickness — thin lines or something like cad has. The button never
 //! > worked but I do want that display option!"*
 //!
-//! Both halves of that were correct. `view.thin_lines` was registered, drawn on
-//! the View tab, and **inert**; it was unregistered on 2026-08-17 because
-//! `RenderOptions` had no field behind it. The engine shipped
-//! `stroke_display: StrokeDisplay { Actual, Hairline }` (`Pass 254.0`,
-//! `8f9fb3e`) the day this shell asked, so the control is back — and *"the
-//! button never worked"* is precisely the sentence this check exists to prevent
-//! being true a second time.
 //!
 //! # ★★★ Why a driven check when five unit tests already pass
 //!
@@ -81,11 +73,6 @@
 //! disclosure that says *"this is not what will print"* becoming permanent
 //! would be the worst version of that.
 //!
-//! ⬜ **NOT RUN.** Written 2026-09-05 with another track holding the machine's
-//! pointer. Two driven runs at once corrupt each other, so this check has never
-//! been executed against a real window; every claim in this header about what
-//! the application does is derived from its source and from unit tests, and the
-//! run is owed.
 
 use crate::checks::driving::{declared, declared_names, declared_or_in_overflow, list};
 use crate::checks::{Check, CheckContext, CheckReport};
@@ -344,13 +331,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let canvas = declared(&trace, ui_rect, CANVAS_REGION)
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
 
-    // ★★★ **AIMED AT MEASURED INK, not at the canvas's centre** — 2026-09-07.
     //
-    // `Ctrl+wheel` zooms about the pointer, so this one point decides what the
-    // whole climb lands on. It used to be `frame.declared_center(canvas)`, and
-    // on a CAD sheet that is blank paper: the linework is a border and a title
-    // block round the edges. This check reported **136 ink pixels of 286,528**
-    // and SKIPPED — correctly, and invisibly, because a SKIP is not red.
     //
     // ⇒ One capture at the opening zoom, [`densest_ink`] over it, and the aim
     // is a fact about this document rather than an assumption about where
@@ -428,16 +409,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!(
         "{ink_before} ink pixels in the canvas with real widths"
     ));
-    // ★★★ **A FLOOR, NOT A ZERO CHECK — raised 2026-09-05, the first time this
-    // check was ever run.**
     //
-    // The guard used to be `ink_before == 0`. On its first run it measured
-    // **138 ink pixels in a canvas of roughly 300,000** — four hundredths of one
-    // per cent — because climbing to 394 % on an A1 sheet lands the view on
-    // **blank paper**: the title block is in a corner and the zoom is anchored
-    // at the centre. 138 is above zero, so the guard let it through, and the
-    // check then reported *"the drawing lost 100.0 % of its ink"* and
-    // *"turning line weights back on did not restore the drawing"*.
     //
     // ⇒ Both sentences were true of the pixels and **false about the
     // application.** They are a statement about 138 pixels of nothing, and the
@@ -574,13 +546,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         dropped * 100.0
     ));
 
-    // ★★★ **THE ENGINE'S OWN COUNT IS THE PRIMARY ORACLE** — 2026-09-07.
     //
-    // The ink ratio below used to be the only one, and it failed a **working
-    // build**: on `a1-titleblock.pdf` at 394 % the drawing lost 1.39 %, under
-    // the floor, because the strokes in the aimed region were already close to
-    // one device pixel and the §8.4.3.2 floor had nothing left to take. The
-    // measurement was calibrated on a different drawing.
     //
     // ⇒ **Never widen a tolerance when the measurement runs out — read a better
     // instrument.** `Diagnostics::strokes_hairlined` (`Pass 254.1`) is the

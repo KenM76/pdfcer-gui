@@ -1,11 +1,6 @@
 //! `a_text_file_becomes_pages` — **File ▸ Import text as pages, driven: a
 //! `.txt` on disk becomes real pages in the open document.**
 //!
-//! The other half of the operator's 2026-09-04 ask — *"we should have
-//! export/import for that"* — which was half a feature for two days because
-//! `pdfcer-core` could not create a page, only copy one. `blank_document` and
-//! `place_text` shipped as `Pass 252.0`; this is what says the shell reached
-//! them.
 //!
 //! ## ★★★ The five links, and four of them have no test anywhere else
 //!

@@ -237,10 +237,6 @@ pub fn toggle(ui: &mut Ui, value: &mut bool, label: &str, note: Option<&str>) {
 
 /// ★★ **A free-text setting, with the parse shown rather than enforced.**
 ///
-/// The window's only non-radio, non-checkbox control, added 2026-08-26 for the
-/// CMYK buffer ceiling. Everything else here is a choice between named options;
-/// this one is a *quantity*, and a quantity the operator was explicitly given
-/// the right to choose without a cap:
 ///
 /// > *"can the size of the buffer be increased? Allow the user to set the size
 /// > up to the maximum possible?"*

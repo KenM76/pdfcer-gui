@@ -3,12 +3,6 @@
 //!
 //! # Why this is its own file
 //!
-//! `super` reached 1503 lines on 2026-09-12 and `check-file-size` went red.
-//! R2's instruction for that moment is to find the seam rather than raise the
-//! limit, and the seam was already here: these seven functions know nothing
-//! about each other, nothing about `MarkupSpec`, and nothing about whether
-//! they should be drawn. They are handed a [`Current`] and an `AnnotTarget`
-//! and they build a control.
 //!
 //! What the parent keeps is the judgement: `section` decides there is a
 //! selection worth a panel, `markup_rows` reduces the annotation to a
@@ -105,14 +99,7 @@ pub(super) fn colour_row(
 
 /// **The interior colour, `/IC` — the Fill row.**
 ///
-/// # ★★★ Why this exists at all, when the header used to argue against it
 ///
-/// `MarkupStyle::interior` shipped in the engine with `set_markup_style` and had
-/// **zero GUI callers** until 2026-09-06. The module header carries the argument
-/// that kept it that way, and carries the correction beside it; the short form
-/// is that *"a filled comment shape hides the drawing it is a comment about"* is
-/// a sound reason to author `interior: None` and not a reason to refuse an
-/// operator the ability to fill a shape they have already placed.
 ///
 /// `canvas::markup::spec` is untouched by this. **No fill at author time, fill
 /// available on restyle.**
@@ -125,12 +112,6 @@ pub(super) fn colour_row(
 /// control down, and R9's answer is the same: the row is absent, the way
 /// [`width_row`] is absent for a highlight.
 ///
-/// ⚠ **Corrected 2026-09-06.** The paragraph above used to justify the list
-/// with *"`apply_markup_style` does not read `style.interior` on those arms"* —
-/// a fact about the engine's source, restated here, where nothing checks it.
-/// The list is now asked for: `MarkupStyleSupport::takes_interior`, through
-/// [`Current::offers_fill`]. The old sentence was not wrong; it was a copy, and
-/// a copy is what this project filed a request to be rid of.
 ///
 /// # ★ The swatch shape mirrors [`colour_row`] exactly, including the Clear
 ///
@@ -194,8 +175,6 @@ pub(super) fn fill_row(
 /// carried colour, interior, width, opacity and endings and had no dash field at
 /// all, so there was nothing for a control to reach.
 ///
-/// The verb arrived on the afternoon of 2026-09-06 with two others, and the
-/// **other two are what make this one safe to offer**:
 ///
 /// * `/BS` `/S` and `/D` are read back on the way IN, so a restyle that does not
 ///   mention the dash **preserves** it — including a dash pdfcer never authored
@@ -281,9 +260,6 @@ pub(super) fn dash_row(
 /// rather than here, because it is true of the section and not of this control
 /// alone.
 ///
-/// ★ Moved here on 2026-09-12. It sat above `dash_row`, run
-/// together with that item's doc comment — so it documented `dash_row`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 pub(super) fn width_row(
     ui: &mut Ui,
     current: &Current,
@@ -330,14 +306,7 @@ pub(super) fn width_row(
 
 /// **The two line endings, `/LE` — what makes an arrow an arrow.**
 ///
-/// # ★★★ Why this exists, when the header used to argue against it
 ///
-/// `MarkupStyle::endings` shipped with `set_markup_style` and had **zero GUI
-/// callers** until 2026-09-06. The header carries the overturned argument in
-/// full; the short form is that a `/Line` with `/LE [/None /None]` is not a
-/// different *kind* of mark — same `/Subtype`, same geometry, same verb — and
-/// §12.5.6.7 treats the endings as style, which is why the engine put them in
-/// the style struct rather than in a reshape.
 ///
 /// # ★★ Two controls, ONE dictionary property — and why that is not a breach of
 /// this module's "one field per action" rule
@@ -357,8 +326,6 @@ pub(super) fn width_row(
 /// The failure the rule prevents needs a second control holding a copy of a
 /// value it set earlier, and neither of these two holds anything.
 ///
-/// # ★ `/Line` only, and absent otherwise — the engine's answer, since
-/// 2026-09-06
 ///
 /// `MarkupStyleSupport::takes_endings` is `true` for `/Line` and for nothing
 /// else, and [`Current::offers_endings`] is what asks it. A chooser on a
@@ -366,11 +333,6 @@ pub(super) fn width_row(
 /// `EditError::StylePropertyNotApplicable` at `edit.rs:26478` — so R9 says
 /// absent and the engine agrees in writing.
 ///
-/// ⚠ This paragraph used to read *"[`Current::endings`] is `Some` for a
-/// `MarkupSpec::Line` and nothing else, which matches `apply_markup_style`
-/// exactly."* True, and a restatement of the engine's list inside a shell. The
-/// spec arm still supplies the **pair**, because that is a value; it no longer
-/// decides whether the control exists.
 pub(super) fn endings_row(
     ui: &mut Ui,
     current: &Current,
@@ -449,12 +411,6 @@ pub(super) fn endings_row(
             page: target.page,
             id: target.id,
             style: MarkupStyle {
-                // ★ `StyleEdit::Set` since 2026-09-06 — the arm that WRITES
-                // `/LE`, including `Set((None, None))` when the operator sets
-                // both ends to *No end*. That is deliberately not the same act
-                // as the Clear above: it states "no arrowheads" in the file
-                // where Clear takes the statement out. Same picture, different
-                // bytes; see `t::markup_endings_clear`.
                 endings: Some(StyleEdit::Set(chosen)),
                 ..MarkupStyle::default()
             },

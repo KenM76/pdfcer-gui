@@ -1,9 +1,6 @@
 //! # `canvas::fit` — **where the view goes when the viewport changes, or a fit
 //! is pressed**
 //!
-//! ★★★ **The subject widened on 2026-08-31** (`OPERATOR_REQUESTS.md` O78) and
-//! the old title — *"spending a fit command's request to place the view"* — is
-//! kept above the new one because the widening is the finding.
 //!
 //! The operator:
 //!
@@ -14,10 +11,6 @@
 //!
 //! ## ★★★ Preserving the centre SUBSUMES a fit's re-placement
 //!
-//! This module used to have two jobs — spend a pending fit request, and
-//! re-place the view when the viewport changed **while a fit was active**. The
-//! second is now a special case of a general rule, and it is a theorem rather
-//! than a convenience.
 //!
 //! On an axis a fit **pins**, the page is by construction no larger than the
 //! viewport, so `margin = (v − d) / 2`, and holding the page's own centre at
@@ -29,13 +22,6 @@
 //! equality so deleting the old path cannot silently change what Fit page
 //! does.
 //!
-//! ⇒ A fit is now purely a rule about **zoom** — `ViewState::apply_fit`, run
-//! every frame — and this is the one rule about **position**. They used to be
-//! entangled, and the entanglement is why a pan had to leave the fit: a
-//! re-placement would have thrown the operator's position away, so the only
-//! defence available was to stop being in a fit. With position defended in its
-//! own right that defence is unnecessary, which is why
-//! [`crate::canvas::offset`]'s pan arm no longer calls `set_fit(FitMode::None)`.
 //!
 //! ## The original subject, unchanged below this line
 //!
@@ -43,7 +29,6 @@
 //!
 //! ## The request
 //!
-//! `OPERATOR_REQUESTS.md` O28, 2026-08-24:
 //!
 //! > *"If I press the Fit width or fit page button the view should center to
 //! > the width as well or center the page."*
@@ -96,23 +81,7 @@ use crate::canvas::geometry;
 /// How far the viewport must move, on either axis, before it counts as a
 /// **resize** that re-places the view.
 ///
-/// # ★★★ Why a floor exists, measured on 2026-09-08
 ///
-/// The central panel's width oscillated by 0.1-0.5 pt between consecutive
-/// frames with nothing on screen changing. Run down on 2026-09-09: a solid
-/// scroll bar fading in inside a dock body overshoots its pane by a
-/// rounding residue, and `egui::Panel` answered by sliding the whole side
-/// inward by that residue (`egui_shell::dock::overflow_probe`). The dock
-/// now keeps a body's union out of its frame, so that source is gone; the
-/// floor stays because it is the right contract regardless of source - a
-/// sub-pixel change of viewport is not a resize an operator made - and a
-/// future source would otherwise reach the view again. An exact
-/// comparison reported a resize on **every
-/// frame**, which was harmless only for as long as the measure and place
-/// halves of the centre rule agreed exactly about the viewport's width. The
-/// frame they disagreed — the canvas's scroll bars took real width and one
-/// half was still reading the outer size — the page moved 7.4 px per frame
-/// until it left the screen.
 ///
 /// # Why half a point, and why the comparison is STRICTLY greater
 ///
@@ -193,24 +162,7 @@ pub(super) enum Placed {
 ///
 /// # Arguments
 ///
-/// * `current_display` — the acting page's drawn size, already re-fitted this
-///   frame. Read by the resize arm alone, which stays page-based on purpose —
-///   see [`Placed`]. ★ The acting page's *rect* used to be a parameter here
-///   and was dropped by O177: arm 1 now solves against the row's origin, and
-///   nothing else ever read it.
-/// * `row_rect` — the rect of the **row** holding the acting page, for its
-///   origin. Equal to `current_rect` under every non-facing mode, which is why
-///   the arms below can use it unconditionally. See
-///   [`crate::viewer::strip::Strip::row_rect_of`].
 ///
-/// ★ That row's drawn **size** — the page's own size outside a facing mode,
-///   and both pages plus the spread gap inside one — is taken from `row_rect`
-///   rather than passed beside it. It was a parameter for one afternoon on
-///   2026-09-12 and clippy's argument-count lint caught it: two arguments
-///   spelling one measurement is a pair a caller can swap in silence.
-/// * `display_size` — the whole strip's drawn size.
-/// * `vp` — the viewport measured before the scroll area was built, the same
-///   measurement every margin term in [`geometry`] is derived against.
 pub(super) fn placement(
     doc: &mut OpenDoc,
     current_display: (f32, f32),
@@ -228,8 +180,6 @@ pub(super) fn placement(
     page_index: usize,
 ) -> Option<Placed> {
     let row_display = (row_rect.width(), row_rect.height());
-    // ★★★ **A pending request OR a live fit mode**, and the second half is
-    // `OPERATOR_REQUESTS.md` **O55**, 2026-08-28:
     //
     // > *"if the canvas window is resized the pdf should resize to match"*
     //
@@ -298,10 +248,6 @@ pub(super) fn placement(
     // ★ The operator's sentence says it exactly: *"if the canvas window is
     // **resized** the pdf should resize to match"*. Resized, not redrawn.
     //
-    // ★ Compared exactly rather than with a tolerance — UNTIL 2026-09-08. The
-    // paragraph that stood here said a viewport that has not changed produces
-    // bit-identical floats, and that a tolerance "would only decide how much
-    // of a resize is allowed to be ignored, which is a question nobody has".
     //
     // ★★★ Somebody has, and it was measured rather than argued: the central
     // panel's width oscillates by **0.1–0.5 pt from frame to frame** with no
@@ -321,11 +267,6 @@ pub(super) fn placement(
     // window edge, a panel collapsing — is tens to hundreds of points and
     // clears the floor on its first frame.
     //
-    // ★★★ **The comparison is now made on EVERY frame, whatever the fit** —
-    // O78. It used to read
-    // `doc.view.fit != FitMode::None && doc.fit_viewport != Some(...)`, so a
-    // document that was not in a fit was never told the viewport had changed
-    // and got no resize handling at all.
     //
     // That was worse than "the scroll offset is kept in pixels". On a single
     // page `page_local_offset` reduces to `page_local = scroll − viewport`,
@@ -393,14 +334,6 @@ pub(super) fn placement(
     //
     // ## Why this is needed at all, given the continuous strip is scrollable
     //
-    // `Action::SetPageDisplay` assigns `doc.tracked_page = doc.view.page_index`
-    // so the new arrangement does not read the current page as "navigated to"
-    // and scroll to it. That suppression is correct and stays — but it left
-    // the scroll offset the continuous strip had settled on in force over a
-    // layout that no longer describes it. Measured on 2026-09-12 by driving
-    // the shipped build: scrolled 480 pt in Continuous, then switched to
-    // Single, and the page was drawn 431 pt above the middle of the canvas
-    // with roughly half of it off the top edge. Exactly the report.
     //
     // ## Why the ROW and not the page
     //
@@ -420,9 +353,6 @@ pub(super) fn placement(
     if !changed {
         return None;
     }
-    // ★★★ **DECLINE UNTIL THE OPEN-SEED ARM HAS PLACED THE VIEW** — the
-    // regression of 2026-09-13, and the paragraph this replaces is why the
-    // guard is spelled out instead of inferred.
     //
     // What stood here said: *"No previous frame is no centre to preserve, so
     // the very first frame of a document declines by construction and
@@ -630,10 +560,6 @@ mod tests {
     /// by exactly half of it, as the centre rule says they must.
     #[test]
     fn once_the_gate_opens_the_placement_is_exact() {
-        // ★ Zoom 1.0, so the page (612 × 792) is LARGER than the viewport on
-        // both axes. A page smaller than the viewport is centred by its
-        // margin and its page-local offset is 0 whatever the viewport does —
-        // the first draft of this test used zoom 0.5 and compared 0 with 0.
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);
         settled(&mut doc);
         let before = frame(1.0, (444.0, 592.0));
@@ -680,8 +606,6 @@ mod tests {
         doc.canvas_frames = 0;
         assert_eq!(place_at(&mut doc, 1.0, (444.0, 592.0), None), None);
 
-        // Frame 1 — the seed's frame. A `before` IS available and the viewport
-        // HAS changed, so every precondition the arm used to rely on is met.
         doc.canvas_frames = crate::canvas::offset::SEED_FRAME;
         assert_eq!(
             place_at(&mut doc, 1.0, (446.0, 592.0), Some(before)),

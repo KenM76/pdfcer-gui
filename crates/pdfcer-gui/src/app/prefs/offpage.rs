@@ -24,7 +24,6 @@
 //!
 //! # ★★★ Why the answer is stored per MODE rather than once
 //!
-//! The operator's request, 2026-09-11, verbatim:
 //!
 //! > *"by default, read doesn't show off page items, review and edit do show
 //! > off page items. these settings can be changed by the user and their

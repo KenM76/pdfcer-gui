@@ -8,7 +8,6 @@
 //! is a statement about a run that has finished, and a one-page run has no
 //! observable middle — it is started and then it is over.
 //!
-//! The operator's request of 2026-09-01 is entirely about the middle:
 //!
 //! > *"can you make it so the recognizing ocr gives feedback on what it is
 //! > doing when it is running (pages done, words/characters detected, etc) so
@@ -31,10 +30,6 @@
 //!
 //! # ★★ What was already true, and why it was not enough
 //!
-//! The feature shipped on 2026-09-01 with unit tests over
-//! `ocr::progress::Control` — including both orders of a Stop and a Cancel
-//! arriving together, which is the sharp edge in the design. Those tests are
-//! good and they are not the thing.
 //!
 //! **They call the verb. They cannot see the chain in front of it.** Between
 //! `Control` and the operator there is a dialog that must *draw* the tally, a
@@ -341,14 +336,6 @@ fn start_a_run(
     session.settle(40);
     // ★★★ **MAXIMIZE, and this line is a repair.**
     //
-    // Found on 2026-09-01 by writing `checks::ocr_progress` and watching it
-    // SKIP for a reason that turned out to apply to THIS check too: at the
-    // window's default width the `file` tab's **Recognise group collapses**,
-    // and a collapsed group declares `ribbon.group.file.recognise.collapsed`
-    // instead of `ribbon.item.file.ocr`. The harness then reports *"the
-    // application declared no `ribbon.item.file.ocr` region"* — which reads as
-    // the command having been removed, and is in fact the ribbon doing exactly
-    // what a ribbon is for.
     //
     // ★★ This check had therefore been reporting **SKIP** rather than PASS, and
     // a SKIP is not a failure, so nothing was red and nothing prompted a look.
@@ -388,12 +375,6 @@ fn start_a_run(
             session.trace_path().display()
         )));
     }
-    // ★ The scope is left at its default, which is **All pages**. That is both
-    // what the operator asked for on 2026-08-26 and what these checks need: a
-    // run over one page has no middle to observe. It is asserted rather than
-    // assumed — `ocr-scope pages=` is the dialog's own report of what it
-    // resolved, and a default that silently became "this page" would turn all
-    // three of these checks into tests of nothing.
     let pages = trace
         .last("ocr-scope")
         .and_then(|l| l.get_usize("pages"))

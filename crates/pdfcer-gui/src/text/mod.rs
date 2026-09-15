@@ -175,11 +175,6 @@ pub mod embed;
 /// gesture's refusals, the angle an override overrode, and an apex that is
 /// only real if the lines are extended.
 ///
-/// Its own header carries the reason it exists: `pdfcer-core` gives that
-/// gesture three facts a shell is expected to surface, and this build
-/// surfaced none of them until 2026-08-19.
-/// Every word the Insert-image window shows, and the disclosures a placement
-/// owes afterwards.
 ///
 /// Its hardest job is stated in its own header: a resolution is a property of
 /// the **placement**, not of the file, and every mistake it can report — a
@@ -540,15 +535,6 @@ pub fn window_title() -> &'static str {
 
 /// Shown on the canvas when nothing is open.
 ///
-/// ★ **This sentence changed when `file.open` was wired**, and the change is
-/// the rule rather than an edit. It used to read *"No document open. Start
-/// pdfcer with a PDF path, for example: pdfcer-gui drawing.pdf"*, because at S0
-/// there was no Open command and *"a message that names a control the
-/// operator cannot find is worse than no message."* The command exists now —
-/// on the File tab, on the quick-access toolbar, and on Ctrl+O — so the
-/// message names it. The old wording would have been the same defect in
-/// reverse: telling an operator to restart the application to do something
-/// there is a button for.
 ///
 /// The command line stays in the sentence because it is still true and is
 /// still how a file association or a shell "Open with" reaches pdfcer.
@@ -582,14 +568,7 @@ pub fn canvas_no_pages() -> &'static str {
 /// that would not decode — and replacing one with "an error occurred" throws
 /// away the only part of the sentence that helps.
 ///
-/// # ★★★ The example this paragraph used to give is now the counter-example
 ///
-/// It read: *"the renderer's errors are structured, specific diagnostics
-/// ('requested raster size 115200x86400 exceeds MAX_PIXMAP_EDGE')"*. That is
-/// `pdfcer_render::RenderError::BadRasterSize`, and on 2026-09-12 the operator
-/// reported seeing exactly it, painted across a site plan he was editing
-/// (`OPERATOR_REQUESTS.md` O186). Two pixel counts are a precise fact about a
-/// pixmap and no instruction at all to a man looking at a blank sheet.
 ///
 /// So `crate::render::worker` now takes that variant out of the pass-through
 /// and gives it one of this module's own sentences. The example is kept here
@@ -608,21 +587,9 @@ pub fn canvas_render_failed(detail: &str) -> String {
 ///
 /// # What it covers
 ///
-/// `pdfcer-render` `Pass 296.0` (`69d4d67`, consumed 2026-09-11) added
-/// `RenderError::RasterizerLimit { scale, panic_message }`. Before it, a
-/// region render at an extreme zoom **panicked a worker thread inside
-/// `tiny-skia`**; now the panic is caught at the one `catch_unwind` in that
-/// crate and returned as an ordinary refusal, so the worker lives and the
-/// canvas gets a sentence instead of a dead tile.
 ///
 /// # ★★★ Why the engine's `Display` is deliberately thrown away here
 ///
-/// [`canvas_render_failed`]'s doc argues, correctly, that `pdfcer-render`'s
-/// errors are structured diagnostics worth passing through verbatim
-/// ("requested raster size 115200x86400 exceeds MAX_PIXMAP_EDGE"). **This one
-/// is the exception.** The reason changed on 2026-09-11 and the superseded
-/// one is recorded here rather than deleted, because it is the stronger
-/// evidence for the rule that survived it.
 ///
 /// **Until `Pass 296.5` (`4f6f5a5`)**, `RasterizerLimit`'s `Display` was
 /// `"the rasterizer cannot work at scale {scale}: {panic_message}"`, where
@@ -717,7 +684,6 @@ pub fn canvas_page_waiting(page_number: usize) -> String {
 ///
 /// # Why this is not [`canvas_page_waiting`], and why that mattered
 ///
-/// O186, 2026-09-12. Deep inside a 36-sheet drawing set the operator got
 ///
 /// > *"This page could not be drawn. requested raster size 50411508x32619210
 /// > is empty or exceeds MAX_PIXMAP_EDGE"*
@@ -859,9 +825,6 @@ pub fn open_unsupported(path: &Path, detail: &str) -> String {
 ///
 /// # ★★★ IT SAID "THIS BUILD CANNOT YET PROMPT FOR A PASSWORD" WHILE PROMPTING
 ///
-/// Corrected 2026-09-03, on an outside reviewer's report: the canvas carried
-/// that sentence **in the same frame** as `dialogs::password` asked for the
-/// password. Two surfaces, one `Status::NeedsPassword`, saying opposite things.
 ///
 /// The old doc comment is worth keeping because it is the whole diagnosis:
 ///

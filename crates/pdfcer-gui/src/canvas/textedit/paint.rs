@@ -2,10 +2,6 @@
 //!
 //! ## Why this is its own file
 //!
-//! R2, on 2026-08-20, when the in-place editor pushed `canvas::textedit` past
-//! 1,500 lines. A real seam: everything here answers one question — *what does
-//! an operator see while they are composing?* — and nothing here takes a
-//! keystroke, resolves a click or builds an action.
 //!
 //! ## The one thing to know before changing anything in here
 //!
@@ -14,11 +10,6 @@
 //! size, in that order, a few lines apart. That is not tidiness — it is the
 //! defect this file was rewritten to remove.
 //!
-//! The caret used to be derived from the page's own glyph advances, which was
-//! right while the page's glyphs were the only thing on screen and became wrong
-//! the moment a preview was drawn in a different font: the caret would sit
-//! somewhere other than between the characters the operator could see, and
-//! drift further with every keystroke.
 //!
 //! Two derivations of one position, agreeing at first and separating under use,
 //! is the same class of defect as the vertex drag that tracked at `1/zoom` and
@@ -71,8 +62,6 @@ const PREVIEW_INSET_PT: f32 = 2.0;
 /// contributor to "weird": *"you type in the wrong typeface at the wrong
 /// widths, then it snaps to reality on Accept."*
 ///
-/// This module's answer, until 2026-08-20, was to draw **no glyphs at all** —
-/// a caret and a bracket, with this promise attached:
 ///
 /// > *"The characters themselves are shown off-canvas, in the status bar, where
 /// > `text::textedit` owns the sentence."*
@@ -82,8 +71,6 @@ const PREVIEW_INSET_PT: f32 = 2.0;
 /// the draft. So the operator typed into a bracket and their characters
 /// appeared nowhere at all:
 ///
-/// > *"I can edit text now, but there is no live preview of that either."*
-/// > — 2026-08-20
 ///
 /// ## Why an in-place editor BOX is not the ghost D4a condemns
 ///
@@ -129,12 +116,6 @@ const PREVIEW_INSET_PT: f32 = 2.0;
 ///
 /// ## The caret is measured against the text AS DRAWN
 ///
-/// Not against the page's glyph advances, which is where it used to come from.
-/// The draft is now drawn in the shell's font, so a caret placed by the
-/// document's metrics would sit somewhere other than between the characters the
-/// operator can see — and would drift further with every keystroke. One string,
-/// one font, one size, measured once: the preview and the caret cannot disagree.
-/// The editor box's own region name. See its publication in [`preview`].
 pub const REGION_BOX: &str = "text-edit.box"; // ui-text-exempt: trace region name, never displayed
 
 pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
@@ -158,7 +139,6 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
         return;
     };
     let screen = egui::Rect::from_two_pos(p.map.to_screen(rect.min), p.map.to_screen(rect.max));
-    // ★★★ **WHAT YOU ARE TYPING, WHERE YOU ARE TYPING IT.** 2026-08-20.
     //
     // The operator: *"I can edit text now, but there is no live preview of that
     // either."* He is right and it made the feature nearly unusable — the page
@@ -208,7 +188,6 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     let font = egui::FontId::proportional(height * PREVIEW_FILL);
     // ★★★ A BOX DRAFT WRAPS; EVERY OTHER DRAFT DOES NOT.
     //
-    // The operator, 2026-08-21: *"I should be able to make it multi line."*
     //
     // `Anchor::Box` is the anchor a dragged rectangle produces, and the whole
     // point of that rectangle is a **width to wrap against** — a PDF has no
@@ -351,16 +330,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
         egui::StrokeKind::Outside,
     );
     if on {
-        // ★★★ The caret is measured against the text AS DRAWN — not against
-        // the page's glyph metrics. 2026-08-20, with the live preview.
         //
-        // It used to come from `caret_x`, which walks the RUN's glyph advances.
-        // That was right when the page's own glyphs were the only thing on
-        // screen. It is wrong now: the draft is drawn in the shell's font
-        // inside an editor box, so a caret placed by the document's metrics
-        // would sit somewhere other than between the characters the operator
-        // can actually see — and the further they typed, the further out it
-        // would drift.
         //
         // This is the same class of defect as the vertex drag that tracked at
         // `1/zoom`: two derivations of one position, agreeing at first and
@@ -398,8 +368,6 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     }
 }
 
-// ★★ `caret_x` was DELETED on 2026-08-20, with the live preview, and the reason
-// is worth keeping.
 //
 // It derived the caret's position from the RUN's own glyph advances — exact
 // while `caret <= glyphs.len()` and extrapolated beyond it, with a doc comment

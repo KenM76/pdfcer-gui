@@ -933,12 +933,6 @@ pub struct ObjectTreeUi {
     /// longer open. Those tests reach for the one index-bearing field they can
     /// set from outside, and deleting it would delete the assertion with it.
     ///
-    /// ★ That is a poor reason to keep a field and it is stated as one. The
-    /// right end is for those tests to assert against the tree's *expansion*
-    /// state, which is index-bearing, production-live and cleared by the same
-    /// `forget_document`. Until they do, this field is a test fixture wearing a
-    /// production field's clothes, and this comment is what stops the next
-    /// reader mistaking it for the second selection it used to be.
     focus: Option<usize>,
 }
 

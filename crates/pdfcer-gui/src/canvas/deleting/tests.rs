@@ -1,9 +1,5 @@
 //! # `canvas::deleting::tests` — which verb each rung reaches, asserted
 //!
-//! Split out of [`super`] the way `canvas::moving::tests` and
-//! `canvas::selection::tests` were, and for their reason: the module above is
-//! one subject — *which delete verb does this selection reach, and what does it
-//! refuse* — and the assertions are a different subject with a different reader.
 //!
 //! ## ★★★ What these are actually protecting, and it is not the routing
 //!
@@ -225,9 +221,6 @@ fn the_last_label_is_deletable_even_when_the_earlier_one_is_not() {
 
 /// ★★★ **One line out of a path that holds many.**
 ///
-/// The twin of the label case, and the one whose move verb has been wired since
-/// Pass 28.0 — so until 2026-09-05 this exact selection could be **dragged** and
-/// not removed.
 #[test]
 fn selecting_one_line_deletes_that_line_and_not_the_drawing_view() {
     let provider = provider(TWO_LINES);

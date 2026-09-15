@@ -1,12 +1,5 @@
 //! # `text::commands::view` — every label and tooltip on the View tab
 //!
-//! Split out of [`super`] on 2026-08-20, when that file crossed rule R2's
-//! 1,500-line ceiling. The View tab is the largest single section of the
-//! catalogue by a wide margin — page display, zoom, the overlays, the nine
-//! panel toggles and the window verbs — and it is also the most
-//! self-contained: nothing here is read by any other tab's entry, and every
-//! entry answers one question, which `RIBBON_IA.md` §3 gives as *"what am I
-//! looking at, and how?"*
 //!
 //! ## It is re-exported, so nothing changed for a caller
 //!
@@ -43,12 +36,6 @@ pub const fn view_page_single() -> CommandText {
 
 /// `view.page_continuous`
 ///
-/// The operator's instruction of 2026-08-12 is what this control is, and the
-/// tooltip carries its reasoning rather than a feature description: *"continuous
-/// scroll should be an option under the view tab as the way I move around a
-/// page is great when working with drafting drawings."* So the words say what
-/// it is **for** — a document you read through — and leave single page
-/// standing as the right answer for a sheet set, which it is.
 ///
 /// The second sentence states the per-document persistence, because it is
 /// behaviour the operator cannot see until it surprises them: choosing this on
@@ -159,12 +146,6 @@ pub const fn edit_copy() -> CommandText {
 
 /// `edit.paste` — the object clipboard's paste.
 ///
-/// ★ The tooltip was rewritten on 2026-08-29 and the old wording is worth
-/// recording, because it had quietly become false twice: it said *"the copied
-/// comment or markup"* after `Pass 120.0` made page content pasteable and again
-/// after form fields joined the clipboard. A tooltip that names a NARROWER scope
-/// than the command has is the same defect class as one that names a wider one —
-/// the operator never tries the thing that would have worked.
 #[must_use]
 pub const fn edit_paste() -> CommandText {
     CommandText::new(
@@ -177,7 +158,6 @@ pub const fn edit_paste() -> CommandText {
 
 /// `edit.paste_duplicate` — the second sense of a form-field paste.
 ///
-/// **Ken, 2026-08-29:** *"ctrl shift v for paste as duplicate."*
 ///
 /// ★★★ The tooltip leads with the CONSEQUENCE — *"typing in one fills both"* —
 /// rather than with the mechanism (*"a second widget of the same field"*), which
@@ -234,9 +214,6 @@ pub const fn edit_duplicate() -> CommandText {
 
 /// `edit.copy_as_vector` — the clipboard's copy-OUT.
 ///
-/// **Ken, 2026-09-03** (`OPERATOR_REQUESTS.md` **O120**): *"Also I'd like to be
-/// able to copy and paste anything to other software - like copy and paste
-/// vector graphics into word or inkscape for example if possible."*
 ///
 /// ★★★ The tooltip leads with **what arrives at the other end**, because that is
 /// the only thing that distinguishes this from the Copy beside it. Ordinary Copy
@@ -413,12 +390,6 @@ pub const fn view_tool_hand() -> CommandText {
 pub const fn view_tool_text() -> CommandText {
     CommandText::new(
         "Text",
-        // ★ Rewritten 2026-08-19. It used to say only "drag to select text",
-        // which was the whole of what the tool did and was exactly the trap the
-        // operator fell into: he armed it, got an I-beam, clicked, and could not
-        // type. The click now edits, so the tooltip leads with that — the
-        // sentence a control shows is a promise, and this one was keeping a
-        // smaller promise than the operator was reading into it.
         "Click text to edit it, or click empty space to start new text. Drag to select text \
          for copying. Press again to return to the select tool.",
     )
@@ -587,14 +558,6 @@ pub const fn view_guides() -> CommandText {
 ///
 /// # ★ Why there is no Settings entry for it (a decision, not an omission)
 ///
-/// The 2026-08-17 sweep moved the two surviving `view.*` settings into
-/// Settings ▸ Drawing the page on the argument that *"a value set once and
-/// forgotten is not an activity"*. This is the other case: it is a **reading
-/// aid he flips several times while reading one sheet** — turn it off to see
-/// whether two lines are coincident, turn it back on to check a drafting
-/// weight — so it is an activity, and P2 says a ribbon tab picks those. It is
-/// also per **document** ([`crate::viewer::ViewState`]), so two open drawings
-/// can disagree, which is what comparing a sheet against its neighbour needs.
 ///
 /// A *persisted* default would additionally mean pdfcer opening every drawing
 /// for the rest of time showing something the file does not say, because of a
@@ -615,8 +578,6 @@ pub const fn view_line_weights() -> CommandText {
 
 /// `view.off_page`
 ///
-/// ★★★ **The operator's request of 2026-09-11, in full**, because both
-/// halves of it are in this tooltip:
 ///
 /// > *"in our view ribbon area we need an option to show the stuff that is
 /// > off page or not (and when not showing the stuff that is off page there
@@ -688,13 +649,6 @@ pub const fn view_sidebar() -> CommandText {
     )
 }
 
-// ★★★ `view_panel_tool` was retired on 2026-09-04 — `OPERATOR_REQUESTS.md`
-// O123 dissolved the panel it labelled. Its argument was that the caption had
-// to be *Tool* and not *Tool options*, because the two text tools that
-// produced the panel have no options at all; that argument is now settled the
-// other way round, since the options the panel DID hold turned out to be
-// properties and moved to the Properties panel.
-
 /// `view.panel_bookmarks`
 #[must_use]
 pub const fn view_panel_bookmarks() -> CommandText {
@@ -740,15 +694,6 @@ pub const fn view_panel_layers() -> CommandText {
 
 /// `view.panel_signatures`
 ///
-/// ★★★ **CORRECTED 2026-09-05.** The second sentence read *"pdfcer does not
-/// check whether they are valid."* It became false when
-/// `signature::verify_all_with_trust` was wired (`crate::trust::examine`,
-/// engine `pdfcer-core` v0.38.0 at `b01964f`), and it was **missed by the
-/// sweep that corrected the panel's own explainer** — `crate::text::panels`
-/// deleted the near-identical sentence the same day and left this one
-/// standing, because the feature work opened that file and never opened this
-/// one. The tooltip is the surface read *before* the panel opens, so it was
-/// the worse of the two to leave wrong.
 ///
 /// The replacement states the three facts the panel actually draws rather
 /// than a verdict, because the panel never folds them into one.
@@ -773,7 +718,6 @@ pub const fn view_panel_objects() -> CommandText {
 
 /// `view.panel_forms`
 ///
-/// ## ★ Was `edit.form_fill`, moved on the operator's answer (2026-08-14)
 ///
 /// The taxonomy's argument for keeping form-filling out of Read is recorded
 /// in [`crate::app::modes`]; the operator's answer is that Acrobat Reader
@@ -861,10 +805,6 @@ pub const fn view_close_other_documents() -> CommandText {
 
 /// `view.reset_layout`
 ///
-/// ★ **This entry lost an ellipsis and a promise, and both losses are the
-/// same correction.** It used to read *"Reset layout…"* / *"Put the panels
-/// back where they started. You choose which ones — the left panel, the
-/// right panel, or just whether they are open."*
 ///
 /// The choice is real and specified — `RIBBON_IA.md`: *"an operator who only
 /// wanted the right dock back must not lose their left one"* — and
@@ -877,9 +817,6 @@ pub const fn view_close_other_documents() -> CommandText {
 /// this catalog's header forbids, and the trailing `…` made the same promise
 /// in punctuation.
 ///
-/// **Restore both the moment the chooser lands** — the original wording is
-/// quoted above so that is a copy rather than a rewrite.
-/// **Float this panel** — tear it out of the dock into a window of its own.
 ///
 /// # The words, and the two that were rejected
 ///

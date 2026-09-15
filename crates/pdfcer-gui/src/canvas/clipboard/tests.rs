@@ -1,11 +1,5 @@
 //! Unit tests for [`super`] — the canvas clipboard.
 //!
-//! ★ Split into a file of its own on 2026-09-05, when the annotation clipboard
-//! took `clipboard.rs` past R2's 1,500-line ceiling. It is the same seam
-//! `canvas::selection` already uses (`selection/tests.rs`), and it is the right
-//! one for the same reason: the assertions grew a fixture, a session and a
-//! paste round trip, which is a body of work with its own shape rather than a
-//! coda on the module it tests.
 //!
 //! **Do not shorten the reasoning on any of these to fit a line count.** Each
 //! header says what the assertion would miss if it were written the obvious
@@ -28,14 +22,6 @@
 
 /// ★★★ **A cut that cannot delete must not copy either.**
 ///
-/// The fourth door onto `delete_annotation`, found by an adversarial review
-/// on 2026-08-29 after the other three had been gated the day before, and
-/// the worst of the four: on a certified document `Ctrl+X` copied the
-/// annotation, raised a Delete the engine then refused into a silent `Err`
-/// arm, and `annots::delete` cleared the selection anyway — leaving the
-/// operator with the markup still on the page, no selection, no
-/// explanation, **and a clipboard holding a copy of it**, so the next
-/// `Ctrl+V` duplicates the thing they were trying to move.
 ///
 /// # What this asserts, and why each half is needed
 ///
@@ -126,10 +112,6 @@ fn the_paste_moves_down_the_page() {
     assert!(dy < 0.0, "PDF y increases upward, so down is negative");
 }
 
-// ---------------------------------------------------------------------------
-// The annotation clipboard — 2026-09-05
-// ---------------------------------------------------------------------------
-
 /// The fixture the four assertions below are aimed at. Its generator,
 /// `tools/gen-annots-with-everything-fixture.py`, argues for every key in it;
 /// the short version is that **every annotation carries `/CA`, `/T`, `/M` and
@@ -162,21 +144,9 @@ fn with_annot_selected(index: usize) -> crate::app::state::OpenDoc {
 
 /// ★★★ **A STICKY NOTE CAN BE COPIED**, and until 2026-09-05 it could not.
 ///
-/// This is the operator-facing whole of the change. `Ctrl+C` over a `/Text`
-/// annotation used to answer *"that annotation is not one pdfcer authors …
-/// so there is nothing for it to copy"*, because the clipboard read a
-/// `MarkupSpec` out of the dictionary and `spec_from_dict` has no reader for a
-/// sticky note. A sticky note is the most-copied comment in a review workflow.
 ///
 /// # What the assertions are, and why the obvious one is not enough
 ///
-/// Asserting only `Ok(_)` would pass against a build that parked an **empty**
-/// clip — which is the plausible failure here, because `copy_selection`
-/// returns `Ok` with an empty `annotations` vector if the index list never
-/// reached it. So the count on the clip is asserted, and so is the fact that
-/// it is a `Selection`: a build that quietly re-authored it from a spec (the
-/// route deleted on 2026-09-08) would satisfy every other assertion and would
-/// have dropped the baked `/AP`.
 #[test]
 fn a_sticky_note_reaches_the_clipboard() {
     let ctx = egui::Context::default();
@@ -220,7 +190,6 @@ fn a_sticky_note_reaches_the_clipboard() {
 /// ★★★ **A SQUARE STILL KEEPS ITS AUTHOR, NOTE AND OPACITY** — the property
 /// held, while the route under it changed.
 ///
-/// # ⚠ What this test used to assert, and why that stopped being true
 ///
 /// It asserted the **carrier**: that a `/Square` came back as
 /// `Clipped::Markup`, because `paste_clip_annotations` planted a clipped
@@ -230,10 +199,6 @@ fn a_sticky_note_reaches_the_clipboard() {
 /// *"the paste happened"* test, and handed the operator an anonymous, undated,
 /// opaque copy of a signed comment.
 ///
-/// `Pass 270.0` ended that on 2026-09-08. `ClipAnnotation::Markup` gained a
-/// `MarkupCarry` beside the spec — the dash, `/CA`, `/Contents`, `/T` — and
-/// the engine's paste now builds `MarkupOptions` from it and calls
-/// `add_markup_with`. **The clip route carries what the spec route carries.**
 ///
 /// ⇒ So the assertion moved to the **payload**, and accepts either carrier.
 /// That is the better test and it should have been written this way from the

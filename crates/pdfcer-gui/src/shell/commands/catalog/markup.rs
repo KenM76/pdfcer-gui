@@ -1,8 +1,5 @@
 //! # `shell::commands::catalog::markup` — the Markup tab — what is added for somebody else to read
 //!
-//! One band of [`super::all`]'s catalogue. Split out of [`super`] under **R2**
-//! on 2026-08-28, when the Attachments command took that file to 1,495 of its
-//! 1,500 lines and the next command registered would have broken the rule.
 //!
 //! ## ★★★ The split is per TAB, and the reason it was refused before is gone
 //!
@@ -50,8 +47,6 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.arrow", t::markup_arrow(), 502)
             .with_icon("shape-arrow")
             .enabled_when("doc.pages"),
-        // ★ **The three unblocked Phase 6 kinds** — Phase 6, 2026-08-14, moving
-        // out of `manifest::PLANNED`.
         //
         // `FEATURES.md` carried all three as *"engine-ready, but not drag-shaped;
         // each needs its own gesture"* for the whole project, and that is exactly
@@ -84,9 +79,6 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.polygon", t::markup_polygon(), 504)
             .with_icon("shape-polygon")
             .enabled_when("doc.pages"),
-        // ★ **Revision cloud**, registered 2026-08-19 — the operator's item 6,
-        // raised three times in his own words: *"still no revision cloud
-        // tool."*
         //
         // Token **507**, out of the band's own run, because 506 is
         // `markup.finish` and tokens are never reused. The ORDER on the ribbon
@@ -109,16 +101,6 @@ pub(super) fn band() -> Vec<Command> {
         // ★ **Finish shape** — the ribbon half of the vertex tools' ending, and
         // `measure.finish`'s twin in every respect that matters.
         //
-        // Polyline and Polygon are the only markup gestures with no natural end:
-        // a band drag ends when the button comes up and a freehand stroke ends
-        // the same way, but a run of clicks does not end itself. The operator
-        // settled that shape of problem on 2026-08-14 for the radius/diameter
-        // tool — **two endings through one commit path** — and this is that
-        // answer applied to the second tool with the same problem, deliberately
-        // rather than inventing a third. A double-click on the canvas is the
-        // ending most operators will use; this is the discoverable one, and the
-        // one that works when the last corner sits somewhere awkward to
-        // double-click.
         //
         // # Why `markup.finishable` and not `doc.pages`
         //
@@ -134,19 +116,7 @@ pub(super) fn band() -> Vec<Command> {
         // clicks this control is live for one tool and greyed for the other. The
         // operator is told the rule before they press, rather than refused after.
         //
-        // # The icon refusal that stood here is DISCHARGED — 2026-09-04
         //
-        // This registration and `catalog::measure`'s `measure.finish` carried
-        // the same sentence, word for word, in two files: *"There is no
-        // check-mark, tick or accept glyph in the set, and no existing key means
-        // 'complete this gesture'."* That was a true statement about the
-        // catalogue and it is no longer true — `finish-shape` and `check` were
-        // both adopted from the outside review of 2026-09-03 — so the refusal is
-        // **spent rather than overturned**, the same way
-        // [`crate::icons::Icon::Pages`] and the Attachments paperclip record.
-        // The note is rewritten rather than deleted, because a reader who finds
-        // a bare `.with_icon("finish-shape")` here with no history will
-        // eventually re-derive the wrong lesson from it.
         //
         // What in it was load-bearing and still is:
         //
@@ -201,17 +171,7 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.finish", t::markup_finish(), 506)
             .with_icon("finish-shape")
             .enabled_when("markup.finishable"),
-        // ===================================================================
-        // ★★★ THE TWO NODE COMMANDS — the right-click route to a drawn
-        // shape's corners, 2026-09-06.
-        // ===================================================================
         //
-        // The operator, 2026-09-05: *"I also can't edit or delete nodes of a
-        // markup shape once it is drawn."* `canvas::annotnodes` answered the
-        // moving half that day and half-answered the other two — insert and
-        // remove worked, and they needed the Points tool armed **plus** `Ctrl`
-        // or `Ctrl+Shift`, with nothing on screen saying so. These two are the
-        // route somebody can find.
         //
         // ## ★★★ Why neither has a ribbon home, and why that is legitimate
         //
@@ -281,8 +241,6 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.highlight", t::markup_highlight(), 510)
             .with_icon("shape-highlight")
             .enabled_when("doc.pages"),
-        // ★ **The three text-markup kinds** — Phase 6, 2026-08-14, moving out of
-        // `manifest::PLANNED`.
         //
         // # Why `selection.text` and not `doc.pages`
         //

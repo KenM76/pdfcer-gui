@@ -206,19 +206,7 @@ pub fn zoom_ceiling(
     // Above it, the region tier can render and the page's size stops mattering.
     // ★★★ THE POSITIONAL CAP IS GONE, because tier 3 replaced it — O24.
     //
-    // It stood here from 2026-08-22 morning until the `f64` anchor was wired,
-    // and its reasoning is worth keeping because it is what made the cap
-    // correct AT THE TIME: the scroll offset is an `f32` over a content space
-    // where one unit is one screen pixel, so past 2^24 content points the view
-    // moved in 2-pixel steps, then 512, then 2,048, and above 4×10^10 stopped
-    // being drawn at all. Rendering succeeded to a trillion percent throughout —
-    // **rendering and working parted company four orders of magnitude apart** —
-    // so capping where the picture still appeared would have shipped a range
-    // whose top half pans in thousand-pixel jumps.
     //
-    // `viewer::deep_position_needed` is now the same constant's other use: it
-    // hands the position to `viewer::deep::DeepAnchor` at exactly the point the
-    // cap used to refuse. One number, two uses, and they cannot drift.
 
     // ★★★ AND NOTHING CAPS IT ANY MORE. Two ceilings stood here today and both
     // are gone, each removed by finding where the precision was ACTUALLY lost:
@@ -264,10 +252,6 @@ pub fn zoom_ceiling(
 /// area is authoritative and nothing about the canvas changes; above it
 /// [`super::deep::DeepAnchor`] is.
 ///
-/// ★ The SAME constant that used to cap the zoom. Before tier 3 was wired the
-/// only honest response to passing it was to refuse to go further; now it is
-/// the point at which the position model changes hands. One number, two uses,
-/// and they cannot drift apart.
 #[must_use]
 pub fn deep_position_needed(page_pts: (f32, f32), zoom: f32) -> bool {
     let longest = page_pts.0.max(page_pts.1);
@@ -280,15 +264,6 @@ pub fn deep_position_needed(page_pts: (f32, f32), zoom: f32) -> bool {
 
 /// # Tests — the three ceilings, and the ladder that has to be able to reach them
 ///
-/// ★★ **Moved here from [`super`] on 2026-09-12, and the move is the point.**
-/// Every test below asks one question — *how far may this page be magnified?* —
-/// which is the question this file exists to answer, and they were sitting in
-/// `viewer/mod.rs` only because they predate the split that created this file.
-/// `viewer/mod.rs` had reached 1,498 lines of R2's 1,500, so O186's fourth
-/// parameter could not have been tested at all without finding the seam first.
-/// R2's own wording: *"when a file approaches the limit, that is the signal to
-/// find the seam, not to raise the limit."* The seam was already named in this
-/// file's header.
 ///
 /// ★ What deliberately did NOT move: the tests of `super::max_zoom_for_page`,
 /// `super::raster_scale` and `ViewState`'s clamping. Those answer questions
@@ -397,10 +372,6 @@ mod tests {
     /// ★★★ **The default reaches the maximum** — the operator's instruction of
     /// 2026-08-22, *"Also set the default to be able to hit the maximum zoom."*
     ///
-    /// This test previously asserted the opposite: that the default reproduced
-    /// the old ceiling exactly, so a fresh install was unchanged. That was the
-    /// cautious call and he overruled it — a capability you have to find a
-    /// preferences file to switch on is one most of its users never have.
     ///
     /// ★ The property is kept, not dropped: **what must not change is the
     /// PANNING**, which is what he actually cares about. That is asserted by

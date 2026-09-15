@@ -18,17 +18,6 @@
 //! *"a colour control on a selected text object that sweeps it for you"*, which
 //! O89 itself called *"closest to what you tried"*.
 //!
-//! ★★★ **The other two were already built**, which was measured rather than
-//! assumed and is recorded in O89 in place of the sentences that said
-//! otherwise. The Properties panel's *"press T and sweep"* sentence existed
-//! from 2026-08-29 until 2026-09-14, when O198 made the route it named
-//! unnecessary and it was deleted; and every one of the five Font commands'
-//! tooltips has ended
-//! *"Sweeping text with the Text tool (T) chooses what it applies to"* since
-//! the group shipped. What was NOT true was O89's third row — *"the greyed
-//! button saying so on hover"* — for exactly **one** of the five controls: the
-//! ribbon's Colour swatch answered a greyed hover with the CMYK-and-spot-ink
-//! sentence, a claim about text it had not read. Fixed in `app::fontband`.
 //!
 //! ## ★★★ THE OPERAND IS THE OBJECT'S OWN BYTE SPAN, NOT A GUESS AT GEOMETRY
 //!
@@ -64,23 +53,7 @@
 //!
 //! ## ★★★ Why COLOUR is the only control still drawn here
 //!
-//! ★★★ **CORRECTED 2026-09-14, and the correction is the whole of
-//! `OPERATOR_REQUESTS.md` O198.** What stood here from 2026-09-05 until then,
-//! in summary: face, size, bold and italic are *not* offered on an object
-//! selection, because each needs a reading of ONE run to be honest and a
-//! whole text object has no single answer to any of them; so colour got a
-//! working control and the other four got a sentence naming the route to the
-//! Text tool.
 //!
-//! ⇒ **The premise was true and the conclusion did not follow.** "No single
-//! answer" is an argument about what a control may *display*, and this
-//! project's own product class answers it with an indeterminate presentation
-//! rather than by withholding the control. It is not an argument about what a
-//! press may *apply*: `format_text` takes a run list, the object's run list
-//! is exact, and applying one face to nine runs is precisely what a hand
-//! sweep across the same words does. The operator, 2026-09-14: *"the
-//! properties area is uneditable too. This is true even when I add a new line
-//! of text."*
 //!
 //! So [`super::text::section`] now draws face, size, bold and italic for a
 //! clicked object as well as for a sweep, reading the first run for its
@@ -185,7 +158,6 @@ pub const SWATCH_REGION: &str = "properties.textobject.swatch";
 /// The same argument every other region here makes about its own state.
 // ui-text-exempt: trace region name, never displayed
 pub const INK_REGION: &str = "properties.textobject.ink";
-// ★★★ `ROUTE_REGION` and the sentence it named were DELETED on 2026-09-14.
 //
 // It read *"To change the font, size, bold or italic of these words, press T
 // for the Text tool and sweep across them"*, and `OPERATOR_REQUESTS.md` O198
@@ -333,13 +305,6 @@ pub fn section(
     draft: &mut TextObjectDraft,
     actions: &mut Vec<Action>,
 ) -> bool {
-    // ★★★ **The gates are one call since 2026-09-14**, and it is the same
-    // call `super::text::section` above made a frame-instant earlier:
-    // `app::textoperand` answers *which runs would a restyle act on* with a
-    // live swept range first and the single selected text object second. Four
-    // hand-written gates lived here — no annotation, exactly one object, the
-    // object is text, no sweep in progress — and every one of them is now a
-    // clause of that resolver, stated once. `OPERATOR_REQUESTS.md` O198.
     //
     // ★★ A **swept** operand means the section above owns the whole editor
     // including its Colour row, so this one stands down. Drawing both would put

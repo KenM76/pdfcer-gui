@@ -2,10 +2,6 @@
 //!
 //! ## The defect this exists for
 //!
-//! Found 2026-08-26 by `ui-verify ui_scale_resizes_the_chrome`, in the first
-//! driven run of this project's history in which every check launched. At
-//! `ui_scale = 1.80` in an 1100 × 800 window — 611 × 444 **points** — five of
-//! the status bar's declared regions lay outside the client area:
 //!
 //! ```text
 //! status-group:page    457.4 .. 603.1     ok
@@ -234,9 +230,6 @@ const SEPARATOR_PTS: f32 = 6.0;
 pub fn affordable(available: f32, widths: &Widths) -> Vec<Group> {
     let mut shown: Vec<Group> = Group::ORDER.to_vec();
     if !available.is_finite() {
-        // A non-finite available width means the parent is mid-layout or
-        // degenerate. Show everything: that is the pre-2026-08-26 behaviour,
-        // and it is the right fallback because it fails towards *visible*.
         return shown;
     }
     for (group, _) in SHED_ORDER {

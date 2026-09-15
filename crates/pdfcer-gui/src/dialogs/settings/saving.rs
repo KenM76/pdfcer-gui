@@ -49,11 +49,6 @@ use crate::text::settings as t;
 /// every entry, so a 5,000-object file gets a 10,000-byte diff without anybody
 /// editing it.
 ///
-/// The reason it shipped wrong is worth keeping: *"match the source"* needed an
-/// **observation of the base file's bytes** that no channel carried. The
-/// recommendation was right and unimplementable at the same time. The channel
-/// now exists — `xref::observed_entry_eol` reads the form out of the base file
-/// — and the operator's 2026-08-08 ruling was to use it.
 ///
 /// # ★ Three legal forms, and the illegal ones are deliberately absent
 ///
@@ -125,11 +120,6 @@ pub fn xref_entry_eol(ui: &mut Ui, draft: &mut Draft) {
 /// requires one before a following object on the incremental-append path
 /// anyway.
 ///
-/// It is a setting because the choice was previously **hard-coded and labelled
-/// in the source as a recorded spec ambiguity** — and an engineer who finds
-/// that label will ask where the switch is. A documented ambiguity with no
-/// control is a decision pdfcer made and hid; the cost of the control is one
-/// radio pair.
 ///
 /// # ★ The guess disclosure the old note omitted
 ///

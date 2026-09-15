@@ -3,20 +3,7 @@
 //!
 //! # Why the tests are a file of their own
 //!
-//! R2 (no source file over 1,500 lines), reached honestly: `conditions/mod.rs`
-//! went past the limit on 2026-09-03 while the mode was being added to
-//! `selection.delete_permitted`. The seam is the obvious one and the right
-//! one — a condition's *derivation* and the *table of what it answers* are
-//! different subjects, and the second is much the larger.
 //!
-//! ★ It matters more here than in most modules. These tests are the only place
-//! the published facts are written down as a **table** rather than as a
-//! traversal, and a table is what a reader needs to answer *"what does the
-//! ribbon see in Review?"*. Burying it under nine hundred lines of derivation
-//! made it a thing nobody read — and on 2026-09-03 that cost a data-loss
-//! defect: `selection.delete_permitted` never asked the mode, and four tests in
-//! this file **asserted the wrong thing and passed**, because the fixture they
-//! use starts in Read and nothing said so.
 
 use super::*;
 
@@ -359,7 +346,6 @@ fn the_formattable_condition_is_the_union_of_the_two_selections() {
         "an object selection is a subject — this is the Delete the tab has always had"
     );
 
-    // 2. …and a sweep on top of it: BOTH, which used to be unrepresentable.
     let epoch = {
         let Status::Open(doc) = &mut app.status else {
             unreachable!("`opened` opens a document")
@@ -424,14 +410,6 @@ fn the_formattable_condition_is_the_union_of_the_two_selections() {
 /// > long as its other half does, and the other half is in a different
 /// > file.
 ///
-/// **`OPERATOR_REQUESTS.md` O71 falsified that other half nine days
-/// later.** `canvas::clicking`'s image arm runs precisely when
-/// `!caps.edit_content` — it exists so a reader can click a picture and
-/// copy it. So from 2026-08-31 a content selection was reachable in Read,
-/// this condition was set there, the Format tab's Delete was **drawn and
-/// enabled**, and `app::dispatch::format`'s object arm had no capability
-/// guard at all. The Delete *key* refused; the ribbon button deleted page
-/// content in the mode whose whole promise is that it authors nothing.
 ///
 /// # Why the table has a Review row for annotations
 ///
@@ -826,13 +804,6 @@ fn a_certified_document_withholds_delete_for_a_selected_form_field() {
     };
 
     let mut app = PdfcerApp::new();
-    // ★ EDIT, on both halves below, and held constant on purpose: this
-    // test varies the DOCUMENT (certified against its uncertified twin) and
-    // must not vary the mode. Since 2026-09-03 `selection.delete_permitted`
-    // also asks whether the MODE may delete, and `PdfcerApp::new` starts in
-    // Read — so without this the positive half would refuse for a reason
-    // that has nothing to do with `/Perms`, and the test would go green on
-    // a build where the engine refusal had been deleted.
     app.ribbon.set_mode("edit");
     app.open_path(local("certified-comments.pdf"));
     let Status::Open(doc) = &mut app.status else {

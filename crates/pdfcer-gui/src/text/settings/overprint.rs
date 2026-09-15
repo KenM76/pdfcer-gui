@@ -1,10 +1,5 @@
 //! # `text::settings::overprint` — the zero-tint rule, in the operator's words
 //!
-//! Split out of [`super::look`] on 2026-09-03 under R2. The seam is a subject
-//! rather than a line count: every other block in `look` is about how pdfcer
-//! DRAWS — the theme, control sizes, what happens when a document first opens.
-//! This one is about **which colours behave like ink**, which is a printing
-//! question an operator arrives at from a printed sheet, not from the screen.
 //!
 //! ## ★★★ What this module exists to keep straight
 //!
@@ -12,15 +7,6 @@
 //! underneath it showing. The argument is over *which* colours count, and pdfcer
 //! has changed its mind once, for a good reason:
 //!
-//! * Until 2026-09-03 the default was `GreyAsKOnly` — a deliberate divergence
-//!   from the standard, recorded as such, kept because pdfcer flattened spot
-//!   inks into C/M/Y and the literal reading knocked a spot backdrop out. The
-//!   divergence preserved it **by a compensating error**.
-//! * Spot inks got their own plane (engine `Pass 238.0`/`239.0`), the
-//!   compensating error stopped being needed, and re-measurement on the
-//!   print-conformance sweep put the literal reading at **0 fail / 43 pass of
-//!   51** against **2 fail** for the old default. The default moved to
-//!   `DeviceCmykOnly`.
 //!
 //! ⇒ Which is why nothing in this module writes down *which* option is the
 //! default. It asks. See [`zero_tint_default_suffix`].
@@ -81,12 +67,6 @@ pub const fn zero_tint_label(scope: pdfcer_core::settings::OverprintZeroTintScop
 /// ★★★ DERIVED from `OverprintZeroTintScope::default()`, never written into a
 /// label — and that is the whole point of it existing.
 ///
-/// "(pdfcer's default)" was hard-coded onto `GreyAsKOnly` from the day this
-/// control shipped. On 2026-09-03 the engine moved the default to
-/// `DeviceCmykOnly` (Pass 244.0): spot inks got their own plane, so the literal
-/// reading of ISO 32000-1 §8.6.7 stopped needing a compensating divergence, and
-/// re-measurement on the print-conformance sweep put it at **0 fail / 43 pass
-/// of 51** against **2 fail** for the old default.
 ///
 /// The label went on saying "(pdfcer's default)" about the option that was no
 /// longer it — a sentence true when written and silently false afterwards,
@@ -136,12 +116,6 @@ mod tests {
     /// **★★★ Exactly one scope is marked as the default, and it is the one the
     /// ENGINE says is the default.**
     ///
-    /// This is the tripwire for the defect that produced it. "(pdfcer's
-    /// default)" was written into `GreyAsKOnly`'s label from the day the
-    /// control shipped, and on 2026-09-03 the engine moved the default to
-    /// `DeviceCmykOnly` — so the window went on telling the operator that the
-    /// option pdfcer had stopped using was the one it used. The engine's own
-    /// note caught it; nothing here would have.
     ///
     /// ★ Asserting **exactly one** rather than "the right one carries it"
     /// catches the other half: a suffix added to a second label by hand, which

@@ -250,10 +250,6 @@ pub mod sign;
 // ---------------------------------------------------------------------------
 // The edit disclosure — what [`vector_edit`] carries out to `app::status`
 //
-// See [`vector_edit`]'s "The disclosures" section for what a disclosure IS.
-// This block is the answer to the question that section used to leave open:
-// *where does an operator read one?*
-// ---------------------------------------------------------------------------
 
 /// **An instrument, not a feature** — how long the engine takes to accept one
 /// edit, measured rather than reasoned. `#[cfg(test)]` and `#[ignore]`d; it

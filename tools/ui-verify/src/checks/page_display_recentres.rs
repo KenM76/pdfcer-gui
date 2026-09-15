@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! `OPERATOR_REQUESTS.md` **O177**, 2026-09-12:
 //!
 //! > *"when switching the view from scroll pages to show one page at a time or
 //! > show two pages side by side the page or pages view should snap back to

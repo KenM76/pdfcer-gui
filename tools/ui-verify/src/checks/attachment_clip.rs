@@ -3,13 +3,6 @@
 //!
 //! # Where this came from
 //!
-//! Nobody reported it. `tools/gates/check-verb-coverage.sh` shipped on
-//! 2026-09-01 and named five verbs `pdfcer-core` implements that this shell
-//! called nowhere and had written no sentence about. Three of them were
-//! `copy_attachment`, `cut_attachment` and `paste_attachment`, shipped in
-//! `Pass 173.0` — so an embedded file could not be moved from one open document
-//! to another, which is an odd thing to be missing now that pdfcer is
-//! multi-document.
 //!
 //! ⇒ **This check is the answer to "how would anyone have known?"** and the
 //! shape is worth keeping: the gate found the gap, and the gate cannot close
@@ -207,12 +200,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- open the Attachments panel ----------------------------------------
     //
-    // ★★ ASK WHETHER IT IS ALREADY DRAWING, and only press the toggle if it is
-    // not. `attachments`' own header records why: the ribbon item is a TOGGLE
-    // and the dock layout persists, so pressing it over an already-open panel
-    // shuts the subject of the check — which is what that check did on every
-    // run until 2026-08-29, and what `the_line_weight_switch_reaches_the_resize`
-    // started doing the day the exit hook made layout persistence reliable.
     //
     // ★ The ribbon item may also be absent from THIS tab: the ribbon shows one
     // tab at a time, so `ribbon.item.edit.attachments` is not declared unless

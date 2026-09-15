@@ -3,7 +3,6 @@
 //!
 //! ## The request
 //!
-//! `OPERATOR_REQUESTS.md` **O70**, 2026-08-31:
 //!
 //! > *"we should have a checkbox in navigate for a Smart-Selector option, in
 //! > Edit Mode this makes it so if I click on an object and it is enabled to be
@@ -308,8 +307,6 @@ impl Scope {
         {
             return target;
         }
-        // ★★★ **A CONTAINER THAT HOLDS EVERYTHING IS THE PAGE** — 2026-09-01,
-        // and this guard repairs a defect this module CAUSED.
         //
         // Resolving a leaf to its container is right for a title block and
         // wrong for the commonest form in the world: every CAD exporter wraps a
@@ -324,12 +321,6 @@ impl Scope {
         //   "There are obviously more than one item on the page, but when I
         //    click on one of the objects all I get is the page selected."
         //
-        // ★★ It shipped on 2026-08-31 and was found on 2026-09-01 by
-        // `a_click_inside_a_form_selects_what_is_drawn_there` — a driven check
-        // written for the FIRST occurrence, which had SKIPPED on a stale binary
-        // through both sweeps in between. The check is why this cost a day
-        // rather than a fortnight, and the skip is why it cost a day rather
-        // than an hour.
         //
         // ★ Entering such a form is untouched. A double-click descends, the
         // Objects panel lists it, the canvas menu reaches it. Reachable on

@@ -3,8 +3,6 @@
 //!
 //! # What this is for
 //!
-//! `OPERATOR_REQUESTS.md` O14 item 11, from the conventions sweep of
-//! 2026-08-20:
 //!
 //! > **No selection inside a draft** — no Shift+arrow, no Ctrl+A, no
 //! > drag-select.
@@ -27,9 +25,6 @@
 //! observable, and a check that has to mutate to measure will eventually mutate
 //! and fail to clean up.
 //!
-//! So the shell publishes `text-select`, carrying the two indices. That is
-//! `DEFECTS.md` D14's rule — *a trace line must carry the number a wrong build
-//! would get wrong* — used to avoid a side effect rather than to catch a bug.
 //!
 //! # ★★ The second half is the one nobody writes: the selection must GO AWAY
 //!
@@ -42,7 +37,6 @@
 //! A build with no rule 4 passes every "does Shift+Right select" assertion.
 //! This check presses Right afterwards and requires the shell to say `none`.
 //!
-//! # ★★ The pointer half, added 2026-08-21
 //!
 //! Step 6 sweeps the pointer across the editor box and requires a selection to
 //! come out of it. It is here rather than in a check of its own because it
@@ -116,12 +110,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check needs a click or a sweep that lands IN TEXT. On 2026-09-12
-    // it was handed the sweep's shared aim, which on `a1-titleblock.pdf`
-    // lands on a path - and that sheet is 2383.9 × 1683.8 pt carrying 123
-    // characters, so its tallest glyph is 2.4 screen pixels at fit zoom and
-    // no aim on it would have been reliable either. Sixteen checks reported
-    // sixteen plausible reasons for that one fact.
     //
     // `fixture::text_point_target` holds the document, the point, and the
     // measurement behind both. Read its doc comment before changing either.
@@ -324,10 +312,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: ★★★ SWEEP ACROSS THE TEXT WITH THE POINTER ----------------------
     //
-    // The pointer half of item 11, added 2026-08-21. It is a separate step of
-    // this check rather than a check of its own because it needs everything
-    // steps 1-3 established — a mode, a tool, a caret in a real run — and a
-    // second check would be a second copy of all of it.
     //
     // ★ The editor box is aimed at through its OWN declared region. It is
     // painted into the canvas rather than laid out as a widget, so it appears

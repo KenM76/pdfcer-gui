@@ -1,7 +1,5 @@
 //! # `text::settings::bytes` — what changing it makes pdfcer WRITE
 //!
-//! One of three copy modules under [`crate::text::settings`], split on
-//! 2026-08-17 at rule R2's 1,500-line ceiling.
 //!
 //! ## ★ The split is by BLAST RADIUS, which is the window's own taxonomy
 //!

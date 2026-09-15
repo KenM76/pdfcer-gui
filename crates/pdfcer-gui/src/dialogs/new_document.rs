@@ -7,7 +7,6 @@
 //! the command that asks what kind — and Inkscape's split is the shape being
 //! followed: `Ctrl+N` makes a document, `Ctrl+Alt+N` chooses what kind.
 //!
-//! ## ★ Why this could not be built until 2026-08-18
 //!
 //! `crate::app::blank`'s §3a is the record and is worth reading before
 //! touching this file. In short: nothing in `pdfcer-core` wrote a `/MediaBox`,
@@ -198,11 +197,6 @@ impl NewDocumentDialog {
 
     /// Draw it. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
-        // ★ ITS OWN OS WINDOW as of 2026-08-21. The screen-anchor note is
-        // retired rather than moved: the operator's standing objection is to
-        // surfaces whose position is derived from the page, and a desktop
-        // window is as far from page-derived as a position gets. Size is an
-        // opening bid; see [`crate::dialogs::host::Host::fit`].
         let (frame, ()) = crate::dialogs::host::Host::new(
             "new-document", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),

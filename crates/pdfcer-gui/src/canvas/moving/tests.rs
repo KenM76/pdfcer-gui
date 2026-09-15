@@ -1,39 +1,12 @@
 //! # `canvas::moving::tests` — the move gesture's algebra, asserted
 //!
-//! Split out of [`super`] under **R2** on 2026-08-27, when the form-XObject
-//! refusal took the module past 1,500 lines. The tests were the seam, for the
-//! reason `canvas::selection::tests` gives when it made the same move: the
-//! code above is one subject — *which verb does a drag on this selection
-//! become, and what does it refuse* — and there is no honest place to cut it
-//! in two. The assertions are a different subject with a different reader.
 //!
 //! ## What these are about, and why the module they test is worth this much
 //!
 //! Three obligations, stated in [`super`]'s header and each one paid for by a
 //! defect:
 //!
-//! 1. **A press that turns out to be a drag must not change the selection.**
-//! 2. **A ghost is drawn if and only if the release would commit** — the
-//!    preview may not promise a move the engine is going to refuse, which is
-//!    why [`super::eligible`] is asked once per frame *and* once on release.
-//! 3. **Every refusal is named**, not silently absorbed. There are **eleven**,
-//!    and **two** of them reach the operator in words: `InsideForm`, and since
-//!    2026-09-15 `NoVerbForPart(Run)`. The test for which is not *is this a
-//!    refusal* but **can the operator see the cause** — those two describe a
-//!    state they did not put themselves in and cannot see, and the other nine
-//!    do not. [`super::Refusal::worded`] holds the argument and the match, and
-//!    that match is exhaustive so a twelfth refusal cannot join the silent
-//!    nine by default.
 //!
-//!    ★★★ **This paragraph said** *“There are nine, and the newest —
-//!    `InsideForm` — is the **only** one that reaches the operator in words”*
-//!    **until 2026-09-15, and both halves were wrong.** There were eleven when
-//!    it was written, and `NoVerbForPart(Run)` passes the very test the
-//!    sentence goes on to state. It is kept visible rather than quietly
-//!    replaced because the lesson is not the count: a confident sentence at
-//!    the top of the file where a decision lives is why nobody re-opened that
-//!    decision for three weeks, while a drag on one line of a title block did
-//!    nothing in silence. `OPERATOR_REQUESTS.md` **O188**.
 //!
 //! ## `#![cfg(test)]` at the top, and why it is the marker rather than the name
 //!
@@ -543,11 +516,6 @@ fn run_entered() -> SelectionState {
 /// ★★★ **A text run at the Part rung MOVES** — `OPERATOR_REQUESTS.md` O188,
 /// and the day this test was inverted is the day the feature shipped.
 ///
-/// It used to be named `a_text_run_at_the_part_rung_declines_rather_than_
-/// moving_the_object` and it asserted `Err(NoVerbForPart(Run))`, because until
-/// `pdfcer-core` `G017` (2026-09-14) there was no verb to reach. That is the
-/// whole of what changed: the rung, the selection and the gesture are
-/// identical, and the answer is now a subject rather than a refusal.
 ///
 /// ★★ **The half of the old test that was load-bearing is kept**, and it is
 /// the assertion in its failure message rather than in its `assert_eq!`:
@@ -751,11 +719,6 @@ fn the_refusals_the_operator_can_see_raise_nothing() {
 
 /// ★★ **Every refusal traces a distinct, stable, lower-kebab token.**
 ///
-/// `reason=` in `canvas-move-declined` is read by `tools/ui-verify`, and it was
-/// a `{:?}` of the variant until 2026-09-15 — a rendering of the source, which
-/// moves when a variant is renamed or gains a field, with no compiler
-/// diagnostic and no failing test. Two collide-checks and a shape-check are
-/// what make [`super::Refusal::token`] a contract rather than a second `Debug`.
 #[test]
 fn every_refusal_traces_a_distinct_stable_token() {
     let all = all_refusals();

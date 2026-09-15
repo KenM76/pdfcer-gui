@@ -1,7 +1,5 @@
 //! # `text::settings::look` — what changing it makes you SEE
 //!
-//! One of three copy modules under [`crate::text::settings`], split on
-//! 2026-08-17 at rule R2's 1,500-line ceiling.
 //!
 //! ## ★ The split is by BLAST RADIUS, which is the window's own taxonomy
 //!
@@ -190,10 +188,6 @@ pub const fn cmyk_intent_calibrated_note() -> &'static str {
      document the way someone else will."
 }
 
-// ★★★ `cmyk_intent_naive_label`, `cmyk_intent_naive_note` and
-// `cmyk_intent_divergence` were DELETED here on 2026-08-28
-// (`OPERATOR_REQUESTS.md` O52), and the deletion is recorded because two of the
-// three carried arguments worth keeping even though the strings are gone.
 //
 // **The naive option** was offered for one stated purpose — *"only useful for
 // comparing against something pdfcer produced earlier"* — which was true while
@@ -365,11 +359,6 @@ pub const fn unparsed_value_note() -> &'static str {
 
 /// Where a page's blending colour space comes from: the setting's name.
 ///
-/// ★ Worded as the **symptom**, not the mechanism. Nobody arrives at this
-/// window looking for a "page group blending colour space"; they arrive
-/// because a print file's overprinted areas look wrong, or because a file
-/// renders differently than it used to. The title is the sentence that makes
-/// the person with that problem stop scrolling.
 #[must_use]
 pub const fn blend_space_title() -> &'static str {
     "Overprint in print-ready files"
@@ -1026,13 +1015,6 @@ pub const fn chrome_title() -> &'static str {
 /// these are switches they have to flick on every single document — because the
 /// group headings are how a symptom finds its setting and this is the symptom.
 ///
-/// ★ **It says "the View tab" rather than "View ▸ Display", and that is not a
-/// style choice.** `icons::glyphs`' coverage gate refused the first draft: the
-/// font stack this shell ships cannot draw `U+25B8 ▸`, so the separator this
-/// project's *documentation* uses everywhere would have rendered as a
-/// substitution box in front of the operator. The gate found it on the first
-/// run of the new copy, which is the second real tofu it has caught. Internal
-/// notation is not operator copy.
 #[must_use]
 pub const fn chrome_silence() -> &'static str {
     "Also not a standards question. These are the three switches in the View \
@@ -1268,9 +1250,6 @@ pub const fn preset_pdfcer_note() -> &'static str {
 
 /// ★★★ **This standard's render answers are the same as N others'.**
 ///
-/// Shown under a selected conformance preset when its six values match another
-/// preset's exactly — which, measured on 2026-08-26, is true of all eight of
-/// the PDF/X and PDF/A presets.
 ///
 /// It exists because the operator asked for the control in order to *"see how
 /// far we are along with matching the [conformance suite's] tests"*, and

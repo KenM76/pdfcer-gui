@@ -6,13 +6,6 @@
 //! > *"also in the next release add the local compilation time to the top bar at
 //! > the end of the date you added."*
 //!
-//! ★★ He is closing a loop his own reports opened. The date went into the title
-//! on 2026-09-01 after he spent a morning reporting a defect that had already
-//! been fixed, against a build he did not know was old. **Two backlog rows have
-//! been closed by "you were running an old build"** — O85 and O87 — and on a day
-//! with several publishes the date alone cannot tell two builds apart. A date
-//! answers *is this today's*; a date and a time answer *is this the one I just
-//! installed*, which is the question that was actually being got wrong.
 //!
 //! ⇒ So the failure this guards against is not cosmetic. A title that silently
 //! lost its time would put the project back to spending mornings on defects that
@@ -34,10 +27,6 @@
 //!
 //! `PDFCER_BUILD_TIME` has two producers and they disagree about zone:
 //!
-//! | producer | stamp | zone |
-//! |---|---|---|
-//! | `package-portable.py` | `2026-09-02 06:25 +0100` | **local** |
-//! | `build.rs` fallback | `2026-09-02 06:25 UTC` | UTC, and labelled |
 //!
 //! A packaged build's time is already local, so its offset is noise to somebody
 //! standing in that zone and is dropped. A dev build's is UTC, and showing

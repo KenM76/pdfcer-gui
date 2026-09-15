@@ -1,7 +1,6 @@
 //! # `panels::forms::spotlight` — **the panel→canvas channel: which field is
 //! being filled**
 //!
-//! Operator, 2026-09-02, `OPERATOR_REQUESTS.md` O98:
 //!
 //! > *"when we have the fill form panel visible and I click on fields in it
 //! > instead it should highlight the field on the canvas that is being filled."*

@@ -8,8 +8,6 @@
 //! > *"In `pdfcer-gui` a placed markup can be selected and deleted but not moved
 //! > or resized yet."*
 //!
-//! The move half landed on 2026-08-28, the day `pdfcer-core` shipped
-//! `move_annotation`. This is the check that keeps it.
 //!
 //! ## ★★★ Why the failure it guards is worse than "the drag does nothing"
 //!
@@ -258,7 +256,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // measuring a different program from the one an operator uses, and the
     // failure it produces names the wrong subject.
     //
-    // ★★ **The POINTER first, the chord as the fallback — 2026-08-28.**
     //
     // `V` has worked in this check since it was written, and it is kept for
     // that reason. What changed is that it is no longer *first*:

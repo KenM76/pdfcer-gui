@@ -2,8 +2,6 @@
 //!
 //! ## What this closes
 //!
-//! The two controls this surface shipped **without**, on 2026-08-18, with a
-//! sentence where they should have been:
 //!
 //! > *"A group cannot yet be renamed or removed — pdfcer's editing engine has no
 //! > command for either … Both are requested."*

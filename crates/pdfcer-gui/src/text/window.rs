@@ -7,7 +7,6 @@
 //! for a harder reason: the reference is read by somebody browsing, and these
 //! sentences are read by somebody **stuck**.
 //!
-//! ## ★★★ Why this catalog exists at all — the operator, 2026-09-05
 //!
 //! > *"I didn't see a way to get back out of read mode. if there is a shortcut
 //! > for this it should have a note what the key combo is in the top bar that
@@ -19,11 +18,6 @@
 //! toggles**, and the only remaining route is a chord that nothing on screen
 //! names.
 //!
-//! `app::window`'s header used to answer this with *"the tooltip on the control
-//! states the chord before the operator presses it"*. That reasoning is
-//! corrected in place there, and the short form is: a tooltip is a disclosure
-//! available to somebody who already knows where to point, and a bound chord
-//! can be pressed from memory or by accident having pointed at nothing.
 //!
 //! ## ★★ These sentences are CLAIM-BEARING, and that governs their shape
 //!

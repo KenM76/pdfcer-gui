@@ -40,10 +40,6 @@
 //!
 //! ## 2b. And Shift makes it a move, which is the operator's call
 //!
-//! Requested 2026-08-20: *"can you also make it so you can move the pages
-//! between documents instead of just copy by holding one of the keys like shift
-//! or control, whichever on windows uses to switch from copy to move
-//! operation."*
 //!
 //! **Shift.** Windows has bound the drag modifiers the same way since the
 //! mid-nineties — Ctrl copies, Shift moves, Ctrl+Shift makes a shortcut — and
@@ -208,12 +204,6 @@ impl PdfcerApp {
     /// **The second half of a move** — remove the pages from the document they
     /// came from, now that the first half has demonstrably happened.
     ///
-    /// Split out of the arm above because it needs the **opposite borrow**. The
-    /// insert holds `&self.parked[i]` together with `&mut self.status`; this
-    /// holds `&mut self.parked[i]` and nothing else. Two borrows of one field
-    /// that differ in mutability cannot overlap, so they cannot be one
-    /// function, and forcing it would mean cloning a document to satisfy the
-    /// compiler.
     ///
     /// # Why the disclosure is stamped with the TARGET's epoch
     ///

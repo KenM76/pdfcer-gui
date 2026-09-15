@@ -5,7 +5,6 @@
 //!
 //! # The report
 //!
-//! **Ken, 2026-09-12,** item 5 of `FEATURE.txt`:
 //!
 //! > *"The live preview blue outlines that appear when we drag an object scale
 //! > with zooming in and out of the page instead of being independent of zoom —

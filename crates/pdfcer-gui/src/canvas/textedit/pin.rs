@@ -18,13 +18,6 @@
 //!
 //! ## Why this is its own module rather than a private detail of the caret
 //!
-//! It was a private detail of the caret until 2026-08-27, inline in
-//! [`super::plan`], and that was correct while exactly one thing edited text.
-//! `format_text` is the second: restyling an existing run takes **the same
-//! `pinned_span` and the same `EditTarget`** as replacing its text — the engine
-//! shaped the two verbs that way deliberately, *"so a shell that has decided
-//! which stream a caret is in does not have to translate that decision between
-//! two verbs."*
 //!
 //! A second copy of that decision is the thing to avoid. The `EditTarget` arm
 //! below is nine lines of code and sixty of argument, and the argument is what
@@ -62,10 +55,6 @@ use crate::app::state::OpenDoc;
 
 /// Which content buffer a glyph's span indexes — the `EditTarget` half of a pin.
 ///
-/// Its own function since 2026-08-27, when a second caller appeared
-/// ([`operators_in_run`]). The sixty lines of argument below are the reason it
-/// is a function rather than two copies: a paraphrase of them beside the
-/// restyle verb would compile, would look correct, and would drift.
 fn target_of(p: &pdfcer_core::text_extract::GlyphProvenance) -> pdfcer_core::text_edit::EditTarget {
     match p.content_stream {
         pdfcer_core::text_extract::ContentStreamRef::Page => {
@@ -262,8 +251,6 @@ pub struct RunStyle {
     /// ★★★ **It is NOT the show operator's decoded text**, and assuming it was
     /// cost this project a driven run. See [`Self::find`].
     pub text: String,
-    // ★★★ `Reading::find` was HERE until 2026-08-28, and its deletion is the
-    // end of a three-act story worth keeping in one place.
     //
     // **Act 1 — it was built for a reason that turned out to be false.** It
     // computed *"the longest stretch of the run's text whose glyph byte-ranges
@@ -331,10 +318,7 @@ pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
 /// **Which faces on this page `set_font` would actually ACCEPT for this run**,
 /// and the string to pass for each.
 ///
-/// `Pass 142.1`, consumed 2026-08-27. This project asked for it by name after
-/// shipping a face chooser built the only way that was then possible.
 ///
-/// # ★★★ What the list used to be, and the two ways it was wrong
 ///
 /// The face combo was built from `fontinfo::FontInventory`, filtered to the
 /// records naming this page, showing each `/BaseFont` with its §9.6.4 subset
@@ -379,10 +363,6 @@ pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
 /// same `(page, run, epoch)` stamp their style read-back uses, so it is paid
 /// once per selection change rather than sixty times a second.
 ///
-/// `None` when the run does not pin or the preview refuses — a chooser then
-/// falls back to the inventory list, which is the behaviour that shipped and is
-/// wrong only in the two ways above, rather than to an empty combo.
-/// ## ★★★ It takes the ALREADY-INSPECTED reading, and the first draft did not
 ///
 /// The first version of this function called [`inspect`] itself, which reads
 /// well and is a **doubling of the most expensive thing this shell does**: its
@@ -391,12 +371,6 @@ pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
 /// is **784 ms** on the operator's benchmark sheet where one is 392 — paid on
 /// every selection change, to answer two halves of one question.
 ///
-/// Caught by asking what the caller already had rather than by measuring a slow
-/// build, which is the cheap direction to catch it in. The signature is now the
-/// honest one: this function's job is the **preview**, and the extraction is the
-/// caller's.
-/// ★★★ `candidate` — **the text the operator is ABOUT TO WRITE**, not the text
-/// that is there. Added 2026-09-08 with `Pass 142.2`.
 ///
 /// `None` coverage-tests the run's own characters, which is the right question
 /// for a Properties panel describing a run as it stands. `Some(text)` tests the
@@ -455,11 +429,6 @@ pub fn font_preflight(
 /// hold a stale style struct alongside a fresh pin.
 #[must_use]
 pub fn inspect(doc: &OpenDoc, page: usize, run: usize) -> Option<Inspected> {
-    // ★★★ The shared extraction. **This is the 392 ms site** — the one
-    // `panels::properties::refusedchar`'s header measures by name, and the one
-    // that used to run a second time on every click that had already paid for
-    // the identical extraction inside `app::cache::ensure_form_runs`. See
-    // `crate::app::cache::provenance`.
     let text = doc.provenance_page_text(page)?;
     let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
     let pin = of_run(&model, run)?;
@@ -540,10 +509,6 @@ pub fn operators_in_run(
             glyph.text_start as usize,
             glyph.text_start as usize + glyph.text_len as usize,
         );
-        // ★★★ The per-operator `find` text was built HERE until 2026-08-27,
-        // by walking the glyphs and extending a byte cursor over the run's
-        // text — *"but only over bytes a glyph actually covers. A gap here is a
-        // derived character and must not join the two halves."*
         //
         // That was a **second locator**, living beside the engine's, and it is
         // deleted rather than kept. `Pass 145.0` made a pinned request with an
@@ -581,10 +546,6 @@ pub fn operators_in_run(
 
 /// One show operator inside a run: how to name it.
 ///
-/// ★ It carried a `find` and a byte cursor until 2026-08-27. Both are gone —
-/// `Pass 145.0` made a pinned request with an empty `find` mean *the whole
-/// operator*, so the pin is the whole address. See [`operators_in_run`] for the
-/// measurement that made the deletion safe rather than hopeful.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Operator {
     /// The locator.

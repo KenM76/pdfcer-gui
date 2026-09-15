@@ -77,7 +77,6 @@ pub fn ladder_step_up(zoom: f32) -> f32 {
 ///
 /// # ★★★ Why the search is not simply reversed
 ///
-/// `OPERATOR_REQUESTS.md` **O24g**, 2026-08-22:
 ///
 /// > *"clicking the negative button to zoom back snaps me back to 800% when I
 /// > am over 800%."*
@@ -201,11 +200,6 @@ mod tests {
 
     /// ★★ **Stepping DOWN saturates; stepping UP no longer does** — O24.
     ///
-    /// This asserted `ladder_step_up(MAX_ZOOM) == MAX_ZOOM` from the day it was
-    /// written until 2026-08-22, and it was right to: the ladder ended at 800 %
-    /// and there was nowhere above it to go. With a configurable maximum there
-    /// is, and saturating here would make the `+` button inert exactly where
-    /// the setting starts mattering.
     ///
     /// ★ So the property changes shape rather than disappearing: **the step
     /// keeps climbing, and what stops it is the CEILING** — `ViewState::zoom_in`

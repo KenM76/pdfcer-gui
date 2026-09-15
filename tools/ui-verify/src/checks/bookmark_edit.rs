@@ -23,12 +23,6 @@
 //! authoring row `bookmark_can_be_written` drives, and phases B and C then act
 //! on it.
 //!
-//! That is a real dependency and it is stated rather than hidden: if
-//! `bookmark_can_be_written` fails, this check SKIPS rather than reporting a
-//! rename defect, because there is nothing to rename and *"could not set up"* is
-//! a different fact from *"the feature is broken"*. A harness that cannot tell
-//! those apart reports the wrong module, which is what seven of ten failures in
-//! the 2026-08-28 sweep turned out to be.
 //!
 //! # ★★ The rename oracle is the PANEL's census, not the trace alone
 //!
@@ -67,14 +61,6 @@
 //! | B | click the row, retype the name, press **Enter** | `bookmark-rename chars=6`, `rename-bookmark`, and `items` **unchanged** |
 //! | C | press Remove | `bookmark-delete descendants=0`, `delete-bookmark`, and `items=0` |
 //!
-//! ★★★ **Two of those three gestures were missing until 2026-08-29, and without
-//! them this check could not pass on any build.** It went from the Add press
-//! straight to reading `bookmarks.rename` — on a comment saying *"fall through
-//! to the row click below"*, and there was no row click below — and then typed
-//! six letters and read the trace without committing them. `BookmarksUi`'s
-//! selection is set only by a row click, and `edit::rename_row` raises its
-//! action only on the button or on Enter, so both halves reported a working
-//! panel as broken.
 //!
 //! ★ Enter, not the Rename button: that button publishes no `ui_rect` region,
 //! so there is no coordinate for a harness to aim at. `edit::rename_row` commits
@@ -96,8 +82,6 @@ use crate::sys::vk;
 
 /// The mode the Bookmarks panel is **authored** in.
 ///
-/// ★★★ **Was `read`, and that made this check permanently unrunnable —
-/// corrected 2026-09-05 on the first sweep that ever executed it.**
 ///
 /// Read's dock does carry Bookmarks (see `app::modes::defaults` — *Read: Pages,
 /// Bookmarks*), so the panel is on screen and `dock.body.view.panel_bookmarks`
@@ -117,18 +101,10 @@ use crate::sys::vk;
 /// carries Bookmarks, so no extra toggle is needed — which is why [`INVOKE`]
 /// stopped toggling the panel at the same time.
 ///
-/// # ★★★ Correction, 2026-09-12: the second clause above does not follow
 ///
 /// It is kept rather than deleted because it is the inference that produced a
 /// defect, and a reader who never sees it will draw it again.
 ///
-/// *Carried in the default dock* means the panel is **mounted**. It does not
-/// mean the panel is **raised**, and those came apart on the very day that
-/// sentence was written. Ken asked on 2026-09-05 for *"no tabs in the left
-/// side bar when the left rail is visible"*, and the dock now draws no tab
-/// strip whenever a rail can raise every panel in the stack — which, in this
-/// application, it always can. `dock.tab.view.panel_bookmarks` has not been
-/// published since.
 ///
 /// This check calls [`driving::raise_dock_tab`] and **discards the bool**. It
 /// got `false`, correctly, and carried on; the panel it then read was whatever
@@ -150,11 +126,6 @@ use crate::sys::vk;
 const MODE: &str = "review";
 /// Supplied at launch. **Nothing**, deliberately.
 ///
-/// ★★ It used to be `view.panel_bookmarks`, which is a **toggle**, over a mode
-/// whose default layout already mounts the panel — so it was as likely to close
-/// the panel as to open it, and which it did depended on `userdata/layout.ron`
-/// written by whichever run went before. [`MODE`]'s default dock mounts
-/// Bookmarks, so the correct number of toggles is zero.
 const INVOKE: &str = "";
 /// The title box on the authoring row.
 const TITLE_BOX: &str = "bookmarks.new_title";
@@ -332,18 +303,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // decision, because a bookmark click means "take me there" first and always.
     // So there is no separate select gesture to drive: the row is the control.
     //
-    // ★★★ AND THE ROW HAS TO BE CLICKED. Until 2026-08-29 this check went
-    // straight from the Add press to reading `bookmarks.rename`, on a comment
-    // saying "fall through to the row click below" — and there was no row click
-    // below. `BookmarksUi::selected` is set in exactly one place,
-    // `panels::bookmarks::show`'s `if let Some(id) = picked`, and `picked` comes
-    // only from a row's `Response::clicked`. Authoring a bookmark does NOT
-    // select it: the add row leaves the selection alone deliberately, because
-    // what it means there is *the parent for the next add*, and `Move to top
-    // level` clears it. So `bookmarks.rename` was never declared, the branch
-    // below always taken, and this check could not pass on any build — it was
-    // reporting THE SELECTED-BOOKMARK BLOCK NEVER APPEARED about a panel
-    // behaving exactly as its own module header says it does.
     let trace = session.trace()?;
     // ★★★ A row that is ON SCREEN, not merely the last one traced.
     //
@@ -434,11 +393,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         driver.press(key)?;
     }
     session.settle(10);
-    // ★★★ AND THEN COMMIT IT. Typing into the field only moves the DRAFT:
-    // `panels::bookmarks::edit::rename_row` raises the action on
-    // `button.clicked() || (response.lost_focus() && Enter)`, so a check that
-    // typed and then read the trace would find nothing however well the feature
-    // worked. This check did exactly that until 2026-08-29.
     //
     // ★ Enter rather than the button, and not by preference: the Rename button
     // publishes **no `ui_rect` region** — only the field does (`REGION_RENAME`)

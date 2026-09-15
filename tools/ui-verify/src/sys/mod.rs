@@ -94,10 +94,6 @@ pub mod vk {
     /// `F4`, for **`Alt+F4`** — the only way this harness can ask the
     /// application to close **gracefully**.
     ///
-    /// ★★★ Added 2026-09-02 for `page_display_preference`, and the distinction
-    /// is the whole reason it exists. Dropping a [`crate::launch::Session`]
-    /// **kills** the process, and a killed process runs no exit hook: eframe's
-    /// `on_exit` never fires, so the debounced layout flush never happens.
     ///
     /// A check that killed the window and then asserted the preference survived
     /// would be asserting that the 750 ms debounce had already expired --
@@ -108,15 +104,6 @@ pub mod vk {
 
     /// `Z`, for `Ctrl+Z` and `Ctrl+Shift+Z` — undo and redo.
     ///
-    /// ★ These next four exist because `checks::chords` presses them, which is
-    /// the closed-list rule being followed rather than bent: each is here
-    /// because one named check drives it, and the list still refuses
-    /// `pub const A..Z`. They were added on 2026-08-18, when fourteen declared
-    /// shortcuts turned out never to have been dispatched — a defect no check
-    /// could have caught while the harness could not spell the keys.
-    /// `S`, for `Ctrl+S`. Added 2026-09-01 when the operator reported that
-    /// pressing it after an edit closed the program — the chord suite pressed
-    /// it via a table entry and no check had ever needed the code by name.
     pub const S: u16 = 0x53;
     pub const Z: u16 = 0x5A;
     /// `Y`, for `Ctrl+Y` — redo's other spelling.
@@ -145,13 +132,6 @@ pub mod vk {
     pub const END: u16 = 0x23;
     /// `VK_NEXT` -- the key every keyboard prints as **Page Down**.
     ///
-    /// The closed-list rule again: added 2026-09-12 because one named check
-    /// needs it and nothing else could supply it.
-    /// `page_display_recentres` has to reach page index 1 of
-    /// `fixtures/four-pages.pdf` before a facing spread exists at all -- the
-    /// cover rule in `viewer::display::PageDisplay::row_of` puts page 0 in a
-    /// row by ITSELF, so a facing fit measured at launch is measuring one
-    /// page and would pass on a build that cannot fit two.
     ///
     /// Pressed rather than reached through the ribbon because `Action::NextPage`
     /// is what the operator's own gesture raises, and because the page-number
@@ -170,10 +150,6 @@ pub mod vk {
     /// greyed with an empty field, deliberately, so a check that cannot type
     /// cannot reach the verb at all.
     ///
-    /// "Detail" is chosen rather than a nonsense string because the check's
-    /// failure text quotes it, and an operator reading *"no group called
-    /// Detail appeared in the list"* is being told something about a drawing
-    /// they recognise. Added 2026-08-18.
     pub const D: u16 = 0x44;
     /// See [`D`].
     pub const T: u16 = 0x54;
@@ -190,11 +166,6 @@ pub mod vk {
     pub const V: u16 = 0x56;
     /// `X`, for `Ctrl+X` — cut.
     ///
-    /// ★ Added 2026-08-29 for `checks::cut_gate`, following the closed-list
-    /// rule above: each letter is here because one named check drives it. `C`
-    /// and `V` were added when the object clipboard landed and `X` was not,
-    /// because nothing drove a cut until the cut GATE needed proving — which is
-    /// the shape of gap this list makes visible rather than hides.
     pub const X: u16 = 0x58;
     /// See [`D`].
     pub const I: u16 = 0x49;
@@ -204,12 +175,6 @@ pub mod vk {
     /// `Space` — the bar, pressed as a **character** rather than as a
     /// command.
     ///
-    /// ★ The closed-list rule again, and this entry is the first that exists
-    /// to type a character whose whole point is that it is INVISIBLE.
-    /// `checks::find_options` presses it after a needle to reproduce what a
-    /// spreadsheet paste hands over (**O180**, 2026-09-12) — a trailing blank
-    /// that, before that fix, stopped a search from finding text that plainly
-    /// was on the page.
     ///
     /// A space rather than a tab, although the defect covers both: a tab in a
     /// single-line egui field is a focus-moving key in most toolkits and would

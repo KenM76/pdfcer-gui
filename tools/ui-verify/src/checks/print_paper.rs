@@ -3,11 +3,6 @@
 //!
 //! # What this is about
 //!
-//! On 2026-08-18 `pdfcer-print` answered this project's third filing about the
-//! print path and shipped paper selection: `printer_forms`, `PaperSelection`,
-//! `printer_caps_for` and a properties dialog. The shell grew a paper combo
-//! and a **Properties…** button beside the printer selector — a surface the
-//! operator had asked for three times.
 //!
 //! The interesting failure is not "the combo does not appear". It is this:
 //!
@@ -44,13 +39,6 @@
 //! geometry came **back** with. The check reads the line before and after
 //! choosing an entry from the list, and requires both to move:
 //!
-//! ⚠ `sheet=` was `Some((612.0, 792.0))` until 2026-09-10 and is now a bare
-//! `WxH` token — see `autopaper::size_token` for why a field a machine reads
-//! does not get a `Debug` spelling. **This check is unaffected**, because it
-//! compares the field to itself before and after by string equality and never
-//! parses it; the example above is corrected so that a reader of this file is
-//! not shown a line the program no longer emits. The other three fields on
-//! that line belong to `print_auto_paper`, which is the check that reads them.
 //!
 //! | `paper=` | `sheet=` | verdict |
 //! |---|---|---|
@@ -320,12 +308,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // --- E. open the list and choose a DIFFERENT sheet -----------------------
     // ★★ FROM HERE ON THE REGIONS ARE IN THE DIALOG'S OWN OS WINDOW.
     //
-    // As of 2026-08-20 the print dialog is a real OS window (`dialogs::host`,
-    // and `ui-conventions/dialogs.md` G1 — the operator's report). Its
-    // `ui-rect` rectangles are relative to **its** client area, not the
-    // application's, so `session.frame()` is the wrong origin for every one of
-    // them: it produces coordinates that look entirely reasonable and land
-    // several hundred points away.
     //
     // `declared_in` carries the viewport tag and `frame_for` turns it into the
     // right origin. It is re-resolved per click rather than hoisted, because

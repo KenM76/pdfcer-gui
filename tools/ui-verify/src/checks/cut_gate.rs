@@ -3,7 +3,6 @@
 //!
 //! # What this is about
 //!
-//! `pdfcer-core`, unprompted, 2026-08-29:
 //!
 //! > **Do not offer Cut as enabled and let it fail.** A **copy** of something
 //! > pdfcer cannot carry costs nothing — the original stays. A **cut** of the

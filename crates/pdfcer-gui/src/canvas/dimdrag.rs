@@ -103,64 +103,7 @@
 //! The corpus is `ui-conventions/drag-moves.md`. Every row answered, because
 //! the unanswered ones are the ones the operator finds.
 //!
-//! - D1 live-preview: the dimension follows the pointer from the first frame,
-//!   drawn through `dimension_preview_segments` — the same function a committed
-//!   dimension is drawn from. **This row failed twice.** The label drag never
-//!   previewed (the arm was written and unreachable), and the vertex drag
-//!   converted screen→canvas twice, so it tracked at `1/zoom` and sat off by the
-//!   scroll origin. Both fixed 2026-08-20; see `drag_vertex`.
-//! - D2 derived-from-commit: `placed` returns the geometry AND the two scalars
-//!   the commit writes, so preview and commit are one calculation. A caller
-//!   cannot draw one placement and commit another without going out of its way.
-//! - D3 escape-cancels: WAIVED — the gesture machine owns Escape and drops the
-//!   drag before this module is reached. Nothing is written until `Complete`, so
-//!   an abandoned drag leaves the document untouched by construction.
-//! - D4 one-undo-entry: `place_dimension`, `move_dimension_vertex`,
-//!   `insert_dimension_vertex` and `remove_dimension_vertex` are each one
-//!   engine command, so one gesture is one Ctrl+Z. ★ For the three vertex
-//!   verbs that is not an accident of granularity — they share one body,
-//!   `EditSession::apply_vertex_edit` (`D:/Dev/pdfcer/crates/pdfcer-core/src/
-//!   edit.rs:38002`), which plans the edit, rewrites the record, regenerates
-//!   the annotation **and its baked `/AP`**, rewrites the sidecar catalog, and
-//!   commits all of it as a single `Command`. A shell that raised two actions
-//!   for one gesture would break that, which is why each gesture below pushes
-//!   exactly one.
-//! - D5 modifiers-constrain: **Shift locks both drags to one axis**, applied
-//!   by `canvas::interact` before either reaches this module —
-//!   [`crate::canvas::constrain::translate`] for the label, whose outcome is a
-//!   delta, and `reposition` for a vertex, whose outcome is a position and
-//!   which therefore filters the displacement from the press so the grab point
-//!   survives (D8). A label held to its *standoff* or its *slide* specifically —
-//!   the dimension-space pair rather than the page axes — is a further
-//!   refinement and is not built; recorded as a gap rather than claimed.
-//! - D6 snapping: **a vertex drag snaps**, as of 2026-08-20, through the same
-//!   `snap_candidates` query and the same operator settings the measure tools
-//!   use — [`crate::canvas::measure::snap_point`], which exists precisely so
-//!   there is one answer to *"where would this land"* rather than two. Alt
-//!   suspends it, exactly as it does for a pick, and the marker is drawn at the
-//!   target before the release. **The LABEL drag still does not snap**, and
-//!   that is deliberate rather than pending: a label's position is
-//!   presentational, it changes no measured value, and snapping a caption to a
-//!   wall would move it onto the drawing rather than clear of it. The old row
-//!   read: a vertex drag does not snap, while the tool that
-//!   PLACED that vertex does. So an operator can pick a corner onto geometry and
-//!   then be unable to put it back. The sharpest of the gaps here.
-//! - D7 no-op-is-not-an-edit: **GAP** — a zero-travel release still raises the
-//!   action. The engine may collapse it; this module does not check.
-//! - D8 grab-point: the vertex moves by the pointer's DELTA, so whatever part of
-//!   the handle was grabbed stays under the cursor. The label drag has always
-//!   been a delta, and its header carries the argument for why the absolute form
-//!   is right for authoring and wrong for moving.
-//! - D9 disclosure: `MoveVertex` re-measures and says so off-canvas, with the
-//!   label before and after — the "before" cannot be reconstructed once the
-//!   geometry that produced it is gone. `Place` writes fields the value function
-//!   does not read, so it has nothing to disclose and says nothing.
-//!   `InsertVertex` and `RemoveVertex` re-measure too, and disclose the same
-//!   pair **plus the corner count**, because the count is the thing the
-//!   operator asked to change and the thing a mis-aimed gesture would get
-//!   wrong.
 //!
-//! ## ★★★ ADDING AND REMOVING A CORNER — 2026-09-05, the operator's report
 //!
 //! > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
 //!
@@ -179,11 +122,6 @@
 //!
 //! ### The gesture, and why both verbs are DRAGS
 //!
-//! | gesture on a corner handle | means |
-//! |---|---|
-//! | drag | **move** that corner (unchanged since 2026-08-20) |
-//! | **Points tool armed** + `Ctrl` + drag | **add** a corner immediately after it, dropped where the pointer lands |
-//! | **Points tool armed** + `Ctrl`+`Shift` + drag | **remove** that corner |
 //!
 //! ★★ **A click cannot reach this module, and that is a fact about the gesture
 //! machine rather than a preference.** [`crate::canvas::gesture::GestureState::update`]
@@ -285,9 +223,6 @@ pub fn selected(doc: &OpenDoc, selection: &SelectionState) -> Option<(DimensionI
     // See the module header: an angular dimension's placement is a radius and
     // an angle, and this module's delta is in points.
     //
-    // Perimeter joined Linear on 2026-08-20, when the engine shipped the kind
-    // and confirmed that `place_dimension` carries it *"with no new semantics
-    // and no new fields"*.
     if !matches!(
         record.kind,
         DimensionKind::Linear { .. } | DimensionKind::Perimeter { .. }
@@ -306,14 +241,6 @@ pub fn selected(doc: &OpenDoc, selection: &SelectionState) -> Option<(DimensionI
 ///
 /// # Why this is not `overlay::grip_box`
 ///
-/// That function derives its box from the selection's cached content outlines,
-/// which `select_annot` clears — an annotation is not content and has no
-/// decomposed outline to cache. So `grip_box` answers `None` over a selected
-/// dimension, which is why a press on one used to start a marquee and replace
-/// the selection the operator was trying to act on. Keeping the two functions
-/// separate rather than teaching `grip_box` about annotations keeps the resize
-/// grips out of this: `grip_box`'s box is also what the eight scale handles are
-/// laid out on, and a dimension has no scale verb.
 #[must_use]
 pub fn grab_box(doc: &OpenDoc, map: &PageMapping, selection: &SelectionState) -> Option<Rect> {
     selected(doc, selection)?;
@@ -751,9 +678,6 @@ fn inner(
     let page = doc.pages.get(doc.view.page_index)?;
     let old = *points.get(index)?;
 
-    // ★★★ `from` and `at` are ALREADY CANVAS SPACE — the gesture machine says
-    // so on the variant, and converting them again was the operator's bug of
-    // 2026-08-20:
     //
     // > *"as soon as I click one, the preview of the dragging of it is offset
     // > from the mouse and moves at a different speed than my mouse movements,
@@ -806,7 +730,6 @@ fn inner(
     let (target, snap) =
         crate::canvas::measure::snap_point(ctx, doc.view.page_index, free, alt_held, targets, map);
 
-    // ★★★ THE COUNT EDITS BRANCH OFF HERE, ABOVE THE MOVE — 2026-09-05.
     //
     // They share everything up to this line — the grab, the delta, the page
     // conversion, the snap — because a corner being added is placed by exactly

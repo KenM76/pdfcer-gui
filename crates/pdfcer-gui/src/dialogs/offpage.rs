@@ -1,11 +1,8 @@
 //! # `dialogs::offpage` — **which of my drawings have marks outside the sheet?**
 //!
-//! `edit.offpage`, built 2026-09-11 against `pdfcer_core::offpage`.
 //!
 //! ## ★★★ The third of the operator's question that was still open
 //!
-//! **Ken, 2026-09-10:** *"how do I view and edit objects that are off of the
-//! page? we added this feature but I didn't see how to enable it."*
 //!
 //! The **view** and **edit** halves shipped the same day: the canvas learned to
 //! rasterize a halo past the sheet edge, and the cull learned that a page can be
@@ -94,11 +91,6 @@
 //!
 //! ## What it does NOT do
 //!
-//! It does not move anything back onto the sheet, and there is no button here
-//! that does. Off-page objects are already selectable and draggable on the
-//! canvas as of 2026-09-10, and `crate::canvas` is the primary surface for
-//! anything positional — a window that repositioned content the operator cannot
-//! see would be the opposite of both rules this file is written under.
 
 use egui::Ui;
 
@@ -282,16 +274,6 @@ impl OffPageDialog {
             let bands: Vec<(usize, Vec<pdfcer_core::page_tree::Rect>)> = self
                 .scans
                 .iter()
-                // ★★★ THE SAME TOLERANCE THE SCAN USED, and it is not a formality.
-                // The engine grew this parameter on 2026-09-11 because bands drawn
-                // at the exact page box contradict a scan that ignores a fringe: a
-                // border stroked ON the boundary overhangs by half its line width,
-                // so pdfcer would cut content it had just reported clean — one
-                // feature giving two answers to one question. It is also where the
-                // feature's cost lived: a full-bleed scan whose image reaches a hair
-                // past the edge INTERSECTS an exact band, so every such image is
-                // decoded, cleared by a sliver and re-encoded. The engine measured
-                // half a second becoming ten minutes on a forty-sheet drawing.
                 //
                 // Passing `0.0` here would compile, pass every test, and decline
                 // both halves of that fix in silence. The value must track line 217.

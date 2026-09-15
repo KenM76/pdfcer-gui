@@ -88,7 +88,6 @@ fn parse_first_mediabox(text: &str) -> Option<PageGeometry> {
 
 /// **Where the operator's own test drawings live, in the order to look.**
 ///
-/// # ★★★ Why this is a search and not a constant — 2026-09-05
 ///
 /// Three checks pinned one absolute path apiece:
 ///
@@ -154,22 +153,10 @@ pub fn operator_file_complaint(name: &str) -> String {
     )
 }
 
-// The test module goes LAST, and that is a lint rather than a taste: clippy
-// refuses `items after a test module`, because an item below `mod tests` is
-// easy to read as part of the tests and is not. It was moved here on
-// 2026-09-05 when `OPERATOR_DIRS` was added above it during the driven
-// sweep -- the const is production code and belongs with production code.
-
 /// Where a gesture on TEXT can actually be measured, and on which document.
 ///
 /// # The one measurement that explains sixteen skips
 ///
-/// On the 2026-09-12 full sweep, sixteen of the forty SKIPs were one fact
-/// wearing sixteen costumes. The shared aim `0,2000,320` on
-/// `fixtures/a1-titleblock.pdf` lands on a **path**, so every check needing
-/// a caret, a text selection, a text properties panel or a font control
-/// reported - correctly, at length, and about the wrong thing - that its
-/// subject was not there. Several named application modules while doing it.
 ///
 /// ★★★ And a second fact would have survived fixing the aim: that sheet is
 /// **2383.9 × 1683.8 pt carrying 123 characters**, so at the fit zoom the
@@ -268,13 +255,6 @@ pub fn text_block_target() -> (std::path::PathBuf, f32, f32, f32) {
 ///
 /// # Why it is here and not in each check
 ///
-/// Eleven check modules carry a private copy of exactly this function:
-/// `link_follow`, `ocr_progress`, `off_page_census`, `off_page_marquee`,
-/// `off_page_press`, `off_page_toggle`, `off_page_visible`, `off_page_zoom`,
-/// `page_display_pref`, `quit_unsaved` and `save_as`. None of them is wrong.
-/// The problem is the twelfth: pinning a fixture is the standing repair for
-/// the checks the 2026-09-12 sweep found aimed at the wrong document, and
-/// there are about thirty of those.
 ///
 /// ⇒ The eleven are left alone on purpose. Migrating them belongs in its own
 /// commit - a mechanical edit to eleven unrelated modules, folded into a
@@ -301,7 +281,6 @@ pub fn workspace_root() -> std::path::PathBuf {
 /// That is a property of the *fixture*, not of any one check, which is why it
 /// lives here beside the other thing the harness reads out of a document.
 ///
-/// # What it cost to learn - measured 2026-09-12
 ///
 /// `resize_scales_a_shape` was moved into `sweep-full.sh`'s ALONE table with
 /// `--doc-point 0,300,500` and passed. The other two kept taking the sweep's
@@ -346,7 +325,6 @@ pub fn grip_gesture_target() -> (std::path::PathBuf, DocPoint) {
 /// ⇒ The requirement is not "a path" but **"a path with a heavy pen"**, and
 /// that is a property of the fixture rather than of the check.
 ///
-/// # ★★★ What the shared aim point measured, 2026-09-12
 ///
 /// Driven first on the sweep's shared `a1-titleblock.pdf --doc-point
 /// 0,2000,320`, the check **SKIPPED**: that coordinate is over text

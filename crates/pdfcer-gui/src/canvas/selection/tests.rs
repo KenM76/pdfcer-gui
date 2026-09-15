@@ -1,7 +1,5 @@
 //! # `canvas::selection::tests` — the selection algebra, asserted
 //!
-//! Split out of [`super`] under **R2** on 2026-08-18, when annotation
-//! selection took the module past 1,500 lines.
 //!
 //! ## Why the TESTS moved and not the code
 //!
@@ -550,7 +548,6 @@ fn a_plain_click_replaces_and_a_shift_click_toggles() {
 ///
 /// # Why this test was written
 ///
-/// That check FAILED on 2026-08-21, reproducibly and in isolation:
 ///
 /// > *"TWO MARKED ANCHORS WERE CLICKED, THE SECOND WITH SHIFT, AND 1 ENDED UP
 /// > SELECTED."*
@@ -884,11 +881,6 @@ fn missing_every_anchor_falls_back_to_the_part_rung() {
 /// **★★★ A subtracting band takes exactly its hits out and leaves the rest** —
 /// `OPERATOR_REQUESTS.md` O104.
 ///
-/// The operator, 2026-09-03: *"I can't unselect things once I have selected
-/// them for redaction."* This is the half a click could not do — on a sheet of
-/// overlapping strokes, removing one object from a selection of twenty by
-/// clicking it precisely is often not practical, and a band is how the work is
-/// actually done.
 #[test]
 fn a_subtracting_band_removes_only_what_it_hit() {
     let mut sel = SelectionState::default();
@@ -1020,12 +1012,6 @@ fn the_grip_box_is_the_union_of_the_selection() {
 
 /// ★★★ **A placed object arrives selected, at the Object rung, alone.**
 ///
-/// The operator, 2026-08-26: *"if I add an image I Expect to click on it to
-/// resize but dragging doesn't resize."* He was right about the symptom and it
-/// was never the resize — a driven check had already proved a selected image
-/// resizes from a corner grip (`resize-commit grip=SouthEast sx=0.6810`). It
-/// arrived **unselected**, so his first press was a press on unselected paper,
-/// which `gesture::meaning` reads as a marquee. He watched a rubber band.
 ///
 /// Three properties, and each is a separate way to get this wrong: the new
 /// object is selected; it is the ONLY thing selected; and the rung is Object,
@@ -1062,12 +1048,6 @@ fn a_placed_object_replaces_the_selection_at_the_object_rung() {
 /// ★★★ **An empty operand list is not an empty selection**, and the three
 /// accessors say which is which.
 ///
-/// This is the property every form-related refusal in the application rests
-/// on. `canvas::moving` used to answer a leaf-only selection with
-/// `Refusal::NothingSelected`, which contradicted the outline on screen;
-/// `status::selected` would have gone silent on it. Both now ask
-/// `leaf_indices_on` first, and both would be wrong again if these three
-/// answers ever collapsed into each other.
 #[test]
 fn a_leaf_only_selection_is_not_an_empty_selection() {
     use crate::canvas::target::TargetId;

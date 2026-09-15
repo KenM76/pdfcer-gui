@@ -1,6 +1,5 @@
 //! # `canvas::textedit::lines` — the caret's arithmetic inside a MULTI-LINE draft
 //!
-//! ## What this is, and why it arrived on 2026-09-04
 //!
 //! The operator, `OPERATOR_REQUESTS.md` **O127**:
 //!

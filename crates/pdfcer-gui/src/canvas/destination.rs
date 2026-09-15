@@ -1,9 +1,5 @@
 //! # `canvas::destination` — **arriving where a bookmark points**
 //!
-//! Operator report, 2026-09-01: *"in Acrobat clicking on the nested bookmarks
-//! in the drawing package takes you to a zoomed in area of the page … when we
-//! click on ours it just jumps us to the correct page, but doesn't send us to
-//! the spot on the page the bookmark actually points to."*
 //!
 //! Two halves, in two places, and this is the second:
 //!
@@ -30,14 +26,6 @@
 //!
 //! ## ★★★ And it must not frame until the canvas is drawing the right page
 //!
-//! The half added on 2026-09-06, for `DEFECTS.md` **D23**. The scroll offset
-//! moves on the frame the page turns; the strip's *visible set* does not — it
-//! was chosen from the offset the frame inherited. So on the frame a
-//! destination arrives, the canvas is scrolled to the new page and still
-//! drawing the old one, and `zoom::frame_rect` plans the framing against a
-//! [`crate::canvas::zoom::CanvasFrame`] that is about **another sheet**. The
-//! anchor it builds carries that sheet's index, `consume_anchor` solves it
-//! exactly, and the operator is put back on the page they left, magnified.
 //!
 //! [`arrive_step`] is the gate, and it carries the whole argument — including
 //! why the repair is a bounded wait on the *destination* path rather than a
@@ -121,10 +109,6 @@ pub const MAX_WAIT_FRAMES: u32 = 4;
 
 /// What [`arrive`] should do with a parked destination on this frame.
 ///
-/// The mirror of [`crate::canvas::zoom::AnchorStep`], and deliberately so: that
-/// one is the *output* side of the same two-frame problem — the display not
-/// having settled when the anchor is solved — and until 2026-09-06 the **input**
-/// side had no equivalent at all. See [`arrive_step`] for what that cost.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ArriveStep {
     /// The canvas's frame record describes the destination's own page, so the

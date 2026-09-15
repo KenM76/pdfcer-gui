@@ -5,7 +5,6 @@
 //! > *"also can the enter key create new lines when we are editing or creating
 //! > text?"*
 //!
-//! ## ⚠ WRITTEN 2026-09-04 AND **NOT EXECUTED**
 //!
 //! The session that wrote it was instructed not to launch the GUI — the
 //! operator was at his keyboard and a second run would have fought his pointer.

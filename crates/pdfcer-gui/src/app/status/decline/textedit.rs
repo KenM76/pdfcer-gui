@@ -5,13 +5,6 @@
 //!
 //! ## Why it is its own file
 //!
-//! **R2.** [`super`] crossed 1,500 lines the day these two arrived — the second
-//! split from it, after `decline/floor.rs` — and the seam is a real one rather
-//! than a size-driven cut. Everything else in that file answers *"what is a
-//! decline, and how long does it owe its sentence?"*; this answers *"what does
-//! the text caret decline, and who says so?"*, which is a subject with two
-//! call-site families and an argument about **channels** that nothing else on
-//! that surface shares.
 //!
 //! ## ★★★ The argument, once, for both: a sentence in the wrong slot is silence
 //!
@@ -105,11 +98,6 @@ pub(crate) fn record_enter_cannot_split() {
 /// engine accepted. That answer is correct and it arrives too late to be much
 /// use.
 ///
-/// `EditSession::run_repertoire` — built by the engine in direct answer to this
-/// project's 2026-09-09 request — makes the run's alphabet knowable when the
-/// caret lands. `canvas::textedit::repertoire` measures it once,
-/// `canvas::textedit::keys` sieves each keystroke against it, and this is where
-/// the declined key becomes a sentence and an offer.
 ///
 /// # ★★ Why the sentence is [`EditRefusal::RunCannotTake`] and not one of the
 /// # two that name a cause
@@ -155,12 +143,6 @@ pub(crate) fn record_key_refused(page: usize, run: usize, character: char, base_
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★★ Flat fields, and `character='q'` in the same spelling
-        // `edit-text-classified` and `refusedchar` both use, so a driven check
-        // can compare the pre-commit refusal against the commit-time one
-        // without knowing which surface it came from. The 2026-09-05 finding
-        // that a debug-formatted tuple made a correct build report itself broken
-        // is why this is spelled out rather than derived.
         format!(
             "text-edit-key-declined page={page} run={run} character='{character}' character_font={base_font}"
         )
@@ -253,14 +235,6 @@ fn record_edit_text(why: crate::text::textedit::EditRefusal) {
 /// - **grepping its `Display` string** — prose that is theirs to reword, which
 ///   `check-ui-strings.sh`'s exclusion 3 rules out in as many words.
 ///
-/// It also said the generic sentence was *"written to be deleted"* the day
-/// `EditError` gained a coarse kind. **It has one.**
-/// `pdfcer_core::text_edit::RefusalKind` shipped at `b1033ab` in direct answer
-/// to this project's 2026-09-04 request, and is deliberately **not**
-/// `#[non_exhaustive]` so the match is proved complete by the compiler. It had
-/// never been consumed here, because both engine-watching gates are keyed on
-/// `EditSession`'s **verbs** and a new *type* is invisible to
-/// `check-verb-coverage.sh` and `check-engine-backlog.sh` alike.
 ///
 /// # `one_operator` is the fact the engine cannot have
 ///
@@ -295,7 +269,6 @@ pub(crate) fn record_edit_text_refusal(
     use pdfcer_core::text_edit::RefusalClass;
 
     let kind = error.refusal_kind();
-    // ★★★ **The distinction the engine asked us to keep, 2026-09-08.**
     //
     // `NoMatch` and `PinnedSpanNotFound` both arrive as
     // `RefusalKind::NotFound` and mean opposite things — *the text does not
@@ -310,16 +283,6 @@ pub(crate) fn record_edit_text_refusal(
         pdfcer_core::text_edit::EditError::PinnedSpanNotFound { .. }
     );
     let missing = missing_character(error);
-    // ★★ The character itself, not a predicate over it — `EditRefusal::of`
-    // took a `bool` until 2026-09-05, which meant the classification knew that
-    // *a* character had been refused and the sentence could not say which. The
-    // datum was already in hand here; only the status bar's return type stopped
-    // it reaching the operator, and that is now a `Cow`.
-    // ★★ Pass 256.1: the CASE, not just the character. `refused_char_kind`
-    // reads `Refusal::trigger` to tell "the font has no such letter" from "the
-    // font has two of them", which arrive as the same `RefusalKind` and need
-    // opposite sentences. `missing` is still what the offer is keyed on, because
-    // the remedy — change the face — is the same for both.
     let why = crate::text::textedit::EditRefusal::of(
         kind,
         one_operator,
@@ -327,13 +290,7 @@ pub(crate) fn record_edit_text_refusal(
         stale_pin,
     );
     crate::diag::trace(|| {
-        // ★★★ **FLAT FIELDS, NOT `{:?}` ON A TUPLE — corrected 2026-09-05, by
-        // the first driven run this line was ever subjected to.**
         //
-        // It used to emit `character={missing:?}`, which for
-        // `Option<(char, String)>` renders as `character=Some(('q',` followed
-        // by a space, the quoted base-font name, and two closing brackets.
-        // Three things are wrong with that in a `key=value` trace:
         //
         //   1. **It contains spaces and a comma**, so a reader splitting on
         //      whitespace gets `character=Some(('q',` and drops the rest.
@@ -368,11 +325,6 @@ pub(crate) fn record_edit_text_refusal(
             Some((c, font)) => (format!("'{c}'"), font.clone()),
             None => ("none".to_owned(), "none".to_owned()),
         };
-        // ★★ `stale_pin` replaced `occurrences=` here on 2026-09-08, and it is
-        // the field a check now needs: it is the one fact that separates the
-        // two refusals `RefusalKind::NotFound` collapses together, so a build
-        // that read the category right and chose the wrong sentence is visible
-        // in the trace rather than only on screen.
         //
         // A bare `0`/`1`, never `{:?}` on the `bool` — the same rule that
         // banned a debug-formatted `Option` from this line in the first place.
@@ -394,13 +346,6 @@ pub(crate) fn record_edit_text_refusal(
     // the engine, the refusal, the character and the chooser all existed and
     // nothing joined them.
     if let Some((character, base_font)) = missing {
-        // ★★★ **The words the operator typed travel with the refusal** — O141's
-        // second half, 2026-09-05. Without them the offer can change the face
-        // and cannot finish the job: `Ctrl+Enter` calls `commit_into` and then
-        // `abandon` whether or not the engine accepted, so the draft is gone by
-        // the time the block draws, and taking the offer used to leave the
-        // operator to click back into the text and type the character a second
-        // time.
         //
         // ★ Read from `canvas::textedit::last_commit` rather than passed in,
         // and that module's [`Committing`] doc carries the whole argument: the

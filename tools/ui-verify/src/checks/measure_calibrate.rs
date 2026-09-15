@@ -3,7 +3,6 @@
 //!
 //! # The gap this closes
 //!
-//! Reported by the operator on 2026-08-17, in their words:
 //!
 //! > *"Measure tool still missing the feature where we set the scale by
 //! > selecting two lines or points and defining what that distance
@@ -32,13 +31,6 @@
 //! 5. `app::frame` notices *that*, hands the measured length to the waiting
 //!    dialog, and disarms the tool -- which is what brings the window back.
 //!
-//! ⚠ Steps 2 and 5 were *close the window* and *re-open a new one* until
-//! 2026-09-13, when that was found to be discarding everything the operator
-//! had already typed. This check passed before and after, because what it
-//! asserts -- that a window is there afterwards, carrying a real measurement
-//! -- is true of both. The distinction is asserted by
-//! `set_scale_reads_the_group_it_is_about_to_overwrite`, which counts
-//! constructions.
 //!
 //! Steps 3 and 5 are edges read once per frame. Only a running window sees
 //! them.
@@ -254,12 +246,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "canvas at zoom {:.3}; picking two points {SPAN_PT:.0} pt apart",
         mapping.zoom
     ));
-    // ★★★ `span_from`, not `target.x + SPAN_PT`, and this check is the reason
-    // that function exists. It SKIPPED in EVERY recorded sweep -- 2026-09-12,
-    // 09-12b, 09-13a, 09-13b, 09-14 -- because the sweep aims at x=2000, the
-    // span put pick B at 2400, and `a1-titleblock.pdf` is 2383.937 wide.
-    // Sixteen points, and the operator's two-point calibration had never once
-    // been driven. A SKIP is not red, so nothing said so.
     let span = mapping.span_from(target, SPAN_PT)?;
     // ★★★ `picking::resolve_pick`, NOT a bare `click_at`. One click is not
     // always one pick: a click that lands on a DERIVED snap candidate — a
@@ -268,11 +254,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // same point. That is rule 4's fuzzy-never-sneaky gate, it is deliberate,
     // and a check that clicks once per pick silently loses pick B to it.
     //
-    // ⚠ This check did exactly that on its first-ever completed run,
-    // 2026-09-14, and reported that the clicks never reached `ScalePick` while
-    // the trace three lines up read `measure-pick outcome=Promoted
-    // reason=derived-candidate-needs-confirm`. See `checks::picking`'s header
-    // for why the loop is shared rather than copied a third time.
     for (label, doc) in [("A", target), ("B", span)] {
         let window = mapping.doc_to_window(doc)?;
         let screen = session.frame()?.to_screen(window);

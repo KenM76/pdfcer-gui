@@ -2,11 +2,9 @@
 //!
 //! ## The report this module exists for, verbatim
 //!
-//! `OPERATOR_REQUESTS.md` **O23**, second half, 2026-08-21:
 //!
 //! > *"also objects should still be reachable even if they are off the page."*
 //!
-//! and, on 2026-09-10, after the first half had shipped and the second had not:
 //!
 //! > *"how do I view and edit objects that are off of the page? we added this
 //! > feature but I didn't see how to enable it."*
@@ -66,19 +64,9 @@
 //! context, and a rule with this many cases that is only ever exercised by
 //! driving is a rule that silently loses a case.
 //!
-//! | Pointer | Button | Answer | Why |
-//! |---|---|---|---|
-//! | over the sheet | — | [`Surface::Page`] | the ordinary case, unchanged |
-//! | in the pasteboard | up | [`Surface::Pasteboard`] | a hover out there is a hover over off-page content |
-//! | in the pasteboard | **down, pressed on the sheet** | [`Surface::Page`] | ★ a rubber-band started on the paper and dragged off it is one gesture, and it belongs to the page it began on |
-//! | in the pasteboard | **down, pressed out there** | [`Surface::Pasteboard`] | ★ the new half: a band may now START off the sheet |
-//! | **standing on the page's own context menu** | — | [`Surface::Page`] | ★★★ 2026-09-12: the menu COVERS the page, so egui stops reporting the page as containing the pointer — see below |
 //!
 //! ## ★★★ The fifth clause, and the two-day-old defect that earned it
 //!
-//! Added 2026-09-12 after the first driven sweep in three weeks found the
-//! only application defect it found: **a canvas context menu deleted itself
-//! the instant the pointer moved onto it.**
 //!
 //! egui derives a popup's identity from the id of the `Response` it was
 //! attached to — `Popup::default_response_id(r) == r.id.with("popup")`. The
@@ -107,13 +95,6 @@
 //! the page, in precisely the sense row three means by *"a band started on
 //! the sheet and dragged off it is one gesture"*.
 //!
-//! ⚠ Why nothing caught it for two days: it was introduced by `bfc8dea`
-//! (2026-09-10), whose diff is literally `- &image_response,` ⇒
-//! `+ acting_response,`; it produces no diagnostic at all; **no driven check
-//! has ever activated a `menu.item.*` row**; and it is invisible to unit
-//! tests because it lives in the identity of a `Response` that cannot be
-//! constructed without a live context. It broke every canvas context menu
-//! **for the operator**, not only for the harness.
 //!
 //! The third row is the one that would be got wrong by a naive "is the pointer
 //! over the page" test, and it is not a corner case — it is the gesture the
@@ -297,8 +278,6 @@ mod tests {
     /// under a different id, and egui drops it as abandoned. The operator sees
     /// the menu vanish as they reach for it.
     ///
-    /// ★ This assertion **fails** against the code as it stood on 2026-09-11,
-    /// which is the only reason it is worth having.
     #[test]
     fn the_page_keeps_the_frame_while_its_own_menu_covers_the_pointer() {
         assert_eq!(surface(false, false, false, true, true), Surface::Page);
@@ -306,9 +285,6 @@ mod tests {
 
     /// The popup clause must not be a latch on the pasteboard's behaviour.
     ///
-    /// With no popup open, the identical frame is the pasteboard's — which is
-    /// the 2026-09-10 feature (O23 part B) the fifth clause must not undo. The
-    /// pair of these two is the test; either alone would pass on a stub.
     #[test]
     fn without_a_menu_the_same_frame_is_still_the_pasteboards() {
         assert_eq!(

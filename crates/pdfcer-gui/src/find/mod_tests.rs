@@ -1,11 +1,6 @@
 #![cfg(test)]
 //! # `find::mod_tests` - what the find state machine promises, proved headlessly
 //!
-//! Split out of [`super`] on 2026-09-12, when operator request **O179** took
-//! that file past R2's 1,500-line ceiling. The seam is the one this workspace
-//! already uses in `dialogs::print::preview_tests`, `dialogs::textannot_tests`
-//! and `egui-shell`'s `dock/width_tests`: the module keeps the code, the
-//! sibling keeps the proof, and neither grows at the other's expense.
 //!
 //! ## Why these are worth having without a GUI
 //!

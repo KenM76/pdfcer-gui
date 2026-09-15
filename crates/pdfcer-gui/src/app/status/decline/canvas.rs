@@ -1,10 +1,5 @@
 //! # `app::status::decline::canvas` — what a refused canvas gesture may say
 //!
-//! ★★★ **Split out of [`super`] on 2026-09-15 with `OPERATOR_REQUESTS.md`
-//! O188**, which is the fifth time that file has met R2's 1,500-line ceiling.
-//! It stood at 1,367 lines and O188's variant is fifty-seven of them; adding
-//! the vocabulary and its writer as well would have landed at ~1,498, and a
-//! file with two lines of headroom is a file that forbids its own next edit.
 //!
 //! ## Why a file and not two more functions in `record`
 //!
@@ -112,12 +107,6 @@ pub enum CanvasDecline {
     /// for why this refusal earns a sentence when most of its siblings in
     /// `canvas::moving::Refusal` do not.
     ///
-    /// ★★ **This arm and the next replaced a single `TextRunCannotMoveAlone`
-    /// on 2026-09-15**, one day after they shipped, because
-    /// `pdfcer-core` `G017` made the old one's central claim (*pdfcer cannot
-    /// move a single line yet*) false. Two arms rather than one because the
-    /// engine distinguishes the two causes and the operator's next action
-    /// differs between them — see [`crate::text::arrange`].
     TextRunHasNoPositionOfItsOwn,
     /// ★★★ **A drag on a line that the NEXT line's position is measured from**
     /// — O188.

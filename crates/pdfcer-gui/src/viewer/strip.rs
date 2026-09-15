@@ -208,9 +208,6 @@ pub fn row_metrics(
 /// Under Single and Facing the current row is still exactly right: those modes
 /// show one row and the operator chose it, so there is no loop to close.
 ///
-/// **On a document whose pages are all the same size this changes nothing** —
-/// every row is the tightest — which is why the fix costs nothing in the
-/// common case and only differs on documents that were previously broken.
 ///
 /// # Cost
 ///

@@ -2,7 +2,6 @@
 //!
 //! ## What this closes
 //!
-//! The operator, 2026-08-31 (`OPERATOR_REQUESTS.md` **O71**):
 //!
 //! > *"In read mode the regular pointer should also allow us to select images
 //! > so we can copy and paste them as well as text outside of the pdfcergui."*

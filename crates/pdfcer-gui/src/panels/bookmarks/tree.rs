@@ -1,11 +1,6 @@
 //! # `panels::bookmarks::tree` — the two questions this panel asks of an
 //! outline, in the one place they can be tested
 //!
-//! Split out of [`super::add`] on 2026-08-28, when [`super::edit`] arrived and
-//! needed both of them. Before that they were private helpers of the add row;
-//! promoting them to a shared module is what stops the delete surface growing a
-//! second, subtly different depth-first walk — which is exactly how two callers
-//! come to disagree about what "the selected bookmark" means.
 //!
 //! ## ★★ Generic over the tree, because `OutlineItem` is `#[non_exhaustive]`
 //!

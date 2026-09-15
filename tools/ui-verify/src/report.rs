@@ -155,11 +155,6 @@ impl CheckReport {
     ///
     /// # ★★★ Why this is not just `skip`
     ///
-    /// Because for two years it was, and on 2026-09-03 that let a **crashing
-    /// build report PASS**. `dialogs_open_in_their_own_window` drives
-    /// `pdfcer ▸ Keyboard shortcuts`, which aborted the process on open; the
-    /// `viewport-inner` line the check greps for is written before the panic,
-    /// so the evidence existed and the check was satisfied.
     ///
     /// The guard that catches it is in `Session::trace`, and it has to be able
     /// to produce a **red** result. Routing it through `skip` would have made a

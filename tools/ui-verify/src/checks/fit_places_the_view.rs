@@ -3,7 +3,6 @@
 //!
 //! # The reports
 //!
-//! `OPERATOR_REQUESTS.md` O28 and O29, 2026-08-24:
 //!
 //! > *"If I press the Fit width or fit page button the view should center to
 //! > the width as well or center the page."*
@@ -12,14 +11,6 @@
 //!
 //! # ★★★ Why the run must pan into the pasteboard FIRST
 //!
-//! This is the property that makes the check able to fail, and it is the same
-//! shape `zoom_keeps_place`'s pan is: **the state O28 is about did not exist
-//! before O23's pasteboard.** A page no larger than the viewport used to have
-//! nowhere to be except the middle, so a fit that set only the scale looked
-//! centred anyway. With a whole viewport of slack on every side, "the scale is
-//! right and the page is not on screen" is reachable — and a check that
-//! pressed Fit page from a centred start would watch the page "stay" where the
-//! bug would have put it, pass, and mean nothing.
 //!
 //! So the run scrolls hard into the pasteboard, **asserts that it got there**
 //! (a run that failed to displace the view has not set up its own precondition

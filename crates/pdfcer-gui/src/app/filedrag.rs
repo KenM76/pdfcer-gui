@@ -2,7 +2,6 @@
 //!
 //! ## What this closes
 //!
-//! The operator, 2026-08-31 (`OPERATOR_REQUESTS.md` **O67**):
 //!
 //! > *"I should be able to drag and drop documents into the thumbnails section
 //! > of another pdf to import the pages."*

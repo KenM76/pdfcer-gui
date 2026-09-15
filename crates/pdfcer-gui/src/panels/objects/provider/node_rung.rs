@@ -29,11 +29,6 @@
 //!
 //! ## ★★★ Why this is a module and not more methods in [`super`]
 //!
-//! **Extracted 2026-09-15 to honour project rule R2** (`no .rs file over 1500
-//! lines`, enforced by `tools/gates/check-file-size.sh`), which `mod.rs` had
-//! reached at 1521 lines. The gate is the occasion; the seam is not arbitrary,
-//! and R2's whole value is that a file at the limit has to be *read* for a
-//! seam rather than trimmed at the 1500th line.
 //!
 //! **The seam chosen is the Point rung.** [`super`] answers *"what is on this
 //! page, and where is it?"* — it owns the decomposition, the canvas↔PDF

@@ -1,13 +1,6 @@
 //! **The print job itself** — everything from the moment the operator presses
 //! **Print** until the receipt is on screen.
 //!
-//! Split out of [`super`] on 2026-09-10 under **rule R2** (no source file over
-//! 1,500 lines), which that file crossed when O166's persistence landed. The
-//! seam is the one the dialog already had rather than a line drawn to hit a
-//! number: [`super`] owns the *window* — its state, what it draws, what it
-//! recomputes every frame from the operator's current answers — and this file
-//! owns the *job*, which is a transaction with a single entry point, no widgets
-//! and no per-frame behaviour at all.
 //!
 //! # What is here
 //!
@@ -42,11 +35,6 @@ impl PrintDialog {
     ///
     /// # ★★★ Why this is extracted rather than left inline
     ///
-    /// Because the behaviour it decides is the operator's 2026-09-03 report —
-    /// *"it doesn't close after I hit the print button [...] there was a dozen
-    /// jobs there"* — and the only way to drive the inline version is to
-    /// actually print. Spooling a real job to his printer to prove a window
-    /// closes is not a test, it is the defect.
     ///
     /// So the decision is separated from the act. `ui-verify` cannot reach it
     /// (no headless route ends in a real spool), and this project's rule is
@@ -223,11 +211,6 @@ impl PrintDialog {
                 self.effective_device().paper,
                 autopaper::pick_token(self.device.paper),
                 autopaper::outcome_token(&self.auto_paper),
-                // ★ `sheet=` is a `size_token`, not `{:?}`, since 2026-09-10.
-                // It used to print `Some((1190.4, 841.68))` and survived only
-                // because the harness's splitter tracks bracket depth — see
-                // `autopaper::size_token` for why a field a machine reads does
-                // not get a `Debug` spelling.
                 autopaper::size_token(job.map(|j| j.device.physical_pt)),
                 // ★★ `largest=` and `mixed=`, added for O167's driven check.
                 //
@@ -280,7 +263,6 @@ impl PrintDialog {
 ///
 /// ## ★ The settings surface landed, and this paragraph is what it changed
 ///
-/// This doc comment used to say:
 ///
 /// > One choice the old shell encoded is missing here and its absence is not an
 /// > omission: **the CMYK conversion intent**. `pdfcer-core`'s settings surface
@@ -290,14 +272,6 @@ impl PrintDialog {
 /// > the previous intent, which is the exact staleness class that key exists to
 /// > close.
 ///
-/// It landed on 2026-08-17 and both halves were done together, as instructed.
-/// The options now come from `crate::app::settings::SettingsExt`, which carries
-/// **five** settings rather than the one that note anticipated — the CMYK
-/// intent, the mask resampling filter, the minification filter, the CMYK JPEG
-/// polarity, and what is drawn for an annotation with no stated appearance
-/// state. That last one reaches paper as well as the screen, which is why its
-/// radius line in the settings window is the only one that separately names
-/// printing.
 ///
 /// [`preview::PreviewKey`] gained the same five, for the reason that note gave.
 pub(super) fn render_options(

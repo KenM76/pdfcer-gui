@@ -1,8 +1,5 @@
 //! # `text::redact::carriers` — the places a copy of the removed text can hide
 //!
-//! ★★★ **Added 2026-09-09**, when `pdfcer-core` at `369d4de` introduced
-//! [`CarrierAction::CheckedClean`][cc] and three whole-file-sweep counters, and
-//! the engine-API drift gate showed that this shell reads **none** of them.
 //!
 //! [cc]: pdfcer_core::redact::CarrierAction::CheckedClean
 //!
@@ -53,13 +50,6 @@
 //! [`crate::text::redact`]'s rules 1–3 bind here unchanged. This group adds a
 //! fourth, and every string below obeys it:
 //!
-//! > **Say where, in his vocabulary, never in the engine's.** A carrier name is
-//! > the whole actionable content of a residual line: *"the tagged-reading
-//! > structure a screen reader follows"* is something an operator can decide
-//! > about in a second, and *"struct_tree"* is something he can only click
-//! > past. This is the same finding `raw_residual_line` was corrected for on
-//! > 2026-09-04, one sentence over, after his report that the warning *"always
-//! > finds text that wasn't redacted"*.
 //!
 //! ★ **The fallback is the raw key, deliberately.** `CarrierStatus::carrier` is
 //! an open vocabulary — a future engine build may add one — and the choice at
@@ -123,9 +113,6 @@ pub fn carrier_name(carrier: &str) -> &str {
 
 /// One residual line for a carrier the engine detected and could not scrub.
 ///
-/// Moved here from `text/redact/mod.rs` on 2026-09-09 with its wording
-/// corrected to name the carrier in English; the signature and every call site
-/// are unchanged, because the parent re-exports it.
 ///
 /// ★ Dispatches to [`residual_sweep_line`] for the one carrier the generic
 /// sentence is **false** about. Selecting the sentence here rather than at the
@@ -263,11 +250,6 @@ pub fn sweep_scrubbed_line(entries: u64, objects: u64, content_streams: u64) -> 
 /// on is a warning everybody learns to click past, which then costs the real
 /// one its force.
 ///
-/// ★★ **And they are not dropped, which is the other half.** Until 2026-09-09
-/// `RedactionReport::notes` was read by nothing in this shell at all. The object
-/// numbers the residual sweep could not scrub existed only there. A disclosure
-/// the engine wrote and the shell discarded is worse than one it never wrote,
-/// because the engine's authors believe it was delivered.
 ///
 /// The count is in the label so the section advertises whether it is empty
 /// before it is opened.

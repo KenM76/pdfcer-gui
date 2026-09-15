@@ -1,13 +1,6 @@
 //! # `shell::commands::catalog::arrange` — the Markup tab's **Arrange** group:
 //! which mark is drawn on top
 //!
-//! One band of [`super::all`]'s catalogue, registered 2026-09-06. It is the
-//! **fifth** file in this per-tab split and the first that is a *group* rather
-//! than a tab, so the seam is worth stating: [`super::markup`] holds the
-//! commands that **add** a mark to the page, and these four change the order the
-//! marks already there are painted in. Same tab, different subject, and the
-//! subject is the one that decides which file a registration lives in — that is
-//! [`super`]'s own rule, applied one level down.
 //!
 //! ## ★★★ The ids are `markup.*` and the file is `arrange.rs`, deliberately
 //!
@@ -59,10 +52,6 @@
 //! ## ★ `selection.markup_restylable`, and its name is now narrower than the
 //! fact
 //!
-//! The predicate these four wait on means *a markup annotation is selected and
-//! this mode may author markup* — one fused fact, published by `app::conditions`
-//! since 2026-09-06 for the five Format ▸ Markup controls. It is **exactly** the
-//! question these four ask, so reusing it is what stops two names for one fact.
 //!
 //! Its name says *restylable* because restyling was its only client when it was
 //! coined that morning. Arranging is not restyling. Renaming it is a change to

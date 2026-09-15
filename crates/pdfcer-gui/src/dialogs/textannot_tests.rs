@@ -1,12 +1,6 @@
 #![cfg(test)]
 //! # `dialogs::textannot_tests` — the sticky-note/text-box/stamp window, proved headlessly
 //!
-//! Split out of [`super::textannot`] on 2026-09-10, when operator request O172
-//! — *"add our own custom stamps and use them, preferrably exactly the same way
-//! acrobat does"* — took that file past R2's 1500-line ceiling. The seam is the
-//! one `dialogs::print::preview_tests` and `egui-shell`'s `dock/width_tests`
-//! already use in this workspace: **the module keeps the code, the sibling
-//! keeps the proof.**
 //!
 //! ## Why the tests were the right half to move
 //!
@@ -127,10 +121,6 @@ fn the_note_window_does_not_open_in_the_corner() {
 /// **The window is squeezed to fit a narrow application window, and never
 /// below the size it refuses to be dragged to.**
 ///
-/// The floor is the half that was missing: the expression used to be
-/// `420.min(width - 40)` with no `max`, which is **negative** for an
-/// application window under 40 pt wide. Unreachable today and free to
-/// close.
 #[test]
 fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
     let roomy = window_size(screen(), TextAnnotKind::TextBox, 0.0);
@@ -162,11 +152,6 @@ fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
 /// ★★★ **Each kind's window is as tall as its own body needs, and the one
 /// kind with nothing added did not move.**
 ///
-/// Two chooser have been added under two of the three bodies: the sticky's
-/// icon radios on 2026-09-06, and the stamp's label-size combo on
-/// 2026-09-10 (engine `Pass 287.0`). Without the extra height the Accept
-/// button sits below the window's own bottom edge — a dialog the operator
-/// cannot finish, which is a worse failure than any it replaces.
 ///
 /// ★★ **The text-box assertion is the positive control** and it is what
 /// makes this a test at all. Asserting only *"the sticky and the stamp are
@@ -174,16 +159,7 @@ fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
 /// kind — the change would be invisible, the text box would grow a strip of
 /// empty window, and nothing here would say so.
 ///
-/// ⚠ **This test was renamed on 2026-09-10, and the old name is the
-/// lesson.** It was `only_the_sticky_notes_window_grew_for_its_chooser`,
-/// and it asserted `stamp.y == WINDOW_PTS.y` with the message *"the stamp
-/// has no chooser and must not have grown"*. That sentence was true when it
-/// was written and became false the moment the stamp got one. A test whose
-/// **name and message state a property the program no longer has** is worse
-/// than no test: it reads as a measurement, and the next person to grep for
-/// *"which kinds have choosers?"* finds an answer rather than a question.
 ///
-/// # ★★★ The sticky-versus-stamp ordering INVERTED on 2026-09-11
 ///
 /// Until that day this test asserted `sticky.y > stamp.y`, with the reason
 /// *"seven radio rows and a disclosure is a taller addition than a heading,
@@ -193,8 +169,6 @@ fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
 /// it compared the two ADDITIONS while ignoring that the additions sit on
 /// different bodies.
 ///
-/// From the driven run of 2026-09-11, in the dialog's own content
-/// coordinates:
 ///
 /// | body | what it holds | measured |
 /// |---|---|---|
@@ -212,12 +186,6 @@ fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
 /// derivation only supports a 16 pt difference, and an assertion tighter
 /// than its evidence is the defect this whole doc block is about.
 ///
-/// ⚠ **What is still owed:** [`STICKY_EXTRA_PTS`] has never been measured
-/// against a driven run the way [`STAMP_EXTRA_PTS`] now has. It is an
-/// estimate from 2026-09-06 by the same method that left the stamp's
-/// chooser below the fold for five days. Open the sticky dialog under
-/// `ui-verify`, read `dialog:text-annot` and the last region the body
-/// declares, and either confirm 190 or correct it here with the numbers.
 #[test]
 fn each_kinds_window_is_as_tall_as_its_body_needs() {
     let screen = screen();
@@ -233,10 +201,6 @@ fn each_kinds_window_is_as_tall_as_its_body_needs() {
         stamp.y > boxed.y,
         "the size chooser needs room the text box does not: {stamp:?} vs {boxed:?}"
     );
-    // ★ The ordering, not merely the inequality — and it reversed on
-    // 2026-09-11 when the stamp's constant was measured instead of guessed.
-    // See this test's doc for the two numbers it now rests on: an 80 pt size
-    // section against a 64 pt text field, both read off a driven trace.
     assert!(
         stamp.y >= sticky.y,
         "the stamp body carries the sticky's gallery AND a size section, where the \
@@ -301,10 +265,6 @@ fn the_chosen_icon_reaches_the_commit_action() {
         StampName::Final,
         "the field the icon was modelled on must still travel too"
     );
-    // ☑ The third operand, added 2026-09-10 with the size chooser, and it
-    // is asserted at a NON-default value for the reason the two above are:
-    // a field left at its default travels identically whether it is carried
-    // or silently reconstructed at the far end.
     assert_eq!(
         *stamp_size,
         StampSize::Points(24),
@@ -820,10 +780,6 @@ fn a_library_of(n: usize) -> Library {
 // binary, in `ui-verify`'s custom-stamp check, which owns the folder it plants.
 // Saying so here so a later reader does not mistake the gap for coverage.
 //
-// Falsification, 2026-09-10: with `open` patched to ignore its `last` argument,
-// `a_remembered_standard_stamp_is_selected_when_the_window_reopens` went red and
-// the rest stayed green -- so the restoring half is genuinely measured, and the
-// fallback test below is the negative arm of that pair, not evidence on its own.
 
 /// ★★★ **Cancel must not remember.** The whole reason
 /// [`TextAnnotDialog::remembered`] reads a field only the accept path writes,

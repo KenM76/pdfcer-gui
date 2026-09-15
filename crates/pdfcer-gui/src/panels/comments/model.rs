@@ -342,8 +342,6 @@ pub fn collect<G: ObjectGraph + ?Sized>(
 
 /// Classify one annotation.
 ///
-/// Split out of [`collect`]'s loop so the classification can be read — and
-/// tested — without the page walk around it.
 fn row(page_index: usize, annot: &Annotation, ce_dimensions: &BTreeSet<ObjId>) -> CommentRow {
     let subtype = annot.subtype_label();
     // An annotation with no object identity cannot be in the sidecar, because

@@ -1,8 +1,5 @@
 //! # `shell::commands::catalog::view` — the View tab — what is on screen and how the page is laid out
 //!
-//! One band of [`super::all`]'s catalogue. Split out of [`super`] under **R2**
-//! on 2026-08-28, when the Attachments command took that file to 1,495 of its
-//! 1,500 lines and the next command registered would have broken the rule.
 //!
 //! ## ★★★ The split is per TAB, and the reason it was refused before is gone
 //!
@@ -95,18 +92,7 @@ pub(super) fn band() -> Vec<Command> {
         // would be art invented here, decoding to nothing the word beside it
         // did not already say.
         //
-        // This is the reasoning the icon ui-spec §3.2 applied to Actual size
-        // ("a numeral read at a glance is clearer than any glyph substitute
-        // could be… both add a decode step a bare percentage does not need"),
-        // applied to a group instead of a control. The 2026-08-14 icon pass
-        // considered each of the five and refused each: an invented glyph on
-        // a settings knob is decoration, and decoration on a ribbon costs the
-        // legibility of the glyphs that mean something.
         //
-        // ★ **All five were UNREGISTERED on 2026-08-17**, and tokens 210-214
-        // are retired rather than reused — a token is an operator's saved
-        // keybinding, and handing 211 to something else would silently rebind
-        // whatever they had put on it.
         //
         // Three of the five had nothing behind them: there is no
         // tiled-progressive path in this shell, and `RenderOptions` had neither
@@ -122,15 +108,6 @@ pub(super) fn band() -> Vec<Command> {
         // the other two are no longer reached by a command at all.
         // `crate::app::prefs`' header carries the evidence per verdict.
         //
-        // ⚠ **CORRECTED 2026-09-05 (O137): the thin-lines verdict expired.**
-        // The sentence above is written in the past tense now because the
-        // engine shipped `RenderOptions::stroke_display` (`Pass 254.0`,
-        // `8f9fb3e`) the day this shell asked for it, and the control is back
-        // as `view.line_weights` in the Display group below — a **display**
-        // toggle, not a Render setting, for the reason its own note gives. Four
-        // of the five verdicts still hold; `view.antialiasing` is the one that
-        // is still true, and nobody has asked for it.
-        // ★ **No icon, on the icon ui-spec's own explicit instruction.**
         //
         // §3.2 is a whole section devoted to this one control: "Recommend
         // leaving `zoom_100_button()` as plain text ('100%'), not iconified…
@@ -139,10 +116,6 @@ pub(super) fn band() -> Vec<Command> {
         // engineer does not feel obligated to force an icon here against the
         // better outcome."
         //
-        // The 2026-08-14 pass gave the other four Zoom entries glyphs and
-        // deliberately left this one alone. A spec that anticipated being
-        // overruled by a completeness drive, and argued against it in
-        // advance, is the strongest kind of recorded decision there is.
         command("view.zoom_actual", t::view_zoom_actual(), 220).enabled_when("doc.pages"),
         // Zoom to selection is gated on `selection.bounds`, not on
         // `selection.any` — the two differ, and the difference is the
@@ -170,33 +143,12 @@ pub(super) fn band() -> Vec<Command> {
         command("view.zoom_region", t::view_zoom_region(), 224)
             .with_icon("zoom-region")
             .enabled_when("doc.pages"),
-        // ★★ **The two pointer tools that make the canvas predictable**, added
-        // 2026-08-19 on the operator's report:
         //
         // > *"The selector should be predictable like other programs. It seems a
         // > lot of ideas are getting invented instead of just using the … most
         // > common method expected."*
         //
-        // He is right, and `view.tool_select` had been **deliberately absent** —
-        // the comment that used to sit here read *"There is deliberately no
-        // `view.tool_select` beside them"*, on the argument that Select is the
-        // default you return to rather than a thing you pick. That argument is
-        // sound and it produced an unusable surface: with no Select control
-        // there was no *row of tools*, so the Hand and the Text tool read as two
-        // unrelated toggles rather than as members of a set, and there was
-        // nowhere for a third and fourth to join. A tool palette is the most
-        // conventional object in this product class; not having one is the
-        // invention.
-        // ★★ **The object clipboard, 2026-08-19** — the operator's report:
-        // *"also the standard copy/paste and I didn't try cut so possibly that
-        // one too aren't implemented."* They were not.
         //
-        // ★ Scoped to **markup and comments**, because that is what the engine
-        // can express: `annot_author::spec_from_dict` reads one and `add_markup`
-        // writes one back. Page content cannot be pasted — 157 verbs in
-        // `edit.rs` and none inserts content, checked 2026-08-19 — so a copy of
-        // a path would be offering a paste that could never happen. The labels
-        // say "comment or markup" rather than "object" for exactly that reason.
         //
         // `enabled_when("doc.pages")` rather than a selection condition: what is
         // selected changes every click, and a control that greys and un-greys
@@ -235,11 +187,6 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.paste", t::edit_paste(), 405)
             .with_icon("paste")
             .enabled_when("doc.pages"),
-        // ★★ `edit.paste_duplicate` — Ken, 2026-08-29, O58. Registered as its
-        // own command rather than read as a modifier inside `edit.paste`,
-        // because a command is the unit this shell can bind, place, menu and
-        // withhold; a modifier read inside a handler is reachable only from the
-        // keyboard. `app::dispatch::clipboard`'s header carries the argument.
         //
         // ★ Same `doc.pages` gate and same icon as its sibling. A second paste
         // glyph would be a distinction the operator has to learn for no gain —
@@ -258,7 +205,6 @@ pub(super) fn band() -> Vec<Command> {
         command("view.tool_hand", t::view_tool_hand(), 225)
             .with_icon("hand")
             .enabled_when("doc.pages"),
-        // ★ **The text tool** — 2026-08-14, and it closes two things at once.
         //
         // Beside `view.tool_hand` because View ▸ Navigate is where the *other*
         // pointer-tool toggle already lives, and because View is the one tab
@@ -352,16 +298,7 @@ pub(super) fn band() -> Vec<Command> {
         // `crate::viewer::ViewState`, which `conditions` can read, so no
         // second mechanism was needed.
         //
-        // ★ **All three now carry a glyph, and the note that used to stand
-        // here is retired rather than reworded.** It read: "No icons: there
-        // is no ruler, grid or guide key in `crate::icons::catalog`, and
-        // naming one would draw the catalogue's deliberate slashed mark for
-        // an unknown key. A command with no icon renders as its label, which
-        // is the right answer here… the control's name is a word, and the
-        // word is what makes it findable."
         //
-        // The first half was a true statement about the catalogue and is now
-        // false: `rulers`, `grid` and `guides` exist, authored 2026-08-14.
         //
         // The second half was a **misreading of the ribbon**, and it is worth
         // saying so plainly because it is the reason three controls stayed
@@ -392,18 +329,7 @@ pub(super) fn band() -> Vec<Command> {
         // ★★★ **`view.line_weights` — O137, and it is the one entry in this
         // file that was DELETED and is now back.**
         //
-        // Ken, 2026-09-05: *"awhile ago you told me you removed the button to
-        // show all lines without their thickness — thin lines or something like
-        // cad has. The button never worked but I do want that display
-        // option!"* Both halves of that are correct.
         //
-        // Its predecessor `view.thin_lines` was token **213**, was drawn on
-        // this tab, and was **inert**; it was unregistered on 2026-08-17 with
-        // the rest of the Render group because *"`RenderOptions` has neither a
-        // thin-lines nor an antialiasing field"*. That deletion was right —
-        // R8, and a control that does nothing is exactly the defect he
-        // reported. Treating it as closing the question was not: **a capability
-        // nobody can reach is not a capability nobody wants.**
         //
         // ★★ It may exist now **because the field exists now**:
         // `RenderOptions::stroke_display: StrokeDisplay { Actual, Hairline }`,
@@ -434,9 +360,6 @@ pub(super) fn band() -> Vec<Command> {
         command("view.line_weights", t::view_line_weights(), 235)
             .with_icon("line-weights")
             .enabled_when("doc.pages"),
-        // ★★★ **`view.off_page` — the operator's request of 2026-09-11**,
-        // and the second entry in this group whose "off" costs nothing to
-        // draw because it stops something being drawn:
         //
         // > *"in our view ribbon area we need an option to show the stuff
         // > that is off page or not (and when not showing the stuff that is
@@ -471,9 +394,6 @@ pub(super) fn band() -> Vec<Command> {
         command("view.off_page", t::view_off_page(), 236)
             .with_icon("off-page")
             .enabled_when("doc.pages"),
-        // The sidebar is the application's own furniture and toggles with
-        // or without a document; the panels inside it need one to describe.
-        // ★★★ `view.sidebar` was HERE until 2026-08-31 — O68's sweep.
         //
         // There is no sidebar rail in this build; there is a dock, and every
         // dock panel already has its own command. So the control had nothing
@@ -482,10 +402,6 @@ pub(super) fn band() -> Vec<Command> {
         // View ▸ Panels and enabled with nothing open, which made it the most
         // prominent dead control in the program.
         //
-        // R8: absence is expressed by not registering. R9: it renders nothing.
-        // ★★★ **`view.panel_tool` was retired on 2026-09-04** —
-        // `OPERATOR_REQUESTS.md` O123, and token 247 goes with it and is never
-        // reused.
         //
         // The panel it toggled no longer exists: its status is a permanent
         // strip the right dock reserves (`crate::app::toolstatus`), its live
@@ -511,14 +427,6 @@ pub(super) fn band() -> Vec<Command> {
         //
         // Both halves have been overtaken:
         //
-        // * The premise is gone. `pages` was authored on 2026-08-14 (three
-        //   sheets, front one whole and two behind showing only the edges
-        //   that clear it — `crate::icons::Icon::Pages` records what it was
-        //   drawn to stay distinguishable from). Naming it draws a glyph.
-        // * The fallback argument was a misreading of the ribbon, the same
-        //   one the Display group's note made: a band control draws its icon
-        //   BESIDE its label, never instead of it. Nothing about the word was
-        //   ever at stake.
         //
         // Left standing, that comment would have read as a live reason to
         // keep a bare button in a row of glyphs. A decision whose premise has
@@ -565,17 +473,11 @@ pub(super) fn band() -> Vec<Command> {
         // called View. They have controls now, so they have glyphs.
         command("view.read_mode", t::view_read_mode(), 250).with_icon("read-mode"),
         command("view.fullscreen", t::view_fullscreen(), 251).with_icon("fullscreen"),
-        // ★ `view.floating_panels` (252) and `view.app_initiative` (253) were
-        // UNREGISTERED on 2026-08-17, tokens retired rather than reused.
         //
         // Neither had anything behind it. `egui-shell`'s dock has no floating
         // mode at all — its only `floating` is `egui`'s scroll-bar style — so
         // the first governed a capability that does not exist.
         //
-        // ★★★ **The first half of that stopped being true on 2026-09-04.**
-        // `egui_shell::dock::float` and `::floatwin` landed and panels now
-        // float into real OS windows, so a capability the note calls
-        // non-existent exists. The four commands below are it.
         //
         // `view.floating_panels` is STILL not re-registered, and the
         // distinction is worth stating rather than leaving as an omission.
@@ -602,15 +504,6 @@ pub(super) fn band() -> Vec<Command> {
         // behaviour pdfcer does not have, which is a control that cannot do
         // anything whichever way it is set.
         //
-        // Building it would mean building the behaviour first, and the
-        // behaviour is the thing the operator objected to. It goes back on the
-        // list the day something wants to float unasked, and not before.
-        // ★★★ **THE TWO AUTO-HIDE COMMANDS**, 2026-09-05, and they are on the
-        // ribbon rather than in Settings alone because R8 says so: registering
-        // a command is the only way this shell may learn a capability exists,
-        // and it is what puts the pair in the keymap, in the menu document and
-        // under the operator's own customization. A setting reachable only from
-        // a Settings window is a capability most operators never find.
         //
         // ★★ **Neither renders PRESSED, and that is the convention rather than
         // an omission.** Office's own ribbon-display control is a caret that
@@ -621,21 +514,10 @@ pub(super) fn band() -> Vec<Command> {
         // shrunken to a chevroned band, are not states an operator can be
         // uncertain about.
         //
-        // ⬜ **What that costs, named rather than implied.** The `selected:`
-        // convention would make them render lit, and it is one six-line block
-        // in `app::conditions::armed` — a file a CONCURRENT track owns as of
-        // 2026-09-05, which is the only reason it is not written. If the pair
-        // should light up, that block is the whole change; nothing here moves.
         //
-        // ★ `collapse` and `sidebar` were both unused by this catalog:
-        // `collapse` is the chevron the bookmark tree uses, and `sidebar` was
-        // freed when `view.sidebar` was unregistered on 2026-08-31. Two
-        // pictures that already mean "this strip folds away" and "this is the
-        // strip down the side".
         command("view.ribbon_auto_hide", t::view_ribbon_auto_hide(), 263).with_icon("collapse"),
         command("view.rail_auto_hide", t::view_rail_auto_hide(), 264).with_icon("sidebar"),
         command("view.reset_layout", t::view_reset_layout(), 254).with_icon("reset-layout"),
-        // ★★★ **The three per-panel layout verbs**, 2026-09-04.
         //
         // They live ONLY in the `dock.tab` context menu and on a floating
         // panel's header strip — never on the ribbon — and that is forced
@@ -660,12 +542,6 @@ pub(super) fn band() -> Vec<Command> {
         // note on `offers_anything`).
         command("view.panel_float", t::view_panel_float(), 259).with_icon("floating-panels"),
         command("view.panel_dock", t::view_panel_dock(), 260).with_icon("floating-panels"),
-        // ★★★ `close`, applied 2026-09-05. The ruling was made on 2026-09-04
-        // in `shell::commands`' icon-less ledger and deliberately NOT applied
-        // there, because this file belonged to a concurrent track that day and
-        // a two-agent edit of one registration list is how a command gets
-        // registered twice. The deferral was the right call and its condition
-        // has expired; the ledger's count moves 8 → 7 with this line.
         //
         // ★ The refusal it retires was FALSE AT SOURCE, which is why it is
         // worth a comment rather than a silent edit. It read *"there is no
@@ -674,12 +550,6 @@ pub(super) fn band() -> Vec<Command> {
         // this one was never checked. ⇒ Verify an absence against the source,
         // never against the document that asserts it.
         //
-        // The second half of the 2026-09-04 ruling, restated so it is not
-        // re-litigated: `dock.tab` draws this row, and drawing it bare one row
-        // under a Float that has a glyph made the same word appear twice with
-        // only one of them pictured. Sharing `close` with `file.close` is
-        // correct rather than a collision — both close the thing the surface is
-        // about, and the surface says which thing.
         command("view.panel_close", t::view_panel_close(), 261).with_icon("close"),
         // ★★ **The recovery command**, and the one member of the family that
         // DOES belong on the ribbon — because it is the only one with no
@@ -689,30 +559,12 @@ pub(super) fn band() -> Vec<Command> {
         command("view.dock_all_panels", t::view_dock_all_panels(), 262)
             .with_icon("floating-panels")
             .enabled_when("panels.floating"),
-        // ★ **The two document-switching verbs**, registered 2026-08-19 with
-        // the document tab strip.
         //
         // `enabled_when("docs.multiple")` and not `doc.open`: with one document
         // open there is nothing to switch to, and R9 reserves greying for
         // *temporarily* unavailable — which this is, exactly. Opening a second
         // document arms both, and the hover says what they would do.
         //
-        // They exist as commands rather than as bare keyboard handling because
-        // `R8` allows no other way for the shell to learn a capability is
-        // present: the chords in the manifest resolve against this registry,
-        // so a build without them would have Ctrl+Tab bound to nothing rather
-        // than bound to something that silently does nothing.
-        // ★★ **The chevron borrow ended 2026-09-04**, with art adopted from the
-        // outside review of 2026-09-03, and this is the borrow whose cost is
-        // easiest to state in one sentence: **"previous document" and "previous
-        // page" drew the same picture.** `chevron-left` and `chevron-right` are
-        // the PAGE navigation glyphs — the status bar's page stepper wears them,
-        // and they are documented on their variants as *"Previous page"* and
-        // *"Next page"* — so the two verbs an operator most needs to keep apart,
-        // move within this file and move to another file, were one tile each.
-        // Pressing the wrong one does not lose work, but it does lose your
-        // place, and the operator has no way to tell in advance which it will
-        // be.
         //
         // The borrow was also against a WRITTEN reservation rather than merely
         // against taste: `chevron-left.svg`'s own note keeps the bare
@@ -739,7 +591,6 @@ pub(super) fn band() -> Vec<Command> {
         command("view.previous_document", t::view_previous_document(), 256)
             .with_icon("document-previous")
             .enabled_when("docs.multiple"),
-        // ★ **Close others**, 2026-08-20, with the document tab strip.
         //
         // Its operand depends on the route: from a tab's context menu it keeps
         // the tab that was right-clicked, from the ribbon it keeps the one on
@@ -758,7 +609,6 @@ pub(super) fn band() -> Vec<Command> {
         // you right-clicked is already the ✕ on that tab and a middle click on
         // it, which are the two gestures every operator reaches for first.
         //
-        // # The icon refusal that stood here is DISCHARGED IN HALF — 2026-09-04
         //
         // It read: *"No icon. `catalog`'s coverage table calls a context-menu
         // row's glyph decoration: a menu is a list of words, read rather than

@@ -2,13 +2,7 @@
 //! or delete nodes of a markup shape once it is drawn"*, for the one shape
 //! where the engine can do it.
 //!
-//! ## ✅ DRIVEN 2026-09-06 — and its first run was a failure of the CHECK
 //!
-//! Written 2026-09-05 without ever being run (another track held the pointer
-//! all that session, and two driven runs on one machine corrupt each other:
-//! `Driver::raise_and_confirm` brings *its* window to the front). It was first
-//! driven the following day and **failed at step 3**, on the previous release
-//! and on the working tree identically:
 //!
 //! > *the selected shape published no `canvas.dimension-vertex.1`, so there is
 //! > no corner to aim at … Regions seen: none.*
@@ -41,11 +35,6 @@
 //! `pdfcer-core` has had three vertex verbs since `Pass 107.0` and this shell
 //! called exactly one of them:
 //!
-//! | verb | `edit.rs` | called before 2026-09-05 |
-//! |---|---|---|
-//! | `move_dimension_vertex` | 37892 | yes — `app/actions/dimensions.rs` |
-//! | `insert_dimension_vertex` | 37927 | **no** |
-//! | `remove_dimension_vertex` | 37955 | **no** |
 //!
 //! So a corner could be dragged and the number of corners could not change.
 //! `canvas::dimdrag::count_edit` now reaches both, on a Ctrl-drag and a
@@ -109,10 +98,6 @@ use crate::sys::vk;
 
 /// The mode this is driven in, and the choice is the point of the check.
 ///
-/// Review is the mode a ce dimension is authored in and the mode whose
-/// `edit_content` is false, so it is the one where the Points tool's gate
-/// changed on 2026-09-05. Driving this in Edit would exercise the same code
-/// with the interesting half of the gate short-circuited.
 const MODE: &str = "review";
 /// The Measure tab, which Review is shown.
 const TAB: &str = "ribbon.tab.measure";
@@ -137,9 +122,6 @@ const VERTEX_REGION: &str = "canvas.dimension-vertex";
 /// `text-edit-tool`) each do it from their own toggle rather than from
 /// `select`. So there is no positive line saying *the Points tool is now armed*.
 ///
-/// What there is, is `app::dispatch::navigate`'s decline, written on exactly
-/// the path this check is about: before 2026-09-05, pressing `A` in Review
-/// produced this line and armed nothing.
 ///
 /// ⇒ The absence is a weak signal on its own and it is **not carrying the
 /// assertion alone**. The positive proof is downstream and total:
@@ -196,11 +178,6 @@ impl Check for ACornerCanBeAddedAndTakenAway {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        // ★ Stated in the report as well as in this file's header, because a
-        // sweep summary is what gets read and a module header is not. It said
-        // "NOT DRIVEN BY ITS AUTHOR" until 2026-09-06; what replaced it is
-        // narrower on purpose — one path through this check has now been seen
-        // to fail and to pass, and the refusal path still has not.
         report.note(
             "driven 2026-09-06: its first run failed at step 3 with the pen still down, and \
              that was the check's fault, not the application's. The REFUSAL path — a triangle \
@@ -387,8 +364,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: select it, so its corner handles are published ----------------
     //
-    // ★★★ PUT THE PEN DOWN FIRST — and the first driven run of this check,
-    // 2026-09-06, is why this paragraph exists.
     //
     // This step went straight from the closing click to the selecting click,
     // and it failed with *"the selected shape published no
@@ -461,10 +436,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: ★★★ arm the Points tool — IN REVIEW ---------------------------
     //
-    // The gate this whole piece of work turns on. Before 2026-09-05
-    // `retire_forbidden`'s Node arm was `caps.edit_content`, which Review does
-    // not have, so the tool retired the instant it armed and the chord answered
-    // with a decline sentence.
     //
     // ★ The `A` chord and not a ribbon press, and that is forced rather than
     // chosen: `view.tool_node`'s ribbon and rail items both carry
@@ -634,15 +605,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the removal's funnel line vanished between two reads of the same trace file",
         ));
     };
-    // ⚠ `Some("none")`, NOT `Some("0")` - corrected 2026-09-10.
     //
-    // The funnel writes the disclosure SENTENCES, joined by ` | `, and the
-    // literal word `none` when there are none. It has never written a count, so
-    // the condition this line used to carry - `== Some("0")` - could not become
-    // true on any build, and the assertion it guards had been silently green
-    // over every possible outcome since it was written. Found while writing
-    // `custom_stamp`, whose first version made the same mistake in the other
-    // direction and read the field with `get_usize`.
     //
     // ★ The standing lesson, and this is another instance of it: **a check
     // that cannot fail is not evidence.** Falsify a new condition against a real

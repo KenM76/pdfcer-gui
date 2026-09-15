@@ -1,17 +1,8 @@
 //! # `dialogs::embed` — the confirmation before font programs go into a
 //! document
 //!
-//! `tools.embed_fonts`, wired 2026-08-28. The last of the three commands the
-//! font-folder work unblocked.
 //!
-//! ## ★★★ A window with ONE setting, and how it got there — corrected
-//! 2026-09-05
 //!
-//! This header used to say the window has **no** settings, that *"there is no
-//! option to set"*, and that a form here *"would imply choices that do not
-//! exist"*. That was true when it was written and it is not true now, and the
-//! sentence is corrected in place rather than left standing beside its
-//! replacement.
 //!
 //! There is exactly one control: **use pdfcer's own copy of a standard-14 face
 //! where none of your fonts answers**. It is off when the window opens, it is
@@ -21,23 +12,8 @@
 //!
 //! ### Why the "no settings by design" argument did not survive
 //!
-//! It was used, on 2026-08-28, as the reason **not** to offer the choice at
-//! all: the window has no settings, so a switch cannot be added, so the only
-//! options are always or never — and always was taken. Recorded in
-//! `OPERATOR_REQUESTS.md` **O47**.
 //!
-//! ★★ That is an argument about a *window* being used to settle a question
-//! about a *capability*. A surface's current shape is not a reason to withhold
-//! something the operator is entitled to decide; it is at most a reason to
-//! think about where the control goes. A window that grows one honest,
-//! defaulted-off, disclosed control is still an honest window — and the whole
-//! product class, pdfcer's own CLI included, spells this exact decision as
-//! exactly one switch.
 //!
-//! The rest of the original argument stands and is why there is not a second
-//! control: an embed puts font **programs** — actual outlines — permanently
-//! into a document, changes its size, and can bear on a PDF/A claim. A
-//! one-click ribbon verb would be dishonest about that.
 //!
 //! ## ★★★ WHY THE SWITCH IS OFF BY DEFAULT, and it is not a matter of taste
 //!
@@ -57,10 +33,6 @@
 //! so pdfcer does not make it for you."* — `pdfcer-cli/src/main.rs:1598`,
 //! `--use-bundled-fonts`, off by default.
 //!
-//! ⇒ Until 2026-09-05 this window made that decision for him on every press,
-//! with no way to decline it. Rule 4 is *fuzzy, never sneaky*: it forbids doing
-//! a thing **silently**, not doing it — and the half that was missing here was
-//! never the disclosure, which was already loud. It was the **choice**.
 //!
 //! ## What did NOT change
 //!
@@ -387,13 +359,6 @@ impl EmbedDialog {
         // answer for, and is indistinguishable from a broken button without
         // this line.
         //
-        // ★★★ `own_fonts_offered=` and `own_fonts_on=` are new on 2026-09-05
-        // and they exist because of a shape this project keeps meeting: **a
-        // driven check that the switch is off by default passes on a build that
-        // ignores the switch entirely.** With both fields on the line, a check
-        // can assert the offer was made *and* declined — two facts, not one —
-        // and a build that stopped offering is as visible as a build that
-        // stopped defaulting.
         let offered = own_font_faces.len();
         let own_targets = with_own_fonts
             .as_ref()
@@ -560,13 +525,6 @@ impl EmbedDialog {
                         let face = blocked.base_font.as_deref().unwrap_or_default();
                         // ★★★ THE PER-FONT REMEDY HAD TO LEARN ABOUT THE BOX.
                         //
-                        // With the box unticked, a standard-14 face pdfcer
-                        // carries is now a `NoSourceFont` row — and that row's
-                        // sentence used to end *"and it is not one of the
-                        // fourteen pdfcer carries itself"*, which for exactly
-                        // these fonts would be **false**. A refusal's wording is
-                        // a claim about what would fix it, and the things that
-                        // fix it change under it; this one changed today.
                         //
                         // So the row is told whether pdfcer has a copy, and says
                         // *"tick the box below"* when it does. It is the cheapest
@@ -590,8 +548,6 @@ impl EmbedDialog {
                 }
             });
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ★★★ THE ONE CONTROL — O47, answered properly on 2026-09-05.
         //
         // Drawn here, between the report and the buttons, because that is where
         // the consequence belongs: the operator reads what will happen, meets
@@ -733,11 +689,6 @@ mod tests {
     /// ★★★ The two assertions are worthless apart and are written as one test
     /// so that they cannot be separated:
     ///
-    /// * *off* alone passes on a build that has no bundled faces to offer, or
-    ///   that ignores the flag and always returns the operator's own plan;
-    /// * *on* alone passes on a build that ignores the flag the other way and
-    ///   always returns the substitutes — which is what shipped between
-    ///   2026-08-28 and 2026-09-05, and is the state this row corrected.
     ///
     /// ★ Strings stand in for the two plans. What is under test is the
     /// **selection**, and a selection is the same function whatever it selects

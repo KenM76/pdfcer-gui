@@ -2,10 +2,6 @@
 //!
 //! ## What this closes, and the row that was wrong about it
 //!
-//! `pdfcer`'s `gui` column ticked *"edit a Bézier handle"* `[x]`. Their sweep of
-//! 2026-08-19 corrected it to `⬜ nothing`: one of six rows that were true of
-//! the **old** in-repo shell and became false, untouched, when the column's
-//! referent moved to this build.
 //!
 //! ★ **Nothing was blocking it.** `EditSession::move_handle` has existed since
 //! Pass 30.1, with a `Handle` enum, a planner, a `v`/`y` re-spelling path and a
@@ -136,7 +132,6 @@ pub fn visible(
     let Some(subpath) = entered.subpath else {
         return Vec::new();
     };
-    // ★★ **Either index space, as of 2026-09-01** — `OPERATOR_REQUESTS.md` O70.
     //
     // This resolved a page paint-order index and returned empty for anything
     // inside a form XObject, with the right reason at the time: the handles are
@@ -246,11 +241,6 @@ pub fn drag(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ `in_form=` since 2026-09-01 (O70): the same gesture now reaches two
-        // verbs, and a trace that named only the node would leave a reader
-        // unable to tell which — on a document where the two index spaces hold
-        // 129,758 and 10,256 entries, that is the difference between reading a
-        // correct drag and a wrong one.
         format!(
             "handle-commit node={} side={:?} in_form={} to=[{:.2} {:.2}]",
             frame.node,

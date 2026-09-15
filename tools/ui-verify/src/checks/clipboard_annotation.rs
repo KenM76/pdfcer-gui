@@ -1,7 +1,6 @@
 //! `copying_a_sticky_note_carries_the_whole_comment` — **the annotation
 //! clipboard, driven end to end.**
 //!
-//! ## ⚠ WRITTEN 2026-09-05 AND **NOT RUN**
 //!
 //! Said here, in its own header, rather than left for an absent result to
 //! imply. The session that wrote it was told the operator might be at his
@@ -18,12 +17,6 @@
 //!
 //! ## What this is for
 //!
-//! Until 2026-09-05 `Ctrl+C` over a **sticky note** — a `/Text` annotation,
-//! the single most-copied comment in a review workflow — put a sentence on the
-//! status row saying pdfcer does not author that kind, and copied nothing. So
-//! did a stamp, a text box, a link and a file attachment. The clipboard read a
-//! `MarkupSpec` out of the dictionary and `annot_author::spec_from_dict` has no
-//! reader for any of them.
 //!
 //! The repair routes the copy through `EditSession::copy_selection`, which
 //! carries an annotation pdfcer does **not** model as its own dictionary plus
@@ -36,12 +29,6 @@
 //! reach is the **chord**, and the chord is where this family's defects have
 //! actually lived:
 //!
-//! | link | what breaks it, historically |
-//! |---|---|
-//! | `Ctrl+C` arrives at the canvas at all | a text sweep or a focused widget owning the chord (defect O18) |
-//! | the copy puts a MARKER on the OS clipboard | without one, `egui-winit` never synthesises `Event::Paste` and `Ctrl+V` vanishes — a documented trap that a NEW copy path re-earns every time, because the workaround lives at each copy site |
-//! | `Ctrl+V` reaches the paste verb | the same trap, from the other end |
-//! | the engine actually planted the annotation | nothing on this side can see it but the count |
 //!
 //! The second row is the one this check exists for. `RESUME.md` records the
 //! form-field copy shipping **without** the marker, one function away from the
@@ -51,14 +38,6 @@
 //!
 //! ## ★★★ It pins its own fixture and IGNORES `--pdf`
 //!
-//! Same posture as `ocr` and as `three_clicks_round_a_hole_measure_the_hole`,
-//! and for a stronger reason than either: this check's subject is *"a
-//! `/Text` annotation, which pdfcer does not model, copies whole"*, and on a
-//! document whose only annotations are squares and clouds **the defect cannot
-//! occur** — every one of those took the shell's spec route (deleted 2026-09-08
-//! once the engine's own carrier matched it), which worked before this
-//! change and works after it. An arbitrary drawing would make this check unable
-//! to fail, which is this suite's own stated worst outcome.
 //!
 //! `fixtures/annots-with-everything.pdf` is built by
 //! `tools/gen-annots-with-everything-fixture.py`, whose header argues for every
@@ -257,8 +236,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(frame.to_screen(window_point))?;
     session.settle(16);
 
-    // ★★★ THE PRECONDITION READS `annot-select`, NOT `canvas-selection` —
-    // corrected 2026-09-05, on the first run this check ever had.
     //
     // It read `canvas-selection sel=` and SKIPPED with *"the click at PDF (370,
     // 670) selected nothing … either the fixture was regenerated with different
@@ -383,8 +360,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(paste) = trace.events(PASTE_EVENT).last() else {
-        // ★★★ **ASK THE MODE GATE FIRST — added 2026-09-05 after this branch's
-        // first real run blamed the wrong mechanism.**
         //
         // The message below suspects the OS-clipboard marker, which is the
         // right first suspect for a *new copy site*. On the run this check

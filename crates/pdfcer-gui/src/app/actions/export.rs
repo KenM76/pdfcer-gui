@@ -742,9 +742,6 @@ enum Produced {
 
 /// One page, encoded as PNG or JPEG.
 ///
-/// Split out of [`image`] so the loop reads as *produce, write, say* rather
-/// than as one branch nested in another. `Err` carries the engine's own
-/// message; the caller wraps it in a sentence that names the page.
 fn raster_bytes(
     view: &pdfcer_render::DocumentView<'_>,
     page: &pdfcer_core::page_tree::Page,

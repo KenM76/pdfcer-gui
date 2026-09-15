@@ -63,10 +63,6 @@ pub const REGION_TEXT: &str = "text-annot.text"; // ui-text-exempt: trace region
 pub const REGION_ACCEPT: &str = "text-annot.accept"; // ui-text-exempt: trace region name, never displayed
 /// **Cancel**, and it is declared for exactly the reason Accept is.
 ///
-/// The operator's report of 2026-09-10 named both: *"I can't see the add or
-/// cancel button. Those buttons should always be available."* A harness that
-/// could see one of the two would report the answer row as reachable on a build
-/// where half of it had been clipped away.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_CANCEL: &str = "text-annot.cancel";
 /// The region the sticky note's icon chooser publishes, so a driven check can
@@ -80,11 +76,6 @@ pub const REGION_ICON: &str = "text-annot.icon"; // ui-text-exempt: trace region
 /// The region the stamp's label-size chooser publishes, so a driven check
 /// can find it and open it.
 ///
-/// ★ Its own region for [`REGION_ICON`]'s reason exactly, and that reason is
-/// sharper here: the stamp body ALREADY had a gallery before this chooser
-/// existed, so a check written against [`REGION_BODY`] would have passed on
-/// every build since 2026-08-28 — including all of the ones with no size
-/// control in them at all.
 pub const REGION_STAMP_SIZE: &str = "text-annot.stamp-size"; // ui-text-exempt: trace region name, never displayed
 
 /// The region the **operator's own** stamps publish, one enclosing box for the
@@ -218,12 +209,6 @@ const WINDOW_PTS: egui::Vec2 = egui::vec2(420.0, 240.0);
 
 /// **How much taller the sticky note's window opens**, in points.
 ///
-/// ★★ Because that one body is genuinely longer than the other two, and by a
-/// known amount: seven radio rows, a heading and the icon disclosure, added
-/// under the text field on 2026-09-06. 240 pt held a four-line field and two
-/// buttons comfortably; it does not hold those as well, and a dialog whose
-/// Accept button is below its own bottom edge is a window an operator cannot
-/// finish.
 ///
 /// # ★ A constant added to [`WINDOW_PTS`], not a size measured from the body
 ///
@@ -253,14 +238,7 @@ const STICKY_EXTRA_PTS: f32 = 190.0;
 /// wide margin, for a control every other program on his desk draws as a
 /// dropdown.
 ///
-/// # ★★★ Why this is 190 and not 70 — 2026-09-11, and it is the SECOND
-/// time this constant has been a claim the body outgrew
 ///
-/// 70 pt was written on 2026-09-06 as *"roughly three rows' worth"* — an
-/// estimate of the size chooser ALONE, added to a base that was already too
-/// small for the gallery underneath it. The full driven sweep of 2026-09-11
-/// measured the result, and the numbers are worth keeping because they are
-/// what makes this constant arguable:
 ///
 /// | quantity | measured (content coordinates) |
 /// |---|---|
@@ -273,10 +251,6 @@ const STICKY_EXTRA_PTS: f32 = 190.0;
 /// | its wrapped `.small()` disclosure below | to roughly `440` |
 /// | ⇒ the body's real extent | 425 pt, in a 360 pt viewport |
 ///
-/// The Size chooser was therefore **below the fold on a freshly opened stamp
-/// dialog**, exactly as the operator's own three stamps were on 2026-09-10 and
-/// for the same reason: *a guessed size is a claim about the content, and the
-/// content changed under the claim.*
 ///
 /// The arithmetic the new number comes from, so a reader can redo it:
 ///
@@ -319,9 +293,6 @@ const CUSTOM_CATEGORY_PTS: f32 = 26.0;
 
 /// **…and for each of his stamps**, in points.
 ///
-/// Measured, not guessed: the driven run of 2026-09-10 published three custom
-/// radios at content y 298, 326 and 354, so the pitch of a radio row in this
-/// window is exactly 28 pt.
 ///
 /// ⚠ That is a measurement of a ROW's pitch, taken once, from a trace — not a
 /// size queried from the `Ui` this function helps to size. The distinction is
@@ -352,7 +323,6 @@ const CUSTOM_EXTRA_MAX_PTS: f32 = 320.0;
 /// **How much taller the stamp window opens because the operator has stamps of
 /// his own.**
 ///
-/// # ★★★ Why this exists, and it is a defect report — 2026-09-10
 ///
 /// `Pass O172` added the custom half to the stamp gallery and did not change
 /// the window's height. The first driven run of
@@ -428,18 +398,8 @@ const SCREEN_MARGIN_PTS: f32 = 40.0;
 /// `Host::fit`'s: a size measured from the content it sizes is R128, which this
 /// project has met three times.
 ///
-/// ★ The floor is new as of 2026-09-04 and the previous expression had none:
-/// `420.0.min(screen.width() - 40.0)` goes **negative** on an application
-/// window narrower than 40 pt. Unreachable in practice and free to close, and
-/// an unreachable negative size is the kind of thing that becomes reachable
-/// when somebody adds a second monitor at 250 % scaling.
 #[must_use]
 fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> egui::Vec2 {
-    // ★ The height is per-KIND as of 2026-09-06, and the width is not. The
-    // three bodies are the same width by construction — a field, a gallery and
-    // a chooser all stretch to the window — and two of the three grew
-    // downwards. Making the width vary too would be a second number with no
-    // reason behind it.
     //
     // ⚠ The text box is now the ONLY kind with no addition, so this match no
     // longer folds two arms into one. Written out rather than left as
@@ -646,8 +606,6 @@ impl TextAnnotDialog {
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
         let screen = ctx.input(egui::InputState::content_rect);
         let size = window_size(screen, self.kind, custom_extra_pts(&self.library));
-        // ★★★ ITS OWN OS WINDOW as of 2026-08-21, AND IT OPENS WHERE IT SAYS —
-        // the second half restored 2026-09-04, review finding A16c.
         //
         // A note is typed *about* something on the page, so the one window that
         // must be movable off the document is this one. When it became an OS
@@ -682,12 +640,6 @@ impl TextAnnotDialog {
             // [`crate::dialogs::host::Host::scrolled`] for the operator's rule
             // this enacts and why it is structural rather than best-effort.
             //
-            // This dialog is the one that made the rule: its height is a
-            // GUESS — `WINDOW_PTS` plus a per-kind constant — deliberately not
-            // measured from the content it sizes, because measuring it is
-            // R128's feedback loop. A guess that is too small used to clip the
-            // bottom of the window, and the bottom of this window is Add and
-            // Cancel.
             crate::dialogs::host::Host::scrolled(
                 ui,
                 self,
@@ -768,12 +720,6 @@ impl TextAnnotDialog {
 
     /// **The two buttons, pinned to the bottom of the window.**
     ///
-    /// Separated from [`Self::body`] on 2026-09-10, on the operator's report
-    /// that the second stamp he placed opened a window whose Add and Cancel
-    /// were below its own bottom edge. They were the last items in a linear
-    /// layout, so they were the first thing an under-tall window clipped —
-    /// and a dialog whose Accept is off-screen is a transaction that cannot be
-    /// finished, only abandoned with the title bar's X.
     fn footer(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             // ★ Accept is greyed when there is nothing to author, with the
@@ -783,8 +729,6 @@ impl TextAnnotDialog {
             // reserved for.
             let ready = self.kind.uses_gallery() || !self.text.trim().is_empty();
             let accept = ui.add_enabled(ready, egui::Button::new(t::accept()));
-            // ★★★ `ui_rect_visible`, NOT `ui_rect`, and the difference is the
-            // whole of the operator's report of 2026-09-10.
             //
             // `ui_rect` publishes a rectangle whether or not it is on the
             // screen, so a check that read it would have found Accept
@@ -821,9 +765,6 @@ impl TextAnnotDialog {
         crate::diag::ui_rect(REGION_TEXT, response.rect);
         // ★★ **Ask until the field actually HOLDS focus — not once.**
         //
-        // This used to latch on having *asked*: `request_focus(); focused_once
-        // = true;`. Asking and holding are different facts, and the gap between
-        // them is a window the operator types into and nothing happens.
         //
         // The dialog's first frame is the frame **after** the gesture that
         // opened it — `Action::BeginTextAnnot` is raised by the canvas and
@@ -842,11 +783,6 @@ impl TextAnnotDialog {
         // is long enough to outlast the release being resolved and far short of
         // a human reaching for the mouse.
         //
-        // ★ And it latches on `has_focus()` rather than counting down, so the
-        // common case costs exactly one request: the frame after a successful
-        // one observes focus and stops asking for good.
-        // ★★★ AND THE BUDGET ONLY RUNS WHILE THE WINDOW ITSELF IS FOCUSED —
-        // 2026-08-21, when this dialog became a real OS window.
         //
         // The retry above is eight frames, chosen to outlast a pointer release
         // being resolved. That was the whole race while the dialog drew inside
@@ -867,14 +803,6 @@ impl TextAnnotDialog {
         // keeps its original meaning — *don't fight the operator's own click* —
         // and stops being consumed by a wait that has nothing to do with them.
         let window_focused = ui.ctx().input(|i| i.viewport().focused) != Some(false);
-        // ★★ Published because a field that never takes focus is a whole
-        // defect class in this shell — *"it doesn't type anything in the box
-        // when I type"* — and it is invisible from outside: the box is drawn,
-        // the caret blinks, and the characters go somewhere else. The four
-        // numbers are the whole state machine above, so a driven check or a
-        // reader of a trace can tell "never asked", "asked and lost the race",
-        // and "held it and then the WINDOW lost focus" apart. All three were
-        // suspected on 2026-08-21 and the trace is what ruled two of them out.
         crate::diag::trace_on_change("text-annot-field", || {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!(
@@ -940,19 +868,6 @@ impl TextAnnotDialog {
     /// (pick one of seven)"*. This is a different act, and the difference is
     /// the point rather than an exception to that rule:
     ///
-    ///   * A stamp face and a note icon are **named things from a closed set**
-    ///     the operator wants to see all of. A size is a **number on a scale**,
-    ///     where the list is a convenience and the operator already knows what
-    ///     18 pt is without reading the other nine.
-    ///   * Every program on his desk — Word, Acrobat, every CAD annotation
-    ///     dialog — draws a size as a dropdown. Standing rule: **use the
-    ///     conventional interaction, never invent one.** The convergence of a
-    ///     product class is the specification, and a vertical stack of ten
-    ///     size radios would be pdfcer's own invention.
-    ///   * It costs the window ~80 pt instead of ~250 — a heading, one combo
-    ///     row and a wrapped disclosure, measured at content y 360–440 in the
-    ///     driven run of 2026-09-11. See [`STAMP_EXTRA_PTS`], whose doc
-    ///     carries that measurement and the arithmetic it feeds.
     ///
     /// # ★ What the disclosure under it is, and what it is NOT
     ///
@@ -1020,25 +935,8 @@ impl TextAnnotDialog {
         // above belongs to the chooser, and a check looking for the words
         // should find them inside the region that names them.
         //
-        // ★★★ **`ui_rect_visible`, not `ui_rect` — 2026-09-11, and it is the
-        // third control in this one window to need it.**
         //
-        // `Self::body` scrolls and `Self::footer` does not. A rectangle in the
-        // scrolled content is a position in the CONTENT, and past the bottom
-        // of the viewport it names a place on the screen that belongs to
-        // something else. The full-sweep run of 2026-09-11 published this
-        // region at content y 381–409 in a window whose content area ended at
-        // 402 and whose Add and Cancel sat at 378–402. A driven check pressed
-        // the chooser's declared centre, the press landed on a BUTTON, the
-        // dialog closed, and the check reported — accurately, and about
-        // entirely the wrong thing — that pressing the Size chooser opened no
-        // popup.
         //
-        // The operator's version of the same fault is worse and quieter: egui
-        // gives a press to the top layer without complaint, so a control drawn
-        // under the pinned footer is unreachable **in silence**. `REGION_ACCEPT`
-        // was given this treatment on 2026-09-10 and `REGION_CUSTOM_STAMPS.{i}`
-        // on the same day, both from driven failures with the same shape.
         //
         // ⇒ In this window, any region a check may PRESS must be published
         // through `ui_rect_visible`. Publishing it unconditionally does not
@@ -1212,14 +1110,6 @@ impl TextAnnotDialog {
                     .as_ref()
                     .is_some_and(|c| c.file == stamp.file && c.page_index == stamp.page_index);
                 let response = ui.radio(selected, &stamp.label);
-                // ★ Keyed on the stamp's ORDINAL, not on its label. The label
-                // is the operator's own words — his signature is called `Ken`
-                // — and a driven check keyed on it would be a check that only
-                // runs on this machine. `library::scan` sorts the file list
-                // and the categories, so the ordinal is stable between runs
-                // for an unchanged folder, which is what a check needs.
-                // ★★★ `ui_rect_visible`, not `ui_rect` — 2026-09-10, and the
-                // reason is a driven failure rather than a preference.
                 //
                 // The first driven run of `custom_stamp_reaches_the_page`
                 // found these three rows published at content y 298, 326 and
@@ -1277,14 +1167,6 @@ impl TextAnnotDialog {
         // stamps offered"* reads this one; a check pressing a particular stamp
         // reads the ordinal-keyed ones above.
         //
-        // ⚠ **`ui.cursor().min`, never `ui.cursor().max`.** `Ui::cursor` is
-        // the space still AVAILABLE, so in a vertical layout its `max` is
-        // `f32::INFINITY` — and until 2026-09-11 this line published
-        // `rect=[[12.0 278.0] - [408.0 inf]]` on every frame. That is not a
-        // rectangle; it is a region that contains every point below it,
-        // including the footer, the window's own edge and the desktop. The
-        // first reader of the 2026-09-11 sweep took the `inf` for a layout
-        // overflow and spent the investigation on the wrong subsystem.
         //
         // The cursor's `min` is where the next widget WOULD go, i.e. the
         // bottom of everything drawn — which is the quantity this line always

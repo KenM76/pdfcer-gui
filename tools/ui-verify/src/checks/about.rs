@@ -15,12 +15,6 @@
 //!
 //! # What it asserts, and why the build block is a trace rather than pixels
 //!
-//! The operator asked on 2026-08-18 for About to carry *"the date and time of
-//! the build … and the date and time of the builds of the used pdfcer and
-//! iccce"*. Those values come from `build.rs` through `env!`, so the thing that
-//! can go wrong is not the wording — that is unit-tested — but a value arriving
-//! **empty**, which renders as `built  from abc1234` and reads as a layout
-//! glitch rather than as a missing stamp.
 //!
 //! Reading four fields out of a PNG is not something this harness can do, so
 //! the application traces them alongside drawing them and this check asserts on
@@ -114,12 +108,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // ★★★ MAXIMISE, or the File tab's last two groups are not on the band at
-    // all. Measured 2026-09-03: at the harness's default 1,100 pt window the
-    // File tab publishes fourteen items and stops at `file.print` — the whole
-    // "Document" and "pdfcer" groups (properties, fonts, settings, shortcuts,
-    // about) are folded away, so THREE checks skipped reporting a lost
-    // command. The commands are not lost; the band is narrower than they are.
     //
     // `declared_or_in_overflow` already knows about collapsed groups and the
     // overflow popup, and is still the right first resort — but it cannot

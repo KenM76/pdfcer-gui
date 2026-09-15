@@ -2,7 +2,6 @@
 //! # `render::hairline` — **the proof that "line weights off" actually thins the
 //! drawing, and thins it in the RIGHT DIRECTION**
 //!
-//! `OPERATOR_REQUESTS.md` **O137**, in his words, 2026-09-05:
 //!
 //! > *"awhile ago you told me you removed the button to show all lines without
 //! > their thickness — thin lines or something like cad has. The button never

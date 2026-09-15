@@ -1,10 +1,5 @@
 //! # `text::forms::authoring` — the words for **making** a form field
 //!
-//! [`super`] covers **filling** an `/AcroForm` that already exists. This file
-//! covers the opposite direction, added 2026-08-26 on the operator's request to
-//! place form controls from the ribbon: the five kinds' nouns, the placement
-//! dialog's labels, and the disclosures the engine's `FieldAuthorOutcome`
-//! obliges.
 //!
 //! Its own file rather than more of `super`, for the reason `super`'s header
 //! gives about itself: *"the reviewer of a disclosure sentence is reading a file
@@ -257,10 +252,6 @@ pub fn form_widget_deleted_last() -> String {
     "That was the field's last box, so the field was removed from the form too.".to_owned()
 }
 
-// ===========================================================================
-// EDITING A FIELD THAT IS ALREADY PLACED — `Pass 134.0`, consumed 2026-08-27
-// ===========================================================================
-
 /// **The `Sort` flag was set over a list nobody has sorted.**
 ///
 /// ★★ pdfcer will not reorder `/Opt` on the operator's behalf and this sentence
@@ -333,7 +324,6 @@ pub fn field_appearance_stale(why: &str) -> String {
 #[must_use]
 pub fn field_widget_moved(resized: bool, regenerated: bool) -> &'static str {
     match (resized, regenerated) {
-        // ★★★ **The third case, added 2026-08-31 — `OPERATOR_REQUESTS.md` O76.**
         //
         // The operator: *"Form shape outlines of checkboxes and such scale
         // when I drag them larger."*
@@ -502,11 +492,6 @@ mod tests {
             assert!(line.len() < 240, "too long for a status line: {line}");
         }
     }
-
-    // ===========================================================================
-    // The two action-target disclosures — a rename repairs other people's buttons,
-    // a delete breaks them, and until 2026-09-08 neither said so
-    // ===========================================================================
 
     /// ⚠ **THESE THREE ARE STRING TESTS. What they cover, and what covers the
     /// rest — stated rather than implied.**

@@ -158,12 +158,6 @@ impl LastStamp {
 
     /// A short, stable token for the diagnostic trace. Never displayed.
     ///
-    /// ⚠ Deliberately hand-built rather than a `Debug` rendering. `Debug` is a
-    /// shape the compiler is free to change and that a `#[derive]` in another
-    /// crate owns; a driven check greping for it reports the opposite of the
-    /// truth the day a field is added. This project has been bitten by exactly
-    /// that, in a check that quoted the true line in the message it used to
-    /// state its false conclusion.
     ///
     /// It is also not the gallery's operator copy: that is allowed to be
     /// reworded on a Tuesday and is translatable in principle. Same rule and

@@ -1,7 +1,6 @@
 //! # `canvas::markup::palette` — **Acrobat's own markup colours**, measured
 //! rather than chosen
 //!
-//! The operator's ask, verbatim, on 2026-09-06:
 //!
 //! > *"Also make sure you've used the same default colours and style look for
 //! > these things as Adobe."*
@@ -18,8 +17,6 @@
 //! a plausible-looking hex triple sourced from memory or from a blog would be
 //! exactly the invention that rule forbids.
 //!
-//! So every value below was **read out of Acrobat's own defaults store** on the
-//! operator's machine on **2026-09-06**:
 //!
 //! ```text
 //! HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\DC\Annots\cAnnots\<subtype>\cstrokeColor
@@ -135,10 +132,6 @@ pub const HIGHLIGHTER_ORANGE: [u8; 3] = [255, 98, 0];
 
 /// **Acrobat's underline** — `#1373E8`.
 ///
-/// Its own key, its own colour, and nothing else in the store shares it. This is
-/// the clearest single refutation of the *"one pen for all linework"* argument
-/// [`super::pen`] used to make: Adobe gives underline a colour that is not the
-/// shape pen's and not the strikeout's.
 pub const UNDERLINE_BLUE: [u8; 3] = [19, 115, 232];
 
 /// **Acrobat's strikeout** — `#F86464`, a light red/pink.
@@ -174,11 +167,6 @@ pub const FREETEXT_GREEN: [u8; 3] = [6, 138, 28];
 
 /// **This shell's own highlighter yellow** — `#FFFF00`.
 ///
-/// ★ The one entry in the grid whose source is **not** Acrobat, and it is
-/// labelled as such rather than smuggled in. It was `Pen::default`'s
-/// `highlighter` from the day the pen existed until 2026-09-06, so every
-/// highlight this shell has ever authored is this colour and an operator
-/// re-marking an old drawing needs it reachable in one click.
 ///
 /// Pure `#FFFF00` is also the value a highlighter yellow *is* in every program
 /// that offers one, which is why it needs no further defence — only an honest
@@ -413,9 +401,6 @@ mod tests {
         /// unreadable — but the *shape* is the point of the test, so it is named
         /// rather than simplified away.
         type Reading = ([u8; 3], (f64, f64, f64), &'static str);
-        // NOT A THEME COLOUR: these are the /DeviceRGB fractions read out of
-        // Acrobat's own defaults store on 2026-09-06 — the measurement this
-        // module's table transcribes, asserted against the bytes it stores.
         let measured: [Reading; 7] = [
             (MARKUP_RED, (0.858_826, 0.203_918, 0.145_096), "cSquare"),
             (HIGHLIGHTER_ORANGE, (1.0, 0.384_308, 0.0), "cHighlight"),

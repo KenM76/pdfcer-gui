@@ -400,15 +400,6 @@ fn page_block(
     // ★ A PLAIN LABEL, NOT `RichText::strong()`, and this is a measurement
     // rather than a preference.
     //
-    // The first draft used `.strong()`, which is what every other heading in
-    // `crate::panels` uses, and the running binary drew it **near-white on the
-    // panel's light grey** — legible only if you knew it was there. `egui`'s
-    // `RichText::strong()` resolves to `Visuals::strong_text_color()`, which is
-    // `widgets.active.fg_stroke.color`; `egui_shell::theme` sets that to the
-    // palette's `on_accent`, correctly, because the active state is the one
-    // state whose background is the accent. The two decisions are each right
-    // and their product is a near-invisible heading on any surface that is not
-    // accent-filled.
     //
     // That is `DEFECTS.md` D2 in a new place — the same near-white-foreground
     // shape, arrived at from the other end — and it is **not this work's to
@@ -610,10 +601,6 @@ fn page_block(
 
 /// The sentence for one page's `/Tabs` state, and whether it is a warning.
 ///
-/// Split out of [`page_block`] so the mapping can be tested without a `Ui`.
-/// It is the single most consequential decision on screen: it is what tells the
-/// operator whether the sequence they are reading **is** the tab order, and a
-/// list that silently showed the wrong sequence would be worse than no list.
 ///
 /// # Which states warn, and why exactly those
 ///

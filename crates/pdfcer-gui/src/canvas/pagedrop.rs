@@ -1,6 +1,5 @@
 //! # `canvas::pagedrop` — dropping pages onto the page view
 //!
-//! The second half of the operator's request of 2026-08-19:
 //!
 //! > *"…drag and drop pages from one thumbnail image sidebar to another **or
 //! > onto the canvas** to add pages and insert them **in between the pages

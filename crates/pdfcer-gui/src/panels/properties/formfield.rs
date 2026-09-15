@@ -1,10 +1,6 @@
 //! # `panels::properties::formfield` — the properties of a form field clicked
 //! on the page
 //!
-//! **Operator request, 2026-08-26:** *"don't forget that when I click on an
-//! existing form field on the page it's properties should come up in our side
-//! pane for editing it's properties."* This is the side pane's half; the click
-//! is `crate::canvas::forms`'s.
 //!
 //! ## ★★★ What can be changed, what can only be read, and why the difference
 //! is disclosed rather than hidden
@@ -45,12 +41,6 @@
 //!
 //! ## ★★★ Rename and Delete are OFFERED ONLY WHERE THEY WOULD WORK (R83)
 //!
-//! Added 2026-08-28, closing a gap an audit of `EditSession`'s public surface
-//! found: **nothing in this shell consulted `deletion_refusal`**, a pure query
-//! that has existed for the whole life of the crate and whose own doctest
-//! spells out this call site. It appeared here only inside comments in
-//! `crate::panels::forms`, arguing about which query *Flatten* should ask, while
-//! Delete asked none.
 //!
 //! The consequence, on the ordinary real-world certified fillable form: three
 //! live controls — Rename, Delete field, Delete this box — every press of which
@@ -71,7 +61,6 @@
 //! arguable. And a sentence rather than a silence, because a panel that simply
 //! omits half its controls looks half-drawn.
 //!
-//! ## ★★★ …AND THIS PANEL WAS ONE DOOR OF FOUR (2026-08-29)
 //!
 //! The fix above closed the panel and claimed the rule. It was true here and
 //! nowhere else: the `canvas.field` context menu's Delete carried no
@@ -363,13 +352,6 @@ pub fn section(
     ui.add_space(6.0);
     ui.separator();
     ui.add_space(6.0);
-    // ★★★ The editable properties — `EditSession::edit_field`, consumed
-    // 2026-08-27. Placed between the rename box and the delete buttons on
-    // purpose: reading the pane top to bottom now goes "what this field IS",
-    // then "what you can change about it", then "how to get rid of it", which
-    // is the order of increasing commitment every other surface in this shell
-    // uses. Delete was directly under rename before, which put the most
-    // destructive control in the middle of the panel.
     //
     // `field.clone()` is deliberately NOT taken: the section reads the field
     // it is handed and raises actions, so the borrow ends with the frame.
@@ -397,8 +379,6 @@ pub fn section(
     ui.small(t::not_editable_note());
     ui.add_space(6.0);
     ui.separator();
-    // ★★★ `ui.min_rect()`, at the END — and it was `ui.max_rect()` at the
-    // START until 2026-08-27, which is a defect only driving could find.
     //
     // `max_rect` is the space a `Ui` is ALLOWED to use, not the space it took.
     // Published before anything is drawn, it reported
@@ -527,12 +507,6 @@ fn rename_row(
     // dotted string typed here would author a `/T` containing a dot — a field
     // no reader, including pdfcer, can address again.
     let typed = draft.trim().to_owned();
-    // ★★★ ASKED, not modelled. Until 2026-09-12 this line was
-    // `!typed.is_empty() && !typed.contains('.')` — a second model of an
-    // engine rule, living in this repository, derived by reading a *private*
-    // function. It carried a table arguing why it was safe to keep on the very
-    // day a different shim (`group_is_a_field`) was deleted for drifting: this
-    // one depended on the STRING only, that one on the document.
     //
     // The argument was sound. It was also **exactly the argument the deleted
     // shim's author would have written**, which is why it went to the engine as

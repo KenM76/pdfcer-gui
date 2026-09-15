@@ -12,8 +12,6 @@
 //! Because the two-line tool's output is an **inference**, and the shell was
 //! swallowing every statement about it.
 //!
-//! `pdfcer-core` gives the two-line gesture three things a shell is expected to
-//! surface, and until 2026-08-19 this build surfaced none of them:
 //!
 //! | fact | what it means | what happened without it |
 //! |---|---|---|

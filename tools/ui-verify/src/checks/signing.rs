@@ -1,8 +1,6 @@
 //! `checks::signing` — **a document is signed, and the signature is read back
 //! out of the file by a different subsystem in a different process**
 //!
-//! The driven half of `crate::sign` / `crate::dialogs::sign`, answering the
-//! operator's report of 2026-09-03: *a document cannot be signed.*
 //!
 //! # ★★★ THE ONE THING THIS CHECK EXISTS FOR, AND WHY A TRACE LINE IS NOT IT
 //!

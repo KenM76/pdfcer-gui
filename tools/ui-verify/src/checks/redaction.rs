@@ -37,10 +37,6 @@
 //! | 2 | the **output** | `SURVIVOR` **present** | the scan is still a valid instrument on *this* file. Page 2 is untouched, so its text must still be findable — and if the writer had compressed the streams, this fails and says so, rather than letting run 3 pass because a deflate stream hid everything |
 //! | 3 | the **output** | `SECRET` **absent** | **the verdict** |
 //!
-//! Runs 1 and 2 are not belt and braces. Without run 1 the check passes on a
-//! fixture that never contained the secret; without run 2 it passes on any
-//! output whose bytes the scan cannot read. Both were failure modes available
-//! to the first draft.
 //!
 //! # ★ …and a fourth oracle, in a second process
 //!

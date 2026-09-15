@@ -64,7 +64,6 @@
 //! `RESUME.md`'s recurring "a trace-grepping check passes on a build that
 //! failed" finding.
 //!
-//! # ★★ Falsified, not merely green — 2026-09-11
 //!
 //! It passed on its first drive, which is the moment a check is least worth
 //! believing. So the fixture constant was swapped to `fixtures/paragraph.pdf`

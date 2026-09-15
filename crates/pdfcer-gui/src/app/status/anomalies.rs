@@ -18,12 +18,6 @@
 //! > added to one of them, and the symptom would be two surfaces describing one
 //! > raster differently, which is the worst available outcome for a *diagnostic*.
 //!
-//! ⚠ That is a **verbatim quotation**, so it carries the other file's count and
-//! goes stale the moment a finding is added there. It was corrected on
-//! 2026-09-10 when `annotations_without_ap` minus `annotations_icon_painted`
-//! became the tenth — prose drifting from a count is a defect this project has
-//! now spent seven corrections on, and a quoted count is the easiest kind to
-//! miss because the file that changed does not contain it.
 //!
 //! Every word of that transfers. `LoadAnomaly` is `#[non_exhaustive]`; a fifth
 //! variant is not a hypothetical, it is the thing

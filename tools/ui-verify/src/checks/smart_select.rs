@@ -3,7 +3,6 @@
 //!
 //! # The request
 //!
-//! `OPERATOR_REQUESTS.md` **O70**, 2026-08-31:
 //!
 //! > *"if a click selects an object that is made of multiple objects (group,
 //! > form, etc) a double click should bring me further down the chain … If I
@@ -50,9 +49,6 @@
 //!
 //! ## ★★★ Why it opens its OWN fixture and ignores `--pdf`
 //!
-//! Because the subject needs a page whose visible content is painted from
-//! inside a form, and **neither real drawing can provide one at fit zoom**.
-//! Measured, 2026-08-31:
 //!
 //! | document | forms | what a driven click selected |
 //! |---|---|---|

@@ -3,13 +3,6 @@
 //!
 //! # What this is about
 //!
-//! `file.new` makes an A4 page and asks nothing, which is what Acrobat and
-//! Inkscape both do. `file.new_from_template` is the other half of
-//! `RIBBON_IA.md` §5.1's row — the command that asks — and it could not exist
-//! until 2026-08-18, because nothing in `pdfcer-core` wrote a `/MediaBox` and
-//! the only shell-side implementation was one checked-in template asset per
-//! size. That plan is recorded and refused in `app::blank`'s §3a; it could not
-//! have answered a custom size at any number of assets.
 //!
 //! `EditSession::set_media_box` shipped, so the implementation is: parse the
 //! one template, resize page 0, rewrite the whole file, **re-parse it**, and
@@ -241,7 +234,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
              choose from."
         ))
     })?;
-    // ★★★ **OPEN THE POPUP, THEN LOOK — up to three times, 2026-09-05.**
     //
     // One click and a 12-frame settle SKIPPED reproducibly with *"Entries
     // declared: none"*, on three consecutive runs of the same build. An
@@ -369,7 +361,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
 /// **The frame a New-document dialog region must be converted against.**
 ///
-/// # ★★★ The defect this closes — 2026-09-05, first run of this check
 ///
 /// This check clicked every one of its dialog controls through
 /// `session.frame()`, which is the **application's main window**. The dialog is
@@ -389,11 +380,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 /// Three clicks and a 20-frame settle apiece changed nothing, which is the tell:
 /// **a retry that does not help means the aim, not the wait.**
 ///
-/// ★★ `RESUME.md` records the identical fault in `checks::ocr::click_region` on
-/// 2026-08-27, and its conclusion verbatim: *"If you convert a check to drive a
-/// dialog, use `driving::frame_of`; it is safe on a main-window region and costs
-/// nothing."* That check was fixed; this one was written afterwards without it.
-/// A note is not a mechanism.
 ///
 /// # Errors
 ///

@@ -806,11 +806,6 @@ impl PdfcerApp {
         // instead; this is the first line that can see both halves, because the
         // destructured borrows above end with the dock's closure.
         //
-        // The same one-shot lived in `DialogsState::show` while that panel was
-        // a window — see `crate::dialogs`' note where the draw used to be. The
-        // guards did not move: `open_scale` still applies its own no-document
-        // and already-open checks at the one place a `ScaleDialog` is built, so
-        // a request arriving while one is open leaves a half-typed ratio alone.
         let scale_request = self.panels.dimension_groups.take_scale_request();
 
         for token in tokens {
@@ -854,8 +849,6 @@ impl PdfcerApp {
         //    report of a splitter drag, a tab move or a close — not a
         //    comparison this function has to re-derive.
         //
-        // A third — *is a write due?* — used to be here and is now in
-        // `Self::ui`, so read mode cannot hide a pending write with the dock.
         //
         // The order of 1 and 2 is load-bearing: recording after a mode change
         // would file the outgoing arrangement under the incoming mode.
@@ -1039,12 +1032,6 @@ impl PdfcerApp {
 /// out somewhere the operator cannot see it, and the trace stays silent about
 /// it on purpose.
 ///
-/// A free function rather than the closure body it used to be, for one reason:
-/// **the tests below have to be able to call the production line.** A closure
-/// inlined in [`PdfcerApp::docks`] is reachable only by running the
-/// application, and a change to a diagnostic channel that can only be checked
-/// by running the application is a change that can be green and wrong — which
-/// is the entire failure class this function exists to close.
 pub(super) fn publish_dock_rect(r: &egui_shell::dock::RectReport<'_>) -> bool {
     crate::diag::ui_rect_visible(r.name, r.rect, r.clip)
 }
@@ -1152,12 +1139,6 @@ mod dock_rect_tests {
     /// dock.body.p0          rect=[0..154]   clip=[0..120]   0.779 visible
     /// ```
     ///
-    /// **Both zero-visibility regions used to publish an ordinary-looking
-    /// rectangle**, and a driven check asserting "the collapse control is
-    /// there" would have passed on a build where the operator could not reach
-    /// it by any means. That is the shape of the defect this guards against —
-    /// Bookmarks, Layers and Signatures shipping unreachable with a rail entry
-    /// and every gate green — reproduced at unit scale.
     ///
     /// The assertions run in **both** directions on purpose. Asserting only
     /// the silences would be satisfied by a filter that dropped the whole dock

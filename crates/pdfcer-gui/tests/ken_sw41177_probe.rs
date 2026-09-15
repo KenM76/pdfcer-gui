@@ -432,11 +432,6 @@ fn how_many_runs_actually_hit_the_ambiguity_refusal_and_is_the_remedy_real() {
 /// against bytes the previous cell rewrote, and a refusal caused by the run
 /// order would be filed against the cell.
 ///
-/// ⚠ This paragraph used to name `PageEditedThisSession` as the concrete
-/// hazard. That citation died with `G015` (engine `025d703d`) — nothing
-/// constructs that error now. The discipline is unchanged and does not depend
-/// on it; a probe whose Nth measurement is taken on the output of its N−1th
-/// is measuring itself.
 #[test]
 #[ignore = "reads a file outside the repository, one document load per cell; run by hand"]
 fn which_cells_on_his_bom_sheet_does_the_engine_actually_refuse() {
@@ -814,16 +809,6 @@ fn measure_page(page: usize) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// 2026-09-09 — two more probes, for two of the operator's four reports that
-// morning: *"we're back to the apply redactions box that just tells me we
-// can't do it"* and *"some text in sw41177 still isn't editable"*. Both are
-// measured against HIS files (three of them, staged under
-// `target/scratch/ken/`), headlessly, with the engine at the revision
-// `Cargo.lock` pins — which is the only way to know whether a fix the engine
-// shipped hours ago reaches his drawing or not.
-// ---------------------------------------------------------------------------
-
 const HIS_FILES: [&str; 3] = [
     "target/scratch/ken/SW41177.pdf",
     "target/scratch/ken/SW41177 INSTALLATION.pdf",
@@ -1018,11 +1003,6 @@ fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
             println!("his line is not on page 0 any more");
             return;
         };
-        // The ENGINE's recognition, because `reflow_block` resolves the integer
-        // it is given against `reflow_recognition_options()` and nothing else.
-        // This probe used the caret's default recognition until 2026-09-14 and
-        // printed block 106 where the engine has 70 blocks — the shell had the
-        // same defect and it is corrected in `canvas::textedit::reflow`.
         let model = EditableTextModel::recognize(
             &text,
             &pdfcer_core::text_edit::reflow_recognition_options(),
@@ -1055,19 +1035,7 @@ fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
             // works, so a refusal here means the probe is reflowing a
             // different block than he is." It was never measured.
             //
-            // v2 (measured, 2026-09-14 morning): the refusal on the first
-            // frame after `File > Open` is `PageEditedThisSession`, because
-            // `SW41177.pdf` page 0 natively carries EIGHT non-empty
-            // `/Contents` streams and the engine's guard tested exactly that
-            // — a structural count reported as a session fact. That
-            // measurement became `request_G015`.
             //
-            // v3, and why v2 is now history: the engine agreed and **deleted
-            // the guard** (engine `025d703d`, 2026-09-14). Nothing constructs
-            // `PageEditedThisSession` any more. A refusal reaching this arm
-            // today is therefore SOMETHING ELSE, and the overwhelmingly
-            // likely something else on a CAD sheet is a composite
-            // (Type 0 / CIDFont) face, which reflow declines by name.
             //
             // — A probe's pre-written failure sentences are a hypothesis, and
             // a hypothesis printed as a conclusion is how a wrong cause gets
@@ -1178,9 +1146,6 @@ fn can_he_edit_text_after_the_block_it_lives_in_has_been_reflowed() {
 ///
 /// # What happened to it
 ///
-/// This probe printed the per-page counts, `request_G015` quoted them, and the
-/// engine **deleted the guard** the same day (engine `025d703d`, 2026-09-14).
-/// Nothing constructs `ReflowApplyError::PageEditedThisSession` at this pin.
 ///
 /// ⇒ So what follows is now a **structural census of his file**, not a
 /// refusal forecast: it says how many of his sheets a stream-sensitive engine
@@ -1234,11 +1199,6 @@ fn how_many_content_streams_does_each_of_his_sheets_carry() {
 /// ⚠⚠ **Step 1 is no longer a WORKAROUND, and the paragraph that said it was
 /// has been removed rather than softened.**
 ///
-/// What it said: the previous probe found reflow refusing on a freshly opened
-/// file, `edit_text`'s own report disclosed that it *"collapsed 7 additional
-/// /Contents stream(s) into the first"*, and that collapse happened to satisfy
-/// the guard — so the feature was *"unlocked by using a different feature
-/// first, and nothing tells him that"*. True on 2026-09-14 in the morning.
 ///
 /// `G015` deleted the guard the same day (engine `025d703d`). Reflow no longer
 /// needs a prior edit, and a workaround kept past its cause is how a shell

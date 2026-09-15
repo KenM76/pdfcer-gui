@@ -66,7 +66,6 @@
 //! preview its own body. *"The preview said yes and the call refused"* is not a
 //! state the code can reach.
 //!
-//! ### ★ What this section used to say, and why the correction is kept
 //!
 //! It read *"Why there is no pre-flight, said out loud rather than left as a
 //! gap"*, and described the honest interim: every row offered a live button,
@@ -198,15 +197,6 @@ pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions:
     // ★★ EVERY page's unclaimed widgets, at the TOP of the section, and that
     // placement is the fix for a remedy nobody could reach.
     //
-    // These rows used to be drawn inside each page's block, immediately under
-    // the sentence counting that page's unclaimed widgets — which reads well
-    // and is unusable. The Tab-order section lists **every page in the
-    // document**, so on a 37-sheet drawing with one inserted form page the
-    // rows sat 36 page-blocks down a scroll area. A driven run clicked the
-    // published rectangle and hit nothing, because the row was scrolled out of
-    // view; an operator told *"2 form controls need re-registering — Forms, Tab
-    // order lists them"* would have opened the panel and found a list with no
-    // obvious remedy in it.
     //
     // Third instance in one day of the same shape: the Bookmarks authoring row
     // below its list, the Manage-groups Add button below a settings block, and
@@ -235,12 +225,6 @@ pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions:
         let page_index: usize = page_index;
         // ★★ TWO LINES, not one, because this is a DOCK PANEL and not a dialog.
         //
-        // The first draft put the label, the name box and the button on one
-        // `horizontal` — about 460 pt of content in a pane that is 314 pt wide.
-        // egui does not wrap a horizontal layout, so the row simply ran off the
-        // right-hand edge and pushed the next one down: a driven run measured
-        // the button at x=1090..1229 in a panel ending at x=1100, and clicking
-        // its published centre hit the canvas.
         //
         // A **label wraps and a button does not**, which is what decides the
         // split: the identifying text goes on its own line where it can wrap to
@@ -433,15 +417,6 @@ fn refusal_hint(error: &pdfcer_core::edit::EditError) -> &'static str {
     match error {
         E::WidgetHasNoFieldIdentity { .. } => t::tab_order_register_needs_a_name(),
         E::FieldNameTaken { .. } => t::tab_order_register_name_taken(),
-        // ★★★ Added 2026-09-12 after MEASURING what this surface can reach,
-        // and the measurement contradicted a table written the day before.
-        // `actions::forms::correctable`'s reachability table says a dotted name
-        // is reachable HERE and defensive elsewhere, on the grounds that this
-        // box is free text gated only on non-empty. True of this shell's own
-        // gate — and beside the point, because the engine put
-        // `reject_dotted_partial` inside `adopt_plan`, which `adopt_preview`
-        // shares. The refusal arrives in the preview, the button greys, and the
-        // press that table describes cannot happen.
         //
         // ★★ Which makes these two arms necessary rather than decorative: the
         // refusal that would have been a status-bar sentence after a press is a
@@ -650,12 +625,6 @@ mod tests {
     /// enforcement sites — and the disclosure moved with it, out of the status
     /// bar and into a hover, silently.
     ///
-    /// ★★ The second assertion is the one worth having. Before the
-    /// `DottedPartialName` arm was added on 2026-09-12, [`refusal_hint`] fell
-    /// into [`t::tab_order_register_unavailable`], which tells the operator *the
-    /// reason is not one this panel expects* — the rule being enforced correctly
-    /// while the program apologises for being confused. Asserting only that the
-    /// preview is `Err` would be green through that entire state.
     ///
     /// Driven on `ORPHAN_WIDGET`, the hand-authored fixture: one page, one
     /// `/Widget` owned by no field and no `/AcroForm` at all, which is the only
@@ -688,11 +657,6 @@ mod tests {
 
     /// The bare-dot refusal is reachable from here too, and worded separately.
     ///
-    /// ★★ It became reachable on 2026-09-12 and not before. Until then the
-    /// engine's `reject_dotted_partial` tested `contains('.')` and only that, so
-    /// `a..b` was **accepted** by `adopt_widget` while `rename_field` refused it
-    /// — two behaviours for one rule across three enforcement sites, which they
-    /// found only by making the rule askable as `validate_partial_name`.
     ///
     /// ⇒ *a private predicate with three callers is three behaviours until
     /// something forces them to agree.* Asserted here because this surface is

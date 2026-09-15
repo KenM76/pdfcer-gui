@@ -3,7 +3,6 @@
 //!
 //! # Why this exists
 //!
-//! `OPERATOR_REQUESTS.md` O24, and the operator on 2026-08-22:
 //!
 //! > *"put the max zoom setting on the bar at the bottom."*
 //!

@@ -174,11 +174,6 @@ pub(crate) fn policy_token(options: LoadOptions) -> &'static str {
 
 /// Where the pointer was over the page when a Ctrl+wheel arrived.
 ///
-/// ★ **Re-exported, not declared here.** The type moved to [`crate::viewer`]
-/// when the rulers landed — R2's ceiling forced a split out of this file, and
-/// a zoom fact belongs beside `ViewState::zoom` and `ZOOM_LADDER`; that
-/// module's own docs carry the argument. The re-export keeps it a *move*
-/// rather than a rename, so `canvas::zoom` still names it by this path.
 pub use crate::viewer::ZoomAnchor;
 
 /// **Which optional-content groups the operator has hidden** — split out
@@ -264,15 +259,6 @@ pub struct OpenDoc {
     /// gains a file gains it through a save, and this build has no save that
     /// gives it one.
     ///
-    /// ★ **`file.save_copy` landed on 2026-08-14 and is deliberately not that
-    /// save.** *Save a copy* writes the document somewhere and leaves the
-    /// document alone — Inkscape's verb, and the only one of the three
-    /// reference applications that has it — so a created document saved to
-    /// `D:\jobs\sheet.pdf` is still called `Untitled 1.pdf` afterwards and still
-    /// reads [`Origin::Created`] here. The save that would write this field is
-    /// `file.save_as`, which does not exist. See [`crate::app::save`] §3.4,
-    /// which carries the argument and the reason writing it here would rename
-    /// the operator's open document because they asked for a copy.
     pub origin: Origin,
     /// The edit session — the single owner of the document, through which
     /// every future mutation will pass.
@@ -337,11 +323,6 @@ pub struct OpenDoc {
     ///
     /// # ★ Why this exists: the blank flash after every edit
     ///
-    /// `RenderKey` compares page index, raster scale, annotation stance and
-    /// layer generation — **not the edit epoch**, because an edit changes none
-    /// of them. So until 2026-08-18 the only way an edit could make the canvas
-    /// re-render was to assign `page_texture = None`, and every writer did
-    /// exactly that.
     ///
     /// Nulling it is also what put a **blank page on screen between the edit
     /// and the next raster**. The operator: *"the page goes blank and flashes
@@ -461,10 +442,6 @@ pub struct OpenDoc {
     ///
     /// # ★★★ Why a separate field, when `render_error` already exists
     ///
-    /// **Found by driving the binary, 2026-09-10.** A deep-zoom check reported
-    /// a blank canvas, and the capture held **611 `render-spawn` lines and
-    /// ~573 worker-thread panics for a single check** — the shell re-asking
-    /// for the identical picture on every frame, and a thread dying each time.
     ///
     /// `render::settle`'s spawn gate did have a hold, spelled
     /// `doc.render_error.is_some() && !stale_discrete`, and it could not fire,
@@ -544,11 +521,6 @@ pub struct OpenDoc {
     /// remove** — `RedactionReport::redacted_text`, empty on every document
     /// that has no removal armed.
     ///
-    /// Added 2026-09-04 with the collapsing apply; **re-based 2026-09-05** onto
-    /// `RedactAction::Pending(Staging::Stage)` when `pdfcer-core`
-    /// `Pass 250.2` replaced that route with an undo-preserving one. The old
-    /// sentence said *applied INTO this document*, which is no longer what
-    /// happens: nothing is removed until the save.
     ///
     /// It exists for one consumer: `crate::app::save::write_copy` greps the
     /// bytes it is about to write for these strings and **refuses the save** if
@@ -571,14 +543,6 @@ pub struct OpenDoc {
     /// good file — or, in the direction that matters, a clean pass on a file
     /// nobody checked.
     ///
-    /// ★★★ **It is not cleared by a save, and IS cleared by a cancel** — the
-    /// second half is new on 2026-09-05 and it is not tidiness. These strings
-    /// are this shell's statement that every file it writes for this document
-    /// has that text removed from it, and after
-    /// `Staging::Cancel` that statement is false: the content is deliberately
-    /// still there. Leaving them set would make the next ordinary save refuse
-    /// itself, correctly, over a removal the operator called off on purpose —
-    /// with no way out but to close the document.
     pub redaction_absence_claims: Vec<String>,
     /// The single-slot background rasterizer.
     pub render_worker: RenderWorker,
@@ -709,12 +673,6 @@ pub struct OpenDoc {
     ///
     /// # ★★★ Why all three, and why the middle one is the safety property
     ///
-    /// `EditSession::page_content_generation` became `&mut self` on 2026-09-01
-    /// — unavoidably, and for the reason this shell itself gave the engine:
-    /// the number has to walk the page to know which forms it descends into,
-    /// and walking populates a memo. But `crate::app::cache`'s decomposition is
-    /// built from `&self`, behind an `Arc` the render worker also holds, so the
-    /// read cannot happen there.
     ///
     /// ⇒ So it is measured once per frame at a `&mut` point and read from here.
     /// `Arc::get_mut` can fail — a render in flight holds a second handle — so
@@ -898,10 +856,6 @@ pub struct OpenDoc {
     pub selection: SelectionState,
     /// ★★ **The form field selected for editing its properties**, if any.
     ///
-    /// The operator, 2026-08-26: *"when I click on an existing form field on
-    /// the page its properties should come up in our side pane for editing its
-    /// properties."* This is what a click on a widget in Edit mode sets, and
-    /// what `panels::properties::formfield` reads.
     ///
     /// # ★ Why it is NOT part of [`SelectionState`]
     ///
@@ -929,10 +883,6 @@ pub struct OpenDoc {
     /// ★★★ **The backdrop — the last small whole-page raster, kept so the page
     /// is never blank while a sharper one is on its way.**
     ///
-    /// The operator, 2026-08-26: *"the screen should never be blank while
-    /// waiting to render when zooming out — there should be at least a low
-    /// resolution zoom of the newly panned or zoomed out area instead of just
-    /// remaining blank while the higher definition render occurs."*
     ///
     /// Measured before it was built: zooming out from 3590 % held
     /// `canvas-coverage covered=0.000` for about twenty frames. The held
@@ -1000,21 +950,9 @@ pub struct OpenDoc {
     /// ★★★ **Which pages have been ASKED**, as opposed to
     /// [`Self::ink_pages`], which is which pages answered *yes*.
     ///
-    /// Two sets and not one, because "not in `ink_pages`" has meant two
-    /// different things since 2026-09-11 and conflating them is how the ask
-    /// would be paid for on every frame: *this page is additive* and *nobody
-    /// has looked yet*. A page that answers `false` is a page this shell must
-    /// not ask about again, and there is nowhere else to record that.
     ///
     /// # Why an ask exists at all now
     ///
-    /// Until `Pass 296.4` (`8d2f6bb`, consumed 2026-09-11) `page_blend_space`
-    /// was `pub(crate)` and the only way to learn a page's blending space was
-    /// to **render it once and read the counters afterwards**. That inference
-    /// was sound — the engine confirmed it is exactly the union it computes —
-    /// and it cost a full raster to answer a question the page's own `/Group`
-    /// dictionary answers. `pdfcer_render::page_composites_in_ink` is that
-    /// question, asked directly.
     ///
     /// # ★★ The gap the observation left, which is small and real
     ///
@@ -1063,10 +1001,6 @@ pub struct OpenDoc {
     /// ★★★ **The [`Self::edit_epoch`] the file on disk currently holds** — i.e.
     /// the revision a successful *Save* last wrote over the operator's own file.
     ///
-    /// `edit_epoch == saved_epoch` means *everything the operator has done is on
-    /// disk*. It is deliberately NOT the same question as `edit_epoch == 0`,
-    /// which asks *has anything ever been edited* and is what the OCR preflight
-    /// used to ask.
     ///
     /// # The defect this exists for
     ///
@@ -1170,12 +1104,6 @@ pub struct OpenDoc {
     annotations: bool,
     /// The operator's optional-content override. See [`LayerOverride`].
     ///
-    /// ★ `pub(super)` rather than private since 2026-09-01: the four methods
-    /// that read and write it live in [`crate::app::layers`], split out of this
-    /// file under R2 when it reached the 1,500-line ceiling. Still module-scoped
-    /// — nothing outside `app` may reach past `hidden_layers` and its three
-    /// companions, because the three-state `Option` they enforce is exactly what
-    /// a direct write would get wrong.
     pub(super) layers: LayerOverride,
 }
 
@@ -1463,16 +1391,10 @@ pub(crate) use fixtures::{
 
 /// ★ **The object count the harness reads** — `PROJECT_PLAN.md` §4.3 req 3.
 ///
-/// Split out under R2 on 2026-09-11. Its header carries the subject: this is
-/// the one member of `OpenDoc` that is about the *instrument* rather than
-/// about the document.
 mod objectcount;
 
 /// ★★★ **The preview that outlives the gesture** — `OPERATOR_REQUESTS.md` O63.
 ///
-/// Split out under R2 on 2026-08-30. Its header carries the subject: for how
-/// long is a picture of this document still true? Three clauses, two of them
-/// bounded by wall-clock time, and the reason each of the two is.
 mod heldpreview;
 pub(crate) use heldpreview::HeldPreview;
 

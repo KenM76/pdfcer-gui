@@ -10,15 +10,6 @@
 //! **Changing a `/MediaBox` changes the paper. It does not move, scale or
 //! shrink anything drawn on the page.**
 //!
-//! That sentence is the difference between the operator getting what he
-//! expected and losing his title block, and it is *not* obvious — every office
-//! application in the world has a "page size" control that reflows, and the
-//! only one that behaves like this is a drawing program. Measured on
-//! `fixtures/a1-titleblock.pdf` on 2026-09-06, through the engine's own
-//! `set-page-size`: every glyph run's coordinate is **byte-identical** before
-//! and after an A1 → A4 resize. The title block sits at x 1831–2207 pt, and an
-//! A4 sheet stops at 595.28. It is *entirely off the paper*, still in the
-//! content stream, invisible to every reader.
 //!
 //! So this catalogue states the rule three times over, in three registers, and
 //! that repetition is deliberate rather than sloppy:
@@ -38,10 +29,6 @@
 //! Two different things on a CAD sheet are called dimensions and a paper change
 //! affects them differently, so R8b rule 15 forbids the bare word:
 //!
-//! | | what it is | what a paper change does to it |
-//! |---|---|---|
-//! | **pdf dimension** | the printed measurement the CAD exporter drew — page content pdfcer reads and must not silently alter | **nothing.** It is content; it does not move. It can end up off the sheet. |
-//! | **ce dimension** | the measurement pdfcer itself authored — an annotation plus a `/PieceInfo` sidecar | **nothing.** Measured 2026-09-06: `/Rect`, sidecar and the printed value (`400.00 pt`) are identical across an A1 → A4 resize. |
 //!
 //! ★ The second row is *why the honest answer is "nothing moves"* rather than a
 //! hedge. A verb that scaled the drawing to fit would have to rescale every ce
@@ -330,14 +317,6 @@ pub fn overhang_unmeasurable(unread: usize, total: usize) -> String {
 
 /// The boundary on what the fits/overhang measurement covers.
 ///
-/// ★★ Stated on screen, permanently, beside the measurement — not buried in a
-/// doc comment. `PageObjects::page_bbox` is the union of the **drawn** objects'
-/// bounding boxes. Comments, form fields, stamps and ce dimensions are
-/// annotations: separate objects with their own `/Rect`, which this sweep does
-/// not walk. They keep their coordinates across a resize (measured 2026-09-06 —
-/// a `Square` at 120,560–320,700 was still at 120,560–320,700 on an A6 sheet
-/// 297 × 420, i.e. entirely off it), so they can fall off exactly as content
-/// can, and the measurement above would not have said so.
 #[must_use]
 pub const fn annots_not_counted() -> &'static str {
     "Measured on what is drawn on the page. Comments, form fields and ce dimensions keep their \
@@ -479,10 +458,6 @@ pub fn disclosure_size_advisory(n: usize, below: bool) -> String {
 
 /// The engine refused the change because the document is certified.
 ///
-/// ★★ Worded rather than traced, because `RESUME.md`'s standing cross-cutting
-/// defect is that *"every engine refusal reaches the operator as SILENCE"*.
-/// Measured 2026-09-06 on `fixtures/certified-comments.pdf`: the engine refuses
-/// with `CertificationForbidsChange` and this is what that has to read as.
 #[must_use]
 pub const fn refused_certified() -> &'static str {
     "This document carries a certification signature that does not permit structural page \
@@ -569,11 +544,6 @@ mod tests {
     /// ★★ **The "it fits" line and the "not counted" line are separate, and
     /// both are needed.**
     ///
-    /// `fits()` is the only promise in this window. Measured 2026-09-06, an
-    /// annotation keeps its `/Rect` across a resize exactly as content keeps
-    /// its coordinates — so a sheet whose *drawing* fits can still lose a
-    /// sticky note. The promise is therefore bounded on screen and not only in
-    /// a doc comment: a bound nobody can read is not a bound.
     #[test]
     fn the_promise_is_bounded_on_screen() {
         assert!(fits().contains("drawn"), "{}", fits());

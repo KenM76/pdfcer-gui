@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-01: *"I can't seem to copy and paste text we have OCRed."*
 //!
 //! ## ★★★ It was caused by a feature that shipped seven hours earlier
 //!
@@ -64,11 +63,6 @@ use crate::report::CheckReport;
 const SELECTION: &str = "selection-set"; // ui-text-exempt: a trace event name, never displayed
 /// The line a text sweep writes.
 ///
-/// ★★★ `canvas-text-selection`, and the first three drafts said `text-selection`
-/// — which is a SUBSTRING of it. Every `grep` used to confirm the name matched,
-/// the trace looked right, and the check reported *"selected no characters"*
-/// through a settle, a longer settle and a poll loop, because `events()` is an
-/// exact match and none of those three attempts was ever going to work.
 ///
 /// ⇒ A harness constant confirmed by a substring grep is not confirmed. The
 /// instrument that finally answered it was the check reporting what it had
@@ -93,10 +87,6 @@ const ON_A_WORD: (f64, f64) = (12.7, 7.4);
 
 /// A point on the same page with no recognised word under it.
 ///
-/// ★★ Inside the page and clear of every run. The first draft put this at
-/// (200, 500) on a page that turns out to be **145 x 74 pt** — a point off the
-/// sheet entirely, which would have made step C assert something about nothing.
-/// Read off the extraction's own run boxes, none of which reaches past x=110.
 const OFF_THE_WORDS: (f64, f64) = (120.0, 62.0);
 
 pub struct TextOnAScanCanStillBeSweptOverTheImage;

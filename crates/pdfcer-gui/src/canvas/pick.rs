@@ -18,7 +18,6 @@
 //!
 //! ## ★ Why this replaced a pair of ribbon buttons, in the operator's words
 //!
-//! `OPERATOR_REQUESTS.md` O17, 2026-08-21:
 //!
 //! > *"On the bottom bar I want a filter menu that pops up with all the
 //! > options of what to enable selecting of — text, points, lines, etc — all

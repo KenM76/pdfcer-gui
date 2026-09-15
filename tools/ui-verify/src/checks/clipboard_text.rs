@@ -3,7 +3,6 @@
 //!
 //! # Why this check exists, and why nothing else could have caught the defect
 //!
-//! `OPERATOR_REQUESTS.md` O18, reported 2026-08-21:
 //!
 //! > *"if I select text in read mode … and press ctrl+c to copy, then try to
 //! > paste in notepad, it doesn't work. I get a notice to paste it back into
@@ -122,12 +121,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check needs a click or a sweep that lands IN TEXT. On 2026-09-12
-    // it was handed the sweep's shared aim, which on `a1-titleblock.pdf`
-    // lands on a path - and that sheet is 2383.9 × 1683.8 pt carrying 123
-    // characters, so its tallest glyph is 2.4 screen pixels at fit zoom and
-    // no aim on it would have been reliable either. Sixteen checks reported
-    // sixteen plausible reasons for that one fact.
     //
     // `fixture::text_point_target` holds the document, the point, and the
     // measurement behind both. Read its doc comment before changing either.

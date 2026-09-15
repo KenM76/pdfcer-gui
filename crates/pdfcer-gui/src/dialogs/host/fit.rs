@@ -1,10 +1,5 @@
 //! # `dialogs::host::fit` — growing a window to its body, without a loop
 //!
-//! Split out of [`super`] on 2026-09-10 when that file reached 1,600 lines and
-//! tripped R2. The seam is a real subject rather than a convenient cut: every
-//! item here exists because **an OS window has to be created at some size**,
-//! and nine of the thirteen dialogs converted on 2026-08-21 had no size written
-//! down anywhere — their layout *was* the number.
 //!
 //! ## ★★★ The defect this module is shaped by
 //!
@@ -22,11 +17,6 @@
 //!
 //! ## Why the arithmetic is a free function
 //!
-//! [`Host::fit`] needs a live viewport to read `inner_rect` and to issue the
-//! resize, so the whole decision used to be reachable headlessly only in its
-//! no-op half. That was true of the *resize* and never true of the
-//! *arithmetic*: [`fit_target`] is pure, so the convergence test below can feed
-//! it its own output and require a fixed point.
 //!
 //! ## Rule 15
 //!
@@ -128,11 +118,6 @@ impl Host {
     /// # ★★ Why this exists: `.resizable(false)` was a SIZE, and an OS window
     /// # has to be given one
     ///
-    /// Nine of the thirteen dialogs converted on 2026-08-21 were
-    /// `egui::Window::…resizable(false)` with **no** `default_size`, which
-    /// means egui sized them to their content every frame. There is no number
-    /// written down anywhere for how big those dialogs are — the layout *is*
-    /// the number.
     ///
     /// An OS window must be created at some size, so a naive conversion means
     /// **guessing thirteen numbers**, and a guess that is too small does not
@@ -195,11 +180,6 @@ impl Host {
         // ★★★ THE GROWTH BUDGET — the guard that turns a layout mistake into a
         // stopped dialog instead of one that grows without limit.
         //
-        // Added 2026-08-25 after the third instance of R128's shape in this
-        // project, and the first one an operator had to report: the print
-        // dialog's footer overflowed its row by a fixed width every frame, so
-        // every requested size was NEW, the once-per-size guard was satisfied
-        // every time, and the window grew in steps for as long as it was open.
         //
         // ★ The point that took three instances to learn: **a guard against
         // repetition is not a guard against monotonic creep.** Creep never
@@ -360,12 +340,6 @@ mod tests {
     /// ★★★ **The print dialog's runaway, reproduced as arithmetic — and the
     /// proof that no pure function could have stopped it.**
     ///
-    /// Operator report, 2026-08-25: the print dialog *"keeps expanding its size
-    /// in little steps to infinity"* after pressing Print. The cause was a
-    /// footer row whose right-to-left button block reached the right edge of
-    /// whatever width it was offered, with a status label appended AFTER it —
-    /// so the row overflowed by the label's width no matter how wide the
-    /// window became.
     ///
     /// This test models exactly that: content that is always `OVERFLOW` wider
     /// than its window. Every individual answer [`fit_target`] gives is

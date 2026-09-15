@@ -35,8 +35,6 @@
 //! alignment — is therefore **N**, and under P3 absent. Twenty-four
 //! entries in [`super::PLANNED`] come from this one section.
 //!
-//! # ★★★ MEASURED 2026-08-17, FALSIFIED 2026-08-18, AND STILL WRITTEN HERE ON
-//! 2026-09-06
 //!
 //! What follows is the header this file carried for nineteen days, kept
 //! verbatim because **the shape of the mistake is the record**. It named two
@@ -56,15 +54,6 @@
 //! > … a markup or a dimension is not selectable at all, so even a perfect
 //! > `set_markup_style` would have nothing to name.
 //!
-//! **`EditSession::set_markup_style` shipped on 2026-08-18**, and
-//! `canvas::selection::annot::AnnotTarget` — an `ObjId`, a page, an
-//! `AnnotKind` and the `/F` lock bit — landed the same day.
-//! `panels::properties::markup` has been calling the verb through
-//! `Action::SetMarkupStyle` since 2026-08-19. Every sentence above was false
-//! from the moment the panel it argues for existed, and this file went on
-//! stating both as present-tense facts about the engine until the operator
-//! asked for *"full editing working for the Markup tools"* and somebody read
-//! the header.
 //!
 //! ⇒ **A blocker is a measurement with a date, not a property of the world.**
 //! `tools/gates/check-stale-blockers.sh` exists for exactly this class and did
@@ -94,22 +83,11 @@
 //!
 //! # What the tab carries now
 //!
-//! Three groups: **Font** (2026-08-27), **Markup** (2026-09-06) and
-//! **Selection**. §5.8's build order — *"panel first, tab second … the tab's
-//! contents are a subset of it"* — was followed for both of the first two, and
-//! it is why each was one pass rather than two: the property editors were
-//! written once, in `panels::properties`, and the band reads the same actions.
 //!
 //! What is left of §5.8's table in [`super::PLANNED`] is now the rows with no
 //! verb behind them — a note's text (`MarkupNote`, a different struct), the
 //! dimension property editors, and the vector-object rows.
 //!
-//! ⚠ **This paragraph named a markup's line style too, on the reasoning that
-//! `MarkupStyle` carried no dash pattern.** That was true when it was written
-//! on the morning of 2026-09-06 and false about six hours afterwards:
-//! `MarkupStyle::dash` shipped that afternoon (`pdfcer-core` `edit.rs:4422`)
-//! with the preserve and author halves beside it, and `format.line_style` is
-//! now a registered command and the **sixth** control of the Markup group.
 //!
 //! ⇒ Corrected rather than deleted, because it is the **third** stale-blocker
 //! correction in this one header. The two above it stood for nineteen days
@@ -159,13 +137,7 @@ use egui_shell::manifest::{Item, Tab};
 /// The condition, published by the application each frame, under which the
 /// Format tab appears.
 ///
-/// # ★★★ It became its own condition on 2026-08-27, and the change is the
-/// whole reason the Font group works
 ///
-/// It used to be `"selection.any"` — the **object** selection — and the note
-/// here argued for that spelling on the grounds that the tab and the one
-/// command inside it must ask the same question, so that a Format tab could
-/// never appear holding a single greyed control.
 ///
 /// That argument was sound for a tab with one group. It stops being sound the
 /// moment the tab carries controls for a **second kind of selection**, and it
@@ -194,12 +166,6 @@ use egui_shell::manifest::{Item, Tab};
 /// O37's admission that nothing on screen tells an operator to press `T`
 /// before sweeping — see the Font group below.
 ///
-/// Not spelled `crate::shell::manifest::SELECTION_ANY`: that constant is the
-/// object-selection condition and has two other readers (the canvas context
-/// menu among them). It used to be an alias for this one, and de-aliasing them
-/// was the first step of this change, because editing this string in place
-/// would have silently retargeted a Delete in a menu that has nothing to do
-/// with this tab.
 pub(super) const VISIBLE_WHEN: &str = "selection.formattable"; // ui-text-exempt: a condition name, never displayed
 
 /// The condition under which a mode may change page content, and therefore
@@ -279,8 +245,6 @@ pub(super) fn tab() -> Tab {
         .with_question(ribbon::question_format())
         .with_visible_when(VISIBLE_WHEN)
         .with_groups([
-            // ---------------------------------------------------------------
-            // Font — §5.8's "Text run" row, built 2026-08-27 for O37.
             //
             // ★★★ FIRST, ahead of Selection, and the order is the operator's
             // rather than this file's. §5.8's own table lists a text run's
@@ -343,9 +307,6 @@ pub(super) fn tab() -> Tab {
                     Item::custom(super::FONT_COLOUR).shown_when(FONT_VISIBLE_WHEN),
                 ],
             ),
-            // ---------------------------------------------------------------
-            // Markup — §5.8's "Markup annotation" row, built 2026-09-06 on the
-            // operator's *"getting full editing working for the Markup tools."*
             //
             // ★★★ SECOND, between Font and Selection, and the position is
             // decided by the same rule that put Font first. §5.8's tables read
@@ -415,18 +376,6 @@ pub(super) fn tab() -> Tab {
                 ribbon::group_format_selection(),
                 [
                     command("format.properties"),
-                    // ★ Between Properties and Delete deliberately. §5.8's menu
-                    // rule is least-destructive-first, and the same reading orders
-                    // a group: describe, then re-aim, then destroy. It is also the
-                    // order of increasing commitment, so the eye meets Delete last
-                    // in both surfaces that carry it.
-                    // ★★★ **Gated on the mode, 2026-09-04 — A18's second half.**
-                    // The dispatch arm added a `!edit_content` guard on
-                    // 2026-09-03 and that guard is correct, but a guard alone
-                    // leaves the CONTROL. In Read the operator saw an enabled
-                    // "Select form", pressed it, and nothing happened — this
-                    // project's founding defect class, re-created by the fix
-                    // for a data-loss defect.
                     //
                     // R9: withheld, not greyed. A mode is not a temporary
                     // condition that will pass while the operator hovers; it is

@@ -3,12 +3,6 @@
 //!
 //! # The defect
 //!
-//! `canvas::markup::palette` was written on 2026-09-06 from Acrobat DC's own
-//! registry — `HKCU\…\DC\Annots\cAnnots\<subtype>\cstrokeColor`, read twice,
-//! minutes apart, agreeing to six decimals. Shapes are **`#DB3425`**. The value
-//! it replaced had been written from memory, and the same commit found the
-//! highlighter's default is **orange `#FF6200`, not yellow** — *"what everybody
-//! knows was wrong"*.
 //!
 //! A palette written from memory is a defect that ships silently: nothing
 //! crashes, every test is green, and the only symptom is that a drawing marked
@@ -100,13 +94,6 @@
 //! of taking-the-darkest-quarter recovers a pure sample from a line thinner than
 //! a pixel.
 //!
-//! ★ Measured on the first driven run of this check, 2026-09-06, with the
-//! darkest quarter of the strip's ink averaged: **`#EB9D96`** — a pale pink, 105
-//! away from `#DB3425` in blue. A tolerance wide enough to call that Acrobat's
-//! red would be wide enough to call almost anything Acrobat's red — and the
-//! run's own capture shows why the two verdicts disagree: the rectangle in it
-//! is plainly the right colour to a human eye and plainly not `#DB3425` to a
-//! byte comparison.
 //!
 //! ## The measure that survives it: the direction away from the paper
 //!
@@ -222,11 +209,6 @@ const ACROBAT_RED: Rgb = Rgb {
 /// Two colours this shell has actually drawn shapes in, named so a failure can
 /// say *which* wrong answer it got.
 ///
-/// ★ The yellow is not hypothetical: `(1.0, 1.0, 0.0)` is what the highlighter
-/// carried in this shell until 2026-09-06, *"written from memory"*. The orange
-/// is Acrobat's real highlighter and is the near miss a careless fix would
-/// produce — 46 apart from the red in the green channel, which is inside a
-/// sloppy tolerance and outside this one.
 const NEAR_MISSES: [(&str, Rgb); 3] = [
     (
         "Acrobat's HIGHLIGHTER orange #FF6200 — the right table, the wrong row",
@@ -256,10 +238,6 @@ const NEAR_MISSES: [(&str, Rgb); 3] = [
 ///
 /// # ★★ Where the number comes from
 ///
-/// Measured, 2026-09-06, first driven run, `a1-titleblock.pdf` at 20 % zoom: the
-/// strip read `#EB9D96`, whose normalised direction is `0.190, 0.933, 1.000`
-/// against Acrobat's red at `0.165, 0.931, 1.000` — **0.025 apart**, through a
-/// stroke thinner than a pixel.
 ///
 /// The nearest wrong answer this shell could plausibly produce is the
 /// highlighter's orange at **0.315**. `0.10` sits four times above the observed

@@ -1,6 +1,5 @@
 //! # `canvas::backdrop` — the low-resolution page under the sharp one
 //!
-//! **Operator request, 2026-08-26:**
 //!
 //! > *"the screen should never be blank while waiting to render when zooming
 //! > out — there should be at least a low resolution zoom of the newly panned
@@ -124,7 +123,6 @@ pub(super) fn paint(ui: &Ui, doc: &OpenDoc, page: usize, current: usize, rect: e
 ///
 /// # ★★★ TWO numbers, because one of them cannot see the second defect
 ///
-/// **Operator, 2026-09-04:**
 ///
 /// > *"the canvas does a fading around the edges on stuff shown at the edges of
 /// > the view. I don't want this. it should render true."*
@@ -143,10 +141,6 @@ pub(super) fn paint(ui: &Ui, doc: &OpenDoc, page: usize, current: usize, rect: e
 /// visible page has the picture the operator is entitled to** — the region or
 /// whole-page raster itself, with the backdrop excluded.
 ///
-/// | | reads `1.000` when | reads low when |
-/// |---|---|---|
-/// | `covered` | anything at all is drawn | the page is **blank** — the 2026-08-26 defect |
-/// | `sharp` | the real raster reaches every visible corner | the **backdrop is showing** — the 2026-09-04 defect |
 ///
 /// ★★ The pair is what makes both falsifiable from one capture, and neither
 /// could be derived from the other after the fact. It is the same argument this
@@ -161,13 +155,6 @@ pub(super) fn paint(ui: &Ui, doc: &OpenDoc, page: usize, current: usize, rect: e
 ///
 /// ## ★★ …and adding it closed a hole in `covered` itself
 ///
-/// `covered` used to be computed as *"the backdrop's rect if there is a
-/// backdrop, else `paint_rect`"* — with no reference to whether there was a
-/// **texture**. `canvas::present` sets `paint_rect = rect` on the branch where
-/// there is no raster at all, so the state this module was built to detect —
-/// no backdrop, no texture, a state sentence on blank paper — reported
-/// `covered=1.000`. The instrument was blind to its own subject on the one
-/// path where nothing is drawn.
 ///
 /// ⇒ It is now derived from `sharp`, which is `0.000` when `textured` is false,
 /// so the blank case reads `covered=0.000` as the module header's measurement
@@ -212,8 +199,6 @@ pub(super) fn publish_coverage(
             doc.view.zoom
         )
     });
-    // ★★★ **How many strokes this raster THINNED** — `Diagnostics::strokes_hairlined`,
-    // `pdfcer-core` `Pass 254.1`, traced 2026-09-07.
     //
     // The disclosure in `app::status::disclosure::line_weights_disclosure`
     // reads the same field to choose which sentence the operator sees. This

@@ -1,12 +1,5 @@
 //! # `redact::tests` — the security assertions for the apply pipeline
 //!
-//! Split out of [`super`] on 2026-09-04 (evening) under rule R2, when the
-//! deferred apply route (`Pass 250.1`) took `redact/mod.rs` past the
-//! 1,500-line ceiling. **Nothing moved but its address**: the suite, its
-//! fixtures and every paragraph of its reasoning are unchanged, and the seam
-//! is the one R2 asks for rather than a line count — `mod.rs` answers *"what
-//! is the pipeline?"* and this file answers *"what has been proven about
-//! it?"*, and the two grow for different reasons.
 //!
 //! ★ It stays a module named `tests` inside `redact`, deliberately:
 //! [`super::proof`]'s own suite reaches [`assemble`] as
@@ -133,11 +126,6 @@ fn scratch(name: &str) -> std::path::PathBuf {
 /// extractable. Without it, a build that emitted an empty page would pass
 /// all three assertions above while destroying the document.
 ///
-/// This is deliberately an assertion of ABSENCE, not of appearance. A
-/// raster test could only show that the region is painted black, which is
-/// precisely the false-redaction failure ISO 32000-1 §12.5.6.23 forbids
-/// ("clipping or image masks shall not be used to hide that data") — a black
-/// box over live text is what this feature exists to never ship.
 #[test]
 fn applied_redaction_leaves_no_recoverable_trace_in_the_saved_bytes() {
     let session = session_with_unsaved_mark();
@@ -278,22 +266,10 @@ fn an_unmarked_document_is_refused_by_name() {
 /// ★★★ **A region over a raster image now DESTROYS the samples**, and this
 /// test is the record of the day that changed.
 ///
-/// It read `a_region_over_an_image_refuses_the_whole_apply` until
-/// 2026-09-03 and asserted that the engine declined the entire document —
-/// which was true, was the operator's headline complaint
-/// (`OPERATOR_REQUESTS.md` O103, *"every time I've tried the redact feature
-/// it tells me it can't"*), and stopped being true with `pdfcer-core`
-/// v0.26.0 the same day.
 ///
 /// ★★★ **Writing over the source replaces it, and leaves no temporary
 /// behind.**
 ///
-/// The destination [`crate::dialogs::redact::Destination::ReplaceOriginal`]
-/// produces, added 2026-09-04, and the reason
-/// [`PreparedRedaction::write_to`] became atomic on the same day: the old
-/// `std::fs::write` was defensible only while the target could never be the
-/// operator's own document, and a torn write there destroys the last
-/// remaining copy of the content being removed.
 ///
 /// Three assertions, and the third is the one a `write`-based build passes
 /// by accident and an unclean temp-file build fails:
@@ -648,9 +624,6 @@ fn the_debug_impl_reports_a_length_rather_than_the_bytes() {
     );
 }
 
-// ===========================================================================
-// ★★★ THE DEFERRED ROUTE — `stage_into_session`, `save_applying_pending`,
-// 2026-09-05, `pdfcer-core` `Pass 250.2`
 //
 // This section REPLACES the one that measured `apply_into_session`'s collapse
 // (`Pass 250.1`), and the replacement is not a rename: the property under test
@@ -1088,12 +1061,6 @@ fn the_staging_and_the_undo_log_both_survive_the_save() {
 /// ★★★ **A REAL drawing survives the staged route** —
 /// `fixtures/a1-titleblock.pdf`.
 ///
-/// Every other fixture in this file is uncompressed with a Base-14 font, which
-/// is a document with nothing for a coincidence to hide in. This one is a CAD
-/// title block with compressed content streams and an embedded, subsetted
-/// font — and it is the file whose font `name` table describes its ligatures as
-/// *"Classic construction"*, which is what made the shell refuse every real
-/// redaction until the proof was corrected on 2026-09-04.
 ///
 /// It asserts through pdfcer's own text extraction as well as through the raw
 /// bytes, because on a compressed document the raw scan alone would pass on a

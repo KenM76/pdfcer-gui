@@ -3,11 +3,6 @@
 //!
 //! # Why this is its own module
 //!
-//! Split out of `canvas::present` on 2026-09-10, when adding O23's halo tier
-//! put that file at 1,503 lines and the R2 gate — *no source file over 1,500
-//! lines* — refused it. The gate's own text says what to do about that: *"split
-//! the module along its seams — one subject per file — rather than raising the
-//! limit"*. This is the seam, and it was a seam before the gate said so.
 //!
 //! Everything else in `present` is about **drawing and handling** what the
 //! frame already has. This is the one block that decides what to **ask the
@@ -62,10 +57,6 @@
 //!
 //! # ★★★ The operator's switch, and why BOTH gates are in this file
 //!
-//! `View ▸ Off-Page Content` ([`crate::app::actions::ViewChrome::OffPage`],
-//! 2026-09-11) decides whether any of this happens at all. Off-page support
-//! is two separable things and the switch must take both, or it takes
-//! neither convincingly:
 //!
 //! 1. **See and reach** — [`decide`] substitutes `None` for the content
 //!    bounds, which puts every page back on the whole/region tiers and makes
@@ -81,12 +72,6 @@
 //! the two states. **A layout cost with no visible cause is worse than the
 //! feature it pays for.**
 //!
-//! ⚠ What is deliberately NOT gated is [`crate::canvas::pasteboard`]. The
-//! base pasteboard — one viewport of free scroll around the sheet — is O23's
-//! FIRST half, asked for separately on 2026-08-21 and never withdrawn. Only
-//! the overhang TERM is the off-page feature; zeroing it restores the layout
-//! to exactly what it was before this feature existed, which is the whole of
-//! the requirement.
 
 use crate::app::state::OpenDoc;
 use crate::viewer;
@@ -124,7 +109,6 @@ pub(super) fn decide(
     // ★★★ O24's REGION TIER, decided here because only the canvas knows
     // where the operator is looking.
     //
-    // The operator, 2026-08-22, at 2382 % on a US Letter page:
     //
     // > *"I got a requested raster size 14580x18868 is empty or exceeds
     // > MAX_PIXMAP_EDGE"*
@@ -165,20 +149,6 @@ pub(super) fn decide(
         } else {
             None
         };
-        // ★ The THIRD argument, added 2026-08-26: whether this page is
-        // blended in ink, and at what ceiling. It ends the whole-page tier
-        // at the colour ceiling as well as the pixmap one — but only for a
-        // page that has been observed asking for ink, which on a CAD sheet
-        // is never. `render::strategy::Ink` carries the whole argument,
-        // including the 263 % measurement that made the unconditional
-        // version unacceptable.
-        // ★ ASKED, not waited for. Until 2026-09-11 the only way to know was
-        // to render the page and read the counters, so an ink page's FIRST
-        // raster was always chosen on the assumption it was additive —
-        // harmless on a document opened at a fit zoom, and not harmless on one
-        // reopened at a remembered deep zoom, where that first raster is the
-        // one the answer was needed for. `OpenDoc::learn_ink` asks once per
-        // page and remembers both answers.
         doc.learn_ink(current);
         if crate::render::strategy::for_page(extent, raster_scale, doc.ink_at(current))
             == crate::render::strategy::Strategy::Region
@@ -199,12 +169,6 @@ pub(super) fn decide(
                 let anchor = doc
                     .deep_anchor
                     .unwrap_or_else(viewer::deep::DeepAnchor::origin);
-                // ★★★ HANDED ON IN `f64` — O24i. This used to cast to
-                // `f32` here, and that one line is what stopped detail
-                // improving past about 10⁷ %: the rect is a few times
-                // 10⁻⁸ pt wide at an absolute position near 540, and no
-                // `f32` holds both magnitudes. See
-                // `render::strategy::region_for`.
                 Some(anchor.visible_rect((avail.x, avail.y), f64::from(doc.view.zoom)))
             } else {
                 // ★★★ `halo::reach(place, ..)` and NOT `place`. Above the
@@ -287,8 +251,6 @@ pub(super) fn decide(
 ///
 /// # Why this lives here and not at its call site
 ///
-/// It moved out of `canvas::present` on 2026-09-11, with the toggle. Two
-/// reasons, and the second is the load-bearing one:
 ///
 /// * `present.rs` had eight lines of R2 headroom and this is thirteen.
 /// * **This is the same decision `decide` makes**, expressed against the

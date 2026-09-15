@@ -49,12 +49,6 @@ pub const fn intro() -> &'static str {
 
 /// Why the ratio path is what a cold-opened dialog offers.
 ///
-/// ★ **This string used to say the other path could not be armed at all**, and
-/// it was accurate until 2026-08-17: *"needs a reference line drawn on the
-/// page, which this build cannot arm yet."* That was exactly the gap the
-/// operator reported — *"still missing the feature where we set the scale by
-/// selecting two lines or points and defining what that distance
-/// represents"* — and the gesture exists now.
 ///
 /// Kept as a sentence rather than deleted, because a cold dialog really does
 /// have only one path that can produce a scale: no line is drawn yet. What
@@ -170,15 +164,6 @@ pub const fn fraction_label() -> &'static str {
 /// of the engine's public enums, so a variant added there is a compile error
 /// here rather than a silently unnamed row in a picker.
 ///
-/// ★★★ **That is not a claim about the shape of the enum any more — it is a
-/// measurement.** On 2026-09-13 the engine shipped `Kilometer`, `Yard` and
-/// `Mile` (reply `G013`) and this match **failed to compile** until all three
-/// were named, which is exactly the outcome the paragraph above predicted. The
-/// order of the arms follows `Unit::all()`'s order rather than declaration
-/// order in the engine, because this list's consumers are dropdowns and the
-/// dropdown order is the one an operator reads. That is the outcome
-/// worth having: a unit with no name would render as an empty combo entry, and
-/// an operator would select it without knowing what they had chosen.
 ///
 /// Contrast `crate::text::settings::theme_preset_label`, which *does* carry a
 /// catch-all, because `egui_shell::theme::Preset` IS `#[non_exhaustive]` — the
@@ -306,11 +291,6 @@ pub const fn cancel_tooltip() -> &'static str {
 // Calibrating by picking two points on the drawing
 // ===========================================================================
 //
-// ★ The operator asked for this by name on 2026-08-17: "set the scale by
-// selecting two lines or points and defining what that distance represents."
-// It is the workflow every drafting tool calls calibration, and it is the one
-// a drafter reaches for, because it needs no arithmetic from them: point at
-// something the drawing already dimensions, type what it says, done.
 
 /// The button that starts the two-point pick.
 ///
@@ -418,15 +398,6 @@ mod tests {
     /// A picker with two identically-labelled rows is a picker whose choice is
     /// a coin toss.
     ///
-    /// ★★★ **This list was written out by hand until 2026-09-13, and that made
-    /// the completeness test structurally incapable of finding the gap it
-    /// exists to find.** It named six units. When the engine shipped
-    /// `Kilometer`, `Yard` and `Mile` (reply `G013`) this test would have gone
-    /// on passing while all three were unlabelled, because the only thing it
-    /// ever measured was the six it already knew about. It was saved by the
-    /// match in `unit_name` being exhaustive — the compiler refused the build
-    /// until the arms existed — which means the guard that actually worked was
-    /// somewhere else entirely, and this one was decoration.
     ///
     /// ⇒ **A completeness test that carries its own copy of the set is
     /// testing the copy.** It reads `Unit::all()` now, which is the same list

@@ -6,7 +6,6 @@
 //! agree with both, and three things that must agree are three things that
 //! drift when they live in three files.
 //!
-//! ## ★ The report this answers — O180, 2026-09-12
 //!
 //! Ken: *"trailing spaces/tabs/etc stops a search from finding text on the page
 //! that doesn't have these symbols … copy pasting from excel seems to give a

@@ -69,15 +69,6 @@ const KEY: &str = "canvas.stampfit"; // ui-text-exempt: context-data key, never 
 
 /// The fit policies this shell offers, **in the order a control lists them**.
 ///
-/// ★★★ **All three, and the middle two are the point of this pass.**
-/// `canvas::textannot::StampSize`'s header used to argue at length that
-/// `ShrinkToBox` and `ClipToBox` could not be offered, because the size the
-/// engine actually drew at was not reported and offering them would mean
-/// either staying silent about an inference or re-deriving the engine's rule
-/// here. That argument was correct, was filed rather than worked around, and
-/// **`Pass 291.0` answered it**: `StampLabelFit` reports the drawn size, the
-/// requested size, the hidden-character count and the grown width, and
-/// `is_inference()` says which of the four outcomes owes a sentence at all.
 ///
 /// ⇒ The order is *least surprising first*. `GrowToText` changes the geometry
 /// and shows it; `ShrinkToBox` changes the number the operator typed;

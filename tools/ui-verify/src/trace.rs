@@ -140,12 +140,6 @@ impl TraceLine {
     ///
     /// # ★ Why a list accessor exists at all
     ///
-    /// Added 2026-09-10 for the canvas line's `crop=llx,lly,urx,ury`. The
-    /// alternative — four fields `cropx0=`, `cropy0=`, … — was rejected because
-    /// the four numbers are one measurement and a partial read of them is worse
-    /// than no read: three-quarters of a crop box, silently defaulted, is
-    /// exactly the class of defect the crop box was traced to eliminate.
-    /// Returns `None` unless **every** element parses, for the same reason.
     #[must_use]
     pub fn get_f64_list(&self, key: &str) -> Option<Vec<f64>> {
         let v = unwrap_debug_option(self.get(key)?)?;
@@ -256,11 +250,6 @@ impl Trace {
     /// it sees **a number that never changes** and reports the feature behind
     /// it as inert.
     ///
-    /// That is not hypothetical, and it is the third recurrence of one shape in
-    /// this crate. [`crate::checks::driving::declared_since`] carries the first
-    /// two (a drop caret gone by the time it was read; a deleted row still
-    /// counted). The third, on 2026-09-05, cost a full sweep two false defect
-    /// reports:
     ///
     /// > `save_copy_round_trip` and `undo_redo_round_trip` both read
     /// > `comments-panel … listed=` with `last`, and both reported *"THE
@@ -303,12 +292,6 @@ impl Trace {
 
     /// Did the application emit anything at all under the prefix?
     ///
-    /// The distinction this answers is the one that cost pdfcer's investigation
-    /// a round trip on 2026-08-04: an empty trace means either "the process
-    /// never saw the diagnostic environment variable" or "the process saw
-    /// nothing worth reporting", and those need different fixes. The
-    /// application emits an unconditional `start` line so the two can be told
-    /// apart; [`Trace::started`] is the question that uses it.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.lines.is_empty()

@@ -2,11 +2,6 @@
 //!
 //! # What this file asserts, and why it drives a process to do it
 //!
-//! `src/main.rs` calls `refuse_if_self_is_stale` before every path that
-//! matters, and as of 2026-09-14 `--list` is one of them. That ordering is one
-//! line of dispatch, it has no type attached to it, and moving it back above
-//! the guard would compile, pass clippy, and break nothing any other test in
-//! this workspace looks at. So it is asserted here, by **running the binary**.
 //!
 //! ## Why not a source scan
 //!

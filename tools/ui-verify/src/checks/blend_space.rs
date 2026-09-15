@@ -1,7 +1,6 @@
 //! `blend_space` — **a page blended in ink keeps its ink at every zoom, and
 //! says so on the rare occasion it cannot.**
 //!
-//! The driven assertion for the operator's report of 2026-08-26:
 //!
 //! > *"seems I get different results depending on Zoom level. The [shading]
 //! > boxes … on zoom out the colors between our rendering and the
@@ -34,7 +33,6 @@
 //! Only a full box average is stable for flat patches, gradients and text
 //! alike.
 //!
-//! # ★★★ WHAT THIS CHECK NOW ASSERTS FIRST, AND WHY IT CHANGED — 2026-08-26
 //!
 //! Everything above is still true of `pdfcer-render`. What changed is the
 //! **shell**, and it changed in the direction that makes the operator's report
@@ -53,9 +51,6 @@
 //! raster-blend-space cmyk_buffer=true refused=0 wrong_space=0 scale=8.013
 //! ```
 //!
-//! At 801 % zoom, where this same build previously reported `refused=1` and
-//! showed the disclosure, **the page still composites in ink**. The colours no
-//! longer depend on the zoom at all.
 //!
 //! ★ So the primary assertion is now the **stronger** one — *the ink survives*
 //! — and the disclosure assertion has become a fallback for the cases where it
@@ -65,13 +60,6 @@
 //! the 256 MiB default), or a page opened directly at a high zoom before the
 //! shell has observed that it is blended in ink.
 //!
-//! ★★ **The three outcomes are told apart by the trace, and the difference
-//! matters.** Before this, a page with no transparency and a page whose ink
-//! survived were indistinguishable to this check — both reach the ceiling zoom
-//! with no disclosure — and it reported FAIL for both. It did exactly that on
-//! `SW41177.pdf` during the full run of 2026-08-26, with a report reading *"the
-//! page's colours have changed and nothing on screen says so"* about a line-work
-//! drawing that has no transparency anywhere on it.
 //!
 //! | `cmyk_buffer` seen true? | `refused` seen? | verdict |
 //! |---|---|---|
@@ -380,15 +368,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // there is correctly nothing to disclose and the application is right to
     // say nothing.
     //
-    // ★ This is not hypothetical. On 2026-08-26 the full suite was run against
-    // `SW41177.pdf` — a SOLIDWORKS drawing set, which is the operator's own
-    // document and the harness's usual `--pdf` — and this check reported FAIL
-    // with a report that read as *"the page's colours have changed and nothing
-    // on screen says so"*. Every `raster-blend-space` line in that run said
-    // `cmyk_buffer=false refused=0 wrong_space=0`, at every scale up to 3.26.
-    // Nothing had changed and nothing was owed. Re-run against
-    // the industry print-conformance suite's composite page, the file this check was written
-    // for, it passed with the disclosure appearing exactly at the crossing.
     //
     // **A CAD drawing is line work.** The fixture the operator's suite runs on
     // is the one least likely to use transparency, so left unguarded this check

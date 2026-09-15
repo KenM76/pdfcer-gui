@@ -27,11 +27,6 @@
 //!
 //! ## ★★ …and the SECOND claimant, which egui cannot see at all
 //!
-//! [`a_canvas_draft_keeps_its_arrow_keys`] stores a real
-//! [`crate::canvas::textedit::Draft`] and asserts `text_edit_focused()` is
-//! **false** while `composing()` is **true** — the exact gap that cost the
-//! operator the space bar on 2026-08-20, when a guard asked egui alone. An
-//! arrow key is where that gap costs most: it is how a caret is moved.
 
 // ★★ The INNER attribute, not just the `mod tests;` in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a test file **from the file**

@@ -3,9 +3,6 @@
 //!
 //! ## The defect
 //!
-//! Found **2026-08-19**, while auditing this build against `pdfcer`'s
-//! capability register. `file.close`'s shipped tooltip — an operator-visible
-//! string, on the ribbon, in every mode — reads:
 //!
 //! > *"Close the document. **You are asked what to do about unsaved edits
 //! > first.**"*
@@ -121,11 +118,6 @@ pub const REGION_CANCEL: &str = "unsaved.cancel"; // ui-text-exempt: trace regio
 ///
 /// # ★ Four variants because four `Action`s replace the open document
 ///
-/// Not "close", which is how this would have been built if it had been written
-/// from the tooltip that exposed the defect. `crate::app::lifecycle`'s
-/// `save_pending` doc already names the set — *"an Open, a New or a Close must
-/// not proceed while a save is pending"* — and `Action::NewSized` joined it on
-/// 2026-08-14 **by reusing that predicate rather than growing a second rule**.
 ///
 /// This type is that same set, and building it as a set rather than as a
 /// `bool` on the close path is the whole reason Open cannot quietly keep the
@@ -142,8 +134,6 @@ pub enum PendingIntent {
     /// `Action::Close`, and `Action::CloseDocument` once it has brought the
     /// tab it is closing to the front.
     ///
-    /// ★ **The only variant anything constructs, since 2026-08-20.** The three
-    /// below are unreachable — see the note under this enum.
     Close,
     /// `Action::Open(path)`.
     ///
@@ -187,13 +177,6 @@ pub enum PendingIntent {
 // ★★ THREE OF THE FOUR VARIANTS ARE CURRENTLY UNCONSTRUCTED, AND THAT IS
 //    RECORDED RATHER THAN DELETED.
 //
-// Until 2026-08-20, Open, New and NewSized each REPLACED the open document, so
-// each asked this question first. Since the document tab strip landed they
-// park what is open and add a tab: nothing is discarded, so there is nothing
-// to ask about — and asking anyway would put a sentence in front of the
-// operator that is **false**, which is how a confirmation gets dismissed
-// unread. `crate::app::actions::document`'s header carries the full argument
-// and the table of which arms still guard.
 //
 // They are kept, with their sentences, for one specific reason that is a real
 // gap rather than a hedge: **pdfcer still asks nothing when the window is
@@ -379,22 +362,7 @@ impl UnsavedDialog {
 
     /// **Whether an answer is parked here and has not been drained.**
     ///
-    /// ★★★ The twin of `signature::SignatureDialog::answered`, and it is here
-    /// because this window carries the **same latent defect** its neighbour
-    /// shipped: [`Self::show`] answers `false` on the very frame a button is
-    /// pressed, and its owner used to read that `false` as *"this dialog is
-    /// finished"* and drop the dialog — with the outcome still inside it —
-    /// before `PdfcerApp::resume_after_unsaved` could take it out.
     ///
-    /// ★ It was **not** found by driving, because nothing in the harness clicks
-    /// this window: the sweep of 2026-08-29 that caught the signature warning
-    /// has no check that presses *Close without saving*. It is fixed here
-    /// anyway, in the same change, because the two windows share one retirement
-    /// branch two lines apart in `crate::dialogs::DialogsState::show` — and
-    /// fixing one of a matched pair leaves the survivor looking deliberate.
-    /// Its symptom would be worse than the signature window's: a *Close without
-    /// saving* that closes the question and does not close the document, which
-    /// reads as the whole application ignoring the operator.
     ///
     /// See [`crate::dialogs::retire`] for the rule both now obey.
     #[must_use]
@@ -404,12 +372,6 @@ impl UnsavedDialog {
 
     /// Draw it. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
-        // ★ ITS OWN OS WINDOW as of 2026-08-21 — and this is the dialog that
-        // most needs a **taskbar entry**, which is the half of `dialogs::host`
-        // easy to overlook. It appears in answer to a close, so an operator who
-        // has already looked away is the normal case; a modal question hidden
-        // behind the application window with no entry anywhere is the classic
-        // "the program has frozen" report.
         //
         // ★ Still no `ScrollArea`, and the note that said so stands: this is
         // the one dialog whose content is bounded by construction — three
@@ -551,16 +513,7 @@ pub fn ask_for(status: &Status, intent: PendingIntent) -> Option<UnsavedDialog> 
     let Status::Open(doc) = status else {
         return None;
     };
-    // ★★★ **`save::has_unsaved_edits`, since 2026-08-31 — `OPERATOR_REQUESTS.md`
-    // O65.**
     //
-    // This line used to read `if doc.edit_epoch == 0`, which asks *"has
-    // anything EVER been edited"* and is therefore permanently true after the
-    // first edit. A document the operator had just saved was still asked
-    // about, the prompt's only save button is "Save a copy…" — a picker — and
-    // succeeding at that picker proceeds with the pending intent. So pressing
-    // Save and then Close produced: a filename prompt, and then the document
-    // closing. That is his report, and Save never closed anything.
     //
     // The old comment's argument was sound and is kept: two independent
     // notions of "edited" would eventually disagree. The correction is that
@@ -656,13 +609,6 @@ mod tests {
     /// ★★★ **A parked answer is visible to the owner until it is drained, and
     /// not after.**
     ///
-    /// [`crate::dialogs::retire`]'s second input, and the twin of the assertion
-    /// `signature::tests::an_answer_is_visible_until_it_is_taken_and_not_after`
-    /// makes. Pressing a button here sets `outcome`, which makes [`Self::show`]
-    /// answer `false` — and until 2026-08-29 the owner read that `false` as
-    /// permission to drop this dialog **with the outcome still inside it**,
-    /// which would have meant a *Close without saving* that closed the question
-    /// and left the document open.
     ///
     /// It is asserted against `take_outcome` rather than alone, because the
     /// property that matters is that the pair agrees about what "parked" means:

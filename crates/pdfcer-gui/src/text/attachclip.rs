@@ -65,11 +65,6 @@ pub fn cut_button() -> String {
 
 /// What Cut does, and the half of it that is not obvious.
 ///
-/// It says the bytes stay recoverable, because `EditSession::detach_file` is
-/// not a redaction verb: the attachment's bytes remain in the earlier revision
-/// until the document is written out fresh, and a shell that lets *delete*
-/// imply *erasure* has misdescribed it. A Cut reads even more like erasure
-/// than a Remove does, so if the sentence belongs anywhere it belongs here.
 #[must_use]
 pub fn cut_tooltip() -> String {
     "Takes this file out of the document and onto the clipboard. The bytes stay recoverable \

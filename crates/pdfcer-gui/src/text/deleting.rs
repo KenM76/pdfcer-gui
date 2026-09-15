@@ -22,17 +22,6 @@
 //! screen, round the thing they want gone, and the key does nothing. From where
 //! they sit, Delete is broken.
 //!
-//! ★★★ **The fourth joined them on 2026-09-05, and the reason it was silent is
-//! worth keeping.** `NoObjectModel` was classified as obvious because for the
-//! whole life of the deeper rungs it was only ever reachable through a frame
-//! that had **forgotten to ask** for the decomposition — so it was not a state
-//! the operator had put themselves in, it was a bug wearing a refusal's name,
-//! and no sentence is right for a bug. `canvas::modelneed` now asks on the
-//! frame the key arrives, so reaching this means the document really is
-//! unreadable at that depth, and that is a limit the operator is owed in words.
-//! ⇒ **A refusal classified as "obvious" while it was unreachable-except-by-bug
-//! has to be re-classified when the bug is fixed**, or the fix ships a new
-//! silence.
 //!
 //! ## The rule every sentence follows
 //!
@@ -62,12 +51,6 @@ use crate::canvas::deleting::Refusal;
 /// The sentence for a refusal to delete, or `None` when the state is one the
 /// operator can already see.
 ///
-/// One function over the whole enum rather than one per variant, so a variant
-/// added to [`Refusal`] is a **compile error here** instead of a Delete that
-/// refuses silently — which is precisely what the three deeper rungs did for
-/// the whole life of this shell until 2026-09-05. `text::resizing::refusal`
-/// makes the same choice for the same reason and its header records the same
-/// history.
 ///
 /// `Option` rather than an empty string, because *"there is deliberately
 /// nothing to say"* and *"the sentence is missing"* must not be the same value.

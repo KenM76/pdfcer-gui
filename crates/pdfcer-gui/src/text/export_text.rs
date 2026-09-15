@@ -1,7 +1,6 @@
 //! # `text::export_text` — every word the Export-text window shows, and every
 //! sentence a text export owes afterwards
 //!
-//! The operator, 2026-09-04, verbatim:
 //!
 //! > *"also the engine can export PDFs as text. we should have export/import
 //! > for that."*
@@ -26,10 +25,6 @@
 //!
 //! ## ★★ What "the text of this document" means, and why it is not decided here
 //!
-//! `file.copy_document_text` has been putting a string on the clipboard since
-//! 2026-08-20, and that string is
-//! `text_extract::extract_document_view(…).plain_text()`. This export writes
-//! **the same string**, byte for byte, at its default settings.
 //!
 //! That is not laziness, it is the whole point. Two answers to *"what is the
 //! text of this document"* inside one program is worse than either answer on
@@ -247,11 +242,6 @@ pub const fn loses_heading() -> &'static str {
 
 /// ★ Layout. The loss an operator is most likely to be surprised by.
 ///
-/// A table is the worked example on purpose: it is the shape whose loss is
-/// **invisible in the output**. A table exported as text is a perfectly
-/// plausible list of lines, and nothing about it says that the columns used to
-/// line up — which is exactly the shape of failure this project's rule 4
-/// exists to refuse.
 #[must_use]
 pub const fn loses_layout() -> &'static str {
     "A table becomes a run of lines, and side-by-side columns can come out \
@@ -495,10 +485,6 @@ pub fn pages_unreadable(count: usize) -> String {
 /// nothing. An operator reading a short export and no explanation concludes
 /// the file is a scan.
 ///
-/// ★ Engine `Pass 290.0` (2026-09-10) is what made the page extractable at
-/// all — before it, one blank spacer page with no `/Resources` refused the
-/// whole document. This sentence is the disclosure half of that widening: the
-/// text comes out, and pdfcer says which pages it had to assume something for.
 #[must_use]
 pub fn pages_resources_defaulted(count: usize) -> String {
     format!(

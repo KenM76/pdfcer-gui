@@ -8,26 +8,11 @@
 //!
 //! # The report, and why it was not a feature request
 //!
-//! **Ken, 2026-09-15:** he selected one line of a title block on a SolidWorks
-//! export, dragged it, and nothing happened. Not an error, not a refusal, not
-//! a greyed control — the outline did not move and the status bar said
-//! nothing.
 //!
 //! # ★★★ THIS CHECK WAS INVERTED ON THE DAY IT SHIPPED, AND THAT IS THE
 //! # LESSON IT NOW CARRIES
 //!
-//! Its first version asserted that the drag is **refused**, because on
-//! 2026-09-15 that was the whole truth: `pdfcer-core` had `move_subpath`,
-//! `move_node` and `move_objects`, and no verb that moved one show operator.
-//! The shell's part of the defect was the *silence after* the refusal, so the
-//! check drove a drag, asserted `reason=no-verb-for-text-run`, asserted the
-//! sentence `text-run-cannot-move-alone`, and went green.
 //!
-//! **The engine shipped `move_text_run` the next day** (`G017`, 2026-09-14,
-//! against a request this project filed on the 13th), and every one of those
-//! assertions became a name for something that does not exist — while the
-//! check's own header still explained, at length and persuasively, why a build
-//! that MOVED the line was not what it wanted.
 //!
 //! ⇒ **A driven check that pins a capability's absence has a shelf life
 //! measured in days.** Nothing in this repository changed; a dependency did,
@@ -164,12 +149,6 @@
 //! `fixtures/inherited-runs.PROVENANCE.md` carries the measured spans the aims
 //! in [`AIMS`] were computed from.
 //!
-//! ★★★ **Pinned in code and not read from `--pdf`**, because the 2026-09-12
-//! sweep hands every chunked check one shared A1 sheet and one shared aim.
-//! `deeper_rung_delete` carried a correct fixture table in *prose* for a week
-//! and all three of its rungs still ran against a document their own header
-//! said they could not use. Knowledge a check cannot run without belongs in
-//! the check.
 //!
 //! ⚠ A missing fixture is a **FAIL**, not a SKIP: it is committed to this
 //! repository, so its absence is a broken checkout rather than an unavailable
@@ -315,11 +294,6 @@ struct Aim {
 
 /// What a drag on one of [`AIMS`] must produce.
 ///
-/// ★★★ **Both arms exist because a check with only the refusing ones cannot
-/// fail on the dangerous build.** Before 2026-09-14 the program refused EVERY
-/// line move; a table of two refusals would pass against that build for ever
-/// while the feature the operator asked for was absent. [`Expect::Moves`] is
-/// the control that makes the other two rows mean something.
 enum Expect {
     /// The move rules must refuse, with this `reason=` on `canvas-move-declined`
     /// and this `what=` on `canvas-decline-recorded`, and the status bar must
@@ -395,8 +369,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here. See the
-    // module header for what a prose fixture table cost on 2026-09-12.
     let pdf = crate::fixture::workspace_root()
         .join("fixtures")
         .join(FIXTURE);
@@ -532,7 +504,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// ladder, which is what this row needs: every row starts from no selection and
 /// descends to the Part rung by its own click, so no row inherits a rung.
 ///
-/// # ★★★ WHAT ESCAPE DOES *NOT* DO, MEASURED ON 2026-09-15
 ///
 /// This function's first shape treated an empty status-bar slot as a
 /// **precondition** and skipped the row when the slot was still on screen,

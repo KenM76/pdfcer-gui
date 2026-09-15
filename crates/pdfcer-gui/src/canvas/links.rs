@@ -1,7 +1,6 @@
 //! # `canvas::links` — **following a `/Link`, which this program could not do
 //! at all until now**
 //!
-//! Operator report, 2026-09-01: *"does a clickable table of contents work?"*
 //!
 //! It did not, and the honest description of the state was worse than "there is
 //! a bug". **There was no link-following code path in the shell whatsoever.**
@@ -9,7 +8,6 @@
 //! drawing package whose entire navigation is a hyperlinked contents sheet
 //! behaved like a stack of loose pages.
 //!
-//! ## ★★★ Why it was not a shell fix until 2026-09-01
 //!
 //! A link's destination **could not be read**. `pdfcer_core::annot::Annotation`
 //! carries `action_type` — the `/S` name, so the string `GoTo` — by an explicit
@@ -220,10 +218,6 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
                 t::remote(&remote_label(file, target)),
             );
         }
-        // `/URI`, `/Launch`, `/JavaScript`, `/SubmitForm`, … Recognised and
-        // disclosed, never executed.
-        // ★★ `file` arrived 2026-09-06, and it is the reason this arm is no
-        // longer the end of the sentence for a `/Launch`.
         //
         // The engine already resolved a file specification for `/GoToR` and
         // **threw it away for `/Launch`** — the same key, the same question,

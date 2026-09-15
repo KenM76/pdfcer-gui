@@ -15,10 +15,6 @@
 //! * Ctrl+wheel does not zoom back out,
 //! * and there is nothing to click, because there is no page widget to click on.
 //!
-//! ★★★ **It is terminal.** Measured 2026-09-12: the only ways out are a keyboard
-//! route that does not go through the canvas, or closing and reopening the file.
-//! A canvas that has stopped responding to the mouse is not a rendering defect
-//! the operator can describe — it is *"the program froze"*.
 //!
 //! `geometry::visible_origin_range` and `deep::confine` stop the
 //! view being carried off in the first place, and **this module is still

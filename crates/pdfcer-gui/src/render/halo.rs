@@ -2,7 +2,6 @@
 //!
 //! ## The report, and which half of it this is
 //!
-//! `OPERATOR_REQUESTS.md` **O23**, second clause, 2026-08-21:
 //!
 //! > *"also objects should still be reachable even if they are off the page."*
 //!
@@ -297,8 +296,6 @@ pub fn reach(
 ///
 /// # ★★★ What it is for, stated as the defect it removes
 ///
-/// Measured 2026-09-11, on the trace of
-/// `zooming_does_not_throw_away_where_the_operator_panned`:
 ///
 /// `content_extent` puts **one viewport of slack** on every side of the strip,
 /// and a viewport is a count of **screen pixels**. So the pasteboard is a fixed

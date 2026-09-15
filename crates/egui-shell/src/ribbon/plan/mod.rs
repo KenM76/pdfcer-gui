@@ -984,9 +984,6 @@ mod tests {
     /// **★ A group over the cap is split into two rows, evenly, and is
     /// narrower for it.**
     ///
-    /// The measurable claim of the whole change: a wrapped group *costs the
-    /// band less*, which is what lets a fifth group fit where three used to
-    /// be pushed into the overflow menu.
     ///
     /// The evenness is asserted as a bound rather than as an exact split,
     /// because the optimum depends on the item widths — seven items of 75

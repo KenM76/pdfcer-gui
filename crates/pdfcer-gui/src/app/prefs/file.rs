@@ -1,8 +1,5 @@
 //! # `app::prefs::file` — the on-disk format
 //!
-//! The parser and the writer, and nothing else. Split out of `prefs/mod.rs`
-//! under **R2** on 2026-09-09, when the *Zoom* control's `find_zoom_on_jump`
-//! key took that file to 1,502 lines — two over the ceiling.
 //!
 //! ## Why these two and not some other seam
 //!
@@ -303,10 +300,6 @@ impl Prefs {
                         line,
                     }),
                 },
-                // O163, 2026-09-09. Its own arm for the same reason
-                // `smart_select` has one: it is not a member of any of the
-                // key families below, and a reader meeting it inside a shared
-                // pattern would go looking for a family it does not have.
                 "find_zoom_on_jump" => match opening::bool_from_key(value) {
                     Some(on) => prefs.find_zoom_on_jump = on,
                     None => notes.push(PrefNote::BadValue {
@@ -340,11 +333,6 @@ impl Prefs {
                         line,
                     }),
                 },
-                // ★ The pages panel's two, O187, 2026-09-12. One arm each,
-                // for the reason the comment below gives about the auto-hide
-                // pair: they are one row on screen but two independent
-                // decisions, and a reader meeting one inside a joint arm
-                // would reasonably expect the other to move with it.
                 "page_previews" => match opening::bool_from_key(value) {
                     Some(on) => prefs.page_previews = on,
                     None => notes.push(PrefNote::BadValue {
@@ -370,10 +358,6 @@ impl Prefs {
                         line,
                     }),
                 },
-                // The two auto-hide settings, 2026-09-05. One arm each rather
-                // than a shared pattern: they are two independent surfaces and
-                // a reader meeting one inside a joint arm would reasonably
-                // expect the other to move with it.
                 "ribbon_auto_hide" => match opening::bool_from_key(value) {
                     Some(on) => prefs.ribbon_auto_hide = on,
                     None => notes.push(PrefNote::BadValue {
@@ -425,22 +409,7 @@ impl Prefs {
                 // and a bad print value is reported against its own key rather
                 // than as a spelling mistake.
                 //
-                // ★ A SECOND delegated family joined it on 2026-09-11:
-                // `off_page.<mode>`, whose key is a PREFIX and so cannot be a
-                // literal arm above at all. The two are chained rather than
-                // nested — `offpage` first, falling through to `printing` on
-                // `NotMine` — because both speak the same `KeyOutcome` and the
-                // single `match` below stays the one place a note is made. A
-                // second `match` per family is how one of them comes to report
-                // a bad value as an unknown key.
                 //
-                // ★ A THIRD joined them on 2026-09-13: the twelve
-                // `export_*` keys -- O196, the same complaint O166 made about
-                // the Print window, made about the three Export windows. Same
-                // arrangement for the same reason, and the chain is still flat:
-                // `offpage`, then `printing`, then `exporting`, each falling
-                // through on `NotMine`, all three reported by the one `match`
-                // below.
                 //
                 // ⚠ The chain is ORDER-INSENSITIVE and must stay that way. No
                 // two families claim a key, so which one is asked first cannot

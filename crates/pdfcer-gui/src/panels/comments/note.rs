@@ -1,14 +1,6 @@
 //! # `panels::comments::note` — the note being typed, and the stamp that keeps
 //! it honest
 //!
-//! One annotation's `/Contents` while the operator is editing it, and nothing
-//! else. Split out of [`super`] rather than added to it because this is the
-//! first piece of **inter-frame operator state** the Comments panel has ever
-//! had, and that module's own header says in as many words that it had none:
-//! *"it is a pure function of the document. Nothing in it is expanded, picked,
-//! drafted or remembered."* That sentence is now false and is corrected there;
-//! this file is what made it false, and it is worth its own file so the
-//! argument for the correction is in one place.
 //!
 //! ## ★★★ Why a draft at all, rather than writing on every keystroke
 //!
@@ -45,7 +37,6 @@
 //! shape that no longer has that text — and the moment to stop lying is the
 //! moment it goes stale, not the moment somebody presses a button.
 //!
-//! ## ★★★ One draft, two destinations — added 2026-09-06
 //!
 //! `EditSession::add_reply` (`Pass 253.0`) closed *"we can read a comment
 //! thread and cannot add to it"*, and the affordance it needed was **this
@@ -266,12 +257,6 @@ pub struct CommentsUi {
     ///
     /// # Why an instrument and not an assertion on a pure function
     ///
-    /// On 2026-09-05 the Delete control and the note editor were both drawn,
-    /// live and effective, in **Read** — the mode whose whole stated posture is
-    /// *the document is not yours to alter*. Forty-six tests over this panel
-    /// passed, the twenty-nine gates were green and the ribbon comparison
-    /// exited 0. It was found by launching the release binary off screen and
-    /// reading its trace.
     ///
     /// The lesson this project already had, applied one rung up: **a unit test
     /// that calls the verb cannot see the chain in front of it.** A test of a

@@ -1,7 +1,6 @@
 //! # `ocr::progress` — **what the recogniser is doing, and the two ways to end
 //! it early**
 //!
-//! Operator request, 2026-09-01:
 //!
 //! > *"can you make it so the recognizing ocr gives feedback on what it is
 //! > doing when it is running (pages done, words/characters detected, etc) so

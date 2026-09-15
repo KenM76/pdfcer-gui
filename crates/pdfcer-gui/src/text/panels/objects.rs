@@ -454,15 +454,7 @@ fn without_subset_tag(name: &str) -> &str {
 /// because a type size is conventionally a whole number and the trailing
 /// zeros would read as a precision this value does not claim.
 ///
-/// ★ Moved here on 2026-09-13. It sat above `without_subset_tag`,
-/// run together with that item's doc comment — so it documented
-/// `without_subset_tag` and this item had none.
 ///
-/// ★ It went unseen for as long as it did because the title that
-/// absorbed it opens with a decoration run, and until 2026-09-13
-/// `tools/gates/check-orphan-docs.py` could only express an
-/// undecorated title — 42% of this crate's titles were outside its
-/// scope while it reported clean. See that gate's `DECOR`.
 #[must_use]
 pub fn font_label(font: &pdfcer_core::vector::TextFont) -> String {
     let name = without_subset_tag(
@@ -833,11 +825,6 @@ turned back into letters. Rather than show a row of question marks, pdfcer says 
         ObjectNote::TextPartlyUndecodable => {
             // ★ The replacement character is **named, not shown**.
             //
-            // This sentence used to contain a literal `\u{fffd}`, and the
-            // bundled font stack cannot draw it — so a sentence explaining
-            // that some characters are unreadable rendered its own example as
-            // an unreadable box. Found by the widened glyph gate; see
-            // `DEFECTS.md` D12.
             //
             // Naming it is better than substituting a drawable stand-in
             // anyway: the operator is being told what they will see *in the

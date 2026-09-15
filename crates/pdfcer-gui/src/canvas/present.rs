@@ -7,12 +7,6 @@
 //!
 //! ## Why this is its own file
 //!
-//! R2, and it is the second time of asking. `canvas/mod.rs` reached 1,501 lines
-//! **twice on 2026-08-29** — once when the form-field clipboard added a module
-//! to the index and again when the cut gate added another. Both times the
-//! cheap fix was to shorten the new module's doc comment, and the first time
-//! that is what happened, with a note saying the real seam was `show_in` and
-//! that trimming was kicking the can.
 //!
 //! ⇒ It was. R2's own instruction is *"when a file approaches the limit, that is
 //! the signal to find the seam, not to raise the limit"* — and a module index
@@ -83,11 +77,6 @@ pub const CANVAS_MARGIN: f32 = 16.0;
 
 /// ★★ **The three values the canvas samples once per frame**, bundled.
 ///
-/// They were three separate parameters until 2026-08-21, when adding the
-/// fourth-from-last put [`show`] over clippy's seven-argument ceiling. The
-/// lint was right and the bundle is not a workaround for it: these three
-/// already had a paragraph in [`interact::Frame`] arguing that they belong
-/// together, and it reads as a definition of this type —
 ///
 /// > `tool` is *what* the operator armed, `caps` is *whether* the mode
 /// > permits it, and `pen` is *what it will look like*. All three are
@@ -217,16 +206,6 @@ fn show_in(
     // viewport, and `fit_scale` would fall back to actual size on a window
     // the operator is still resizing — a visible jump at the end of a drag.
     //
-    // ★★★ **MEASURED INSIDE THE SCROLL BARS** — 2026-09-08. The canvas's bars
-    // are solid and take real width (see [`scroll_style`]), so the room the
-    // page actually has is the outer size **minus** `allocated_width()` on
-    // each axis. Every viewport this function reads is derived from this one
-    // number — the fit here, `vp` below, and the `viewport_size` the scroll
-    // area reports back — so the three cannot disagree. They disagreed for one
-    // build: the fit was sized against the outer, the frame was recorded
-    // against the inner, the centre rule placed against the outer, and the
-    // page crept **7 px per frame** — half the bar's 14 pt — until it left the
-    // screen. Measured on the driven `resize_scales_a_shape` run, not reasoned.
     //
     // The style is set HERE, before anything measures, because
     // `allocated_width()` reads it; setting it beside the `ScrollArea` builder
@@ -319,11 +298,6 @@ fn show_in(
     // was not, which is the defect. Falls back to the page rect on the same
     // degenerate case `current_rect` falls back on.
     let row_rect = layout.row_rect_of(current).unwrap_or(current_rect);
-    // The scale every page on screen is rasterized at. Derived once, here, and
-    // used to look each visible page's raster up: deriving it a second time
-    // inside the draw loop is how a page could be *drawn* against one key while
-    // being *requested* against another, which would show as a page that never
-    // stops saying it is not drawn yet.
     let raster_scale =
         viewer::raster_scale(doc.view.zoom, pixels_per_point, doc.prefs.render_quality);
 
@@ -353,11 +327,6 @@ fn show_in(
         scroll_source.mouse_wheel = false;
     }
 
-    // ★★★ **THE SCROLL BARS ARE SOLID AND BESIDE THE PAGE, NEVER OVER IT** —
-    // 2026-09-08, the cause of the `resize_scales_a_shape` red after five
-    // wrong explanations. See [`scroll_style`] for the measurement. The style
-    // itself is applied at the top of this function, where the viewport is
-    // measured, because the measurement depends on it.
     let mut scroll_area = egui::ScrollArea::both()
         .id_salt("page-canvas") // ui-text-exempt: internal widget id, never displayed
         .scroll_source(scroll_source)
@@ -388,9 +357,6 @@ fn show_in(
     // deep-position tier, a pending fit's placement, and the ranked list of
     // six sources that decide the scroll offset.
     //
-    // Split out into [`super::viewpos`] on 2026-09-12 under R2; its header
-    // carries why that is a seam rather than a cut, and why the offset comes
-    // back as a value instead of being applied there.
     let viewpos::Position {
         overhang,
         deep,
@@ -437,16 +403,6 @@ fn show_in(
         // a Response whose `.rect` IS that rect, so every page's screen rect
         // is its true drawn rect by construction rather than by coincidence.
         let avail = ui.available_size();
-        // ★★ O23's pasteboard. Measured against `vp`, the viewport taken
-        // BEFORE the scroll area is built — never `avail`, which is measured
-        // inside it and therefore depends on whether scrollbars are showing,
-        // which the pasteboard is what causes. That feedback is R128.
-        // (Since 2026-09-08 the bars are always visible and `vp` is measured
-        // with their allocation already taken off, so the two agree — but the
-        // rule stands: `vp` is the one measurement, `avail` is egui's echo.)
-        // ★★ TIER 3 takes the content down to the viewport. There is then
-        // nothing for egui to scroll and nothing for it to round: the
-        // position is the anchor's, and the strip is placed from it below.
         let outer = if deep {
             avail
         } else {
@@ -461,16 +417,6 @@ fn show_in(
         // wheel block near the end of `show` for why the current page's own
         // response was the wrong gate.
         //
-        // ★★★ **AND IT SENSES CLICKS — this `Sense` was O23's one-way door.**
-        // It read `Sense::hover()` from the day the pasteboard shipped until
-        // 2026-09-10, and that single word was the whole of why the operator
-        // could not find the off-page feature: there was a viewport of slack
-        // to scroll into on every side, and a press out there was not a
-        // gesture, so an object dragged past the sheet edge became invisible,
-        // unclickable, and still in the file. Everything underneath already
-        // coped — `mapping::PageMapping::to_page` does not clamp, the engine's
-        // decomposer does not cull to the page box, and `hit_test_point_all`
-        // asks only that the query point be finite.
         //
         // ★★ **Widening this does NOT steal clicks from the pages.** This
         // rectangle is allocated BEFORE any page, and egui resolves an overlap
@@ -576,8 +522,6 @@ fn show_in(
 
         // ★★★ **A PAGE IS VISIBLE WHEN ITS CONTENT IS, NOT WHEN ITS SHEET IS.**
         //
-        // `OPERATOR_REQUESTS.md` **O23**, third verb, measured on 2026-09-11 by
-        // `ui-verify`'s `an_object_off_the_page_survives_being_zoomed_in_on`.
         //
         // `Strip::visible` culls on the PAGE's rectangle, and that was the only
         // truth there was until this shell learned to draw outside it. With the
@@ -849,21 +793,6 @@ fn show_in(
         // same `avail` that decided `outer` above, so the margin the solve
         // reconstructs is the margin this frame actually drew.
         //
-        // ★ The strip's own rect used to ride out with it, so that
-        // `remember_frame` could subtract it from the page's to recover the
-        // page's place *within the strip*. O26e replaced that reconstruction
-        // with `geometry::offset_from_drawn`, which measures against the
-        // viewport instead and therefore needs nothing from in here that the
-        // pages do not already carry.
-        // ★★ The whole `Response` now rides out, not just its `hovered()`.
-        // O23's off-page half needs it: it is the OTHER of the two surfaces a
-        // gesture can belong to, and `interact` — which runs after the closure
-        // has closed — has to be able to be handed it. `egui::Response` is a
-        // plain cloneable struct with no borrow of the `Ui`, so carrying it out
-        // costs nothing and borrows nothing. `content_hovered` is still
-        // computed in here, unchanged, because the Ctrl+wheel gate below reads
-        // only that and reading it at two different moments would be a second
-        // way to be wrong.
         (drawn, avail, content_response.hovered(), content_response)
     });
 
@@ -941,11 +870,6 @@ fn show_in(
     // ★★★ THE ACTING PAGE IS THE ONE WHOSE RECT WE ARE ABOUT TO USE —
     // `OPERATOR_REQUESTS.md` O26c.
     //
-    // This used to be `doc.view.page_index`, decided *before* the fallback
-    // above and then never revisited. When the current page was not among the
-    // drawn ones the fallback took `drawn.first()` — a **different page** —
-    // and the next two lines then paired **that page's rect** with **the
-    // current page's extent**.
     //
     // ★★ On a document whose sheets are all the same size that mismatch is
     // invisible. `SW41177.pdf` mixes 1584 × 1224 sheets with 1224 × 792 ones,
@@ -1056,21 +980,7 @@ fn show_in(
     // ★★★ MEASURED FROM THE DRAWN RECT, NOT RECONSTRUCTED FROM THE SCROLL
     // OFFSET — `OPERATOR_REQUESTS.md` O26e.
     //
-    // This used to call `geometry::page_local_offset(scroll_offset, …)`, and
-    // on the shallow tier the two are algebraically the same number — a unit
-    // test asserts exactly that, so this is not a behaviour change below the
-    // threshold. Above it they are not the same at all: the deep branch
-    // **forces the scroll offset to zero** (the content is the viewport there,
-    // so zero is the only valid offset) and holds the position in `f64`
-    // instead. Reconstructing from that forced zero recorded "the page is
-    // centred in the pasteboard" on every deep frame.
     //
-    // Nothing consumed the lie while the tier held. The first zoom that
-    // crossed back **did**: `offset_before` is this field, so
-    // `zoom_anchor_offset` solved the descent against a position the operator
-    // had never been in and put the page's own origin under the pointer.
-    // Driven, 2026-08-24, descending through 1,185,799 %: the page point under
-    // the viewport centre went from (791.93, 1152.34) to (−0.02, −0.03).
     //
     // `image_rect` and `inner_rect` are this frame's real screen rects, at
     // every tier, produced by whichever branch placed the strip. An offset
@@ -1125,12 +1035,6 @@ fn show_in(
     let on_page = image_response.contains_pointer();
     // ★★★ The page's own context menu, asked for by id rather than inferred.
     //
-    // `contains_pointer` is layer-aware, so the open menu COVERS the page and
-    // `on_page` goes false the moment the cursor reaches the menu. That flips
-    // `acting_response`, which changes the popup's id, which makes egui drop
-    // the popup as abandoned — silently, with no close call and no trace.
-    // See `pasteboard`'s module header: this is the defect `bfc8dea`
-    // introduced on 2026-09-10 and the first full sweep found on 2026-09-12.
     let page_owns_open_popup =
         egui::Popup::is_id_open(ui.ctx(), egui::Popup::default_response_id(&image_response));
     let surface = pasteboard::surface(
@@ -1265,8 +1169,6 @@ fn show_in(
     // ★★★ THE GATE IS THE CANVAS, NOT THE CURRENT PAGE — `OPERATOR_REQUESTS.md`
     // O26.
     //
-    // It used to read `image_response.hovered()`, which is the response of the
-    // **acting page only**. Three ordinary positions were therefore inert:
     //
     // * the pointer over a *different* visible page, which under a continuous
     //   mode is most of the screen whenever more than one page fits;
@@ -1276,27 +1178,7 @@ fn show_in(
     //   any point of the screen, and therefore a position the operator is now
     //   *expected* to be in.
     //
-    // ★★ It is also what turned O26's page catapult from a lurch into a
-    // freeze. Once the current-page tracker had thrown `page_index` seven
-    // pages down the strip, the acting page was off screen, nothing under the
-    // pointer was it, and **every subsequent Ctrl+wheel did nothing at all**:
-    // driven, 2026-08-24, five further notches produced a byte-identical
-    // trace. A view that jumps is a bug; a view that jumps and then will not
-    // zoom back is the operator's report.
     //
-    // `content_response` is the scroll area's whole content — pages, gaps and
-    // pasteboard — so this asks *"is the pointer over the canvas?"*, which is
-    // the question the comment above always claimed it was asking. It is a
-    // real egui `Response`, so it still respects layer order and a floating
-    // window over the canvas still swallows the wheel; a `rect.contains`
-    // test would not have.
-    // ★ The body is [`zoom::wheel_step`] and not a block here, because O186's
-    // escape hatch needs the identical gesture on a frame that drew nothing.
-    // The gate stays at this call site — it is the only part of this that is
-    // about THIS frame's two responses — and the rule about arming the anchor
-    // went with the body, so the rescue path cannot come to zoom about a
-    // different point than the ordinary path does. The reasoning that used to
-    // sit inside this block is on `zoom::wheel_step` now, unchanged.
     if content_hovered || image_response.hovered() {
         zoom::wheel_step(ui.ctx(), doc, actions);
     }

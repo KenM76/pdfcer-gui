@@ -9,12 +9,6 @@
 //!
 //! # ★★★ Why there are two, and why the first one was not enough
 //!
-//! Until 2026-08-29 there was one check, it was named
-//! `…_of_a_shared_form`, its pass note read *"Every other invocation site keeps
-//! naming {original} and is byte-identical"* — and it was pinned to
-//! `page-sized-form.pdf`, **a document with exactly one invocation.** There
-//! were no other invocation sites. The check asserted a sentence about a
-//! population of zero and passed.
 //!
 //! That is not a cosmetic error in a note. It is the same defect the *feature*
 //! had, reproduced in the instrument that was supposed to catch it: the command
@@ -31,10 +25,6 @@
 //!
 //! # What this is for
 //!
-//! `EDITABLE_SURFACES.md`, written 2026-08-28, is an audit keyed on the
-//! **engine's** verb list rather than on this shell's feature list. It found
-//! `unshare_form` implemented in `pdfcer-core` and named nowhere in
-//! `crates/pdfcer-gui/src`, and `pdfcer-core` asked for it by name:
 //!
 //! > *"So you can offer the button. Please un-suppress it rather than leaving
 //! > the suppression in place — a control withheld on the strength of a note
@@ -79,9 +69,6 @@
 //!
 //! ## ★★★ The harness gap this check found, and had to close
 //!
-//! `right_clicking_a_form_field_opens_its_menu` was the first driven context
-//! menu in this project's history, on 2026-08-28. It asserts that the right
-//! menu **resolved** and that it **offered something**, and it stops there.
 //!
 //! It stopped there because it had to. `shell::menus::MenuHost::attach_with`
 //! called `egui_shell::menu::Menu::attach` — the convenience constructor that
@@ -159,16 +146,6 @@
 //! One 200 × 200 pt page whose only page object is a page-sized form holding
 //! three 40 × 40 squares. It is invoked **once**.
 //!
-//! ★★★ This file used to be the shared check's fixture, and the comment that
-//! justified it read: *"It is invoked once, not thirty-six times, and that is
-//! fine — `unshare_form` does not require a form to be shared, and refusing to
-//! privatise a singly-invoked form would be a rule nobody wrote."* Both
-//! sentences were true about the **engine**, which is a verb and does what it
-//! is told. Neither was a defence of the **shell**, which had told the operator
-//! their drawing was on other pages and dirtied their document to give them a
-//! byte-identical clone of it. The rule nobody had written is now written:
-//! `crate::…::UnshareRefusal::NotShared`, and this file is the fixture that
-//! proves it fires.
 //!
 //! ## The sequence
 //!
@@ -228,10 +205,6 @@ const SHARED_FIXTURE: &str = "forms-xobject/shared-across-two-pages.pdf";
 
 /// **The unshared fixture: one form, one page, one invocation.**
 ///
-/// The ordinary shape of a CAD sheet wrapped in a single form, and — until
-/// 2026-08-29 — a document the shell would happily clone an object into while
-/// telling the operator that every *other* page still shared it. There are no
-/// other pages. This is the file the decline is proved on.
 const UNSHARED_FIXTURE: &str = "forms-xobject/page-sized-form.pdf";
 
 /// Both fixtures' page box, in PDF points.
@@ -288,10 +261,6 @@ const APPLIED: &str = "unshare-form-applied";
 /// `unshare-form-measured page=… form=… places=… pages=… other=… lower_bound=…`
 /// — the document walk's verdict, written on **both** paths.
 ///
-/// ★★ This is the line that did not exist before 2026-08-29, and its absence
-/// is the whole defect in one fact: nothing in the command's chain had ever
-/// asked how many times the form was invoked, so there was no number anywhere
-/// to trace.
 const MEASURED: &str = "unshare-form-measured";
 /// `unshare-form-declined page=… form=… reason=… places=…` — the decline's own
 /// positive oracle. See the module header for why the absence of [`APPLIED`]
@@ -593,16 +562,6 @@ fn open_and_press(
 
     // --- 4: the row is on screen, and O53 is satisfied ---------------------
     //
-    // ★★★ This assertion is about the ROUTE, not about the verb, and it is the
-    // one that fails if `format.unshare_form` is registered on the ribbon only.
-    // ⚠ CORRECTED 2026-09-12. This comment used to claim that a greyed row
-    // publishes no rect, so the assertion below also caught a build where
-    // `selection.in_form` stopped being published. **It does not, and it
-    // never did.** `menu/plan.rs:203` keeps a disabled command as
-    // `Slot::Command { enabled: false, .. }`, and `menu/render.rs:569`
-    // reports the row's rect with no reference to `enabled` at all. What
-    // `plan` really drops is a command that is **not registered** — R8, a
-    // different rule about a different thing.
     //
     // ⇒ So a build that greys this row still passes here, and the greying
     // has no check. That is left stated rather than quietly deleted: an

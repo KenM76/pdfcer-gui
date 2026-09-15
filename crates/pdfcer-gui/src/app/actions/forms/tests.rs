@@ -35,9 +35,6 @@
 //! move_widget` — which is the good case. The bad case is a cut that still
 //! compiles.
 //!
-//! Both are the same shape as everything the 2026-09-07 reply triage spent
-//! the night correcting: a green build reporting on work it did not do —
-//! committed here by the session doing the correcting.
 
 #![cfg(test)]
 //
@@ -198,11 +195,6 @@ fn a_rename_puts_the_retargeting_sentence_in_the_disclosure_store() {
 ///
 /// # What this is really asserting, because it is not the engine's rule
 ///
-/// That `rename_field` refuses a collision is the engine's business and is
-/// asserted in the engine's own suite. What could only be asserted from here
-/// is that the refusal **arrives somewhere an operator can read**, and until
-/// 2026-09-12 it did not: `forms::rename` mapped only `Ok`, so every failure
-/// reached `decline::floor` and came out as *"That change was refused"*.
 ///
 /// That is the shape worth the paragraph. The bar was never blank. There
 /// was always a sentence, it was always true, and it answered nothing — so no
@@ -314,10 +306,6 @@ fn an_unowned_widget_adopts_under_an_ordinary_name() {
 /// **The dotted name is refused with a sentence, on the one surface that
 /// can provoke it.**
 ///
-/// This is what consuming the 2026-09-12 delivery means. The engine shipped
-/// the guard because this shell asked for it; the shell already had the
-/// `correctable` arm; so the delivery is consumed when the **chain** is proven,
-/// not when the arm exists.
 ///
 /// And it is a different test from the rename one above, which is green and
 /// proves nothing about this. That drives `rename_field`, which has refused
@@ -326,14 +314,6 @@ fn an_unowned_widget_adopts_under_an_ordinary_name() {
 /// ⇒ *a green test naming the variant is not evidence about the route that can
 /// actually raise it.*
 ///
-/// **Corrected 2026-09-12.** This doc said `adopt_widget` was reached from
-/// `panels::forms::tab_order::register`'s name box as *free text gated only on
-/// non-empty* — the one route `correctable`'s table marked reachable. Measured
-/// the next morning and it is wrong: the engine's guard is inside `adopt_plan`,
-/// which `adopt_preview` shares, so that row greys its own button while the
-/// period is typed and the press never happens. The table has been corrected in
-/// place and the grey is asserted by
-/// `panels::forms::tab_order::register::tests::a_dotted_name_greys_the_register_button_and_the_hover_names_the_rule`.
 ///
 /// **This test is kept, and its value went UP rather than down.** It is no
 /// longer a test of a route an operator can walk; it is the measurement that
@@ -469,11 +449,6 @@ fn renaming_a_field_nothing_names_records_no_second_sentence() {
 /// new field named `Text.2` left one empty field and an orphaned box, with no
 /// recovery. That is why it became a refusal rather than a disclosure.
 ///
-/// It is no longer a loss. Since 2026-08-30 the engine refuses at
-/// `place_new_field_deferred` — `FormAuthorError::FieldPathCrossesTerminal` —
-/// before a byte is staged. On 2026-09-11 the shell's own pre-check was
-/// deleted and `actions::forms::correctable` gained an arm that reads the
-/// engine's variant and carries the field name the engine resolved.
 ///
 /// # TWO OF THE THREE TESTS THAT STOOD HERE COULD NOT HAVE FAILED
 ///
@@ -512,15 +487,6 @@ mod dotted_names {
     /// reaching the operator is the **engine's**, carrying the name the engine
     /// resolved, rather than a second predicate this shell evaluates first.
     ///
-    /// Rewritten 2026-09-11, and the old subject is worth one line because
-    /// the assertion inverted. It used to require that `author` consult a
-    /// shell-side guard **before writing anything**. It now requires that it
-    /// consult **nothing** before calling the verb, and word what comes back.
-    /// The pre-check it defended had, by the time it was read, become wrong in
-    /// the way a duplicate model always does: it refused on any prefix present
-    /// in `AcroForm::fields`, where the engine refuses only on a **terminal**,
-    /// so it falsely refused the mixed node. A test guarding a guard is only as
-    /// right as the guard.
     ///
     /// # THIS TEST PASSED BY READING ITS OWN ASSERTION STRING
     ///
@@ -537,11 +503,6 @@ mod dotted_names {
     /// would have gone on passing if `author` had never called the guard, if
     /// the guard had been deleted, or if `author.rs` had been emptied.
     ///
-    /// It was exposed by an unrelated refactor — moving the test modules out
-    /// of `forms.rs` on 2026-09-08 took the literal out of the scanned file and
-    /// the test went red immediately. **Nothing was looking for this**; a
-    /// source-scanning check that happens to live in the file it scans is
-    /// invisible to every gate this project has.
     ///
     /// ⇒ **A source-scanning test must never be able to read itself.** It now
     /// reads `author.rs`, which contains the code and not the assertion, and
@@ -549,7 +510,6 @@ mod dotted_names {
     /// doc comment into the scanned file could not satisfy it either.
     /// Everything in `src` that is not a full-line comment.
     ///
-    /// Why a source-scanning assertion needs this, added 2026-09-12.
     ///
     /// The check below went red because `author`'s doc comment — moved into
     /// `author.rs` that day, see `tools/gates/check-orphan-docs.py` — *names*
@@ -578,8 +538,6 @@ mod dotted_names {
 
     #[test]
     fn author_words_the_engines_refusal_rather_than_pre_empting_it() {
-        // `../` — this file moved into `forms/` on 2026-09-08 and
-        // `include_str!` is relative to the file that writes it.
         let src = code_only(include_str!("../forms/author.rs"));
         assert!(
             src.contains("super::correctable(error)"),

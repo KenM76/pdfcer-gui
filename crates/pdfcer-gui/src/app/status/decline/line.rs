@@ -1,9 +1,5 @@
 //! # `app::status::decline::line` — one decline, one sentence
 //!
-//! Split out of [`super`] on 2026-09-10, when `OPERATOR_REQUESTS.md` O172's
-//! custom-stamp decline took that file past R2's 1500-line ceiling. The seam is
-//! the one the module already used for `record`, `textedit` and `clipboard`:
-//! the parent keeps the **state**, a child keeps one **job** done with it.
 //!
 //! ## Why THIS was the half to move
 //!
@@ -58,10 +54,6 @@ impl Declined {
         let fixed: &'static str = match self {
             Self::NothingToFrame => t::zoom_declined_no_selection(),
             Self::CanvasNotDrawn => t::zoom_declined_not_drawn(),
-            // ★ The variant carries WHICH fact refused; the catalog owns the
-            // words for each. Before 2026-09-11 this arm named one flat string
-            // that was wrong for both of its two call sites in different
-            // directions — see `text::status::InsideFormRefusal`.
             Self::InsideForm(reason) => reason.line(),
             Self::SaveFailed => t::save_copy_failed(),
             Self::SettingsNotSaved => t::settings_not_saved(),
@@ -166,10 +158,6 @@ impl Declined {
             Self::BookmarkMoveRefused => {
                 crate::text::panels::bookmarks::bookmark_move_declined_engine()
             }
-            // ★ Returns early like `EditText` below, because this sentence can
-            // name the faces that WOULD show the run — `Refusal::remedy_faces`,
-            // consumed 2026-09-11. Without a list it is still borrowed static
-            // prose and still allocates nothing.
             Self::TextStyle(why) => return why.line(),
             Self::Rotate(why) => (*why).line(),
             Self::Unshare(why) => (*why).line(),
@@ -186,11 +174,6 @@ impl Declined {
             // — so the un-categorised case is the *same string*, in one place,
             // and cannot drift into two voices for one condition.
             //
-            // ★★★ **And it is the one arm that leaves through a `return`.**
-            // `EditRefusal::line` answers a [`Cow`] since 2026-09-05 because
-            // its `FontLacksTheCharacter` sentence names the character the
-            // engine refused. Everything else in this match is fixed prose and
-            // is unaffected.
             Self::EditText(why) => return why.line(),
             // ★ Reaches across to `crate::text::measure` on the same rule: a
             // string lives with the surface that owns its subject, and this

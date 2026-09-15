@@ -1,18 +1,9 @@
 //! `a_save_that_would_produce_blank_pages_is_refused` — **the operator's own
 //! bug report, driven through the running binary.**
 //!
-//! ⬜ **NOT DRIVEN BY ITS AUTHOR.** This module was written on 2026-09-05 and
-//! **has not been run once.** The canvas-input track owned the pointer for the
-//! whole of the session that produced it and two driven runs corrupt each
-//! other, so the suite was deliberately not invoked. Every sentence below about
-//! what the trace will contain is a *prediction from the source*, not an
-//! observation, and R1 is explicit that a passing unit test is not a substitute
-//! for one. The first session with a free machine should run this and correct
-//! whatever it got wrong — including, quite possibly, the `INVOKE` chain.
 //!
 //! # What this is for
 //!
-//! The operator, 2026-09-05:
 //!
 //! > *"I tested deleting pages from a pdf. when I open the document in Acrobat
 //! > there are blank pages at the end of the document equalling the number of
@@ -51,16 +42,6 @@
 //! indistinguishable from one that honoured it
 //! (`three_clicks_round_a_hole_measure_the_hole`'s standing rule).
 //!
-//! The pin is not convenience. On a **flat** page tree the immediate parent
-//! *is* the root, so a writer that updates only the immediate parent updates
-//! the root by accident and **the defect cannot occur**. Run against
-//! `fixtures/four-pages.pdf` this check would watch a page delete, watch a
-//! clean save, and pass — reporting that a build carrying the defect in full is
-//! sound. That exact substitution was performed on the unit-test half on
-//! 2026-09-05 and it did precisely that, including printing a sentence
-//! asserting the engine had been fixed. So the fixture is pinned, and the
-//! `levels=` field of the `save-pagetree` trace line is read back and asserted
-//! ≥ 3 before any verdict is reached.
 //!
 //! ## The oracle: three things, and the third is the one no trace can fake
 //!

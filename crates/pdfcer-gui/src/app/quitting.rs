@@ -1,6 +1,5 @@
 //! # `app::quitting` — **closing the program without losing anybody's work**
 //!
-//! Operator, 2026-09-02, `OPERATOR_REQUESTS.md` O102:
 //!
 //! > *"when I close the program it should prompt to save changes if there are
 //! > any, and it should do what other programs do — switch focus to the document

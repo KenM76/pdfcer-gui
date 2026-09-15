@@ -144,11 +144,6 @@ pub(crate) struct ProvenanceTextCache {
     /// ★★★ **What actually makes a failed extraction cheap, and it is NOT the
     /// order this line is written in.**
     ///
-    /// The sibling caches in [`super`] carry a comment saying the key is set
-    /// *before* the work "so a failed extraction is not retried every frame",
-    /// and this module was written with the same sentence until it was
-    /// **falsified on 2026-09-09**: moving the `set` below the extraction and
-    /// re-running the tests changed nothing, in any of them.
     ///
     /// It could not. The value store at the end of
     /// [`OpenDoc::ensure_provenance_text`] is *unconditional* — a failed
@@ -257,13 +252,6 @@ impl OpenDoc {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             //
-            // ★★ **The count of these lines IS the measurement.** One line per
-            // extraction, so a harness can tell a cache that works from one
-            // that does not — and this is the line that proves the six
-            // duplicate extractions this module removed are actually gone. A
-            // click on a text run with the properties panel open used to emit
-            // `form-runs` and then a silent second extraction inside
-            // `pin::inspect`; it now emits exactly one `provenance-text`.
             format!(
                 "provenance-text page={page} ms={} runs={} ok={}",
                 started.elapsed().as_millis(),
@@ -314,16 +302,6 @@ mod tests {
     /// ★★★ **The handle is HELD, never dropped, and that is the whole
     /// correctness of this test.**
     ///
-    /// This test was written with `drop(page0)` before the two comparisons and
-    /// it **failed in the full suite while passing when run alone**
-    /// (2026-09-09). The reason is not flakiness and not shared state: once
-    /// `page0` is dropped the cache has already evicted its own copy — it
-    /// holds exactly one page, and page 1 displaced page 0 — so the last `Rc`
-    /// is gone and the allocation is **freed**. `ptr0` is then a dangling
-    /// address, and the allocator is entitled to hand that same address
-    /// straight back for the next `PageText`, which is exactly what it did
-    /// once the other tests in this binary had warmed the heap into a
-    /// different shape.
     ///
     /// ⇒ **A pointer-identity check across a deallocation is not an identity
     /// check.** It is asked "is this a different allocation?" and the
@@ -399,11 +377,6 @@ mod tests {
     /// frame — the measurement in `app::cache`'s header — to learn the same
     /// thing sixty times a second.
     ///
-    /// ★★ **This test does not assert the ORDER of the `set`, and it was
-    /// renamed on 2026-09-09 because its name claimed it did.** Moving the
-    /// `set` below the extraction leaves all four tests here green — measured,
-    /// not reasoned — because the store is unconditional and so both orders
-    /// record the attempt. See [`super::ProvenanceTextCache::built_for`].
     ///
     /// What this does catch is the change that actually breaks the property:
     /// returning early on the failure arm without recording the key.

@@ -1,11 +1,6 @@
 //! `checks::signing::reaching` — **how the signing check reaches the controls
 //! it presses**
 //!
-//! Split out of [`super`] under **R2** on 2026-09-06, when phases E to H took
-//! `checks/signing.rs` to 1,523 lines. The seam is between **reaching** and
-//! **asserting**, and it is a real one rather than a cut at a line number:
-//! nothing in this file knows what the Sign window is for, and nothing in
-//! [`super`] knows how a wheel event finds a scrolled radio button.
 //!
 //! ## ★★★ THE THREE FINDINGS THAT LIVE HERE, because they are about the
 //! HARNESS and will bite the next check as well
@@ -340,10 +335,6 @@ pub(super) fn field_name_of(raw: &str) -> String {
 
 /// The last `sign-opened` line's `refusal=` token.
 ///
-/// ★ A token the application spells as a `const fn`, never a `{:?}` of a domain
-/// type — `dialogs::sign::refusal_token` says why at its definition, and the
-/// reason is that Debug-formatting a value a check parses produced two false
-/// failure reports on 2026-09-05.
 pub(super) fn last_refusal(session: &Session) -> Result<Option<String>> {
     Ok(session
         .trace()?
@@ -385,9 +376,6 @@ pub(super) fn engine_fixture(rel: &str, what: &str) -> Result<PathBuf> {
 
 /// **Bring the Signatures panel to the front, mounting it if it is not there.**
 ///
-/// Lifted out of phase D on 2026-09-06 when phase F needed the identical five
-/// steps, and the duplication would have been the third copy of a sequence whose
-/// every line is load-bearing.
 ///
 /// ★★★ The fallback is not optional, and the first full re-run of this check is
 /// why. `raise_dock_tab` succeeded once purely because a PREVIOUS launch had

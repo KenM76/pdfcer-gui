@@ -82,9 +82,6 @@ impl Secret {
     /// `Err` that cannot occur — which is how an `unwrap` gets written on the
     /// one path in the program that must not panic while holding a secret.
     ///
-    /// Added 2026-09-06 for `crate::sign`: `Pkcs12Signer::from_der` takes the
-    /// passphrase as `&str`, because RFC 7292's key derivation is defined over
-    /// a BMPString and the engine does that conversion itself.
     ///
     /// ⚠ Exposing is exactly as dangerous as [`Self::expose`] and the same rule
     /// applies: the result must not be formatted, stored, or handed to anything

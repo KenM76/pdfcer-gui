@@ -3,12 +3,6 @@
 //!
 //! `RIBBON_IA.md` §5.4. **Four** groups: Content, Insert, Forms, Protect.
 //!
-//! ★ It was five until 2026-08-14, when the operator moved the two text-copy
-//! commands to File ▸ Export and the **Clipboard** group — whose only members
-//! they were — was deleted rather than left empty. The site of that group
-//! carries the full reasoning; the one-line version is that copying is not
-//! authoring, so the verb does not belong on the authoring tab, and an empty
-//! band is the placeholder `RIBBON_IA.md` P3 forbids.
 //!
 //! # Three renames that are the point of the tab
 //!
@@ -22,8 +16,6 @@
 //!
 //! # The `Editing on` master toggle is gone
 //!
-//! Operator decision, 2026-08-12: *"make it work the same way other
-//! programs do."*
 //!
 //! No mainstream editor has a global editing switch. Acrobat, Bluebeam,
 //! Word and Illustrator all work the same way: selection and Delete are
@@ -96,11 +88,6 @@ pub(super) fn tab() -> Tab {
                     // retyped a sentence in it, so it follows the tool that
                     // does the retyping.
                     command("edit.reflow_block"),
-                    // ★ `edit.objects` was the fourth member until 2026-08-31.
-                    // Deleted, not moved — see its former registration in
-                    // `shell::commands::catalog::edit` for O69's argument. The
-                    // group is three again, and Content now means "the text on
-                    // this page", which is what its three members actually do.
                 ],
             ),
             // ---------------------------------------------------------------
@@ -145,15 +132,8 @@ pub(super) fn tab() -> Tab {
             group(
                 "insert",
                 ribbon::group_edit_insert(),
-                // ★ BOTH large, 2026-09-04 — the mockup draws `Image…` and
-                // `Attachments` as the Insert group's two big controls. The
-                // whole group is promoted, so nothing is hoisted past
-                // anything.
                 [large("edit.insert_image"), large("edit.attachments")],
             ),
-            // ★★ **Clipboard is BACK, 2026-08-19** — and the note below, which
-            // explains why it was deleted, is kept because its reasoning was
-            // right and only its premise expired.
             //
             // It was deleted because its two members moved to File ▸ Export and
             // nothing was left. What refills it is not those two returning: it
@@ -189,10 +169,6 @@ pub(super) fn tab() -> Tab {
                     // tooltip and in the Edit menu; `RIBBON_SCALING.md`'s rule is
                     // that a group's members share a presentation.
                     icon_only("edit.paste_duplicate"),
-                    // ★★★ **Five now — `edit.copy_as_vector`, 2026-09-04**, and
-                    // it is the one member of this group that copies OUT of
-                    // pdfcer rather than within it (`OPERATOR_REQUESTS.md`
-                    // O120).
                     //
                     // ★★ **Clipboard, not File ▸ Export**, and the mockup's own
                     // caption note is the argument: *"it is a clipboard verb —
@@ -215,9 +191,6 @@ pub(super) fn tab() -> Tab {
                     // five. The label is in the tooltip and in the Edit menu,
                     // which is where `edit.paste_duplicate` puts its own.
                     icon_only("edit.copy_as_vector"),
-                    // ★★★ **Six now — `edit.duplicate`, 2026-09-06** (Ctrl+D),
-                    // and it is the one member of this group that never touches
-                    // the clipboard at all.
                     //
                     // ★★ **That is exactly why it is in the Clipboard group.**
                     // The band is the operator's *"make another one of this"*
@@ -257,10 +230,6 @@ pub(super) fn tab() -> Tab {
             // ---------------------------------------------------------------
             // ★ **Clipboard was here, and it is deleted rather than emptied.**
             //
-            // It held exactly two commands — `edit.copy_page_text` and
-            // `edit.copy_document_text` — and on 2026-08-14 the operator moved
-            // both to File ▸ Export as `file.copy_page_text` and
-            // `file.copy_document_text`. Its own note read:
             //
             //     Clipboard — the two commands that moved off File.
             //     Copying text out of a document is a content operation, not a
@@ -300,13 +269,6 @@ pub(super) fn tab() -> Tab {
             // together, and it was right about the operator who is *in this
             // tab*.
             //
-            // ★ **Fill left on 2026-08-14, and the argument that moved it is
-            // stronger than the one that kept it here.** The operator's
-            // answer to `crate::app::modes`' open question is that Read
-            // fills forms — Acrobat Reader does, and replacing it is the
-            // stated goal. Read is shown `file` and `view` alone, and P1
-            // gives a command exactly one tab, so `edit.form_fill` became
-            // `view.panel_forms` in View ▸ Panels.
             //
             // What is left is not a remnant. Filling a field is using the
             // document as its author designed it; creating a field, renaming

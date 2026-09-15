@@ -1,7 +1,6 @@
 //! # `engine_overlay_skew` — the shell's model of a page and the engine's must
 //! describe the same page, and these tests are what notices when they stop
 //!
-//! ## ★★★ STATUS, 2026-08-31: FIXED BY THE ENGINE, AND THESE TESTS INVERTED
 //!
 //! This file was written as a **reproduction** — three tests that passed on
 //! the broken engine and were built to fail on the fixed one, each carrying
@@ -49,13 +48,6 @@
 //!
 //! ## Why it is a test rather than a paragraph in a request
 //!
-//! Because `D:\Dev\pdfcer` is READ-ONLY to this project, the fix is not mine
-//! to make — it is a feature request. A request that asserts a defect in
-//! somebody else's crate had better carry a reproduction, and this project's
-//! standing rule is that **a backlog row is a record, not evidence**. Three
-//! documents in this repository have previously stated an absence that was
-//! false. So the claim in the request is this file, and this file is run by
-//! `cargo test --workspace` on every commit.
 //!
 //! ## The shape they were written in, and why it was right
 //!
@@ -85,9 +77,6 @@
 //! the request.
 
 use pdfcer_core::edit::EditSession;
-// ★ Brought in 2026-09-07 for `a_foreign_icon_name_survives_a_colour_only_restyle`,
-// which resolves a `/Name` through the session's overlay graph rather than off
-// the base document — the same distinction this file's own header is about.
 use pdfcer_core::graph::ObjectGraph;
 
 /// A one-page document with a little content, built from a fixture that
@@ -278,13 +267,6 @@ fn a_just_inserted_image_can_be_transformed() {
 /// Two consequences, and the second is why this is filed as urgent rather
 /// than as a nuisance:
 ///
-/// 1. **An index the document no longer has still resolves.** Asking for
-///    page 3 of a three-page document must be `PageOutOfRange`. It is not.
-/// 2. **Therefore an index the document DOES have resolves to the wrong
-///    sheet.** Delete page 0, then move or delete an object on what the
-///    operator sees as page 0, and the verb edits the page that used to be
-///    page 0 — a different sheet — and returns `Ok`. Nothing refuses, nothing
-///    discloses, and the wrong drawing is changed.
 ///
 /// This test asserts (1), because it is the crisp one: a count mismatch needs
 /// no fixture with distinguishable content and cannot be argued with. (2)
@@ -377,11 +359,6 @@ fn a_foreign_icon_name_survives_a_colour_only_restyle() {
     // ★★★ **The sticky is found by what its `/Name` READS AS, over every
     // `/Text` on the page — not by taking the first one.**
     //
-    // The first draft took `.find(|a| a.subtype == b"Text")` and failed with a
-    // confident, wrong message: the fixture carries **two** sticky notes and
-    // the first is an ordinary `/Note`, so the assertion was measuring the
-    // wrong annotation while its own text said the engine had flattened a name.
-    // A harness with a bad input produces defects that do not exist.
     //
     // ★ Requiring **exactly one** match is what keeps this from becoming
     // vacuous. A build whose reader flattens finds zero and fails naming that;

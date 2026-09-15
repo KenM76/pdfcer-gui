@@ -211,8 +211,6 @@ pub(super) fn section(
     );
     field(ui, t::geometry_h(), &mut draft.h, None, locked);
 
-    // ★★★ **THE ANGLE** — `OPERATOR_REQUESTS.md` O146, 2026-09-07: *"the angle
-    // should be editable from the properties."*
     //
     // ★★ Drawn only when the mark HAS one. `draft.angle` is `None` for an
     // annotation with no appearance stream and for one whose `/Matrix` is a
@@ -350,15 +348,6 @@ pub(super) fn section(
         // composed. Turning last means the two extent verbs act on the
         // rectangle the operator was reading the numbers off.
         //
-        // ★★ **ABSOLUTE since 2026-09-07 (afternoon), and that is the whole
-        // point of the field.** It raised `AnnotAction::Rotate` — a delta,
-        // computed here as `typed − seed` — for a few hours, because
-        // `rotate_annotation` was the only verb that existed. `Pass 155.2`
-        // shipped `set_annotation_rotation` the same day, in answer to this
-        // shell's request, and the argument is in the engine's doc comment
-        // verbatim: *"composing a typed value as a delta requires the shell to
-        // already trust its own idea of the current angle, and the first time
-        // those disagree the object silently ends up somewhere else."*
         //
         // ⇒ `GeometryDraft::angle_delta` survives as the *did the operator
         // touch this field?* predicate — it still has to answer that, and its

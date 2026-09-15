@@ -104,12 +104,6 @@ pub const fn where_document() -> &'static str {
 
 /// Where a page-level attachment lives, and the consequence of that.
 ///
-/// ★ The clause about page deletion is the whole reason this string is not
-/// simply *"On page 3"*. A `/FileAttachment` annotation (§12.5.6.15) is
-/// **destroyed when its page is deleted**, and this application can delete a
-/// page from three different surfaces. An operator who has been told is one
-/// who can decide; one who has not finds out from a file that used to have
-/// their supplier's spreadsheet in it.
 #[must_use]
 pub fn where_page(page_number: usize) -> String {
     format!("On page {page_number} — deleting that page takes this file with it")
@@ -515,10 +509,6 @@ pub const fn remove_lives_with_the_note() -> &'static str {
 /// > attachment was sensitive, the operator needs a full rewrite … Shells are
 /// > expected to say so rather than let 'delete' imply erasure."*
 ///
-/// Under the default incremental save (§7.5.6) **every prior revision is still
-/// in the file by design** — that is what makes existing signatures survive —
-/// so the attachment's bytes remain recoverable from the earlier revision.
-/// Only a full rewrite drops superseded revisions.
 ///
 /// ★ And the second sentence **names the command that does it**. A disclosure
 /// that states a hazard and leaves the operator to find the remedy has done

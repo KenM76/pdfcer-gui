@@ -4,9 +4,6 @@
 //! `RIBBON_IA.md` §5.1. Six groups: File, Save, Export, Print, Document,
 //! pdfcer.
 //!
-//! ★ **`New` landed 2026-08-14** — see the File group below, and
-//! `crate::app::blank` for where a blank document comes from when the engine
-//! has no way to make one and has declared that it never will.
 //!
 //! # What this tab stopped being
 //!
@@ -35,19 +32,6 @@
 //! 2. **Copy page text / copy document text leave**, to Edit ▸ Clipboard.
 //!    Copying text out of a document is a content operation.
 //!
-//!    ★ **Reversed on 2026-08-14, by operator decision, and the reversal is
-//!    recorded here rather than replacing the sentence above** — "this left
-//!    and came back, for a better-stated reason" is a more useful fact than
-//!    either half alone, and the returning reader who remembers the move
-//!    needs to find it. They are now `file.copy_page_text` and
-//!    `file.copy_document_text`, in **File ▸ Export**, and the Edit ▸
-//!    Clipboard group that held them is deleted. The original argument was
-//!    right that copying is a *content* operation and wrong to conclude that
-//!    a content operation is an *authoring* one: copying reads the page and
-//!    writes to the clipboard, changing nothing. See the Export group below
-//!    for the full reasoning and for why they are in Export rather than in a
-//!    Clipboard band of their own.
-//! 3. **Reset layout leaves**, to View ▸ Window. It resets panel geometry.
 //!
 //! And one thing arrives: **Fonts**, from View ▸ Panels. The Fonts panel
 //! answers *"what is inside this file"*, not *"what is on my screen"*, so
@@ -76,17 +60,6 @@ pub(super) fn tab() -> Tab {
             // ---------------------------------------------------------------
             // File — getting a document in and out of the application.
             //
-            // ★ **`New` shipped on 2026-08-14** and its `PLANNED` entry ("N —
-            // a blank or from-template document. pdfcer has no
-            // document-creation path at all.") is retired. The second half of
-            // that sentence is still true of the engine and always will be —
-            // `pdfcer-core`'s `document.rs:10-19` names it an invariant — so
-            // New does not create a document, it **opens one**: a 443-byte
-            // blank-A4 template that ships as an asset and goes through
-            // `Document::from_bytes`. `crate::app::blank` carries the whole
-            // argument, including why filing a feature request for
-            // `Document::blank(…)` would have been asking the engine to break
-            // its own named invariant.
             //
             // It is **first** in the band. All three reference applications
             // open their File menu with New and follow it with Open, and the
@@ -98,15 +71,6 @@ pub(super) fn tab() -> Tab {
             // make a document, open a document, reopen one they had, put it
             // away.
             //
-            // §5.1 specifies this row as "New (blank / from template)".
-            // ★ **BOTH halves ship as of 2026-08-18.** The blank half is
-            // `file.new`; the from-template half is `file.new_from_template`,
-            // which is where the page-size choice lives, and the split is
-            // Inkscape's own: `Ctrl+N` makes a document, `Ctrl+Alt+N` chooses
-            // what kind. The second one was in `PLANNED` until
-            // `EditSession::set_media_box` shipped — see
-            // `crate::app::blank`'s §3a for what it was blocked on and why the
-            // ten-assets alternative was refused rather than built.
             //
             // ★ `Recent ⌄` is an `Item::Custom`, not a command item, and that
             // is the only structural oddity on this tab.
@@ -129,13 +93,6 @@ pub(super) fn tab() -> Tab {
                 "file",
                 ribbon::group_file_file(),
                 [
-                    // ★ Large, 2026-09-04 — `mockups/pdfcer-shell.html`
-                    // draws `New` and `Open…` as the File group's two big
-                    // controls and wraps the rest into one column beside
-                    // them. They are already the leading run of this group,
-                    // so `sizing`'s hoist is a no-op and the rendered order
-                    // is the mockup's exactly: [New][Open…] then the column
-                    // [New from template…][Recent ⌄][Close].
                     large("file.new"),
                     large("file.open"),
                     command("file.new_from_template"),
@@ -186,9 +143,6 @@ pub(super) fn tab() -> Tab {
                     // qualified saves in a column beside it. First in the
                     // group already, so the hoist is a no-op.
                     large("file.save"),
-                    // ★ **Save as** between Save and Save a copy** — 2026-09-02,
-                    // O95 — and the position is the group's own stated order of
-                    // increasing consequence, not the end of the list.
                     //
                     // Save writes the file you have. Save As writes a different
                     // file **and moves you to it**. Save a copy writes a
@@ -216,10 +170,6 @@ pub(super) fn tab() -> Tab {
             // are still absent until the shell exists, because a **C** row
             // is an engine, not a command.
             //
-            // ★ **The two text-copy commands are back, and this time on the
-            // right band.** Operator decision, 2026-08-14: `edit.copy_page_text`
-            // and `edit.copy_document_text` became `file.copy_page_text` and
-            // `file.copy_document_text`.
             //
             // The module header above still records that they LEFT this tab, and
             // that record stands rather than being edited away — the reasoning
@@ -258,16 +208,7 @@ pub(super) fn tab() -> Tab {
                 ribbon::group_file_export(),
                 [
                     command("file.export_dxf"),
-                    // ★ O120, 2026-09-04. Second in the band, directly after
-                    // the other export that writes a picture of the page's own
-                    // content — and before the form-data pair, which is a round
-                    // trip and reads as one. §5.1's own Export table has the
-                    // image row second for the same reason.
                     command("file.export_image"),
-                    // ★★★ Export text, 2026-09-04. Third, directly after the
-                    // two exports that write a derivative of the page's own
-                    // content and before the form-data pair, which is a round
-                    // trip and reads as one.
                     //
                     // ★ Its natural neighbours are the two copy-text verbs at
                     // the end of this band, and it is deliberately NOT beside
@@ -279,15 +220,7 @@ pub(super) fn tab() -> Tab {
                     // file write between two clipboard writes and leave the band
                     // with no order at all.
                     command("file.export_text"),
-                    // ★ Its twin, 2026-09-07, adjacent for the reason stated
-                    // four lines down about the form-data pair — the same rule,
-                    // applied to the pair it was written for.
                     command("file.import_text"),
-                    // ★★★ Save as stamp collection, O169, 2026-09-10. Last of
-                    // the verbs that write *a derivative of this document's own
-                    // page content to a file*, and before the form-data pair,
-                    // which is a round trip and reads as one — the band's
-                    // stated rule, applied.
                     //
                     // ★ **No import twin beside it, and none is missing.** The
                     // three pairs above are pairs because their formats are not
@@ -307,9 +240,6 @@ pub(super) fn tab() -> Tab {
                     command("file.copy_document_text"),
                 ],
             ),
-            // ---------------------------------------------------------------
-            // ★★★ SECURITY — `OPERATOR_REQUESTS.md` **O119**, approved and
-            // wired 2026-09-04: *"yes add encryption and permissions"*.
             //
             // # Placement: immediately after Export, and it is the mockup's
             //
@@ -334,15 +264,6 @@ pub(super) fn tab() -> Tab {
             // operator's drawing and the other decides what a recipient's reader
             // is asked to allow. The mockup draws both `big`.
             //
-            // ★ The group's caption is `crate::text::protect::group_file_security`
-            // rather than a `ribbon::` sibling, and the full path is written out
-            // so the seam is visible at the call site. Its own doc gives the
-            // reason: when a feature's copy is one subject and one module, the
-            // caption is part of that subject.
-            // ---------------------------------------------------------------
-            // ★★★ **`file.sign` joined this band on 2026-09-06**, and it is
-            // the ribbon's first CONDITIONAL item — `SHELL_FRAMEWORK.md` §5b's
-            // `capability:` field, whose mechanism landed with it.
             //
             // # Why here, beside Encrypt… and Permissions…
             //
@@ -405,10 +326,6 @@ pub(super) fn tab() -> Tab {
             // cannot tell you whether a document is encrypted is doing
             // half its job, and the status bar carries that fact today.
             //
-            // ★★★ **THREE controls since 2026-09-05, and the new one is first**
-            // — the operator: *"the document properties are still always
-            // visible in the properties tab. it needs to get out of there and
-            // be in its own document properties tab."*
             //
             // `file.document_properties` opens `crate::panels::docprops`, which
             // was the last section of the Properties panel until that sentence.
@@ -469,12 +386,6 @@ pub(super) fn tab() -> Tab {
             // with nothing open still has a version to check and a licence to
             // read.
             //
-            // ★ `file.about` shipped on 2026-08-14 and its `PLANNED` entry
-            // ("N — there is no about box.") is retired. It is not a courtesy
-            // control: it is the in-application half of the attribution
-            // surface that the operator's decision to ship CC-BY-SA-4.0 OCR
-            // model weights requires. See `crate::text::about` and
-            // `crate::dialogs::about`.
             //
             // It goes LAST in the group, which is where every reference
             // application puts it — Acrobat, Inkscape and SolidWorks all end

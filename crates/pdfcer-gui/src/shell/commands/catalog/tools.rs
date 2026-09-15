@@ -1,8 +1,5 @@
 //! # `shell::commands::catalog::tools` — the Tools tab — what runs across files, or is configured once
 //!
-//! One band of [`super::all`]'s catalogue. Split out of [`super`] under **R2**
-//! on 2026-08-28, when the Attachments command took that file to 1,495 of its
-//! 1,500 lines and the next command registered would have broken the rule.
 //!
 //! ## ★★★ The split is per TAB, and the reason it was refused before is gone
 //!
@@ -47,8 +44,6 @@ pub(super) fn band() -> Vec<Command> {
         // distinction between this tab and Pages, expressed as a predicate.
         // ===================================================================
         command("tools.merge_files", t::tools_merge_files(), 700).with_icon("combine"),
-        // ★★★ `tools.split_files` was HERE until 2026-08-31 — O68, and it is
-        // UNREGISTERED rather than implemented or greyed.
         //
         // The operator pressed it and nothing happened. It had no dispatch arm
         // and its blocker is real and names a missing capability in THIS
@@ -64,8 +59,6 @@ pub(super) fn band() -> Vec<Command> {
         // was never written". It returns with `pages.split`, which is the same
         // dialog with a different operand set. Both are in `manifest::PLANNED`.
         command("tools.font_folders", t::tools_font_folders(), 710).with_icon("font-folders"),
-        // ★★ **The three-way `fonts` share ended 2026-09-04**, with art adopted
-        // from the outside review of 2026-09-03.
         //
         // What the borrow was costing: [`crate::icons::Icon::Fonts`] belongs to
         // the Fonts PANEL, which reports and writes nothing, and both font
@@ -78,15 +71,6 @@ pub(super) fn band() -> Vec<Command> {
         // "genuinely breaks that guarantee", and it was drawing the same tile as
         // the panel that merely lists faces.
         //
-        // ★ **The pair is one drawing with one difference and may not be redrawn
-        // separately.** Both are a capital A sealed inside a frame; the frame is
-        // SOLID for embed and DASHED for unembed, and that dash is the entire
-        // distinction between them. It renders — `icons::svg` parses
-        // `stroke-dasharray` (`Shape::dash`, added 2026-09-04 naming this pair
-        // and `measure-perimeter` as the reason). If a later pass ever
-        // "simplifies" one of these two to a solid frame, the two commands
-        // become one picture again and the destructive one is the one that
-        // disappears into the other.
         //
         // Against `fonts` itself the cue is the frame: an A on an open baseline
         // rule reads as "a typeface, listed"; an A closed inside a box reads as
@@ -101,13 +85,6 @@ pub(super) fn band() -> Vec<Command> {
         command("tools.unembed_fonts", t::tools_unembed_fonts(), 712)
             .with_icon("unembed-fonts")
             .enabled_when("doc.open"),
-        // ★ **The borrow of `tools` ended 2026-09-04.** What it was costing is
-        // the set's standing argument in miniature: **an icon is a claim.** The
-        // `tools` wrench says *adjust this*, and this command adjusts nothing —
-        // it reports what the renderer had to substitute or leave out. It also
-        // meant the tab's own identity glyph was doing duty as one command's
-        // art, so the tile was indistinguishable from the tab that contained it.
-        // Same argument that keeps `fonts` from being a pencil.
         //
         // A folded page carrying a measurement trace across it. Distinct from
         // [`crate::icons::Icon::Text`]'s folded page by the trace, which is the

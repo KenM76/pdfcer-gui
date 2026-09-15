@@ -1,6 +1,5 @@
 //! # `canvas::placing` — **point at the page instead of typing coordinates**
 //!
-//! **Operator request, `OPERATOR_REQUESTS.md` O66, 2026-08-31:**
 //!
 //! > *"anything we are inserting like this should have an option in its
 //! > dialogue box to place it with the mouse instead of by positional
@@ -43,16 +42,6 @@
 //! the cancel path simply was never one of the places anybody remembered to
 //! reopen from.
 //!
-//! ★ **That precedent was repaired on 2026-09-13 by adopting this file's rule**,
-//! and the repair is worth recording here because it is the evidence for the
-//! rule rather than an exception to it. `dialogs::scale` now derives
-//! `hidden` from the armed canvas tool (`ScaleDialog::hidden`) and stores
-//! nothing; `close_scale` is deleted. A stored `awaiting_pick: bool` plus a
-//! once-a-frame invariant in `app::frame` was written first, and was thrown
-//! away on reading the paragraph above — which is the most direct return this
-//! header has produced. The tense is corrected rather than the paragraph
-//! deleted, because a ruling that has been applied twice is stronger evidence
-//! than one still arguing against a live bug.
 //!
 //! ⇒ With a stored `hidden: bool` this arm would inherit that, five times over:
 //! a mode change through `tool::arm::retire_forbidden`, the Tool panel putting

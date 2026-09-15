@@ -2,9 +2,6 @@
 //!
 //! # Why this is its own file
 //!
-//! Split out of [`super::driving`] on 2026-09-05 under **R2** (no `.rs` file
-//! over 1,500 lines), when the first full driven sweep added two more helpers
-//! of this shape and took that file to 1,534.
 //!
 //! The seam is a real subject rather than an arbitrary cut, and the tell is
 //! that all three functions here answer the **same question** —
@@ -42,7 +39,6 @@ use crate::launch::Session;
 use super::driving::declared;
 /// **Bring a docked panel to the front of its tab stack.**
 ///
-/// # ★★★ Why this is a funnel and not a paragraph — 2026-09-05
 ///
 /// `RESUME.md` records the finding in its own words: *"A docked pane that is
 /// not in front publishes nothing, which is indistinguishable from a panel with
@@ -70,7 +66,6 @@ use super::driving::declared;
 /// | 2 | `dock.body.<id>` | the panel is already drawn and active — presses NOTHING and returns `true`. |
 /// | 3 | `rail.tabs.<id>` | presses the left-rail entry, then checks it did not close the panel. |
 ///
-/// # ★★★ Why route 3 exists — the 2026-09-05 suppression, found 2026-09-12
 ///
 /// Ken asked that day for *"no tabs in the left side bar when the left rail
 /// is visible"*, and [`egui_shell::dock::Dock::tabs_suppressed`] delivers it:
@@ -93,13 +88,6 @@ use super::driving::declared;
 ///
 /// # ★★ Why route 2 must be tried BEFORE route 3
 ///
-/// The rail entry dispatches the panel command, and `view.panel_*` is a
-/// **toggle** (`app::panels::toggle_panel`, operator decision 2026-08-14):
-/// pressing it while the panel is on screen **closes** it. A fallback that
-/// pressed the rail unconditionally would therefore close the panel its
-/// caller asked to read, and the caller would report an empty panel — the
-/// exact class of confident wrong answer this whole family of helpers exists
-/// to prevent, reintroduced by its own repair.
 ///
 /// `dock.body.<id>` is published only while the panel is the drawn, active
 /// tab of a visible side, so it answers the toggle's question directly.
@@ -197,7 +185,6 @@ pub fn raise_dock_tab(
 /// **Scroll a panel until a control it declares is WHOLLY inside the panel's
 /// body, and hand back the control's fresh rectangle.**
 ///
-/// # ★★★ Why [`scroll_to`] is not enough, and the incident — 2026-09-05
 ///
 /// [`scroll_to`] stops as soon as the region is **declared**. That is the right
 /// test for a control published through `diag::ui_rect_visible`, which is

@@ -2,19 +2,12 @@
 //!
 //! # Why this is its own file
 //!
-//! The same seam `print/layout.rs` was split on, and stated in the same terms:
-//! **geometry is a different subject from the transaction.** `host.rs` owns
-//! what a dialog window *is* — the viewport, the ownership, the focus window,
-//! the fit budget, the button pair. This file owns one question and no others:
-//! given the application window's rectangles and a dialog's size, what desktop
-//! point should the window be created at?
 //!
 //! It is a `mod placement;` declared inside `host.rs`, so it lives at
 //! `dialogs/host/placement.rs` and needs no entry in `dialogs/mod.rs` — which
 //! is at 1,496 lines and has no room for one. R2 is satisfied by splitting on a
 //! real seam rather than by shaving comments off the file that grew.
 //!
-//! # ★★★ The defect this file was written for: A16c, 2026-09-03
 //!
 //! An outside review found the sticky-note dialog *"opens at the window
 //! origin"*. It did, and the cause was two lines in two files that each looked

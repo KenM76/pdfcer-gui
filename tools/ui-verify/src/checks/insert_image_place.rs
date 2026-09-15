@@ -4,7 +4,6 @@
 //!
 //! # The request
 //!
-//! `OPERATOR_REQUESTS.md` **O66**, 2026-08-31:
 //!
 //! > *"anything we are inserting like this should have an option in its
 //! > dialogue box to place it with the mouse instead of by positional

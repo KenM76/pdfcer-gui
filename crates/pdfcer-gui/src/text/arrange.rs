@@ -10,12 +10,6 @@
 //! | **Bring to front / Send to back** and their one-step twins | [`crate::app::dispatch::markup`] → [`crate::app::actions::reorder`] | which mark is drawn on top where two overlap |
 //! | the **pointer drag** | [`crate::canvas::moving`] | where page content sits, continuously |
 //!
-//! ★★ The third row arrived on 2026-09-15 with `OPERATOR_REQUESTS.md` O188, and
-//! it widened the subject from *a mark* to *something on the page*: a drag moves
-//! page content — a drawn line, a label, a whole title block — where the other two
-//! move annotations only. The header said *a mark* for three weeks because the
-//! only gestures here were markup gestures, which is a fact about which
-//! sentences had been written rather than about what *arranging* means.
 //!
 //! They are one file rather than two for the reason [`crate::text::rotating`]
 //! and [`crate::text::resizing`] are two: those hold sentences for gestures
@@ -81,14 +75,6 @@
 //! the first sentence sends the operator straight into the second. Press an
 //! arrow, be told to drag, drag, be told to press Escape.
 //!
-//! ★★★ **That collision NARROWED on 2026-09-15 and did not close.** Until
-//! `pdfcer-core` shipped `move_text_run`, every drag on a line refused, so the
-//! loop caught every operator who tried. Now most lines move, and the two
-//! sentences above are reached only where the file gives the line no position
-//! of its own — so the arrow-key sentence is right far more often than it was
-//! and still wrong in the same narrow place. A defect that gets rarer without
-//! getting different is the kind that stops being reported before it stops
-//! happening, which is why this paragraph is longer now rather than deleted.
 //!
 //! ★★ **It is recorded and not “fixed”, deliberately.** The obvious repair is to
 //! widen `not_a_markup` with an *unless it is one line of text* clause, and that
@@ -283,14 +269,7 @@ pub const fn degenerate_page() -> &'static str {
 /// see the cause, and from where they sit dragging is simply broken — which is
 /// this project's founding defect shape, arriving on the newest gesture.
 ///
-/// # ★★★ WHY THERE ARE TWO, when there was one until 2026-09-15
 ///
-/// The retired sentence said *“pdfcer cannot move a single line yet”*, and on
-/// 2026-09-14 that stopped being true: `pdfcer-core` shipped `move_text_run`
-/// and `move_text_run_in_form` (`G017`), and most lines now move. What remains
-/// is not a missing capability but a property of **the file in front of him**,
-/// and there are exactly two ways to have it — so there are exactly two
-/// sentences, and neither may be written as *pdfcer cannot*.
 ///
 /// ★★ **The distinction is not pedantry, it decides what he does next.**
 /// *pdfcer cannot move a line* invites him to go looking for a newer build, a
@@ -384,10 +363,6 @@ pub const fn run_has_no_position_of_its_own() -> &'static str {
 /// **A drag on a line that the NEXT line's position is measured from** — the
 /// second of O188's two refusals.
 ///
-/// See [`run_has_no_position_of_its_own`] for the argument both sentences share:
-/// why there are two of them, why neither says *pdfcer cannot*, why the offer
-/// that used to lead the retired wording is gone, and why present tense here
-/// does not reopen the retirement ruling.
 ///
 /// ★★ **What this one has to get across that its twin does not** is that the
 /// refusal is protecting something. The other sentence reports an absence; this

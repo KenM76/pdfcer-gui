@@ -208,14 +208,7 @@ pub(super) fn double_click(st: &mut MeasureState, page_index: usize, actions: &m
 /// catch radius. `candidate` is what produced it, `None` meaning the raw
 /// position.
 ///
-/// # ★★★ Why this goes THROUGH the snap machinery, when it used to go around it
 ///
-/// Until 2026-09-03 the circular pick was taken **before** the point
-/// resolution, and there was a written argument for it: the pick committed no
-/// point, it toggled an *object*, and the object under the pointer is the same
-/// object whether or not there is a midpoint six pixels away. That argument was
-/// sound and its premise is gone — see [`super::pick::CircularPick`] for the
-/// measurement that removed it, and `OPERATOR_REQUESTS.md` O105.
 ///
 /// Now that a pick **is** a point, every part of that machinery is exactly what
 /// this tool wants:

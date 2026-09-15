@@ -3,13 +3,6 @@
 //!
 //! # What this is for
 //!
-//! `ui-conventions/drag-moves.md` D5 — *"modifiers constrain, and the
-//! constraint is announced"* — was found **absent from every drag in this
-//! shell** by the conventions sweep of 2026-08-20, and Shift-preserves-aspect
-//! is the sharpest instance: it is *the* resize convention, present in every
-//! program in the class for thirty years. An operator who holds Shift and gets
-//! a free-form resize does not conclude that pdfcer chose differently; they
-//! conclude it is broken.
 //!
 //! # ★★ Why this is a PAIR of drags and not one
 //!
@@ -49,14 +42,6 @@
 //! therefore a property of the drag AND the shape together, never of the drag
 //! alone.**
 //!
-//! Until 2026-08-29 this check chose its travel in **screen pixels** — 90 by 12
-//! — and then asserted that x was dominant. On `SW41177` the selection box is
-//! 390.6 × 41.0 px, so 90 px is 0.230 of the width while 12 px is 0.293 of the
-//! height: the drag was **y-dominant in the only space that decides**, the
-//! shell correctly kept `sy = 1.9888`, and the check reported it as *"the wrong
-//! factor"*. The shell was right; the constant was wrong. It is now a fraction
-//! of the shape, so the premise assertion 3 rests on is true by construction on
-//! any fixture. See [`DRAG_X_OF_SHAPE`] for the measured numbers.
 //!
 //! # ★ Why the trace and not the pixels
 //!
@@ -106,7 +91,6 @@ const OUTLINE_REGION: &str = "canvas.selection-outline";
 /// ★ Deliberately far more than [`DRAG_Y_OF_SHAPE`]. See the module header: a
 /// lopsided travel is what makes assertions 1 and 3 able to fail.
 ///
-/// # ★★★ It was `90.0` SCREEN PIXELS until 2026-08-29, and that was the defect
 ///
 /// The old pair — `90.0` px on x against `12.0` px on y — expressed the travel
 /// in **the screen's** space, and assertion 3 then read *"x travelled further,
@@ -114,11 +98,6 @@ const OUTLINE_REGION: &str = "canvas.selection-outline";
 /// drag's pixel ratio beats the selection box's own aspect ratio, and on
 /// `SW41177` it does not:
 ///
-/// | | measured, 2026-08-29 |
-/// |---|---|
-/// | the selection box | 390.6 × 41.0 px — **9.53 : 1** |
-/// | the old travel | 90 × 12 px — **7.5 : 1** |
-/// | relative travel | x: `90/390.6` = **0.230** · y: `12/41.0` = **0.293** |
 ///
 /// So the pointer travelled further **along y in the operand's own terms**, the
 /// shell kept `sy`, and the check called it *"the wrong factor"* while stating
@@ -210,13 +189,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check and its two siblings drag one of the eight selection grips,
-    // and that gesture can only be measured where the selection outline is
-    // big enough on screen for the grips not to overlap each other. The sweep
-    // hands every check one shared aim point chosen for the majority, and on
-    // 2026-09-12 two of these three FAILED under it - each printing several
-    // paragraphs that named application functions as the likely cause. Every
-    // one of those functions was correct.
     //
     // ⇒ `fixture::grip_gesture_target` holds the point and the reason. A
     // check whose subject cannot exist under an arbitrary aim must not be
@@ -467,14 +439,6 @@ fn one_drag(
     // `declared_at(1.0, 1.0)` — the bottom-right corner, where `handles` centres
     // the south-east grip. Not the centre: that is `Grip::Move`.
     let from = frame.declared_at(outline, 1.0, 1.0);
-    // ★★ The travel is a FRACTION OF THE OUTLINE and nothing else, so
-    // `declared_at` is handed the fraction directly rather than a pixel count
-    // divided by an extent. That division is what used to be here, and turning
-    // pixels into a fraction at the last moment is not the same thing as
-    // *choosing* the travel in the operand's space: the number a reader saw was
-    // `90.0` px, the number that decided the outcome was `90/w`, and the two
-    // parted company on the first fixture whose box was not roughly square.
-    // See [`DRAG_X_OF_SHAPE`] for the run that proved it.
     let to = frame.declared_at(outline, 1.0 + DRAG_X_OF_SHAPE, 1.0 + DRAG_Y_OF_SHAPE);
     // A mid-point so the drag passes through frames where the constraint is
     // live rather than teleporting from press to release. `drag_via`'s own

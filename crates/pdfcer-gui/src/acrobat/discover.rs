@@ -135,10 +135,6 @@ mod tests {
     /// **★★★ The `.pdf` handler is filtered by file name, and this is the
     /// case that proves the filter earns its keep.**
     ///
-    /// Measured on the operator's own machine, 2026-09-04:
-    /// `HKLM\SOFTWARE\Classes\.pdf` reads `OpenPDFStudio.pdf`. A fallback that
-    /// trusted the registered handler would launch a competitor's editor from
-    /// a button that says *Open in Acrobat*.
     #[test]
     fn only_an_acrobat_executable_is_recognised_as_one() {
         assert_eq!(

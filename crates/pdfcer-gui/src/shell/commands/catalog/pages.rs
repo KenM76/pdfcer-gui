@@ -1,8 +1,5 @@
 //! # `shell::commands::catalog::pages` — the Pages tab — what happens to the set of sheets
 //!
-//! One band of [`super::all`]'s catalogue. Split out of [`super`] under **R2**
-//! on 2026-08-28, when the Attachments command took that file to 1,495 of its
-//! 1,500 lines and the next command registered would have broken the rule.
 //!
 //! ## ★★★ The split is per TAB, and the reason it was refused before is gone
 //!
@@ -62,13 +59,6 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.extract", t::pages_extract(), 311)
             .with_icon("page-extract")
             .enabled_when("doc.pages"),
-        // ★ These two REUSE existing keys rather than gaining art, and the
-        // reuse is the catalogue's own documented meaning rather than a
-        // near-enough substitution. `crate::icons::Icon::ChevronUp`'s doc
-        // comment already reads: *"'Move selection up' in the page rail and
-        // the Combine-files list"* — it was authored 2026-08-03 for exactly
-        // this verb, because `▲` (U+25B2) was VERIFIED tofu in the shipped
-        // font stack.
         //
         // Drawing page-shaped art for reorder would have been the worse
         // answer twice over: two more assets to keep in step with the rest of
@@ -83,13 +73,6 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.move_down", t::pages_move_down(), 313)
             .with_icon("chevron-down")
             .enabled_when("doc.pages"),
-        // ★★★ `pages.split` was HERE until 2026-08-31 — O68. Unregistered
-        // with `tools.split_files`, which is the same dialog with a different
-        // operand set; see that one's note in `catalog::tools` for the whole
-        // argument. R9: nothing is drawn until the boundary chooser exists.
-        // ★★ **The borrow of `combine` ended 2026-09-04**, with art adopted from
-        // the outside review of 2026-09-03, and what the borrow was costing is
-        // the clearest case in this file.
         //
         // `combine` is [`crate::icons::Icon::Combine`] — `link.svg`, two closed
         // interlocking rings — and its documented owner is a DIFFERENT command:
@@ -129,8 +112,6 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.rotate_right", t::pages_rotate_right(), 321)
             .with_icon("rotate-cw")
             .enabled_when("doc.pages"),
-        // ★★★ **Sheet size** — 2026-09-06, the third Transform command and the
-        // one that closes `EDITABLE_SURFACES.md`'s `set_media_boxes` row.
         //
         // ★ `doc.pages` and no new condition, on this band's own rule stated at
         // the top of the file: with nothing picked it acts on the current

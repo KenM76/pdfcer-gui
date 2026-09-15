@@ -32,10 +32,6 @@
 //! not authoring* ruling, the mode gate derived from a tab list, the arrival of
 //! `CanvasTool::Text` — and none of them is a change to what a range means.
 //!
-//! Re-exported flat by [`super`], so every call site still writes
-//! `textsel::takes_the_press` and nothing outside `canvas/` learns that the
-//! module was split. The three tests that are *about the gate* came with it,
-//! which is this project's test for whether a split was along a seam at all.
 //!
 //! ---
 //!
@@ -69,11 +65,6 @@
 //!
 //! > | **Canvas gestures** | pan, zoom, **text selection for copy**, follow links |
 //!
-//! And the operator settled the same question for the *commands* on 2026-08-14,
-//! moving both text-copy verbs off the authoring tab with the sentence that
-//! decides this one too: **copying is not authoring.** A capability named
-//! `select_text` would be that ruling restated in a second place, free to
-//! disagree with it.
 //!
 //! ### …but it still has to be told apart from the content marquee
 //!
@@ -83,22 +74,11 @@
 //! meanings, one button, and no way for the canvas to guess which the operator
 //! meant.
 //!
-//! ★ **This paragraph used to claim all three reference applications resolve it
-//! the same way, with a tool. That was wrong, and the correction is the reason
-//! the resolution below needed an argument rather than a head-count.** What they
-//! actually do: **Acrobat and SolidWorks resolve text-versus-object
-//! *contextually*, within one tool** — hover text, get an I-beam; hover an
-//! object, get an arrow — while **Inkscape** alone uses a separate Text tool
-//! beside its Selector. Acrobat *Reader*, the product being replaced, has only
-//! the Selection tool, which selects text because there is nothing else there to
-//! select.
 //!
 //! The shipped answer follows Inkscape, and the argument for preferring the
 //! minority is at [`CanvasTool::Text`](crate::canvas::tool::CanvasTool::Text) —
 //! summarised three subsections below, under the tool's arrival.
 //!
-//! So the rule is [`takes_the_press`], and as of 2026-08-14 it has **two
-//! disjuncts** where it shipped with one:
 //!
 //! > **A press means text when the text tool is armed, *or* when the select tool
 //! > is active and the mode cannot select content.**
@@ -109,8 +89,6 @@
 //!
 //! ### ★ The first half arrived, and it is the paragraph below that predicted it
 //!
-//! What used to stand here — kept, because the prediction was exact and because
-//! the gap it named is what this section is now the record of:
 //!
 //! > ★ **Edit is the row worth staring at, and it is a known gap rather than an
 //! > accident.** A reviewer can select text and an editor cannot, which is an
@@ -176,16 +154,7 @@
 //! inferring from a flag, so the drag's meaning and the click's routing cannot
 //! disagree.
 //!
-//! ### …and one consequence that was previously said to be impossible
 //!
-//! It used to follow that [`crate::canvas::selection::SelectionState`] and
-//! [`TextSelection`] could never both be non-empty. **In Edit, with the text
-//! tool armed, they now can**: marquee some objects with the select tool, arm
-//! Text, sweep a line, and both fields hold something. Nothing breaks — both
-//! conditions are published, both are true statements, the Format tab and the
-//! text-markup controls are simultaneously live and both act on the operand
-//! their label names, and the overlay paints an outline and a wash which are
-//! visibly different things.
 //!
 //! The interesting part is that the *shape* was right for a reason its own
 //! argument got wrong. They are two fields on [`crate::app::state::OpenDoc`]

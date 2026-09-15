@@ -5,13 +5,6 @@
 //!
 //! ## ★★★ This window exists to be READ, not to be filled in
 //!
-//! ⚠ **Corrected 2026-09-05.** This paragraph read *"It has no settings … there
-//! is no useful way to make it configurable either"*, and that sentence was
-//! used in `OPERATOR_REQUESTS.md` **O47** as the reason not to let the operator
-//! decide whether pdfcer's own standard-14 faces may stand in for his. The
-//! window now has exactly one control, and the reasoning that kept it out was
-//! wrong rather than merely outdated — `dialogs::embed`'s header carries the
-//! whole account.
 //!
 //! What survives, and still governs every string in this file: `embed_fonts`
 //! takes a request the shell has already resolved, so almost every word here is
@@ -26,10 +19,6 @@
 //!
 //! ## ★★ The three things it must say, in this order
 //!
-//! ★ Since 2026-09-05 there is a **fourth**, and it comes between 2 and the
-//! buttons: [`own_fonts_offer`], [`own_fonts_consequence`] and
-//! [`own_fonts_checkbox`] — the fonts pdfcer could stand in for, **by name**,
-//! what standing in costs, and the box. See their own docs.
 //!
 //! **1. What will be embedded**, because that is the operator's answer.
 //!
@@ -147,20 +136,12 @@ pub fn blocked_row(face: &str, blocker: &EmbedBlocker, pdfcer_has_a_copy: bool) 
         EmbedBlocker::ProgramDeclaredButUnreadable => {
             "the document says it carries this font, and those bytes cannot be read".to_owned()
         }
-        // ★★★ Its remedy changed on 2026-08-28 and the sentence had to follow.
         //
-        // It used to say only *"add a folder that does"*. Since O47 and O50,
-        // there are **two** remedies and the cheap one is a checkbox — so this
-        // names that first, because a row that sends an operator to a folder
-        // picker when one click would do is a row that costs them the
-        // difference.
         //
         // ⇒ A refusal's wording is a claim about what would fix it, and the
         // things that fix it change under it. This one had been true for
         // exactly one day.
         //
-        // ★★★ AND IT CHANGED AGAIN ON 2026-09-05, in the direction that makes
-        // it false rather than merely stale.
         //
         // Until today pdfcer's own fourteen faces answered unconditionally, so
         // a font pdfcer carries could never reach this row and the clause *"and
@@ -508,12 +489,6 @@ mod tests {
     /// **A standard-14 font pdfcer carries is told so, and one it does not is
     /// not** — the two halves of the same row, asserted together.
     ///
-    /// ★★★ This is the assertion that catches the wording defect the switch
-    /// created. Before 2026-09-05 pdfcer's own faces answered
-    /// unconditionally, so a font pdfcer carries could never be reported as
-    /// *"pdfcer has nowhere to take it from"*; with the box unticked it can be,
-    /// and the old sentence would have told the operator pdfcer has no copy of
-    /// a font it is holding.
     ///
     /// ★ The two are asserted **against each other** rather than against
     /// literal strings. A test pinning the exact sentence would fail every time

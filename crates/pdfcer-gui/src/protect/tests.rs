@@ -55,16 +55,6 @@ fn passwords(current_owner: &[u8], user: &[u8], owner: &[u8]) -> Passwords {
 /// parallel and two tests writing one path is a flake that reproduces about a
 /// third of the time — the worst kind.
 ///
-/// ★★★ **And the caller tag alone was not enough, which is the more
-/// interesting half.** It distinguishes THREADS inside one `cargo test`. It
-/// does nothing about two `cargo test` PROCESSES, because both have the same
-/// set of callers and therefore ask for the same filenames. On 2026-09-13 a
-/// second concurrent workspace run turned
-/// [`super::tests::changing_the_password_keeps_what_the_document_allowed`] red
-/// while it passed alone: one process was still writing the encrypted copy
-/// when the other opened it. The assertion that failed was five lines
-/// downstream of the real event, which is why this reads as a regression in
-/// whichever test lost the race rather than as a shared-state defect.
 ///
 /// ⇒ The doc comment above named the hazard and fixed half of it, and a
 /// half-fix under a confident note is worse than no note: the next reader
@@ -291,7 +281,6 @@ fn permissions_on_an_unprotected_document_is_refused_by_name() {
 /// opens the file and the old one no longer does. Either half alone would pass
 /// on a build that wrote the bytes out unchanged.
 ///
-/// ## ★★★ What this test found when it was first run, 2026-09-04
 ///
 /// It was written asserting `preserved_grants() == [Print]` on a document
 /// written with `permissions = [Print]`, and it **failed**, reporting

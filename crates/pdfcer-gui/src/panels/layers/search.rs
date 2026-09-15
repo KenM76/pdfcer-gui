@@ -2,13 +2,6 @@
 //!
 //! # Why this is its own file
 //!
-//! The same seam `dialogs/host/placement.rs` was split on, and stated in
-//! the same terms: **the rule is a different subject from the drawing.**
-//! [`super`] owns what a layer row says and which actions a click raises;
-//! this file owns one question and no others — *given a query and a layer,
-//! is that layer in the list?* It is a `mod search;` declared inside
-//! `layers.rs`, so it lives at `panels/layers/search.rs` and needs no entry
-//! in `panels/mod.rs`.
 //!
 //! The split is worth it for one reason beyond R2: a predicate in a file of
 //! its own can be **swept** — every layer shape this project knows about,

@@ -13,7 +13,6 @@
 //! `reshape_annotation_preview` on every frame of the drag, so a release that
 //! reaches these functions is one the engine already said yes to.
 //!
-//! ## The NODES of a markup shape — operator report, 2026-09-05
 //!
 //! > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
 //!

@@ -78,13 +78,6 @@
 /// document's properties", which is exactly wrong for a fill colour and exactly
 /// wrong in the other direction for `/Title`.
 ///
-/// ★ **Since 2026-09-05 the two scopes are two panels** — `file.properties` and
-/// `file.document_properties`, the second being [`super::docprops`] — so this
-/// panel has one subject again and that argument has expired. The heading stays
-/// anyway, for a different and smaller reason: this panel draws **several**
-/// sections at once (*This markup*, *This text*, *Position and size*), each
-/// headed with what it is about, and one unheaded field list among them would
-/// read as the continuation of whichever section happened to be above it.
 #[must_use]
 pub fn properties_object_heading() -> &'static str {
     "Object properties"
@@ -102,10 +95,6 @@ pub fn properties_nothing_focused() -> &'static str {
     "Pick a row in the Objects panel to see what it is made of."
 }
 
-// ★★★ **The document's own copy MOVED to [`super::docprops`] on 2026-09-05**,
-// with the section it belongs to — the operator: *"the document properties are
-// still always visible in the properties tab. it needs to get out of there and
-// be in its own document properties tab."*
 //
 // Seventeen functions went: the "This document" heading and its note, the four
 // `/Info` field labels, the inexact-decode disclosure, and the seven read-only
@@ -559,20 +548,7 @@ pub const fn text_unreadable() -> &'static str {
 // for the Text tool and sweep across them. Clicking picks the shape they are
 // drawn in, which is not the same thing."*
 //
-// Written 2026-08-29 for O37's *"nothing on screen tells you to press T"*,
-// re-aimed 2026-09-05 when O89 gave the clicked object a working colour
-// control, and **deleted 2026-09-14** when `OPERATOR_REQUESTS.md` O198 gave
-// it a working font, size, bold and italic control as well. Every clause of
-// the sentence had become false: clicking now picks the words as well as the
-// shape, and the four properties it named are editable without arming
-// anything.
 //
-// ★★ **A disclosure has a subject, and when the fix removes the subject the
-// disclosure goes with it.** The alternative — re-aiming it a second time at
-// whatever was still missing — is how an application ends up narrating its
-// own history to an operator who only wanted to change some text. The whole
-// of what this sentence used to route to is now one click away, and a
-// sentence explaining a route to a thing already on screen is noise.
 //
 // ⚠ Its test, `the_text_route_sentence_names_the_bound_chord`, went with it,
 // and so did the only reader of `view.tool_text`'s chord outside the keymap.
@@ -580,9 +556,6 @@ pub const fn text_unreadable() -> &'static str {
 // restoring from git — including its comment about why `contains("T")` passed
 // for the wrong reason.
 
-// ★★★ `text_face_label`, `text_face_none` and `text_face_ambiguous` were HERE
-// until 2026-08-29 and now live in [`super::face`], with the two group headings
-// and the standard-14 disclosure that joined them.
 //
 // They moved because the chooser did. `Pass 162.0` made the face list carry
 // faces the document does NOT contain, which turned one combo box into a
@@ -610,9 +583,6 @@ pub const fn text_size_suffix() -> &'static str {
 
 /// What a Format ▸ Font control shows when it is greyed and has no operand.
 ///
-/// ★★★ **A screenshot found this and no trace could have**, 2026-08-27, which
-/// is `D:/dev/rag/egui/`'s standing rule arriving in person: *layout and
-/// clipping defects have exactly one oracle, a rendered screenshot.*
 ///
 /// The Font group's size field is an `egui::DragValue` over the shared read-back
 /// draft. With nothing swept the draft holds its `Default` — zero — and the
@@ -694,10 +664,6 @@ pub const fn text_colour_not_plain() -> &'static str {
     "Set in CMYK or a spot colour — pdfcer will not offer to change it here, because doing so would convert the ink to screen colour permanently."
 }
 
-// ---------------------------------------------------------------------------
-// ★★★ What Bold and Italic would ACTUALLY do to this run —
-// `EditSession::preview_style_ladder`, consumed 2026-09-11
-// ---------------------------------------------------------------------------
 //
 // # What these replace, and why the sentence they replace was not wrong
 //
@@ -714,15 +680,7 @@ pub const fn text_colour_not_plain() -> &'static str {
 // whether any of them covers the characters they swept, and whether the one
 // that does belongs to the same typeface as the text they are looking at.
 //
-// # ★★★ The instrument changed on 2026-09-11, and so did the number of answers
 //
-// These sentences were first written on 2026-08-29 against
-// `preview_style_resolution`, which previews the **R90 synthesis gate**: one
-// bit, *"is there a real face on this page that claims this style"*. The gate
-// is one input to the decision, not the decision. `Pass 179.0` had already
-// turned the commit path into a four-rung ladder, and the gate cannot see rung
-// 2 by construction — the standard-14 sibling of the run's own family is
-// **not on the page**, which is the whole point of it.
 //
 // So the old hover, on the commonest CAD page there is — a title block set in
 // `Helvetica` with no bold resource anywhere — answered *"no real bold face,
@@ -890,15 +848,7 @@ pub fn text_italic_hint_standard_sibling(face: &str) -> String {
 /// than a preference, which is why the sentence says what *will* happen rather
 /// than merely offering to do it.
 ///
-/// # ★★★ It became a measurement on 2026-09-11, and the hedge came out
 ///
-/// From 2026-08-29 to 2026-09-11 this read *"… pdfcer will use a real bold
-/// typeface if it can find one and thicken the letters if it cannot — and it
-/// will tell you which it did."* That hedge was correct and unavoidable: the
-/// shell was previewing the **R90 gate**, which cannot see rung 2, so it knew
-/// the gate had found nothing and did not know what the ladder would do next.
-/// The doc comment of the day argued at length that predicting the rung needed
-/// an instrument that did not exist.
 ///
 /// ⇒ It exists now. `preview_style_ladder` returns the rung the commit will
 /// land on, so this sentence is only ever shown when the answer is **rung 4**,

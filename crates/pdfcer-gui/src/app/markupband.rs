@@ -1,8 +1,6 @@
 //! # `app::markupband` — the five Format ▸ Markup controls the ribbon cannot
 //! draw itself
 //!
-//! `RIBBON_IA.md` §5.8's *Markup annotation* row, and the operator's ask of
-//! 2026-09-06: *"getting full editing working for the Markup tools."*
 //!
 //! ## What this module is
 //!
@@ -99,12 +97,6 @@
 //! ## ★★★ WHICH subtype takes WHICH property is the ENGINE's question, and this
 //! module no longer holds an answer to it
 //!
-//! Until 2026-09-06 this file decided, **in this crate**, that a text markup has
-//! no border to widen, that a line has no interior to fill, and that a `/Line`
-//! alone has ends to put a head on. It derived all three by matching on
-//! `MarkupSpec`'s arms in [`Current::read`]. That list was correct on the day it
-//! was written, and this project filed it as a boundary defect anyway, in these
-//! words:
 //!
 //! > *"That list is the engine's to know. The first subtype that gains or loses
 //! > a border is the day our copy is wrong and nothing tells us."*
@@ -216,15 +208,6 @@
 //! `pub(crate)` would have been an edit to another author's file to save
 //! twenty lines.
 //!
-//! ⚠ **Corrected 2026-09-06.** This paragraph used to end: *"The two are
-//! allowed to differ, and one of them does — this one also reads `/LE` and the
-//! interior, which the panel offers no control for."* That was true when it was
-//! written and stopped being true the same day: `panels::properties::markup`
-//! gained `fill_row` and `endings_row` in the session that added this band, so
-//! **both surfaces now read all five terms**. The permission still stands — the
-//! two readers are allowed to differ — but the example of a difference is gone,
-//! and a header that keeps a stale example teaches the next reader a fact about
-//! the panel that is no longer so.
 //!
 //! ⚠ What is **not** duplicated is the derivation that matters: both read
 //! through `annot_author::spec_from_dict`, the author's view, which is what
@@ -318,14 +301,6 @@ const DASH_WIDTH: f32 = 88.0;
 /// perfectly buildable here. What it cannot express is *"exactly one field, and
 /// the caller chose which"*, which is the invariant the dispatcher relies on.
 ///
-/// ⚠ **Not `Copy` since 2026-09-06, and the engine's own note predicted it.**
-/// [`Self::Dash`] carries a `BorderDash`, which owns a `Vec<f64>`
-/// (`pdfcer-core` `annot_author.rs:157`), so the derive lost `Copy` the day the
-/// dash arrived. Every consequence was mechanical — this type is *constructed*
-/// at each control and *consumed* by `into_style`, and nothing ever read it
-/// twice. It is called out because the reply that shipped the field warned that
-/// move errors would appear and warned against reaching for a `clone` in a hot
-/// path to silence them; there is none, and there should not be one.
 #[derive(Debug, Clone, PartialEq)]
 pub enum MarkupEdit {
     /// `/C` — the outline colour.
@@ -343,20 +318,9 @@ pub enum MarkupEdit {
     /// `/LE` — the pair of line endings, or the **removal of the key**.
     /// `/Line` only.
     ///
-    /// ★★ A `StyleEdit` since 2026-09-06, and the two arms are two different
-    /// files that draw the same line: `Set` writes the array — including
-    /// `Set((None, None))`, which is *"no arrowheads"* stated explicitly — and
-    /// `Clear` removes `/LE` altogether, so the mark goes back out the way it
-    /// came in. See this module's header for why the second is offered as an
-    /// action rather than as a fifth position in the chooser.
     Endings(StyleEdit<(LineEnding, LineEnding)>),
     /// ★★★ `/BS` `/S` + `/D` — the **line style**: dashed, or solid.
     ///
-    /// `RIBBON_IA.md` §5.8's eighth control, and the only one of the eight that
-    /// had *"no engine verb at all"* until the afternoon of 2026-09-06.
-    /// `MarkupStyle::dash` (`pdfcer-core` `edit.rs:4422`) is that verb, and its
-    /// two arms are the two things this chooser can mean: `Set(dash)` makes the
-    /// border dashed with that pattern, `Clear` makes it solid.
     ///
     /// ★★ **The third arm is `None`, and it is what NOT touching the control
     /// does.** A restyle that does not mention `dash` preserves whatever the
@@ -399,17 +363,6 @@ impl MarkupEdit {
                 opacity: Some(edit),
                 ..MarkupStyle::default()
             },
-            // ★ Passed through whole rather than wrapped in `Set` here, which
-            // is what the variant's own `StyleEdit` buys: the decision between
-            // *write the array* and *remove the key* was taken at the control,
-            // by the operator, and this function's job is to place it in one
-            // field of an otherwise-default struct. Wrapping here would have
-            // put the fifth state out of reach again for exactly the reason the
-            // engine's field was a bare `Option` before 2026-09-06.
-            // ★ Passed through whole for [`Self::Endings`]' reason exactly: the
-            // decision between *dashed* and *solid* was taken at the chooser,
-            // by the operator, and `Clear` here is the engine's own spelling of
-            // *make it solid* rather than the removal of a control's value.
             Self::Dash(edit) => MarkupStyle {
                 dash: Some(edit),
                 ..MarkupStyle::default()
@@ -653,12 +606,6 @@ struct Current {
     /// ★★★ **Which of these properties this `/Subtype` can take at all — the
     /// ENGINE's answer, not this module's.**
     ///
-    /// `MarkupStyleSupport::for_subtype` (`pdfcer-core` `edit.rs:4493`) is
-    /// asked once, off the annotation's own `/Subtype`, and its three booleans
-    /// are what [`fill`], [`width`] and [`endings`] consult before drawing
-    /// anything. Until 2026-09-06 the same three answers were derived here from
-    /// `MarkupSpec`'s arms, which is the copy of the engine's list this shell
-    /// filed a request to be rid of. See the module header.
     ///
     /// ★ Distinct from a value being `None`, and the distinction is the whole
     /// of why a control is **absent** rather than greyed: `false` means the
@@ -829,12 +776,6 @@ impl Current {
         };
         // ★★★ **This `match` reads VALUES; it no longer decides CAPABILITIES.**
         //
-        // Until 2026-09-06 the arms below also set `fillable`, and the absence
-        // of a `width` assignment on the `TextMarkup` arm was how the width
-        // control came to be hidden for a highlight. Both were this crate
-        // holding a copy of the engine's list, which is the boundary defect
-        // filed and now answered — `current.support` above carries all three
-        // answers and the three control functions consult it.
         //
         // ⚠ What stays is what only an arm can say: `border_width` lives in
         // `MarkupSpec::Square`, `width` in `MarkupSpec::Line`, `endings` in
@@ -891,10 +832,6 @@ impl Current {
                 current.stroke = rgb_of(color);
                 current.width = Some(width);
             }
-            // A text markup's shape is `/QuadPoints`, so there is no border
-            // width in the arm to read. That it has no border to widen is
-            // `support.takes_border`'s to say, not this arm's absence of an
-            // assignment — which is the correction of 2026-09-06.
             MarkupSpec::TextMarkup { color, .. } => current.stroke = rgb_of(color),
             // `MarkupSpec` is `#[non_exhaustive]`. A kind this build does not
             // know the shape of gets no readback, which is the same answer a
@@ -1040,10 +977,6 @@ fn stroke(
 /// `/IC` is a control whose only possible effect is an undo entry the operator
 /// did not earn.
 ///
-/// ★ The whole control is absent for a subtype with no interior, **and the
-/// engine says which those are** — `MarkupStyleSupport::takes_interior`, via
-/// [`Current::support`]. It was a `fillable` flag this module set from
-/// `MarkupSpec`'s arms until 2026-09-06; see the header.
 fn fill(
     ui: &mut Ui,
     current: Current,
@@ -1098,11 +1031,6 @@ fn fill(
 /// highlight is `/QuadPoints` and has nothing to stroke. R9, and the same
 /// answer `panels::properties::markup::width_row` gives.
 ///
-/// ★★ **Which subtypes those are is `MarkupStyleSupport::takes_border`'s to
-/// say.** This function used to answer it by whether the `MarkupSpec` arm had
-/// handed over a width — correct today, wrong the first day the engine gives a
-/// text markup a border, and wrong in the silent direction. The value read is
-/// still the arm's; the capability question is the engine's.
 ///
 /// ⇒ [`Current::offers_width`] therefore carries two terms and both are needed.
 /// `takes_border` false means *this subtype has no border* — nothing renders,
@@ -1201,12 +1129,6 @@ fn opacity(
 ///
 /// # ★★★ What this closes
 ///
-/// `RIBBON_IA.md` §5.8's *Line style* row read **⛔ no engine verb exists** and
-/// was the only entry in that row's eight for which that was true. It stopped
-/// being true on the afternoon of 2026-09-06, when `pdfcer-core` answered this
-/// shell's request with all three halves of the dash rather than the one that
-/// was asked for — preserve, author, and restyle. This is the restyle half's
-/// ribbon control; [`crate::canvas::markup::swatch`] is the author half's.
 ///
 /// # ★★ The preserve half is why this control is SAFE, and it is why it
 /// # shipped at all
@@ -1271,13 +1193,6 @@ fn dash(
 
 /// Which ends of a `/Line` carry an arrowhead.
 ///
-/// **Absent for every other subtype**, because nothing else has ends to put one
-/// on — and **the engine is what says which those are**:
-/// `MarkupStyleSupport::takes_endings`, via [`Current::support`]. It was
-/// `Current::endings` being `Some` that decided it until 2026-09-06, which was
-/// this crate answering a question the engine owns; see the header. It costs no
-/// space — `egui_shell::ribbon::control` reserves the budgeted width only when
-/// the application supplies **no renderer at all**.
 ///
 /// # ★★★ Four positions, and the SHAPE is preserved rather than chosen
 ///
@@ -1308,9 +1223,6 @@ fn dash(
 /// removal offered where there is nothing to remove has no possible effect but
 /// an undo entry the operator did not earn.
 ///
-/// ★ Moved here on 2026-09-12. It sat above `dash`, run
-/// together with that item's doc comment — so it documented `dash`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 fn endings(
     ui: &mut Ui,
     current: Current,
@@ -1471,10 +1383,6 @@ fn srgb_to_colour(rgb: [u8; 3]) -> Color {
 
 /// **Holding a spinner's value across frames while it is being dragged.**
 ///
-/// Split out of this file on 2026-09-06 under R2, in the same commit that fixed
-/// the defect it exists for: two `DragValue`s here were re-seeded from the
-/// document every frame, so a drag could never accumulate and neither control
-/// could be dragged at all. Its header carries the whole finding.
 use crate::app::spinnerdraft::{drafted, keep_draft};
 
 #[cfg(test)]

@@ -1,7 +1,5 @@
 //! # `app::frame` — the per-frame update, in the one order it may happen in
 //!
-//! `eframe`'s entry point and nothing else. Split out of [`crate::app`] on
-//! 2026-08-17, when that file crossed rule R2's 1,500-line ceiling.
 //!
 //! ## The seam is a real one, not a line count
 //!
@@ -59,10 +57,6 @@ use super::{PdfcerApp, REGION_CENTRAL_PANEL, keyboard, modes, window};
 /// press nothing. `PDFCER_DIAG_VIEWPORT` already gives a real, laid-out,
 /// invisible window; this gives it something to do.
 ///
-/// It landed with `dialogs::host` on 2026-08-20 because that change had no
-/// other honest oracle: *"a dialog opened in its own OS window"* is a fact
-/// about a second viewport that no unit test can observe and no screenshot of
-/// the main window contains.
 ///
 /// # ★ It reaches the same choke point an operator's chord does
 ///
@@ -87,13 +81,6 @@ fn scripted_invoke() -> Option<String> {
     use std::sync::atomic::{AtomicUsize, Ordering};
     /// ★ How many of the listed commands have been rung.
     ///
-    /// Was an `AtomicBool` while the variable held one id. It became a counter
-    /// on 2026-08-26 for the reason in the header's *"one command and not a
-    /// script"* section, which is still the governing argument and is not
-    /// weakened by this: **a list of doorbells is not a grammar.** There is no
-    /// syntax to learn, no arguments, no conditionals and no state — the ids
-    /// are the same ids the registry already publishes, and each is dispatched
-    /// through the same `dispatch_command` a keystroke reaches.
     ///
     /// What forced it: **a capability can take two commands to reach.** Arming
     /// a form-field tool needs Edit mode first, because the arm declines
@@ -206,14 +193,6 @@ impl eframe::App for PdfcerApp {
 
         // ★ Step 0 — install the theme. See `DEFECTS.md` D10.
         //
-        // **This call did not exist until 2026-08-14**, and the whole theme
-        // subsystem — three presets, a palette, a role per colour, a
-        // rendered-pair contrast gate over five widget states, and a gate
-        // self-test — was compiled into the binary and never handed to the
-        // `Context`. Every colour an operator has ever seen in this shell was
-        // `egui`'s stock light style. Found by a `ui-verify` check sampling a
-        // pressed ribbon button and getting `egui`'s `selection.bg_fill`
-        // instead of the preset's.
         //
         // Two things are installed, and the second is the one whose absence
         // was invisible: `apply` writes the palette into **both** of egui's
@@ -231,11 +210,7 @@ impl eframe::App for PdfcerApp {
         // restart and no cache to invalidate. It is a handful of field writes
         // against a struct egui already owns.
         //
-        // ★ The preset comes from the operator's settings — 2026-08-17, and
-        // this is the second half of `DEFECTS.md` D10.
         //
-        // The first half was fixed on 2026-08-14 by calling `apply` at all.
-        // What that note said next, and what stayed true until now:
         //
         // > There is also **no way to choose a preset**: the settings dialog is
         // > one of the unsalvaged Class-B surfaces, so even once `apply` is
@@ -285,7 +260,6 @@ impl eframe::App for PdfcerApp {
         // looks broken, the cue is simply not there.
         crate::canvas::overlays::install(&ctx, &theme);
 
-        // ★ Step 0b — install the UI scale. The theme's twin, added 2026-08-17.
         //
         // # Why it is here and not in `configure_context`
         //
@@ -376,13 +350,6 @@ impl eframe::App for PdfcerApp {
         // scale it had just *asked for*, which is not a measurement of
         // anything. It is the assumption restated.
         //
-        // That cost a wrong verdict on 2026-09-11. `ui_scale_resizes_the_chrome`
-        // computed the client area as `client_px / (os_dpi × requested_scale)`
-        // and asserted the two runs' results differed by the scale factor —
-        // an assertion its own arithmetic had already decided, and which
-        // therefore reported on nothing but which window `GetClientRect`
-        // happened to land on. (It landed on a dialog. See
-        // `tools/ui-verify/src/checks/ui_scale.rs`.)
         //
         // # What a reader may and may not conclude from it
         //
@@ -432,12 +399,6 @@ impl eframe::App for PdfcerApp {
         // ★★ Step 0b² bis — **measure the page's content digest**, on the one
         // frame-level `&mut` this shell has.
         //
-        // `app::cache::OpenDoc::page_objects_revision` keys the decomposition
-        // on it, which is what stops a 469 ms rebuild after every annotation
-        // edit. The accessor is `&mut self` (2026-09-01, `pdfcer-core`
-        // `6e2b69e`), and the cache that reads it is `&self` behind an `Arc`
-        // the render worker shares — so the measurement happens here and the
-        // reader takes the number.
         //
         // ★ Silent when a render is in flight and the `Arc` is shared. That is
         // safe rather than lucky: the digest is stored with the epoch it was
@@ -456,8 +417,6 @@ impl eframe::App for PdfcerApp {
         // it is this line.
         let caps = self.capabilities();
         crate::app::modes::capability::publish_edit_content(&ctx, caps.edit_content);
-        // ★★★ AND THE WHOLE SET, EVERY FRAME — 2026-09-04, and its absence was a
-        // defect I introduced the day before.
         //
         // `canvas::tool::store_capabilities` was called from exactly one place:
         // `on_mode_capabilities_changed`, which runs **when the mode CHANGES**.
@@ -621,14 +580,7 @@ impl eframe::App for PdfcerApp {
         // operator would learn that the program accepts drops *sometimes*, which
         // is worse than never.
         //
-        // Nothing in this shell read that field at all until 2026-08-19. The
-        // operator's report — *"can't drag and drop a jpg file onto a new
-        // pdf"* — was entirely true, and it made a WORKING Insert-image button
-        // look broken, because both were tried in the same minute and only one
-        // of them told him anything.
         //
-        // ★★ **Read here, ACTED ON at the end of the frame** — changed
-        // 2026-08-31 for `OPERATOR_REQUESTS.md` O67.
         //
         // `crate::app::filedrag` records the drop and the point it landed on,
         // and any surface drawn later this frame may CLAIM it: the Pages panel
@@ -656,8 +608,6 @@ impl eframe::App for PdfcerApp {
         // on all but the handful of frames where a chord was actually
         // pressed.
         //
-        // ★ **Filtered by the active mode**, which is the keymap's share of
-        // the mode gate. Operator decision, 2026-08-14.
         //
         // The ribbon hides a tab and the canvas asks `Capabilities`; between
         // them sat this, dispatching by id and consulting neither — so Read
@@ -697,8 +647,6 @@ impl eframe::App for PdfcerApp {
         // no operator has, which is the failure this whole channel exists to
         // avoid.
         if let Some(id) = scripted_invoke() {
-            // ★★★ **An OPERAND, for the commands that need one** — added
-            // 2026-09-04 with the panel-layout verbs.
             //
             // `view.panel_float`, `_dock` and `_close` act on *the panel the
             // operator right-clicked*, which arrives through
@@ -805,10 +753,6 @@ impl eframe::App for PdfcerApp {
         // feedback loop — 230 % → 224 % → 215 % drift from a status line
         // that grew (R128, `D:\dev\rag\egui\bottom_panel_height_...md`).
         egui::Panel::bottom("status")
-            // ★ Theme-derived since 2026-08-26. The constant this replaced
-            // assumed 24-point controls and the shipped theme's are 28, so the
-            // bar's own zoom stepper and Find toggle were clipped by two points
-            // at every UI scale. See `status::height_for`.
             .exact_size(crate::app::status::height_for(&theme))
             .show(ui, |ui| {
                 // Three disjoint field borrows through `self`, as at the
@@ -931,15 +875,6 @@ impl eframe::App for PdfcerApp {
             ctx.request_repaint_after(after);
         }
 
-        // Step 2 — compose. Nothing here mutates a document; surfaces push
-        // onto `actions`.
-        // ★ 2026-09-08: `ui.ctx().content_rect()` and `pixels_per_point()`
-        // were traced here for one build while running down the central
-        // panel's 0.1–0.5 pt width wobble. Both were CONSTANT (1400 × 900,
-        // ppp 1.0) on wobble frames, so the wobble was neither the window nor
-        // pixel rounding. Found 2026-09-09 and removed: a scroll bar fading
-        // in inside a dock body overshot its pane, and `Panel::show` slid the
-        // side inward by the excess - `egui_shell::dock::overflow_probe`.
         egui::CentralPanel::default().show(ui, |ui| {
             // Declare the panel's own rect before drawing into it. This is
             // the outermost named region the application owns, and it is the
@@ -1075,12 +1010,6 @@ impl eframe::App for PdfcerApp {
         // real cost — a dialog raised *from* a panel window would be behind
         // the window that raised it.
         //
-        // ⚠ **Forgetting this call is a silent failure.** Every floating
-        // panel would stay in the layout, report as on screen, and be
-        // drawn nowhere — the exact class of defect this project shipped on
-        // 2026-08-10 with three unreachable panels and every gate green.
-        // `DockFrameReport::floats_undrawn` is the number that catches it,
-        // and `crate::app::surfaces`' own test asserts it is zero.
         self.floating_panels(&ctx, &mut actions);
 
         // ★★ The unsaved-edits answer, drained IMMEDIATELY after the dialogs
@@ -1186,18 +1115,7 @@ impl eframe::App for PdfcerApp {
                 crate::canvas::placing::cancel(&ctx);
             }
         }
-        // ★★★ **The window is NOT closed here any more**, and the line that
-        // used to close it (`self.dialogs.close_scale()`) is gone rather than
-        // moved. Arming the tool on the next statement is what hides the
-        // window, because `ScaleDialog::hidden` is derived from the armed tool
-        // and from nothing else — `canvas::placing`'s ruling, applied to the
-        // precedent that module's header names as broken.
         //
-        // What that buys, concretely: an operator who chose metres, typed a
-        // ratio and set the number style before deciding to measure the line
-        // used to come back to a window that had forgotten all four, and one
-        // who pressed Escape mid-pick came back to no window at all. Both are
-        // now impossible to express, because there is no state to restore.
         if self.dialogs.take_scale_calibrate_request() {
             crate::canvas::tool::select(
                 &ctx,

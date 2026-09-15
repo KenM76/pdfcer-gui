@@ -11,8 +11,6 @@
 //! constraint that produced it"* — so the text is going to spill out of the
 //! box, and pdfcer stopped shrinking only to keep it readable.
 //!
-//! Until 2026-09-07 this shell read the chosen **size** and threw the **bound**
-//! away, so the operator got:
 //!
 //! > *"⚠ "FullName" asks for an automatic text size and pdfcer chose 4.0 pt.
 //! > Another program filling this field may choose differently."*
@@ -164,11 +162,6 @@ impl Check for AFieldTooSmallForItsTextSaysSo {
 /// report a disagreement as a hit-test failure.
 /// One widget, as the application says it drew it.
 ///
-/// ⚠ `width` is carried rather than re-derived. The first draft of the SKIP
-/// message below printed `cx * 2.0` as "the box the application drew N pt
-/// wide", which is the CENTRE doubled and was wrong by the box's page offset —
-/// it reported 330 pt for a 190 pt box. A diagnostic that invents a number is
-/// how a correct check sends the next reader to look at the wrong thing.
 struct PlacedBox {
     page: usize,
     field: String,
@@ -209,15 +202,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` is read and IGNORED here.
     //
-    // This check needs a document with an AUTO-SIZED text field — one whose
-    // /DA says `0 Tf` — and there is exactly one in this repository. Until
-    // 2026-09-12 the check knew that and could not act on it: the sentence
-    // naming `fixtures/autosize-field.pdf` lived in the refusal printed when
-    // NO --pdf was passed, and the sweep always passes one. Handed an A1 CAD
-    // sheet with no AcroForm, the check found no widget and reported “this
-    // fixture has exactly one” — false about the document it was given — then
-    // sent the reader to `canvas::forms::classify` and `block_reason`, both
-    // of which were correct.
     //
     // ⇒ A check that can name its fixture in prose can pin it in code.
     //
@@ -401,16 +385,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- And the operator was actually told ---------------------------------
     //
-    // ★★★ The bound reaching the trace is the shell's plumbing working. This is
-    // the part that is about the OPERATOR: the status bar drew its
-    // fill-disclosure group, in Read mode, where the Forms panel is not
-    // mounted — which is the whole reason the sentence lives on the bar rather
-    // than in the panel alone.
-    // ★★ `name=`, not `region=`. The first draft of this read `region=` and
-    // FAILED against a build that was working perfectly — the bar had drawn the
-    // line and the check was asking the wrong key. Recorded because that is the
-    // commonest way a driven check invents a defect: `get()` on a missing key
-    // returns `None`, which is indistinguishable from the value being absent.
     //
     // ★ Anchored past `mark` as well, so this cannot be satisfied by a
     // disclosure some earlier gesture left on the bar.

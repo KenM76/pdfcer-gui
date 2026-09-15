@@ -12,9 +12,6 @@
 //!
 //! ## ★★★ The finding that matters more than the feature
 //!
-//! `pdfcer-core` shipped `EditSession::set_button_action` on **2026-08-30**
-//! (`Pass 182.0`/`183.0`/`183.1`), in answer to this shell's own request, and
-//! the reply said in as many words:
 //!
 //! > *"Please check your own copy. If your surface tells the operator that
 //! > pdfcer never authors an action, it is now saying something untrue in the
@@ -48,11 +45,6 @@
 //! button-action-applied name=Button1 kind=ResetForm replaced=none
 //! ```
 //!
-//! ★ Note what a weaker check would pass on. `add-form-field` committing, or
-//! the field census naming a new button, is true on a build where the action
-//! was never written — which is every build before 2026-09-01. This check must
-//! read `button-action-applied` or it is measuring the feature that already
-//! worked.
 //!
 //! ## The sequence
 //!
@@ -362,7 +354,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- E: and the FORMS PANEL can read it back ----------------------------
     //
-    // ★★★ **The half that could not ship on the morning of 2026-09-01.**
     //
     // `set_button_action` could write and nothing could read, so a control over
     // an EXISTING button had three possible shapes and all three were bad: show

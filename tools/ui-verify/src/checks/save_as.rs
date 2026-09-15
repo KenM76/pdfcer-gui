@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-02, `OPERATOR_REQUESTS.md` O95:
 //!
 //! > *"we need a Save As option so that we are then making edits in the save as
 //! > file instead of the original just like other programs have it."*

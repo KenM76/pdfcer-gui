@@ -27,12 +27,6 @@ pub enum Icon {
     /// Leave a ribbon-opened surface and return to the armed tools' own
     /// options ("back-arrow").
     ///
-    /// Authored 2026-08-06 under the operator's standing ruling that a
-    /// missing glyph is AUTHORED, not worked around: the control wanted `←`
-    /// (U+2190), the coverage gate correctly rejected it as having no glyph
-    /// in the shipped stack, and the first fix reworded the button to plain
-    /// text. Rewording spends the operator's affordance to protect the font
-    /// stack; an icon costs one asset and keeps both.
     ///
     /// Distinct from [`Icon::ChevronLeft`] by its SHAFT — see `back.svg`'s
     /// own embedded note. Same reasoning that made [`Icon::ChevronUp`] and
@@ -59,8 +53,6 @@ pub enum Icon {
     /// Dismiss / remove — drawn instead of the text glyph `✕` (U+2715),
     /// which is absent from every font of the shipped stack.
     ///
-    /// Authored rather than reworded, per the operator's 2026-08-06 ruling
-    /// that a missing glyph for a real control gets an icon created for it.
     Close,
     /// Zoom out ("magnifier±").
     ZoomOut,
@@ -239,11 +231,6 @@ pub enum Icon {
     /// View ▸ Navigate → the **text tool**, which makes the primary drag sweep
     /// a range of text instead of marqueeing objects.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/text-select.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -293,18 +280,8 @@ pub enum Icon {
     FontFolders,
     /// Redaction.
     ///
-    /// It is the one intentionally solid-FILLED glyph in an otherwise
-    /// all-outline set, which is also why it is the pipeline's only coverage
-    /// of the fill path (see `fill_is_semantic_and_the_set_that_uses_it_is_closed`,
-    /// renamed from `redaction_is_the_only_filled_icon` on 2026-08-19). The fill
-    /// is not decoration: every other tool in this app draws or measures,
-    /// and this one obliterates, so its glyph reads as a solid bar rather
-    /// than an outline of one.
     Redact,
 
-    // =======================================================================
-    // ★ The 2026-08-14 pass — twenty-five glyphs for the ribbon's remaining
-    // text buttons.
     //
     // They are kept together, in one dated block, rather than interleaved
     // with their subject neighbours above. The block IS the record: of 88
@@ -588,29 +565,15 @@ pub enum Icon {
     /// Edit ▸ Apply redactions (`edit.redact_apply`) — the one irreversible
     /// command in the redaction family.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/apply-redactions.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ApplyRedactions,
 
     /// Attachments (`edit.attachments`) — the files this document carries
     /// inside itself, which appear on no page.
     ///
-    /// ★ The ruling — what the glyph depicts, and which neighbours it
-    /// must not be mistaken for — lives in `assets/attachment.svg`, beside the art
-    /// it constrains. Migrated there 2026-09-11 under the seam `OVERVIEW.md`
-    /// names: the enum is a list of roles, the asset carries its own rules.
     Attachment,
 
     /// Complete the gesture in progress — `markup.finish` and `measure.finish`.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/check.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -632,20 +595,10 @@ pub enum Icon {
 
     /// Place a **check box** — one independent on/off box.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/check-box.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     CheckBox,
 
     /// Close every open document except one — `view.close_other_documents`.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/close-others.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -701,11 +654,6 @@ pub enum Icon {
 
     /// Copy this page's text to the clipboard — `file.copy_page_text`.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/copy-page-text.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -719,11 +667,6 @@ pub enum Icon {
     /// Dimension groups — `measure.manage_groups`, and the caption's dock tab
     /// (`crate::panels::Panel::DimensionGroups`) with it.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/dimension-groups.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     DimensionGroups,
 
     /// Switch to the next open document — `view.next_document` (Ctrl+Tab).
@@ -743,11 +686,6 @@ pub enum Icon {
     /// Switch to the previous open document — `view.previous_document`
     /// (Ctrl+Shift+Tab).
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/document-previous.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -761,26 +699,15 @@ pub enum Icon {
 
     /// Place a **drop-down** (the `/Ch` choice field).
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/drop-down.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
     ///
-    /// Authored 2026-09-04 out of the same five-way share as [`Icon::CheckBox`].
     DropDown,
 
     /// Embed the font programs a document references but does not carry
     /// (`tools.embed_fonts`).
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/embed-fonts.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -792,11 +719,6 @@ pub enum Icon {
 
     /// A tree row whose children are **hidden** — press to reveal them.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/expand.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -823,31 +745,16 @@ pub enum Icon {
     /// Polyline or Polygon gesture has laid down. The same glyph answers
     /// `measure.finish`, which is its twin in every respect that matters.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/finish-shape.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     FinishShape,
 
     /// A row the **document** forbids changing — an optional-content group
     /// carrying `/Locked` (ISO 32000-1 Table 101), or a `/Ff` read-only form
     /// field.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/lock.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     Locked,
 
     /// Two-line measurement — `measure.two_line`.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/measure-angle.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     MeasureAngle,
 
     /// Path-length measurement — `measure.length`.
@@ -889,11 +796,6 @@ pub enum Icon {
 
     /// Radius / diameter measurement — `measure.radius_diameter`.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/measure-radius.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -914,11 +816,6 @@ pub enum Icon {
 
     /// Merge another file's pages INTO the open document (`pages.merge_into`).
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/merge.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     MergeInto,
 
     /// New (blank) document — `file.new`.
@@ -955,36 +852,18 @@ pub enum Icon {
 
     /// Place a **push button** — the `/Btn` field with no on/off state.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/push-button.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     PushButton,
 
     /// Put the armed tool down — the Tool panel's row 4.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/put-down.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     PutDown,
 
     /// Place a **radio button** — one of a mutually exclusive set.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/radio-button.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
     ///
-    /// Authored 2026-09-04, breaking the same five-way share as
-    /// [`Icon::CheckBox`]: this command drew [`Icon::FormField`], two items from
-    /// [`Icon::ManageList`] in the same ribbon group.
     ///
     /// ★ **`list.svg` reserved this shape for it years before it existed.** That
     /// asset's recorded deviation from ui-spec §8.2 refuses `icon-ring.svg`
@@ -1013,11 +892,6 @@ pub enum Icon {
 
     /// Recognise text (OCR) — `file.ocr`.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/recognise-text.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -1053,11 +927,6 @@ pub enum Icon {
     /// Edit ▸ Redact selection (`edit.redact_selection`) — mark whatever is
     /// selected, in one action.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/redact-selection.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -1072,10 +941,6 @@ pub enum Icon {
     /// Reflow paragraph (`edit.reflow_block`) — re-wrap the paragraph the caret
     /// is in so its lines fill their box again.
     ///
-    /// ★ The ruling — what the glyph depicts, and which neighbours it
-    /// must not be mistaken for — lives in `assets/reflow.svg`, beside the art
-    /// it constrains. Migrated there 2026-09-11 under the seam `OVERVIEW.md`
-    /// names: the enum is a list of roles, the asset carries its own rules.
     Reflow,
 
     /// Report how the page was actually drawn (`tools.render_diagnostics`).
@@ -1148,11 +1013,6 @@ pub enum Icon {
     /// Remove embedded font programs, leaving the references behind
     /// (`tools.unembed_fonts`).
     ///
-    /// [`Icon::EmbedFonts`]' drawing with the frame **dashed** instead of solid:
-    /// the container is still named, but what was inside it is gone. The dash is
-    /// the entire distinction between the two, and it renders — `icons::svg`
-    /// parses `stroke-dasharray` (see `Shape::dash`, added 2026-09-04 naming this
-    /// pair as the reason).
     ///
     /// This is the destructive half of the font pair, and until now it drew the
     /// same picture as [`Icon::Fonts`] — the panel that only *lists* faces. A
@@ -1163,11 +1023,6 @@ pub enum Icon {
 
     /// The wheel-paging toggle on the status bar — `OPERATOR_REQUESTS.md` O30.
     ///
-    /// ★ The ruling for the ART — what the glyph depicts, and which
-    /// neighbours it may not be mistaken for — is in `assets/wheel-flip.svg`.
-    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
-    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
-    /// asset states its own rules, and a rule stated twice drifts.
     ///
     /// What survives below is the part the asset does not say — the
     /// registration history, and the refusals this variant retired.
@@ -1179,23 +1034,13 @@ pub enum Icon {
     /// ([`crate::app::status`]), so this is the one place on the surface where a
     /// glyph buys width rather than spending it.
     WheelFlip,
-    // ── assets orphaned by breaking their aliases, 2026-09-04 ────────────
-    // ★ `Document` rejoined the ribbon on 2026-09-05; `Convert` below is the
-    // one still unbound.
     /// A document, as a subject — `document.svg`. **`file.document_properties`
     /// since 2026-09-05.**
     ///
-    /// ★ Ruling in `document.svg`: the one-day orphan and what found it, why an
-    /// unbound variant's comment must read as an invitation, why the asset was
-    /// kept while nothing named it, and the separation from [`Icon::Properties`].
-    /// **First variant migrated under `OVERVIEW.md`'s seam** (2026-09-05), to
-    /// make room for [`Icon::LineWeights`].
     Document,
 
     /// Change one form into another — `convert.svg`.
     ///
-    /// Orphaned on 2026-09-04 with [`Icon::Document`] and kept for the same
-    /// reason; see that variant for the argument.
     ///
     /// It was reached only through [`Icon::SetScale`], and the alias was a
     /// false claim rather than merely a borrowing: setting a scale converts
@@ -1203,8 +1048,6 @@ pub enum Icon {
     /// rule is that **an icon is a claim**, and this one was making one its
     /// command could not support.
     Convert,
-    // ── five glyphs no control reaches yet, 2026-09-04. One replaces a live
-    // borrow; four are art before button ([`Icon::EditObjects`] is the precedent).
     /// Export the page as a raster image — `file.export_image`. A picture tile
     /// (rect, mountain horizon) with an arrow leaving it to the right.
     /// ★ Replaces a LIVE BORROW made hours earlier: the command registered wearing
@@ -1265,11 +1108,6 @@ pub enum Icon {
     Permissions,
     /// Select everything on the page — `edit.select_all`.
     ///
-    /// A dashed marquee enclosing the pointer. ★★★ **This variant exists
-    /// because a refusal was mistaken for a ruling.** Its absence was argued in
-    /// prose by a build session on 2026-09-01, quoted in four places, and had
-    /// begun to be reported to the operator as settled. He corrected it on
-    /// 2026-09-04: *"I didn't refuse that."*
     ///
     /// ⇒ The lesson is kept beside the art rather than filed away: **a
     /// well-argued refusal written by whoever happened to be building that day
@@ -1299,9 +1137,6 @@ pub enum Icon {
     /// subject), what keeps it clear of `list.svg`, and the 16 px floor the
     /// thinnest bar was measured against.
     ///
-    /// ★★ Authored 2026-09-05 for a control that had been **deleted** — the
-    /// operator's standing ruling (2026-08-06, quoted at [`Icon::Back`]) is
-    /// that a missing glyph is AUTHORED, never worked around.
     LineWeights,
 }
 

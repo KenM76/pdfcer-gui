@@ -1,11 +1,5 @@
 //! # `canvas::grid` — the drawing grid, in the page's own space
 //!
-//! The middle of `RIBBON_IA.md` §5.2's *"Rulers · Grid · Guides"*, split out of
-//! [`super::rulers`] when that file reached R2's 1,500-line ceiling. The seam
-//! is the one that module's header already implied: a ruler is chrome **beside**
-//! the canvas that reserves layout space and answers to R128, while a grid is
-//! chrome **over the page** that reserves nothing and answers to a different
-//! question entirely.
 //!
 //! What stays behind in [`super::rulers`] is everything the two share — the
 //! unit ([`Scale`]), the 1-2-5 [`Ladder`] and its exact tick walk — because a

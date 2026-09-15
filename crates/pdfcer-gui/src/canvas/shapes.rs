@@ -4,10 +4,6 @@
 //!
 //! ## What this replaces, and the convention it overrules
 //!
-//! **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me the
-//! shape change of the line, it just had a perimeter box around it. this goes
-//! for anything I change right now. there isn't a real preview like there is in
-//! inkscape."*
 //!
 //! He is right, and it was **deliberate**. `canvas/handledrag.rs` states the
 //! rule this module exists to reverse:
@@ -135,8 +131,6 @@ pub struct ShapePreview {
     /// # ★★ The footprint, not the bounding box — and that is the whole
     /// difference between acceptable and not
     ///
-    /// **Ken, 2026-08-30:** *"yeah do both"*, accepting that erasing the old
-    /// position would take whatever was underneath with it.
     ///
     /// It takes much less than he agreed to. Because the shell has the real
     /// geometry, the erase is the object's **own outline** — stroked at its own
@@ -209,13 +203,6 @@ pub fn transformed(
         // geometry this shell may draw, and drawing them approximately would be
         // worse than leaving them to the outline.
         //
-        // ★★ `object_for` rather than `model.objects.get`, since 2026-09-01
-        // (`OPERATOR_REQUESTS.md` O70): it resolves either index space, so a
-        // drag inside a form XObject previews its geometry instead of falling
-        // back to the outline ghost. That fallback was correct while a leaf
-        // could not be edited at all and became a visible gap the moment it
-        // could — the operator drags a line inside a title block and watches a
-        // box move.
         let Some(VectorObject::Path(path)) = provider.object_for(target) else {
             continue;
         };
@@ -379,9 +366,6 @@ pub fn for_move_subject(
                 .collect();
             transformed(provider, &targets, Matrix::translate(dx, dy))
         }
-        // ★★★ **And the same preview for a drag inside a container** — O70,
-        // 2026-09-01. One line, because `transformed` stopped caring which
-        // list an object came from.
         MoveSubject::LeavesInForm { leaves, .. } => {
             let targets: Vec<TargetId> = leaves.iter().map(|&i| TargetId::Leaf(i as u64)).collect();
             transformed(provider, &targets, Matrix::translate(dx, dy))
@@ -576,12 +560,6 @@ fn trace(preview: &ShapePreview, asked: usize) {
 ///
 /// # The report
 ///
-/// **Ken, 2026-09-12:** *"The live preview blue outlines that appear when we
-/// drag an object scale with zooming in and out of the page instead of being
-/// independent of zoom - at high zoom levels they end up being the width of the
-/// canvas. I think they keep the same size as the line widths they are moving
-/// and that is ok - but if we set the line width view to the one pixel width
-/// option the preview lines should also be affected by this setting."*
 ///
 /// Two rulings in one paragraph, and they are not the same ruling:
 ///
@@ -815,12 +793,6 @@ pub fn draw(
 /// `render_page`'s own backdrop is (§11.4.7's page group is composited onto an
 /// opaque white backdrop when a document does not say otherwise).
 ///
-/// ⇒ So white is not a guess about this document, it is the same value the
-/// renderer used to produce the raster this is painted over. Reading a colour
-/// out of the texture at that point would be a *measurement* rather than an
-/// assumption, and it is a genuine improvement worth making if a coloured
-/// drawing ever makes this look wrong — recorded here rather than done now
-/// because no such drawing has been seen.
 const fn paper() -> egui::Color32 {
     // DOCUMENT COLOUR: this is the renderer's own page backdrop, not chrome.
     // §11.4.7 composites a page group onto an opaque white backdrop when the

@@ -1,8 +1,5 @@
 //! # `app::status::disclosure` — the three rule-4 lines in the status bar
 //!
-//! Split out of [`super`] on 2026-08-26 when a third line took that file past
-//! the 1,500-line ceiling (R2). The seam is a real one and was already drawn in
-//! the parent's own prose, which distinguished *narration* from *disclosure*:
 //!
 //! > The left half carries four things, and only the first is the narrator. The
 //! > others look similar and are governed by different rules.
@@ -69,11 +66,6 @@ use crate::text::status as t;
 ///
 /// # Why the status bar rather than the Forms panel alone
 ///
-/// The panel shows them, and that was sufficient while the panel was the only
-/// way to fill. Canvas filling landed 2026-08-14 and broke the assumption: a
-/// fill can now happen in **Read mode with the panel closed**, and Read's
-/// dock does not mount Forms unless the operator put it there. The bar is the
-/// one surface present in every mode.
 ///
 /// # It retires itself
 ///
@@ -94,7 +86,6 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     // because two lines is two rows, which is the R128 loop.
     let mut line = String::new();
     if let Some(size) = d.applied_autosize {
-        // ★★★ WHICH constraint chose the size, not just the size — 2026-09-07.
         //
         // Until today this arm called `forms_fill_autosize_note` for every
         // outcome, so the operator got *"pdfcer chose 6.0 pt"* in the one case
@@ -308,7 +299,6 @@ pub(super) fn disclosure_line(ui: &mut egui::Ui, region: &str, line: &str) {
 ///
 /// # ★★★ Why it is in the status bar as well as in Properties
 ///
-/// Operator ruling, 2026-08-26: *"disclose it."*
 ///
 /// Properties already carries the detail — how many objects were recovered, how
 /// many were defined more than once, how many needed repairing. But **a
@@ -422,10 +412,6 @@ fn load_anomalies_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 ///
 /// # What the operator sees without this, and why it reads as a bug
 ///
-/// Reported 2026-08-26: *"seems I get different results depending on Zoom
-/// level. The [shading] boxes … on zoom out the colors between our
-/// rendering and the references don't match, but they do when I am zoomed in.
-/// up to 474% they are mismatched, but at 579% they match."*
 ///
 /// Measured the same day, and his bracket contains the answer exactly.
 /// `pdfcer-render` composites a page with transparency in a **subtractive CMYK
@@ -444,15 +430,6 @@ fn load_anomalies_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 ///
 /// # ★★ Why this is a disclosure and not just a fix
 ///
-/// It is *both*, and the tier half of the fix has landed. The engine's ceiling
-/// is deliberate — `ARCHITECTURE.md` §10 forbids an untrusted-input-sized
-/// allocation without one — and its fallback is honest. What used to be wrong
-/// was where **this shell** stopped asking for whole-page rasters: it switched
-/// to the region tier at `MAX_PIXMAP_EDGE` only, which for A4 is zoom 2071 %,
-/// so between 534 % and 2071 % it asked for a raster the engine could not
-/// composite properly. A **region** render below the ceiling composites in
-/// CMYK at any zoom (`--region 0,60,596,260 --scale 8` → `cmyk_buffer=1`),
-/// because the buffer is sized to the region rather than to the page.
 ///
 /// `render::strategy::for_page` now asks the pixel question as well as the
 /// edge one, by calling the engine's own `pdfcer_render::will_composite_in_cmyk`
@@ -541,7 +518,6 @@ fn line_weights_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     if doc.view.line_weights {
         return;
     }
-    // ★★★ **Which of the two sentences** — `Pass 254.1`, wired 2026-09-07.
     //
     // `Diagnostics::strokes_hairlined` counts strokes this render actually
     // **thinned**. Zero means the mode reached the renderer and had nothing to

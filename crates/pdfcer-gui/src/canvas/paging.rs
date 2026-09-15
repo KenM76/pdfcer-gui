@@ -2,7 +2,6 @@
 //!
 //! ## The request
 //!
-//! `OPERATOR_REQUESTS.md` O30, 2026-08-24:
 //!
 //! > *"when in single page view there should be an option on screen near the
 //! > button to scroll or flip through pages, or the current way it is now when

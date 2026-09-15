@@ -303,18 +303,6 @@ pub fn contrast_at(img: &Image, region: PixRect) -> ContrastReport {
 /// The companion question to [`contrast_at`], and it exists because "nothing
 /// was drawn" and "what was drawn is invisible" are different defects:
 ///
-/// * A **uniform** region where a caption should be means the caption is
-///   missing — the 2026-08-08 screenshot audit found two ribbon groups
-///   rendering with no caption at all, which a contrast test alone would
-///   report as low contrast and misdiagnose.
-/// * A uniform region across a whole *window* means the capture is not a
-///   picture of the application: the display was asleep, the window was never
-///   raised, or the process died before the shot. pdfcer's predecessor script
-///   learned this the expensive way — a run of blank screenshots got a
-///   plausible invented cause attached to them (a compositor race) before the
-///   real one was found (the monitor had powered down), and the fix that
-///   mattered was not the one that was tried first, it was refusing to treat a
-///   uniform capture as evidence at all.
 #[must_use]
 pub fn region_not_uniform(img: &Image, region: PixRect) -> UniformityReport {
     let (buckets, sampled) = bucketize(img, region);
@@ -338,8 +326,6 @@ pub fn region_not_uniform(img: &Image, region: PixRect) -> UniformityReport {
 /// two, because a one-pixel border column and the antialiased tips of a few
 /// glyphs are furniture, not overflow.
 ///
-/// Measured on `master-detail.png`, 2026-09-05, over the last 8 pt of the
-/// Objects pane:
 ///
 /// ```text
 /// (232,232,234) x 2098   the panel's own plate

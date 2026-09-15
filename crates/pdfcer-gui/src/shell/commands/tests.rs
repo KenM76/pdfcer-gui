@@ -1,11 +1,6 @@
 //! `shell::commands::tests` — the properties every registration in this
 //! catalogue must hold.
 //!
-//! Split out of [`super`] under **R2** on 2026-09-06, when the five Format ▸
-//! Markup registrations took that file past 1,500 lines. The seam is the
-//! standard one this tree already uses for `text::commands::tests`,
-//! `panels::tests` and `app::actions::tests`, and `text::commands::tests`' own
-//! header states it:
 //!
 //! > **the assertions about a catalog are a different subject from the
 //! > catalog**, and the catalog is the half a reader opens to find out what a
@@ -17,7 +12,6 @@
 //! for: `register`, `FILE_RECENT`, the `mapping` re-exports and the `reach`
 //! declaration.
 //!
-//! ## ★★ The second cut, 2026-09-10 — [`super::ledger`]
 //!
 //! This file went past 1,500 lines again, and the entry that did it was
 //! `file.stamp_collection`'s (O169). Nine hundred of those lines were the two
@@ -41,13 +35,6 @@
 //!
 //! ## Nothing moved but the module wrapper
 //!
-//! Of the first cut, on 2026-09-06: every test was byte-identical to what it
-//! was, de-indented by one level, so a failure here reads exactly as it did
-//! before the split. `use super::*;` still resolves to `shell::commands`, and
-//! so does every `super::super::` path inside — a `mod tests { … }` and a
-//! `mod tests;` have the same parent, which is why that cut was safe to make
-//! mechanically. The same is true of [`super::ledger`], which is a sibling of
-//! this module and not a child of it, for exactly that reason.
 //!
 //! ## ★ `#![cfg(test)]` as well as the parent's `#[cfg(test)] mod tests;`
 //!
@@ -146,13 +133,6 @@ fn every_predicate_names_a_documented_condition() {
         // header says why: the one state that needs it most is a failed
         // open with other documents behind it.
         "docs.multiple",
-        // ★★ **At least one panel is in a window of its own**, published
-        // by `app::conditions` from the dock's live layout since
-        // 2026-09-04. `view.dock_all_panels` is the only command that
-        // waits on it, and it is the RECOVERY command for a float window
-        // the operator cannot reach — so this is greying in R9's strict
-        // sense: temporarily unavailable, because there is nothing to
-        // dock this second, and the tooltip says what it would do.
         //
         // ★ Deliberately NOT `!panels.floating` on anything. Nothing is
         // hidden by a panel being floated; a float is a place a panel is,
@@ -265,11 +245,6 @@ fn every_predicate_names_a_documented_condition() {
         "markup.finishable",
         // ★★ A condition NOTHING SETS, and that is its whole purpose.
         //
-        // The operator's ruling of 2026-08-26: push buttons stay on the
-        // ribbon, greyed. R9 permits greying only for a TEMPORARILY
-        // unavailable capability explained on hover, and this is exactly
-        // that — `add_push_button` authors one fine; what pdfcer cannot do
-        // is RUN what a button does, because it executes no PDF actions.
         //
         // Expressing "permanently disabled until a capability arrives" as
         // an unset condition rather than as a `disabled: true` flag means
@@ -277,10 +252,6 @@ fn every_predicate_names_a_documented_condition() {
         // runs an action — and until then the ribbon needs no special case
         // and no `#[cfg]`.
         "forms.push_button_runnable",
-        // ★ Published by `app::conditions` for the ribbon's Font group and
-        // the Points tool since 2026-08-17, and named here for the first
-        // time on 2026-08-31 when `view.smart_select` became the third
-        // control to wait on it (`OPERATOR_REQUESTS.md` O70).
         //
         // It was a *shown_when* predicate on the manifest side until now,
         // and manifest predicates are not registry `Enable` values — which
@@ -289,9 +260,6 @@ fn every_predicate_names_a_documented_condition() {
         // list asserts what a COMMAND may wait on, and this is the first
         // command to wait on it.
         "mode.edit_content",
-        // ★★★ **A markup annotation is selected, and this mode may author
-        // markup** — one fused fact, published by `app::conditions` since
-        // 2026-09-06 for the five Format ▸ Markup controls.
         //
         // Fused rather than split into a mode condition and a selection
         // condition, unlike the Font group's `mode.edit_content` +
@@ -317,9 +285,6 @@ fn every_predicate_names_a_documented_condition() {
         // which it must, since the shell evaluates no predicate for an
         // `Item::Custom`.
         "selection.markup_restylable",
-        // ★★★ **The two markup-node predicates**, published since 2026-09-06 —
-        // and they are the first entries in this list that `app::conditions`
-        // never sets.
         //
         // Both are corrected **per right-click** by `canvas::menus`, through
         // `MenuHost::with_conditions`, and the reason they cannot live in the
@@ -346,13 +311,6 @@ fn every_predicate_names_a_documented_condition() {
         // is read to discover.
         "markup.node_insertable",
         "markup.node_removable",
-        // ★★★ **The text-run pick**, published 2026-09-15 — O188(A). It is
-        // the third entry `app::conditions` never sets, and it joins the two
-        // above for the identical reason: the frame's condition set describes
-        // the FRAME, and this one describes **which line of one text block one
-        // right-click landed on**. `canvas::menus` corrects it per click
-        // through `MenuHost::with_conditions`, from a pick `canvas::runmenu`
-        // parked on that same frame.
         //
         // ★★ **One name where the node pair needed two, and the asymmetry is
         // the finding rather than an oversight.** `markup.node_insertable` and
@@ -526,10 +484,6 @@ fn every_command_has_a_tooltip() {
 
 /// ★★★ **Every icon key a command names is a key the icon set has.**
 ///
-/// The missing half of [`Self::the_icon_coverage_split_adds_up_to_the_registry`],
-/// added 2026-09-04 during the mockup-parity pass, and the two are
-/// deliberately adjacent because they are one question asked at two
-/// depths:
 ///
 /// | test | question |
 /// |---|---|

@@ -14,19 +14,7 @@
 //! pixel or reaches `set_markup_style` (R1). What they prove is the set of
 //! decisions the section takes before it draws:
 //!
-//! 1. **Reachability is asked of `spec_from_dict`** — the same call
-//!    `set_markup_style` makes — so a mark this panel offers controls for is a
-//!    mark the verb can act on.
-//! 2. **Which properties a `/Subtype` takes is asked of the ENGINE**,
-//!    `MarkupStyleSupport::for_subtype`, and not restated here. That is the
-//!    workaround deleted on 2026-09-06.
-//! 3. **A colour the swatch cannot show without converting says so**, which is
-//!    the disclosure a CAD sheet's CMYK marks depend on.
-//! 4. **The `/LE` removal is offered only when there is a `/LE` to remove**,
-//!    which is the one fact `spec_from_dict` deliberately erases.
 //!
-//! ⚠ Every negative assertion is paired with a positive control, per the
-//! engine's methodology note of 2026-09-06.
 
 // ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
@@ -130,16 +118,7 @@ fn a_swatch_shows_grey_and_rgb_without_calling_them_converted() {
 
 /// ★★★ **A CMYK `/C` shows, and says it is a conversion.**
 ///
-/// The defect this pins: before 2026-09-06 a CMYK mark reached the panel as
-/// `None` — a default black swatch and, worse, **no Clear button**, so the
-/// one lossless operation available on it was the one withheld. Both halves
-/// are asserted, because fixing only the first would leave a converted
-/// colour presented as though it were the file's own value.
 ///
-/// Falsified twice: `narrowed: false` in the `Cmyk` arm turned the
-/// disclosure assertion red, and collapsing that arm to
-/// `Color::Cmyk(..) => Swatch::default()` — which is the behaviour that
-/// shipped until 2026-09-06 — turned the value assertions red.
 #[test]
 fn a_cmyk_colour_is_shown_as_a_conversion_and_is_flagged_as_one() {
     // Pure cyan: 1 - min(1, 1 + 0) = 0 red, 1 - 0 = 1 green and blue.
@@ -166,10 +145,6 @@ fn a_cmyk_colour_is_shown_as_a_conversion_and_is_flagged_as_one() {
 /// screens: nothing plus a sentence, versus three live controls that cannot
 /// commit.
 ///
-/// Falsified by returning `Reach::Markup` from the `None` arm of `from_spec`,
-/// which turned this red immediately. (It read `restylable: true` there until
-/// the `bool` became [`Reach`] on 2026-09-06 — same falsification, one type
-/// along.)
 #[test]
 fn a_subtype_the_style_verb_refuses_offers_no_controls() {
     // ★ `/FreeText` is the honest subtype for this case: it is one of the
@@ -226,14 +201,6 @@ fn a_subtype_the_style_verb_reads_offers_its_controls() {
 /// interesting one — it is a `/Polygon` in the file and a
 /// `MarkupSpec::Cloud` here — and it is the case this test exists for.
 ///
-/// ⚠ **Corrected 2026-09-06.** This doc used to justify the answer with
-/// *"`apply_markup_style` reads `style.interior` on exactly the first
-/// four"* and to call the alternative *"a subtype-string list"* that would
-/// have got the cloud wrong. Both halves have moved: the mapping is now
-/// `MarkupStyleSupport::for_subtype` — which **is** keyed on the subtype
-/// string, and is right to be, because it is the engine's string keyed by
-/// the engine — and this shell no longer restates what
-/// `apply_markup_style` reads.
 ///
 /// Falsified by pointing `offers_fill` at the interior swatch instead of at
 /// `support.takes_interior`, which turned the line assertion red, and by
@@ -286,12 +253,6 @@ fn the_fill_swatch_reads_back_the_interior_and_knows_when_it_is_absent() {
 /// else** — the set `MarkupStyleSupport::takes_endings` names, and the set
 /// `EditError::StylePropertyNotApplicable` refuses everything outside of.
 ///
-/// ⚠ **Corrected 2026-09-06.** *"which is the set `apply_markup_style` acts
-/// on"* was this shell restating a fact about the engine's source. The
-/// engine now publishes it, so the test asks rather than remembers — and
-/// the pair being asserted is the two questions kept apart: `offers_endings`
-/// (the engine's) and `endings` (the value, from the one spec arm that has
-/// one).
 ///
 /// Falsified by returning `Some((LineEnding::None, LineEnding::None))` from
 /// every arm, which turned the square's value assertion red, and by
@@ -352,12 +313,6 @@ fn the_width_range_matches_the_pen_that_authors() {
 /// ★★★ **What hides a row is the ENGINE's answer, not the shape of the
 /// `MarkupSpec` arm this module read.**
 ///
-/// The assertion that the workaround is gone. Until 2026-09-06 the Fill row
-/// was decided by a four-arm `match` here, the width row by the
-/// `TextMarkup` arm handing over no width, and the choosers by `endings`
-/// being `None` off the `Line` arm — three restatements of a list
-/// `pdfcer-core` owns, filed as: *"the first subtype that gains or loses a
-/// border is the day our copy is wrong and nothing tells us."*
 ///
 /// ★ Every `Current` here is built with **every value present**, so a value
 /// cannot be what differs. A row withheld below is withheld because
@@ -520,8 +475,6 @@ fn a_mark_that_could_not_be_read_offers_nothing() {
     assert!(!nothing.offers_endings_clear());
 }
 
-// ===========================================================================
-// ★★★ THE SECOND STYLE VERB — `Pass 253.2`, 2026-09-06
 //
 // Everything above asserts what `set_markup_style` reaches. These assert the
 // routing between the two verbs and what the second one is shown for. They are
@@ -572,9 +525,6 @@ fn text_current(reading: Option<Option<Reading>>, subtype: &[u8]) -> Current {
 /// ★★★ **A sticky note and a stamp route to the SECOND verb; a shape still
 /// routes to the first.**
 ///
-/// The whole of the fix in one assertion. Until 2026-09-06 a `/Text` reached
-/// this field's ancestor as `restylable: false` and got a sentence saying its
-/// colour could not be changed here — on the afternoon it could.
 ///
 /// ★★ The `Square` row is the **positive control** and it is not decoration.
 /// Asserting only that a `/Text` reaches `TextAnnot` would pass on a
@@ -692,9 +642,6 @@ fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
 /// ★★★ **A note whose `/Name` pdfcer does not model is CARRIED, and reported
 /// as one pdfcer does not draw** — rewritten 2026-09-07 with the engine's fix.
 ///
-/// §12.5.6.4's seven names are *"a standard set, not a closed one"*, so
-/// `/Sparkle` is **conforming**. This test used to assert the shape of a
-/// workaround:
 ///
 /// > *"`text_spec_from_dict` normalises it to `Note` on the way past, and
 /// > `set_text_annot_style` re-bakes from that — so a change to the colour

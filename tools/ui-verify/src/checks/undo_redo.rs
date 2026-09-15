@@ -141,16 +141,6 @@
 //! or the page. `Ctrl+Z`, `Ctrl+Y` and `Ctrl+Shift+Z` are **not driven here**,
 //! and [`crate::checks::chords`] drives them instead.
 //!
-//! ★★ This block used to say they *could not* be pressed, because synthetic
-//! keyboard input did not reach the window. That was false, and the two
-//! sentences it went on to offer as compensation were false with it: the
-//! `shell::manifest` keymap test swept only `Ctrl+<digit>`, and all three of
-//! these chords were among **fourteen the manifest declared and the dispatcher
-//! never dispatched**. Undo's primary route was dead, and the note reassuring
-//! the reader about it was the reason nobody looked. They are covered by the
-//! single `dispatch_command` every route shares — the same dispatcher this check drives
-//! through the QAT — and the gap is stated rather than implied by a green
-//! result.
 //!
 //! That matters more for this pair than for any other command in the shell,
 //! because the keyboard is undo's *primary* route and the QAT is its secondary
@@ -457,15 +447,7 @@ fn click_qat(
 /// Put the session into Review with the Comments panel showing, and report the
 /// census it publishes there.
 ///
-/// # ★★★ This used to be a COPY of `save_copy`'s, and the copy was wrong
 ///
-/// Both files carried the same eight lines and therefore the same defect: the
-/// census was read with `Trace::last`, which searches the whole capture, so a
-/// panel that had been sent to the back of its dock and had **stopped tracing**
-/// kept answering with the count it published in the previous mode. On the
-/// driven sweep of 2026-09-05 that made this check and `save_copy_round_trip`
-/// fail in identical words against a panel that was working, and the sweep
-/// report read the duplication as corroboration: *"two independent witnesses"*.
 ///
 /// The reader now lives in [`crate::checks::comments_census`], once, and its
 /// header carries the whole finding. Nothing in this file reads the census
@@ -669,10 +651,6 @@ fn history_step(
 
     // --- the surface the operator reads moved with it ----------------------
     //
-    // ★★★ ANCHORED ON THE ENGINE'S OWN `…-applied` LINE, for the reason
-    // `comments_census` exists: a census published BEFORE the history step
-    // says nothing about the history step, and reading one as though it did is
-    // how this check reported a working panel as broken on 2026-09-05.
     let Some(now) = comments_census::refresh(session, driver, ui_rect, applied.lineno, report)?
     else {
         return Err(Error::new(format!(
@@ -803,15 +781,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
         )));
     }
-    // ★ **The note is deliberately NOT emitted here.** A silence is only
-    // evidence once the channel that would have broken it is shown to work, and
-    // at this point in the run nothing has proved that a *band* click lands —
-    // only that a mode segment does. A run whose pointer stops reaching the
-    // window after the mode click would otherwise print "correctly greyed"
-    // about a control nothing was delivered to, which is `crate::checks` rule 4
-    // broken in its own words. Observed once, on 2026-08-14, against a planted
-    // build: every click after the mode segment was lost, and this line claimed
-    // the greying as a finding on the way past.
     //
     // The verdict is recorded and worded at the END, after phase D has pressed
     // the same control and required the opposite.
@@ -856,10 +825,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             commit.raw
         )));
     }
-    // ★★★ ANCHORED ON `add-markup` — see `comments_census`. A census published
-    // before the engine authored anything is not evidence that the panel saw
-    // it, and treating one as though it were is what produced this check's
-    // false FAIL of 2026-09-05.
     session.settle(10);
     let caused_at = session
         .trace()?

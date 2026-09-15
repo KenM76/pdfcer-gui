@@ -1,9 +1,5 @@
 //! # `dialogs::tests` — the dialog owner's own assertions
 //!
-//! Split out of [`super`] on 2026-09-04 under **R2**, when the Export-image
-//! window (`OPERATOR_REQUESTS.md` O120) took that file past the 1,500-line
-//! ceiling. The seam is `canvas::selection::tests`' seam and it is chosen for
-//! that module's stated reason rather than for a size:
 //!
 //! > the tests were the seam and the code was not.
 //!
@@ -33,13 +29,6 @@ use super::*;
 /// ★★★ **A window that closed BECAUSE it was answered is not retired
 /// until the answer has been taken out of it.**
 ///
-/// The regression test for the defect
-/// `an_invalidating_save_is_warned_about` found by driving on 2026-08-29:
-/// the signature warning's proceed button set the confirmation, which made
-/// `show` answer `false`, which made the owner drop the dialog **and the
-/// confirmation with it** — so `resume_after_signature` found nothing,
-/// traced nothing, and wrote nothing. Save was unusable on every signed
-/// document.
 ///
 /// Four rows because the predicate has two inputs and each combination is a
 /// real state: an open unanswered window (the normal case), an open window

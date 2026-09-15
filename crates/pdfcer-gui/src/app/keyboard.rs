@@ -71,12 +71,7 @@
 //! whole map is then not installed — a binding that fires with nothing open
 //! is a binding whose action has to defend itself.
 //!
-//! ## ★ Two owners for one chord — the defect this module was split for
 //!
-//! This module used to bind `Ctrl+0` to fit page and `Ctrl+2` to fit width,
-//! **while `crate::shell::manifest`'s keymap bound the same two chords to
-//! `view.zoom_actual` and `mode.review`.** Both statements were compiled in,
-//! both were operator-visible, and they disagreed:
 //!
 //! - The manifest keymap is what `egui_shell::menu::Shortcuts` inverts to
 //!   draw a context menu's right-aligned chord hint, so a right-click on
@@ -134,13 +129,6 @@
 //!
 //! ### Why `Ctrl+0` is actual size and not fit page
 //!
-//! Acrobat numbers these chords `0` = fit page, `1` = actual size, `2` = fit
-//! width, `3` = fit visible, and this module used to follow it. **That
-//! numbering is no longer available as a whole**: `MODES_AND_PANELS.md`
-//! Part 1 §6 specifies `Ctrl+1` / `Ctrl+2` / `Ctrl+3` for the Read / Review
-//! / Edit selector, and the manifest binds them. Taking Acrobat's `0` while
-//! `1`, `2` and `3` mean something else entirely would teach the operator
-//! half of a numbering that then stops working.
 //!
 //! What is left is the browser convention — `Ctrl+0` returns to 100 % — and
 //! it is also what two operator-visible strings already claimed before
@@ -162,12 +150,6 @@ use crate::app::actions::Action;
 
 /// **Spell a manifest chord into the modifiers and key that fire it.**
 ///
-/// The replacement for what used to be a hand-written `DERIVED` spelling
-/// table, and the reason that table had to go: it listed eight chords while
-/// the shipped keymap bound twenty-one, so **fourteen bindings were declared,
-/// printed in menus and tooltips as shortcuts, and dispatched by nothing** —
-/// `Ctrl+Z`, `Ctrl+Y`, `Ctrl+S`, `Ctrl+E`, `Ctrl+Shift+E`, `F11`, `[`, `]`
-/// and six more. Undo had a keyboard shortcut everywhere except the keyboard.
 ///
 /// A table that must be kept in step with a manifest by hand will fall out of
 /// step with it, and the failure is silent in both directions: the keymap
@@ -396,12 +378,6 @@ pub fn collect(ctx: &Context, page_count: Option<usize>) -> Vec<Action> {
 /// site, and `Event::Paste` carries no modifier field. So the shift is
 /// unrecoverable from the event and must come from the input state.
 ///
-/// ★ Measured against the source on 2026-08-29 rather than assumed. The
-/// alternative reading — that egui excludes shift, so `Ctrl+Shift+V` arrives as
-/// an ordinary `Event::Key` and the generic path below handles it with no work
-/// at all — was the hypothesis, and it was **wrong**. It would have shipped a
-/// chord that did nothing, or worse, one that pasted a NEW field every time the
-/// operator asked for a duplicate.
 ///
 /// # ★★ Why the frame's modifiers, when this file's own rule says per-event
 ///
@@ -496,10 +472,6 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
         // ★★★ CTRL+C, CTRL+X AND CTRL+V NEVER ARRIVE AS KEY EVENTS, AND THAT IS
         // WHY THEY HAVE NEVER WORKED.
         //
-        // The operator, twice: *"still no ctrl+c, ctrl+v, ctrl+x"*. On
-        // 2026-08-20 they were bound in the manifest, which was necessary and
-        // **not sufficient** — and the reason is fifteen lines of
-        // `egui-winit-0.35.0/src/lib.rs`:
         //
         // ```rust
         // if is_cut_command(modifiers, active_key)   { events.push(Event::Cut);   return; }
@@ -765,13 +737,6 @@ mod tests {
             });
             // ★ **The chord's OWN id must be absent** — not the whole list.
             //
-            // It asserted `ids.is_empty()` until 2026-08-19, which was the same
-            // statement while no bare letter was bound to anything. The four
-            // pointer tools took `V`, `A`, `T` and `H` that day (the layout
-            // every program in this class uses), so pressing `H` now fires
-            // `view.tool_hand` — correctly — and an empty-list assertion would
-            // fail on `Ctrl+H` for a reason that has nothing to do with what it
-            // is testing.
             //
             // The property under test never was "a bare key does nothing". It is
             // **"a chord that names a modifier does not fire without it"**, and
@@ -869,14 +834,6 @@ mod tests {
     /// The regression test for a defect that only appears under load and reads,
     /// from outside, as harness flakiness.
     ///
-    /// [`commands`] used to ask `i.key_pressed(key)` for the key and
-    /// `i.modifiers` for the modifiers. Those are different clocks:
-    /// `i.modifiers` is the state at the END of the frame, `Event::Key` carries
-    /// the state at the KEYSTROKE. On a long frame — the application busy
-    /// rasterizing a dense CAD sheet — an operator's fifty-millisecond
-    /// `Ctrl+Z` arrives as press-and-release together, `i.modifiers` reports
-    /// `Ctrl` already up, the chord matches nothing, and undo is silently
-    /// dropped.
     ///
     /// This frame is exactly that: a `Ctrl+Z` key event carrying its own
     /// modifiers, followed by the modifiers going empty before the frame ends.
@@ -1121,7 +1078,6 @@ mod tests {
 
     /// ★★★ **Every chord the manifest binds is written down in `MANUAL.md`.**
     ///
-    /// # The defect this exists for, measured 2026-09-11
     ///
     /// The manual's *"Every keyboard shortcut"* section documented **33** of
     /// the **40** chords `built_in.ron` binds. The seven it did not mention

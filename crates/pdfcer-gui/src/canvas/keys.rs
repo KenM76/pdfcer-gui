@@ -1,13 +1,5 @@
 //! # `canvas::keys` — the keys the canvas owns, and who gets Escape
 //!
-//! Escape, Delete and **Tab**, and nothing else. They are split out of
-//! `canvas/mod.rs`
-//! along a real seam rather than for line count: everything else in that file
-//! is *wiring* — it needs an `egui::Ui`, a laid-out scroll area and a live
-//! document, and cannot be exercised without a window — whereas this is a
-//! decision about keys that a headless `egui::Context` can drive end to end.
-//! Its tests came with it, which is the test for whether a split was along a
-//! seam.
 //!
 //! ## Tab, and why it is guarded on the armed tool rather than on a mode
 //!

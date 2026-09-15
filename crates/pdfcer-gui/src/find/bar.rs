@@ -423,9 +423,6 @@ fn anchor_right_top(host: Rect) -> Pos2 {
 
 /// Everything on the row.
 ///
-/// Split from [`show`] so the placement and the layout are separately
-/// readable, and so the row can be driven by a test without an `Area` — what
-/// those tests are about is the controls and the keys, not where the box sits.
 fn body(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec<Action>) {
     let row = Vec2::new(BAR_WIDTH_PTS, ROW_HEIGHT_PTS);
     ui.allocate_ui_with_layout(row, Layout::left_to_right(Align::Center), |ui| {

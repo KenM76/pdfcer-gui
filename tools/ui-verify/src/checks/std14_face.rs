@@ -59,11 +59,6 @@
 //! workspace can observe."* A check that has only ever been seen to pass is
 //! indistinguishable from one that cannot fail.
 //!
-//! Falsified on 2026-08-29 against `D:/Dev/pdfTests/SW41177/SW41177.pdf` at
-//! `--doc-point 0,1140,62`, by planting the **pre-change behaviour** —
-//! `panels::properties::face::choices` returning only the page's own accepted
-//! faces, which is exactly what the chooser did before this work — and
-//! rebuilding `--release`:
 //!
 //! | build | verdict |
 //! |---|---|
@@ -99,15 +94,6 @@ use crate::report::CheckReport;
 const MODE: &str = "edit";
 /// The commands run at startup, in order, before this check touches anything.
 ///
-/// ★★ The same two `restyle_text` learned to need, and for the same reason it
-/// learned it: **the dock arrangement is persisted per machine**, so the
-/// Properties panel being on screen is a coincidence rather than a
-/// precondition. On 2026-08-29 that check spent a red run reporting a panel as
-/// silent when the panel was not mounted at all. `file.properties` mounts and
-/// activates it from any arrangement and is idempotent; `mode.edit` is first
-/// because the dock follows the ribbon mode on the same frame, so a panel
-/// mounted before the mode moved would be mounted into the workspace this check
-/// is about to leave.
 const INVOKE: &str = "mode.edit,file.properties";
 /// The Text section's own region.
 const SECTION_REGION: &str = "properties.text";
@@ -208,12 +194,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check needs a click or a sweep that lands IN TEXT. On 2026-09-12
-    // it was handed the sweep's shared aim, which on `a1-titleblock.pdf`
-    // lands on a path - and that sheet is 2383.9 × 1683.8 pt carrying 123
-    // characters, so its tallest glyph is 2.4 screen pixels at fit zoom and
-    // no aim on it would have been reliable either. Sixteen checks reported
-    // sixteen plausible reasons for that one fact.
     //
     // `fixture::text_point_target` holds the document, the point, and the
     // measurement behind both. Read its doc comment before changing either.

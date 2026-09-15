@@ -1,10 +1,6 @@
 //! # `protect` — putting a password on a document, changing what it allows,
 //! and taking the protection off
 //!
-//! `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04. The window is
-//! [`crate::dialogs::protect`]; this module is everything that can be decided
-//! **without a `Ui`** — what the document says today, what may be offered about
-//! it, which engine verb a choice reaches, and the atomic write at the end.
 //!
 //! The split is `crate::redact`'s and it exists for the same reason: every rule
 //! on this surface is a rule about **the operator's file**, and a rule that can
@@ -414,8 +410,6 @@ impl Standing {
 
 /// **Whether pdfcer is capable of DECLINING this permission at all.**
 ///
-/// ★★★ Discovered by a test rather than assumed, on 2026-09-04, and it is the
-/// one place this surface must not offer the operator a choice.
 ///
 /// `pdfcer_core::crypto::encrypt::assemble_permissions` implements the engine's
 /// write-path rule **W19**, and its own doc states the clause verbatim:
@@ -488,10 +482,7 @@ pub enum Refusal {
 /// [`crate::text::protect::engine_refusal`], so every variant *this* enum has
 /// owns a sentence or the build fails.
 ///
-/// ## ⚠⚠ CORRECTED 2026-09-07 — the half of that claim that was never true
 ///
-/// This comment used to end *"and turns a new engine variant into a **compile
-/// error here** rather than a silent fall-through to a catch-all."*
 ///
 /// **That was false the day it was written, and it cannot be made true.**
 /// `EncryptError` is `#[non_exhaustive]`, so [`From`] below is *required* to
@@ -500,14 +491,6 @@ pub enum Refusal {
 /// exhaustiveness is real on the near side of the mirror and imaginary on the
 /// far side, and the sentence claimed the far side.
 ///
-/// ⇒ It was caught by `check-engine-api-drift`, not by a reader:
-/// `EncryptError::RedactionPending` shipped 2026-09-05 **in answer to this
-/// shell's own request**, fell into the wildcard for three days, and delivered
-/// the engine's implementer-voiced message — naming `save_applying_redaction`
-/// and `cancel_pending_redaction` — into a draughtsman's dialog. The gate held
-/// it as a written exemption ending *"DELETE THIS LINE the day the arm is
-/// added"*; the arm is added, the line is deleted, and this paragraph is what
-/// the exemption was standing in for.
 ///
 /// ★★★ **The same shape bit twice in one evening, in unrelated code.** Hours
 /// earlier, `app::actions::textstyle::reflow_refusal`'s wildcard was about to
@@ -543,10 +526,6 @@ pub enum EngineRefusal {
     /// A deferred redaction is armed, so changing the protection would write
     /// the un-redacted content.
     ///
-    /// **Added 2026-09-07.** `EncryptError::RedactionPending` shipped on
-    /// 2026-09-05 in answer to this shell's own request, and until today it was
-    /// unmatched — it fell into the `#[non_exhaustive]` catch-all below, which
-    /// forwards the engine's `Display`. That put this in front of the operator:
     ///
     /// > *"a deferred redaction is pending; encrypting/re-keying/removing
     /// > encryption now would write the un-redacted content -- apply it via

@@ -5,10 +5,6 @@
 //!
 //! # ★★★ THE ENGINE ANSWERED. This file is the second half arriving.
 //!
-//! Until 2026-09-04 the whole of this module's header was an argument for why
-//! **only an annotation** could be answered for. The argument was correct and
-//! is kept in outline below, because the *reason it was correct* is the reason
-//! it stopped being correct:
 //!
 //! > `vector::decompose`'s walk counted `/OC` sections into
 //! > `DecomposeDiagnostics::oc_sections` and threw the group identity away;
@@ -182,10 +178,6 @@ use crate::canvas::target::TargetId;
 ///
 /// # ★★★ Why the reason is carried rather than collapsed
 ///
-/// It was collapsed until 2026-09-04, and the collapse was right then: with
-/// *every* content object unanswerable, a sentence saying so would have been a
-/// permanent apology printed on every selection in the program, and R9's
-/// answer to an unavailable capability is to render nothing.
 ///
 /// **That justification expired with `Pass 250.0`.** Every variant below is
 /// now rare and specific — a malformed document, a nesting depth, a stale
@@ -413,10 +405,6 @@ impl Membership {
     ///
     /// ## ★★★ The ordering that is NOT obvious, and it cost a wrong design
     ///
-    /// **`Mixed ⊔ Unknown = Unknown`**, not `Mixed`. The first draft had it the
-    /// other way, and the argument was good: once `Group(a)` and `Group(b)` are
-    /// both established, *"this selection spans several layers"* is a fact, and
-    /// an unanswerable third member cannot un-establish it.
     ///
     /// **It is not associative.** `(G₁ ⊔ G₂) ⊔ U` is `Mixed ⊔ U = Mixed`, while
     /// `G₁ ⊔ (G₂ ⊔ U)` is `G₁ ⊔ U = Unknown`. A fold whose result depends on
@@ -1213,13 +1201,6 @@ mod tests {
     /// ★★★ **…including over an established disagreement, and this assertion
     /// is INVERTED from the one that was written first.**
     ///
-    /// The first draft asserted `Mixed ⊔ Unknown = Mixed`, on the reasoning
-    /// that *"this selection spans several layers"* is a fact an unanswerable
-    /// third member cannot take back. The reasoning is sound and the rule is
-    /// **not associative** — `the_fold_does_not_depend_on_selection_order`
-    /// found it within a minute of being written, with the message
-    /// *"join is not associative: Group(1) Group(2) Unknown(Stale) — left:
-    /// Mixed, right: Unknown(Stale)"*.
     ///
     /// ⇒ A highlight that depends on the order the operator added objects to
     /// the selection is a highlight that flickers for reasons nobody can

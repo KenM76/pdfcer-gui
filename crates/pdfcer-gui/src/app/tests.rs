@@ -8,11 +8,6 @@
 #![cfg(test)]
 
 use super::*;
-// ★ Named here rather than at the top of the module: `Action` is used only
-// by these tests since the three drawing surfaces moved to
-// `crate::app::surfaces` on 2026-08-20, and a `use` at module scope that
-// only the test module needs is a `use` that fails the workspace's
-// `-D warnings` clippy gate in a release build.
 use crate::app::actions::{Action, VectorAction};
 use crate::canvas::selection::{ClickHit, SelectionLevel};
 use crate::canvas::target::TargetId;
@@ -118,12 +113,6 @@ fn opened_with_a_form() -> PdfcerApp {
     // test built on this fixture drives a CONTENT-EDITING verb
     // (`format.select_form`, `format.unshare_form`, `format.delete`).
     //
-    // `PdfcerApp::new` starts in **Read**, so before 2026-09-03 these tests
-    // exercised those verbs in the mode that authors nothing, and passed —
-    // because `app::dispatch::format` had no capability guard on any of the
-    // three arms. **The suite had encoded the defect as expected behaviour**,
-    // which is the strongest evidence A18 was real: not a missing check, but
-    // several checks asserting the wrong thing and going green.
     app.ribbon.set_mode("edit");
     app
 }
@@ -238,12 +227,6 @@ fn select_the_form_lands_on_the_container_and_it_is_deletable() {
 /// sentence was discarded on the frame it was written. **Every time, in
 /// every build, since the verb shipped**, with this test green.
 ///
-/// ★★ So the assertion below is now in two parts, and the second one is the
-/// one that matters: *and it survives to the bar*. A test that stops at
-/// the store is testing that a function was called — which is the thing
-/// nobody doubted — rather than that the operator can read the answer.
-/// Found on 2026-09-11 while correcting the sentence's wording, not by any
-/// gate, and not by this test.
 #[test]
 fn select_the_form_with_no_form_selected_says_why() {
     let mut app = opened_with_a_form();
@@ -277,20 +260,8 @@ fn select_the_form_with_no_form_selected_says_why() {
 /// ★★★ **The ribbon's Delete removes a form-interior object, exactly as the
 /// key does** — and until 2026-09-05 it did not.
 ///
-/// # What this test used to assert, and why it was right and then wrong
 ///
-/// It asserted that `format.delete` on a leaf selection **raised nothing** and
-/// recorded `Declined::InsideForm`. That was correct when it was written on
-/// 2026-08-27: no paint-order verb can address a leaf, so the honest response
-/// was a sentence, and the state it closed was real — an outline round the
-/// thing the operator wants gone and a Delete that does nothing.
 ///
-/// **`pdfcer-core` Pass 188.0 shipped `delete_objects_in_form` and O70 wired it
-/// to the Delete KEY on 2026-09-01. This arm was not updated.** So for four
-/// days the key deleted a form-interior object and the ribbon command explained
-/// why it could not — the same divergence `app::keyboard`'s header calls the
-/// defect the single dispatcher exists to make impossible, and the same one
-/// that had already happened once over form fields.
 ///
 /// ⇒ The test was pinning the divergence. Both routes now ask
 /// [`crate::canvas::deleting::subject`], so they cannot differ; what is asserted
@@ -358,15 +329,7 @@ fn delete_on_a_form_interior_selection_removes_it_exactly_as_the_key_does() {
 /// arm a **destructive** command over an empty operand list, which is
 /// defect D1's shape with the worst possible verb behind it.
 ///
-/// ★ Moved here on 2026-09-13. It sat above `the_memory_backed_toggles_report_their_pressed_state`,
-/// run together with that item's doc comment — so it documented
-/// `the_memory_backed_toggles_report_their_pressed_state` and this item had none.
 ///
-/// ★ It went unseen for as long as it did because the title that
-/// absorbed it opens with a decoration run, and until 2026-09-13
-/// `tools/gates/check-orphan-docs.py` could only express an
-/// undecorated title — 42% of this crate's titles were outside its
-/// scope while it reported clean. See that gate's `DECOR`.
 #[test]
 fn the_selection_condition_follows_the_selection() {
     let mut app = PdfcerApp::new();
@@ -426,9 +389,6 @@ fn the_ribbon_delete_raises_the_delete_action() {
     // is where per-frame UI state lives.
     let ctx = egui::Context::default();
     let mut app = opened();
-    // ★★★ EDIT, EXPLICITLY — and until 2026-09-03 this line was not here and
-    // the test passed anyway, which is what made it evidence of a defect
-    // rather than a description of behaviour.
     //
     // `PdfcerApp::new` starts in **Read** ("Start in the first mode the
     // manifest declares"). So this test was dispatching a content-editing verb
@@ -442,9 +402,6 @@ fn the_ribbon_delete_raises_the_delete_action() {
     // and passing. The mode is now stated, so what is under test is the verb
     // rather than the absence of a guard.
     app.ribbon.set_mode("edit");
-    // ★★★ EDIT, EXPLICITLY — and until 2026-09-03 this line was not here and
-    // the test passed anyway, which is what made it evidence of a defect
-    // rather than a description of behaviour.
     //
     // `PdfcerApp::new` starts in **Read** ("Start in the first mode the
     // manifest declares"). So this test was dispatching a content-editing verb
@@ -458,9 +415,6 @@ fn the_ribbon_delete_raises_the_delete_action() {
     // and passing. The mode is now stated, so what is under test is the verb
     // rather than the absence of a guard.
     app.ribbon.set_mode("edit");
-    // ★★★ EDIT, EXPLICITLY — and until 2026-09-03 this line was not here and
-    // the test passed anyway, which is what made it evidence of a defect
-    // rather than a description of behaviour.
     //
     // `PdfcerApp::new` starts in **Read** ("Start in the first mode the
     // manifest declares"). So this test was dispatching a content-editing verb
@@ -474,9 +428,6 @@ fn the_ribbon_delete_raises_the_delete_action() {
     // and passing. The mode is now stated, so what is under test is the verb
     // rather than the absence of a guard.
     app.ribbon.set_mode("edit");
-    // ★★★ EDIT, EXPLICITLY — and until 2026-09-03 this line was not here and
-    // the test passed anyway, which is what made it evidence of a defect
-    // rather than a description of behaviour.
     //
     // `PdfcerApp::new` starts in **Read** ("Start in the first mode the
     // manifest declares"). So this test was dispatching a content-editing verb
@@ -568,10 +519,6 @@ fn the_ribbon_delete_declines_inside_an_object_just_as_the_key_does() {
             .is_set("selection.any")
     );
 }
-
-// -----------------------------------------------------------------------
-// The two commands that used to dispatch nowhere
-// -----------------------------------------------------------------------
 
 /// ★ **`file.properties` puts the Properties panel on screen, from any
 /// mode.**

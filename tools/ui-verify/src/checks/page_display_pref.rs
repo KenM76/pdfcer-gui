@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-08-31, `OPERATOR_REQUESTS.md` O80:
 //!
 //! > *"Also it should remember my page display preferences from my last closing
 //! > of the program. Example if I press show one page at a time and enable flip
@@ -41,11 +40,6 @@
 //!
 //! # ★★ The oracle, and the trace line that could not carry it until today
 //!
-//! `page-display mode=… source=… ribbon-mode=…` is emitted as each document
-//! opens. `source=` is the tier the answer came from, and until 2026-09-02 it
-//! reported only **two** of the three: anything that was not the document's own
-//! record was called `mode-default`, so a display that came from the standing
-//! preference was indistinguishable from one the mode had chosen.
 //!
 //! That is precisely the pair this check has to separate, so the disclosure was
 //! fixed first. Second time in three days that writing a driven check found a
@@ -181,14 +175,6 @@ fn normalise(exe: &Path, report: &mut CheckReport) {
         // ★★★ The preferences file is RESET to the sandbox's seed rather than
         // deleted, and the difference is not cosmetic.
         //
-        // Deleting it removes `ask_default_app = false` along with everything
-        // else, and every absent key takes its compiled-in default — which for
-        // that one is `true`. The 2026-09-11 sweep found the O173 startup
-        // offer in this check's trace for exactly that reason: normalising the
-        // state under test also un-normalised a piece of state the sandbox had
-        // deliberately set. `sandbox::reset_prefs` gives the same fresh-install
-        // starting point for every key this check cares about while keeping the
-        // offer shut.
         if name == "preferences.txt" {
             if crate::sandbox::reset_prefs(&dir).is_ok() {
                 removed.push(name);

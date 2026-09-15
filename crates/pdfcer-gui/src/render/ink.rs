@@ -25,11 +25,6 @@
 //! any real document the second world is the *common* one at depth, and a check
 //! that cannot see it reports it as the first.
 //!
-//! On 2026-09-10 it did exactly that, three rungs running, and settling it took
-//! a hand-written test that scraped the region rectangles out of the trace and
-//! called `pdfcer_render::render_page_region` on them directly. The engine
-//! returned **one tone** for the two deepest. The shell was innocent and
-//! nothing in the harness could have said so.
 //!
 //! # What the trace can say now
 //!

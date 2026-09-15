@@ -65,13 +65,6 @@
 //! | `SW41177.pdf` — 36 SolidWorks sheets | 12 tiles visible, 12 drawn, one per frame in 61 · 222 · 48 · 52 · 33 · 31 · 31 · 31 · 32 · 32 · 33 · 33 ms. Then `drawn=12` and **nothing further scheduled** — the other 24 pages were never touched. |
 //! | `ncored-benchmark-cad-drawing.pdf` — 1 sheet | page 1 drew in **921 ms**, tripped the then-400 ms `SLOW_PAGE`, and the panel reported `previews=0` on the same frame. |
 //!
-//! ⚠ **The second row's outcome no longer happens, and the measurement is
-//! kept because the number is still true.** 921 ms is what that page
-//! costs; what changed on 2026-09-08 is what pdfcer does about it —
-//! nothing, because 921 ms is inside the default budget. The row is left
-//! standing rather than deleted so the next person to raise
-//! [`PAGE_BUDGET_DEFAULT`]'s justification has the evidence in front of
-//! them; see "the skipping rule" below for why the global stop went.
 //!
 //! ## ★ Why this renders on the UI thread, when a cancellable off-thread
 //! worker already exists
@@ -104,12 +97,6 @@
 //! seconds of a document that quietly refuses to be edited, on the exact
 //! documents this application exists for.
 //!
-//! Rendering inline instead means the `session.view()` borrow lives and dies
-//! inside one function call on the UI thread. **No `Arc` clone ever escapes
-//! the frame**, so the mutation choke point is untouched and the hazard
-//! cannot arise. The price is a frame hitch, which is what
-//! [`ThumbnailCache::budget`] exists to bound — and, since 2026-09-08, what
-//! the operator rather than this module gets to put a number on.
 //!
 //! **What would close this properly** is one of:
 //!
@@ -135,8 +122,6 @@
 //!
 //! ## ★★★ The skipping rule — per page, and the checkbox NEVER moves itself
 //!
-//! **This replaced an automatic global stop on 2026-09-08, at the operator's
-//! instruction** (`OPERATOR_REQUESTS.md` O151):
 //!
 //! > *"the drawing page previews checkbox should never automatically turn
 //! > off. You can add a box next to the checkbox to enter a timeout value."*
@@ -218,9 +203,6 @@ pub const THUMBNAIL_WIDTH_PTS: f32 = 140.0;
 /// **The default per-page time limit** — what [`ThumbnailCache::budget`]
 /// holds until the operator types a different number.
 ///
-/// Two seconds, and the number is the old `RENDER_CEILING`'s, unchanged,
-/// because its justification survived the 2026-09-08 rewrite intact even
-/// though the rule around it did not.
 ///
 /// The measurements it was chosen against are this panel's own —
 /// [`tests::thumbnail_cost_on_the_benchmark_documents`] re-runs them.
@@ -244,11 +226,6 @@ pub const THUMBNAIL_WIDTH_PTS: f32 = 140.0;
 /// operator count would otherwise freeze the application for the better part
 /// of a minute.
 ///
-/// ★ The 400 ms that used to live beside this — `SLOW_PAGE` — was a
-/// *different kind of number*: the point at which pdfcer stopped and asked.
-/// It is gone with the rule it served, and the empty measured band it sat in
-/// (72 ms … 238 ms of real work, then 918 ms) is preserved above for whoever
-/// next argues about the default.
 ///
 /// The mechanism, which is real rather than nominal: every render is armed
 /// with a [`RenderCancel`] and a one-shot watchdog thread that trips at the
@@ -404,12 +381,6 @@ pub enum TileState {
 
 /// **The most recent page the budget skipped**, and how long it was given.
 ///
-/// ⚠ Renamed in meaning on 2026-09-08 without changing shape, so read the
-/// field docs rather than the type name: `millis` used to be *how long the
-/// page took* (a completed render, measured after the fact) and is now *how
-/// long it was allowed* before being abandoned. The page's true cost is
-/// unknown by construction — pdfcer stopped it precisely so as not to find
-/// out.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SkippedPage {
     /// Which page (0-based).
@@ -436,16 +407,6 @@ pub struct ThumbnailCache {
     /// The **pixels-per-point bits** everything above describes, or `None`
     /// before the first frame.
     ///
-    /// ★★★ **The edit epoch LEFT this key on 2026-08-31** —
-    /// `OPERATOR_REQUESTS.md` O74, the operator: *"all of the page previews
-    /// get re-rendered instead of just the one that is being changed."* It was
-    /// a **document-wide** counter used as the invalidation key for a cache
-    /// holding one entry **per page**, so an edit to sheet 12 threw away the
-    /// pictures of the other thirty-five. Measured on his own 36-sheet
-    /// SolidWorks set: twelve visible tiles, **666 ms of UI-thread work per
-    /// edit**, worst frame 282 ms — all of it between his click and its result.
-    /// The per-page answer now lives in [`Self::built_at`], compared against
-    /// [`crate::app::state::pageepoch::PageEpochs`].
     ///
     /// **The page index was never in it, and still is not.** A page change
     /// moves the highlight ring; it changes no picture, and dropping the cache
@@ -487,12 +448,6 @@ pub struct ThumbnailCache {
     /// ★★★ **Whether the operator wants previews. Nothing but the operator
     /// writes this.**
     ///
-    /// A plain `bool`, and the plainness is the feature. It was
-    /// `Option<bool>` until 2026-09-08 — three states for a two-state control
-    /// — for one reason: pdfcer also wrote it, so the type had to record
-    /// *who last decided*. With the automatic rule gone there is one party,
-    /// so there are two states, and "is the box ticked" is the whole of the
-    /// question.
     ///
     /// ⚠ If a future change makes this module write this field, the
     /// three-state problem comes straight back and so does the defect the
@@ -501,17 +456,6 @@ pub struct ThumbnailCache {
     /// **The operator's per-page time limit**, from the box beside the
     /// checkbox — or `None`, meaning *never give up*.
     ///
-    /// ★★★ **Persisted since 2026-09-12** (`OPERATOR_REQUESTS.md` **O187**),
-    /// in `crate::app::prefs::Prefs::page_preview_budget_ms`. The sentence
-    /// that used to sit here said persisting it *“means a `Settings` field,
-    /// which is engine territory”* and filed the limitation rather than
-    /// smuggling it. **That sentence was wrong**, and it is recorded here
-    /// rather than deleted because the error is instructive: `Settings` is
-    /// the *engine's* configuration, but this is a **shell** preference and
-    /// the shell has had its own preferences file all along. A limitation
-    /// argued from the wrong file is a limitation that does not exist, and it
-    /// cost the operator four days of a control that forgot itself every
-    /// launch.
     ///
     /// # ★ `Option`, not a zero
     ///
@@ -667,11 +611,6 @@ impl ThumbnailCache {
     /// 3. `PanelsState::forget_document`, carrying it across the reset that a
     ///    new document performs.
     ///
-    /// ★★ The third is not bookkeeping. That reset is `*self = Self::default()`
-    /// and it runs on every launch that opens a file, so without the carry the
-    /// seed in (2) is overwritten before the panel draws once — which is what
-    /// O187 did for the first few hours after it shipped. Measured by driving
-    /// the binary, 2026-09-12.
     pub fn force_on(&mut self, on: bool) {
         self.on = on;
     }
@@ -686,23 +625,6 @@ impl ThumbnailCache {
     ///
     /// Three things happen, and the second and third are the ones that matter:
     ///
-    /// 1. The value is clamped to [`MIN_PAGE_BUDGET`]..=[`MAX_PAGE_BUDGET`]
-    ///    **when there is one**. The control clamps too, but a control
-    ///    narrower than what the value may legally hold silently rewrites it,
-    ///    so the clamp lives on the value as well. `None` — the operator's
-    ///    `0`, *never give up* — is stored as given: it is an instruction
-    ///    rather than an out-of-range number, and [`budget_from_millis`]
-    ///    carries the argument. O187, 2026-09-12.
-    /// 2. **Every [`Unavailable::Abandoned`] entry is dropped**, so the pages
-    ///    the *old* budget gave up on are queued again. Without this, raising
-    ///    the limit would visibly do nothing — the operator's whole reason for
-    ///    raising it is the tile that says "Not finished", and a dial that
-    ///    can only ever remove pictures is a trap. `Unavailable::Failed` is
-    ///    deliberately left alone: a page the renderer *refused* will be
-    ///    refused again, and retrying it every keystroke would cost a render
-    ///    per digit typed.
-    /// 3. The skip note is cleared, because it quotes a limit that is no
-    ///    longer in force.
     ///
     /// ★ Idempotent by design — the panel calls this from a `DragValue` that
     /// reports a change on every pixel of a drag, so an unchanged value must
@@ -862,12 +784,6 @@ impl ThumbnailCache {
         let budget = self.budget;
         // 1. The watchdog — **and only when there is a limit to watch for**.
         //
-        //    ★★★ O187, 2026-09-12: the operator's `0` reaches here as `None`,
-        //    and `None` means no thread is spawned and `options.cancel` is
-        //    left unset. Both halves matter and the second is the one easy to
-        //    forget: arming the token without a watchdog would work today and
-        //    would silently become a hang the day anything else in this
-        //    function learned to cancel.
         //
         //    ⚠ The alternative — a watchdog armed at `Duration::MAX` — was
         //    rejected. It spawns a thread per page that parks until the

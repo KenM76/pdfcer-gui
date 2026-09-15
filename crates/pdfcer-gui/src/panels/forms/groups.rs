@@ -258,7 +258,6 @@ pub(super) fn section(
 
 /// **The per-row census, written from the MODEL rather than from the drawing.**
 ///
-/// # ★★★ It lived inside the drawing loop until 2026-08-29, and the header lied
 ///
 /// This module's header promises the row lines are written *"whether or not the
 /// collapsing header is open, so the listing is provable from a trace without
@@ -326,9 +325,6 @@ fn trace_rows(doc: &OpenDoc, form: &AcroForm) {
 /// least-destructive removal, so the list reads from the safest press to the
 /// most sweeping one.
 ///
-/// ★ Moved here on 2026-09-12. It sat above `trace_rows`, run
-/// together with that item's doc comment — so it documented `trace_rows`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 fn rows(ui: &mut egui::Ui, doc: &OpenDoc, form: &AcroForm, actions: &mut Vec<Action>) {
     let live = armed::armed(doc.edit_epoch);
     let mut raised: Option<FieldAction> = None;

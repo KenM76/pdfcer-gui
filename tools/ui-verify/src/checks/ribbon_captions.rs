@@ -6,15 +6,6 @@
 //! Two of them, sharing one region and one measurement, because they are
 //! indistinguishable until you look:
 //!
-//! * **Illegible caption.** The same root cause as D2 — a foreground colour
-//!   paired with a fill the palette did not expect. Ribbon group captions are
-//!   small, low-emphasis text (`egui-shell` draws them `weak()` and
-//!   `small()`), which is exactly the category a theme change damages first
-//!   and a reviewer notices last.
-//! * **Missing caption.** The 2026-08-08 screenshot audit found **two ribbon
-//!   groups rendering with no caption at all**. Not faint — absent. That was
-//!   caught by a screenshot, not by a test, and `GUI_ROADMAP.md` cites it as
-//!   one of the two findings that justified building this harness.
 //!
 //! [`crate::checks::legibility`] reports them separately, because they have
 //! different fixes: a uniform region means the caption is not being drawn and
@@ -170,13 +161,6 @@ pub fn is_ribbon_caption(name: &str) -> bool {
 
 /// Turn one run's trace into the regions this check is about.
 ///
-/// Split out of [`assess`] so that the claim *"this check starts asserting on
-/// its own the day the ribbon declares its captions"* is **testable without a
-/// ribbon**. A test can hand this function a trace containing the lines the
-/// ribbon will emit and observe that the whole chain — parse, match, convert
-/// to capture pixels, resolve — produces a trace-sourced plan. If that claim
-/// were only exercised by running the real ribbon, it would be untested for
-/// exactly as long as it matters.
 ///
 /// `frame` is the live window's measured geometry; it supplies the DPI scale
 /// that turns the application's logical rects into pixels of the capture. See

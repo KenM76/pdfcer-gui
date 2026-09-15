@@ -1,7 +1,6 @@
 //! # `acrobat` — finding the operator's Acrobat, and handing the file over to
 //! it
 //!
-//! `OPERATOR_REQUESTS.md` **O122**, the operator, 2026-09-04:
 //!
 //! > *"also beside our read-review-edit buttons at the top there should be an
 //! > open in acrobat button which will open the active pdf in acrobat reader or
@@ -91,12 +90,6 @@
 //!
 //! ### Why the `.pdf` handler is filtered rather than trusted
 //!
-//! Source 3 answers *"what opens PDFs here"*, which is **not** the question.
-//! Verified on this machine, 2026-09-04: `HKLM\SOFTWARE\Classes\.pdf` reads
-//! `OpenPDFStudio.pdf` — a different vendor's product entirely. A fallback that
-//! took whatever the handler named would have put a button labelled *Open in
-//! Acrobat* over a launcher for PDF Studio, which is a lie the operator finds
-//! out about after their document is already closed.
 //!
 //! So a handler command is accepted only when the executable it names is
 //! called `Acrobat.exe` or `AcroRd32.exe`. See [`discover::edition_of`].
@@ -187,11 +180,6 @@ impl Edition {
 
     /// Preference order — **lower wins**.
     ///
-    /// A number rather than a `match` at the comparison site, so that the
-    /// preference is stated once. Adding a third edition (Acrobat Standard has
-    /// historically also registered as `Acrobat.exe`, so it would arrive as a
-    /// variant rather than as a new key) means writing one row here, not
-    /// hunting for every place two editions are compared.
     #[must_use]
     pub const fn rank(self) -> u8 {
         match self {

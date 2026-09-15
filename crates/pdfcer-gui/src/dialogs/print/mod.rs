@@ -84,58 +84,9 @@
 //!
 //! Corpus: `ui-conventions/dialogs.md`.
 //!
-//! - G1 is-an-os-window: **DONE 2026-08-20** — this was the operator's report,
-//!   *"doesn't pop up in its own movable window. It is locked within the
-//!   boundaries of the program's window."* It is now a real OS window through
-//!   [`crate::dialogs::host`]: title bar, taskbar entry, draggable outside the
-//!   application and onto a second monitor. It degrades to the old in-viewport
-//!   window on a backend with no multi-viewport support, which is the web
-//!   target, and egui owns that fallback rather than this file.
-//! - G2 use-the-os-dialog: the file and save pickers are the system's, and
-//!   `pdfcer-print` opens the native printer-properties sheet owned by our
-//!   window. The dialogs in this directory are pdfcer's own because they carry
-//!   choices only pdfcer has — which is the right reason to draw one, and does
-//!   not excuse G1.
-//! - G3 owned-by-the-app: the native pickers are. The dialog window itself is
-//!   **not**, and cannot be: `eframe 0.35`'s `ViewportBuilder` has no owner
-//!   option and `egui-winit` never passes egui's own `viewport_parents` down to
-//!   `winit`. `crate::dialogs::host`'s header carries the whole account,
-//!   including why `with_always_on_top` was considered and refused. **GAP**,
-//!   and a named one.
-//! - G4 enter-accepts-escape-cancels: **DONE 2026-08-20** — Escape closes, the
-//!   OS close button closes, Enter presses Print, and Print is drawn in the
-//!   theme's selection fill so an operator can see what Enter will do.
-//!   [`crate::dialogs::host::Host::buttons`] owns all three so no dialog can
-//!   implement two of them.
-//! - G5 keyboard-reachable: **GAP** — egui's tab order is positional and nothing
-//!   here asserts that focus starts in a sensible field or that a modal traps
-//!   it.
-//! - G6 remembers-position: **PARTIAL 2026-08-20** — it comes back where it was
-//!   left for as long as the dialog object lives, which is the whole session it
-//!   is open. It does **not** survive being closed and reopened, and it does not
-//!   survive a restart: a remembered position has to be validated against the
-//!   current monitor layout, and a dialog that opens on a monitor which is no
-//!   longer attached is worse than one that opens where the platform puts it.
-//!   See `dialogs::host`.
-//! - G7 destructive-verbs-named: the unsaved-changes dialog names the file and
-//!   labels its buttons with verbs rather than Yes/No.
-//! - G8 cancel-is-silent: a cancelled picker is a complete, correct,
-//!   uninteresting outcome and is never reported as an error.
-//! - G9 nothing-blocks-silently: a native picker blocks the UI thread by design,
-//!   which is what a modal file dialog is. Long work behind a pdfcer dialog is
-//!   not surfaced. **GAP.**
 
 /// **Where a rendered sheet actually carries ink** — operator request O113.
 ///
-/// Split out of [`preview`] rather than added to it, at the seam between
-/// *"what do these pixels say"* and *"how is the preview painted"*. The first
-/// is pure arithmetic over a byte slice and is fully testable with no GUI at
-/// all; the second needs an `egui::Ui`. Keeping them in one file would have
-/// put a page of pixel-threshold reasoning in the middle of a painting
-/// routine and pushed `preview.rs` toward R2's 1500-line ceiling.
-/// **Which sheet the pages want** — operator request O167, 2026-09-10. Pure
-/// arithmetic over the driver's form list and the job's rotated page extents,
-/// separated from the dialog because it is the half a unit test can drive.
 mod autopaper;
 pub(crate) mod ink;
 pub(crate) mod layout;
@@ -168,11 +119,6 @@ mod verdicts;
 /// the spool itself, the plan trace that precedes it, the receipt that
 /// follows it, and the render options all three share.
 ///
-/// ★ Split out of this file on 2026-09-10 under **rule R2** (no source file
-/// over 1,500 lines) when O166 pushed it to 1,731. The seam is not
-/// arbitrary: everything left here is about the *window* — its state, what
-/// it draws, what it recomputes each frame — and everything moved is about
-/// the *job*, which is a transaction with one entry point and no UI.
 mod commit;
 
 /// **The dialog projected back into the preferences file** —
@@ -422,11 +368,6 @@ pub struct PrintDialog {
     preview_zoom: f32,
     /// How wide the preview column is, in egui points — the splitter's state.
     ///
-    /// Operator request, 2026-09-03: *"the preview should be adjustable
-    /// size."* Lives on the dialog rather than in `egui::Memory` because it is
-    /// part of what the operator has configured about this print, alongside the
-    /// zoom and pan beside it, and those three are reset together when the
-    /// dialog is constructed.
     ///
     /// ★ Always read back through the clamp in [`Self::body`], never used raw:
     /// the bound depends on the window width, which changes under it.
@@ -468,14 +409,6 @@ pub struct PrintDialog {
     ///
     /// # ★ The ink mask rides in the SAME tuple, under the SAME key
     ///
-    /// Added 2026-09-03 for operator request O113, and the placement is the
-    /// point rather than an implementation detail. [`ink::InkMask`] describes
-    /// **these exact pixels** — it is a downsample of this texture's source
-    /// pixmap and of nothing else. A mask held in a separate field, or under a
-    /// key of its own, could outlive the raster it describes, and a mask that
-    /// has outlived its raster is strictly worse than no mask: it would answer
-    /// *"is the overhang blank?"* about a page the operator is no longer
-    /// looking at, and answer it confidently.
     ///
     /// One tuple, one [`preview::PreviewKey`], one lifetime. When the key
     /// misses, all three are replaced together; when the render fails, all
@@ -573,7 +506,6 @@ impl PrintDialog {
     /// [`crate::dialogs::DialogsState::open_print`]'s, because it is the one
     /// place that can see whether a dialog already exists.
     ///
-    /// # ★★★ `remembered` — operator request **O166**, 2026-09-10
     ///
     /// *"the printer dialogue box needs to remember our last settings."* Every
     /// field below that reads `remembered` was a literal until that day, so an
@@ -702,11 +634,6 @@ impl PrintDialog {
         // ★★★ **Traced from the BUILT dialog, and the position of these
         // lines is the whole point of them.**
         //
-        // This block used to sit ABOVE the struct literal and read
-        // `remembered.*` — the parsed `PrintPrefs`. It was moved down here
-        // on 2026-09-10, within the hour, while trying to make the driven
-        // check that reads it FAIL on a broken build. It could not be made
-        // to fail, and the reason was this:
         //
         // ⚠ **A trace emitted from `remembered` proves the preferences
         // file was PARSED. It says nothing about whether the dialog
@@ -758,12 +685,6 @@ impl PrintDialog {
                 },
                 dialog.unavailable,
                 doc.view.page_index,
-                // ★★★ The other TWELVE answers, **as the dialog adopted
-                // them** — a sentence that is now true of the code beneath
-                // it. Added 2026-09-10 while writing O166's driven check:
-                // the fourth time in this project that sitting down to write
-                // one found a trace that could not tell apart the two states
-                // the check existed for.
                 //
                 // The two states are **"the preferences file reached the
                 // dialog"** and **"the file was ignored and these are the
@@ -879,8 +800,6 @@ impl PrintDialog {
 
         let spec = self.job_spec(&page_sizes, doc.view.page_index);
 
-        // ★★★ AUTO PAPER IS RESOLVED HERE, BEFORE ANYTHING READS IT — operator
-        // request O167, 2026-09-10.
         //
         // The position in this function is the whole of its correctness. It is
         // after `page_sizes` (the input) and before `plan` (the first reader),
@@ -931,17 +850,9 @@ impl PrintDialog {
             .as_ref()
             .map(|job| verdicts::Context::new(self.scope, &doc.settings, job.device.printable_pt));
 
-        // ★★★ THE POPPED-OUT PREVIEW, DRAWN BEFORE THIS DIALOG'S OWN WINDOW —
-        // operator request O112 ask 2, 2026-09-05.
         //
-        // A no-op unless the operator has pressed Pop out. The order matters
-        // and [`PrintDialog::popped_preview`] carries the argument: the commit
-        // button's clip count is corrected by what the preview has examined, so
-        // the preview must paint before the footer reads the claim — an
-        // invariant the body used to satisfy by containing it.
         self.popped_preview(ctx, doc, job.as_ref(), &page_sizes, context.as_ref());
 
-        // ★★ A REAL OS WINDOW, as of 2026-08-20. The operator's report:
         //
         // > *"Print dialogue box doesn't pop up in its own movable window. It
         // > is locked within the boundaries of the program's window."*
@@ -1034,9 +945,6 @@ impl PrintDialog {
         if std::mem::take(&mut self.commit_requested)
             && let (Some(printer), Some(job)) = (printer_name, job)
         {
-            // ★★★ O166 -- AND THE ARGUMENT THAT USED TO STAND HERE HAS BEEN
-            // OVERTURNED BY THE OPERATOR. It is quoted rather than deleted,
-            // because it was sound and somebody will think of it again.
             //
             // It read: *"the settings are remembered when the operator presses
             // Print, not when the window closes. Closing without printing is
@@ -1072,8 +980,6 @@ impl PrintDialog {
             // something real to put back.
             saved_on_commit = self.remember(prefs);
             let outcome = self.commit(&printer, doc, &job, &page_sizes);
-            // ★★★ A SUCCESSFUL PRINT CLOSES THE DIALOG — 2026-09-03, and until
-            // this day it did not.
             //
             // The operator: *"it doesn't close after I hit the print button
             // [...] it looks greyed out as though it doesn't do anything even
@@ -1106,15 +1012,6 @@ impl PrintDialog {
             // the settings together, leaving *"nothing printed"* and no route
             // back. Word and Acrobat behave the same way.
             //
-            // ★ THE RECEIPT IS NOT LOST, it moves. `Ok` used to be reported in
-            // the footer, which is a surface that only exists while the window
-            // does; on the disclosure row it outlives the dialog and sits with
-            // every other consequence of an operation. Both sentences travel —
-            // the page count and, when the driver held settings pdfcer does not
-            // model, the `Synthesised` disclosure — through `record_notes`
-            // rather than two `record_note` calls, because the slot holds one
-            // disclosure and a second call REPLACES the first. That is
-            // documented at `record_notes` and is exactly the trap it names.
             match Self::commit_notes(outcome.as_ref()) {
                 Some(notes) => {
                     crate::app::actions::record_notes(doc.edit_epoch, notes);

@@ -471,8 +471,6 @@ impl Statuses {
 
     /// **Does one row survive a status filter?**
     ///
-    /// Split from [`narrow`] so the rule can be asserted against a single row,
-    /// exactly as [`super::filter::Filter::keeps`] is.
     ///
     /// ★ `Is` matches if **any** reviewer's current status is that value, not
     /// if every one is. Two people may disagree, and a reviewer asking *"what

@@ -1,7 +1,6 @@
 //! # `app::textoperand` — **which runs a Format command acts on**, from either
 //! gesture
 //!
-//! `OPERATOR_REQUESTS.md` **O198**, the operator's words of 2026-09-14:
 //!
 //! > *"Also get the font selector and editing tools like old [bold] and italic
 //! > working. That entire area is always greyed out in the menu, and the

@@ -387,12 +387,6 @@ mod tests {
 
     /// ★★★ **The inert-button note is gone, and this test is its headstone.**
     ///
-    /// It said pdfcer *"cannot yet give it something to do"*.
-    /// `set_button_action` shipped on 2026-08-30 and that sentence stayed on
-    /// screen for two days, because **nothing in this repository fails when a
-    /// capability lands**. The engine's own reply had warned in as many words:
-    /// *"if your surface tells the operator that pdfcer never authors an action,
-    /// it is now saying something untrue in the direction that matters."*
     ///
     /// The replacement is `text::buttonaction`, which says what the button WILL
     /// do. What is asserted here is the guard that would have caught the

@@ -2,14 +2,6 @@
 //!
 //! ## The seam
 //!
-//! Split out of [`super`] on 2026-08-20 under R2. The subject is narrow and
-//! real: `pdfcer_core::text_edit::EditReport` comes back from every commit
-//! carrying eleven fields, and **almost none of them belong on a status row**.
-//! Deciding which go to the operator, which go to the diagnostic channel and
-//! which go nowhere is a judgement that recurs every time the engine adds a
-//! field — most recently `form_object`, `form_invocations` and `form_pages` in
-//! `Pass 119.0`, and `followers_repositioned` becoming load-bearing in
-//! `Pass 121.1` a few hours later.
 //!
 //! ## The rule this module applies, stated once
 //!
@@ -35,12 +27,6 @@
 /// `EditReport::disclosures` and the `edit_text` arm carries it to the status
 /// row verbatim.
 ///
-/// That is still true, and **nothing below re-words it.** What changed on
-/// 2026-08-28 is that a *remedy* came into existence:
-/// `EditSession::unshare_form`, surfaced as `format.unshare_form`. The engine
-/// cannot name it — `pdfcer-core` has never heard of this shell's commands — so
-/// the sentence that names it has to be the shell's, appended, exactly as
-/// `crate::text::textedit::pinned_tail_disclosure` already is in the same arm.
 ///
 /// # ★★★ The nesting case, which is the whole reason this is a TYPE and not a
 /// # boolean
@@ -200,14 +186,6 @@ pub fn trace_target(page: usize, run: usize, report: &pdfcer_core::text_edit::Ed
             // ★★ THE REFLOW'S REACH, on the channel because the engine asked
             // for it by name and because of what it caught.
             //
-            // `Pass 121.1`, 2026-08-20. A four-character edit on the operator's
-            // own drawing reported `followers_repositioned=1676` and moved
-            // 34,059 pixels across the whole sheet; after the fix the same edit
-            // moved 42 pixels inside one label. The cause was that reflow shifts
-            // "the rest of the line" until a `Td`/`TD`/`T*` boundary — and **a
-            // CAD stream positions everything with `Tm` and never emits `Td`**,
-            // so there was no boundary and the scan ran to the end of the
-            // stream.
             //
             // The engine's request, verbatim: *"if you show one number from an
             // edit report beyond the disclosures, make it that one."* On

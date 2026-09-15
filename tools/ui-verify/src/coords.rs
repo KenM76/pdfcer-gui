@@ -140,7 +140,6 @@ pub struct PageGeometry {
 
 /// **A page's frame: its crop box in PDF user space, plus its `/Rotate`.**
 ///
-/// # ★★★ What this is for, and the defect that bought it — 2026-09-10
 ///
 /// [`DocPoint`] has always been documented as *PDF user space*, and until this
 /// type existed the conversion did not honour that: it took `p.x` as a canvas
@@ -390,10 +389,6 @@ impl CanvasMapping {
             ))
         })?;
 
-        // ═══════════════════════════════════════════════════════════════════
-        // ★★★ THE PAGE THE APPLICATION IS SHOWING, AGAINST THE PAGE THE CALLER
-        // ASKED FOR — 2026-09-04
-        // ═══════════════════════════════════════════════════════════════════
         //
         // `doc_to_window` below refuses when a point's page differs from
         // `self.page_index`, and its doc comment explains why: *"converting it
@@ -408,13 +403,6 @@ impl CanvasMapping {
         // check. `p.page != self.page_index` was comparing a number against
         // itself. A tautology wearing a guard's clothing.
         //
-        // ⇒ On 2026-09-04 a sweep ran with `--doc-point 1,300,400` against a
-        // ONE-PAGE fixture. Page `1` is the second page. Nothing refused it,
-        // and it produced **six confident, detailed, plausible failure
-        // reports** — resize, rotate, shift-constrained resize, multi-node
-        // move and two more — each naming real functions and real trace
-        // events. **Four were filed as defects.** Re-run on the same fixture at
-        // the same zoom with a valid page, every one passes.
         //
         // ★ This is the third time this project has recorded the same shape: a
         // **proxy condition** standing in for the real one, where the stand-in
@@ -504,11 +492,6 @@ impl CanvasMapping {
 
     /// **PDF user space → canvas space, the one place this crate does it.**
     ///
-    /// Every conversion in this type calls this, so there is exactly one
-    /// arithmetic to be wrong. Before 2026-09-10 there were two copies of a
-    /// single `height - y` flip, in this file, forty lines apart — and both were
-    /// wrong on a turned page in the same way, which is precisely why neither
-    /// could catch the other.
     ///
     /// With a traced [`PageFrame`] the mapping is the real one, `/Rotate` and
     /// crop origin included. Without it, the historical behaviour is preserved
@@ -535,13 +518,6 @@ impl CanvasMapping {
     /// window = image_rect.min + canvas * zoom - scroll
     /// ```
     ///
-    /// ★ This doc comment used to state the first step inline, as
-    /// `canvas_x = doc.x; canvas_y = page_height - doc.y`, and called it *"the
-    /// whole conversion"*. That was true for every fixture in this repository
-    /// and false for the operator's `A-591.pdf`, whose `/Rotate` is 270 — see
-    /// [`PageFrame`] for what it cost. The arithmetic is deliberately no longer
-    /// restated here: a second copy of a conversion, in prose, is a second copy
-    /// to go stale, and this one did.
     ///
     /// # Errors
     ///
@@ -614,11 +590,6 @@ impl CanvasMapping {
     ///
     /// # ★★★ The defect that bought this: two checks that never ran, ever
     ///
-    /// Measured 2026-09-14 across every dated sweep baseline this repository
-    /// holds. `measure_calibrates_by_picking_two_points` — the check for the
-    /// two-point scale calibration **the operator asked for** — SKIPPED in all
-    /// five, and `set_scale_reads_the_group_it_is_about_to_overwrite` skipped on
-    /// its first. Both printed the same refusal:
     ///
     /// ```text
     /// document point (2400, 320) is outside the page's crop box

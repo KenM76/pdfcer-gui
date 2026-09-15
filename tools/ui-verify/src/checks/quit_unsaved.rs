@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-02, `OPERATOR_REQUESTS.md` O102:
 //!
 //! > *"when I close the program it should prompt to save changes if there are
 //! > any, and it should do what other programs do — switch focus to the document
@@ -13,9 +12,6 @@
 //!
 //! # ★★★ Why this check is worth more than the feature it guards
 //!
-//! Before 2026-09-02 the window's ✕ was wired to nothing. `eframe`'s close
-//! request was never read, so one keystroke ended the process with every unsaved
-//! document still unsaved — **silently, with no dialog and no trace line.**
 //!
 //! ★★ And a driven check had been pressing `Alt+F4` all day without noticing.
 //! `checks::page_display_pref` closes the program that way on purpose, and it

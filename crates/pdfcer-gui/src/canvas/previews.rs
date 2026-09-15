@@ -5,9 +5,6 @@
 //!
 //! ## Why this is a module and not a paragraph in `interact`
 //!
-//! It was thirteen `let mut` bindings at the top of `canvas::interact::interact`
-//! carrying seventy lines of doc comment between them, and it pushed that file
-//! past **R2**'s 1,500-line ceiling on 2026-08-30 when O63 added a fourteenth.
 //!
 //! The gate's own message says *"split the module along its seams — one subject
 //! per file — rather than raising the limit"*, and this is a seam rather than a
@@ -60,9 +57,6 @@ pub struct Slots {
     /// ★★★ **The selection's own geometry at its new position**, in page space
     /// (`OPERATOR_REQUESTS.md` O63).
     ///
-    /// **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me
-    /// the shape change of the line, it just had a perimeter box around it …
-    /// there isn't a real preview like there is in inkscape."*
     ///
     /// Beside [`Self::ghost`] rather than replacing it, and the two are `Some`
     /// together on most rungs. They answer different questions — *where is it

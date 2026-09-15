@@ -1,8 +1,5 @@
 //! # `canvas::gesture::outcome` — what a gesture PRODUCED
 //!
-//! Split out of `canvas/gesture/mod.rs` on 2026-08-18 under rule R2, when the
-//! text-annotation band made a fifth `DragKind` and took that file past the
-//! 1,500-line ceiling.
 //!
 //! ## The seam
 //!

@@ -39,19 +39,11 @@
 //!    seeded from the document cannot represent that without a second set of
 //!    "explicitly closed", which is this map wearing a worse shape.
 //!
-//! ## ★★★ Rule 4: nothing here reaches the document — and since 2026-09-06
-//! ## that is a DECISION rather than a limit
 //!
 //! An override is **interface state and only interface state**. It is never
 //! written back, never saved, and never included in any comparison of what the
 //! document says.
 //!
-//! This paragraph used to justify that with *"`pdfcer-core` v0.38.0 has no verb
-//! that could write `/Open` on an existing annotation anyway"*, filed as
-//! `request_a_notes_open_state_cannot_be_changed.md`. **`Pass 253.3` shipped
-//! `EditSession::set_annotation_open`** and that reason expired. The behaviour
-//! here did not change, and must not — see below — so what changed is the
-//! argument, which now has to stand on its own.
 //!
 //! ### The argument, standing on its own
 //!

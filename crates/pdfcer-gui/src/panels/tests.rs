@@ -1,11 +1,6 @@
 #![cfg(test)]
 //! # `panels::tests` — the reachability sweep and the width arithmetic
 //!
-//! Split out of [`super`] on 2026-09-04, when `elide_to_width` took that file
-//! past R2's 1,500-line cap (`tools/gates/check-file-size.sh`). **A move, not a
-//! rewrite**: every test below is byte-identical to the one that was inside
-//! `mod tests` in `panels/mod.rs`, de-indented one level, plus the new
-//! ellipsis tests at the end.
 //!
 //! ★ `#![cfg(test)]` is the FIRST line, an inner attribute on the file rather
 //! than an outer `#[cfg(test)]` on the `mod` line. Both work; this one is the
@@ -80,15 +75,6 @@ fn every_panel_is_reachable_from_the_ribbon() {
 /// while only one of them could ever be opened — the failure hiding
 /// inside the fix.
 ///
-/// ★★★ **It was a live hazard and on 2026-09-05 it became the live case.**
-/// `file.properties`' tooltip commissioned two subjects in one sentence — the
-/// document's own metadata and the selection's properties — and the temptation
-/// this refuses was to hang the second panel off that same id when the operator
-/// asked for the metadata to *"be in its own document properties tab"*. It has a
-/// new id, `file.document_properties`, and this test is what would have caught
-/// the shortcut: with one id claimed twice, whichever panel
-/// [`Panel::from_command_id`] found first would be the only one ever openable,
-/// and the other would sit in the arrangement drawing nothing.
 #[test]
 fn no_two_panels_share_a_command() {
     let mut seen: Vec<&str> = Vec::new();
@@ -107,9 +93,6 @@ fn no_two_panels_share_a_command() {
 /// mode, and the selection inspector still exists** — `OPERATOR_REQUESTS.md`
 /// O136.
 ///
-/// The operator, 2026-09-05: *"the document properties are still always visible
-/// in the properties tab. it needs to get out of there and be in its own
-/// document properties tab."*
 ///
 /// # ★★★ Why this is one test and not three
 ///
@@ -203,13 +186,6 @@ fn the_documents_own_properties_are_their_own_panel_in_every_mode() {
 /// explicitly, and the offer assertion is **paired with a refusal**:
 /// `edit.redact` must NOT be offered in Read.
 ///
-/// **2. ★★★ An unknown COMMAND falls through to `true` as well, and this test
-/// was written not knowing that.** Its first version asserted only the three
-/// offers plus the refusal. It was falsified on 2026-09-05 by deleting
-/// `command("file.document_properties")` from `shell::manifest::file`'s Document
-/// band — the control gone from the ribbon entirely — and **it passed**. The
-/// gate had nothing to look the command up in, and a command on no tab is not a
-/// command any mode refuses.
 ///
 /// ⇒ So the tab is asserted first, out of the manifest's own
 /// `command_references()`, and the two halves together say the thing the name
@@ -571,12 +547,6 @@ fn an_impossibly_narrow_pane_still_gets_an_ellipsis() {
 /// every real launch is a fraction of a second later, because pdfcer is
 /// started on a file.
 ///
-/// ⚠ For three hours on 2026-09-12 that made the whole of O187 do nothing.
-/// The preference was written to the file correctly, read back correctly, and
-/// overwritten before the Pages panel drew a single frame. **3,376 unit tests
-/// and 41 gates were green throughout**, because every test of the mechanism
-/// calls the verb and the defect lives in the frame between the seed and the
-/// first draw. It was found by driving the binary across three processes.
 ///
 /// ⇒ So the property is pinned here, at the seam that broke it, and it is
 /// pinned for BOTH fields: a carry that moved only the tick would leave the

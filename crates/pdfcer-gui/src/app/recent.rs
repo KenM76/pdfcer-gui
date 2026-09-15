@@ -524,7 +524,6 @@ impl RecentFiles {
 /// to be feeling, and a control that greys itself out because a drive is slow
 /// teaches the operator it is broken. It opens, and says so in a row.
 ///
-/// # ★★★ The glyph, 2026-09-05 — and the sentence that predicted this edit
 ///
 /// `catalog::file`'s registration for `file.recent` carries `.with_icon("recent")`
 /// and, beside it, a paragraph saying in as many words what was true until

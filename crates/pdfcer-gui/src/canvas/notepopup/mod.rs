@@ -1117,10 +1117,6 @@ mod placement_tests {
     /// ★★ **Candidate 2: no room on the right, and the flip is to the LEFT —
     /// not a slide.**
     ///
-    /// The anchor is pushed against the right edge of the viewport, where
-    /// `Area::constrain_to` used to slide the window back over it. Room on the
-    /// left is 700 − 8 − 276 = 416 ≥ 288, so the left-hand placement is
-    /// available and must be taken.
     #[test]
     fn a_note_against_the_right_edge_puts_its_window_on_the_left() {
         let anchor = Rect::from_min_max(Pos2::new(700.0, 300.0), Pos2::new(760.0, 340.0));

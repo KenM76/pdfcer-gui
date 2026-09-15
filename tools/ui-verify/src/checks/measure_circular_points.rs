@@ -3,7 +3,6 @@
 //!
 //! # ★★★ The defect, in his words and then in numbers
 //!
-//! `OPERATOR_REQUESTS.md` O105, 2026-09-03:
 //!
 //! > *"can you check our radius/diameter dimensioning tool? selecting a point
 //! > sometimes makes a big circle, and selecting more points around a hole
@@ -80,10 +79,6 @@ const TAB_ID: &str = "measure";
 const SUBJECT: &str = "ribbon.item.measure.radius_diameter";
 /// The Properties panel's body compartment, as the DOCK reports it.
 ///
-/// ★★★ **The pick list moved on 2026-09-04** — `OPERATOR_REQUESTS.md` O123
-/// dissolved the Tool panel and sent its live controls to Properties, on the
-/// operator's own argument: *"I never understood why there is a tool dock when
-/// everything can be in object and properties."*
 ///
 /// The dock's own name is used rather than a panel-published body region
 /// because Properties has never published one — and the dock's is the better

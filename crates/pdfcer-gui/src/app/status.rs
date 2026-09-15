@@ -342,13 +342,6 @@ pub(super) mod decline;
 
 /// The narrator — the render-diagnostics disclosure and its one line.
 ///
-/// Split out of this file along the seam this header draws in prose two
-/// sections above: the notes are **narration**
-/// (a census of what a raster contained, demoted behind a triangle because its
-/// prominence was wrong), and everything else on the left half is a fact about
-/// the operator's own document or gesture, which must not be demoted at all.
-/// The two change for different reasons and are argued from opposite
-/// premises.
 ///
 /// It is `pub(crate)` rather than private for exactly one export:
 /// [`notes::findings`], the ordered, filtered list of what a raster

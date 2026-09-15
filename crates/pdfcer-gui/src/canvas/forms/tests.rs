@@ -1,9 +1,5 @@
 //! # `canvas::forms` tests — the focus's own assertions
 //!
-//! Split out of `canvas/forms.rs` on 2026-09-04 under **R2**. The parent
-//! reached 1,444 of the 1,500-line ceiling and the review row A12c needed one
-//! more function ([`super::live_draft`]), its documentation and its test,
-//! which would not fit.
 //!
 //! ★ The seam is the one this crate has now taken half a dozen times
 //! (`app/state`, `app/prefs`, `canvas/geometry`, `canvas/selection`): the

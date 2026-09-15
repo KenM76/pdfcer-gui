@@ -2,14 +2,6 @@
 //! two sentences each, and the rule they share: *name the next click, not the
 //! matrix.*
 //!
-//! Split out of `text/status/mod.rs` on 2026-09-09, when the second refusal
-//! (`resize_fixed_size_marker`, engine `Pass 277.0`) pushed that file past
-//! R2's 1,500 lines. The seam is the one `refused.rs` and `formdelete.rs`
-//! already draw in this directory: one refusal family per file, the sentence
-//! and the argument for its wording together. Nothing here decides whether
-//! a resize is refused — `app::actions::annots::resize` learns that from the
-//! engine's `EditError` and `app::status::decline` records which sentence;
-//! this file is only the words.
 //!
 //! Both functions are `const` and return `&'static str` because every
 //! sentence in the decline catalog is static today; the day one needs a

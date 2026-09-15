@@ -103,20 +103,6 @@
 //!
 //! ## Input conventions, and why breaking them feels wrong
 //!
-//! - **Plain wheel scrolls; Ctrl+wheel zooms.** egui routes these apart at
-//!   the input-state level: a wheel event carrying the zoom modifier
-//!   becomes `zoom_delta` and contributes *nothing* to
-//!   `smooth_scroll_delta`, so the scroll area cannot pan and zoom off the
-//!   same gesture. Breaking this is the single most common way a
-//!   from-scratch viewer feels wrong.
-//! - **Middle-drag pans** — the CAD / Inkscape / Illustrator / browser
-//!   convention, requested by the operator on 2026-08-04. It is implemented
-//!   against the scroll offset directly rather than by enabling
-//!   `ScrollSource.drag`, because that knob is button-agnostic: turning it
-//!   on would also make a *left*-drag pan, and the left button is reserved
-//!   for the selection marquee that arrives at S4.
-//! - **Panning triggers no re-raster.** It moves the viewport over an
-//!   existing texture.
 //!
 //! ## The zoom anchor — decided once, in [`zoom`]
 //!
@@ -154,20 +140,11 @@ mod deep;
 mod offset;
 // Spending a fit command's request to place the view -- O28.
 mod fit;
-// Where the view sits this frame, settled before anything is drawn: the
-// pasteboard slack, the deep-position tier, a pending fit, and the ranked
-// offset. Split out of `present` under R2 -- its header carries why the three
-// values it hands back are the whole of the seam.
 pub mod geometry;
 pub mod gesture;
 mod viewpos;
 // Draggable alignment lines: what a guide belongs to, where it lives on disk,
 // and why grabbing one cannot also start a marquee.
-pub mod guides;
-// The drawing grid, in each page's own space. Split from `rulers` under R2
-// along the seam that module's header already drew: a ruler is chrome beside
-// the canvas that reserves layout space, a grid is chrome over the page that
-// reserves none.
 /// ★★★ **The annotation half of the canvas clipboard** — split out of
 /// `clipboard` on 2026-09-05 under R2, along the annotation-versus-content
 /// seam. Its header carries the finding that made the split worth making:
@@ -186,6 +163,7 @@ pub mod annotclip;
 /// DELTA and not a rectangle: a move has two halves and a renderer can only
 /// see one of them.
 pub mod annotdrag;
+pub mod guides;
 // The nodes of a markup shape a `/Polygon`, `/PolyLine` or `/Line` and the
 // drag that moves, adds or removes one. The operator's *"I also can't edit or
 // delete nodes of a markup shape once it is drawn."*
@@ -265,18 +243,7 @@ pub mod widgetdrag;
 // kept between frames. Split out under R2 when the rulers landed; see its
 // header on why the forced seam is a real one.
 pub mod input;
-// What the operator just did, and what happens as a result: the seven ordered
-// steps of the one gesture function, the `Frame` of settled facts it is handed,
-// and the two invariants it is accountable for. Split from this file under R2
-// along the seam the two subjects already drew — composition needs a live `Ui`
-// and answers *where does everything go?*, interaction needs this frame's input
-// and answers *what did the operator just do?* Its items are `pub(super)`: this
-// module is the only caller and nothing outside `canvas` can name them.
 pub mod interact;
-// Escape and Delete, and the precedence between the three things that would
-// like Escape. Split from this file along the seam every other split here
-// follows: that module is drivable by a headless `egui::Context`, this one
-// needs a window.
 pub mod keys;
 /// ★★ **Following a `/Link`** — the hit test, the pointing hand, and the
 /// four sentences for the four destinations this program cannot perform.
@@ -326,19 +293,11 @@ pub mod overlays;
 /// **Dropping pages onto the page view** — the caret between two sheets, and
 /// the release that inserts or reorders there.
 ///
-/// The operator's request of 2026-08-19: *"…or onto the canvas to add pages
-/// and insert them in between the pages we've dragged to"*. The drag itself
-/// lives in [`crate::pagedrag`], which is what lets a gesture that began in a
-/// panel — possibly in another document — end here.
 pub mod pagedrop;
 
 /// ★★★ **Reading a comment where the comment is** — the pop-up window a click
 /// on a note opens, and the tooltip a hover shows.
 ///
-/// The operator, 2026-09-05: *"I could add a yellow sticky note but even in
-/// read mode I don't think I could figure out how to read it."* He was right,
-/// and the measurement was worse than the report: the only route to a comment
-/// was the Comments panel, on the `markup` tab, which Read is not shown.
 ///
 /// It lives on the **canvas** rather than on the ribbon precisely so that it
 /// is mode-independent by construction — no future edit to a tab list can take
@@ -354,12 +313,6 @@ mod escape;
 /// ★★★ **Reaching an object that is off the page** — which of the canvas's
 /// two interactive rectangles owns this frame's gesture.
 ///
-/// O23's second half. The operator, 2026-09-10: *"how do I view and edit
-/// objects that are off of the page? we added this feature but I didn't see
-/// how to enable it."* There was nothing to enable: the pasteboard — the
-/// viewport of scrollable slack [`geometry::content_extent`] puts on every side
-/// of the strip — sensed hover and refused clicks, so a press out there never
-/// became a gesture and an object dragged past the sheet edge was unreachable.
 ///
 /// Its header carries the whole argument, including why this is a choice
 /// between two responses rather than one widened page rect, and the two
@@ -457,12 +410,6 @@ mod backdrop;
 pub mod stampfit;
 pub mod strip;
 pub mod target;
-// ★★★ **Which picture this page needs** — region, halo, or the whole sheet.
-// The one block in `present` that decided what to ASK the renderer for rather
-// than what to draw with what arrived; split out on 2026-09-10 when O23's halo
-// tier put that file at 1,503 lines and the R2 gate refused it. Its header
-// carries the three tiers, why their ORDER is a safety argument, and why it
-// peeks at the page's content bounds and never builds them.
 pub mod tier;
 // Selecting TEXT on the page, and copying it: the mode gate that needs no
 // capability, the interaction decisions and which of Acrobat / Inkscape /

@@ -1,7 +1,6 @@
 //! # `panels::docprops` — the **Document properties** panel: this file's own
 //! title, author, subject and keywords, and the facts pdfcer read about it
 //!
-//! ## ★★★ Why this is a panel of its own — the operator, 2026-09-05
 //!
 //! > *"the document properties are still always visible in the properties tab.
 //! > it needs to get out of there and be in its own document properties tab."*
@@ -68,7 +67,6 @@
 //! `/Info` dictionary at all renders four empty boxes, because absent is a
 //! value and an empty box is how absent is spelled.
 //!
-//! ## ★ The blocker this module's own header used to quote
 //!
 //! It opened, for months, by quoting `Panel::command_id`:
 //!
@@ -135,11 +133,6 @@
 
 //! ## ★ Why `Action::SetInfoField` takes `Option<String>` and not `String`
 //!
-//! Moved here from that variant's doc comment on 2026-09-03, when
-//! `action.rs` reached R2's 1,500-line limit and the seam turned out to be
-//! that the enum was carrying the rationale for mechanisms living in other
-//! modules. The documentation belongs beside the mechanism; the variant keeps
-//! a summary and points here.
 //!
 //! `None` is a different edit, not an empty one.
 //! `EditSession::set_info_field(field, None)` **removes the key** from the
@@ -285,7 +278,6 @@ pub const REGION_RECOVERY_DROPPED: &str = "properties.recovery-dropped"; // ui-t
 /// changes this, which changes `[String; FIELDS]` — so the drafts follow
 /// automatically instead of the fifth field being dropped off the end.
 ///
-/// # ★★★ The kind of protection this is changed on 2026-09-13
 ///
 /// Until engine `4851316`, `all()` returned `[Self; 4]`, and this comment
 /// argued that the cardinality lived in a **type**, so a fifth field upstream
@@ -316,13 +308,6 @@ pub const REGION_RECOVERY_DROPPED: &str = "properties.recovery-dropped"; // ui-t
 /// is the only oracle that can tell a field that was added from a field that
 /// was added *and drawn*.
 ///
-/// **The label function still cannot have any of this.** `InfoField` is
-/// `#[non_exhaustive]`, so a `match` on it in this crate needs a `_` arm and
-/// compiles for ever whatever is added — see
-/// `crate::text::panels::docprops::info_label`. That was the contrast this
-/// comment used to draw, and it is weaker than it was: the difference is now
-/// between a constant that follows silently and a `match` that falls through
-/// silently, rather than between a build break and a fall-through.
 const FIELDS: usize = InfoField::all().len();
 
 /// The operator's half-typed metadata, between frames.
@@ -441,10 +426,6 @@ impl InfoDrafts {
 ///
 /// # ★ No collapsing header any more
 ///
-/// The section used to be a `CollapsingState` that folded itself shut whenever
-/// a selection-scoped section above it had spoken (O75). Nothing is above it
-/// now. A header that can only ever be open is a control that does nothing,
-/// and the panel's own tab is where an operator closes this surface.
 pub fn body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut Vec<Action>) {
     egui::ScrollArea::vertical()
         .id_salt("docprops-body")
@@ -701,9 +682,6 @@ fn row(
 /// It **scans the whole thing and rebuilds the index from what it finds**, and
 /// the document then opens and looks completely normal.
 ///
-/// `Document::recovery()` has carried the report of that since the engine
-/// landed and **this shell never called it**. `NO_SURFACE.md` §3b recorded it as
-/// unreachable on 2026-08-17 and it was still unreachable today.
 ///
 /// It is the same shape as the two silences `pdfcer-core` broke this week — a
 /// search that found nothing, and a redaction that marked nothing, over text
@@ -725,7 +703,6 @@ fn row(
 /// — and it would nag on every document that had ever been touched by a bad
 /// writer, which is a great many of them.
 ///
-/// # ★★★ And what the rebuild could NOT keep — wired 2026-09-13
 ///
 /// The three numbers above describe what recovery *kept*. Until the engine's
 /// `fb6e004` there was no way to ask what it **dropped**, and a recovery that
@@ -893,16 +870,7 @@ fn dropped_objects_note(ui: &mut Ui, report: &pdfcer_core::recover::RecoveryRepo
 /// status lines point at already lives — so the operator following either
 /// sentence arrives at one place.
 ///
-/// # ★★★ It is a disclosure that now ENDS in a control — 2026-09-10
 ///
-/// This section used to read *"No control, no button, no way to act"*, and
-/// explained at length that choosing the other value of a duplicate key is a
-/// **re-load with different `LoadOptions`** rather than an edit, that the shell
-/// had no such route, and that drawing a disabled control for it would be the
-/// placeholder **R9** forbids. Every clause of that was correct. The last one
-/// stopped being true when `ENGINE_BACKLOG.md` rows 280 and 281 were wired, and
-/// a limitation sentence outliving its limitation is a defect in whoever
-/// believes it.
 ///
 /// What is drawn now: the rows, unchanged, followed by **one button** —
 /// [`crate::text::anomalies::reread_first_button`] or its opposite, whichever
@@ -1283,7 +1251,6 @@ mod tests {
     /// The four fields this panel was written for are still in the engine's
     /// list.
     ///
-    /// # ★★★ What this test used to assert, and why that could not fail
     ///
     /// It asserted `FIELDS == InfoField::all().len()` and
     /// `drafts.len() == InfoField::all().len()`, with a doc comment explaining

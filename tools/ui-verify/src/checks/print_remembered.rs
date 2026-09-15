@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-10:
 //!
 //! > *"the printer dialogue box needs to remember our last settings."*
 //!
@@ -81,12 +80,6 @@
 //!            copies=3 collate=false subset=odd reverse=true
 //! ```
 //!
-//! Everything after `page=` was added on 2026-09-10 **while writing this
-//! check** — the fourth time in this project that sitting down to write a
-//! driven check found a trace that could not tell apart the two states the
-//! check existed for. Before it, `remembered=` reported the *printer* and
-//! nothing else, so a build that restored the printer and silently dropped the
-//! other twelve would have shown a fully green line.
 //!
 //! ★★★ **And then it was wrong a second time, in a way that looked
 //! finished.** As first written the twelve fields were formatted from
@@ -114,7 +107,6 @@
 //! written in the same vocabulary, so the comparison is literal, token for
 //! token, rather than against a second spelling free to drift.
 //!
-//! # ★★★ Falsified, not merely green (2026-09-10)
 //!
 //! *"A check that cannot fail is not evidence"* is a standing lesson in this
 //! project, written after a long-green gate was found to be aiming at
@@ -424,32 +416,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     let prefs_path = dir.join(PREFS_FILE);
 
-    // ★★★ **Reset the seeded preferences file to the bare seed on EVERY path
-    // out of this check** — and the honest account of what that is worth is worth
-    // more
-    // than the rule it enacts, because the first draft of this comment claimed
-    // a danger that **does not exist under the way the suite actually runs**.
     //
-    // ★ What was MEASURED (`sandbox.rs`, re-measured 2026-09-13). Isolation is
-    // ON by default. Before each check runs, `Sandbox::for_check` makes a private
-    // directory beside the binary, hard-links the binary into it and copies in
-    // `models/`. `ctx.exe` is then rewritten to the sandboxed path, which is what
-    // `userdata()` below resolves against, and `drop(sandbox)` removes the whole
-    // directory afterwards. Under a default `run-all`, therefore, this guard
-    // rewrites a file inside a directory that is about to be deleted anyway.
     //
-    // ★★★ **What this paragraph used to say, and what its one wrong clause
-    // cost.** It said *"`userdata/` is not among the sibling directories it brings,
-    // so every check begins with no preferences file of any kind"*, and concluded
-    // from that that the delete at the top of this function always finds nothing —
-    // which is what made the delete look free. The clause was **true on the day it
-    // was written**. `sandbox::seed_prefs` then began writing a
-    // `userdata/preferences.txt` holding exactly one key — `ask_default_app =
-    // false`, suppressing the O173 startup offer — and **no signature anywhere
-    // changed**, so neither the compiler nor any test could see that this comment
-    // had become the opposite of the truth. Every check now begins with a
-    // preferences file; the delete always found it; and what it removed was the
-    // suppression.
     //
     // ★★ So why keep it. Because the two runs where it is NOT redundant are
     // exactly the two where losing the file would cost the most:
@@ -488,17 +456,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Deletion does not, because an absent `ask_default_app` takes its own
     // compiled-in default, and that one is `true`.
     //
-    // ★★ **What it cost, measured 2026-09-13 by driving the check.** The
-    // control launch's trace carries `dialog-owned title="Open PDFs with pdfcer"
-    // owned=true` and `dialog-focus — focused=Some(true)` forty lines ahead of the
-    // File-tab click, and the click then produced no `ribbon-tab-activated` line at
-    // all: it went to the offer's window, which had the foreground. The check
-    // skipped saying *"the click on `ribbon.tab.file` produced no
-    // `ribbon-tab-activated tab=file` line, so no click reached the ribbon"*, and
-    // **five documents in this repository then recorded that as a ribbon defect** —
-    // "the File-tab route", promoted to a suite-wide blocker on the strength of a
-    // second check reporting the same sentence. The ribbon was never involved. An
-    // absence reported by a check is first a question about the check.
     //
     // ⇒ `sandbox::write_prefs` exists precisely to close this class, and its own
     // doc table names THIS CHECK as one of the three that lost the seed. The repair
@@ -507,12 +464,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // names its victims can still miss one*, and the one it misses is the one
     // spelled with a different verb.
     //
-    // ★ A guard rather than a line at the end, because there is more than one
-    // way out below. **Measured 2026-09-10: eight explicit exits — four FAILs
-    // (`Ok(Some(…))`), three SKIPs (`Err(Error::new(…))`) and the tail
-    // `Ok(None)` — plus five `?` operators, each an exit too and none of them
-    // visible as one when reading down the page.** A tidy-up line at the end
-    // is correct on exactly one of those thirteen.
     //
     // (The exits ABOVE this point deliberately have no guard, and that is not
     // an oversight: everything above resolves arguments — the exe, the PDF,
@@ -644,10 +595,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         text.push_str(value);
         text.push('\n');
     }
-    // ★ Through `sandbox::write_prefs`, which carries the O173 suppression as a
-    // header. Writing this file directly used to drop it, which opened the
-    // default-app offer in front of this check's own window — see that
-    // function for the full account.
     if let Err(why) = crate::sandbox::write_prefs(&dir, &text) {
         return Err(Error::new(format!(
             "could not write {}: {why}",

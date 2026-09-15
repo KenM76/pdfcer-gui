@@ -1,7 +1,5 @@
 //! # `canvas::markup` tests — the pure rules, enumerated
 //!
-//! Split out of [`super`] under **R2** on 2026-08-28, when the markup router
-//! landed and took that file past 1,500 lines.
 //!
 //! ## ★★ The seam is the one that module's own §5 already draws
 //!
@@ -480,12 +478,6 @@ fn the_preview_colour_is_the_committed_colour() {
     // ★★ …and only Highlight takes the highlighter, and every shipped colour
     // is dark enough to be seen on white paper.
     //
-    // This pair replaces a single test that read *"only the highlighter is
-    // yellow"*, implemented as `r > 0.5 && g > 0.5 && b < 0.5`. That was a
-    // correct check of a true fact — the highlighter WAS `#FFFF00` — and it
-    // became a **wrong** check on 2026-09-06, when the highlighter became
-    // Acrobat's measured `#FF6200`. An orange is not yellow by that predicate,
-    // so the test would have failed while nothing was broken.
     //
     // ⇒ The lesson is that it asserted the wrong thing all along. "Is it
     // yellow" was a proxy for two separate claims, and neither of them is about

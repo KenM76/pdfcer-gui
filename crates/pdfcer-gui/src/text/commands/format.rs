@@ -108,9 +108,6 @@ pub const fn format_select_text_line() -> CommandText {
 ///
 /// # Every clause of the tooltip, and what it answers
 ///
-/// **"the form that contains it"** names the structure, which is the fact the
-/// operator can act on — it explains the page-sized outline they used to get,
-/// and it is the word they need if they go looking in another tool.
 ///
 /// **"one object you can move, delete or copy"** is the reason to press it.
 /// The thing selected before pressing is none of those, and this sentence is

@@ -14,11 +14,6 @@
 //! > works, but only after he has tried to drag. **A route he can find
 //! > *before* failing is owed.**
 //!
-//! Deleting one line of a title block has worked since 2026-09-05. It could be
-//! reached exactly one way: arm the Points tool with the `A` chord **before**
-//! clicking, then click the line. Nothing in the program said so. Every route
-//! an operator would try first — double-click, drag, the Objects panel's
-//! outline — either does something else by design or does nothing at all.
 //!
 //! ⇒ The fix is a row in the canvas object menu: *Select this line of text*,
 //! offered when the right-click landed on a line of a text object that has
@@ -80,13 +75,6 @@
 //!
 //! # ★★ Why step 9 needs a trace line and could not use the rect
 //!
-//! `crate::diag::ui_rect` publishes **where** a label was drawn and never
-//! **what it says**. A build that drew the readout and dropped the rung clause
-//! publishes a byte-identical region, so an assertion on
-//! `status-group:selected` alone is satisfied by both outcomes and measures
-//! neither. `status-rung` was added to `app::status::selected` on 2026-09-15
-//! for that reason and states the three facts the clause is computed from
-//! rather than the English.
 //!
 //! ⚠ It is emitted through `diag::trace_changed`, which de-duplicates on the
 //! rendered line. So step 9 is asserted as *"the count was zero before the
@@ -95,15 +83,6 @@
 //! the later one and a mark-relative assertion would report a defect that is
 //! not there. Step 3 is that control, and without it step 9 is vacuous.
 //!
-//! ★★★ **And WHERE that line is emitted from is part of the oracle, not an
-//! implementation detail of the status bar.** It was first written just above
-//! the `match` in `with_part`, keyed on the same `PartKind` the clause-building
-//! arms are keyed on. That reads as equivalent and is not: falsification recipe
-//! (4) below gutted both arms and this check still PASSED, because everything
-//! the trace said remained true — it was a statement about the four guards
-//! ABOVE the match, not about the sentence. ⇒ The emission was moved inside the
-//! two producing arms on 2026-09-15, which is what makes step 9 a measurement
-//! of the disclosure rather than of the code path that leads to it.
 //!
 //! # The fixture, pinned here and not read from `--pdf`
 //!
@@ -112,11 +91,6 @@
 //! starting at x = 72. The same file `move_line_of_text` uses, for the same
 //! measured reasons: one text object with several runs, legible at fit zoom.
 //!
-//! ★★★ **Pinned in code**, because the 2026-09-12 sweep hands every chunked
-//! check one shared A1 sheet and one shared aim. `deeper_rung_delete` carried
-//! a correct fixture table in *prose* for a week and all three of its rungs
-//! still ran against a document their own header said they could not use.
-//! Knowledge a check cannot run without belongs in the check.
 //!
 //! ★★ The aim is **(120, 672)** — inside the *third* line, whose baseline is
 //! 668 — and the third and not the first on purpose. A build whose pick
@@ -133,21 +107,6 @@
 //! A check nobody has seen fail is a claim, not a measurement. Each of these
 //! must turn this check red, at the step named:
 //!
-//! 1. **Delete the row.** Remove the `Item::command("format.select_text_line")`
-//!    line from `CANVAS_OBJECT` in `shell::menus`. → step 6 fails, and the
-//!    message is the O188(A) report. *(This is the state the program was in
-//!    before 2026-09-15, so this is also the recipe that proves the check
-//!    would have caught the original defect.)*
-//! 2. **Break the parking.** Make the `run_pick` binding in `canvas::menus`
-//!    park `RunPick::Elsewhere` unconditionally. → step 5 fails, with the
-//!    unreadable-pick message.
-//! 3. **Break the hand-off.** Make `dispatch::format`'s arm ignore
-//!    `runmenu::resolve`'s run index and call `select_part(page, object, 0, …)`.
-//!    → step 8 fails on the INDEX, not on the presence of the line — which is
-//!    the assertion this file exists for.
-//! 4. **Drop the disclosure.** Replace both clause-building arms of the final
-//!    `match` in `app::status::selected::with_part` with `(line, None)`.
-//!    → step 9 fails while every other step stays green.
 //!
 //!    ⚠ **This recipe has already earned its keep, on the day it was
 //!    written.** Run against the first version of the oracle it PASSED: the
@@ -354,8 +313,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here. See the
-    // module header for what a prose fixture table cost on 2026-09-12.
     let pdf = crate::fixture::workspace_root()
         .join("fixtures")
         .join(FIXTURE);
@@ -614,13 +571,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: ★★★ THE O188(A) DEFECT ITSELF — is there a route? --------------
     //
-    // ★★ What a missing rect does and does NOT prove, taken from
-    // `unshare_form`'s own correction of 2026-09-12: `menu/plan.rs` keeps a
-    // DISABLED command as a slot and `menu/render.rs` reports its rect with no
-    // reference to `enabled`. What `plan` drops is a command that is **not
-    // registered**, or one whose `shown_when` resolved false. So this
-    // assertion catches "no row" and does not catch "greyed row"; the greying
-    // has no check, which is stated rather than quietly left out.
     //
     // ⇒ For this command that is the right coverage anyway, because R9 makes
     // the row ABSENT rather than greyed: the condition is not temporary — the

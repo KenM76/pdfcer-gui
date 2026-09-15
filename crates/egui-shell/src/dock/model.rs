@@ -592,14 +592,6 @@ impl DockLayout {
     /// Whether `panel` is genuinely on screen: floating, or the active
     /// tab of its stack on a visible side.
     ///
-    /// ★★ **The floating arm is first and it is unconditional.** A float
-    /// has no side, so nothing about either dock can hide it — collapsing
-    /// the side it came from does not, and neither does another panel
-    /// being the front tab of the stack it used to be in. An
-    /// implementation that consulted [`super::float::DockHome::side`]
-    /// here would answer "not on screen" about a window the operator is
-    /// looking at, and every toolbar toggle reading this would go dark
-    /// while its panel stayed open.
     #[must_use]
     pub fn is_on_screen(&self, panel: &PanelId) -> bool {
         if self.is_floating(panel) {

@@ -62,11 +62,6 @@
 //! > an anchor set that silently went stale is worse than one that was never
 //! > imported.
 //!
-//! So [`store_line`] prints *how many anchors* and *when Adobe last wrote the
-//! file* as one sentence, and there is no accessor in this module that produces
-//! one without the other. ★ On the machine this was written on, the count is
-//! about 1,780 and the date is **2024-05-27** — sixteen months old. A control
-//! that had shown "1,780 anchors ✓" would have been true and useless.
 //!
 //! ## Voice
 //!

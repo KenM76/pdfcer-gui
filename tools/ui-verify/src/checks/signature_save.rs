@@ -12,11 +12,6 @@
 //! session.changes_structure() -> bool
 //! ```
 //!
-//! Until 2026-08-28 this shell called neither. `Ctrl+S` over a signed drawing
-//! whose page had been deleted wrote a revision and said nothing — not before,
-//! not after, on any surface. `crate::checks::signature_save` is the assertion
-//! that the fix is reachable by a hand on a keyboard rather than only by a unit
-//! test.
 //!
 //! ## ★★★ Why no unit test can make this claim
 //!

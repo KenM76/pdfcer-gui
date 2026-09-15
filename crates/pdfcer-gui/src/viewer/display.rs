@@ -6,7 +6,6 @@
 //!
 //! ## ★ Continuous is an option, not a replacement — and that is the whole point
 //!
-//! The operator's instruction, verbatim, 2026-08-12:
 //!
 //! > *"continuous scroll should be an option under the view tab as the way I
 //! > move around a page is great when working with drafting drawings."*
@@ -30,8 +29,6 @@
 //!
 //! ## ★ Read defaults to continuous; every other mode keeps single page
 //!
-//! `MODES_AND_PANELS.md`'s table, and the operator decision of 2026-08-13 that
-//! settled it:
 //!
 //! > *"Read defaults to continuous scroll; Review and Edit default to single
 //! > page. … Reading a document is a continuous act — you scroll through it,
@@ -299,10 +296,6 @@ mod tests {
 
     /// ★ **Read defaults to continuous; every other mode keeps single page.**
     ///
-    /// The operator decision of 2026-08-13, asserted rather than commented.
-    /// An unknown mode falls back to the default rather than refusing — a
-    /// customized manifest may declare a fourth mode, and it must open a
-    /// document rather than fail to.
     #[test]
     fn only_read_defaults_to_continuous() {
         assert_eq!(

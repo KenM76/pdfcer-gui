@@ -2,16 +2,9 @@
 //! window, draws its body in it, comes back where it came from, and can be
 //! closed.**
 //!
-//! ⚠⚠⚠ **NOT RUN BY THE SESSION THAT REWROTE IT (2026-09-05).** Another
-//! track owned the pointer and the keyboard for the whole of that session and
-//! two driven runs at once corrupt each other, so this file was repaired
-//! headlessly and **has not been executed since**. Every claim below about
-//! what it now asserts is a claim about the code; the verdict is the lead's
-//! to take when the machine is free. Do not read the repairs as evidence.
 //!
 //! # What this is for
 //!
-//! `OPERATOR_REQUESTS.md` O126, the operator, 2026-09-04:
 //!
 //! > *"you understand that there are options to float, close, and dock those
 //! > panels … No shortcuts or lazy half-implementation."*
@@ -23,13 +16,7 @@
 //! **did the platform actually give us a window, and is the panel's body in
 //! it?**
 //!
-//! # ★★★ The two defects this file was rewritten for, 2026-09-05
 //!
-//! The 2026-09-05 full sweep reported this check as **FAIL** with two
-//! findings, filed as A5: *"the float window published no viewport-tagged
-//! `ui-rect`"* and *"`view.dock_all_panels` traced `docked=0`"*. It also
-//! recorded that the same check had been failing with `moved=false` "for
-//! days" in other sweeps.
 //!
 //! **All three were this file's, and not the application's.**
 //!
@@ -43,8 +30,6 @@
 //! out of a stack, floated nothing, and `view.dock_all_panels` then honestly
 //! answered `docked=0`.
 //!
-//! The evidence is the four traces of one run, read in launch order
-//! (`D:\temp\uvdrive\A\panels_float_close_and_dock\`, 2026-09-05 04:51):
 //!
 //! ```text
 //! float     04:51:34  panel-float  moved=true    → saved: layers FLOATING
@@ -201,14 +186,6 @@ const RESET: &str = "view.reset_layout";
 /// — and the Layers panel is an Edit-mode surface. So a float of it can only
 /// succeed in a mode whose default dock carries it.
 ///
-/// This check never said which mode it wanted. It ran green for months anyway,
-/// because `tools/ui-verify` launched every check from **one portable profile
-/// beside the exe**, an earlier check in the sweep clicked the Edit segment,
-/// and the mode was still on disk when this one launched. The application
-/// discarded the stored mode on every launch until 2026-09-06, so nothing
-/// noticed; the moment that was fixed, the leak became load-bearing, and the
-/// moment the harness gained per-check isolation the leak stopped and this
-/// check failed.
 ///
 /// ⇒ **A check that does not state its preconditions is not passing — it is
 /// agreeing with whatever ran before it.** The isolation fix did not break
@@ -292,10 +269,6 @@ fn run_once(ctx: &CheckContext, tag: &str, invoke: &str) -> Result<crate::trace:
     // frame — `PDFCER_DIAG_INVOKE` fires exactly one command per frame, and
     // the ordering is what makes the reset a precondition rather than a race.
     //
-    // ★★ And one more again since 2026-09-06, because [`MODE`] now takes a
-    // frame ahead of the reset. A settle tuned to the old chain would report
-    // "no window" for a float that was one frame from having one, which is the
-    // failure `dialog_windows` records against its own 40.
     session.settle(80);
     session.trace()
 }

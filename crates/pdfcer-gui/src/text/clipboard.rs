@@ -1,8 +1,5 @@
 //! # `text::clipboard` — what the clipboard verbs say on the status row
 //!
-//! ★ Two families live here as of 2026-09-04, and they are kept in one file
-//! because they are one operator-facing subject — *what happened to my copy* —
-//! and splitting them would invite two wordings of the same idea:
 //!
 //! 1. **The object clipboard's four refusals** ([`refusal`]), which are about
 //!    copying *within* pdfcer. These are the original contents of this file and
@@ -79,8 +76,6 @@ pub fn refusal(reason: Refusal) -> String {
         // `&'static str` -- the subtype is data and the sentence is built
         // around it. See `cut_would_not_survive`.
         Refusal::CutWouldNotSurvive(subtype) => cut_would_not_survive(subtype),
-        // ★★★ THIS SENTENCE WAS RETIRED ON 2026-08-20, AND IT WAS THE
-        // OPERATOR'S OLDEST OPEN REQUEST.
         //
         // It read: *"That is page content — a line, a shape or a piece of text.
         // pdfcer can copy comments and markup, but it cannot yet put page
@@ -111,8 +106,6 @@ pub fn refusal(reason: Refusal) -> String {
              work."
                 .to_owned()
         }
-        // ★★★ **THE ENGINE REFUSES THAT KIND, AND THE SENTENCE NAMES IT** —
-        // 2026-09-05.
         //
         // Three subtypes, three genuinely different reasons, and the operator's
         // next move differs for each — which is why this is a `match` on the
@@ -127,9 +120,6 @@ pub fn refusal(reason: Refusal) -> String {
         // *"and 2 others"* is the shape that makes an operator go looking for
         // the other two.
         Refusal::CannotCarry(subtypes) => cannot_carry(&subtypes),
-        // ★★★ THIS SENTENCE WAS RETIRED ON 2026-09-05, and it was reporting a
-        // LIMIT AS AN ABSENCE — the pattern `RESUME.md` records as this
-        // project's most expensive.
         //
         // It read: *"That annotation is not one pdfcer authors — a link, a form
         // field or an attachment — so there is nothing for it to copy."* Every
@@ -258,21 +248,6 @@ fn cannot_carry(subtypes: &[String]) -> String {
 ///
 /// # ★★ The two halves are different kinds of loss and are said differently
 ///
-/// * **`left_behind`** — annotations that will not be on the clipboard at all.
-///   The operator will notice, eventually, and this is what stops it being a
-///   mystery. Worded by [`cannot_carry`], reused rather than re-phrased.
-/// * **`thin`** — annotations that *will* paste, and will paste **without their
-///   author, date, note text and opacity**. This is the one nobody would ever
-///   report: the mark is on the page, it looks right, and what is missing lives
-///   in the pop-up. ★★ **Corrected 2026-09-05: it used to read *"a pop-up this
-///   shell does not draw"*, and that stopped being true the day
-///   `crate::canvas::notepopup` shipped** — which makes the loss *more*
-///   reportable, not less, because the operator can now open the pop-up and
-///   find it empty. The sentence is kept for the same reason it was written;
-///   only its false half is gone. It is `pdfcer-core`'s limit, not
-///   this shell's — `paste_clip_annotations` plants a modelled markup with
-///   `add_markup` rather than `add_markup_with` — and the sentence says so
-///   plainly, because an operator who believes it is their mistake will retry.
 ///
 /// # ★ Why it is not reachable today, said rather than implied
 ///
@@ -325,7 +300,6 @@ pub fn partial_copy(left_behind: &[String], thin: usize) -> String {
 /// parenthesised plural is the tell of a program that could not be bothered —
 /// and this string's whole job is to be read by somebody who did not expect it.
 ///
-/// # ★★ It took TWO counts as of 2026-09-05, and the second is not cosmetic
 ///
 /// The clipboard can now carry annotations, and *"1 object copied from
 /// pdfcer"* pasted into an email about a revision cloud is a sentence about
@@ -455,9 +429,6 @@ fn clipboard_refusal(err: &native_clipboard::PlaceError) -> String {
     }
 }
 
-// ---------------------------------------------------------------------------
-// ★★★ The MODE's refusal — 2026-09-05
-// ---------------------------------------------------------------------------
 //
 // A third family, and it is deliberately not folded into `refusal` above. The
 // two are different kinds of "no" and the operator's next move differs, which
@@ -601,11 +572,6 @@ mod tests {
     /// future edit would most plausibly introduce while "tidying".
     #[test]
     fn every_refusal_is_a_sentence() {
-        // ★ `CannotCarry` joined the list on 2026-09-05, and it is the one
-        // that most needed adding: it is built at runtime from the engine's
-        // payload rather than being a literal in this file, so it is the only
-        // arm `check-ui-strings` cannot see and the only one that could become
-        // a fragment without anybody noticing.
         //
         // ★★ `.clone()` because `Refusal` stopped being `Copy` when that
         // variant arrived carrying the subtypes. Cloning in a test costs
@@ -665,9 +631,6 @@ mod tests {
 
     /// The OS marker names comments as comments, and a mixed copy as both.
     ///
-    /// ★ `os_marker(0, 1)` was the case that did not exist before 2026-09-05
-    /// and is the one an operator now meets most: a comment copied and pasted
-    /// into an email says *"1 comment copied from pdfcer"*, not *"1 object"*.
     #[test]
     fn the_os_marker_counts_objects_and_comments_separately() {
         assert!(os_marker(0, 1).starts_with("1 comment copied"));
@@ -709,10 +672,6 @@ mod tests {
             (ModeRefusal::CutContent, edit),
             (ModeRefusal::CutMarkup, review),
             (ModeRefusal::CutField, edit),
-            // ★ Added 2026-09-06 with the variant. A refusal added to the
-            // enum and not to this list is a sentence nothing checks, which
-            // is the gap `measure_two_line` left in `text::commands::tests`
-            // for a day and which is recorded there in the same words.
             (ModeRefusal::DuplicateMarkup, review),
         ] {
             let line = why.line();
@@ -726,11 +685,6 @@ mod tests {
     /// ★★ **Every one of the seven is a distinct sentence**, and the four that
     /// follow a gesture over a visible operand say the document is unchanged.
     ///
-    /// Seven variants exist only because the remedy or the ACT differs; two
-    /// wearing the same words would be six variants pretending to be seven. And
-    /// a refused cut — or, since 2026-09-06, a refused duplicate — is the case
-    /// in this family where an operator might reasonably fear the document
-    /// moved under them, so rule 4 puts the disclosure where the doubt is.
     ///
     /// ★ `DuplicateMarkup` says *"Nothing has been added"* rather than
     /// *"removed"*, which is why it is asserted separately below rather than

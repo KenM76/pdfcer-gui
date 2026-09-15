@@ -3,7 +3,6 @@
 //!
 //! # The request
 //!
-//! `OPERATOR_REQUESTS.md` **O71**, 2026-08-31:
 //!
 //! > *"In read mode the regular pointer should also allow us to select images
 //! > so we can copy and paste them as well as text outside of the pdfcergui."*
@@ -51,13 +50,6 @@
 //! | C | …and a picture went with it | `clipboard-image w=… h=…`, at least 1:1 |
 //! | D | **right-click it** | `canvas-menu context=canvas.read-object` |
 //!
-//! ★★ Step D is the route somebody finds without being told, and it was added
-//! after the first three shipped. A chord is a feature for an operator who has
-//! read a release note; Acrobat Reader puts *Copy Image* on the right-click,
-//! and until 2026-09-01 a right-click anywhere in Read produced **no menu at
-//! all** — the gate asked `caps.edit_content` before asking which menu, so
-//! even the view menu that file's own comment calls *"the correct menu for a
-//! reader"* was unreachable.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
 use crate::checks::text_selection::aim;

@@ -49,7 +49,6 @@
 //! ## ★★★ EIGHT PENS, NOT TWO — and the argument that said otherwise is kept
 //! ## here, superseded rather than deleted
 //!
-//! ### What this section used to say, verbatim
 //!
 //! > **Two pens, not one, and it is not a per-kind palette.** … What this is
 //! > **not** is a colour per markup kind. `MarkupKind::rgb`'s own note argued
@@ -75,9 +74,6 @@
 //!
 //! ### ★★ Why it is superseded anyway
 //!
-//! Because it answered the wrong question. It asked *"can this shell justify
-//! inventing eight colours?"* — and the answer to that is still no. The
-//! operator's ask of 2026-09-06 asks something else:
 //!
 //! > *"Also make sure you've used the same default colours and style look for
 //! > these things as Adobe."*
@@ -205,10 +201,6 @@ impl PenSlot {
 
     /// **Which pen draws this kind.**
     ///
-    /// The successor to the two-arm `match` [`Pen::colour_for`] used to be, and
-    /// the one place the geometric family's shared slot is asserted. Exhaustive
-    /// over [`MarkupKind`], so a ninth kind fails to compile here rather than
-    /// arriving in whatever colour the catch-all happened to name.
     #[must_use]
     pub const fn of(kind: MarkupKind) -> Self {
         match kind {
@@ -225,10 +217,6 @@ impl PenSlot {
 
     /// **Which pen writes this text annotation.**
     ///
-    /// The sticky/text-box/stamp counterpart of [`Self::of`]. Its one caller is
-    /// `app::actions::apply`'s `CommitTextAnnot` arm, which until 2026-09-06
-    /// passed `pen.ink` for all three — so a sticky note came out shape-red
-    /// where Acrobat's is violet.
     #[must_use]
     pub const fn of_text_annot(kind: crate::canvas::textannot::TextAnnotKind) -> Self {
         match kind {
@@ -323,15 +311,6 @@ pub struct Pen {
     ///
     /// # ★★ Solid ships, and that keeps the standing rule
     ///
-    /// [`Self::opacity`]'s doc states the rule this project applies when a
-    /// capability becomes choosable: *"a build which omits nothing must behave
-    /// as it did before the choice existed, byte for byte."* Unlike the colour
-    /// change of 2026-09-06, this one **does** keep it: the default is
-    /// [`super::linestyle::LineStyle::Solid`], `dash_option` answers `None`, and
-    /// `MarkupOptions::dash: None` authors *"the solid border pdfcer authored
-    /// exclusively before `Pass 258.0`"*
-    /// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4772-4774`). An operator
-    /// who never opens the chooser gets the file they got yesterday.
     ///
     /// # ⚠ Ignored by the text-markup family, and that is the format
     ///
@@ -380,12 +359,6 @@ impl Default for Pen {
     ///
     /// # Every colour here is measured, and none of it is chosen
     ///
-    /// [`super::palette`]'s header carries the reading — Acrobat DC's
-    /// `HKCU\…\Annots\cAnnots\<subtype>\cstrokeColor`, on 2026-09-06 — the
-    /// registry key each value came from, and the evidence that those are
-    /// Adobe's factory values rather than this machine's history. Nothing below
-    /// is a colour this shell picked, which is the entire difference between
-    /// this version and the one before it.
     ///
     /// # ★★★ THIS DELIBERATELY BREAKS THE STANDING "OMITS NOTHING" RULE, and
     /// # the rule is not being ignored — it is being answered
@@ -414,11 +387,6 @@ impl Default for Pen {
     /// from a rule written four lines above, is the whole reason this paragraph
     /// exists.
     ///
-    /// ⚠ The concrete consequence, so nobody has to discover it: a drawing
-    /// marked up before 2026-09-06 and marked up again after it will carry two
-    /// slightly different reds and — much more visibly — an orange highlight
-    /// beside a yellow one. Both are in [`super::palette::ACROBAT`], one click
-    /// apart, which is why the grid keeps [`super::palette::CLASSIC_YELLOW`].
     ///
     /// # ★★ 2 pt is KEPT, and Adobe's number is not being ignored — there
     /// # isn't one
@@ -473,9 +441,6 @@ impl Default for Pen {
             // DOCUMENT COLOUR: Acrobat's `cStamp`.
             stamp: palette::components(palette::MARKUP_RED),
             width_pts: 2.0,
-            // Fully opaque, which writes no `/CA` at all — see the field's own
-            // doc comment. This is what every markup this shell authored before
-            // 2026-08-28 did, so the default is the old behaviour exactly.
             opacity: 1.0,
             // Solid, which writes no dash at all — see the field's own doc
             // comment. Unlike the eight colours above, this default DOES keep
@@ -502,11 +467,6 @@ impl Pen {
     /// > it is a *rule* — **if the pen ever becomes an operator control, the
     /// > tolerance follows it** rather than being re-tuned by eye.
     ///
-    /// The pen became an operator control on 2026-08-17 and the tolerance did
-    /// not follow. This is that rule, honoured — and the module wrote the rule
-    /// down, was read by the session that broke it, and was broken **the same
-    /// day**. Recording the rule in prose was not enough; only a test that
-    /// varies the input could have caught it, and that test now exists.
     ///
     /// # Why the stale value was wrong in a way an operator would see
     ///
@@ -540,14 +500,7 @@ impl Pen {
     /// value changes — which is precisely what happened when it lived
     /// elsewhere as a `const`.
     ///
-    /// # ★★★ THE RULE WAS RE-READ ON 2026-09-06 AND STILL HOLDS, because the
-    /// # width did NOT go per-kind
     ///
-    /// The per-kind change of 2026-09-06 made the **colour** per-slot and left
-    /// [`Self::width_pts`] a single value. That was checked against this rule
-    /// before it was decided, not after, because this exact rule was written
-    /// down once and broken **the same day** by the session that read it, and
-    /// the file records that. It is not being broken a third time.
     ///
     /// Two things follow, and both are load-bearing:
     ///
@@ -658,15 +611,6 @@ impl Pen {
     /// transparency carried by `/CA` instead). Feeding the picker's alpha into
     /// `/C` would be a value with nowhere to go.
     ///
-    /// Opacity is therefore a **separate control**, and it is one that **now
-    /// exists** — [`Self::opacity`], drawn beside the swatches in
-    /// [`super::swatch::show`] since 2026-08-28. This paragraph used to end
-    /// *"it is not built yet: `/CA` support was filed against `pdfcer-core` and
-    /// is accepted-and-scheduled rather than shipped"*, which was true when
-    /// written and stopped being true when `Pass 81.1` landed
-    /// `MarkupOptions::opacity`. Corrected rather than deleted, because a stale
-    /// blocker is this project's most-repeated defect and the shape of it is the
-    /// useful part.
     ///
     /// ⇒ The alpha channel is *still* not offered **on the colour picker**, and
     /// that is unchanged and correct: `/C` has three components, and a picker
@@ -690,11 +634,6 @@ impl Pen {
 
     /// **The `/BS` dash to author with, or `None` for "write a solid border".**
     ///
-    /// The exact twin of [`Self::opacity_option`], and for the same reason it is
-    /// a method rather than a comparison at each call site: `None` is what
-    /// preserves this shell's pre-2026-09-06 bytes, and the call site that
-    /// forgot would be the one that made a pdfcer annotation textually unlike
-    /// every one it had authored before.
     ///
     /// ⚠ **Not passed on the text-markup route.** `app::actions::apply`'s
     /// `CommitMarkup` arm sends it; `CommitTextMarkup` does not, because a
@@ -820,8 +759,6 @@ mod tests {
     /// are yellow. They are not, in the program the operator compares against:
     /// `cHighlight\cstrokeColor` reads `1.0, 0.384308, 0.0`.
     ///
-    /// The assertion is written as *"not the yellow it used to be"* rather than
-    /// only as *"is the orange"*, so the failure message says what happened.
     #[test]
     fn the_highlighter_is_acrobats_orange_and_not_the_old_yellow() {
         let pen = Pen::default();
@@ -906,12 +843,6 @@ mod tests {
 
     /// The three text-annotation kinds land on three different slots.
     ///
-    /// The mapping `app::actions::apply` depends on. Before 2026-09-06 all
-    /// three took `pen.ink`, so a sticky note came out shape-red where
-    /// Acrobat's `cText` is violet — this is the assertion that would have
-    /// caught that, stated as *"three kinds, three slots"* rather than as three
-    /// hard-coded colours, because the colours may legitimately be edited and
-    /// the separation may not.
     #[test]
     fn the_three_text_annotation_kinds_do_not_share_a_pen() {
         use crate::canvas::textannot::TextAnnotKind;

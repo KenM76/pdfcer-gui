@@ -4,19 +4,11 @@
 //!
 //! # The report this closes
 //!
-//! The operator, 2026-09-09:
 //!
 //! > *"I have to draw the size before it gets applied … still can't adjust the
 //! > size of a stamp on the canvas, or by entering a different size in the
 //! > properties box."*
 //!
-//! Engine `Pass 287.0` answered the authoring half of that on 2026-09-10, and
-//! this shell wired it the same day: `dialogs::textannot::sizes` draws a **Size**
-//! combo under the stamp gallery, offering *Fit the box I drew* and nine stated
-//! point sizes, and the value travels
-//! `TextAnnotDialog::stamp_size` → `Action::CommitTextAnnot::stamp_size` →
-//! `app::actions::textannot::Placement` → `canvas::textannot::spec` →
-//! `StampStyle::with_font_size`.
 //!
 //! ⚠ **It shipped in `v0.5.0-dev.20260910.1` undriven**, because the release was
 //! asked for immediately. `OPERATOR_REQUESTS.md` O168 records that as a debt in
@@ -46,11 +38,6 @@
 //!
 //! # ★★ The oracle, and why the application grew a trace line for it
 //!
-//! `autosize_overflow` states the rule: *a trace line must carry the number a
-//! wrong build would get wrong.* Before 2026-09-10 every line this route emits
-//! — `text-annot-note`, `text-annot-page-rotate`, `add-text-annot` — was
-//! **byte-identical** between a build that carried the chosen size and one that
-//! dropped it. `canvas::textannot::spec`'s stamp arm now emits:
 //!
 //! ```text
 //! pdfcer-diag stamp-style size=24 fit=grow rect_w=220.0 rect_h=220.0
@@ -82,8 +69,6 @@
 //! shrunk every stamp on the operator's drawings, and would still pass a check
 //! that only looked at the end state after an explicit selection.
 //!
-//! # ★★★ Falsified, 2026-09-10 — which assertions were made to fail, and which
-//! was not
 //!
 //! *"A check that cannot fail is not evidence."* This one passed on its first
 //! run, which is worth exactly nothing until the passing has been shown to be
@@ -316,15 +301,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // cannot use the feature — and the unit test asserting the window grew is
     // green in both cases.
     //
-    // ★★★ **This step does NOT scroll, and that is the assertion — 2026-09-11.**
     //
-    // The application publishes this region through `diag::ui_rect_visible`, so
-    // it is declared only on the frames where it is actually on the screen. A
-    // check that scrolled the body until it appeared would therefore be green
-    // on a dialog whose Size chooser opens below its own fold — which is
-    // precisely the state the full sweep of 2026-09-11 found and the state
-    // `STAMP_EXTRA_PTS` was corrected to 190 pt to fix. Scrolling here would
-    // have converted an operator-visible defect into a harness step.
     //
     // ⇒ The absence of a scroll is load-bearing. If this ever fails with "was
     // never drawn" on a build where the chooser plainly exists, the answer is
@@ -506,12 +483,6 @@ fn wanted_token() -> String {
 ///
 /// # ★★★ Why this reads a purpose-built line and not the `ui-rect` line
 ///
-/// The first draft of this check read the selection out of `ui-rect`, which
-/// carries a **name** and a **rect** and no text whatsoever. It would have
-/// returned `None` on every build that has ever existed, and the check would
-/// have gone on to print a note saying the chooser *"still reads None after the
-/// press"* — narrating an absence it had never measured, in a tone that reads
-/// as a finding.
 ///
 /// ⚠ That is this project's standing lesson about **unevidenced excuses**: a
 /// check that explains a gap it did not measure turns an open question into a

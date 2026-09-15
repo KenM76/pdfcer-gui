@@ -1,28 +1,10 @@
 //! `clicking_text_offers_its_colour` — **O89's object route, driven.**
 //!
-//! # ★★ First driven 2026-09-14, and it found something on its first run
 //!
-//! This header carried a three-warning banner saying **"THIS CHECK HAS NOT BEEN
-//! RUN"** from 2026-09-05 to 2026-09-14: it was written in a session whose
-//! instructions forbade launching the GUI, so no line below had been observed
-//! against a running binary. That is no longer true and the banner is deleted
-//! rather than softened, because a warning that has stopped applying is read as
-//! a warning that still does.
 //!
 //! What the first run produced, and it is worth keeping because two of the
 //! three findings were about this check rather than about the program:
 //!
-//! 1. **A real defect.** The Properties panel opened on the three *When you
-//!    resize something* switches, which draw whenever the Select tool is armed
-//!    and therefore nearly always. The colour swatch was at y 783-807 in a
-//!    viewport ending at 766. `panels::properties::tool::Slot` is the fix, and
-//!    `OPERATOR_REQUESTS.md` O198 is the operator's report of it.
-//! 2. **A wrong sentence in this file**, corrected below: the failure message
-//!    said the colour row had *"grown a fourth arm that draws nothing"*. It had
-//!    not. It had drawn, off the bottom of its clip.
-//! 3. **A mechanism that existed and was not called.** `driving::clipped_away`
-//!    was added on 2026-09-12 after the identical confusion in `restyle_text`.
-//!    This branch did not use it, so the fix did not carry.
 //!
 //! # The defect
 //!
@@ -49,16 +31,6 @@
 //! passes `font_group` completely and is the exact program the operator
 //! complained about.
 //!
-//! ★★ CORRECTED 2026-09-14 (O198). Until that day this section said the two
-//! checks differed because `font_group` asserted a *sentence* --
-//! `properties.text.route`, telling the operator to press `T` -- and this one
-//! asserted a control. The sentence is deleted: `app::textoperand` resolves a
-//! clicked object's runs, so the face, size and weight controls act on the
-//! click and there is nowhere to send anybody. The division of labour survived
-//! the deletion unchanged, because it was never really about the sentence: this
-//! check owns the **colour** row, which is the one control that does not follow
-//! the other four, since a nine-run object's ink cannot be reported from run 0
-//! and pdfcer refuses a screen colour over a named ink.
 //!
 //! # The oracle, in the order it is read
 //!
@@ -96,23 +68,7 @@
 //!
 //! # ★★★ THE FALSIFICATION TABLE — what to break, and what must go red
 //!
-//! ★★ Still unexercised as of 2026-09-14. The check itself has now been driven
-//! and is green on the pinned fixture, but **no row below has been watched go
-//! red**, so nothing yet proves it is not vacuous. Those are two different
-//! claims and the difference is the whole of this project's
-//! *a-check-that-cannot-fail-is-not-evidence* rule: a green run says the
-//! program did something, a watched plant says the check would have noticed if
-//! it had not. Keep the table until a session has spent the twenty minutes.
 //!
-//! | plant | expected failure |
-//! |---|---|
-//! | `panels::properties::textobject::section` returns `false` immediately | step 1: no `properties.textobject` region |
-//! | `app::textoperand::Cache::resolve` returns `None` | step 3: no `properties.text.face` region — added 2026-09-14 with the step |
-//! | `classify` always returns `Colour::Ink { .. }` | step 2 records the ink sentence, step 4 is skipped — so **also** plant a text fixture in RGB, or the plant is invisible |
-//! | the `Colour::Agreed`/`Mixed` arms draw a plain `ui.label` instead of the swatch | step 2 passes on the label's region? **No** — the label publishes no region, so step 2 fails. That is why the two states publish two names |
-//! | `swatch::show` never opens the popup | step 4: no `.picker` region |
-//! | `swatch::show` returns `None` unconditionally | step 5: no `text-style-applied` |
-//! | the section raises no `Action::TextStyle` | step 5: `text-style-applied` present, `format-text` absent — the two-line oracle earning its keep |
 
 use crate::checks::driving::{
     SHELL_DIAG_ENV, click_mode_segment, clipped_away, declared, declared_names, list,
@@ -142,13 +98,6 @@ const INK: &str = "properties.textobject.ink";
 ///
 /// ★★★ THIS REPLACED A CONSTANT CALLED `ROUTE`, AND THE REPLACEMENT IS O198.
 ///
-/// `ROUTE` was spelled `properties.text.route`: a sentence saying *"press T for
-/// the Text tool and sweep across them"*, which was the only surface in the
-/// program that told an operator how to reach the face, size, bold and italic
-/// controls for text they had clicked. O198 (2026-09-14) removed the reason for
-/// it -- `app::textoperand` resolves a clicked text object's byte span into the
-/// run indices the five Font verbs take -- so the sentence was deleted and the
-/// controls themselves are what this step now asserts.
 ///
 /// ★★ Asserted as a LIST rather than as the section region, for the reason
 /// `font_group`'s `FONT_ITEMS` gives: a section that draws its heading and
@@ -201,12 +150,6 @@ impl Check for ClickingTextOffersItsColour {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        // ⚠ **This note used to say the check had never been run.** It had,
-        // by then, twice — and it printed that sentence on the operator's own
-        // report, directly above a result it was telling him to distrust. The
-        // residual doubt is real but much narrower than the old wording, and
-        // naming it narrowly is the point: the check runs, the check is green,
-        // and no plant has been watched go red.
         report.note(
             "⚠ no row of this check's falsification table has been watched go red — it \
              has been driven and is green, which is not the same as being known to \
@@ -235,10 +178,6 @@ enum Aim<'a> {
 
 /// Read [`Aim`] out of a settled trace.
 ///
-/// ★ Split from the wording so the READ is testable without a running program,
-/// which is `font_group::aim_verdict`'s rule and its reason: a guard against a
-/// harness misreading its own oracle is worth nothing if the guard itself can
-/// only be exercised by driving the mouse.
 ///
 /// ★★ Order is *what* before *how many*. A click that lands on a path inside a
 /// marquee of eleven is an aim problem twice over, and the kind is the half
@@ -335,12 +274,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check needs a click or a sweep that lands IN TEXT. On 2026-09-12
-    // it was handed the sweep's shared aim, which on `a1-titleblock.pdf`
-    // lands on a path - and that sheet is 2383.9 × 1683.8 pt carrying 123
-    // characters, so its tallest glyph is 2.4 screen pixels at fit zoom and
-    // no aim on it would have been reliable either. Sixteen checks reported
-    // sixteen plausible reasons for that one fact.
     //
     // `fixture::text_point_target` holds the document, the point, and the
     // measurement behind both. Read its doc comment before changing either.
@@ -476,15 +409,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         if crate::capture::window_to_png(&session, &shot).is_ok() {
             report.artifact(shot);
         }
-        // ★★★ **ASK WHETHER IT DREW OFF THE EDGE BEFORE SAYING IT DID NOT
-        // DRAW.** Until 2026-09-14 this branch went straight to the sentence
-        // below, and on its first real run it wrote that sentence about a
-        // swatch which had drawn perfectly at y 783-807 in a viewport ending at
-        // 766. `diag::ui_rect_visible` withholds the rect and publishes
-        // `ui-rect-clipped ... shown=0.00` instead, so a check reading only
-        // `ui-rect` sees an absence. The two have opposite fixes: a missing
-        // control is a renderer defect, an unreachable one is a LAYOUT defect,
-        // and this project has now confused them twice.
         let clipped: Vec<String> = [SWATCH, INK]
             .into_iter()
             .filter_map(|name| clipped_away(&trace, ui_rect, name))
@@ -534,13 +458,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3. the other four controls are on screen, on the click -------------
     //
-    // ★★★ THIS STEP INVERTED ON 2026-09-14, AND THE INVERSION IS THE FEATURE.
     //
-    // It used to assert a SENTENCE telling the operator where to go for the
-    // face, size, bold and italic controls. It now asserts the CONTROLS. The
-    // gesture driven is unchanged -- one click on a piece of text, nothing
-    // swept -- and only the expected answer moved, which is what a check should
-    // look like when a workaround is deleted rather than relocated.
     if let Some(row) = STYLE_ROWS
         .into_iter()
         .find(|row| declared(&trace, ui_rect, row).is_none())

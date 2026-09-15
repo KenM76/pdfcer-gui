@@ -101,7 +101,6 @@ pub(super) fn probe(
     let node_tolerance = map.node_tolerance();
     let object = nth_allowed(targets, page_index, point, tolerance, filter, depth, scope);
 
-    // ★★★ **BOTH INDEX SPACES, as of 2026-09-01** — `OPERATOR_REQUESTS.md` O70.
     //
     // This read `.and_then(TargetId::page_object_index)`, with a comment saying
     // the deeper rungs *"are simply not offered"* for a target inside a form
@@ -261,13 +260,6 @@ const DIRECT_SLOT: &str = "canvas-pick-direct";
 /// > *"I really need you to focus on finding ways to make all text editable on
 /// > the sw drawing that is in pdftests folder. Find a way to make it happen."*
 ///
-/// On 2026-09-14 the driven check
-/// `the_font_controls_are_live_on_the_drawing_you_open` was pointed at nine
-/// runs of text on page 1 of his `SW41177.pdf`, one per distinct font size on
-/// the sheet. **Eight of the nine clicks selected a path** — the same path
-/// every time, object 5,899 of 5,903, very nearly the last thing painted. The
-/// trace read `canvas-pick-depth depth=0 of=2` at each of them, so his text WAS
-/// a candidate, and it was second.
 ///
 /// `crates/pdfcer-gui/tests/ken_sw41177_pick.rs` then asked the engine the same
 /// question at four tolerances, and the answer is unambiguous:
@@ -405,8 +397,6 @@ fn name(target: Option<TargetId>) -> String {
 ///
 /// # The defect this closes
 ///
-/// The operator, 2026-08-26: *"when I click on one of the objects all I get is
-/// the page selected."*
 ///
 /// The engine computes the **whole** front-to-back list of what is under a
 /// point — `hit_test_all` — and this module called `.find()` on it and threw
@@ -422,10 +412,6 @@ fn name(target: Option<TargetId>) -> String {
 ///
 /// # `depth` and its wrap
 ///
-/// `0` is a plain click and is exactly what `.find()` used to return, so the
-/// ordinary gesture is unchanged by construction. Each `Alt`+click at the same
-/// point adds one, and the index **wraps** — a fifth `Alt`+click on a stack of
-/// four returns to the top rather than sticking at the bottom.
 ///
 /// Wrapping rather than clamping because a cycle the operator can walk out the
 /// far side of is a cycle they can get lost in: with no visible list, a control
@@ -537,14 +523,6 @@ pub(crate) fn abandon_gesture(ctx: &egui::Context) -> bool {
 /// The pointer movement of an in-progress pan over this canvas, or `None` when
 /// no pan is happening.
 ///
-/// **Two buttons, one path.** The middle button always pans — the CAD /
-/// Inkscape / Illustrator / browser convention, requested on 2026-08-04 — and
-/// the primary button pans as well while the hand tool is active, whether the
-/// operator chose it or is borrowing it with the space bar. They share this
-/// function and therefore share [`super::geometry::pan_offset`], its clamp and
-/// its cursor: `GUI_ROADMAP` 3.2 asks for a hand tool, not for a second
-/// panning implementation that rounds differently at the edges of the scroll
-/// range.
 ///
 /// Gated on the pointer being over the canvas so a drag that began on some
 /// other surface does not yank the page sideways.
@@ -587,7 +565,6 @@ pub(super) fn pan_delta(ui: &egui::Ui, tool: CanvasTool) -> Option<Vec2> {
 /// The live cover for it is the driven check on his own drawing, where the
 /// filter is real.
 ///
-/// # ★★ Falsified, 2026-09-14, and the SIGNATURE is the interesting part
 ///
 /// The call in [`allowed_candidates`] was gated behind `false`, the four tests
 /// re-run, and the source restored from a file copy. Exactly one went red:

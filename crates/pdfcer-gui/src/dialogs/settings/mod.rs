@@ -2,7 +2,6 @@
 //!
 //! ## What this surface is for
 //!
-//! The standing rule behind it, an operator directive of 2026-08-08:
 //!
 //! > Where standards are ambiguous those should become settings that the user
 //! > can choose direction one, with the initial installed default as the best

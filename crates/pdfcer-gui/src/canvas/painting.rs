@@ -1,8 +1,6 @@
 //! # `canvas::painting` — everything the canvas draws, once everything is
 //! decided
 //!
-//! One function, [`draw`], lifted out of [`super::interact`] on 2026-08-19 when
-//! that file crossed R2's 1,500-line ceiling for the first time.
 //!
 //! ## ★ Why this is a seam and not a size
 //!
@@ -286,13 +284,6 @@ pub(super) fn draw(
     // is drawn. Two calls, one decision procedure, no second predicate anywhere
     // for the two to drift apart on.
     //
-    // Before 2026-08-28 the painter re-derived the equivalent condition
-    // locally, which was survivable while every kind offered the same set. It
-    // stopped being survivable when three kinds started offering three
-    // different sets — a markup turns and scales, a ce dimension turns and does
-    // not scale, a form field's box scales and does not turn. See
-    // `overlay::draw_grips`' header for what each disagreement would look like
-    // from a chair.
     //
     // ★ It is cheap: `grabbable` is three `Option` probes over values already
     // resolved for this frame, and the dimension probe short-circuits unless an
@@ -339,14 +330,6 @@ pub(super) fn draw(
     if let Some(rect) = annot_ghost {
         overlay::draw_annot_ghost(&painter, map, *rect);
     }
-    // ★ The resize ghost, on the same layer and under the same contract: it is
-    // `Some` only when `resizing::drag` has established that a release would
-    // commit, so a preview of a refused gesture is never drawn. The anchor is
-    // re-read from the same `grip_box` the drag measured against rather than
-    // carried on the value, because it is a pure function of the selection and
-    // carrying it would be a second copy that could go stale between the frame
-    // that computed it and the frame that paints.
-    // ★★★ `ghost_box`, NOT `grip_box` — O154, 2026-09-08.
     //
     // `grip_box` reads `SelectionState::outlines`, which holds page-content
     // entries only, so it answered `None` whenever a markup annotation was
@@ -376,14 +359,6 @@ pub(super) fn draw(
     }
     // ★ …and the rotate ghost, on the same layer and under the same contract.
     //
-    // The centre is re-read from the same `grip_box` the drag measured against
-    // rather than carried on the value, for the reason the resize ghost gives
-    // one block up: it is a pure function of the selection, and carrying it
-    // would be a second copy that could go stale between the frame that
-    // computed it and the frame that paints.
-    // ★★★ …and the box it is re-read from is `grabbable`'s, NOT
-    // `overlay::grip_box`'s — 2026-08-28, and this line is one of the two the
-    // whole annotation rotation hangs on.
     //
     // `grip_box` derives its answer from the selection's cached **content**
     // outlines, which `select_annot` clears: an annotation is not content and
@@ -437,22 +412,6 @@ pub(super) fn draw(
     // driven check that aimed at a ce dimension and hit a markup shape would
     // report a working build as broken.
     //
-    // ★★ `annotnodes::nodes` is empty for a shape with no editable geometry —
-    // a rectangle, an ellipse, a text mark — which is R9 exactly: **an
-    // unavailable capability renders nothing.** Not a greyed anchor, because
-    // greying is for a capability that is *temporarily* away and this one never
-    // arrives. The sentence that says so is
-    // `annotnodes::explain_unreshapable`'s, raised when the operator arms the
-    // tool that looks for nodes. (A freehand mark was on that list until
-    // `pdfcer-core` `Pass 278.0`, 2026-09-09; it now draws one anchor per
-    // point of every stroke — `annotnodes::ink`'s header carries the density
-    // argument.)
-    // ★ Each source is enumerated SEPARATELY and only then chained. Enumerating
-    // the chain would number a markup shape's first node `dimension_count`
-    // rather than 0 — invisible today, because the two lists are mutually
-    // exclusive by `AnnotKind` and one of them is always empty, and a defect the
-    // day anything makes them both non-empty. An index that is right by
-    // coincidence is the shape of bug this canvas has shipped before.
     let anchors = crate::canvas::dimdrag::vertices(doc, selection)
         .into_iter()
         .enumerate()
@@ -496,9 +455,6 @@ pub(super) fn draw(
 
     // ★★★ **THE SHAPE ITSELF, FOLLOWING THE POINTER** — O63.
     //
-    // **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me the
-    // shape change of the line, it just had a perimeter box around it … there
-    // isn't a real preview like there is in inkscape."*
     //
     // Drawn ABOVE the bounding ghost and below the snap marker. The order is the
     // reading order of the three: the outline says *which* thing is moving, the
@@ -691,14 +647,6 @@ pub(super) fn draw(
     // progress the preview IS the cursor, and it describes what the next click
     // will commit.
     //
-    // ★ It takes the frame's `map`, and the comment here used to say it did not
-    // need one *"because it converts through the renderer's own page
-    // transform"*. That was the defect: the renderer's transform at scale 1.0
-    // lands in **canvas** space — page top-left origin, no zoom — and the
-    // painter speaks screen, so every mark the measure preview drew was offset
-    // by wherever the page sat in the window and drawn at 100 % whatever the
-    // magnification. See `measure::page_to_screen`, which is now the one place
-    // both hops happen.
     if let Some(kind) = active_tool.measure_kind() {
         measure::preview(
             ui,
@@ -774,7 +722,6 @@ fn draw_anchors(
 ) {
     use crate::canvas::selection::SelectionLevel;
 
-    // ★★ **Or the Node tool is armed**, as of 2026-08-19.
     //
     // Before that, anchors drew only after a two-double-click descent, so the
     // operator who wanted to move an end point had to already know a rung
@@ -782,20 +729,7 @@ fn draw_anchors(
     // them on the first click — see `SelectionState::click_direct`, which puts
     // the selection at the Part rung the moment a shape is clicked.
     //
-    // The rung check STAYS beside the tool check rather than being replaced by
-    // it: an operator who descended by double-clicking with the Select tool has
-    // done the thing the marks describe, and taking them away because a
-    // different tool is armed would punish the route that worked.
-    // ★★★ **Or View ▸ Show points is on**, as of 2026-08-28 — a third disjunct
-    // beside the two above, and added the same way and for the same reason the
-    // second was.
     //
-    // The command was registered, drawn and inert for the life of the project
-    // behind a reason that said *"there is nothing for it to show"*. That was
-    // true on 2026-08-15 and stopped being true four days later, when the
-    // multi-node move landed with `overlay::draw_anchors` and with the
-    // enumeration this function already calls. Re-derived on 2026-08-28 as one
-    // of six stale blockers in eleven.
     //
     // ★★ What it gates and what it deliberately does NOT. It gates the draw at
     // its existing scope — the entered object, at the Part rung or the Node
@@ -833,12 +767,6 @@ fn draw_anchors(
     // These answer the question before it — *did the enumeration get far enough
     // to have a count at all* — and without them the two are the same silence.
     //
-    // The four driven checks that read anchors (`tool_row`'s two, `multi_node`,
-    // `bezier_handle`) all begin by asking whether `canvas-anchors` appeared,
-    // and every one of them has to guess when it did not. On the sweep of
-    // 2026-08-29 two guessed *"the program is broken"* and two guessed *"the
-    // aim is wrong"*, on the same fixture at the same `--doc-point`. A reason
-    // token settles that in the trace instead of in four checks' prose:
     //
     // | reason | what it means | what it is about |
     // |---|---|---|
@@ -895,8 +823,6 @@ fn draw_anchors(
     if entered.page != page_index {
         return declined("other-page");
     }
-    // ★★★ **A target inside a form XObject draws its anchors too, as of
-    // 2026-09-01** — `OPERATOR_REQUESTS.md` O70.
     //
     // This declined with `leaf-in-form-xobject`, and the reason was exactly
     // right at the time: *"anchor dots are grab targets for a node drag, and a
@@ -948,7 +874,6 @@ fn draw_anchors(
         // subpath, and five thousand dots would be noise rather than an answer.
         None => provider.object_node_points_of(subject),
     };
-    // ★★ **The cap is disclosed when it fires, since 2026-08-28.**
     //
     // `overlay::draw_anchors` draws nothing unselected past
     // `MAX_UNSELECTED_ANCHORS`, which is correct — five thousand dots is noise
@@ -966,13 +891,6 @@ fn draw_anchors(
     // operator's subject is the subpath they entered rather than the whole
     // object.
     //
-    // ★★★ **…AT EVERY RUNG, since 2026-08-31** — `OPERATOR_REQUESTS.md` O69.
-    // The note above said "not on the descent path, where the cap has always
-    // fired silently" — which described the defect and treated it as a
-    // decision. The Points tool puts the selection at the PART rung, so the
-    // one route the operator was reporting was the one route excluded: he
-    // armed the tool, clicked a dense contour, and got no dots and no
-    // sentence. A limit reported as an absence reads as a broken program.
     //
     // ★ Two sentences, because the remedy differs by rung. At the Object rung
     // "descend into a part" is right; at the Part rung there is nothing below

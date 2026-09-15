@@ -1,6 +1,5 @@
 //! # `app::status::maxzoom` — the maximum-zoom popup, behind the zoom readout
 //!
-//! `OPERATOR_REQUESTS.md` O24, and the operator on 2026-08-22:
 //!
 //! > *"put the max zoom setting on the bar at the bottom."*
 //!
@@ -37,12 +36,6 @@ use crate::text::maxzoom as t;
 
 /// The presets offered, ascending.
 ///
-/// ★ **Ascending by powers of ten past 1,000 %**, because the useful question
-/// at these magnitudes is *how many orders of magnitude*, not *how many
-/// percent*. 800 % is included because it is where the shell used to stop and
-/// is the honest "keep it as it was" choice; 1,000 % is roughly where whole-page
-/// rasterizing gives out on a large sheet, which makes it the one preset with a
-/// behavioural meaning rather than an arithmetic one.
 ///
 /// The top entry is [`MAX_MAX_ZOOM_PERCENT`] rather than a literal `1e12`, so
 /// the label says what is actually stored — see

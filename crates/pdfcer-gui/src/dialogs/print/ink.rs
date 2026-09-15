@@ -2,7 +2,6 @@
 //!
 //! ## The question this module exists to answer, and why it is asked HERE
 //!
-//! Operator request O113, 2026-09-03:
 //!
 //! > *"can you make it so the red pattern you put over the page if it is going
 //! > to print beyond the printable borders is only over the areas that extend

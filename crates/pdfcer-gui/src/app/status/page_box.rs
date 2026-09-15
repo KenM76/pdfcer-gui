@@ -1,9 +1,5 @@
 //! # `app::status::page_box` — page navigation, and the box you type into
 //!
-//! The status bar's right-hand cluster `⏴ ⟨n⟩ / ⟨N⟩ ⏵`, and the control this
-//! whole stage exists to build. Split out of [`crate::app::status`] under
-//! standing rule **R2** (no `.rs` file over 1,500 lines), and the seam is a
-//! real one rather than a cut made to satisfy a gate:
 //!
 //! - Everything left in the parent answers *"how is the bar laid out, and
 //!   what does each group show?"* — a fixed row, a demoted narrator, and two

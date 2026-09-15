@@ -2,11 +2,6 @@
 //! Catalogue-wide properties: exhaustiveness, key spelling, and the closed
 //! set of shared assets.
 //!
-//! Split out of `catalog/mod.rs` under R2. These are properties of the
-//! CONTRACT rather than of any one variant, which is why they live together
-//! and why several of them assert a shape ("exactly one pair shares an
-//! asset") rather than a count ("93 icons") — a count rots, and this project
-//! has spent several corrections proving it.
 
 use super::Icon;
 use std::collections::HashSet;
@@ -31,67 +26,10 @@ fn all_is_exhaustive_and_free_of_duplicates() {
         Icon::ALL.len(),
         "Icon::ALL contains a duplicate variant"
     );
-    // 47 until 2026-08-14, when the pass that filled the ribbon's
-    // remaining text buttons added 25 — and 76 until later the same day,
-    // when the three unblocked Phase 6 markup kinds added `shape-polyline`,
-    // `shape-polygon` and `shape-ink`. If this fails, the fix is not to
-    // edit the number: it is to check that the variant you added really is
-    // in `ALL`, and only then to update this count.
     //
-    // 131 until later on 2026-09-04, when five glyphs landed for controls
-    // the ribbon does not reach yet — `export-image` (which repointed a live
-    // borrow), `open-in-acrobat`, `copy-as-vector`, `encrypt` and
-    // `permissions`. Four of those name no command; `Icon::EditObjects` is
-    // the precedent, and joining `ALL` is precisely what puts their art under
-    // the tests in this file.
     //
-    // ★ This comment used to also say "and update the two prose figures
-    // that quote it". That instruction was followed exactly once. On
-    // 2026-08-21 the count here was 86 while both of those paragraphs
-    // still said 82 — the drift the instruction existed to prevent,
-    // committed by the instruction's own readers, twice.
     //
-    // So the paragraphs no longer carry a number. `from_key` now says
-    // "one comparison per catalogue entry" and `super::cache` says "one
-    // entry per icon per weight", both of which are true at every size
-    // the set will ever be. THIS assertion is the only figure left, and it
-    // is in a test, where drift fails the build instead of misinforming a
-    // reader. Prefer that shape for any future count.
-    // ★ 137 → 139 later on 2026-09-04: `bold` and `italic`. Not new capability
-    // and not a gap being filled — a **correction**. `format.bold` and
-    // `format.italic` had been registered bare since 2026-08-27 on the ground
-    // that *"Word draws `B` and `I` as glyphs; this build has no such art"*,
-    // which is a statement about SUPPLY, and the operator's standing ruling
-    // (2026-08-06, quoted in `Icon::Back`) is that a missing glyph is AUTHORED.
-    // He asked for this pair by name. The two assets carry the account.
-    // ★ 139 → 140 on 2026-09-05: `line-weights`. O137 — the operator asked for
-    // the deleted "show all lines without their thickness" control by name, the
-    // engine shipped the field it had been missing (`Pass 254.0`), and the
-    // glyph was AUTHORED for it. The same correction shape as `bold`/`italic`
-    // the day before: the absence was about supply, and supply is ours.
-    // ★ 140 → 141 on 2026-09-06: `sign`. The signing capability arrived and
-    // the glyph was AUTHORED for it, on the same 2026-08-06 ruling — a missing
-    // glyph is drawn, not worked around. `sign.svg` carries the constraint that
-    // decided every line of it: NOT a seal, badge, shield or checkmark, because
-    // every one of those reads as VALIDATED and this control makes a signature
-    // rather than judging one.
     //
-    // ★★ It does NOT count as a build-dependent number even though the COMMAND
-    // that names it is behind a Cargo feature. `Icon::ALL` is the art in this
-    // binary, and art is not gated: the asset is a `include_str!` constant with
-    // no dependency on `pdfcer-core`, so a `--no-default-features` build ships
-    // the same 141 glyphs and simply has no button that names one of them. That
-    // is deliberate — gating the art would put a `#[cfg]` in `icons`, which is
-    // a second place that knows about a capability and is exactly what
-    // `SHELL_FRAMEWORK.md` §5b forbids.
-    // ★ 141 → 142 on 2026-09-11: `off-page`, AUTHORED for `edit.offpage` —
-    // the census that answers *"how do I view and edit objects that are off of
-    // the page?"*. The reuse it declined was `redact`, and the reason is the
-    // one the asset's own comment argues at length: the three redaction glyphs
-    // carry a filled bar that means *content is being destroyed*, and this
-    // control destroys nothing until a separate, second press. Borrowing it
-    // would have put the strongest cue in the set on the one command in the
-    // group that does not earn it.
     assert_eq!(
         Icon::ALL.len(),
         142,
@@ -172,8 +110,6 @@ fn keys_are_lowercase_kebab_case() {
 /// should be distinguishable are not — which reads to an operator as a
 /// wiring bug in whichever control they clicked second.
 ///
-/// # ★★ The second pair, added 2026-08-27, and why the test's shape is what
-/// made it a decision
 ///
 /// This asserted an **exact list** of one pair, so adding a second could
 /// not be done quietly — which is the whole point of writing it this way
@@ -198,29 +134,13 @@ fn keys_are_lowercase_kebab_case() {
 /// form data have nothing in common but a direction — a pages-named key on
 /// a form command is the near-miss reuse this catalog's refusal table
 /// exists to prevent.
-// ★★ `file.import_text` (2026-09-07) needed no entry here, and finding that
-// out is worth a line. It names the EXISTING `insert-pages` key rather than a
-// new key pointing at the same asset — so there is no second key and nothing to
-// bless. `every_declared_share_is_still_a_share` said so immediately, with
-// `"import-text" is not an icon key`, which is the test doing exactly its job:
-// an entry blessing a share that does not exist is the same defect as one
-// blessing a share that has stopped existing.
 //
 // The argument for pointing it at that art — and for refusing
 // `import-form-data`'s, which is the obvious pick and the wrong one — is at the
 // command in `shell::commands::catalog::file`, where the decision was made.
 /// Every pair of icons permitted to share one asset, with the argument for
 /// each in [`only_the_documented_assets_are_shared`]'s doc comment.
-const SHARED_PAIRS: &[&[&str]] = &[
-    &["font-folders", "open"],
-    // ★ `["import-form-data", "insert-pages"]` was here until 2026-09-04, when
-    // `insert-pages` was given art of its own. The entry is REMOVED rather than
-    // left harmlessly in place, and `every_declared_share_is_still_a_share`
-    // below is what makes leaving it impossible: a blessing for a state that
-    // has stopped existing is the same defect as a citation for a test that has
-    // been renamed — it reads as a decision somebody made, and nothing is
-    // checking that the decision still describes anything.
-];
+const SHARED_PAIRS: &[&[&str]] = &[&["font-folders", "open"]];
 
 #[test]
 fn only_the_documented_assets_are_shared() {

@@ -1,6 +1,5 @@
 //! # `dialogs::settings::preset` — a named vector of answers
 //!
-//! **Operator request O38, 2026-08-25:**
 //!
 //! > *"I'd like a preset setting for rendering things to what the [print
 //! > conformance suite] page needs to render correctly … since it is for
@@ -141,19 +140,7 @@ pub fn choices() -> Vec<Choice> {
 ///
 /// # ★★★ It is `Settings::default()`, and getting here took two corrections
 ///
-/// The first draft restated two values explicitly, believing pdfcer-gui diverged
-/// from the engine on both. **Neither was true**, and the test written to catch
-/// exactly this caught both, an hour apart:
 ///
-/// * **`image_minify`** genuinely diverged — for one day. The engine adopted
-///   `Smooth` on 2026-08-25 (Pass 128.0) on the strength of the operator's
-///   Acrobat comparison, and the restatement became a no-op that same evening.
-/// * **`cmyk_intent`** never diverged at all. `NeutralBlack` has been the
-///   engine's *shipped default* since the operator's 2026-08-08 ruling was
-///   adopted there. What the engine's doc records is a divergence **in
-///   reasoning** — it says openly that its default is knowingly not the
-///   best-evidenced answer — and that was misread here as a divergence in
-///   **value**.
 ///
 /// ★ The second is the more instructive mistake. A doc comment asserting a
 /// difference that does not exist is worse than no comment: it invites the next
@@ -238,12 +225,6 @@ fn still_holds(id: &str, settings: &Settings) -> bool {
 
 /// **How many other conformance presets set exactly the same render answers.**
 ///
-/// ★★★ Measured on demand, never stated as a fact in prose. As of 2026-08-26
-/// this returns 7 for every one of the eight PDF/X and PDF/A presets: they
-/// agree on all six values pdfcer renders differently for. That is not a defect
-/// — the standards genuinely make the same demands of a *renderer*, and differ
-/// in what they demand of a **file**, which is a preflight question and not a
-/// rendering one.
 ///
 /// It is disclosed because the operator's reason for wanting the control was
 /// *"especially PDF/X-4 … to see how far we are along with matching the
@@ -350,12 +331,6 @@ pub fn row(ui: &mut egui::Ui, draft: &mut Draft) {
             // values**, and this two-line rule is the whole of the fix for the
             // defect reported as *"I can only select (ISO15930-1, -4)"*.
             //
-            // `matching` finds the FIRST choice whose settings equal the
-            // current ones. Measured 2026-08-26: all eight PDF/X and PDF/A
-            // presets apply byte-identical render settings, so it always found
-            // PDF/X-1a and the dot jumped back there from wherever it was
-            // clicked. Deriving a selection from values can only ever show as
-            // many states as there are distinct values.
             //
             // ★★ The choice is authoritative **only while it remains true**.
             // `still_holds` re-asks whether the working settings are still that
@@ -368,12 +343,6 @@ pub fn row(ui: &mut egui::Ui, draft: &mut Draft) {
             // has no other way to read: WHICH standard the window is showing as
             // selected, and whether the draft has anything to save.
             //
-            // The second is the operator's report of 2026-08-26 — *"select some
-            // of the standards [and] the save button is greyed out"* — and it
-            // is not readable from a `ui_rect`, because an enabled button and a
-            // disabled one are the same size and the same place. Without this
-            // line the only oracle would be a screenshot of a greyed control,
-            // which is a contrast measurement standing in for a state.
             crate::diag::trace_changed(PRESET_SLOT, || {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -392,10 +361,6 @@ pub fn row(ui: &mut egui::Ui, draft: &mut Draft) {
                 if ui.radio(selected, c.label()).clicked() && !selected {
                     c.apply(&mut draft.working);
                     draft.chosen_preset = Some(c.id());
-                    // ★★★ **And into the PREFERENCES, which is what makes Save
-                    // live.** 2026-08-26, on the operator's report that
-                    // *"select some of the standards [and] the save button is
-                    // greyed out"*.
                     //
                     // `Draft::is_dirty` compares working values against
                     // original ones, and all eight PDF/X and PDF/A presets
@@ -489,13 +454,6 @@ fn detail(ui: &mut egui::Ui, choice: Choice) {
         // ★★★ THE `why` OF EVERY SET CLAIM ARRIVES IN `disclosures()` ABOVE —
         // it did not, for one day, and this is the record of that.
         //
-        // On 2026-09-02 `RenderPreset::disclosures()` emitted an entry's `why`
-        // only for entries a preset LEAVES ALONE, so the reasoning behind every
-        // value a preset actually SETS never left the crate. That mattered
-        // because the engine's own shipping note for the spot axis asked us to
-        // show exactly that sentence — the two values render visibly
-        // differently, and pdfcer's choice looks like a bug beside Acrobat's
-        // composite view unless the reason is on screen.
         //
         // This window worked around it in nine lines, reading `entries()`
         // directly and filtering on
@@ -571,11 +529,6 @@ fn operator_title(key: PresetKey) -> &'static str {
         PresetKey::ImageMinify => t::minify_title(),
         PresetKey::CmykIntent => t::cmyk_intent_title(),
         PresetKey::Separations => t::separations_title(),
-        // ★ Added 2026-09-02, the same day the engine gained the axis. This
-        // test is the fourth time it has caught a key the engine added and this
-        // shell had not been taught — the shipping reply for that Pass calls it
-        // out by name: their preset grid predates the setting and nobody
-        // revisited it, and our coverage contract is what noticed.
         PresetKey::SpotColorantDeviceModel => t::spot_model_title(),
         // ui-text-exempt: the engine's own key name, shown only when this shell
         // has not yet been taught a title for a key the engine added.
@@ -919,8 +872,6 @@ mod tests {
     /// ★★★ **The operator's report, as an assertion: choosing a standard must
     /// make Save live.**
     ///
-    /// > *"When I go to settings and select some of the standards the save
-    /// > button is greyed out and I can't save the change."* — 2026-08-26
     ///
     /// Both halves were true and the second explains the first. `is_dirty`
     /// compares values, and [`identical_siblings`] measures that **all eight

@@ -43,11 +43,6 @@
 //!
 //! # ★★★ The third check is not a disclosure at all — it is the way out
 //!
-//! `RereadingUnderTheOtherValueIsOffered` drives the **control** that arrived
-//! at the foot of that same block on 2026-09-10. The operator's ruling is that
-//! *"if the user can intervene in a decision that should always be an option"*,
-//! and until that day this shell reported the decision and offered no way to
-//! revisit it.
 //!
 //! It is the check with the most between its ends. A press on that button
 //! travels through an `Action`, both of `app::actions::document`'s guards, a
@@ -120,11 +115,6 @@ const ROW_PREFIX: &str = "properties.load-anomalies.";
 /// The **control** at the foot of that block: *read this file again, taking
 /// the other value*.
 ///
-/// ★ It is inside [`ROW_PREFIX`]'s namespace on purpose — it belongs to the
-/// anomaly block and disappears with it — which means the row-count assertion
-/// in `drive_panel` has to subtract it. See that function's note; the count
-/// went from "one row" to "one row and one control" on 2026-09-10 and a check
-/// that had not been told would have reported a phantom second anomaly.
 const REREAD_REGION: &str = "properties.load-anomalies.reread";
 
 /// The shell trace the control emits when it is pressed, and the one the
@@ -169,13 +159,6 @@ const STATUS_LINE: &str = "status";
 /// means this check can run while the operator is working. Every on-screen
 /// alternative either covers his window or races him for it.
 ///
-/// ⚠ **The position only survives because [`launch_quiet`] sets
-/// `LaunchSpec::place` to `false`.** `Session::place` moves every launched
-/// window to `(780, 40)` unconditionally, so before that flag existed this
-/// constant's first two numbers were discarded and the paragraph above was
-/// simply untrue — the window would have landed in the middle of the operator's
-/// screen while a doc comment said it was nowhere near him. The flag was added
-/// with this check, 2026-09-09, and the two must not be separated.
 ///
 /// The size is the harness's usual 1400x900 and is not arbitrary: a narrower
 /// window folds status-bar groups away, and a folded group publishes no region

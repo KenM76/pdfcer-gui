@@ -58,8 +58,6 @@
 //!
 //! ## The operator's report
 //!
-//! > *"the draw a line that follows the pointer tool — I can't edit the nodes
-//! > that make it"* (O158, 2026-09-08)
 //!
 //! The engine's reply to O158 is the source for
 //! every fact this module states about the verb: that it re-bakes the

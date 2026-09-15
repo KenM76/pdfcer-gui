@@ -184,7 +184,6 @@ pub struct CanvasFrame {
     /// content had*, this is *how much room the canvas had*. The centre rule
     /// uses this one at both ends.
     ///
-    /// # ★★★ 2026-09-08 — the two are now EQUAL by construction, and why
     ///
     /// The canvas's scroll bars became solid (`canvas::present::scroll_style`),
     /// and a solid bar takes real width — the situation the paragraph above
@@ -409,10 +408,6 @@ pub fn consume_anchor(ctx: &Context, doc: &mut OpenDoc, display_now: (f32, f32))
 pub enum ZoomStep {
     /// The next ladder rung up — the status bar's `+`, and `Ctrl` `+`.
     ///
-    /// ★ Named after `view.zoom_in` until 2026-08-15, when that dispatch arm
-    /// was deleted: no such command is registered, so the id named nothing an
-    /// operator could press. The two routes above are the real ones —
-    /// `RIBBON_IA.md` §6 puts `zoom −/%/+` on the status bar deliberately.
     In,
     /// The next ladder rung down — the status bar's `−`, and `Ctrl` `-`. Its
     /// twin above carries the note about the name.
@@ -550,24 +545,8 @@ pub fn wheel_step(ctx: &Context, doc: &mut OpenDoc, actions: &mut Vec<Action>) {
     if (factor - 1.0).abs() <= f32::EPSILON {
         return;
     }
-    // Zoom to cursor, half one: remember WHERE on the page the pointer is
-    // before the zoom lands. Anchoring on the viewport centre instead (which is
-    // what happens when nothing records this) drags the detail being inspected
-    // out from under the operator, worse the further off-centre they point —
-    // reported as "jarring" on 2026-08-04.
     //
-    // ★ Through [`arm_anchor`], the same call the discrete commands make —
-    // which is what "the rule is decided once for all four" means in code. The
-    // wheel used to build its own [`ZoomAnchor`] inline from the pointer
-    // position; that inline version WAS the rule, in a place no command could
-    // reach, and duplicating it at three more call sites is how the four would
-    // have drifted apart.
     //
-    // The pointer guard that used to live here went with it: a pointer
-    // off-window (a trackpad pinch can produce exactly that) falls back to the
-    // viewport centre rather than to nothing, and a zero drawn size can no
-    // longer produce a NaN because [`frac_of`] divides by the page EXTENT,
-    // which is finite and positive for any page that drew at all.
     arm_anchor(ctx, doc);
     actions.push(Action::ZoomBy(factor));
 }
@@ -633,12 +612,6 @@ impl ZoomOutcome {
     ///
     /// ## ★ The surface now exists, and this is deliberately NOT wired to it
     ///
-    /// This sentence used to read *"this predicate is what a caller with a
-    /// notice surface would key on to say so in words. There is no such
-    /// surface in this shell yet."* Both halves are now out of date: the
-    /// status bar words declines (`crate::app::status::decline`, 2026-08-14),
-    /// and the operator's ruling was that **the clamped region zoom must not
-    /// be worded through it.**
     ///
     /// The reason is the two numbered points above, taken seriously. A clamped
     /// framing zoom is **a partial grant, not a decline**:
@@ -1123,11 +1096,6 @@ mod tests {
     /// ★★★ **A region at the page's very corner CAN now be centred** — and
     /// this test is the record of that changing.
     ///
-    /// It used to assert the opposite: that framing a region hard against the
-    /// page's top-left saturated at offset zero, *"there is no page to the
-    /// left of or above the origin to scroll to"*, and the operator simply saw
-    /// it off-centre. That was true when the scroll content was the page and
-    /// nothing else.
     ///
     /// **O23 made it false on purpose.** The operator asked for exactly this:
     ///
@@ -1340,11 +1308,6 @@ mod tests {
             Rect::from_min_max(Pos2::new(50.0, 50.0), Pos2::new(51.0, 51.0)),
             16.0,
             1.0,
-            // ★ A LOW maximum, deliberately. This test is about the plan
-            // reporting a clamp, so it needs a ceiling that actually clamps —
-            // and since 2026-08-22 the shipped default is the highest
-            // available, which clamps almost nothing. Passing the default here
-            // made the test assert that an unclamped answer was clamped.
             viewer::MAX_ZOOM * 100.0,
             None,
         );

@@ -70,13 +70,7 @@ pub fn window(session: &Session) -> Result<Image> {
 /// **Capture an arbitrary window of the application under test**, given the
 /// frame that describes it.
 ///
-/// # ★★ Why a pixel check needed this on 2026-08-21
 ///
-/// Because [`window`] captures the application's own window, and as of that day
-/// the surface a pixel check is measuring is often **not in it**. Thirteen
-/// dialogs became real OS windows; a capture of the application shows the page
-/// where the dialog used to be, and the contrast sampler goes on sampling —
-/// reporting a confident 1.51:1 about a piece of the drawing.
 ///
 /// That is the worst available failure: a measurement of the wrong surface is
 /// indistinguishable from a measurement of a broken one. `settings_headings_legible`

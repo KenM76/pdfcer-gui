@@ -1,8 +1,5 @@
 //! # `app::save::tests` — what is guaranteed about writing this document out
 //!
-//! Split out of [`super`] on 2026-09-04 (evening) under rule R2, when the
-//! deferred-redaction assertions took `app/save.rs` past the 1,500-line
-//! ceiling. **Nothing moved but its address.**
 //!
 //! ★ The seam is a real one. `save.rs` answers *"how does a document reach a
 //! file?"* and grows when a save verb or a save mode is added; this answers
@@ -416,8 +413,6 @@ fn a_write_that_cannot_happen_is_a_named_refusal() {
     );
 }
 
-// =======================================================================
-// ★★★ THE STAGED REDACTION — 2026-09-05, `pdfcer-core` `Pass 250.2`
 //
 // This section REPLACES the one that measured `Pass 250.1`'s collapse. The
 // tests below are the same questions asked of a different mechanism, and one
@@ -456,9 +451,6 @@ fn stage(open: &mut crate::app::state::OpenDoc, term: &str) {
 /// ★★★ **A document with an armed removal is UNSAVED, and the term that sees
 /// it is `has_pending_redaction`.**
 ///
-/// The defect this closes is the same one the 2026-09-04 term closed, and the
-/// reachable state is different — which is why the term had to change rather
-/// than merely be renamed:
 ///
 /// * **Under `Pass 250.1`** the session *collapsed*, so `is_modified()`
 ///   answered false immediately afterwards and the predicate inherited it.
@@ -728,8 +720,6 @@ fn undoing_the_marks_under_an_armed_removal_refuses_the_save_by_name() {
     );
 }
 
-// ==========================================================================
-// The page-tree structural guard — 2026-09-05
 //
 // ★★★ Added because the operator opened a file pdfcer had just written and
 // found pages in it pdfcer did not believe were there:
@@ -804,13 +794,6 @@ fn a_document_whose_page_tree_disagrees_with_itself_is_refused_and_writes_nothin
     let source = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures/nested-page-tree.pdf");
     let bytes = std::fs::read(&source).expect("the fixture is readable");
-    // ★ A BYTE substitution, not a `String` one. `from_utf8_lossy` turns the
-    // binary-comment bytes every PDF carries after its header (§7.5.2 —
-    // `%\xe2\xe3\xcf\xd3`, four bytes that make FTP clients treat the file as
-    // binary) into four replacement characters of three bytes each, moving
-    // every cross-reference offset in the file by eight. The first draft of
-    // this test did exactly that, and the length assertion below is what
-    // caught it.
     const OLD: &[u8] = b"/Count 12";
     const NEW: &[u8] = b"/Count 13";
     let hits: Vec<usize> = bytes
@@ -898,13 +881,6 @@ fn deleting_a_page_from_a_nested_document_is_caught_at_the_save() {
 
     // ★★★ THE FIXTURE MUST BE NESTED, AND IT IS ASSERTED RATHER THAN NAMED.
     //
-    // Falsified 2026-09-05 by pointing this line at `fixtures/four-pages.pdf`
-    // — a flat tree. The delete then came out clean (on a flat tree the
-    // immediate parent IS the root, so the defect cannot occur), the `Ok` arm
-    // below printed *"pdfcer-core now decrements /Count on every ancestor"* —
-    // a false statement about a build carrying the defect in full — and the
-    // test PASSED. That is precisely the vacuous shape this whole piece of
-    // work exists to avoid, reached by editing one identifier.
     //
     // `depth` is the number of `/Pages` levels above a leaf. Anything below 3
     // cannot exhibit an ancestor-above-the-parent going stale, so the test
@@ -943,12 +919,6 @@ fn deleting_a_page_from_a_nested_document_is_caught_at_the_save() {
             assert!(!target.exists(), "nothing may reach the disk");
         }
         Ok(_) => {
-            // ★★★ THE SKIP HAS TO EARN ITSELF, and the first draft of this
-            // test did not make it. A bare `println!("SKIP")` here passes for
-            // two completely different builds: one where `pdfcer-core` was
-            // fixed, and one where **the guard was removed from `write_copy`**.
-            // Falsified 2026-09-05 by unwiring the guard — this test went
-            // GREEN while the shell wrote the damaged file to disk.
             //
             // So the skip is conditional on the written FILE being clean, read
             // back independently. A save that succeeded because nobody looked

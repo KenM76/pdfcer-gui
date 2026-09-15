@@ -26,12 +26,6 @@
 //!
 //! # ★★★ Capability 1 — the rows publish where they were drawn
 //!
-//! Wired 2026-08-28. Before it, `MenuHost` called `Menu::attach(…)` — the
-//! convenience constructor that takes *no optional capabilities at all* —
-//! so pdfcer's context menus drew rows and told the diagnostic channel
-//! nothing about them. The consequence was narrow and total: **no driven
-//! check could click a context-menu row**, ever, because there was no
-//! coordinate to aim at.
 //!
 //! `right_clicking_a_form_field_opens_its_menu` is the evidence. It is the
 //! first driven context menu in this project's history, it asserts that
@@ -62,8 +56,6 @@
 //!
 //! # ★★★ Capability 2 — the rows draw the icons they already name
 //!
-//! Wired 2026-09-04, and it is the same class of defect as capability 1,
-//! found the same way.
 //!
 //! `ContextMenu::with_icon_painter` has existed since the menu engine
 //! landed. Nothing called it. So every context-menu row in every build of
@@ -73,18 +65,6 @@
 //! `floating-panels` at their registration; the key was correct data
 //! waiting for a surface that read it.
 //!
-//! ★★ The finding that made this a pass of its own is what the gap did to
-//! the *record*. An icon-coverage audit had recorded, against
-//! `view.panel_close`, that a menu row cannot draw a glyph because *"the
-//! icon column exists on the ribbon, not in a context menu"*. That
-//! sentence is a statement about this application's wiring dressed as a
-//! statement about menus, and once written it was quoted — a refusal
-//! resting on a line nobody wrote reads exactly like a refusal resting on
-//! a decision somebody took. The operator's standing ruling (2026-08-06,
-//! quoted in `crate::icons::Icon::Back`'s doc comment) is that **a missing
-//! glyph is authored, not worked around**, and the test that separates a
-//! valid refusal from an invalid one is whether adding the slot would be
-//! *wrong* or merely *work*. Here it was merely work: one builder call.
 //!
 //! ★ The painter is [`crate::icons::paint_ribbon_icon`] — **the ribbon's
 //! own**, not a second one. The alternative was a menu-specific painter,
@@ -208,8 +188,6 @@ mod tests {
     /// is exercised in `egui_shell::menu`'s own tests, which is the right
     /// place for it.
     ///
-    /// ★★★ **TWO BLANKS BECAME ONE ON 2026-09-05, and the survivor is the
-    /// interesting one.**
     ///
     /// * `view.panel_close` in `dock.tab` — **GONE.** It took `close`, so
     ///   `dock.tab` reads 4 glyph / 0 blank where it read 3 / 1. The
@@ -278,25 +256,7 @@ mod tests {
             report.push_str(&format!("{context}: {g} glyph, {b} blank\n"));
         }
 
-        // ★ 25 / 2 → 26 / 1 on 2026-09-05: `view.panel_close` in `dock.tab`
-        // moved from the blank column to the glyph column. `absent` stays 0
-        // and that is the load-bearing third number — it says no menu in this
-        // build is drawn without an icon column at all.
         //
-        // ★★ 26 / 1 → 33 / 1 on 2026-09-06: `canvas.markup`, the sixth canvas
-        // menu, and **all seven of its rows land in the glyph column**. That is
-        // not luck — it is the reuse convention working. `format.properties`,
-        // `edit.cut`, `edit.copy`, `edit.paste` and `format.delete` were already
-        // drawn elsewhere and bring their glyphs with them, and the two new node
-        // commands share `show-points` rather than asking for art. So a whole
-        // menu arrived with a complete icon column and `icons/assets/` was not
-        // touched, which is the outcome this column's rules were written for.
-        // ★★★ 33 / 1 → 34 / 1 on 2026-09-15: `format.select_text_line`
-        // joins `canvas.object`, and it lands in the glyph column for the
-        // same reason the seven markup rows did — it names a glyph that was
-        // already drawn. `pick-part` is the Points tool's art, and the Points
-        // tool is the one route this row is a shortcut for, so the reuse is
-        // the convention working rather than a borrow being stretched.
         //
         // ★ `blank` stays at 1 and `absent` stays at 0, and both are the
         // load-bearing halves of this tuple. A new row that had refused a

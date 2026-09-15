@@ -19,13 +19,6 @@
 //! `PageObjects::objects`. That is a fact about THIS provider's geometry
 //! helpers and it is still true.
 //!
-//! ★★ The paragraph used to end *"the ladder stops at the Object rung for a
-//! leaf, and it stops there because the address space runs out"*, citing
-//! `FormLeaf::is_editable` being `false` for every leaf. **Corrected
-//! 2026-09-11: the ladder does not stop.** `pdfcer-core`'s `Pass 188.0`
-//! shipped form-scoped part and node verbs, `canvas::moving::eligible`
-//! routes to them, and `is_editable` now means *"this leaf is a path"*
-//! rather than *"nothing in a form can be edited"*.
 //!
 //! What is genuinely absent is a form-interior equivalent of the three
 //! helpers above, and the coverage for it lives where the routing does
@@ -42,12 +35,6 @@
 //! filename is a restatement of it that goes stale the moment a third such
 //! module is written.
 //!
-//! Without it, `check-ui-strings` reports every `assert!` message here as
-//! un-catalogued operator copy. That happened once already, on 2026-08-18,
-//! when `canvas::selection::tests` was split out under the same rule and the
-//! gate produced 28 false hits. The noise is the actual hazard: most of
-//! pdfcer's old string-gate floor was test assertions, and a split that
-//! reintroduced them would train people to ignore the report.
 //!
 //! ★ **The line gate still counts these lines.** `check-file-size.sh` counts
 //! total lines, tests included, on purpose — its own header says so — so
@@ -58,13 +45,6 @@
 
 use super::*;
 use pdfcer_core::content::ContentStream;
-// ★ `Handle` is named here explicitly rather than arriving through
-// `use super::*`. It used to come in that way, because `provider/mod.rs`
-// imported it for `subpath_handle_points` and `nearest_handle`; those two moved
-// to [`super::node_rung`] on 2026-09-15 under R2 and took the import with them.
-// Naming the type where it is used is what the file already does for
-// `NoXObjects` and `decompose`, and it means this test module no longer depends
-// on which sibling of `provider` happens to hold the handle accessors.
 use pdfcer_core::vector::{Handle, NoXObjects, decompose};
 
 fn provider(src: &[u8]) -> ObjectModelProvider {

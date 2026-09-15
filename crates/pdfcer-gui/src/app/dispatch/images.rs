@@ -61,7 +61,6 @@ pub(super) fn insert(dialogs: &mut DialogsState, status: &Status) {
 
 /// Import the file at `path` and open the placement window.
 ///
-/// # ★★ Why this is split out of [`insert`]
 ///
 /// Because a **dropped** image has already answered the question `insert`'s
 /// first line asks. Fused with the picker, drag-and-drop could not reach the

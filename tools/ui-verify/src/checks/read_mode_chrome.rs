@@ -10,12 +10,6 @@
 //! > keyboard-only (Ctrl+H, F11) on a tab literally named View. This is the
 //! > single most confusing thing in the current ribbon.
 //!
-//! This shell gave both a control, and for a day that was all it gave them:
-//! `shell::commands::reach` found `view.read_mode` among the eleven registered
-//! commands whose honest status was *"the control should not be drawn yet"*,
-//! with the note that a chord that does nothing **cannot even be greyed**. The
-//! arm landed on 2026-08-15 (`app::window`), and this is the check that says so
-//! from outside the process.
 //!
 //! # ★ Why a unit test cannot cover it, which is the bar for being here
 //!
@@ -145,13 +139,6 @@ const TOGGLE_EVENT: &str = "fullscreen-toggle";
 ///
 /// # ★★★ Why a retry and not a longer settle
 ///
-/// Because the thing that goes wrong is **delivery**, not timing. This suite's
-/// record for this control is three runs and three different outcomes: one
-/// where the first click never reached the ribbon (2026-08-27, SKIPPED with
-/// exactly this diagnosis), one where the foreground was held by a browser
-/// (2026-08-28), and one where the *second* click never reached it
-/// (2026-08-29) — and that last one was reported as a defect in the
-/// application, because only the first press was ever verified.
 ///
 /// A click that is not delivered is not delivered no matter how long the
 /// harness then waits, so the answer is to press again and read the
@@ -375,15 +362,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let before_image = crate::capture::window_to_png(&session, &before_png)?;
     report.artifact(before_png);
     let frame = session.frame()?;
-    // ★ **The probe is the ACTIVE TAB, not the control**, and the first draft
-    // of this check got that wrong in a way worth recording: aimed at
-    // `ribbon.item.view.read_mode`, the measured difference was `#E8E8EA` →
-    // `#F2F2F3`, a delta of **10** against a threshold of 12 — on a run where
-    // the canvas had demonstrably risen 109 pt and the ribbon was demonstrably
-    // gone. An unpressed control's fill and the canvas backdrop behind it are
-    // both near-white greys in this theme, so the honest reading is that the
-    // probe was measuring two shades of the same thing, not that the feature
-    // was broken.
     //
     // The active tab is the one region on the band whose colour is chosen to be
     // unmistakable: it paints `accent` on `on_accent` (`FEATURES.md`'s theme
@@ -517,16 +495,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     report.note(format!(
         "the pixels where `{TAB}` was changed by {delta} ({before_fill:?} → {after_fill:?})"
     ));
-    // ★ PHASE D — come back out, added 2026-08-17.
     //
-    // This check used to end in read mode and say so, on the grounds that
-    // `Ctrl+H` was the only exit and "this machine cannot inject keystrokes".
-    // **That was wrong for the whole life of the project.** Chords failed
-    // because `sys::win32::key_stroke_with` posted the modifier and the key in
-    // the same instant, giving the application no frame in which the modifier
-    // was held and the key was not — so `Ctrl+H` arrived as a bare `h`. Three
-    // 12 ms pauses fixed it, and `find_opens_and_finds` passes for the first
-    // time.
     //
     // Driving the return buys two things:
     //
@@ -640,15 +609,6 @@ fn fullscreen_round_trip(
     // Put it back FIRST, so that every return below leaves the operator's
     // display as it found it.
     //
-    // ★★★ AND PROVE THE PRESS LANDED, WHICH IT DID NOT ON 2026-08-29. See
-    // [`press_until_invoked`]: this line used to be a bare `click_at`, and the
-    // failure sentence below was reached with **one** `{INVOKE_EVENT}
-    // id={FULLSCREEN_ID}` line in the whole trace. The restoring press had never
-    // arrived, and the check reported `app::window::next_fullscreen` — a
-    // function that had just been fixed by driving, and was correct — as
-    // reading a stale state. A confident, specific, wrong defect report about
-    // working code, produced by measuring the result of an input nobody had
-    // shown was delivered.
     let restored_press = press_until_invoked(session, driver, ui_rect, control)?;
     // ★ **Three seconds, and the asymmetry with the 1 s above is measured
     // rather than cautious.** Entering full screen was complete inside 1 s on
@@ -666,8 +626,6 @@ fn fullscreen_round_trip(
     session.settle(120);
     let restored = session.frame()?.client_pixels();
 
-    // ★ AREA, not both axes — corrected 2026-08-17 after this fired on a
-    // window that had gone full screen perfectly well.
     //
     // The predicate was `filled.w <= before.w || filled.h <= before.h`: BOTH
     // dimensions had to grow. That holds on a wide desktop where the window is
@@ -715,9 +673,6 @@ fn fullscreen_round_trip(
     // the reason this whole phase re-reads the shell trace rather than trusting
     // `click_at`'s `Ok`.
     //
-    // `Err` rather than `Ok(Some(_))`, deliberately: a press that was never
-    // delivered is the HARNESS's failure, and a suite that recorded it as a
-    // program defect would be doing exactly what the run of 2026-08-29 did.
     if !restored_press {
         return Err(Error::new(format!(
             "the window is full screen and {PRESS_TRIES} clicks on `{FULLSCREEN}` produced no \
@@ -788,9 +743,6 @@ fn fullscreen_round_trip(
 /// two lies a window-manager transition, an egui frame boundary, and a ribbon
 /// that may have re-laid itself out.
 ///
-/// On 2026-08-29 the entering press landed, the restoring press did not, and
-/// the check — which verified only the first — measured a client area still
-/// 3440 × 1440 and reported:
 ///
 /// > *"a second press that does not restore means the state it reads is not the
 /// > state the OS is in"*

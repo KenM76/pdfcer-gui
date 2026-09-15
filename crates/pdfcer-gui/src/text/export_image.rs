@@ -19,7 +19,6 @@
 //!
 //! ## ★★★ The sentence this whole catalog exists for
 //!
-//! The operator, 2026-09-03, verbatim:
 //!
 //! > *"note that there had better be full support (including transparency
 //! > where supported!)"*

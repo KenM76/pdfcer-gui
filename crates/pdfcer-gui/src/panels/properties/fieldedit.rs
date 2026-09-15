@@ -1,12 +1,9 @@
 //! # `panels::properties::fieldedit` — a placed form field's properties, and
 //! the controls that change them
 //!
-//! `Pass 134.0`'s `EditSession::edit_field`, consumed 2026-08-27.
 //!
 //! ## ★★★ The sentence this module deletes
 //!
-//! [`super::formfield`] shipped on 2026-08-26 showing a field's flags as
-//! **read-only facts**, under a sentence the operator actually read:
 //!
 //! > ~~Required, read-only, the tooltip and the border can only be set when a
 //! > field is placed. **To change one, delete this field and place a new one.**~~
@@ -214,12 +211,6 @@ pub fn section(
         // a control that writes the wrong PDF type — not nothing, something
         // else, which is the failure mode that gate exists for.
         default_value_row(ui, fqn, state, actions);
-        // ★ Same `FieldType::Text` gate as its neighbours. `/Q` is variable-text
-        // justification (§12.7.3.3) and applies to `/Tx` and `/Ch`; this pane
-        // offers it on text fields, where the operator can see the effect in
-        // the in-canvas editor immediately — `boxes::editor_align` has honoured
-        // `/Q` since 2026-09-04, so this control's result is visible without
-        // saving.
         alignment_row(ui, field, fqn, actions);
     }
 
@@ -275,8 +266,6 @@ pub fn section(
 
     tooltip_row(ui, fqn, state, actions);
 
-    // ★★★ `ui_rect`, NOT `ui_rect_visible` — and the difference is a finding
-    // rather than a preference, measured by driving on 2026-08-27.
     //
     // `ui_rect_visible` publishes a region only when at least 60 % of it lies
     // inside the clip. That threshold exists for an excellent reason
@@ -537,10 +526,6 @@ fn default_value_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &
             .desired_width(f32::INFINITY)
             .hint_text(t::label_default_value_hint()),
     );
-    // ★★★ `ui_rect_visible`, NOT `ui_rect` — the rule is stated at [`REGION`]
-    // twenty lines up and I broke it on the first draft: **`ui_rect_visible`
-    // for a control a check will CLICK or SAMPLE; `ui_rect` for a section a
-    // check scrolls TO.**
     //
     // The first version published unconditionally, and a driven run showed
     // exactly the failure the rule prevents: `properties.field_edit.default_value`
@@ -685,12 +670,6 @@ impl FieldPropsDraft {
     /// is the same term `super::text`'s `TextStyleDraft` carries for the same
     /// reason.
     ///
-    /// ★ Note what a re-read costs here and does not cost there: this is a
-    /// field lookup in an already-parsed `AcroForm`, not a text extraction with
-    /// provenance. The stamp is for **correctness** — not leaking one field's
-    /// draft onto another — rather than for the 392 ms the text draft is
-    /// avoiding.
-    /// ★★ It takes the two VALUES, not the `&Field` it used to.
     ///
     /// The refactor was forced by a test and is right on its own: `Field` has
     /// no `Default`, so a unit test could not build one without a document —
@@ -768,11 +747,6 @@ mod tests {
     /// a new variant is invisible to the check built to find it, and the count
     /// still adds up.
     ///
-    /// ★ `Quadding` is deliberately not `#[non_exhaustive]`, which is what makes
-    /// this possible at all. If the engine ever marks it so, this test stops
-    /// compiling and that is the correct outcome: the guarantee would be gone
-    /// and pretending otherwise is what the 2026-09-07 sweep spent a night
-    /// correcting.
     #[test]
     fn the_alignment_list_covers_every_variant_the_engine_has() {
         for q in ALL_QUADDINGS {

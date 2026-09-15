@@ -5,12 +5,6 @@
 //! WHY THIS IS ITS OWN FILE
 //! ===========================================================================
 //!
-//! Split out of `raster_wall.rs` on 2026-09-12 for the same reason as
-//! `raster_wall::trace` — R2's 1,500-line limit — but the seam was chosen, not
-//! forced. Part A's whole trick is that **the pointer is parked between two
-//! sheets and never moves again**, so that one wheel notch grows the row gap
-//! and pushes the neighbour down the screen. Every function in this file exists
-//! to establish or to measure that one condition:
 //!
 //!   * [`seam_y`] says where the gap is this frame.
 //!   * [`window_closes_at`] says how long the neighbour will survive there.

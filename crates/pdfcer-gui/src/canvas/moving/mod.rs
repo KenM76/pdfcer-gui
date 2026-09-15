@@ -194,10 +194,6 @@ pub enum MoveSubject {
     /// ★★★ **The Object rung for things painted INSIDE a form XObject**:
     /// `move_objects_in_form`.
     ///
-    /// `OPERATOR_REQUESTS.md` O70's second slice, and until `pdfcer-core`
-    /// Pass 188.0 (2026-08-31) there was no verb to route it to — this was a
-    /// worded refusal, [`Refusal::InsideForm`], because a leaf has no
-    /// paint-order index and every geometry verb addressed one.
     ///
     /// ## ★★ A separate variant, not `Objects` with leaf indices in it
     ///
@@ -257,13 +253,6 @@ pub enum MoveSubject {
     ///
     /// # Why this arrived a month after its delete twin
     ///
-    /// Because until 2026-09-14 there was no verb. `delete_text_run` has
-    /// existed since `pdfcer-core` `Pass 32.0`; `move_text_run` shipped as
-    /// `G017`, and this crate filed the request the day before. Three separate
-    /// code bases had *written down* that the gap existed — two files in the
-    /// old GUI and one design note here — and none had asked for it, which is
-    /// the failure mode `EDITABLE_SURFACES.md` calls *"considered verbs whose
-    /// consideration was filed where the register could not see it"*.
     ///
     /// # ★★ Reaching this variant is CONDITIONAL, unlike every sibling here
     ///
@@ -426,26 +415,9 @@ pub enum Refusal {
     /// is on screen. This is the refusal that has an explanation to give, and
     /// [`crate::app::status::decline`] gives it.
     ///
-    /// # ★★★ What this variant means NOW, corrected 2026-09-11
     ///
-    /// It said: *"[`pdfcer_core::vector::FormLeaf::is_editable`] is `false` for
-    /// every leaf the engine produces"*, dated 2026-08-27 against
-    /// `pdfcer-core` v0.14.0, and ended *"when editing-through-recursion
-    /// lands, the remedy is to route to the form-scoped verb"*.
     ///
-    /// **Editing-through-recursion landed at `Pass 188.0`, this shell routed
-    /// to all six form-scoped verbs on 2026-09-01, and the sentence stayed.**
-    /// `is_editable` did not change signature, so nothing broke and nothing
-    /// warned; it changed MEANING. It now answers *"is this leaf a path"*,
-    /// and the engine's own doc says in as many words that a shell greying
-    /// out the whole container on `false` is now wrong.
     ///
-    /// ★★ The shell was never wrong about the CAPABILITY — only about the
-    /// reason. `eligible` routes a form-interior selection to
-    /// `MoveSubject::LeavesInForm`, `SubpathInForm`, `NodeInForm` and
-    /// `NodesInForm`, and has since 2026-09-01. What survived was the
-    /// paragraph explaining why it could not, which is the more dangerous
-    /// half to leave lying about: a later reader trusts it and does not try.
     ///
     /// # What actually reaches this variant
     ///
@@ -466,13 +438,7 @@ pub enum Refusal {
     NoPartEntered,
     /// The entered part has no move verb.
     ///
-    /// # ★★★ What this variant means NOW, narrowed 2026-09-15
     ///
-    /// It said: *"a text object's show operator is a 'part', but
-    /// `move_subpath` translates path construction operands and there is
-    /// nothing for it to translate"*, and that was the whole of O188's move
-    /// half — true from this crate's first commit until `pdfcer-core` shipped
-    /// `move_text_run` (`G017`, 2026-09-14).
     ///
     /// **It is no longer the Part rung's answer for a run.** [`eligible`] now
     /// routes a movable run to [`MoveSubject::TextRun`] and an unmovable one to
@@ -631,13 +597,7 @@ impl Refusal {
     /// check, where one hidden behind a wildcard is an assumption.
     pub(crate) const fn worded(self) -> Option<CanvasDecline> {
         match self {
-            // The operator can see an outline round the thing they dragged, the
-            // drag does nothing, and there is no way on screen to learn why.
-            // Reachable by an ordinary click since 2026-08-27, so not rare.
             Self::InsideForm => Some(CanvasDecline::InsideFormNotAPath),
-            // ★★★ **THE O188 SENTENCE WAS RETIRED HERE ON 2026-09-15, one day
-            // after it shipped, and the retirement is the point rather than an
-            // embarrassment.**
             //
             // It read: *"Delete removes that line on its own, but pdfcer cannot
             // move a single line yet — press Escape to select the whole block
@@ -767,15 +727,6 @@ pub fn eligible(
                 // selection**, and saying so was a flat contradiction of what
                 // was on screen.
                 //
-                // `object_indices_on` answers about the page's own paint order
-                // and drops every target drawn inside a form XObject —
-                // correctly, because no paint-order verb can address one. Since
-                // 2026-08-27 an ordinary click can produce a selection made
-                // entirely of those, and this arm reported it as *"nothing
-                // selected"* while the operator was looking at an outline round
-                // the thing they were dragging.
-                // ★★★ **A pure form-interior selection MOVES, as of
-                // 2026-09-01** — O70's second slice.
                 //
                 // This arm returned `Refusal::InsideForm` for the life of the
                 // shell, and the refusal was honest: no geometry verb could
@@ -793,9 +744,6 @@ pub fn eligible(
                     Ok(MoveSubject::LeavesInForm { page, leaves })
                 };
             }
-            // ★★★ THE REFUSAL BECAME A FORK — 2026-08-20, and it is the
-            // operator's *"can I please please please have the capability to
-            // move the text after?"*
             //
             // This read:
             //
@@ -821,10 +769,6 @@ pub fn eligible(
             // something he does dozens of times to hundreds of objects, and the
             // wrapping accumulates in a file he then sends to somebody.
             //
-            // So: **the lighter verb where it can express the gesture, the
-            // general one where it cannot.** The predicate is unchanged — it is
-            // the same `ctx.non_path` that used to refuse — which is what makes
-            // this a fork rather than a second notion of "is this a path".
             match ctx.non_path {
                 None => Ok(MoveSubject::Objects { page, objects }),
                 Some(_) => Ok(MoveSubject::Transform { page, objects }),
@@ -833,10 +777,6 @@ pub fn eligible(
         SelectionLevel::Part => {
             let entry = entered_entry(selection, page)?;
             let subpath = entry.subpath.ok_or(Refusal::NoPartEntered)?;
-            // ★★★ **Inside a form, the same rung reaches a different verb** —
-            // `OPERATOR_REQUESTS.md` O70, 2026-09-01. Asked before the kind
-            // match because the address space decides which family of verbs
-            // exists, and the kind decides which member of it.
             if let Some(leaf) = entry.object.leaf_index() {
                 return match ctx.part_kind {
                     Some(PartKind::Subpath) => Ok(MoveSubject::SubpathInForm {
@@ -844,12 +784,6 @@ pub fn eligible(
                         leaf,
                         subpath,
                     }),
-                    // ★★★ **And a run inside a form reaches a verb too, since
-                    // 2026-09-14** — `move_text_run_in_form`, which is the
-                    // half of `G017` O188 is actually about: on a SolidWorks
-                    // set the title block IS a form, so a page-scoped verb
-                    // alone would have answered the request everywhere except
-                    // where he asked it.
                     //
                     // ★ The pre-check is the same one the page arm runs and
                     // it was asked of the same `TargetId`, so a leaf and a page
@@ -875,8 +809,6 @@ pub fn eligible(
                     object,
                     subpath,
                 }),
-                // ★★★ **A text run IS a part, and since 2026-09-14 it has a
-                // move verb** — `move_text_run`, `OPERATOR_REQUESTS.md` O188.
                 //
                 // The comment that stood here said *"it has no move verb"* and
                 // explained why declining early kept the ghost truthful. The
@@ -929,11 +861,6 @@ pub fn eligible(
             // operator could Shift-click four anchors, watch four highlight,
             // drag, and move one.
             //
-            // That is the defect `pdfcer`'s own `gui` column ticked `[x]` for
-            // months (their note of 2026-08-19: "multi-node select-and-move —
-            // objects move together; nodes one at a time"), and it is one of
-            // the six rows that were true of the OLD in-repo shell and became
-            // false when the column's referent moved to this build.
             let nodes = selection.selected_nodes_on(page, entry.object);
             match ctx.part_kind {
                 Some(PartKind::Subpath) if nodes.len() > 1 => Ok(MoveSubject::Nodes {
@@ -956,11 +883,6 @@ pub fn eligible(
 /// [`TargetId`](crate::canvas::target::TargetId) newtype exists to prevent,
 /// and one comparison to rule out.
 ///
-/// ★ It stopped resolving the index on 2026-09-01 (O70). It used to answer
-/// `(usize, Selection)` and refuse a leaf with `Refusal::InsideForm` on the
-/// way — which was right while no verb could address one, and is now a
-/// decision the CALLER makes, because the two arms above route to two families
-/// of verb rather than to one.
 fn entered_entry(
     selection: &SelectionState,
     page: usize,
@@ -1152,7 +1074,6 @@ fn context(
     provider: Option<&ObjectModelProvider>,
 ) -> Option<MoveContext> {
     let provider = provider?;
-    // ★★★ **Asked of the TARGET, not of a page index** — O70, 2026-09-01.
     //
     // This read `.and_then(|e| e.object.page_object_index())`, with a comment
     // saying a form-interior target *"has no `part_kind` to ask about"*. It had
@@ -1166,9 +1087,6 @@ fn context(
     // outside_one` reported `canvas-move-declined level=Part reason=InsideForm`
     // with every other line in the trace looking correct.
     //
-    // ★ That is verbatim what the run printed and is left as printed. The
-    // field is a stable token since 2026-09-15, so the same line reads
-    // `reason=inside-form detail=InsideForm` today — see `Refusal::token`.
     let entry = selection.entered_object();
     let entered = entry.map(|e| e.object);
     Some(MoveContext {
@@ -1308,9 +1226,6 @@ pub fn drag(
     if phase == Phase::InFlight {
         // ★★★ THE LIVE SHAPE, `OPERATOR_REQUESTS.md` O63.
         //
-        // **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me
-        // the shape change of the line, it just had a perimeter box around it …
-        // there isn't a real preview like there is in inkscape."*
         //
         // Built HERE rather than in the painter, and that placement is the whole
         // guarantee: `subject` is the value the release hands to `EditSession`,
@@ -1395,8 +1310,6 @@ pub fn drag(
     }
     // ★★★ HOLD IT. `OPERATOR_REQUESTS.md` O63, third piece.
     //
-    // **Ken, 2026-08-30:** *"the live preview should remain while the update to
-    // the pdf structure runs in the background."*
     //
     // The gesture is over and the Action is raised, but the page raster
     // underneath still shows the object where it STARTED, for one to two
@@ -1432,11 +1345,6 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
     // lives there rather than here — beside the exhaustive match that makes
     // adding a twelfth refusal a compile error until somebody decides.
     //
-    // ★★★ This comment said *“one refusal out of the eight”* until
-    // 2026-09-15. There were eleven. The count had been wrong for long enough
-    // that nobody re-read the sentence it introduced, and the sentence was the
-    // reason `NoVerbForPart` was never weighed — which is `OPERATOR_REQUESTS.md`
-    // O188, a drag on one line of a title block doing nothing in silence.
     //
     // ★ Recorded from the CANVAS, which no other decline in this application
     // does. It is sound for the reason `status::decline`'s header gives for the
@@ -1471,12 +1379,6 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
 
 /// ★★★ **The keyboard's way of asking for the same move** — the arrow keys.
 ///
-/// A sibling module rather than a section of this one, and the seam is the same
-/// one this file was split along: *what a gesture is* and *what a move is* are
-/// different subjects. Everything in this file is about a **drag** — a phase, a
-/// ghost, a grab point, a release — and none of it applies to a keystroke, which
-/// has no interval at all. What the two share is [`page_delta`], and that is
-/// exactly what the child imports.
 ///
 /// It is under `moving` rather than under `keys` because the shared thing is the
 /// **coordinate crossing**, not the key: a nudge written in the key handler
@@ -1485,7 +1387,5 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
 /// for the whole argument, the step it takes and whose convention it is.
 pub(crate) mod nudge;
 
-// The move gesture's assertions. Split out under R2 on 2026-08-27; see its
-// header for why the tests were the seam and the code was not.
 #[cfg(test)]
 mod tests;

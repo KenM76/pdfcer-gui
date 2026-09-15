@@ -131,10 +131,6 @@ const BEYOND_RASTER_SLOT: &str = "strip-beyond-raster";
 impl OpenDoc {
     /// How long this document's zoom must stop changing before it is committed.
     ///
-    /// ★ **The operator's, as of 2026-08-17.** [`ZOOM_SETTLE`] was the whole
-    /// answer and is now only the *default* — `manifest::DIRECTED` carried this
-    /// as *"partial G — `ZOOM_SETTLE` is a compiled-in constant today"*, and
-    /// that was accurate: the control was missing, not the value.
     ///
     /// Read from the document's preferences **snapshot** rather than from the
     /// application, for the same reason its settings snapshot exists: this is a
@@ -223,13 +219,6 @@ impl OpenDoc {
     ///
     /// # ★★★ It is also where a raster refusal becomes a zoom CEILING — O186
     ///
-    /// The operator, 2026-09-12: *"zoom should stop at the limit and not end up
-    /// showing an error — the canvas will just stop zooming in and can still
-    /// function."* This function is the one place in the shell a render refusal
-    /// is absorbed, so it is necessarily the place that clause is executed: see
-    /// the `Err` arm's own commentary for the learn-and-pull-back, and
-    /// [`crate::render::ceiling`] for why the number can only come from a
-    /// refusal that has already happened.
     fn absorb_render(&mut self, ctx: &egui::Context, result: RenderOutcome) {
         match result {
             Ok(pixels) => {
@@ -238,15 +227,6 @@ impl OpenDoc {
                 // A page blended in ink, recorded before anything else is done
                 // with the result.
                 //
-                // This comment said "the ONE write to `OpenDoc::ink_pages`"
-                // until 2026-09-11, and it had stopped being true when
-                // `OpenDoc::learn_ink` began asking
-                // `pdfcer_render::page_composites_in_ink` directly. There are
-                // TWO writers now, and `app::state`'s field doc is the one
-                // that says so and explains why the pair is safe: the engine
-                // ships a test asserting the ask and the render agree on every
-                // fixture, so this is a second observer that can only confirm
-                // the first, never contradict it.
                 //
                 // An exclusivity claim is the shape of comment that a later,
                 // correct change falsifies WITHOUT touching the file the
@@ -746,11 +726,6 @@ impl OpenDoc {
     /// here would decline orders that would have succeeded.
     /// # ⚠⚠ DRIVEN COVERAGE IS OWED, AND NOTHING HERE IS EVIDENCE YET
     ///
-    /// **Measured 2026-09-12: no driven check falsifies this guard.** Both
-    /// raster-wall checks were re-driven against a build with `&& fillable`
-    /// removed from the caller's condition, and **both still passed.** That is
-    /// recorded here rather than left as a gap in a report, because a fix whose
-    /// regression test cannot fail is a fix that will be silently reverted.
     ///
     /// Why neither check reaches it, which is the useful half:
     ///
@@ -931,16 +906,6 @@ impl PdfcerApp {
         // ★ …and an EDIT is a discrete change too, even though it moves no
         // field of the key.
         //
-        // The key answers "is this a picture of the right page, at the right
-        // scale, with the right annotation stance". It cannot answer "is it a
-        // picture of the right *revision*", because an edit changes none of
-        // those. That third term is `page_texture_epoch`, and adding it here is
-        // what lets `vector_edit` stop nulling the texture — which is what put
-        // a blank page on screen after every edit.
-        // ★★★ Per-page since 2026-08-31 (O74). The third term still answers
-        // "is it a picture of the right REVISION" — it is now the revision of
-        // *this page* rather than of the document, so an edit on sheet 3 no
-        // longer re-rasterises the canvas while it is showing sheet 7.
         let stale_edit = doc.page_texture_epoch != doc.page_epochs.get(doc.view.page_index);
         let stale_discrete =
             stale_edit || current.is_none_or(|k| k.discrete_inputs() != wanted.discrete_inputs());
@@ -979,18 +944,10 @@ impl PdfcerApp {
         // The strip is still serviced below: one page that will not draw must
         // not stop the pages around it from filling in.
         //
-        // ★★ Why this asks `render_refused` and not `render_error`. It used to
-        // read `doc.render_error.is_some() && !stale_discrete`, and that could
-        // not fire at all -- `render_error` did not survive the frame it was
-        // set in, and `stale_discrete` is unconditionally true once a texture
-        // has been nulled, which is the first thing a refusal does. Measured
-        // 2026-09-10: 611 spawns and ~573 dead worker threads in one check.
-        // The full argument is on `OpenDoc::render_refused`.
         let current_held = doc.render_refused.is_some_and(|(key, epoch)| {
             key == wanted && epoch == doc.page_epochs.get(doc.view.page_index)
         });
 
-        // ★★★ **O186's third route, closed here.** 2026-09-12.
         //
         // A request with no region is a request for the WHOLE SHEET, and above
         // the renderer's pixmap ceiling there is no such pixmap. Placing the
@@ -1098,10 +1055,6 @@ impl PdfcerApp {
         // ★★ `retain` no longer takes the visible set, and that is the whole of
         // the operator's *"they constantly redraw with larger files"*.
         //
-        // It used to drop every entry not on screen, so a sheet scrolled past
-        // was rendered again from the content stream the moment it came back —
-        // 691 ms on a dense A1 (`BENCHMARK.md`). What bounds the cache now is
-        // the operator's own budget and the distance rule inside `retain`.
         //
         // `visible` is still taken above, because the strip's *request* logic
         // below needs it: what to render next is still "the nearest visible page
@@ -1115,7 +1068,6 @@ impl PdfcerApp {
         // per wheel notch.
         let settling = now < doc.zoom_commit_at;
 
-        // ★★ **The decline, published.** O186, 2026-09-12.
         //
         // Without this line the fix below is invisible: the whole point of it is
         // that nothing happens — no request, no failure, no message — and an
@@ -1235,13 +1187,6 @@ impl PdfcerApp {
 /// | engine `synthetic/pageops/four-pages.pdf` | four sheets, **all US Letter** |
 /// | this repo's `fixtures/four-pages.pdf` | `2383.937 × 1683.78`, `612 × 792`, `612 × 792`, `306 × 396` |
 ///
-/// Measured 2026-09-12 by reading both files' `/MediaBox` entries, after very
-/// nearly writing this suite against the engine's. **Only the local one can
-/// distinguish "the answer depends on THIS page" from "the answer is a
-/// constant"**, because only it has sheets that differ — by a factor of six
-/// between its largest and smallest. Against the engine's copy, every
-/// assertion below would still pass while testing nothing about the `page`
-/// argument at all, which is the worst available outcome for a test.
 ///
 /// ★ Opened rather than hand-built, for the reason `app::status::rasterstop`'s
 /// tests give: [`Self::strip_page_orderable`] reaches `page_extent_pts`, which

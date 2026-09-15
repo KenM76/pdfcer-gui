@@ -860,10 +860,6 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // a run: it launches with NO document, it opens one window, and it
         // asserts on a trace rather than on pixels. It is also cheap.
         Box::new(shortcuts::ShortcutsReferenceIsLive),
-        // Immediately after the two checks whose SKIPs found the defect it
-        // exists for. Both of those now maximise the window and are green;
-        // this one deliberately does NOT, so the narrow band they used to
-        // trip over is still driven by something every run.
         Box::new(band_scroll::ACommandTwoScrollStopsAwayIsStillReachable),
         Box::new(block_nav::ArrowKeysWalkBetweenBlocks),
         Box::new(dialog_windows::DialogsOpenInTheirOwnWindow),

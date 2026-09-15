@@ -22,10 +22,6 @@
 //!
 //! ## ★★★ The WALK is the shell's; the RESOLUTION is the engine's
 //!
-//! This module reads files. `pdfcer_render::FontEnvironment` decides what
-//! answers to what. The split is not tidiness — it is that the second half was
-//! **already written**, three rungs deep and doctested, and the first draft of
-//! this module reimplemented the shallowest of them.
 //!
 //! `resolve_for_embedding` tries, in order:
 //!
@@ -35,31 +31,16 @@
 //! | `Alias` | a **standard-14 family equivalence** — `Helvetica` → `Arial` |
 //! | `Bundled` | a face pdfcer itself ships. **Offered only when the operator ticks the box** — see below |
 //!
-//! ★★ The middle rung is what makes this feature work at all on this platform.
-//! Every CAD drawing this project exists for asks for `Helvetica`, and **no
-//! Windows machine has a font called Helvetica**. A resolver with only the
-//! first rung finds nothing on exactly the documents that need embedding most
-//! — which is what the first draft of this module did, on the day it was
-//! written, and it is why the delegation is worth the crate dependency.
 //!
 //! ⇒ Recorded because the shape generalises: *"the shell owns resolution"* was
 //! read as *"the shell must implement resolution"*. It means the shell owns the
 //! **filesystem** — `pdfcer-core` must not read a directory — and `pdfcer-render`
 //! is not `pdfcer-core`.
 //!
-//! ## ★★ How bundled faces are offered — corrected 2026-09-05, twice over
 //!
 //! This section has now been wrong in **both** directions and the history is
 //! worth two sentences, because the shape recurs.
 //!
-//! It originally read *"Why bundled faces are NOT offered"*, and said this
-//! shell had no equivalent of `pdfcer`'s `--use-bundled-fonts` *"because the
-//! Embed window has no settings by design"*. **That became false on
-//! 2026-08-28**, when `dialogs::embed` was changed to pass `true`
-//! unconditionally — and the paragraph here went on asserting the opposite for
-//! eight days, in the module that owns the argument, while
-//! `ui-verify`'s `embedding_works_with_no_font_folder_at_all` passed against
-//! the behaviour it denied.
 //!
 //! ⇒ The general form, and this project has paid for it six times: **a
 //! paragraph explaining why something is not done outlives the day it is
@@ -74,9 +55,6 @@
 //! the bundled faces are BSD-3-Clause, and embedding one puts it inside a file
 //! the operator distributes.
 //!
-//! ★ Rule 4 is *fuzzy, never sneaky*. It forbids doing this **silently**, not
-//! doing it. The disclosure was already loud from the first day; what was
-//! missing until 2026-09-05 was the operator's ability to decline.
 //!
 //! ## ★★ A stem match is still disclosed, and the engine does not distinguish it
 //!
@@ -165,13 +143,6 @@ pub enum Match {
     /// **One of the faces pdfcer itself ships**, used because nothing the
     /// operator pointed pdfcer at could answer.
     ///
-    /// ★★★ The most inferred rung, and the engine says so in as many words:
-    /// *"nothing on the operator's machine was consulted."* Offered only
-    /// because the operator asked for it — `OPERATOR_REQUESTS.md` **O47**,
-    /// answered *"yes"* on 2026-08-28 — and disclosed loudly wherever it fires,
-    /// because a document that goes out with pdfcer's Helvetica substitute in it
-    /// looks different from one with the operator's own, and nothing on the
-    /// canvas says which happened.
     Bundled,
     /// A **standard-14 family equivalence** — the document says `Helvetica` and
     /// the folder holds `Arial`. Metric-compatible by design, and the advances
@@ -265,11 +236,6 @@ impl Library {
     ///
     /// # ★★★ The operator asked for this, and the licensing argument survives
     ///
-    /// `OPERATOR_REQUESTS.md` **O47**, answered *"yes"* on 2026-08-28. The
-    /// module header's argument — that pdfcer must not choose a font program on
-    /// somebody's behalf, silently, in a file that outlives the decision — is
-    /// not overruled by this. It is satisfied the same way **O50**'s checkbox
-    /// satisfies it: the operator decided, once, explicitly.
     ///
     /// ★★ And it is the **last** rung, which is what makes it safe to leave on.
     /// `resolve_for_embedding` consults the bundled table only after an exact
@@ -555,12 +521,6 @@ mod tests {
 
     /// ★★★ **`Helvetica` resolves to Arial, and it is graded as a substitute.**
     ///
-    /// **The test this rewrite exists for.** No Windows machine has a font
-    /// called Helvetica, and every CAD drawing this project serves asks for
-    /// one, so a resolver with only an exact rung finds nothing on precisely
-    /// the documents that need embedding most. That is what the first draft of
-    /// this module did — and no test in it could see the gap, because every one
-    /// of them registered a name and then asked for that same name.
     #[test]
     fn helvetica_finds_arial_and_says_it_is_a_substitute() {
         let mut library = Library::scan(&[]);
@@ -595,11 +555,6 @@ mod tests {
 
     /// ★★★ **A bundled face is offered ONLY when it was asked for.**
     ///
-    /// `FontEnvironment::bundled()` is what this scans into, so pdfcer's own
-    /// standard-14 substitutes sit in the table the whole time and one `true`
-    /// in the wrong place puts them into somebody's document. The operator said
-    /// yes on 2026-08-28 (`OPERATOR_REQUESTS.md` **O47**) — and *"yes"* is a
-    /// decision that has to be carried, not a reason to stop checking.
     ///
     /// ★★ Both halves in one test on purpose: an assertion that only proved the
     /// `true` case would pass on a build that ignored the flag entirely, which

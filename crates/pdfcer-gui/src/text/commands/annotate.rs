@@ -27,13 +27,6 @@
 //!
 //! ## Nothing else changed
 //!
-//! Every function came across verbatim, and [`super`] re-exports all twenty-one
-//! by name — so every call site still writes `t::markup_rectangle()` and nothing
-//! outside `text/` learns that the catalog was split. The re-export is explicit
-//! rather than a glob for the reason `shell::commands`' own `pub use` is: a glob
-//! would let a function added here arrive in the crate's namespace without
-//! anybody naming it, and the catalog's whole discipline is that every
-//! operator-visible string is named somewhere a reviewer looks.
 //!
 //! The tests stay in [`super`], with the list they walk. They are about the
 //! catalog as a whole — no two labels alike, every tooltip a sentence, every
@@ -206,9 +199,6 @@ pub const fn markup_finish() -> CommandText {
 /// where the new corner lands, since the answer is *on the outline*, not under
 /// the pointer: the click is allowed to be several points off the line.
 ///
-/// ★ *"a freehand mark"* joined the list on 2026-09-09 with `pdfcer-core`
-/// `Pass 278.0`. A tooltip that listed three shapes while the row appeared on
-/// a fourth would be the surface disagreeing with itself.
 #[must_use]
 pub const fn markup_add_node() -> CommandText {
     CommandText::new(
@@ -373,8 +363,6 @@ pub const fn measure_perimeter() -> CommandText {
 
 /// `measure.length`
 ///
-/// ★ The operator's ask of 2026-08-20: *"add a length tool that works like the
-/// perimeter tool without needing to close the profile."*
 ///
 /// The label is `Length`, not `Path length` or `Open perimeter`: the operator
 /// asked for a *length tool*, and the word they used is the word to put on it.
@@ -437,11 +425,6 @@ pub const fn measure_set_scale() -> CommandText {
 
 /// `measure.manage_groups`
 ///
-/// ★ **The trailing ellipsis was removed on 2026-08-19 and its removal is the
-/// label doing its job.** A `…` is a promise that the control opens something
-/// with a start and an end — a dialog you finish and dismiss. This one now
-/// toggles a dock panel (`crate::panels::Panel::DimensionGroups`), and a
-/// toggle whose label promises a dialog is a small lie told sixty times a day.
 ///
 /// The label is also the **dock tab caption**, because
 /// `crate::app::PdfcerApp::new` builds the panel registry from the command

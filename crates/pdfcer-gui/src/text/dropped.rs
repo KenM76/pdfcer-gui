@@ -1,9 +1,5 @@
 //! # `text::dropped` — the three sentences a drop can answer with
 //!
-//! Every one is a **disclosure on the status row**, and the reason they exist at
-//! all is the reason the feature exists: until 2026-08-19 a file dragged onto
-//! this window did nothing, silently. A drop that is ignored teaches an operator
-//! that the program does not accept drops — a conclusion they will not revisit.
 //!
 //! ★ Two of the three say **what to do next**, because the operator's remedy is
 //! not guessable from the refusal. The third names what pdfcer takes, which is

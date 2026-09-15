@@ -9,11 +9,7 @@
 //!
 //! ## The operator's ask, twice
 //!
-//! > *"We should also have all the font tools available that Word does."*
-//! > — O37, 2026-08-25
 //!
-//! > *"…when I have an object selected like text the Tool tab doesn't switch
-//! > to giving me the editable stuff for that object."* — O46, 2026-08-26
 //!
 //! ## ★★★ The operand is the TEXT SELECTION, not the object selection
 //!
@@ -35,8 +31,6 @@
 //! object with the Select tool does not raise this section; sweeping across the
 //! text does.
 //!
-//! ## ★★★ AMENDED 2026-09-05 — the paragraph above is still true of THIS
-//! ## section, and it is no longer true of the panel
 //!
 //! `OPERATOR_REQUESTS.md` **O89**: *"I don't see where I am able to edit the
 //! color of text, vectors, etc."* He had clicked the text and found nothing but
@@ -50,13 +44,6 @@
 //! stakes every restyle on. `crate::canvas::textedit::pin::object_text` is the
 //! join and carries the argument.
 //!
-//! ⇒ Two consequences for a reader of this file. **(1)** The sentence formerly
-//! ending this paragraph — *"the empty state says so in those words"* — has
-//! moved with the state it describes; `route` and `ROUTE_REGION` are gone from
-//! here, and the block where they stood says where they went and why the region
-//! kept its old spelling. **(2)** This section is now exactly what its heading
-//! claims: the editor for a **swept range**. With nothing swept it returns
-//! `false` and says nothing, because something else is speaking.
 //!
 //! ★ Four of the five controls here are still sweep-only, and that is a
 //! decision rather than a leftover: face, size, bold and italic each need a
@@ -82,15 +69,6 @@
 //! `set_font` selects a real face and refuses when the page carries none.
 //! `gate_synthesis` refuses synthesis when a real face **is** available.
 //!
-//! ★★★ **They are NOT exact complements, and this paragraph used to say they
-//! were.** It read *"so between them every page is covered and there is no
-//! page on which bold is unreachable"*, quoting the engine — who withdrew the
-//! claim in writing on 2026-08-27 after reproducing the counter-example.
-//! `gate_synthesis` prefers a real face by *family*, and the face it prefers
-//! may not map every glyph in the run, in which case `set_font` refuses it and
-//! synthesis is already gated off. On `textedit/format_family.pdf` bold is
-//! reachable by neither verb. Filed, confirmed, and queued first by the
-//! engine; `crate::app::actions::textstyle`'s header carries the whole of it.
 //!
 //! ★★ The conclusion survives its premise, which is why the two buttons still
 //! do not grey. Greying them would mean predicting a refusal that depends on a
@@ -103,15 +81,12 @@
 //! `crate::app::actions::textstyle` takes whichever verb the page allows and
 //! discloses which one it took.
 //!
-//! ## ★★★ AMENDED TWICE — 2026-08-29 made the premise half false, and
-//! 2026-09-11 removed its subject entirely
 //!
 //! The paragraph two up says greying would mean *"predicting a refusal that
 //! depends on a per-run glyph-coverage test this shell cannot run without doing
 //! the engine's work."* Both amendments are kept, in order, because the first
 //! one's reasoning is what earned the second.
 //!
-//! ### 2026-08-29 — the shell could predict the `format_family.pdf` refusal
 //!
 //! `EditSession::preview_style_resolution` said whether a real face resolves
 //! and handed back the string to pass to `set_font`; `preview_font_resources`
@@ -122,7 +97,6 @@
 //! that prediction, and the buttons still did not grey, because the engine had
 //! a queued fix that would turn the case into ordinary synthesis.
 //!
-//! ### ★★★ 2026-09-11 — the fix landed, and the whole outcome went away
 //!
 //! It was not a narrower `gate_synthesis`. `Pass 179.0`'s automatic **style
 //! ladder** replaced the decision the gate was making, and under it *"a real
@@ -132,14 +106,6 @@
 //! sentence kept alive past its subject is how a shell ends up warning about a
 //! limit that no longer exists.
 //!
-//! ⇒ ★★ And the instrument changed with it. The 2026-08-29 join was previewing
-//! the **R90 gate**: one bit, *"is there a real face on this page that claims
-//! this style"*. The gate is one input to the ladder's decision, not the
-//! decision, and it **cannot see rung 2 by construction** — the standard-14
-//! sibling of the run's own family is not on the page, which is the whole point
-//! of it. On the commonest CAD page there is, a title block set in `Helvetica`
-//! with no bold resource, the old hover promised thickened letters about a
-//! press that binds `Helvetica-Bold` and produces genuinely bold type.
 //!
 //! `EditSession::preview_style_ladder` (`Pass 295.0`, consumed here the day it
 //! shipped) runs `plan_style_ladder` — **the function `format_text` runs** —
@@ -175,8 +141,6 @@
 //! are **buttons that apply**, not switches that reflect — and the face name
 //! beside them is where an operator reads what the text actually is.
 //!
-//! ## ★★★ AMENDED 2026-08-29 — the face chooser offers faces the document does
-//! NOT contain
 //!
 //! `pdfcer-core` v0.15.0 (`Pass 162.0`) closed the last of the four things the
 //! operator named as not fully editable:
@@ -255,12 +219,6 @@ pub const SIZE_REGION: &str = "properties.text.size";
 /// The face chooser's own region.
 // ui-text-exempt: trace region name, never displayed
 pub const FACE_REGION: &str = "properties.text.face";
-// ★★★ `ROUTE_REGION` moved to [`super::textobject`] on 2026-09-05 with the
-// sentence it names, and it kept its SPELLING — `properties.text.route`. The
-// surface did not move, only the module that draws it, and
-// `tools/ui-verify/src/checks/font_group.rs` finds it by that string. A rename
-// would have been a harness break dressed as tidiness, and a driven check that
-// stops finding a region reports the feature as missing.
 
 /// What the selected text looks like now, re-read only when it can have
 /// changed.
@@ -322,10 +280,6 @@ pub struct TextStyleDraft {
     /// was there before any of this landed, and which is still the honest thing
     /// to say when nothing is known.
     ///
-    /// ★★ It was `preview_style_resolution` from 2026-08-29 to 2026-09-11 and
-    /// previewed the **R90 gate**, which is a different question from *"what
-    /// will this button do?"* the moment a rung exists that binds a face the
-    /// page does not carry. [`StyleOutlook`]'s header has the whole account.
     bold_outlook: Option<StyleForecast>,
     /// The italic twin of [`Self::bold_outlook`], probed **separately**.
     ///
@@ -360,9 +314,6 @@ pub struct TextStyleDraft {
     objects: crate::app::textoperand::Cache,
 }
 
-// ★★★ `FaceChoice` was DEFINED HERE until 2026-08-29 and now lives in
-// [`super::face`], beside the popup body that draws it and the [`FaceOrigin`]
-// tag that says which of two acts a row performs.
 //
 // It moved because the control did. `Pass 162.0` let pdfcer restyle text to a
 // face the document does NOT contain, so a row in this list is now either a
@@ -373,10 +324,6 @@ pub struct TextStyleDraft {
 
 pub(crate) mod style;
 
-// ★ Re-exported rather than referred to by the longer path. The split on
-// 2026-09-11 was about R2's line ceiling, not about the shape of the module's
-// interface, and a caller outside this file should not be able to tell that
-// the forecast moved.
 //
 // ★★ `style` is `pub(crate)` rather than private, and the reason is a lint
 // rather than a caller: [`TextStyleDraft::bold_outlook`] is `pub(crate)` and
@@ -462,12 +409,6 @@ impl TextStyleDraft {
         // costs a second extraction, which is why it is here and not in the
         // chooser: a combo is drawn every frame it is open.
         //
-        // ★★★ The list is built by [`super::face::choices`] and is **two lists
-        // joined**, since 2026-08-29: the page's own accepted resources, and the
-        // standard-14 faces pdfcer would author on demand (`Pass 162.0`). That
-        // function's doc comment carries the whole of why the second half is
-        // filtered on the pre-flight's `entries` rather than on `accepted()`,
-        // and why the fourteen are offered without being coverage-tested first.
         //
         // ★ `accepted()` for the page half. A refused entry is deliberately
         // **not** offered greyed-with-a-reason, though the engine hands us the
@@ -489,8 +430,6 @@ impl TextStyleDraft {
         // stamp does. Twice — once per axis — because the two buttons issue two
         // separate single-axis requests; see `Self::italic_outlook`.
         //
-        // ★★★ THE ORDERING CONSTRAINT HERE IS GONE, and its deletion is the
-        // point of the 2026-09-11 change. This read:
         //
         // > AFTER `self.faces`, and the order is load-bearing rather than
         // > incidental: `Self::outlook` joins the preview's `selector` against
@@ -511,14 +450,6 @@ impl TextStyleDraft {
         // ★★★ **The only instrument on this path, and it was added the day
         // the path got more expensive.**
         //
-        // Before 2026-09-11 this module emitted nothing at all. It now makes
-        // TWO `preview_style_ladder` calls per sync, each of which walks the
-        // page's content stream — on top of the `inspect` this function's own
-        // header records at 392 ms on the operator's site plan. The cost is
-        // paid once per `(page, run, edit_epoch)` rather than per frame, so it
-        // lands as a pause when text is SWEPT, which is exactly the shape of
-        // report that arrives as *"selecting text got slow"* and has nothing
-        // behind it to read.
         //
         // ★★ Measured rather than assumed, and reported even when it is
         // cheap: a number nobody logged until somebody complained is a number
@@ -543,8 +474,6 @@ impl TextStyleDraft {
         self.face.is_some()
     }
 
-    // -----------------------------------------------------------------------
-    // Accessors, added 2026-08-27 when the Format ▸ Font group shipped.
     //
     // ★★ **One draft, two surfaces, and that is the whole reason these exist.**
     //
@@ -628,7 +557,6 @@ impl TextStyleDraft {
 /// Returns whether it drew, so [`super::body_sections`] knows the panel is
 /// already saying something about a selection.
 ///
-/// # ★★★ It draws for a CLICKED text object too, since 2026-09-14
 ///
 /// `OPERATOR_REQUESTS.md` O198: *"the properties area is uneditable too. This
 /// is true even when I add a new line of text."* Until then this section
@@ -706,15 +634,7 @@ pub fn section(
     true
 }
 
-// ===========================================================================
-// ★★★ `route` LIVED HERE UNTIL 2026-09-05, AND IT WAS ONLY HALF AN ANSWER
 //
-// It drew one sentence — *"press T for the Text tool and sweep across them"* —
-// whenever a text OBJECT was selected and nothing had been swept, and it was
-// `OPERATOR_REQUESTS.md` O89's second candidate, *"the Properties panel naming
-// the missing step where the swatch would be."* Built 2026-08-29, correct, and
-// still not what he asked for: he wanted the colour, and the panel told him
-// where to go and get it.
 //
 // It has moved WHOLE — sentence, region name, `object_kind` gate and the
 // one-object rule — into [`super::textobject`], which draws a **working colour
@@ -733,13 +653,6 @@ pub fn section(
 ///
 /// # ★★★ The list was the page's fonts and no longer only is
 ///
-/// This doc comment used to open *"`set_font` **selects** an existing resource;
-/// it does not **create** one. Offering Helvetica on a page that carries only
-/// Arial would produce a refusal on press."* That was true, it was the reason
-/// the chooser only ever offered what the page already had, and `Pass 162.0`
-/// ended it: pdfcer now authors a standard-14 `/Font` resource on demand, so
-/// Helvetica on a page built from Arial is a change that works rather than a
-/// refusal.
 ///
 /// ★ The old sentence is kept above rather than deleted because the *rule* it
 /// states has not changed — a chooser must not offer entries that cannot work —
@@ -854,12 +767,6 @@ fn weight_row(
             });
         }
         let italic = ui.button(t::text_italic());
-        // ★ Published, since 2026-08-29, and it was the only control in this
-        // section without a region. The two buttons now carry *different*
-        // sentences derived from two separate engine probes, so a driven check
-        // that could point at Bold and not at Italic could assert half the
-        // feature — and half a per-axis answer is exactly the case the two
-        // probes exist to separate.
         crate::diag::ui_rect_visible(ITALIC_REGION, italic.rect, ui.clip_rect());
         if italic.on_hover_text(italic_hint(draft)).clicked() {
             actions.push(Action::TextStyle {
@@ -889,8 +796,6 @@ fn colour_row(
     runs: &[usize],
     actions: &mut Vec<Action>,
 ) {
-    // ★★★ `horizontal_wrapped`, NOT `horizontal` — 2026-09-12, and the defect
-    // it fixes was an unreadable disclosure rather than a layout blemish.
     //
     // The refusal below is a whole sentence. `ui.horizontal` does not wrap: it
     // lays out past the end of the available width and reports a `min_rect`
@@ -944,10 +849,6 @@ fn colour_row(
     });
 }
 
-// ★★★ `faces_on_page` was HERE until 2026-08-27, and it is **deleted rather
-// than kept**, which is this project's standing rule the moment a workaround's
-// cause is removed: a mechanism with no caller rots, and the next reader cannot
-// tell a deliberate fallback from a forgotten one.
 //
 // It built the face chooser's list from `fontinfo::FontInventory`, filtered to
 // the records naming this page, and its own doc comment named the flaw
@@ -999,7 +900,6 @@ pub(crate) fn shorten(base_font: &str) -> &str {
 /// undid that on the operator's behalf would make the engine's care pointless.
 /// Gray round-trips exactly, so it is offered.
 ///
-/// # ★★★ `pub(super)` since 2026-09-05, and the widening is the point
 ///
 /// [`super::textobject`] asks the same question about a **whole text object**,
 /// and it asks it **here** rather than deciding for itself which spaces are

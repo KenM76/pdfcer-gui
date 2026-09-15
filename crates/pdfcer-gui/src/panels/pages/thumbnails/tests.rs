@@ -1,9 +1,5 @@
 //! Tests for [`super`] — the page-thumbnail cache and its policy.
 //!
-//! Split out on 2026-09-08 for R2 (no source file over 1,500 lines) when the
-//! O151 rewrite pushed `thumbnails.rs` past the limit. **Nothing else moved**:
-//! this is the same `mod tests` block, de-indented, with its parent's private
-//! fields still reachable because a child module can see them.
 //!
 //! ★ One assertion changed as a consequence and it is the interesting one.
 //! `only_the_operator_may_untick_previews` scans the parent's source through
@@ -168,15 +164,6 @@ fn raising_the_limit_retries_what_it_skipped_and_nothing_else() {
 /// is a build where every page is abandoned while the checkbox reads
 /// "on".
 ///
-/// ⚠ **This test used to pass `Duration::ZERO` and expect the floor**, and
-/// it must never be written that way again. Since O187 (2026-09-12) zero
-/// has a second, opposite meaning — *no limit at all* — and it does not
-/// arrive here as a `Duration`: it arrives as `None`, from
-/// [`budget_from_millis`], which is the single place that decides what the
-/// number means. `Some(Duration::ZERO)` is therefore not the operator's
-/// zero; it is a caller asking for an instant give-up, and it is still
-/// clamped to the floor. The two are asserted separately below because
-/// conflating them is exactly the defect this doc exists to prevent.
 #[test]
 fn the_limit_cannot_be_set_outside_what_is_useful() {
     let mut cache = ThumbnailCache::default();
@@ -192,11 +179,6 @@ fn the_limit_cannot_be_set_outside_what_is_useful() {
 
 /// **★★★ Zero milliseconds is `None`, and `None` is not a small number.**
 ///
-/// `OPERATOR_REQUESTS.md` **O187**, 2026-09-12: *“setting it to 0 should set
-/// it to infinity (never time out)”*. This is the assertion that the
-/// sentinel survives the clamp that catches every other small value — the
-/// one thing that could quietly undo the whole request, because `1` and
-/// `0` look alike in a clamp and one of them is an instruction.
 ///
 /// The round trip is asserted in both directions: what the file holds
 /// becomes what the cache holds, and what the cache holds becomes what the
@@ -302,22 +284,10 @@ fn turning_previews_off_by_hand_stops_explaining_a_skip() {
 /// `force_on` is the one sanctioned writer. Any other assignment to
 /// `self.on` is pdfcer deciding on the operator's behalf again.
 ///
-/// ★ What this test does NOT constrain is how many places CALL `force_on`,
-/// and that distinction is load-bearing. There are three (see its own doc),
-/// and all three carry the operator's instruction rather than forming one.
-/// The sentence here used to say *"called from exactly one place — the
-/// checkbox"*, which was true when it was written and was still sitting in
-/// the file hours after O187 added a second and a third.
 ///
 /// # ⚠ It failed on its first run by reading its own assertion, and the
 /// fix is why this file exists where it does
 ///
-/// The first draft lived *inside* `thumbnails.rs` and correctly reported
-/// **itself** as a writer: the expected value `"self.on = on;"` and the
-/// filter literal `"self.on = "` are both lines containing the marker. That
-/// is the `include_str!` trap this project has hit before — a check that
-/// reads its own expected string and thereafter passes on a file which has
-/// never contained the subject.
 ///
 /// The R2 split solved it structurally: the harness is a different file now,
 /// so `include_str!` cannot reach these strings at all. That is a stronger

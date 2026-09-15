@@ -1,8 +1,6 @@
 //! # `app::actions::write` — the three verbs that exist only to move a file
 //! picker out of the layout pass
 //!
-//! Split out of [`super::action`] under **R2** on 2026-08-28, when that file
-//! crossed 1,500 lines for the second time in one day.
 //!
 //! ## ★★★ The seam, and it is the sharpest one this enum has
 //!
@@ -109,9 +107,6 @@ pub enum WriteAction {
     },
     /// ★★★ **Write the words on one or more pages out as a plain text file.**
     ///
-    /// Raised by `crate::dialogs::export_text` and by nothing else. The
-    /// operator, 2026-09-04: *"also the engine can export PDFs as text. we
-    /// should have export/import for that."*
     ///
     /// # Why it carries a plan, like [`Self::Image`] and unlike [`Self::FormData`]
     ///

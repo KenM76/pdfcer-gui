@@ -47,11 +47,7 @@
 //! engine has a test for it, and this section relies on it rather than
 //! pre-emptively greying a control that would have worked.
 //!
-//! ═══════════════════════════════════════════════════════════════════════════
-//! # ★★★ MORE THAN ONE OBJECT — built 2026-09-05, O89 piece 2
-//! ═══════════════════════════════════════════════════════════════════════════
 //!
-//! This section drew for **exactly one** object until 2026-09-05, and said so:
 //!
 //! > *"One object at a time, for now. The engine will recolour a whole
 //! > selection; the control does not offer it yet, because when the objects

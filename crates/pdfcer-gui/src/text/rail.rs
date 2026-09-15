@@ -30,13 +30,6 @@ pub fn pinned() -> &'static str {
 /// to evaluate — and this one is permanent chrome, so they would press it
 /// once per session for ever.
 ///
-/// ⚠ **`⏷` is U+23F7**, not the obvious `⌄` (U+2304) and not `▼` (U+25BC).
-/// `crate::icons::glyphs` measures the shipped font stack, and both of those
-/// render as a **substitution box** in front of the operator — its gate caught
-/// exactly that here, on the first draft of this function, which had written
-/// U+2304. The `⏴⏵⏶⏷` block is the one this project has verified;
-/// `crate::text::find` and `crate::text::status` already stand on the same
-/// finding, and `crate::text::panels::bookmarks` records the measurement.
 #[must_use]
 pub fn chevron_glyph(count: usize) -> String {
     format!("⏷{count}")
@@ -62,12 +55,6 @@ pub fn chevron_hint(names: &[&str]) -> String {
 /// One rail row's hover: the control's name, its sentence, and — when the row
 /// is a **pinned** stand-in for a whole group — [`pinned`] under it.
 ///
-/// ★ Composed here rather than at the draw site because R1
-/// (`tools/gates/check-ui-strings.sh`) counts the joining as part of the
-/// string: the em dash between a name and its sentence, and the blank line
-/// before the pinned note, are typography, and typography belongs beside the
-/// words it punctuates. The gate caught the first draft doing it in
-/// `app::rail`.
 #[must_use]
 pub fn hover(label: &str, tooltip: Option<&str>, pinned_row: bool) -> String {
     let head = match tooltip {

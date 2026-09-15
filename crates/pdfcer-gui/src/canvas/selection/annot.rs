@@ -2,7 +2,6 @@
 //!
 //! ## ★ The gap this closes, and how long it was open
 //!
-//! `FEATURES.md` recorded it on 2026-08-17, under the Format contextual tab:
 //!
 //! > *"**The canvas selection cannot address an annotation** — `Selection` is
 //! > `page + object + subpath + node`, four integers naming a paint-order
@@ -10,9 +9,6 @@
 //! > means a markup or dimension **is not selectable at all**. The second is
 //! > ours; the first is filed."*
 //!
-//! Both halves of that are now discharged. The engine's half — no verb that
-//! modifies an annotation — cleared on 2026-08-18 with `set_markup_style`.
-//! This is ours.
 //!
 //! The operator's report is what it cost: *"How do I edit a stamp I've
 //! applied?"*, *"I still can't get to edit dimension groups when I click on
@@ -78,28 +74,6 @@
 //!
 //! Corpus: `ui-conventions/click-selects.md`.
 //!
-//! - C1 shape-not-box: a candidate may carry its drawn segments, and where it
-//!   does they are what is tested. Added 2026-08-20 on the operator's report;
-//!   see [`hit`]'s header for the whole argument.
-//! - C2 unfilled-interior: **GAP** — only ce dimensions supply a shape today. A
-//!   `/Square` with no `/IC` still claims its interior, so a large empty callout
-//!   box remains un-clickable-through. The mechanism to fix it is already here:
-//!   give that subtype a shape.
-//! - C3 topmost-wins: `.rev()` over `/Annots`, which is paint order.
-//! - C4 tolerance: none for a rect — the engine bakes the pen half-width into
-//!   `/Rect` at authoring time, so a second one would double-count — and the
-//!   canvas click tolerance for a segment, which has no width at all. Both
-//!   stated at the call site.
-//! - C5 segment-not-line: `distance_to_segment` clamps to the ends. Without it a
-//!   short dimension line would claim a stripe across the sheet.
-//! - C6 miss-deselects: owned by `canvas::interact`, which clears the annotation
-//!   selection when a click in a mode that could have hit one did not.
-//! - C7 drawn-equals-live: the ink is the target and the `/Rect` is the outline
-//!   drawn AFTER selection, which is a different thing from a hover affordance —
-//!   nothing here is painted as targetable that is not. If annotation hover
-//!   highlighting is ever added it must highlight the shape, not the box.
-//! - C8 stated-precedence: `gesture::press_kind` holds the whole order in one
-//!   place, and an annotation click sits below every armed tool by construction.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -237,7 +211,6 @@ pub fn selectable_on(
 ) -> Vec<Candidate> {
     let mut out = Vec::new();
     for annot in page_annotations(view, page.id) {
-        // ★★★ **`suppressed_on_screen`, not `hidden`** — corrected 2026-09-05.
         //
         // `hidden()` is `/F` bit 2 alone. `suppressed_on_screen()` is the
         // engine's own screen predicate, `hidden() || no_view()` (§12.5.3,
@@ -821,15 +794,6 @@ mod tests {
             resources_defaulted: false,
         };
 
-        // ★ A `DocumentView` over the loose graph rather than the graph itself,
-        // since 2026-09-07: `selectable_on` asks the engine to place each
-        // annotation's appearance (`annotquad::oriented` →
-        // `pdfcer_render::annot::appearance_placement`), and a placement needs
-        // the byte source a stream span points into as well as the object
-        // graph. These annotations carry no `/AP`, so the placement answers
-        // `None` for both and this test measures exactly what it always did —
-        // which is the point: an empty buffer is honest here, and a view built
-        // over the wrong bytes would resolve spans off the end of it.
         let view = pdfcer_core::view::DocumentView::new(
             &graph,
             &[],

@@ -6,10 +6,6 @@
 //! > *"can you get cut copy and paste working for objects I select on the
 //! > canvas?"* — asked in the first week and repeatedly since.
 //!
-//! Until 2026-08-20 `Ctrl+C` on a shape put a **sentence** on the status row —
-//! *"pdfcer can copy comments and markup, but it cannot yet put page content
-//! back onto a page"* — which was honest and was still a refusal. `Pass 120.0`
-//! shipped `ObjectClip` and this check is the wiring of it.
 //!
 //! # ★★ Why this cannot be a unit test
 //!
@@ -60,13 +56,6 @@ use crate::sys::vk;
 const MODE: &str = "edit";
 /// `clipboard-copy kind=selection page=… objects=… annots=… thin=… bytes=…`.
 ///
-/// ★ The `kind=` was `content` until 2026-09-05, when the canvas clipboard's
-/// content variant became a general `ObjectClip` carrier that also holds
-/// annotations and `Clipped::Content` was renamed `Clipped::Selection`. Updated
-/// here in the same change: a driven check filtering on a token the program no
-/// longer prints is a **permanent false red** that reads as a real defect, and
-/// this suite has already paid for that shape twice (`RESUME.md` — the
-/// `PDFCER_LEGACY` profile's four swept names).
 const COPY_EVENT: &str = "clipboard-copy";
 /// `clipboard-paste kind=selection page=… from=… objects=… offset=…`.
 const PASTE_EVENT: &str = "clipboard-paste";

@@ -6,7 +6,6 @@
 //! ## ★★★ It is the second half of a fix, and without it the fix is a
 //! regression
 //!
-//! The driven sweep of 2026-09-05 found, as its first failure:
 //!
 //! ```text
 //! chord-command      chord="Ctrl+C" id=edit.copy  via=clipboard-event
@@ -15,13 +14,6 @@
 //! chord-not-offered  id=edit.paste mode=review
 //! ```
 //!
-//! **Copy was offered in Review and paste was not**, so an operator in the mode
-//! whose entire purpose is marking up somebody else's drawing could copy a
-//! comment and had nowhere to put it. The cause was
-//! [`crate::app::modes::capability::offers_command`]: Paste lives on the Edit
-//! tab, Review is not shown that tab, and the chord was refused before the
-//! dispatcher — which had been gating the effect **correctly** on the
-//! clipboard's contents since 2026-09-05 and was never reached.
 //!
 //! ⇒ The chord is now pushed through blind, on this project's standing pattern
 //! (*"push the chord blind, gate the effect in dispatch"*, stated at

@@ -212,16 +212,6 @@ impl ScaleEntryFields {
     ///
     /// # The defect this closes
     ///
-    /// The Set-scale window is the one surface whose entire job is to change a
-    /// number, and until 2026-09-13 it was the only surface in the application
-    /// that could not see the number it was about to change. Both of the other
-    /// constructors seed from nothing, so a group calibrated to `1:50` in
-    /// inches opened a window reading `1:100` in metres, and pressing Accept
-    /// without touching a control silently recalibrated the drawing. The
-    /// operator's words were *"the set scale dialogue does not show me the
-    /// scale that is already set"*; the sharper half of the report is the one
-    /// he did not have to say, which is that a window pre-filled with a
-    /// plausible wrong number is worse than one pre-filled with nothing.
     ///
     /// # What is seeded, and why the RATIO path
     ///
@@ -354,11 +344,6 @@ impl ScaleEntryFields {
     ///
     /// # ★★★ Why this exists: "Show dimensions in" was a dead control
     ///
-    /// **A6**, from the 2026-09-03 outside review, and the review had
-    /// the symptom right and the culprit backwards. It reported the *summary
-    /// line* as wrong. The summary line was truthful; the **dropdown** was the
-    /// broken thing, and fixing the sentence alone would have converted a
-    /// visible contradiction into a silent one, which is worse.
     ///
     /// The mechanism, in one paragraph. [`Self::entry`] builds a
     /// [`ScaleEntry`], and on the **ratio** path that variant has no unit field
@@ -548,8 +533,6 @@ impl ScalePick {
 // Group-panel actions — each maps to exactly one shipped EditSession command
 // ---------------------------------------------------------------------------
 
-// ★ **`GroupAction` was DELETED on 2026-08-18, and this note is what stands in
-// its place.**
 //
 // It was a salvaged, fully-tested, **zero-caller** enum: four variants naming
 // four `EditSession` group verbs, carried across whole in the Phase 7 salvage
@@ -798,12 +781,6 @@ mod tests {
     /// ★★★ **This test used to pin the defect**, and the correction is worth
     /// more than the assertion.
     ///
-    /// Until 2026-09-04 it asserted `preview.scale == 100.0 / 72.0` — inches
-    /// per point — for a fields struct whose `unit` is `Unit::Meter`, because
-    /// `..ScaleEntryFields::default()` supplies it and the default is metres
-    /// against an inch basis. So the test was green, correct about the engine's
-    /// arithmetic, and describing a preview that told the operator **inches**
-    /// while the control beside it said **Metres**.
     ///
     /// ⇒ A6 was not merely untested. It was **tested, and the test agreed with
     /// it.** A value asserted from the implementation rather than from the

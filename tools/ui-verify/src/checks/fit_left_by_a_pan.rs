@@ -4,12 +4,10 @@
 //!
 //! # ★★★ The request changed by one clause, and this file is the record
 //!
-//! `OPERATOR_REQUESTS.md` **O55**, 2026-08-28:
 //!
 //! > *"if the canvas window is resized the pdf should resize to match unless
 //! > the person has changed the zoom **or panned around**."*
 //!
-//! `OPERATOR_REQUESTS.md` **O78**, 2026-08-31:
 //!
 //! > *"unless I have **manually changed the zoom** after clicking one of the
 //! > preset options, the pdf should maintain whichever option was selected."*
@@ -72,7 +70,6 @@
 //! pins both directions: the wheel keeps the fit, a pan leaves it. Neither
 //! check can be satisfied by a build that treats all view movement alike.
 //!
-//! ## ★★★ Falsified, 2026-08-28, and the result names its own limit
 //!
 //! With `doc.view.set_fit(FitMode::None)` removed from `canvas::offset`'s pan
 //! arm and nothing else changed, this check fails and reports:

@@ -835,10 +835,6 @@ mod tests {
     /// would have come out of the shape pen, moving whenever the operator
     /// recoloured a rectangle, and this test would have said nothing.
     ///
-    /// ⇒ A test is only worth what its falsification proves, and a falsification
-    /// **claimed in a comment** proves nothing at all. The identity assertion
-    /// below is what the first draft was missing: each kind takes the slot named
-    /// after it, not merely a slot of its own.
     ///
     /// Falsified twice, both actually run: pointing `Squiggly` at
     /// `PenSlot::Shape` (fired — and did **not** fire before the identity row

@@ -129,7 +129,6 @@ use pdfcer_core::page_tree::{self, Rect};
 /// ★★ **The raster size recognition is run at, as a pixel count** — measured,
 /// not chosen.
 ///
-/// # Why a pixel count and not a DPI, which is what this constant used to be
 ///
 /// `ocrs`'s detector **resizes every image to its model's fixed input size**
 /// before running it (`detection.rs`: *"Resize images to the text detection
@@ -147,7 +146,6 @@ use pdfcer_core::page_tree::{self, Rect};
 /// an accuracy figure rather than an impression. Recognised tokens of three or
 /// more characters were compared against the page's own extracted text:
 ///
-/// # ★★★ RE-MEASURED 2026-08-26, against a detector that works
 ///
 /// The first version of this table was produced by a text-detection model that
 /// **did not work** — `pdfcer-core`'s bundled build had been broken since the
@@ -266,10 +264,6 @@ pub enum Refusal {
     /// ★ **This page already draws text**, so recognising it would add an
     /// invisible duplicate rather than make anything findable.
     ///
-    /// Measured 2026-08-27: a second pass over a recognised page takes it from
-    /// 427 extracted codes to 854 — `add_ocr_layer` adds a layer, it does not
-    /// replace one. So this is a refusal rather than a warning, and it is the
-    /// default, exactly as `--skip-text` is OCRmyPDF's.
     ///
     /// Per **page**, never per run: on a mixed document — a scanned drawing
     /// bound with a typed cover sheet — the cover is skipped and the scan is
@@ -330,21 +324,8 @@ pub struct Recognised {
     /// ★★★ **The recognised words, per page, ready to be applied to the open
     /// session as one undoable edit.**
     ///
-    /// # This used to be `bytes: Vec<u8>` — a whole PDF — and the change is the
-    /// point
     ///
-    /// `pdfcer_core::ocr::layer::add_ocr_layer` takes an immutable `&Document`
-    /// and hands back a complete file, which made recognition the one
-    /// capability in pdfcer that was not an *edit*. A shell holding an open
-    /// session could only offer *"here is a different file, somewhere else"*,
-    /// and the operator said what he thought of that on 2026-08-26: *"Why do I
-    /// have to save a copy instead of just go back into my pdf and save over
-    /// it?"*
     ///
-    /// `EditSession::add_ocr_layer` landed in the engine on 2026-08-27 (Pass
-    /// 135.0). The layer goes into the session, the ordinary Save writes it,
-    /// undo takes it back out, and the whole Save-as apparatus this dialog grew
-    /// around the old signature is gone.
     ///
     /// # ★★ And it deletes the unsaved-edits refusal, which no guard could fix
     ///
@@ -381,9 +362,6 @@ pub struct Recognised {
     pub words_recognised: usize,
     /// ★ **How many pages produced words**, across a multi-page run.
     ///
-    /// `1` for the single-page case this used to be the only shape of. Reported
-    /// so the dialog can say *"12 of 36 pages"* rather than a word count alone,
-    /// which on a long scan tells the operator nothing about coverage.
     pub pages_written: usize,
     /// How many pages were visited and produced nothing — blank sheets,
     /// photographs with no text, and pages skipped because they already had
@@ -424,12 +402,6 @@ pub fn raster_scale(dpi: f32) -> f32 {
 /// would be a worse failure than the one it is guarding.
 #[must_use]
 pub fn fitted_dpi(width_pt: f64, height_pt: f64) -> f32 {
-    // ★ Through the table, which converts points to inches by the engine's
-    // own `Unit::Inch` factor — a MULTIPLY by 1/72 where this line used to be
-    // a DIVIDE by 72. Those are not the same arithmetic (units.rs's header
-    // measures where they part), but the difference is in the last bit of an
-    // area that is then square-rooted, clamped into MIN_DPI..=MAX_DPI and
-    // rounded to an f32, so no page size can reach a different DPI through it.
     let area_in_sq_inches =
         crate::units::inches_from_points(width_pt) * crate::units::inches_from_points(height_pt);
     // `is_sign_positive` beside `is_finite` rather than `> 0.0`, and the pair is
@@ -513,8 +485,6 @@ pub fn resolve_models(
     exe_dir: Option<&Path>,
     user_data: Option<&Path>,
 ) -> Result<models::ModelSource, models::ModelsNotFound> {
-    // ★★★ `_with`, NAMING THE FILES — adopted 2026-08-26, and it closes a
-    // shadowing hazard rather than tidying a call.
     //
     // The plain `resolve_model_dir` asks only `is_dir()`. So an **empty**
     // `models/ocrs` beside the executable RESOLVES — and, worse, it wins the
@@ -563,17 +533,11 @@ pub struct Request {
     /// module header on why, and [`Refusal::UnsavedEdits`] for what guarantees
     /// that base is what the operator is looking at.
     ///
-    /// ★ Kept as the FALLBACK since 2026-08-26. When [`Self::source`] is
-    /// `Some`, the file on disk is read instead — see that field.
     pub session: Arc<EditSession>,
     /// ★★★ **The pages to recognise, zero-based, in order.**
     ///
     /// # Why this is a list
     ///
-    /// The operator, 2026-08-26: *"how do I OCR more than one page? Why does
-    /// the tool stop at one? […] Where is the option to select more than one
-    /// page? How did we end up with the most useless and un-userfriendly of
-    /// options for the OCR?"*
     ///
     /// It was a `usize`. Nothing in `pdfcer-core` required that — the engine's
     /// own `add_ocr_layer` takes one page at a time, but its output is a
@@ -677,7 +641,6 @@ pub(in crate::ocr) fn recognise(
     // page 40 of 200 reports as a whole document recognised.
     let mut stopped_after: Option<usize> = None;
 
-    // ONCE, before the loop. See `Recogniser` for what this used to cost.
     let recogniser = Recogniser::load(&request.model_dir)?;
 
     let mut pages = Vec::new();
@@ -754,13 +717,6 @@ pub(in crate::ocr) fn recognise(
     if pages.is_empty() {
         // ★★★ **WHICH nothing, and the distinction was found by driving.**
         //
-        // A full driven run on 2026-08-27 pointed this at the operator's own
-        // CAD sheet — every page of which already has text — and got
-        // `NothingRecognised`, which reads as *"the recogniser could not read
-        // your document"*. It had not looked at it. The remedy for the two is
-        // different: one is "there is nothing readable here", the other is
-        // "turn off the skip if you meant it", and only the second is
-        // actionable.
         //
         // `> 0` rather than `== request.pages.len()`: a run where some pages
         // were blank and some already had text still has the skip as its
@@ -790,10 +746,6 @@ struct OnePage {
     words: usize,
     /// How many characters those words hold.
     ///
-    /// ★ Asked for by name on 2026-09-01, and it is the better of the two for
-    /// showing that a long run is alive: a dense drawing can yield hundreds of
-    /// characters inside a handful of "words", so this number moves when the
-    /// word count barely does.
     chars: usize,
     /// What it was rasterized at.
     dpi: f32,
@@ -801,9 +753,6 @@ struct OnePage {
 
 /// One page: rasterize it, read it, and put the words in page space.
 ///
-/// ★ **Applies nothing.** It used to call `add_ocr_layer` and return a whole
-/// PDF; the writing now happens once, on the UI thread, for the whole run. That
-/// is what makes a forty-page recognition **one** undo entry rather than forty.
 fn recognise_one(
     request: &Request,
     recogniser: &Recogniser,
@@ -830,11 +779,6 @@ fn recognise_one(
     // ★★ **The doubling guard, and the reason it is measured rather than
     // assumed.**
     //
-    // Measured 2026-08-26 on a one-page fixture: recognising an
-    // already-recognised page took it from **427 character codes to 854**. The
-    // OCR layer is Table 106 mode 3 — rendered but invisible — so nothing on
-    // screen changes and nothing warns. What changes is that every Find match
-    // is doubled and every copy comes out twice.
     //
     // An extraction failure is NOT treated as "has text". A page whose content
     // stream will not parse is exactly the kind of page a recogniser is for,
@@ -876,9 +820,6 @@ fn recognise_one(
     let words_recognised = words.len();
     // ★ The flip, and the ONLY place it happens. See the module header.
     //
-    // ★★★ `..._on` WITH THE PAGE'S `/Rotate`, NEVER the bare
-    // `words_to_page_space` — corrected 2026-08-25 on the engine's report
-    // (Pass 129.0).
     //
     // `pdfcer-render` honours `/Rotate`: `page_device_geometry` swaps the
     // raster's axes at 90° and 270°. The mapping BACK to page space did not,
@@ -991,12 +932,6 @@ fn reports_confidence() -> bool {
 ///
 /// # Why this is a type rather than a function call per page
 ///
-/// It used to be `recognise_image(model_dir, …)`, which read every model file
-/// off disk and built the engine **once per page**. That was invisible while
-/// the dialog could only do one page. It stops being invisible the moment a
-/// fifty-page run exists: the detection and recognition models are tens of
-/// megabytes, and paying for them fifty times is the difference between a run
-/// an operator waits through and one they abandon.
 ///
 /// The gap document called this out as the one thing that had to change
 /// *underneath* the new page-scope control rather than beside it — a scope
@@ -1093,12 +1028,7 @@ mod tests {
     /// size must come out at the DPI the constant implies. That is arithmetic,
     /// and it holds whatever the constant's *value* turns out to be.
     ///
-    /// # ★★★ This asserts the RELATIONSHIP, not the number — rewritten 2026-08-25
     ///
-    /// It used to assert `145..=155 DPI`, on the grounds that 150 was the best
-    /// row of a measured accuracy table. **That table was retracted**: it was
-    /// produced by a text-detection model that did not work (see
-    /// [`TARGET_PIXELS`]), so the 150 it pinned was a property of noise.
     ///
     /// The engine's note on the retraction made the general point, and it is
     /// why this test is shaped differently now:

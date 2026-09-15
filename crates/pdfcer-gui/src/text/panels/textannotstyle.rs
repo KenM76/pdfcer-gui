@@ -15,13 +15,6 @@
 //! the copy follows the code rather than the file it happened to start in.
 //! `text::panels::annotgeometry` is the precedent for a sibling here.
 //!
-//! ★ [`crate::text::panels::properties::markup_not_restylable`] stays where it
-//! is, and its own doc carries the correction it took on 2026-09-06 — that
-//! sentence and the string it superseded are one subject and must not end up in
-//! two files where an author could soften either alone.//!
-//! ## ★★★ THE CORRECTION THIS PASS OWES —
-//! ## [`crate::text::panels::properties::markup_not_restylable`] WAS PARTLY
-//! ## FALSE FOR AN AFTERNOON
 //!
 //! That function's own doc keeps the superseded sentence verbatim. What
 //! belongs here is why it went wrong and what replaced it, because both are
@@ -36,14 +29,6 @@
 //! style struct — and it restyles a sticky note's icon and colour and a
 //! stamp's colour.
 //!
-//! ⇒ From that moment the sentence made a **false claim about two of the three
-//! subtypes it was shown for**, and false in the direction that matters: it
-//! told the operator a capability did not exist on the very day it did, over a
-//! row open since 2026-09-05 carrying his own *"check that these are fully
-//! editable while you are at it."* That is the `set_button_action` shape
-//! `check-verb-coverage.sh` exists because of — *"if your surface tells the
-//! operator that pdfcer never authors an action, it is now saying something
-//! untrue in the direction that matters."*
 //!
 //! ★ **The fix was not a reworded sentence. It was fewer marks reaching one.**
 //!
@@ -63,11 +48,6 @@
 /// ★★★ **Why a text box's appearance is not changed here — and it is NOT
 /// because no verb exists.**
 ///
-/// This is the sentence that replaced [`markup_not_restylable`] for a
-/// `/FreeText` on 2026-09-06, and the distinction it draws is the whole reason
-/// it is a second string rather than a reuse. `set_text_annot_style` restyles a
-/// text box perfectly well. **This shell declines to call it**, and the
-/// argument is measured rather than cautious:
 ///
 /// * `annot_author::text_spec_from_dict` reports `multiline: false` for every
 ///   `/FreeText` there is, because §12.5.6.6 gives the subtype no such key, and
@@ -135,14 +115,6 @@ pub const fn markup_icon_foreign() -> &'static str {
 ///
 /// # ★★★ Why the name itself and not a category word
 ///
-/// This replaced *"Not one of these"* on 2026-09-07. That phrase was the
-/// honest answer while the name could not be carried: the engine's reader
-/// flattened an unmodelled `/Name` to `Note`, so the shell knew only that
-/// *something* had been lost and could not say what. `Pass 253.5` carries the
-/// bytes (`StickyIcon::Other`), so the panel can name it — and a chooser that
-/// says **"Sparkle"** tells the operator something a chooser saying **"Not one
-/// of these"** cannot: which of his notes it is, and that pdfcer is going to
-/// keep it.
 ///
 /// ★ Quoted, because it is a value out of his file rather than a word this
 /// program chose, and the quotes are what make a name like *Note 2* read as a
@@ -161,7 +133,6 @@ pub fn markup_icon_foreign_named(name: &str) -> String {
 /// ★★★ **The note under a foreign icon** — and it says something different
 /// from what it said yesterday.
 ///
-/// # It used to warn about destruction, and that warning is now FALSE
 ///
 /// The superseded text, kept because the shape of the change is the useful
 /// part:
@@ -204,10 +175,6 @@ pub const fn markup_icon_foreign_note() -> &'static str {
      — including when you change the colour — but pdfcer draws its own sticky-note symbol for \
      it, so it will not look the way it does in the program that made it."
 }
-
-// ===========================================================================
-// The stamp's label size — `Pass 292.0`, 2026-09-10
-// ===========================================================================
 
 /// The label on the stamp's label-size control.
 ///

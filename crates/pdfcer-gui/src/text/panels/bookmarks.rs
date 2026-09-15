@@ -8,13 +8,6 @@
 //!
 //! ## Why a module of its own rather than more of [`super`]
 //!
-//! R2, arithmetic first: `super`'s `mod.rs` was 1,164 lines when this arrived
-//! and carries three panels. Two hundred lines of disclosure would have put it
-//! within a hundred of the 1,500-line ceiling, and the next bookmark verb over
-//! the top of it. `fonts`, `objects` and `properties` are already split out of
-//! that file on the same rule, and the subject boundary — *"the words for the
-//! two verbs that change a bookmark's PLACE rather than its name"* — decides
-//! where the cut falls.
 //!
 //! ## ★★★ The `/Count` sign runs through every sentence in this file
 //!

@@ -1,7 +1,6 @@
 //! **A probe, not a test** — which markup kinds does `resize_annotation`
 //! actually refuse, and why?
 //!
-//! The operator, 2026-09-08:
 //!
 //! > *"Also when will being able to drag on the canvas be able to resize the
 //! > Text Box and Stamp."*
@@ -17,11 +16,6 @@
 //! *which* sometimes is a property of the engine and of the annotation, not
 //! something this repository states anywhere. He asked which; nobody knows.
 //!
-//! ⚠ **And "read the engine and reason" is exactly what produced four wrong
-//! claims on 2026-09-08 alone** — two wrong diagnoses of his BOM report, a font
-//! coverage number sampled from one cell, and a request that asserted a code
-//! branch was fine when it had never been exercised. This authors each kind and
-//! asks.
 //!
 //! Run with:
 //!
@@ -65,9 +59,6 @@ fn rect() -> pdfcer_core::page_tree::Rect {
 /// answered against a page the previous row rewrote, and a refusal caused by
 /// the run order would be filed against the kind.
 ///
-/// ⚠ This note used to name `PageEditedThisSession` as the concrete hazard.
-/// That citation died with `G015` (engine `025d703d`); nothing constructs that
-/// error now. The discipline never depended on it.
 #[test]
 #[ignore = "a measurement, not an assertion — run it and read the output"]
 fn which_markup_kinds_does_a_corner_drag_actually_resize() {
@@ -126,10 +117,6 @@ fn which_markup_kinds_does_a_corner_drag_actually_resize() {
         // all — it is the engine failing to recognise its own work — and a
         // report naming the Text box would be naming the wrong subject.
         //
-        // ⚠ Without this row the first run's output reads as *"text boxes and
-        // stickies cannot be resized"*, which is a confident, precise and
-        // possibly wrong sentence. That is the shape of every wrong claim made
-        // on 2026-09-08.
         (
             "Square (the CONTROL)",
             Box::new(|s: &mut EditSession| {

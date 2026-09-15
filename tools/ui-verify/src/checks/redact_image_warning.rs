@@ -22,12 +22,6 @@
 //!
 //! # ★★★ THE REFUSAL IS GONE, and this check's subject changed with it
 //!
-//! `pdfcer-core` **v0.26.0** (`Pass 245.0`, 2026-09-03 — the same day as the
-//! report) ships all three asks: the gate is on the samples rather than the
-//! bounding boxes, a wholly covered image is removed outright, and an
-//! undecodable image now retains just the marks that touch it rather than
-//! refusing the document. So a region over an image no longer fails; it
-//! **destroys those pixels**.
 //!
 //! The disclosure did not become unnecessary — it changed subject, and to the
 //! more important of the two. A raster redaction is irreversible in a way a text
@@ -94,13 +88,6 @@ const WITHOUT_IMAGE: &str = "fixtures/a1-titleblock.pdf";
 /// page. A build that said "this region covers 1 image(s)" and stopped would
 /// pass a looser check and leave him no wiser about what Apply will do.
 ///
-/// ★★★ **It read `"will be refused"` until 2026-09-03, and the words changed
-/// because the OUTCOME did.** `pdfcer-core` v0.26.0 (`Pass 245.0`) destroys
-/// image samples under a region instead of refusing the document, so the
-/// disclosure stopped being a warning about a failure and became a warning
-/// about an irreversible success. This constant is what made that a one-line
-/// edit: the check asserts *"the consequence is stated"*, and only the
-/// consequence moved.
 ///
 /// ⇒ A check pinned to a whole sentence would have gone red here and read as a
 /// regression in the shell, when what had happened is that the engine got

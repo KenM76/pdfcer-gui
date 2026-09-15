@@ -2,23 +2,13 @@
 //! whose whole product is **text that was not in the document before**, and
 //! whose whole risk is that it might have touched a file nobody saved.
 //!
-//! # ★★★ What this check used to be, and why it changed
 //!
 //! It was called `ocr_recognises_a_page_and_writes_a_new_file`, and every
 //! assertion in it was about a **Save-a-copy**: a picker was answered through
 //! an environment seam, a file appeared where the harness asked, and the source
 //! was hashed before and after to prove it had not been overwritten.
 //!
-//! All of that existed because `ocr::layer::add_ocr_layer` took an immutable
-//! `&Document` and returned a complete PDF. Recognition was the one capability
-//! in pdfcer that was not an edit, so a shell holding an open session could only
-//! offer *"here is a different file, somewhere else"*. The operator's verdict,
-//! 2026-08-26: *"Why do I have to save a copy instead of just go back into my
-//! pdf and save over it?"*
 //!
-//! `EditSession::add_ocr_layer` (engine Pass 135.0, 2026-08-27) made it an
-//! edit. The layer lands in the session, `Ctrl+S` writes it and `Ctrl+Z` takes
-//! it back out. So the links worth driving changed shape.
 //!
 //! # What no unit test in this workspace observes
 //!
@@ -64,13 +54,6 @@
 //!
 //! # Mouse only, and one consequence that matters
 //!
-//! ★ **CORRECTED 2026-08-18.** These headers used to say synthetic keyboard
-//! input does not reach the target window on this machine. It DOES — see
-//! [`crate::checks::add_text`], which types real characters into a caret
-//! draft and asserts they landed. The belief came from `Ctrl+E` producing no
-//! trace, which was the dead-keymap defect (fourteen of twenty-one declared
-//! chords were dispatched by nothing) misread as a property of the machine —
-//! and while it stood nobody drove a chord, so nothing could contradict it.
 
 //!
 //! **The consequence here is specific and is reported rather than implied: the
@@ -339,18 +322,7 @@ pub(super) fn click_region(
     }
     // ★★★ **`frame_of`, never `session.frame()`.**
     //
-    // This dialog is its own OS window, so its `ui-rect` numbers are relative
-    // to ITS origin. Converting them against the application's frame aims the
-    // pointer hundreds of points away — at plausible coordinates, with no error
-    // anywhere — which is the bulk defect `driving::frame_of` was written for
-    // on 2026-08-21 when thirteen dialogs became real windows.
     //
-    // ★ This call site was missed in that conversion and did not fail until
-    // 2026-08-27, when the page-scope group pushed the Recognise button far
-    // enough down the dialog that the stray click stopped landing on the
-    // button by accident. **A wrong aim that happens to hit is a green result
-    // reporting nothing**, which is this harness's own stated worst outcome —
-    // so the near-miss is worth recording rather than quietly fixing.
     driver.click_at(driving::frame_of(session, &trace, ui_rect, name)?.declared_center(rect))?;
     session.settle(12);
     Ok(())
@@ -407,11 +379,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // planted-build run came to aim at the repository's own copy.
     // ★★★ **This check pins its own fixture and IGNORES `--pdf`.**
     //
-    // Found by a full driven run on 2026-08-27: pointed at the operator's own
-    // drawing it failed with `NothingRecognised`, and the application was
-    // right. That sheet is a vector CAD export — every page already has text —
-    // so the doubling guard skipped all of it, correctly, and there was nothing
-    // left to recognise.
     //
     // ★ A check whose subject is *"did the recogniser read this page"* cannot
     // take an arbitrary document, because on a document that already has text
@@ -439,12 +406,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         before.1
     ));
 
-    // ★ **There is no save destination any more.** This check used to set
-    // `PDFCER_DIAG_SAVE_PATH` so the file picker could be answered without a
-    // human, because the only way out of the dialog was a Save-a-copy.
-    // Recognition became an edit on 2026-08-27 and the picker went with it, so
-    // there is nothing to answer and nothing to clean up afterwards.
-
     // --- launch ------------------------------------------------------------
     let mut spec = LaunchSpec::new(&exe, ctx.out("ocr.trace.txt"));
     spec.pdf = Some(fixture.clone());
@@ -467,14 +428,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     // ★★★ **MAXIMIZE, and this line is a repair.**
     //
-    // Found on 2026-09-01 by writing `checks::ocr_progress` and watching it
-    // SKIP for a reason that turned out to apply to THIS check too: at the
-    // window's default width the `file` tab's **Recognise group collapses**,
-    // and a collapsed group declares `ribbon.group.file.recognise.collapsed`
-    // instead of `ribbon.item.file.ocr`. The harness then reports *"the
-    // application declared no `ribbon.item.file.ocr` region"* — which reads as
-    // the command having been removed, and is in fact the ribbon doing exactly
-    // what a ribbon is for.
     //
     // ★★ This check had therefore been reporting **SKIP** rather than PASS, and
     // a SKIP is not a failure, so nothing was red and nothing prompted a look.
@@ -569,11 +522,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("recognition finished: `{}`", recognised.raw));
 
-    // ★ The word count comes off the RECOGNITION line and the placement count
-    // comes off the EDIT line, because they are now two different subsystems'
-    // answers. Until 2026-08-27 one trace line carried both, which made a
-    // recogniser that produced words and a layer writer that placed none
-    // indistinguishable from a recogniser that produced nothing.
     let words = recognised.get_usize("recognised").unwrap_or(0);
     if words == 0 {
         return Ok(Some(format!(
@@ -598,12 +546,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- phase D: the layer reached the OPEN DOCUMENT -----------------------
     //
-    // ★★★ **This phase used to click a Save control.** Until 2026-08-27 the
-    // only way out of this dialog was Save-a-copy, because
-    // `ocr::layer::add_ocr_layer` took an immutable `&Document` and returned a
-    // whole PDF — there was nothing to put the layer *into*. The operator's
-    // objection was exactly that: *"Why do I have to save a copy instead of
-    // just go back into my pdf and save over it?"*
     //
     // `EditSession::add_ocr_layer` (engine Pass 135.0) made recognition an
     // edit. So the thing to assert is no longer *a file appeared where I asked*
@@ -637,12 +579,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- ★ phase E: the falsifying one --------------------------------------
     //
-    // ★★ **Re-aimed, not retired.** It used to assert that a Save-a-copy had
-    // not overwritten the source. The property it protects now is narrower and
-    // still the one that matters: **recognising does not write to disk.** The
-    // operator has not saved, so their file must be untouched — and a build
-    // that "helpfully" wrote the recognised revision out on their behalf would
-    // pass every phase above and have modified a file they did not ask it to.
     //
     // This is still a genuinely falsifying assertion rather than a confirming
     // one. It fails against the plausible wrong implementation and there is no

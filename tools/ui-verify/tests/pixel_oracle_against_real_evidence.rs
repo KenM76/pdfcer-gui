@@ -8,9 +8,6 @@
 //! actual antialiased screenshot of an actual application, separates text a
 //! person can read from text a person cannot.
 //!
-//! That is the claim the harness makes, so that is the claim that gets tested
-//! — against `evidence/crop_settings.png`, the dated artefact `DEFECTS.md` D2
-//! cites, captured from the old GUI on 2026-08-12.
 //!
 //! # Both directions, and the second one is the important one
 //!

@@ -1,8 +1,5 @@
 //! # `shell::menus::tests` — the sweeps that keep the menu document honest
 //!
-//! Split out of [`super`] under **R2** on 2026-09-06, when the sixth canvas
-//! menu — `canvas.markup`, the right-click route to a placed markup shape's
-//! nodes — took that file past 1,500 lines.
 //!
 //! ## ★ The seam, and why it is a subject rather than a cut
 //!
@@ -64,12 +61,6 @@ fn everything_open() -> ConditionSet {
         .with("doc.open")
         .with("doc.pages")
         .with(manifest::SELECTION_ANY)
-        // ★★ 2026-08-28. Without it `canvas.object` stopped opening, and
-        // the failure was correct: `format.delete` and `format.properties`
-        // moved to the wider `selection.actionable` when a form field
-        // became something they can act on, and this fixture's name
-        // promises *"everything open"* while naming conditions one at a
-        // time.
         //
         // ⇒ A hand-listed "liveliest state" fixture goes stale the moment a
         // command's predicate changes, and it fails on the menu that lost
@@ -198,8 +189,6 @@ fn no_menu_offers_a_command_this_build_does_not_have() {
             );
         }
     }
-    // ★★★ **A HAND-WRITTEN LIST OF FOUR IDS STOOD HERE UNTIL 2026-09-01,
-    // AND THIS TEST'S OWN DOC COMMENT SAID IT DID NOT.**
     //
     // The paragraph above reads *"asserted against `PLANNED` rather than
     // against a hand-written list of four ids, so a clipboard command that
@@ -208,12 +197,6 @@ fn no_menu_offers_a_command_this_build_does_not_have() {
     // underneath it sat the list anyway, forbidding `edit.cut`,
     // `edit.copy`, `edit.paste` and `edit.paste_in_place` by name.
     //
-    // The object clipboard landed on 2026-08-20. `edit.copy` has a
-    // registration, a dispatch arm, a driven check and — as of
-    // `OPERATOR_REQUESTS.md` O71 — a right-click row on the reader's
-    // picture menu, which is what made this fail. **The test was not
-    // protecting an invariant; it was pinning a fact that had stopped
-    // being true, in a file whose prose already said it should not.**
     //
     // ⇒ Deleted rather than updated, because updating it would restore the
     // exact mechanism the doc comment argues against. `PLANNED` is the one
@@ -450,8 +433,6 @@ fn the_menu_document_round_trips_through_ron() {
     // string an operator scrolling the file actually looks for.
     assert!(text.contains(CANVAS_OBJECT), "{text}");
     let compact = original.to_ron().expect("serializes");
-    // ★★ The spelling checked here carries the CONDITION, and it had to
-    // change on 2026-08-29: **both** `format.delete` items now do.
     //
     // `canvas.object`'s gained `selection.delete_permitted` with the
     // annotation half of R83; `canvas.field`'s gained the same name with
@@ -495,11 +476,6 @@ fn each_menu_holds_exactly_the_documented_items() {
             &[
                 "view.zoom_selection",
                 "format.properties",
-                // ★ 2026-09-15, O188(A). Directly above `format.select_form`
-                // and not below it, because the two re-aim in opposite
-                // directions and the list reads down the ladder: the line
-                // inside the block, then the block's enclosing form. A reader
-                // scanning this menu is descending, and the rows should agree.
                 "format.select_text_line",
                 "format.select_form",
                 "format.unshare_form",
@@ -524,12 +500,6 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "view.reset_layout",
             ][..],
         ),
-        // ★ The markup menu, 2026-09-06. Listed here for the same reason the
-        // four above are — the header claims an Items column and a claim beside
-        // the thing it describes decays — and for one more: `markup.add_node`
-        // and `markup.remove_node` are `TAB_SCOPED`, so this list is the ONLY
-        // written record of where either verb is reachable from. Losing a row
-        // here loses the command, and no ribbon test would notice.
         (
             CANVAS_MARKUP,
             &[
@@ -550,9 +520,6 @@ fn each_menu_holds_exactly_the_documented_items() {
             ids, expected,
             "menu `{context}` no longer matches the table in this module's header"
         );
-        // ★★ **No CUSTOM item**, which is what the sweeps above would
-        // miss. Narrowed from "no non-command item" on 2026-09-04, when
-        // `dock.tab` grew a separator.
         //
         // The invariant's own stated reason is the test: the sweeps walk
         // `command_ids()`, so an item carrying a command id they cannot

@@ -11,8 +11,6 @@
 //! and never handed to the `Context`. Every colour an operator had ever seen in
 //! this shell was `egui`'s stock light style.
 //!
-//! The first half was fixed on 2026-08-14 by calling `Theme::apply` once per
-//! frame. The second half is this module, and D10 said so:
 //!
 //! > There is also **no way to choose a preset**: the settings dialog is one of
 //! > the unsalvaged Class-B surfaces, so even once `apply` is wired, the preset

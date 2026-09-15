@@ -7,9 +7,6 @@
 //!
 //! ## ★★★ The capability was present, tested, disclosed, and unreachable
 //!
-//! `EditSession::reorder_annotations` shipped on 2026-09-02 and
-//! [`crate::app::actions::reorder`] has called it ever since. Its own doc
-//! comment names the thing that made this obvious:
 //!
 //! > `/Annots` order is **paint order** for every annotation, so moving a widget
 //! > past a `/Link` or a markup changes which is drawn on top where they

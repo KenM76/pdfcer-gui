@@ -4,8 +4,6 @@
 //!
 //! # Why this exists
 //!
-//! `OPERATOR_REQUESTS.md` O23's pasteboard was bisected on 2026-08-21 down to
-//! two literals:
 //!
 //! ```text
 //! .scroll_offset(vec2(100, 100))   → canvas keeps its pointer input
@@ -26,14 +24,6 @@
 //! | input dies | this is a **pre-existing defect in today's shell**, met whenever he scrolls a long way down a drawing. It outranks O23 entirely, and O23 has been getting the blame |
 //! | input survives | the difference is that the offset was **forced on the frame the content was first laid out**, and the fix is to force it one frame later |
 //!
-//! ★★★ **ANSWERED 2026-09-05: input SURVIVES.** Driven on `four-pages.pdf`, at
-//! a wheel-reached offset of **1,182 pt** with a page still under the pointer,
-//! the canvas answers every movement. Driven on `a1-titleblock.pdf` at 832 pt,
-//! the same. So the second row is the true one, the pasteboard is cleared, and
-//! what remains of O23 is the forced-offset-on-the-first-layout-frame question
-//! — a smaller and much more specific thing than *"the canvas loses the
-//! mouse"*. ⚠ It took a repair to this check to establish that; see the section
-//! at the foot of this header before quoting the answer.
 //!
 //! # ★★ Why the assertion is `canvas-pointer` events and not a selection
 //!
@@ -56,7 +46,6 @@
 //! scrolling, and the question has nothing to do with editing. One fewer click
 //! is one fewer thing that can go wrong before the measurement.
 //!
-//! # ★★★ THIS CHECK REPORTED A DEFECT THAT WAS ITS OWN — repaired 2026-09-05
 //!
 //! The first full driven sweep filed it as application defect **A3**: *"the
 //! canvas stops seeing the pointer after a long scroll"*, one pointer event
@@ -259,10 +248,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- scroll a long way, and STOP while a page is still on screen ---------
     //
-    // ★★★ The whole of the 2026-09-05 repair. One forty-notch turn carried a
-    // one-page document off the top of the viewport and left the check
-    // measuring the pasteboard; each step is checked, and the last one that
-    // still has a sheet under the pointer is where the measurement is taken.
     let start = offset_now(&session)?;
     let mut offset = start;
     let mut page_now = page_rect;
@@ -310,15 +295,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // re-issuing the same position could legitimately produce nothing and would
     // read as the defect.
     //
-    // ★★ …and to a point on the page **as it is now**. The viewport does not
-    // move when the document scrolls; the sheet does. Aiming at a fixed
-    // fraction of the viewport — which is what this did until 2026-09-05 —
-    // walks off the sheet as the scroll proceeds, so the pointer ends up over
-    // the pasteboard and the absence of `canvas-pointer` is the harness's own
-    // doing.
     //
-    // ★★★ **COUNTED FROM HERE, not from before the wheel** — and this is the
-    // repair falsification found, 2026-09-05.
     //
     // With a defect planted in `canvas::trace::pointer` that suppresses the
     // line past a scroll offset of 700 pt, this check **still passed**: it

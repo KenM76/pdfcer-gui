@@ -12,13 +12,6 @@
 //! **The resolution the window previewed and the resolution the document
 //! reported are the same number.**
 //!
-//! That equality is not decoration. `pdfcer-core` deleted its own copy of
-//! `pixels / (points / 72)` on 2026-08-19 specifically so there would be one
-//! derivation left, after this shell asked for the pure preview and said it
-//! would rather have nothing than two implementations. The engine holds up its
-//! half with a test; **the shell can only hold up its half by making the
-//! equality observable**, which is what the `dpi=` field on
-//! `insert-image-requested` is for.
 //!
 //! The failure it catches is specific and quiet. A re-derivation in the window
 //! — the obvious four-liner — measures the *requested* rectangle rather than
@@ -137,9 +130,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // ★★ **A PNG this harness encodes, or a file named by `PDFCER_UIV_IMAGE`.**
     //
-    // The env seam was added 2026-08-19, on the operator's report that *"the
-    // insert image button doesn't insert it either"* — for a **jpg** — while
-    // this check, which drives exactly that button, was passing.
     //
     // It was passing on a PNG the harness authors itself, and that is the same
     // fixture trap that hid the text-editing defect for three weeks: *a check
@@ -217,10 +207,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★ **The operator's own sequence, when asked for**: a NEW document from
     // the template first, then the insert.
     //
-    // 2026-08-20, verbatim: *"Make a new document from a template … and insert
-    // the image."* He reports the insert doing nothing and has done since it
-    // shipped, while this check — which inserts into an **opened** PDF — has
-    // passed throughout, including against his own file.
     //
     // A created document is not an opened one: `Origin::Created`, no file
     // behind it, `stored_under()` empty. If the difference lives there, this is
@@ -251,12 +237,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ★★ The page as it stands before ANY of this — one half of step 6.
     //
-    // Taken here, and not later, because the only two moments in this check
-    // when no dialog is on screen are *before the ribbon item is clicked* and
-    // *after Insert is pressed*. A "before" taken while the placement window
-    // was up would differ from the "after" by the window itself, which is most
-    // of the sheet — so the comparison would pass on a document that never
-    // changed. It did, on 2026-08-20, for exactly one run before this moved.
     let page_before = declared(&session.trace()?, ui_rect, PAGE)
         .map(|r| session.frame().map(|f| f.logical_to_capture_pixels(r)))
         .transpose()?;
@@ -417,13 +397,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: ★★ THE PICTURE IS ACTUALLY ON THE PAGE -------------------------
     //
-    // Every assertion above reads the TRACE, and on 2026-08-20 every one of
-    // them passed against the operator's own 4 MB JPEG while he was reporting
-    // *"I click insert and nothing happens"* — accurately. A trace can say the
-    // verb ran, the document changed and the epoch moved. It cannot say the
-    // canvas repainted, and "the edit landed and the view kept showing its
-    // cached raster" is, from the operator's chair, indistinguishable from a
-    // button that does nothing.
     //
     // What it caught: `EditSession::add_image` returns `Ok`, reports correct
     // disclosures, and leaves a page whose `/Contents` `page_tree::pages` then

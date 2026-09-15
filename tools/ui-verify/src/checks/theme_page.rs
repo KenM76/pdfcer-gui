@@ -368,14 +368,6 @@ struct Reading {
 ///
 /// # The geometry: all FOUR sides, and the thickest wins
 ///
-/// The first draft of this function looked above and below the sheet only, and
-/// its first live run SKIPPED — correctly, and usefully. A **maximised** window
-/// on a landscape CAD sheet fits the page to the window's HEIGHT, so the strips
-/// above and below it were 10.4 and 5.6 points of drop shadow, while the strips
-/// to its left and right were **585 points each**. A check that only knew about
-/// two of the four sides would have skipped on every run in the layout it was
-/// written for, and a skip nobody reads is a check that has quietly stopped
-/// running.
 ///
 /// So all four candidates are considered and the **thickest** is taken —
 /// thickness being the dimension across the strip, which is the one that decides
@@ -789,13 +781,6 @@ mod tests {
     /// ★★ **The widest side wins, and this test is the bug it was written
     /// after.**
     ///
-    /// The first draft looked above and below the sheet only, and its first
-    /// live run SKIPPED on the layout it was written for. These are the real
-    /// numbers from that run: a maximised window fits a landscape sheet to the
-    /// window's HEIGHT, leaving 10.4 points of margin above it and 585 to each
-    /// side. A band chooser that only knows about two of the four sides finds
-    /// nothing thick enough and the check stops running — silently, because a
-    /// SKIP is not red.
     #[test]
     fn the_thickest_side_is_the_one_sampled_even_when_it_is_a_flank() {
         let viewport = r(288.0, 143.3, 3112.0, 1327.0);

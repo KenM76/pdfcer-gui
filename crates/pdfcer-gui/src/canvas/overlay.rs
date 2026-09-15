@@ -637,10 +637,6 @@ pub fn draw_move_ghost(
 /// Paint the **rotate ghost**: the selection's outlines turned about the
 /// selection's centre.
 ///
-/// [`draw_resize_ghost`]'s sibling, and split from it for the same reason that
-/// one is split from the move ghost: this transforms four CORNERS rather than
-/// two, because a rotated rectangle is not an axis-aligned one and
-/// `Rect::from_min_max` of two rotated corners is a different shape entirely.
 ///
 /// ★ **It draws a quadrilateral, not a rect**, and that is the whole visible
 /// difference. Drawing the rotated bounding box instead would show the operator
@@ -715,12 +711,6 @@ pub fn draw_rotate_ghost(
 /// Paint the **resize ghost**: the selection's outlines, scaled about the
 /// grip's anchor.
 ///
-/// [`draw_move_ghost`]'s sibling, and split from it rather than folded in for
-/// the reason `canvas::resizing`'s own header gives about the arithmetic: a
-/// move is one displacement applied to everything, a resize is a **map** whose
-/// answer depends on where each corner started. One function taking an
-/// `enum { Move(Vec2), Resize(Pos2, Vec2) }` would branch inside a loop that is
-/// otherwise two lines.
 ///
 /// ★ The anchor is in **screen** space, because that is the space the outlines
 /// are projected into and the space [`crate::canvas::handles::Grip::anchor`]

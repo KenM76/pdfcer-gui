@@ -126,13 +126,6 @@ const ASPECT: f32 = 1.7;
 /// # ★★★ `mixed_hint` is a PARAMETER, and it was a hard-coded string for about
 /// # twenty minutes
 ///
-/// The sentence shown at the top of the picker over a disagreeing selection
-/// names its subject — *"These **words** are not all one colour"* — and this
-/// widget serves two subjects. The first draft read
-/// `crate::text::panels::textobject::mixed_hint()` inline, which put a sentence
-/// about words over a selection of **paths** on the vector row. It was caught
-/// by reading the call sites rather than by any test, and no test could have
-/// caught it: both strings compile, both render, and the wrong one is grammatical.
 ///
 /// ⇒ Same rule this module's header already states for the ink refusal: **the
 /// sentence belongs to whoever knows what the selection is made of.** The widget

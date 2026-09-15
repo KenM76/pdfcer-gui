@@ -1,9 +1,5 @@
 //! # `dialogs::redact::tests` — the apply transaction's headless assertions
 //!
-//! Split out of [`super`] on 2026-09-04 (evening) under rule R2, when the
-//! third destination took `dialogs/redact.rs` past the 1,500-line ceiling.
-//! **Nothing moved but its address**: every test, fixture and paragraph of
-//! reasoning is unchanged.
 //!
 //! ★ The seam is the one R2 asks for. `redact.rs` answers *"what does the
 //! dialog do?"*; this answers *"what is guaranteed about the state machine
@@ -364,10 +360,6 @@ fn clean_session() -> pdfcer_core::edit::EditSession {
     session
 }
 
-// =======================================================================
-// ★★★ THE DEFERRED DESTINATION — 2026-09-04 (evening)
-// =======================================================================
-
 /// ★★★ **The default destination writes nothing.**
 ///
 /// The safety property the default has to carry, expressed as a property
@@ -396,12 +388,6 @@ fn the_default_destination_writes_nothing() {
 /// ★★★ **The staging consequence is disclosed on the destination that has
 /// it, and only on that one.**
 ///
-/// ★★★ **REWRITTEN 2026-09-05, and the sentence under test is now the
-/// opposite of the one this test was written for.** It used to be
-/// `the_undo_consequence_is_disclosed_before_the_operator_can_commit` and it
-/// asserted that the disclosure named the number of undo steps the click
-/// would destroy — the price of `Pass 250.1`'s collapsing verb, which the
-/// operator accepted on condition he was told first.
 ///
 /// `Pass 250.2` charges no such price: the undo log survives. What is
 /// disclosed in the same place, in the same warning role, from the same
@@ -464,9 +450,6 @@ fn the_staging_consequence_is_disclosed_before_the_operator_can_commit() {
 /// ★★★ **A document whose removal is already armed gets the staged phase,
 /// with a control that calls it off.**
 ///
-/// New 2026-09-05, and it is the assertion behind *a stageable operation
-/// that cannot be un-staged is a trap*. Three things, each with a failure it
-/// is looking for:
 ///
 /// 1. **the pipeline refuses by name.** `prepare_redaction_apply` on a
 ///    staged session must answer [`RedactApplyRefusal::AlreadyStaged`] and
@@ -594,12 +577,6 @@ fn confirming_the_default_destination_pushes_an_action_and_writes_no_file() {
 /// ★ **The deferred destination is not asked for the overwrite
 /// acknowledgement, and the replace destination still is.**
 ///
-/// The gate used to be spelled `destination == NewFile || acknowledged`,
-/// which was correct while there were two destinations and became a trap
-/// the moment there were three: a third value that is neither `NewFile` nor
-/// `ReplaceOriginal` would have been asked for a tick at a checkbox that is
-/// not on screen, leaving the confirm control dead with an explanation
-/// pointing at nothing.
 ///
 /// ★★ And the half that is the whole of O125: **Save-over-the-original
 /// still warns.** It is a warning and not a refusal — the operator may do

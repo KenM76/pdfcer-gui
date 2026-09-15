@@ -1,10 +1,6 @@
 #![cfg(test)]
 //! # `dialogs::print::preview_tests` — the preview's arithmetic, proved headlessly
 //!
-//! Split out of [`super::preview`] on 2026-09-03, when operator request O113
-//! took that file past R2's 1500-line ceiling. The seam is the one
-//! `egui-shell`'s `dock/width_tests.rs` already uses in this workspace: the
-//! module keeps the code, the sibling keeps the proof.
 //!
 //! ## What is proved here, and why every one of these needs no GUI
 //!

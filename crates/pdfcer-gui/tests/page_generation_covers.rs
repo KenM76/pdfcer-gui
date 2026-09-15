@@ -3,22 +3,12 @@
 //!
 //! ## Why this test exists
 //!
-//! `pdfcer-core`'s reply of 2026-08-31
-//! (`reply_the_verbs_decomposition_is_gone_and_two_of_your_premises_were_wrong.md`)
-//! offers this shell a cheap invalidation key:
 //!
 //! > *"Your `(page, edit_epoch)` cache key can go. `Pass 186.0` also shipped
 //! > `EditSession::page_content_generation(page_index) -> u64` … comparing
 //! > object counts means decomposing twice, comparing this means comparing two
 //! > integers."*
 //!
-//! The prize is large and measured: this shell's own decomposition of the
-//! operator's benchmark drawing takes **469 ms** for 129,758 objects and
-//! 10,256 leaves (`page-objects-built page=0 objects=129758 leaves=10256
-//! ms=469`, driven 2026-08-31). Today it is rebuilt on **every** `edit_epoch`
-//! bump — including edits that cannot have touched page content at all, such
-//! as authoring a form field, which is an `/Annots` change. That is the
-//! operator's O74 complaint in its most expensive form.
 //!
 //! ## ★★★ Why a TEST and not a swap
 //!

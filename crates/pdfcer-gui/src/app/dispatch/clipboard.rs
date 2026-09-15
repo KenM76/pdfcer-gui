@@ -4,24 +4,9 @@
 //! over **three kinds of operand**, and the whole subject of this module is the
 //! fork that decides which of them a keystroke is about.
 //!
-//! ★ Six now. `edit.copy_as_vector` joined on 2026-09-04 (the copy-OUT) and
-//! `edit.duplicate` on 2026-09-06 (`Ctrl+D`) — and the second of those is the
-//! one that stretches the module's name, because **it never touches the
-//! clipboard at all**. It is here because *"make another one of this"* is what
-//! an operator was doing with Copy-then-Paste before it existed, and because
-//! what it needs is this file's fork: which operand does the gesture mean?
-//! Its own function carries the argument for why it is a separate id from
-//! `edit.paste_duplicate`, which the name invites a reader to assume it is not.
 //!
 //! ## Why this is a module and not four match arms
 //!
-//! `super`'s file crossed R2's 1,500-line ceiling for the fourth time when
-//! `edit.paste_duplicate` arrived on 2026-08-29. It joins [`super::pages`],
-//! [`super::images`] and [`super::textcopy`] as the fourth application of the
-//! same seam, and it is the right seam independently of the line count: the
-//! three-way fork below is the *entire* logic here, and a reader trying to
-//! answer *"what does Ctrl+C do?"* should find it in one screen rather than
-//! interleaved with tool arming and zoom.
 //!
 //! ## ★★★ The fork, in priority order, and why each rung is where it is
 //!
@@ -44,8 +29,6 @@
 //!
 //! ## ★★ The two pastes are two commands, not one command with a modifier
 //!
-//! **Ken, 2026-08-29:** *"ctrl v for paste as new. ctrl shift v for paste as
-//! duplicate."* — `OPERATOR_REQUESTS.md` **O58**.
 //!
 //! They are separate ids because a command is the unit this shell can
 //! *register*, *bind*, *place on a ribbon*, *put in a context menu* and
@@ -73,13 +56,7 @@
 //! same predicate the Delete key reads, because a form field is part of the
 //! document rather than a comment on it.
 //!
-//! ### ★★★ …and since 2026-09-05 every one of those gates SAYS SO
 //!
-//! `app::modes::capability::offers_command` used to refuse `edit.cut`,
-//! `edit.paste` and `edit.paste_duplicate` in any mode that does not show the
-//! **Edit tab** — which is where the Clipboard group is drawn. That was a rule
-//! about where a button lives being used to answer a question about what a mode
-//! may do, and the driven sweep of 2026-09-05 found what it cost:
 //!
 //! ```text
 //! chord-command      chord="Ctrl+C" id=edit.copy  via=clipboard-event
@@ -129,12 +106,6 @@ pub fn handles(id: &str) -> bool {
             | "edit.copy_as_vector"
             | "edit.paste"
             | "edit.paste_duplicate"
-            // ★★ `edit.duplicate`, 2026-09-06 — and it is the one id here that
-            // never touches the clipboard. It is routed to this module anyway
-            // because *"make another one of this"* is what the operator was
-            // doing with Copy-then-Paste before it existed, and because the
-            // three-rung fork at the head of this file is the machinery it
-            // needs: which operand does the gesture mean?
             | "edit.duplicate"
     )
 }
@@ -238,11 +209,6 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
     };
     let cutting = id == "edit.cut";
 
-    // ★★ RUNG 1 — TEXT WINS. Defect O18: both handlers see the same
-    // `Event::Copy` in the same frame, and until 2026-08-21 the object path ran
-    // anyway and wrote its marker over what the text path had put on the
-    // clipboard. The operator swept some text, pressed Ctrl+C, pasted into
-    // Notepad and got "1 object copied from pdfcer".
     //
     // The collision is resolved in the BROADER verb because only this one can
     // see both operands. Cut is included deliberately: cutting swept page text
@@ -265,10 +231,6 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!("command-declined id={id} reason=mode-cannot-remove-field")
             });
-            // ★★★ …and the operator is TOLD, since 2026-09-05. See the header's
-            // "Mode gating" section: the chord now reaches this function from
-            // every mode, so a `return` here is a keypress that does nothing,
-            // and a trace line is not a surface.
             crate::app::status::decline::record_mode_refusal(
                 crate::text::clipboard::ModeRefusal::CutField,
             );
@@ -312,9 +274,6 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
                 if content { "content" } else { "markup" }
             )
         });
-        // ★★★ Worded, since 2026-09-05 — and it carries the SAME fork the gate
-        // above just made rather than re-deriving it, so the sentence cannot
-        // name a different operand from the one that was refused.
         crate::app::status::decline::record_mode_refusal(if content {
             crate::text::clipboard::ModeRefusal::CutContent
         } else {
@@ -382,22 +341,9 @@ fn paste(
     // cut's follows what is selected: a paste has no operand on the page to
     // look at, so the clipboard is the only honest source.
     let caps = app.capabilities();
-    // ★★ The gate and the SENTENCE are decided in one match, since 2026-09-05.
     //
-    // It used to yield a bare `bool` and the refusal below traced a fixed
-    // string. Both halves have to know the same thing — *which* operand was
-    // refused decides *which* mode the operator is told to switch to — and two
-    // matches on `clipped` would be two derivations free to disagree. The
-    // `ModeRefusal` is computed here whether or not it is used, which costs a
-    // discriminant and removes the possibility.
     let (allowed, refusal) = match &clipped {
-        // ★★★ **A clip asks for the gate its CONTENTS need**, as of 2026-09-05.
         //
-        // It used to be `Clipped::Content => caps.edit_content`, which was one
-        // fact when a clip could only hold page objects. A clip can now hold
-        // annotations alone, and demanding `edit_content` for those would make
-        // **Review unable to paste a comment it is allowed to author** — the
-        // mode whose whole purpose is marking up somebody else's drawing.
         //
         // ★ The stricter gate wins on a mixed clip, and it has to: pasting one
         // is one act, so a mode that may not add a line to a drawing may not
@@ -437,8 +383,6 @@ fn paste(
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("command-declined id={id} reason=mode-cannot-paste-here")
         });
-        // ★★★ **AND IT SAYS SO** — 2026-09-05, the second half of the driven
-        // sweep's finding A1.
         //
         // Until today this `return` was the whole answer: a trace line, and
         // nothing on any surface. It was *reachable only in Read*, because
@@ -523,9 +467,6 @@ fn paste(
 /// ★★★ **`edit.copy_as_vector`** — put the page, or the selection on it, on the
 /// operating system's clipboard as **editable geometry**.
 ///
-/// `OPERATOR_REQUESTS.md` **O120**, 2026-09-03: *"Also I'd like to be able to
-/// copy and paste anything to other software - like copy and paste vector
-/// graphics into word or inkscape for example if possible."*
 ///
 /// # ★★ Why this is a fifth id and not a modifier on `edit.copy`
 ///
@@ -605,16 +546,7 @@ mod tests {
     /// registered ABSENCE, and a prefix rule would claim it the day it became
     /// real, routing it here with no body and no failure.
     ///
-    /// ★ Four until 2026-09-04, when `edit.copy_as_vector` joined. It is listed
-    /// here rather than trusted to the `edit.` prefix for the same reason the
-    /// absence is: `shell::commands::reach` proves every registered id is
-    /// routed by reading THIS function, so an id that only a prefix would have
-    /// claimed is an id nothing proves has a body.
     ///
-    /// ★ Six since 2026-09-06, when `edit.duplicate` joined — the one member
-    /// that never touches the clipboard, listed here for the same reason as the
-    /// rest: `shell::commands::reach` proves every registered id is routed by
-    /// reading THIS function.
     #[test]
     fn handles_the_six_and_not_the_registered_absence() {
         for id in [

@@ -1,10 +1,5 @@
 //! # `status::fit` — the bar's four named zoom levels
 //!
-//! Split out of [`super`] under **R2** on 2026-08-24, when O29's Fit height
-//! button took that file past 1,500 lines. It joins [`super::zoom`],
-//! [`super::page_box`], [`super::filter`] and the rest: `status.rs` owns the
-//! bar's **layout and the argument for its order**, and each group owns its
-//! own controls.
 //!
 //! ## ★ The one thing to read before changing anything here
 //!

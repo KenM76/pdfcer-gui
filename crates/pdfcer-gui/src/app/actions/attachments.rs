@@ -187,11 +187,6 @@ pub enum AttachmentAction {
     ///
     /// # `replacing` is carried, and it is not a convenience
     ///
-    /// `attach_file` does `entries.retain(|(k, _)| k != &name_bytes)` before
-    /// inserting, so a same-named attachment is **replaced** — silently, with
-    /// the old bytes recoverable only from the earlier revision. The panel says
-    /// so before the press; this field is how the sentence *after* the press
-    /// can say it too.
     ///
     /// It is computed **before** the write, because afterwards the answer has
     /// changed: the document now has exactly one file of that name either way,
@@ -214,10 +209,6 @@ pub enum AttachmentAction {
     /// `detach_file`'s own doc comment states the obligation this shell is
     /// under, and it is unusually direct:
     ///
-    /// > *"This is NOT a redaction verb and must not be described as one … the
-    /// > attachment's bytes remain recoverable from the earlier revision. Only
-    /// > a full rewrite drops superseded revisions … Shells are expected to say
-    /// > so rather than let 'delete' imply erasure."*
     ///
     /// The `name` field exists for that sentence and for nothing else. The
     /// engine returns `()`, the row is gone from the panel by the time the
@@ -447,13 +438,6 @@ fn attach(doc: &mut OpenDoc, description: Option<&str>) {
 ///
 /// # The disclosure is the point of this function
 ///
-/// `detach_file` returns `()`. There is no count to report, no residue to
-/// describe, and nothing on screen changes except a row disappearing — which
-/// the operator caused and expected. The one thing they cannot see is the one
-/// thing that matters: **under the default incremental save (§7.5.6) every
-/// prior revision is still in the file by design**, which is what makes
-/// existing signatures survive, and it means the removed attachment is
-/// recoverable from the earlier revision by anyone who opens the bytes.
 ///
 /// `crate::text::panels::attachments::removed` carries that sentence and names
 /// the remedy — `file.save_compacted`, the full rewrite — because a disclosure

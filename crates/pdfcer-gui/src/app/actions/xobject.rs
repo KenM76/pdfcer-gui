@@ -3,10 +3,6 @@
 //! One verb today: **give this page its own private copy of a shared drawing**,
 //! so that a later edit to it changes this page and no other.
 //!
-//! Written 2026-08-28, when `EDITABLE_SURFACES.md` — an audit keyed on the
-//! *engine's* verb list rather than on this shell's feature list — found
-//! `EditSession::unshare_form` implemented in `pdfcer-core` and named nowhere in
-//! `crates/pdfcer-gui/src`.
 //!
 //! ## ★★★ Why this is a sub-enum file on day one, holding one variant
 //!
@@ -154,14 +150,6 @@ pub(super) fn apply(doc: &mut OpenDoc, action: XObjectAction) {
 ///
 /// # ★★★ Every refusal is caught INSIDE the closure and worded
 ///
-/// `super::apply::vector_edit`'s `Err` arm traces, and since O116 (2026-09-04)
-/// words one un-categorised sentence and nothing more — it names no verb and no
-/// remedy, by construction. Its own comment explains why that floor is a scope
-/// statement rather than an oversight: wording a decline is catalog work per
-/// refusal, and a
-/// `format!` of an `EditError`'s `Display` would route diagnostic prose into
-/// the UI. So a verb that owes sentences words them here, from inside the
-/// closure, the way `super::annots::resize` and `super::annots::rotate` do.
 ///
 /// **This verb owes a sentence for every one of its refusals**, which is
 /// unusual — `resize` words exactly one of six — and the reason is a property
@@ -198,7 +186,6 @@ pub(super) fn apply(doc: &mut OpenDoc, action: XObjectAction) {
 /// where a driven check can read it; a count of places on the sheet in front of
 /// the operator is a disclosure.
 ///
-/// # ★★★ It ASKS before it acts, and the question is the fix of 2026-08-29
 ///
 /// [`fanout`] runs **first**, before `vector_edit` is called at all, and its
 /// two possible answers are the two possible shapes of this whole verb:
@@ -270,18 +257,6 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 ///
 /// # ★★★ Why this exists: the command shipped without ever asking
 ///
-/// "Give this page its own copy" went out on 2026-08-28 and, for one day,
-/// **nothing in its chain asked whether the form was invoked more than once.**
-/// `catalog/format.rs` gates the control on `selection.in_form`;
-/// `conditions.rs` defines that as *"a leaf id is in the selection for this
-/// page"*; `dispatch/format.rs` adds only *"the leaf resolves to a containing
-/// form"*. And `EditSession::unshare_form` itself guards encryption,
-/// certification, `/Size` suppression, form-not-on-page and nesting — and has
-/// **no is-shared check**, by design: it is a verb, and a verb does what it is
-/// told. So on an ordinary one-page CAD sheet wrapped in a single form the
-/// engine allocated an object, privatised `/Resources`, committed an undo entry
-/// and returned `Ok`, and the shell told the operator that every other page
-/// still shared the original. There were no other pages.
 ///
 /// ⇒ The question is the shell's to ask, and this is where it is asked.
 ///

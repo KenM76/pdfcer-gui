@@ -7,11 +7,6 @@
 //!
 //! ## Why it is its own file
 //!
-//! **R2.** [`super::textedit`] crossed 1,500 lines on 2026-09-06, when O142's
-//! ambiguity refusal and `Pass 256.1`'s ambiguous-character refusal arrived
-//! together. The seam was already drawn and already labelled — that file carried
-//! a banner reading *"Why an edit the operator committed did not happen — O140"*
-//! — and the two subjects either side of it are genuinely different questions:
 //!
 //! * above it, **what an edit COSTS**: the pinned-tail disclosure, the
 //!   multi-run note, the reflow refusals. Sentences about an edit that
@@ -53,7 +48,6 @@
 /// **O140**, and the sentence that replaces `edit_declined_by_engine`'s nine
 /// cause-free words for this one verb.
 ///
-/// The operator, 2026-09-05, on his own quote:
 ///
 /// > *"on page 2 there is a spelling mistake — clien instead of client. if I
 /// > try to edit the edit is not accepted. **the lines I added below `price)`
@@ -71,14 +65,6 @@
 /// many words, that it *"is written to be **deleted**… The day `EditError`
 /// gains a `kind()`, this becomes four sentences that name the four buckets."*
 ///
-/// **That day arrived and nothing here had noticed.** `pdfcer-core` shipped
-/// `text_edit::RefusalKind` — four variants, deliberately **not**
-/// `#[non_exhaustive]` so a front end may match it exhaustively and have the
-/// compiler prove the sentences are complete — at revision `b1033ab`, in direct
-/// answer to this project's 2026-09-04 request. It sat unconsumed because both
-/// gates that watch the engine are keyed on `EditSession`'s **verbs**: a new
-/// *type* is invisible to `check-verb-coverage.sh` and to
-/// `check-engine-backlog.sh` alike.
 ///
 /// ⇒ Four of the five variants below are `RefusalKind`'s, one-for-one. Nothing
 /// here re-derives the engine's reasoning, matches on its error variants or
@@ -192,12 +178,6 @@ pub enum EditRefusal {
     /// signed quotations as a live constraint. R9's rule for a capability
     /// applies to a sentence too — an unreachable one renders nothing.
     ///
-    /// ⇒ If a future engine withdraws `span_from_pin`, this comes back **with
-    /// the correction the engine sent alongside it**, not as it was:
-    /// dropping the pin was never merely *risking the wrong occurrence*. See
-    /// `canvas::textedit::Plan::occurrences`, which keeps the whole argument.
-    /// ★★★ **The character IS in this font — twice — and pdfcer will not pick
-    /// which glyph he meant.** `Pass 256.1`, consumed 2026-09-06.
     ///
     /// The composite twin of [`Self::FontLacksTheCharacter`], and the two arrive
     /// from the engine as the **same** `RefusalKind::UnsupportedFont`. What
@@ -405,12 +385,6 @@ impl EditRefusal {
     /// whole code↔glyph relation being unreadable (R-INV-2, 3, 4). Both arrive
     /// as `RefusalKind::UnsupportedFont`, and only the first has a remedy.
     ///
-    /// ★★ It arrives as the character itself rather than as a `bool` since
-    /// 2026-09-05, and the widening is the whole of what let the status bar name
-    /// it. The datum was already being read at the call site — the recorder
-    /// needs it for the panel either way — and passing the answer instead of a
-    /// predicate over it removes the state where two surfaces agree that *a*
-    /// character was refused and only one of them can say which.
     ///
     /// ★ It is consulted **only** inside `UnsupportedFont`, on the same rule the
     /// `NotFound` split follows: the engine's category wins wherever it has one,
@@ -471,8 +445,6 @@ impl EditRefusal {
             }
             (K::UnsupportedFont, None) => Self::UnsupportedFont,
             (K::StructureFrozen, _) => Self::DocumentProtected,
-            // ★★★ **THE TWO LOCATIONAL REFUSALS, KEPT APART — 2026-09-08,
-            // on the engine's own instruction.**
             //
             // `EditError::NoMatch` and `EditError::PinnedSpanNotFound` both
             // arrive as `RefusalKind::NotFound`, and they mean opposite
@@ -569,12 +541,6 @@ impl EditRefusal {
     ///
     /// # ★★★ Why this returns a [`Cow`] and every other catalog function does not
     ///
-    /// Because exactly one of these sentences has a **subject the operator can
-    /// see** — the character they just typed — and until 2026-09-05 it could not
-    /// say it. The five sentences around it are about a property of the document
-    /// (its font, its protection, how its producer wrote the line) and are
-    /// complete as fixed prose; this one was the general statement of a specific
-    /// event, and it read like every other decline in the bar as a result.
     ///
     /// [`Cow::Borrowed`] is what five of the six arms return, so the change
     /// costs no allocation on any frame that is not reporting this one refusal —
@@ -598,25 +564,11 @@ impl EditRefusal {
             // there is no sequence of clicks that gets him his `t` today, and
             // the sentence says exactly that rather than inventing one.
             //
-            // ⚠ It deliberately does NOT say "delete it and retype it". That
-            // was checked too: `add_text` writes the engine's bundled
-            // Helvetica, so retyping a line of AbrilFatface or Arimo replaces
-            // his typography with a substitute at a position he would have to
-            // find by eye — and there is no verb here that deletes a text run
-            // in the first place. Offering it would be a workaround that does
-            // not exist.
-            // ★★★ RE-DERIVED 2026-09-08, and the old sentence named a cause
-            // that is now the case which WORKS.
             //
             // It read: *"The program that made this file wrote the line one
             // letter at a time … there is no piece here that holds the word you
             // are correcting … this limit is on the list to fix."*
             //
-            // That was exactly right until `Pass 256.0` (2026-09-06), which
-            // taught `edit_text` to match a `find` **across consecutive show
-            // operators** — so a line written one letter at a time is precisely
-            // what pdfcer now edits, and the sentence was describing the fixed
-            // case to an operator meeting the unfixed one.
             //
             // ⇒ What is left is narrower and is not "letter at a time": the
             // pieces are separated by something the matcher will not join
@@ -653,15 +605,6 @@ impl EditRefusal {
             // to the surface that does. `panels::properties::refusedchar` names
             // it, offers the faces, and carries rule 4's disclosure.
             //
-            // ★★★ The one sentence in this catalog built from a runtime value,
-            // so it leaves through a `return` rather than through `fixed`. The
-            // character is quoted with the SAME `'c'` spelling the Properties
-            // block and the classification trace use, so an operator reading the
-            // bar and the panel sees one character described one way — and a
-            // driven check comparing the two surfaces compares like with like.
-            // `app::status::decline::textedit` learned the cost of two spellings
-            // on 2026-09-05, when a debug-formatted tuple in the trace made a
-            // correct build report itself broken.
             Self::FontLacksTheCharacter(c) => {
                 return std::borrow::Cow::Owned(font_lacks_the_character(c));
             }
@@ -680,17 +623,7 @@ impl EditRefusal {
                  cursor was placed there. Click in the words again and make the change a second \
                  time. Your document is unchanged."
             }
-            // ★ The one variant with no cause to name, and it is deliberately
-            // the SAME sentence the whole verb used to show. Where the engine
-            // says only "other", inventing a cause here would be the "second
-            // copy of their taxonomy that drifts and then tells the operator
-            // the WRONG reason" that `RefusalKind` exists to prevent.
             Self::Unstated => crate::text::status::edit_declined_by_engine(),
-            // ★★★ The third sentence in this catalog built from a runtime value,
-            // and the second reason `line` returns a `Cow`. Same `'c'` spelling
-            // as its two neighbours and as both traces, for the reason
-            // 2026-09-05 taught: two spellings of one character made a correct
-            // build report itself broken.
             Self::RunCannotTake(c) => {
                 return std::borrow::Cow::Owned(run_cannot_take(c));
             }
@@ -702,8 +635,6 @@ impl EditRefusal {
 /// ★★★ **"pdfcer cannot type a `q` into this text"** — the status bar's `⊗`
 /// sentence for `OPERATOR_REQUESTS.md` **O141**, with the character in it.
 ///
-/// The operator, 2026-09-05: *"if the character isn't available in a pdf are we
-/// able to change to a different font?"*
 ///
 /// # Why the character is worth the one allocation this catalog makes
 ///
@@ -757,11 +688,6 @@ pub fn font_lacks_the_character(character: char) -> String {
 /// choosing would silently swap one shape for another that happens to spell the
 /// same letter.
 ///
-/// ★ The engine used to refuse the whole font for this (`R-INV-4`), so the
-/// sentence's second clause is now load-bearing in a way it could not have been
-/// before `Pass 256.1`: **the rest of the text still edits**. Saying only that
-/// something was refused would make him abandon a document where every other
-/// character is fine.
 ///
 /// ★★ The remedy is the same control as [`font_lacks_the_character`]'s and the
 /// sentence ends by naming it, because the face offer really is raised for this
@@ -820,7 +746,6 @@ pub fn run_cannot_take(character: char) -> String {
     )
 }
 
-// ★★★ `ambiguous_on_the_page` LIVED HERE and was deleted on 2026-09-08.
 //
 // Forty lines arguing a sentence that no longer has an occasion: *"pdfcer will
 // not change these words, because the same words appear N times on this page
@@ -848,18 +773,6 @@ mod tests {
     /// obstacle in its first clause, or promising a remedy this build does not
     /// have, goes red rather than shipping.
     ///
-    /// ★ A hand-written list inside a completeness sweep is a shape this
-    /// project has been bitten by three times, and it is tolerable here for one
-    /// reason: `EditRefusal::line`'s `match` is exhaustive, so a new variant is
-    /// a **compile error** in the catalog before it can be a gap in this list.
-    /// The list is a convenience over a closed set, not the closure itself.
-    /// ⚠ Seven since 2026-09-08, and the one that went was
-    /// `AmbiguousOnThePage(3)` — deleted with its subject when
-    /// `EditRequest::spanning_from` made a caret's ambiguity unreachable. The
-    /// `3` in it was itself a lesson worth keeping: it was `3` rather than `2`
-    /// on purpose, because the sentence interpolated the count and `2` is the
-    /// one value a build could hard-code and still satisfy a sweep that only
-    /// checked a number was present.
     const EVERY: [EditRefusal; 8] = [
         EditRefusal::SplitAcrossPieces,
         EditRefusal::UnsupportedFont,
@@ -882,12 +795,6 @@ mod tests {
     /// things**, and a build that collapsed any two of them would still satisfy
     /// every other test in this file.
     ///
-    /// The failure this pins is the design that was rejected on 2026-09-09:
-    /// raising [`EditRefusal::FontLacksTheCharacter`] from the pre-commit gate
-    /// because the remedy is the same. It would have been invisible — the
-    /// wording is good, the route is right, the offer appears — and it would
-    /// have told an operator whose composite font spells a letter **twice**
-    /// that his font does not have it.
     #[test]
     fn the_three_character_sentences_are_three_sentences() {
         let lacks = EditRefusal::FontLacksTheCharacter('q').line().into_owned();
@@ -983,11 +890,6 @@ mod tests {
         // stray condition added to either goes red.
         for one in [true, false] {
             for named in [Some(RefusedCharacter::NotInTheFont('q')), None] {
-                // ★ Swept over `stale_pin` as well: three shell-side facts
-                // reach this function and these two buckets must ignore all of
-                // them. `stale_pin` replaced `occurrences` on 2026-09-08 and
-                // inherits its place in this sweep — a condition on the newest
-                // input is the easiest to add by accident.
                 for stale in [false, true] {
                     assert_eq!(
                         EditRefusal::of(K::StructureFrozen, one, named, stale),
@@ -1000,8 +902,6 @@ mod tests {
                 }
             }
         }
-        // ★★★ **THE FOUR `NotFound` OUTCOMES, and the split is on `stale_pin`
-        // — 2026-09-08, on the engine's own instruction.**
         //
         // `EditError::NoMatch` and `EditError::PinnedSpanNotFound` both arrive
         // as `RefusalKind::NotFound` and mean opposite things:
@@ -1198,11 +1098,6 @@ mod tests {
     fn the_split_run_sentence_says_the_document_is_unchanged() {
         let s = EditRefusal::SplitAcrossPieces.line();
         assert!(s.contains("unchanged"), "{s:?}");
-        // ★★★ RE-POINTED 2026-09-08. This asserted the phrase *"one letter at
-        // a time"*, which was the right cause until `Pass 256.0` taught
-        // `edit_text` to match across consecutive show operators — after which
-        // a line written that way is the case that WORKS, and pinning it kept
-        // the sentence describing the fix to the operator meeting the residue.
         //
         // ⇒ The test's own stated intent is what survives: **the cause has to
         // be in his terms.** So it now asserts that positively, and asserts the

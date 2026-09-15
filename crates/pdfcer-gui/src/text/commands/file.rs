@@ -1,10 +1,5 @@
 //! # `text::commands::file` — the File tab's command copy
 //!
-//! Split out of [`super`] on 2026-09-02 under R2, when that file reached the
-//! 1,500-line ceiling and Save As could not be added without one. The seam is
-//! the one this directory already uses: [`super::annotate`] and [`super::view`]
-//! are the same split for their own tabs, so this is the third of a shape
-//! rather than a new idea.
 //!
 //! ★ Only the entries that need to be here have moved. The rest of the File
 //! tab's copy stays in [`super`] until the next thing pushes it over, because
@@ -67,10 +62,6 @@ pub const fn file_export_image() -> CommandText {
 /// > file back into a PDF. See `crate::app::actions::exporttext`'s header. A
 /// > tooltip that mentioned a round trip would be the promise R9 forbids."*
 ///
-/// `EditSession::place_text` and `blank_document` shipped as `Pass 252.0` on
-/// 2026-09-06, in answer to this shell's own request, and
-/// [`file_import_text`] is registered directly beside this command. The
-/// round trip exists, so mentioning it is a statement rather than a promise.
 ///
 /// ★ The tooltip below still does not mention it, and that is now a *wording*
 /// decision rather than an honesty one: a tooltip's job is its own control, and
@@ -91,13 +82,7 @@ pub const fn file_export_text() -> CommandText {
 ///
 /// # ★★★ The half of the operator's ask that was missing for two days
 ///
-/// > *"also the engine can export PDFs as text. we should have export/import
-/// > for that."* — 2026-09-04
 ///
-/// Export shipped that day; import could not, because the crate had **no way to
-/// create a page** — only to copy one. `blank_document` is the primitive that
-/// changed that and `place_text` is the paginating placer built on it, both
-/// filed for by this shell and shipped on 2026-09-06.
 ///
 /// # ★★ Why the label says *pages* and not *text*
 ///

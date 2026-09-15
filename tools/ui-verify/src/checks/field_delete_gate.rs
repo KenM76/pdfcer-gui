@@ -10,11 +10,6 @@
 //!
 //! # ★★★ What was wrong, and why "the annotation one is fixed" was not enough
 //!
-//! On 2026-08-29 the R83 pass closed the annotation door: `format.delete`
-//! acquired `visible_when: "selection.delete_permitted"` on the Format tab and
-//! on the `canvas.object` menu, `canvas::keys`' annotation rung acquired a
-//! gate, and `panels::properties::annotdelete` drew the sentence. Its commit
-//! claimed *"where a gate refuses the controls are not drawn at all."*
 //!
 //! That held for **one surface of three**, and for a form field the gate was a
 //! no-op by construction:
@@ -417,14 +412,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ---- D: the keystroke ------------------------------------------------
     //
-    // ★★ The most valuable assertion in the check, and the only one that
-    // catches the pre-fix build directly. Everything above was ALREADY TRUE on
-    // 2026-08-28: the panel asked `deletion_refusal`, withheld its buttons and
-    // drew the sentence. What did not exist was any gate on the key, the menu
-    // or the condition — so Delete raised the action, the engine refused it
-    // into a funnel that says nothing, and the verb had already cleared
-    // `doc.selected_field`, blanking the very sentence the assertions above
-    // just confirmed.
     certified.driver.press(vk::DELETE)?;
     certified.session.settle(12);
     let trace = certified.session.trace()?;

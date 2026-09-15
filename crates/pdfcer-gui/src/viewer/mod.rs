@@ -198,13 +198,6 @@ pub struct ZoomAnchor {
     ///
     /// # Why an anchor has to name its page (`OPERATOR_REQUESTS.md` O26d)
     ///
-    /// `frac`, `offset_before` and `display_before` are all measured against
-    /// **one page**: the anchor says *"the point at this fraction of THAT
-    /// page was at that offset when the page was that size"*. Under a
-    /// continuous mode the canvas then converts the solve's answer back into
-    /// a strip offset by adding the page's origin within the strip — and it
-    /// used to add **whichever page happened to be current on the frame the
-    /// anchor was consumed**.
     ///
     /// Those are two different frames and they can name two different pages:
     /// the anchor is armed on frame N (during `show`, when the wheel is seen)

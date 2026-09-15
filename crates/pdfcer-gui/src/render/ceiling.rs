@@ -1,7 +1,5 @@
 //! # `render::ceiling` — the zoom ceiling this document *taught* the shell
 //!
-//! `OPERATOR_REQUESTS.md` **O186**, 2026-09-12. The operator's ruling, verbatim
-//! and in full, because every decision in this file is one clause of it:
 //!
 //! > *"If this error is caused by some other limitation that will always
 //! > happen, zoom should stop at the limit and not end up showing an error —

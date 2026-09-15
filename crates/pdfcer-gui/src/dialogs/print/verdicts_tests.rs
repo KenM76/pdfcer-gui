@@ -3,10 +3,6 @@
 //!
 //! ## What is proved here, and why none of it needs a window
 //!
-//! Everything in [`super`] is arithmetic over remembered facts: a bucket
-//! count, a four-way decision, and an equality test on a cache key. Not one of
-//! those needs an `egui::Ui`, a device, or a rendered page — which is the
-//! reason the module was split out of `preview.rs` rather than added to it.
 //!
 //! ★ **Every failure mode here is silent.** A cache key that never matches
 //! produces the *old* count, which is the correct answer to a different

@@ -1,11 +1,6 @@
 //! # `canvas::notepopup::controls` — everything in the window that CHANGES
 //! # something
 //!
-//! *Add note* / *Edit note*, *Save*, *Cancel*, *Remove note*, *Delete
-//! comment*, and **Open by default** — plus the three sentences that stand in
-//! their place when the operator's stance or the file forbids them. Split out
-//! of [`super`] under **R2** on 2026-09-06, when the `/Open` write-back took
-//! that file to 1,639 lines against a ceiling of 1,500.
 //!
 //! ## ★★ Why this is the seam
 //!
@@ -244,13 +239,6 @@ fn open_default(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView, actions: &mut V
 ///
 /// # ★★★ The Comments panel's *"this build has no Delete"* was true and is not
 ///
-/// That paragraph was written on 2026-08-14 and its stated reason —
-/// *"`crate::app::actions::Action` has no variant that could carry the
-/// intent"* — stopped being true when `AnnotAction::Delete` landed. It is
-/// corrected in place, dated, in that module's own header, along with the
-/// `/TrapNet` reasoning that depended on it. **A limitation sentence is a
-/// citation with an hours-long shelf life**, and this project has now paid for
-/// that lesson six times.
 ///
 /// # R83: the control is omitted when the engine would refuse
 ///

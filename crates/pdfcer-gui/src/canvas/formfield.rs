@@ -1,6 +1,5 @@
 //! # `canvas::formfield` — placing a new form field on the page
 //!
-//! **Operator request, 2026-08-26:**
 //!
 //! > *"get all the form buttons on the ribbon working next along with adding
 //! > all the form feature buttons. when I click one I should be able to click
@@ -13,10 +12,6 @@
 //!
 //! ## ★★★ Why it was never built, and why that reason was wrong
 //!
-//! `shell::commands::reach::register` recorded `edit.form_create_field` as
-//! blocked on *"core's STRUCTURAL certification gate"*. **There is no such
-//! gate.** Probed on 2026-08-26 against a real drawing:
-//! `EditSession::add_text_field` authors a field and returns its id.
 //!
 //! What the engine refuses is a spec whose tooltip is `Undecided` —
 //! `TooltipDecisionRequired`, an **accessibility** requirement rather than a
@@ -73,8 +68,6 @@ pub enum FormFieldKind {
     Choice,
     /// A button that performs an action.
     ///
-    /// ★★ **Authored, but inert — and it is on the ribbon GREYED rather than
-    /// absent**, on the operator's ruling of 2026-08-26.
     ///
     /// That is R9-correct rather than an exception to it. R9 reserves greying
     /// for a *temporarily* unavailable capability that is explained on hover,
@@ -98,8 +91,6 @@ impl FormFieldKind {
 
     /// Whether pdfcer can do anything useful with this kind **once placed**.
     ///
-    /// ★★★ **`true` for all five since 2026-09-01**, and the history is worth
-    /// keeping because it is what this predicate was FOR.
     ///
     /// It answered `false` for [`Self::PushButton`] for the life of the
     /// project. Authoring worked — `add_push_button` places a correct widget —
@@ -109,10 +100,6 @@ impl FormFieldKind {
     /// recurring failure mode, so the tool was greyed and the placement dialog
     /// said why.
     ///
-    /// `pdfcer-core` shipped `EditSession::set_button_action` on **2026-08-30**
-    /// (`Pass 182.0`/`183.0`/`183.1`) on the operator's direct instruction, and
-    /// this shell consumed it on 2026-09-01. `dialogs::buttonaction` is the
-    /// surface; `canvas::formfield::action` is the model.
     ///
     /// ★★ **The predicate is kept rather than deleted**, and not out of
     /// sentiment. `app::dispatch::forms` decides its worded refusal on it and
@@ -257,10 +244,6 @@ mod tests {
     /// ★★★ **NO KIND IS AUTHORABLE-BUT-INERT ANY MORE**, and the test that
     /// used to say otherwise did its job.
     ///
-    /// It read *"exactly one kind is authorable-but-inert, and it is the push
-    /// button"*, with the instruction: *"if pdfcer ever runs PDF actions, this
-    /// test fails and the failure is the prompt to un-grey the button."* On
-    /// 2026-09-01 it failed for exactly that reason and this is what it became.
     ///
     /// ★★ Inverted rather than deleted, because the WELD is the point. Three
     /// surfaces have to agree about whether a kind is useful once placed — the
@@ -289,9 +272,6 @@ mod tests {
     /// ★★ **The push button in particular**, named rather than left to the
     /// blanket above.
     ///
-    /// `set_button_action` shipped 2026-08-30 and this shell consumed it on
-    /// 2026-09-01. A regression that re-greyed the button would pass the empty-
-    /// set test above only by also changing it, and would pass nothing here.
     #[test]
     fn a_push_button_can_be_given_something_to_do() {
         assert!(

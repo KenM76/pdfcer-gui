@@ -79,7 +79,7 @@ const SPOTLIGHT: &str = "canvas-form-spotlight";
 /// The fixture — **this project's own**, not the engine's, and that is a
 /// finding rather than a preference.
 ///
-/// ★★★ Not one form fixture in `D:\Dev\pdfcerixtures\syntheticorms\` carries a
+/// ★★★ Not one form fixture in `D:\Dev\pdfcer\fixtures\synthetic\forms\` carries a
 /// plain text field with an `/AP` `/N` appearance stream. Measured 2026-09-02
 /// across all eighteen: `demo-form` and `radio-choice-form` have text fields
 /// with **no** appearance, `rich-field-form`'s one paint-ready text field is
@@ -191,12 +191,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★★ THE SELECT TOOL, EXPLICITLY — and this is a finding about the
     // feature, not merely a step.
     //
-    // The canvas's whole form overlay is gated on `offered_in(tool)`, which is
-    // `CanvasTool::Select` and nothing else. Edit mode does not start there, so
-    // on entering it the overlay stops drawing entirely: no wash, no spotlight,
-    // no form boxes. Measured 2026-09-02 — the canvas traced its last spotlight
-    // line at the exact frame `mode-changed to=edit` appeared, 260 lines before
-    // the panel first wrote a field into the channel.
     //
     // ⇒ The check selects the tool so it measures the feature in the state the
     // feature is designed for. **The gap this leaves is recorded rather than

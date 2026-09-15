@@ -5,11 +5,6 @@
 //!
 //! ## ★★★ Why this exists — the gap the operator's report exposed
 //!
-//! The operator, 2026-09-05: *"the review features should look and act the
-//! same as they do in Acrobat Reader."* Acrobat's Comment pane is a **work
-//! list**, and a work list you cannot narrow is a list you scroll. Its filter
-//! offers reviewer, type, status and checkmark; its sort offers page, type,
-//! author, date and colour.
 //!
 //! This panel had **none of it**: every annotation in the document, in
 //! document order, always. On `SW41177.pdf` — thirty-six sheets — a reviewer
@@ -17,18 +12,6 @@
 //!
 //! ## ★★ What is offered, and what is NOT, and why each absence
 //!
-//! | Acrobat offers | here | why |
-//! |---|---|---|
-//! | filter by **reviewer** | ✅ [`Filter::author`] | `/T` is modelled and read |
-//! | filter by **type** | ✅ [`Filter::subtype`] | `/Subtype` is modelled and read |
-//! | filter to **comments with text** | ✅ [`Filter::with_note_only`] | ★ this shell's own, and it earns its place: pdfcer's own markup authoring cannot write `/Contents` on a geometric shape, so a drawing pdfcer marked up is a column of "no note" rows with the reviewer's actual remarks scattered through it |
-//! | filter by **status** (Accepted / Rejected / …) | ✅ [`Filter::status`] | ★★★ **arrived 2026-09-06.** It was ❌ here for one day, on the grounds that *"`/State` and `/StateModel` have zero occurrences in `pdfcer-core` v0.38.0 — not read, not written, not modelled"*, filed as `request_review_status_is_not_modelled_at_all.md`. `Pass 253.1` closed it. The predicate is **not** in [`Filter::keeps`] and could not be — a status lives on *other* annotations (§12.5.6.3) — so it is answered by [`super::reviewstate::narrow`]; that field's doc carries the whole split |
-//! | filter by **checkmark** | ❌ | a per-viewer flag Acrobat keeps outside the PDF. Not a document property, so not this panel's |
-//! | sort by **page** | ✅ [`Sort::Document`], the default | |
-//! | sort by **type** | ✅ [`Sort::Subtype`] | |
-//! | sort by **author** | ✅ [`Sort::Author`] | |
-//! | sort by **date** | ❌ | ★★ **`/M` is not reliably a date.** §12.5.2 gives its type as *"date **or** text string"* and requires a reader to accept any format, so `pdfcer-core` stores it raw and its own docs say *"do not assume it parses"*. A sort would have to either parse it — rejecting legal values — or sort the strings, which orders `D:2026…` before `17 January` and calls it chronology. `crate::text::panels::comments::comment_row_byline` makes the same ruling for display and this is it holding for ordering |
-//! | sort by **colour** | ❌ | `/C` is **not in the engine's read model** at all — `annot.rs`'s parser reads `/CA` and never `/C`. Filed as `request_an_annotations_colour_cannot_be_read.md` |
 //!
 //! ⇒ Of the four absences this table opened with, **one has since closed** —
 //! status, on the day after it was written — and it closed because the request

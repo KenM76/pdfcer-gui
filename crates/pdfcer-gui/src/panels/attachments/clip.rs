@@ -26,11 +26,6 @@
 //! so a same-named attachment is **replaced**. Not refused. Not suffixed. The
 //! existing entry is dropped from the tree and the new one takes its key.
 //!
-//! The old bytes survive in the earlier revision until a full rewrite, so it is
-//! recoverable — and **nothing on screen would say it had happened**. A write
-//! that produces a document which looks right and is not is the worst shape a
-//! silent edit can take, so it gets the bookmark paste's treatment: said beside
-//! the button, while the operator can still choose.
 //!
 //! A **statement**, not a confirmation. One paste is one `EditSession` command
 //! and therefore one `Ctrl+Z`, which is enough for the rule that a destructive

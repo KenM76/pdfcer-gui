@@ -134,14 +134,6 @@ pub trait CanvasTargetProvider {
     /// **The outermost form XObject a target is painted inside**, as a page
     /// object, or `None` for a target that is not inside one.
     ///
-    /// ★★★ Why this is on the trait rather than only on the live provider
-    /// (2026-08-31, `OPERATOR_REQUESTS.md` O70): `canvas::smart` substitutes a
-    /// container for a leaf on the click path, which runs against
-    /// `&dyn CanvasTargetProvider`. Reaching past the trait to the concrete
-    /// provider there would put the one rule this feature has in a place the
-    /// test doubles cannot reach — and the rule is exactly the kind that needs
-    /// a stub to state it: *a click selects the container until you are inside
-    /// it.*
     ///
     /// A provided method answering `None`, like [`Self::object_class`], so a
     /// double that has no forms is unaffected. `None` means *"nothing to
@@ -195,19 +187,7 @@ pub trait CanvasTargetProvider {
 
     /// Every target a marquee rect takes, under `mode` and `forms`.
     ///
-    /// ★ `mode` is a parameter as of 2026-09-02 (`OPERATOR_REQUESTS.md` O88):
-    /// a left-to-right drag encloses, a right-to-left drag touches. The caller
-    /// decides from the drag's direction and every implementor obeys, rather
-    /// than each deciding for itself — see the live provider's own
-    /// `hit_test_rect` for the report that motivated it.
     ///
-    /// ★★ `forms` is a parameter as of 2026-09-11, and for the same reason one
-    /// rung up: the engine's [`pdfcer_core::vector::hit_test_rect_deep`] makes
-    /// it explicit *"a deliberate act at the call site rather than a
-    /// surprise"*, and a shell that pinned it to one value inside one
-    /// implementation would be re-taking a decision the engine had just handed
-    /// to the caller. The three callers in this crate do not all want the same
-    /// answer, which is the practical half of the same argument:
     ///
     /// | caller | passes | because |
     /// |---|---|---|
@@ -303,12 +283,6 @@ pub trait CanvasTargetProvider {
     // ★★★ THE SAME THREE QUESTIONS, FOR EITHER INDEX SPACE
     // ===================================================================
     //
-    // `OPERATOR_REQUESTS.md` O70, 2026-09-01. The three above take a page
-    // paint-order index, which is the only address the Part and Node rungs
-    // have ever had — so those rungs were structurally unavailable for
-    // anything painted inside a form XObject. `canvas::input::probe` said so
-    // in a comment: *"the ladder stopping at the Object rung for a leaf,
-    // expressed where the address space runs out."*
     //
     // These take a `TargetId` and are the ones `probe` now asks. The
     // page-index forms stay for the callers that legitimately hold one, and
@@ -548,8 +522,6 @@ impl CanvasTargetProvider for ObjectModelProvider {
         use crate::panels::objects::provider::PartKind;
         match (self.part_kind_of(target), target.page_object_index()) {
             (Some(PartKind::Subpath), _) => self.subpath_hits_of(target, point, tolerance),
-            // ★★★ **A TEXT OBJECT'S RUNS, and forgetting them here broke the
-            // Points tool for text — caught by the full sweep, 2026-09-01.**
             //
             // The first version of this override handled `Subpath` and answered
             // empty for everything else, which silently dropped the `Run` arm
@@ -691,8 +663,6 @@ pub struct StubTargets {
     /// `leaves[1]` are different things, and that only the first is an edit
     /// operand.
     ///
-    /// ★★★ Hit by [`Self::hit_test_rect`] as of 2026-09-11, and the sentence
-    /// that used to be here was **false for as long as it stood**.
     ///
     /// It read *"deliberately not hit by `hit_test_rect`, matching the live
     /// provider"*. The live provider has returned leaves from a marquee since
@@ -1034,13 +1004,6 @@ mod tests {
     ///
     /// # What this is really testing, and why it is not the engine's job
     ///
-    /// Until 2026-09-11 `StubTargets::hit_test_rect` ignored `leaves` outright,
-    /// and its doc comment said that *matched the live provider*. It did not:
-    /// the live provider has returned form interiors from a marquee since the
-    /// day it was written. So every selection test that used this stub to
-    /// reason about a band near a form was reasoning about a shell that does
-    /// not exist — and none of them could fail, because the stub agreed with
-    /// itself.
     ///
     /// The engine proves its own deep marquee against real content streams.
     /// What is proved here is narrower and is the part the engine cannot see:

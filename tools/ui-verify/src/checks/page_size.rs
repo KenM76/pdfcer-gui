@@ -5,12 +5,6 @@
 //!
 //! # What this is about
 //!
-//! `EditSession::set_media_boxes` shipped on 2026-08-18, written for the
-//! drawing-set case, and was called by nothing for nineteen days because no
-//! `pages.resize` command existed. A complete size chooser was built and
-//! unreachable in `dialogs::new_document`, which opens only while creating a
-//! file. The command, the window and the verb are wired now, and the whole
-//! point of this file is that **none of that is evidence.**
 //!
 //! # ★★★ HOW I WOULD FALSIFY THIS CHECK
 //!
@@ -343,8 +337,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
         .push((SAVE_PATH_ENV.to_owned(), saved.display().to_string()));
-    // ★★★ **`mode.edit` at launch — added 2026-09-06, the first time this check
-    // was ever RUN.**
     //
     // It was written by a session that was forbidden to drive, and on its first
     // real run it SKIPPED with *"the application declared no `ribbon.tab.pages`
@@ -653,14 +645,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 /// Click a region the **application** declared, converting against the frame it
 /// was declared in.
 ///
-/// ★★★ `driving::frame_of`, never `session.frame()`. **A dialog is an OS
-/// window**, so the main window's frame is the wrong one and the symptom of
-/// using it is *silence*: every click lands hundreds of points away, nothing
-/// responds, and the check reports a working feature as inert.
-/// `RESUME.md` records that fault twice — `checks::ocr::click_region` on
-/// 2026-08-27 and `new_document_size` on 2026-09-05, the second written *after*
-/// the first was fixed and its lesson written down. A note is not a mechanism;
-/// a shared helper is.
 fn click_dialog_region(
     session: &Session,
     driver: &Driver,

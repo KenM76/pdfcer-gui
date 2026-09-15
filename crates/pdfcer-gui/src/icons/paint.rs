@@ -34,9 +34,6 @@
 //! to serve as that icon's accessible name, and *the application actually
 //! supplied a painter*. Its doc comment records why the third clause exists:
 //!
-//! > an application that registers icon keys but supplies no
-//! > `Ribbon::with_icon_painter` used to get a row of blank boxes — a
-//! > control with no label, no glyph and no explanation.
 //!
 //! Until a painter is supplied the whole ribbon falls back to text buttons.
 //! Supplying one is the difference between a toolbar and a ribbon.

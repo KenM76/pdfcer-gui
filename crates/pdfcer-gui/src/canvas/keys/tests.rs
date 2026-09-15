@@ -1,7 +1,5 @@
 //! # `canvas::keys` tests — the Delete ladder and the Escape ladder, enumerated
 //!
-//! Split out of [`super`] under **R2** on 2026-08-28, when the form-field
-//! Delete took that file past 1,500 lines.
 //!
 //! ## ★★ The seam, and why the half left behind is the interesting one
 //!
@@ -27,13 +25,6 @@
 //! * `model_attempted: true` — *the frame asked for one and did not get it*,
 //!   which is the **page-would-not-decompose** case.
 //!
-//! The other combination — asked `false` — is the 2026-09-05 defect, four times
-//! recurrent, and `super`'s Delete arm carries a `debug_assert` that panics on
-//! it. Writing `false` here would therefore make every deeper-rung case below
-//! fail with that assert's message rather than its own, which is the correct
-//! behaviour and the reason the value is not simply `false` for tidiness. See
-//! `canvas::modelneed` for the four incidents and `keys::Keys::model_attempted`
-//! for the table.
 //!
 //! ## ★ …and every case passes `page: None`, which is the honest value
 //!
@@ -47,17 +38,9 @@
 //! [`crate::canvas::moving::nudge`]'s tests, beside the module that decides it —
 //! this file's seam, applied once more.
 
-// ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
-// `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
-// file** rather than from its name, and without it every assertion message here
-// is reported as operator-facing copy — 28 of them, the last time a test module
-// was split under R2.
 #![cfg(test)]
 
 use super::*;
-// ★ Both re-imported here on 2026-09-05, when `canvas::keys` stopped naming
-// them: the Delete decision moved to `canvas::deleting` and `super::*` no
-// longer re-exports what these assertions read.
 use crate::app::actions::VectorAction;
 use crate::canvas::selection::{ClickHit, SelectionLevel};
 use crate::canvas::target::TargetId;
@@ -285,12 +268,6 @@ fn delete_removes_a_selected_form_field_and_nothing_else() {
 ///
 /// # What this pins, and why the shape of the failure is the point
 ///
-/// Rung 0 above was added on 2026-08-28 with **no gate at all** — it pushed
-/// `DeleteWidget` on `caps.edit_content && selected_field` and returned six
-/// lines above the annotation branch that does ask one. So the R83 pass that
-/// closed the annotation rung on 2026-08-29 walked past this rung without
-/// seeing it, because a rung that asks nothing looks like a rung with nothing
-/// to ask.
 ///
 /// The consequence was not a harmless no-op. `actions::forms::delete_widget`
 /// cleared `doc.selected_field` **before** calling the engine, so on an
@@ -459,9 +436,6 @@ fn delete_with_nothing_selected_raises_nothing() {
 /// has outlived the reason originally given for it — which is why the reason is
 /// rewritten here rather than left standing.
 ///
-/// **It used to be:** *"the Part rung has no delete verb wired"*. True until
-/// 2026-09-05, when `delete_subpath`, `delete_text_run` and `delete_node` were
-/// wired through [`crate::canvas::deleting`]. The rung has a verb now.
 ///
 /// **What is asserted is unchanged and is the part that mattered all along:**
 /// the Part rung must not raise `DeleteSelection`. One measured CAD export
@@ -1209,12 +1183,6 @@ fn a_second_escape_retires_the_zoom_the_guide_drag_protected() {
 ///
 /// # What this pins, and why the shape of the failure matters more than the rung
 ///
-/// This rung read `if annot.target.locked` and nothing else until 2026-08-29 —
-/// one of the **three** things that refuse an annotation delete. `/Encrypt` and
-/// an enforced certification signature were not asked, because
-/// `EditSession::annotation_deletion_refusal` — a pure query whose own doc
-/// comment names the call site by rule number — was called by nothing in this
-/// shell.
 ///
 /// The consequence was not a harmless no-op. `actions::annots::delete` clears
 /// the annotation selection **after** the funnel rather than on success, so on a
@@ -1326,12 +1294,6 @@ fn delete_acts_on_an_annotation_when_the_gate_is_open() {
 ///
 /// # Why this test exists rather than only the assert
 ///
-/// A `debug_assert` nobody has watched fire is a comment with a semicolon. This
-/// is the fourth recurrence of one defect — `Resize` (2026-08-19), `Handle`
-/// (2026-08-19), `DimensionVertex` (2026-08-20) and the Delete key
-/// (2026-09-05) — and the first three were each fixed by adding a variant to a
-/// list, which is why there was a fourth. The guard that is supposed to make a
-/// fifth loud has to be **seen** to be loud.
 ///
 /// ⚠ It is the ONE case in this file that passes `model_attempted: false`, and
 /// it is why every other case passes `true`: `false` means *nobody asked*, and
@@ -1344,11 +1306,6 @@ fn delete_acts_on_an_annotation_when_the_gate_is_open() {
 /// tripwire as working when it had not run at all.
 ///  And why it is compiled out of a RELEASE test run.
 ///
-/// The tripwire is a `debug_assert`, so `cargo test --release` compiles the
-/// panic away and this test then fails for a reason that says nothing about
-/// the program: *"test did not panic as expected"*. Found 2026-09-10 -- the
-/// release suite reported `3313 passed; 1 failed` while the debug suite
-/// reported `3314 passed; 0 failed`, and the difference was entirely this.
 ///
 /// A permanently-red test in one profile is worse than no test, because the
 /// only way to keep using that profile is to learn to ignore the red -- and a

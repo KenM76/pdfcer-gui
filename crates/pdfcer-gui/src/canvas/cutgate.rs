@@ -5,8 +5,6 @@
 //!
 //! ## Where the question comes from
 //!
-//! `pdfcer-core`, unprompted, on 2026-08-29 —
-//! `note_cut_copy_paste_now_covers_almost_everything_and_six_things_were_broken.md`:
 //!
 //! > **Do not offer Cut as enabled and let it fail.** A **copy** of something
 //! > pdfcer cannot carry costs nothing — the original stays, the clip carries an
@@ -127,12 +125,6 @@ mod tests {
     /// ★★★ The mirror is PERMISSIVE, and this test states the rule that keeps
     /// it that way.
     ///
-    /// The list below is every subtype this shell can put on a page or select.
-    /// None of them may be a blocker, because the engine carries all of them —
-    /// several only since the `Raw` carrier landed on 2026-08-29, which is the
-    /// event that makes this test worth having: a mirror written the day before
-    /// would have been greying Cut over a sticky note that had become perfectly
-    /// cuttable, and nothing would have failed.
     ///
     /// ⇒ A mirror that is too permissive costs one refusal sentence. One that
     /// is too strict costs a capability, silently, for as long as nobody tries.

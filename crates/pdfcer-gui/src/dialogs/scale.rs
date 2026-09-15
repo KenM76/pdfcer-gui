@@ -45,11 +45,6 @@
 //! path reachable from a dialog opened cold, and, as the source notes, an
 //! accessibility win: a scale can be set entirely by typing.
 //!
-//! **A cold-opened dialog offers the ratio path.** ★ This paragraph used to
-//! end *"drawing one is a canvas gesture (`ScalePick`) that is not yet armed by
-//! any command"*, and that stopped being true on 2026-08-17: the **Measure it
-//! on the drawing…** button in this very window arms it, and the dialog
-//! re-opens on the real-length path with the measured length in it.
 //!
 //! What survives is the reason the radio is **absent rather than greyed** when
 //! no line has been drawn: greying is for *temporarily* unavailable, and with
@@ -72,34 +67,6 @@
 //!
 //! Corpus: `ui-conventions/dialogs.md`.
 //!
-//! - G1 is-an-os-window: **GAP, and it is the operator's report of 2026-08-20** —
-//!   *"doesn't pop up in its own movable window. It is locked within the
-//!   boundaries of the program's window."* Every dialog here is an
-//!   `egui::Window`, which is an in-viewport panel. egui can already do the real
-//!   thing through `show_viewport_immediate`; the panel was the path of least
-//!   resistance and nothing pushed back.
-//! - G2 use-the-os-dialog: the file and save pickers are the system's, and
-//!   `pdfcer-print` opens the native printer-properties sheet owned by our
-//!   window. The dialogs in this directory are pdfcer's own because they carry
-//!   choices only pdfcer has — which is the right reason to draw one, and does
-//!   not excuse G1.
-//! - G3 owned-by-the-app: the native pickers are; an in-viewport panel cannot be
-//!   anything else. This becomes a live question the moment G1 is fixed.
-//! - G4 enter-accepts-escape-cancels: **PARTIAL** — Escape closes; Enter is not
-//!   wired as the affirmative default and no button is drawn as the default, so
-//!   an operator who types into the last field and presses Enter gets nothing.
-//! - G5 keyboard-reachable: **GAP** — egui's tab order is positional and nothing
-//!   here asserts that focus starts in a sensible field or that a modal traps
-//!   it.
-//! - G6 remembers-position: **GAP** — anchored `CENTER_CENTER` every time, so a
-//!   dialog the operator moved comes back to the middle of the window.
-//! - G7 destructive-verbs-named: the unsaved-changes dialog names the file and
-//!   labels its buttons with verbs rather than Yes/No.
-//! - G8 cancel-is-silent: a cancelled picker is a complete, correct,
-//!   uninteresting outcome and is never reported as an error.
-//! - G9 nothing-blocks-silently: a native picker blocks the UI thread by design,
-//!   which is what a modal file dialog is. Long work behind a pdfcer dialog is
-//!   not surfaced. **GAP.**
 
 use egui::Ui;
 use pdfcer_core::dimension::{DEFAULT_GROUP_ID, DimensionModel, FractionMode, GroupId, Unit};
@@ -130,12 +97,6 @@ pub struct ScaleDialog {
     ///
     /// # ★ It is now OPERATOR-changeable, and the old contract still holds
     ///
-    /// This field's note used to read *"not re-read per frame: a group picker
-    /// that moved underneath an open dialog would let them type a number for
-    /// one group and commit it to another."* That reasoning is **still exactly
-    /// right and is still honoured** -- nothing re-reads the *authoring* group
-    /// while this window is up, so changing what the canvas draws into cannot
-    /// redirect a calibration in progress.
     ///
     /// What changed is that the operator may now aim the window deliberately,
     /// through the picker this field backs (`OPERATOR_REQUESTS.md` O193). That
@@ -178,12 +139,6 @@ pub struct ScaleDialog {
     /// The reference line's measured length in PDF points, when the operator
     /// calibrated by picking two points on the drawing.
     ///
-    /// ★ `None` is the *typed* path — the dialog opened cold from the ribbon,
-    /// there is no drawn line, and only the ratio entry can produce a scale.
-    /// `Some` is the **calibration** path the operator asked for by name on
-    /// 2026-08-17: two picks measured this many points on the page, and the
-    /// question the dialog now asks is what that distance *is* on the real
-    /// thing.
     ///
     /// It is threaded straight through to `ScaleEntryFields`, whose `entry`,
     /// `preview` and `commit` all take `drawn_pdf_length: Option<f64>` and have
@@ -220,14 +175,6 @@ impl ScaleDialog {
     ///
     /// # ★ It reads the document now -- O192
     ///
-    /// This constructor took a bare [`GroupId`] until 2026-09-13 and seeded its
-    /// fields from [`ScaleEntryFields::for_group_panel`], which is seeded from
-    /// nothing. So the window opened reading `1:100` in metres over a group
-    /// calibrated to `1:50` in inches, and an operator who pressed *Set scale*
-    /// without touching a control silently recalibrated the whole drawing to a
-    /// number the window had invented. The operator's report named the visible
-    /// half -- *"does not show me the scale that is already set"* -- and the
-    /// invisible half is the one that could have damaged a file.
     ///
     /// ★★ [`ScaleEntryFields::for_group`] carries the whole inversion and the
     /// proof that it is exact. The only thing done here is choosing the path:
@@ -418,16 +365,6 @@ impl ScaleDialog {
     ///
     /// # ★★★ Hidden is DERIVED, and that distinction is the third defect
     ///
-    /// Until 2026-09-13 the application answered the calibrate request by
-    /// calling `close_scale()`, which dropped the dialog, and rebuilt a fresh
-    /// one from `ScaleEntryFields::default()` when the pick completed. An
-    /// operator who chose metres, typed a ratio, set the number style to
-    /// eighths and *then* decided to measure the line on the drawing came back
-    /// to a window that had forgotten all four. Nothing said so; the window
-    /// simply reappeared looking like a new one, which reads as the program
-    /// losing their work rather than as a design. And pressing Escape mid-pick
-    /// stranded them completely -- the key lands on `disarm_measure`, and
-    /// nothing reopened the window that had already been destroyed.
     ///
     /// # Why a flag was written first, and then deleted
     ///
@@ -476,12 +413,6 @@ impl ScaleDialog {
     /// clear rather than a returned flag, so the caller cannot forget to reset
     /// it and re-arm on every subsequent frame.
     ///
-    /// ★ **It no longer means "close me".** The application used to answer
-    /// this signal by destroying the dialog; it now answers it by arming the
-    /// tool, and arming the tool is what hides the window -- see
-    /// [`Self::hidden`]. There is nothing for this function to set, which is
-    /// the point: "asked to pick" and "is off screen" cannot disagree if only
-    /// one of them is stored.
     pub fn take_calibrate_request(&mut self) -> bool {
         std::mem::take(&mut self.calibrate_requested)
     }
@@ -530,11 +461,6 @@ impl ScaleDialog {
             ((screen.height() - size.y).max(0.0) / 3.0).max(0.0),
         );
 
-        // ★ ITS OWN OS WINDOW as of 2026-08-21. The computed opening position
-        // above is retired with the `egui::Window` it fed: `dialogs::host`
-        // insets a new dialog from the application window and then remembers
-        // wherever the operator drags it, which is the thing that position was
-        // approximating without the memory.
         let _ = pos;
         let (frame, ()) = crate::dialogs::host::Host::new(
             "set-scale", // ui-text-exempt: a viewport key, never displayed.
@@ -574,12 +500,6 @@ impl ScaleDialog {
         // ★★ BOTH PATHS NOW, and which one the window leads with depends on
         // whether the operator measured something first.
         //
-        // This block used to say the ratio path was the only one, because
-        // "the real-length path needs a drawn reference line, and drawing one
-        // is a canvas gesture no command arms yet". That sentence was accurate
-        // and it was also the whole gap the operator reported on 2026-08-17:
-        // *"still missing the feature where we set the scale by selecting two
-        // lines or points and defining what that distance represents."*
         //
         // The gesture now exists (`MeasureKind::Scale`), and the two states
         // this dialog can be in are genuinely different questions:
@@ -855,18 +775,6 @@ fn unit_combo(ui: &mut Ui, id: &str, unit: &mut Unit) {
     egui::ComboBox::from_id_salt(id)
         .selected_text(t::unit_name(*unit))
         .show_ui(ui, |ui| {
-            // ★ **`Unit::all()` directly, with no local list in front of it.**
-            // This read `&units()` until 2026-09-13, a one-line shim whose own
-            // doc comment recorded that the hand-written array it replaced had
-            // held the same six units in the same order — a **latent**
-            // divergence, the kind that goes wrong silently the first time the
-            // engine gains a unit, in a dropdown nobody would think to
-            // re-count. The shim was kept only because `all()` returned
-            // `[Unit; 6]` and a fixed-size array is a cardinality in a
-            // signature. Reply `G013` made it `&'static [Unit]`, which removed
-            // the reason, so the shim went with it: **a mechanism whose cause
-            // has been removed rots**, and this one would have gone on
-            // asserting a six that is now a nine.
             for option in Unit::all().iter().copied() {
                 ui.selectable_value(unit, option, t::unit_name(option));
             }

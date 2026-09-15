@@ -91,10 +91,6 @@ pub(super) fn extract(doc: &OpenDoc, pages: &[usize]) {
 
 /// Assemble the new document and put it on disk, reporting on the trace.
 ///
-/// Split from [`extract`] so the picker and the write are separable in the
-/// reading as well as in the testing — `crate::app::save::write_and_report`'s
-/// reason, and this half is the one a unit test can reach, because it never
-/// opens a dialog.
 fn write_extract(doc: &OpenDoc, pages: &[usize], target: &Path) {
     let assembled = pdfcer_core::pageops::extract(&doc.session.view(), pages);
     let (bytes, report) = match assembled {

@@ -696,9 +696,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // ★★ This block used to FAIL when `EDITABLE_REGION` was absent while a
-    // control inside it was present, on the reasoning that it *"should be
-    // impossible — the section publishes its own rect after its controls."*
     //
     // **That was an invariant asserted without being measured, and the first
     // driven run refuted it.** The section published through

@@ -3,7 +3,6 @@
 //!
 //! # The report this exists for, verbatim
 //!
-//! `OPERATOR_REQUESTS.md` **O171**, 2026-09-10:
 //!
 //! > *"After I place the first stamp and go to make a second one the window for
 //! > the options pops up but is undersized so I can't see the add or cancel
@@ -31,16 +30,6 @@
 //! > same question**, and this check never computes, compares or guesses a
 //! > single number.
 //!
-//! ⚠ That is a property of the application, not of this file, and it was made
-//! true on 2026-09-10 in the same revision as this check: `REGION_ACCEPT` used
-//! to be a plain `ui_rect`, which publishes a rectangle whether or not anyone
-//! can see it. A check reading *that* would have found Accept "declared" on the
-//! exact build where the operator could not press it, then clicked a point
-//! below the window's own bottom edge — a plausible number, no error anywhere,
-//! and a live defect reported as working. `REGION_CANCEL` did not exist at all;
-//! his sentence names both buttons, and a harness that could see one of the two
-//! would report the row as reachable on a build where half of it had been
-//! clipped away.
 //!
 //! # Phases
 //!
@@ -61,9 +50,6 @@
 //!
 //! # Rule 15
 //!
-//! [`BOX_PT`] and [`SECOND_OFFSET_PT`] are **pdf dimensions** — coordinates in
-//! the CAD-exported page's own space, used to aim the pointer. Nothing in this
-//! module authors a ce dimension.
 
 use crate::checks::driving::{
     SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
@@ -95,8 +81,6 @@ const SECOND_OFFSET_PT: f64 = 300.0;
 ///
 /// # ★★★ Why this is a function and not `target + SECOND_OFFSET_PT`
 ///
-/// It was `target + SECOND_OFFSET_PT` on both axes until 2026-09-11, and the
-/// full sweep SKIPPED this check because of it:
 ///
 /// > *document point (2520, 840) is outside the page's crop box (0, 0) —
 /// > (2383.937, 1683.78)*
@@ -211,16 +195,12 @@ fn armed_tool(session: &Session) -> Result<Option<String>> {
 /// **Arm the stamp tool from the Markup tab — but only if it is not already
 /// armed.**
 ///
-/// # ★★★ The ribbon item is a TOGGLE, and the first version of this check did
-/// not know that — 2026-09-10
 ///
 /// It was written to click Markup > Stamp before *each* placement, on the
 /// reasoning that *"markup tools disarm themselves after a placement in some
 /// modes and not in others… re-arming an already-armed tool costs one click and
 /// closes the question."*
 ///
-/// **It costs one click and OPENS the question**, because `markup.stamp` is a
-/// toggle. Driven on 2026-09-10 the trace read, in three consecutive lines:
 ///
 /// ```text
 /// egui-shell-diag ribbon-command-invoked id=markup.stamp handler=522
@@ -486,8 +466,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- E: the SECOND stamp, which is the whole point ---------------------
     //
-    // ★★★ **The main window is raised first — and the reason this comment
-    // originally gave was WRONG, which is the more useful half. 2026-09-11.**
     //
     // The raise itself is cheap and correct: the dialog owned the foreground a
     // moment ago, and a check that drives the canvas immediately after a
@@ -513,10 +491,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // right-hand half of the target window, which the sibling check
     // `stamp_size_reaches_the_engine` named by SKIPPING in the same minute.
     //
-    // ⇒ The defect was in `input::Driver::drag`, which never asked
-    // `confirm_uncovered` — the guard `click_at` has had since 2026-08-27. It
-    // asks now, and this failure mode reports as a SKIP naming the offending
-    // window instead of as an accusation against the stamp tool.
     //
     // ★★ The standing lesson, earning yet another instance: **a driven failure
     // is a claim about the check too**, and the way to test that claim is to

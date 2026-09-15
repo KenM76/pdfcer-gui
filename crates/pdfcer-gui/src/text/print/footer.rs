@@ -1,10 +1,5 @@
 //! **The print window's three ways out** — `OPERATOR_REQUESTS.md` **O185**.
 //!
-//! Split out of [`super`] under R2 on 2026-09-14, at the banner that was
-//! already there. The seam is not only the line count: every other section of
-//! that catalogue names a control describing *what will be printed*, and this
-//! one names the controls for *leaving*, which after O166 is a decision about
-//! state the window owns rather than about the job.
 //!
 //! # ★★ What the three words have to do between them
 //!

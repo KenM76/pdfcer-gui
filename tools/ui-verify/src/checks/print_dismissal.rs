@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-14:
 //!
 //! > *"I set the printer up, close the window to go check something, and it's
 //! > all gone."*

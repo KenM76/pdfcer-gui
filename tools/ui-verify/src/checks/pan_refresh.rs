@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! `OPERATOR_REQUESTS.md` O25, 2026-08-23:
 //!
 //! > *"if I pan to far to one side when I am beyond 800% zoom it doesn't always
 //! > render the new exposed area, and the same thing happens usually when I
@@ -69,8 +68,6 @@ const RENDER_EVENT: &str = "render-async-done";
 
 /// The worker's **inline** completion line — the other half of the same fact.
 ///
-/// ★★★ Added 2026-08-28, after this check reported *"NO RENDER WAS REQUESTED"*
-/// against a build that had spawned and completed **nineteen** of them.
 ///
 /// `render::worker` has two completion paths and takes whichever is cheaper: a
 /// raster that finishes fast enough is done **inline**, on the frame that asked

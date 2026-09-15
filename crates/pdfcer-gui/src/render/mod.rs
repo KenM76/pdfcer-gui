@@ -49,22 +49,10 @@
 //! the whole of a single-page session, and [`settle`]'s strip pass returns on
 //! an `is_empty` check.
 //!
-//! [`settle`] also holds what used to be the second half of
-//! `crate::app::state` — the per-frame staleness decision — moved here when
-//! Phase 4 doubled its size. That file's header already named the seam: it
-//! answers *"what is open"*, and this answers *"what should the picture be"*.
 
 // ★ A NOTE ON THE ORDER OF WHAT FOLLOWS, because it has already eaten four
 // module headers once and the damage is silent.
 //
-// `rustfmt`'s `reorder_modules` is on by default and it sorts a contiguous run
-// of `mod` items alphabetically. It does **not** carry an item's doc comment
-// with it. So inserting one new module into a sorted run re-sorts the run,
-// leaves every doc comment where it was, and the result compiles, passes every
-// gate, and renders four modules' documentation onto whichever module happens
-// to be last — which is what had happened to this block before 2026-09-10, and
-// is why `offpage`, `raster` and `strategy` each spent some time described by
-// somebody else's header.
 //
 // The rule that keeps it fixed: **each `pub mod` sits directly under its own
 // doc comment, and the run stays alphabetical.** A doc comment stranded above a

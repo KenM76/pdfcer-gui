@@ -162,15 +162,6 @@ pub(crate) fn of_run(
     rep
 }
 
-// ★ `accepts(ctx, doc, page, run, char) -> bool` stood here until 2026-09-09 and
-// was deleted with its only caller, the same day both landed. It applied the
-// *not measured means yes* rule one character at a time; `sieve` below applies
-// the identical rule to a whole keystroke's text and is what the key handler
-// actually needs, because an `egui::Event::Text` can carry more than one
-// character. Keeping a one-character wrapper alive for the tests that were
-// written against it would have been a second predicate to keep in step with the
-// first — the shape this project deletes rather than documents.
-
 /// **What one keystroke's text survives as** — the characters the run will
 /// take, and the first one it will not.
 ///
@@ -290,11 +281,6 @@ fn measure(doc: &OpenDoc, page: usize, run: usize) -> Option<Arc<RunRepertoire>>
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI.
         //
-        // ★★ FLAT FIELDS, never `{:?}` on the struct — the standing finding
-        // from 2026-09-05, when a debug-formatted tuple on the sibling trace
-        // made a correct build report itself broken. `accepted` is a COUNT
-        // rather than the set: the set runs to a few hundred characters and a
-        // trace line is read with `grep`.
         //
         // ★★★ `reason` is the engine's own sentence and this is the ONE place
         // it is allowed to appear. `super::Refusal::NoUsableEncoding`'s docs

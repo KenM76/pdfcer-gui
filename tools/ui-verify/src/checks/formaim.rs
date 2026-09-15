@@ -12,9 +12,6 @@
 //! pdfcer-diag form-field-selected page=0 field=Text1 widget=0
 //! ```
 //!
-//! On 2026-08-29 all three failed on that assertion, with the same sentence:
-//! *"THE FIELD COULD NOT BE SELECTED"*. **The click was landing exactly where
-//! the field is.** From `widget-move.trace.txt`:
 //!
 //! ```text
 //! form-target page=0 field=Text1 widget=0 rect=(473.8,529.4)+(160.0,20.0)

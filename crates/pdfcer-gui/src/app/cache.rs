@@ -271,10 +271,6 @@ pub(in crate::app) struct PageTextCache {
 ///
 /// # The reader is a SNAPSHOT and going stale is silent
 ///
-/// It resolves against the page order it was built with. A page delete, a page
-/// insert or a new named destination invalidates it — and a stale one does not
-/// error, it answers *confidently and wrongly*, sending a link to the page that
-/// used to be at that index.
 ///
 /// The epoch key is what prevents that, and it is why the reader is keyed on
 /// the epoch rather than held for the document's lifetime: **every** edit bumps
@@ -762,9 +758,6 @@ impl OpenDoc {
 
     /// **Does `run` on the current page have no show operator to anchor on?**
     ///
-    /// `Some(true)` / `Some(false)`, or `None` when the question could not be
-    /// answered - see [`FormRunCache::flags`] for why `None` must never be read
-    /// as `true`, and for what this question used to be.
     ///
     /// The first call for a `(page, epoch)` pays one provenance-bearing
     /// extraction; every call after it is a vector index. See

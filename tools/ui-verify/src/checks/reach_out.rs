@@ -3,8 +3,6 @@
 //!
 //! # What this is about
 //!
-//! **Ken, 2026-08-30:** *"I think pdfcer added support for several button
-//! features and protections for outgoing submits."*
 //!
 //! Half right. pdfcer cannot yet **author** a button action — still planned, and
 //! a policy decision rather than a missing verb. What it did ship is the
@@ -25,9 +23,6 @@
 //!
 //! # ★★★ Why this needs its own fixture, and why that is the finding
 //!
-//! **Nothing in either corpus has a submit action.** Checked on 2026-08-30:
-//! every PDF under the engine's `fixtures/synthetic` reports
-//! `js_network_actions=0`, and this shell's own fixtures are CAD drawings.
 //!
 //! That absence is worth stating rather than routing around: **the one document
 //! shape this disclosure exists for is the one nobody had a copy of.** A check

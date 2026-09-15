@@ -188,7 +188,6 @@ fn an_out_of_range_run_edits_nothing() {
 /// ★★★ **Bold binds a REAL `Helvetica-Bold` on a page carrying no bold face**
 /// — the standard-14 rung, and the reason `set_style` was wired.
 ///
-/// # What this test asserted until 2026-09-11, and why that was not enough
 ///
 /// One thing: that `doc.edit_epoch` moved. Its own comment argued the point —
 ///
@@ -328,7 +327,6 @@ fn the_standard_face_rung_tells_the_operator_it_used_a_real_face() {
 /// (`Times-Bold`, whose `/Differences` remaps `o` to `/bullet`, so it does NOT
 /// cover the run).
 ///
-/// # What this test used to assert, and why it was right to
 ///
 /// Asking for synthetic bold was refused by `gate_synthesis` — *"a REAL bold
 /// face is available"* — **naming `Times-Bold`**, because it matched the run's
@@ -339,9 +337,6 @@ fn the_standard_face_rung_tells_the_operator_it_used_a_real_face() {
 /// It was written as a **characterisation** test, with the engine revision
 /// named, and it closed with a prediction:
 ///
-/// > When the engine picks a covering face, this test starts failing on
-/// > assertion 1 — and **that failure is the good news, not a regression**.
-/// > `pdfcer-core` at `914389c`, 2026-08-27.
 ///
 /// ## The prediction came true the same night
 ///
@@ -435,11 +430,6 @@ fn bold_takes_the_covering_real_face_on_a_page_that_has_one() {
 /// `ReflowRefusal::PageSetChanged`, which told the operator *"pages have been
 /// added, removed or reordered since. Save this file and open it again."*
 ///
-/// That was a correct reading of the engine on 2026-09-05, when `Unsupported`
-/// carried three sentences and two of them were about the session's page set.
-/// `Pass 257.0` removed both on 2026-09-06. From then until this test was
-/// written, `Unsupported` carried **ten** sentences, **none** of them about the
-/// page set, and the shell asserted that cause for all ten.
 ///
 /// ⚠ **3,865 tests were green throughout.** Nothing here touched
 /// `reflow_refusal` at all — it was a `fn` with no caller in `#[cfg(test)]` —
@@ -455,10 +445,6 @@ fn an_engine_decline_with_no_discriminant_names_no_cause_and_promises_no_remedy(
     // must give the SAME honest answer to every one of them — a test that tried
     // one string would pass against a build that special-cased that string.
     let every_unsupported = [
-        // NB the Pass 251.0 sentence is NOT in this list any more. It became
-        // `ReflowApplyError::PageEditedThisSession` on 2026-09-07, hours after
-        // this test was written, and is asserted by
-        // `the_one_recoverable_refusal_keeps_its_remedy` below.
         "the page has no /Contents to reflow",
         "the block carries no font resource",
         "the block's font resource is unresolvable",
@@ -556,9 +542,6 @@ fn a_named_cause_comes_from_a_named_engine_variant() {
 /// already be right; a mapping deleted because it was briefly unreachable
 /// is how the remedy would be lost a third time.
 ///
-/// `pdfcer-core` shipped `ReflowApplyError::PageEditedThisSession` on
-/// 2026-09-07, hours after `EngineDeclined` was added above, and the reply that
-/// announced it flagged a hazard in this shell's own code by name:
 ///
 /// > *"any `match` of yours ending in `_` just gained a variant it will not
 /// > distinguish, and the one it will not distinguish is the one you care
@@ -617,13 +600,6 @@ fn the_one_recoverable_refusal_keeps_its_remedy() {
 /// ending in `_` just gained a variant it will not distinguish, and the one it
 /// will not distinguish is the one you care about."*
 ///
-/// ★★ [`FormatError::SynthesisRefusedByPosture`] became reachable on
-/// 2026-09-11, when `StyleChange::stamp` moved from `set_synthetic` to
-/// `set_style`. It fires **only** when the operator explicitly chose
-/// `StylePolicy::Refuse` and pdfcer then walked every real rung and found
-/// nothing — so collapsing it into `Other` would answer *"never fake it"* with
-/// *"pdfcer could not change that text"*: their own instruction, obeyed
-/// exactly, reported back as a malfunction.
 ///
 /// ★ The **distinctness** sweep is the assertion that does the work. Checking
 /// that each variant maps to something passes trivially; checking that no two
@@ -653,9 +629,6 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
             E::ShearUnsupported("the follower would move".to_owned()),
             R::ItalicWouldMove,
         ),
-        // ★★★ `E::CoverageFailure` WAS MISSING FROM THIS LIST until 2026-09-11,
-        // and it was missing because it could not be BUILT — not because it did
-        // not matter.
         //
         // It wraps `text_edit::Refusal`, which is `#[non_exhaustive]` with all
         // fields public and, until `Pass 295.0`, **no public constructor**
@@ -695,12 +668,6 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
             )),
             R::FaceLacksCharacters(vec![REMEDY_A.to_owned(), REMEDY_B.to_owned()]),
         ),
-        // ★ `rung_one` carries a WHOLE CLAUSE since `Pass 295.0`, not the face
-        // list it used to (`passed`). The old field was interpolated straight
-        // after the words `page faces`, which ran them together — `page
-        // facesHelvetica-Bold` — and, worse, read as *"X was used"* where it
-        // meant *"X was tried and rejected"*. `thiserror`'s format string
-        // cannot branch, so the branch moved to the construction site.
         (
             E::SynthesisRefusedByPosture {
                 style: "bold",
@@ -818,9 +785,6 @@ fn each_engine_decline_reaches_a_refusal_that_suits_it() {
         seen.push(super::reflow_refusal(&error));
     }
 
-    // ★★★ The point: three declines, three DIFFERENT operator outcomes. Before
-    // 2026-09-07 every one of these produced the same sentence, and that
-    // sentence named a cause the engine could not produce.
     for (i, a) in seen.iter().enumerate() {
         for b in seen.iter().skip(i + 1) {
             assert_ne!(
@@ -844,26 +808,9 @@ fn each_engine_decline_reaches_a_refusal_that_suits_it() {
 ///
 /// # Why this test exists, and what it is really guarding
 ///
-/// `O198`: the operator's 36-sheet SOLIDWORKS drawing sets its body text in
-/// `AQHZBV+CenturyGothic`, a composite (Type 0 / CIDFont) face. Within-block
-/// reflow of composite text is a deferred engine feature (`R-INV-4`, FF-E), so
-/// **every** reflow he attempted on that sheet was refused — and until
-/// 2026-09-14 the sentence he got was [`ReflowRefusal::EngineDeclined`]'s
-/// *"something about how this page was drawn stops it doing so safely"*. True,
-/// honest, and useless: it gave him no way to know that trying the paragraph
-/// next to it was pointless for exactly the same reason.
 ///
 /// # ★★ The assertion that matters is the SECOND one
 ///
-/// Reaching `FontIsComposite` from a composite refusal is the easy half and a
-/// match on the `Refused` variant alone would satisfy it. What this test also
-/// pins is that a `Refused` carrying **any other** trigger does NOT reach that
-/// sentence, because the engine's payload is a general `encoding::Refusal`
-/// over eight `RInvTrigger`s and only one of them is about composite fonts.
-/// `reflow_apply::refuse_if_composite` is the sole constructor today; a variant
-/// match would start lying the day a second one appears, silently and with no
-/// compile error, which is the precise shape of the wildcard defect corrected
-/// twice on 2026-09-07 and recorded in the tests above.
 ///
 /// ★ *A tripwire keyed on the other side's data survives the other side
 /// changing; one keyed on our reading of it does not.*

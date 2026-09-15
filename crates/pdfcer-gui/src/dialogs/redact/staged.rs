@@ -1,10 +1,6 @@
 //! # `dialogs::redact::staged` — the phase for a document whose removal is
 //! already armed
 //!
-//! **New 2026-09-05, with `pdfcer-core` `Pass 250.2`.** It draws one heading,
-//! one paragraph and one control, and it exists as a module of its own for a
-//! seam rather than for a line count — [`super`] was at 1,318 lines before this
-//! work and R2's ceiling was not in sight.
 //!
 //! ## ★ The seam, argued
 //!

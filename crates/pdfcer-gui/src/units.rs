@@ -6,10 +6,6 @@
 //!
 //! # Why this module exists at all
 //!
-//! It was written on 2026-09-13 to close operator request **O194 clause 2**,
-//! and the enumeration that produced that clause (`UNIT_SURFACES.md` §3) found
-//! the program holding **three independent spellings of one physical
-//! constant**:
 //!
 //! * six private constants under two different names — `PTS_PER_MM` in
 //!   `panels/pages`, `panels/docprops` and `dialogs/insert_image`, `PT_PER_MM`
@@ -31,12 +27,6 @@
 //! precisely the kind of masking that stops working the moment somebody shows a
 //! decimal.
 //!
-//! ★★ **The engine is a third spelling, and it is the one this module
-//! ships.** [`Unit::baseline_per_point`] returns `25.4 / 72.0` — one constant,
-//! divided once, folded at compile time — and this module multiplies by it.
-//! That was measured only when the test defending this paragraph was written
-//! and failed; the paragraph had previously said the engine used the multiply
-//! form, which it does not. Swept over 10 000 inputs, 2026-09-13:
 //!
 //! ```text
 //!   engine  vs closure form    3_003 of 10_000 inputs disagree
@@ -223,11 +213,6 @@ pub fn whole(value: f64) -> i64 {
 
 /// Points to whole millimetres, using [`whole`]'s rounding rule.
 ///
-/// This is the single function that the page-thumbnail tooltip, the Document
-/// Properties panel, the print dialogue, the new-document dialogue and the
-/// page-size dialogue all call, which is what makes them agree. Before
-/// 2026-09-13 those five surfaces used three different spellings between them
-/// and two different rounding rules.
 #[must_use]
 #[inline]
 pub fn whole_mm_from_points(points: f64) -> i64 {
@@ -285,11 +270,6 @@ mod tests {
     ///   pt / (72.0 / 25.4)      435.5281171027777    the six constants
     /// ```
     ///
-    /// ★★ **Then the rewritten test failed too**, on the line asserting the
-    /// engine and divide forms differ — because at *that* input they do not.
-    /// One input cannot establish that three spellings are different numbers;
-    /// it establishes only what one input did. Swept over 10 000 deterministic
-    /// inputs, measured 2026-09-13:
     ///
     /// ```text
     ///   engine  vs closure form    3_003 of 10_000 inputs disagree

@@ -1,7 +1,6 @@
 //! # `panels::properties::widgetedit` — the **box** a form field is drawn in,
 //! as opposed to the field itself
 //!
-//! `Pass 134.0`'s `EditSession::edit_widget`, consumed 2026-08-27.
 //!
 //! ## ★★★ Why this is a second file and not four more rows in [`super::fieldedit`]
 //!
@@ -46,19 +45,7 @@
 //!
 //! ## ★★★ All of `WidgetEdit`'s properties are here, and two of them took an hour
 //!
-//! ⚠ **This heading said *"All four"* until 2026-09-11, by which time
-//! `WidgetEdit` carried seven** — `rect`, `resize`, `border`, `border_color`,
-//! `background`, `caption`, `visibility`. A completeness claim that names a
-//! NUMBER goes stale the moment the other side grows a field, and it goes
-//! stale **silently**: nothing fails to compile, no gate counts it, and the
-//! sentence keeps reading like an audited fact. Phrase such a claim against
-//! the type, never against a count, so that the only way to falsify it is to
-//! look at the type.
 //!
-//! This section read *"`WidgetEdit` carries four properties and this pane
-//! offers **two**"* for about an hour on 2026-08-27, and the reason is worth
-//! keeping because the outcome is what decision 058 promises and rarely gets to
-//! demonstrate.
 //!
 //! **border** (`/BS`) and **visibility** (`/F`) were writable and **not
 //! readable**: `annot_author::read_border_width` was private, `border_style` is
@@ -204,8 +191,6 @@ pub fn section(
 
     geometry_rows(ui, draft, actions, fqn, widget_index);
     ui.add_space(4.0);
-    // ★★ Rotation sits WITH the geometry, not after the caption, and it moved
-    // here on 2026-08-30 for two reasons that agree.
     //
     // It IS geometry — an operator adjusting where a box is and how big it is is
     // in the same thought as which way round it faces, and the caption is a
@@ -230,7 +215,6 @@ pub fn section(
 
 /// **Turn the box**, in ninety-degree steps.
 ///
-/// `EditSession::rotate_widget`, shipped 2026-08-30. `/MK /R`, Table 189.
 ///
 /// # ★★★ THE DIRECTION IS THE WHOLE DANGER, AND IT IS NEGATED HERE
 ///
@@ -285,8 +269,6 @@ fn rotation_row(
 
     let mut turn = |ui: &mut Ui, label: &str, region: &str, delta: i64| {
         let response = ui.button(label);
-        // ★★★ The GATED form, and using the plain one shipped an unreachable
-        // control on 2026-08-30.
         //
         // This module's own header states the rule two hundred lines above:
         // *"the per-control regions below take the gated form, because a check
@@ -394,15 +376,6 @@ fn geometry_rows(
             FieldAction::EditWidget {
                 field: fqn.to_owned(),
                 widget: widget_index,
-                // ★ `from_corners`, not a literal `Rect { .. }`: §7.9.5 lets a
-                // `/Rect`'s corners arrive in any order and normalises them, and
-                // an operator who types a width of -20 has expressed something
-                // the standard has an answer for. Building the rect any other
-                // way would either refuse a legal input or author a
-                // denormalised box.
-                // ★★★ **AND THE SAME SCALE ANSWERS THE DRAG CARRIES** —
-                // `OPERATOR_REQUESTS.md` O76, wired 2026-08-31 when
-                // `pdfcer-core` Pass 187.0 taught `WidgetEdit` to carry them.
                 //
                 // Read from the SAME store the Tool row writes and the grip
                 // drag reads (`canvas::scaling::read`), not from a second

@@ -1,9 +1,6 @@
 //! # `text::protect` — every operator-facing string on the two Security
 //! controls that **write** protection into a file
 //!
-//! `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04 with the instruction
-//! that ended the question: *"yes add encryption and permissions … Always add
-//! new features. never ask. just do."*
 //!
 //! ## Why this is a second module rather than more of [`crate::text::security`]
 //!
@@ -265,10 +262,6 @@ pub const fn current_owner_password_label() -> &'static str {
 /// ★★★ **Disclosure 3 of O119's three: re-permissioning needs the owner
 /// password.**
 ///
-/// The engine asked for this to be surfaced by name, in its 2026-09-03 reply:
-/// *"`AuthKind` tells you which one opened the file — surface that, because
-/// `remove_encryption` will refuse a user-authenticated session and the operator
-/// should see WHY before pressing it."*
 ///
 /// ★ It is drawn **above the field**, not after a refusal. A refusal that
 /// arrives on press is a program that knew the answer and waited.
@@ -356,10 +349,6 @@ pub fn permission_row(name: &str, said: &str) -> String {
 
 /// ★★★ **Why one permission on the list has no tick-box.**
 ///
-/// Found by a test on 2026-09-04, not assumed — see
-/// [`crate::protect::tests::changing_the_password_keeps_what_the_document_allowed`]'s
-/// header for the failure that surfaced it and
-/// [`crate::protect::always_granted`] for the rule.
 ///
 /// `pdfcer-core` sets bit 10 on **every** file it writes, regardless of what the
 /// caller asked for — its rule W19, for compatibility with PDF 1.7 readers. So
@@ -466,12 +455,6 @@ pub const fn no_file_refusal() -> &'static str {
 /// refusal in two different voices is how an operator comes to believe they are
 /// two different problems.
 ///
-/// ⚠ **This did not exist until 2026-09-07 and the gap was three days old.**
-/// `EncryptError::RedactionPending` shipped 2026-09-05; the Protect surface had
-/// no arm for it, so the engine's own `Display` reached the dialog carrying
-/// `save_applying_redaction` and `cancel_pending_redaction` — internal Rust
-/// names — as the operator's instructions. See
-/// [`crate::protect::EngineRefusal::RedactionPending`].
 ///
 /// ★ It names **encrypting** rather than the three operations the engine's
 /// message lists, because the reason is identical for all three and the

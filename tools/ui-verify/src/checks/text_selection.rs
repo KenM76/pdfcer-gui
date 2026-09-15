@@ -77,14 +77,6 @@
 //!
 //! # Mouse only
 //!
-//! ★ **Escape, Ctrl+A and Ctrl+C are not driven here, and that is unwritten
-//! work rather than a limitation.** This block used to say synthetic keyboard
-//! input could not reach the window; it can (see [`crate::checks::add_text`]),
-//! and the claim was a misreading of the dead-keymap defect.
-//! **So Escape, Ctrl+A and Ctrl+C are not driven here**, and this file says so
-//! rather than implying otherwise: they are covered by unit test alone
-//! (`canvas::keys` for Escape, `canvas::textsel` for the other two), and the gap
-//! is on the record. Nothing in the phases above needs a key.
 //!
 //! # Every way this reports SKIP, and why none of them is a pass
 //!

@@ -1,13 +1,5 @@
 //! # `panels::forms::tab_order::tabs` — what the file STATES about tab order
 //!
-//! Split out of [`super::model`] on 2026-09-02 under R2, when the drag work
-//! carried that file past the 1,500-line ceiling. The seam is not arbitrary:
-//! this module answers *"what does the document say the tab order is"* and
-//! [`super::model`] answers *"what is actually on the page"*. They are two
-//! different questions of two different parts of the file — `/Tabs` lives in
-//! the page dictionary (and, by inheritance, in its ancestors), `/Annots` and
-//! the widgets live below it — and the tab-order panel is precisely the place
-//! those two answers are put beside each other and compared.
 //!
 //! ## ★★ Why the distinction is load bearing and not merely tidy
 //!
@@ -50,9 +42,6 @@ impl TabsEntry {
     /// What this entry implies about whether the `/Annots` sequence on screen
     /// **is** the tab order.
     ///
-    /// [`Self::OnAncestor`] answers as [`Self::Absent`] does, because that is
-    /// what this build applies: the ancestor's value is disclosed beside the
-    /// list, not used to describe it.
     #[must_use]
     pub fn sequence(&self) -> Sequence {
         match self {

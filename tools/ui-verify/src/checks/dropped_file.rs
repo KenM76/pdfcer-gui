@@ -3,8 +3,6 @@
 //!
 //! # What this is for
 //!
-//! The operator, 2026-08-19: *"also can't drag and drop a jpg file onto a new
-//! pdf, and the insert image button doesn't insert it either."*
 //!
 //! Half of that was false and half was worse than reported.
 //!

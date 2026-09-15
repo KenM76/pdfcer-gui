@@ -10,9 +10,6 @@
 //! > and dropping rows around like we can with pages in the page preview, and
 //! > have **clear markers** of where the field is going to move to."*
 //!
-//! The list shipped read-only on 2026-08-30, because `pdfcer-core` had no verb
-//! that reordered a page's `/Annots`. The verb shipped 2026-09-02; this is the
-//! check that the gesture reached it.
 //!
 //! # ★★ Why this cannot be a unit test, and the shape of the failure it catches
 //!
@@ -240,13 +237,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     // ★★★ GIVE THE PANE ROOM BEFORE OPENING THE SECTION.
     //
-    // Measured 2026-09-02: the Forms panel is the BOTTOM of three stacked panes
-    // in the right dock — 396 points tall. The tab-order section sits below the
-    // whole-form controls, and once its explainer, count and separator are laid
-    // out there are roughly 42 points left for a list of rows about 30 points
-    // each. `ui_rect_visible` publishes nothing for a row that is mostly
-    // clipped, correctly, so the check saw an empty list and no amount of
-    // scrolling helped: the content is not scrolled away, it has nowhere to go.
     //
     // ★★ Scrolling was tried first and failed twice, each time for a different
     // and instructive reason — the panel's centre lands on the fill list's OWN
@@ -265,11 +255,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★★ SCROLL THE PANEL UNTIL THE ROWS ARE ON SCREEN, and this is not
     // housekeeping — it is the precondition the whole check rests on.
     //
-    // The Tab-order section sits below the fill list and the groups in a docked
-    // panel with its own scroll area. Measured 2026-09-02 on a two-field form:
-    // its rows lay at y = 1406 in a client area 1369 points tall — off the
-    // bottom of the window on a 3440 x 1440 display, and further off on
-    // anything smaller.
     //
     // ★★ Until the rows published through `ui_rect_visible` this was INVISIBLE.
     // They published a rectangle regardless of the clip, the harness converted

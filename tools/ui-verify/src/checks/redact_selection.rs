@@ -3,10 +3,6 @@
 //!
 //! # What this closes
 //!
-//! **Ken, 2026-08-30:** *"the redaction tool — am I able to select objects on
-//! the canvas and redact them that way yet? I only tried it when it only worked
-//! with the search box and it didn't work for some things. it just told me it
-//! couldn't."*
 //!
 //! He was right. Until now there were two marking routes and nothing between
 //! them: **the search box**, which reaches text pdfcer can read *as text*, and

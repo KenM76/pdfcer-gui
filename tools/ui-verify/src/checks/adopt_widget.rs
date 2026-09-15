@@ -88,11 +88,6 @@ const INSERT_PATH_ENV: &str = "PDFCER_DIAG_INSERT_PATH";
 const MODE: &str = "edit";
 /// The command that opens the insert window, and the tab it lives on.
 ///
-/// ★ `pages.insert_from_file` on the **Pages** tab, not `edit.insert_pages`.
-/// The first draft of this check guessed the latter and skipped with a list of
-/// the nine controls the Edit tab actually declares — which is `crate::checks`
-/// rule 5 working: a reason that says what it *did* find turns a wrong guess
-/// into a one-line correction instead of an investigation.
 const INSERT_TAB: &str = "pages";
 const INSERT_ITEM: &str = "ribbon.item.pages.insert_from_file";
 /// The insert window's commit control.
@@ -308,10 +303,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // rectangle — so clicking its centre lands on whatever is drawn there
     // instead, and the check reports the control as inert.
     //
-    // That is a *harness* limitation reporting as an application defect, which
-    // this suite produced three times on 2026-08-19 before `Driver::scroll_at`
-    // existed. So: scroll until the row is inside the panel, and say so if it
-    // never gets there rather than clicking a coordinate outside the window.
     let panel = declared(&trace, ui_rect, PANEL_BODY)
         .ok_or_else(|| Error::new(format!("no `{PANEL_BODY}` region to scroll.")))?;
     let mut rect = declared(&trace, ui_rect, first)

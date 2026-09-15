@@ -12,11 +12,6 @@
 //! **Illegible** — something is drawn and its contrast against its background
 //! is below the threshold. This is D2.
 //!
-//! **Absent** — the region is uniform: nothing is drawn there at all. The
-//! 2026-08-08 screenshot audit found two ribbon groups rendering with **no
-//! caption**, and a contrast-only check would report those as low contrast and
-//! send whoever read it looking at the theme. They are different defects with
-//! different fixes, so they get different sentences.
 //!
 //! There is now a third, which only became reachable once the application
 //! started declaring its own regions: **off-surface** — the application says a

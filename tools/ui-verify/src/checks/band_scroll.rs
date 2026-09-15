@@ -4,10 +4,6 @@
 //! # ★★★ The defect this exists for was in the HARNESS, and it reported the
 //! application as broken
 //!
-//! Until 2026-08-25 the ribbon's last resort at a narrow width was a
-//! `⏷ N more` **dropdown**: one click and everything hidden appeared at once.
-//! `driving::declared_or_in_overflow` was written against that, and one click
-//! was the whole search.
 //!
 //! On the operator's instruction — *"do the scroll like Word"*, asked twice —
 //! the dropdown became a `›` arrow that **shifts the band by exactly one
@@ -32,13 +28,6 @@
 //! > *"no `ribbon.item.file.about` region on the File tab or in its
 //! > overflow."*
 //!
-//! Measured 2026-09-02: `about_reports_the_build`,
-//! `shortcuts_reference_is_live` and `properties_metadata_round_trips` all
-//! SKIPPED with that message at the harness's default 1,100 pt window, where
-//! the File tab's **Document** and **pdfcer** groups are two and three stops
-//! away. All three were worked around with `session.maximize()`, which is a
-//! good thing for those three to do for their own reasons and does nothing at
-//! all for the next check to meet this.
 //!
 //! ⇒ **A helper's prose and the mechanism it drives agreed when the prose was
 //! written.** That is the shape this project keeps meeting, and the reason a
@@ -53,12 +42,6 @@
 //! any command that happens to sit one stop past the fold — which is most of
 //! them, and is exactly why the bug survived a full sweep.
 //!
-//! So this check reads `driving::BandSearch`, which the search fills in as it
-//! goes, and requires a run that is **beyond the old search's reach**: either
-//! two scroll stops, or one stop plus a collapsed group opened there. Measured
-//! on 2026-09-03 it is the second of those — `1 scroll, found_in_popup` — and
-//! the assertion is written as the disjunction so a ribbon re-layout that turns
-//! it into the first does not silently disarm the check.
 //!
 //! ★ If a future ribbon change puts About one stop away, this check SKIPS
 //! rather than passing, and says it needs recalibrating against whatever

@@ -3,7 +3,6 @@
 //!
 //! # The request
 //!
-//! The operator, 2026-08-22:
 //!
 //! > *"Can you confirm that rendering on screen is actually happening at
 //! > maximum zoom? zoom in on one of the michocondria structures and post
@@ -44,7 +43,6 @@
 //! can still be drawn off-screen; a shell that stopped asking cannot report a
 //! failure.
 //!
-//! # ★★★ The fourth thing, added 2026-09-10: what the raster itself contained
 //!
 //! The uniformity assertion above is correct, and it is what caught O174. It is
 //! also unfalsifiable in one direction, and that cost most of an afternoon.
@@ -276,10 +274,6 @@ fn drawn_now(session: &Session) -> Result<u32> {
 /// contains, and letting `-1` through would turn every mid-zoom cancellation
 /// into a spurious *"the engine drew nothing"*.
 ///
-/// `None` means the build does not trace the field at all — the honest answer
-/// for the legacy binary and for any build older than 2026-09-10. The caller
-/// then falls back to the original, weaker verdict and says so in the message,
-/// rather than treating a missing field as a zero.
 fn last_ink(session: &Session) -> Result<Option<i64>> {
     Ok(session
         .trace()?
@@ -340,9 +334,6 @@ fn photograph(
     if uniformity.is_uniform() {
         // ★★★ A BLANK CANVAS HAS TWO CAUSES AND THIS IS WHERE THEY PART.
         //
-        // Added 2026-09-10, after this assertion spent an afternoon accusing an
-        // innocent shell. The two worlds a near-uniform canvas is consistent
-        // with:
         //
         //   1. the engine drew ink and the shell failed to show it — a defect,
         //      and the defect O174 actually was at 2,025 % on a rotated sheet;
@@ -501,9 +492,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let driver = Driver::new(session.window());
 
     let trace = session.trace()?;
-    // The canvas's own rect — not used to AIM (the pointer goes to a document
-    // coordinate below) but to say which pixels of the capture are the page,
-    // which is what makes the uniformity assertion mean anything.
     let canvas = driving::declared(&trace, ui_rect, CANVAS_REGION)
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
     let frame = session.frame()?;

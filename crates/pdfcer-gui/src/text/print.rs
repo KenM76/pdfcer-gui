@@ -148,7 +148,6 @@ pub fn properties_failed(detail: &str) -> String {
 /// The first of the three no-printer sentences (module docs). It is what this
 /// build says when the print spooler itself could not be queried.
 ///
-/// # ★ This sentence used to be a lie, and the lie is instructive
 ///
 /// It read *"This build cannot reach a print device"* for the whole of
 /// v0.1.0, which was true when it was written — `pdfcer-print` was not a
@@ -502,7 +501,6 @@ pub const fn duplex_short() -> &'static str {
 
 /// Label for the tray-by-sheet-size checkbox.
 ///
-/// # ★ This control was deleted on 2026-08-17 and is back on 2026-08-18
 ///
 /// It was removed because it did nothing: `DeviceSettings::pick_tray_by_page_size`
 /// was a field `pdfcer-print` declared and read nowhere, so the job spooled,
@@ -776,8 +774,6 @@ pub fn paper_is_a_request(sheet: Option<(f64, f64)>) -> String {
 /// The sheet the job was laid out on, when the operator asked for no
 /// particular one.
 ///
-/// # ★ This sentence used to end "pdfcer cannot change it", and that is no
-/// # longer true
 ///
 /// It read, for as long as there was no paper control:
 ///
@@ -785,13 +781,6 @@ pub fn paper_is_a_request(sheet: Option<(f64, f64)>) -> String {
 /// > in Windows. pdfcer cannot change it — set it in the printer's preferences
 /// > and reopen this dialog."*
 ///
-/// Which was correct, disclosed the right thing, and named the only remedy
-/// there was. It became false on 2026-08-18, when `pdfcer-print` shipped
-/// `PaperSelection` and this dialog grew a list — and a sentence like that
-/// does not announce its own expiry. It was found because the work that
-/// falsified it was the work that changed this file; had the paper control
-/// been added anywhere else, the dialog would have offered a paper list with
-/// a line under it saying paper could not be chosen.
 ///
 /// **The general lesson, which this project has now paid for three times:**
 /// a disclosure that names a limitation is a claim with a shelf life, and it
@@ -1141,11 +1130,6 @@ pub const fn overhang_is_blank() -> &'static str {
 // The footer — the one irreversible control in the application
 // ---------------------------------------------------------------------------
 //
-// Moved to `print/footer.rs` on 2026-09-14, under R2, when O185 turned one
-// button into three and took this file past 1,500 lines. The banner stays
-// because the reading order of a catalogue is part of what it documents: a
-// reader working down the window from the title bar should find the footer
-// where the footer is, even if what they find is a signpost.
 
 /// The three ways out of the print window, and what each does to the
 /// remembered settings. See the module's own header for the argument.

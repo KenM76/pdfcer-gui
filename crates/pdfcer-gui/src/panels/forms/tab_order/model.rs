@@ -248,10 +248,6 @@ impl Listing {
 
     /// Whether **any** page in the document declares a `/Tabs` on itself.
     ///
-    /// Used only by the trace. Deliberately not used to decide anything on
-    /// screen: every page states its own `/Tabs` situation beside its own rows,
-    /// because a document-wide summary of a per-page property would be right
-    /// about the document and wrong about the page the operator is reading.
     #[must_use]
     pub fn any_page_declares_tabs(&self) -> bool {
         self.pages

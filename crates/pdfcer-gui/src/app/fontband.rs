@@ -194,14 +194,6 @@ pub(super) fn draw(
 /// extraction with provenance capture (392 ms on the operator's benchmark
 /// sheet), and it is what actually reaches `add_enabled_ui` eleven lines above.
 ///
-/// So `enabled=1 live=0` is **a control greyed while every condition in the
-/// shell says it should not be**, and there is no other line in the trace from
-/// which that state can be inferred: the rect report says the control drew, the
-/// condition report says the condition holds, and the control is grey. It is
-/// the precise shape of `OPERATOR_REQUESTS.md` O198 claim 3 — *"that entire
-/// area is always greyed out in the menu"* — reported about a build whose
-/// every condition test passes, and until 2026-09-14 nothing outside this
-/// process could see it.
 ///
 /// ★★ Emitted under [`egui_shell::ribbon::report::ENABLEMENT_EVENT`], the same
 /// event name the shell's own command controls use, so **one grep finds all
@@ -250,12 +242,6 @@ fn command_for(kind: &str) -> Option<&'static str> {
 /// The page and the runs the controls would act on, and the draft synced to
 /// them — or `None` when there is nothing to act on.
 ///
-/// ★★★ **The operand is now either gesture**, `OPERATOR_REQUESTS.md` O198.
-/// Until 2026-09-14 this read `doc.text_selection` directly, which meant the
-/// five controls were live only for a swept range — and a swept range cannot
-/// be made in Edit, the only mode that draws them. See
-/// `app::textoperand`'s header for the whole deadlock; the short version is
-/// that the band was greyed in every reachable state and the operator said so.
 ///
 /// ★ It asks the **same** questions `panels::properties::text::section` asks,
 /// in the same order: an operand resolves, and its first run pins. A control
@@ -308,12 +294,6 @@ const FACE_POPUP_REGION: &str = "ribbon.font.face";
 ///
 /// # ★★★ The popup body is NOT written here, and that is the point
 ///
-/// It was, until 2026-08-29: this function and
-/// `panels::properties::text::face_row` held two copies of one `for` loop over
-/// the same list. `Pass 162.0` then gave the chooser a second kind of row — the
-/// standard-14 faces pdfcer authors on demand — with a disclosure it owes,
-/// headings to tell the two kinds apart, and a minimum popup width so the
-/// sentence is legible on a band whose control is 78 points wide.
 ///
 /// Adding all of that twice is how *"a face offered in one surface and not the
 /// other"* happens, which this project has found more than once. So both
@@ -387,12 +367,6 @@ fn size(
     let was = draft.size();
     // ★★★ A greyed size field shows the PLACEHOLDER, not a number.
     //
-    // Found by looking at a screenshot on 2026-08-27, after the driven check
-    // had passed. With nothing swept the draft holds its `Default` — zero —
-    // and `DragValue`'s own `range(1.0..=1440.0)` clamps that up, so the
-    // greyed control read **`1.0 pt`**: a claim about the operator's document,
-    // and a false one. The check was right to pass; it asserts that the control
-    // is drawn, and it was.
     //
     // A `Button` rather than a `DragValue` with clever formatting, because a
     // `DragValue` in this state is a control that can be dragged: `add_enabled_ui`

@@ -1,8 +1,5 @@
 //! # `dialogs::unsaved_host` — raising and draining the unsaved question
 //!
-//! The four accessors [`super::DialogsState`] offers for
-//! [`crate::dialogs::unsaved`], split out of [`super`] on 2026-09-02 under R2
-//! when that file crossed the 1,500-line ceiling.
 //!
 //! ## ★★ The seam is a real one: a question with THREE answers
 //!

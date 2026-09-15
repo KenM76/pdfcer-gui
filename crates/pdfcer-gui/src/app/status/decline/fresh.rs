@@ -1,11 +1,5 @@
 //! # `app::status::decline::fresh` — is the sentence still true?
 //!
-//! ★★★ **The retirement predicate, and the one fact-pair it reads**, split out
-//! of [`super`] on 2026-09-12 under R2. That file stood at 1,460 lines against
-//! the 1,500-line ceiling with a form-field refusal inbound that needed a
-//! variant, two match arms, a recorder and their reasons — the **fourth** time
-//! this module has met the ceiling, after `floor`, `textedit`/`record` and
-//! `line`.
 //!
 //! ## The seam
 //!
@@ -342,15 +336,6 @@ impl Declined {
             // -one call sites in `decline/tests.rs` to build the one mechanism
             // this arm exists to refuse.
             //
-            // ★★★ What earns the `true` got STRONGER on 2026-09-15 without
-            // changing the answer, and that is worth a line because the two
-            // arguments are easy to confuse. The retired wording was past
-            // tense (*that drag did nothing*) and survived on the rule that a
-            // report of a past moment cannot go stale. These two are present
-            // tense and survive on something better: they state a property of
-            // the document — *this line's position is not written down here*
-            // — which nothing but an edit can change. Neither Escape nor a
-            // new selection can falsify them. `retire` still owns stale.
             Self::TextRunHasNoPositionOfItsOwn | Self::TextRunWouldDragTheNextLine => true,
         }
     }

@@ -1,8 +1,6 @@
 //! # `panels::properties::annotdelete` — whether the selected annotation can
 //! be deleted, and what would go with it
 //!
-//! Two engine queries, one section, and both of them were named nowhere in this
-//! shell until 2026-08-29:
 //!
 //! | query | what it answers | what this section does with it |
 //! |---|---|---|
@@ -12,15 +10,6 @@
 //! ## ★★★ The defect the first query closes, and it is the day-before defect
 //! wearing a different `/Subtype`
 //!
-//! On 2026-08-28 an audit of `EditSession`'s public surface found that
-//! **`deletion_refusal` — the FORMS one — was consulted by nothing.** It
-//! appeared in this crate only inside three comments in `crate::panels::forms`,
-//! arguing correctly about which query *Flatten* should ask, while Rename,
-//! Delete field and Delete this box asked none. On an ordinary certified
-//! fillable form all three were drawn live and every press returned a refusal to
-//! the trace and nothing at all to the operator.
-//! `crate::panels::properties::formfield` is the fix and its header carries the
-//! finding.
 //!
 //! **The annotation half was the same defect, one file along, and it was still
 //! open.** `annotation_deletion_refusal` is `&self`, side-effect-free, and its
@@ -32,13 +21,6 @@
 //! * the **canvas right-click's Delete** was drawn and enabled,
 //! * the **Delete key** raised the action,
 //!
-//! and all three ended in `crate::app::actions::apply::vector_edit`'s `Err`
-//! arm — which wrote one line to the trace and, by that arm's own recorded
-//! decision, said **nothing to the operator**. Three visible controls, silently
-//! inert. That is the failure this project is named after. (Since O116,
-//! 2026-09-04, that arm words an un-categorised decline. It ends the silence
-//! and names no annotation, no kind and no cause, which is why this file's
-//! sentences are still owed.)
 //!
 //! ⇒ ★★ The generalisation, and it is the audit's rather than this file's: **a
 //! query the engine wrote for a shell is not consumed by being read.** Both of
@@ -250,13 +232,6 @@ pub fn gate(
 /// let mut selection = std::mem::take(&mut doc.selection);
 /// ```
 ///
-/// and puts it back a thousand lines later, so every line between those two
-/// sees a `SelectionState::default()` on the document. From 2026-08-28 to
-/// 2026-08-29 this function was what filled in
-/// `canvas::keys::Keys::annot_delete_refused`, which meant that flag was
-/// **`false` on every frame of the program's life, on every document**:
-/// `doc.selection.annot()` answered `None`, `is_some_and` short-circuited, and
-/// the Delete key's annotation rung never declined.
 ///
 /// What that looked like from a chair is the R83 defect the gate was written to
 /// close, intact: on a certified drawing the Properties panel drew *"this
@@ -327,13 +302,6 @@ pub enum Refusal {
 impl Refusal {
     /// The sentence.
     ///
-    /// ★ `pub(crate)` since 2026-08-29, when `Ctrl+X` turned out to be a fourth
-    /// door onto this verb and needed the same words on the status row that this
-    /// panel puts beside the selection. **One catalog, two surfaces** — the
-    /// alternative is a second wording of one fact, and this project's record of
-    /// that is `UnembedBlocker::reason` delegating to `Removability::reason`
-    /// precisely so a font that refuses in two places refuses for the same
-    /// stated reason.
     #[must_use]
     pub(crate) const fn line(self) -> &'static str {
         match self {

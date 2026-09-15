@@ -1,10 +1,6 @@
 //! Tests for [`super`]'s **body strip** — the region of a selection that means
 //! *move* rather than *resize*.
 //!
-//! Split out on 2026-09-08 for R2 (no source file over 1,500 lines) when
-//! `Grip::name` needed room. **Nothing else moved**: the same
-//! `mod body_strip_tests` block, de-indented, with its parent's private items
-//! still reachable because a child module can see them.
 //!
 //! ⚠ `handles.rs` carries **two** test modules and only this one moved. A
 //! first attempt cut at the first `#[cfg(test)]` and swept up both, leaving
@@ -40,17 +36,7 @@ fn the_centre_of_a_short_field_is_the_body() {
 /// ★★ …and on a short box **no grip's grab region reaches into the body at
 /// all**, which is the promise that replaced "the mid-edge pair is withheld".
 ///
-/// # Why this assertion changed on 2026-09-05, stated rather than quietly edited
 ///
-/// The original wording asserted that North and South were *dropped* from
-/// the offered list on a 5.9 px-tall field. That was the right assertion for
-/// the mechanism that existed at the time — a filter — and it is the wrong
-/// one for the mechanism that exists now. [`grip_bounds`] pushes the grips
-/// outward instead of dropping them, so on this field North and South are
-/// offered **and drawn 7.05 px clear of the box**, where they can be aimed
-/// at and where they eat nothing. Withholding them would now be a
-/// regression: they are the two grips that resize a short field's height,
-/// which is the one thing an operator is likely to want from it.
 ///
 /// So the promise is restated at the level it was always really about:
 /// **the body belongs to the body.** That is falsifiable against both

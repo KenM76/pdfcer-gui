@@ -1,9 +1,5 @@
 //! # `text::status::diagnostics` — **the narrator's whole vocabulary**
 //!
-//! Every sentence the *Render notes* disclosure can say, and nothing else.
-//! Split out of [`super`] on 2026-09-10 under standing rule **R2** when the
-//! tenth finding — the appearance-less annotation — pushed the parent file to
-//! 1,509 lines against a 1,500-line cap.
 //!
 //! ## ★ The seam is a consumer, not an alphabet
 //!
@@ -269,11 +265,6 @@ pub fn diagnostics_contents_missing(n: usize) -> String {
 ///
 /// # ★★★ Why a repair that changes nothing on the page is still disclosed
 ///
-/// Engine `Pass 290.0` (2026-09-10) stopped refusing a page whose
-/// `/Resources` is absent on itself **and every ancestor**, substituting the
-/// empty dictionary ISO 32000 Table 30 names for exactly this case. The page
-/// then renders normally — rule 4, no mark on the canvas, nothing tinted —
-/// and this line is the off-canvas half of that.
 ///
 /// ⚠ **It is not cosmetic bookkeeping, and the reason is easy to get
 /// backwards.** The obvious reading is *"a page with no content stream has

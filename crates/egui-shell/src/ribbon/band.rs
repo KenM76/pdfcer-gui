@@ -144,12 +144,6 @@ use super::sizing;
 /// it rather than as a line of its own. The salvage source used the same
 /// constant for the same reason.
 ///
-/// ★ **2 → 3 on 2026-09-04**, from `mockups/pdfcer-shell.html`'s
-/// `.grp .cap { padding: 3px 0 5px }` — the first figure. One point, and it
-/// is here rather than left alone because the operator's instruction was
-/// *"exactly like that including sizing"* and because the caption's font
-/// went up two points in the same pass: a 9 pt caption 2 pt below its row
-/// and an 11 pt caption 2 pt below its row are not the same optical gap.
 pub(crate) const CAPTION_GAP: f32 = 3.0;
 
 /// Clear space between the band's captions and whatever the application puts
@@ -185,12 +179,6 @@ pub(crate) const CAPTION_GAP: f32 = 3.0;
 /// visual churn beyond the defect, and churn is harder to review than the
 /// change it is mixed into.
 ///
-/// ★ **4 → 5 on 2026-09-04.** `mockups/ribbon.html` is superseded by
-/// `mockups/pdfcer-shell.html`, whose band puts the clearance on the CAPTION
-/// rather than on the band — `.grp .cap { padding: 3px 0 5px }`, the second
-/// figure — and asks for five points of it. The role is identical (the
-/// caption must not sit on the seam with whatever is under the ribbon) and
-/// so is the reasoning below; only the number moved.
 pub(super) const BAND_PADDING_BOTTOM: f32 = 5.0;
 
 /// The condition-name prefix that marks a command as currently *on*.
@@ -537,12 +525,6 @@ pub(crate) fn render_band(
         // ★★★ THE LEFT ARROW'S RESERVATION, taken before any group is laid
         // out — exactly as the right one's is, and for the identical reason.
         //
-        // Added 2026-08-25 after the sweep below found the defect: `groups_rect`
-        // began at `full.min`, the left arrow's rect is `full.min ..
-        // full.left() + reserve`, and the arrow is drawn AFTER the groups. They
-        // overlapped precisely, and at 237 pt `ribbon.group.view.window` was
-        // measured at `[[0.0 31.0] - [169.5 100.0]]` under an arrow occupying
-        // `0 .. 24`.
         //
         // What that costs is worse than an overlap: **the arrow wins the hit
         // test**, so on a scrolled band the leading control is unreachable and
@@ -778,13 +760,6 @@ pub(crate) fn captioned_group(
 /// The inside of a group: its control rows, then its caption, padded to
 /// [`GroupBox`].
 ///
-/// Split out of [`captioned_group`] only so the horizontal inset above reads
-/// as one line rather than as a closure wrapping a closure. **It is not a
-/// second drawing path** — [`captioned_group`] is the only caller and the
-/// only function that can reach it, so the module header's invariant ("every
-/// group goes through one closure, which emits the caption itself") is
-/// unchanged: `outcome.captions_emitted` is still incremented on a line that
-/// cannot be reached without the label having been drawn.
 #[allow(clippy::too_many_arguments)]
 fn group_body(
     ui: &mut egui::Ui,
@@ -797,7 +772,6 @@ fn group_body(
     outcome: &mut BandOutcome,
 ) {
     ui.vertical(|ui| {
-        // ★★★ EVERY VERTICAL GAP IN A GROUP IS EXPLICIT — 2026-09-05.
         //
         // The group's own column had the theme's `item_spacing.y` (4 pt at
         // `Quiet`), which `egui` inserts after **every** laid-out rect —
@@ -919,13 +893,6 @@ fn group_body(
         ui.add_space((box_.pad_top + box_.rows - (ui.cursor().top() - top)).max(0.0));
         ui.add_space(CAPTION_GAP);
 
-        // ★ `.size(…)` rather than `.small()`, since 2026-09-04. The mockup's
-        // `.grp .cap { font-size: 11px }` is two points above `egui`'s
-        // `TextStyle::Small` (9 pt), and a caption that small under an 11 pt
-        // band reads as a footnote rather than as the name of the block above
-        // it. `.weak()` is kept: `.cap { color: var(--ink-quiet) }` is
-        // `Palette::text_muted`, which is what `weak` resolves to — and it is
-        // NOT `.strong()`, so `check-strong-text` has nothing to say here.
         let caption = ui
             .allocate_ui_with_layout(vec2(widest, 0.0), Layout::top_down(Align::Center), |ui| {
                 ui.label(
@@ -1008,16 +975,7 @@ fn measure_group_rows(
         ctx.theme.metrics.gutter,
         max_rows,
         plan::GROUP_WRAP_WIDTH,
-        // ★★★ **EVERY GROUP ASKS, since 2026-09-05 — and this line is what a
-        // driven run found missing.**
         //
-        // It read `group.preferred_rows().map(|rows| rows as usize)`, with the
-        // note *"`None` is every group that has not asked, which is almost all
-        // of them."* `None` means [`plan::wrap_group`] keeps its
-        // *"it fits on one row, so leave it"* short-circuit, and on 2026-09-04
-        // the band's row budget went to three rows without this call site
-        // moving. The result, **measured off screen at 1400 x 900 on the File
-        // tab from the release binary's own `ribbon.item.*` trace**:
         //
         // ```text
         // file.file      x=8..401   (393 pt)  items=4  rows=1  tops=[41.0]
@@ -1026,16 +984,6 @@ fn measure_group_rows(
         // file.export.collapsed                 <- collapsed, at 1400 px
         // ```
         //
-        // **Not one group used a second row.** Every band was 68 pt tall
-        // carrying a single 21.7 pt row of controls, `GROUP_WRAP_WIDTH` (440)
-        // was never tripped because no group is that wide on one row, and two
-        // groups — Recognise and Export — were collapsed into captioned buttons
-        // **with 126 pt of band still unused**. That is the operator's
-        // *"it looks like the edits to the ribbon got halfway done"*, and it is
-        // the half nothing had looked at: `RIBBON_IA.md`'s 2026-09-05 amendment
-        // argued the three-row change from the mockup's rectangles and this
-        // shell's theme metrics, and said so — *"the product's own rectangles
-        // were NOT captured"*.
         //
         // ⇒ A group now asks for the ceiling it is being planned against unless
         // its manifest asks for something else. `wrap_group` still returns the
@@ -1068,13 +1016,6 @@ fn measure_group_rows(
     if lead > 0.0 && !rest.is_empty() {
         lead += gutter;
     }
-    // ★★ Measured in the font the caption is actually DRAWN in, since
-    // 2026-09-04. It read `&TextStyle::Small` until the mockup pass raised the
-    // caption to `Metrics::ribbon_caption_pts` (9 pt → 11), and a group
-    // measured against a 9 pt caption and drawn with an 11 pt one is a group
-    // whose caption is wider than the box the planner reserved for it — the
-    // caption is centred on the group's width, so the overflow is silent and
-    // symmetric, half a word past each edge and over the separator rule.
     //
     // This is the same "one decision written twice" trap `sizing`'s header
     // warns about, arriving through a font rather than through arithmetic.

@@ -1,10 +1,6 @@
 //! # `canvas::vertexroute` — **which of TWO node-edit verb families one drag
 //! reaches**
 //!
-//! Split out of [`super::interact`] under **R2** on 2026-09-05, when markup
-//! node editing would have taken that file past 1,500 lines for the third time.
-//! It is the same seam [`super::dragroute`] draws one gesture along, and the
-//! header there states the rule this one inherits:
 //!
 //! > One gesture — press on the thing, drag it — reaches different engine verbs,
 //! > and **which one is decided entirely by what is selected**.

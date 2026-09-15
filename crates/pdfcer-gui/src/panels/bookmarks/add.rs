@@ -3,10 +3,6 @@
 //!
 //! ## The gap this closes
 //!
-//! pdfcer has read bookmarks since the reader passes and had **zero authoring
-//! verbs opposite them** — the engine's own words. `EditSession::add_outline_item`
-//! shipped 2026-08-19 as `Pass 103.0`, the first ask of this shell's
-//! `insert_pages` request, and this is the surface for it.
 //!
 //! ## ★★ The `/Count` trap, and why nothing here diffs a number
 //!
@@ -133,8 +129,6 @@ pub fn show(ui: &mut Ui, doc: &OpenDoc, ui_state: &mut BookmarksUi, actions: &mu
             // looking for where bookmarks are added.
             let disabled = ui.add_enabled(false, egui::Button::new(t::bookmark_add_button()));
             crate::diag::ui_rect(REGION_ADD, disabled.rect);
-            // ★★★ **`on_disabled_hover_text`, since 2026-08-31** —
-            // `OPERATOR_REQUESTS.md` O77's sweep.
             //
             // This read `on_hover_text`, and in egui 0.35 that builds
             // `Tooltip::for_enabled`, which opens only when
@@ -180,11 +174,6 @@ mod tests {
 
     /// The add row's own two strings still say what the module header promises.
     ///
-    /// The tree walks that used to be tested here moved to [`super::tree`] on
-    /// 2026-08-28, with their fixtures, when `edit` needed them too. What is
-    /// left in this file that a test can reach without a `Ui` is the wording of
-    /// the two disclosures the row is responsible for - and both of them are
-    /// disclosures rather than labels, which is why they are worth pinning.
     #[test]
     fn the_collapsed_disclosure_names_the_consequence_rather_than_the_cause() {
         let said = t::bookmark_add_under_collapsed();

@@ -16,7 +16,6 @@
 //! [`ObjectGraph`] and a [`Page`] and returns data, which means every rule it
 //! states can be asserted.
 //!
-//! ## ★★★ Why this exists at all — the operator's report, 2026-09-05
 //!
 //! > *"I could add a yellow sticky note but even in read mode I don't think I
 //! > could figure out how to read it."*
@@ -48,14 +47,6 @@
 //! §12.5.6.14 Table 183 gives the same key the same meaning on the `/Popup`.
 //! A note authored open must therefore **open on load**, with no click.
 //!
-//! ★★★ **The workaround that was here is GONE — 2026-09-06.** This paragraph
-//! read: *"`pdfcer_core::annot::Annotation` does not model `/Open`. Confirmed
-//! by audit on 2026-09-05: `b"Open"` appears exactly twice in the whole crate,
-//! both write sites in `annot_author.rs`. So this module reads the raw
-//! dictionary through `ObjectGraph::value`."* It was reported as a workaround
-//! under pdfcer decision 058 — *anything the GUI has to work around is a place
-//! the crate boundary was drawn wrong* — and filed as
-//! `request_popup_open_state_cannot_be_read.md`.
 //!
 //! `Pass 253.3` shipped [`pdfcer_core::annot::Annotation::open`], and
 //! [`read_open`] is now two field reads. ⇒ **The shell's copy was deleted the
@@ -178,13 +169,6 @@ pub struct NoteView {
     pub locked: bool,
     /// The annotation this one replies to (`/IRT`), when it is a reply.
     ///
-    /// ★★★ **Also the exclusion key**, as of 2026-09-06: [`notes_on`] drops
-    /// any annotation with an `/IRT` rather than drawing a window for it. A
-    /// reply is placed at its parent's own `/Rect` by
-    /// `EditSession::add_reply`, so a bubble of its own would sit on top of the
-    /// comment it answers and take every click meant for it — see that
-    /// function's exclusion comment. [`super::thread`] is where a reply is
-    /// shown instead, which is where §12.5.6.2 puts it.
     ///
     /// This field therefore survives on a [`NoteView`] only as a **guard**: it
     /// is `None` for every note this module returns, and a test asserts so. It
@@ -192,9 +176,6 @@ pub struct NoteView {
     /// assertion inexpressible, and because `Reply` carries the same fact for
     /// the rows in a thread.
     ///
-    /// ⚠ This used to say *"read only — `pdfcer-core` v0.38.0 has no verb that
-    /// authors an `/IRT`"*. `Pass 253.0` closed that; the Comments panel
-    /// authors replies through `crate::app::actions::annot::AnnotAction::Reply`.
     pub in_reply_to: Option<ObjId>,
 }
 
@@ -270,11 +251,6 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
     // direction is the parent's `/Popup`"*), so the pairing is ours to make
     // and it is made from the parent's side.
     //
-    // ★★ The pop-up's own `/Open` is gathered here too, as of 2026-09-06, and
-    // that is what let [`read_open`] stop parsing dictionaries: Table 170 gives
-    // geometric markup **no `/Open` of its own**, so a `/Square`'s window state
-    // exists only on the companion — and `page_annotations` returns the
-    // companion, with `Annotation::open` on it, in this same walk.
     for annot in page_annotations(graph, page.id) {
         if annot.is_popup {
             if let Some(id) = annot.id {
@@ -289,8 +265,6 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
         if annot.is_widget() || annot.flags.suppressed_on_screen() {
             continue;
         }
-        // ★★★ **A REPLY IS NOT AN INDEPENDENT NOTE** — excluded 2026-09-06,
-        // the day this shell could first author one.
         //
         // `EditSession::add_reply` places a reply at **its parent's own
         // `/Rect`** — deliberately, and the engine says why: *"a reader draws a
@@ -300,11 +274,6 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
         // makes it the LAST match — and [`under`] takes the last match so the
         // topmost note wins a click.
         //
-        // ⇒ Without this line, answering a comment makes that comment
-        // **unreachable on the canvas**: the click that used to open it opens
-        // the newest answer to it instead, showing the answer's words and not
-        // the question's. The operator's own comment disappears behind their
-        // reply to it, permanently, with nothing on screen saying so.
         //
         // ★★ And the reply is not hidden by this — it is shown where §12.5.6.2
         // says it belongs. [`super::thread`] lists the whole transitive thread
@@ -361,7 +330,6 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
 
 /// **Does the file say this note starts open?**
 ///
-/// # ★★★ It used to parse a raw dictionary. It does not any more — 2026-09-06
 ///
 /// This function's whole body was a `graph.value(id)` dictionary lookup for
 /// `b"Open"`, reported as a workaround under pdfcer decision 058 (*anything the
@@ -422,13 +390,6 @@ fn canvas_rect(rect: pdfcer_core::page_tree::Rect, page: &Page) -> Option<Rect> 
 ///
 /// # The defect this closes
 ///
-/// Until 2026-09-05 a click opened a pop-up for *every* annotation that **could**
-/// carry a note, not for those that **do**. So clicking a revision cloud you
-/// only meant to select produced an empty window over the drawing — and, until
-/// the placement fix landed the same day, one that sat on top of the shape and
-/// swallowed the drag as well. It was recorded as a known limit in [`super`]'s
-/// header and on `OPERATOR_REQUESTS.md` O133 as *"a question about WHEN a pop-up
-/// opens rather than where it goes"*. This is that question, answered.
 ///
 /// # The rule, and why it is not simply "has words"
 ///
@@ -529,9 +490,6 @@ pub fn can_record_open_state(note: &NoteView) -> bool {
 /// would make the note on a hollow rectangle reachable only by clicking its
 /// hairline border.
 ///
-/// ★ Moved here on 2026-09-12. It sat above `has_something_to_read`, run
-/// together with that item's doc comment — so it documented `has_something_to_read`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 #[must_use]
 pub fn under(notes: &[NoteView], point: Pos2, tolerance: f32) -> Option<&NoteView> {
     notes
@@ -676,13 +634,6 @@ mod tests {
     /// default it."* An implementation that returned `false` unconditionally
     /// would pass every other test in this module.
     ///
-    /// ★ These five tests were rewritten on 2026-09-06 when [`read_open`]
-    /// stopped parsing raw dictionaries and started taking
-    /// `pdfcer_core::annot::Annotation::open`. What they assert is unchanged,
-    /// and deliberately so: the *rule* about which of the two objects wins did
-    /// not move, only who read the key. A rewrite that also changed the
-    /// assertions would have left nobody able to say whether the engine's
-    /// answer matched the shell's old one.
     #[test]
     fn a_note_authored_open_reads_as_open() {
         assert!(read_open(Some(true), None));
@@ -843,14 +794,6 @@ mod tests {
         // The `/Popup` is the window rather than a comment: §12.5.6.14 is a
         // `shall`, and it has never been listed.
         //
-        // The **reply** stopped being listed on 2026-09-06, and that is the
-        // half worth the sentence. `add_reply` places a reply at its parent's
-        // own `/Rect`, appended to `/Annots`, and [`under`] takes the last
-        // match — so a listed reply is a bubble sitting exactly on top of the
-        // comment it answers, taking every click meant for it. The reply's
-        // words are not lost: [`replies_to`] gathers them into the parent's
-        // thread, which the two assertions at the bottom of this test check on
-        // this same document.
         assert_eq!(
             notes.len(),
             2,

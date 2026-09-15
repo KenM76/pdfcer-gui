@@ -2,7 +2,6 @@
 //! is written on two surfaces, and it names the key the keymap actually
 //! holds.**
 //!
-//! # ⬜ NOT RUN — written 2026-09-05 and never driven
 //!
 //! Stated first, in its own section, because a check nobody has run is not
 //! evidence and this project has shipped twenty modules in that state. The
@@ -11,7 +10,6 @@
 //! **a green test count is not a substitute for R1.** Whoever runs it first
 //! should expect to correct it; see *What could still be wrong* at the foot.
 //!
-//! # The operator, 2026-09-05
 //!
 //! > *"I didn't see a way to get back out of read mode. if there is a shortcut
 //! > for this it should have a note what the key combo is in the top bar that

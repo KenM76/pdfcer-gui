@@ -23,7 +23,6 @@
 //! disagreeing with a better one. The disagreement is then hidden rather than
 //! resolved, and the surface that was *right* is the one that got worse.
 //!
-//! The operator's ruling, 2026-09-04:
 //!
 //! > *"Remember the blank/not-blank verdict for each sheet as the operator
 //! > steps through the preview, and label the button with the geometric count

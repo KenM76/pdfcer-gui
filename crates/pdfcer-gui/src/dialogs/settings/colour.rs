@@ -114,12 +114,6 @@ pub fn zero_tint(ui: &mut Ui, draft: &mut Draft) {
     );
     // ★★★ THE DEFAULT FIRST, and it is now ASKED rather than assumed.
     //
-    // `intent`'s argument is unchanged — an operator reads what pdfcer is doing
-    // now before they read the alternatives — but the list used to hard-code
-    // which one that was, and on 2026-09-03 the engine moved it. Sorting by
-    // `OverprintZeroTintScope::default()` means the ordering follows the engine
-    // instead of having to be remembered, and the "(pdfcer's default)" marker
-    // comes from the same question rather than from a label.
     let mut scopes = [
         Scope::GreyAsKOnly,
         Scope::DeviceCmykOnly,
@@ -236,18 +230,6 @@ pub fn polarity(ui: &mut Ui, draft: &mut Draft) {
 ///
 /// # What the operator is actually choosing between
 ///
-/// ISO 32000-1 §11.4.7 says a page with no declared blending space uses the
-/// **device's native** space. pdfcer's pixmap is RGBA8, which is additive — and
-/// in an additive space overprint is not merely unsimulated, it is
-/// **unrepresentable**: §11.7.4.3 makes the blend function return the source
-/// colour for every component *"specified in the current colour space"*, and
-/// in sRGB every component is always specified. The engine measured the
-/// consequence on the industry print-conformance suite it measures itself
-/// against: **24 of its 51 patches request overprint**, and under the literal
-/// reading all 24 are wrong. (The suite is licensed and is deliberately not
-/// named in this repository — operator ruling, 2026-08-25, enforced by
-/// `tools/check-suite-name-absent.py`. It is named in full in the private map
-/// directory, which is where a reader who needs it should look.)
 ///
 /// So the shipped default consults the file's **output intent**, but only when
 /// that intent is subtractive. That conditional is what makes it safe: an RGB

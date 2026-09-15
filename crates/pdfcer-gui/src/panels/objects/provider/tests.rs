@@ -43,12 +43,6 @@
 //! filename is a restatement of it that goes stale the moment a third such
 //! module is written.
 //!
-//! Without it, `check-ui-strings` reports every `assert!` message here as
-//! un-catalogued operator copy. That happened once already, on 2026-08-18,
-//! when `canvas::selection::tests` was split out under the same rule and the
-//! gate produced 28 false hits. The noise is the actual hazard: most of
-//! pdfcer's old string-gate floor was test assertions, and a split that
-//! reintroduced them would train people to ignore the report.
 //!
 //! ★ **The line gate still counts these lines.** `check-file-size.sh` counts
 //! total lines, tests included, on purpose — its own header says so — so
@@ -273,10 +267,6 @@ fn a_marquee_encloses_objects_inside_a_form() {
         p.hit_test_rect(0, grazing, MarqueeMode::Enclosed, FormMarquee::Include)
             .is_empty()
     );
-    // ★ …and the SAME grazing band as a crossing window takes it. Added
-    // 2026-09-02 with O88: without this the enclosure assertion above is
-    // half a claim, because it cannot distinguish "enclosure is enforced"
-    // from "the deep index space is unreachable by any marquee at all".
     assert_eq!(
         p.hit_test_rect(0, grazing, MarqueeMode::Touched, FormMarquee::Include),
         vec![TargetId::Object(0), TargetId::Leaf(1)],
@@ -301,12 +291,6 @@ fn a_marquee_encloses_objects_inside_a_form() {
     // leaf — which is the one assertion that proves `FormMarquee` travels all
     // the way to the engine.
     //
-    // Added 2026-09-11 with the adoption of `hit_test_rect_deep`. Every other
-    // assertion in this test would pass just as happily if `Include` were
-    // hard-coded inside the provider, or inside the engine, or if the argument
-    // were accepted and dropped — the failure mode this crate has met twice
-    // before with `mode`. One rect, both policies, is the only shape that can
-    // tell a threaded parameter from a decorative one.
     //
     // ★★ This is also the closest thing to a direct test of the engine's
     // interleave that this crate should own: `Object(0)` is the form, `Leaf(1)`

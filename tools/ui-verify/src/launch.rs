@@ -110,11 +110,6 @@ impl LaunchSpec {
 
 /// **Where every launched window is put**, in desktop pixels.
 ///
-/// To the **right** of the top-left corner, which is where always-on-top
-/// furniture docks — see [`Session::place`]. Measured on this machine
-/// 2026-08-20: the Windows on-screen keyboard occupies `(-5, 0)-(746, 266)`,
-/// and it cannot be closed from a process of ordinary integrity. `780` clears
-/// it, and a 1100 px client still ends at 1880 on a 1920-wide desktop.
 ///
 /// ★ This is a **mitigation, not the guard.** `Driver::confirm_uncovered`
 /// refuses a click on a point another window owns, wherever the window is;
@@ -130,9 +125,6 @@ const SAFE_ORIGIN_Y: i32 = 40;
 /// cannot be a laid-out application window. See the polling loop in
 /// [`Session::launch`] for what happens without it.
 ///
-/// ★ Moved here on 2026-09-12. It sat above `SAFE_ORIGIN_X`, run
-/// together with that item's doc comment — so it documented `SAFE_ORIGIN_X`
-/// and this constant had none. See `tools/gates/check-orphan-docs.py`.
 const MIN_CLIENT_PX: u32 = 200;
 
 /// A running application, its captured trace, and its window.
@@ -193,7 +185,6 @@ impl Session {
     /// specific thing that was missing.
     /// Launch, retrying a launch the MACHINE killed before a window existed.
     ///
-    /// # ★★★ The failure this retries, measured 2026-09-09 (01:00–01:30)
     ///
     /// `accesskit_windows` installs its window subclass with `SetPropW`, and on
     /// this operator's 208-hour session that call fails **intermittently** with
@@ -415,14 +406,6 @@ impl Session {
     /// windows toward the edge of the desktop. A failure that depends on where
     /// the window happened to open is a failure nobody can reproduce.
     ///
-    /// **★★ Always-on-top windows live at the top of the screen.** The
-    /// Windows on-screen keyboard docks there, it is summoned by synthetic
-    /// keystrokes — so this harness brings it on itself — and it cannot be
-    /// closed from a process of ordinary integrity. It lay across the ribbon's
-    /// tab row for an afternoon on 2026-08-20 and made two checks report a
-    /// working ribbon as unresponsive, intermittently. `Driver::confirm_uncovered`
-    /// is the guard that now catches it; this is the measure that stops it
-    /// happening. Below [`SAFE_ORIGIN_Y`] there is nothing docked.
     fn place(&self) {
         if let Some(w) = self.window {
             sys::move_window(w, SAFE_ORIGIN_X, SAFE_ORIGIN_Y);
@@ -451,11 +434,6 @@ impl Session {
     ///
     /// # ★★★ The one caller, and why a panic is the MECHANISM there
     ///
-    /// [`TheRasterWallStopsTheZoomInsteadOfPaintingAnError`] drives the zoom
-    /// until the rasterizer gives out, because that is the only way to observe
-    /// the operator's fourth clause in O186 — *"zoom should stop at the limit
-    /// and not end up showing an error"*. Measured on 2026-09-12 against a
-    /// 5.7 MB dense vector drawing, the way the engine gives out is this:
     ///
     /// ```text
     /// thread '<unnamed>' (10320) panicked at tiny-skia-0.11.4/src/pipeline/lowp.rs:350:28:
@@ -479,12 +457,6 @@ impl Session {
     /// whether the panic is a **declared mechanism of the engine**, as it is
     /// here, or a bug nobody has filed yet.
     ///
-    /// The engine's own answer on this is
-    /// `reply_G002_deep_zoom_refuses_instead_of_panicking_SHIPPED.md`
-    /// (`pdfcer-render`, 2026-09-11): the refusal is the guarantee and there is
-    /// no scale it can promise, because the first failing scale bisected to
-    /// three unrelated values across six page geometries. A panic converted to
-    /// a refusal is therefore the *permanent* shape of this, not a stopgap.
     ///
     /// [`TheRasterWallStopsTheZoomInsteadOfPaintingAnError`]: crate::checks::raster_wall::TheRasterWallStopsTheZoomInsteadOfPaintingAnError
     pub fn expect_thread_panic(&self) -> &Self {
@@ -496,7 +468,6 @@ impl Session {
     /// died — or from one whose worker threads died — unless the check said it
     /// might**.
     ///
-    /// # ★★★ WHY THIS GUARD EXISTS — 2026-09-03 (evening)
     ///
     /// An outside reviewer opened `pdfcer ▸ Keyboard shortcuts` on a fresh
     /// launch and the **process aborted**, taking the operator's unsaved markup
@@ -523,12 +494,7 @@ impl Session {
     /// calls [`Session::expect_exit`] first. That is greppable, and it is a
     /// statement rather than an omission.
     ///
-    /// # ★★★ A THREAD CAN DIE WITHOUT THE PROCESS DYING — 2026-09-10
     ///
-    /// The guard above asks one question: *did the process exit?* On
-    /// 2026-09-10 `the_page_still_renders_at_every_decade_of_zoom` reported the
-    /// canvas going blank at 50,970,380 % and attributed it, in its own words,
-    /// to the shell:
     ///
     /// > the raster exists and the shell is not putting it on screen. THIS IS
     /// > THE DEFECT.
@@ -670,7 +636,6 @@ If this check provokes a panic on purpose, say so with                  `session
     /// Named in frames because that is the unit the thing being waited for is
     /// measured in: a raster rebuild, a layout pass, a provider swap.
     ///
-    /// # ★★★ It used to be a wall clock wearing the word "frames"
     ///
     /// The whole body was `sleep(frames * 25ms)`. On an idle machine 25 ms is
     /// about a frame and the name is nearly true. **Under load it is not** — the
@@ -678,12 +643,6 @@ If this check provokes a panic on purpose, say so with                  `session
     /// that settled and then clicked was acting before the interface had caught
     /// up.
     ///
-    /// Measured 2026-09-02, running the suite in batches: three checks failed
-    /// with substantive, believable messages — a bookmark that went to the page
-    /// and did not zoom, a canvas that stopped seeing the pointer, a list of
-    /// rows that never drew — and **all three passed when re-run alone against
-    /// the same binary**. The convenient reading was "contention", which
-    /// explains nothing and excuses everything. The mechanism was this function.
     ///
     /// # How it waits now
     ///
@@ -753,12 +712,6 @@ If this check provokes a panic on purpose, say so with                  `session
 impl Session {
     /// **Has the application gone?**
     ///
-    /// ★★★ Added 2026-09-01 for `ctrl_s_after_an_edit_saves_and_the_program_is_still_running`,
-    /// and it is the first check in this harness whose subject is the process
-    /// rather than the pixels. The operator reported that pressing `Ctrl+S`
-    /// after an edit **closed the program**, and nothing here could express
-    /// that: every other oracle is a trace line, and a program that has exited
-    /// writes none — which is indistinguishable from a missed click.
     ///
     /// `try_wait` rather than `wait`: it must never block. A check calling this
     /// is asking a question, not waiting for an answer.
@@ -825,13 +778,6 @@ pub fn staleness_complaint(exe: &Path, source_root: &Path) -> Option<String> {
     }
     // ★ The GAP, in words, rather than two `SystemTime` debug prints.
     //
-    // This message is read by somebody about to spend an hour on a feature that
-    // was never compiled, and it printed
-    // `SystemTime { intervals: 134324724498206576 }` twice — which carries the
-    // information and does not deliver it. **How far behind the binary is
-    // decides what the reader does next**: two minutes is a rebuild they
-    // forgot; three hours is a session's work that never ran, which is exactly
-    // what happened to a 108-check sweep on 2026-08-29.
     let behind = t.duration_since(exe_time).map_or_else(
         |_| "an unmeasurable amount".to_owned(),
         |d| {

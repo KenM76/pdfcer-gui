@@ -9,9 +9,6 @@
 //! > *"unfortunately there was no way to reposition, resize, or rotate it on
 //! > the screen. Can I please please please have that too?"*
 //!
-//! Reposition and resize landed on 2026-08-20. **Rotate is the third word in
-//! that sentence** and had no affordance at all until `Pass 113.0` gave the
-//! shell a verb.
 //!
 //! # ★★ Why this cannot be a unit test
 //!
@@ -27,12 +24,6 @@
 //! | 5 | the sign survives the screen → page crossing | **nothing** |
 //! | 6 | every selected index reaches `transform_objects` as one command | **nothing** |
 //!
-//! **Link 3 is the one that would ship.** `Grip::is_resize` used to be
-//! `self != Grip::Move`, and the wildcard arm below it read `(None, Some(_)) =>
-//! DragKind::Move`. Either left alone would have produced a *working gesture
-//! aimed at the wrong verb* — a handle that moved the selection, or one that
-//! resized it about a corner. Both look deliberate. Nothing in the workspace
-//! asks about them.
 //!
 //! Link 5 is the one that would look like a feature: an object that turns the
 //! wrong way is not obviously a defect to anybody who did not watch the
@@ -140,13 +131,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check and its two siblings drag one of the eight selection grips,
-    // and that gesture can only be measured where the selection outline is
-    // big enough on screen for the grips not to overlap each other. The sweep
-    // hands every check one shared aim point chosen for the majority, and on
-    // 2026-09-12 two of these three FAILED under it - each printing several
-    // paragraphs that named application functions as the likely cause. Every
-    // one of those functions was correct.
     //
     // ⇒ `fixture::grip_gesture_target` holds the point and the reason. A
     // check whose subject cannot exist under an arbitrary aim must not be
@@ -287,8 +271,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3b: IS THE HANDLE EVEN ON THE CANVAS? -----------------------------
     //
-    // ★★★ Added 2026-08-21 after this check failed and named three causes,
-    // ALL THREE WRONG. `OPERATOR_REQUESTS.md` O22.
     //
     // The rotate handle sits `ROTATE_STEM_PX` ABOVE the selection box. Select
     // something near the top of the viewport and the handle's whole square

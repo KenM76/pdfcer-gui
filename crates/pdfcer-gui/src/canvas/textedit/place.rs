@@ -2,11 +2,6 @@
 //!
 //! ## The seam
 //!
-//! Split out of [`super`] on 2026-08-21 under R2, when the text box took that
-//! file past the 1,500-line ceiling. It is the seam the file already drew with
-//! its own banner — *"Starting a draft"* — and it is a real subject rather than
-//! a size-driven cut: everything here answers **where does a press put the
-//! caret**, and nothing here knows what typing does afterwards.
 //!
 //! ## The two gestures, and why they are two
 //!
@@ -16,12 +11,6 @@
 //! | **click** on bare page | [`Anchor::Origin`] | `add_text` — one single-line run at a point |
 //! | **drag** a rectangle | [`Anchor::Box`] | `add_text` boxed — a wrapped paragraph |
 //!
-//! ★★ The third arrived on 2026-08-21, on the operator's *"I should be able to
-//! make it multi line."* It has to be a drag, and the reason is the file format
-//! rather than a preference: **a PDF has no paragraph.** Each visual line is its
-//! own show operator at its own absolute position, so something must decide
-//! where the second line starts — a width to wrap against — and a width is a
-//! rectangle somebody draws.
 //!
 //! ## ★ What this module refuses, and why each refusal is a sentence
 //!
@@ -100,15 +89,8 @@ pub fn click(
                 y: f64::from(pdf.y),
             }
         }
-        // ★★ **A click that names no run starts a new one**, as of 2026-08-19.
         //
-        // This used to be `resolve_run(click)?` — a bare `?`, so a click on
-        // blank paper with the caret armed refused, wrote a sentence to the
-        // status row, and did nothing. Two separate tools were needed to type a
-        // character in an empty spot versus in an existing word, and which one
-        // you had was invisible.
         //
-        // The operator, 2026-08-19:
         //
         // > *"How do I make new text when I click on the canvas and expect to
         // > edit there? Same problem as the previous."*
@@ -155,11 +137,6 @@ pub fn click(
     // engine returns it that way **by this project's own request**, so the shell
     // could tell *"the question failed"* from *"the answer is nothing"*.
     //
-    // Putting a caret in such a run would be the defect class this project named
-    // on 2026-08-14 and has refused since: **a control that accepts input it
-    // will discard**. Every keystroke would be declined by the gate below, the
-    // draft would end empty, and the operator would have spent a word learning
-    // what one sentence could have told him before the first key.
     //
     // ⚠ Only the *measured* empty case refuses. `of_run` answering `None` means
     // the run could not be pinned or the engine would not answer, and that is
@@ -196,11 +173,6 @@ pub fn click(
     };
     // ★★ The caret lands WHERE THE CLICK LANDED, not at the end.
     //
-    // `caret_index_at` measures the click's x against the run's own glyph
-    // advances - the same glyph boxes the caret is drawn from - so clicking
-    // between the `1` and the ` ` of `SHEET 1 OF 4` puts the caret between
-    // them. Before 2026-08-20 the draft had no caret index at all, so a click
-    // anywhere in a run behaved as a click at its end.
     //
     // Falls back to the end of the text, which is the old behaviour, when the
     // run's glyphs cannot be read. That is the right fallback rather than the
@@ -256,7 +228,6 @@ pub fn click(
 
 /// **Open a draft anchored to a dragged rectangle** — the multi-line entrance.
 ///
-/// The operator, 2026-08-21: *"I should be able to make it multi line."*
 ///
 /// # ★ The conversion is `markup::band::endpoints`, not a new one
 ///
@@ -348,12 +319,6 @@ pub fn begin_box(
 /// **Does `run` have no show operator of its own?** `Some(true)` /
 /// `Some(false)`, or `None` when the question could not be asked.
 ///
-/// A thin forward to [`crate::app::state::OpenDoc::run_has_no_anchor`], which
-/// owns the extraction and the cache. It is worth a named function here anyway:
-/// this is the one place in the shell that asks *"can pdfcer-core edit this
-/// run"*, so there is one line to change when the answer changes — which it
-/// did, on 2026-08-20, when form editing landed and this stopped being about
-/// forms at all.
 ///
 /// # Why the answer is cached one level down and not here
 ///
@@ -439,7 +404,6 @@ fn resolve_run(c: &Click<'_>) -> Result<Anchor, Refusal> {
     let pos = model
         .hit_test(f64::from(pdf.x), f64::from(pdf.y))
         .ok_or(Refusal::NoRun)?;
-    // ★★★ **D4a's boundary used to REFUSE here, and refusing was the defect.**
     //
     // The old code read: *if the caret's visual line begins and ends in
     // different runs, `return Err(Refusal::SpansRuns)`* — on the argument that
@@ -510,20 +474,11 @@ fn resolve_run(c: &Click<'_>) -> Result<Anchor, Refusal> {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ Named so a driven check can tell the two shapes apart. Until
-            // 2026-08-19 this case emitted `text-edit-declined reason=SpansRuns`
-            // and placed no caret; it now emits this and a caret, and a harness
-            // that could not distinguish "refused" from "allowed and disclosed"
-            // would pass against either.
             format!("text-edit-shares-line run={}", pos.run)
         });
     }
     // ★★★ **THE EDITABILITY CHECK, and it is the last thing before the caret.**
     //
-    // Added 2026-08-20 on the operator's *"Still no editing text on top of the
-    // canvas."* Every stage of this module worked; the commit reached
-    // `pdfcer-core` and was refused, **to the trace only**, so a caret took his
-    // keystrokes and discarded them in silence.
     //
     // The cause is one field this shell was not reading. `GlyphProvenance`
     // carries a byte span AND the name of the buffer that span indexes:
@@ -542,12 +497,7 @@ fn resolve_run(c: &Click<'_>) -> Result<Anchor, Refusal> {
     // sentence reads *"text to edit ("p") was not found in an editable run"*
     // about text that is plainly there.
     //
-    // ★★★ THE FORM REFUSAL IS GONE — `Pass 119.0`, 2026-08-20.
     //
-    // Everything above this line describes a limit the engine no longer has.
-    // It is kept because the mechanism it explains is still the mechanism, and
-    // because the next reader needs to know that `content_stream` is a field
-    // that MATTERS rather than one that used to.
     //
     // What is left is the one case that is genuinely unreachable and always
     // was: a run with **no show operator of its own**. An `/ActualText` run is

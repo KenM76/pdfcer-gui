@@ -1,8 +1,5 @@
 //! # `canvas::rightclick` — which menu a secondary click opens
 //!
-//! One question, and it takes three hit tests plus one frame-ordering rule to
-//! answer honestly. Split out of [`super::interact`] under **R2** on
-//! 2026-08-28, when the fourth canvas menu took that file past 1,500 lines.
 //!
 //! ## ★★★ The frame-ordering hazard, which is the whole reason this is subtle
 //!

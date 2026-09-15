@@ -170,10 +170,6 @@ pub(super) struct Sweep {
 
 /// **Count the calls to `subject` in one file's source.**
 ///
-/// Split from [`sweep`] so the *rule* is testable against a fixture rather than
-/// only against the real tree — `crate::diag::record_if_changed`'s shape, and
-/// the same one `reach::read_arms` takes: a reader that can only be pointed at
-/// the real file cannot be shown to bite.
 ///
 /// Both a free call (`path::to::subject(..)`) and a method call
 /// (`receiver.subject(..)`) count. The engine's is a free function, so only the

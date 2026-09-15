@@ -23,11 +23,6 @@ use pdfcer_core::vector::{FormMarquee, MarqueeMode};
 pub enum SelectionAction {
     /// **Everything on the page, wherever it now sits** — `edit.select_all`.
     ///
-    /// The operator, 2026-09-01: *"we should be able to select things off the
-    /// side of the page, especially since I sometimes drop objects there, and
-    /// when I do I can't get them back."* The whole argument is on the arm in
-    /// [`apply_action`], where the marquee's `Enclosed` mode and the
-    /// deliberately unbounded rectangle are.
     SelectAllOnPage,
     /// **Select exactly this object** — raised by the Objects panel when a
     /// row is clicked.

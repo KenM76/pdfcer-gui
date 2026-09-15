@@ -218,10 +218,6 @@ mod search;
 /// building the page-object route found. Its header carries what `pdfcer-core`
 /// can and cannot say, with `file:line` for every symbol.
 ///
-/// ★ `pub(crate)` rather than private since 2026-09-05: the status bar reads
-/// it too, because **the canvas is the primary surface, never a panel** — a
-/// capability reachable only from a panel is a capability the operator has to
-/// know about before they can use it.
 pub(crate) mod highlight;
 
 /// The trace name of the search field's rectangle.
@@ -497,15 +493,6 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                     );
                 }
                 ui.horizontal(|ui| {
-                    // Table 101 `/Locked`: "the UI shall not allow the
-                    // visibility state to be changed". Disabled and
-                    // explained, never hidden and never silently ignored —
-                    // R83. `on_disabled_hover_text` as well as
-                    // `on_hover_text` because egui shows neither the
-                    // ordinary hover text nor any tooltip at all on a
-                    // disabled widget without it, and this row's whole
-                    // problem is that it looks broken.
-                    // ★★★ **A padlock beside a locked row, added 2026-09-04.**
                     //
                     // The comment above says this row's whole problem is that
                     // it *looks broken* — a check box that will not move, with
@@ -1063,13 +1050,6 @@ mod tests {
     /// on means two title blocks painted over each other, and the operator
     /// has no way to know pdfcer did that rather than the document.
     ///
-    /// The sibling list is taken from [`RadioGroupLookup::radio_group_of`],
-    /// not from whichever array the search happened to walk. That is not
-    /// fussiness — the first draft of this test iterated `radio_groups`
-    /// directly and failed, because this fixture's shared member belongs to
-    /// **two** arrays and `radio_group` reports only the first (`DA-N1`). A
-    /// test that asserts against a different array from the one the panel
-    /// consults is testing nothing the panel does.
     #[test]
     fn turning_on_a_radio_member_turns_its_unlocked_siblings_off() {
         let (read, document_hidden) = read_fixture("layers/radio-locked.pdf");

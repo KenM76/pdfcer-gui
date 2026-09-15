@@ -1,11 +1,5 @@
 //! # `canvas::forms::marks` — the two marks the canvas draws over fillable fields
 //!
-//! Split out of [`super`] on 2026-09-02 under R2, when O98's trace carried that
-//! file past the 1,500-line ceiling. The seam is a real one rather than a cut at
-//! a convenient line number: everything else in `canvas::forms` is about
-//! **interaction** — which box the pointer is over, which one has focus, what a
-//! keystroke does to it, what a click commits. These two functions draw and
-//! decide nothing.
 //!
 //! ## The two marks, and they answer different questions
 //!

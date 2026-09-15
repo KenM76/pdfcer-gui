@@ -73,8 +73,6 @@ pub fn recoloured_partly(changed: usize, refused: usize) -> String {
     )
 }
 
-// ===========================================================================
-// ★★★ MORE THAN ONE OBJECT — O89 piece 2, 2026-09-05
 //
 // The three strings below exist because a multi-object colour control owes
 // three disclosures a single-object one does not, and every one of them has to

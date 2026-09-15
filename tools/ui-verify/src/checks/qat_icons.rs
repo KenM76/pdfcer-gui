@@ -3,13 +3,6 @@
 //!
 //! # The defect
 //!
-//! The quick-access toolbar draws Open, Save a copy, Undo and Redo. Every one
-//! of those commands names an icon and carries a tooltip, the icon set was
-//! salvaged and landed with 47 glyphs and 52 tests (**72 glyphs** as of
-//! 2026-08-14, when the 41 commands that still rendered as bare words were
-//! swept — 30 wired, 11 refused on the record), and
-//! `crate::icons::paint_ribbon_icon` was written, documented and asserted to
-//! satisfy the shell's seam.
 //!
 //! And the QAT rendered **text buttons**, because nobody wrote
 //! `.with_icon_painter(&mut icons)` at the one call site that matters.

@@ -1,10 +1,5 @@
 //! # `pagetree` — **does this document's page tree still agree with itself?**
 //!
-//! One question, asked of the bytes a save is about to hand to the file system,
-//! and answered by walking the page tree the way a *stranger's* reader walks
-//! it. It exists because on 2026-09-05 the operator opened a document pdfcer
-//! had just written and found pages in it that pdfcer did not believe were
-//! there:
 //!
 //! > *"I tested deleting pages from a pdf. when I open the document in Acrobat
 //! > there are blank pages at the end of the document equalling the number of
@@ -96,17 +91,6 @@
 //! `open_flag`, which reads `/Open` the same way and admits in its own header
 //! that it is a workaround. The same admission is owed here and is made:
 //!
-//! ⚠ **`pdfcer-core`'s read model cannot see an intermediate node's `/Count` at
-//! all.** Audited 2026-09-05 against v0.38.0 (`b01964f`):
-//! `page_tree::pages` / `pages_in` return `Vec<Page>` — **leaves only**;
-//! intermediate nodes are traversed and discarded (`page_tree.rs:283`, `:300`).
-//! [`page_slots`](pdfcer_core::page_tree::page_slots) (`page_tree.rs:417`) is
-//! the only public type that leaks an intermediate node's *identity*, via
-//! `PageSlot::ancestors`, and it exposes neither that node's `/Count` nor its
-//! `/Kids`. `b"Count"` does not occur in `page_tree.rs` at all; every
-//! occurrence in the crate is either an outline `/Count` or a **write** site in
-//! the rebalancer. There is no public read of a page-tree `/Count` anywhere,
-//! and there is no `validate_page_tree`.
 //!
 //! ⇒ So there is no non-raw way to ask this question, and the raw way is a
 //! **read of a key ISO 32000-1 §7.7.3.2 defines, through the crate's own public
@@ -211,10 +195,6 @@
 //!
 //! ## 9. ★★ What it costs, measured rather than asserted
 //!
-//! `BENCHMARK.md` exists in this repository because an earlier analysis
-//! asserted a performance weakness from architecture and was wrong, so these
-//! numbers were taken before the guard was placed on every save. Release build,
-//! 2026-09-05, this machine:
 //!
 //! | document | size | the walk itself | [`audit_saved_bytes`] end to end | `to_incremental_bytes` on the same document |
 //! |---|---:|---:|---:|---:|
@@ -536,12 +516,6 @@ fn count_of<G: ObjectGraph + ?Sized>(graph: &G, id: ObjId) -> Option<i64> {
 
 /// **Which sentence a refused save owes the operator.**
 ///
-/// Moved here from [`crate::app::save`] on 2026-09-05 when that file crossed
-/// R2's 1,500-line ceiling, and it is the right home rather than a convenient
-/// one: choosing between the three sentences is reasoning about an [`Audit`],
-/// and the third choice needs a **second audit** that this module is the only
-/// place equipped to take. `crate::text::pagetree` still owns every word; this
-/// owns only the question of which words apply.
 ///
 /// `base` is the file the document was opened from, or `None` for a document
 /// that has never been on disk (`file.new`).

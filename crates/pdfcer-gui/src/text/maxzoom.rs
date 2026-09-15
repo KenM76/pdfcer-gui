@@ -43,9 +43,6 @@ pub fn crossover_note() -> &'static str {
 
 /// Hover text for the zoom readout, which opens this popup.
 ///
-/// Replaces the old readout tooltip's second half — it used to end by
-/// explaining the ladder and nothing else, and the readout now does something
-/// when clicked, which a tooltip has to say.
 #[must_use]
 pub fn readout_tooltip() -> &'static str {
     "The current zoom. The − and + buttons step a fixed ladder of familiar \

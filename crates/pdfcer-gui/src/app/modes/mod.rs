@@ -34,13 +34,6 @@
 //!
 //! ## Why the arrangements themselves live in [`defaults`]
 //!
-//! `app/modes.rs` was one file until it reached 1,512 lines against the
-//! 1,500-line gate (R2). It was split rather than trimmed, for the reason
-//! the gate itself gives — *"the right response to this gate firing is to
-//! SPLIT THE MODULE, not to shrink the prose"* — and along the seam the file
-//! had already drawn between its own two halves. `app/mod.rs` has been split
-//! twice under the same rule, into [`crate::app::dispatch`] and
-//! [`crate::app::conditions`], and the pattern is deliberately the same one.
 //!
 //! The two halves answer two different questions:
 //!
@@ -526,12 +519,6 @@ fn adopt(layout: &mut DockLayout, default: &DockLayout, new: &[PanelId]) -> Vec<
                 // ★★★ **And it is RAISED, or the whole function is a no-op the
                 // trace reports as a success.**
                 //
-                // This line's absence was found on 2026-08-19 by the check that
-                // asks what a first frame shows. `stack.tabs.push` mounts the
-                // panel and leaves whatever was active still active, so on any
-                // profile older than the panel it arrives **behind another
-                // tab** — present in `layout.ron`, present in the tab strip,
-                // and invisible.
                 //
                 // For a panel whose whole purpose is discoverability that is
                 // identical to not shipping it. The **Tool panel** is exactly
@@ -601,17 +588,7 @@ fn adopt(layout: &mut DockLayout, default: &DockLayout, new: &[PanelId]) -> Vec<
 
 /// The shared tail of the two start-up paths.
 ///
-/// ★★★ **Where the application decides which mode it opens in**, and since
-/// 2026-08-27 that is *the one it was left in* rather than always the first the
-/// manifest declares.
 ///
-/// The operator, 2026-08-26, reporting the consequence rather than the cause:
-/// *"I can't figure out how to click on objects to edit them."* Part of that is
-/// an engine limitation and is filed as one — but the part nothing explained is
-/// that the program opened in **Read** on every launch, where a click on page
-/// content selects nothing at all, and no surface said so. Someone who spent an
-/// afternoon in Edit came back the next morning to a program that had silently
-/// forgotten.
 ///
 /// # The three ways this can decline, all of which land on the first mode
 ///
@@ -840,12 +817,6 @@ mod tests {
         } = start_in(&dir, Some(&shell), &registry);
         // ★★ **The session opens in Edit, because that is where it was left.**
         //
-        // This line asserted `Some("read")` until 2026-08-27 and was correct
-        // about the program at the time: it opened in the manifest's first mode
-        // however the operator had left it. That behaviour is the invisible
-        // first failure of every session — Read cannot select page content, and
-        // an operator who spent yesterday in Edit gets a canvas that ignores
-        // their clicks and no surface saying why.
         //
         // ★ Note what the assertion below now proves that it could not before:
         // the arrangement is restored **without a mode change**, because the
@@ -1121,8 +1092,6 @@ mod tests {
             "a panel registered since the layout was written must appear: {mounted:?}"
         );
 
-        // ★ **Mounted is not shown, and this test used to stop one line above
-        // this comment.**
         //
         // Forms adopts into Read's RIGHT side, which a layout of this vintage
         // records as `SideLayout::none()` — no columns, `visible: false`.

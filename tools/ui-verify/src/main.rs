@@ -52,7 +52,6 @@ fn main() -> ExitCode {
 
 /// **Refuse to run a harness older than its own sources.**
 ///
-/// # ★★★ The run this exists for, 2026-08-29
 ///
 /// A full 108-check sweep was launched with a freshly built *application* and a
 /// `ui-verify.exe` stamped **two and three-quarter hours earlier** — five
@@ -83,16 +82,7 @@ fn main() -> ExitCode {
 /// If that directory is gone — a binary copied elsewhere, which
 /// `package-portable` does — the check is skipped rather than guessed at.
 ///
-/// ★ `--allow-stale` covers this too, deliberately: one flag for *"yes, I mean
-/// to drive the older build"*, whichever binary is older, rather than a second
-/// flag nobody would remember.
-/// # ★★★ And `--list` is behind this guard, which it was not until 2026-09-14
 ///
-/// `--help` and `--list` both used to return from [`run`] *above* this call, on
-/// the reasoning — written into the comment there — that they "answer without
-/// driving anything". That is sound about `--help`. It was wrong about `--list`
-/// for a reason that did not exist on the day the line was written:
-/// **`--list` became the authoritative COUNT command.**
 ///
 /// `RESUME.md` names `ui-verify --list | grep -cE '^  [a-z0-9_]+$'` as the way
 /// to measure how many driven checks exist, and that figure is quoted into
@@ -100,7 +90,6 @@ fn main() -> ExitCode {
 /// one path this guard deliberately skipped was the one path whose output
 /// reaches a shipped document.
 ///
-/// # ⚠ It bit on 2026-09-14
 ///
 /// A check was added and committed. `ui-verify.exe` on disk was an hour older
 /// than that commit. `--list` answered **223** where the roster was **224** —
@@ -164,10 +153,6 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
         println!("{USAGE}");
         return Ok(ExitCode::SUCCESS);
     }
-    // ★ After `--help`, which describes the command line and cannot be wrong
-    // about anything a stale build would change, and before EVERY other path —
-    // INCLUDING `--list`, which used to sit above it. See
-    // [`refuse_if_self_is_stale`] and the section on why that move matters.
     refuse_if_self_is_stale(args)?;
     if args.iter().any(|a| a == "--list") {
         list();
@@ -284,13 +269,6 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
 
     // ★★★ **One profile directory per check** — see [`ui_verify::sandbox`].
     //
-    // The binary is portable: it keeps its settings in `userdata/` BESIDE
-    // ITSELF, so every check pointed at one `--exe` shares one profile. That
-    // was harmless only while the application discarded the stored mode on
-    // every launch, which it stopped doing on 2026-09-06 — and the first thing
-    // it cost was an investigation into `a_link_goes_to_the_page_it_names`
-    // reporting a click that "produced nothing", which was an earlier check's
-    // Edit mode still on disk and not a defect at all.
     //
     // The resolution happens ONCE, here, and not per check, because
     // `CheckContext::resolve_exe` would otherwise resolve the *sandbox* on the
@@ -321,7 +299,6 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
         if !selected.is_empty() && !selected.iter().any(|s| s == check.name()) {
             continue;
         }
-        // ★★★ **A BEAT BETWEEN CHECKS, and a measurement bought it — 2026-09-01.**
         //
         // A full sweep of 128 checks reported THREE FAILURES and about sixty
         // skips. Every one of the three passed when re-run alone, seconds

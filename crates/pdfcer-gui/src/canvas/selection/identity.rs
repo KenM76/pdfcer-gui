@@ -16,7 +16,6 @@
 //!
 //! ## ★ Selection is an identity, not a position
 //!
-//! `GUI_ROADMAP.md` Phase 1, from the operator's own words on 2026-08-13:
 //!
 //! > *"if I select a node or something for a tool, I should be able to pan
 //! > and zoom out without losing my first selection."*

@@ -63,11 +63,6 @@
 //!
 //! ## What the page says, and why those words
 //!
-//! Fourteen lines of drawing-office prose at 11 pt -- general notes, a drawing
-//! number, a revision. [`LINES`] carries the full argument for why it is a
-//! **page** and not a caption, and it is worth reading: the first version of
-//! this fixture was two words on a blank card, and it uncovered a real and
-//! previously unrecorded failure mode in `ocrs` by being unrepresentative.
 //!
 //! ## How it is built
 //!
@@ -184,11 +179,6 @@ const FIXTURE_DPI: f32 = 200.0;
 ///
 /// ### Why these words
 ///
-/// Drawing-office vocabulary, so an assertion can be about *content* -- a check
-/// that asserted "some words came back" would pass against a recogniser
-/// returning noise. Ordinary sentence case at 11 pt rather than large capitals:
-/// the point is to look like a page, and the earlier version's 28 pt capitals
-/// were part of what made it unrepresentative.
 pub(crate) const LINES: [&str; 14] = [
     "GENERAL NOTES",
     "1. All dimensions are in millimetres unless noted",
@@ -476,10 +466,6 @@ fn image_only_pdf_pages(grey: &[u8], width: u32, height: u32, pages: usize) -> V
 
 /// Render the source page and wrap it as an image-only document.
 ///
-/// Returns the finished PDF bytes. Split from the test that writes them so that
-/// the *generation* is reachable from an assertion without touching the
-/// repository — `tests::the_fixture_contains_no_text_operator_at_all` runs on
-/// every `cargo test` and needs the bytes, not the file.
 pub(crate) fn build() -> Vec<u8> {
     let (grey, w, h) = raster();
     image_only_pdf(&grey, w, h)

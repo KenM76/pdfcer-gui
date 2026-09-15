@@ -1,7 +1,6 @@
 //! `export_text_writes_the_documents_words` — the text reaches disk, and the
 //! file holds exactly the characters the shell said it wrote.
 //!
-//! # ★★★ WRITTEN 2026-09-04 AND **NOT RUN**
 //!
 //! Said here, in the module's own words, rather than left for an absent result
 //! to imply. Another session owned the desktop while this was written, and this
@@ -16,11 +15,6 @@
 //!
 //! # The gap this closes
 //!
-//! `file.export_text` was in `manifest::registers`' planned list for the life of
-//! the project, marked `C` — *"pdfcer-core extracts text already. Needs a save
-//! dialog and nothing else."* It shipped 2026-09-04 on the operator's ask:
-//! *"also the engine can export PDFs as text. we should have export/import for
-//! that."*
 //!
 //! # Why this needs driving
 //!

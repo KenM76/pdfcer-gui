@@ -508,7 +508,6 @@ pub const fn placement_visible() -> &'static str {
 /// it. An operator who found something on their drawing afterwards that nobody
 /// had described would read it as a defect, and they would be right to.
 ///
-/// # ★★★ CORRECTED 2026-09-06, AND THE CORRECTION IS THE INTERESTING PART
 ///
 /// **What this string said until the pin moved:** *"The box is an empty frame:
 /// pdfcer does not yet draw your name or the date inside it."* That was true of
@@ -538,13 +537,6 @@ pub const fn placement_visible() -> &'static str {
 ///
 /// # What did NOT change, and why the recommendation survives
 ///
-/// The default is still *draw nothing*, and the argument for it is now a
-/// different argument rather than a weakened one. It used to be *"the box would
-/// be empty and read as a defect"*. It is now: **a reader shows the signature in
-/// its own panel whether the box is there or not**, so the box adds no
-/// information and does add content the operator did not draw to a sheet he is
-/// about to send out. An operator who wants the stamp gets a stamp with his name
-/// in it, and the sentence below now tells him that truthfully.
 ///
 /// ⚠ [`placement_where`]'s 180 × 60 and `crate::sign::default_rect`'s clamp were
 /// re-examined with this: the clamp shrinks the box only on a page smaller than

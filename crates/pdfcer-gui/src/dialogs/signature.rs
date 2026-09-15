@@ -3,9 +3,6 @@
 //!
 //! ## The gap
 //!
-//! Found **2026-08-28**, auditing this build against `pdfcer-core`'s capability
-//! register. The engine exposes two verbs written specifically so a front end
-//! could answer this question, and this shell called neither:
 //!
 //! ```text
 //! session.signature_impact_of_save(mode: SaveMode) -> SignatureImpact
@@ -406,15 +403,6 @@ impl SignatureDialog {
     /// }
     /// ```
     ///
-    /// The answer lives **in the dialog** until
-    /// `PdfcerApp::resume_after_signature` drains it, later in the same frame.
-    /// So the press closed the window, the window took the confirmation to the
-    /// grave with it, `take_signature_answer` found an empty slot, and the save
-    /// never ran. Observed by driving on 2026-08-29
-    /// (`an_invalidating_save_is_warned_about`): the window opened, the button
-    /// was pressed, the window closed, and **no `signature-confirmed` line was
-    /// ever traced** — which made Save unusable on every signed document, by
-    /// any route this guard covers.
     ///
     /// ★ It is invisible to every test that does not run a whole frame. The
     /// dialog is correct in isolation (`take_confirmation` returns the answer),
@@ -748,13 +736,6 @@ mod tests {
     /// is undrained — which is what keeps the window alive long enough to hand
     /// it over.**
     ///
-    /// The regression test for `an_invalidating_save_is_warned_about`, found by
-    /// driving on 2026-08-29: pressing *Save anyway* set `confirmed`, which
-    /// made [`SignatureDialog::show`] answer `false`, which made
-    /// `DialogsState::show` drop this dialog **with the confirmation still in
-    /// it** — so `resume_after_signature` found an empty slot, traced no
-    /// `signature-confirmed`, and no file was written. Save was unusable on
-    /// every signed document.
     ///
     /// [`crate::dialogs::retire`] is the fix and it reads [`Self::answered`],
     /// so the two edges asserted here are the ones it depends on:

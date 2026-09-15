@@ -1,8 +1,5 @@
 //! # `find::bar` — the unsearchable note's tests
 //!
-//! A second test file rather than a module inside
-//! [`super::tests`](crate::find::bar::tests), split out of `bar.rs` alongside
-//! it under **R2** on 2026-09-09.
 //!
 //! ★ Kept separate because it must reach **both** `find::bar` (through
 //! `super::*`) and `super::tests::searched`. Nested inside the other module,

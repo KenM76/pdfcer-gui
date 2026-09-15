@@ -36,11 +36,6 @@
 //!
 //! ## ★ The buttons scroll nothing and are always reachable
 //!
-//! Built on [`crate::dialogs::host::Host::scrolled`], which is the operator's
-//! standing rule of 2026-09-10 — *"Those buttons should always be available,
-//! and if there isn't size for all the features they get scrolled in their own
-//! space"* — made structural. There is no size this window can be at which the
-//! answer is off-screen.
 //!
 //! ## Rule 15
 //!
@@ -63,10 +58,6 @@ pub const REGION_DONT_ASK: &str = "defaultapp.dont-ask";
 /// The button that declines this time — the one route out of this window that
 /// changes nothing outside pdfcer.
 ///
-/// ★ Declared for the same reason [`REGION_ACTION`] is, and the operator's
-/// sentence of 2026-09-10 is plural: *"Those **buttons** should always be
-/// available"*. A harness that could see one of the two would report the answer
-/// row as reachable on a build where half of it had been clipped away.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_LATER: &str = "defaultapp.later";
 
@@ -147,8 +138,6 @@ impl DefaultAppDialog {
         )
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
-            // The operator's rule of 2026-09-10, made structural rather than
-            // negotiated. See the module header.
             crate::dialogs::host::Host::scrolled(
                 ui,
                 self,

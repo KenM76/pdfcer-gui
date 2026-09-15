@@ -37,12 +37,6 @@
 //!     (Default)    REG_SZ    C:\Program Files\Adobe\Acrobat DC\Acrobat\Acrobat.exe
 //! ```
 //!
-//! Captured from this machine on 2026-09-04. The value is whatever follows
-//! the **type token**, which is why [`value_from_reg_output`] splits on
-//! `REG_SZ` / `REG_EXPAND_SZ` rather than on column positions or on runs of
-//! spaces: the separator is documented as whitespace of unspecified width, and
-//! the *value itself* routinely contains spaces, so any split that counted
-//! them would truncate `C:\Program Files\…` at the first one.
 //!
 //! It is fragile in one specific way and that is worth stating rather than
 //! discovering: a value whose **content** contains the literal text `REG_SZ`
@@ -224,11 +218,6 @@ mod tests {
 
     /// **The real output of the real command on the real machine, parsed.**
     ///
-    /// Captured verbatim on 2026-09-04 from
-    /// `reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Acrobat.exe" /ve`.
-    /// Pinning the actual bytes rather than a tidied-up approximation is the
-    /// point: a parser tested only against what its author imagined the output
-    /// looks like is a parser tested against its own assumptions.
     #[test]
     fn the_real_reg_query_output_yields_the_real_path() {
         // Assembled line by line rather than as one continued literal, and

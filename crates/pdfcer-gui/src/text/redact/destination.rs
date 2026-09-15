@@ -1,8 +1,5 @@
 //! # `text::redact::destination` — where the redacted document goes
 //!
-//! ★★★ **Added 2026-09-04, on the operator's explicit instruction**, and the
-//! only group of strings in this catalog that exists because a ruling was
-//! reversed rather than because a control was added. His words:
 //!
 //! > *"why does it have to save to a new file right away? Why can't it just
 //! > wait on saving until I choose to save over the existing file or save as a
@@ -42,17 +39,8 @@
 //! > one file is spelled one way across the choice, the acknowledgement, the
 //! > button and the outcome.
 
-// ---------------------------------------------------------------------------
-// ★★★ THE DEFERRED DESTINATION — 2026-09-04 evening, REWRITTEN 2026-09-05
 //
-// The half of O125 that could not be written on the morning of 2026-09-04. The
-// engine shipped `EditSession::apply_redactions` that afternoon (`Pass 250.1`)
-// and this group said what that verb did: the removal landed in the open
-// document, the page changed, and the whole undo log went with it.
 //
-// `Pass 250.2` (2026-09-05) changed the verb underneath these sentences, and
-// the sentences are REWRITTEN rather than softened, because two of them were
-// exactly backwards:
 //
 //   * `undo_will_be_cleared` said the undo history is destroyed. It is
 //     preserved. It is replaced by `removal_happens_at_save`, which says the
@@ -79,12 +67,6 @@
 /// he is looking at a document, and the two nouns that would be accurate are
 /// both ours rather than his.
 ///
-/// ★★ 2026-09-05: *"the removal happens when you Save"* rather than *"Save
-/// decides where it goes, and when"*. The old half-sentence was true of the
-/// collapsing verb, where the removal had already happened and only its
-/// destination was outstanding. On `Pass 250.2` the removal itself is what is
-/// outstanding, and a label that talks only about *where* invites the operator
-/// to believe the *what* is already done.
 #[must_use]
 pub fn destination_open_document() -> &'static str {
     "This document — the removal happens when you Save"
@@ -130,10 +112,6 @@ pub const fn destination_open_document_now_tooltip() -> &'static str {
 /// through to the wrong arm here would be a false claim in the one place a
 /// false claim is worst."*
 ///
-/// Neither existing sentence is true of this destination. The deferred one says
-/// nothing is removed yet — false. The file ones say a file is written — also
-/// false. **Content goes, no file moves**, and that combination existed nowhere
-/// until 2026-09-08.
 #[must_use]
 pub const fn permanence_statement_now() -> &'static str {
     "The marked content will be removed from the open document as soon as you press this. It \
@@ -153,11 +131,6 @@ pub const fn confirm_button_into_document_now() -> &'static str {
 /// ★★ Why the deferred destination is safe, and the one thing about it that
 /// surprises people.
 ///
-/// **REWRITTEN 2026-09-05.** The sentence it replaces ended *"applying clears
-/// the undo history, so nothing before it can be stepped back"*, which was the
-/// price of `Pass 250.1`'s collapsing verb and is now false in the strongest
-/// possible way: this route is the one that **keeps** the undo history, and
-/// keeping it is the entire reason the engine shipped `Pass 250.2`.
 ///
 /// Three facts, in the order an operator needs them: nothing is written and
 /// nothing is removed *yet*; the page will not change, which is the surprise;
@@ -170,9 +143,6 @@ pub fn destination_open_document_tooltip() -> &'static str {
 /// ★★★ **The one thing the operator must know before he presses the button,
 /// stated ABOVE it.**
 ///
-/// **This function replaces `undo_will_be_cleared(steps)`, 2026-09-05**, in the
-/// same place, in the same warning role, drawn from the same region — and it
-/// says the opposite thing, because the engine's verb changed.
 ///
 /// What the old sentence carried was the *price* of the collapsing verb: the
 /// whole undo log went, and the operator had accepted that on condition he was
@@ -207,13 +177,6 @@ pub fn removal_happens_at_save() -> &'static str {
 /// none is coming because **no file is involved at all**. Promising a picker
 /// with a punctuation mark would be a lie the operator acts on either way.
 ///
-/// ★★ 2026-09-05: *"Set up"* rather than *"Permanently remove from this
-/// document"*. The old label was the consequence of the collapsing verb and is
-/// now a description of something the button does not do — it arms a removal
-/// that happens at the save — and on this dialog the standing rule is that
-/// **the label IS the consequence**. A label claiming an immediate removal on a
-/// control that performs none is the same defect as an ellipsis promising a
-/// picker that never opens, one order of magnitude worse.
 ///
 /// It still says *"the content"* rather than *"the marks"*, because the whole
 /// misunderstanding this feature exists to prevent is that applying does
@@ -231,12 +194,6 @@ pub fn confirm_button_into_document() -> &'static str {
 /// identically to its two siblings, deliberately: it is the part an operator
 /// must not have to read twice to compare.
 ///
-/// ★★★ **REWRITTEN 2026-09-05.** Its first clause used to read *"Applying
-/// removes the marked content from the document you have open, and writes
-/// nothing"*, which was true of the collapsing verb and is now false in the
-/// most expensive direction available: it claims a removal that has not
-/// happened, at the top of the report, in the warning role, which is the one
-/// sentence a reader who takes in nothing else takes in.
 ///
 /// ★ It still says the file on disk *"still contains that content"*, which is a
 /// rule-4 disclosure and not reassurance. An operator who arms a redaction,
@@ -254,13 +211,6 @@ pub fn permanence_statement_deferred() -> &'static str {
 /// funnel rather than in a dialog — because arming a save is an ordinary edit
 /// now, and an ordinary edit reports where every other one does.
 ///
-/// ★★★ **RENAMED from `applied_into_document` and rewritten, 2026-09-05.** The
-/// old sentence began *"Redacted — N region(s) … removed from this document,
-/// and verified absent from it"* and both halves of that are now false: nothing
-/// has been removed, and nothing has been verified, because the engine's
-/// staging verb discards the bytes there would have been to sweep
-/// (`crate::redact` §1.0.1). Saying *"verified"* here would have been the
-/// catalog's rule 2 broken at the one place it is load-bearing.
 ///
 /// Rule 1 is kept mechanically: `residuals` picks between two genuinely
 /// different sentences rather than putting a number into one.
@@ -283,11 +233,6 @@ pub fn staged_into_document(regions: u64, pages: usize, residuals: usize) -> Str
 
 /// ★★★ **The sentence after a save that actually performed the removal.**
 ///
-/// New 2026-09-05, and it carries three facts an operator has no other way to
-/// learn. It is recorded by `crate::app::save` on every one of the three save
-/// verbs, and on `file.save` it is recorded **after** the ordinary
-/// *"saved to …"* receipt, deliberately — the slot holds one disclosure, and
-/// this is the one rule 4 says wins.
 ///
 /// 1. **It happened.** The word *verified* is earned here and nowhere else on
 ///    this route: `crate::redact::save_applying_pending` swept the exact bytes
@@ -324,11 +269,6 @@ pub fn saved_applying_redaction(
 
 /// **The sentence after the operator calls a staged removal off.**
 ///
-/// New 2026-09-05 with [`cancel_button_staged`]. Short, and it says the two
-/// things a cancel has to say: the removal will not happen, and **the marks are
-/// still there** — because taking the arming off is not taking the marks off,
-/// and an operator who read this as *"never mind, that is dealt with"* would
-/// have a marked document he believes is a clean one.
 #[must_use]
 pub fn staging_cancelled(marks: usize) -> String {
     format!(
@@ -390,9 +330,6 @@ pub fn cancel_button_staged_tooltip() -> &'static str {
 
 /// **The destination choice's heading.**
 ///
-/// ★★★ Added 2026-09-04 on the operator's instruction. Until that date the
-/// apply had exactly one destination — a new file — and he asked, in the same
-/// breath as the refusal complaint:
 ///
 /// > *"why does it have to save to a new file right away? Why can't it just
 /// > wait on saving until I choose to save over the existing file or save as a
@@ -438,12 +375,6 @@ pub fn destination_replace(file_name: &str) -> String {
 /// control that gets clicked past.
 #[must_use]
 pub fn destination_replace_tooltip() -> &'static str {
-    // ★ *"not Undo, not …"* rather than *"Undo does not reach it"*, and not by
-    // preference: `no_post_apply_sentence_mentions_undo_as_a_way_back` rejected
-    // the first draft of this sentence on 2026-09-04. The rule-3 sweep accepts
-    // the word only in an explicit negation, and matching
-    // `permanence_statement`'s own phrasing is what makes the two sentences
-    // read as one claim rather than two overlapping ones.
     "The file on disk is overwritten with the redacted document. It is the only remaining copy of the content you are removing, so once it is replaced that content is gone from your machine — not Undo, not an earlier revision of the file, not any recovery tool will bring it back."
 }
 

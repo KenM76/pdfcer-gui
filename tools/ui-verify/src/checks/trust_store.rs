@@ -1,7 +1,6 @@
 //! `signature_trust_is_reported_as_its_own_fact` — **the Signatures panel
 //! reports three facts and never merges them, and `not checked` says so.**
 //!
-//! # ★★★ WRITTEN 2026-09-05 AND **NOT RUN**
 //!
 //! Said here, in the module's own words, rather than left for an absent result
 //! to imply. The operator may be at his keyboard, and this harness drives a

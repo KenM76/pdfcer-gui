@@ -3,10 +3,6 @@
 //!
 //! # The gap this closes
 //!
-//! Until 2026-08-20 pdfcer could hold exactly one document. Opening the next
-//! drawing **replaced** the one on screen, which is why `Action::Open` needed
-//! an unsaved-edits prompt in front of it. The operator asked for the
-//! obvious thing:
 //!
 //! > *"make it so we can open multiple PDFs at once…"*
 //!

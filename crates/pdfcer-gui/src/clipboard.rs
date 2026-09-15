@@ -1,7 +1,5 @@
 //! # `clipboard` — the bytes a copy-out places, and the order they go in
 //!
-//! This module builds and orders the payload for `OPERATOR_REQUESTS.md`
-//! **O120**'s second half — the operator's own words, 2026-09-03:
 //!
 //! > *"Also I'd like to be able to copy and paste anything to other software -
 //! > like copy and paste vector graphics into word or inkscape for example if
@@ -202,12 +200,6 @@ impl ClipFormat {
 /// vectors"*, which is indistinguishable from the feature not existing, except
 /// that it costs them the time to discover it.
 ///
-/// ⇒ Which is why this module builds bytes and places nothing. Measured by the
-/// engine on 2026-09-03, `hello.pdf` through `pdfcer copy-page`, pasted into a
-/// throw-away Word document driven by combridge: **one inline shape at
-/// 200.2 × 120.0 pt — the page's physical size — with `svgBlip` in the
-/// OOXML.** The same paste with only the raster formats placed: a plain
-/// picture.
 ///
 /// # Why `application/pdf` is not here
 ///

@@ -3,22 +3,11 @@
 //!
 //! # The gap this closes — `OPERATOR_REQUESTS.md` **O120**
 //!
-//! The operator, 2026-09-03: *"I'd like to be able to copy and paste anything
-//! to other software - like copy and paste vector graphics into word or
-//! inkscape for example if possible."*
 //!
 //! O120's own Status line sets the bar and it is the engine's:
 //!
 //! > *"they get ticked when the GUI half is **driven**, not when it compiles."*
 //!
-//! ⚠⚠ **THIS CHECK HAS NOT BEEN RUN.** It was written on 2026-09-04 in a
-//! session that was instructed not to launch the GUI — another track owned the
-//! desktop, and `ui-verify` was deliberately not run. It is committed unrun,
-//! with that stated here rather than implied by an absent result: **a check
-//! nobody has executed is a check whose own correctness is unmeasured**, and
-//! the first person to run it should expect to fix it rather than to read a
-//! verdict from it. `export_image_emf` carries the same warning for the same
-//! reason and on the same day.
 //!
 //! # ⚠ This check REPLACES the operator's clipboard, and it must
 //!

@@ -16,22 +16,6 @@
 //! So the committed fixture has to stand in for it, and standing in means
 //! reproducing the *mechanism* rather than the appearance:
 //!
-//! * **Every rotated string is set in wide capitals.** That is not cosmetic. At
-//!   12 pt Helvetica every capital's advance exceeds `line_gap_ratio × size` =
-//!   3.6 pt, so the extraction splits the string at **every letter** and no run
-//!   holds two glyphs. This is precisely the case the first draft of
-//!   [`super::writing`] could not see — see its §2.1 — and a fixture full of
-//!   narrow letters would have passed that draft and proved nothing.
-//! * **Four quadrant rotations, not one.** 90° and 270° break on the baseline
-//!   clause; 180° breaks on the *backward-jump* clause instead, which is a
-//!   different line of `classify` reached for a different reason and would not
-//!   have been exercised by the vertical case alone.
-//! * **One 30° string**, because the band this produces is a genuine
-//!   parallelogram rather than an axis-aligned rectangle, which is the one place
-//!   the canvas wash is documented to over-cover.
-//! * **One horizontal string**, which is the regression guard: whatever else
-//!   changes, selecting it must produce exactly what it produced before any of
-//!   this existed.
 //!
 //! ## The generator is a test, and the fixture is committed
 //!

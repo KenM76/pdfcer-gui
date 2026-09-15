@@ -193,13 +193,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // -----------------------------------------------------------------
     // C. THE PANEL'S OWN COMPARTMENT IS REACHABLE.
     //
-    // ★★ `dock.body.view.panel_layers` goes through `ui_rect_visible`, which
-    // publishes ONLY when at least 60 % of the region survived its clip. So
-    // its presence is a reachability claim and not merely a layout one —
-    // which is the distinction three panels shipped without on 2026-08-10.
-    // Without it, section B could pass about a field drawn inside a
-    // compartment nobody can see.
-    // -----------------------------------------------------------------
     let body = format!("dock.body.{SHOW_LAYERS}");
     match trace.events("ui-rect").find(|l| l.raw.contains(&body)) {
         Some(l) => {

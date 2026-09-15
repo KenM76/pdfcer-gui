@@ -11,12 +11,6 @@
 //! the defect **four separate times**. Its own comments recorded three of them
 //! before the fourth arrived:
 //!
-//! | date | what shipped needing the model and not asking for it | how it presented |
-//! |---|---|---|
-//! | 2026-08-19 | `GestureOutcome::Resize` | *"the gesture does nothing"* — a whole driving session |
-//! | 2026-08-19 | `GestureOutcome::Handle` | the same, a second driving session |
-//! | 2026-08-20 | `GestureOutcome::DimensionVertex` | quieter: the drag worked and **never snapped**, which is indistinguishable from a snap that found nothing |
-//! | 2026-09-05 | **the Delete key** at the Part and Node rungs | `canvas-delete-declined level=Part sel=1 reason=NoObjectModel` — three shipped verbs reachable by nothing |
 //!
 //! ★★★ **The fourth is the one that proves the list was the wrong shape, not
 //! merely out of date.** `Resize`, `Handle` and `DimensionVertex` were each
@@ -220,26 +214,12 @@ pub fn gesture_needs_model(outcome: &GestureOutcome) -> bool {
         // gesture.
         GestureOutcome::Move { .. } => true,
 
-        // ★★ `Resize` joined this set on 2026-08-19, and its absence was the
-        // second defect the first driven resize found. The decomposition is
-        // what `canvas::resizing` reads every node position out of, so without
-        // it the commit declined with `NoObjectModel` — a refusal that is
-        // correct for *"the model could not be read"* and was here reporting
-        // *"nobody asked for it"*. The list was written when a resize
-        // committed nothing, so there was genuinely nothing for it to need.
         GestureOutcome::Resize { .. }
         // ★ Same reason as `Resize`, and it was learned there: the commit
         // needs the object model to refuse a stale index, and a gesture on a
         // canvas that never asked for a provider gets `None` and declines. The
         // resize spent a whole driving session on exactly this.
         | GestureOutcome::Handle { .. }
-        // ★★ …and `DimensionVertex`, added 2026-08-20 when the vertex drag
-        // learned to snap. THIRD time the old list was the defect. The failure
-        // here was quieter than either of the others, because the drag works
-        // perfectly without the model — it just never snaps, and a snap that
-        // never fires is indistinguishable from a snap that found nothing
-        // nearby. That is precisely the class of defect that survives a green
-        // suite.
         | GestureOutcome::DimensionVertex { .. }
         // ★ …and `Rotate`, for `Resize`'s reason: the commit resolves
         // paint-order indices, and a gesture on a canvas that never asked for

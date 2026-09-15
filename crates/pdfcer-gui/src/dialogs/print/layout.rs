@@ -2,22 +2,12 @@
 //!
 //! # Why this is its own file
 //!
-//! R2 (no source file over 1,500 lines), reached honestly: `print/mod.rs` went
-//! past the limit on 2026-09-03 while four operator-reported defects were fixed
-//! in it. The seam is real rather than convenient — **geometry is a different
-//! subject from the transaction.** `mod.rs` owns what a print job IS (the
-//! device, the plan, the commit, what the operator is told afterwards); this
-//! file owns only where things are drawn and how wide they are.
 //!
 //! # ★★★ THE ONE RULE THIS FILE EXISTS TO HOLD
 //!
 //! > **Every width and height is derived from the space OUTSIDE the scroll area
 //! > and from constants. Nothing is measured from inside it.**
 //!
-//! Breaking that rule is what produced the operator's report of 2026-09-03 —
-//! *"I have two scroll bars in the pop up window that won't go away no matter
-//! how"* — and it was broken in three different ways in succession, each of
-//! which read as obviously correct:
 //!
 //! 1. the content was forced to `ui.available_width()` measured **outside** the
 //!    scroll area, which is one scrollbar wider than the viewport the content
@@ -57,11 +47,6 @@ use crate::text::print as t;
 
 /// The **narrowest** the options column may be squeezed to, in egui points.
 ///
-/// A floor, not a width. It used to be a fixed 400 pt whose stated reason was
-/// that *"a fixed width is what gives the horizontal scrollbar something stable
-/// to measure"* — and that reasoning is what produced the scrollbar deadlock
-/// [`PrintDialog::body`] documents. The scrollbar does not need a stable number
-/// to measure; it needs to be told the truth about how wide the content is.
 ///
 /// Sized to hold the longest radio label in the three tabs without wrapping,
 /// which is what makes it a floor worth having: below this the options start
@@ -280,7 +265,6 @@ impl PrintDialog {
     /// The two-column body: preview on the left, a draggable splitter, options
     /// on the right.
     ///
-    /// # ★★★ THE TWO SCROLLBARS THAT WOULD NOT GO AWAY — 2026-09-03
     ///
     /// The operator: *"I have two scroll bars in the pop up window that won't
     /// go away no matter how."* They would not, and the previous version of
@@ -322,17 +306,6 @@ impl PrintDialog {
     /// therefore does the only honest thing: a bar appears when, and only when,
     /// the content does not fit.
     ///
-    /// - the preview column's width is [`Self::preview_width`], which the
-    ///   operator drags (his 2026-09-03 request), clamped so neither column can
-    ///   be squeezed out of existence;
-    /// - the options column takes the remainder, never less than
-    ///   [`OPTIONS_COLUMN_MIN_WIDTH_PTS`];
-    /// - a **horizontal** bar appears only when the window is too narrow for
-    ///   both minimums together, which is the one case where scrolling is the
-    ///   right answer;
-    /// - a **vertical** bar appears only when a column's own content is taller
-    ///   than the body, which for the options column is a real possibility on a
-    ///   short window and for the preview never is.
     ///
     /// ★ `context` is the frame's one cache context — see
     /// [`super::verdicts::Context`]. It is `Some` exactly when `job` is, and
@@ -392,8 +365,6 @@ impl PrintDialog {
         // layout defect by removing the layout is how one defect becomes
         // several, and it was visible in the very next capture.
         let gap = ui.spacing().item_spacing.x;
-        // ★★★ THE POPPED-OUT CASE CHANGES THE ARITHMETIC AND NOT ONLY THE
-        // DRAWING — 2026-09-05, operator request O112 ask 2.
         //
         // With the preview in its own window the row has **one** child, not
         // three, so `horizontal_top` inserts **no** gaps and the two column
@@ -498,13 +469,6 @@ impl PrintDialog {
                     // ★★★ R9, AND IT IS THE WHOLE OF ASK 2's DESIGN: WHILE THE
                     // PREVIEW IS POPPED OUT, THIS COLUMN DRAWS NOTHING AT ALL.
                     //
-                    // Not a greyed rectangle. Not a *"the preview is in another
-                    // window"* placard holding the same 340 pt open. Not a
-                    // dotted outline where it used to be. The column and its
-                    // splitter are **absent**, and the options take every point
-                    // they were using — which is why [`Columns::split`] gives
-                    // `options` the whole content width in that case rather
-                    // than merely giving the preview a width of zero.
                     //
                     // A stub here would be the exact thing this project's
                     // no-placeholders rule exists to forbid: a surface that
@@ -583,13 +547,6 @@ impl PrintDialog {
         // sum would report a number that is not what the scroll area measures,
         // which is the mistake this whole defect was made of.
         //
-        // ★★ `popped=` travels with it since 2026-09-05, and it is not
-        // decoration. `preview_w=0.0` alone is ambiguous — it is also what a
-        // build with a broken clamp would print — whereas `popped=true
-        // preview_w=0.0 options_w=<content>` is the single line that says the
-        // column collapsed *and* the options took the room. A driven check that
-        // could only read the width would pass on a build that zeroed the
-        // preview and left a 340 pt hole where it had been.
         let content = split.laid_out();
         let popped = self.preview_popped;
         crate::diag::trace(|| {
@@ -607,11 +564,6 @@ impl PrintDialog {
     ///
     /// # ★ Why a real splitter and not a `ui.separator()`
     ///
-    /// Operator request, 2026-09-03: *"the preview should be adjustable
-    /// size."* The preview column was a hard-coded 340 pt, so widening the
-    /// dialog widened the empty space and left the sheet postage-stamp sized —
-    /// which is the wrong way round, because the preview is the reason the
-    /// dialog exists.
     ///
     /// # ★★ The affordance is a CURSOR, and nothing is drawn on the preview
     ///
@@ -666,9 +618,6 @@ impl PrintDialog {
         crate::diag::ui_rect(REGION_SPLITTER, rect);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // THE FOOTER MOVED HERE FROM `mod.rs` ON 2026-09-05, and the seam is the
-    // one this file was split on rather than a new one.
     //
     // `mod.rs` owns what a print job IS — the device, the plan, the commit,
     // what the operator is told afterwards. This file owns **where things are
@@ -705,10 +654,6 @@ impl PrintDialog {
     ///
     /// # ★★★ The label's count is corrected by what the preview has seen
     ///
-    /// Operator request O113, 2026-09-04. It used to be [`Job::clipped`] —
-    /// a geometric count of page boxes exceeding the printable rectangle —
-    /// which on a 1:1 CAD sheet read *"Print — 1 sheet will be clipped"* over
-    /// a preview showing nothing hatched and saying the overhang was blank.
     ///
     /// It is now the geometric count **minus the sheets the preview has
     /// examined and found blank**, with every sheet nobody has looked at still
@@ -754,9 +699,6 @@ impl PrintDialog {
             // this machine uses.
             // ★★★ THE OUTCOME IS DRAWN FIRST, AND THE ORDER IS THE BUG FIX.
             //
-            // Operator report, 2026-08-25: *"when I press print, instead of
-            // closing after printing it just keeps expanding its size in
-            // little steps to infinity."*
             //
             // It did, and the cause was this block sitting AFTER the button
             // block rather than before it. [`Host::buttons`] lays its pair out
@@ -805,15 +747,6 @@ impl PrintDialog {
                 // than folded into `None` so the reason is where somebody
                 // looking for the missing receipt will find it.
                 //
-                // Since 2026-09-03 a successful commit closes the window — it
-                // sets [`super::Dismissal::Printed`], which since O185 is how
-                // that path says so — and this window is therefore gone by the
-                // next frame, so anything drawn here would be shown for at
-                // most one. The receipt — the page
-                // count, and the `Synthesised` disclosure when the driver held
-                // settings pdfcer does not model — goes to the application's
-                // disclosure row instead, where it OUTLIVES the dialog. See
-                // `show`'s commit block.
                 //
                 // Drawing it in both places was considered and refused: two
                 // copies of one sentence is how they come to disagree, and the
@@ -843,13 +776,6 @@ impl PrintDialog {
                         .unwrap_or_else(|| t::commit().to_owned());
                     // ★★★ THREE ROUTES, NOT TWO — `OPERATOR_REQUESTS.md` **O185**.
                     //
-                    // Until 2026-09-14 the footer offered Print and Close, and
-                    // the operator's complaint was that neither said the thing
-                    // he meant: *"I set the printer up, close the window to go
-                    // check something, and it's all gone."* Keeping and
-                    // abandoning were sharing one button, so the button had to
-                    // pick one, and whichever it picked was wrong half the
-                    // time.
                     //
                     // Each arm below sets a [`super::Dismissal`] rather than a
                     // close flag. The reason is read once, at `show`'s single
@@ -913,8 +839,6 @@ mod tests {
 
     use super::*;
 
-    // ★★★ `the_body_width_holds_both_columns` WAS HERE, AND IT WAS GREEN
-    // THROUGHOUT — retired 2026-09-03.
     //
     // It asserted `BODY_CONTENT_WIDTH_PTS > COLUMN + COLUMN`, and its stated
     // purpose was that a forgotten change *"would silently reintroduce the

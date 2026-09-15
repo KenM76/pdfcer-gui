@@ -412,11 +412,6 @@ pub(super) fn interact(
 
     // ---- 2. what a press would land on -------------------------------
     //
-    // Moved to `canvas::pressing` under R2 on 2026-08-19, when the Node tool
-    // and the Bézier-handle hit test pushed this file past 1,500 lines. It is a
-    // real seam: everything there answers *if the button went down here, right
-    // now, what would happen?* and changes nothing, where every remaining
-    // section of this function advances, routes or paints.
     //
     // ★ Its header carries the **precedence** — handle, then anchor, then grip,
     // then the selection body — and the three separate defects that taught it.
@@ -424,20 +419,11 @@ pub(super) fn interact(
     // lives in one place with its own reasoning beside it.
     // ★★★ **1b. A press on an unselected object selects it.**
     //
-    // Moved to `canvas::presspick` under R2 on 2026-08-27, and it is a real
-    // seam rather than a convenient cut: `canvas::pressing`'s header opens with
-    // *"changes nothing"*, and this step changes the selection. Putting a
-    // mutation inside the module whose contract is that it only looks would
-    // have made that contract false the day someone relied on it.
     //
     // Its header carries the operator's report, the four gestures it must not
     // disturb, and why this is nine statements rather than a new `DragKind`.
     crate::canvas::presspick::at_press(
         &ctx,
-        // ★ The acting page's response, added 2026-08-31 for O75: this step
-        // was the one place on the canvas that asked the *window* whether a
-        // press had happened rather than asking *itself*, so a press in a
-        // dock selected page content through the panel.
         response,
         doc,
         &mut selection,
@@ -509,13 +495,6 @@ pub(super) fn interact(
     // express, and its header carries all four incidents and the 531 ms
     // measurement that decided how narrow the keyboard term should be.
     //
-    // ★ `doc.page_objects()` — THE decomposition, the one the Objects panel
-    // lists and the `objects n=` trace counts. The canvas used to build its
-    // own here (module docs, seam 2); that second `decompose_page` over the
-    // same page is gone. The gate is kept even though the value is cached,
-    // because `page_objects()` builds on first use: asking for it on a frame
-    // with nothing to resolve would decompose the page the first time the
-    // operator merely zoomed.
     //
     // Not "if a resolve needs one" — see step 6 for why the resolve's build
     // has to happen after the keys rather than before them.
@@ -551,16 +530,7 @@ pub(super) fn interact(
         None
     };
 
-    // ---- 5. apply the gesture -----------------------------------------
-    // ★★★ **The fourteen pre-commit slots one frame might fill**, extracted
-    // to `canvas::previews` on 2026-08-30 when O63's shape preview pushed
-    // this file past R2's ceiling.
     //
-    // The seventy lines of argument that used to sit here — why each slot is
-    // its own value and not a variant of another — moved with them, stated
-    // once in that module's header instead of nine times in this function.
-    // `interact` answers *what does this frame's pointer mean*; those answer
-    // *what is drawn while the answer is still provisional*.
     let mut pv = crate::canvas::previews::Slots::default();
     // ★ The one preview value that does NOT live in `pv`, because it does not
     // belong to this frame: it is handed to the document to keep on screen
@@ -604,9 +574,6 @@ pub(super) fn interact(
                 pick: *pick,
                 pen,
                 point,
-                // ★ Ctrl toggles too, not only Shift. Reaching for Ctrl used to
-                // give a plain click, which REPLACES the selection with the one
-                // object he was trying to remove — see O104.
                 shift: shift || ctrl,
                 double,
                 triple,
@@ -672,8 +639,6 @@ pub(super) fn interact(
         // ten days, because the fork's two branches could both answer "not
         // mine" and the gesture had nowhere to go.
         //
-        // Moved out of this file under R2 on 2026-08-28. Nothing about a move
-        // is decided here, which is this arm's whole shape: it is wiring.
         GestureOutcome::Move { delta, phase } => {
             let previews = crate::canvas::dragroute::moved(
                 &crate::canvas::dragroute::Frame {
@@ -724,15 +689,6 @@ pub(super) fn interact(
         // knows where to let go. Nothing is committed at either phase; see
         // `canvas::textsel`'s header §6.
         //
-        // Note what it does NOT need: a decomposition. A text sweep hit-tests
-        // glyphs, not objects, which is why this outcome is absent from
-        // `needs_targets` above — and why a sweep over the 129,758-object
-        // benchmark sheet decomposes nothing.
-        // ★ The sweep, routed. Every rule it once applied inline — the
-        // extraction options, the degenerate-drag refusal, what counts as a
-        // changed range — already lived in `textsel`, so the body moved there
-        // on 2026-09-02 under R2 and this arm became what it always described
-        // itself as: wiring.
         GestureOutcome::TextSelect { from, to, phase } => {
             text_selection = textsel::sweep(doc, page_index, from, to, phase);
         }
@@ -754,15 +710,6 @@ pub(super) fn interact(
         // `band::a_non_band_kind_is_refused_by_the_band_gesture` and
         // `ink::a_non_freehand_kind_is_refused_by_the_freehand_gesture`.
         //
-        // Nothing about a markup is decided here: this arm is wiring, and the
-        // rules are unit-tested without a window. Note what neither needs: a
-        // decomposition. A markup hit-tests nothing, which is why this outcome is
-        // absent from `needs_targets` above.
-        // ★ The markup drag, routed. Three gesture modules behind one outcome
-        // — a band, a freehand trail, and the line-grouped quads of a highlight
-        // that found text under it — and `markup::route` is the decision. Moved
-        // out of this arm on 2026-08-28 when the third destination landed, for
-        // the reason every arm here states: this is wiring.
         GestureOutcome::Markup {
             kind,
             from,
@@ -884,7 +831,6 @@ pub(super) fn interact(
                 );
             }
         }
-        // ★★ A resize drag COMMITS, as of 2026-08-19.
         //
         // The comment that stood here read *"a resize drag is CONSUMED and
         // commits nothing … `pdfcer-core` has no scale verb, so there is nothing
@@ -962,17 +908,7 @@ pub(super) fn interact(
                 crate::canvas::textedit::begin_box(&ctx, doc, page_index, from, to, page);
             }
         }
-        // ★ The resize, routed. Three destinations share these eight grips —
-        // page content, a markup annotation and a form field's box — and
-        // `canvas::resizing` is the decision. Moved out of this arm's body on
-        // 2026-08-28 for the reason every other arm here states: this is
-        // wiring, and the rules are unit-tested without a window.
         GestureOutcome::Resize { grip, delta, phase } => {
-            // ★ The next link after `canvas-press`, added 2026-09-08 while
-            // chasing the `resize_scales_a_shape` red. `canvas-press` proved
-            // the press MEANS Resize; this proves whether the gesture machine
-            // ever turns that meaning into an outcome, which is the step
-            // between "understood correctly" and "acted on".
             crate::diag::trace_changed(RESIZE_ARM_SLOT, || {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
@@ -1104,11 +1040,6 @@ pub(super) fn interact(
 
     // ---- 5b. the right-click ---------------------------------------------
     //
-    // ★ Split to [`super::rightclick`] under **R2** on 2026-08-28, when the
-    // fourth canvas menu took this file past 1,500 lines. One subject —
-    // *which menu does a secondary click open* — with three hit tests and a
-    // frame-ordering hazard, all of which belong together and none of which
-    // belongs in the middle of a gesture pipeline.
     let tokens = super::rightclick::attach(super::rightclick::Click {
         response,
         ctx: &ctx,
@@ -1202,7 +1133,6 @@ pub(super) fn interact(
         page_index,
         doc.edit_epoch,
     );
-    // ★★★ **And the ANNOTATION half of the same invariant** — 2026-09-07.
     //
     // Beside `resolve` rather than anywhere else, because they answer the same
     // question about two subjects and are due on the same condition. Until this
@@ -1274,8 +1204,6 @@ pub(super) fn interact(
 
     // ---- 8. draw --------------------------------------------------------
     //
-    // ★ Lifted to `canvas::painting` on 2026-08-19 — see that module's header
-    // for why this is the seam. Everything above decides; that decides nothing.
     crate::canvas::painting::draw(
         ui,
         &ctx,
@@ -1315,13 +1243,6 @@ pub(super) fn interact(
         // be permanently false, so the caret would never take a keystroke.
         let owns_keyboard = !ctx.text_edit_focused();
         let _ = crate::canvas::textedit::keys::typing(ui, &ctx, doc, owns_keyboard, actions);
-        // ★ Evidence for *"it doesn't type anything in the box when I type and
-        // nothing gets added"* — the operator, 2026-08-18. Four facts, each
-        // killing a different hypothesis: `draft=false` (the click stored
-        // none), `owns_keyboard=false` (a `TextEdit` has focus, so `typing`
-        // reads no events), `text_events=0` (egui delivered none — the keys
-        // are not reaching this window), `len` not rising (read and stored,
-        // insert not landing).
         //
         // ★ Why a trace rather than a test: the driven check for text editing
         // seeds the draft through `PDFCER_DIAG_TYPE`, the one path that BYPASSES
@@ -1376,13 +1297,6 @@ pub(super) fn interact(
 
     // ★ …and where that answer is a CROSSHAIR, supply our own bitmap.
     //
-    // The operator, 2026-08-18: *"The crosshairs when over the canvas are white
-    // making it hard to see them."* Nothing in this crate drew them — the
-    // platform's stock crosshair is monochrome and its colour belongs to the
-    // operator's pointer scheme, which no application can read. So pdfcer stops
-    // asking for it and hands the OS a two-tone bitmap instead; the full
-    // argument, including why it is not inverted and why the two tones are not
-    // theme colours, is in `canvas::cursor`'s header.
     //
     // The icon is still set above and is the **fallback**: `egui-winit` drops
     // to `cursor_icon` on any integration or platform that cannot take a
@@ -1398,13 +1312,6 @@ pub(super) fn interact(
     // ★★ …and where that answer is an I-BEAM, turn it to match the text under
     // the pointer.
     //
-    // The operator, 2026-08-26: *"In Adobe when I hover over it the I cursor
-    // re-orients itself to match the text orientation […] as it is now the I
-    // cursor doesn't reorient."* Acrobat is right — the I-beam's meaning is
-    // *"text flows this way"*, and over a 90° title-block stamp an upright one
-    // says it about the wrong axis. `canvas::cursor::Tilt` carries the argument
-    // and the reason this shell can do it at all where most applications
-    // cannot.
     //
     // ★ **The cost question answers itself here, and that is why the tilt is
     // applied at this point and not in `tool::cursor_for`.** Turning the beam

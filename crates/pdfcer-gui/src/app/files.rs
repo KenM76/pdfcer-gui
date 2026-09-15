@@ -82,10 +82,6 @@
 //!
 //! ## ★ The dirty-document rule, stated where it will be needed
 //!
-//! [`crate::app::actions`]' header has always said an Open must not proceed
-//! while a save is pending. **`file.save_copy` was wired on 2026-08-14 and this
-//! paragraph still holds**, which is worth stating rather than assuming,
-//! because the obvious reading of "there is a save now" is the wrong one:
 //!
 //! * `save_pending` asks *"is a save **in flight**?"* — is there a moment at
 //!   which the bytes on disk are a partial revision and the `EditSession` being
@@ -461,8 +457,6 @@ pub fn pick_image_source() -> Picked {
 
 /// **Ask which form-data file to read.**
 ///
-/// The mirror of `actions::export::form_data`'s save picker, and the last of
-/// the form verbs to be wired (2026-08-27).
 ///
 /// # ★ Three filters, and the format is decided by CONTENT rather than by which
 /// one the operator picked
@@ -881,13 +875,6 @@ pub fn pick_merge_sources() -> Vec<PathBuf> {
 /// the suggestion itself is never that file, which is
 /// `crate::dialogs::ocr::suggested_path`'s job and is asserted there.
 ///
-/// ★ **This is the only write-destination question pdfcer-gui asks**, and it is
-/// now asked by **two** surfaces: `dialogs::ocr`, which wrote the first file
-/// this shell ever produced, and — since 2026-08-14 — `crate::app::save`, the
-/// body of `file.save_copy`. The operator's standing rule — *Read may produce a
-/// new document; it may not modify this one* — is enforced here, by asking,
-/// rather than by a mode check: a path the operator names cannot silently be
-/// the one they opened.
 ///
 /// One function for both, deliberately, and `title` is what the second caller
 /// cost. The alternative was a second `native_save` beside this one, which

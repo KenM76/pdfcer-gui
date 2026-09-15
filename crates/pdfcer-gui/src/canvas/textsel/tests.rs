@@ -1,10 +1,5 @@
 //! # `canvas::textsel` tests — driven against real extractions of real files
 //!
-//! Split out of `textsel.rs` on 2026-08-26 under R2, when §8's rotated-text
-//! work took that file over the 1,500-line limit. Nothing moved but the tests,
-//! and they moved **whole** rather than being thinned: the gate's own header is
-//! explicit that the right response to it firing is to split the module, not to
-//! shrink the prose.
 //!
 //! ## ★ Every assertion here drives the ENGINE
 //!
@@ -31,10 +26,6 @@
 // earns the exemption is *not in the release build*, and a filename is a
 // restatement of that which goes stale the moment a third such module exists.
 //
-// Without it this file's assertion messages are reported as operator-facing
-// copy — 78 of them on the split that created it, which is exactly the noise
-// exclusion 2 of that gate was written to remove. `canvas/selection/tests.rs`
-// learned the same thing on 2026-08-18.
 
 use super::*;
 use crate::app::state::{FOUR_PAGES, OpenDoc, ROTATED_TEXT, open_fixture, open_local_fixture};
@@ -85,11 +76,6 @@ fn on_rotated_page<R>(body: impl FnOnce(&PageContext<'_>) -> R) -> R {
 /// gives: a coordinate that misses is symptom-identical to a hit test that
 /// is broken.
 fn on_string(ctx: &PageContext<'_>, word: &str, fraction: f32) -> Pos2 {
-    // ★ The ENGINE's lines since 2026-08-27. This used to read a shell-side
-    // census that recovered the writing direction from glyph origins; `Pass
-    // 139.2` publishes `Line::direction` from the text rendering matrix, and
-    // the census is deleted. A test that kept its own copy of a rule the engine
-    // now owns would keep passing while the product broke.
     let model = pdfcer_core::text_edit::EditableTextModel::recognize(
         ctx.text,
         &pdfcer_core::text_edit::BlockRecognitionOptions::default(),
@@ -630,11 +616,6 @@ fn shift_click_extends_from_the_anchor_and_needs_one() {
         let start = egui::pos2(box_.min.x + 1.0, box_.center().y);
         let end = egui::pos2(box_.max.x - 1.0, box_.center().y);
 
-        // A quarter of the way across the line, not one canvas unit: a
-        // one-unit sweep can begin and end inside the same glyph, which
-        // resolves both ends onto the *same* caret boundary and therefore
-        // covers nothing. That is correct behaviour and a useless fixture —
-        // and it is what the first draft of this test did.
         let quarter = egui::pos2(box_.min.x + box_.width() / 4.0, box_.center().y);
         let seed = drag(ctx, start, quarter).expect("a quarter-line sweep selects glyphs");
         let extended = click(ctx, Some(&seed), end, true, false, false)
@@ -657,14 +638,6 @@ fn shift_click_extends_from_the_anchor_and_needs_one() {
 /// by `resolve_range`, so the last run's end is a real boundary rather than
 /// a byte past one.
 ///
-/// ★ Compared against **`plain_text()`**, not `sourced_text()`, and the
-/// difference is a lesson worth keeping: the first draft of this test split
-/// `sourced_text()` on whitespace and looked for the words in the copy, and
-/// it failed with `select-all dropped "OneChapter"`. `sourced_text()`
-/// deliberately omits every derived space and line break — it is the honest
-/// lower bound on *what the file provides* — so on this fixture it runs
-/// `Page One` and `Chapter 1` together into a token that exists in no
-/// selection anyone could make.
 ///
 /// That is exactly the distinction a copy has to get right in the other
 /// direction: [`resolve`] walks the **runs**, derived-whitespace runs

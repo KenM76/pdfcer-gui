@@ -524,13 +524,6 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.redact_apply", t::edit_redact_apply(), 441)
             .with_icon("apply-redactions")
             .enabled_when("doc.pages"),
-        // **THE FOURTH MARKING ROUTE.** `edit.offpage` joins the
-        // arm/mark/obliterate family as a **mark**: it authors
-        // `/Redact` annotations over the area outside each page boundary and
-        // removes nothing. `edit.redact_apply` above remains the only control in
-        // this program that destroys content, which is the property the family
-        // was split into three glyphs to protect and which a fourth member must
-        // not quietly break.
         //
         // ⇒ A control that scanned and deleted on one press would be exactly
         // that break — the middle step skipped, on the one operation where the

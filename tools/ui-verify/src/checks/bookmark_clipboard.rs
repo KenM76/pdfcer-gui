@@ -3,8 +3,6 @@
 //!
 //! # ★★ The one operation in this program Acrobat cannot do
 //!
-//! `pdfcer-core`, 2026-08-29: *"Acrobat cannot do this between two files at all;
-//! Adobe's own documentation says so by name."*
 //!
 //! That is worth stating in a check file, because it changes what a failure
 //! here means. For most of this suite a red result says *pdfcer is behind a
@@ -89,16 +87,6 @@ use crate::trace::Trace;
 /// even the order `panel-then-mode` loses the panel — which is what the first
 /// version did, and its symptom was the same missing authoring row.
 ///
-/// **3. ★★★ And the conclusion drawn from 1 and 2 was FALSE — corrected
-/// 2026-09-05, on the first sweep that ever ran this check.** It read: *"read is
-/// the mode whose default layout does not carry this panel, so the toggle
-/// reliably turns it on, and nothing this check does needs Edit — the panel
-/// offers [authoring] in every mode."* Both halves are wrong.
-/// `app::modes::defaults` mounts Bookmarks in **Read** as well (*Read: Pages,
-/// Bookmarks*), so the toggle was as likely to close it as to open it; and Read
-/// deliberately offers **no** bookmark authoring at all — `bookmark_add`'s
-/// second half, `read_mode_offers_no_bookmark_authoring`, asserts that absence
-/// and passes.
 ///
 /// So this check ran, found no `bookmarks.new_title`, and SKIPPED — accurately,
 /// unhelpfully, and for ever, because a SKIP is not red. Its own header was the

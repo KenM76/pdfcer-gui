@@ -1,7 +1,5 @@
 //! # `viewer::fit` — how the zoom is decided from the viewport, and where the view goes
 //!
-//! Split out of [`super`] under **R2** on 2026-08-24, when `OPERATOR_REQUESTS`
-//! O28 and O29 took that file past 1,500 lines.
 //!
 //! ## The seam
 //!

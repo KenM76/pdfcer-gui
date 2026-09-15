@@ -10,13 +10,6 @@
 //! > comment a shape you just drew, comment a highlight you just swept, fix a
 //! > typo in your own comment, answer someone else's.
 //!
-//! All four were impossible here until 2026-08-28, for a reason that is
-//! structural rather than lazy: `MarkupOptions` is an **author-time** type, and
-//! a cloud, a rectangle and an arrow are authored on mouse-release from
-//! geometry alone. There is no text-entry moment in that gesture and there must
-//! not be one — a dialog on every shape a reviewer draws is the interaction
-//! nobody ships. So the conventional model needs a verb acting on an annotation
-//! that **already exists**, and until `set_markup_note` there was none.
 //!
 //! # ★★★ Why this cannot be a unit test, in the specific
 //!
@@ -30,11 +23,6 @@
 //! | 4 | the apply arm resolves the author and calls the engine | partially |
 //! | 5 | the engine writes `/Contents` and the panel reads it back | yes, on both sides separately |
 //!
-//! Link 3 is the one that has burned this project repeatedly, most recently
-//! **on 2026-08-28 itself**: the O51 scale switches were written into an arm
-//! that never runs, compiled, read correctly, and drew nothing, with every unit
-//! test green. *"Nothing tested that the control is on screen."* This check is
-//! that test for this control.
 //!
 //! # What it does
 //!
@@ -114,13 +102,6 @@ use crate::sys::vk;
 const INVOKE: &str = "mode.review,markup.comments,markup.rectangle";
 /// The panel's per-frame census.
 ///
-/// ★★★ **Every comparison read of it below is ANCHORED — 2026-09-05.** A docked
-/// pane that is not the front tab of its stack draws nothing and so traces
-/// nothing, which means `Trace::last(CENSUS)` goes on answering with the line
-/// the panel published before it went quiet. On the sweep of that morning
-/// `save_copy_round_trip` and `undo_redo_round_trip` each read such a fossil
-/// and reported a working panel as broken, in identical words — which read as
-/// corroboration, because each carried its own copy of the same helper.
 ///
 /// This file carried a third copy of the pattern and passed that sweep only
 /// because the layout happened to be favourable. Its phase F would otherwise
@@ -441,13 +422,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(12);
     // ★★★ THE PRECONDITION IS READ FIRST, and the order is the whole point.
     //
-    // Until 2026-08-29 the `selected=1` assertion below stood AHEAD of this
-    // one, so a run in which the `V` never arrived — the case this SKIP exists
-    // to name, and one `scale_switch` has measured at zero arrivals in six —
-    // drew a second rectangle instead of selecting the first, reported
-    // `selected=0`, and went red saying *"the canvas selected the shape and the
-    // Comments panel did not find it"* about a canvas that had selected
-    // nothing. A guard placed after the assertion it guards is not a guard.
     if session.trace()?.events(SELECTED).count() == 0 {
         return Err(Error::new(format!(
             "the click on the shape produced no `{SELECTED}` line, so nothing is selected and a \
@@ -489,7 +463,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(pasted) = trace.events(PASTED).last() else {
-        // ★★★ **READ THE MODE GATE BEFORE BLAMING THE CHORD — 2026-09-05.**
         //
         // The message below blamed "chords with a dock panel raised", which is a
         // real and measured harness weakness and was not what happened. On the

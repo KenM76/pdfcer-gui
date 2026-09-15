@@ -4,7 +4,6 @@
 //!
 //! # The report this closes
 //!
-//! The operator, 2026-09-09, and again after the first half was fixed:
 //!
 //! > *"still can't adjust the size of a stamp on the canvas, **or by entering a
 //! > different size in the properties box**."*
@@ -41,11 +40,6 @@
 //! sentence is a report about the last hop, and only a hand on the control can
 //! measure it.
 //!
-//! ⚠ **The regions this check looks for did not exist until it was written.**
-//! `properties.markup.textannot.size` and `.fit` were added to the application
-//! on 2026-09-10, in the same hour as this file. That is worth stating plainly:
-//! the row shipped instrumented for nothing, which means it shipped
-//! **unmeasurable**, which is this project's standing definition of not done.
 //!
 //! # ★★ The oracle, and why it is two trace lines rather than a screenshot
 //!

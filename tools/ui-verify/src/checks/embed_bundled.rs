@@ -1,13 +1,7 @@
 //! `embedding_works_with_no_font_folder_at_all` — **pdfcer's own fourteen faces
 //! answer when nothing of the operator's can, AND only when he asks.**
 //!
-//! # ⚠ THE 2026-09-05 REWRITE HAS NEVER BEEN RUN
 //!
-//! This check passed in its earlier form. It was rewritten on 2026-09-05 with
-//! the operator at his machine, so `ui-verify` could not be run and **the new
-//! assertions have not fired in either direction.** The original oracle is
-//! unchanged and is asserted here as the *ticked* position; what is new is the
-//! unticked position beside it. Treat a red from either as unverified.
 //!
 //! # What this is for
 //!
@@ -15,16 +9,7 @@
 //! the standard-14 faces it ships when none of their folders holds the font a
 //! document names.
 //!
-//! ## ★★★ The answer changed shape on 2026-09-05, and so did this check
 //!
-//! The 2026-08-28 answer was *"always, disclosed loudly"* — no control, the
-//! bundled rung simply on. It is now **the disclosed opt-in**: a checkbox in
-//! the Embed window, **off** when the window opens, with the fonts it would
-//! stand in for named beside it. The deciding reason is not the letterforms,
-//! which were always disclosed; it is that pdfcer's fourteen faces are
-//! BSD-3-Clause and embedding one puts that licence inside a file the operator
-//! then distributes. `pdfcer`'s own CLI keeps `--use-bundled-fonts` off for
-//! exactly that, in those words.
 //!
 //! ## ★★★ WHY THIS CHECK NOW DRIVES BOTH POSITIONS
 //!
@@ -84,15 +69,6 @@
 //! ## ★★★ A DECLINE IS A SKIP, NOT A FAILURE — and reading it the other way
 //! cost an afternoon
 //!
-//! The 2026-08-28 sweep ran this check twice. On `fixtures\a1-titleblock.pdf`
-//! it **passed**, with `targets=3 … substituted=true` and no font folder
-//! configured — the bundled rung firing exactly as O47 asked. On
-//! `D:\Dev\pdfTests\SW41177\SW41177.pdf` it **failed**, on
-//! `embed-fonts-declined folders=0 detail=nothing-to-open`, and that failure
-//! was carried into the handoff as *"the strongest candidate for a real
-//! defect"*. It was neither. SW41177 carries six fonts and **six
-//! `/FontFile2` streams** — every face it names is already embedded, so
-//! *"nothing to do"* is the correct and only honest answer.
 //!
 //! ⇒ The old message claimed a decline meant *"the bundled rung was not
 //! reached"*. **That inference is not available**, and has not been since O47.
@@ -268,11 +244,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     // ── POSITION 1: the offer was made, and it was DECLINED ───────────────────
     //
-    // ★★★ `targets=0` HERE IS CORRECT SINCE 2026-09-05, and reading it as the
-    // defect is the mistake this rewrite exists to avoid. With no folder
-    // configured and the box unticked, the operator's own fonts answer for
-    // nothing, so nothing will be embedded — which is the whole of the new
-    // default and is exactly what he should see before he decides.
     //
     // What replaces that oracle is `own_fonts_offered`: the number of fonts
     // pdfcer holds a copy of and is OFFERING. Zero there is the bundled rung

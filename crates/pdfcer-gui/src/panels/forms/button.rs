@@ -1,15 +1,9 @@
 //! # `panels::forms::button` — **what an existing push button does, and how to
 //! change it**
 //!
-//! The half of `OPERATOR_REQUESTS.md` O60/O61 that could not ship on
-//! 2026-09-01, and shipped hours later when the engine answered.
 //!
 //! ## ★★★ Why this row did not exist until the reader did
 //!
-//! `EditSession::set_button_action` shipped on 2026-08-30 and the placement
-//! dialog consumed it the same morning: draw a button, choose what pressing it
-//! does. That worked because a button being *placed* has a known action —
-//! none — so the control had a truthful starting value.
 //!
 //! A button **already in the document** does not. `pdfcer-core` could write an
 //! action and not read one back, and this project declined to draw the control
@@ -54,10 +48,6 @@
 //!
 //! ## Where the row is
 //!
-//! In the Forms panel, on the push-button row, where `block_reason` used to put
-//! a sentence saying there was nothing to fill in. That sentence was true and
-//! is still true — a push button holds no value — and it was the whole of what
-//! this shell had to say about a button until now.
 
 use egui::Ui;
 use pdfcer_core::edit::{ButtonAction, ButtonActionState, NamedAction, ResetScope};

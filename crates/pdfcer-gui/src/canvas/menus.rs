@@ -12,11 +12,6 @@
 //! | an object | [`crate::shell::menus::CANVAS_OBJECT`] | there is a thing to act *on*, so the menu is about it |
 //! | blank page | [`crate::shell::menus::CANVAS_EMPTY`] | there is no thing, so the menu is about the *view* |
 //!
-//! ⚠ That table said **"Two menus"** and listed two until 2026-09-06, while
-//! this file resolved five. It is the same decay the parent document's own
-//! heading carried, found the same way — by adding the sixth and reading what
-//! was already written. The count is now [`CanvasMenu`]'s variant list, which
-//! `each_canvas_menu_names_a_context_the_shell_defines` walks.
 //!
 //! `GUI_ROADMAP.md` Phase 1 is why this file exists at all:
 //!
@@ -193,10 +188,6 @@ pub enum CanvasMenu {
     /// ★★★ **A markup shape is selected**: act on the shape, and on the corner
     /// under the pointer.
     ///
-    /// Chosen below [`Self::Text`] and [`Self::Field`] and **above**
-    /// [`Self::Object`], [`Self::ReadObject`] and [`Self::Empty`]. The sixth
-    /// canvas context, added 2026-09-06 with the right-click route to a shape's
-    /// nodes.
     ///
     /// ## ★★ Keyed on the SELECTION, not on a hit test, and here is why that
     /// is not the field menu's mistake in reverse
@@ -319,11 +310,6 @@ pub fn select_under_right_click(
 
 /// **What a right-click landed on**, hit-tested at the object rung.
 ///
-/// Moved here from `canvas::interact` on 2026-08-20 under R2, and it belongs
-/// here on its merits rather than only on line count: the *only* consumer of
-/// this answer is the context menu, and the two rules below are rules about
-/// what a menu means. A caller that had to know them in order to feed
-/// [`attach`] would be a caller that could get a menu wrong.
 ///
 /// ★ **The OBJECT rung only** — `hit_test`, not `probe`. `probe` also asks for
 /// the nearest part and node so that a double-click can descend, and a
@@ -375,11 +361,6 @@ pub struct Attach<'a> {
     /// **The decomposed page**, for the one question `object` cannot answer:
     /// *which LINE of that text block is the pointer on.*
     ///
-    /// ★ The thirteenth field, added 2026-09-14 with O188(A). It is the same
-    /// provider [`right_clicked_object`] was already handed by the caller, so
-    /// nothing new is computed for a frame — what changes is that the answer is
-    /// now asked for one rung deeper, and only when the object menu is the one
-    /// being opened.
     ///
     /// `None` when nothing has been decomposed, which is
     /// [`crate::canvas::runmenu::RunPick::Elsewhere`] and therefore no row.
@@ -448,15 +429,6 @@ pub struct Attach<'a> {
 /// Returns the handler tokens the operator chose, for the caller to hand to
 /// the application's one dispatch point. **Nothing here executes anything.**
 ///
-/// ★ It took eight positional arguments until 2026-09-06 under a
-/// `too_many_arguments` allow whose reason ended *"the resulting type would
-/// have no name that was true"*. The markup menu brought four more — the
-/// document, the mapping, the pointer and one capability, every one of them
-/// needed to answer *which corner* — and twelve is past the point where the
-/// argument holds: [`Attach`] does have a true name, it is *one right-click*,
-/// and every field can now carry the note that explains it. The same
-/// conversion `Press`, `Keys`, `Frame`, `Drag`, `Swept` and
-/// [`super::rightclick::Click`] all made.
 #[must_use]
 pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
     let Attach {
@@ -504,11 +476,6 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             // asking it twice with two hit tests is how the two answers drift.
             CanvasMenu::Field
         } else if markup_menu(selection, author_markup, object, map, screen_pos) {
-            // ★★★ **A selected markup shape**, 2026-09-06. See
-            // [`CanvasMenu::Markup`] for the precedence argument and for what
-            // this deliberately does not do — it does not select the shape,
-            // because a right-click has never selected an annotation and making
-            // it do so is a change in the press pipeline rather than in a menu.
             //
             // ★★ The PICK is taken here and parked, on this one frame, because
             // this is the only frame on which the pointer is still over the
@@ -616,15 +583,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
     // open at all — the state `offers_anything` is built to prevent, met from
     // the one direction it cannot see.
     //
-    // ★★ It used to say *"both items"*, and that stopped being true on
-    // 2026-08-29: `canvas.field`'s `format.delete` now carries
-    // `selection.delete_permitted` as its `visible_when`, so on a document
-    // whose form structure is frozen the menu offers `format.properties`
-    // alone — one item, still enough for `offers_anything`, and the Delete is
-    // ABSENT rather than greyed (R9).
     //
-    // ★★★ And `selection.delete_permitted`, corrected for the SAME reason and
-    // on the same frame — added 2026-08-29, with the form half of R83.
     //
     // The frame-top condition set answers this from
     // `panels::properties::formfield::refuses_delete`, which requires

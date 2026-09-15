@@ -6,14 +6,6 @@
 //!
 //! > *"also objects should still be reachable even if they are off the page."*
 //!
-//! Answering that against `pdfcer-core` and `pdfcer-render` source on 2026-08-21
-//! produced an unusually clean result — **no engine change is required**. The
-//! decomposer applies no page-box culling of any kind, so an object painted at
-//! `(-5000, -5000)` is already in `PageObjects::objects` with a truthful
-//! negative bounding box; `hit_test_point_all`'s only predicate on the query
-//! point is `is_finite`, so it will already select one. The single place
-//! off-page content disappears is the **raster**, and only because the
-//! whole-page entry point sizes its pixmap to the `/CropBox`.
 //!
 //! `pdfcer_render::render_page_region` takes an arbitrary page-space rectangle
 //! and — this is the part the feature depends on — **never clamps or intersects

@@ -93,7 +93,6 @@
 //! (Feather, Lucide, Font Awesome, …) whose own licence would then travel
 //! with them into pdfcer's asset tree?
 //!
-//! Answered directly by the operator (Ken), 2026-08-02, verbatim:
 //!
 //! > "Scriptree icons are mine, use from it what makes sense and create new
 //! > ones in its style when necessary, try to make them close to what
@@ -294,11 +293,6 @@
 //!    registration in `crate::shell::commands`, and the only place the count
 //!    of them is true is that module's own assertion — **not here**.
 //!
-//!    ⇒ **A count written into prose in one file cannot be kept true by any
-//!    mechanism in another.** The number that used to stand here drifted
-//!    through four separate changes without a single test going red, and what
-//!    caught it was a human reading two files side by side — which is exactly
-//!    the labour an assertion exists to replace.
 //!
 //!    ⚠ **Two kinds of refusal, and only one of them is about the supply of
 //!    art.** A command with **no slot to put a glyph in** — a text segment, a

@@ -1,6 +1,5 @@
 //! # `markup_resize_preview` — dragging a comment's corner shows where it is going
 //!
-//! The operator, 2026-09-08:
 //!
 //! > *"the Markup Items don't have a live preview — the bounding box stays the
 //! > same size when I drag the handles — the items that I can resize do
@@ -252,11 +251,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: drag the CORNER, not the body -----------------------------------
     //
-    // ★★★ The distinction this check lives or dies on. A press inside the body
-    // is a MOVE, which has had a ghost since 2026-08-28 — so a check that
-    // aimed at the middle would see a preview, pass, and say nothing about the
-    // defect. The grip sits ON the corner of the outline, which is where the
-    // shape's own corner is, so `SHAPE.1` is the aim.
     let grip = aim(ctx, &session, page, corner(SHAPE.1))?;
     let landing = aim(ctx, &session, page, corner(DRAG_TO))?;
     driver.drag(grip, landing)?;

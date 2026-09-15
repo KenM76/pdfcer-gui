@@ -152,8 +152,6 @@ pub use wheel::WheelPaging;
 
 /// The shipped maximum zoom, as a percentage.
 ///
-/// ★★ **The maximum, on the operator's instruction of 2026-08-22** — *"Also
-/// set the default to be able to hit the maximum zoom."*
 ///
 /// It was 800 % for one build, chosen so a fresh install behaved exactly as
 /// the shell had before the setting existed. That was the cautious call and he
@@ -350,8 +348,6 @@ pub struct Prefs {
     /// **Wash the fillable fields, so you can see what can be typed into** —
     /// `OPERATOR_REQUESTS.md` O96.
     ///
-    /// Ken, 2026-09-02: *"in our display section we should have an option to
-    /// shade the form fields like acrobat does."*
     ///
     /// # ★★★ Why this is not the thing rule 4 forbids, and the distinction is
     /// exact
@@ -411,12 +407,6 @@ pub struct Prefs {
     ///
     /// # ★★ Why `Option`, and why collapsing it would be a regression
     ///
-    /// `None` means *"fall through to the per-mode default"*, and it has to
-    /// stay expressible. `MODES_AND_PANELS.md`'s per-mode rule — Read is
-    /// continuous — is a deliberate decision from 2026-08-13, and an operator
-    /// who has never stated a preference must keep getting it. A plain
-    /// `PageDisplay` here would have to pick one, and picking one silently
-    /// overrides that rule for everybody.
     ///
     /// This is the same refusal [`crate::viewer::remembered::recall`] already
     /// makes for its own layer: *nothing recorded* and *recorded as single*
@@ -471,11 +461,6 @@ pub struct Prefs {
     /// [`PrefAction::FindZoom`](crate::app::actions::prefs::PrefAction::FindZoom), read back into
     /// the find state once at startup.
     ///
-    /// ★ **`true` by default**, which is the behaviour every build before
-    /// 2026-09-09 had: going to a hit re-applies Fit page or Fit width to
-    /// whatever page the hit is on, so on a set whose sheets are different
-    /// sizes the zoom changes. The checkbox exists to turn that OFF, so its
-    /// default is ON — the same argument [`Self::smart_select`] makes above.
     ///
     /// ★★ **This is not a search option.** It changes nothing about which
     /// text matches, so it is deliberately not a `FindOptions` field: those
@@ -495,15 +480,6 @@ pub struct Prefs {
     /// restart. Written by `Action::SetFindTrim`, read back into the find
     /// state once at startup.
     ///
-    /// ★ **`true` by default, and that reverses what shipped** — the one
-    /// place in this struct where the default is not “what the previous
-    /// build did”. Every build before 2026-09-12 handed the query to the
-    /// engine verbatim, which is exactly the behaviour he reported as
-    /// broken; leaving the default at `false` would fix it only for
-    /// operators who go looking in Settings. What keeps the new default
-    /// from being its own silence is the find bar's disclosure row, which
-    /// appears whenever the raw query has whitespace at either end and
-    /// says which way the setting is pointing.
     ///
     /// ★★ **This one DOES change what matches**, unlike its neighbour
     /// above, so changing it makes a standing result set wrong rather than
@@ -535,13 +511,6 @@ pub struct Prefs {
     /// [`Self::smart_select`]'s argument exactly: a checkbox that exists so
     /// something can be turned OFF defaults to ON.
     ///
-    /// ⚠ **Nothing but the operator may write this field**, and that is not
-    /// a style rule. `ThumbnailCache::on` was `Option<bool>` until
-    /// 2026-09-08 precisely because pdfcer also wrote it and the type had to
-    /// record *who last decided*. If a future change makes the panel clear
-    /// this on the operator's behalf, that three-state problem comes back
-    /// and so does the reported defect — now with a file to make it
-    /// permanent. Skip the page, not the feature.
     pub page_previews: bool,
     /// ★★★ **How long one page picture may take, in milliseconds — and
     /// `0` means never give up** — `OPERATOR_REQUESTS.md` **O187**,
@@ -651,8 +620,6 @@ pub struct Prefs {
     ///
     /// # The defect this exists for
     ///
-    /// The operator, 2026-08-26: *"When I go to settings and select some of the
-    /// standards the save button is greyed out and I can't save the change."*
     ///
     /// Both halves of that are literally true, and the second explains the
     /// first. A preset's *values* were the only thing recorded, and
@@ -792,13 +759,6 @@ pub struct Prefs {
     /// **Where Acrobat's downloaded trust list is**, when this machine does not
     /// keep it where pdfcer looks. Empty means *"look in the usual places"*.
     ///
-    /// `ENGINE_BACKLOG.md`'s trust-store rows, 2026-09-05. The list Acrobat
-    /// downloads (AATL + the EU Trusted Lists) lands in
-    /// `%APPDATA%\Adobe\Acrobat\<track>\Security\addressbook.acrodata`, and
-    /// `crate::trust::candidate_paths` tries four tracks in the same order
-    /// `pdfcer-cli` does — so the window and the command line find the same
-    /// file, which is the one support conversation nobody can win when they
-    /// disagree.
     ///
     /// # Why a preference exists when discovery works
     ///
@@ -903,13 +863,7 @@ impl Default for Prefs {
             // `MODES_AND_PANELS.md`'s per-mode rule. See the field.
             default_page_display: None,
             smart_select: true,
-            // ★ True = the behaviour every build before 2026-09-09 had,
-            // deliberately. See the field's ★ on why a checkbox that exists
-            // to disable something defaults to enabled.
             find_zoom_on_jump: true,
-            // ★ True = NOT the behaviour before 2026-09-12, deliberately.
-            // See the field's ★ on why this is the one default in this
-            // struct that reverses what shipped.
             find_trim_query: true,
             // ★ True = what every build has done, deliberately. See the
             // field's ★ on why a checkbox that exists to disable something
@@ -1116,18 +1070,10 @@ impl Prefs {
 /// The on-disk format — the parser and the writer, which are two spellings of
 /// one vocabulary and must be read together.
 ///
-/// Split out under **R2** on 2026-09-09 when the *Zoom* control's key took
-/// this file two lines over the ceiling. See that file's own header for why
-/// the seam falls between the *model* and its *transcription* rather than
-/// between reading and writing.
 mod file;
 
 /// The preference file's own tests — the round trips, the notes a bad value
 /// produces, and the seeding of a fresh view.
 ///
-/// Split out under **R2** on 2026-08-28, when `author_name` took this file past
-/// 1,500 lines. The seam is the one this project has used seven times now:
-/// tests are the largest single block in a mature module and the one whose
-/// removal leaves the subject intact.
 #[cfg(test)]
 mod tests;

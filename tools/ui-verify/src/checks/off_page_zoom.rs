@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-11, `OPERATOR_REQUESTS.md` **O23**:
 //!
 //! > *"how do I view and edit objects that are off of the page? we added this
 //! > feature but I didn't see how to enable it."*
@@ -18,9 +17,6 @@
 //!
 //! # ★★★ Why "edit" is a separate property, and why the first two were green
 //!
-//! **Editing an object means zooming in on it.** Nobody nudges a `/Rect` by a
-//! point at 100 %. And until 2026-09-11 zooming in on an off-page object *took
-//! it away* — measured, not inferred.
 //!
 //! The pasteboard O23 shipped was `viewport × 1.0`: a fixed count of **screen
 //! pixels**. The slice of the **drawing** that slack covers is therefore
@@ -124,13 +120,6 @@ use crate::report::CheckReport;
 /// Single-page display, then **100 %** — a property of the document rather than
 /// of the window, so the climb starts from the same place on every machine.
 ///
-/// ★★★ `mode.edit` is named FIRST, and it is not decoration. Since
-/// 2026-09-11 the display of off-sheet content is a per-mode preference and
-/// **Read ships with it OFF** — the operator's request: *"by default, read
-/// doesn't show off page items, review and edit do show off page items."*
-/// This check's whole subject is off the sheet, so without an explicit mode it
-/// would run in whatever mode the shell opens in, find nothing, and report a
-/// defect that is a correctly-implemented setting.
 ///
 /// Edit rather than Review because that is the mode this check's gestures
 /// belong in anyway, and because a mode named explicitly cannot drift when a
@@ -271,22 +260,7 @@ const NOTHING_VISIBLE: &str = "nothing-visible";
 ///
 /// # Why this function exists at all
 ///
-/// The first draft of this check treated *any* stall as a precondition failure
-/// and skipped, with the helpful-sounding suffix *"Raise `max_zoom_percent`, or
-/// run in a narrower window."* Both halves of that sentence were wrong:
 ///
-/// * `max_zoom_percent` defaults to `1e12` and its floor is `10.0`, so the
-///   operator's zoom cap was never what stopped the climb. **That suffix was an
-///   excuse the check had not measured**, and an unevidenced excuse is worse
-///   than silence — it reads as an answered question, so nobody investigates.
-/// * The stall on 2026-09-11 was **the defect this check exists to find**. The
-///   strip culled pages on the sheet's rectangle rather than on the rectangle
-///   its content actually reaches, so once the magnification carried the sheet
-///   off the viewport the canvas laid out nothing, dropped its `canvas-viewport`
-///   and `page` rects, and stopped publishing a zoom to climb with. Reported as
-///   SKIP, that read as *"the harness could not run"*, which is the exact
-///   failure mode this project has written down three times: **a SKIP is not
-///   red, so a check can stop running unnoticed.**
 ///
 /// # What it measures
 ///

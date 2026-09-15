@@ -1,9 +1,5 @@
 //! Tests for [`super`] — the canvas overlay's rectangles, ghosts and grips.
 //!
-//! Split out on 2026-09-08 for R2 (no source file over 1,500 lines) when O154's
-//! `ghost_box` and its two tests pushed `overlay.rs` past the limit. **Nothing
-//! else moved**: the same `mod tests` block, de-indented, with its parent's
-//! private items still reachable because a child module can see them.
 
 #![cfg(test)]
 

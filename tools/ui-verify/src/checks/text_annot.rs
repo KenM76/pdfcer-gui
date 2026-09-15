@@ -3,10 +3,6 @@
 //!
 //! # The gap this closes
 //!
-//! The operator asked on 2026-08-18 to *"finish adding all of the standard
-//! revisioning tools."* Three were registered, drawn on the Markup tab, and
-//! had no dispatch arm for the whole life of the project: text box, sticky note
-//! and stamp.
 //!
 //! Their recorded reason was accurate — `canvas::markup`'s own table calls them
 //! *"text-bearing, not geometric. A different gesture (place, then type) and a
@@ -272,17 +268,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver
         .click_at(frame_of(&session, &trace, ui_rect, "text-annot.text")?.declared_center(field))?;
     session.settle(8);
-    // ★★★ **THE MIDDLE KEY IS ENTER — 2026-09-08, `OPERATOR_REQUESTS.md` O154.**
     //
     // > *"when I use the 'Text box' Markup tool, making new lines by pressing
     // > enter just has the items show up as one line with a `?` for each new
     // > line instead."*
     //
-    // This block used to type two keys with a note saying *"WHAT is typed does
-    // not matter — the Accept control is gated on the field being non-empty and
-    // nothing else"*. That was true of what the check asserted, and it is
-    // exactly why the check was green while the feature was broken: **the
-    // dialog accepted anything, so the check typed the cheapest thing.**
     //
     // ⇒ A newline is now the one character that HAS to be typed here, because
     // it is the one the whole route mishandled: `vartext::encode_winansi` mapped

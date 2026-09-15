@@ -107,12 +107,6 @@ pub struct Vocabulary {
     /// canvas-relative and flip y once against the page height. That fallback
     /// is **correct only for an upright page whose crop origin is (0, 0)**.
     ///
-    /// It shipped that way, and on 2026-09-10 it was measured wrong on the
-    /// operator's `A-591.pdf`, a `/Rotate 270` sheet: every `--doc-point` aimed
-    /// at the wrong place, and the bounds check refused the right-hand third of
-    /// the canvas because it believed a 1224 pt-wide canvas was a 792 pt-wide
-    /// page. The harness was making the *same* mistake the renderer was making
-    /// in defect O174 — a single `height - y` where a rotation belonged.
     ///
     /// The legacy binary cannot emit these, which is why they are `Option` and
     /// not a hard requirement: a profile that demanded them would turn every
@@ -207,8 +201,6 @@ impl Vocabulary {
 
     /// The vocabulary of the OLD binary at `D:\Dev\pdfcer`.
     ///
-    /// Every name was read out of `D:\Dev\pdfce\crates\pdfce-gui\src` at the
-    /// 2026-08-12 release build:
     ///
     /// * `canvas … rect= zoom= sel=` — `main.rs:16866`, traced only on pointer
     ///   events
@@ -484,11 +476,6 @@ pub const PDFCER_GUI: Profile = Profile {
 ///
 /// # ★★★ EVERY NAME IN THIS PROFILE IS AN OLD NAME, DELIBERATELY
 ///
-/// This is the one place in the crate where the old stem is *correct*, and it
-/// went wrong on 2026-09-03 in exactly the way this project has a memory for:
-/// **a rename can blind an instrument silently.** The project-wide sweep
-/// rewrote all four of the fields below, and every one of them names something
-/// **outside this repository** that did not rename with us:
 ///
 /// | field | swept to | actually |
 /// |---|---|---|
@@ -530,11 +517,6 @@ pub const PDFCER_LEGACY: Profile = Profile {
 /// # Provenance, stated in full because a calibrated number is only as good as
 /// its provenance
 ///
-/// Measured against `evidence/crop_settings.png` (1860×1035), the dated
-/// artefact `DEFECTS.md` D2 cites as its evidence. That file is a crop of the
-/// old GUI's Settings dialog captured on 2026-08-12; the seven headings listed
-/// below are the seven `DEFECTS.md` names in the order they appear down the
-/// dialog.
 ///
 /// The calibration is [`Calibration::Image`], so these fractions can only be
 /// used against that image. They are **not** valid against a live window of
@@ -718,9 +700,6 @@ mod tests {
     ///
     /// # Why this test exists
     ///
-    /// On 2026-09-03 the project-wide `pdfce` -> `pdfcer` sweep rewrote all
-    /// four external names in [`PDFCER_LEGACY`]. Nothing went red. The old
-    /// GUI does not live in this repository and did not rename, so:
     ///
     /// * the exe path came to name a binary in the ENGINE repository, whose
     ///   `Pass 247.0` had just deleted the only GUI crate it ever had --

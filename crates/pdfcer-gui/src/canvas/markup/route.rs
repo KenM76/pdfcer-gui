@@ -1,8 +1,5 @@
 //! # `canvas::markup::route` — which markup gesture one drag reaches
 //!
-//! Split out of [`crate::canvas::interact`] under **R2** on 2026-08-28, when the
-//! text-following highlight took that file past 1,500 lines for the third time
-//! in a day.
 //!
 //! ## ★★★ The seam, and it is the same one `canvas::dragroute` draws
 //!

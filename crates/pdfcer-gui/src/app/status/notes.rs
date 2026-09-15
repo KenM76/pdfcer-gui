@@ -1,9 +1,5 @@
 //! # `app::status::notes` — the narrator, demoted behind a disclosure triangle
 //!
-//! The status bar's left-most line: *what pdfcer had to substitute or leave out
-//! when it drew this page*. Split out of [`crate::app::status`] under standing
-//! rule **R2** (no `.rs` file over 1,500 lines), and the seam is the one the
-//! parent's own header already draws in prose:
 //!
 //! > The left half carries four things, and only the first is the narrator.
 //! > The others look similar and are governed by different rules.
@@ -219,13 +215,6 @@ fn annotations_not_drawn(d: &pdfcer_render::Diagnostics) -> usize {
 /// **The renderer's report as an ordered list of sentences**, one per finding
 /// that actually occurred.
 ///
-/// ★ Split out of [`notes_line`] on 2026-08-15 so that the status bar's one
-/// line and the Render-diagnostics dialog's list are the *same ten decisions*
-/// — which counters are reported, which two are not, and in what order — made
-/// once. Two tables would agree on the day they were written and disagree the
-/// first time an eleventh counter was added to one of them, and the symptom would
-/// be two surfaces describing one raster differently, which is the worst
-/// available outcome for a *diagnostic*.
 ///
 /// Empty is a real answer and means the page drew clean. Callers word that
 /// themselves, because the bar and the dialog have different room for it.
@@ -268,11 +257,6 @@ pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
     // it is a `bool`, and it is the CAUSE of several of the lines that can
     // appear under it.
     //
-    // Engine `Pass 290.0` (2026-09-10) stopped refusing a page that carries no
-    // `/Resources` on itself or on any ancestor: pdfcer now supplies the empty
-    // dictionary Table 30 names and the page opens. Before that, one blank
-    // spacer page cost EVERY page in the file, on every verb that walks the
-    // tree — measured on the operator's own Acrobat-written signature file.
     //
     // ⚠ The reason this is disclosed at all, rather than treated as a silent
     // repair: §7.8.3 lets a form XObject or a Type 3 font omit its own
@@ -341,10 +325,6 @@ mod tests {
     /// resources"* would send the operator looking for a font that was never
     /// the problem.
     ///
-    /// ⚠ The first assertion also guards the direction that costs nothing to
-    /// get wrong and everything to leave wrong: engine `Pass 290.0` made this
-    /// page **open** where it used to refuse the whole document, and a silent
-    /// repair is the shape rule 4 forbids.
     #[test]
     fn a_page_whose_resources_were_supplied_says_so_first() {
         let d = pdfcer_render::Diagnostics {

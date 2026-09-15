@@ -4,10 +4,6 @@
 //!
 //! # ⚠ THIS CHECK HAS NOT BEEN RUN
 //!
-//! Written 2026-09-05 and **not executed**. `ui-verify` drives the real cursor
-//! and keyboard and takes the whole desktop; the operator may be at his
-//! machine, and the session that wrote this was instructed not to launch the
-//! GUI. It is registered, it compiles, and it has never seen a running binary.
 //!
 //! **Do not read a green suite as evidence for this row until it has been
 //! driven once.** Say so in whatever report cites it. A check nobody has run

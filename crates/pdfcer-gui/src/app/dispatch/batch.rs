@@ -23,12 +23,6 @@
 //! > **An allow-list whose entries are prose can only ever force an
 //! > explanation, never a fix.**
 //!
-//! The check can prove an entry is registered, has no arm, and that its reason
-//! is long enough and does not merely restate the id. It cannot prove the
-//! reason is *true*. An audit on 2026-08-28 found six of eleven entries wrong;
-//! `tools.merge_files` was the seventh and survived that audit, sitting
-//! immediately above the entry that was retired for naming a missing **host** —
-//! which is what its own reason did.
 //!
 //! ⇒ The runtime replacement is in `tools/ui-verify`: press every registered
 //! id and fail on any `command-unimplemented` line. That is a claim about the

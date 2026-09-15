@@ -6,7 +6,6 @@
 //!
 //! ## ★★★ The surface this exists for, and the report that commissioned it
 //!
-//! The operator, 2026-09-05:
 //!
 //! > *"I could add a yellow sticky note but even in read mode I don't think I
 //! > could figure out how to read it. the review features should look and act
@@ -47,15 +46,6 @@
 //! *"An unavailable capability renders nothing, not a disabled stub. Greying
 //! is reserved for temporarily unavailable, and must explain on hover."*
 //!
-//! 1. **There is no Reply control on THIS surface, and the reason changed on
-//!    2026-09-06.** It used to be *"`pdfcer-core` v0.38.0 reads `/IRT` and
-//!    `/RT` and has no verb of any kind that writes either"*, filed as
-//!    `request_a_reply_can_be_read_and_never_written.md`. **That is no longer
-//!    true**: `EditSession::add_reply` shipped as `Pass 253.0`
-//!    (`pdfcer-core/src/edit.rs:26948`) and this shell authors replies from
-//!    the **Comments panel**, whose catalog carries the wording
-//!    (`crate::text::panels::comments::comment_row_reply` and its four
-//!    neighbours).
 //!
 //!    ⇒ So the absence here is now a **scope** decision rather than a
 //!    capability one, and the distinction matters: an R9 absence is a
@@ -150,20 +140,9 @@ pub fn popup_close() -> &'static str {
 /// What the close control does — on hover, because the glyph alone is
 /// conventional enough not to need a caption on the row.
 ///
-/// ★★★ It says **screen**, and as of 2026-09-06 that is a *choice* rather
-/// than a limit — which is why the sentence now names the control that does
-/// the other thing.
 ///
 /// # What changed, and why the wording had to change with it
 ///
-/// This entry used to justify itself with *"`pdfcer-core` v0.38.0 has no verb
-/// that can change an existing annotation's `/Open`."* `Pass 253.3` shipped
-/// `EditSession::set_annotation_open` and that reason expired. The behaviour
-/// did **not** change and must not: closing a bubble you were reading is a
-/// reading gesture, and wiring it to the document would give a reviewer one
-/// undo entry per comment they glanced at and a dirty file after a session in
-/// which they altered nothing. `crate::app::actions::annot::AnnotAction::SetOpen`
-/// carries the whole argument.
 ///
 /// ⇒ ★★ But an unchanged behaviour with an expired reason needs a **new**
 /// sentence, because the old one now reads as a limitation that is not there.

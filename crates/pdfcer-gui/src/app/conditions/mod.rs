@@ -18,11 +18,6 @@
 //!
 //! ## Why this is its own file
 //!
-//! Split from `app/mod.rs` when that file crossed the 1,500-line gate for the
-//! second time — the first split produced `app/dispatch.rs`. The seam is the
-//! same shape as that one and just as real: `mod.rs` composes a frame,
-//! `dispatch.rs` answers *what does this verb do*, and this file answers
-//! *what is true right now*. They change for different reasons.
 //!
 //! ## ★ Two sources, one convention
 //!
@@ -151,11 +146,6 @@ impl PdfcerApp {
                 // 009 posture A. The catalog comment beside the command said the
                 // greying was *"one line"* away from lifting; this is the line.
                 //
-                // `pdfcer-core` shipped `set_button_action` on 2026-08-30 (`Pass
-                // 182.0`/`183.0`/`183.1`). The condition rides `doc.pages` because a
-                // button needs a sheet to sit on and nothing more — the seven things
-                // it can be set to are all writable into any document a field can be
-                // placed in, so there is no narrower precondition to state.
                 //
                 // ★ Welded to `FormFieldKind::is_useful_once_placed` by a test, and
                 // that weld is the mechanism: the ribbon asks by condition string and
@@ -174,12 +164,6 @@ impl PdfcerApp {
             // annotation selection — so `selection.any` is false while a field
             // is selected and every control gated on it resolves disabled.
             //
-            // ⇒ That was invisible while the only route to `format.delete` was
-            // the Format tab, which is not drawn for a form selection. Giving
-            // the canvas a `canvas.field` right-click menu on 2026-08-28 gave
-            // the command a second door and the state became reachable: the
-            // menu's Delete would have been greyed on a field the Delete KEY
-            // removes.
             //
             // ★★ It is deliberately NOT a widening of `selection.any`. That
             // condition also decides whether the contextual **Format tab**
@@ -196,15 +180,6 @@ impl PdfcerApp {
             //
             // # ★★★ Why this exists, and it is a defect rather than a polish
             //
-            // `EditSession::annotation_deletion_refusal` is a pure query whose
-            // own doc comment names this call site by rule number, and until
-            // 2026-08-29 **nothing in this shell called it**. On a certified or
-            // encrypted drawing the Format tab's Delete, both canvas menus'
-            // Delete and the Delete key were all live, and every press ended in
-            // `actions::apply::vector_edit`'s `Err` arm — one line to the trace,
-            // nothing to the operator. That is the day-before forms defect
-            // (`deletion_refusal`, consulted by nothing) wearing a different
-            // `/Subtype`.
             //
             // # ★★ It is a POSITIVE name for a negative fact, deliberately
             //
@@ -226,9 +201,6 @@ impl PdfcerApp {
             // `format.delete` keeps that condition as its `enabled_when`; this
             // one decides only whether it is drawn at all.
             //
-            // ★ It is NOT set for a selected form field on a document whose
-            // form structure is frozen, and that arm was missing until
-            // 2026-08-29 — see the ladder below.
             //
             // ⇒ A control that is *drawn and refuses* is the defect being fixed.
             // A control that is *withheld where it would have worked* is a worse
@@ -302,8 +274,6 @@ impl PdfcerApp {
             } else {
                 crate::panels::properties::annotdelete::refuses_selected(doc)
             };
-            // ★★★ **THE MODE IS A REFUSAL TOO, AND ITS ABSENCE HERE DREW AN
-            // ENABLED DELETE IN READ** — 2026-09-03.
             //
             // The ladder above asks the ENGINE whether a delete would be
             // refused. That was the whole question, on the strength of the note
@@ -312,13 +282,6 @@ impl PdfcerApp {
             //   > in practice this is unreachable, because entering such a mode
             //   > clears the selection and no gesture can build a new one
             //
-            // **`OPERATOR_REQUESTS.md` O71 falsified that nine days later.**
-            // `canvas::clicking`'s image arm runs precisely when
-            // `!caps.edit_content` — it exists so a reader can click a picture
-            // and copy it — so a content selection has been reachable in Read
-            // since 2026-08-31, `selection.any` and everything built on it has
-            // been set there, and the Format tab's Delete was **drawn and
-            // enabled** in the mode that authors nothing.
             //
             // ★ Not a widening into `selection.actionable`'s territory, which
             // this condition's own header forbids. That one asks *is there
@@ -397,9 +360,6 @@ impl PdfcerApp {
             {
                 set.set("selection.in_form");
             }
-            // ★ **The two conditions this function used to say were deliberately
-            // absent**, and the comment they replace is worth quoting rather
-            // than deleting, because it was right when it was written:
             //
             // > `undo.available` and `redo.available` are still deliberately
             // > absent: there is no undo stack to report on yet. Setting them
@@ -534,18 +494,6 @@ impl PdfcerApp {
             //
             // # Why a third name, when two already exist
             //
-            // The contextual Format tab appears *"only while something is
-            // selected"* (`RIBBON_IA.md` §5.8), and since 2026-08-27 it holds
-            // two kinds of control: the Selection group, which acts on a page
-            // **object**, and the Font group, which acts on a swept **text
-            // range**. Those are the two conditions immediately above, and
-            // they are different index spaces — `selection.any` is a
-            // paint-order index, `selection.text` is a run range — so neither
-            // one of them is the tab's condition. Spelling the tab as
-            // `selection.any` means sweeping text in Edit restyles nothing
-            // because the tab carrying the controls never appeared; spelling
-            // it as `selection.text` loses the Delete the tab has carried
-            // since it shipped.
             //
             // ★ The expression language is deliberately one condition name
             // with an optional leading `!` (`egui_shell::commands::Enable`'s
@@ -569,9 +517,6 @@ impl PdfcerApp {
             if !doc.selection.is_empty() || set.is_set("selection.text") {
                 set.set("selection.formattable");
             }
-            // ★★★ **A markup annotation is selected, and this mode may author
-            // markup** — the Format ▸ Markup group's whole existence condition,
-            // published from 2026-09-06 for `app::markupband`'s five controls.
             //
             // # Why ONE condition carries two facts
             //
@@ -804,8 +749,6 @@ impl PdfcerApp {
         if self.capabilities().edit_content {
             set.set("mode.edit_content");
         }
-        // ★★ **Every pressed state, in one place** — `app::conditions::armed`,
-        // split out 2026-08-31 under R2.
         //
         // It answers a different question from everything above it: not *"may
         // this control be pressed?"* but *"is it already in the state it

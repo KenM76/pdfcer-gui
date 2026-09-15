@@ -678,11 +678,6 @@ pub const fn bookmark_add_to_top_button() -> &'static str {
 
 /// How a parent is chosen.
 ///
-/// ★ Says it out loud because the gesture is **overloaded on purpose**: a
-/// bookmark click navigates, and it also records the row as the parent for the
-/// next add. Both are true of the row the operator pointed at, which is what
-/// makes the overload honest — but an operator who was not told would file a
-/// bookmark under whichever heading they last used to jump somewhere.
 #[must_use]
 pub const fn bookmark_add_parent_hint() -> &'static str {
     "Click a bookmark above to file the new one under it. Clicking also jumps \

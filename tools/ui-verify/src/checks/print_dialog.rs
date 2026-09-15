@@ -377,7 +377,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- D. ★★★ AND IT OPENED IN ITS OWN OS WINDOW -------------------------
     //
-    // The operator's report, 2026-08-20, and `ui-conventions/dialogs.md` G1:
     //
     // > *"Print dialogue box doesn't pop up in its own movable window. It is
     // > locked within the boundaries of the program's window. Like, I just

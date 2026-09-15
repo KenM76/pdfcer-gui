@@ -3,12 +3,6 @@
 //!
 //! # Why this is its own file
 //!
-//! **R2.** `dialogs/redact.rs` reached 1,609 lines on 2026-09-08 when
-//! [`Destination::OpenDocumentNow`] was added on the operator's report that the
-//! dialog offered only a *"don't apply yet"* button. Its tests were already
-//! split out, so the seam had to be production code — and this is a real
-//! subject rather than a convenient cut: **four destinations, and every
-//! behavioural difference in the dialog is a function of which one is chosen.**
 //!
 //! The permanence sentence, the confirm label, whether a picker opens, whether
 //! a file is written, whether the page changes, and which of two acknowledgement
@@ -24,14 +18,11 @@
 
 /// **Where the redacted document goes.**
 ///
-/// ★★★ Added 2026-09-04, on the operator's explicit instruction, and it
-/// reverses a ruling this file used to state as settled. His words:
 ///
 /// > *"why does it have to save to a new file right away? Why can't it just
 /// > wait on saving until I choose to save over the existing file or save as a
 /// > new file?"*
 ///
-/// # What this file used to say, and why it was wrong
 ///
 /// [`RedactDialog::commit`] read, verbatim: *"There is no 'save over the
 /// original' branch to find, because there is none to write, and on this
@@ -54,8 +45,6 @@
 /// change is that the safe default is now a default rather than the only
 /// option.
 ///
-/// # ★★★ CORRECTED the same evening — the deferred half SHIPPED, and this
-/// section used to say it could not
 ///
 /// What stood here, verbatim, written at about midday:
 ///
@@ -97,35 +86,14 @@ pub(super) enum Destination {
     /// writes nothing. The old default ([`Self::NewFile`]) was safe because it
     /// never overwrote; this is safer still, because it never writes.
     ///
-    /// ★★★ **Its price was inverted on 2026-09-05, and the old price is worth
-    /// recording because it is what the operator agreed to.** Under
-    /// `Pass 250.1` this destination **finalized**: the removal happened at the
-    /// click and the whole undo log went with it, disclosed above the confirm
-    /// control as a step count, on his ruling *"finalizing the document and
-    /// can't be undone is ok **for now**"*. `Pass 250.2` charges nothing —
-    /// base, overlay and the entire undo/redo stack survive — and what is
-    /// disclosed in the same place is the surprise that replaced the price:
-    /// [`crate::text::redact::removal_happens_at_save`], because **the page
-    /// does not change**.
     OpenDocument,
     /// **The open document, now** — the removal happens at the click and the
     /// page changes on screen.
     ///
     /// # ★★★ Why this exists, and it is an operator report
     ///
-    /// The operator, 2026-09-08: *"the redaction feature regressed back to just
-    /// giving me the 'don't apply yet' button."*
     ///
-    /// Nothing had regressed in code. [`Self::OpenDocument`] became the default
-    /// on 2026-09-04 because he asked for it — *"why can't it just wait on
-    /// saving until I choose to save"* — and on 2026-09-05 `Pass 250.2` made it
-    /// **cost nothing**: base, overlay and the whole undo stack survive. The
-    /// price it charges instead is stated in that variant's own doc: **the page
-    /// does not change.**
     ///
-    /// ⇒ So he pressed the one button the default offered and watched nothing
-    /// happen, which is his 2026-09-04 complaint in a new form — *"what is the
-    /// purpose of a redaction tool that refuses every time to do any work?"*
     ///
     /// ★★ **The deferred destination is not a mistake and is not being
     /// replaced.** It is cheaper, it is safer, and he asked for it. What was
@@ -156,9 +124,6 @@ pub(super) enum Destination {
 /// asserted without constructing a document, and so that changing it is a
 /// visible edit rather than one word in a struct literal.
 ///
-/// It moved on 2026-09-04 from [`Destination::NewFile`] to
-/// [`Destination::OpenDocument`]. Both are safe defaults and for different
-/// reasons: the old one never *overwrote*, the new one never *writes*.
 pub(super) const DEFAULT_DESTINATION: Destination = Destination::OpenDocument;
 
 impl Destination {
@@ -178,14 +143,6 @@ impl Destination {
     /// Whether confirming **stages** the removal for the next save rather than
     /// performing it.
     ///
-    /// ★★★ Added 2026-09-08 with [`Self::OpenDocumentNow`], and it is the
-    /// reason that variant needed more than a radio row. The confirm handler
-    /// branched on `!writes_now()` — *"anything that does not write a file is
-    /// staged"* — which was true while `OpenDocument` was the only
-    /// non-writing destination and became **silently wrong** the moment a
-    /// second one existed: `OpenDocumentNow` writes no file either, so it would
-    /// have taken the staging path and done exactly the nothing the operator
-    /// reported.
     ///
     /// ⇒ Named for what it MEANS rather than derived from what it is not. A
     /// predicate written as the complement of another is a predicate that

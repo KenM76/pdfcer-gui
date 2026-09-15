@@ -24,12 +24,6 @@
 ///
 /// # Why the clamp is not optional
 ///
-/// The offset is subtracted, so the content follows the hand. Without a clamp
-/// an unscrollable canvas — the page fitted inside the viewport, offset pinned
-/// at zero — still accepts a negative target for one frame, so the page slides
-/// with the pointer and then snaps back the instant the drag ends. Observed
-/// exactly that on 2026-08-04: a 50 px slide and a 50 px jump back. Refusing to
-/// move at all is the honest response to "there is nothing to pan to".
 ///
 /// # Known limitation, deliberately left
 ///
@@ -62,12 +56,6 @@ pub fn pan_offset(
 /// The centring margin on one axis: half the slack when the page is smaller
 /// than the viewport, zero once it is larger.
 ///
-/// Lifted out of [`zoom_anchor_offset`] when [`anchor_screen_pos`] and
-/// [`offset_holding_anchor_at`] were split out of it, so that all three read
-/// the *same* margin. The margin is not a refinement — see
-/// [`zoom_anchor_offset`]'s derivation — and two spellings of it would drift
-/// apart in exactly the case that matters, the fit-page zoom an operator
-/// starts from.
 #[must_use]
 fn margin(display: f32, viewport: f32) -> f32 {
     (display.max(viewport) - display) / 2.0
@@ -91,11 +79,6 @@ const PASTEBOARD_FRACTION: f32 = 1.0;
 ///
 /// # The defect this exists for, measured rather than reasoned
 ///
-/// `OPERATOR_REQUESTS.md` **O186**: *"the canvas will just stop zooming in."*
-/// Driven on 2026-09-13 by
-/// `tools/ui-verify/src/checks/off_sheet.rs` against `fixtures/four-pages.pdf`
-/// — an A1 landscape sheet — in a 970 × 1158 pt canvas, Ctrl+wheeling **in**
-/// with the pointer 84 pt above the sheet's top edge:
 ///
 /// ```text
 /// notches 30     zoom   2320 %          canvas-pos at = 27073.000,-1158.688
@@ -181,20 +164,7 @@ fn sheet_sliver(viewport: f32) -> f32 {
 ///
 /// # ★★★ Why the overhang term exists, in the operator's own words
 ///
-/// O23, 2026-08-21: *"objects should still be reachable even if they are off
-/// the page."* Three weeks later, with the reach and the sight both shipped:
-/// *"how do I view and edit objects that are off of the page?"*
 ///
-/// **Edit.** Editing an object means zooming in on it, and until this term
-/// existed zooming in *took it away*. The pasteboard was `viewport × 1.0` — a
-/// fixed number of **screen pixels** — so the slice of the *drawing* it covered
-/// was `viewport / zoom` and shrank with every notch. An object 100 pt off the
-/// left edge of a sheet, on a 470 px-wide canvas, could be brought to the
-/// middle of the screen only while `235 / zoom ≥ 100`: **below about 235 %**.
-/// Above that the scroll offset ran into a clamp, the anchored zoom's solved
-/// offset was clamped away, and the object walked off the edge of the screen
-/// while the operator zoomed toward it. Measured on 2026-09-11 — see
-/// [`crate::render::halo::overhang`] for the trace and the arithmetic.
 ///
 /// # The rule, and why the half viewport
 ///
@@ -413,7 +383,6 @@ pub fn strip_to_scroll(in_strip: f32, strip: f32, viewport: f32, overhang: f32) 
 /// changed; the guard was never written because below the threshold it was not
 /// the shell's to write.
 ///
-/// Measured 2026-09-12 on `ncored-benchmark-cad-drawing.pdf`:
 ///
 /// ```text
 /// deep anchor      pdf = (1199.50, -0.54)
@@ -442,11 +411,6 @@ pub fn strip_to_scroll(in_strip: f32, strip: f32, viewport: f32, overhang: f32) 
 /// way to guarantee that is for one of them to be *derived from* the other
 /// rather than to resemble it.
 ///
-/// The first draft of this function wrote the bound out longhand as
-/// `(-pb, (strip + pb - viewport).max(-pb))`, with the `.max` there to stop an
-/// inverted interval when the strip is shorter than the viewport. ★★ **Both
-/// halves of that were wrong, and only measuring them said so** — see
-/// [`tests::the_draft_longhand_range_was_wrong_in_the_two_ways_measuring_it_found`]:
 ///
 /// * **the guard is unreachable.** Inversion needs
 ///   `strip < viewport − 2 × pasteboard`, and [`PASTEBOARD_FRACTION`] is `1.0`,
@@ -573,10 +537,6 @@ pub fn anchor_screen_pos(
 /// axis. So a fit-page document nobody has panned has its page centre at the
 /// viewport centre, and restoring the centred point re-centres it *for free*.
 ///
-/// ⇒ That is what lets `canvas::fit` stop having a separate resize path. A fit
-/// becomes purely a rule about **zoom** (`ViewState::apply_fit`, every frame)
-/// and this becomes the one rule about **position**. Two rules that used to be
-/// entangled, and the entanglement was what made a pan have to leave the fit.
 ///
 /// # A non-finite axis yields `0.5` — the middle of the page
 ///
@@ -696,17 +656,6 @@ pub fn offset_holding_anchor_at(
 /// zero yields "the page is centred in the pasteboard", which is a statement
 /// about a page nobody is looking at.
 ///
-/// ★★★ **That lie was `OPERATOR_REQUESTS.md` O26e.** `CanvasFrame::offset` is
-/// the `offset_before` of the next zoom, so every frame spent at deep zoom
-/// recorded a fictitious "before". Nothing went wrong while the tier held —
-/// the deep branch does not consult it — but the moment a zoom-out crossed
-/// back, [`zoom_anchor_offset`] solved against it and put the page's **origin**
-/// under the pointer. Driven, 2026-08-24: descending through the boundary at
-/// 1,185,799 % moved the page point under the viewport centre from
-/// (791.93, 1152.34) to **(−0.02, −0.03)** — the corner of the sheet, with
-/// twelve million pixels of drawing off screen. The operator's report was
-/// *"zoom out … repositions the page so that it is off screen in the far
-/// bottom left corner … from around 2 million %"*.
 ///
 /// # The measurement
 ///
@@ -909,13 +858,6 @@ pub fn strip_offset(
 ///
 /// # Why this exists
 ///
-/// Ctrl+wheel previously called `zoom_by` and nothing else. The scroll offset
-/// was left alone, so the *viewport centre* was the fixed point of the zoom and
-/// whatever the operator was pointing at slid away — worse the further from
-/// centre they were pointing, which is exactly where a person zooms in on a
-/// drawing detail. Every other application that zooms a canvas (browsers, CAD,
-/// Inkscape, Office) anchors on the cursor, and the operator reported the old
-/// behaviour as "jarring" on 2026-08-04 for that reason.
 ///
 /// # The geometry
 ///
@@ -999,19 +941,7 @@ pub fn zoom_anchor_offset(
     let held = anchor_screen_pos(anchor_frac, offset_before, display_before, viewport);
     // ★★★ RETURNED UNCLAMPED — `OPERATOR_REQUESTS.md` O24e.
     //
-    // This used to clamp to `display_after - viewport`: the range a page has
-    // when the scroll content is the page and nothing else. **The pasteboard
-    // made that false.** `content_extent` now adds a viewport of slack on
-    // every side (O23, so an object off the page is still reachable), so the
-    // real range is `content_extent(strip, viewport) - viewport` and the page
-    // is only part of it.
     //
-    // The damage was worst exactly where the operator found it. At a fit-page
-    // zoom the page is no LARGER than the viewport, so `display_after -
-    // viewport` is zero or negative, the clamp range collapses to `[0, 0]`,
-    // and every zoom forced the offset to zero — which after
-    // `strip_offset`'s conversion is the centred position. His report,
-    // 2026-08-22:
     //
     // > *"if I am zoomed out to about page size, pan the cells to the center
     // > of the screen, then start to zoom, the page snaps back to near the

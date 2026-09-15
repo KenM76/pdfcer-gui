@@ -202,13 +202,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ctx.profile.diag_env.0.to_owned(),
         ctx.profile.diag_env.1.to_owned(),
     ));
-    // ★ The SHELL's diagnostic channel too, added 2026-08-17 with the Edit-mode
-    // step below. `egui-shell` traces ribbon and mode events under its own
-    // prefix and its own switch, separate from the application's — so a check
-    // that sets only the application's env sees no `ribbon-mode-selected` line
-    // and cannot tell "the click missed" from "the channel is off". That is
-    // exactly the ambiguity `click_mode_segment`'s failure text refuses to
-    // resolve, and it is resolved here instead, at the launch that causes it.
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
@@ -261,8 +254,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- step 0: PUT THE APPLICATION IN A MODE THAT CAN SELECT -------------
     //
-    // ★ Added 2026-08-17, and its absence had turned this check into a
-    // reporter of a defect that does not exist.
     //
     // This check was written before Read mode existed. The shell's default
     // mode is `read` — `mode-changed from=None to=read remembered=false` on a

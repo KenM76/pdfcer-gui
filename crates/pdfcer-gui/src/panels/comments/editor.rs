@@ -1,9 +1,5 @@
 //! # `panels::comments::editor` — everything on a row that WRITES
 //!
-//! The *Add note* / *Edit note* control, the *Reply* control, and the one text
-//! box both of them open. Split out of [`super`] under **R2** on 2026-09-06,
-//! when the reply affordance took that file to 1,757 lines against a ceiling
-//! of 1,500.
 //!
 //! ## ★★ Why this is the seam, and not "split the rows from the strip"
 //!
@@ -171,11 +167,6 @@ pub(super) fn note_controls(
 ///
 /// # The gap this closes, in this shell's own words
 ///
-/// 2026-09-05, filed and carried open until the verb landed: *"we can read a
-/// comment thread and cannot add to it."* The **read half already worked** —
-/// this panel's trace has printed `replies=` since the day it was written, and
-/// `crate::canvas::notepopup::thread` draws the conversation inside a comment's
-/// window. What was missing was a destination, and this is it.
 ///
 /// # ★★ Beside *Add note*, not under it, and the pairing is the explanation
 ///
@@ -226,12 +217,6 @@ fn reply_control(
 /// ★★★ **Whether there is anything to post** — the shell's own R83 guard, and
 /// the reason it cannot be delegated.
 ///
-/// `add_reply`'s doc comment lists `EditError::MarkupNoteEmpty` among its
-/// errors and **that variant does not exist**: measured 2026-09-06 against the
-/// pinned engine at `d2ea5de`, the identifier occurs once in the whole crate
-/// and the occurrence is that doc line. `MarkupNote::validate`
-/// (`edit.rs:4731`) checks the `/M` date's §7.9.4 shape and nothing else, so an
-/// empty reply is **authored rather than refused**.
 ///
 /// ⇒ So the decision is this shell's, and it is *not* the one the note editor
 /// makes. An empty `/Contents` on a sticky note is ordinary — it is what the
@@ -287,7 +272,6 @@ pub(super) fn keeps_author(comment: &CommentRow) -> bool {
 
 /// [`keeps_author`] over the name alone — **the one spelling of the rule**.
 ///
-/// # ★★★ Why this is separate, added 2026-09-05
 ///
 /// Because there are now **two** editors for one note: this panel's, and the
 /// canvas pop-up's (`crate::canvas::notepopup`), which is the route that works
@@ -342,8 +326,6 @@ fn editor(
     draft: &mut NoteDraft,
     sink: &mut RowSink<'_>,
 ) {
-    // ★★★ **The open box is itself a writing control, and counting it closed a
-    // hole in the instrument** — 2026-09-06.
     //
     // `CommentsUi::writing_controls_drawn` was incremented only by the
     // *buttons* that open an editor, never by the editor itself. So on a row
@@ -352,13 +334,6 @@ fn editor(
     // real `body` in Read and asserts the tally is zero, **could not see the
     // editor path at all**.
     //
-    // ⇒ It was found by falsifying the reply-editor test: the stance check was
-    // deliberately moved after the draft branch — the exact 2026-09-05 defect
-    // shape, a live writing control in Read — and the test **stayed green**.
-    // A guard that cannot go red is not a guard. Same lesson as
-    // `crate::app::modes`' deleted start-up assertion, one rung down: ★ a
-    // negative assertion is vacuous when the thing that would produce the
-    // positive is not counted.
     *sink.writing_controls_drawn += 1;
     let response = ui.add(
         egui::TextEdit::multiline(draft.text_mut())
@@ -371,8 +346,6 @@ fn editor(
         return;
     }
 
-    // ★★★ **A `/FreeText` row's before-the-write warning was DELETED here on
-    // 2026-09-06, hours after it was added, and the deletion is the record.**
     //
     // It said, in un-`.weak()` type above the keyboard hint, that the words
     // printed in a text box could not be changed once it was placed and that

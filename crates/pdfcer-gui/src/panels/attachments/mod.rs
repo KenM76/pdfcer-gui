@@ -322,8 +322,6 @@ fn row(
     let name = display_name(attachment);
     ui.label(name.clone());
 
-    // ★★★ **THE VERBS COME SECOND, before the metadata — 2026-09-01, and a
-    // measurement moved them.**
     //
     // They were last, after the name, the location, the description, the size,
     // the dates, the claimed type and two possible caveats about the name. On a

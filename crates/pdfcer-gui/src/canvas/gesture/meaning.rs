@@ -266,16 +266,6 @@ pub enum DragKind {
     /// [`GestureOutcome::TextSelect`]. There is no per-drag choice to sample at
     /// the press — no kind, no intent, no grip.
     ///
-    /// ★ That emptiness used to carry an extra claim: *"which is itself the
-    /// reason the gate for it is a mode question rather than an armed-tool one."*
-    /// The inference was wrong and is corrected rather than deleted, because it
-    /// is a tempting one. Carrying no per-drag state says nothing about **who
-    /// decides** the drag happens; it says only that the deciding does not have
-    /// to be *remembered*. Since 2026-08-14 the gate is both — an armed
-    /// [`CanvasTool::Text`], or the pre-existing mode rule — and this variant
-    /// still carries nothing, because
-    /// [`crate::canvas::tool::CanvasTool::Text`] itself carries nothing either.
-    /// See [`crate::canvas::textsel`]'s header §3.
     TextSelect,
     /// The markup tool was armed: **draw**, in the carried shape.
     ///
@@ -455,19 +445,7 @@ impl DragKind {
 /// which is a different question that happens to read the same flag in one of
 /// its two halves. That is not a capability inverted.
 ///
-/// Selecting text authors nothing — it reads the page and writes to the
-/// clipboard, which is the operator's own *copying is not authoring* ruling of
-/// 2026-08-14 — so there is nothing here to permit, in either half. What there
-/// is, is a collision: in a mode that selects page content the primary drag is
-/// already the marquee. `crate::canvas::textsel::takes_the_press` is the one
-/// place that collision is resolved, this function asks it, and
-/// `canvas::interact` asks the same function again when it routes the click — so
-/// the two cannot disagree about what a press meant. That module's header §3
-/// carries the full argument, including why a `select_text` capability would
-/// have been the wrong shape.
 ///
-/// ★ **Since 2026-08-14 the predicate has two disjuncts**, and the second one
-/// changes where the exclusivity comes from rather than whether there is any:
 ///
 /// * **un-armed** (`CanvasTool::Select` in a mode that cannot select content) —
 ///   exclusive **by construction**, one flag on both sides of one branch, which
@@ -475,13 +453,6 @@ impl DragKind {
 /// * **armed** (`CanvasTool::Text`, in any mode) — exclusive **by precedence**,
 ///   at rung 2 above, which is the rule `DragKind::Markup` has always used.
 ///
-/// The property an operator can feel is untouched either way: this function
-/// returns one [`DragKind`], so one press has one meaning. What a reader has to
-/// know is that in Edit *both underlying facts* can now be true at once — the
-/// mode can select content, and the operator has asked for text — so the order
-/// of the branches below is load-bearing where it previously was not.
-/// **What the primary button may do this frame** — the answer [`press_kind`]
-/// returns and [`super::GestureState::update`] acts on.
 ///
 /// # ★ Why two fields rather than one `Option<DragKind>`
 ///
@@ -696,11 +667,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // ★★ A FORM tool, and it is placed BOTH ways at once — which is why it
     // needs no `is_dragged` predicate of its own.
     //
-    // The operator, 2026-08-26: *"when I click one I should be able to click on
-    // the canvas to place the position or drag a box for size"*. Both, for every
-    // kind, and the click is not a degenerate drag that happens to be tolerated
-    // — it is the primary gesture for a check box, whose conventional size is
-    // 14 pt square and which nobody wants to drag out by hand.
     //
     // ★ It sits ABOVE the text-annotation rung rather than below, and the
     // ordering is currently unobservable: the two tools cannot both be armed,
@@ -760,8 +726,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     }
     if tool.text_edit_kind().is_some() {
         return PressMeaning {
-            // ★★★ A DRAG WITH THE TEXT TOOL DRAWS A BOX TO TYPE IN — the
-            // operator, 2026-08-21: *"I should be able to make it multi line."*
             //
             // It has to be a drag, and the reason is the file format rather
             // than a preference: a PDF has no paragraph, so each visual line is
@@ -823,15 +787,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // ★ The two worlds, split on the one flag that separates them, rather than
     // one `match` with a capability test on every arm.
     //
-    // It used to be the latter, and the text row is what showed why that was the
-    // wrong shape: with `edit_content` false, **three of the four arms were
-    // dead** — a grip is drawn only for a content selection, so in a mode that
-    // cannot make one there is no grip to hover, no resize and no move. Writing
-    // them as `caps.edit_content.then_some(…)` inside one match left those dead
-    // arms answering `None` and swallowing the press, so a hypothetical grip in
-    // Read produced *no meaning at all* where every other press in Read means
-    // text. Unreachable, and incoherent — and the incoherence is the kind that
-    // becomes reachable the day something else changes.
     //
     // Split, each branch says one thing. The content branch is byte-for-byte the
     // precedence that shipped: markup, grip, armed zoom, marquee. The reading
@@ -880,8 +835,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         } else {
             DragKind::TextSelect
         })
-    // ★★★ **THE ROTATE HANDLE OF A SELECTED ANNOTATION, AND IT IS THE HIGHEST
-    // OF THE THREE ANNOTATION RUNGS.** 2026-08-28, `Pass 155.0` + `Pass 159.0`.
     //
     // ## Why it is a rung of its own rather than an arm of the two below
     //
@@ -942,7 +895,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         Some(DragKind::Rotate)
     // ★★★ **A SELECTED CE DIMENSION GETS ITS OWN RUNG, ABOVE `edit_content`.**
     //
-    // 2026-08-20, and the placement is the whole of what this rung does.
     //
     // Everything below is gated on `caps.edit_content`, which **Review does not
     // have** — and Review is the mode a ce dimension is *made* in. So a
@@ -974,9 +926,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             // what it says; `canvas::dimdrag`'s header carries that argument.
             DimensionPress::Body => DragKind::Move,
         })
-    // ★★★ A press inside a selected MARKUP annotation, in a mode that may author
-    // markup. Added 2026-08-28, and it is the branch whose absence made the
-    // whole annotation drag a dead end.
     //
     // Below the dimension branch and above `edit_content`, and both placements
     // are decisions:
@@ -992,12 +941,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     //   and an operator who has just drawn a shape there and wants to nudge it
     //   is in the mode where the content branch does not run at all.
     //
-    // => The absence of this branch is what made the fork in `canvas::interact`
-    // a dead end. `annotdrag` was reachable and never reached, because no press
-    // on a markup ever became a `DragKind::Move` to route.
-    // ★★★ A press inside a selected MARKUP annotation or a selected FORM
-    // FIELD's box. Added 2026-08-28, ten days apart, and merged here because
-    // they produce the same verb.
     //
     // Below the dimension branch and above `edit_content`, and both placements
     // are decisions:
@@ -1019,12 +962,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // rename it."* So a widget drag is only reachable in Edit, and gating it
     // any other way would be a second answer to a question that has one.
     //
-    // ⇒ The absence of these two branches is what made the fork in
-    // `canvas::dragroute` a dead end for its whole life: the modules were
-    // reachable and never reached, because no press on a markup or a widget
-    // ever became a `DragKind::Move` to route.
-    // ★★★ **…AND ON ONE OF THEIR GRIPS, WHICH IS NOT THE SAME AS INSIDE THEIR
-    // BOX** — 2026-09-05.
     //
     // `markup_body` is `grab_box().contains(p)`. A corner grip is *centred on*
     // a corner of that box, so half of its live area is outside it, and
@@ -1037,14 +974,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // failing beside it for an unrelated reason, which is what made the pair
     // read as *"the annotation branch eats every gesture"*.
     //
-    // ★★ The rotate handle is the control that shows why this was missed: it
-    // sits obviously clear of the box and so was obviously given its own arm
-    // above. The eight scale grips look as though they are on the edge, so a
-    // body test looks sufficient — and it is, for every press an operator makes
-    // one pixel too far in. `canvas::pressing` computes the two grip flags and
-    // its comment carries the measurement.
-    // ★★★ **A NODE OF A SELECTED MARKUP SHAPE, AND IT OUTRANKS THAT SHAPE'S
-    // BODY AND ITS EIGHT GRIPS.** 2026-09-05, `Pass 255.0`.
     //
     // The operator's report: *"I also can't edit or delete nodes of a markup
     // shape once it is drawn."*
@@ -1108,16 +1037,6 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         // ★★ `is_resize()` rather than "not Move", enumerated for that same
         // reason. `Grip::Rotate` is not a resize and must not fall in here.
         //
-        // ⚠ **The reason given here was stale and is corrected 2026-09-05.** It
-        // said *"annotations are offered no rotate handle (`GripSet::scale_only`),
-        // so it cannot arrive"* — false since `rotate_annotation` shipped on
-        // Pass 155.0: `pressing::grabbable` hands a markup `GripSet::all()`,
-        // and a rotate handle is exactly what it draws. What actually keeps
-        // `Rotate` out of this arm is the **rotate arm above**, which claims
-        // every `grip == Some(Grip::Rotate)` its capability allows, plus the
-        // positive `is_resize()` test here — which is why matching on the
-        // property rather than on "not Move" was right for a reason better than
-        // the one written down.
         //
         // ★ `markup_grip` and `widget_grip` are `is_resize()`-gated at their
         // source (`canvas::pressing`), so a rotate press cannot enter this arm

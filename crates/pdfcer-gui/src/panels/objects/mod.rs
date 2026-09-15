@@ -299,10 +299,6 @@ pub fn body(
         return Vec::new();
     };
     let provider = &*provider;
-    // The operator's own state, from the panels' side. These used to come
-    // back from one call together, because the provider and the tree had to
-    // be two disjoint borrows of one struct; they are now two different
-    // objects and the pairing is gone.
     let tree = state.tree_mut();
     let objects = &provider.page_objects().objects;
     if objects.is_empty() {
@@ -1286,10 +1282,6 @@ mod tests {
     /// here at the same 314 pt pane (`room` = 296 pt after the expander
     /// column), against `fixtures/a1-titleblock.pdf` page 0:
     ///
-    /// | | narrowest | widest |
-    /// |---|---:|---:|
-    /// | the **description**, which the row used to draw | 306.3 pt | 473.6 pt |
-    /// | the **headline**, which it draws now | 104.7 pt | 207.6 pt |
     ///
     /// Every description was over the 296 pt room — which is why *every* row
     /// was elided — and the widest headline uses 70 % of it.

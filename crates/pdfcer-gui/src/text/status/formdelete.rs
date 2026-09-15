@@ -23,13 +23,6 @@
 /// (a chord consults no `visible_when`), a condition gone stale within a frame,
 /// and any engine guard the query does not forecast.
 ///
-/// Before 2026-08-29 that residue was silence —
-/// `app::actions::apply::vector_edit`'s `Err` arm traced and said nothing (it
-/// words an un-categorised floor since O116, which names no gate) — and
-/// the verb had *already cleared* `doc.selected_field`, so the press also took
-/// away the panel sentence below that was explaining the refusal. **A refusal
-/// must be a sentence, never a silence**, and least of all a silence that
-/// destroys its own explanation.
 ///
 /// # ★★ Why the wording is not
 /// [`crate::text::panels::formfield::delete_refused`]'s, when the fact is the

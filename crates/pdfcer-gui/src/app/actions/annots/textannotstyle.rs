@@ -205,20 +205,6 @@ pub(in crate::app::actions) fn set_text_annot_style(
             // differs between the two routes is not the outcome, which is
             // identical, but **whose rectangle it is**:
             //
-            //   * Placing. The rectangle is a request still in progress. The
-            //     operator dragged it a moment ago, the dialog forewarned them
-            //     with `stamp_size_bound()` before they committed, and the box
-            //     that lands is the box they are watching land. Nothing was
-            //     taken from them, so a sentence would be pdfcer narrating its
-            //     own arithmetic back at the person who just asked for it.
-            //   * Restyling. The rectangle is **existing content pdfcer
-            //     changed** — a stamp that has been on the page, possibly for
-            //     months, at a size the operator chose and may have positioned
-            //     against something. Typing a new size into a properties field
-            //     is not a request to move the stamp's right edge, and after
-            //     the re-bake it may overlap a title block it used to clear.
-            //     That is an inference made on content, and the surviving half
-            //     of rule 4 owes it a sentence.
             //
             // The question is not *"can the operator see this outcome?"* —
             // they can see both — but *"did they ask for it, in the act they

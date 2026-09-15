@@ -1,11 +1,6 @@
 //! # `canvas::marquee` — **what a rubber-band takes, and why the direction
 //! decides it**
 //!
-//! Two pure functions and their tests, split out of [`crate::canvas::interact`]
-//! on 2026-09-02 under R2 when that file crossed the 1,500-line ceiling. The
-//! seam is a real subject rather than a line count: everything here answers one
-//! question — *given a band and the direction it was dragged, which targets does
-//! it select?* — and none of it needs a frame, a `Ui` or a document.
 //!
 //! ## ★★★ The operator's report, `OPERATOR_REQUESTS.md` O88
 //!
@@ -134,10 +129,6 @@ pub fn without_page_wrappers(
 
 /// **Resolve a completed select-band into a new selection.**
 ///
-/// The whole of the marquee arm's body, lifted out of
-/// [`crate::canvas::interact`] on 2026-09-02 so that file could come back under
-/// the 1,500-line R2 ceiling — and it belongs here anyway: every line of it is
-/// about what a band takes, which is this module's one subject.
 ///
 /// `targets` is `None` when the page has no decomposition, in which case the
 /// band selects nothing. That is not an error and must not clear the selection
@@ -147,11 +138,6 @@ pub fn without_page_wrappers(
 /// **What a band does to the selection it lands on** — `OPERATOR_REQUESTS.md`
 /// O104.
 ///
-/// Until 2026-09-03 a band could only replace or add, which is half of the
-/// operator's report *"I can't unselect things once I have selected them"*. On
-/// a CAD sheet with hundreds of overlapping strokes, taking one object back out
-/// by clicking it precisely is often not practical; a band is how the work is
-/// actually done, and ours had no way to remove.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Combine {
     /// No modifier: the band's hits become the selection.
@@ -188,9 +174,6 @@ pub const fn mode(shift: bool, ctrl: bool) -> Combine {
 /// **Everything a released selection band does**, so `canvas::interact` holds
 /// the wiring and this module holds the behaviour.
 ///
-/// Extracted 2026-09-03 when O104's Ctrl handling pushed `interact.rs` past
-/// R2's 1,500-line ceiling — the same seam `canvas::previews` was found at on
-/// 2026-08-30, and found the same way.
 ///
 /// ★★★ **THE DIRECTION DECIDES WHAT THE BAND TAKES** (O88): left to right
 /// encloses, right to left touches — AutoCAD's window / crossing-window rule.
@@ -272,8 +255,6 @@ pub fn select_with(
         Combine::Add => selection.marquee(page_index, &hits, true),
         Combine::Replace => selection.marquee(page_index, &hits, false),
     }
-    // ★★★ **THE KINDS, NOT ONLY THE COUNT** — added 2026-09-02, and the
-    // reason is a check whose oracle turned out to be an assumption.
     //
     // `a_marquee_over_a_table_takes_its_text_as_well_as_its_lines` asserted a
     // COUNT, reasoning that *"a table's rules are one path object per line and

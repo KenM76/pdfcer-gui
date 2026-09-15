@@ -2,8 +2,6 @@
 //!
 //! ## ★★★ The defect this closes, and it is the shape this project keeps finding
 //!
-//! Found 2026-09-03 by `tools/security-coverage.py`, while auditing this shell
-//! against `pdfcer-core`'s API for `OPERATOR_REQUESTS.md` O108.
 //!
 //! **An encrypted PDF could not be opened at all.** The shell detected the case
 //! perfectly: `Document::load` returns `DocError::PasswordRequired`,
@@ -31,11 +29,6 @@
 //!
 //! ## Why a real OS window
 //!
-//! Every dialog in this shell has been one since 2026-08-21, and this one earns
-//! it twice over: it appears in answer to an **Open**, which is a gesture an
-//! operator makes and then looks away from, and a modal question hidden behind
-//! the application window with no taskbar entry is the classic *"the program has
-//! frozen"* report. [`crate::dialogs::host`] gives it the entry.
 //!
 //! ## ★★ What is deliberately NOT here
 //!

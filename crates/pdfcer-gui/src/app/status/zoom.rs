@@ -1,7 +1,5 @@
 //! # `app::status::zoom` — the zoom controls, and the maximum behind them
 //!
-//! `− ⟨percent⟩ +` on the status bar, and — since 2026-08-22 — the
-//! maximum-zoom popup the readout opens.
 //!
 //! ## Why this is a file
 //!

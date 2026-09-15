@@ -105,8 +105,6 @@ pub fn cancelled(attempted: usize) -> String {
 
 /// **What the recogniser is doing right now.**
 ///
-/// Operator request, 2026-09-01: *"so that the user can see that it is doing
-/// something and hasn't frozen on large documents."*
 ///
 /// ★★ Three moving numbers, and each answers a different worry. The page count
 /// answers *"how far"*; the character count answers *"is it still alive"* —
@@ -167,11 +165,6 @@ pub fn intro() -> &'static str {
 
 /// The label on the control that starts recognition.
 ///
-/// ★ **No longer "Recognise this page".** It said that because that was all it
-/// could do, and the operator's 2026-08-26 report — *"how do I OCR more than
-/// one page? Why does the tool stop at one?"* — was as much about the label as
-/// about the capability: a button naming one page is a button that has already
-/// answered the question, wrongly.
 #[must_use]
 pub fn run() -> &'static str {
     "Recognise"
@@ -280,12 +273,6 @@ pub fn skip_pages_with_text() -> &'static str {
 
 /// Its tooltip — the measured reason it is on by default.
 ///
-/// ★★ This is not a preference, it is a **hazard guard**, and the measurement
-/// is worth keeping in the tooltip rather than only in a comment: running the
-/// recogniser twice over one page was measured on 2026-08-26 to take a page
-/// from 427 character codes to 854. Nothing looks different, because the layer
-/// is invisible both times — but every Find hit is doubled and every copy comes
-/// out twice.
 #[must_use]
 pub fn skip_pages_with_text_tooltip() -> &'static str {
     "Recognising a page that already has text adds a second invisible copy of it, so Find matches and copied text come out doubled. Turn this off only if you know a page's existing text is wrong."
@@ -342,12 +329,6 @@ pub fn no_confidence() -> &'static str {
 /// the words are *in the document*, an ordinary Save writes them, and an
 /// ordinary Undo removes them.
 ///
-/// The operator, 2026-08-26: *"Why do I have to save a copy instead of just go
-/// back into my pdf and save over it or save from there?"* The answer was that
-/// `add_ocr_layer` took an immutable document and handed back a whole file, so
-/// this shell had nothing to put the layer *into*. The engine's Pass 135.0
-/// (2026-08-27) made recognition an edit, and the honest sentence is now the
-/// short one.
 #[must_use]
 pub fn applied_to_document() -> &'static str {
     "The text is now in this document. Save when you are ready, or press Ctrl+Z to take it back out."

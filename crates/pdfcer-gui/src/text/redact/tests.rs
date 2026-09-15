@@ -1,8 +1,5 @@
 //! # `text::redact::tests` — the three wording rules, enforced
 //!
-//! Split out of [`super`] on 2026-09-04 (evening) under rule R2, when the
-//! deferred destination's strings took `text/redact/mod.rs` past the
-//! 1,500-line ceiling. **Nothing moved but its address.**
 //!
 //! ★ The seam is the one R2 asks for, and on this catalog it is sharper than
 //! usual. `mod.rs` holds *sentences*; this holds the **rules those sentences
@@ -12,12 +9,6 @@
 //! > 2. Never say "verified" unless a verification step actually ran.
 //! > 3′. Never suggest that Undo can recover content that has reached a file.
 //!
-//! ★★★ Rule 3 was **corrected in place** on 2026-09-05 — see [`super`]'s
-//! header. It used to forbid the word near any "post-apply" state, which
-//! `Pass 250.2` made false: the deferred route preserves undo completely, so a
-//! staged removal CAN be undone and a sentence saying so is true and useful.
-//! Undo reaches the **arming** and never reaches the **removal**, and the two
-//! sweeps below are drawn on exactly that line.
 //!
 //! Each is a sweep over a list of strings, and the lists are the load-bearing
 //! part: a string added to the catalog and not to the sweep is a string the
@@ -150,12 +141,6 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
             "applied_with_residuals(replaced)",
             applied_with_residuals("a.pdf", 2, 1, true),
         ),
-        // ★★★ The six carrier strings, added 2026-09-09 with `super::carriers`.
-        // `checked_clean_line` is the one that most needs to be here: it is the
-        // only *reassuring* sentence in the report body that rule 2 did not
-        // already govern, it is about a check that ran, and "checked" is one
-        // careless edit from "verified" — which would hand the engine's
-        // carrier sweep the word this shell's own byte sweep earns.
         (
             "checked_clean_line",
             checked_clean_line(&["the document properties"]),
@@ -221,13 +206,6 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
     // outcome must not, and that inversion is the whole of what `Pass 250.2`
     // did to this rule.
     //
-    // Until 2026-09-05 the deferred route collapsed the session and proved the
-    // result, so `applied_into_document` said "verified" and had earned it.
-    // `apply_redactions_deferred` runs the removal only for a preview and
-    // **discards the bytes** (`crate::redact` §1.0.1), so at staging time
-    // nothing has been swept and the word would be a claim about a sweep that
-    // did not happen — on the one surface where that word is the whole
-    // difference between a report and an assertion.
     //
     // The word moved to the moment the bytes exist. `staged_into_document` is
     // in the sweep above, where it must stay.
@@ -254,11 +232,6 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
 /// ★★ **The staged outcome obeys rule 1, and says the two things only it has
 /// to say.**
 ///
-/// ★★★ **REWRITTEN 2026-09-05.** Its predecessor asserted that both forms
-/// said *"Nothing is on disk yet"*, which was the deferred route's own hazard
-/// under `Pass 250.1`: the content had been removed from the document, the
-/// file had not been written, and an operator who handed over the original had
-/// redacted nothing.
 ///
 /// Under `Pass 250.2` that sentence is no longer sufficient, because a second
 /// thing is now also true and is the more surprising of the two: **nothing has
@@ -316,7 +289,6 @@ fn the_staged_outcome_names_its_residuals_and_says_nothing_has_happened_yet() {
 /// ★★★ **The staged-save outcome says the three things nothing else on
 /// screen can.**
 ///
-/// New 2026-09-05, and each clause is a defect if it is missing:
 ///
 /// 1. **the file has the content removed** — the receipt, and the only one of
 ///    the three the operator would guess;
@@ -373,12 +345,6 @@ fn the_cancel_sentence_says_the_marks_are_still_there() {
 
 /// ★ **No sentence about content that has reached a FILE offers Undo.**
 ///
-/// Rule 3′ — see the module header, where rule 3 was corrected in place on
-/// 2026-09-05. The rule used to forbid the word near any "post-apply" state
-/// and it survived `Pass 250.1` because that verb destroyed the undo log
-/// outright. `Pass 250.2` preserves undo completely, so a staged removal
-/// **can** be undone, and a rule forbidding the word near that state would
-/// forbid the true and useful sentence.
 ///
 /// The distinction that replaced it: undo reaches the **arming**, and never
 /// reaches the **removal**. So this sweep's membership list is the
@@ -399,10 +365,6 @@ fn no_post_apply_sentence_mentions_undo_as_a_way_back() {
         // siblings is about the content once the save has happened — and that
         // is precisely the state rule 3′ governs.
         permanence_statement_deferred().to_owned(),
-        // ★★★ The staged SAVE outcome, added 2026-09-05, and it is the single
-        // most important member of this list: it is the only sentence in the
-        // catalog read at the exact moment content has left a file on this
-        // route.
         saved_applying_redaction("a.pdf", 1, 1, 0),
         saved_applying_redaction("a.pdf", 1, 1, 2),
         applied_clean("a.pdf", 1, 1, false),
@@ -414,21 +376,12 @@ fn no_post_apply_sentence_mentions_undo_as_a_way_back() {
         destination_replace_tooltip().to_owned(),
     ] {
         let lower = line.to_lowercase();
-        // ★★ The allowance list, and why it SHRANK on 2026-09-05.
         //
         // Rule 3′ forbids **offering** undo as a way back to content that has
         // reached a file. It has never forbidden the word, and the two
         // negation forms below are what a sentence needs in order to correct
         // the learned expectation rather than merely omit it.
         //
-        // The two log-related allowances that were added on 2026-09-04 —
-        // "undo history" and "undo step" — are **removed**. They existed
-        // because the collapsing verb destroyed the log and the sentences had
-        // to say so, which is not a negation and could not be phrased as one.
-        // Nothing destroys the log any more, so a sentence in this list
-        // mentioning it would be a false claim about the operator's work, and
-        // the allowance that would have let it through is gone with the verb
-        // that needed it.
         let permitted = ["not undo", "not be undone"];
         assert!(
             !lower.contains("undo") || permitted.iter().any(|p| lower.contains(p)),
@@ -442,8 +395,6 @@ fn no_post_apply_sentence_mentions_undo_as_a_way_back() {
 /// ★★★ **…and the staging sentences are ALLOWED to say undo works, because
 /// it does.**
 ///
-/// The other side of rule 3′, and it is asserted rather than merely permitted
-/// by omission. New 2026-09-05.
 ///
 /// Before a save, undo genuinely reaches everything: the marks, the edits
 /// around them, and — through the *call it off* control — the arming itself.
@@ -509,8 +460,6 @@ fn the_suggested_name_differs_from_the_original() {
 
 /// Every refusal says something different, and each names its own cause.
 ///
-/// # ★★★ `FullRewriteUnavailable` appears TWICE, and until 2026-09-11 it
-/// # appeared once — with a payload that reached the wrong arm
 ///
 /// The entry read `reason: "hybrid".to_owned()`, and `refusal_message`
 /// selected its sentence with `reason.contains("hybrid-reference")`. The
@@ -548,9 +497,6 @@ fn each_named_refusal_says_something_different() {
         R::VerificationFailed {
             survivors: vec!["x".to_owned()],
         },
-        // ★ New 2026-09-05, and it is the one member of this set that is not
-        // a failure. It must still have a sentence of its own, and the
-        // sentence must not read as one — see `refusal_message`'s own note.
         R::AlreadyStaged,
     ];
     let mut seen: Vec<String> = Vec::new();
@@ -591,10 +537,6 @@ fn the_census_changes_shape_rather_than_only_its_number() {
     assert!(marks_count(3).contains("STILL IN THIS FILE"));
 }
 
-// ===========================================================================
-// The carriers — `super::carriers`, added 2026-09-09
-// ===========================================================================
-
 /// Every carrier key `pdfcer_core::redact` can emit or documents.
 ///
 /// ★ Hand-written, and it has to be: the engine's keys are `&'static str`
@@ -630,11 +572,6 @@ const EVERY_CARRIER: &[&str] = &[
 
 /// ★★★ **No residual line ever prints an engine key.**
 ///
-/// The fourth wording rule, asserted over the whole vocabulary rather than over
-/// a sample. Until 2026-09-09 the sentence the operator read was literally
-/// *"⚠ struct_tree: present in this document…"* — an identifier the engine
-/// documents as being *"for the carrier"*, i.e. for a program, printed into a
-/// report written for a person.
 ///
 /// ★★ **The assertion is "no underscore", not "does not contain the key", and
 /// the difference is a measurement.** The blunt substring form was written
@@ -731,12 +668,6 @@ fn the_whole_file_sweep_does_not_get_the_generic_carrier_sentence() {
 /// ★★ **The sweep's residual sentence points at the notes, and the notes
 /// section exists.**
 ///
-/// A promise kept across two modules: [`super::residual_sweep_line`] tells the
-/// operator that pdfcer's own notes *"at the foot of this report"* say which
-/// objects were left, and `dialogs::redact::disclosures::engine_notes` is what
-/// puts them there. Before 2026-09-09 `RedactionReport::notes` was read by
-/// nothing in this crate, so a sentence like this one would have pointed at an
-/// empty part of the screen.
 #[test]
 fn the_sweep_sentence_points_somewhere_that_exists() {
     assert!(residual_sweep_line().contains("notes"));

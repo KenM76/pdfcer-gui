@@ -4,7 +4,6 @@
 //!
 //! # The three reports this is the oracle for
 //!
-//! All filed by the operator on 2026-09-13, and all one structural cause:
 //!
 //! > **O192** — *"the set scale dialogue does not show me the scale that is
 //! > already set"*
@@ -117,12 +116,6 @@ const SPAN_PT: f64 = 400.0;
 ///
 /// ### It is APPENDED, not entered into an empty field
 ///
-/// Measured 2026-09-13: `ScaleEntryFields::default()` seeds
-/// `real_length_text` with `"1"`, and `reseed` deliberately carries that text
-/// across because it belongs to the reference line rather than to the group.
-/// Clicking the field puts the caret at the end, so what is actually committed
-/// is **`1100`** in the group's display unit — millimetres, on a fresh
-/// document.
 ///
 /// That is recorded rather than corrected. Clearing the field would mean
 /// sending Ctrl+A, and Ctrl+A on a build where focus has silently gone
@@ -403,11 +396,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // same point. That is rule 4's fuzzy-never-sneaky gate, it is deliberate,
     // and a check that clicks once per pick silently loses pick B to it.
     //
-    // ⚠ This check did exactly that on its first-ever completed run,
-    // 2026-09-14, and reported that the clicks never reached `ScalePick` while
-    // the trace three lines up read `measure-pick outcome=Promoted
-    // reason=derived-candidate-needs-confirm`. See `checks::picking`'s header
-    // for why the loop is shared rather than copied a third time.
     for (label, doc) in [("A", target), ("B", span)] {
         let window = mapping.doc_to_window(doc)?;
         let screen = session.frame()?.to_screen(window);

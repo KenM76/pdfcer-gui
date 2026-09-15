@@ -788,10 +788,6 @@ mod tests {
 
     /// **Punctuation collapses to match what survived.**
     ///
-    /// Rule 4. The input here is what a real document turns into once a
-    /// build without the editing commands has had its way with it: leading
-    /// rules, a doubled rule where a command used to be, and a trailing
-    /// rule.
     #[test]
     fn separators_collapse_around_what_is_left() {
         let registry = registry();

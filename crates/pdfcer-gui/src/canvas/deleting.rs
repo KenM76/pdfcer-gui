@@ -10,8 +10,6 @@
 //!
 //! ## ★★★ What this closes, and why it is one defect three times
 //!
-//! Until 2026-09-05 Delete acted at the **Object rung only**. Every deeper rung
-//! declined:
 //!
 //! ```text
 //! canvas-delete-declined level=Part reason=no-verb-for-rung
@@ -415,13 +413,6 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
 /// Four do, and they are the four an operator meets **without having made a
 /// mistake**:
 ///
-/// * [`Refusal::NoObjectModel`] — the page's content would not decompose, so
-///   nothing inside an object can be addressed. **Added 2026-09-05**: it was
-///   silent while it was only ever reachable through a frame that forgot to
-///   ask, which made it a bug report rather than a message. Now that
-///   `canvas::modelneed` asks on the frame the key arrives, reaching it means
-///   the document really is unreadable at that depth — and an operator who
-///   selected a line, pressed Delete and got nothing is owed that sentence.
 ///
 /// * [`Refusal::RunWouldMoveNext`] — they picked a label, pressed Delete, and
 ///   the file's own structure forbids it. There is a remedy and it always

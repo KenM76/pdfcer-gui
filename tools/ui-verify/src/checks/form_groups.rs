@@ -3,9 +3,6 @@
 //!
 //! # What this module is about
 //!
-//! `EDITABLE_SURFACES.md` (2026-08-28) enumerated every `pub fn` on
-//! `EditSession` and diffed it against every call site in the shell. Two of the
-//! misses were forms:
 //!
 //! | engine | shell, before |
 //! |---|---|
@@ -83,14 +80,6 @@
 //! | G | click a widget the canvas census names | `form-field-selected field=…` |
 //! | H | File ▸ Properties, then read the Properties pane's gate census | `form-field-gates rename_refused=1 delete_refused=1`, and **neither** `properties.form_field.rename` nor `properties.form_field.delete` declared |
 //!
-//! ★★★ **H opens the Properties panel, and that is a correction rather than a
-//! flourish.** Edit's default dock puts Properties and Forms in ONE tabbed
-//! stack, and a tabbed stack draws only its active tab — so phase F's own
-//! `View ▸ Forms` click pushed Properties to the back and
-//! `panels::properties::formfield::section` stopped running. The 2026-08-29
-//! sweep reported *"a field is selected and the Properties pane traced no
-//! `form-field-gates` line"* about a pane the check had itself hidden; the
-//! selection in that same trace is real. See `PROPERTIES_ITEM`.
 //!
 //! ★ Phase F is what makes phase H's absences readable: a build that simply
 //! failed to draw the Properties section would produce the same missing
@@ -161,11 +150,6 @@ const PANEL_ITEM: &str = "ribbon.item.view.panel_forms";
 /// **pushes Properties to the back of the same stack**, and
 /// `panels::properties::formfield::section` stops running entirely.
 ///
-/// That is why the 2026-08-29 sweep reported *"a field is selected and the
-/// Properties pane traced no `form-field-gates` line"*: the selection was real
-/// (`form-field-selected page=0 field=Personal.Address.Zip widget=0` is in the
-/// trace) and the pane that would have written the census was a background tab
-/// the check had itself put there. Phase H now brings it back before reading.
 ///
 /// ★ `file.properties` is `show_panel`, not a toggle, so it is idempotent and
 /// scrolls the tab into view — which matters, because the dock publishes a

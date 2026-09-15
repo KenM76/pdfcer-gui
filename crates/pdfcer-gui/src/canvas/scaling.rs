@@ -125,14 +125,7 @@ pub fn store(ctx: &egui::Context, modifiers: Modifiers) {
 impl Modifiers {
     /// The engine request these describe.
     ///
-    /// ## ★★★ `uniform` is NOT consulted here, and it was until 2026-08-28
     ///
-    /// `annots::resize` used to pass `scale_stroke_width: uniform` — deriving
-    /// the flag from whether the drag was proportional rather than from
-    /// anything the operator said. That was a **workaround for a refusal**, and
-    /// a defensible one while no toggle existed: with a foreign appearance and
-    /// a uniform scale, the engine refuses unless either the stroke scales or
-    /// distortion is allowed, and forcing the first made the common case work.
     ///
     /// ⇒ It also made the operator's answer unreachable. Once the switch
     /// exists, deriving the same flag from geometry **overrides them silently**

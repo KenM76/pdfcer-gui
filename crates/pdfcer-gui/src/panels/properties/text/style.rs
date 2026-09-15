@@ -3,12 +3,6 @@
 //!
 //! # Why this is a module and not a section of [`super`]
 //!
-//! `panels/properties/text.rs` reached 1,473 lines on 2026-09-11 against R2's
-//! 1,500-line ceiling, and the rule's own instruction for that moment is to
-//! find the seam rather than raise the limit. The seam is clean: everything
-//! here is downstream of one engine call, `EditSession::preview_style_ladder`,
-//! and nothing in it is touched by the size field, the colour swatch, the face
-//! chooser or the section's layout.
 //!
 //! ⇒ What stayed behind is the *draft* — the mutable state of the section —
 //! and what came here is the *prediction*. [`TextStyleDraft::forecast`] is
@@ -37,8 +31,6 @@ use crate::text::panels::properties as t;
 /// ★★★ **Which RUNG of the engine's style ladder one of the two weight buttons
 /// would take**, said before the press.
 ///
-/// # ★★★ It previewed the GATE until 2026-09-11, and the gate is a different
-/// question
 ///
 /// Until that afternoon this came from `preview_style_resolution` joined
 /// against `preview_font_resources`. `preview_style_resolution` previews the
@@ -84,9 +76,6 @@ pub(crate) enum StyleOutlook {
     /// standard-14 sibling of this text's own family — a real face, needing no
     /// font file, costing about sixty bytes.
     ///
-    /// ★★★ **The outcome this preview could not see at all until 2026-09-11**,
-    /// and the one that fires most often on the operator's drawings. See the
-    /// type's header.
     StandardSibling(String),
     /// **Rung 4**: no real face is available by any route, so the letters will
     /// be thickened or slanted and the engine will say so afterwards.
@@ -180,14 +169,6 @@ impl TextStyleDraft {
     ///
     /// # ★★ `options` is not optional, and passing the wrong one is a lie
     ///
-    /// `StylePolicy::Refuse` changes the answer: under it a ladder that reaches
-    /// rung 4 is a **refusal**, not a synthesis. The engine says so at the
-    /// method — *"pass the same `FormatOptions` the commit will use"* — and
-    /// this passes the operator's own posture out of the settings store, the
-    /// same value `crate::app::actions::textstyle` puts on the commit. A
-    /// preview run under a default posture would promise thickened letters to
-    /// an operator who had ticked *never fake it*, which is the exact defect
-    /// the deleted `Refuse`-pinned probe used to cause from the other side.
     ///
     /// ★ A single axis per call, because the two buttons issue two separate
     /// single-axis requests; see [`TextStyleDraft::italic_outlook`] for why
@@ -338,13 +319,6 @@ pub(super) fn italic_hint(draft: &TextStyleDraft) -> String {
 ///
 /// # ★★ One function for two axes, which is the opposite of what was here
 ///
-/// The two hints used to be two `match`es over the same variants, differing
-/// only in which catalog function each arm called. That shape survived three
-/// variants; at seven it is fourteen arms that have to be kept in step by hand,
-/// and the recorded defect of this project is a copy-paste that reads the wrong
-/// axis' field. Taking `bold: bool` and selecting the catalog function at the
-/// leaf makes the divergence impossible: there is one arm per outlook, and the
-/// axis is a parameter rather than a duplicated body.
 ///
 /// ★ The addendum is appended here rather than folded into each sentence,
 /// because it is **orthogonal** — a ladder can pass over faces on its way to any

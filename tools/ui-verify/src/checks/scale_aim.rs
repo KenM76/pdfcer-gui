@@ -1,8 +1,5 @@
 //! # `checks::scale_aim` — getting to a zoom rung, and staying on the target
 //!
-//! Split out of [`super::scale_sweep`] under **R2** on 2026-09-05, when the
-//! marquee arm, the aim-residual guard and the three repaired diagnoses took
-//! that file to 1,598 lines.
 //!
 //! ## ★★ The seam is a real subject boundary, not a size-driven cut
 //!
@@ -22,16 +19,6 @@
 //!
 //! ## ★★★ Why the aiming half is worth reading alone
 //!
-//! Because it is the half that can make every measurement in the other file a
-//! statement about the harness. The 2026-09-05 sweep filed *"clicking directly
-//! on the content the zoom is anchored to selected nothing"* at five rungs;
-//! what had happened is written in [`re_aim`]'s own header — the correction
-//! moves the **pointer**, and Ctrl+wheel holds the point under the pointer
-//! fixed, so an error the correction cannot close is magnified by every
-//! further notch rather than reduced. It was a limit of this loop and not
-//! anything the application did. A reader who wants to know whether a
-//! scale-sweep finding is real starts here, and [`aim_residual`] is the number
-//! that answers it.
 //!
 //! ## The dependency runs one way
 //!
@@ -127,16 +114,7 @@ pub fn re_aim(
     cap: f32,
     viewport: Option<crate::geom::LRect>,
 ) -> Result<ScreenPoint> {
-    // ★★★ **ITERATED, not one shot** — 2026-09-05, and the single correction
-    // this replaces is why the sweep lost its target above 2,559 %.
     //
-    // The correction is capped at `cap` (a third of the viewport) per move, so
-    // an error larger than that needs several. It used to get exactly one per
-    // Ctrl+wheel step — and the next Ctrl+wheel then MAGNIFIED whatever was
-    // left, because zoom-to-cursor holds the point under the POINTER fixed, not
-    // the point you meant. Once the residual exceeds the viewport it can never
-    // be recovered by moving the pointer at all: at 2,298,020 % the whole
-    // viewport spans 0.021 canvas points.
     //
     // Measured before this loop: residual 0.02 canvas pt at 2,559 % and
     // **4.49** at 6,957 % — one rung later, one pan probe and one ribbon click

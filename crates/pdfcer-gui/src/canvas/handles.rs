@@ -58,36 +58,6 @@
 //!
 //! Corpus: `ui-conventions/handles.md`.
 //!
-//! - H1 appear-on-selection: the eight grips are drawn when something is
-//!   selected at the Object rung, before any drag.
-//! - H2 standard-set: **complete as of 2026-08-20** — eight resize grips, the
-//!   body, and a rotate handle offset above the top edge on a stem, which is
-//!   the arrangement PowerPoint, Illustrator, Figma, Inkscape, Visio and Konva
-//!   all present. This row read *"GAP: no rotate handle, because no engine verb
-//!   rotates anything"*, and it ended *"when that lands, the handle above the
-//!   top edge is the shape to build, not a menu item."* `Pass 113.0` landed it
-//!   and that is the shape that was built.
-//! - H3 screen-sized: `GRIP_SIZE_PX` is in points and does not scale with zoom,
-//!   so a corner on a plan at 20 % is as grabbable as one at 400 %.
-//! - H4 target-not-smaller: `GRIP_GRAB_SLACK_PX` expands the live area beyond
-//!   the drawn square. Never the reverse.
-//! - H5 grips-outrank-body: checked first, because corner grips sit ON the
-//!   box's edge and half of each square overlaps the interior — if the body won,
-//!   each would be a half-size target on its outer half only.
-//! - H6 cursor-names-it: `Grip::cursor` gives each grip its diagonal or axis
-//!   arrow and the body a move cursor.
-//! - H7 painted-equals-grabbable: the same predicate decides both. **This row
-//!   exists because it failed on 2026-08-20**: a dimension's vertex handles were
-//!   painted from the selection and hit-tested behind a capability the mode did
-//!   not have, so they were visible and untouchable in the very mode that
-//!   authors dimensions.
-//! - H8 published: `SELECTION_OUTLINE_REGION` publishes the box every grip is
-//!   derived from, and `dimdrag::VERTEX_REGION` publishes each vertex handle
-//!   indexed — so a driven check aims at what the application says rather than
-//!   at a guess.
-//! - H9 vertex-editing: a perimeter ce dimension's corners are handles and drag
-//!   to reshape. **GAP: no right-click to add or remove a point**, though both
-//!   engine verbs and the preflight that greys the menu item already exist.
 
 use egui::{CursorIcon, Pos2, Rect, Vec2};
 
@@ -142,13 +112,6 @@ pub const MIN_MID_GRIP_EXTENT_PX: f32 = GRIP_SIZE_PX * 3.0;
 /// the grips that survive a small box, and the ones a resize actually wants —
 /// are all that is offered.
 ///
-/// ⇒ ★★ **This was a partial answer until 2026-09-05, and the rest is now
-/// built rather than recorded.** Withholding the mid-edge pair fixed the short
-/// *strip*; it did nothing for a box that is small in **both** axes, where the
-/// four corner grips cover the body between them and there is no mid-edge pair
-/// left to withhold. That case is not exotic — it is the operator's own
-/// molecular-structure fixture, whose cells are **0.85 pt across**. See
-/// [`grip_bounds`], which pushes the grips OUTWARD instead of dropping them.
 ///
 /// This constant keeps its job: it is the width of body a box must have before
 /// the grips can sit on its own edges, and [`grip_bounds`] is the function that
@@ -206,11 +169,6 @@ pub enum Grip {
     ///
     /// # And it is not a resize
     ///
-    /// [`Self::is_resize`] answers `false`, so `gesture::meaning` routes a press
-    /// on it to its own drag kind rather than to `DragKind::Resize`. That
-    /// predicate used to be `self != Self::Move`, which would have quietly made
-    /// this the ninth resize grip — a rotate handle that scaled the object, and
-    /// a defect nobody would have thought to test for.
     Rotate,
 }
 
@@ -447,14 +405,6 @@ pub fn rotate_rect_in(frame: GripFrame) -> Rect {
 ///
 /// # ★★★ The defect this closes, in the operator's own words
 ///
-/// He asked, on 2026-09-04: *"zoom in on the atoms of the banana pdf file and
-/// see what happens when you try to draw a box around a molecule and move it,
-/// or select the ion and move it."* The answer, measured by driving the binary
-/// on that fixture: **an object smaller than 12 pt on screen could not be moved
-/// at all.** Every press landed in a grip, the drag was routed to the resize
-/// machinery, and the engine refused it by name — `resize-declined
-/// reason=Degenerate`. The banana's cells are 0.85 pt across, and the fixture's
-/// own text says reading their labels takes about 12,000 %.
 ///
 /// Two constants, each correct in isolation, made it:
 ///
@@ -521,14 +471,6 @@ pub fn grip_bounds(bounds: Rect) -> Rect {
 ///
 /// # ★★★ Why a type rather than an `Option<[Pos2; 4]>` parameter everywhere
 ///
-/// Because six functions need the same question answered — the painter, the hit
-/// test, the rotate handle, the ghost, the cursor and the drag — and this
-/// project's standing rule (H7) is *one value, one decision, every consumer*.
-/// The 2026-08-20 incident it comes from is a dimension's vertex handles being
-/// painted from the selection and hit-tested from a capability check: each half
-/// self-consistent, the pair invisible to any test of either half, and the
-/// symptom a handle that was visible and untouchable in the mode that authors
-/// dimensions.
 ///
 /// # The upright case is bit-for-bit what it always was
 ///
@@ -768,14 +710,6 @@ pub fn grip_rects_in(frame: GripFrame) -> Vec<(Grip, Rect)> {
 
     // Only ONE condition per mid-edge grip now, and it is about piling.
     //
-    // There used to be two. The second — *"does the perpendicular axis have a
-    // body left after this grip eats 6 pt of it?"* — was the 2026-09-04 fix for
-    // a 160 × 20 pt form field whose centre sat inside its own North grip. It is
-    // gone because [`grip_bounds`] now makes it **unfalsifiable**: the pushed box
-    // always has a body strip, so the condition could never be false and a
-    // condition that cannot fail is not a guard, it is decoration that reads
-    // like one. The `debug_assert` above is what took over its job, and it names
-    // the invariant instead of silently depending on it.
     //
     // ★ The piling condition stays, and stays measured against the PUSHED box:
     // whether a mid-edge grip lands on top of its corner neighbours is a
@@ -812,9 +746,6 @@ pub fn grip_rects_in(frame: GripFrame) -> Vec<(Grip, Rect)> {
 #[must_use]
 /// Which grips a selection offers, because it has a verb behind each.
 ///
-/// ★★★ Two flags rather than one, added 2026-08-28 when annotations and form
-/// fields gained a resize verb (`resize_annotation`, `edit_widget … with_rect`)
-/// and neither gained a rotate one.
 ///
 /// The single `offer_resize` bool this replaces was correct while exactly one
 /// kind of thing could be resized. It cannot express *"eight grips, no rotate
@@ -843,12 +774,6 @@ pub fn grip_rects_in(frame: GripFrame) -> Vec<(Grip, Rect)> {
 /// about the drawing; or both change, so nothing was measured"* — so this is a
 /// permanent asymmetry rather than a gap waiting to close.
 ///
-/// ★★ It is one value passed to BOTH the painter and the hit test, which is
-/// rule H7 and is why it is a struct rather than two arguments threaded
-/// separately. That row exists because it failed on 2026-08-20: a dimension's
-/// vertex handles were painted from the selection and hit-tested behind a
-/// capability the mode did not have, so they were visible and untouchable in
-/// the very mode that authors dimensions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct GripSet {
     /// The eight scale grips.
@@ -861,12 +786,6 @@ pub struct GripSet {
     /// rotation to the next kind that gains a resize verb without anybody
     /// deciding.
     ///
-    /// ★★ That caution paid on the day it was written. Until 2026-08-28 this
-    /// field's doc said *"never true without `resize` today"* — and
-    /// [`GripSet::rotate_only`] now exists, because a ce dimension turns and
-    /// does not scale. A struct that had collapsed the two would have had to be
-    /// un-collapsed to ship that, and the intervening builds would have offered
-    /// eight scale grips around a dimension whose extent is its measurement.
     pub rotate: bool,
 }
 
@@ -906,9 +825,6 @@ impl GripSet {
     /// would be the *"visible control, silently inert"* failure wearing the
     /// costume of a fix.
     ///
-    /// ★ Until 2026-08-28 this said *"an annotation or a form field's box"*.
-    /// The annotation moved to [`Self::all`] when `rotate_annotation` shipped;
-    /// the widget stayed, and it is the only member left.
     pub const fn scale_only() -> Self {
         Self {
             resize: true,
@@ -918,18 +834,9 @@ impl GripSet {
 
     /// ★★★ **Neither — a mark that can be MOVED and nothing else.**
     ///
-    /// Added 2026-09-08 for the sticky note, `OPERATOR_REQUESTS.md` O155.
     ///
     /// # The one kind on this canvas whose box does not describe it
     ///
-    /// `/Text` — a sticky note — is drawn as a **fixed-size marker**
-    /// (ISO 32000-1 12.5.6.4: it behaves as if `NoZoom`/`NoRotate` were set),
-    /// anchored at its rect's **upper-left** corner (12.5.3). ⚠ The engine's
-    /// `Sticky` doc used to say *lower-left*; it was struck through and
-    /// corrected on 2026-09-09, and `canvas::clicking` moved with it.
-    /// Its `/Rect` therefore says **where** it is and not **how big** it is,
-    /// and dragging a corner of that rectangle is a gesture with no meaning:
-    /// `resize_annotation` refuses it, and would be wrong not to.
     ///
     /// ⇒ So it is offered no grips. **The outline is still drawn** — it has to
     /// be, or a selected sticky is indistinguishable from an unselected one —
@@ -979,15 +886,7 @@ impl GripSet {
     /// canvas deliberately offers no handle for it: a scale that is a property
     /// of a *measurement group* has no grip on one member of that group.
     ///
-    /// ★ Moved here on 2026-09-13. It sat above `move_only`,
-    /// run together with that item's doc comment — so it documented
-    /// `move_only` and this item had none.
     ///
-    /// ★ It went unseen for as long as it did because the title that
-    /// absorbed it opens with a decoration run, and until 2026-09-13
-    /// `tools/gates/check-orphan-docs.py` could only express an
-    /// undecorated title — 42% of this crate's titles were outside its
-    /// scope while it reported clean. See that gate's `DECOR`.
     pub const fn rotate_only() -> Self {
         Self {
             resize: false,
@@ -1028,10 +927,6 @@ pub fn grip_at_in(frame: GripFrame, pointer: Pos2, offer: GripSet) -> Option<Gri
         // here, in one place, with nothing in between for a future edit to slip
         // a capability check into.
         //
-        // That row exists because it failed on 2026-08-20: a dimension's vertex
-        // handles were painted from the selection and hit-tested behind a
-        // capability the mode did not have, so they were visible and untouchable
-        // in the very mode that authors dimensions.
         if rotate_rect_in(frame)
             .expand(GRIP_GRAB_SLACK_PX)
             .contains(pointer)
@@ -1085,12 +980,6 @@ mod tests {
     /// on top of the corners — but keeps every corner, so nothing becomes
     /// unreachable.
     ///
-    /// ★ **The fixture was `10.0 × 200.0` until 2026-08-29 and is now
-    /// `22.0 × 200.0`**, because 10 px wide fails the *other* rule — see
-    /// [`MIN_BODY_STRIP_PX`]. At 10 px the East and West grips reach 6 px in
-    /// from each side and cover the box entirely, so withholding them is
-    /// correct and this test's `assert!(kinds.contains(&Grip::East))` was
-    /// asserting the defect.
     ///
     /// 22 keeps the property this test is actually about: below
     /// `MIN_MID_GRIP_EXTENT_PX` (24) on the narrow axis, so North and South are
@@ -1261,13 +1150,6 @@ mod tests {
     /// than assumed, because it is the one a build can get wrong in two
     /// directions and look plausible in both:
     ///
-    /// * a build that reused `GripSet::all()` would paint eight scale grips
-    ///   around a dimension whose extent **is** its measurement — a resize that
-    ///   the engine declines by name, offered on the canvas as though it did
-    ///   not;
-    /// * a build that left `GripSet::default()` alone would paint nothing, and
-    ///   the rotation `pdfcer-core` shipped on `Pass 159.0` would be unreachable
-    ///   with no affordance anywhere.
     ///
     /// The middle row — a press at a **corner** answering `Move` rather than
     /// `NorthWest` — is the load-bearing one. `grip_at` gates the eight

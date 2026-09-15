@@ -176,10 +176,6 @@ fn hiding_annotations_or_a_layer_is_not_an_edit() {
     doc.set_layer_visible(ObjId::new(4, 0), false);
 
     assert_eq!(doc.edit_epoch, 0, "no content changed");
-    // ★ The key's second half is the engine's content digest since
-    // 2026-08-31, not the epoch, so this asserts that the cache did NOT
-    // rebuild — by comparing against the key taken before the two visibility
-    // changes — rather than pinning a number this test has no opinion about.
     let key = doc.page_objects.built_for.get();
     let _ = doc.page_objects();
     assert_eq!(

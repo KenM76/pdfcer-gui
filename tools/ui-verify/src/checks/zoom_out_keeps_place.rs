@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! `OPERATOR_REQUESTS.md` O26, 2026-08-24:
 //!
 //! > *"Zoom out has a small bug where it sometimes seems to reposition the page
 //! > so that it is off screen in the far bottom left corner. This happened when
@@ -18,12 +17,6 @@
 //! that hand-over **going up**. This check exists because nothing in the suite
 //! had ever come back **down** through it.
 //!
-//! ⚠ Do not read that percentage as current. O49 cut the constant to 2^20 on
-//! 2026-08-28, which puts the boundary at about **132,000 %** on Letter — and
-//! because it bounds `page_height × zoom` rather than the zoom, there is no
-//! percentage that is right for every sheet. The figure above is kept because
-//! it is what made the operator's sentence a measurement rather than a guess,
-//! not because it still locates the boundary.
 //!
 //! [`DeepAnchor`]: pdfcer-gui `viewer::deep::DeepAnchor`
 //!
@@ -57,21 +50,6 @@
 //!
 //! # The shape of the run
 //!
-//! 1. **Pan off centre.** The centred position is what O24e snapped *to*, so a
-//!    run that started centred could watch a defect "hold" a position that was
-//!    already the one the bug produces. Same reasoning, same constant, as the
-//!    sibling.
-//! 2. **Climb until the trace says `tier=deep`**, then a few notches past it,
-//!    so the descent starts from inside the tier rather than balanced on its
-//!    edge.
-//! 3. **Descend one notch at a time**, measuring after each, until the trace
-//!    has said `tier=scroll` for [`SETTLE_NOTCHES`] consecutive notches.
-//! 4. **Refuse to pass** a run that never reached `deep`, or never returned to
-//!    `scroll`, or never descended. Each of those is a run that did not test
-//!    the thing the check is named after, and each is reported as a SKIP
-//!    rather than a pass — the guard `deep_pan` and `zoom_keeps_place` both
-//!    grew on 2026-08-22, after a check passed twice against a binary with the
-//!    defect deliberately restored.
 
 use crate::checks::driving;
 use crate::checks::zoom_keeps_place::{
@@ -103,12 +81,6 @@ const PAN_AT: (f32, f32) = (0.30, 0.30);
 /// ★ On [`FIXTURE`] the numbers are **measured, not derived**, and the first
 /// two written here were neither.
 ///
-/// That sheet is 2383.9 pt on its long side, not Letter's 792 — and the long
-/// side is what the bound is taken against, because the threshold is
-/// `SUB_PIXEL_CONTENT_EXTENT / longest_page_pt`. A paragraph written on
-/// 2026-09-13 said *"1683.8 pt tall"*, quoted a threshold of **623** and a
-/// crossing at **33** notches; every one of those is wrong. 1683.8 is the
-/// SHORT side, and using it inflated the threshold by the aspect ratio.
 ///
 /// The driven run reports the real figures on its own progress lines:
 /// threshold **~440**, crossed at notch **39**, at a zoom of **46,479 %**,
@@ -193,15 +165,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★★★ Pinned, not taken from `--pdf`, since 2026-09-13.
     //
-    // It used to read `ctx.pdf` and SKIP when that was absent, which made the
-    // check unrunnable on its own: `--check zooming_back_out_keeps_the_view`
-    // reported *"no --pdf. There is nothing to zoom."* and only `sweep-full.sh`
-    // — which hands the chunked checks one shared fixture — ever actually drove
-    // it. That mattered the moment the `!reached_deep` branch below became a
-    // FAIL: a failure nobody can reproduce with a one-line command is a failure
-    // nobody reproduces.
     //
     // ⚠ And the page SIZE is load-bearing here in a way it is not for most
     // checks. The hand-over threshold bounds `longest_page_pt × zoom`, so the
@@ -277,24 +241,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             break;
         }
     }
-    // ★★★ A FAIL, not a SKIP, since 2026-09-13 — and the reason is the whole
-    // argument for ever revisiting a skip branch.
     //
     // It was written as `Err` (which this harness reports as SKIPPED) on the
     // defensible ground that a run which never crossed the hand-over has
     // measured nothing about coming back down through it, and a check that
     // measured nothing should not claim a pass. That is still true.
     //
-    // What changed is that it has since **been observed passing**: this check
-    // appears in neither the fail list nor the skip list of the full sweep of
-    // 2026-09-13, which drove it on the sheet now pinned as [`FIXTURE`] — so it
-    // reached the deep tier, and the branch is no longer the "we might not get
-    // there" hedge it was written as. A
-    // branch that has been proven reachable-and-crossed can only be taken again
-    // by a build in which something regressed — `MAX_CLIMB` notches of Ctrl
-    // +wheel failing to cross a boundary they demonstrably cross — and a
-    // regression that reports SKIPPED is a regression nobody investigates. O49
-    // cutting the threshold by a factor of sixteen only widened the margin.
     //
     // ⚠ The message still explains the two benign causes, because naming them
     // is what makes a failure diagnosable. It no longer offers them as a reason
@@ -377,14 +329,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             .max((after.page.1 - prev.page.1).abs());
         // ★★★ EVERY notch is asserted, at the same tolerance, at every zoom.
         //
-        // An earlier draft let readings on the `f32` tier above a measured
-        // "jitter zoom" be recorded instead of asserted, on the argument that
-        // the tier's own resolution was coarser there than any useful bar.
-        // The very first driven run with that hatch in place **recorded a
-        // movement of 1,161 pt** — the whole page — and reported PASS. The
-        // hatch was hiding O26d, a live defect, on its first outing. A check
-        // that can decline to judge is a check that cannot fail, and this
-        // suite exists because of exactly that.
         //
         // `crossings` counts the notches that spanned the tier boundary, so a
         // run that never measured the hand-over is a SKIP rather than a pass.

@@ -1,7 +1,5 @@
 //! # `render::worker::key` — **what a render is OF**, as one comparable value
 //!
-//! Split out of [`super`] on 2026-09-11 under **R2**, when wiring
-//! `pdfcer-render`'s `RasterizerLimit` refusal took `worker.rs` to 1,541 lines.
 //!
 //! ## ★ Why this is the seam, and not "move the tests out"
 //!
@@ -39,15 +37,6 @@ use super::RenderRequest;
 ///
 /// # Why this is load-bearing rather than bookkeeping
 ///
-/// The shell decides "the texture is stale" by comparing these keys
-/// against the cached texture, and re-runs that decision every frame.
-/// While a background render is in flight the texture has NOT been
-/// replaced yet, so the decision keeps coming out the same way. Without
-/// a way to recognise that the render already running is *for the very
-/// request being asked for again*, each frame would cancel the previous
-/// render and start an identical one — and a page slower than one frame
-/// would never finish. Not a slow render: a render that can never
-/// complete, on a page that used to merely be slow.
 ///
 /// `raster_scale` is compared by bit pattern rather than by `==`
 /// because it comes from the same arithmetic each frame; an exact float
@@ -230,7 +219,6 @@ impl RenderKey {
     ///
     /// # ★★★ Why this had to become its own question
     ///
-    /// `OPERATOR_REQUESTS.md` **O25**, 2026-08-23:
     ///
     /// > *"if I pan to far to one side when I am beyond 800% zoom it doesn't
     /// > always render the new exposed area, and the same thing happens
@@ -265,7 +253,6 @@ impl RenderKey {
     ///
     /// # ★★★ Why a texture must be placed by ITS OWN region
     ///
-    /// `OPERATOR_REQUESTS.md` **O24c**, reported 2026-08-22:
     ///
     /// > *"As I drag using the middle mouse button the pan will follow and
     /// > work, but if I pan a little too far it jumps back in the opposite
@@ -379,14 +366,6 @@ impl RenderKey {
 
     /// The key `request` describes.
     ///
-    /// `pub(crate)` rather than private since 2026-09-10, for one caller:
-    /// `render::settle`'s `OpenDoc::rasterize` stamps
-    /// `OpenDoc::render_in_flight` with this before the inline wait, so a
-    /// refusal that arrives *inside* the frame budget still knows which
-    /// request it is about. See `OpenDoc::render_refused` for why that
-    /// mattered - a panicked worker drops its channel and reports
-    /// `Disconnected` immediately, so the fast path is the one every panic
-    /// takes.
     pub(crate) fn of(request: &RenderRequest) -> Self {
         Self::new(
             request.page_index,

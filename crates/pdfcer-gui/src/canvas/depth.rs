@@ -5,8 +5,6 @@
 //!
 //! ## Why they are worth remembering at all
 //!
-//! The operator, 2026-08-26: *"when I click on one of the objects all I get is
-//! the page selected."*
 //!
 //! Two things were true. The engine did not enter form XObjects, so most of
 //! what he could see was not in the object model — that is filed as an engine

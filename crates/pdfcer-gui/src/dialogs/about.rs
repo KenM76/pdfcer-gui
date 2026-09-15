@@ -238,14 +238,6 @@ impl AboutDialog {
 ///
 /// # ★★ Why the third case says a sentence instead of nothing
 ///
-/// Because it is a **report**, not a control, and the same argument
-/// [`crate::text::about::component_absent`] makes for `iccce` applies: an
-/// absent fact stated is more useful than a gap, and a gap where a version
-/// used to be is indistinguishable from a layout fault. The rule R9 actually
-/// imposes is that it must not be a **stub** — and the sentence contains no
-/// number, no `0.0.0`, and no fallback to the manifest, which is asserted by
-/// `tests::the_unavailable_case_invents_no_number` rather than left to
-/// good intentions.
 ///
 /// # Why `distance` is a `&str` and parsed here
 ///

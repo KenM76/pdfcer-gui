@@ -331,11 +331,6 @@ pub fn run(initial: Option<PathBuf>) -> eframe::Result {
         ..Default::default()
     };
 
-    // Unconditional first line when tracing. Without it an empty trace has
-    // two very different meanings — "the process never saw PDFCER_DIAG" and
-    // "the process saw nothing worth reporting" — and a harness cannot tell
-    // them apart. That ambiguity cost the old shell's investigation a round
-    // trip on 2026-08-04.
     diag::trace(|| format!("start argv1={initial:?}"));
 
     eframe::run_native(
@@ -352,8 +347,6 @@ pub fn run(initial: Option<PathBuf>) -> eframe::Result {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!("window-handle present={}", app.window.is_some())
             });
-            // ★ Apply the operator's UI scale BEFORE the first frame is laid
-            // out — 2026-08-17.
             //
             // `app::frame`'s step 0b applies it every frame and would reach the
             // same value on frame 2, so this is not what makes the preference

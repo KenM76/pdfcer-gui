@@ -1,6 +1,5 @@
 //! `checks::picking` — **one click is not always one pick**, in one place.
 //!
-//! # The defect that bought this module, measured 2026-09-14
 //!
 //! `measure_calibrates_by_picking_two_points` and
 //! `set_scale_reads_the_group_it_is_about_to_overwrite` both drive the two-point
@@ -54,13 +53,6 @@
 //!
 //! # Why not in [`crate::checks::driving`]
 //!
-//! `driving.rs` stood at 1,493 lines of the 1,500 standing rule **R2** allows.
-//! R2's own text says that a file approaching the limit is the signal to find
-//! the seam rather than to raise the limit, and there is a real seam here:
-//! `driving` is about *the ribbon* — declared rects, segments, shell-side
-//! trace lines, control fills. This is about *the canvas gesture that follows*.
-//! [`crate::checks::reaching`] was split off the same file on 2026-09-05 for
-//! the same reason, and its header records the precedent.
 //!
 //! # What this module deliberately does NOT do
 //!

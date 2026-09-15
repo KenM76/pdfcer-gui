@@ -305,11 +305,6 @@ pub const fn font_folders_hint() -> &'static str {
 
 /// Shown in place of an empty list.
 ///
-/// ★★ Its wording changed on 2026-08-28 when the OS-fonts checkbox landed:
-/// "no folders" stopped meaning "nothing to embed from", because the box may be
-/// ticked. An empty-state sentence that contradicts a control four rows below it
-/// is worse than none -- an operator who has ticked the box and reads *"nowhere
-/// to take one from"* has been told their setting does not work.
 #[must_use]
 pub const fn font_folders_none() -> &'static str {
     "No folders of your own yet."
@@ -482,71 +477,8 @@ mod tests {
     /// 15 answers to a silent standard, plus **6** preferences of the shell's
     /// own.
     ///
-    /// ★ Was 13 + 5 until 2026-08-19, when `quad_point_order` acquired a
-    /// control. That setting had been honoured by the engine and offered
-    /// nowhere, which is the gap
-    /// `crate::dialogs::settings::tests::every_setting_the_store_carries_has_a_control_in_this_window`
-    /// now refuses to compile past.
     ///
-    /// ★★ And 23 → **24** on 2026-08-26, when `max_cmyk_buffer_bytes` acquired
-    /// one. The same gap, caught by the same test, on the very first build
-    /// after the engine grew the setting — which is the whole reason that test
-    /// is a `#[test]` and not a note. The engine shipped it in v0.14.0 at this
-    /// shell's own request; the number moved in the same session the control
-    /// was written, which is the property this constant exists to guarantee.
-    /// ★★ And 24 → **25** on 2026-08-28, when the engine's `Pass 143.0` added
-    /// `overprint_zero_tint_scope` and this window's own completeness test —
-    /// `every_setting_the_store_carries_has_a_control_in_this_window` — caught
-    /// it within one `cargo update`. That is the mechanism working: a setting
-    /// the engine honours and the window cannot reach is a setting an operator
-    /// can only change by hand-editing a text file.
-    /// ★★ And 25 → **26** on 2026-08-28 with `author_name` — the **first**
-    /// entry here that is neither an answer to a silent standard nor a
-    /// rendering preference. It is a fact about the *person*, and it is in
-    /// this window because the alternative was a comment nobody signed.
-    /// ★★ And 26 → **27** on 2026-08-29 with `paste_chords` —
-    /// `OPERATOR_REQUESTS.md` O58, and the first entry here that exists
-    /// because **another program disagrees with us**. It is a compatibility
-    /// preference rather than a taste one: Acrobat assigns the two form-field
-    /// pastes to the opposite chords, both assignments have a real argument,
-    /// and the operator asked for the choice rather than a ruling.
-    /// ★★ And 27 → **28** on 2026-08-30 with `style_policy` — the engine's
-    /// `Pass 179.0`, and the **third** time this window's completeness test
-    /// caught a setting the engine had grown and the shell could not reach.
     ///
-    /// ★★★ It caught something larger that time. The same engine Pass changed
-    /// what `format_text` DOES by default — a synthesis request that used to be
-    /// refused is now applied — and that silently removed this shell's Bold
-    /// button, which was built on the refusal. `cargo update` brought both in
-    /// together, and the settings test and one face-by-name assertion were the
-    /// only two things that noticed.
-    // ★ 28 → 29 on 2026-09-02: `spot_colorant_device_model`, new in
-    // `pdfcer-core 0.20`. Ken: *"the engine I think has a couple of new options
-    // for colour rendering that we might need to surface."* He was right, and
-    // the coverage gate two files away fired on the same `cargo update` — the
-    // pair working as designed, one demanding the control and one demanding
-    // the copy.
-    // ★ 29 → 30 on 2026-09-02: `shade_form_fields`. Ken: *"in our display
-    // section we should have an option to shade the form fields like acrobat
-    // does."* Note this one is a SHELL preference rather than an engine
-    // setting, so the sibling coverage test in `dialogs::settings` — which
-    // enumerates the engine's store — could never have demanded it. This
-    // catalog is the only instrument that covers both.
-    // ★ 30 → 31 on 2026-09-04: `acrobat_path` — O122, *"have a setting where
-    // people can change it."* The second SHELL preference in this count and the
-    // first setting in the window about **another program on this machine**, so
-    // neither the engine-store coverage test nor anything else could have
-    // demanded it. Its copy lives in `crate::text::acrobat` rather than here,
-    // because O122's four surfaces are one conversation and were filed
-    // together; this list reaches across for it, which is what keeps the count
-    // honest about a group whose words live elsewhere.
-    // ★★★ 31 → 33 on 2026-09-05, and it is the only entry in this list
-    // that moved the count by TWO. The trust-store work adds one ENGINE setting
-    // (`acrobat_trust_store`, which the sibling completeness test in
-    // `dialogs::settings` demanded — it was red before this control existed)
-    // and one SHELL preference beside it (`acrobat_trust_store_path`, which no
-    // test could have demanded, because the engine deliberately does not model
-    // where the file is: *"locating the file is the shell's job"*).
     //
     // ★★ They are two headers rather than one on purpose. A permission and a
     // location have different blast radii — one governs the pdfcer command line
@@ -554,34 +486,12 @@ mod tests {
     // `radius` line covering both would have to be vague about the one that
     // matters. `dialogs::settings::signatures`' header carries the argument.
     //
-    // ★★ 33 → 34 on 2026-09-05: **one** header over the two auto-hide
-    // toggles, and the singular is the decision rather than a shortcut. They
-    // are one question the operator answers twice — *"how much of the window
-    // do I want the drawing to have?"* — and the sentence that makes the
-    // feature safe to try, that the drawing does not move when a strip comes
-    // and goes, is true of both. Two headers would have to say it twice or
-    // leave it off one of them, which is the trust-store pair's test applied
-    // and answered the other way: those two have different blast radii, these
-    // two have the same one.
     //
-    // ★ 34 → 35 on 2026-09-12: the find bar's blank-trimming preference
-    // (**O180**). A shell preference rather than an engine setting, like
-    // `field_shade` and the five before it, and filed in the *Copying and
-    // extracting text* group because searching is extraction — which is
-    // also the argument its `radius` line makes to the operator.
     const SETTINGS_COUNT: usize = 35;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
-    /// ★ **Hoisted out of the test it used to live inside, on 2026-08-17, when
-    /// it turned out to be four short.**
     ///
-    /// The list held exactly the thirteen `pdfcer_core::settings` entries and
-    /// had never grown: the *Drawing the page* group's two preferences were
-    /// added on 2026-08-17 and neither reached it, so the window's own stated
-    /// contract — *"a setting cannot be added without answering all three,
-    /// because the code does not compile otherwise"* — was being checked over a
-    /// subset of the window while reading as though it covered all of it.
     ///
     /// The `header` helper's required arguments did their job: both settings
     /// **do** answer all three. What was missing was any check that they were
@@ -695,11 +605,6 @@ mod tests {
             // of which file its value happens to be stored in.
             (quality_title(), quality_silence(), quality_radius()),
             (settle_title(), settle_silence(), settle_radius()),
-            // ★ How much memory pdfcer may spend so a page it has already drawn
-            // does not have to be drawn again — 2026-08-19. Its radius line is
-            // the one in this window that names a way to make the program
-            // FAIL rather than merely behave differently, which is why it says
-            // so out loud.
             (
                 page_cache_title(),
                 page_cache_silence(),
@@ -724,13 +629,6 @@ mod tests {
                 paste_chords_radius(),
             ),
             (chrome_title(), chrome_silence(), chrome_radius()),
-            // ★★ The two auto-hide toggles under ONE triple, 2026-09-05,
-            // because they are drawn under one header — see SETTINGS_COUNT's
-            // note. This list counts HEADERS, not controls: the obligation it
-            // checks is that every heading in the window says what happens if
-            // the operator does nothing and what the setting cannot reach,
-            // and a heading answers those once however many switches sit
-            // under it.
             (auto_hide_title(), auto_hide_silence(), auto_hide_radius()),
             // ★★★ The two trust-store settings, reached across into
             // `crate::text::trust` for the reason `crate::text::acrobat`'s
@@ -784,13 +682,6 @@ mod tests {
 
     /// ★ **The window draws exactly the settings this catalog describes.**
     ///
-    /// Written 2026-08-17, and it is the guard that would have caught the
-    /// omission [`triples`] documents. Everything else about the window's
-    /// contract is enforced from the copy side: `header`'s signature forces
-    /// three arguments, and the test above forces three non-empty answers. Both
-    /// are blind to the failure that actually happened, which is a control
-    /// drawn in the dialog and never entered in the catalog — because a catalog
-    /// cannot notice something that is not in it.
     ///
     /// So this counts from the **other** end: it parses the dialog's own source
     /// and counts the [`crate::dialogs::settings::widgets::header`] calls the
@@ -817,44 +708,18 @@ mod tests {
     /// test time, which is the runtime file read `reach.rs` refused.
     /// The group modules the window is built from, paired with their source.
     ///
-    /// ★ Hoisted out of `the_window_draws_exactly_the_settings_this_catalog_describes`
-    /// on 2026-08-30 so that `every_settings_module_is_counted` can check the
-    /// list is complete. A hand-written list that only one test can see is a
-    /// hand-written list nothing can audit.
     const GROUP_SOURCES: &[(&str, &str)] = &[
         (
             "appearance",
             include_str!("../../dialogs/settings/appearance.rs"),
         ),
         ("colour", include_str!("../../dialogs/settings/colour.rs")),
-        // ★★★ Added 2026-09-04 with the Acrobat-path control — O122 — and
-        // added BEFORE the control was written rather than ten minutes after,
-        // which is the whole point of the note on `comments` below and of
-        // `every_settings_module_is_counted`. That test caught this file's
-        // absence on the first `cargo test` after the module was created,
-        // exactly as designed.
         ("acrobat", include_str!("../../dialogs/settings/acrobat.rs")),
-        // ★★★ Added 2026-08-28 with the author-name control, and its
-        // absence for the first ten minutes is the finding: this list is
-        // HAND-WRITTEN, so a new settings module is invisible to the very
-        // test whose job is to prove the window and the catalog agree.
-        // A new file draws a header nobody counts and describes a setting
-        // nobody checks — the count still adds up and both halves are
-        // wrong. If a third module is ever added, this line is the one to
-        // remember before the control is written.
         (
             "comments",
             include_str!("../../dialogs/settings/comments.rs"),
         ),
         ("display", include_str!("../../dialogs/settings/display.rs")),
-        // ★★★ Added 2026-08-30 with the faking-bold-and-italic control,
-        // and it is `comments`' lesson recurring exactly as that comment
-        // predicted. `fonts.rs` had existed for two days and drew no
-        // `header` at all while it held only the folder list, so its
-        // absence here cost nothing and announced nothing. The moment it
-        // gained a setting, this list was short by one — which is why
-        // `every_settings_module_is_counted` below now derives the
-        // membership instead of asking the next session to remember.
         ("fonts", include_str!("../../dialogs/settings/fonts.rs")),
         ("images", include_str!("../../dialogs/settings/images.rs")),
         (
@@ -863,9 +728,6 @@ mod tests {
         ),
         ("pages", include_str!("../../dialogs/settings/pages.rs")),
         ("saving", include_str!("../../dialogs/settings/saving.rs")),
-        // ★ Added 2026-09-05 WITH the trust-store controls rather than after
-        // them — `comments`' note above asks for exactly that, and
-        // `every_settings_module_is_counted` is what stops it being a request.
         (
             "signatures",
             include_str!("../../dialogs/settings/signatures.rs"),
@@ -933,17 +795,7 @@ mod tests {
     ///
     /// # The gap this closes, which had already been found once and left open
     ///
-    /// The list above is hand-written, and the comment beside it says so:
-    /// *"a new settings module is invisible to the very test whose job is to
-    /// prove the window and the catalog agree."* That was written on
-    /// 2026-08-28 after `comments.rs` was missed for ten minutes, and it ends
-    /// *"if a third module is ever added, this line is the one to remember"*.
     ///
-    /// ★★ A note asking a future session to remember something is not a
-    /// mechanism, and on 2026-08-30 it failed exactly as written: `fonts.rs`
-    /// had existed since 2026-08-28, drew no `header` while it held only the
-    /// folder list, and the moment it gained one the count was silently short
-    /// by one in **both** directions at once.
     ///
     /// ⇒ So this test reads `dialogs/settings/mod.rs` and requires every module
     /// it declares to appear above. Two modules are excluded **by name and with
@@ -1073,8 +925,6 @@ mod tests {
                 !touches_bytes(radius),
                 "a preview-only setting claims it changes the file: {radius:?}"
             );
-            // ★ An EXPLICIT list of accepted phrasings, widened 2026-08-17 and
-            // deliberately not loosened to "contains the word file".
             //
             // A loose match would be satisfied by a radius line saying the
             // setting *does* change the file — the exact opposite claim — so

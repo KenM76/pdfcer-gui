@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-12, `OPERATOR_REQUESTS.md` **O187**:
 //!
 //! > *"the draw page previews timeout needs to be remembered, and setting it to
 //! > 0 should set it to infinity (never time out)"*
@@ -754,12 +753,6 @@ fn persisted_after(trace: &Trace, before: usize) -> Option<Persisted> {
         .skip(before)
         .last()
         .map(|l| Persisted {
-            // ⚠ `true`/`false`, not `1`/`0`. The SAME fact is spelled two
-            // ways in two lines: `PrefAction::apply` formats a Rust `bool`, and
-            // the panel line formats `u8::from(..)`. A comparison against `"1"`
-            // here is never a compile error and is always false, so it would have
-            // reported "the verb wrote the value from before the change" for every
-            // build ever made. Measured on this file, first run, 2026-09-12.
             on: l.get("on") == Some("true"),
             budget_ms: l.get_usize("budget_ms").unwrap_or(usize::MAX),
             raw: l.raw.clone(),

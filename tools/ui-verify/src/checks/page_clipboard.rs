@@ -3,10 +3,6 @@
 //!
 //! # What this is about
 //!
-//! Ken, 2026-08-29, to the engine session: *"can you make sure we have cut,
-//! copy, and paste available for everything and if not implement?"* The engine
-//! shipped `copy_pages` / `cut_pages` / `paste_pages`; this shell consumed them
-//! as three named commands on the Pages tab.
 //!
 //! # ★★★ The oracle is the PAGE COUNT, and nothing smaller would do
 //!

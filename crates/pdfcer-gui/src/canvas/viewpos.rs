@@ -1,9 +1,6 @@
 //! # `canvas::viewpos` — **where the view sits this frame**, decided before
 //! the strip is drawn
 //!
-//! Split out of [`super::present`] on 2026-09-12 under **R2**, when O177's
-//! facing-fit work pushed that file past the 1,500-line ceiling. Nothing here
-//! changed in the move; the addresses did.
 //!
 //! ## Why this is the seam
 //!
@@ -166,14 +163,6 @@ pub(super) fn position(
     // pasteboard is the exact defect O23 spent three attempts on — see the
     // field's own documentation.
     //
-    // ★★★ The MEASUREMENT moved to `tier::overhang` on 2026-09-11, with
-    // `View ▸ Off-Page Content`. It is the same decision `tier::decide` makes
-    // — *does this page reach past its sheet, and is the operator asking to be
-    // shown it?* — asked against the layout instead of against the raster, and
-    // the two halves of one switch must not live in two files. That function
-    // carries the peek's 469 ms argument, the zoom multiplication and the
-    // gate; what stays HERE is the single write, because the field must be
-    // written exactly once per frame and this is that frame.
     doc.pasteboard_overhang = super::tier::overhang(doc, current);
     let overhang = doc.pasteboard_overhang;
     super::trace::pasteboard(overhang, doc.view.off_page);

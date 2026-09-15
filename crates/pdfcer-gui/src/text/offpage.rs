@@ -6,9 +6,6 @@
 //!
 //! ## ★★★ What this window is FOR, in the operator's own words
 //!
-//! O23 asked, on 2026-08-21, for objects outside the page box to be reachable
-//! at all — they were invisible, unselectable and unrenderable. Three weeks
-//! later he came back with the half that matters:
 //!
 //! > *"how do I view and edit objects that are off of the page? we added this
 //! > feature but I didn't see how to enable it."*

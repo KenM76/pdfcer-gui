@@ -273,12 +273,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     // ★★ THE PREVIEW, AND ONLY A SCREENSHOT CAN SAY IT DREW.
     //
-    // Captured after the last vertex, with the pointer still on the page.
-    // Everything asserted above reads the trace, and on 2026-08-20 all of it
-    // passed on a build whose preview drew NOTHING - `gesture_in_progress` had
-    // not learned the perimeter's pick, so `measure::preview` returned before
-    // painting a single segment. The operator reported it the same day: *"both
-    // these tools need a preview just like the measure tool has."*
     //
     // A picture rather than an assertion, deliberately. Asserting on accent
     // pixels would need the theme's colour and the polyline's exact route
@@ -383,8 +377,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     // --- 4: ★★ the LENGTH tool is the same gesture and does NOT close ------
     //
-    // The operator, 2026-08-20: *"add a length tool that works like the
-    // perimeter tool without needing to close the profile."*
     //
     // Asserted here rather than in a check of its own, because what is worth
     // proving about Length is a NEGATIVE relative to Perimeter — clicking the
@@ -473,7 +465,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // distinction that made it a two-minute fix instead of an investigation
     // into the painter.
     //
-    // ★★ **The POINTER first, the chord as the fallback — 2026-08-28.**
     //
     // `driving::arm_select_from_ribbon`'s doc carries the measurements: with a
     // dock panel raised, `V` was observed arriving zero times in six runs, and
@@ -498,11 +489,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     // ★★ ON THE INK, not in the middle of the ring.
     //
-    // This aimed at the centre of the traced square until 2026-08-20 and the
-    // run reported UNVERIFIED — correctly. A click there now MISSES, because a
-    // dimension is hit-tested on its drawn segments rather than on its bounding
-    // box, so the empty middle of a perimeter belongs to whatever is behind it.
-    // That is the operator's own report, working.
     //
     // So the click goes to the midpoint of the first edge — between corners 0
     // and 1 — which is ink. A check that kept aiming at the hole would have
@@ -560,10 +546,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ★★ …and the shell ASKED whether the corner should snap.
     //
-    // `ui-conventions/drag-moves.md` D6, and the gap the 2026-08-20 sweep
-    // named: *"a vertex drag does not snap, while the tool that placed that
-    // vertex does — so you can pick a corner onto geometry and then be unable
-    // to put it back."*
     //
     // What is asserted is that the `snap=` FIELD EXISTS, not that a candidate
     // was found. The destination above is a document point chosen for being far

@@ -3,7 +3,6 @@
 //!
 //! # The report
 //!
-//! Ken, 2026-09-01, on `TR-0461-1500-copy.pdf`:
 //!
 //! > *"I can't box select the tables in the left or right top corners using the
 //! > mouse — it only picks up the lines of each table, so I can't drag the
@@ -82,7 +81,6 @@ const FIXTURE_PAGE: PageGeometry = PageGeometry {
 
 /// **Where the band STARTS, and it is on measured-empty paper.**
 ///
-/// # ★★★ This constant is the whole repair, 2026-09-02
 ///
 /// The previous origin was `(14, 618)` — just outside the table, "comfortably
 /// inside the sheet", and **on top of an object**. Three runs of this check
@@ -217,8 +215,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ **ARM THE SELECT TOOL FIRST**, and this line is the repair that made
-    // this check able to run at all — 2026-09-02.
     //
     // Its first three runs reported "THE BAND SELECTED NOTHING AT ALL: no
     // `canvas-selection … via=pv.marquee` line", which reads as a hit test
@@ -227,10 +223,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ones, so no rubber band had ever begun. The press belongs to whichever
     // tool is armed, and nothing here had armed one.
     //
-    // ★★ Two of the three failures were previously written off as the harness
-    // "driving the band above the canvas" — true of the first run, and it
-    // masked this. A check that fails for two different reasons in two runs is
-    // one whose SECOND diagnosis nobody looked for.
     //
     // A `false` return means the pointer route to the tool is unavailable, which
     // is a SKIP rather than a failure: the band could not be started, so nothing
@@ -332,8 +324,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // ★★★ **THE ORACLE IS THE KINDS, NOT THE COUNT** — rewritten 2026-09-02,
-    // and the previous oracle was an assumption that measurement refuted.
     //
     // It read: *"a table's rules are ONE path object per line in most CAD
     // exports and its words are one text object per cell, so a band over this

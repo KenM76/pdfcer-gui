@@ -1,7 +1,6 @@
 //! # `canvas::textedit::glyphwall` — his typo, the pin that was stopping it, and
 //! the occurrence count that makes dropping the pin safe
 //!
-//! `OPERATOR_REQUESTS.md` **O142**. The operator, 2026-09-05:
 //!
 //! > *"on page 2 there is a spelling mistake — clien instead of client. if I try
 //! > to edit the edit is not accepted."*
@@ -211,10 +210,6 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     let doc = crate::app::state::open_local_fixture(UNIQUE);
     let planned = super::plan(&doc, 0, 0, RUN, FIXED);
 
-    // ★★★ **THE PIN NOW STAYS ON, AND THIS ASSERTION USED TO SAY THE
-    // OPPOSITE.** Until 2026-09-08 it read `pinned_span.is_none()` with the
-    // comment *"THE WHOLE FIX … the pin must come OFF"*, licensed by
-    // `occurrences == Some(1)`.
     //
     // `Pass 272.0`'s `EditRequest::spanning_from` retired both. The span
     // search starts at the pinned operator instead of at the first operator

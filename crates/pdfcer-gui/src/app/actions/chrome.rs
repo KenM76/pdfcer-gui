@@ -73,12 +73,6 @@ pub enum ViewChrome {
     /// `view.off_page` — **may the canvas show, and reach, the marks that
     /// sit outside the sheet?**
     ///
-    /// The operator's request of 2026-09-11, verbatim: *"in our view ribbon
-    /// area we need an option to show the stuff that is off page or not
-    /// (and when not showing the stuff that is off page there shouldn't be
-    /// a gap between pages where the stuff is, so it just goes back to
-    /// looking before we added the view things that are off the page
-    /// feature)."*
     ///
     /// **The only variant whose "off" changes the LAYOUT.** The others add
     /// or remove a mark; this one decides how

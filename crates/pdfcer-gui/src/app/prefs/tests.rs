@@ -436,10 +436,6 @@ fn a_trillion_percent_is_accepted_and_the_page_actually_draws_there() {
         "max_zoom_percent = 1000000000000
 ",
     );
-    // ★ Accepted in full, and NOT clamped. It was clamped for part of
-    // 2026-08-22, while a trillion percent rendered cleanly and showed a
-    // blank page; removing the two precision ceilings made the figure he
-    // named actually draw, so the clamp went with them.
     assert!((prefs.max_zoom_percent - 1e12).abs() / 1e12 < 1e-6);
     assert!(
         notes.is_empty(),

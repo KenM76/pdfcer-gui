@@ -427,14 +427,6 @@ pub enum AnnotAction {
         /// # The guard is THIS SHELL's, not the engine's, and the difference
         /// was measured
         ///
-        /// `add_reply`'s own doc comment lists *"[`EditError::MarkupNoteEmpty`]
-        /// and the note's own validation"* among its errors. **That variant
-        /// does not exist.** Measured 2026-09-06 against the pinned engine at
-        /// `d2ea5de`: `MarkupNoteEmpty` occurs exactly once in the whole crate
-        /// and the occurrence is that doc line; `MarkupNote::validate`
-        /// checks only the `/M` date's §7.9.4 shape and
-        /// returns `Ok(())` for an empty `/Contents`. So an empty reply is
-        /// **authored**, not refused.
         ///
         /// Which makes the blank case the shell's to decide, and it is
         /// decided against. A `/Text` sticky with no `/Contents` is an
@@ -495,9 +487,6 @@ pub enum AnnotAction {
         /// displayed open"*.
         open: bool,
     },
-    // =======================================================================
-    // The NODES of a markup shape — the operator's report of 2026-09-05
-    // =======================================================================
     //
     // > *"I also can't edit or delete nodes of a markup shape once it is
     // > drawn."*

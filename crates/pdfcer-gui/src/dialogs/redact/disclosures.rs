@@ -1,13 +1,6 @@
 //! # `dialogs::redact::disclosures` — the parts of the engine's report that
 //! reached nobody
 //!
-//! ★★★ **Added 2026-09-09.** `pdfcer-core` at `369d4de` shipped
-//! `CarrierAction::CheckedClean`, three whole-file-sweep counters and — since
-//! long before that — a `RedactionReport::notes` field, and the engine-API
-//! drift gate showed that this shell read **none of the four**. Not "read them
-//! and decided not to show them": never read them. `report.carriers` was
-//! touched at exactly two sites and both were the same `==` filter against
-//! `DisclosedNotScrubbed`; `report.notes` was touched nowhere in the crate.
 //!
 //! ## Why a file of its own, and where the seam is
 //!
@@ -53,15 +46,6 @@
 //! [`super::RedactDialog::report`] had been deleted would pass every test in the
 //! workspace, which is the exact shape of the defect this module closes.
 //!
-//! The guard is **`cargo clippy --workspace --all-targets -- -D warnings`**, and
-//! it was measured on 2026-09-09 rather than assumed: commenting out the three
-//! call sites produces five `never used` warnings — [`sweep`],
-//! [`checked_clean`], [`checked_clean_names`], [`engine_notes`] and
-//! [`REGION_ENGINE_NOTES`] — and `-D warnings` turns each into an error. That
-//! works only because every item here is `pub(super)` or private. **If one of
-//! these is ever raised to `pub`, the tripwire goes silent for it**, and the
-//! function can be orphaned in a green build. Do not raise them without
-//! replacing the guard with a driven `ui-verify` assertion.
 //!
 //! ⚠ A driven assertion is still owed regardless: dead-code analysis proves the
 //! call exists, not that the label reaches a pixel the operator can read. That
@@ -147,12 +131,6 @@ pub(super) fn checked_clean(ui: &mut egui::Ui, theme: &Theme, report: &Redaction
 /// **The carriers the engine checked and found nothing in**, already in the
 /// operator's words.
 ///
-/// ★★★ The filter is `== CarrierAction::CheckedClean` and it is the *third*
-/// distinct verdict this shell now distinguishes, which is the whole point of
-/// the variant: `Absent` means the carrier is not in the document, `Scrubbed`
-/// means pdfcer took something out of it, and this means pdfcer looked and
-/// there was nothing to take. Before 2026-09-09 the third was folded into
-/// silence.
 ///
 /// ⚠ `CarrierAction` is `#[non_exhaustive]`, so this cannot be written as an
 /// exhaustive `match` and a sixth variant would land here as neither

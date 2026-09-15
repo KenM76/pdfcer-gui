@@ -2,8 +2,6 @@
 //!
 //! ## What this closes
 //!
-//! The operator, 2026-08-19: *"also the standard copy/paste and I didn't try cut
-//! so possibly that one too aren't implemented."*
 //!
 //! They were not. `Ctrl+C` copied **text** — a swept range, through
 //! `canvas::textsel::clipboard` — and that was the whole of this shell's
@@ -14,31 +12,9 @@
 //!
 //! ## ★★ What is expressible, and what is not — measured, not assumed
 //!
-//! **This table was written 2026-08-19 and every "blocked" row in it has since
-//! expired. Corrected in place on 2026-09-05 rather than left standing beside
-//! its correction, per R5.** The 2026-08-19 reading — *"markup can be copied
-//! through `spec_from_dict`/`add_markup`, page content cannot be put back at
-//! all"* — was true when taken and is kept only in this sentence, because its
-//! shape is the lesson: **a capability claim about another crate is a dated
-//! citation with a shelf life measured in hours.**
 //!
-//! Re-measured 2026-09-05 against engine **v0.38.0 (`b01964f`)**, from source:
 //!
-//! | subject | copy | paste | verdict |
-//! |---|---|---|---|
-//! | **page content** (paths, text runs, images) | `copy_objects` `edit.rs:10410` | `paste_objects` `edit.rs:11079` | ✅ shipped 2026-08-20 |
-//! | **annotations** (any subtype but three) | `copy_annotations` `edit.rs:10432` | `paste_objects` — it plants both halves | ✅ **shipped here 2026-09-05** |
-//! | **both at once** | `copy_selection` `edit.rs:10456` | the same `paste_objects` | ✅ wired; see the note below on why it cannot yet be *reached* |
-//! | **text** (swept) | extraction | the clipboard is the destination | ✅ already shipped |
-//! | **`/Widget`, `/Popup`, `/Redact`** | — | — | ⛔ the engine refuses all three **by name**, deliberately |
 //!
-//! ★ **What the annotation row changed, in the operator's terms.** Until
-//! 2026-09-05 this module copied an annotation by reading a `MarkupSpec` out of
-//! its dictionary and authoring a *new* annotation from it — so the eight
-//! subtypes `pdfcer-core` models could be copied and **everything else could
-//! not**. A sticky note, a stamp, a text box, a link and a file attachment all
-//! answered `Ctrl+C` with *"that annotation is not one pdfcer authors."* A
-//! sticky note is the most-copied comment in a review workflow.
 //!
 //! ★★★ **And the lossless route turned out to be lossy in the other
 //! direction.** `copy_selection` carries a markup pdfcer *models* as a spec and
@@ -179,12 +155,7 @@ pub enum Clipped {
     /// ★★★ **A copied selection** — page content, annotations, or both, as one
     /// `ObjectClip`.
     ///
-    /// This variant is what the type's own docs predicted: *"the day page
-    /// content becomes pasteable this type is where that arrives."* `Pass 120.0`
-    /// shipped `ObjectClip` on 2026-08-20 and this is that day.
     ///
-    /// # ★★ It was called `Content` until 2026-09-05, and the rename is a
-    /// correction rather than a tidy-up
     ///
     /// The name was accurate while the only thing a clip could hold was a page
     /// object. It stopped being accurate the moment this shell started routing
@@ -270,12 +241,6 @@ pub enum Clipped {
         /// How many annotations on the clip travel as a `MarkupSpec` and will
         /// therefore arrive **without** `/CA`, `/T`, `/M` or `/Contents`.
         ///
-        /// Zero for every clip this shell parks today: since `Pass 270.0` the
-        /// engine's markup carrier holds `/CA`, `/Contents` and `/T` itself
-        /// (`MarkupCarry`), and the spec-plus-options route that used to
-        /// stand in for it was deleted on 2026-09-08. The field exists so
-        /// that a future lossy carrier discloses rather than silently thins
-        /// the copy. See [`crate::canvas::annotclip::Plan::thin`].
         thin: usize,
         /// ★★★ **The point that is placed under the cursor on a paste** —
         /// the clip's centre, in **PDF user space**.
@@ -312,19 +277,9 @@ pub enum Clipped {
     },
     /// ★★★ **A form field**, as of 2026-08-29 — `OPERATOR_REQUESTS.md` O58.
     ///
-    /// The third thing this clipboard can hold, and the one that needed a
-    /// module of its own: see [`crate::canvas::fieldclip`] for why a form
-    /// field could not previously be copied at all, and for the two senses
-    /// `Ctrl+V` and `Ctrl+Shift+V` carry.
     ///
     /// # Why it is a variant here and not a second clipboard
     ///
-    /// **One clipboard holds one thing.** Copying a markup after copying a
-    /// field must replace it, because `Ctrl+V` has to mean exactly one act at
-    /// any moment. A second `egui::Memory` key would give the shell two live
-    /// clipboards and `edit.paste` a choice to make between them — and any rule
-    /// it used to choose (most recent? most specific? whatever the selection
-    /// is?) would be a rule the operator cannot see.
     ///
     /// Boxed because `ClippedField` carries a whole `Draft` and this enum is
     /// cloned on every read; the other two variants are a `Box` and a `Vec`
@@ -333,11 +288,6 @@ pub enum Clipped {
     FormField(Box<crate::canvas::fieldclip::ClippedField>),
     /// **An embedded file** — its name, its decoded bytes and its description.
     ///
-    /// `OPERATOR_REQUESTS.md` O59's family, and the one the verb-coverage gate
-    /// found on 2026-09-01: `copy_attachment` / `cut_attachment` /
-    /// `paste_attachment` shipped in `Pass 173.0` and this shell named none of
-    /// them, so an attachment could not be moved between two open documents —
-    /// odd, now that pdfcer is multi-document.
     ///
     /// ★★ **Carries the DECODED bytes**, which is the engine's choice and worth
     /// restating: `AttachmentClip` holds what `extract-attachment` would give
@@ -429,13 +379,6 @@ pub enum Clipped {
 /// `canvas::resizing`'s six refusals take. A `Ctrl+C` that does nothing and
 /// says nothing is indistinguishable from a broken keyboard.
 ///
-/// ★★ **It stopped being `Copy` on 2026-09-05**, when [`Self::CannotCarry`]
-/// arrived carrying the `/Subtype`s the engine refused. That is data taken off
-/// the clip rather than a compile-time constant, and it has to be: the whole
-/// point of the variant is to name *which* thing could not be copied, and a
-/// `&'static str` would mean this shell keeping a third copy of a subtype
-/// table `pdfcer-core` already owns. Every call site moves the value rather
-/// than copying it, so nothing needed changing but the derive.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Refusal {
     /// ★★★ **The cut's DELETE half would be refused, so its copy half did not
@@ -475,11 +418,6 @@ pub enum Refusal {
     NothingSelected,
     /// The engine refused to copy the selection.
     ///
-    /// ★★ **This variant was `ContentNotAnnotation` until 2026-08-20**, and it
-    /// said: *"`EditSession` has no verb that puts page content back, so a copy
-    /// would be offering a paste that could never happen."* True when it was
-    /// written, and `Pass 120.0` made it false — the operator had been asking
-    /// for cut/copy/paste of page content since the first week.
     ///
     /// What replaces it is the engine's own refusal, which is a genuinely
     /// different fact: a clip it could not assemble. Kept as one variant rather
@@ -507,14 +445,7 @@ pub enum Refusal {
     CannotCarry(Vec<String>),
     /// **The selected annotation is no longer on the page it names.**
     ///
-    /// # ★★ This variant's meaning CHANGED on 2026-09-05, and its old sentence
-    /// was about to become false
     ///
-    /// It used to mean *"the dictionary would not yield a `MarkupSpec`"*, and
-    /// its sentence said so in the operator's terms: *"That annotation is not
-    /// one pdfcer authors — a link, a form field or an attachment — so there is
-    /// nothing for it to copy."* Every word was true of the re-authoring
-    /// clipboard.
     ///
     /// It is false now. A link copies. An attachment copies. A sticky note, a
     /// stamp and a text box copy, with their baked appearances — that is the
@@ -561,15 +492,6 @@ pub fn store(ctx: &egui::Context, clipped: Clipped) {
 ///
 /// # ★★★ AND THEN IT ASKS THE ENGINE WHAT IT DID
 ///
-/// The clip comes back carrying, per annotation, the **carrier** the engine
-/// chose, and [`crate::canvas::annotclip::Plan::of`] reads it so a refusal is
-/// disclosed by name and a lossy carrier — none exists today — would be
-/// disclosed as `thin`. Until 2026-09-08 this was also a fork: a lone modelled
-/// markup was thrown away and re-copied through the shell's own
-/// spec-plus-options route, because the engine's `MarkupSpec` carrier dropped
-/// `/CA`, `/T` and `/Contents`. `Pass 270.0` gave that carrier a `MarkupCarry`
-/// and the route was deleted; [`crate::canvas::annotclip`]'s header holds the
-/// history and the falsifying tests.
 ///
 /// ⇒ **The fork is read off the payload, never off a subtype list here.** A
 /// list would be a fourth copy of a taxonomy `pdfcer-core` owns, and would be
@@ -623,14 +545,6 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     // ★★ The clip's OWN bbox, unioned by the engine over both content items and
     // annotation `/Rect`s (`edit.rs:10569`), converted to a centre.
     //
-    // This replaced a walk of `CanvasTargetProvider::bounds` on 2026-09-05, and
-    // the change is a correction rather than a simplification: the provider
-    // answers for **content objects only**, so a clip whose only member was an
-    // annotation got `anchor: None` and silently fell back to the offset rule —
-    // the operator's O73 complaint, reproduced for the new payload on the day
-    // it shipped. The clip's bbox is also the representation that survives the
-    // source document being closed, which is what makes "copy, close, paste
-    // where I point" work at all.
     let anchor = (!clip.bbox().is_empty()).then(|| {
         let b = clip.bbox();
         ((b.min.x + b.max.x) / 2.0, (b.min.y + b.max.y) / 2.0)
@@ -672,12 +586,6 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     //   does not make yet. That is the remaining half of the operator's item 3,
     //   named here rather than left as a silence.
     //
-    // Until then the marker is what makes the chord arrive and the in-memory
-    // clip is what is pasted, so a pdfcer→pdfcer paste is already lossless. What
-    // is missing is pdfcer→pdfcer **across two processes**.
-    // ★★★ **AND A PICTURE BESIDE IT, as of 2026-08-31** —
-    // `OPERATOR_REQUESTS.md` O71: *"so we can copy and paste them … outside of
-    // the pdfcergui."*
     //
     // The marker sentence and the bitmap go on in ONE clipboard transaction,
     // and that is not an optimisation. `EmptyClipboard` is per-open, so two
@@ -763,9 +671,6 @@ pub fn cut(
 ) -> Result<Clipped, Refusal> {
     // ★★★ **ASK WHETHER THE DELETE CAN HAPPEN BEFORE THE COPY DOES.**
     //
-    // This is the fourth door onto `delete_annotation`, found by an adversarial
-    // review on 2026-08-29 after the other three had been gated the day before,
-    // and it is the worst of the four:
     //
     // On a certified or encrypted document, `Ctrl+X` over a markup **copied it
     // to the clipboard**, raised the Delete, watched the engine refuse into
@@ -784,13 +689,6 @@ pub fn cut(
     // that silently becomes a copy is a different verb wearing the operator's
     // chord, and they would find out by pasting.
     //
-    // ★ Asked HERE rather than in `annots::delete`, and the difference matters:
-    // the delete arm is reached by four routes and must stay a routing arm, but
-    // only this route has a **second half to call off**. Gating inside the arm
-    // would refuse the delete and leave the copy already on the clipboard.
-    // ★★★ AND WHETHER THE CLIPBOARD COULD CARRY IT AT ALL — the second half of
-    // the same question, added 2026-08-29 when `pdfcer-core` shipped cut for
-    // every class and asked for exactly this.
     //
     // First, before the delete gate below and before the copy, because it is
     // the cheaper question and because the two refusals are about different
@@ -848,11 +746,6 @@ pub fn cut(
     // The delete is raised through the funnel like every other edit, rather
     // than performed here: this module changes no document.
     match (&clipped, doc.selection.annot()) {
-        // ★★★ **BOTH HALVES OF A SELECTION CLIP**, as of 2026-09-05, and they
-        // are two actions rather than one because they address two different
-        // things: page content by paint-order index into a content stream, an
-        // annotation by `ObjId` in the page's `/Annots`. Nothing in this shell
-        // — or in `EditSession` — takes both in one call.
         //
         // ★★ SO A MIXED CUT IS TWO UNDO ENTRIES, and that is stated rather
         // than hidden. It is not reachable today (the selection model holds
@@ -1045,10 +938,6 @@ pub fn paste(
 /// Paste a clip onto `page`, raising the action that authors it — **page
 /// content, annotations, or both**.
 ///
-/// ★ Renamed from `paste_content` on 2026-09-05, when the clip stopped being
-/// content-only. The old name would have been the same kind of falsehood the
-/// `Clipped::Content` variant's rename removes: a function called
-/// `paste_content` that plants a sticky note.
 ///
 /// # ★ The offset rule is the markup one, and the geometry is not
 ///
@@ -1086,12 +975,6 @@ fn paste_clip(
     target: Option<egui::Pos2>,
     actions: &mut Vec<Action>,
 ) -> Result<(), Refusal> {
-    // ★★★ The cursor rule (O73), expressed as the matrix this verb takes
-    // rather than as a pair of numbers. See `paste` for the argument about the
-    // CENTRE, which is shared: one delta for the whole clip, so relative
-    // geometry inside a multi-object paste is preserved by construction rather
-    // than by care.
-    // ★★★ WHY it fell back, not just THAT it did — 2026-09-01.
     //
     // The operator reported *"copy and paste still doesn't paste where the
     // cursor is, it just pastes near the copied object"*, and this rule needs

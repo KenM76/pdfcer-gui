@@ -415,12 +415,6 @@ mod tests {
              confirmation with no numbers in it",
         );
         assert_eq!(live.preview.group_name, GROUP);
-        // Three, measured rather than assumed: `Personal.Name`,
-        // `Personal.Address.City` and `Personal.Address.Zip`. The first draft
-        // of this test said two, from reading `PROVENANCE.md`'s summary of the
-        // fixture rather than asking the engine — which is the same mistake in
-        // miniature that this whole surface exists to prevent, and it is why
-        // the panel draws the preview's numbers instead of counting rows.
         assert_eq!(
             live.preview.terminals.len(),
             3,

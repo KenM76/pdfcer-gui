@@ -8,13 +8,6 @@
 //! question for it. Nothing below can improve on that and nothing below should
 //! try to.
 //!
-//! What the compiler cannot guard is the half that is not an enum at all: the
-//! **keyboard** term. [`super::Need::delete_at_a_deeper_rung`] is a plain
-//! conjunction, and deleting it — or narrowing it back to the Object rung —
-//! compiles perfectly and restores the 2026-09-05 defect: Delete at the Part
-//! and Node rungs declining `NoObjectModel` because nobody asked for the
-//! decomposition, which is three shipped engine verbs reachable by nothing at
-//! all, silently.
 //!
 //! So the tripwire is here, stated per rung, and it names its own subject in
 //! the test name so a failure says what broke rather than which line moved.
@@ -116,8 +109,6 @@ fn quiet<'a>(selection: &'a SelectionState, idle: &'a GestureOutcome) -> Need<'a
 /// canvas-delete-declined level=Part sel=1 reason=NoObjectModel asked=false
 /// ```
 ///
-/// …the operator presses Delete on a selected line or label and **nothing
-/// happens**, exactly as it did before 2026-09-05.
 #[test]
 fn a_delete_at_a_deeper_rung_asks_for_the_object_model() {
     let idle = GestureOutcome::Idle;

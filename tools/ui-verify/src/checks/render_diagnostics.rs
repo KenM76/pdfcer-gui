@@ -12,11 +12,6 @@
 //! > which makes the inert control the least defensible kind — the work behind
 //! > it is done.
 //!
-//! The renderer has produced `pdfcer_render::Diagnostics` since S0 and the
-//! status bar has shown a one-line summary of it since S2. What was missing was
-//! a `match` arm and a window. Both landed on 2026-08-15
-//! (`crate::dialogs::diagnostics`), and this is the check that says so from
-//! outside the process.
 //!
 //! # ★ Why a unit test cannot cover it
 //!

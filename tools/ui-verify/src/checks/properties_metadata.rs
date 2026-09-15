@@ -1,7 +1,6 @@
 //! `properties_metadata_round_trips` — typing a title reaches the document,
 //! and undo takes it back out of the box as well as out of the file.
 //!
-//! # ⚠ NOT RUN by the session that last edited this file — 2026-09-05
 //!
 //! It was **passing** before that session and it has **not been re-run since**:
 //! the machine's pointer and keyboard belonged to another track, and a driven
@@ -10,7 +9,6 @@
 //! ⇒ A reader looking for evidence that the metadata panel still works after
 //! the move will not find it in this file. Run it.
 //!
-//! # ★★★ The surface MOVED — the operator, 2026-09-05
 //!
 //! > *"the document properties are still always visible in the properties tab.
 //! > it needs to get out of there and be in its own document properties tab."*
@@ -86,9 +84,6 @@ use crate::sys::vk;
 const MODE: &str = "review";
 /// The panel's own region.
 ///
-/// ★ Still `properties.info` after the section became the Document properties
-/// panel on 2026-09-05 — see `crate::panels::docprops`'s `REGION`, which
-/// carries the reason the name was left alone.
 const SECTION: &str = "properties.info";
 /// The prefix of the per-field editor regions; the field's index in
 /// `InfoField::all()` is appended. Index 0 is `/Title`, index 1 is `/Author`.
@@ -372,12 +367,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// §5.1 heads *"inspection of what is inside the file"*, which is where Fonts
 /// and Properties already sit. A document's title is inside the file.
 ///
-/// ★ It was `ribbon.item.file.properties` until 2026-09-05, when the operator
-/// asked for the metadata to leave the selection inspector. The **first**
-/// control in the Document band is now the one whose label is the phrase he
-/// used, which is also why the check aims at a specific id rather than at "the
-/// first item in the band": an item-position search would have silently kept
-/// passing against the old control.
 pub fn open_document_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.file").ok_or_else(|| {

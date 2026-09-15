@@ -8,11 +8,6 @@
 //!
 //! ## ★★★ The disclosure rule these strings implement
 //!
-//! `pdfcer-core`'s reply on `set_button_action`, 2026-08-30, measured Acrobat
-//! Reader's own submit warning through UI Automation and found it names
-//! **scheme and host only** — not the port, not the path — and says **nothing
-//! whatever** about the payload: no field count, no whole-file indication, no
-//! mention of hidden fields. Its "remember this site" box is ticked by default.
 //!
 //! ⇒ *"Design it from `SubmitDisclosure`, not from Acrobat"* — a straight copy
 //! of Acrobat's dialog would be a **regression** against what pdfcer can now

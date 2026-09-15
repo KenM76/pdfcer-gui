@@ -1,8 +1,6 @@
 //! # `refused_character_face` — **a refused character offers the face that can
 //! type it**, driven end to end
 //!
-//! `OPERATOR_REQUESTS.md` **O141**. The operator, 2026-09-05, while trying to
-//! fix a typo:
 //!
 //! > *"if the character isn't available in a pdf are we able to change to a
 //! > different font?"*
@@ -57,13 +55,6 @@
 //!   different thing happening to the document. A block frozen on one state
 //!   cannot produce that sequence.
 //!
-//! ★★ That sequence USED to be three states, `offer` → `swapped` →
-//! `blocked`, and shortening it was not a loosening. `blocked` was the retype
-//! coming back refused; on a build carrying engine v0.41.0 the retype lands, so
-//! the block retires without ever declaring a third state. **Requiring
-//! `blocked` here would now require the defect.** Its presence is failed by
-//! name rather than ignored, because it remains a reachable state for other
-//! causes — see step 6.
 //!
 //! ★ The stronger classical control applies on top of it and is asserted in
 //! step 6: the offer must be **gone** after a commit that succeeded, and its
@@ -81,7 +72,6 @@
 //! | 4 | **nothing** | the block re-applies the operator's own edit by itself — a commit follows with no further input |
 //! | 5 | — | that commit **lands**: the character goes in, in one gesture, and the block retires |
 //!
-//! ## ★★★ STEP 5 HAD TWO ACCEPTED OUTCOMES UNTIL 2026-09-06, AND NOW HAS ONE
 //!
 //! **This is the most important paragraph in the file**, because it is the one
 //! that records a check being tightened rather than a program being fixed, and
@@ -834,12 +824,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 5: THE OFFER FINISHES THE JOB, WITH NO SECOND GESTURE ------------
     //
-    // Nothing is clicked and nothing is typed from here on, and that is the
-    // assertion. Until 2026-09-05 this step clicked the text again and pressed
-    // `Ctrl+Enter` a second time, because that is what the operator had to do:
-    // `Ctrl+Enter` calls `commit_into` and then `abandon` whether or not the
-    // engine accepted, so the words he wrote were thrown away by the refusal
-    // and he had to produce them again from memory.
     //
     // They travel with the refusal now (`canvas::textedit::Committing`), so the
     // block re-raises `Action::CommitTextEdit` itself on the frame the face
@@ -886,8 +870,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: THE CHARACTER MUST GO IN. ONE OUTCOME NOW, NOT TWO ------------
     //
-    // \u{2605}\u{2605}\u{2605} REWRITTEN 2026-09-06, ON THE ENGINE BUMP TO v0.41.0, AND THE
-    // OLD SHAPE IS RECORDED HERE BECAUSE THE REWRITE IS THE POINT.
     //
     // Until today this step accepted EITHER outcome. The character going in was
     // a pass; the retype being refused was also a pass, provided the block said
@@ -1035,12 +1017,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // never advanced could not produce a sequence, and a stale-refusal block
     // frozen on one state could not either.
     //
-    // \u{2605}\u{2605} The expected sequence CHANGED with the engine fix, and the change is
-    // itself an assertion. It used to be `offer` -> `swapped` -> `blocked`,
-    // where `blocked` was the retype coming back refused. On a build carrying
-    // `Pass 257.0` the retype LANDS, so the block retires on the next frame and
-    // never reaches `blocked` \u{2014} the sequence is `offer` -> `swapped` and
-    // stops. Requiring `blocked` here would now require the defect.
     //
     // \u{26a0} `blocked` is still a REACHABLE state and was deliberately not deleted:
     // `RefusedCharUi::retried` is reached by arithmetic (the retype was raised
@@ -1109,14 +1085,7 @@ fn offer_must_retire(
     landed_raw: &str,
 ) -> Option<String> {
     let _ = ctx;
-    // ★★★ **LIVENESS IS COUNTED ON `canvas-pos`, NOT ON `ui-rect`, AND THE
-    // CORRECTION CAME FROM THE FIRST DRIVEN RUN OF THIS BRANCH** — 2026-09-06,
-    // on the engine bump to v0.41.0.
     //
-    // The absence asserted below — *"the offer is gone"* — is only a verdict
-    // over frames the application actually painted; on a build that had stopped
-    // painting it would hold vacuously. So a liveness count has to come first,
-    // and it used to count `ui-rect` lines.
     //
     // ⇒ **That was wrong, and it could not be seen to be wrong until the engine
     // shipped.** `ui-rect` is published by a control when it draws, not once per

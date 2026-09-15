@@ -10,10 +10,6 @@
 //! > *"unfortunately there was no way to reposition, resize, or rotate it on
 //! > the screen. Can I please please please have that too?"*
 //!
-//! Reposition landed with `canvas::moving`'s transform fork and resize with
-//! `canvas::resizing`'s, both on 2026-08-20. **Rotate is the third word in that
-//! sentence and it had no affordance at all** — the verb rotates, and nothing
-//! on the canvas reached it.
 //!
 //! ## ★★ Why a rotate is not a resize with different arithmetic
 //!
@@ -46,7 +42,6 @@
 //! a private convention the operator has to learn, which is
 //! `handles.md` H2's stated failure mode.
 //!
-//! ## ★★★ THREE DESTINATIONS SHARE THIS ONE GESTURE — 2026-08-28
 //!
 //! The header above describes a rotation of **page content**, which is what
 //! this module did on the day it was written. `pdfcer-core` `Pass 155.0` and
@@ -96,8 +91,6 @@
 //! rotate handle sits *outside* that box, and a press on it selected the object
 //! underneath, so the rotate became a select-and-move.
 //!
-//! ## ★★★ …AND THE SECTION ABOVE WAS RIGHT AND STILL SHIPPED THE DEFECT —
-//! 2026-08-29
 //!
 //! On the **first ever driven run** of `rotating_a_markup_turns_it` the rotate
 //! handle was painted, was pressed at the centre of the rect this application
@@ -372,12 +365,7 @@ pub fn drag(
         commit_annotation(annot, dimension, pivot, theta, actions);
         return None;
     }
-    // ★★★ **THE CONTENT GUARD, AND IT IS BELOW THE ANNOTATION BRANCH.** Moved
-    // here on 2026-08-29, on the FIRST driven run of
-    // `rotating_a_markup_turns_it`, and it is the whole defect that run found.
     //
-    // It used to stand five lines above the `is_travel` check's successor —
-    // *before* the annotation branch — as:
     //
     //     let objects = selection.object_indices_on(page_index);
     //     if objects.is_empty() { return None; }
@@ -396,9 +384,6 @@ pub fn drag(
     //
     // ## ★★★ THIS IS THE SIXTH INSTANCE OF ONE HAZARD IN THIS CANVAS
     //
-    // The fifth was `presspick::covers()`, fixed on 2026-08-28 — the same wrong
-    // question at a different call site — and the rule written there is the one
-    // this fix obeys:
     //
     // > **A guard that must agree with another module has to CALL it, not
     // > resemble it.**

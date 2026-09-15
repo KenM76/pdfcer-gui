@@ -1,9 +1,6 @@
 //! # `dialogs::unembed` — the confirmation before font programs come OUT of a
 //! document
 //!
-//! `tools.unembed_fonts`, wired 2026-08-28. The destructive twin of
-//! [`crate::dialogs::embed`], and the **last** command on this project's
-//! scaffold list to be reached by the font work.
 //!
 //! ## ★★★ Its recorded blocker was TRUE, which made it the odd one out
 //!

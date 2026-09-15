@@ -6,14 +6,6 @@
 //! questions the PDF standard declines to answer. Loading them is easy;
 //! **honouring** them is where the old shell failed, and it failed silently.
 //!
-//! Measured against `D:\Dev\pdfce\crates\pdfce-gui` on 2026-08-17: of the
-//! thirteen settings that window persists, **four are read anywhere in the
-//! application and nine are not.** `separations`, `cmyk_intent`,
-//! `parallel_epsilon_degrees` and `theme` reach the code that would act on
-//! them. `word_gap_ratio`, `mask_resample`, `image_minify`,
-//! `cmyk_jpeg_polarity`, `unmappable_code`, `actual_text`, `missing_as`,
-//! `xref_entry_eol` and `trailing_eol` are written to disk, read back from
-//! disk, shown in a window, edited by the operator — and then never consulted.
 //!
 //! The mechanism is not a bug anyone wrote. It is what happens when option
 //! structs are built at the call site:
@@ -256,13 +248,6 @@ impl SettingsExt for Settings {
             .with_image_minify(self.image_minify)
             .with_cmyk_jpeg_polarity(self.cmyk_jpeg_polarity)
             .with_missing_as(self.missing_as)
-            // ★ Added 2026-08-26, engine v0.14.0, and it is the ONLY thing that
-            // makes the Colour group's ceiling control do anything. The setting
-            // reaches `CmykBuffer::new` through this call and through no other
-            // route, so a build that added the control and not this line would
-            // present an operator with a number that changes nothing — which is
-            // worse than not offering it, because they would conclude the
-            // colours cannot be fixed.
             //
             // `Option<usize>` passed VERBATIM: `None` means the engine's own
             // default and every one of its four public helpers takes the same
@@ -331,11 +316,6 @@ mod tests {
     /// ★★★ **This test outlived the function it was written for, and that is
     /// the point rather than an accident.**
     ///
-    /// It was written on 2026-08-28 against `app::settings::colour_default`, a
-    /// three-line seed this shell carried because `pdfcer-core`'s default was
-    /// still `NeutralBlack` and O52 had reversed the operator's earlier ruling.
-    /// That function shipped with a `debug_assert_ne!` tripwire whose message
-    /// said *"delete it and its call site"*.
     ///
     /// **`Pass 153.0` landed the same day and the tripwire fired.** The seed is
     /// gone, its call site is gone, and this assertion now reads the engine
@@ -376,20 +356,12 @@ mod tests {
         s.missing_as = MissingAppearanceState::FirstEntry;
         s.xref_entry_eol = XrefEntryEol::CrLf;
         s.trailing_eol = TrailingEol::None;
-        // ★ 2026-08-26, engine v0.14.0. A distinctive value rather than a round
-        // one, so the assertion below cannot be satisfied by some other field
-        // that happens to print the same digits.
         s.max_cmyk_buffer_bytes = Some(777_000_000);
         s
     }
 
     /// ★★★ **The session funnel applies the operator's quad-point order.**
     ///
-    /// The regression test for the fourth channel — the one the check that
-    /// guards this module could not see, because it is a *setter on a session*
-    /// rather than a field on an options struct. Until 2026-08-28 every session
-    /// this shell opened took the engine's default and an operator who chose
-    /// counterclockwise got reading order in every markup they ever drew.
     ///
     /// ★★ It asserts **both** values, and that is not symmetry for its own
     /// sake. Asserting only `Counterclockwise` would pass on an implementation
@@ -552,14 +524,6 @@ mod tests {
     ///
     /// # ★★★ The fourth constructor, and the finding that added it
     ///
-    /// `EditSession::new` joined the list on 2026-08-28. It is not an options
-    /// struct, which is precisely why it was missed: this check was written
-    /// around the three **option constructors** named in the module header, and
-    /// a setting delivered by a *setter on the session* — `quad_point_order`
-    /// through `EditSession::set_quad_point_order` — is invisible to that
-    /// shape. The result was an operator choice, persisted, validated, shown in
-    /// a window, and honoured by nothing, with this check reporting green for
-    /// the whole life of the shell.
     ///
     /// ⇒ The lesson is not about the field. **A guard shaped around one
     /// delivery mechanism cannot see a second one**, and the way to find the
@@ -581,10 +545,6 @@ mod tests {
             ("RenderOptions", "default"),
             ("SaveOptions", "default"),
             ("SaveOptions", "identity"),
-            // ★★★ The fourth entry, added 2026-08-28, and the one that says
-            // what the first three could not: a setting can be delivered by a
-            // SETTER on a session as well as by a field on an options struct,
-            // and a check keyed on constructors is blind to it.
             //
             // `EditSession::new` takes the engine's defaults, so every session
             // opened through it discarded `Settings::quad_point_order` — for
@@ -742,19 +702,6 @@ mod tests {
                     || name.ends_with("app/blank.rs")
                     || name.ends_with("ocr/fixture.rs")
                     || name.contains("/redact/")
-                    // ★★★ `protect/` — encryption and permissions, added
-                    // 2026-09-04 with O119. The one call it makes is
-                    // `EditSession::new(document)` in `prepare`, and it is
-                    // exempt for a reason this scan cannot see from the token:
-                    // **it builds no options at all.** The scan looks for
-                    // `EditSession::new` because that is how a call site
-                    // *usually* bypasses `SettingsExt` — by making a session and
-                    // then handing it defaults. This one makes a session and
-                    // hands it the operator's own `set_encryption` /
-                    // `set_permissions` arguments; there is no `SaveOptions`,
-                    // no `RenderOptions` and no `FormatOptions` anywhere in the
-                    // module, so there is nothing for a preference to be
-                    // discarded from.
                     //
                     // ★ Why a session is built here at all, rather than reusing
                     // the open one: `prepare` answers *"was this file opened
@@ -894,11 +841,6 @@ mod tests {
     /// > widths. *The one thing worse than not having this feature is having it
     /// > follow him into a file he sends a client.*
     ///
-    /// That was decided in writing on 2026-09-05, **before the engine field
-    /// existed**, and the engine held the same line from its side: its own
-    /// backlog row records that there is deliberately no CLI flag, because *"a
-    /// hairline export would be an unfaithful file, the one outcome the request
-    /// forbids"*.
     ///
     /// # ★★★ Why this is a check and not a paragraph
     ///

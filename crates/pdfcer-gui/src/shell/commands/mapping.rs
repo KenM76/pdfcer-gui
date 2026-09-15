@@ -156,23 +156,7 @@ pub fn chrome_for_command(id: &str) -> Option<crate::app::actions::ViewChrome> {
 /// command **arms the canvas tool with** — nothing else. What is still outside
 /// it, and each for its own reason:
 ///
-/// * **Underline, strikeout and squiggly** mark a *text selection* and arm no
-///   tool at all, so they have their own enum and their own pair of functions
-///   ([`text_mark_command`]) — see `canvas::markup::text` §3;
-/// * **Cloud** is blocked on `MarkupSpec::Cloud`, which pdfcer accepted on
-///   2026-08-14 and has not started;
-/// * **a plain line** is the existing Arrow with a different `/LE`, which is a
-///   Style question rather than a kind.
 ///
-/// ★ **This said "these four" until 2026-08-14**, and the sentence it rested on
-/// was *"polygon, polyline and ink are not drag-shaped"*. That was true and it
-/// stopped being a reason the day those gestures were built: two of the three
-/// are now clicked (`canvas::markup::vertex`) and one is dragged freehand
-/// (`canvas::markup::ink`). The wording is kept in this note rather than
-/// deleted, because the boundary it was proxying for — *a variant nothing can
-/// arm is a dead state* — is the real rule and is unchanged. See
-/// `canvas::markup`'s header, where the boundary is restated as the property the
-/// tests below actually assert.
 ///
 /// Declaring the remaining kinds here early would put dead arms in a type whose
 /// job is to say what the tool is doing — the same argument the old shell made
@@ -308,11 +292,6 @@ pub fn text_mark_for_command(id: &str) -> Option<crate::canvas::markup::text::Te
 /// a fifth tool. All remain in [`super::manifest::PLANNED`], which is where an
 /// absent command is supposed to be.
 ///
-/// `measure.set_scale` is registered and is deliberately **not** a kind: it
-/// changes what measurements are read against rather than placing one. (This
-/// sentence used to end *"and its dialog does not exist yet"*. It does —
-/// `crate::dialogs::scale`, since 2026-08-17 — and the reason for not being a
-/// kind never depended on that clause.)
 ///
 /// `measure.finish` is registered and is not a kind either, for a sharper
 /// reason: it does not *arm* anything. It **ends** the radius/diameter
@@ -322,19 +301,7 @@ pub fn text_mark_for_command(id: &str) -> Option<crate::canvas::markup::text::Te
 /// `crate::canvas::tool::arm_measure`'s same-kind-retires rule — which is the
 /// opposite of what it is for.
 ///
-/// ## ★ What this doc comment used to say
 ///
-/// Until 2026-08-14 it carried a paragraph explaining that `Circular` was
-/// absent because *"the gesture has no natural end, and the only place to say
-/// so was an accept box decision 024 retired"*. That was accurate while it
-/// stood and it is now false: the operator decided the tool should have **two**
-/// endings, neither of them a floating box, and both are built. The paragraph
-/// is not merely deleted — a reader who finds `measure.radius_diameter`
-/// reaching a real tool and remembers the old note should be able to see what
-/// replaced it. What shipped is a **double-click** on the canvas and this
-/// command, both routed through one commit path
-/// (`canvas::measure::circular::commit`), with the ribbon control
-/// enabled only while there is a non-degenerate fit to commit.
 #[must_use]
 pub fn measure_command(kind: crate::canvas::measure::MeasureKind) -> &'static str {
     use crate::canvas::measure::MeasureKind as K;
@@ -649,8 +616,6 @@ mod tests {
             "a Finish that is always enabled is a control that does nothing on \
              almost every press, and P3 reserves greying for exactly this"
         );
-        // ★★★ **The refusal this used to assert was DISCHARGED on 2026-09-04,
-        // and only half of it was ever about supply.**
         //
         // It read: *"no accept glyph exists, and the `measure` ruler would draw
         // a fourth identical one for a command that places nothing."* Two

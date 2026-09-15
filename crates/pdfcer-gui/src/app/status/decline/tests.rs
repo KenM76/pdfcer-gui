@@ -394,16 +394,6 @@ fn a_successful_zoom_takes_the_sentence_down_itself() {
 ///
 /// Three steps, and the middle one is the point of the whole module:
 ///
-/// 1. `view.zoom_selection` on a freshly-opened document declines. Nothing
-///    is selected, so `zoom_to_selection` returns `NoBounds` before it ever
-///    looks for a canvas frame — which is why the expected variant is
-///    `NothingToFrame` and not `CanvasNotDrawn` even though the canvas has
-///    also never drawn here.
-/// 2. The sentence is **live**, which is the thing that used to be
-///    missing: the outcome reached the bar instead of the floor.
-/// 3. Any other command retires it. Asserted with `view.zoom_actual` — an
-///    ordinary, unrelated verb — because the rule is "the operator's next
-///    act", not "an act about zooming".
 ///
 ///    `view.zoom_actual` rather than an id no token names: `retire()` runs
 ///    *above* the `match`, so an unimplemented id reaches the catch-all and

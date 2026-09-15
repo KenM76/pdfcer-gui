@@ -29,13 +29,6 @@
 //! obvious tidy is therefore to route everything through the transform, and it
 //! would be worse.
 //!
-//! **The reason is the FILE rather than the API.** `move_objects` adds nothing;
-//! a transform adds a `q`, a `cm` and a `Q` per object per gesture. On this
-//! operator's drawings a nudge is something done dozens of times to hundreds of
-//! objects, and the wrapping accumulates in a file he then sends to somebody.
-//! So: the lighter verb where it can express the gesture, the general one where
-//! it cannot. `canvas::moving::eligible` is the one place that forks, on the
-//! same predicate that used to *refuse* the general case.
 
 use pdfcer_core::vector::{Handle, Matrix, Point};
 
@@ -159,11 +152,6 @@ pub enum VectorAction {
     ///
     /// # What it closes
     ///
-    /// Its move twin [`Self::MoveSubpath`] shipped on the day the Part rung
-    /// landed and this did not, so for a fortnight a line could be entered,
-    /// selected and **dragged** and could not be removed. Delete at that rung
-    /// traced `canvas-delete-declined … reason=no-verb-for-rung` and did
-    /// nothing at all.
     ///
     /// The engine's own reason for the verb is the operator's file: *"one
     /// stroked path with 1194 subpaths covering a whole isometric view"*, on
@@ -202,11 +190,6 @@ pub enum VectorAction {
     /// > *"on the operator's drawing **one text object holds all 237 dimension
     /// > labels**, so deleting 'a label' deleted every one of them."*
     ///
-    /// A CAD exporter's `BT`…`ET` boundary reflects its own batching and
-    /// nothing the draughtsman drew. The hit test has been per-run since Pass
-    /// 18.5 — so a label could already be **selected** — and until 2026-09-05
-    /// the only Delete this shell offered at that moment removed the whole
-    /// text object, which is every label on the sheet.
     ///
     /// ★ Those 237 are **pdf dimensions** (R8b Rule 15): page content pdfcer
     /// reads and must not silently alter. A **ce dimension** is one pdfcer
@@ -348,10 +331,6 @@ pub enum VectorAction {
     /// ★★★ Displace every selected object **inside a form XObject** by a
     /// page-space delta — `EditSession::move_objects_in_form`.
     ///
-    /// `OPERATOR_REQUESTS.md` O70's second slice, 2026-09-01. Its own variant
-    /// beside [`Self::MoveSelection`] because the indices are a different
-    /// address space; `canvas::moving::MoveSubject::LeavesInForm` carries the
-    /// argument.
     ///
     /// ★★ The coordinates are **page space**, exactly as the page-level verbs
     /// take, and that is the engine's contract rather than this shell's choice:
@@ -394,13 +373,6 @@ pub enum VectorAction {
     ///
     /// # What the operator asked for, and why it took a month
     ///
-    /// He can select one label in a title block — the hit test has been
-    /// per-run since `Pass 18.5` — and since 2026-09-05 he can delete it.
-    /// Dragging it did nothing, in silence, because `move_subpath` translates
-    /// path construction operands and a show operator has none. The gap was
-    /// written down in three places across two code bases and asked for in
-    /// none; `pdfcer-core` shipped `move_text_run` as `G017` on 2026-09-14, the
-    /// day after this project finally filed it.
     ///
     /// ★ Those labels are **pdf dimensions** (R8b Rule 15) — page content
     /// a CAD exporter wrote. This moves them; it does not re-measure them, and
@@ -507,11 +479,6 @@ pub enum VectorAction {
     /// ★★ **Move many of one object's nodes at once** — what a RESIZE is, in
     /// the absence of a scale verb.
     ///
-    /// `pdfcer-core` has no verb that scales a vector object. Re-derived against
-    /// its source on 2026-08-19 rather than taken from a note, because two
-    /// other blockers this project recorded had quietly expired: `grep "pub fn
-    /// .*scale"` over `edit.rs` returns one hit and it is `set_group_scale`, a
-    /// ce-dimension calibration.
     ///
     /// So a resize is expressed as what it *is* — every node of the path moved
     /// to `anchor + (p - anchor) * (sx, sy)` — and `EditSession::move_nodes`
@@ -618,22 +585,9 @@ pub enum VectorAction {
     ///
     /// # Why it takes a SLICE, and why that retired a refusal
     ///
-    /// One gesture is one command and one undo entry — this project's standing
-    /// rule. `canvas::resizing` used to decline a multi-object resize by name
-    /// (*"pdfcer resizes one shape at a time"*), because `move_nodes` is
-    /// per-object and N objects would have been N commands. That refusal is
-    /// **gone**: the transform takes every index at once and scales them all
-    /// about one pivot, which is what every drawing application does.
     ///
     /// # ★ What the engine collapses, and why the count is not ours
     ///
-    /// `TransformOutcome::objects_transformed` is **not necessarily the index
-    /// count**. Duplicate indices, and an object whose byte span is *contained
-    /// inside* another selected object's, are collapsed — because wrapping a
-    /// contained span twice applies the transform to those marks twice, which is
-    /// the one arithmetic error here that renders as *almost* right.
-    /// ★★★ **Paste page content** — `Pass 120.0`, 2026-08-20, and the
-    /// operator's oldest open request.
     ///
     /// > *"can you get cut copy and paste working for objects I select on the
     /// > canvas?"* — asked in the first week and repeatedly since.
@@ -982,11 +936,6 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             dy,
         } => {
             if !leaves.is_empty() {
-                // ★★ **A shell-side invalidation counter stood here for four
-                // hours**, on 2026-09-01, because the engine's content digest
-                // did not move for a form-stream rewrite — measured in
-                // `tests/page_generation_covers.rs` and filed rather than
-                // absorbed.
                 //
                 // `pdfcer-core` `6e2b69e` folded the descended-form set into the
                 // digest the same night, so the invalidation is computed on the
@@ -1010,12 +959,6 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 session.move_subpath(page, object, subpath, dx, dy)
             });
         }
-        // ★★★ O188's move half, wired 2026-09-15. No disclosure handling of
-        // its own and that is deliberate, not an omission: `move_text_run`
-        // returns the sentences an inserted `Td` owes, and the funnel records
-        // whatever the closure returns, in one call, stamped with the epoch the
-        // edit produced. `MoveHandle`'s arm above carries the full argument for
-        // why a second, hand-written re-record is the LOSSY mechanism.
         VectorAction::MoveTextRun {
             page,
             object,
@@ -1076,14 +1019,6 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             handle,
             to,
         } => {
-            // `said` is filled by the closure and read after it, because
-            // `vector_edit` owns the borrow of the session and the note has
-            // to be recorded against the epoch the edit produced — which
-            // does not exist until `vector_edit` has returned.
-            // ★★★ **A HAND-WRITTEN RE-RECORD STOOD HERE AND WAS DELETED
-            // 2026-09-05**, while wiring the three deeper-rung deletes, because
-            // it was the second mechanism for one sentence — and the second
-            // mechanism was the LOSSY one.
             //
             // It cloned the disclosure list out of the closure and then called
             // `record_note` once per sentence. `record_note` is the singular of
@@ -1157,10 +1092,6 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
         VectorAction::PasteObjects { page, clip, at } => {
             let mut added = 0_u64;
             let mut pasted = 0_u64;
-            // ★★★ **The ANNOTATION half of the outcome**, read out as of
-            // 2026-09-05. `paste_objects` plants both halves — its content
-            // command, then the private `paste_clip_annotations` — and returns
-            // `PasteOutcome::annotations_pasted` beside `objects_pasted`.
             //
             // It is on the trace because it is the number a wrong build gets
             // wrong **invisibly**: a clip whose annotation payload the

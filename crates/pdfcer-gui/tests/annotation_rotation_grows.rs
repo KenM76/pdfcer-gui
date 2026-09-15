@@ -3,17 +3,7 @@
 //!
 //! ## ★★★ STATUS: THIS TEST ASSERTS A DEFECT, AND IT IS SUPPOSED TO PASS
 //!
-//! **If it goes RED, the engine has fixed `rotate_annotation` and this file's
-//! job has changed.** Turn every assertion round to state the correct behaviour
-//! — *the same total angle draws the same size* — and close
-//! `request_rotate_annotation_grows_the_artwork_when_applied_twice.md` in
-//! `D:\Dev\FeatureRequests\pdfce_FeatureRequests\`. That is exactly what
-//! `engine_overlay_skew.rs` in this same directory did on 2026-08-31, and its
-//! header records why the shape is right: a claim about somebody else's crate
-//! had better carry a reproduction, and a reproduction that lives in a request
-//! file is not run by anything.
 //!
-//! ## What the operator said, 2026-09-07
 //!
 //! > *"fixed the rotate bug in the review objects where the object gets larger
 //! > with each enactment of the tool."*
@@ -47,22 +37,9 @@
 //!
 //! ## ★★ Why the oracle is an A/B and not an expected number
 //!
-//! Because *"a rotated rectangle's bounding box is larger, and that is
-//! normative"* is a true sentence that can be used to justify almost any
-//! measurement. It cannot justify **two different pictures from the same total
-//! rotation**. One 60° turn and four 15° turns must produce the same file to
-//! within float noise; that they do not is a claim no argument about bounding
-//! boxes can absorb.
 //!
 //! ## ★ And why the measurement is a DIFF against a bare render
 //!
-//! The fixture page carries text. A naive ink-bounding-box over the whole page
-//! measures the page, and the first draft of this test did exactly that: it
-//! reported the same box for both arms and **passed**, while the underlying
-//! defect was a 3.7 % change in the dark-pixel count that nothing was looking
-//! at. Rendering the page once without the annotation and diffing pixel for
-//! pixel isolates the mark and nothing else — which is the difference between a
-//! test of the defect and a test of the fixture.
 
 use pdfcer_core::annot_author::{Color, MarkupSpec};
 use pdfcer_core::edit::EditSession;
@@ -178,7 +155,6 @@ fn drawn_size(turns: usize, each: f64) -> (u32, u32) {
 /// ★★★ **THE REGRESSION NET. Same total angle, same picture — at 1, 4 and 24
 /// turns.**
 ///
-/// Measured 2026-09-07 against `pdfcer-core` v0.45.0 at `98d0abb`:
 ///
 /// | | drawn size (device px @ scale 2) |
 /// |---|---|

@@ -3,11 +3,6 @@
 //!
 //! # What this proves
 //!
-//! `attach_file`, `list_attachments`, `extract_attachment` and `detach_file`
-//! have existed in `pdfcer-core` for months with **no command, no menu item and
-//! no panel** — a capability that does not exist as far as the operator is
-//! concerned. The panel shipped on 2026-08-28. This is what says it stayed
-//! working.
 //!
 //! # ★★★ Why the round trip rather than "a file was attached"
 //!
@@ -93,10 +88,6 @@ use crate::report::CheckReport;
 /// stack activates by default is a property of the running program and not of
 /// the source. **Launching it offscreen for seven seconds found it.**
 ///
-/// ★ The convention this now follows is `properties_metadata`'s, cited by
-/// `bookmark_add` and `dimension_groups` before it: **ask whether the surface is
-/// already drawing, and only press the toggle if it is not.**
-/// ★★★ **AND the panel, through the seam — corrected 2026-09-01.**
 ///
 /// This was `"mode.edit"` alone, on the reasoning recorded above: ask whether
 /// the panel is already drawing, and press the ribbon toggle only if it is not.
@@ -237,9 +228,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- A: the panel, and nothing in it -----------------------------------
     //
-    // ★ Raised only if it is not already drawing. See [`INVOKE`]: pressing the
-    // toggle over an open panel shuts the subject of the check, which is what
-    // this one did on every run until 2026-08-29.
     if census(&session)?.is_none() {
         let trace = session.trace()?;
         if let Some(item) = declared(&trace, ui_rect, PANEL_ITEM) {
