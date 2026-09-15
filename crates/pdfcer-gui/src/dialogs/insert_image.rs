@@ -46,6 +46,11 @@
 //! *"re-deriving the arithmetic in the GUI is how a preview and a result drift
 //! apart."* Nothing here computes a rectangle.
 //!
+//! It previews **the resolution** too, as of 2026-08-19 — filed that morning
+//! and shipped the same day. `NewImage::effective_dpi()` and
+//! `below_screen_resolution()` are pure, and the half that mattered is that
+//! `add_image` now **calls** them rather than repeating the formula, so the
+//! preview and the outcome cannot disagree.
 //!
 //! ★ The four-line version this window nearly computed would have been wrong.
 //! Under `ImageFit::Contain` the placed rectangle is the *letterboxed*
@@ -69,6 +74,34 @@
 //!
 //! Corpus: `ui-conventions/dialogs.md`.
 //!
+//! - G1 is-an-os-window: **GAP, and it is the operator's report of 2026-08-20** —
+//!   *"doesn't pop up in its own movable window. It is locked within the
+//!   boundaries of the program's window."* Every dialog here is an
+//!   `egui::Window`, which is an in-viewport panel. egui can already do the real
+//!   thing through `show_viewport_immediate`; the panel was the path of least
+//!   resistance and nothing pushed back.
+//! - G2 use-the-os-dialog: the file and save pickers are the system's, and
+//!   `pdfcer-print` opens the native printer-properties sheet owned by our
+//!   window. The dialogs in this directory are pdfcer's own because they carry
+//!   choices only pdfcer has — which is the right reason to draw one, and does
+//!   not excuse G1.
+//! - G3 owned-by-the-app: the native pickers are; an in-viewport panel cannot be
+//!   anything else. This becomes a live question the moment G1 is fixed.
+//! - G4 enter-accepts-escape-cancels: **PARTIAL** — Escape closes; Enter is not
+//!   wired as the affirmative default and no button is drawn as the default, so
+//!   an operator who types into the last field and presses Enter gets nothing.
+//! - G5 keyboard-reachable: **GAP** — egui's tab order is positional and nothing
+//!   here asserts that focus starts in a sensible field or that a modal traps
+//!   it.
+//! - G6 remembers-position: **GAP** — anchored `CENTER_CENTER` every time, so a
+//!   dialog the operator moved comes back to the middle of the window.
+//! - G7 destructive-verbs-named: the unsaved-changes dialog names the file and
+//!   labels its buttons with verbs rather than Yes/No.
+//! - G8 cancel-is-silent: a cancelled picker is a complete, correct,
+//!   uninteresting outcome and is never reported as an error.
+//! - G9 nothing-blocks-silently: a native picker blocks the UI thread by design,
+//!   which is what a modal file dialog is. Long work behind a pdfcer dialog is
+//!   not surfaced. **GAP.**
 
 use std::sync::Arc;
 

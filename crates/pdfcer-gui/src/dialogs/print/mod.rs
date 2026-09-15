@@ -84,6 +84,46 @@
 //!
 //! Corpus: `ui-conventions/dialogs.md`.
 //!
+//! - G1 is-an-os-window: **DONE 2026-08-20** — this was the operator's report,
+//!   *"doesn't pop up in its own movable window. It is locked within the
+//!   boundaries of the program's window."* It is now a real OS window through
+//!   [`crate::dialogs::host`]: title bar, taskbar entry, draggable outside the
+//!   application and onto a second monitor. It degrades to the old in-viewport
+//!   window on a backend with no multi-viewport support, which is the web
+//!   target, and egui owns that fallback rather than this file.
+//! - G2 use-the-os-dialog: the file and save pickers are the system's, and
+//!   `pdfcer-print` opens the native printer-properties sheet owned by our
+//!   window. The dialogs in this directory are pdfcer's own because they carry
+//!   choices only pdfcer has — which is the right reason to draw one, and does
+//!   not excuse G1.
+//! - G3 owned-by-the-app: the native pickers are. The dialog window itself is
+//!   **not**, and cannot be: `eframe 0.35`'s `ViewportBuilder` has no owner
+//!   option and `egui-winit` never passes egui's own `viewport_parents` down to
+//!   `winit`. `crate::dialogs::host`'s header carries the whole account,
+//!   including why `with_always_on_top` was considered and refused. **GAP**,
+//!   and a named one.
+//! - G4 enter-accepts-escape-cancels: **DONE 2026-08-20** — Escape closes, the
+//!   OS close button closes, Enter presses Print, and Print is drawn in the
+//!   theme's selection fill so an operator can see what Enter will do.
+//!   [`crate::dialogs::host::Host::buttons`] owns all three so no dialog can
+//!   implement two of them.
+//! - G5 keyboard-reachable: **GAP** — egui's tab order is positional and nothing
+//!   here asserts that focus starts in a sensible field or that a modal traps
+//!   it.
+//! - G6 remembers-position: **PARTIAL 2026-08-20** — it comes back where it was
+//!   left for as long as the dialog object lives, which is the whole session it
+//!   is open. It does **not** survive being closed and reopened, and it does not
+//!   survive a restart: a remembered position has to be validated against the
+//!   current monitor layout, and a dialog that opens on a monitor which is no
+//!   longer attached is worse than one that opens where the platform puts it.
+//!   See `dialogs::host`.
+//! - G7 destructive-verbs-named: the unsaved-changes dialog names the file and
+//!   labels its buttons with verbs rather than Yes/No.
+//! - G8 cancel-is-silent: a cancelled picker is a complete, correct,
+//!   uninteresting outcome and is never reported as an error.
+//! - G9 nothing-blocks-silently: a native picker blocks the UI thread by design,
+//!   which is what a modal file dialog is. Long work behind a pdfcer dialog is
+//!   not surfaced. **GAP.**
 
 /// **Where a rendered sheet actually carries ink** — operator request O113.
 ///

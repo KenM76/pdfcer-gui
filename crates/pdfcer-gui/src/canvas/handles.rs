@@ -58,6 +58,36 @@
 //!
 //! Corpus: `ui-conventions/handles.md`.
 //!
+//! - H1 appear-on-selection: the eight grips are drawn when something is
+//!   selected at the Object rung, before any drag.
+//! - H2 standard-set: **complete as of 2026-08-20** — eight resize grips, the
+//!   body, and a rotate handle offset above the top edge on a stem, which is
+//!   the arrangement PowerPoint, Illustrator, Figma, Inkscape, Visio and Konva
+//!   all present. This row read *"GAP: no rotate handle, because no engine verb
+//!   rotates anything"*, and it ended *"when that lands, the handle above the
+//!   top edge is the shape to build, not a menu item."* `Pass 113.0` landed it
+//!   and that is the shape that was built.
+//! - H3 screen-sized: `GRIP_SIZE_PX` is in points and does not scale with zoom,
+//!   so a corner on a plan at 20 % is as grabbable as one at 400 %.
+//! - H4 target-not-smaller: `GRIP_GRAB_SLACK_PX` expands the live area beyond
+//!   the drawn square. Never the reverse.
+//! - H5 grips-outrank-body: checked first, because corner grips sit ON the
+//!   box's edge and half of each square overlaps the interior — if the body won,
+//!   each would be a half-size target on its outer half only.
+//! - H6 cursor-names-it: `Grip::cursor` gives each grip its diagonal or axis
+//!   arrow and the body a move cursor.
+//! - H7 painted-equals-grabbable: the same predicate decides both. **This row
+//!   exists because it failed on 2026-08-20**: a dimension's vertex handles were
+//!   painted from the selection and hit-tested behind a capability the mode did
+//!   not have, so they were visible and untouchable in the very mode that
+//!   authors dimensions.
+//! - H8 published: `SELECTION_OUTLINE_REGION` publishes the box every grip is
+//!   derived from, and `dimdrag::VERTEX_REGION` publishes each vertex handle
+//!   indexed — so a driven check aims at what the application says rather than
+//!   at a guess.
+//! - H9 vertex-editing: a perimeter ce dimension's corners are handles and drag
+//!   to reshape. **GAP: no right-click to add or remove a point**, though both
+//!   engine verbs and the preflight that greys the menu item already exist.
 
 use egui::{CursorIcon, Pos2, Rect, Vec2};
 

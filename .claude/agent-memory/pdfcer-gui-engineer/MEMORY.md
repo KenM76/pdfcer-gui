@@ -136,3 +136,4 @@
 - [Tidying an input changes every instrument reading it](feedback_tidying_an_input_changes_every_instrument.md) — the sweep was right; it blinded a gate and killed 18 citations.
 - [A command judged through a pipe reports the pipe's exit code](feedback_a_command_judged_through_a_pipe_reports_the_pipes_exit_code.md) — a FAILED release build read as exit 0.
 - [The injected memory warning is a snapshot](feedback_the_injected_memory_warning_is_a_snapshot.md) — 36 h stale; it nearly bought a 136-file rename. Measure.
+- [Verify the result, not the diff](feedback_verify_the_result_not_the_diff.md) — two checks passed on a file that would not compile.

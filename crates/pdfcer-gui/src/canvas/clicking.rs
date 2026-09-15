@@ -2,6 +2,12 @@
 //!
 //! ## The seam
 //!
+//! Split from [`crate::canvas::interact`] under R2. It is the seam the file was
+//! always going to split along rather than the cheapest one to reach:
+//! `interact`'s subject is *one frame of canvas interaction* — read the pointer,
+//! advance the gesture machine, decompose if a hit test needs it, route the
+//! outcome, re-resolve, draw — and this is one of the outcomes it routes,
+//! carrying a third of its lines.
 //!
 //! [`crate::canvas::pressing`] already owns the companion question, *what would
 //! a press land on*. This owns *what does a completed click do about it*, and
@@ -49,6 +55,29 @@
 //! it is the row that had no single home until the ladder was extracted into a
 //! file whose header could state it.
 //!
+//! - C1 ink-not-bounding-box: NOT THIS FILE — `ObjectModelProvider::subpath_hits`
+//!   and `selection::annot::under_pointer` decide it, and the outstanding
+//!   `/Square` case is `OPERATOR_REQUESTS.md` O14 row 8.
+//! - C2 unfilled-interior-belongs-behind: NOT THIS FILE — same two places, same
+//!   open row.
+//! - C3 topmost-wins: `super::input::probe` returns the front-most target and
+//!   rung 8 hands it to `SelectionState::click` unchanged; rung 3's
+//!   `under_pointer` walks `/Annots` in paint order for the same reason.
+//! - C4 tolerance-in-screen-units: `map.tolerance()` — the frame's one mapping,
+//!   so it is constant at every zoom. Passed, never re-derived.
+//! - C5 segments-clamp: NOT THIS FILE — the provider's distance tests.
+//! - C6 empty-space-deselects: **answered here, twice.** Rung 8's
+//!   `SelectionState::click` clears on a miss, and the `annot_hit.is_none()`
+//!   guard above the ladder clears the annotation selection on a miss in the
+//!   modes that have one — which had to be explicit, because an annotation
+//!   selection is a second store that rung 8 cannot see.
+//! - C7 drawn-outline-is-the-live-target: NOT THIS FILE — the painters and
+//!   `dimdrag::vertex_at`/`handles::grip_at` own the drawn-vs-target pair, and
+//!   that corpus row records the 2026-08-20 defect where they disagreed.
+//! - C8 priority-is-stated: **this module.** The eight rungs above, in one
+//!   place, in order, each with the reason it sits where it does — and each
+//!   reachable only through this one function, so a press cannot mean different
+//!   things depending on which path ran first.
 
 use crate::app::actions::forms::FieldAction;
 use egui::Pos2;

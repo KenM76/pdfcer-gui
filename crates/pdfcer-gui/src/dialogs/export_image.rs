@@ -3,6 +3,7 @@
 //!
 //! ## The gap this closes — `OPERATOR_REQUESTS.md` **O120**
 //!
+//! The operator, 2026-09-03, verbatim:
 //!
 //! > *"can you add the ability to export page(es) to png, jpg, svg. note that
 //! > there had better be full support (including transparency where
@@ -109,6 +110,47 @@
 //!
 //! Corpus: `ui-conventions/dialogs.md`.
 //!
+//! - G1 is-an-os-window: **SATISFIED** — [`crate::dialogs::host::Host`], which
+//!   is `show_viewport_immediate`. The operator's 2026-08-20 report (*"locked
+//!   within the boundaries of the program's window"*) is answered by the host
+//!   rather than by anything here; this window simply uses it, as `export_dxf`
+//!   and `compact` do.
+//! - G2 use-the-os-dialog: **SATISFIED where one exists** — the save picker is
+//!   the system's, through `crate::app::files::pick_save_path`. This window is
+//!   pdfcer's own because the choices in it (which format, which pages, what
+//!   resolution, whether transparency survives) are choices only pdfcer has.
+//! - G3 owned-by-the-app: **SATISFIED** by the host, which parents the viewport
+//!   to the application window.
+//! - G4 enter-accepts-escape-cancels: **PARTIAL** — Escape closes, through the
+//!   host. Enter is not wired as the affirmative default and no button is drawn
+//!   as the default. That is the whole directory's gap rather than this
+//!   window's (`insert_image` records it identically) and fixing it in one
+//!   dialog would make the other nine inconsistent; it belongs in
+//!   [`crate::dialogs::host`].
+//! - G5 keyboard-reachable: **PARTIAL** — every control is a standard egui
+//!   widget and therefore tab-reachable, but egui's tab order is positional and
+//!   nothing here asserts that focus starts in the format group or that the
+//!   modal traps it. Directory-wide gap, same owner as G4.
+//! - G6 remembers-position: **SATISFIED** — the host remembers a dialog's
+//!   position and size across openings within a session.
+//! - G7 destructive-verbs-named: **NOT APPLICABLE, and deliberately so.**
+//!   Nothing here is destructive: an export cannot change the document (see
+//!   `app::actions::export`'s header on why that is what makes these verbs a
+//!   family). The one thing it *can* overwrite is a file on disk, and that
+//!   confirmation is the system save dialog's, which G2 says is where it
+//!   belongs.
+//! - G8 cancel-is-silent: **SATISFIED** — Cancel closes and records nothing,
+//!   and a cancelled save picker likewise returns without a sentence
+//!   (`crate::app::files::Picked::Cancelled`'s own doc: *"a complete, correct,
+//!   uninteresting outcome"*).
+//! - G9 nothing-blocks-silently: **PARTIAL, and the honest reading is that this
+//!   window makes it worse than most.** The export runs on the UI thread in the
+//!   apply phase, so a fifty-page 600 DPI run freezes the window with no
+//!   progress. What keeps that from being a defect today is that the same
+//!   thread already renders every page the canvas shows, at the same cost per
+//!   page, and this window states the pixel count before the press so the size
+//!   of the wait is predictable. A background export with a progress bar is the
+//!   right answer and it is a change to `app::actions`, not to this file.
 
 use egui::Ui;
 

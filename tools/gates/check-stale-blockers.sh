@@ -344,8 +344,8 @@ if [ "$status" -ne 0 ]; then
   echo "was written. Update the row — and then go and look for the other three"
   echo "places this gate CANNOT see: the module header that forbade the feature,"
   echo "the operator-facing string that describes the gap, and any test named"
-  echo "no_* / never_* / not_* that asserts the absence. HANDOFF.md §10 has the"
-  echo "procedure and the case that produced it."
+  echo "no_* / never_* / not_* that asserts the absence. Fixing the row alone"
+  echo "leaves the shell still refusing what the engine now does."
   exit 1
 fi
 

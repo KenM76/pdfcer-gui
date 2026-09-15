@@ -53,7 +53,7 @@ agent charter.
 
 Every **Status** cell below asserts something about `crates/pdfcer-gui` and
 `crates/egui-shell`. Re-measure before quoting one. A wrong status here does
-not stay here: this file is the survey `FEATURES.md`, `HANDOFF.md`,
+not stay here: this file is the survey `FEATURES.md`, `RESUME.md`,
 `RIBBON_IA.md` and a `PLANNED` entry in `shell/manifest/` all quote, so one
 stale cell travels by being copied rather than checked.
 

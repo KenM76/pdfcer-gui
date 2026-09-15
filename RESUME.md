@@ -120,6 +120,23 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 - **Cite engine source by symbol name, or pair the line with the pin.** Line
   numbers rot monotonically because `edit.rs` grows at the head, and a rotted
   citation protects its claim: the reader who checks finds plausible code, stops.
+- **A doc comment in this repo can be a GATE'S DATA, not narration.**
+  `check-conventions.sh` reads `// conventions: <class>` blocks and scores each
+  numbered row of the gesture class as answered or not; `check-unreachable-refusals`
+  reads `UNREACHABLE-FROM:` markers; `check-verb-coverage` scores a verb
+  "consumed" on prose. A comment sweep that looks purely cosmetic took the
+  answer rows out of nine surfaces and turned one gate red with no code change.
+  Before deleting comments in bulk, grep `tools/gates/` for what parses them.
+- **Ten root documents were deleted on 2026-09-15** — `CONTINUE.md`,
+  `DOC_DRIFT.md`, `GLYPH_ADOPTION.md`, `HANDOFF.md`, `HOW_IT_SHOULD_WORK.md`,
+  `HOW_IT_WORKS_TODAY.md`, `INTERACTION_GAP.md`, `REVIEW_TRIAGE.md`,
+  `SHELL_LAYOUT_PROPOSAL.md`, `SWEEP_REPAIRS.md`. Their conclusions live in the
+  documents that remain; what is gone is the argument and the history. Three
+  citations of the dead names survive **inside string literals** and were left
+  alone because they are code, not comment: `crates/egui-shell/src/theme/contrast.rs:989`
+  and `tools/ui-verify/src/checks/dimension_groups.rs:284,316`. Do not go
+  looking for the files; `mockups/` cites three more in generated HTML and says
+  so in its generator's header.
 - **The shared sweep fixture is a compromise.** `fixtures/a1-titleblock.pdf` has
   one page, no AcroForm, no optional content, no transparency, no removable
   font, and its tallest text is about 2.4 px at fit zoom. Each absence is some

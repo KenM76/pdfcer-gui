@@ -297,8 +297,8 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
     // content selection, which Read cannot make) and are checked anyway,
     // because "it is safe because nothing can be selected" is an argument
     // that holds only for as long as its other half does, and its other
-    // half is in a different file — `HANDOFF.md` §2's lesson about a test
-    // that checks a relation rather than a magnitude.
+    // half is in a different file, so this checks the relation rather than
+    // the magnitude: the rows must stay absent however the other file changes.
     for grip in [None, Some(Grip::SouthEast), Some(Grip::Move)] {
         let meaning = press_kind(
             Press {

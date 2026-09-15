@@ -3,6 +3,12 @@
 //!
 //! ## Why this is its own file
 //!
+//! R2, on 2026-08-20, when the caret pushed `canvas::textedit` past 1,500
+//! lines. It is a real seam rather than a convenient cut, and the test for that
+//! is the one this project uses everywhere: **everything here is a pure
+//! function of a `&str` and an index.** No `egui::Context`, no document, no
+//! page, no PDF. The rest of `textedit` is about *placing* a caret on a page
+//! and *committing* what was typed into it; this file is about the string.
 //!
 //! That split is worth having for a second reason. A caret is the most
 //! convention-bound object in any editor — every operator alive already knows
@@ -12,6 +18,10 @@
 //!
 //! ## The defect this file is the answer to
 //!
+//! Until 2026-08-20 there was **no caret index at all**. `insert` extended the
+//! end of the draft and `backspace` popped its last character, so the painter
+//! drew its line at the right edge of the run's glyph box — because that is the
+//! only position an append-only draft has. The operator:
 //!
 //! > *"the cursor just sits at the end of a text line. It can't be moved to the
 //! > center of an existing text block."*
@@ -58,6 +68,35 @@
 //!
 //! Corpus: `ui-conventions/text-caret.md`.
 //!
+//! - T1 live-preview: **GAP, and it is the operator's open complaint** — *"I can
+//!   edit text now, but there is no live preview of that either."* The page
+//!   renders committed glyphs; the draft lives beside it and nothing draws it,
+//!   so the operator sees the old text and a blinking caret. The corpus is
+//!   explicit that the approximation is acceptable and the absence is not:
+//!   drawing the draft in the shell's own font, scaled to the run, shifts
+//!   slightly on commit and is still a preview.
+//! - T2 caret-has-a-position: a click lands it at the nearest character
+//!   boundary; arrows, Ctrl+arrows, Home and End move it; Backspace and Delete
+//!   act either side of it. Added 2026-08-20 — before that there was no index at
+//!   all, and the painter drew its line at the right edge because that is the
+//!   only position an append-only draft has.
+//! - T3 graphemes-not-bytes: **PARTIAL** — characters, not bytes, so `é` takes
+//!   one keystroke. Not grapheme clusters, so a combining mark or an emoji
+//!   sequence still takes two. `unicode-segmentation` is already in the tree.
+//! - T4 clamp-never-assert: every operation clamps on entry. A panic in a caret
+//!   would take the whole window down over a keystroke.
+//! - T5 composer-owns-the-keyboard: `composing` is the one predicate, and
+//!   `tools/gates/check-typing-guard.sh` fails the build on a second copy.
+//!   **This row exists because it failed twice** — Delete after a canvas click,
+//!   then the space bar, which the pan tool took because this caret is not an
+//!   `egui::TextEdit` and egui's own predicate cannot see it.
+//! - T6 enter-commits-escape-abandons: both, and a draft identical to what it
+//!   replaces raises no action.
+//! - T7 no-control-characters: `insert` filters them; Enter and Escape arrive as
+//!   key events and mean something.
+//! - T8 selection: **GAP** — no Shift+arrow, no Ctrl+A, no drag-select within a
+//!   draft. Named rather than left implied, because a highlight that some keys
+//!   respect and others silently ignore is worse than none.
 
 /// **Insert `s` at the end of the draft.** The one mutation typing performs.
 ///

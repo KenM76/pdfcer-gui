@@ -103,7 +103,64 @@
 //! The corpus is `ui-conventions/drag-moves.md`. Every row answered, because
 //! the unanswered ones are the ones the operator finds.
 //!
+//! - D1 live-preview: the dimension follows the pointer from the first frame,
+//!   drawn through `dimension_preview_segments` — the same function a committed
+//!   dimension is drawn from. **This row failed twice.** The label drag never
+//!   previewed (the arm was written and unreachable), and the vertex drag
+//!   converted screen→canvas twice, so it tracked at `1/zoom` and sat off by the
+//!   scroll origin. Both fixed 2026-08-20; see `drag_vertex`.
+//! - D2 derived-from-commit: `placed` returns the geometry AND the two scalars
+//!   the commit writes, so preview and commit are one calculation. A caller
+//!   cannot draw one placement and commit another without going out of its way.
+//! - D3 escape-cancels: WAIVED — the gesture machine owns Escape and drops the
+//!   drag before this module is reached. Nothing is written until `Complete`, so
+//!   an abandoned drag leaves the document untouched by construction.
+//! - D4 one-undo-entry: `place_dimension`, `move_dimension_vertex`,
+//!   `insert_dimension_vertex` and `remove_dimension_vertex` are each one
+//!   engine command, so one gesture is one Ctrl+Z. ★ For the three vertex
+//!   verbs that is not an accident of granularity — they share one body,
+//!   `EditSession::apply_vertex_edit` (`D:/Dev/pdfcer/crates/pdfcer-core/src/
+//!   edit.rs:38002`), which plans the edit, rewrites the record, regenerates
+//!   the annotation **and its baked `/AP`**, rewrites the sidecar catalog, and
+//!   commits all of it as a single `Command`. A shell that raised two actions
+//!   for one gesture would break that, which is why each gesture below pushes
+//!   exactly one.
+//! - D5 modifiers-constrain: **Shift locks both drags to one axis**, applied
+//!   by `canvas::interact` before either reaches this module —
+//!   [`crate::canvas::constrain::translate`] for the label, whose outcome is a
+//!   delta, and `reposition` for a vertex, whose outcome is a position and
+//!   which therefore filters the displacement from the press so the grab point
+//!   survives (D8). A label held to its *standoff* or its *slide* specifically —
+//!   the dimension-space pair rather than the page axes — is a further
+//!   refinement and is not built; recorded as a gap rather than claimed.
+//! - D6 snapping: **a vertex drag snaps**, as of 2026-08-20, through the same
+//!   `snap_candidates` query and the same operator settings the measure tools
+//!   use — [`crate::canvas::measure::snap_point`], which exists precisely so
+//!   there is one answer to *"where would this land"* rather than two. Alt
+//!   suspends it, exactly as it does for a pick, and the marker is drawn at the
+//!   target before the release. **The LABEL drag still does not snap**, and
+//!   that is deliberate rather than pending: a label's position is
+//!   presentational, it changes no measured value, and snapping a caption to a
+//!   wall would move it onto the drawing rather than clear of it. The old row
+//!   read: a vertex drag does not snap, while the tool that
+//!   PLACED that vertex does. So an operator can pick a corner onto geometry and
+//!   then be unable to put it back. The sharpest of the gaps here.
+//! - D7 no-op-is-not-an-edit: **GAP** — a zero-travel release still raises the
+//!   action. The engine may collapse it; this module does not check.
+//! - D8 grab-point: the vertex moves by the pointer's DELTA, so whatever part of
+//!   the handle was grabbed stays under the cursor. The label drag has always
+//!   been a delta, and its header carries the argument for why the absolute form
+//!   is right for authoring and wrong for moving.
+//! - D9 disclosure: `MoveVertex` re-measures and says so off-canvas, with the
+//!   label before and after — the "before" cannot be reconstructed once the
+//!   geometry that produced it is gone. `Place` writes fields the value function
+//!   does not read, so it has nothing to disclose and says nothing.
+//!   `InsertVertex` and `RemoveVertex` re-measure too, and disclose the same
+//!   pair **plus the corner count**, because the count is the thing the
+//!   operator asked to change and the thing a mis-aimed gesture would get
+//!   wrong.
 //!
+//! ## ★★★ ADDING AND REMOVING A CORNER — 2026-09-05, the operator's report
 //!
 //! > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
 //!
@@ -122,6 +179,11 @@
 //!
 //! ### The gesture, and why both verbs are DRAGS
 //!
+//! | gesture on a corner handle | means |
+//! |---|---|
+//! | drag | **move** that corner (unchanged since 2026-08-20) |
+//! | **Points tool armed** + `Ctrl` + drag | **add** a corner immediately after it, dropped where the pointer lands |
+//! | **Points tool armed** + `Ctrl`+`Shift` + drag | **remove** that corner |
 //!
 //! ★★ **A click cannot reach this module, and that is a fact about the gesture
 //! machine rather than a preference.** [`crate::canvas::gesture::GestureState::update`]

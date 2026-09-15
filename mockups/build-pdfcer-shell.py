@@ -1,6 +1,17 @@
 """Build `mockups/pdfcer-shell.html` — the revised shell-layout mockup.
 
 =====================================================================
+★ PROVENANCE — THE DOCUMENTS CITED BELOW NO LONGER EXIST
+=====================================================================
+
+`SHELL_LAYOUT_PROPOSAL.md`, `GLYPH_ADOPTION.md` and `REVIEW_TRIAGE.md` were
+retired when the root documents were reduced to what describes the program as
+it stands. Their conclusions are in `RIBBON_IA.md`, `MODES_AND_PANELS.md` and
+`DESIGNS.md`; what is gone is the argument that reached them. Citations of
+those three names here and in the generated HTML are historical — do not go
+looking for the files.
+
+=====================================================================
 WHAT THIS IS
 =====================================================================
 

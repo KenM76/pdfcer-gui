@@ -930,9 +930,10 @@ follow Delete down the ladder, or the disappearance is disclosed.
 
 ### D51 — OPEN: invisible OCR text is an object-selection target, against this project's own spec
 
-`HOW_IT_SHOULD_WORK.md` states that OCR-invisible text (`Tr 3`) **is not** an
-object-selection target and **is** a target for the character sweep. Neither
-half is implemented: there is no render-mode predicate anywhere in this crate's
+This project's rule for OCR-invisible text (`Tr 3`) is that it **is not** an
+object-selection target and **is** a target for the character sweep — a
+recognised layer exists to be searched, not to be clicked. Neither half is
+implemented: there is no render-mode predicate anywhere in this crate's
 hit-test or selection path, and the engine deliberately bounds invisible text
 (`pdfcer_core::vector::decompose`, `text_hit` tests run bounds only).
 

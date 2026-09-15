@@ -1,6 +1,14 @@
 """Regenerate `glyphs/shipped.json` from the ICONS THE PRODUCT ACTUALLY SHIPS.
 
 =====================================================================
+★ PROVENANCE — `GLYPH_ADOPTION.md` NO LONGER EXISTS
+=====================================================================
+
+It was retired when the root documents were reduced to what describes the
+program as it stands. It is quoted below because the quotation is the reason
+this generator exists; the file itself is gone and is not coming back.
+
+=====================================================================
 WHAT THIS IS, AND — MORE IMPORTANTLY — WHAT IT IS NOT
 =====================================================================
 
