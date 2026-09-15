@@ -48,39 +48,58 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-1. **O198's remainder, which is O188** — a title-block run the exporter wrote as
+1. **O201 — a scanned page is not there until he scrolls onto it.** He waits at
+   every page of a multipage scan. `render::settle::fill_strip` asks for one
+   visible page per frame and `RenderWorker` has a single slot, so nothing is
+   ever rendered ahead. Visible pages keep absolute precedence; the
+   ahead-of-scroll work is what is left of the `StripRasters` texel budget, and
+   `RenderWorker::cancel_and_wait` is the invariant a prefetch must not break.
+2. **O204 — Tab inside a form walks the ribbon instead of the fields.** The key
+   belongs to whatever he last clicked: the next field in a form, the next object
+   on the canvas, Shift+Tab backwards. `canvas::keys` returns early on
+   `text_edit_focused`, and the canvas field editor never sets
+   `TextEdit::lock_focus(false)`, so egui keeps Tab. Bare Tab must not be bound
+   in the manifest — that is egui's own next-widget key.
+3. **O203 — a form field appears only after the click.** An armed form tool owes
+   a ghost of the exact rectangle a single click would place, following the
+   cursor. It is the cursor and not content, so rule 4 permits it.
+4. **O202 — a form object has no colour, before or after placement.** No way to
+   set one when placing, none in Properties afterwards. The engine side is
+   `edit_widget`; whether it regenerates the appearance stream on a colour-only
+   change is the thing to measure before designing the control.
+5. **O198's remainder, which is O188** — a title-block run the exporter wrote as
    one lump is still one lump: he can reach that text and drag a line, not take
    it apart. **The verb has landed and is in the pin**: `EditSession::split_text_object`
    with `text_object_split_plan` for the cost-before-committing half. Nothing in
    this shell calls either; the row in `ENGINE_BACKLOG.md` carries the five
    refusals that want operator sentences and the rule-4 disclosure `Line`
    granularity owes.
-2. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
-3. **O189** — bookmarks survive a cross-document page drag.
-4. **O183** — the nine-part ce-dimension paragraph, part 7 first.
-5. **O178** — multi-window tab dragging.
-6. **O182** — white seams between the image tiles of a colour rendering.
-7. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
-   unit control, and `ui_text` abbreviations. Step 2 shipped as an invariant:
-   `src/units.rs` is the only place a document length is converted or rounded for
-   display, `whole()` the only function permitted to round one, and
-   `check-unit-conversion.sh` fails the build on a fresh `25.4` under the GUI.
-   Font and type sizes are excluded, and the exclusion is written into source.
-8. **O195** — smart select in Review. `smart::enabled` defaults on and
-   `clicking.rs` reads the scope every frame, but `textsel::takes_the_press`
-   answers `tool.is_text() || (Select && !edit_content)`, so in Review the plain
-   Select press is consumed as a text sweep and the smart rung never sees it.
-   Flipping the manifest condition alone would ship a visible, inert control,
-   which is what R9 exists to prevent.
-9. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
-   wide and its corner grips eat every point on it; the fix is a grip that yields
-   the body below some size, not a harness zoom that hides it.
-10. **Wire `SignReport::appearance_lines`** — the one engine delivery genuinely
+6. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
+7. **O189** — bookmarks survive a cross-document page drag.
+8. **O183** — the nine-part ce-dimension paragraph, part 7 first.
+9. **O178** — multi-window tab dragging.
+10. **O182** — white seams between the image tiles of a colour rendering.
+11. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
+    unit control, and `ui_text` abbreviations. Step 2 shipped as an invariant:
+    `src/units.rs` is the only place a document length is converted or rounded for
+    display, `whole()` the only function permitted to round one, and
+    `check-unit-conversion.sh` fails the build on a fresh `25.4` under the GUI.
+    Font and type sizes are excluded, and the exclusion is written into source.
+12. **O195** — smart select in Review. `smart::enabled` defaults on and
+    `clicking.rs` reads the scope every frame, but `textsel::takes_the_press`
+    answers `tool.is_text() || (Select && !edit_content)`, so in Review the plain
+    Select press is consumed as a text sweep and the smart rung never sees it.
+    Flipping the manifest condition alone would ship a visible, inert control,
+    which is what R9 exists to prevent.
+13. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
+    wide and its corner grips eat every point on it; the fix is a grip that yields
+    the body below some size, not a harness zoom that hides it.
+14. **Wire `SignReport::appearance_lines`** — the one engine delivery genuinely
     owed. It is what the engine drew into the signature box, and here it reaches
     only a trace the source marks as never displayed, so he signs without seeing
     what the stamp says while the engine records *a rectangle too small for them*
     as a real outcome. Off-canvas, in the signing dialog's result.
-11. **Run a full driven sweep.** Ninety-five minutes taking the real cursor and
+15. **Run a full driven sweep.** Ninety-five minutes taking the real cursor and
     keyboard, so only while he is away. Diff the SKIP set by NAME against the
     previous baseline in `target/scratch/`, in both directions.
 

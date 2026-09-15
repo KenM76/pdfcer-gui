@@ -93,7 +93,7 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 wrote them, before any of it was measured. A row that says FILED means his
 words are recorded and nothing else has happened yet.
 
-## O200 — ◑ **BUILT AND UNIT-FALSIFIED; THE DRIVEN CHECK IS WRITTEN AND HAS NOT BEEN RUN — NOT CLOSED, that is yours** — a link that should only jump now zooms, and it should not move the page sideways either
+## O200 — ◑ **BUILT, UNIT-FALSIFIED AND DRIVEN GREEN — NOT CLOSED, that is yours** — a link that should only jump now zooms, and it should not move the page sideways either
 
 > *"after we made it so bookmarks in drawing files exported from solidworks
 > zoom to the correct spot on the page, this behaviour carried over onto links
@@ -134,10 +134,15 @@ touched is the point path, which is what a Word table of contents uses.
 
 **Verified by:** nine unit tests in `canvas::destscroll`, falsified by planting
 the old behaviour (exactly two go red, and they are the two that name the two
-claims). `tools/ui-verify/src/checks/point_destination.rs` drives the real
-binary over `fixtures/xyz-null-zoom.pdf`, whose two links differ in one number
-so that "held" has a control and "moved" has a witness — **written, registered,
-and not yet run**, because running it takes the cursor and the keyboard.
+claims); and by two driven checks over `fixtures/xyz-null-zoom.pdf`, whose two
+links differ in one number so that "held" has a control and "moved" has a
+witness. **Both ran against the shipped binary and both passed.** The control
+zoomed to 183.72%, clicked the near link, and the magnification came back
+byte-identical at 1.8372 with the horizontal unmoved at 674.4; the witness did
+the same at the far link and the view travelled 1852.4 pt across the sheet, at
+that same unchanged magnification. In both, the solver read `origin_x` as the
+offset measured *before* the click, which is the property that makes "where you
+were looking" the operator rather than the page-turn.
 
 ## O201 — **FILED** — pages should already be rendered when he scrolls to them, and the visible ones come first
 
