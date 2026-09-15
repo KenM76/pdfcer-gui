@@ -1,127 +1,80 @@
-//! # `app::status::decline` — the worded decline: saying that a command did
-//! *not* run
+//! The worded decline: telling the operator that a command did *not* run.
 //!
-//! `FEATURES.md`'s Phase 3 row read *"traced and greyed but never worded"*.
-//! `crate::canvas::zoom` has always returned
-//! [`ZoomOutcome::NoBounds`]/[`ZoomOutcome::NoCanvas`] and always traced them,
-//! and `crate::app::dispatch` has always dropped the value on the floor. This
-//! module is the half that was missing: a store, a retirement rule, and one
-//! line in the status bar's left half.
-//!
-//! ## ★ The distinction this module exists to hold: a decline is not a
-//! disclosure
-//!
-//! The bar's left half already carries two rule-4 sentences
-//! ([`super::fill_disclosure`], [`super::edit_disclosure`]) and they are a
-//! different **speech act** from this one:
+//! A decline ("Nothing to zoom to") occupies the status bar's left half beside
+//! the two rule-4 disclosures in [`super`], and is a different speech act from
+//! them:
 //!
 //! | | says | is true because |
 //! |---|---|---|
-//! | disclosure | *this happened, and here is the part you cannot see* | a document changed |
-//! | decline | *this did not happen* | a document did **not** change |
+//! | disclosure | this happened, and here is the part you cannot see | a document changed |
+//! | decline | this did not happen | a document did **not** change |
 //!
-//! They share the *place* and the *discipline* — the same
-//! [`super::disclosure_line`], the same named-region publication, the same
-//! R128 fixed row — and they share nothing else. In particular they must not
-//! share a store, and the wording must diverge too: *"Nothing to zoom to"* is
-//! not *"About your last edit: …"*. One slot and one wording for both would
-//! make a completed gesture and a refused one wear the same sentence in the
-//! same place, which is **worse than the trace-only state this replaces**.
+//! They share the place and the discipline — the same [`super::disclosure_line`],
+//! the same named-region publication, the same fixed row — and nothing else.
+//! They must not share a store or a wording: one slot for both would make a
+//! completed gesture and a refused one wear the same sentence in the same place.
 //!
-//! ## ★★ Why this is NOT keyed on [`crate::app::state::OpenDoc::edit_epoch`]
+//! # Retirement
 //!
-//! The epoch key is what makes the two disclosures safe, and it is exactly
-//! what would make this one wrong. Three independent reasons, any one of them
-//! sufficient:
+//! A decline is **not** keyed on [`crate::app::state::OpenDoc::edit_epoch`],
+//! which is what makes the two disclosures safe and would make this wrong:
 //!
-//! 1. **A decline changes no document, so the epoch never moves.** The
-//!    disclosures retire because the *next edit* bumps the epoch past them,
-//!    with no code remembering to clear anything. A decline produces no edit,
-//!    so an epoch-keyed decline would never retire — it would still read
-//!    "Nothing to zoom to" forty gestures later, which is the precise inverse
-//!    of the property that makes the edit disclosure safe.
-//! 2. **A decline must be repeatable.** Pressing the chord twice with nothing
-//!    selected is **two events**, and the operator needs the second to
-//!    register. An epoch key cannot express a repeat, because by construction
-//!    nothing changed between the two — the key is identical, so the second
-//!    press is indistinguishable from the first never having been retired.
-//!    `crate::canvas::zoom::trace_outcome` makes the same ruling on the trace
-//!    channel and states it in the same words: *"two identical zoom commands
-//!    are two events, and a gate that silenced the second would make a harness
-//!    unable to tell a command that ran twice from one that ran once."*
-//! 3. **They are different speech acts** — see the table above.
+//! 1. A decline changes no document, so the epoch never moves and an
+//!    epoch-keyed decline would never retire.
+//! 2. Two identical declined chords are two events, and the operator needs the
+//!    second to register. The epoch key is identical across both, so it cannot
+//!    tell a repeat from an unretired first.
 //!
-//! ## ★ The precedent that IS right: `page_box`'s clamp note
+//! It is retired instead by the operator's next act, in two places:
 //!
-//! [`super::page_box`] already has a note that is retired **by the operator's
-//! next act** rather than by an epoch. Its rule is *"the note is true while
-//! you are still where it put you"*, and its test is
-//! `page_box::tests::a_clamp_note_is_forgotten_once_the_operator_moves_away`.
-//! A decline is that shape, and this module is modelled on it. Two halves,
-//! and both are needed:
+//! - **[`retire`], at the dispatcher.** `crate::app::dispatch` is the choke
+//!   point every command arrives at, so it is the one place that knows the
+//!   operator has just invoked something. Retiring there, before the new
+//!   command's arm runs, means re-pressing a declining chord ends the sentence
+//!   and raises it again — reason 2 made mechanical.
+//! - **[`live`]'s still-true filter, at the bar.** Selecting something is a
+//!   canvas gesture and reaches no dispatcher, so the bar draws the sentence
+//!   only while the reason that produced it is still true, asked through *the
+//!   same predicate that produced it* ([`zoom::can_zoom_to_selection`],
+//!   [`zoom::last_frame`]) rather than a second spelling that could drift. A
+//!   decline can therefore go stale but never become a lie, and the dispatcher
+//!   handles stale.
 //!
-//! - **[`retire`] at the dispatcher.** `crate::app::dispatch` is the one
-//!   choke point every command arrives at, which makes it the one place that
-//!   knows *"the operator has just invoked something"*. A decline is retired
-//!   there, before the arm for the new command runs — so pressing Ctrl+F, or
-//!   clicking Fit page, ends the sentence, and re-pressing the zoom chord ends
-//!   it and then raises it again, which is reason 2 above made mechanical.
-//! - **[`live`]'s still-true filter at the bar.** Not every act is a command:
-//!   *selecting something* is a canvas gesture and reaches no dispatcher. So
-//!   the bar draws the sentence only while the reason that produced it is
-//!   still true, asked through **the same predicate that produced it**
-//!   ([`zoom::can_zoom_to_selection`], [`zoom::last_frame`]) rather than
-//!   through a second spelling that could drift. A decline can therefore never
-//!   become a lie, only stale — and the dispatcher handles stale.
-//!
-//! The filter is a *filter* rather than a clear, exactly as
+//! The filter is a filter rather than a clear, for the same reason
 //! [`crate::app::actions::last_edit_disclosure`]'s epoch comparison is: state
 //! that must be cleared is state that will one day be shown against the wrong
 //! document.
 //!
-//! ## ★ What this module deliberately does NOT word
+//! # What this module deliberately does not word
 //!
-//! **The raster-ceiling-clamped region zoom is not a decline — it is a partial
-//! grant.** [`ZoomOutcome::Zoomed`] carries both the scale that was asked for
-//! and the scale that was pinned, and
-//! [`ZoomOutcome::ceiling_changed_the_answer`] reports when they differ. It is
-//! tempting to word that here. It would be wrong:
+//! **A region zoom clamped by the raster ceiling is a partial grant, not a
+//! decline.** [`ZoomOutcome::Zoomed`] carries both the scale asked for and the
+//! scale pinned, and [`ZoomOutcome::ceiling_changed_the_answer`] reports when
+//! they differ. Wording it here would be wrong twice over: the region *is*
+//! framed at the closest scale the page can reach, and the clamp already
+//! reports itself where the operator is already looking, because the framing
+//! verb raises `Action::ZoomTo` carrying the clamped number and the zoom
+//! readout states it on the same frame. A line that fires when nothing was
+//! declined trains the operator to stop reading the line.
 //!
-//! - the region **is** framed, centred, at the closest scale the page can go
-//!   to — the operator got the honest partial answer, not a refusal;
-//! - the clamp **already reports itself**, and does so in the one place an
-//!   operator is already looking for a scale: the framing verb raises
-//!   `Action::ZoomTo` carrying the *clamped* number, so the zoom readout three
-//!   controls to the right states the truth on the same frame.
+//! # Why the store is a thread-local
 //!
-//! Wording it would word a non-event, and would train the operator to read a
-//! decline line that fires when nothing was declined — which is how a surface
-//! stops being read. The decision is recorded beside
-//! [`ZoomOutcome::ceiling_changed_the_answer`] as well, because that is where
-//! the next reader will look.
+//! It should be a field on `OpenDoc`, and `crate::app::state` is not this
+//! module's to extend — a territory boundary rather than a design judgement,
+//! stated here so whoever lifts it knows the preferred shape.
 //!
-//! ## Why the store is a thread-local
+//! It is sound regardless, and more obviously so than the same pattern in
+//! [`crate::app::actions::last_edit_disclosure`] and
+//! `crate::panels::forms::edit`: this is not document state. It records that a
+//! command declined, it cannot change a pixel, nothing reads it but the bar
+//! deciding whether to draw a sentence, and `eframe`'s update loop is one
+//! thread — so writer and reader are the same thread, while a test on another
+//! thread gets its own empty slot rather than another test's leftovers.
 //!
-//! The same answer, for the same reason, as
-//! [`crate::app::actions::last_edit_disclosure`]'s `LAST_EDIT` and
-//! `crate::panels::forms::edit`'s `LAST_FILL`: it *should* be a field on
-//! `OpenDoc`, and `crate::app::state` is not this work's to extend — a
-//! **territory boundary rather than a design judgement**, stated here so
-//! whoever lifts it knows what the preferred shape is.
-//!
-//! It is nonetheless sound, and rather more obviously so than its two
-//! neighbours: this is not document state at all. It records that a command
-//! declined; it cannot change a pixel of the page; nothing reads it except a
-//! bar deciding whether to draw a sentence; and `eframe`'s update loop is one
-//! thread, so the writer and the reader are the same thread while a test on
-//! another thread gets its own empty slot rather than another test's
-//! leftovers.
-//!
-//! One thing it does **not** need that its neighbours do: a document
-//! identity. A decline that outlived a document close would be filtered out on
-//! the next frame anyway, because a freshly-opened document has drawn no page
-//! and has nothing selected — which makes the sentence *true* rather than
-//! stale — and the first command the operator invokes retires it.
+//! It needs no document identity. A decline that outlived a document close is
+//! filtered out on the next frame anyway, because a freshly-opened document has
+//! drawn no page and has nothing selected, which makes the sentence true rather
+//! than stale.
 
 use std::cell::RefCell;
 
