@@ -213,6 +213,17 @@ strip cache is cleared outright and paging with PageDown renders from nothing.
 His words are *"as I scroll"*, so the strip is the subject; the single-page case
 is a second, separate question and is not being folded in silently.
 
+**The honest consequence, which he is owed before it surprises him.** The
+page-cache preference defaults to 256 M texels, about 976 MB of RGBA, and today
+that ceiling is almost never reached: the cache only ever holds pages he has
+already scrolled onto. Render-ahead is the first mechanism that will *fill* it,
+so the setting starts to bite where it previously sat idle. That is the setting
+working as described rather than a regression — it is named, costed in megabytes
+in its own label, and one step below Maximum on purpose — but the resident texel
+count belongs in the same off-canvas disclosure as the band count, so the
+connection between *"pages are ready when I get to them"* and *"the program is
+holding a gigabyte"* is visible rather than inferred.
+
 **The disclosure this owes (rule 4).** A prefetched page renders exactly as a
 page he scrolled to — same path, same raster, no marking of any kind. What is
 owed off-canvas is the count: a `trace_changed` slot saying how many band pages

@@ -55,3 +55,31 @@ exactly representable, so a precision story has to explain how two values that
 are equal print differently — and it cannot. When your hypothesis needs the
 inputs to differ, **print the inputs** before writing the sentence. Full account
 in [[a-capability-claim-in-product-copy-needs-the-same-citation-as-a-limitation-claim]].
+
+## ★ THIRD, 2026-09-15 — in a codebase that is half comments, the DOCUMENTED mechanism attracts the blame
+
+`RESUME.md` said of O201: *"`fill_strip` asks for one visible page per frame and
+`RenderWorker` has a single slot, so nothing is ever rendered ahead."* The second
+clause is false and the first is nearly a tautology. `RenderWorker`'s single slot
+is deliberate, correct, and irrelevant — a prefetch never needs a second slot,
+because it is only ever issued on a frame when the worker is already idle.
+
+The real cause is that `fill_strip` builds its candidate set from
+`doc.strip_visible` and nothing else, so no page outside the viewport is ever a
+candidate at any zoom.
+
+⇒ **Why the wrong half got named: `RenderWorker` has a fifteen-line header
+arguing its single-slot design, and the `strip_visible` scope has no comment at
+all.** A mechanism that explains itself is the one a reader recalls when asked
+*"why is nothing rendered ahead?"*, and this repo is 52% comments, so that
+distortion is everywhere. The silent mechanism is not less likely to be the
+cause — it is only less likely to be **remembered**. Same failure as the two
+above with a different source of visibility: a report column, then an
+enumeration bullet, now a doc comment.
+
+**How to apply:** when a `RESUME`/backlog row states a cause, the row is a
+*claim*, not a measurement — and the clause that cites a well-documented
+component is the one to falsify first. The falsification here was one grep:
+does anything outside `strip_visible` ever reach `rasterize`? Then correct the
+row, because a cold session reads it before it reads the source
+([[a-register-row-outranks-memory-so-correcting-the-row-is-the-work]]).
