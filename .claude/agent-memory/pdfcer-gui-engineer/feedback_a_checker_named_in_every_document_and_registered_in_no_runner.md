@@ -61,4 +61,4 @@ the same day.
   `run-all.sh`, and it is not done until both are in the same commit.
 - Related: [[a-check-that-cannot-fail-is-not-evidence]],
   [[a-runners-sentinel-is-a-claim-about-the-runner]],
-  [[a-long-green-check-can-be-aiming-at-nothing]].
+  [[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]].

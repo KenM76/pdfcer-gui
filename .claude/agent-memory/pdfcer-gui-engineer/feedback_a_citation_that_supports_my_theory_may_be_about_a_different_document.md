@@ -40,3 +40,24 @@ hypothesis as a hypothesis to falsify first, and say plainly that overturning it
 is the most valuable thing they can report. Related:
 [[when-two-things-differ-in-two-ways-the-measured-one-is-not-the-cause]],
 [[a-limitation-sentence-is-a-citation-with-an-hours-long-shelf-life]].
+
+---
+
+## ★★★ Our OWN draft is the worst offender, 2026-09-15
+
+`DESIGNS.md` held a fully-drafted engine request, written three days earlier,
+with a heading that said DO NOT FILE FROM THIS DOCUMENT. Re-measuring before
+filing found **six `file:line` groups moved by up to forty lines** — and, worse,
+**one supporting CLAIM was simply wrong**: the draft argued a whole family of
+`*_in_form` verbs was absent; six exist, and the real gap was a different
+shape entirely (they can move and cannot delete).
+
+⇒ **A draft request decays in its arguments, not only in its citations.** A
+line number that moved is embarrassing; a premise that has since become false
+sends the other team to build the wrong thing, and they cannot check it
+because the premise is about OUR reading of THEIR crate.
+
+**How to apply:** re-measure every citation against the pinned checkout before
+filing, and re-ask every *'there is no X'* sentence as a grep. Record the
+drift where the draft lives rather than silently correcting the draft — the
+next reader needs to know the document decays, not just that it is right now.

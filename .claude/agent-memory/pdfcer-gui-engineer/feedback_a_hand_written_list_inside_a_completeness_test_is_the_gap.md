@@ -37,7 +37,7 @@ file*, which is rare enough that nothing routinely exercises it.
   is deleted.
 
 ★ This is the same family as [[a-check-that-cannot-fail-is-not-evidence]] and
-[[a-long-green-check-can-be-aiming-at-nothing]], with one difference worth
+[[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]], with one difference worth
 holding: those two are about a check that never *fires*. This one **fires,
 passes, and reports a number** — the arithmetic is internally consistent and
 externally short.

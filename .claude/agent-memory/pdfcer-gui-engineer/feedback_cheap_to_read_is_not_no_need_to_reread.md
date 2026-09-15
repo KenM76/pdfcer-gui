@@ -29,5 +29,5 @@ happened to read the same field.
 **How to apply:** any time you meet a cache with a written justification for not
 invalidating, ask what changes the value and whether anything watches for that.
 The pattern to look for is a comment that compares costs where the question was
-about staleness. Related: [[a-long-green-check-can-be-aiming-at-nothing]],
+about staleness. Related: [[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]],
 [[unit-tests-that-call-the-verb-cannot-see-the-chain-in-front-of-it]].

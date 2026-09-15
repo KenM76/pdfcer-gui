@@ -52,5 +52,5 @@ before the second link could be asserted at all.
   the operator will never file the report that would have found it.
 - Related: [[unit-tests-that-call-the-verb-cannot-see-the-chain-in-front-of-it]],
   [[a-stages-trace-records-what-the-stage-decided]],
-  [[a-long-green-check-can-be-aiming-at-nothing]],
+  [[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]],
   [[an-unevidenced-excuse-is-worse-than-silence]].

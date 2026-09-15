@@ -52,7 +52,7 @@ it printed made the next person less likely to look.
   always there and the scope just moved".
 
 Siblings: [[a-check-that-cannot-fail-is-not-evidence]] (an assertion that
-cannot go red), [[a-long-green-check-can-be-aiming-at-nothing]] (the right
+cannot go red), [[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]] (the right
 assertion pointed at the wrong surface), [[a-rename-can-blind-an-instrument-silently]]
 (a scope that *was* right and got rewritten),
 [[a-gate-whose-input-set-comes-from-git-measures-the-index]] (a scope that

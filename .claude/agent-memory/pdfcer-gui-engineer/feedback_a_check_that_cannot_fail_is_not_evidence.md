@@ -147,3 +147,28 @@ not run, and some fraction of them are checks that **cannot** run. The two are
 indistinguishable from the tally and distinguishable from the message, so the
 messages have to be read one at a time — which is the work a clean
 `passed=N failed=0` invites you to skip.
+
+---
+
+## ★★★ When the check asserts a CHAIN, one falsification proves ONE link
+
+2026-09-15, O188(B). The new driven check reads three stages of one refusal:
+the canvas traces the cause, the apply phase traces the sentence's stable
+token on the far side of the `Action` boundary, the status bar publishes its
+region a frame later. Falsifying it once — deleting the sentence — turns it
+red, and proves only that stage two is wired.
+
+⇒ **Plant a defect per link, and require a DIFFERENT failure message each
+time, with the neighbouring notes still green.** That is what distinguishes a
+check that discriminates from one that merely reddens. Restore from a byte
+copy between plants, never through git.
+
+★★ **And a presence assertion needs a pre-state control.** *The region drew*
+means nothing unless the region was empty before the gesture — the shared
+`status-group:decline` is satisfied equally by the right sentence, the wrong
+one, and a stale one. **Assert the control, do not assume it**: SKIP if the
+slot is already full, and say why (a decline that survived a command is its
+own defect). This is the presence-shaped twin of the absence-baseline lesson.
+
+Related: [[an-absence-assertion-is-only-as-good-as-when-its-baseline-was-taken]],
+[[an-assertion-both-outcomes-satisfy-is-not-a-measurement-of-which-one-shipped]].

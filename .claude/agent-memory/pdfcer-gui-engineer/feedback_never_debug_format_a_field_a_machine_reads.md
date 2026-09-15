@@ -36,4 +36,4 @@ agree — do not loosen the comparison. Loosening leaves the two surfaces
 speaking different languages and hides the next mismatch. If a value has two
 parts, give it two fields. Related:
 [[a-driven-failure-is-a-claim-about-the-check-too]],
-[[a-long-green-check-can-be-aiming-at-nothing]].
+[[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]].

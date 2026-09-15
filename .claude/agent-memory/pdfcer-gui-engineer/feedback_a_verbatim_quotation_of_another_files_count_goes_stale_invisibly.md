@@ -70,3 +70,34 @@ so far, because of its position in the argument.
 - **Correct a published dated stamp by ANNOTATION, not by edit.** The header
   was in his hands; the correction is bracketed and separately dated beside it.
   A silently-right number teaches the next reader nothing about the decay.
+
+---
+
+## ★★★ Ninth instance, 2026-09-15 — **in the row whose ENTIRE JOB is the
+## count, and the commit that broke it never touched the row**
+
+`RESUME.md`'s measured-state table says *Unit tests* and gives a command to run.
+It read **4,305 passing / 4,361 defined**. HEAD actually held **4,307 / 4,363**:
+commit `5a64530` added two `#[test]`s, and the two commits that came after it
+(`b9ea87c`, `a5dda82`) both **rewrote that row's prose** — its attribution
+paragraph, its release-level claim — without re-running the command in the cell
+beside it.
+
+⇒ **Rewriting the prose around a figure feels like re-measuring it, and is not.**
+That is the whole finding. The previous eight instances were a stale number
+nobody looked at; this one was looked at twice, edited twice, and left wrong
+both times, because the edit was *about* the number without being *of* it.
+
+**How to apply:**
+
+- **Touching a measured row means re-running its command.** Not the sentences
+  around it — the command in the cell. If that is too expensive to do on this
+  edit, do not edit the row at all; a stale row that says nothing new is
+  cheaper than a stale row wearing fresh prose.
+- **Attribute the delta as well as stating the total**, and attribute it with a
+  command: `git show <rev> -- '*.rs' | grep -cE '^\+\s*#\[test\]'` is what
+  found this. The attribution is what fails loudly when the arithmetic does not
+  close — four new tests against a delta of six is what exposed it.
+- ★ **The suspect is every `.rs`-touching commit since the row was last
+  MEASURED**, which is not the same set as *since it was last edited*. Those two
+  sets diverged by two commits here.

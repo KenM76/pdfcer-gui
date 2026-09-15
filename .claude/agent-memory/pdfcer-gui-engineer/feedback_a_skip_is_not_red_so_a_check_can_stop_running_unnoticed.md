@@ -34,7 +34,7 @@ run. When a check reports *"the application declared no `ribbon.item.X`
 region"*, grep the trace for `ribbon.group.*collapsed` and `ribbon.overflow`
 before believing X was removed — they are two different reflow mechanisms with
 two different region names. Related: [[a-check-that-cannot-fail-is-not-evidence]]
-and [[a-long-green-check-can-be-aiming-at-nothing]]. Filed to `D:/dev/rag/egui/`.
+and [[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]]. Filed to `D:/dev/rag/egui/`.
 
 ## ★★★ 2026-09-13 — a SKIP that is not about the check, the build or the world: the machine was busy
 
