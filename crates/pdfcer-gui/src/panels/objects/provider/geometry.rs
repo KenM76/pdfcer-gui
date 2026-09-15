@@ -43,7 +43,7 @@
 use egui::{Pos2, Rect};
 use pdfcer_core::vector::{Point, VectorObject};
 
-use super::{ObjectModelProvider, PartKind, TargetId, resolve};
+use super::{ObjectModelProvider, PartKind, RunMoveBlock, TargetId, resolve};
 
 impl ObjectModelProvider {
     // ===================================================================
@@ -102,6 +102,56 @@ impl ObjectModelProvider {
             Some(VectorObject::Path(_)) => Some(PartKind::Subpath),
             Some(VectorObject::Text(_)) => Some(PartKind::Run),
             _ => None,
+        }
+    }
+
+    /// **Would moving run `run` of the text object `target` be refused, and
+    /// why** — asked BEFORE the drag, so the ghost never promises a move the
+    /// engine is going to decline.
+    ///
+    /// # ★★★ The engine's own guard, called rather than copied
+    ///
+    /// [`pdfcer_core::vector::edit::text_run_move_refusal`] is the pre-check
+    /// `plan_move_text_run` itself runs, exported for this purpose on
+    /// 2026-09-14 (`G017`). Calling it — rather than reading `positioned_by`
+    /// here and reaching the same conclusion — is what makes
+    /// [`crate::canvas::moving::eligible`] and the engine structurally unable
+    /// to disagree, which is the whole of obligation 3 in `canvas::moving`'s
+    /// header: *a ghost is drawn if and only if the release would commit*.
+    ///
+    /// ★★ **It does not promise success.** A singular `Tm` or CTM is
+    /// discovered during planning, from geometry, not from the run's
+    /// structure, so `None` here means *"the move will be planned"* and not
+    /// *"the move will land"*. The residual failure arrives as an ordinary
+    /// engine refusal through the edit funnel, which is the right place for a
+    /// condition nothing could have known in advance.
+    ///
+    /// # Returns
+    ///
+    /// `None` when the move would be planned — **and also** for a target that
+    /// is not a text object at all, because there is no run-move to refuse.
+    /// The caller has already established the kind through
+    /// [`Self::part_kind_of`]; this is not the function that decides whether a
+    /// run is what was selected.
+    #[must_use]
+    pub fn text_run_move_refusal_of(&self, target: TargetId, run: usize) -> Option<RunMoveBlock> {
+        let Some(VectorObject::Text(text)) = self.object_for(target) else {
+            return None;
+        };
+        match pdfcer_core::vector::edit::text_run_move_refusal(text, run)? {
+            pdfcer_core::vector::VectorEditError::TextRunHasNoPositionOfItsOwn { .. } => {
+                Some(RunMoveBlock::NoPositionOfItsOwn)
+            }
+            pdfcer_core::vector::VectorEditError::MoveWouldMoveNextRun { .. } => {
+                Some(RunMoveBlock::WouldMoveNextRun)
+            }
+            // ★ `TextRunOutOfRange` today, and `VectorEditError` is
+            // `#[non_exhaustive]`, so a refusal this crate has never seen lands
+            // here too. Both readings are the same instruction to the shell:
+            // decline the drag, say nothing, do not guess. A new variant that
+            // DESERVES a sentence will show up as a silent decline in a driven
+            // run, which is a defect with a symptom rather than one without.
+            _ => Some(RunMoveBlock::NotThere),
         }
     }
 

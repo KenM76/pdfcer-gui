@@ -1142,9 +1142,11 @@ pub(crate) enum Declined {
     /// unreachable by construction because a run has no anchors to descend to. A
     /// payload would have one inhabitant.
     ///
-    /// The wording is [`crate::text::arrange::run_cannot_move_alone`], which
-    /// carries the argument for the order of its four clauses and the citations
-    /// for both capability claims it makes.
+    /// The wording is
+    /// [`crate::text::arrange::run_has_no_position_of_its_own`], which carries
+    /// the argument for the order of its clauses, for why there are two of
+    /// these variants rather than one, and the citation for the single
+    /// capability claim it makes.
     ///
     /// # Retirement: the `retire`-only class, on the TENSE argument
     ///
@@ -1160,11 +1162,35 @@ pub(crate) enum Declined {
     /// condition this reports is the one the sentence asks the operator to
     /// change.*
     ///
-    /// What earns the `true` is that the wording is a **report of a past
-    /// moment** — *that drag did nothing, and the document is unchanged* — true
-    /// when it was written whatever the next frame does. The operator's next
-    /// command retires it through [`retire`].
-    TextRunCannotMoveAlone,
+    /// What earns the `true` is that the wording states a **property of the
+    /// document** — *this line's position is not written down here* — which
+    /// nothing but an edit can change. The operator's next command retires it
+    /// through [`retire`].
+    TextRunHasNoPositionOfItsOwn,
+    /// ★★★ **A drag on a line that the NEXT line's position is measured from**
+    /// — O188's second refusal, 2026-09-15.
+    ///
+    /// The twin of [`Self::TextRunHasNoPositionOfItsOwn`] and everything above
+    /// applies to it unchanged: same founding-defect shape, same `retire`-only
+    /// class, same reason it earns a sentence where most canvas refusals do not.
+    ///
+    /// # ★★ Why the pair is two variants and not one with a payload
+    ///
+    /// Because the payload would be read exactly once, to choose between two
+    /// fixed strings, and a decline's whole contract here is *one variant, one
+    /// sentence, no two alike* — which `decline::tests::no_two_declines_share_a_
+    /// sentence` enforces by iterating over the variants. A payload would hide
+    /// one of the two sentences from that loop, and the loop is the only thing
+    /// in the program that can catch a paraphrase.
+    ///
+    /// ★ **The distinction is real to the operator**, which is the test that
+    /// decides this. One says *there is nothing here to change*; the other says
+    /// *changing it would move something you did not select*. Same remedy,
+    /// different fact, and a single variant would have to pick one of them to
+    /// tell him.
+    ///
+    /// The wording is [`crate::text::arrange::run_would_drag_the_next_line`].
+    TextRunWouldDragTheNextLine,
 }
 
 impl Declined {

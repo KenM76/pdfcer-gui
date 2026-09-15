@@ -111,11 +111,17 @@
 /// header carries why that is a seam rather than an arbitrary cut.
 mod geometry;
 
+/// **The Point rung's pick sets** — which anchors belong to which subpath,
+/// which number each answers to, which Bézier handle shapes which side of a
+/// node, and which of them a press picks. Split out 2026-09-15 under R2; its
+/// header carries why the rung is a seam rather than an arbitrary cut.
+mod node_rung;
+
 use egui::{Pos2, Rect};
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::{
-    Bounds, FormMarquee, Handle, HitTarget, MarqueeMode, Matrix, PageObjects, Point, Segment,
-    VectorObject, decompose_page, hit_test_point_deep, hit_test_rect_deep,
+    Bounds, FormMarquee, HitTarget, MarqueeMode, Matrix, PageObjects, Point, VectorObject,
+    decompose_page, hit_test_point_deep, hit_test_rect_deep,
 };
 use pdfcer_core::view::DocumentView;
 use pdfcer_render::page_device_geometry;
@@ -302,8 +308,22 @@ pub struct ObjectModelProvider {
 /// | | `Subpath` | `Run` |
 /// |---|---|---|
 /// | Delete | `delete_subpath` | `delete_text_run` |
-/// | Drag to move | `move_subpath` | **nothing — no core verb exists** |
+/// | Drag to move | `move_subpath` | `move_text_run` — **but conditionally**, see [`RunMoveBlock`] |
 /// | Descend to Point | yes | no (a run has no anchors) |
+///
+/// ★★★ **The move cell read "nothing — no core verb exists" until
+/// 2026-09-15**, and it had been true for the whole life of this crate. The
+/// engine shipped `move_text_run` and `move_text_run_in_form` on 2026-09-14
+/// (`G017`), which is `OPERATOR_REQUESTS.md` O188's move half and the thing
+/// the operator asked for by name.
+///
+/// ★★ Note the word **conditionally**, because it is the part that survives
+/// the delivery. A subpath can always be moved; a run can be moved only when
+/// the file gave it a position of its own. That asymmetry does not go away
+/// with a verb — it is a property of ISO 32000-1 sub-clause 9.4.2, where a
+/// show operator may take its origin from the previous one's advance — so
+/// the shell still has a refusal to word, and [`RunMoveBlock`] is what it
+/// words it from.
 ///
 /// The Point-rung row needs no guard anywhere:
 /// [`ObjectModelProvider::nearest_node`] reaches
@@ -319,6 +339,60 @@ pub enum PartKind {
     Subpath,
     /// A show operator ("run") of a text object.
     Run,
+}
+
+/// **Why moving one line of a text object would be refused**, asked before the
+/// gesture rather than after it.
+///
+/// # ★★★ This is the ENGINE's guard, re-spelled, not a second opinion
+///
+/// [`ObjectModelProvider::text_run_move_refusal_of`] calls
+/// [`pdfcer_core::vector::edit::text_run_move_refusal`], which is *the same
+/// function* `plan_move_text_run` runs first — not a description of it, not a
+/// re-implementation of its rule. The engine exported it for exactly this
+/// purpose and said so: *"a front end that pre-checks against a second
+/// implementation of the same rule is a front end that will one day enable a
+/// control the engine refuses, or grey out one it would have allowed"*
+/// (`R221`, `R243`).
+///
+/// ★★ **Contrast [`ObjectModelProvider::text_run_delete_would_move_next`]
+/// three functions below**, which IS a hand-rolled copy of the delete-side
+/// rule, written before the engine exported anything. It reads the same
+/// `positioned_by` flag and reaches the same answer today. It is a standing
+/// hazard of precisely the kind this type exists to avoid, and it is recorded
+/// here rather than silently tolerated: the delete-side guard has no exported
+/// twin yet, so there is nothing to call. When one ships, that function
+/// becomes a one-line delegation and this paragraph goes with it.
+///
+/// # What each variant means for the operator
+///
+/// | variant | the file says | what the operator can still do |
+/// |---|---|---|
+/// | [`Self::NoPositionOfItsOwn`] | this line carries on from the line above it, so it has no coordinate of its own | select the whole block and drag that |
+/// | [`Self::WouldMoveNextRun`] | the line AFTER this one carries on from it, so moving this one drags that one too | select the whole block and drag that |
+/// | [`Self::NotThere`] | the index is not a run of this object | nothing — a stale selection, not worded |
+///
+/// ★ The first two are ISO 32000-1 sub-clause 9.4.2 showing through, and
+/// they are common on real CAD exports: a producer that writes `(A) Tj (B) Tj`
+/// with no positioning operator between them has made B's origin a function of
+/// A's advance, and no amount of engine work can separate them without
+/// rewriting the file's shape.
+///
+/// ★ `NotThere` exists because a selection can outlive the edit that
+/// removed what it named. It is a refusal, so the drag does nothing, but it
+/// earns no sentence — the operator has not done anything wrong and there is
+/// nothing for them to do differently.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RunMoveBlock {
+    /// The run takes its origin from the previous run's advance (9.4.2), so
+    /// there is no operand to rewrite. `TextRunHasNoPositionOfItsOwn`.
+    NoPositionOfItsOwn,
+    /// The run AFTER this one takes its origin from this one's advance, so
+    /// moving this one would drag that one along. `MoveWouldMoveNextRun`.
+    WouldMoveNextRun,
+    /// The index is not a run of this object at all — a stale selection, or
+    /// an object that stopped being text under an edit.
+    NotThere,
 }
 
 impl ObjectModelProvider {
@@ -688,306 +762,6 @@ impl ObjectModelProvider {
             Some(VectorObject::Path(path)) => path.page_subpaths().len(),
             _ => 0,
         }
-    }
-
-    /// The anchors of ONE subpath, each paired with its **object-scoped**
-    /// index — the Point rung's pick set (decision 028 §Q1).
-    ///
-    /// # Why not [`Self::object_sample_points`], which already returns anchors
-    ///
-    /// That one returns the whole object's flat list, and using it as a node
-    /// pick set is a hazard decision 028 found already shipped: on a measured
-    /// CAD export one path object holds **6,681 anchors**, so "the nearest
-    /// anchor to the press" can easily belong to a subpath the operator is
-    /// not pointing at, and nothing is drawn beforehand to say which. Scoping
-    /// the pick set to the ENTERED subpath is what makes the grab predictable
-    /// — the operator can only hit points they descended into and can see.
-    ///
-    /// The same number is why the Objects panel nests points under a *part*
-    /// rather than listing an object's anchors directly: 6,681 sibling rows
-    /// under one object is not a tree, it is a wall.
-    ///
-    /// # Why the index is object-scoped even though the set is subpath-scoped
-    ///
-    /// Decision 025 §1.3(b): the number pdfcer shows and the number
-    /// `pdfcer node-move --node N` addresses must be the same number.
-    /// `vector::anchor_count` counts across the whole object, so the running
-    /// offset is added here rather than letting the GUI invent a second
-    /// numbering that would disagree with every other consumer.
-    ///
-    /// Returns empty for a non-path object or an out-of-range index — the
-    /// same exclusion [`Self::object_sample_points`] applies, for the same
-    /// reason (text and image objects are not node-editable, decision 011
-    /// §2.1).
-    #[must_use]
-    /// The **Bézier handles** of one anchor of one subpath, in PDF user space.
-    ///
-    /// Returns at most two: the control point governing the curve as it
-    /// *arrives* at the anchor and the one governing it as it *leaves*. Either
-    /// or both are absent when the neighbouring segment is a straight line or
-    /// there is no neighbouring segment at all — which is the ordinary case on
-    /// a CAD drawing, where almost every path is polygonal.
-    ///
-    /// # ★ Why this is per-ANCHOR and every other point accessor is per-subpath
-    ///
-    /// Because handles are only ever drawn for the anchors the operator has
-    /// selected, and that is not a cosmetic decision. A subpath's anchors are
-    /// its skeleton and are worth showing all at once; its handles are two per
-    /// anchor and are *inside* the shape, so drawing every one turns a curve
-    /// into a thicket and hides the outline the operator is working on. Every
-    /// vector editor draws them for the selection alone, and this accessor's
-    /// shape is what makes that the cheap path rather than a filter over a
-    /// list that was expensive to build.
-    ///
-    /// # ★★ How an anchor index maps onto segments, and the off-by-one in it
-    ///
-    /// `Subpath` is `start` plus a list of `segments`, and `anchors()` yields
-    /// `start` first and then each segment's end. So for object-scoped anchor
-    /// `k` **within this subpath** (0-based):
-    ///
-    /// - its **incoming** handle is `segments[k - 1].c2` — the second control
-    ///   point of the segment that ends *here*. Absent for `k == 0`, which has
-    ///   no segment before it.
-    /// - its **outgoing** handle is `segments[k].c1` — the first control point
-    ///   of the segment that starts *here*. Absent for the last anchor.
-    ///
-    /// Getting that backwards produces handles that are drawn on the wrong side
-    /// of the anchor and drag the wrong curve, which looks like a coordinate
-    /// bug rather than an indexing one. It is stated here because
-    /// `pdfcer_core::vector::Handle`'s own doc comment states it, and the two
-    /// must agree: the `Handle` value returned here is passed straight to
-    /// `EditSession::move_handle`.
-    ///
-    /// A **closed** subpath's first anchor also has an incoming handle — from
-    /// the closing segment — and that is deliberately NOT returned. The closing
-    /// segment of an `h`-terminated subpath has no operands of its own in the
-    /// content stream, so there is nothing for `move_handle` to rewrite, and
-    /// offering a handle the engine will refuse is the "visible control,
-    /// silently inert" failure this project keeps finding.
-    pub fn node_handles(
-        &self,
-        index: usize,
-        subpath: usize,
-        node: usize,
-    ) -> Vec<(pdfcer_core::vector::Handle, Point)> {
-        use pdfcer_core::vector::{Handle, Segment};
-
-        let Some(VectorObject::Path(path)) = self.objects.objects.get(index) else {
-            return Vec::new();
-        };
-        let subpaths = path.page_subpaths();
-        // The object-scoped anchor index has to be brought back into the
-        // subpath's own space, using the SAME running offset
-        // `subpath_node_points` computes — see its comment for why the offset
-        // is the object-scoped index of the subpath's first anchor.
-        let mut offset = 0usize;
-        for (i, sp) in subpaths.iter().enumerate() {
-            let count = sp.anchors().count();
-            if i == subpath {
-                let Some(local) = node.checked_sub(offset).filter(|k| *k < count) else {
-                    // The anchor is not in this subpath. A selection that
-                    // out-ran a decomposition, refused rather than guessed at —
-                    // the same posture `canvas::moving`'s `NodeNotFound` takes.
-                    return Vec::new();
-                };
-                let mut out = Vec::with_capacity(2);
-                // Incoming: the second control point of the segment BEFORE it.
-                if let Some(Segment::Cubic { c2, .. }) =
-                    local.checked_sub(1).and_then(|j| sp.segments.get(j))
-                {
-                    out.push((Handle::Incoming, *c2));
-                }
-                // Outgoing: the first control point of the segment AFTER it.
-                if let Some(Segment::Cubic { c1, .. }) = sp.segments.get(local) {
-                    out.push((Handle::Outgoing, *c1));
-                }
-                return out;
-            }
-            offset += count;
-        }
-        Vec::new()
-    }
-
-    pub fn subpath_node_points(&self, index: usize, subpath: usize) -> Vec<(usize, Point)> {
-        let Some(VectorObject::Path(path)) = self.objects.objects.get(index) else {
-            return Vec::new();
-        };
-        let subpaths = path.page_subpaths();
-        // The running offset IS the object-scoped index of the target
-        // subpath's first anchor, because `anchor_count` flattens the same
-        // walk in the same order.
-        let mut offset = 0usize;
-        for (i, sp) in subpaths.iter().enumerate() {
-            let anchors: Vec<Point> = sp.anchors().collect();
-            if i == subpath {
-                return anchors
-                    .into_iter()
-                    .enumerate()
-                    .map(|(k, p)| (offset + k, p))
-                    .collect();
-            }
-            offset += anchors.len();
-        }
-        Vec::new()
-    }
-
-    /// **Every** anchor of the path object at paint-order `index`, each with
-    /// its object-scoped index — [`Self::subpath_node_points`] flattened
-    /// across all subpaths.
-    ///
-    /// # Why the whole object and not one subpath
-    ///
-    /// A multi-node **selection** is object-scoped: nothing stops an operator
-    /// Ctrl-clicking one anchor on a shape's outer subpath and another on a
-    /// hole inside it, and a selection set holds both by their object-scoped
-    /// index. A multi-node **drag** therefore has to look up positions across
-    /// the whole object — asking per-subpath would mean the caller
-    /// re-deriving which subpath each selected index falls in, which is
-    /// exactly the offset arithmetic [`Self::subpath_node_points`] exists to
-    /// keep in one place.
-    ///
-    /// Empty for a non-path object, for the same reason
-    /// [`Self::subpath_count`] returns `0`.
-    #[must_use]
-    pub fn object_node_points(&self, index: usize) -> Vec<(usize, Point)> {
-        let Some(VectorObject::Path(path)) = self.objects.objects.get(index) else {
-            return Vec::new();
-        };
-        path.page_subpaths()
-            .iter()
-            .flat_map(|sp| sp.anchors())
-            .enumerate()
-            .collect()
-    }
-
-    /// The Bézier control points ("handles") of one subpath, each tagged with
-    /// the **object-scoped index of the node it belongs to** and which side
-    /// of that node it shapes.
-    ///
-    /// # Which handle belongs to which node
-    ///
-    /// A cubic segment carries two control points, and they belong to
-    /// *different* nodes — this is the part that is easy to get backwards.
-    /// Segment `k` runs from anchor `k` to anchor `k+1`, so its `c1` shapes
-    /// the curve LEAVING anchor `k` and its `c2` shapes the curve ARRIVING
-    /// at anchor `k+1`. That is exactly the split
-    /// [`pdfcer_core::vector::Handle`] names, and it is why the enum is worded
-    /// by direction of travel rather than "first/second": first-and-second
-    /// are properties of a *segment*, and a segment says nothing about which
-    /// node the operator selected.
-    ///
-    /// Straight segments contribute nothing. pdfcer refuses to invent a handle
-    /// for a line — turning a line into a curve is a different operation with
-    /// a different name — so a node with no curve on a side simply has no
-    /// mark there, and the absence is stated in the readout rather than drawn
-    /// as a ghost (decision 028 §Q2).
-    ///
-    /// `v`/`y` implicit control points need no special handling here: the
-    /// decomposition already resolves them into explicit `c1`/`c2`
-    /// (`Segment::Cubic`'s own doc comment), so this sees one uniform shape
-    /// and the promotion-to-`c` happens far downstream in the planner.
-    #[must_use]
-    pub fn subpath_handle_points(
-        &self,
-        object: usize,
-        subpath: usize,
-    ) -> Vec<(usize, Handle, Point)> {
-        let Some(VectorObject::Path(path)) = self.objects.objects.get(object) else {
-            return Vec::new();
-        };
-        let subpaths = path.page_subpaths();
-        let mut offset = 0usize;
-        for (i, sp) in subpaths.iter().enumerate() {
-            let anchors = sp.anchors().count();
-            if i != subpath {
-                offset += anchors;
-                continue;
-            }
-            let mut out = Vec::new();
-            for (k, seg) in sp.segments.iter().enumerate() {
-                if let Segment::Cubic { c1, c2, .. } = *seg {
-                    // `c1` shapes the curve leaving anchor k …
-                    out.push((offset + k, Handle::Outgoing, c1));
-                    // … and `c2` shapes the curve arriving at anchor k+1.
-                    out.push((offset + k + 1, Handle::Incoming, c2));
-                }
-            }
-            return out;
-        }
-        Vec::new()
-    }
-
-    /// The handle of `subpath` nearest `point` within `tolerance`, as
-    /// `(node index, side)` — the Point rung's handle pick.
-    ///
-    /// # Why handles are hit-tested BEFORE nodes
-    ///
-    /// A handle sits close to its own node exactly when the curve is nearly
-    /// flat there. If the node won ties, the handle would be unreachable
-    /// precisely in the case where the operator most wants it — to pull a
-    /// flat segment into a curve. Checking the smaller target first is the
-    /// standard resolution and the one decision 028 §Q3 specifies.
-    ///
-    /// `point` is in **PDF page space**, unlike [`Self::nearest_node`]'s
-    /// canvas-space input: the only caller is the drag classifier, which has
-    /// already converted the press origin to page space to compute the drag's
-    /// reference point. Converting back to canvas just to convert forward
-    /// again would be two chances to disagree with itself for no benefit.
-    #[must_use]
-    pub fn nearest_handle(
-        &self,
-        object: usize,
-        subpath: usize,
-        pdf: Point,
-        tolerance: f64,
-    ) -> Option<(usize, Handle)> {
-        let mut best: Option<((usize, Handle), f64)> = None;
-        for (index, side, p) in self.subpath_handle_points(object, subpath) {
-            if !p.is_finite() {
-                continue;
-            }
-            let d = p.distance(pdf);
-            if d <= tolerance && best.is_none_or(|(_, bd)| d < bd) {
-                best = Some(((index, side), d));
-            }
-        }
-        best.map(|(hit, _)| hit)
-    }
-
-    /// The object-scoped index of the anchor of `subpath` nearest `point`
-    /// within `tolerance`, or `None` — the Point rung's pick.
-    ///
-    /// Takes canvas space and converts internally, exactly as
-    /// [`Self::subpath_hits`] does, so the canvas→PDF frame conversion stays
-    /// in the one place that owns it rather than being re-derived by each
-    /// caller. `tolerance` is in PDF units, already converted from screen
-    /// pixels by the caller.
-    ///
-    /// **Ties resolve to the lower index**, which is the same rule the vector
-    /// edit tool's own nearest-anchor search uses — so a point equidistant
-    /// from two anchors picks the same one whether it was reached by clicking
-    /// or by dragging. (That tool lands at S5; the rule is stated here rather
-    /// than cross-referenced so it survives being read alone.)
-    #[must_use]
-    pub fn nearest_node(
-        &self,
-        object: usize,
-        subpath: usize,
-        point: Pos2,
-        tolerance: f64,
-    ) -> Option<usize> {
-        let pdf = self.canvas_to_pdf(point)?;
-        let mut best: Option<(usize, f64)> = None;
-        for (index, p) in self.subpath_node_points(object, subpath) {
-            if !p.is_finite() {
-                continue;
-            }
-            let d = p.distance(pdf);
-            if d <= tolerance && best.is_none_or(|(_, bd)| d < bd) {
-                best = Some((index, d));
-            }
-        }
-        best.map(|(index, _)| index)
     }
 
     // -----------------------------------------------------------------

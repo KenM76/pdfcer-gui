@@ -118,7 +118,7 @@ use pdfcer_core::vector::Point;
 use crate::app::actions::{Action, CanvasDecline, VectorAction};
 use crate::canvas::gesture::Phase;
 use crate::canvas::selection::{SelectionLevel, SelectionState};
-use crate::panels::objects::provider::{ObjectModelProvider, PartKind};
+use crate::panels::objects::provider::{ObjectModelProvider, PartKind, RunMoveBlock};
 use crate::viewer;
 
 /// A drag displacement in **PDF page space** — the frame every `move_*` verb
@@ -251,6 +251,58 @@ pub enum MoveSubject {
         /// The anchors, object-scoped, ascending and unique.
         nodes: Vec<usize>,
     },
+    /// ★★★ **The Part rung of a TEXT object: `move_text_run`** —
+    /// `OPERATOR_REQUESTS.md` O188, the operator's own ask to move one line of
+    /// a title block.
+    ///
+    /// # Why this arrived a month after its delete twin
+    ///
+    /// Because until 2026-09-14 there was no verb. `delete_text_run` has
+    /// existed since `pdfcer-core` `Pass 32.0`; `move_text_run` shipped as
+    /// `G017`, and this crate filed the request the day before. Three separate
+    /// code bases had *written down* that the gap existed — two files in the
+    /// old GUI and one design note here — and none had asked for it, which is
+    /// the failure mode `EDITABLE_SURFACES.md` calls *"considered verbs whose
+    /// consideration was filed where the register could not see it"*.
+    ///
+    /// # ★★ Reaching this variant is CONDITIONAL, unlike every sibling here
+    ///
+    /// [`eligible`] only builds it when
+    /// [`ObjectModelProvider::text_run_move_refusal_of`] answers `None`. A run
+    /// whose origin is inherited from the previous run's advance (9.4.2) has no
+    /// coordinate to rewrite and refuses with [`Refusal::TextRunCannotMove`]
+    /// instead — *before* a ghost is drawn, so obligation 3 in the module
+    /// header still holds exactly.
+    TextRun {
+        /// The page.
+        page: usize,
+        /// The enclosing text object, by paint-order index.
+        object: usize,
+        /// The show operator, in content order — the same numbering
+        /// `delete_text_run` and `hit_test_text_runs` use.
+        run: usize,
+    },
+    /// ★★★ **The Part rung of a text object INSIDE a form XObject**:
+    /// `move_text_run_in_form`.
+    ///
+    /// ★★ **This is the variant O188 is actually about**, and it is worth
+    /// saying plainly: on the operator's SolidWorks sets the title block *is* a
+    /// form XObject, drawn on every sheet. A page-scoped verb alone would have
+    /// answered his request everywhere except where he asked it. The engine
+    /// made the same observation in `move_text_run_in_form`'s own doc.
+    ///
+    /// ⚠ **One call changes every sheet the form is drawn on.** The form's
+    /// stream is shared, so this is not a per-page edit wearing a per-page
+    /// address — see `VectorAction::MoveTextRunInForm` for what the shell
+    /// owes the operator about that.
+    TextRunInForm {
+        /// The page the leaf is on.
+        page: usize,
+        /// The enclosing text object, by **leaf** index.
+        leaf: usize,
+        /// The show operator, in content order.
+        run: usize,
+    },
     /// The Part rung of a **path** object: `move_subpath`.
     Subpath {
         /// The page.
@@ -322,6 +374,23 @@ pub struct MoveContext {
     /// What kind of part the entered object decomposes into, at the Part and
     /// Node rungs. `None` for an object with no Part rung at all (an image).
     pub part_kind: Option<PartKind>,
+    /// ★★★ **Whether the engine would refuse to move the entered RUN**, and
+    /// why — `None` when it would not, or when the entered thing is not a
+    /// run at all.
+    ///
+    /// Carried here, alongside [`Self::part_kind`], for the reason the whole
+    /// struct exists: [`eligible`] must stay a pure function of *what is
+    /// selected* and *what the model says about it*, so that the tests which
+    /// prove it never have to build a decomposition. The decomposition-shaped
+    /// question is asked once, by [`context`], which owns the provider.
+    ///
+    /// ★★ It is the ENGINE's answer, not this crate's —
+    /// [`ObjectModelProvider::text_run_move_refusal_of`] calls the same
+    /// function `plan_move_text_run` runs first. That is what makes the ghost
+    /// and the commit structurally unable to disagree; see [`RunMoveBlock`] for
+    /// the argument in full, and for the one place this crate still keeps a
+    /// hand-rolled copy of a rule like this.
+    pub run_move: Option<RunMoveBlock>,
 }
 
 /// Why a move drag committed nothing.
@@ -395,10 +464,47 @@ pub enum Refusal {
     /// The Part rung is entered but no part is named — an inconsistent state
     /// [`SelectionState`] does not produce, refused rather than guessed at.
     NoPartEntered,
-    /// The entered part has no move verb: a text object's show operator is a
-    /// "part", but `move_subpath` translates path construction operands and
-    /// there is nothing for it to translate.
+    /// The entered part has no move verb.
+    ///
+    /// # ★★★ What this variant means NOW, narrowed 2026-09-15
+    ///
+    /// It said: *"a text object's show operator is a 'part', but
+    /// `move_subpath` translates path construction operands and there is
+    /// nothing for it to translate"*, and that was the whole of O188's move
+    /// half — true from this crate's first commit until `pdfcer-core` shipped
+    /// `move_text_run` (`G017`, 2026-09-14).
+    ///
+    /// **It is no longer the Part rung's answer for a run.** [`eligible`] now
+    /// routes a movable run to [`MoveSubject::TextRun`] and an unmovable one to
+    /// [`Self::TextRunCannotMove`], which carries the engine's reason. What is
+    /// left here is the **Node** rung: a text run has no anchors, so there is
+    /// no `move_node` to reach, and `PartKind::Run` arriving at that rung is an
+    /// inconsistent selection rather than a missing capability.
+    ///
+    /// ★ Kept rather than deleted because the Node arm genuinely needs an
+    /// arm, and because [`Self::token`] still distinguishes the two part kinds
+    /// — a driven check that could not tell them apart would be asserting the
+    /// wrong cause.
     NoVerbForPart(PartKind),
+    /// ★★★ **The engine would refuse to move this line, and it said so before
+    /// the operator let go of the mouse.**
+    ///
+    /// `OPERATOR_REQUESTS.md` O188. Distinct from [`Self::NoVerbForPart`] in
+    /// the way that matters to whoever reads the sentence: that one meant
+    /// *pdfcer cannot do this at all*, this one means *pdfcer cannot do it to
+    /// THIS line, because of how the file was written*. The remedy is the
+    /// same — select the whole block and drag that — but the fact is not,
+    /// and a sentence that got them the wrong way round would send the
+    /// operator looking for a setting that does not exist.
+    ///
+    /// ★★ **Raised from [`eligible`], not from the edit funnel**, which is
+    /// the placement that makes it honest. The engine would refuse this move
+    /// too, and would do it after the gesture — so the operator would have
+    /// watched an outline slide across the sheet and then snap back. Asking
+    /// [`ObjectModelProvider::text_run_move_refusal_of`] first means no ghost
+    /// is ever drawn for a move that will not happen, which is obligation 3
+    /// in this module's header.
+    TextRunCannotMove(RunMoveBlock),
     /// The Node rung is entered but no anchor is named. Same nature as
     /// [`Self::NoPartEntered`].
     NoNodeEntered,
@@ -470,6 +576,18 @@ impl Refusal {
             Self::NoVerbForPart(PartKind::Run) => "no-verb-for-text-run",
             // ui-text-exempt: stable diagnostic tokens, never displayed.
             Self::NoVerbForPart(PartKind::Subpath) => "no-verb-for-subpath",
+            // ★★★ Split by BLOCK, for the reason the pair above is split by
+            // part kind: these are three distinguishable causes wearing one
+            // variant, and two of them put different sentences on the status
+            // bar. A driven check asserting "the drag was refused" learns
+            // nothing; one asserting WHICH refusal fired is the only kind that
+            // can tell a correct decline from a decline for the wrong reason.
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::TextRunCannotMove(RunMoveBlock::NoPositionOfItsOwn) => "run-has-no-position",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun) => "run-would-move-next",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::TextRunCannotMove(RunMoveBlock::NotThere) => "run-not-there",
             // ui-text-exempt: stable diagnostic tokens, never displayed.
             Self::NoNodeEntered => "no-node-entered",
             // ui-text-exempt: stable diagnostic tokens, never displayed.
@@ -517,14 +635,48 @@ impl Refusal {
             // drag does nothing, and there is no way on screen to learn why.
             // Reachable by an ordinary click since 2026-08-27, so not rare.
             Self::InsideForm => Some(CanvasDecline::InsideFormNotAPath),
-            // ★★★ O188. Identical shape, on a different rung: one line inside a
-            // block of text, outlined, dragged, silent. The sentence leads with
-            // what DOES work — Delete reaches one line — because that half
-            // shipped on 2026-09-05 and he had not found it.
-            Self::NoVerbForPart(PartKind::Run) => Some(CanvasDecline::TextRunCannotMoveAlone),
+            // ★★★ **THE O188 SENTENCE WAS RETIRED HERE ON 2026-09-15, one day
+            // after it shipped, and the retirement is the point rather than an
+            // embarrassment.**
+            //
+            // It read: *"Delete removes that line on its own, but pdfcer cannot
+            // move a single line yet — press Escape to select the whole block
+            // and drag that."* True when written. False the moment
+            // `pdfcer-core` shipped `move_text_run` (`G017`), because the
+            // sentence asserts an absence, and an absence is the one kind of
+            // claim a delivery can falsify without touching a single line of
+            // this crate.
+            //
+            // ★★ Both halves of the Part rung for a run now reach a verb or a
+            // REASON, and neither is this one. A movable run goes to
+            // `MoveSubject::TextRun`; an unmovable one goes to
+            // `Self::TextRunCannotMove`, three lines below. What is left of
+            // `NoVerbForPart(Run)` is the Node rung, where a run has no anchors
+            // and the state is inconsistent rather than unsupported — the
+            // operator has not been refused a capability, so there is nothing
+            // to tell them.
+            Self::NoVerbForPart(PartKind::Run) => None,
             // Unreachable: `eligible` sends a subpath at the Part rung to
             // `move_subpath`. Named anyway — see the docs above.
             Self::NoVerbForPart(PartKind::Subpath) => None,
+            // ★★★ **The replacement pair, and they say opposite things about
+            // WHICH line is the problem** — which is exactly why they are two
+            // sentences and not one parameterised one. `NoPositionOfItsOwn` is
+            // about the line the operator grabbed; `WouldMoveNextRun` is about
+            // the line under it, which looks fine and is the reason the grabbed
+            // one cannot go. An operator told the wrong one of those goes
+            // looking for a fault in the wrong place.
+            Self::TextRunCannotMove(RunMoveBlock::NoPositionOfItsOwn) => {
+                Some(CanvasDecline::TextRunHasNoPositionOfItsOwn)
+            }
+            Self::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun) => {
+                Some(CanvasDecline::TextRunWouldDragTheNextLine)
+            }
+            // ★ Silence, deliberately. The selection named a run the object
+            // does not have — it outlived an edit — and the operator did
+            // nothing wrong and has nothing to do differently. Saying so would
+            // be the bar narrating this program's own bookkeeping.
+            Self::TextRunCannotMove(RunMoveBlock::NotThere) => None,
             Self::NoObjectModel
             | Self::NothingSelected
             | Self::UnaddressableObject
@@ -692,10 +844,24 @@ pub fn eligible(
                         leaf,
                         subpath,
                     }),
-                    // A text run inside a form has no move verb either — the
-                    // engine's six are node and object verbs — so it declines
-                    // by the same name it would on the page.
-                    Some(other) => Err(Refusal::NoVerbForPart(other)),
+                    // ★★★ **And a run inside a form reaches a verb too, since
+                    // 2026-09-14** — `move_text_run_in_form`, which is the
+                    // half of `G017` O188 is actually about: on a SolidWorks
+                    // set the title block IS a form, so a page-scoped verb
+                    // alone would have answered the request everywhere except
+                    // where he asked it.
+                    //
+                    // ★ The pre-check is the same one the page arm runs and
+                    // it was asked of the same `TargetId`, so a leaf and a page
+                    // object cannot come to disagree about whether a run moves.
+                    Some(PartKind::Run) => match ctx.run_move {
+                        Some(block) => Err(Refusal::TextRunCannotMove(block)),
+                        None => Ok(MoveSubject::TextRunInForm {
+                            page,
+                            leaf,
+                            run: subpath,
+                        }),
+                    },
                     None => Err(Refusal::InsideForm),
                 };
             }
@@ -709,11 +875,30 @@ pub fn eligible(
                     object,
                     subpath,
                 }),
-                // A text run IS a part, and it has no move verb. Declining
-                // here rather than letting `move_subpath` refuse downstream is
-                // what keeps the ghost truthful — the engine's refusal arrives
-                // after the operator has already watched an outline slide.
-                Some(other) => Err(Refusal::NoVerbForPart(other)),
+                // ★★★ **A text run IS a part, and since 2026-09-14 it has a
+                // move verb** — `move_text_run`, `OPERATOR_REQUESTS.md` O188.
+                //
+                // The comment that stood here said *"it has no move verb"* and
+                // explained why declining early kept the ghost truthful. The
+                // conclusion outlived the premise: the ghost still has to be
+                // truthful, but the thing that makes it truthful is now the
+                // engine's own pre-check rather than a blanket refusal.
+                //
+                // ★★ `ctx.run_move` is
+                // `ObjectModelProvider::text_run_move_refusal_of`, which calls
+                // `pdfcer_core::vector::edit::text_run_move_refusal` — *the
+                // function `plan_move_text_run` runs first*, not a shell-side
+                // reading of the same rule. So obligation 3 holds by
+                // construction: this cannot promise a move the planner will
+                // refuse, because it is asking the planner.
+                Some(PartKind::Run) => match ctx.run_move {
+                    Some(block) => Err(Refusal::TextRunCannotMove(block)),
+                    None => Ok(MoveSubject::TextRun {
+                        page,
+                        object,
+                        run: subpath,
+                    }),
+                },
                 None => Err(Refusal::NotAPath(object)),
             }
         }
@@ -876,6 +1061,28 @@ pub fn action(
             dy: delta.dy,
         }
         .into()),
+        // ★★★ A displacement, not a destination, and that is the engine's
+        // signature rather than this shell's preference: `move_text_run`
+        // rewrites the operands of a positioning operator (or inserts one), so
+        // the natural operand is how far, exactly as it is for `move_subpath`
+        // two arms below. The Node rung is the family that takes a destination,
+        // and it takes one because the thing it rewrites IS a coordinate pair.
+        MoveSubject::TextRun { page, object, run } => Ok(VectorAction::MoveTextRun {
+            page,
+            object,
+            run,
+            dx: delta.dx,
+            dy: delta.dy,
+        }
+        .into()),
+        MoveSubject::TextRunInForm { page, leaf, run } => Ok(VectorAction::MoveTextRunInForm {
+            page,
+            leaf,
+            run,
+            dx: delta.dx,
+            dy: delta.dy,
+        }
+        .into()),
         MoveSubject::Subpath {
             page,
             object,
@@ -962,13 +1169,30 @@ fn context(
     // ★ That is verbatim what the run printed and is left as printed. The
     // field is a stable token since 2026-09-15, so the same line reads
     // `reason=inside-form detail=InsideForm` today — see `Refusal::token`.
-    let entered = selection.entered_object().map(|e| e.object);
+    let entry = selection.entered_object();
+    let entered = entry.map(|e| e.object);
     Some(MoveContext {
         non_path: selection
             .object_indices_on(page)
             .into_iter()
             .find(|&i| provider.part_kind(i) != Some(PartKind::Subpath)),
         part_kind: entered.and_then(|target| provider.part_kind_of(target)),
+        // ★★★ **The engine's own move guard, run once per frame of the drag.**
+        //
+        // Asked unconditionally rather than behind an `if part_kind == Run`,
+        // and the reason is the one this whole struct is built around: a
+        // condition evaluated in two places is a condition that can be
+        // evaluated differently in two places. `text_run_move_refusal_of`
+        // already answers `None` for anything that is not a text object, so the
+        // guard would buy nothing but a second opinion about what a run is.
+        //
+        // ★ The cost is a `Vec::get` and two enum comparisons inside the
+        // engine, over a decomposition this provider has already built — the
+        // same order as the `part_kind` scan on the line above, which the
+        // header argues is affordable on every frame for the same reason.
+        run_move: entry
+            .and_then(|e| e.subpath.map(|run| (e.object, run)))
+            .and_then(|(target, run)| provider.text_run_move_refusal_of(target, run)),
     })
 }
 

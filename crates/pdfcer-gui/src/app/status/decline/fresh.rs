@@ -342,10 +342,16 @@ impl Declined {
             // -one call sites in `decline/tests.rs` to build the one mechanism
             // this arm exists to refuse.
             //
-            // What earns the `true` is the past tense: *that drag did nothing,
-            // and the document is unchanged* was true when it was written
-            // whatever the next frame does. `retire` owns stale.
-            Self::TextRunCannotMoveAlone => true,
+            // ★★★ What earns the `true` got STRONGER on 2026-09-15 without
+            // changing the answer, and that is worth a line because the two
+            // arguments are easy to confuse. The retired wording was past
+            // tense (*that drag did nothing*) and survived on the rule that a
+            // report of a past moment cannot go stale. These two are present
+            // tense and survive on something better: they state a property of
+            // the document — *this line's position is not written down here*
+            // — which nothing but an edit can change. Neither Escape nor a
+            // new selection can falsify them. `retire` still owns stale.
+            Self::TextRunHasNoPositionOfItsOwn | Self::TextRunWouldDragTheNextLine => true,
         }
     }
 }

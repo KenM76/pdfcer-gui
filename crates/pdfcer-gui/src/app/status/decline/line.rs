@@ -218,7 +218,12 @@ impl Declined {
             // `text::arrange`'s header rather than papered over, and the two
             // sentences being adjacent is the point: whoever reworks either
             // one has to read it.
-            Self::TextRunCannotMoveAlone => crate::text::arrange::run_cannot_move_alone(),
+            Self::TextRunHasNoPositionOfItsOwn => {
+                crate::text::arrange::run_has_no_position_of_its_own()
+            }
+            Self::TextRunWouldDragTheNextLine => {
+                crate::text::arrange::run_would_drag_the_next_line()
+            }
         };
         std::borrow::Cow::Borrowed(fixed)
     }

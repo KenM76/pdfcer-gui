@@ -74,11 +74,21 @@
 //! > *“The arrow keys nudge a selected markup. **Drag this with the pointer
 //! > instead.**”*
 //!
-//! [`run_cannot_move_alone`] answers a drag on **one line inside a block of
-//! text**, and it says pdfcer cannot do that yet. So there is exactly one
-//! selection — a text run entered at the Part rung — for which the first sentence
-//! sends the operator straight into the second. Press an arrow, be told to drag,
-//! drag, be told to press Escape.
+//! [`run_has_no_position_of_its_own`] and [`run_would_drag_the_next_line`]
+//! answer a drag on **one line inside a block of text** that this particular
+//! file will not let pdfcer move. So there is exactly one selection — a text
+//! run entered at the Part rung, in a document written that way — for which
+//! the first sentence sends the operator straight into the second. Press an
+//! arrow, be told to drag, drag, be told to press Escape.
+//!
+//! ★★★ **That collision NARROWED on 2026-09-15 and did not close.** Until
+//! `pdfcer-core` shipped `move_text_run`, every drag on a line refused, so the
+//! loop caught every operator who tried. Now most lines move, and the two
+//! sentences above are reached only where the file gives the line no position
+//! of its own — so the arrow-key sentence is right far more often than it was
+//! and still wrong in the same narrow place. A defect that gets rarer without
+//! getting different is the kind that stops being reported before it stops
+//! happening, which is why this paragraph is longer now rather than deleted.
 //!
 //! ★★ **It is recorded and not “fixed”, deliberately.** The obvious repair is to
 //! widen `not_a_markup` with an *unless it is one line of text* clause, and that
@@ -273,56 +283,128 @@ pub const fn degenerate_page() -> &'static str {
 /// see the cause, and from where they sit dragging is simply broken — which is
 /// this project's founding defect shape, arriving on the newest gesture.
 ///
+/// # ★★★ WHY THERE ARE TWO, when there was one until 2026-09-15
+///
+/// The retired sentence said *“pdfcer cannot move a single line yet”*, and on
+/// 2026-09-14 that stopped being true: `pdfcer-core` shipped `move_text_run`
+/// and `move_text_run_in_form` (`G017`), and most lines now move. What remains
+/// is not a missing capability but a property of **the file in front of him**,
+/// and there are exactly two ways to have it — so there are exactly two
+/// sentences, and neither may be written as *pdfcer cannot*.
+///
+/// ★★ **The distinction is not pedantry, it decides what he does next.**
+/// *pdfcer cannot move a line* invites him to go looking for a newer build, a
+/// setting, or a different program. *This line's position is not written down
+/// in this file* tells him it is this drawing, that the very same gesture will
+/// work on the next one, and that the remedy in the second clause is the whole
+/// of the answer rather than a consolation. A sentence that got those the wrong
+/// way round would send him hunting for something that does not exist — the
+/// failure O188 was raised about, wearing a different hat.
+///
+/// # What each one is answering, in the operator's terms
+///
+/// A block of text is a run of instructions, and the position of each line in
+/// it may either be **stated** or **inherited from where the line before it
+/// finished** (ISO 32000-1 §9.4.2 — but he cannot see that and the sentences
+/// never say it). Where it is stated, there is a number to change and the drag
+/// works. Where it is inherited:
+///
+/// * [`run_has_no_position_of_its_own`] — **this** line's position is
+///   inherited, so there is no number to change. Moving it would mean writing
+///   one, which is an edit to how the file is structured and not the edit he
+///   asked for.
+/// * [`run_would_drag_the_next_line`] — the **next** line's position is
+///   inherited from this one, so moving this one moves that one too. pdfcer
+///   will not silently move something the operator did not select.
+///
+/// ★★ Both are asked **before the press is accepted**, by
+/// `canvas::moving::eligible` through
+/// `ObjectModelProvider::text_run_move_refusal_of`, which calls the engine's
+/// own `text_run_move_refusal` — the function the planner runs first. So the
+/// sentence and the outcome cannot disagree, and no ghost outline is ever drawn
+/// for a drag that will not commit.
+///
 /// # ★★ The order of the clauses is the argument, not the style
 ///
 /// | clause | what it is doing |
 /// |---|---|
-/// | *“That drag was on one line inside a block of text”* | names what was under the pointer, because the outline does not distinguish a run from an object |
-/// | *“Delete removes that line on its own”* | **the offer, and it comes before the limit** |
-/// | *“pdfcer cannot move a single line yet”* | the limit, said as *yet*, because a core verb is what is missing |
-/// | *“press Escape to select the whole block and drag that”* | R83: a refusal that names its remedy |
+/// | *“That line”* / *“The line after this one”* | names what was under the pointer, because the outline does not distinguish a line from a block |
+/// | *“takes its position from —”* | **the cause, in terms he can act on**: a fact about this document |
+/// | *“press Escape to select the whole block of text and drag that”* | R83: a refusal that names its remedy |
 ///
-/// The offer is before the limit because of what O188 actually asked for. He
-/// asked to take a title block apart — remove pieces **and** move them — and the
-/// removing half has shipped and been driven since 2026-09-05. He had not found
-/// it. A refusal that spends its one line on what is impossible teaches him
-/// nothing he did not already learn from the drag doing nothing; a refusal that
-/// leads with the half that works answers the request it was raised by.
+/// The retired wording led with an **offer** — *Delete removes that line on
+/// its own* — because O188 asked to take a title block apart and the removing
+/// half had shipped unnoticed. That offer is gone from both sentences, on
+/// purpose: the moving half has now shipped too, he has found both, and a line
+/// spent advertising Delete is a line not spent on the only thing these two
+/// still have to explain, which is why *this* line is the exception.
 ///
-/// # ★★ Past tense, and it decides the retirement rule
+/// ★ It is also a claim this pair could no longer make honestly. Delete's
+/// own refusal is the mirror of [`run_would_drag_the_next_line`]'s — the same
+/// §9.4.2 inheritance blocks both — so *Delete removes that line on its own*
+/// would be false for a selection reachable from here, and an offer that is
+/// sometimes false is worse than no offer. A capability claim in product copy
+/// needs the same citation a limitation claim does.
 ///
-/// *“That drag **was** on”*, not *“This **is**”*. A present-tense sentence about the
-/// selection becomes false the instant the operator presses Escape — which is the
-/// remedy it just asked for — so it would have to be filtered on the selection,
-/// and the filter would delete the instruction at the moment they began to
-/// follow it. [`crate::app::status::decline::Declined::TextRunCannotMoveAlone`]'s
-/// arm in `app::status::decline::fresh` carries that ruling; this wording is what
-/// makes it available.
+/// # Tense: present now, and the retirement ruling survives the change
 ///
-/// # Both capability claims are measured, not assumed
+/// The retired sentence was past tense (*“That drag **was** on”*) because it
+/// reported a gesture, and a report of a past moment stays true whatever the
+/// next frame does. These two are **present** tense, and are on firmer ground
+/// for it: they state a property of the document, which nothing but an edit can
+/// change — not pressing Escape, and not selecting something else.
 ///
-/// Copy that tells an operator something works is a claim, and it needs the same
-/// citation a limitation claim does.
+/// ★★ That does **not** reopen the retirement rule.
+/// `app::status::decline::fresh` still answers `true` for both, and the trap it
+/// is avoiding is unchanged: the remedy these sentences name is *press Escape*,
+/// and a predicate keyed on *is a line still selected?* would delete the
+/// instruction at the instant the operator began to follow it. The tense
+/// argument got stronger; the ruling it was supporting did not move.
 ///
-/// * **Delete reaches one run.** [`crate::canvas::deleting`]'s routing table
-///   sends the Part rung on a text object to `EditSession::delete_text_run`, and
-///   that module's tests assert it. The engine can still refuse the call
-///   (§9.4.2, a following run it cannot reposition); that refusal has a sentence
-///   of its own, which is what makes this an **offer** rather than a guarantee.
-/// * **Escape ascends exactly one rung.** Decision 025's L1, in
-///   [`crate::canvas::keys`]. From the Part rung it lands on the whole text
-///   object — which `move_objects`/`transform_objects` really does move, so the
-///   remedy is a gesture that works and not a hope.
+/// # The one capability claim left, and it is measured
 ///
-/// ★ Says **block of text** rather than *show operator*, *run* or *`Tj`*. The
-/// operator can see a block of text and a line inside it; they cannot see any of
-/// the other three, and a sentence in the file format's vocabulary reads as an
-/// internal error whatever it says — this file's standing rule.
+/// **Escape ascends exactly one rung.** Decision 025's L1, in
+/// [`crate::canvas::keys`]. From the Part rung it lands on the whole text
+/// object — which `move_objects`/`transform_objects` really does move, so the
+/// remedy is a gesture that works and not a hope.
+///
+/// ★ Says **block of text** and **line** rather than *show operator*, *run*
+/// or *`Tj`*; says *takes its position from* rather than *`Td`*, *`Tm`* or
+/// *text-space displacement*. The operator can see a block of text and a line
+/// inside it; they cannot see any of the rest, and a sentence in the file
+/// format's vocabulary reads as an internal error whatever it says — this
+/// file's standing rule.
 #[must_use]
-pub const fn run_cannot_move_alone() -> &'static str {
-    "That drag was on one line inside a block of text. Delete removes that line on its own, \
-     but pdfcer cannot move a single line yet — press Escape to select the whole block \
-     and drag that."
+pub const fn run_has_no_position_of_its_own() -> &'static str {
+    "That line takes its position from the line before it, so this document has no position \
+     for it that pdfcer could change — press Escape to select the whole block of text and \
+     drag that."
+}
+
+/// **A drag on a line that the NEXT line's position is measured from** — the
+/// second of O188's two refusals.
+///
+/// See [`run_has_no_position_of_its_own`] for the argument both sentences share:
+/// why there are two of them, why neither says *pdfcer cannot*, why the offer
+/// that used to lead the retired wording is gone, and why present tense here
+/// does not reopen the retirement ruling.
+///
+/// ★★ **What this one has to get across that its twin does not** is that the
+/// refusal is protecting something. The other sentence reports an absence; this
+/// one reports a consequence — the drag *could* be performed and pdfcer is
+/// declining, because carrying it out would move a line the operator did not
+/// select and did not look at. Said badly, that reads as the program being
+/// timid. Said as *moving this line would drag that one with it*, it reads as
+/// the program noticing something he could not see, which is what happened.
+///
+/// ★ **Not** *“the next line is attached to this one”*, which is the obvious
+/// plain-English rendering and is wrong in the direction that matters: it
+/// suggests a relationship he could detach, and there is no such control. *Takes
+/// its position from* names a one-way dependency that is a fact about the file.
+#[must_use]
+pub const fn run_would_drag_the_next_line() -> &'static str {
+    "The line after this one takes its position from this one, so moving it would drag that \
+     line along too — press Escape to select the whole block of text and drag that."
 }
 
 // ===========================================================================

@@ -391,6 +391,21 @@ pub fn for_move_subject(
         // reports the object-scoped indices for one subpath, offsets included,
         // and re-deriving that arithmetic is the hazard `with_nodes_moved`'s
         // header describes.
+        // ★★★ **A text run gets the bounding ghost and NOTHING else, and that
+        // is the honest preview rather than a gap.**
+        //
+        // `ShapePreview` is path geometry — anchors and segments moved by a
+        // delta — and a show operator has none. There is nothing to draw
+        // that would be more informative than the outline `MovePreview::ghost`
+        // already carries, and drawing a rectangle here and calling it a shape
+        // would be the same rectangle twice.
+        //
+        // ★ `moving::drag`'s own comment already promised this: *"on a rung
+        // the shape preview cannot serve — a text run, an image, a form
+        // XObject — the outline is the whole answer, exactly as it was
+        // before this existed."* Written before a run could move at all, and
+        // still exactly right now that it can.
+        MoveSubject::TextRun { .. } | MoveSubject::TextRunInForm { .. } => None,
         MoveSubject::Subpath {
             object, subpath, ..
         } => {

@@ -792,7 +792,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // with the three above green is a statement about the MOVE path alone,
         // while a failure of all four is a statement about the Part rung on text —
         // which is the first fork a reader needs and is free if the order holds it.
-        Box::new(move_line_of_text::ARefusedDragOnOneLineOfTextSaysSo),
+        Box::new(move_line_of_text::DraggingOneLineOfTextMovesItOrSaysWhy),
         // ★★★ And immediately after the refusal, because the two are the two
         // halves of O188 and they are ordered the way the operator met them.
         // `move_line_of_text` asserts that the gesture he TRIED is refused out

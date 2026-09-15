@@ -388,6 +388,93 @@ pub enum VectorAction {
         /// Vertical displacement, PDF user-space points (Y is up).
         dy: f64,
     },
+    /// ★★★ **Displace ONE LINE of a text object** —
+    /// `EditSession::move_text_run`, the Part rung's move verb for text, and
+    /// `OPERATOR_REQUESTS.md` O188's move half.
+    ///
+    /// # What the operator asked for, and why it took a month
+    ///
+    /// He can select one label in a title block — the hit test has been
+    /// per-run since `Pass 18.5` — and since 2026-09-05 he can delete it.
+    /// Dragging it did nothing, in silence, because `move_subpath` translates
+    /// path construction operands and a show operator has none. The gap was
+    /// written down in three places across two code bases and asked for in
+    /// none; `pdfcer-core` shipped `move_text_run` as `G017` on 2026-09-14, the
+    /// day after this project finally filed it.
+    ///
+    /// ★ Those labels are **pdf dimensions** (R8b Rule 15) — page content
+    /// a CAD exporter wrote. This moves them; it does not re-measure them, and
+    /// they have nothing to do with the **ce dimensions** pdfcer authors.
+    ///
+    /// # ★★ The refusal that is asked BEFORE the press, and where
+    ///
+    /// 9.4.2 again, and the mirror image of [`Self::DeleteTextRun`]'s: a run
+    /// with no positioning operator of its own starts wherever the previous one
+    /// ended, so there is no operand to rewrite; and a run whose SUCCESSOR is
+    /// in that state cannot move without dragging the successor along.
+    /// `crate::canvas::moving::eligible` asks
+    /// `ObjectModelProvider::text_run_move_refusal_of` before a ghost is drawn,
+    /// and **that is the engine's own guard rather than a copy of it** —
+    /// `pdfcer_core::vector::edit::text_run_move_refusal`, the function
+    /// `plan_move_text_run` runs first. Compare the note on
+    /// [`Self::DeleteTextRun`], whose pre-check IS a hand-rolled copy because
+    /// the delete side has no exported twin yet.
+    ///
+    /// # Disclosures — and this one is NOT always empty
+    ///
+    /// The planner rewrites `Tm` or `Td` operands where it can. Where the run
+    /// was placed by `TD`, `T*`, `'`, `"` or by nothing at all it **inserts a
+    /// `Td`**, and discloses that it did: the page looks identical, the move is
+    /// exact, and dragging back by the same amount will not restore the
+    /// original bytes. Rule 4 in its purest form — an inference the operator
+    /// cannot see, so it is reported off-canvas and nothing is drawn
+    /// differently. The funnel records them; this variant needs no code for it.
+    MoveTextRun {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing text object, by paint-order index.
+        object: usize,
+        /// The run, in content order — the numbering the hit test returns and
+        /// [`Self::DeleteTextRun`] already uses. **Nothing renumbers**: the
+        /// move family rewrites operands in place, so the selection survives
+        /// the drag naming the same line.
+        run: usize,
+        /// Horizontal displacement, PDF user-space points.
+        dx: f64,
+        /// Vertical displacement, PDF user-space points (Y is up).
+        dy: f64,
+    },
+    /// ★★★ **Displace one line of a text object INSIDE a form XObject** —
+    /// `EditSession::move_text_run_in_form`.
+    ///
+    /// ★★ **This is the variant O188 is actually about.** On the operator's
+    /// SolidWorks sets the title block *is* a form XObject, drawn once per
+    /// sheet; the labels he wants to nudge live inside it. A page-scoped verb
+    /// alone would have answered his request everywhere except where he asked
+    /// it, which the engine said in as many words when it shipped the pair
+    /// together.
+    ///
+    /// ⚠ **One call changes every sheet the form is drawn on**, because the
+    /// form's stream is shared. `FormSurgeryOutcome::invocations` and `::pages`
+    /// are the measured pair that says how many, and the engine folds the reach
+    /// sentence into `disclosures` when the count is above one — so routing
+    /// the disclosures through the funnel, as every `*_in_form` arm here does,
+    /// IS how the operator is told. There is no second mechanism and there must
+    /// not be one.
+    MoveTextRunInForm {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing text object, by **leaf** index — a different address
+        /// space from [`Self::MoveTextRun`]'s `object`, which is why it is a
+        /// separate variant rather than a flag.
+        leaf: usize,
+        /// The run, in content order.
+        run: usize,
+        /// Horizontal displacement, PDF user-space points.
+        dx: f64,
+        /// Vertical displacement, PDF user-space points (Y is up).
+        dy: f64,
+    },
     /// Drag **one anchor** of one path object to an absolute page-space point
     /// — the Node rung's move verb.
     ///
@@ -921,6 +1008,36 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
         } => {
             vector_edit_on_page(doc, "move-subpath", page, 1, |session| {
                 session.move_subpath(page, object, subpath, dx, dy)
+            });
+        }
+        // ★★★ O188's move half, wired 2026-09-15. No disclosure handling of
+        // its own and that is deliberate, not an omission: `move_text_run`
+        // returns the sentences an inserted `Td` owes, and the funnel records
+        // whatever the closure returns, in one call, stamped with the epoch the
+        // edit produced. `MoveHandle`'s arm above carries the full argument for
+        // why a second, hand-written re-record is the LOSSY mechanism.
+        VectorAction::MoveTextRun {
+            page,
+            object,
+            run,
+            dx,
+            dy,
+        } => {
+            vector_edit_on_page(doc, "move-text-run", page, 1, |session| {
+                session.move_text_run(page, object, run, dx, dy)
+            });
+        }
+        VectorAction::MoveTextRunInForm {
+            page,
+            leaf,
+            run,
+            dx,
+            dy,
+        } => {
+            vector_edit_on_page(doc, "move-text-run-in-form", page, 1, |session| {
+                session
+                    .move_text_run_in_form(page, leaf, run, dx, dy)
+                    .map(|outcome| outcome.disclosures)
             });
         }
         VectorAction::MoveNode {

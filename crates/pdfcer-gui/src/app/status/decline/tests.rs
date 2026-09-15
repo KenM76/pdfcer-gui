@@ -297,14 +297,24 @@ fn no_two_declines_share_a_sentence() {
         // with the least to say — and a decline that reads like another
         // decline tells the operator the wrong thing happened.
         Declined::EditRefused,
-        // ★★ Five, 2026-09-15 (`OPERATOR_REQUESTS.md` O188). Not a
-        // formality for this one: its sentence is fetched by a call into
+        // ★★ Five and six, 2026-09-15 (`OPERATOR_REQUESTS.md` O188). Not a
+        // formality for these: their sentences are fetched by calls into
         // `text::arrange`, two modules away from every other entry here, so
-        // nothing but this loop would notice it paraphrasing a neighbour. And
-        // the neighbour it is nearest to is `EditRefused` directly above —
-        // both answer *the thing you just tried did not happen*, and only one
-        // of them is allowed to say why.
-        Declined::TextRunCannotMoveAlone,
+        // nothing but this loop would notice one paraphrasing a neighbour. And
+        // the neighbour they are nearest to is `EditRefused` directly above —
+        // all three answer *the thing you just tried did not happen*, and only
+        // two of them are allowed to say why.
+        //
+        // ★★★ **The pair is nearest of all to EACH OTHER**, and that is the
+        // comparison this loop was extended for. They are two refusals of one
+        // gesture, differing only in which line the file failed to state a
+        // position for, and they end with the identical remedy clause. A later
+        // edit that collapsed them into one wording would leave the program
+        // telling the operator *there is nothing to change* about a line whose
+        // position is perfectly well stated — true-sounding, and wrong about
+        // the only fact he needs.
+        Declined::TextRunHasNoPositionOfItsOwn,
+        Declined::TextRunWouldDragTheNextLine,
     ];
     for (i, a) in all.iter().enumerate() {
         for b in &all[i + 1..] {
@@ -757,7 +767,15 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         // which is the only place that would have made the author add it to
         // the list above as well. Nothing else in the suite would have gone
         // red, and the count would still have added up.
-        | Declined::TextRunCannotMoveAlone => {}
+        //
+        // ★★★ **And then it paid twice in one day.** Hours later the engine
+        // shipped the verb that made that variant's sentence false, it was
+        // replaced by the two below, and the build broke here a second time —
+        // which is what sent the author to the sentence-uniqueness loop above
+        // to add BOTH. A rename that the compiler waves through is how a
+        // completeness test quietly stops being complete.
+        | Declined::TextRunHasNoPositionOfItsOwn
+        | Declined::TextRunWouldDragTheNextLine => {}
     }
 }
 

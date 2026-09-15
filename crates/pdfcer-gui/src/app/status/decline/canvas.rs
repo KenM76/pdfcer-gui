@@ -105,12 +105,27 @@ pub enum CanvasDecline {
     /// `NoContainingForm`, is written directly by `app::dispatch::format` from a
     /// place that has established a fact the canvas cannot.
     InsideFormNotAPath,
-    /// ★★★ **A drag on one line inside a block of text** — O188.
+    /// ★★★ **A drag on one line whose position this file does not state** —
+    /// O188.
     ///
-    /// [`super::Declined::TextRunCannotMoveAlone`] carries the argument for why
-    /// this refusal earns a sentence when nine of its ten siblings in
+    /// [`super::Declined::TextRunHasNoPositionOfItsOwn`] carries the argument
+    /// for why this refusal earns a sentence when most of its siblings in
     /// `canvas::moving::Refusal` do not.
-    TextRunCannotMoveAlone,
+    ///
+    /// ★★ **This arm and the next replaced a single `TextRunCannotMoveAlone`
+    /// on 2026-09-15**, one day after they shipped, because
+    /// `pdfcer-core` `G017` made the old one's central claim (*pdfcer cannot
+    /// move a single line yet*) false. Two arms rather than one because the
+    /// engine distinguishes the two causes and the operator's next action
+    /// differs between them — see [`crate::text::arrange`].
+    TextRunHasNoPositionOfItsOwn,
+    /// ★★★ **A drag on a line that the NEXT line's position is measured from**
+    /// — O188.
+    ///
+    /// Twin of [`Self::TextRunHasNoPositionOfItsOwn`], and the one that reports
+    /// a consequence rather than an absence: the move is possible and pdfcer is
+    /// declining it, because it would carry a line the operator never selected.
+    TextRunWouldDragTheNextLine,
 }
 
 impl CanvasDecline {
@@ -140,7 +155,9 @@ impl CanvasDecline {
             // ui-text-exempt: stable diagnostic token, never displayed.
             Self::InsideFormNotAPath => "inside-form-not-a-path",
             // ui-text-exempt: stable diagnostic token, never displayed.
-            Self::TextRunCannotMoveAlone => "text-run-cannot-move-alone",
+            Self::TextRunHasNoPositionOfItsOwn => "text-run-no-position-of-its-own",
+            // ui-text-exempt: stable diagnostic token, never displayed.
+            Self::TextRunWouldDragTheNextLine => "text-run-would-drag-next-line",
         }
     }
 }
@@ -183,8 +200,8 @@ impl CanvasDecline {
 /// build that breaks any one link fails at that link:
 ///
 /// ```text
-/// canvas       canvas-move-declined level=Part sel=1 reason=no-verb-for-text-run
-/// apply phase  canvas-decline-recorded what=text-run-cannot-move-alone
+/// canvas       canvas-move-declined level=Part sel=1 reason=run-has-no-position
+/// apply phase  canvas-decline-recorded what=text-run-no-position-of-its-own
 /// status bar   ui-rect name=status-group:decline
 /// ```
 ///
@@ -203,7 +220,10 @@ pub(crate) fn record_canvas(what: CanvasDecline) {
         CanvasDecline::InsideFormNotAPath => {
             super::Declined::InsideForm(crate::text::status::InsideFormRefusal::NotAPath)
         }
-        CanvasDecline::TextRunCannotMoveAlone => super::Declined::TextRunCannotMoveAlone,
+        CanvasDecline::TextRunHasNoPositionOfItsOwn => {
+            super::Declined::TextRunHasNoPositionOfItsOwn
+        }
+        CanvasDecline::TextRunWouldDragTheNextLine => super::Declined::TextRunWouldDragTheNextLine,
     };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI

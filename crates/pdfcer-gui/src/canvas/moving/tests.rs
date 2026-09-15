@@ -142,6 +142,7 @@ fn paths() -> MoveContext {
     MoveContext {
         non_path: None,
         part_kind: Some(PartKind::Subpath),
+        run_move: None,
     }
 }
 
@@ -519,11 +520,10 @@ fn the_part_rung_reaches_move_subpath() {
     );
 }
 
-/// ★ **A text run at the Part rung declines** — it is a part, and there is
-/// no verb that moves one. The same shape as Delete declining at a rung
-/// whose verb is not wired.
-#[test]
-fn a_text_run_at_the_part_rung_declines_rather_than_moving_the_object() {
+/// A selection with the first part of object 0 entered — the shape every run
+/// test below starts from, factored out because four of them need it and a
+/// fifth copy would be a fifth chance to enter a different rung by accident.
+fn run_entered() -> SelectionState {
     let mut sel = SelectionState::default();
     sel.click(0, hit_object(0), false, false);
     sel.click(
@@ -536,48 +536,174 @@ fn a_text_run_at_the_part_rung_declines_rather_than_moving_the_object() {
         false,
         true,
     );
+    assert_eq!(sel.level(), SelectionLevel::Part);
+    sel
+}
+
+/// ★★★ **A text run at the Part rung MOVES** — `OPERATOR_REQUESTS.md` O188,
+/// and the day this test was inverted is the day the feature shipped.
+///
+/// It used to be named `a_text_run_at_the_part_rung_declines_rather_than_
+/// moving_the_object` and it asserted `Err(NoVerbForPart(Run))`, because until
+/// `pdfcer-core` `G017` (2026-09-14) there was no verb to reach. That is the
+/// whole of what changed: the rung, the selection and the gesture are
+/// identical, and the answer is now a subject rather than a refusal.
+///
+/// ★★ **The half of the old test that was load-bearing is kept**, and it is
+/// the assertion in its failure message rather than in its `assert_eq!`:
+/// *moving the enclosing object because a run was selected is the wrong
+/// action, not a lenient one*. A shell that answered
+/// [`MoveSubject::Objects`] here would drag the entire title block when the
+/// operator had one label selected, which is a worse outcome than the silence
+/// O188 complained about — so this asserts the exact subject, not merely that
+/// something was returned.
+#[test]
+fn a_text_run_at_the_part_rung_moves_that_run() {
+    let sel = run_entered();
     let ctx = MoveContext {
         non_path: None,
         part_kind: Some(PartKind::Run),
+        run_move: None,
     };
     assert_eq!(
         eligible(&sel, 0, ctx),
-        Err(Refusal::NoVerbForPart(PartKind::Run)),
-        "moving the enclosing object because a run was selected is the wrong action, \
-         not a lenient one"
+        Ok(MoveSubject::TextRun {
+            page: 0,
+            object: 0,
+            run: 0,
+        }),
+        "a run the engine would accept must move as a run — not as its enclosing \
+         object, and not as a refusal"
+    );
+    assert_eq!(
+        action(
+            MoveSubject::TextRun {
+                page: 0,
+                object: 0,
+                run: 0,
+            },
+            PageDelta { dx: 4.0, dy: -1.25 },
+            None,
+            &[],
+        ),
+        Ok(VectorAction::MoveTextRun {
+            page: 0,
+            object: 0,
+            run: 0,
+            dx: 4.0,
+            dy: -1.25,
+        }
+        .into()),
+        "the delta must reach the verb unmodified — a run has no anchors, so \
+         nothing here may snap, clamp or round it"
     );
 }
 
-/// ★★★ **A refused drag on one line of text says so** —
+/// ★★★ **A run the ENGINE would refuse never gets a ghost** — the pre-check
+/// that makes O188's move half honest rather than merely present.
+///
+/// Both blocks are asserted, and separately, because they are two different
+/// facts about the document and the operator is told which one he has. See
+/// [`crate::text::arrange::run_has_no_position_of_its_own`] for why that
+/// distinction survives all the way out to the sentence.
+///
+/// ★★ **What this is really guarding is the ORDER of two questions.** The
+/// engine would refuse these moves too — `plan_move_text_run` runs the same
+/// guard — but it would refuse them *after* the gesture, so the operator would
+/// watch an outline slide across the sheet and snap back. Obligation 3 in this
+/// module's header says a ghost is only ever drawn for a move that will
+/// commit; this is the test of it for the newest subject.
+#[test]
+fn a_run_the_engine_would_refuse_declines_before_the_ghost_is_drawn() {
+    let sel = run_entered();
+    for block in [
+        RunMoveBlock::NoPositionOfItsOwn,
+        RunMoveBlock::WouldMoveNextRun,
+    ] {
+        let ctx = MoveContext {
+            non_path: None,
+            part_kind: Some(PartKind::Run),
+            run_move: Some(block),
+        };
+        assert_eq!(
+            eligible(&sel, 0, ctx),
+            Err(Refusal::TextRunCannotMove(block)),
+            "{block:?} must reach the operator as its own refusal, carrying the \
+             engine's reason rather than a summary of it"
+        );
+    }
+}
+
+/// ★★★ **A refused drag on one line of text says WHICH refusal it was** —
 /// `OPERATOR_REQUESTS.md` O188.
 ///
-/// The test above asserts that the drag is *refused*, which was already true
-/// and was never the complaint. This asserts the half that was missing: that
-/// the refusal reaches the operator. Ken drew a box round one label in a title
-/// block, dragged it across the sheet, and got nothing happening with no
-/// sentence anywhere — which from where he sits is dragging being broken.
+/// The test above asserts that the drag is *refused*, which was never the
+/// complaint. This asserts the half that was missing: that the refusal reaches
+/// the operator. Ken drew a box round one label in a title block, dragged it
+/// across the sheet, and got nothing happening with no sentence anywhere —
+/// which from where he sits is dragging being broken.
+///
+/// ★★★ **Why the loop, when one arm would compile.** Because the two blocks
+/// share a remedy and differ only in their first clause, and the cheap version
+/// of this test — assert that *a* sentence was asked for — is satisfied by a
+/// build that raises the same sentence for both. An assertion both outcomes
+/// satisfy is not a measurement of which one shipped. So each block is asked
+/// for by name, and `decline::tests::no_two_declines_share_a_sentence` is what
+/// then proves the two names are not two spellings of one string.
 ///
 /// ★ Asserts the ACTION, not the status bar. The store is written by the
-/// apply phase (`app::actions::apply`) and the wording lives in
-/// `text::arrange::run_cannot_move_alone`; what this module is responsible for
-/// is asking. The driven `ui-verify` check is what asserts the sentence
-/// actually lands on the bar, per R1 — a unit test cannot see the chain in
-/// front of the verb.
+/// apply phase (`app::actions::apply`) and the wordings live in
+/// `text::arrange`; what this module is responsible for is asking. The driven
+/// `ui-verify` check is what asserts the sentence actually lands on the bar,
+/// per R1 — a unit test cannot see the chain in front of the verb.
 #[test]
 fn a_refused_drag_on_one_line_of_text_asks_for_a_sentence() {
+    for (block, expected) in [
+        (
+            RunMoveBlock::NoPositionOfItsOwn,
+            CanvasDecline::TextRunHasNoPositionOfItsOwn,
+        ),
+        (
+            RunMoveBlock::WouldMoveNextRun,
+            CanvasDecline::TextRunWouldDragTheNextLine,
+        ),
+    ] {
+        let mut actions = Vec::new();
+        decline(
+            &SelectionState::default(),
+            Refusal::TextRunCannotMove(block),
+            &mut actions,
+        );
+        assert_eq!(
+            actions,
+            vec![Action::DeclineOnCanvas(expected)],
+            "{block:?} must raise its OWN sentence, not a shared one and not silence"
+        );
+    }
+}
+
+/// ★★ **The third block stays silent, and that is the correct answer** —
+/// [`RunMoveBlock::NotThere`] means the selection named a line this object does
+/// not have.
+///
+/// That is not a refusal the operator caused and there is nothing he could do
+/// about it; a sentence would report an internal inconsistency in the
+/// vocabulary of his drawing. R9's shape: the honest answer to *this should not
+/// have happened* is nothing on screen, and the trace line
+/// `canvas-move-declined — reason=run-not-there` for whoever is reading the
+/// log. It is reachable only through a stale selection, which
+/// [`super::Refusal::worded`] documents.
+#[test]
+fn a_run_index_that_is_not_there_refuses_without_a_sentence() {
     let mut actions = Vec::new();
     decline(
         &SelectionState::default(),
-        Refusal::NoVerbForPart(PartKind::Run),
+        Refusal::TextRunCannotMove(RunMoveBlock::NotThere),
         &mut actions,
     );
-    assert_eq!(
-        actions,
-        vec![Action::DeclineOnCanvas(
-            CanvasDecline::TextRunCannotMoveAlone
-        )],
-        "a drag on one line inside a block of text must raise its sentence, not \
-         refuse in silence"
+    assert!(
+        actions.is_empty(),
+        "an impossible selection must not word itself at the operator, got {actions:?}"
     );
 }
 
@@ -674,6 +800,15 @@ fn all_refusals() -> Vec<Refusal> {
         Refusal::NoPartEntered,
         Refusal::NoVerbForPart(PartKind::Subpath),
         Refusal::NoVerbForPart(PartKind::Run),
+        // ★★★ All three blocks, not one representative. The vector below is
+        // what `refusals_that_owe_nothing` and its twin iterate, so a block
+        // missing here is a block whose sentence — or whose deliberate
+        // silence — is never checked by anything. `NotThere` is the one that
+        // matters most: it is the only arm of the three that says nothing, and
+        // an omission here would read as a pass.
+        Refusal::TextRunCannotMove(RunMoveBlock::NoPositionOfItsOwn),
+        Refusal::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun),
+        Refusal::TextRunCannotMove(RunMoveBlock::NotThere),
         Refusal::NoNodeEntered,
         Refusal::NodeNotFound(1),
         Refusal::NoTravel,
@@ -688,6 +823,7 @@ fn all_refusals() -> Vec<Refusal> {
             | Refusal::NotAPath(_)
             | Refusal::NoPartEntered
             | Refusal::NoVerbForPart(_)
+            | Refusal::TextRunCannotMove(_)
             | Refusal::NoNodeEntered
             | Refusal::NodeNotFound(_)
             | Refusal::NoTravel
@@ -846,6 +982,7 @@ fn several_selected_anchors_move_as_one_command() {
         MoveContext {
             non_path: None,
             part_kind: Some(PartKind::Subpath),
+            run_move: None,
         },
     )
     .expect("a multi-node selection on a path has a move subject");
@@ -922,6 +1059,7 @@ fn one_selected_anchor_still_takes_the_singular_verb() {
         MoveContext {
             non_path: None,
             part_kind: Some(PartKind::Subpath),
+            run_move: None,
         },
     )
     .expect("one anchor on a path has a move subject");

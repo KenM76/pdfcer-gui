@@ -58,7 +58,14 @@
 
 use super::*;
 use pdfcer_core::content::ContentStream;
-use pdfcer_core::vector::{NoXObjects, decompose};
+// ★ `Handle` is named here explicitly rather than arriving through
+// `use super::*`. It used to come in that way, because `provider/mod.rs`
+// imported it for `subpath_handle_points` and `nearest_handle`; those two moved
+// to [`super::node_rung`] on 2026-09-15 under R2 and took the import with them.
+// Naming the type where it is used is what the file already does for
+// `NoXObjects` and `decompose`, and it means this test module no longer depends
+// on which sibling of `provider` happens to hold the handle accessors.
+use pdfcer_core::vector::{Handle, NoXObjects, decompose};
 
 fn provider(src: &[u8]) -> ObjectModelProvider {
     let cs = ContentStream::parse(src.to_vec()).expect("parse");

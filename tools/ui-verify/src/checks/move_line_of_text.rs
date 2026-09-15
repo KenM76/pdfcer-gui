@@ -1,39 +1,64 @@
-//! `move_line_of_text` — **a drag on one line inside a block of text is
-//! refused, and the operator is TOLD.**
+//! `move_line_of_text` — **a drag on one line inside a block of text MOVES
+//! it, or says why it cannot.**
 //!
-//! The driven half of `OPERATOR_REQUESTS.md` **O188** change (B). It is the
-//! only thing that can say the feature works, because the defect O188 names is
-//! a *silence*, and a silence is exactly what a green unit-test suite looks
-//! like.
+//! The driven half of `OPERATOR_REQUESTS.md` **O188**, changes (B) and (C). It
+//! is the only thing that can say the feature works, because the defect O188
+//! names is a *silence*, and a silence is exactly what a green unit-test suite
+//! looks like.
 //!
 //! # The report, and why it was not a feature request
 //!
 //! **Ken, 2026-09-15:** he selected one line of a title block on a SolidWorks
 //! export, dragged it, and nothing happened. Not an error, not a refusal, not
 //! a greyed control — the outline did not move and the status bar said
-//! nothing. Every part of that was *correct* except the last one:
+//! nothing.
 //!
-//! * `pdfcer-core` has no verb that moves one show operator out of a text
-//!   object. It has `move_subpath`, `move_node`, `move_objects`; there is no
-//!   `move_text_run`. The engine request for one is O188 change (C).
-//! * `canvas::moving::eligible` therefore refuses at the Part rung with
-//!   `Refusal::NoVerbForPart(PartKind::Run)`, which is right — declining
-//!   before the ghost slides is what keeps the preview truthful.
-//! * …and `canvas::moving::decline` wrote a trace line and **nothing else**.
-//!   One refusal out of eleven raised an operator-facing sentence
-//!   (`InsideForm`), and the comment above the mechanism said *"one refusal out
-//!   of the eight"* — a count that had been wrong long enough that nobody
-//!   re-read the sentence it introduced, which is a large part of why this one
-//!   was never weighed.
+//! # ★★★ THIS CHECK WAS INVERTED ON THE DAY IT SHIPPED, AND THAT IS THE
+//! # LESSON IT NOW CARRIES
 //!
-//! ⇒ **The defect is the third bullet only.** A build that moves the line is
-//! not what this check wants; a build that refuses *audibly* is.
+//! Its first version asserted that the drag is **refused**, because on
+//! 2026-09-15 that was the whole truth: `pdfcer-core` had `move_subpath`,
+//! `move_node` and `move_objects`, and no verb that moved one show operator.
+//! The shell's part of the defect was the *silence after* the refusal, so the
+//! check drove a drag, asserted `reason=no-verb-for-text-run`, asserted the
+//! sentence `text-run-cannot-move-alone`, and went green.
+//!
+//! **The engine shipped `move_text_run` the next day** (`G017`, 2026-09-14,
+//! against a request this project filed on the 13th), and every one of those
+//! assertions became a name for something that does not exist — while the
+//! check's own header still explained, at length and persuasively, why a build
+//! that MOVED the line was not what it wanted.
+//!
+//! ⇒ **A driven check that pins a capability's absence has a shelf life
+//! measured in days.** Nothing in this repository changed; a dependency did,
+//! and a green suite became a liar. The defence is not to avoid such checks —
+//! this one caught a real silence — but to write the absence down where the
+//! backlog gate can see it (`ENGINE_BACKLOG.md`) so that the delivery arrives
+//! as a failing gate rather than as a quietly wrong assertion.
+//!
+//! # What it asserts now: three drags, three answers, one document
+//!
+//! `move_text_run` succeeds on most lines and refuses on two shapes, and the
+//! operator is shown a different sentence for each. So the check drives all
+//! three answers against one fixture:
+//!
+//! | the line under the pointer | what must happen |
+//! |---|---|
+//! | one the NEXT line's position is measured from | refused, *moving it would drag that line along too* |
+//! | one whose position this document does not state | refused, *there is no position here to change* |
+//! | one that states its own position, with no successor | **it MOVES** |
+//!
+//! ★★★ **The third row is not a bonus, it is what makes the other two mean
+//! something.** A table of two refusals passes for ever against the build this
+//! check was originally written for — the one that refused every line move.
+//! A check that cannot fail on the dangerous build is not a check.
 //!
 //! # ★★★ WHY THIS CHECK EXISTS WHEN FOUR UNIT TESTS ALREADY COVER IT
 //!
-//! `canvas::moving::tests` asserts, at the seam, that `decline` pushes
-//! `Action::DeclineOnCanvas(CanvasDecline::TextRunCannotMoveAlone)`. Those
-//! tests are right and they are not evidence, for this project's founding
+//! `canvas::moving::tests` asserts, at the seam, that `decline` pushes the
+//! right `Action::DeclineOnCanvas`, and that a movable run produces
+//! `VectorAction::MoveTextRun`. Those tests are right and they are not
+//! evidence, for this project's founding
 //! reason (**R1**): they call the function. They cannot see the chain in front
 //! of it — whether a real drag at a real rung reaches `decline` at all,
 //! whether the apply phase has an arm for the action, whether the status bar
@@ -48,9 +73,15 @@
 //! # The oracle — three lines, three subsystems, in order
 //!
 //! ```text
-//! canvas       canvas-move-declined level=Part sel=1 reason=no-verb-for-text-run …
-//! apply phase  canvas-decline-recorded what=text-run-cannot-move-alone
+//! canvas       canvas-move-declined level=Part sel=1 reason=run-would-move-next …
+//! apply phase  canvas-decline-recorded what=text-run-would-drag-next-line
 //! status bar   ui-rect name=status-group:decline rect=…
+//! ```
+//!
+//! and, for the row that commits, one line from a fourth subsystem:
+//!
+//! ```text
+//! apply phase  move-text-run page=0 n=1 epoch=3 disclosures=none
 //! ```
 //!
 //! | line | question it answers | who writes it |
@@ -117,12 +148,21 @@
 //!
 //! `fixtures/paragraph.pdf` at page 0, `(120, 704)` in PDF user space.
 //!
-//! The same pin `deeper_rung_delete`'s label rung uses, and for the same
-//! measured reasons: one `BT`…`ET` block holding **six** `Tj` operators at
-//! 12 pt on a 612 × 792 page, so a Part-rung pick lands on a show operator
-//! that is one of several, and the text is legible at fit zoom. The aim is
-//! inside the first line, whose baseline is 700 and whose cap height at that
-//! size reaches about 708.
+//! ★★★ **NOT `paragraph.pdf`, which every other line-of-text check in this
+//! harness uses** — and the reason is the whole argument for a second
+//! fixture. `paragraph.pdf` writes a `Tm` in front of all six of its show
+//! operators, so every one of its lines states its own position, so
+//! `text_run_move_refusal` answers `None` six times out of six and **neither
+//! refusal can be reached on it**. A check written against it alone would pass
+//! on a build that had deleted the pre-check entirely, for ever.
+//!
+//! `inherited-runs.pdf` is one `BT`…`ET` block holding **three** `Tj`
+//! operators at 12 pt on a 612 × 792 page, with a positioning operator in
+//! front of the first and the third and **none** in front of the second. That
+//! single omission produces all three of the engine's answers in one document.
+//! `tools/gen-inherited-runs-fixture.py` builds it and carries the reasoning;
+//! `fixtures/inherited-runs.PROVENANCE.md` carries the measured spans the aims
+//! in [`AIMS`] were computed from.
 //!
 //! ★★★ **Pinned in code and not read from `--pdf`**, because the 2026-09-12
 //! sweep hands every chunked check one shared A1 sheet and one shared aim.
@@ -192,22 +232,19 @@ const PART_LEVEL: &str = "Part";
 /// identical lines in nine seconds.
 const MOVE_DECLINED_EVENT: &str = "canvas-move-declined";
 
-/// The stable token `canvas::moving::Refusal::token` writes for
-/// `NoVerbForPart(PartKind::Run)`.
-///
-/// ★★ **Twelve tokens for eleven variants**, because `NoVerbForPart` splits by
-/// part kind: its `Run` instance speaks to the operator and its `Subpath`
-/// instance is unreachable, so the two have opposite operator-facing outcomes
-/// and cannot share a name. The unit of a trace token is *a distinguishable
-/// cause*, not an enum variant.
-const REASON_RUN: &str = "no-verb-for-text-run";
-
 /// `canvas-decline-recorded what=…` — the apply phase's line, written once per
 /// decline by `app::status::decline::canvas::record_canvas`.
+///
+/// ★★★ The per-refusal tokens live in [`AIMS`] rather than in constants here,
+/// which is a change from this check's first shape and was forced by what
+/// happened to it. It held `REASON_RUN = "no-verb-for-text-run"` and
+/// `RECORDED_TEXT_RUN = "text-run-cannot-move-alone"` as module constants,
+/// asserted them, and was green — against a build whose refusal sentence said
+/// *pdfcer cannot move a single line yet*. `pdfcer-core` shipped the verb the
+/// next day and both constants became names of things that no longer exist. A
+/// token that only one row needs belongs in that row, where the thing it
+/// describes is visible beside it.
 const RECORDED_EVENT: &str = "canvas-decline-recorded";
-
-/// The stable token `CanvasDecline::token` writes for the sentence O188 added.
-const RECORDED_TEXT_RUN: &str = "text-run-cannot-move-alone";
 
 /// The `⊗` slot in the status bar. `app::status::decline::show` draws into it
 /// and publishes it as a `ui-rect` on the frame it draws.
@@ -221,13 +258,93 @@ const RECORDED_TEXT_RUN: &str = "text-run-cannot-move-alone";
 /// controls.
 const DECLINE_REGION: &str = "status-group:decline";
 
-/// The fixture, and where on it to aim. See the module header for the
-/// measurements behind both.
-const FIXTURE: &str = "paragraph.pdf";
+/// The fixture. See the module header, and
+/// `fixtures/inherited-runs.PROVENANCE.md`, for why it is not
+/// `paragraph.pdf` like every other line-of-text check in this harness.
+const FIXTURE: &str = "inherited-runs.pdf";
 /// Page index of [`FIXTURE`] this check uses.
 const PAGE: usize = 0;
-/// Aim, in PDF user space (y up), inside the first line of the paragraph.
-const AIM: (f64, f64) = (120.0, 704.0);
+
+/// ★★★ **The three aims, and the answer each one must produce.**
+///
+/// One launch, one fixture, three drags. Every field here is measured — see
+/// `fixtures/inherited-runs.PROVENANCE.md` for the Helvetica advances the x
+/// spans were computed from and the re-measurement that confirmed them.
+///
+/// ★★ **The aim is not asserted directly, and it does not need to be.** The
+/// three runs produce three *different* answers, so an aim that landed on the
+/// wrong one produces the wrong answer and this check fails — loudly, naming
+/// what it got. That is the property a table of three buys that three separate
+/// checks against three separate fixtures could not: the discriminating power
+/// is in the document, not in the harness's arithmetic.
+const AIMS: [Aim; 3] = [
+    Aim {
+        what: "the first line, which the SECOND line's position is measured from",
+        at: (87.0, 704.0),
+        expect: Expect::Declines {
+            reason: "run-would-move-next",
+            recorded: "text-run-would-drag-next-line",
+        },
+    },
+    Aim {
+        what: "the second line, whose position this document does not state",
+        at: (150.0, 704.0),
+        expect: Expect::Declines {
+            reason: "run-has-no-position",
+            recorded: "text-run-no-position-of-its-own",
+        },
+    },
+    Aim {
+        what: "the third line, which states its own position and has no successor",
+        at: (128.0, 664.0),
+        expect: Expect::Moves,
+    },
+];
+
+/// One row of [`AIMS`].
+struct Aim {
+    /// What the operator would call the thing under the pointer, used in every
+    /// note and failure message this check writes. Not a run index: a message
+    /// that says *run 1* is a message whoever reads it has to go and decode.
+    what: &'static str,
+    /// Where to press, in PDF user space (y up).
+    at: (f64, f64),
+    /// What must happen on release.
+    expect: Expect,
+}
+
+/// What a drag on one of [`AIMS`] must produce.
+///
+/// ★★★ **Both arms exist because a check with only the refusing ones cannot
+/// fail on the dangerous build.** Before 2026-09-14 the program refused EVERY
+/// line move; a table of two refusals would pass against that build for ever
+/// while the feature the operator asked for was absent. [`Expect::Moves`] is
+/// the control that makes the other two rows mean something.
+enum Expect {
+    /// The move rules must refuse, with this `reason=` on `canvas-move-declined`
+    /// and this `what=` on `canvas-decline-recorded`, and the status bar must
+    /// then draw the sentence.
+    Declines {
+        /// `canvas::moving::Refusal::token`.
+        reason: &'static str,
+        /// `app::status::decline::canvas::CanvasDecline::token`.
+        recorded: &'static str,
+    },
+    /// The move must COMMIT — the funnel's own line, and no decline anywhere.
+    Moves,
+}
+
+/// The funnel label `VectorAction::MoveTextRun`'s apply arm passes to
+/// `vector_edit_on_page`, which becomes the head of its success line:
+/// `move-text-run page=0 n=1 epoch=N disclosures=…`.
+///
+/// ★★ Asserted instead of `canvas-move`, and the difference is the whole
+/// point of asserting it. `canvas-move` is written by the canvas when it
+/// RAISES the action; this one is written by the apply phase after the engine
+/// has accepted the edit and the epoch has moved. A shell that raised a move
+/// the engine then refused writes the first and not the second — and that is
+/// precisely the build a pre-check regression produces.
+const MOVED_EVENT: &str = "move-text-run";
 
 /// How far the drag travels, in window logical points, on each axis.
 ///
@@ -239,18 +356,18 @@ const AIM: (f64, f64) = (120.0, 704.0);
 const DRAG_PX: f32 = 60.0;
 
 /// See the module documentation.
-pub struct ARefusedDragOnOneLineOfTextSaysSo;
+pub struct DraggingOneLineOfTextMovesItOrSaysWhy;
 
-impl Check for ARefusedDragOnOneLineOfTextSaysSo {
+impl Check for DraggingOneLineOfTextMovesItOrSaysWhy {
     fn name(&self) -> &'static str {
-        "a_refused_drag_on_one_line_of_text_says_so"
+        "dragging_one_line_of_text_moves_it_or_says_why"
     }
 
     fn defect(&self) -> &'static str {
-        "Dragging one line inside a block of text does nothing and says nothing — the move \
-         rules correctly refuse (`pdfcer-core` has no verb that moves one show operator) and \
-         the refusal goes to the trace alone, so the operator is left with a gesture that \
-         silently did not happen"
+        "Dragging one line inside a block of text does nothing and says nothing — either the \
+         move never reaches `move_text_run` on a line the engine would accept, or a line the \
+         engine refuses is refused in silence, and in both cases the operator is left with a \
+         gesture that did not happen and no way on screen to learn why"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -292,10 +409,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!(
-        "--pdf and --doc-point are IGNORED: pinned to {} at page {PAGE}, {:.0}, {:.0}",
+        "--pdf and --doc-point are IGNORED: pinned to {} at page {PAGE}, {} aims",
         pdf.display(),
-        AIM.0,
-        AIM.1
+        AIMS.len()
     ));
 
     if !ctx.allow_input {
@@ -351,18 +467,91 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(20);
 
-    // --- 2: arm the Points tool, then select one line -----------------------
+    // --- 2: arm the Points tool ---------------------------------------------
     //
-    // ★ Before the click, not after — see the module header. And the chord is
-    // a command, so it also retires any decline the mode switch left on the
-    // bar, which is what the control in step 3 depends on.
+    // ★ Once, before the first click — see the module header. The tool stays
+    // armed for all three drags, which also means the two later rows do not get
+    // a fresh `dispatch_command` and therefore do not get a free
+    // `decline::retire`. That is deliberate and it is what the per-row control
+    // in [`one_aim`] is for.
     driver.press(vk::A)?;
     session.settle(12);
 
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, PAGE)?;
-    let window_point = mapping.doc_to_window(DocPoint::new(PAGE, AIM.0, AIM.1))?;
     let frame = session.frame()?;
+
+    // --- 3: each aim in turn ------------------------------------------------
+    //
+    // ★★★ **The rows share a launch and are otherwise independent**, which is
+    // the shape a suite that shares state taught this project to insist on. Any
+    // row may FAIL, and a FAIL stops the check — but no row leaves a
+    // precondition behind for the next one, because each re-reads the trace
+    // from its own mark and each asserts its own empty-slot control before it
+    // presses.
+    //
+    // ★★ The third row EDITS THE DOCUMENT, and it runs last for that reason.
+    // A committed move changes the page, and every aim above it is computed
+    // from the page as loaded. Running the control first would have moved a
+    // line the two refusal rows are then aiming at.
+    for aim in &AIMS {
+        if let Some(failure) = one_aim(&session, &driver, &mapping, &frame, ui_rect, aim, report)? {
+            return Ok(Some(failure));
+        }
+    }
+
+    Ok(None)
+}
+
+/// Drive one row of [`AIMS`]: select the line, drag it, and assert what the row
+/// says must happen.
+///
+/// Same three-way return as [`drive`]: `Err` SKIP, `Ok(Some(_))` FAIL,
+/// `Ok(None)` pass.
+///
+/// # ★★ Why the control is INSIDE this function and not once at the top
+///
+/// Because `status-group:decline` is one region shared by every decline in the
+/// application, and two of the three rows put a sentence in it. A control taken
+/// once, before the loop, would be a baseline for row 1 and a fossil for rows 2
+/// and 3 — the exact shape of *an absence assertion is only as good as when
+/// its baseline was taken*, which cost this project a green check over a
+/// planted defect. Each row establishes its own.
+///
+/// The clearing gesture is a press of **Escape**, which is a command, and
+/// `decline::retire` runs at the top of `dispatch_command`. It also ascends the
+/// selection ladder, which is wanted: every row starts from no selection and
+/// descends to the Part rung by its own click, so no row inherits a rung.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn one_aim(
+    session: &Session,
+    driver: &Driver,
+    mapping: &CanvasMapping,
+    frame: &crate::coords::WindowFrame,
+    ui_rect: &'static str,
+    aim: &Aim,
+    report: &mut CheckReport,
+) -> Result<Option<String>> {
+    let what = aim.what;
+
+    // --- clear whatever the previous row left ------------------------------
+    driver.press(vk::ESCAPE)?;
+    session.settle(14);
+    let before = session.trace()?;
+    if driving::declared(&before, ui_rect, DECLINE_REGION).is_some() {
+        return Err(Error::new(format!(
+            "the status bar's `{DECLINE_REGION}` slot is still on screen after Escape, so \
+             anything this row found there afterwards would prove nothing. Escape is a \
+             command and `decline::retire` runs at the top of `dispatch_command`, so a \
+             decline surviving it is its own defect and worth filing separately. SKIPPED \
+             rather than failed, because this check's subject is a different one and it can \
+             no longer measure it — row: {what}. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+
+    // --- select the line ----------------------------------------------------
+    let window_point = mapping.doc_to_window(DocPoint::new(PAGE, aim.at.0, aim.at.1))?;
     let at = frame.to_screen(window_point);
     driver.click_at(at)?;
     session.settle(14);
@@ -375,11 +564,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if selected == 0 {
         return Err(Error::new(format!(
             "the click at document point ({:.1}, {:.1}) on page {PAGE} selected nothing, so \
-             there is no line to drag. That is either an aim that is not on a glyph or a \
-             broken hit test, and this harness cannot tell them apart — so it declines to \
-             file either. Trace: {}.",
-            AIM.0,
-            AIM.1,
+             there is no line to drag — row: {what}. That is either an aim that is not on a \
+             glyph or a broken hit test, and this harness cannot tell them apart, so it \
+             declines to file either. The spans the aims were computed from are in \
+             `fixtures/inherited-runs.PROVENANCE.md` and are the first thing to re-measure. \
+             Trace: {}.",
+            aim.at.0,
+            aim.at.1,
             session.trace_path().display()
         )));
     }
@@ -389,112 +580,164 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .unwrap_or_else(|| "none".to_owned());
     if level != PART_LEVEL {
         return Err(Error::new(format!(
-            "the selection ladder is at `{level}` and this check needs `{PART_LEVEL}`, so no \
+            "the selection ladder is at `{level}` and this row needs `{PART_LEVEL}`, so no \
              single LINE of text is selected and the drag below would be testing the Object \
-             rung — which moves the whole text block and is not refused at all. The Points \
-             tool should land directly on the Part rung; on a text object a part is a show \
-             operator. Trace: {}.",
+             rung — which moves the whole text block and is a different verb entirely. The \
+             Points tool should land directly on the Part rung; on a text object a part is a \
+             show operator. Row: {what}. Trace: {}.",
             session.trace_path().display()
         )));
     }
-    report.note(format!(
-        "the selection ladder is at the {PART_LEVEL} rung ({selected} selected) — one line \
-         inside a block of text"
-    ));
 
-    // --- 3: the control — the decline slot must be EMPTY before the drag ----
-    //
-    // ★★★ Without this the whole verdict is vacuous. `status-group:decline` is
-    // one region shared by every decline in the application, so a sentence
-    // left on the bar by an earlier gesture would satisfy step 5 no matter
-    // what the drag did — the "absence assertion whose baseline was taken too
-    // late" failure, in its presence-shaped form.
-    //
-    // It is asserted rather than assumed because it is a real property of the
-    // program and not of this sequence: arming the Points tool is a command,
-    // and `decline::retire` runs at the top of `dispatch_command`. If a
-    // decline IS on the bar here, the program has a retirement defect and this
-    // check cannot discriminate — so it SKIPs and says which, instead of
-    // reporting a pass it did not earn.
-    if driving::declared(&trace, ui_rect, DECLINE_REGION).is_some() {
-        return Err(Error::new(format!(
-            "the status bar's `{DECLINE_REGION}` slot is ALREADY on screen before the drag, \
-             so its presence afterwards would prove nothing. Arming the Points tool is a \
-             command and `decline::retire` runs at the top of `dispatch_command`, so this \
-             should be impossible — a decline surviving a command is its own defect and is \
-             worth filing separately. SKIPPED rather than failed because this check's \
-             subject is a different one and it can no longer measure it. Trace: {}.",
-            session.trace_path().display()
-        )));
-    }
-    report.note("control: the decline slot is empty before the drag");
-
-    // --- 4: drag the line ---------------------------------------------------
+    // --- drag ---------------------------------------------------------------
     let mark = trace.mark();
     driver.drag(at, frame.offset_from(at, DRAG_PX, DRAG_PX))?;
     session.settle(26);
     let after = session.trace()?;
 
-    // --- 5: the verdict -----------------------------------------------------
-    //
-    // Three links, asserted in order, each with its own message. A build that
-    // breaks one of them fails at that one rather than at a summary.
+    match aim.expect {
+        Expect::Moves => moved(session, &after, mark, ui_rect, what, report),
+        Expect::Declines { reason, recorded } => declined(
+            session, &after, mark, ui_rect, aim, reason, recorded, report,
+        ),
+    }
+}
 
-    // 5a — did the gesture reach the move rules at all?
-    let Some(declined) = after.last_after(MOVE_DECLINED_EVENT, mark) else {
-        let moved = after.last_after("canvas-move", mark).map(|l| l.raw.clone());
-        return Err(Error::new(format!(
-            "the drag produced no `{MOVE_DECLINED_EVENT}` line, so the release never reached \
-             `canvas::moving::drag`'s refusal and this check never exercised its subject. \
-             {} Two ordinary causes, and this harness cannot tell them apart from the trace \
-             alone: the press landed on paper rather than on the selected run, so the \
-             gesture became a marquee; or the travel was below the drag threshold. SKIPPED \
-             rather than failed. Trace: {}.",
-            moved.map_or_else(
-                || "No `canvas-move` line either, so nothing committed.".to_owned(),
-                |raw| format!("A move COMMITTED instead: `{raw}`.")
+/// Assert the CONTROL row: the drag committed a `move_text_run`.
+///
+/// ★★★ **This is the row that proves the other two are measuring something.**
+/// It is also the whole of O188's move half as the operator experiences it —
+/// he drags one label in a title block and the label moves.
+fn moved(
+    session: &Session,
+    after: &crate::trace::Trace,
+    mark: usize,
+    ui_rect: &'static str,
+    what: &str,
+    report: &mut CheckReport,
+) -> Result<Option<String>> {
+    let Some(line) = after.last_after(MOVED_EVENT, mark) else {
+        let declined = after
+            .last_after(MOVE_DECLINED_EVENT, mark)
+            .map(|l| l.raw.clone());
+        return Ok(Some(format!(
+            "★★★ THE DEFECT: dragging {what} did not move it. No `{MOVED_EVENT}` line \
+             follows the release, so the edit never reached `EditSession::move_text_run` \
+             through the funnel. {} This line states its own position and has no successor \
+             that depends on it, so `text_run_move_refusal` answers `None` for it and the \
+             engine would accept the move — which means the refusal, if there was one, is \
+             this shell's and not the document's. That is `OPERATOR_REQUESTS.md` O188 \
+             unfixed. Trace: {}.",
+            declined.map_or_else(
+                || "No `canvas-move-declined` line either, so the gesture did not reach the \
+                    move rules at all — the press may have landed on paper and become a \
+                    marquee, or the travel may have been below the drag threshold."
+                    .to_owned(),
+                |raw| format!("It was REFUSED instead: `{raw}`.")
             ),
             session.trace_path().display()
         )));
     };
-    let reason = declined.get("reason").unwrap_or("?");
-    if reason != REASON_RUN {
+    report.note(format!("dragging {what} moved it: `{}`", line.raw));
+
+    // ★★ And it must NOT have worded a refusal at the operator. A build that
+    // both moved the line and put a sentence on the bar is worse than one that
+    // did neither, because the operator is told his edit did not happen while
+    // looking at it having happened.
+    if driving::declared(after, ui_rect, DECLINE_REGION).is_some() {
+        return Ok(Some(format!(
+            "the drag on {what} COMMITTED (`{}`) and the status bar is showing a decline \
+             anyway. Whatever that sentence says, it contradicts the page in front of the \
+             operator — `fuzzy, never sneaky` cuts both ways, and a refusal displayed over \
+             a successful edit is the worst-reading half of it. Trace: {}.",
+            line.raw,
+            session.trace_path().display()
+        )));
+    }
+    report.note("★★ and no decline was drawn over it — the page and the status bar agree");
+    Ok(None)
+}
+
+/// Assert a REFUSING row, in the three links the refusal has to survive.
+///
+/// A build that breaks any one link fails at that link and says which, rather
+/// than at a summary: refused for the right reason, worded, and drawn.
+#[allow(clippy::too_many_arguments)]
+fn declined(
+    session: &Session,
+    after: &crate::trace::Trace,
+    mark: usize,
+    ui_rect: &'static str,
+    aim: &Aim,
+    reason: &str,
+    recorded: &str,
+    report: &mut CheckReport,
+) -> Result<Option<String>> {
+    let what = aim.what;
+
+    // --- a: did the gesture reach the move rules at all? --------------------
+    let Some(line) = after.last_after(MOVE_DECLINED_EVENT, mark) else {
+        let moved = after.last_after(MOVED_EVENT, mark).map(|l| l.raw.clone());
+        if let Some(raw) = moved {
+            return Ok(Some(format!(
+                "★★★ THE DEFECT, in the direction that damages a document: the drag on \
+                 {what} COMMITTED — `{raw}`. The engine's own guard says this line cannot \
+                 move without carrying another line with it, or has no position to change, \
+                 so a commit here means `canvas::moving::eligible` is no longer asking \
+                 `text_run_move_refusal` before it draws the ghost. The operator moved one \
+                 label and something he did not select moved too, silently. Trace: {}.",
+                session.trace_path().display()
+            )));
+        }
         return Err(Error::new(format!(
-            "the drag was refused for `{reason}`, not `{REASON_RUN}`, so the aim did not land \
-             on one line inside a block of text and this check never exercised its subject. \
-             The line seen was `{}`. SKIPPED rather than failed: a refusal for another cause \
-             says nothing about O188 in either direction. Trace: {}.",
-            declined.raw,
+            "the drag on {what} produced no `{MOVE_DECLINED_EVENT}` line and no \
+             `{MOVED_EVENT}` line, so the release never reached `canvas::moving::drag` and \
+             this row never exercised its subject. Two ordinary causes this harness cannot \
+             tell apart from the trace alone: the press landed on paper rather than on the \
+             selected line, so the gesture became a marquee; or the travel was below the \
+             drag threshold. SKIPPED rather than failed. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    let got = line.get("reason").unwrap_or("?");
+    if got != reason {
+        return Ok(Some(format!(
+            "the drag on {what} was refused for `{got}`, and the engine's guard says it must \
+             be `{reason}`. The line seen was `{}`. This is a FAILURE and not a skip: the \
+             two refusals of a line move are two different facts about the document and the \
+             operator is shown a different sentence for each, so refusing for the wrong one \
+             tells him the wrong thing about his own drawing. If the aim is what moved, the \
+             spans are in `fixtures/inherited-runs.PROVENANCE.md`. Trace: {}.",
+            line.raw,
             session.trace_path().display()
         )));
     }
     report.note(format!(
-        "the move rules refused, for the reason under test: `{}`",
-        declined.raw
+        "dragging {what} was refused, for the reason under test: `{}`",
+        line.raw
     ));
 
-    // 5b — ★★★ THE O188 DEFECT ITSELF. Did the refusal raise a sentence?
-    let at_decline = declined.lineno;
-    let recorded = after
+    // --- b: ★★★ THE O188 DEFECT ITSELF. Did the refusal raise a sentence? ---
+    let at_decline = line.lineno;
+    let found = after
         .events(RECORDED_EVENT)
-        .find(|l| l.lineno > at_decline && l.get("what") == Some(RECORDED_TEXT_RUN));
-    if recorded.is_none() {
+        .find(|l| l.lineno > at_decline && l.get("what") == Some(recorded));
+    if found.is_none() {
         let other = after
             .events(RECORDED_EVENT)
             .find(|l| l.lineno > at_decline)
             .map(|l| l.raw.clone());
         return Ok(Some(format!(
-            "★★★ THE DEFECT: the drag on one line of text was refused and the operator was \
-             told NOTHING. The refusal is correct and is not the bug — `pdfcer-core` has no \
-             verb that moves one show operator, so `canvas::moving::eligible` declines with \
-             `NoVerbForPart(Run)` before the ghost slides, which is what keeps the preview \
-             truthful. **The bug is the silence after it**: no `{RECORDED_EVENT} \
-             what={RECORDED_TEXT_RUN}` line follows `{}`, so `Refusal::worded` returned \
-             `None` for this refusal, no `Action::DeclineOnCanvas` was raised, and the \
-             status bar's decline slot was never given a sentence to draw. {} This is O188 \
-             and it is the founding defect class of this project: the operator drags, \
-             nothing moves, and nothing says why. Trace: {}.",
-            declined.raw,
+            "★★★ THE DEFECT: the drag on {what} was refused and the operator was told \
+             NOTHING. The refusal is correct and is not the bug — the engine's own guard \
+             says this move cannot be performed, and `canvas::moving::eligible` asks it \
+             before the ghost slides, which is what keeps the preview truthful. **The bug \
+             is the silence after it**: no `{RECORDED_EVENT} what={recorded}` line follows \
+             `{}`, so `Refusal::worded` returned `None`, no `Action::DeclineOnCanvas` was \
+             raised, and the status bar's decline slot was never given a sentence to draw. \
+             {} This is O188 and it is the founding defect class of this project: the \
+             operator drags, nothing moves, and nothing says why. Trace: {}.",
+            line.raw,
             other.map_or_else(
                 || "No decline of any kind was recorded after the refusal.".to_owned(),
                 |raw| format!("A DIFFERENT decline was recorded instead: `{raw}`.")
@@ -504,29 +747,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!(
         "the refusal's sentence crossed the `Action` boundary and reached the store: \
-         `{RECORDED_EVENT} what={RECORDED_TEXT_RUN}`"
+         `{RECORDED_EVENT} what={recorded}`"
     ));
 
-    // 5c — was it DRAWN? A sentence in a store nobody reads is still silence.
-    if driving::declared(&after, ui_rect, DECLINE_REGION).is_none() {
+    // --- c: was it DRAWN? A sentence in a store nobody reads is silence. ----
+    if driving::declared(after, ui_rect, DECLINE_REGION).is_none() {
         return Ok(Some(format!(
-            "the refusal recorded its sentence and the status bar never drew it. \
-             `{RECORDED_EVENT} what={RECORDED_TEXT_RUN}` is in the trace, so the gesture \
-             refused and the apply phase wrote the store — and no `{DECLINE_REGION}` region \
-             is on screen on any later frame, which means `decline::live` filtered it out \
-             (a `still_true` predicate that retires the sentence on the frame it is \
-             written) or `decline::line` has no catalog entry for it. The operator sees \
-             exactly what O188 reported: a drag that did nothing, in silence. Regions \
-             beginning `status-group:` that ARE declared: {}. Trace: {}.",
-            list(&driving::declared_names(&after, ui_rect, "status-group:")),
+            "the refusal on {what} recorded its sentence and the status bar never drew it. \
+             `{RECORDED_EVENT} what={recorded}` is in the trace, so the gesture refused and \
+             the apply phase wrote the store — and no `{DECLINE_REGION}` region is on \
+             screen on any later frame, which means `decline::live` filtered it out (a \
+             `still_true` predicate that retires the sentence on the frame it is written) \
+             or `decline::line` has no catalog entry for it. The operator sees exactly what \
+             O188 reported: a drag that did nothing, in silence. Regions beginning \
+             `status-group:` that ARE declared: {}. Trace: {}.",
+            list(&driving::declared_names(after, ui_rect, "status-group:")),
             session.trace_path().display()
         )));
     }
-    report.note(
-        "★★ the decline slot is on screen after the drag — refused, worded, and drawn, all \
-         three",
-    );
-
+    report.note(format!("★★ refused, worded and drawn, all three — {what}"));
     Ok(None)
 }
 
