@@ -806,6 +806,14 @@ pub mod resize;
 /// three links of the chain in front of it have no other instrument.
 pub mod restyle_text;
 pub mod ribbon_captions;
+/// ★★★ **The right-click route to one line inside a block of text** —
+/// O188(A). The delete had worked since 2026-09-05 and could be reached only by
+/// arming the Points tool with a chord BEFORE clicking; nothing said so. Its
+/// oracle is an index carried across three frames and four subsystems — the
+/// operand is parked in `egui::Memory` when the menu opens and read back when
+/// the row is pressed, and no in-process test in this project can own two
+/// frames of a real popup.
+pub mod run_menu_route;
 /// The zoom ladder and the closed-loop aim `scale_sweep` drives its battery
 /// with. Split out under R2 on 2026-09-05; its header carries the seam.
 pub mod scale_aim;

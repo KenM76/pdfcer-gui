@@ -94,7 +94,7 @@
 //!
 //! | Context id | Right-click site | Items | The reasoning |
 //! |---|---|---|---|
-//! | [`CANVAS_OBJECT`] | a selected object on the page | `view.zoom_selection`, `format.properties`, `format.select_form`, `format.unshare_form`, `format.delete` | ★ The Items column was **wrong** until 2026-08-28 — it had never been updated for `format.select_form`, added the previous day, which is this project's recurring shape of a prose claim beside the thing it describes decaying while a test pins the truth one screen down. The two form commands arrived with the form-XObject work: `format.select_form` because a click now reaches *inside* a form and the container has to be reachable on purpose, and `format.unshare_form` because O53 forbids a command existing only on the ribbon — and because the operator who needs it is mid-gesture, about to type into a title block, and the pointer is where they are looking. Zoom to selection is here because **SolidWorks and Acrobat both reach it by right-click** and only Inkscape binds a key for it — operator instruction of 2026-08-14 to match those three; see the registration site for why no chord was invented. Then §5.8 lists Delete in **every** selection type's row. It is the one command in that section that exists (see `manifest::DIRECTED`), and it is wired: `PdfcerApp::dispatch_token` reads `SelectionState::deletable_objects_on`, the same rule the Delete key reads. **`format.properties` joined them on 2026-08-18**, with the ce-dimension properties section: a selected ce dimension's group, measurement, style overrides and radius/diameter switch are otherwise reachable only by noticing that a contextual tab appeared or by opening a dock panel by name, and the operator's report was *"I click and can't figure out how to enable some of the basic stuff."* It sits above Delete because the destructive row is last in every menu here. |
+//! | [`CANVAS_OBJECT`] | a selected object on the page | `view.zoom_selection`, `format.properties`, `format.select_text_line`, `format.select_form`, `format.unshare_form`, `format.delete` | ★ The Items column was **wrong** until 2026-08-28 — it had never been updated for `format.select_form`, added the previous day, which is this project's recurring shape of a prose claim beside the thing it describes decaying while a test pins the truth one screen down. The two form commands arrived with the form-XObject work: `format.select_form` because a click now reaches *inside* a form and the container has to be reachable on purpose, and `format.unshare_form` because O53 forbids a command existing only on the ribbon — and because the operator who needs it is mid-gesture, about to type into a title block, and the pointer is where they are looking. Zoom to selection is here because **SolidWorks and Acrobat both reach it by right-click** and only Inkscape binds a key for it — operator instruction of 2026-08-14 to match those three; see the registration site for why no chord was invented. Then §5.8 lists Delete in **every** selection type's row. It is the one command in that section that exists (see `manifest::DIRECTED`), and it is wired: `PdfcerApp::dispatch_token` reads `SelectionState::deletable_objects_on`, the same rule the Delete key reads. **`format.properties` joined them on 2026-08-18**, with the ce-dimension properties section: a selected ce dimension's group, measurement, style overrides and radius/diameter switch are otherwise reachable only by noticing that a contextual tab appeared or by opening a dock panel by name, and the operator's report was *"I click and can't figure out how to enable some of the basic stuff."* It sits above Delete because the destructive row is last in every menu here. **`format.select_text_line` joined on 2026-09-14** (O188(A)) and is the only row here that is absent rather than greyed when it does not apply: it descends to ONE LINE of a multi-line text object, a rung that until then was reachable only by arming the Points tool with a chord nobody had been told about. It is a re-aim, not an edit, which is why `DESIGNS.md` §6.2's ban on a context-menu item does not reach it — see the registration site. |
 //! | [`CANVAS_MARKUP`] | a selected markup shape on the page | `format.properties`, `markup.add_node`, `markup.remove_node`, `edit.cut`, `edit.copy`, `edit.paste`, `format.delete` | ★★★ **The sixth canvas context, 2026-09-06, and the reason it is not [`CANVAS_OBJECT`] is that four of that menu's five rows are meaningless on an annotation.** `format.select_form` and `format.unshare_form` are about page content inside a form XObject; a markup annotation is not page content and is never inside one, so both would resolve, draw and do nothing — the *live and silently inert* class this project's `DEFECTS.md` is made of. What replaces them is the pair the operator asked for by name: *"I also can't edit or delete nodes of a markup shape once it is drawn."* See the block comment at the registration for the order, and [`crate::canvas::annotnodes::menu`] for why one of them can be greyed and the other absent on the very same shape. |
 //! | [`CANVAS_EMPTY`] | blank page, or the paper beside the drawing | `view.zoom_fit_page`, `view.zoom_fit_width`, `view.zoom_fit_height`, `view.zoom_actual` | The four **named** zoom levels, all of which have a live dispatch arm today. A right-click on paper is about the *view*, because there is no object to be about. |
 //! | [`DOCK_TAB`] | a panel tab in the dock | `view.reset_layout` | The only registered command that acts on the dock. The **command** is wired (`PdfcerApp::dispatch_command` calls `Modes::reset` with `ResetScope::All`); the **menu** still cannot be attached — see the warning below. |
@@ -282,6 +282,32 @@ pub const NODE_REMOVE_OFFERED: &str = "markup.node_remove_offered";
 /// greyed rather than hidden, and why the command's tooltip states the floor.
 pub const NODE_REMOVABLE: &str = "markup.node_removable";
 
+/// **The right-click landed on one line of a MULTI-LINE text object** — the
+/// `visible_when` of `format.select_text_line`, and its `enabled_when` too.
+///
+/// ★★★ O188(A). The Part rung on text — the rung at which *one line* is the
+/// operand, and therefore the only rung at which `delete_text_run` can be
+/// reached — was reachable by exactly one gesture: arm the Points tool by
+/// chord, *then* click. No surface named it. This condition is what lets a row
+/// name it instead. [`crate::canvas::runmenu`] carries the measurement of
+/// every other gesture and why each lands one rung up.
+///
+/// Set per right-click by [`crate::canvas::menus`], never by
+/// `PdfcerApp::conditions`, for [`NODE_INSERT_OFFERED`]'s reason: it is a fact
+/// about *one click on one line*, and the frame's condition set describes the
+/// frame.
+///
+/// ★★ **One name, carried on both the item and the command**, where the node
+/// pair above needs two each. That is not an inconsistency — it is R9 applied
+/// to a question with no recoverable state. A node can be un-removable *for
+/// now* (the shape is at its vertex floor; draw another corner and the row
+/// lives again), so that row is drawn and greyed and explains itself. There is
+/// nothing the operator can do, while this menu is open, that turns a
+/// single-run text object into a multi-run one or moves the pointer onto a
+/// line it is not on. So the row is **offered or absent**, and shown implies
+/// pressable — which also means a stale frame cannot press a dead row.
+pub const RUN_SELECT_OFFERED: &str = "canvas.run_select_offered";
+
 /// Right-click on a panel tab in the dock.
 ///
 /// Defined but not attachable from this crate — see the module header.
@@ -455,6 +481,49 @@ pub fn built_in() -> Menus {
             //
             // Greyed rather than absent when the selection is not inside a
             // form, by the same R9 reading the catalog entry argues.
+            // ★★★ **The discoverable route to ONE LINE of a text block**, added
+            // 2026-09-14 for `OPERATOR_REQUESTS.md` O188(A).
+            //
+            // The operator asked to *"move the individual text blocks"* inside
+            // a grouped block of text *"and have the ability to delete them"*.
+            // Delete shipped — `EditSession::delete_text_run`, at the Part rung
+            // — and then the note filed with it recorded the part that had not:
+            // **the rung itself was reachable by exactly one chord-armed
+            // gesture and was announced on no surface.** A capability nobody
+            // was told about has not shipped.
+            //
+            // ## Why a row that RE-AIMS is allowed where a row that EDITS is not
+            //
+            // `DESIGNS.md` §6.2 forbids a context-menu item by name, and that
+            // ruling stands: it is about the *move* half, whose premise is
+            // "use the conventional interaction, never invent one" — and the
+            // conventional way to move a piece of a thing is to drag it, not to
+            // pick a row called *Move*. This row performs no edit. It changes
+            // what is selected, which is the same act as the two rows below it,
+            // for the same reason: the operator's hand is already on the thing.
+            //
+            // Nor does it breach `canvas::menus`' rule that a right-click never
+            // descends. The click still selects the whole object; the descent
+            // happens only when somebody reads a row that says so and presses
+            // it.
+            //
+            // ## Placement: the two Select rows read as a pair
+            //
+            // Directly above `format.select_form`, which is the group's
+            // describe → re-aim → detach → destroy order with both re-aims
+            // together. Descent above ascent, because the thing the pointer is
+            // ON is nearer than the thing it is inside.
+            //
+            // ## Absent, not greyed
+            //
+            // On `RUN_SELECT_OFFERED`, which is one condition rather than the
+            // offered/enabled pair the node rows carry, for the reason stated
+            // at the constant: there is no recoverable state here. See also
+            // `crate::canvas::runmenu`'s `of > 1` gate — on a single-run text
+            // object this row would descend to a place indistinguishable from
+            // where the operator already stands, which is a row that appears to
+            // do nothing.
+            Item::command("format.select_text_line").shown_when(RUN_SELECT_OFFERED),
             Item::command("format.select_form"),
             // ★★★ The right-click route to *"give this page its own copy"*,
             // added 2026-08-28 with the form-XObject unshare.

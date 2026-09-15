@@ -372,6 +372,18 @@ pub struct Attach<'a> {
     pub page: usize,
     /// The front-most content object under the pointer, or `None` for paper.
     pub object: Option<TargetId>,
+    /// **The decomposed page**, for the one question `object` cannot answer:
+    /// *which LINE of that text block is the pointer on.*
+    ///
+    /// ★ The thirteenth field, added 2026-09-14 with O188(A). It is the same
+    /// provider [`right_clicked_object`] was already handed by the caller, so
+    /// nothing new is computed for a frame — what changes is that the answer is
+    /// now asked for one rung deeper, and only when the object menu is the one
+    /// being opened.
+    ///
+    /// `None` when nothing has been decomposed, which is
+    /// [`crate::canvas::runmenu::RunPick::Elsewhere`] and therefore no row.
+    pub targets: Option<&'a crate::panels::objects::provider::ObjectModelProvider>,
     /// Whether this right-click is about a form field.
     pub field_selected: bool,
     /// Whether the DOCUMENT permits deleting a widget — the frame-top
@@ -452,6 +464,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
         selection,
         page,
         object,
+        targets,
         field_selected,
         field_delete_permitted,
         reading,
@@ -549,6 +562,35 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             select_under_right_click(selection, page, object)
         };
         store(&ctx, chosen);
+        // ★★★ **The run pick, taken on this one frame and parked** — O188(A).
+        //
+        // Same mechanism, same reason and the same memory discipline as the
+        // markup node pick four screens up: this is the only frame on which
+        // the pointer is still over the text. `egui` draws the popup on every
+        // frame until it is dismissed, and by the second of them the pointer
+        // is on the menu. `crate::canvas::runmenu`'s header carries the whole
+        // argument.
+        //
+        // ★★ Taken from `object` — the hit test `right_clicked_object` already
+        // ran — and NOT from the selection, which step 2 has just changed. The
+        // row is about the thing the pointer is on, and `select_under_right_click`
+        // may legitimately have left a different thing selected (a multi-object
+        // selection the click landed inside is preserved, by its second rule).
+        //
+        // ★★★ **Parked on every right-click, not only on the object menu.** The
+        // `else` arm is what makes a stale pick impossible: without it, a
+        // right-click on paper would leave the previous click's line parked,
+        // and the next frame that read it would be reading an operand from a
+        // gesture two clicks ago. The markup pick above is narrower because its
+        // condition override is guarded by `matches!(chosen, Markup)`; this one
+        // does not rely on that guard to be correct.
+        let run_pick = if matches!(chosen, CanvasMenu::Object) {
+            crate::canvas::runmenu::pick_at(targets, page, object, map, screen_pos)
+        } else {
+            crate::canvas::runmenu::RunPick::Elsewhere
+        };
+        crate::canvas::runmenu::park(&ctx, run_pick);
+        crate::canvas::runmenu::trace(run_pick);
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI.
@@ -652,6 +694,29 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             (menus::NODE_REMOVE_OFFERED, rows.remove.shown()),
             (menus::NODE_REMOVABLE, rows.remove.enabled()),
         ]);
+    }
+    // ★★★ **`format.select_text_line`'s one condition** — O188(A), and the
+    // narrowness is the same argument the Delete above makes: it is a fact
+    // about ONE right-click on ONE line, and `PdfcerApp::conditions()` ran
+    // before that click existed. Nothing publishes this name anywhere else, so
+    // outside this `matches!` it is simply absent, which `ConditionSet` reads
+    // as false and the item's `shown_when` reads as *no row*.
+    //
+    // ★★ Read from the **parked** pick rather than recomputed, for the reason
+    // stated where it is parked: on every frame after the click the pointer is
+    // on the menu, and a recomputed answer would delete the row out from under
+    // the hand travelling toward it.
+    //
+    // ★ ONE name, where the node pair needs four. There is no greyed state
+    // here — see `shell::menus::RUN_SELECT_OFFERED` — so *shown* and *enabled*
+    // are one question, and the command carries the same name in its
+    // `enabled_when` so a route that never consults an item cannot press a row
+    // whose operand has evaporated.
+    if matches!(chosen, CanvasMenu::Object) {
+        overrides.push((
+            menus::RUN_SELECT_OFFERED,
+            crate::canvas::runmenu::parked(&ctx).offered(),
+        ));
     }
     let conditions = host.with_conditions(&overrides);
 

@@ -898,4 +898,17 @@ pub const TAB_SCOPED: &[(&str, &str)] = &[
         // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
         "The mirror of `markup.add_node`, with the same operand and the same argument — this corner, the one under the pointer. It is additionally the more dangerous of the two to give a ribbon home: a button that removed some invented default corner would silently reshape a drawing on a press the operator read as harmless.",
     ),
+    // ★★★ The route to one line of a text block, 2026-09-14 — O188(A).
+    //
+    // ⚠ This is the first entry here that is **the only** route rather than
+    // the discoverable second one, and that is deliberately visible in its
+    // reason rather than smoothed over. The three panel-tab entries and the
+    // two markup verbs all end by naming where else the capability can be
+    // found; this one ends by saying there is nowhere else, because the whole
+    // report is that there was nowhere at all.
+    (
+        "format.select_text_line",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "Its operand is ONE LINE OF ONE BLOCK OF TEXT - which run of which text object, decided by where the pointer was at the instant of the secondary click. A ribbon button has no such operand: by the time it is pressed the pointer is on the ribbon, so it would have to invent one (the first line? the last one clicked?) and would then descend onto a line the operator was not pointing at - which is this feature's whole defect class, since the next thing pressed at that rung is Delete. It is NOT the case that the capability is discoverable elsewhere: it was reachable only by arming `view.tool_node` (Points) with a chord before clicking, and that nothing named it is the report this row exists to close, so this menu is currently the ONLY route rather than the second one. A ribbon home is owed the day the Part rung gains a subject a button can name - `RIBBON_IA.md` has no such control today.",
+    ),
 ];

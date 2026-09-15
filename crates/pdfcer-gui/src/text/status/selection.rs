@@ -265,6 +265,98 @@ pub fn selection_many(count: usize) -> String {
     }
 }
 
+// ===========================================================================
+// ★ The Part rung — one line of a text block, one part of a shape
+// ===========================================================================
+
+/// ★★★ **What the operator has when the selection is narrower than an
+/// object**, appended to the line that names the object.
+///
+/// # The gap this closes
+///
+/// The Part rung has existed since 2026-09-05 and **no surface said the
+/// operator was on it.** The outline shrinks from the whole title block to
+/// one line of it, and that is the entire signal: the status bar went on
+/// naming the object's kind and the object's size, which are now both facts
+/// about something bigger than what Delete would remove.
+///
+/// ⇒ That is the failure mode this module's header is organised around,
+/// one rung down: *reporting the wrong thing is worse than reporting
+/// nothing*, because a line that is confidently about the block gives the
+/// operator no reason to suspect he is not holding the block.
+///
+/// # ★★ Why there is no index in it
+///
+/// The obvious wording is *line 4 of 27*, and it was refused. The Objects
+/// panel already numbers the same thing, as `Run #3`, **zero-based on
+/// purpose** — decision 025 §1.3(b), so that the number pdfcer shows and
+/// the number a `pdfcer` command line addresses are one number. A status bar
+/// saying *line 4* beside a panel saying *Run #3* about the same run is two
+/// numberings of one thing, which is the drift this project spends its
+/// corrections on.
+///
+/// *1 line of 27* needs no index space at all. It says what he has (one
+/// line), and how much there is (twenty-seven), and it cannot disagree with
+/// the panel because it does not name a position.
+///
+/// # ★ Rule 4
+///
+/// Nothing is drawn on the drawing to express the rung. The selection
+/// outline is the cursor and is untouched; this is the off-canvas half.
+#[must_use]
+pub fn selection_part_of_text(line: &str, of: usize) -> String {
+    format!("{line} · 1 line of {of}")
+}
+
+/// The same clause for a **path**'s part, where the word is *part* rather
+/// than *line*.
+///
+/// ★ Two functions rather than one with a flag, because the two words are
+/// the whole content of the difference and a flag would put the choice at
+/// the call site with nothing beside it explaining which is which. The
+/// caller asks `ObjectModelProvider::part_kind` — the one dispatcher the
+/// Objects panel's row builder also asks — so the two surfaces cannot
+/// disagree about which kind of part is selected.
+#[must_use]
+pub fn selection_part_of_path(line: &str, of: usize) -> String {
+    format!("{line} · 1 part of {of}")
+}
+
+/// The hover behind the text clause: what Delete does here, and the way
+/// back out.
+///
+/// # ★★★ Why the way out is stated and not assumed
+///
+/// A rung with no visible exit is a stranding, and this module's
+/// `inside_container` note records the same argument for the scope a bare
+/// Escape leaves behind. The Part rung is reachable in one right-click now,
+/// which means it is reachable by an operator who did not set out to go
+/// there — so the sentence that gets him back has to be somewhere he is
+/// already looking.
+///
+/// ★★ **It names Delete because Delete is the capability**, and naming it
+/// is the only disclosure the shell can make honestly: `delete_text_run`
+/// exists, `move_text_run` does not (request `G017`), and a sentence here
+/// that said *drag it* would be describing a verb the engine has not got.
+/// The refused drag has its own sentence, in `crate::text::arrange`, and
+/// this one deliberately does not duplicate it.
+#[must_use]
+pub const fn selection_part_of_text_hint() -> &'static str {
+    "One line inside a block of text. Delete removes just this line. Press Escape to select the whole block again."
+}
+
+/// The hover behind the path clause.
+///
+/// ★ Its verbs differ from the text one's and the difference is real rather
+/// than cosmetic: a part of a path can be **dragged** — `move_subpath` —
+/// and a line of text cannot. The two hovers are where that asymmetry is
+/// said out loud to the operator, and they will stay two sentences until
+/// the engine grows the missing verb.
+#[must_use]
+pub const fn selection_part_of_path_hint() -> &'static str {
+    "One part of a shape. Drag it to move it, or press Delete to remove just this part. Press Escape to select the whole shape again."
+}
+
 /// ★★ **…and how many other things were under the same click.**
 ///
 /// Appended to whichever line above applies, because it is a fact about the

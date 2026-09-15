@@ -63,6 +63,21 @@ pub(crate) fn handles(id: &str) -> bool {
         "format.delete"
             | "format.properties"
             | "format.select_form"
+            // ★ The text-run re-aim, 2026-09-15 — O188(A). It sits next to
+            // `format.select_form` because it is the same act one rung down:
+            // both RE-AIM the selection at something the click could not have
+            // named on its own, and neither edits anything. `select_form`
+            // ascends from a leaf to the form that paints it; this one descends
+            // from a text block to the one line the pointer was over.
+            //
+            // ★★ It is the only arm in this file whose operand is not the
+            // selection. It reads a pick parked in `egui::Memory` by the
+            // right-click that opened the menu — which is why `dispatch` grew
+            // an `egui::Context` parameter on the same day — and that is not a
+            // shortcut: no ribbon control can ask *"which line of this block
+            // is the pointer on?"*, so the command has no ribbon home and is
+            // registered `TAB_SCOPED` for exactly that reason.
+            | "format.select_text_line"
             // ★ The form-XObject unshare, 2026-08-28. It sits with
             // `format.select_form` rather than with the Font group because it
             // asks the same first question every arm in this file has to ask —
@@ -104,7 +119,12 @@ pub(crate) fn handles(id: &str) -> bool {
 /// `id` is guaranteed to be one [`handles`] claims — the caller's arm is
 /// guarded on it — so the fall-through is unreachable and says so rather than
 /// silently doing nothing.
-pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
+pub(crate) fn dispatch(
+    app: &mut PdfcerApp,
+    ctx: &egui::Context,
+    id: &str,
+    actions: &mut Vec<Action>,
+) {
     match id {
         // ★ The ribbon's Delete — the contextual Format tab's one command.
         //
@@ -117,11 +137,20 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // dead code wearing a design pattern, which is what the
         // no-placeholders invariant forbids.
         //
-        // It became wirable when the selection moved onto `OpenDoc`: this
-        // function has no `egui::Context`, so while the selection lived in
-        // `egui::Memory` there was no route from a ribbon click to the
-        // thing it was about to delete. That is the whole of why the
-        // control has been drawn-but-unwired until now.
+        // It became wirable when the selection moved onto `OpenDoc`. While
+        // the selection lived in `egui::Memory` there was no route from a
+        // ribbon click to the thing it was about to delete, because this
+        // function had no `egui::Context` to read that memory through. That
+        // is the whole of why the control was drawn-but-unwired until then.
+        //
+        // ★ The correction, 2026-09-15: this function now DOES take an
+        // `egui::Context`, added for `format.select_text_line`'s parked pick.
+        // That does not reopen the old route and must not be read as doing
+        // so — the selection is on `OpenDoc` and stays there. A context
+        // parameter is how a command reads an operand the RIBBON could not
+        // have asked for; it is not a licence to move state back into frame
+        // memory, where nothing outside a frame can see it and no test can
+        // hold it.
         //
         // **The rule is not restated here.**
         // `SelectionState::deletable_objects_on` decides what a Delete may
@@ -405,6 +434,87 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                     None => crate::app::status::decline::record_inside_form(
                         crate::text::status::InsideFormRefusal::NoContainingForm,
                     ),
+                }
+            }
+        }
+        // ★★★ **Select just the line of text the pointer was over.**
+        //
+        // O188(A), 2026-09-15. The operator's words, `OPERATOR_REQUESTS.md`:
+        // *"In text that is grouped together or whatever it is called, such
+        // as in my title blocks, I would like a way to move the individual
+        // text blocks within it around, and have the ability to delete
+        // them"*.
+        //
+        // Deleting one line has worked since 2026-09-05. **Reaching the rung
+        // it works at had exactly one route**, and nothing in the program
+        // named it: arm the Points tool first (`A`), then single-click. A
+        // route he can find only after already failing is not a route, which
+        // is the whole of what this arm is for.
+        //
+        // # Where the operand comes from, and why it is not the selection
+        //
+        // Every other arm in this file acts on `doc.selection`. This one
+        // cannot: the selection at the moment of the click is the whole text
+        // block, and *which line* is a property of the POINTER, not of the
+        // selection. `canvas::menus` parks the pick — page, object, run
+        // index, and how many runs the object has — on the frame that opens
+        // the context menu, because egui reopens that menu every frame while
+        // the pointer travels onto it, and by the time this arm runs the
+        // pointer is over a menu row and not over the text at all. The markup
+        // node menu established the pattern; `canvas::runmenu` states the
+        // argument in full.
+        //
+        // # What it deliberately does not do
+        //
+        // It does not edit, move, or delete anything, and it raises no
+        // `Action`. Re-aiming the selection is not an edit, which is why a
+        // menu row is allowed to do it where `DESIGNS.md` §6.2 forbids a menu
+        // row that edits. Nothing is pushed, nothing is undoable, and Escape
+        // ascends back to the whole block exactly as it does from any
+        // Part-rung selection.
+        //
+        // # Why a decline raises nothing
+        //
+        // The same reason the markup node commands do. By the time this arm
+        // runs the menu has closed, and a closed menu is not a surface an
+        // explanation can arrive on. It is also not reachable in practice:
+        // the row is ABSENT unless a pick was parked with a live run on the
+        // current page, per R9 — not greyed, absent — so a decline here means
+        // the model changed between the click and the press, and the honest
+        // report of that is to leave the selection where the operator last
+        // saw it. The trace still says so, for the harness.
+        //
+        // ★ Guarded on `edit_content` with the other re-aim, and for the
+        // same measured reason: `select_form` + `delete` was a data-loss
+        // compound in Read mode (A18). This one re-aims DOWN rather than up,
+        // so the same compound narrows a delete rather than widening it —
+        // but Read mode does not select parts of content at all, and an arm
+        // that acts anyway is the divergence, not the risk it happens to
+        // carry.
+        "format.select_text_line" if !app.capabilities().edit_content => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "format-select-text-line-declined reason=mode-cannot-edit-content".to_owned()
+            });
+        }
+        "format.select_text_line" => {
+            if let Status::Open(doc) = &mut app.status {
+                let page = doc.view.page_index;
+                // ★ The `Ref` is taken and dropped inside this block, before
+                // `doc` is borrowed mutably to move the selection. `resolve`
+                // re-validates the parked pick against the CURRENT model —
+                // the object is still a text run, the run index is still in
+                // range, the page is still the one that was clicked — so a
+                // reflow between the click and the press narrows the
+                // selection to nothing rather than to somewhere the operator
+                // never pointed.
+                let resolved = {
+                    let targets = doc.page_objects();
+                    crate::canvas::runmenu::resolve(ctx, targets.as_deref(), page)
+                };
+                if let Some((object, run)) = resolved {
+                    doc.selection
+                        .select_part(page, object, run, "select-text-line");
                 }
             }
         }
@@ -720,8 +830,11 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
 ///
 /// # ★★ The provider, and why it is read here rather than passed in
 ///
-/// The dispatcher has no `egui::Context` and no frame, so it cannot inherit the
-/// canvas's borrow the way `canvas::keys` does. `doc.page_objects()` is keyed on
+/// The dispatcher is not inside the canvas's frame — it runs from the command
+/// funnel, after the ribbon or a menu has already closed — so it cannot inherit
+/// the canvas's borrow the way `canvas::keys` does. (It has taken an
+/// `egui::Context` since 2026-09-15, for a different arm's parked operand; a
+/// context is not a frame and buys this one nothing.) `doc.page_objects()` is keyed on
 /// `(page, edit_epoch)` and the canvas built it on the frame that drew the
 /// selection outline the operator is looking at, so this is a cache read rather
 /// than a second `decompose_page` — the same key, the same epoch, the same

@@ -188,6 +188,10 @@ pub fn attach(click: Click<'_>) -> Vec<HandlerToken> {
         selection: click.selection,
         page: click.page_index,
         object,
+        // ★ The same provider `right_clicked_object` was just handed, passed
+        // on so the menu can ask one rung deeper — which LINE of a text block
+        // the pointer is on (O188(A)). Nothing extra is computed here.
+        targets: click.targets,
         field_selected: field_menu,
         field_delete_permitted,
         reading,

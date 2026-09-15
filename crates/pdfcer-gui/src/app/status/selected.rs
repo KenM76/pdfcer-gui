@@ -62,6 +62,49 @@ use crate::text::status as t;
 /// The region this line publishes, so a driven check can find it.
 pub const REGION: &str = "status-group:selected"; // ui-text-exempt: trace region name, never displayed
 
+/// `status-rung kind=text|path part=N of=M` — the rung clause this bar
+/// appended, stated on the channel a harness can read.
+///
+/// # ★★★ Why a label's own words need a trace line at all
+///
+/// [`crate::diag::ui_rect`] publishes WHERE this label was drawn and never
+/// WHAT it says. That is the right division for a layout oracle and it is
+/// useless for a content one: a build that drew the readout and dropped the
+/// rung clause publishes a byte-identical region, so a check asserting the
+/// region is satisfied by both outcomes and measures neither.
+///
+/// ⇒ So the clause states itself. The line is emitted from the same arm
+/// that builds the clause, out of the same numbers, on the frame the label
+/// is drawn — so a harness that sees this line AND the region on the same
+/// frame has measured that the sentence exists and that the bar drew it.
+/// Neither half alone says that, which is why a check should assert both.
+///
+/// ⚠ **"From the same arm" is load-bearing, and it was not true for the
+/// first four hours this constant existed.** The emission sat ABOVE the
+/// `match`, keyed on the same `PartKind` the arms are keyed on, which reads
+/// as equivalent and is not: falsification recipe (4) of the driven check —
+/// replace both arms with `(line, None)` — left the trace firing and the
+/// check PASSING on a build that disclosed nothing. It now goes through
+/// [`trace_rung`], called from the two producing arms and from nowhere else.
+///
+/// ★ It is a trace of the DECISION, not a transcription of the string.
+/// Echoing the rendered text would make every wording change a harness
+/// change and would tempt a check into asserting English; `kind`, `part`
+/// and `of` are the three facts the clause is computed from, and a build
+/// that gets any of them wrong gets the sentence wrong too.
+///
+/// ★★ Routed through [`crate::diag::trace_changed`] rather than
+/// [`crate::diag::trace`], because this is drawn sixty times a second and
+/// a selection that is sitting still would otherwise bury the channel —
+/// the lesson `canvas-pointer` taught when a stationary pointer emitted
+/// fifty identical lines in nine seconds. The de-duplication is on the
+/// rendered line, so a harness must not assume one press produces one line:
+/// an EARLIER gesture that produced the identical clause suppresses the
+/// later one. A check wanting a before/after verdict asserts that the
+/// count before its gesture was ZERO, rather than that a new line follows
+/// a mark.
+const RUNG_SLOT: &str = "status-rung"; // ui-text-exempt: trace slot name, never displayed
+
 /// Draw the selection readout, or nothing.
 ///
 /// Takes `&OpenDoc` and the context: the selection is on the document, and the
@@ -173,10 +216,167 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
         None => text,
     };
 
+    // ★★★ **The rung, said in words** — 2026-09-15, O188(A).
+    //
+    // Appended before the layer clause and after the depth clause, which is
+    // the order the three facts narrow in: *what it is* (kind and size),
+    // *which of the ones under the pointer* (depth), *how much of it you
+    // hold* (rung), *where it lives* (layer). Each clause is about the one
+    // before it.
+    let (text, hint) = with_part(doc, page, first, text);
+
     let text = with_layer(doc, &text);
 
     let response = ui.label(text);
     crate::diag::ui_rect(REGION, response.rect);
+    // ★ The hover carries the verbs, not the readout. `disclosure`'s rule:
+    // eliding defers rather than loses — the bar has room for *1 line of
+    // 27* and not for the sentence that says what Delete will do with it.
+    if let Some(hint) = hint {
+        response.on_hover_text(hint);
+    }
+}
+
+/// ★★★ **Is the selection narrower than the object it names, and by how
+/// much?**
+///
+/// Returns the line with a rung clause appended, and the hover that belongs
+/// behind it — or the line unchanged and `None`.
+///
+/// # Why this reads the level rather than the entry's `subpath`
+///
+/// Both would work today. `SelectionLevel` is the **stated** answer, kept in
+/// step by `normalise`, and `subpath: Some(_)` is the representation that
+/// happens to carry it; a readout that inferred the rung from the
+/// representation would be a second definition of what Part means. The
+/// level is asked first and the index is read only once the level has said
+/// there is one.
+///
+/// # ★★ A leaf produces no clause, and that is not a hole
+///
+/// The Part rung is unreachable inside a form XObject: `part_hits_of`
+/// matches on a page-object index and returns nothing for a leaf, so the
+/// ladder caps itself at the object rung there by construction. Requiring
+/// `page_object_index` here is therefore an assertion of that fact rather
+/// than a case being dropped — and if it ever stops being true, the clause
+/// goes quiet rather than printing a total it computed from the wrong index
+/// space.
+///
+/// # ★ The total is re-read every frame
+///
+/// From the same `page_objects` cache the outline was drawn from, keyed on
+/// `(page, edit_epoch)`. A reflow that changes how many runs the object has
+/// changes this number on the next frame, which is the only behaviour that
+/// keeps *1 line of 27* from becoming a claim about a document revision the
+/// operator is no longer looking at.
+fn with_part(
+    doc: &OpenDoc,
+    page: usize,
+    first: crate::canvas::target::TargetId,
+    line: String,
+) -> (String, Option<&'static str>) {
+    use crate::canvas::selection::SelectionLevel;
+    use crate::panels::objects::provider::PartKind;
+
+    if doc.selection.level() != SelectionLevel::Part {
+        return (line, None);
+    }
+    let Some(part) = doc
+        .selection
+        .entries()
+        .iter()
+        .find(|e| e.page == page && e.object == first)
+        .and_then(|e| e.subpath)
+    else {
+        return (line, None);
+    };
+    let Some(index) = first.page_object_index() else {
+        return (line, None);
+    };
+    let Some(provider) = doc.page_objects() else {
+        return (line, None);
+    };
+    let of = provider.part_count(index);
+    // A part index outside the object's own count is a stale selection the
+    // resolver is supposed to have cleared. Saying nothing beats saying
+    // *1 line of 3* about a run that is not there.
+    if part >= of {
+        return (line, None);
+    }
+    let kind = provider.part_kind(index);
+    drop(provider);
+
+    // ★★★ **The trace is emitted from INSIDE the producing arms, and that
+    // placement is the whole of its value.**
+    //
+    // It sat above this `match` for four hours on 2026-09-15, keyed on `kind`,
+    // and the driven check that reads it PASSED on a build whose arms had been
+    // replaced with `(line, None)` — i.e. on a build where the operator stands
+    // on one line of six and the status bar says nothing about it, which is
+    // exactly the defect the line exists to report. Everything the trace said
+    // was true; it was a statement about the four early returns above rather
+    // than about the clause, and an assertion both outcomes satisfy measures
+    // neither.
+    //
+    // ⇒ The emission and the sentence are now produced by the same arm, so
+    // there is no edit that removes the clause and leaves the trace. See
+    // [`RUNG_SLOT`] for why a rect cannot make this claim and why the fields
+    // are the DECISION rather than the sentence.
+    //
+    // ⚠ The `None` arm is deliberately silent rather than tracing
+    // `kind=none`. A part selection whose object reports no part kind produces
+    // no clause BY DESIGN, and a trace line there would make the absence of a
+    // clause indistinguishable from the presence of one to any check that only
+    // counts lines.
+    match kind {
+        Some(PartKind::Run) => {
+            trace_rung(RUNG_TEXT, part, of);
+            (
+                t::selection_part_of_text(&line, of),
+                Some(t::selection_part_of_text_hint()),
+            )
+        }
+        Some(PartKind::Subpath) => {
+            trace_rung(RUNG_PATH, part, of);
+            (
+                t::selection_part_of_path(&line, of),
+                Some(t::selection_part_of_path_hint()),
+            )
+        }
+        None => (line, None),
+    }
+}
+
+/// The `kind=` token for one line of a text object. See [`RUNG_SLOT`].
+// ui-text-exempt: diagnostic trace fragment, never displayed in the UI
+const RUNG_TEXT: &str = "text";
+
+/// The `kind=` token for one subpath of a shape. See [`RUNG_SLOT`].
+// ui-text-exempt: diagnostic trace fragment, never displayed in the UI
+const RUNG_PATH: &str = "path";
+
+/// Say which rung the status bar just disclosed, on the frame it disclosed it.
+///
+/// Called from the two arms of [`with_part`] that build a rung clause, and from
+/// nowhere else — which is the property the driven check depends on, and the
+/// reason this is a function rather than four lines repeated twice: a second
+/// call site added anywhere would be visible here, and a reader who wants to
+/// know what can emit this line has one place to look.
+///
+/// ★★ Routed through [`crate::diag::trace_changed`] because the status bar is
+/// built sixty times a second and an unconditional trace would write fifty
+/// identical lines in nine seconds — the `canvas-pointer` lesson. The
+/// de-duplication is keyed on the RENDERED line, which has one consequence a
+/// harness must honour: a check wanting a before/after verdict asserts that the
+/// count BEFORE its gesture was zero, rather than that a new line follows a
+/// mark. A line identical to one already written is suppressed, and a
+/// mark-relative assertion would read that suppression as the feature being
+/// broken.
+fn trace_rung(kind: &str, part: usize, of: usize) {
+    crate::diag::trace_changed(RUNG_SLOT, || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("{RUNG_SLOT} kind={kind} part={part} of={of}")
+    });
 }
 
 /// ★★★ **Which layer the selection is on, appended to the line that already

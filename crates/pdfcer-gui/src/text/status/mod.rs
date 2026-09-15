@@ -145,6 +145,14 @@ pub use selection::{
     selection_one_in_form,
     selection_one_in_form_unsized,
     selection_one_unsized,
+    // ★ The Part rung's four, 2026-09-15 — O188(A). Two clauses and two
+    // hovers, and they come in pairs because the clause is the readout and
+    // the hover is the verbs; a call site that took one without the other
+    // would be stating a rung with no way out of it.
+    selection_part_of_path,
+    selection_part_of_path_hint,
+    selection_part_of_text,
+    selection_part_of_text_hint,
     selection_with_depth,
     // ★ The six ladder sentences, one per outcome the engine can report
     // (`StyleLadder::rung`, split at rung 1 by `StyleLadder::same_family`),

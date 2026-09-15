@@ -132,10 +132,33 @@ pub const fn put_down_hint() -> &'static str {
 ///
 /// ⇒ The wording therefore says *a measurement you have drawn*, which is true
 /// in both modes and locates the subject without a mode word in it.
+///
+/// ## ★★★ The THIRD subject, added 2026-09-15, and it was missing for ten
+/// days
+///
+/// This tool is also the one existing route to **one line of a block of
+/// text**: arm it, single-click a title block, and the selection narrows to
+/// the run under the pointer, which Delete then removes on its own. That has
+/// worked since 2026-09-05 and **this sentence did not say so**, which made
+/// it a capability with no route an operator could find — `OPERATOR_REQUESTS`
+/// O188(A), in his terms: *a route he can find before failing is owed*.
+///
+/// ⇒ The primary answer to O188(A) is a **right-click row**
+/// (`format.select_text_line`), because it needs no tool armed in advance
+/// and no prior knowledge at all. This clause is the second half, and it is
+/// owed on the same argument the paragraph above makes for measurements: an
+/// operator shown only two of a tool's three subjects never learns the
+/// third exists.
+///
+/// ★ *picks out just the line you clicked* rather than *selects the run*.
+/// **Run** is the format's word and appears in the Objects panel, where a
+/// reader is already looking at a tree of format objects; this strip speaks
+/// the operator's, and his word for it — verbatim — is *line*.
 #[must_use]
 pub const fn node_instruction() -> &'static str {
     "Click a shape to show its points. Click a point to select it, then drag to \
-     move it. On a measurement you have drawn, drag a corner to reshape it."
+     move it. On a measurement you have drawn, drag a corner to reshape it. On \
+     a block of text, clicking picks out just the line you clicked."
 }
 
 /// The line under it: how to take more than one, and how to change how many

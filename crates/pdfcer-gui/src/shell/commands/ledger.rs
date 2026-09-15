@@ -384,9 +384,33 @@ fn registration_succeeds_and_registers_every_command() {
     // question about what the operator is doing, not about which file is
     // open. A second, per-document control could only contradict the
     // first, and the contradiction would present as the toggle forgetting.
+    // ★★★ 160 → 161 on 2026-09-15: `format.select_text_line` —
+    // *Select this line of text* — and it is the first command in this
+    // register whose **operand no ribbon control can ask for**.
+    //
+    // O188(A). Deleting one line of a title block has worked since
+    // 2026-09-05 and could be reached one way only: arm the Points tool
+    // (`A`) BEFORE clicking. Nothing in the program said so. The operator's
+    // row records the bar plainly — *"a route he can find before failing is
+    // owed"* — and a right-click row is that route.
+    //
+    // ⇒ Why the number moves by ONE and not by two. The tempting twin is a
+    // `format.select_text_block` that ascends again, and it was refused
+    // because **Escape already does it**, from every rung, everywhere, and
+    // has since the ladder shipped. A menu row duplicating a key that works
+    // is a second statement of a rule, which is the drift this whole file
+    // exists to record. The new row's own tooltip names Escape instead.
+    //
+    // ★ It registers no ribbon item. `manifest::registers::TAB_SCOPED`
+    // carries the sixth entry and the argument: the command needs to know
+    // *which line the pointer is on*, and a ribbon band is not over the
+    // page. What is new about that entry — and it says so rather than
+    // smoothing it over — is that the other five are the discoverable
+    // SECOND route to something the ribbon also offers, and this one is the
+    // only route there is.
     assert_eq!(
         registry().len(),
-        160 + usize::from(cfg!(feature = "signing"))
+        161 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -761,9 +785,24 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // at a time, and what tells them apart is the label — which is what
     // the convention asks a label to do. Nothing was drawn, so
     // `icons/assets/PROVENANCE.md` is untouched.
+    // ★★★ 143 → 144 on 2026-09-15: `format.select_text_line` names
+    // `pick-part` — a REUSE under this header's shared-key convention, the
+    // sixth, and the only one so far where the borrowed glyph was drawn for
+    // the identical ACT rather than merely a neighbouring one.
+    //
+    // `Icon::PickPart` is the Points tool's glyph, and the Points tool is
+    // the one existing route to the rung this command reaches. A reader who
+    // has ever armed it sees the same picture on the menu row that puts him
+    // in the same place without arming anything — which is the convention
+    // working rather than the convention being stretched.
+    //
+    // ★ The two controls are never drawn side by side (one is a ribbon
+    // toggle on Edit, the other a row in the canvas context menu), which is
+    // the condition the reuse notes above all turn on. Nothing was drawn, so
+    // `icons/assets/PROVENANCE.md` is untouched.
     assert_eq!(
         named,
-        143 + usize::from(cfg!(feature = "signing")),
+        144 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands

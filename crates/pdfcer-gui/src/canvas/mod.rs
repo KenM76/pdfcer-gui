@@ -392,6 +392,15 @@ pub mod rightclick;
 /// header carries why a rotation is not a resize with different arithmetic:
 /// the pointer's DISTANCE from the centre must mean nothing.
 pub mod rotating;
+/// ★★ **The discoverable route to ONE LINE of a text block** — the
+/// right-click row that descends to the Part rung on a multi-line text
+/// object. O188(A): that rung was reachable by exactly one chord-armed
+/// gesture and was announced on no surface. Its header carries the operand
+/// problem (a menu row carries a command id and nothing else) and where the
+/// pick is parked to solve it, plus why this does not breach
+/// `DESIGNS.md`'s *do not add a context-menu item*: that rules out a row
+/// that EDITS, not one that re-aims the selection.
+pub mod runmenu;
 /// ★★ The eight resize grips, finally committing — built out of `move_nodes`
 /// because `pdfcer-core` has no scale verb, which was re-derived against its
 /// source rather than taken from a note.

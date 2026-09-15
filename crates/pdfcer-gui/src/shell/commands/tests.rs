@@ -346,6 +346,29 @@ fn every_predicate_names_a_documented_condition() {
         // is read to discover.
         "markup.node_insertable",
         "markup.node_removable",
+        // ★★★ **The text-run pick**, published 2026-09-15 — O188(A). It is
+        // the third entry `app::conditions` never sets, and it joins the two
+        // above for the identical reason: the frame's condition set describes
+        // the FRAME, and this one describes **which line of one text block one
+        // right-click landed on**. `canvas::menus` corrects it per click
+        // through `MenuHost::with_conditions`, from a pick `canvas::runmenu`
+        // parked on that same frame.
+        //
+        // ★★ **One name where the node pair needed two, and the asymmetry is
+        // the finding rather than an oversight.** `markup.node_insertable` and
+        // `markup.node_removable` are two because each has a *temporary*
+        // refusal worth greying for — draw another corner and Remove comes
+        // back. This one has none. Either the pointer was over a line of a
+        // multi-line text object or it was not, and no amount of waiting
+        // changes the answer, so R9 says the row is ABSENT rather than greyed:
+        // `shown_when` takes it away and `enabled_when` never fires on a row
+        // nobody can see.
+        //
+        // ⇒ Named here anyway, and that is this list's whole job. A command
+        // that waits on a name is the subject; whether the name is also used
+        // to HIDE its only control is a separate fact, and the one a reader
+        // comes to this list to discover.
+        "canvas.run_select_offered",
     ];
     for command in registry().iter() {
         if let egui_shell::commands::Enable::When(name) = &command.enable {

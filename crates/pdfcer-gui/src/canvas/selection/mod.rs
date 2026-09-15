@@ -771,6 +771,73 @@ impl SelectionState {
         });
     }
 
+    /// **Select ONE PART of one object, and stand at the Part rung** —
+    /// [`Self::select_only`]'s sibling, one rung down.
+    ///
+    /// # ★★★ Why this exists as its own verb
+    ///
+    /// `OPERATOR_REQUESTS.md` O188(A). Until 2026-09-14 the Part rung had
+    /// exactly one entrance — [`Self::click_direct`], reached only by arming
+    /// the Points tool with a chord *before* clicking — and nothing on any
+    /// surface named it. [`crate::canvas::runmenu`] carries the measurement of
+    /// every other gesture and why each lands one rung up.
+    ///
+    /// A second entrance needs a way to *say* "stand here, on this part", and
+    /// [`Self::select_only`] cannot: it hard-sets [`SelectionLevel::Object`],
+    /// correctly, because that is what its callers mean.
+    ///
+    /// ⇒ The alternative was a `level` argument on `select_only`, and it was
+    /// refused for the reason this project refuses most boolean parameters: a
+    /// call site would then read `select_only(page, object, SOMETHING, why)`
+    /// with the rung as a value rather than as the thing the function is for,
+    /// and *"the right verb at the wrong rung"* is exactly the defect class a
+    /// second entrance to a rung can introduce.
+    ///
+    /// # What it guarantees
+    ///
+    /// - **Exactly one entry.** Descending is always a narrowing; a multi-part
+    ///   selection at the Part rung has no meaning any verb consumes
+    ///   (`delete_text_run` and `move_subpath` each take one part), and the
+    ///   Part-rung verb table in `panels::objects::provider` is written per
+    ///   part.
+    /// - **`node: None`.** The Node rung is one further down and this verb
+    ///   does not reach it. `Selection::node`'s own doc states the invariant
+    ///   that `Some` implies `subpath.is_some()`; the converse is not implied
+    ///   and must not be invented here.
+    /// - **`normalise` is still called**, exactly as every other mutator in
+    ///   this file does, so the one-place-that-sorts-and-dedupes rule holds
+    ///   even for a selection that cannot need sorting. A mutator that skips
+    ///   it because it *happens* not to need it today is the seam the next
+    ///   caller falls through.
+    ///
+    /// ★ **The caller is responsible for `part` being in range.** This type
+    /// holds no document and cannot check. `canvas::runmenu::resolve` re-asks
+    /// the provider immediately before calling — see its header for why a
+    /// condition that answered *for a frame* is not enough for a press that
+    /// happens in one.
+    pub fn select_part(&mut self, page: usize, object: TargetId, part: usize, why: &'static str) {
+        self.entries = vec![Selection {
+            page,
+            object,
+            subpath: Some(part),
+            node: None,
+        }];
+        self.level = SelectionLevel::Part;
+        self.normalise();
+        crate::diag::trace(move || {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            // ★ Names the list as well as the index, for `select_only`'s
+            // reason one function up: a page has two index spaces, and a trace
+            // that cannot tell `objects[7]` from `leaves[7]` cannot be read
+            // back.
+            let list = if object.is_leaf() { "leaf" } else { "object" };
+            format!(
+                "selection-set page={page} {list}={} part={part} level=part via={why}",
+                object.raw()
+            )
+        });
+    }
+
     /// Every selected **anchor** on one object of one page, object-scoped,
     /// ascending and unique.
     ///

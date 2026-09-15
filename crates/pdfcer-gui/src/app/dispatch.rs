@@ -834,7 +834,11 @@ impl PdfcerApp {
             // The Format tab's arms — Delete, Properties and Select-the-form.
             // Split out under R2 on 2026-08-27; see `dispatch::format`'s header
             // for the seam.
-            id if format::handles(id) => format::dispatch(self, id, actions),
+            // ★ `ctx` since 2026-09-15 — `format.select_text_line` reads a
+            // pick parked in frame memory by the right-click that opened the
+            // menu, which is an operand no ribbon control can ask for. Same
+            // shape as `measure` and `markupnodes` below.
+            id if format::handles(id) => format::dispatch(self, ctx, id, actions),
             id if measure::handles(id) => {
                 measure::dispatch(self, ctx, id, actions);
             }

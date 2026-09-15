@@ -291,9 +291,20 @@ mod tests {
         // commands share `show-points` rather than asking for art. So a whole
         // menu arrived with a complete icon column and `icons/assets/` was not
         // touched, which is the outcome this column's rules were written for.
+        // ★★★ 33 / 1 → 34 / 1 on 2026-09-15: `format.select_text_line`
+        // joins `canvas.object`, and it lands in the glyph column for the
+        // same reason the seven markup rows did — it names a glyph that was
+        // already drawn. `pick-part` is the Points tool's art, and the Points
+        // tool is the one route this row is a shortcut for, so the reuse is
+        // the convention working rather than a borrow being stretched.
+        //
+        // ★ `blank` stays at 1 and `absent` stays at 0, and both are the
+        // load-bearing halves of this tuple. A new row that had refused a
+        // glyph would have moved `blank` to 2 — which is legal, argued at the
+        // registration, and would have to be argued here too.
         assert_eq!(
             (glyph, blank, absent),
-            (33, 1, 0),
+            (34, 1, 0),
             "menu rows by icon slot state; per-menu breakdown:\n{report}"
         );
         assert_eq!(

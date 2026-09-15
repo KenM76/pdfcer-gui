@@ -622,10 +622,47 @@ text object, so it must be operand rewriting), the hard case named
 for the successor problem offered rather than guessed at. Every citation was
 re-measured against the pinned revision first; several had drifted ~40 lines.
 
-⚠ **(A) is still open.** The delete is reachable only through the Points tool
-(`A`, then click); a double-click on text opens the caret instead, which is
-O70's ruling and correct. The new sentence tells him Delete works, but only
-after he has tried to drag. A route he can find *before* failing is owed.
+**(A) BUILT 2026-09-15 — right-click a line of a title block and the menu
+offers that line.**
+
+The delete had worked since 2026-09-05 and could be reached exactly one way:
+arm the Points tool with the `A` chord **before** clicking, then click. Nothing
+in the program said so, and the routes he would try first are all correctly
+spoken for — a double-click opens the caret (O70), a drag is now refused out loud
+(B). ⇒ So the route is a row in the canvas object menu, *Select this line of
+text*, present only when the right-click landed on a line of a text object that
+has more than one, and absent rather than greyed when it did not (R9: the
+condition is not temporary — the pointer either was on a line or it was not).
+
+★ It is a **re-aim, not an edit**, which is why `DESIGNS.md` §6.2's ban on a
+context-menu item does not reach it, and it sits directly above
+`format.select_form` because the two re-aim in opposite directions and the menu
+reads down the ladder: the line inside the block, then the block's enclosing
+form.
+
+★★ **Verified by driving the binary, and the oracle was falsified before it was
+believed.** `the_right_click_offers_the_line_you_clicked` clicks into Edit
+mode, selects the block, right-clicks the **third** of six lines, presses the
+row, and then asserts that the SAME run index appears in four places written by
+four subsystems across three frames — the pick taken when the menu opened, the
+pick read back when the row was pressed, the selection the ladder moved to, and
+the sentence the status bar drew. Aiming at the third line and not the first is
+deliberate: a build that ignores the pointer and returns run 0 is invisible on
+the top line.
+
+⚠ **The fourth falsification recipe found a defect in the check itself, and
+that is worth recording.** The status bar's trace line was emitted from just
+above the `match` that builds the clause rather than from inside its arms —
+which reads as equivalent and is not. Gutting both arms left the trace firing
+and the check PASSING on a program where the operator stands on one line of six
+and the bar says nothing about it. An oracle one statement away from the thing
+it claims to measure is an assertion both outcomes satisfy; the only way to
+find one is to run the recipe.
+
+⚠ **Left for him to say:** whether the row's wording reads right in a real
+title block, and whether he wants the same route on a **shape** — the Part rung
+under a polyline has the identical problem and the identical chord, and this
+row deliberately covers only text until he has used it.
 
 ---
 

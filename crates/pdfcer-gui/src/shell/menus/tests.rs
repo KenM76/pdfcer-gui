@@ -495,6 +495,12 @@ fn each_menu_holds_exactly_the_documented_items() {
             &[
                 "view.zoom_selection",
                 "format.properties",
+                // ★ 2026-09-15, O188(A). Directly above `format.select_form`
+                // and not below it, because the two re-aim in opposite
+                // directions and the list reads down the ladder: the line
+                // inside the block, then the block's enclosing form. A reader
+                // scanning this menu is descending, and the rows should agree.
+                "format.select_text_line",
                 "format.select_form",
                 "format.unshare_form",
                 "format.delete",

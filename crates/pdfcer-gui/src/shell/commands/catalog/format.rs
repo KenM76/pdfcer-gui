@@ -105,6 +105,79 @@ pub(super) fn band() -> Vec<Command> {
         command("format.select_form", t::format_select_form(), 802)
             .with_icon("pick-form-xobject")
             .enabled_when("selection.in_form"),
+        // ===================================================================
+        // ★★★ format.select_text_line — THE ROUTE TO ONE LINE OF A TEXT BLOCK
+        // ===================================================================
+        //
+        // `OPERATOR_REQUESTS.md` O188, and specifically the half of it that was
+        // still open after the delete shipped:
+        //
+        // > ⚠ **(A) is still open.** The delete is reachable only through the
+        // > Points tool (`A`, then click); a double-click on text opens the
+        // > caret instead, which is O70's ruling and correct. The new sentence
+        // > tells him Delete works, but only after he has tried to drag.
+        // > **A route he can find *before* failing is owed.**
+        //
+        // `crate::canvas::runmenu`'s header carries the measurement behind
+        // that: every other gesture on this canvas lands at the Object rung or
+        // opens the caret, so the Part rung on a text object had exactly one
+        // entrance and no surface named it.
+        //
+        // ## ★★★ NO RIBBON HOME — and the register that makes that legible
+        //
+        // `manifest::registers::TAB_SCOPED`. O53's ruling is that a command
+        // must not exist only on a context menu, and the bar for an exemption
+        // is one sentence: **the command needs an OPERAND a ribbon control
+        // cannot ask for.** This one needs *the line under the pointer*, which
+        // exists for the duration of one secondary click and is gone by the
+        // time a hand reaches the ribbon. A Format-tab button would have to
+        // invent an operand — "the first line", "the last line you touched" —
+        // and every invention is a different command wearing this one's label.
+        //
+        // The two markup node verbs are the precedent and the argument is
+        // theirs, one surface along.
+        //
+        // ## ★★ The icon is `pick-part`, reused, and it is the honest glyph
+        //
+        // Not a near-miss of the kind this catalog's refusal table is full of.
+        // `Icon::PickPart`'s own doc in `icons::catalog` reads: *"Selection
+        // filter row: **the Part rung** — one subpath of a path, or one
+        // show-operator run of a text object."* That is this command's subject,
+        // word for word, and the second clause is literally what it selects.
+        // `icons/assets.rs` states the convention it rests on: reuse of an
+        // ICON is free while reuse of an ASSET is not.
+        //
+        // Drawing new art was never the alternative, for
+        // `format.select_form`'s reason three entries up:
+        // `icons/assets/PROVENANCE.md` declares that directory the operator's
+        // own art, and a machine-drawn SVG would make that note false.
+        //
+        // ## ★★ `enabled_when` == the item's `shown_when`, and that IS R9
+        //
+        // `shell::menus::RUN_SELECT_OFFERED` on both. R9 greys only what is
+        // *temporarily* unavailable, and there is no such state here: nothing
+        // the operator can do while this menu is open turns a single-run text
+        // object into a multi-run one, or moves the pointer onto a line it is
+        // not on. So the row is offered or absent.
+        //
+        // ★ Carrying it on the command as well as on the item is not belt and
+        // braces for its own sake — `enabled_when` is the registry's and the
+        // item has no enablement field, so this is what stops a stale frame,
+        // or any future non-menu route, from dispatching a row whose operand
+        // has evaporated. `canvas::runmenu::resolve` then re-asks the provider
+        // a third time, because a condition answers *for a frame* and a press
+        // happens in one.
+        //
+        // ## Handler token 815, while the command sits beside 802
+        //
+        // The token is an identity, not a sort order — `super::tests`
+        // `every_handler_token_is_unique` and `..._is_in_its_tabs_block` are
+        // what it answers to, and 800…814 were taken. The POSITION in this
+        // list is the readable order and that is where the pairing lives: next
+        // to the other command that re-aims a selection from the canvas.
+        command("format.select_text_line", t::format_select_text_line(), 815)
+            .with_icon("pick-part")
+            .enabled_when(crate::shell::menus::RUN_SELECT_OFFERED),
         // ★★★ **The "option" half of decision 076**, registered 2026-08-28
         // after `EDITABLE_SURFACES.md` found `EditSession::unshare_form`
         // implemented in the engine and named nowhere in this crate.

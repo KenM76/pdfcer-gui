@@ -153,10 +153,10 @@ subject is fixed teaches the next reader nothing about what the gap cost.**
 ★★ **What was NOT measured BEFORE this release**, recorded here because the
 public release notes say it too: **the full ninety-five-minute driven sweep.**
 The last complete one was 2026-09-13 and read 183 passed / 4 failed / 34 skipped
-over **221** checks — there are **226** now, so even that figure is not a
-statement about this build. The four failures were the same four by name for the
+over **221** checks — there are **227** now (2026-09-15), so even that
+figure is not a statement about this build. The four failures were the same four by name for the
 third run running and every one of them a defect in the *check* rather than in
-the program. ⚠ Quoting *"226 checks"* without that sentence beside it reads as
+the program. ⚠ Quoting *"227 checks"* without that sentence beside it reads as
 a claim this build does not support.
 
 ⇒ **It is running now**, started 16:10 EDT against a copy of the shipped exe,

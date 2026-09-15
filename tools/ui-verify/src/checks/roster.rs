@@ -793,6 +793,18 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // while a failure of all four is a statement about the Part rung on text —
         // which is the first fork a reader needs and is free if the order holds it.
         Box::new(move_line_of_text::ARefusedDragOnOneLineOfTextSaysSo),
+        // ★★★ And immediately after the refusal, because the two are the two
+        // halves of O188 and they are ordered the way the operator met them.
+        // `move_line_of_text` asserts that the gesture he TRIED is refused out
+        // loud; this one asserts that a route he could have found BEFORE trying
+        // exists in the menu. A failure of this one alone says the capability
+        // works and remains undiscoverable — which is the whole of O188(A), and
+        // is invisible to every other check in this file.
+        //
+        // ★ It stands on the same rung of the same fixture as its neighbour and
+        // reaches it a different way, so a failure of BOTH is a statement about
+        // the Part rung on text rather than about either route.
+        Box::new(run_menu_route::TheRightClickOffersTheLineYouClicked),
         Box::new(autosize_overflow::AFieldTooSmallForItsTextSaysSo),
         Box::new(tool_row::TheTextToolTypesOnOneClick),
         Box::new(tool_row::AClickOnBlankPaperStartsNewText),
