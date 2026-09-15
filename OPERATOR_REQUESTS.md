@@ -171,6 +171,46 @@ carried into the next field placed) and a colour changed **after** placement
 "colour" for a field is more than one colour — at minimum background and
 border, and text colour where the field draws text.
 
+**Measured, and the answer is uncomfortable: of a field's three colours the
+engine paints one.** `/MK` `/BG` (background) and `/MK` `/BC` (border) are read
+and written perfectly — the round trip was finished at this shell's own request,
+twice — and **nothing paints them**. None of the four appearance builders takes a
+colour parameter; the push button's plate is a hard-coded constant; and
+`edit_widget`'s regeneration test does not mention either field, so a colour-only
+edit returns "nothing was regenerated" with no way to say *recorded, not painted*.
+
+That matters here more than it would anywhere else, because **this shell already
+tints its own on-canvas field editor from that background value.** Ship the swatch
+and he would set a colour, watch the box turn that colour while he edits it, save,
+reopen, and find it grey. A screenshot of the editing canvas would differ from a
+screenshot of the same document saved and reopened, which is the one-line test for
+the thing rule 4 forbids. So the background and border swatches are **not offered
+at all** — R9, not a stub — and the gap is filed as `G020`.
+
+**What ships**, with the decisions made here rather than asked:
+
+1. **The text colour, for text fields, drop-downs and push-button captions.**
+   Those three draw their text through a builder that parses `/DA` and uses the
+   colour in it, falling back to black only when the `/DA` states none — so the
+   colour is genuinely painted. Check box and radio take no `/DA` at all; their
+   builders receive a width, a height and a tick style, so a text colour on those
+   two is the same recorded-not-painted defect and is not offered there.
+2. **Before placement: in the placement dialog**, beside the border-width row —
+   not on the armed-tool surface. The dialog is where a field's other properties
+   are already chosen, and one setting living on two surfaces is the failure mode
+   to avoid.
+3. **The chosen colour is remembered across kinds**, the way border width already
+   is, so placing a run of fields does not mean re-picking it each time.
+4. **A sentence replacing the current "not editable" note**, naming what is out of
+   reach and why: the box's own background and border colour are recorded in the
+   file but drawn by nothing, so they are not offered. An absence with no
+   explanation is indistinguishable from an oversight.
+
+A field's `/DA` is font, size and colour as one unit, so a colour-only change has
+to carry the field's current font and size or it silently restyles the text. Where
+the `/DA` cannot be parsed, the row renders nothing and says so, rather than
+offering a default that would overwrite what is there.
+
 ## O203 — **FILED** — placing a form item shows no preview of what a single click will produce
 
 > *"when placing form items, there should be a live preview of their size and
@@ -180,6 +220,22 @@ The click-to-place path has a default size; nothing shows it. He wants the
 outline that a single click would produce following the cursor, which is a
 pre-commit affordance and therefore explicitly allowed by rule 4 — it is the
 cursor, not content marking.
+
+**The anchor is the sharp part.** A click hangs the box's lower-left at the
+pointer, so on screen it grows **up and to the right** — deliberately the same
+rule the drag uses. A ghost centred on the pointer would be a second, wrong
+statement of the same rule, which is worse than no ghost. So the ghost and the
+placement read the same function; two copies would disagree the first time a page
+carries a rotation.
+
+**Decisions made here:** the ghost is the outline only, with no label — the kind
+is already named on the armed-tool surface, and a label positioned relative to the
+document is the sort of thing rule 4 sends off-canvas. It is drawn over existing
+widgets too, because a click there still places a new field on top; suppressing it
+there would be a second placement rule nobody was told about. It disappears the
+moment a drag starts, because the drag's own rubber-band is then the cursor.
+
+Nothing in the engine is involved: this draws and commits nothing.
 
 ## O204 — **FILED** — Tab escapes into the ribbon instead of moving through the form
 
@@ -196,6 +252,51 @@ Tab moves within the surface he last clicked. Named cases:
   the document's own field order.
 - An object selected on the canvas: Tab to the next object.
 - And by extension, a panel he clicked into keeps its own Tab.
+
+**The seam is `eframe::App::raw_input_hook`, and nothing else can work.** egui
+latches the focus move in `Focus::begin_pass` from the **`RawInput`** events,
+before any application `ui` code runs, so consuming Tab out of `InputState`
+later in the frame cannot un-latch it. eframe hands the raw events to the
+application two lines before the frame starts, and its own documentation names
+this exact use. Strip the event there when a canvas scope owns it, publish the
+intent, and let the existing canvas code act on it. Leave it alone otherwise —
+egui's focus walk **is** the right answer for panels, dialogs and the ribbon,
+and that half of his request needs no code at all.
+
+Why he sees the menus: clicking a page focuses nothing. `Sense::click_and_drag`
+is focusABLE, but egui grants focus on click to no widget — a widget has to ask,
+as `TextEdit` does. So `focused()` is `None` and Tab takes egui's *"nothing has
+focus, give it to the first widget that wants it"* branch. The first focusable
+widget of the frame is the ribbon. That one fact explains both halves of the
+report.
+
+**Three scope decisions, made here rather than asked, per the convention of the
+product class:**
+
+1. **The form ring is every widget, not only text fields.** Acrobat tabs to
+   check boxes, radio groups, drop-downs and push buttons, and so does a web
+   form and so does Word. A ring that skips them would be an invention.
+2. **The canvas becomes a real focus owner** — a page response asks for focus
+   when clicked. That makes "which surface owns Tab" an identity test instead of
+   a test for absence, and absence is three different states at once (canvas
+   clicked, a panel with no focusable widget clicked, nothing clicked since
+   launch); the last two would have Tab stolen from them. This is textually what
+   defect D1 did in the old GUI, and D1 does not recur, because D1 was the
+   **guard** and not the focus: the old guard asked whether *anything* held the
+   keyboard, which a focused page satisfies. This shell's guard asks whether
+   text is being composed, which a focused page is not, and a gate forbids the
+   old predicate from coming back.
+3. **Tab wraps within the page for canvas objects, and crosses pages for form
+   fields.** The field ring is document-wide by construction and a form is one
+   thing to fill in; an object ring is per-page and a Tab that changed page
+   would also have to scroll, which is a second gesture he did not ask for.
+
+**One thing the file states and we cannot yet compute:** a page carrying
+`/Tabs /R`, `/C` or `/S` declares a tab order that is *not* `/Annots` order, and
+neither the engine nor this shell derives one. Filed as `G019`. Until it comes
+back, the walk is `/Annots` order and the forms panel says so — the sequence he
+is tabbing is not the one the file states, and he is told that off-canvas rather
+than left to notice it.
 
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 
