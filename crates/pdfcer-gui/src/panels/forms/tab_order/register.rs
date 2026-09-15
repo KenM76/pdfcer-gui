@@ -197,6 +197,15 @@ pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions:
     // ★★ EVERY page's unclaimed widgets, at the TOP of the section, and that
     // placement is the fix for a remedy nobody could reach.
     //
+    // These rows used to be drawn inside each page's block, immediately under
+    // the sentence counting that page's unclaimed widgets — which reads well
+    // and is unusable. The Tab-order section lists **every page in the
+    // document**, so on a 37-sheet drawing with one inserted form page the
+    // rows sat 36 page-blocks down a scroll area. A driven run clicked the
+    // published rectangle and hit nothing, because the row was scrolled out of
+    // view; an operator told *"2 form controls need re-registering — Forms, Tab
+    // order lists them"* would have opened the panel and found a list with no
+    // obvious remedy in it.
     //
     // Third instance in one day of the same shape: the Bookmarks authoring row
     // below its list, the Manage-groups Add button below a settings block, and

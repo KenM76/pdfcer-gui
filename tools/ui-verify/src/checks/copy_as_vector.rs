@@ -3,6 +3,9 @@
 //!
 //! # The gap this closes — `OPERATOR_REQUESTS.md` **O120**
 //!
+//! The operator, 2026-09-03: *"I'd like to be able to copy and paste anything
+//! to other software - like copy and paste vector graphics into word or
+//! inkscape for example if possible."*
 //!
 //! O120's own Status line sets the bar and it is the engine's:
 //!

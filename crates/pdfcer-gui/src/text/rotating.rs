@@ -37,6 +37,14 @@
 //! see still owes an off-canvas report.* Applied honestly, that admits exactly
 //! two things here and excludes several that look like candidates.
 //!
+//! | consequence | disclosed? | why |
+//! |---|---|---|
+//! | the shape turned | **no** | they can see it. Narrating a visible result is noise |
+//! | **the mark really did grow** | **yes, and ONLY for one rule** — [`rect_still_grows`] | ★★ Rewritten 2026-09-07 twice in one day. It used to read *"`/Rect` grew"* and fired on every non-quarter turn, because the outline was drawn from `/Rect` and visibly swelled. Then the outline started following the artwork (`canvas::annotquad`), and then `pdfcer-core` `Pass 155.1` stopped the growth itself. What is left is `RectDerivation::PreviousRect` — an annotation with neither an appearance nor rotatable geometry, which has **nowhere to record an orientation** and genuinely still compounds |
+//! | **a `Linear` dimension's axis lock relaxed** | **yes** — [`axis_lock_relaxed`] | the engine's own instruction: *"an operator whose dimension silently stopped being axis-locked will find out later and blame something else"* |
+//! | the measured value | **no** | it **cannot** change. A rotation preserves every distance, so the number is identical by construction. A sentence saying "the measurement is unchanged" would invite a reader to look for a change that cannot exist |
+//! | `/RD` left alone | **no** | at an angle that is not a quarter turn **no** axis-aligned inset expresses the rotated result, so leaving it is the only correct behaviour. A sentence about it would teach an operator to worry about something that is right — the same ruling [`crate::text::markup`]'s move disclosure already makes about `rect_differences_untouched` |
+//! | the appearance `/Matrix` was composed | **no** | that is *how* a rotation is expressed, not a consequence of it. It is in the trace, where implementation facts belong |
 //!
 //! ## The rule every sentence follows
 //!

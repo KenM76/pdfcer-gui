@@ -1086,6 +1086,10 @@ fn offer_must_retire(
 ) -> Option<String> {
     let _ = ctx;
     //
+    // The absence asserted below — *"the offer is gone"* — is only a verdict
+    // over frames the application actually painted; on a build that had stopped
+    // painting it would hold vacuously. So a liveness count has to come first,
+    // and it used to count `ui-rect` lines.
     //
     // ⇒ **That was wrong, and it could not be seen to be wrong until the engine
     // shipped.** `ui-rect` is published by a control when it draws, not once per

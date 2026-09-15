@@ -4,6 +4,14 @@
 //! # Why the tests are a file of their own
 //!
 //!
+//! ★ It matters more here than in most modules. These tests are the only place
+//! the published facts are written down as a **table** rather than as a
+//! traversal, and a table is what a reader needs to answer *"what does the
+//! ribbon see in Review?"*. Burying it under nine hundred lines of derivation
+//! made it a thing nobody read — and on 2026-09-03 that cost a data-loss
+//! defect: `selection.delete_permitted` never asked the mode, and four tests in
+//! this file **asserted the wrong thing and passed**, because the fixture they
+//! use starts in Read and nothing said so.
 
 use super::*;
 

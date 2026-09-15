@@ -19,6 +19,16 @@
 //! | 6 | the commit reaches `EditSession::set_markup_style` | `app::actions::apply`'s routing, over a parked operand the renderer put down |
 //! | 7 | the regenerated `/AP` is **repainted** | the page raster's invalidation, then `pdfcer-render`, then the compositor |
 //!
+//! ★★ **Link 4 is the one with no other oracle at all.** `visible_when` in a
+//! *menu* did nothing for the whole of this project's life until 2026-09-06 —
+//! `menu::plan::resolve` never read `Item::visible_condition()`, so every row
+//! meant to vanish was **greyed** instead, R9 inverted, with prose at each site
+//! describing behaviour that was not happening. The commit that found it says
+//! why no test could: *"every one asked the model rather than the resolution."*
+//! The arrowhead control here is the same shape one surface over — the manifest
+//! deliberately gives it **no condition** and lets `markupband` decide its own
+//! absence from the value it read — and the only way to tell an absent control
+//! from a greyed one is to ask how much space it took.
 //!
 //! # What it does, and the two oracles it ends on
 //!

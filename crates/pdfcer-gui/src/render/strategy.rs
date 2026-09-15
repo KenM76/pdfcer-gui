@@ -71,6 +71,13 @@
 /// # ★★★ The middle column is the budget; the right column is what SURVIVES
 /// the snap
 ///
+/// This table said *"up to half a screen in any direction"* against `0.5` until
+/// 2026-09-04, and that sentence was **false in two of the four directions** —
+/// not because the overscan was not bought, but because [`region_for`]'s snap
+/// spent it all on one side. The measurement and the operator report that
+/// exposed it are in that function's header; the correction is recorded here
+/// because this is the number a future reader will reach for when they want a
+/// bigger margin, and reaching for it would have been the wrong fix.
 ///
 /// ★★ The right-hand column is now a **guarantee at the worst grid phase**
 /// rather than a best case, which is the only form of it worth writing down:
@@ -140,6 +147,8 @@ pub enum Strategy {
 ///
 /// # Why the tier has two ceilings now
 ///
+/// The operator, 2026-08-26: *"seems I get different results depending on Zoom
+/// level … up to 474 % they are mismatched, but at 579 % they match."*
 ///
 /// A page whose group declares a subtractive blending space (§11.4.7) is
 /// composited in a four-colorant buffer at 20 bytes a pixel. Above a ceiling

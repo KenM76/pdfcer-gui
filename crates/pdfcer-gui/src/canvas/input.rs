@@ -397,6 +397,8 @@ fn name(target: Option<TargetId>) -> String {
 ///
 /// # The defect this closes
 ///
+/// The operator, 2026-08-26: *"when I click on one of the objects all I get is
+/// the page selected."*
 ///
 /// The engine computes the **whole** front-to-back list of what is under a
 /// point — `hit_test_all` — and this module called `.find()` on it and threw

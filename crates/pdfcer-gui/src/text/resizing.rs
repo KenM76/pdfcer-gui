@@ -164,6 +164,14 @@ mod tests {
     /// A refusal that does not say what to do instead is a shrug with a capital
     /// letter — `text::commands`' own rule.
     ///
+    /// ★★ This test used to assert TWO of them, and the other one is gone with
+    /// its sentence. `ManyObjects` said *"select just the one you want"*, which
+    /// was a real alternative to a real limit until `transform_objects` took a
+    /// slice on 2026-08-20. **The assertion outliving the limit is the hazard
+    /// worth naming here**: a test that pins a refusal's wording is a test that
+    /// will keep that refusal alive through the release that made it false,
+    /// which is what happened to the engine's own `NoMatch` message twice
+    /// before it was split.
     #[test]
     fn the_refusal_with_an_alternative_offers_it() {
         assert!(refusal(Refusal::NothingSelected).contains("Click"));

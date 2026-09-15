@@ -27,6 +27,12 @@
 //!
 //! ## ★ It IS previewed now, and the request that got it is worth the paragraph
 //!
+//! This section used to say the resolution could not be shown before the
+//! commit, because `NewImage` offered `placed_rect()` as a pure preview and
+//! nothing for the resolution — and computing `pixels / (points / 72)` locally
+//! would have been the second derivation `placed_rect()`'s own doc warns
+//! about: *"re-deriving the arithmetic in the GUI is how a preview and a result
+//! drift apart."*
 //!
 //!
 //! ★ **And the four-line version this shell nearly wrote would have been

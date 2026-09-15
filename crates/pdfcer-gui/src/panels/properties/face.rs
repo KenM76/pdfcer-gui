@@ -276,6 +276,12 @@ pub(crate) fn choices(
     // ⇒ So all three re-derivations are deleted, and the rows are now as exact
     // as the `accepted()` half above them.
     //
+    // ★★ `is_accepted()` rather than a `match`. `FontAcceptance` is
+    // `#[non_exhaustive]` and the engine added that accessor precisely so a
+    // shell need not pattern-match it — *"a yes/no that does not require
+    // pattern-matching a `#[non_exhaustive]` enum"*. Matching here would give
+    // this shell a wildcard arm that silently swallows a future refusal kind,
+    // which is the trap that bit three times on 2026-09-07.
     //
     // ⚠ A REFUSED face is now ABSENT rather than offered, which is a real
     // behaviour change and the right one: it makes this half behave exactly

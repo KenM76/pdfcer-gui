@@ -1,5 +1,12 @@
 //! # `redact::tests` — the security assertions for the apply pipeline
 //!
+//! Split out of [`super`] on 2026-09-04 (evening) under rule R2, when the
+//! deferred apply route (`Pass 250.1`) took `redact/mod.rs` past the
+//! 1,500-line ceiling. **Nothing moved but its address**: the suite, its
+//! fixtures and every paragraph of its reasoning are unchanged, and the seam
+//! is the one R2 asks for rather than a line count — `mod.rs` answers *"what
+//! is the pipeline?"* and this file answers *"what has been proven about
+//! it?"*, and the two grow for different reasons.
 //!
 //! ★ It stays a module named `tests` inside `redact`, deliberately:
 //! [`super::proof`]'s own suite reaches [`assemble`] as
@@ -266,6 +273,12 @@ fn an_unmarked_document_is_refused_by_name() {
 /// ★★★ **A region over a raster image now DESTROYS the samples**, and this
 /// test is the record of the day that changed.
 ///
+/// It read `a_region_over_an_image_refuses_the_whole_apply` until
+/// 2026-09-03 and asserted that the engine declined the entire document —
+/// which was true, was the operator's headline complaint
+/// (`OPERATOR_REQUESTS.md` O103, *"every time I've tried the redact feature
+/// it tells me it can't"*), and stopped being true with `pdfcer-core`
+/// v0.26.0 the same day.
 ///
 /// ★★★ **Writing over the source replaces it, and leaves no temporary
 /// behind.**
@@ -1061,6 +1074,12 @@ fn the_staging_and_the_undo_log_both_survive_the_save() {
 /// ★★★ **A REAL drawing survives the staged route** —
 /// `fixtures/a1-titleblock.pdf`.
 ///
+/// Every other fixture in this file is uncompressed with a Base-14 font, which
+/// is a document with nothing for a coincidence to hide in. This one is a CAD
+/// title block with compressed content streams and an embedded, subsetted
+/// font — and it is the file whose font `name` table describes its ligatures as
+/// *"Classic construction"*, which is what made the shell refuse every real
+/// redaction until the proof was corrected on 2026-09-04.
 ///
 /// It asserts through pdfcer's own text extraction as well as through the raw
 /// bytes, because on a compressed document the raw scan alone would pass on a

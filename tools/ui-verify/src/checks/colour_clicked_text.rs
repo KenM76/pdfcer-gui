@@ -1,10 +1,27 @@
 //! `clicking_text_offers_its_colour` — **O89's object route, driven.**
 //!
 //!
+//! This header carried a three-warning banner saying **"THIS CHECK HAS NOT BEEN
+//! RUN"** from 2026-09-05 to 2026-09-14: it was written in a session whose
+//! instructions forbade launching the GUI, so no line below had been observed
+//! against a running binary. That is no longer true and the banner is deleted
+//! rather than softened, because a warning that has stopped applying is read as
+//! a warning that still does.
 //!
 //! What the first run produced, and it is worth keeping because two of the
 //! three findings were about this check rather than about the program:
 //!
+//! 1. **A real defect.** The Properties panel opened on the three *When you
+//!    resize something* switches, which draw whenever the Select tool is armed
+//!    and therefore nearly always. The colour swatch was at y 783-807 in a
+//!    viewport ending at 766. `panels::properties::tool::Slot` is the fix, and
+//!    `OPERATOR_REQUESTS.md` O198 is the operator's report of it.
+//! 2. **A wrong sentence in this file**, corrected below: the failure message
+//!    said the colour row had *"grown a fourth arm that draws nothing"*. It had
+//!    not. It had drawn, off the bottom of its clip.
+//! 3. **A mechanism that existed and was not called.** `driving::clipped_away`
+//!    was added on 2026-09-12 after the identical confusion in `restyle_text`.
+//!    This branch did not use it, so the fix did not carry.
 //!
 //! # The defect
 //!
@@ -98,6 +115,13 @@ const INK: &str = "properties.textobject.ink";
 ///
 /// ★★★ THIS REPLACED A CONSTANT CALLED `ROUTE`, AND THE REPLACEMENT IS O198.
 ///
+/// `ROUTE` was spelled `properties.text.route`: a sentence saying *"press T for
+/// the Text tool and sweep across them"*, which was the only surface in the
+/// program that told an operator how to reach the face, size, bold and italic
+/// controls for text they had clicked. O198 (2026-09-14) removed the reason for
+/// it -- `app::textoperand` resolves a clicked text object's byte span into the
+/// run indices the five Font verbs take -- so the sentence was deleted and the
+/// controls themselves are what this step now asserts.
 ///
 /// ★★ Asserted as a LIST rather than as the section region, for the reason
 /// `font_group`'s `FONT_ITEMS` gives: a section that draws its heading and

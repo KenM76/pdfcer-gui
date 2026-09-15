@@ -1179,6 +1179,19 @@ fn show_in(
     //   *expected* to be in.
     //
     //
+    // `content_response` is the scroll area's whole content — pages, gaps and
+    // pasteboard — so this asks *"is the pointer over the canvas?"*, which is
+    // the question the comment above always claimed it was asking. It is a
+    // real egui `Response`, so it still respects layer order and a floating
+    // window over the canvas still swallows the wheel; a `rect.contains`
+    // test would not have.
+    // ★ The body is [`zoom::wheel_step`] and not a block here, because O186's
+    // escape hatch needs the identical gesture on a frame that drew nothing.
+    // The gate stays at this call site — it is the only part of this that is
+    // about THIS frame's two responses — and the rule about arming the anchor
+    // went with the body, so the rescue path cannot come to zoom about a
+    // different point than the ordinary path does. The reasoning that used to
+    // sit inside this block is on `zoom::wheel_step` now, unchanged.
     if content_hovered || image_response.hovered() {
         zoom::wheel_step(ui.ctx(), doc, actions);
     }

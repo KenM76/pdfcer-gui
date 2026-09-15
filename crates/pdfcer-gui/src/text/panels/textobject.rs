@@ -119,6 +119,13 @@ pub fn ink_present(affected: usize, total: usize) -> String {
 
 // ★★★ THE ROUTE SENTENCE IS NOT HERE, AND THERE IS NO LONGER A ROUTE TO NAME.
 //
+// Until 2026-09-14 this comment pointed at `super::properties::text_object_route`,
+// a sentence that told the operator to *"press T for the Text tool and sweep
+// across them"* in order to reach the font controls for a clicked text object.
+// O198 deleted that sentence, because the thing it routed around was a defect
+// rather than a design: clicking a text object now resolves its runs through
+// `crate::app::textoperand`, so the face, size, bold and italic controls are
+// live on the click and there is nowhere to send anybody.
 //
 // ★★ What survives here is the COLOUR refusal above, and it is a different
 // kind of sentence. It is not a route around a missing capability; it is a

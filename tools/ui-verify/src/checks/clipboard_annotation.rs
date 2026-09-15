@@ -38,6 +38,14 @@
 //!
 //! ## ★★★ It pins its own fixture and IGNORES `--pdf`
 //!
+//! Same posture as `ocr` and as `three_clicks_round_a_hole_measure_the_hole`,
+//! and for a stronger reason than either: this check's subject is *"a
+//! `/Text` annotation, which pdfcer does not model, copies whole"*, and on a
+//! document whose only annotations are squares and clouds **the defect cannot
+//! occur** — every one of those took the shell's spec route (deleted 2026-09-08
+//! once the engine's own carrier matched it), which worked before this
+//! change and works after it. An arbitrary drawing would make this check unable
+//! to fail, which is this suite's own stated worst outcome.
 //!
 //! `fixtures/annots-with-everything.pdf` is built by
 //! `tools/gen-annots-with-everything-fixture.py`, whose header argues for every

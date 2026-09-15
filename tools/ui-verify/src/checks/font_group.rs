@@ -478,6 +478,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★★ THE PRECONDITION, BEFORE ANY ORACLE — what did the click actually
     // select?
     //
+    // Every assertion below this line is a sentence about **a text object**,
+    // and none of them means anything if the click landed on a path. The
+    // 2026-08-28 sweep is what proved that: it drove the whole suite at one
+    // `--doc-point 0,300,500`, which on `SW41177.pdf` is a drawing view and not
+    // a label, and this check reported *"A PIECE OF TEXT IS SELECTED AND THE
+    // PROPERTIES PANEL DOES NOT SAY HOW TO CHANGE IT"* about a selection that
+    // was a 318 × 262 pt **Path**. The trace said so on the same frame —
+    // `properties-panel object=832 kind=Path` — and the check never read it.
+    // `panels::properties::text::route` was right to stay silent and was
+    // blamed for a day.
     //
     // ★ Note where the guard has to sit: **before** the Format tab is asserted,
     // not after. The tab's `visible_when` is `selection.formattable`, which is
@@ -606,6 +616,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
+    // ★★★ **The enablement half, added 2026-09-14, and this note used to be a
+    // guess.** It read *"all five controls with nothing swept — greyed, and
+    // there"*, and `greyed` was never measured: a region says a control DREW.
+    // This module's own header states that limit and the note asserted past it
+    // anyway, which is exactly how an unevidenced excuse reads as an answered
+    // question. `OPERATOR_REQUESTS.md` O198 claim 3 is the operator reporting
+    // that these five are *"always greyed out"*, so the honest assertion is the
+    // opposite one, measured: with one text object clicked and NOTHING swept,
+    // every one of the five must be pressable.
     let states = driving::enablement(&session)?;
     let unpressable: Vec<&str> = FONT_COMMANDS
         .into_iter()

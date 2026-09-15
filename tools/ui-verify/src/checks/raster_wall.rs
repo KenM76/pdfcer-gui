@@ -78,6 +78,13 @@
 //!
 //! # ★★★ The window is NARROW, and getting that wrong made the check flaky
 //!
+//! This section used to read *"With `fixtures/four-pages.pdf` the window is
+//! wide … both are far below the zoom at which the growing gap pushes the
+//! neighbour off screen."* That was reasoned from the design, not measured, and
+//! it is **false**. Two runs on 2026-09-12, minutes apart, one passed and one
+//! SKIPPED with *"the strip never reported a visible page it could not order"* —
+//! and the only difference was where a plain wheel notch happened to leave the
+//! seam.
 //!
 //! The **lower** bound of part A's window is the engine's.  [`FIXTURE`]'s pages
 //! are `2383.937 × 1683.78`, `612 × 792`, `612 × 792` and `306 × 396`, and
@@ -351,6 +358,10 @@ const ROW_GAP_PT: f32 = 12.0;
 ///
 /// # ★★★ Just BELOW the middle, and the asymmetry is the whole reason
 ///
+/// This was `(0.30, 0.70)` — centred and generous — on the argument that *"the
+/// further it is from the middle the sooner one of the two pages reaches an
+/// edge"*. That argument treats the two pages as interchangeable and they are
+/// not. Measured 2026-09-12 against [`FIXTURE`]:
 ///
 /// * The page **above** the seam is the E-size sheet, and by the time any of
 ///   this matters its top edge is tens of thousands of points off the top of the

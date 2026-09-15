@@ -65,6 +65,18 @@
 //! `floating-panels` at their registration; the key was correct data
 //! waiting for a surface that read it.
 //!
+//! ★★ The finding that made this a pass of its own is what the gap did to
+//! the *record*. An icon-coverage audit had recorded, against
+//! `view.panel_close`, that a menu row cannot draw a glyph because *"the
+//! icon column exists on the ribbon, not in a context menu"*. That
+//! sentence is a statement about this application's wiring dressed as a
+//! statement about menus, and once written it was quoted — a refusal
+//! resting on a line nobody wrote reads exactly like a refusal resting on
+//! a decision somebody took. The operator's standing ruling (2026-08-06,
+//! quoted in `crate::icons::Icon::Back`'s doc comment) is that **a missing
+//! glyph is authored, not worked around**, and the test that separates a
+//! valid refusal from an invalid one is whether adding the slot would be
+//! *wrong* or merely *work*. Here it was merely work: one builder call.
 //!
 //! ★ The painter is [`crate::icons::paint_ribbon_icon`] — **the ribbon's
 //! own**, not a second one. The alternative was a menu-specific painter,

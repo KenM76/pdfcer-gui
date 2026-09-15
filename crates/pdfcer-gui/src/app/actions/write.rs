@@ -107,6 +107,9 @@ pub enum WriteAction {
     },
     /// ★★★ **Write the words on one or more pages out as a plain text file.**
     ///
+    /// Raised by `crate::dialogs::export_text` and by nothing else. The
+    /// operator, 2026-09-04: *"also the engine can export PDFs as text. we
+    /// should have export/import for that."*
     ///
     /// # Why it carries a plan, like [`Self::Image`] and unlike [`Self::FormData`]
     ///

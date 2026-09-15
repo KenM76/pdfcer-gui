@@ -19,6 +19,16 @@
 //!
 //! ## ★★★ Why the aiming half is worth reading alone
 //!
+//! Because it is the half that can make every measurement in the other file a
+//! statement about the harness. The 2026-09-05 sweep filed *"clicking directly
+//! on the content the zoom is anchored to selected nothing"* at five rungs;
+//! what had happened is written in [`re_aim`]'s own header — the correction
+//! moves the **pointer**, and Ctrl+wheel holds the point under the pointer
+//! fixed, so an error the correction cannot close is magnified by every
+//! further notch rather than reduced. It was a limit of this loop and not
+//! anything the application did. A reader who wants to know whether a
+//! scale-sweep finding is real starts here, and [`aim_residual`] is the number
+//! that answers it.
 //!
 //! ## The dependency runs one way
 //!

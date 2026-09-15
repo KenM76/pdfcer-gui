@@ -58,6 +58,11 @@ const CARET_EVENT: &str = "text-edit-caret";
 const BECAME_ADD_EVENT: &str = "text-edit-became-add";
 /// `canvas-anchors total=… selected=… unselected_drawn=…`.
 ///
+/// ★★★ **Written even when `total=0`, since 2026-08-29** — and the two checks
+/// below are the reason. `overlay::draw_anchors` used to return before this line
+/// when there was nothing to draw, so *"this object has no points"* and *"the
+/// draw never ran"* were the same trace: nothing. Both checks have a `total == 0`
+/// SKIP arm written for the first case, and neither could reach it.
 const ANCHORS_EVENT: &str = "canvas-anchors";
 /// `canvas-anchors-declined reason=…` — the enumeration stopped before it had a
 /// count, and why.
@@ -70,6 +75,17 @@ const DECLINED_EVENT: &str = "canvas-anchors-declined";
 /// The decline reasons that are facts about **the aim or the fixture**, not
 /// about the program, and therefore SKIP rather than FAIL.
 ///
+/// ★★★ This list is the whole difference between the sweep of 2026-08-29 and an
+/// honest one. Four checks read anchors on that run — these two plus
+/// `multi_node` and `bezier_handle` — all four aimed at the same
+/// `--doc-point 0,1140,62` on `SW41177.pdf`, all four saw no `canvas-anchors`
+/// line, and they split two-and-two on what that meant: two SKIPPED saying *"the
+/// point named a text run or an image"* and two FAILED naming specific lines of
+/// `painting::draw_anchors`. The SKIPs were right — at that point
+/// `the_text_tool_types_on_one_click` passes with `text-edit-caret run=426`, so
+/// the aim **is** a text run, and a text run has no anchors — and the two
+/// failures were reports about the aim wearing the clothes of reports about the
+/// code.
 ///
 /// ⇒ With the reason in the trace, no check has to guess. `not-entered` stays a
 /// failure, because it means the click did not reach the rung and that is the
@@ -344,6 +360,11 @@ fn drive_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
 ///
 /// # ★★★ Why this check exists, and it is not "one more toggle"
 ///
+/// `view.show_points` was registered, drawn on View ▸ Display and **inert for
+/// the whole life of the project**, behind a reason that said *"there is
+/// nothing for it to show — this build draws no anchor mark at any rung"*. That
+/// was true on 2026-08-15 and false four days later. Re-derived on 2026-08-28
+/// as one of six stale blockers in eleven.
 ///
 /// ★★ **The first wiring of it was ALSO inert, and no test could have caught
 /// that.** The toggle was added as a disjunct to `draw_anchors`' rung guard —
@@ -535,6 +556,8 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
 /// 2026-08-19 sentence, driven, and the first check in this file that can fail
 /// for the right reason.
 ///
+/// > *"How do I make new text when I click on the canvas and expect to edit
+/// > there? Same problem as the previous."* — 2026-08-19
 ///
 /// One text tool, two outcomes: click **in** text and the caret lands in that
 /// run; click on **blank paper** and a fresh run starts where the pointer is.
@@ -545,6 +568,13 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
 ///
 /// # ★★★ Why this is a separate check, and it is a story about instruments
 ///
+/// It used to be six lines at the end of `drive_text`, and those six lines let
+/// `O142` sit undetected for **two days**. They read
+/// `trace.last("text-edit-became-add")` and, when it was absent, printed *"the
+/// point named an existing run, which is a fact about this fixture rather than
+/// about the feature"*. Nothing measured that. **The absent branch could not
+/// fail and the excuse was invented**, so a completely dead feature and a
+/// badly-aimed click produced the same green line.
 ///
 /// And the feature *was* dead. `EditableTextModel::hit_test` had no distance
 /// bound: asked about a point with nothing near it, it returned the nearest

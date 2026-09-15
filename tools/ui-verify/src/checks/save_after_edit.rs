@@ -3,6 +3,8 @@
 //!
 //! # The report
 //!
+//! Ken, 2026-09-01: *"can you try doing an edit and save? I did this and
+//! pressed ctrl+s to save and it closed."*
 //!
 //! ## ★★★ Why the existing coverage could not see this
 //!

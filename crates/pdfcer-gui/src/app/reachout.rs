@@ -4,6 +4,8 @@
 //!
 //! ## What this closes
 //!
+//! **Ken, 2026-08-30:** *"I think pdfcer added support for several button
+//! features and protections for outgoing submits."*
 //!
 //! This module is the **detection** half of that. Authoring a button action is
 //! a separate capability the engine also ships — `EditSession::set_button_action`

@@ -1,6 +1,11 @@
 //! # `canvas::markup::linestyle` — solid or dashed, on all three surfaces that
 //! ask
 //!
+//! `RIBBON_IA.md` §5.8's Markup row lists eight controls. Seven shipped on the
+//! morning of 2026-09-06; **Line style** was the eighth, and it was the only
+//! entry in the whole row with *"no engine verb at all"*. That stopped being
+//! true the same afternoon, when `pdfcer-core` answered this shell's own
+//! request with three halves rather than the one it asked for:
 //!
 //! | half | engine | what it means here |
 //! |---|---|---|
@@ -322,6 +327,15 @@ impl DashReading {
 ///
 /// # ★★★ Why this is a SECOND reader of a key the engine already reads
 ///
+/// Because the engine's reader is not public. `annot_author::read_border_dash`
+/// is `pub(crate)` (`D:\Dev\pdfcer\crates\pdfcer-core\src\annot_author.rs:840`,
+/// read 2026-09-06), and `spec_from_dict` does **not** carry the dash: a dash
+/// cuts across `MarkupSpec`'s variants rather than belonging to any one of them,
+/// so it travels in `AppearanceOptions` beside the spec instead of inside it
+/// (`annot_author.rs:1633-1673`). There is therefore no public route from an
+/// annotation dictionary to *"is this mark dashed, and how"* — and a control
+/// that cannot show the current value is a control that shows an invented one,
+/// which is the `fontband::size` defect this project has already paid for.
 ///
 /// ⇒ So this is the copy, and it is **written down as a copy** rather than
 /// presented as a reading. The table below is transcribed from

@@ -84,7 +84,21 @@
 //!
 //! # The menus, and why each holds what it holds
 //!
+//! ⚠ This heading read *"The four menus"* until 2026-09-06 and the table under
+//! it listed four while [`built_in`] returned eight. That is this project's
+//! recurring shape — **a prose count beside the thing it counts, decaying while
+//! a test pins the truth one screen down** — and it is why the heading no
+//! longer carries a number at all. [`CONTEXTS`] is the count, and
+//! `tests::the_catalog_defines_exactly_the_documented_contexts` is what makes
+//! it true.
 //!
+//! | Context id | Right-click site | Items | The reasoning |
+//! |---|---|---|---|
+//! | [`CANVAS_OBJECT`] | a selected object on the page | `view.zoom_selection`, `format.properties`, `format.select_text_line`, `format.select_form`, `format.unshare_form`, `format.delete` | ★ The Items column was **wrong** until 2026-08-28 — it had never been updated for `format.select_form`, added the previous day, which is this project's recurring shape of a prose claim beside the thing it describes decaying while a test pins the truth one screen down. The two form commands arrived with the form-XObject work: `format.select_form` because a click now reaches *inside* a form and the container has to be reachable on purpose, and `format.unshare_form` because O53 forbids a command existing only on the ribbon — and because the operator who needs it is mid-gesture, about to type into a title block, and the pointer is where they are looking. Zoom to selection is here because **SolidWorks and Acrobat both reach it by right-click** and only Inkscape binds a key for it — operator instruction of 2026-08-14 to match those three; see the registration site for why no chord was invented. Then §5.8 lists Delete in **every** selection type's row. It is the one command in that section that exists (see `manifest::DIRECTED`), and it is wired: `PdfcerApp::dispatch_token` reads `SelectionState::deletable_objects_on`, the same rule the Delete key reads. **`format.properties` joined them on 2026-08-18**, with the ce-dimension properties section: a selected ce dimension's group, measurement, style overrides and radius/diameter switch are otherwise reachable only by noticing that a contextual tab appeared or by opening a dock panel by name, and the operator's report was *"I click and can't figure out how to enable some of the basic stuff."* It sits above Delete because the destructive row is last in every menu here. **`format.select_text_line` joined on 2026-09-14** (O188(A)) and is the only row here that is absent rather than greyed when it does not apply: it descends to ONE LINE of a multi-line text object, a rung that until then was reachable only by arming the Points tool with a chord nobody had been told about. It is a re-aim, not an edit, which is why `DESIGNS.md` §6.2's ban on a context-menu item does not reach it — see the registration site. |
+//! | [`CANVAS_MARKUP`] | a selected markup shape on the page | `format.properties`, `markup.add_node`, `markup.remove_node`, `edit.cut`, `edit.copy`, `edit.paste`, `format.delete` | ★★★ **The sixth canvas context, 2026-09-06, and the reason it is not [`CANVAS_OBJECT`] is that four of that menu's five rows are meaningless on an annotation.** `format.select_form` and `format.unshare_form` are about page content inside a form XObject; a markup annotation is not page content and is never inside one, so both would resolve, draw and do nothing — the *live and silently inert* class this project's `DEFECTS.md` is made of. What replaces them is the pair the operator asked for by name: *"I also can't edit or delete nodes of a markup shape once it is drawn."* See the block comment at the registration for the order, and [`crate::canvas::annotnodes::menu`] for why one of them can be greyed and the other absent on the very same shape. |
+//! | [`CANVAS_EMPTY`] | blank page, or the paper beside the drawing | `view.zoom_fit_page`, `view.zoom_fit_width`, `view.zoom_fit_height`, `view.zoom_actual` | The four **named** zoom levels, all of which have a live dispatch arm today. A right-click on paper is about the *view*, because there is no object to be about. |
+//! | [`DOCK_TAB`] | a panel tab in the dock | `view.reset_layout` | The only registered command that acts on the dock. The **command** is wired (`PdfcerApp::dispatch_command` calls `Modes::reset` with `ResetScope::All`); the **menu** still cannot be attached — see the warning below. |
+//! | [`OBJECTS_ROW`] | a row in the Objects panel | `file.properties` | The Properties panel is *where an object row is described*; right-clicking a row focuses it and this is the command that puts the description on screen — which it now does: `PdfcerApp::show_panel` activates the panel, mounting it first if the operator's arrangement no longer holds it. |
 //!
 //! ## ★ `dock.tab` — the note below described a gap that CLOSED
 //!
@@ -188,6 +202,11 @@ pub const CANVAS_TEXT: &str = "canvas.text";
 
 /// ★★★ Right-click on the page **over a form field**.
 ///
+/// The fourth canvas menu, added 2026-08-28. Keyed on `doc.selected_field`,
+/// which is neither a `SelectionState` entry nor a caret — a `/Widget` is
+/// deliberately not an annotation selection — so none of the other three ever
+/// resolved for one, and a right-click on a text box offered *"zoom to fit
+/// width"*.
 ///
 /// ⇒ `OPERATOR_REQUESTS.md` **O53**: *"always always always I need objects on
 /// the canvas to be clickable and editable as one would expect."* A context
@@ -392,6 +411,9 @@ pub fn built_in() -> Menus {
         // ★ **Zoom to selection is here because that is where two of the three
         // reference applications put it.**
         //
+        // Operator instruction, 2026-08-14: *"make your best educated guesses
+        // to match what inkscape, acrobat, and SolidWorks do."* Applied to the
+        // open question of how `view.zoom_selection` is reached:
         //
         // | | how it is reached |
         // |---|---|
@@ -485,6 +507,8 @@ pub fn built_in() -> Menus {
             // do nothing.
             Item::command("format.select_text_line").shown_when(RUN_SELECT_OFFERED),
             Item::command("format.select_form"),
+            // ★★★ The right-click route to *"give this page its own copy"*,
+            // added 2026-08-28 with the form-XObject unshare.
             //
             // **O53's ruling is why it is here at all**: a command must not
             // exist only on the ribbon. That rule is doing more work for this

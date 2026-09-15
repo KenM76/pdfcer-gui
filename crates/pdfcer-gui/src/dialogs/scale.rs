@@ -130,6 +130,12 @@ pub struct ScaleDialog {
     ///
     /// # ★ It is now OPERATOR-changeable, and the old contract still holds
     ///
+    /// This field's note used to read *"not re-read per frame: a group picker
+    /// that moved underneath an open dialog would let them type a number for
+    /// one group and commit it to another."* That reasoning is **still exactly
+    /// right and is still honoured** -- nothing re-reads the *authoring* group
+    /// while this window is up, so changing what the canvas draws into cannot
+    /// redirect a calibration in progress.
     ///
     /// What changed is that the operator may now aim the window deliberately,
     /// through the picker this field backs (`OPERATOR_REQUESTS.md` O193). That
@@ -208,6 +214,14 @@ impl ScaleDialog {
     ///
     /// # ★ It reads the document now -- O192
     ///
+    /// This constructor took a bare [`GroupId`] until 2026-09-13 and seeded its
+    /// fields from [`ScaleEntryFields::for_group_panel`], which is seeded from
+    /// nothing. So the window opened reading `1:100` in metres over a group
+    /// calibrated to `1:50` in inches, and an operator who pressed *Set scale*
+    /// without touching a control silently recalibrated the whole drawing to a
+    /// number the window had invented. The operator's report named the visible
+    /// half -- *"does not show me the scale that is already set"* -- and the
+    /// invisible half is the one that could have damaged a file.
     ///
     /// ★★ [`ScaleEntryFields::for_group`] carries the whole inversion and the
     /// proof that it is exact. The only thing done here is choosing the path:
@@ -533,6 +547,12 @@ impl ScaleDialog {
         // ★★ BOTH PATHS NOW, and which one the window leads with depends on
         // whether the operator measured something first.
         //
+        // This block used to say the ratio path was the only one, because
+        // "the real-length path needs a drawn reference line, and drawing one
+        // is a canvas gesture no command arms yet". That sentence was accurate
+        // and it was also the whole gap the operator reported on 2026-08-17:
+        // *"still missing the feature where we set the scale by selecting two
+        // lines or points and defining what that distance represents."*
         //
         // The gesture now exists (`MeasureKind::Scale`), and the two states
         // this dialog can be in are genuinely different questions:

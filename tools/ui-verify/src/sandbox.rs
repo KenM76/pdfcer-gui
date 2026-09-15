@@ -11,6 +11,11 @@
 //! sweep that points every check at the same `--exe` points every check at the
 //! same remembered state.
 //!
+//! That was harmless for exactly as long as the application threw the stored
+//! mode away on every launch — which it did, by accident, from the day the
+//! ribbon shipped until **2026-09-06** (`f4aeee6`, *"Open in the mode you were
+//! last in has been dead since the day it shipped"*). Fixing it turned a
+//! dormant harness defect live in one commit:
 //!
 //! > a check that clicks the Edit segment now leaves `mode: Some("edit")` in
 //! > `userdata/layout.ron`, and **every later check in the sweep starts in
@@ -389,6 +394,16 @@ ask_default_app = false
 /// it — *set the defaults*, or *remove the thing that overrode them* — and a
 /// header prepended to every write covers exactly one.
 ///
+/// `the_print_window_opens_on_the_settings_you_last_used` took both routes. Its
+/// seeding write was repaired to come through this function, and its control
+/// launch sixty lines earlier went on calling `std::fs::remove_file` to reach the
+/// shipped print defaults. So the 2026-09-12 sweep found the offer in that
+/// check's trace **after** the repair, and the check skipped saying *"the click on
+/// `ribbon.tab.file` produced no `ribbon-tab-activated tab=file` line, so no click
+/// reached the ribbon"* — a sentence that names a cause it never measured. Five
+/// places in three documents then recorded "the File-tab route" as a suite-wide
+/// ribbon blocker. The ribbon was never involved. Fixed 2026-09-13 by
+/// [`reset_prefs`], and the check passes.
 ///
 /// ⇒ **When centralising a guard into a write path, grep the same modules for
 /// `remove_file`, `remove_dir`, truncation and "reset to defaults" before

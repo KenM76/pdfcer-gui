@@ -81,6 +81,12 @@ const PAN_AT: (f32, f32) = (0.30, 0.30);
 /// ★ On [`FIXTURE`] the numbers are **measured, not derived**, and the first
 /// two written here were neither.
 ///
+/// That sheet is 2383.9 pt on its long side, not Letter's 792 — and the long
+/// side is what the bound is taken against, because the threshold is
+/// `SUB_PIXEL_CONTENT_EXTENT / longest_page_pt`. A paragraph written on
+/// 2026-09-13 said *"1683.8 pt tall"*, quoted a threshold of **623** and a
+/// crossing at **33** notches; every one of those is wrong. 1683.8 is the
+/// SHORT side, and using it inflated the threshold by the aspect ratio.
 ///
 /// The driven run reports the real figures on its own progress lines:
 /// threshold **~440**, crossed at notch **39**, at a zoom of **46,479 %**,
@@ -166,6 +172,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
     //
+    // It used to read `ctx.pdf` and SKIP when that was absent, which made the
+    // check unrunnable on its own: `--check zooming_back_out_keeps_the_view`
+    // reported *"no --pdf. There is nothing to zoom."* and only `sweep-full.sh`
+    // — which hands the chunked checks one shared fixture — ever actually drove
+    // it. That mattered the moment the `!reached_deep` branch below became a
+    // FAIL: a failure nobody can reproduce with a one-line command is a failure
+    // nobody reproduces.
     //
     // ⚠ And the page SIZE is load-bearing here in a way it is not for most
     // checks. The hand-over threshold bounds `longest_page_pt × zoom`, so the

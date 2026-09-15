@@ -180,6 +180,12 @@ pub enum UnshareRefusal {
     NothingInAForm,
     /// ★★★ **Nothing else draws this drawing, so there is nothing to unshare.**
     ///
+    /// Shell-side, like [`Self::NothingInAForm`], raised before the engine is
+    /// called — and the second of the two variants here that is a **considered
+    /// position rather than a limit**. Added 2026-08-29 for a defect that had
+    /// shipped the day before: the command succeeded on a form invoked exactly
+    /// once, and told the operator *"every other page still shares the
+    /// original"* about a document that had no other page.
     ///
     /// # ★★★ Why declining is the service and performing it is not
     ///
@@ -443,6 +449,13 @@ impl UnshareRefusal {
 /// unit of this operation is the PAGE"*. The sentence says so.
 ///
 ///
+/// The sentence used to end *"every other page still shares the original"* in
+/// both branches, unconditionally, on a command that had never asked how many
+/// other pages there were. On a single-invocation form that clause was **false
+/// about the operator's own file**; on a genuinely shared one it was
+/// indistinguishable from the false version, so the operator who *did* have a
+/// thirty-six-sheet title block learned nothing from it either. One
+/// unconditional clause managed to be both a lie and useless.
 ///
 /// [`Fanout`] carries the measurement, and every claim about other pages is now
 /// made from it or not made at all. See its docs for the three shapes and for

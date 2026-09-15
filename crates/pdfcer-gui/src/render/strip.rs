@@ -144,6 +144,11 @@ use crate::render::worker::RenderKey;
 /// an Annex C sheet differ by four orders of magnitude, and a page count that
 /// admitted six of the latter would admit 1.5 GB without saying so.
 ///
+/// ★ It is a **default**, not a constant, as of 2026-08-19: the operator asked
+/// for the maximum and the honest answer to *"how much of this machine's memory
+/// may pdfcer spend on page pictures"* is that only they know. See
+/// `crate::app::prefs::PageCache`, whose four steps each state their cost in
+/// megabytes, because "Large" is not a number anybody can budget against.
 pub const MAX_CACHED_TEXELS: u64 = 256_000_000;
 
 /// Either a page's raster, or the reason there will not be one.
@@ -280,6 +285,12 @@ impl StripRasters {
     /// `BENCHMARK.md`'s 691 ms. Do that in a 36-sheet set and every sheet is
     /// re-rendered every time it comes back into view, for ever.
     ///
+    /// The operator's words, 2026-08-19: *"increase cache to maximum for page
+    /// view so they don't constantly redraw with larger files."* He had
+    /// diagnosed it exactly. **The budget was never the limit** — 48 M texels is
+    /// ~18 fit-width pages and the visible set is two or three, so the eviction
+    /// loop below had never run on any document he had ever opened. Raising the
+    /// number without this change would have done nothing at all.
     ///
     /// # What bounds it now
     ///

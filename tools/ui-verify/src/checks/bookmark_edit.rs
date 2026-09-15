@@ -23,6 +23,12 @@
 //! authoring row `bookmark_can_be_written` drives, and phases B and C then act
 //! on it.
 //!
+//! That is a real dependency and it is stated rather than hidden: if
+//! `bookmark_can_be_written` fails, this check SKIPS rather than reporting a
+//! rename defect, because there is nothing to rename and *"could not set up"* is
+//! a different fact from *"the feature is broken"*. A harness that cannot tell
+//! those apart reports the wrong module, which is what seven of ten failures in
+//! the 2026-08-28 sweep turned out to be.
 //!
 //! # ★★ The rename oracle is the PANEL's census, not the trace alone
 //!
@@ -61,6 +67,14 @@
 //! | B | click the row, retype the name, press **Enter** | `bookmark-rename chars=6`, `rename-bookmark`, and `items` **unchanged** |
 //! | C | press Remove | `bookmark-delete descendants=0`, `delete-bookmark`, and `items=0` |
 //!
+//! ★★★ **Two of those three gestures were missing until 2026-08-29, and without
+//! them this check could not pass on any build.** It went from the Add press
+//! straight to reading `bookmarks.rename` — on a comment saying *"fall through
+//! to the row click below"*, and there was no row click below — and then typed
+//! six letters and read the trace without committing them. `BookmarksUi`'s
+//! selection is set only by a row click, and `edit::rename_row` raises its
+//! action only on the button or on Enter, so both halves reported a working
+//! panel as broken.
 //!
 //! ★ Enter, not the Rename button: that button publishes no `ui_rect` region,
 //! so there is no coordinate for a harness to aim at. `edit::rename_row` commits
@@ -105,6 +119,13 @@ use crate::sys::vk;
 /// It is kept rather than deleted because it is the inference that produced a
 /// defect, and a reader who never sees it will draw it again.
 ///
+/// *Carried in the default dock* means the panel is **mounted**. It does not
+/// mean the panel is **raised**, and those came apart on the very day that
+/// sentence was written. Ken asked on 2026-09-05 for *"no tabs in the left
+/// side bar when the left rail is visible"*, and the dock now draws no tab
+/// strip whenever a rail can raise every panel in the stack — which, in this
+/// application, it always can. `dock.tab.view.panel_bookmarks` has not been
+/// published since.
 ///
 /// This check calls [`driving::raise_dock_tab`] and **discards the bool**. It
 /// got `false`, correctly, and carried on; the panel it then read was whatever

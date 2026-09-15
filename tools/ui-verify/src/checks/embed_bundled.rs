@@ -10,6 +10,14 @@
 //! document names.
 //!
 //!
+//! The 2026-08-28 answer was *"always, disclosed loudly"* — no control, the
+//! bundled rung simply on. It is now **the disclosed opt-in**: a checkbox in
+//! the Embed window, **off** when the window opens, with the fonts it would
+//! stand in for named beside it. The deciding reason is not the letterforms,
+//! which were always disclosed; it is that pdfcer's fourteen faces are
+//! BSD-3-Clause and embedding one puts that licence inside a file the operator
+//! then distributes. `pdfcer`'s own CLI keeps `--use-bundled-fonts` off for
+//! exactly that, in those words.
 //!
 //! ## ★★★ WHY THIS CHECK NOW DRIVES BOTH POSITIONS
 //!
@@ -69,6 +77,15 @@
 //! ## ★★★ A DECLINE IS A SKIP, NOT A FAILURE — and reading it the other way
 //! cost an afternoon
 //!
+//! The 2026-08-28 sweep ran this check twice. On `fixtures\a1-titleblock.pdf`
+//! it **passed**, with `targets=3 … substituted=true` and no font folder
+//! configured — the bundled rung firing exactly as O47 asked. On
+//! `D:\Dev\pdfTests\SW41177\SW41177.pdf` it **failed**, on
+//! `embed-fonts-declined folders=0 detail=nothing-to-open`, and that failure
+//! was carried into the handoff as *"the strongest candidate for a real
+//! defect"*. It was neither. SW41177 carries six fonts and **six
+//! `/FontFile2` streams** — every face it names is already embedded, so
+//! *"nothing to do"* is the correct and only honest answer.
 //!
 //! ⇒ The old message claimed a decline meant *"the bundled rung was not
 //! reached"*. **That inference is not available**, and has not been since O47.

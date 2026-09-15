@@ -3,7 +3,16 @@
 //!
 //! ## The operator's report, and the day it stopped being a refusal
 //!
+//! > *"the draw a line that follows the pointer tool — I can't edit the nodes
+//! > that make it"* (O158, 2026-09-08)
 //!
+//! The freehand tool authors an `/Ink` annotation, and until `pdfcer-core`
+//! `Pass 278.0` (`c8a6697`, 2026-09-09) that was the one markup kind whose
+//! points the engine could *read* (`Annotation::ink_list`) and could not
+//! *change* — `reshape_annotation` refused it by name. The refusal had been a
+//! decision argued from Acrobat, and the engine's reply overturned it in as
+//! many words: *"Parity with Acrobat is this project's floor, not its
+//! ceiling."* What shipped is a second verb family, not a widened first one:
 //!
 //! ```text
 //! EditSession::reshape_ink(annot, &InkEdit::…, modified)   // the planner

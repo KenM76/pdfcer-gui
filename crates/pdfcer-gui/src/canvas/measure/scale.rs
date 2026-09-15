@@ -212,6 +212,16 @@ impl ScaleEntryFields {
     ///
     /// # The defect this closes
     ///
+    /// The Set-scale window is the one surface whose entire job is to change a
+    /// number, and until 2026-09-13 it was the only surface in the application
+    /// that could not see the number it was about to change. Both of the other
+    /// constructors seed from nothing, so a group calibrated to `1:50` in
+    /// inches opened a window reading `1:100` in metres, and pressing Accept
+    /// without touching a control silently recalibrated the drawing. The
+    /// operator's words were *"the set scale dialogue does not show me the
+    /// scale that is already set"*; the sharper half of the report is the one
+    /// he did not have to say, which is that a window pre-filled with a
+    /// plausible wrong number is worse than one pre-filled with nothing.
     ///
     /// # What is seeded, and why the RATIO path
     ///

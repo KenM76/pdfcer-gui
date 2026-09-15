@@ -240,6 +240,9 @@ pub(super) fn tab() -> Tab {
                     command("file.copy_document_text"),
                 ],
             ),
+            // ---------------------------------------------------------------
+            // ★★★ SECURITY — `OPERATOR_REQUESTS.md` **O119**, approved and
+            // wired 2026-09-04: *"yes add encryption and permissions"*.
             //
             // # Placement: immediately after Export, and it is the mockup's
             //
@@ -326,6 +329,10 @@ pub(super) fn tab() -> Tab {
             // cannot tell you whether a document is encrypted is doing
             // half its job, and the status bar carries that fact today.
             //
+            // ★★★ **THREE controls since 2026-09-05, and the new one is first**
+            // — the operator: *"the document properties are still always
+            // visible in the properties tab. it needs to get out of there and
+            // be in its own document properties tab."*
             //
             // `file.document_properties` opens `crate::panels::docprops`, which
             // was the last section of the Properties panel until that sentence.

@@ -51,6 +51,15 @@
 //! | `Err(InkStrokeWouldBreachPointFloor)` | drawn, **greyed**, tooltip explains | the same floor, **per stroke** of a freehand mark — add a point to that stroke and it comes back |
 //! | any other `Err` | **absent** | a property of the shape's kind, which will not change while the operator looks at it |
 //!
+//! That is R9 exactly — *"an unavailable capability renders nothing; greying is
+//! reserved for temporarily unavailable and is always explained on hover"* —
+//! and it is derived rather than declared. A `/Line` gets no *Add a point here*
+//! because the engine says `GeometryNotReshapable`, not because this file holds
+//! a list of subtypes; the day the engine teaches `/Line` to grow a third
+//! point, the row appears with nothing here edited. ★ And that is precisely
+//! what happened to `/Ink` on 2026-09-09: the engine grew the verbs, [`super`]
+//! grew one `match` arm, and the two rows appeared on a freehand mark with this
+//! file's *decision* unchanged — only its *addressing* grew a second family.
 //!
 //! ## ★★★ The operand problem, and where it is parked
 //!

@@ -18,6 +18,17 @@
 //! *"a colour control on a selected text object that sweeps it for you"*, which
 //! O89 itself called *"closest to what you tried"*.
 //!
+//! ★★★ **The other two were already built**, which was measured rather than
+//! assumed and is recorded in O89 in place of the sentences that said
+//! otherwise. The Properties panel's *"press T and sweep"* sentence existed
+//! from 2026-08-29 until 2026-09-14, when O198 made the route it named
+//! unnecessary and it was deleted; and every one of the five Font commands'
+//! tooltips has ended
+//! *"Sweeping text with the Text tool (T) chooses what it applies to"* since
+//! the group shipped. What was NOT true was O89's third row — *"the greyed
+//! button saying so on hover"* — for exactly **one** of the five controls: the
+//! ribbon's Colour swatch answered a greyed hover with the CMYK-and-spot-ink
+//! sentence, a claim about text it had not read. Fixed in `app::fontband`.
 //!
 //! ## ★★★ THE OPERAND IS THE OBJECT'S OWN BYTE SPAN, NOT A GUESS AT GEOMETRY
 //!
@@ -54,6 +65,15 @@
 //! ## ★★★ Why COLOUR is the only control still drawn here
 //!
 //!
+//! ⇒ **The premise was true and the conclusion did not follow.** "No single
+//! answer" is an argument about what a control may *display*, and this
+//! project's own product class answers it with an indeterminate presentation
+//! rather than by withholding the control. It is not an argument about what a
+//! press may *apply*: `format_text` takes a run list, the object's run list
+//! is exact, and applying one face to nine runs is precisely what a hand
+//! sweep across the same words does. The operator, 2026-09-14: *"the
+//! properties area is uneditable too. This is true even when I add a new line
+//! of text."*
 //!
 //! So [`super::text::section`] now draws face, size, bold and italic for a
 //! clicked object as well as for a sweep, reading the first run for its

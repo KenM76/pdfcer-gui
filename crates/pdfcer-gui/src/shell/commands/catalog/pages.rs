@@ -59,6 +59,13 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.extract", t::pages_extract(), 311)
             .with_icon("page-extract")
             .enabled_when("doc.pages"),
+        // ★ These two REUSE existing keys rather than gaining art, and the
+        // reuse is the catalogue's own documented meaning rather than a
+        // near-enough substitution. `crate::icons::Icon::ChevronUp`'s doc
+        // comment already reads: *"'Move selection up' in the page rail and
+        // the Combine-files list"* — it was authored 2026-08-03 for exactly
+        // this verb, because `▲` (U+25B2) was VERIFIED tofu in the shipped
+        // font stack.
         //
         // Drawing page-shaped art for reorder would have been the worse
         // answer twice over: two more assets to keep in step with the rest of

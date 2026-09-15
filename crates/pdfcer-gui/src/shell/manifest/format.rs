@@ -54,6 +54,15 @@
 //! > … a markup or a dimension is not selectable at all, so even a perfect
 //! > `set_markup_style` would have nothing to name.
 //!
+//! **`EditSession::set_markup_style` shipped on 2026-08-18**, and
+//! `canvas::selection::annot::AnnotTarget` — an `ObjId`, a page, an
+//! `AnnotKind` and the `/F` lock bit — landed the same day.
+//! `panels::properties::markup` has been calling the verb through
+//! `Action::SetMarkupStyle` since 2026-08-19. Every sentence above was false
+//! from the moment the panel it argues for existed, and this file went on
+//! stating both as present-tense facts about the engine until the operator
+//! asked for *"full editing working for the Markup tools"* and somebody read
+//! the header.
 //!
 //! ⇒ **A blocker is a measurement with a date, not a property of the world.**
 //! `tools/gates/check-stale-blockers.sh` exists for exactly this class and did
@@ -83,6 +92,11 @@
 //!
 //! # What the tab carries now
 //!
+//! Three groups: **Font** (2026-08-27), **Markup** (2026-09-06) and
+//! **Selection**. §5.8's build order — *"panel first, tab second … the tab's
+//! contents are a subset of it"* — was followed for both of the first two, and
+//! it is why each was one pass rather than two: the property editors were
+//! written once, in `panels::properties`, and the band reads the same actions.
 //!
 //! What is left of §5.8's table in [`super::PLANNED`] is now the rows with no
 //! verb behind them — a note's text (`MarkupNote`, a different struct), the
@@ -307,6 +321,9 @@ pub(super) fn tab() -> Tab {
                     Item::custom(super::FONT_COLOUR).shown_when(FONT_VISIBLE_WHEN),
                 ],
             ),
+            // ---------------------------------------------------------------
+            // Markup — §5.8's "Markup annotation" row, built 2026-09-06 on the
+            // operator's *"getting full editing working for the Markup tools."*
             //
             // ★★★ SECOND, between Font and Selection, and the position is
             // decided by the same rule that put Font first. §5.8's tables read

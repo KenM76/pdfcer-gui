@@ -41,6 +41,14 @@
 //! This section has now been wrong in **both** directions and the history is
 //! worth two sentences, because the shape recurs.
 //!
+//! It originally read *"Why bundled faces are NOT offered"*, and said this
+//! shell had no equivalent of `pdfcer`'s `--use-bundled-fonts` *"because the
+//! Embed window has no settings by design"*. **That became false on
+//! 2026-08-28**, when `dialogs::embed` was changed to pass `true`
+//! unconditionally — and the paragraph here went on asserting the opposite for
+//! eight days, in the module that owns the argument, while
+//! `ui-verify`'s `embedding_works_with_no_font_folder_at_all` passed against
+//! the behaviour it denied.
 //!
 //! ⇒ The general form, and this project has paid for it six times: **a
 //! paragraph explaining why something is not done outlives the day it is
@@ -143,6 +151,13 @@ pub enum Match {
     /// **One of the faces pdfcer itself ships**, used because nothing the
     /// operator pointed pdfcer at could answer.
     ///
+    /// ★★★ The most inferred rung, and the engine says so in as many words:
+    /// *"nothing on the operator's machine was consulted."* Offered only
+    /// because the operator asked for it — `OPERATOR_REQUESTS.md` **O47**,
+    /// answered *"yes"* on 2026-08-28 — and disclosed loudly wherever it fires,
+    /// because a document that goes out with pdfcer's Helvetica substitute in it
+    /// looks different from one with the operator's own, and nothing on the
+    /// canvas says which happened.
     Bundled,
     /// A **standard-14 family equivalence** — the document says `Helvetica` and
     /// the folder holds `Arial`. Metric-compatible by design, and the advances
@@ -236,6 +251,11 @@ impl Library {
     ///
     /// # ★★★ The operator asked for this, and the licensing argument survives
     ///
+    /// `OPERATOR_REQUESTS.md` **O47**, answered *"yes"* on 2026-08-28. The
+    /// module header's argument — that pdfcer must not choose a font program on
+    /// somebody's behalf, silently, in a file that outlives the decision — is
+    /// not overruled by this. It is satisfied the same way **O50**'s checkbox
+    /// satisfies it: the operator decided, once, explicitly.
     ///
     /// ★★ And it is the **last** rung, which is what makes it safe to leave on.
     /// `resolve_for_embedding` consults the bundled table only after an exact
@@ -555,6 +575,11 @@ mod tests {
 
     /// ★★★ **A bundled face is offered ONLY when it was asked for.**
     ///
+    /// `FontEnvironment::bundled()` is what this scans into, so pdfcer's own
+    /// standard-14 substitutes sit in the table the whole time and one `true`
+    /// in the wrong place puts them into somebody's document. The operator said
+    /// yes on 2026-08-28 (`OPERATOR_REQUESTS.md` **O47**) — and *"yes"* is a
+    /// decision that has to be carried, not a reason to stop checking.
     ///
     /// ★★ Both halves in one test on purpose: an assertion that only proved the
     /// `true` case would pass on a build that ignored the flag entirely, which

@@ -127,6 +127,13 @@
 //!
 //! ## ★★★ Every census here is ANCHORED, and the day that started mattering
 //!
+//! This paragraph used to say that in Review the panel is the first tab of the
+//! right stack and *"is therefore active on the first frame"*, with a click on
+//! `markup.comments` as belt and braces. Both halves went wrong at once on
+//! 2026-09-05. The belt-and-braces click had already been removed on a finding
+//! about band overflow that has since stopped being true; and a persisted
+//! `userdata/layout.ron` put Document properties in front of Comments, so the
+//! panel **stopped tracing entirely** — a dock draws only its active tab.
 //!
 //! The check then read the census the panel had published in the *previous
 //! mode*, twice, and subtracted it from itself: *"it listed 12 before the drag
@@ -134,6 +141,17 @@
 //! `undo_redo_round_trip` — carrying a copy of the same helper — reported the
 //! same thing in the same words on the same sweep, which read as corroboration.
 //!
+//! ⇒ Every census this check takes now comes from
+//! [`crate::checks::comments_census`], which (a) requires the line to have been
+//! published **after** a named cause — the mode change, or the engine's own
+//! `add-markup` — so a fossil cannot answer, (b) **brings the panel forward**
+//! when it has gone quiet, by its dock tab or by `markup.comments`, which
+//! `app/panels.rs` makes a *show* rather than a toggle, and (c) reports SKIP,
+//! never FAIL, when it cannot: *"the panel said nothing"* is a layout fact and
+//! *"the panel said the wrong number"* is a defect, and they are not the same
+//! verdict. Driven against a deliberately seeded hostile layout on 2026-09-05
+//! and seen to recover; driven against a planted frozen census and seen to
+//! fail.
 //!
 //! # The picker is answered, not driven
 //!
@@ -420,6 +438,14 @@ pub(crate) fn click_command(
 /// comparison at the end is between two different measurements.
 ///
 ///
+/// Until 2026-09-05 this file carried its own `comments_count`, its own
+/// `listed()`, and its own excluded-annotation refusal — and
+/// [`crate::checks::undo_redo`] carried a second copy of all three. Both read
+/// the census with `Trace::last`, which searches the whole capture, so when the
+/// panel went to the back of its dock and **stopped tracing**, both read the
+/// line it had published in the previous mode and reported a working panel as
+/// broken, in the same words, on the same sweep. The sweep report called them
+/// *"two independent witnesses"*.
 ///
 /// The shared module's header carries the whole finding. What belongs here is
 /// the consequence for this file: **there is no local census reader any more,

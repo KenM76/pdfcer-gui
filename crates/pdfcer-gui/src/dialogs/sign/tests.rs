@@ -447,6 +447,14 @@ fn the_box_is_described_as_carrying_the_name_and_the_date() {
 /// ★★★ **AN AUTHOR-IMPOSED REFUSAL SAYS WHOSE RULE IT IS, AND PDFCER IS NOT THE
 /// SUBJECT OF THE FIRST SENTENCE.**
 ///
+/// The single most important property of any string added on 2026-09-06.
+/// `Pass 10.13` enforces a signature field's `/SV` dictionary in full and is
+/// deliberately stricter than Acrobat, so the operator **will** meet refusals
+/// here on documents another reader signs. The general wording,
+/// [`crate::text::sign::engine_refused`] — *"pdfcer did not sign the document:
+/// …"* — would tell him, in plain English, that pdfcer is broken; he would be
+/// right to conclude it from the sentence and wrong about the program, and a
+/// working feature would be reported as a defect.
 ///
 /// So: the document's preparer is named, and named FIRST; the strictness is
 /// admitted as a choice rather than hidden; and a remedy is offered that does

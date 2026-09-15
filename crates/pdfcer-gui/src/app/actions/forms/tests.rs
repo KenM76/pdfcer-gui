@@ -195,6 +195,11 @@ fn a_rename_puts_the_retargeting_sentence_in_the_disclosure_store() {
 ///
 /// # What this is really asserting, because it is not the engine's rule
 ///
+/// That `rename_field` refuses a collision is the engine's business and is
+/// asserted in the engine's own suite. What could only be asserted from here
+/// is that the refusal **arrives somewhere an operator can read**, and until
+/// 2026-09-12 it did not: `forms::rename` mapped only `Ok`, so every failure
+/// reached `decline::floor` and came out as *"That change was refused"*.
 ///
 /// That is the shape worth the paragraph. The bar was never blank. There
 /// was always a sentence, it was always true, and it answered nothing — so no

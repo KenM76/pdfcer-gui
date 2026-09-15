@@ -209,6 +209,10 @@ pub enum AttachmentAction {
     /// `detach_file`'s own doc comment states the obligation this shell is
     /// under, and it is unusually direct:
     ///
+    /// > *"This is NOT a redaction verb and must not be described as one … the
+    /// > attachment's bytes remain recoverable from the earlier revision. Only
+    /// > a full rewrite drops superseded revisions … Shells are expected to say
+    /// > so rather than let 'delete' imply erasure."*
     ///
     /// The `name` field exists for that sentence and for nothing else. The
     /// engine returns `()`, the row is gone from the panel by the time the

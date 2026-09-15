@@ -10,6 +10,11 @@
 //! > showing which values are inherited and which are overridden and letting
 //! > the override be set.
 //!
+//! Eleven `Option`s, and **each `Option` IS the operator's checkbox**. The
+//! operator asked for it in those words on 2026-08-12: *"groups of dimensions
+//! should have a default dimensioning and tolerance style that can be set for
+//! the group, but these should have a checkbox to override and set
+//! differently."*
 //!
 //! ## ★ The disclosure is DATA, not a heuristic
 //!

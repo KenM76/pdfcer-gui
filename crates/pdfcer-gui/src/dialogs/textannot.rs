@@ -63,6 +63,10 @@ pub const REGION_TEXT: &str = "text-annot.text"; // ui-text-exempt: trace region
 pub const REGION_ACCEPT: &str = "text-annot.accept"; // ui-text-exempt: trace region name, never displayed
 /// **Cancel**, and it is declared for exactly the reason Accept is.
 ///
+/// The operator's report of 2026-09-10 named both: *"I can't see the add or
+/// cancel button. Those buttons should always be available."* A harness that
+/// could see one of the two would report the answer row as reachable on a build
+/// where half of it had been clipped away.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_CANCEL: &str = "text-annot.cancel";
 /// The region the sticky note's icon chooser publishes, so a driven check can
@@ -239,6 +243,11 @@ const STICKY_EXTRA_PTS: f32 = 190.0;
 /// dropdown.
 ///
 ///
+/// 70 pt was written on 2026-09-06 as *"roughly three rows' worth"* — an
+/// estimate of the size chooser ALONE, added to a base that was already too
+/// small for the gallery underneath it. The full driven sweep of 2026-09-11
+/// measured the result, and the numbers are worth keeping because they are
+/// what makes this constant arguable:
 ///
 /// | quantity | measured (content coordinates) |
 /// |---|---|
@@ -803,6 +812,14 @@ impl TextAnnotDialog {
         // keeps its original meaning — *don't fight the operator's own click* —
         // and stops being consumed by a wait that has nothing to do with them.
         let window_focused = ui.ctx().input(|i| i.viewport().focused) != Some(false);
+        // ★★ Published because a field that never takes focus is a whole
+        // defect class in this shell — *"it doesn't type anything in the box
+        // when I type"* — and it is invisible from outside: the box is drawn,
+        // the caret blinks, and the characters go somewhere else. The four
+        // numbers are the whole state machine above, so a driven check or a
+        // reader of a trace can tell "never asked", "asked and lost the race",
+        // and "held it and then the WINDOW lost focus" apart. All three were
+        // suspected on 2026-08-21 and the trace is what ruled two of them out.
         crate::diag::trace_on_change("text-annot-field", || {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!(

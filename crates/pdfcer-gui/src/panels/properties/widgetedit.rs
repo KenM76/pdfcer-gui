@@ -45,7 +45,19 @@
 //!
 //! ## ★★★ All of `WidgetEdit`'s properties are here, and two of them took an hour
 //!
+//! ⚠ **This heading said *"All four"* until 2026-09-11, by which time
+//! `WidgetEdit` carried seven** — `rect`, `resize`, `border`, `border_color`,
+//! `background`, `caption`, `visibility`. A completeness claim that names a
+//! NUMBER goes stale the moment the other side grows a field, and it goes
+//! stale **silently**: nothing fails to compile, no gate counts it, and the
+//! sentence keeps reading like an audited fact. Phrase such a claim against
+//! the type, never against a count, so that the only way to falsify it is to
+//! look at the type.
 //!
+//! This section read *"`WidgetEdit` carries four properties and this pane
+//! offers **two**"* for about an hour on 2026-08-27, and the reason is worth
+//! keeping because the outcome is what decision 058 promises and rarely gets to
+//! demonstrate.
 //!
 //! **border** (`/BS`) and **visibility** (`/F`) were writable and **not
 //! readable**: `annot_author::read_border_width` was private, `border_style` is

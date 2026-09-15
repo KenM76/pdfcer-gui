@@ -3,6 +3,11 @@
 //!
 //! # Why this is its own module
 //!
+//! Split out of `canvas::present` on 2026-09-10, when adding O23's halo tier
+//! put that file at 1,503 lines and the R2 gate — *no source file over 1,500
+//! lines* — refused it. The gate's own text says what to do about that: *"split
+//! the module along its seams — one subject per file — rather than raising the
+//! limit"*. This is the seam, and it was a seam before the gate said so.
 //!
 //! Everything else in `present` is about **drawing and handling** what the
 //! frame already has. This is the one block that decides what to **ask the

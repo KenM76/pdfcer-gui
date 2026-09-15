@@ -3,6 +3,15 @@
 //!
 //! ## Two things here are load-bearing rather than cosmetic
 //!
+//! **★★ [`shares_the_line_note`] is a DISCLOSURE, and it was a refusal until
+//! 2026-08-19.** `DEFECTS.md` D4a records that the old shell handled a
+//! cross-run selection by setting a flag that *"silently disables the whole
+//! typing loop"* — the operator pressed keys and nothing happened. This shell
+//! replaced the silence with a sentence, which was the right first move and the
+//! wrong final one: **it still refused**, and on a CAD sheet, where a table row
+//! is one show operator per cell, it refused nearly every click. The operator
+//! reported text editing as not working twice, weeks apart, and was right both
+//! times. The refusal is gone; the sentence stayed and changed tense.
 //!
 //! **[`pinned_tail_disclosure`] is owed under rule 4.** When the follower
 //! disposition is `Pin`, the text after the edit does not make room, so a longer
@@ -109,6 +118,11 @@ pub const fn refusal(reason: Refusal) -> &'static str {
 
 /// ★★ The multi-run **disclosure** — what `spans_runs()` used to refuse.
 ///
+/// Until 2026-08-19 this sentence's ancestor was a *refusal*: a click whose
+/// visual line was made of more than one show operator placed no caret at all,
+/// and the sentence told the operator to *"click directly on the word you want
+/// to change"* — advice that could not work, because the refusal was about the
+/// **line**, not about where on it they clicked.
 ///
 /// On a SolidWorks sheet — one show operator per table cell, one per title-block
 /// field — that refused nearly every click. The operator reported the feature as
@@ -178,6 +192,12 @@ pub fn pinned_tail_disclosure(reason: Reason) -> String {
 /// so a page carrying a non-empty EXTRA stream is refused by name rather than
 /// having the text in that stream silently deleted.
 ///
+/// ★★ **Re-measured 2026-09-14; what stood here was two revisions out of
+/// date.** It said `reflow_block` is planned against the **base** document and
+/// that *"one typed character is enough to trip it"*. Engine `Pass 257.0`
+/// (2026-09-06) moved the planner onto the session view and both clauses went
+/// with it: an ordinary text EDIT no longer trips this, because that edit's own
+/// sweep has already consolidated the page. Adding text does.
 ///
 /// ★ The guard is also structural rather than provenance-based, so it fires on
 /// a page NOBODY edited if the producer split its content across streams —
@@ -340,12 +360,25 @@ pub enum ReflowRefusal {
     /// streams and was refused with *"text was added to this page this
     /// session"* on a freshly opened file.
     ///
+    /// ★ Earlier history, kept because the shape recurs: until 2026-09-14
+    /// this comment described the SHELL's `edit_epoch != 0` forecast and
+    /// called it *"the only thing standing between the operator and losing
+    /// work he can see on the page"*. That forecast was deleted on 2026-09-05,
+    /// the day `Pass 251.0` made the engine refuse the case by name; the
+    /// sentence outlived the mechanism by nine days. **A doc comment that
+    /// argues for a guard is a claim the guard exists.**
     PageAlreadyEdited,
     /// The engine's page-set guard: a page was added, removed or reordered, and
     /// reflow's planner is indexed against the base document's pages.
     PageSetChanged,
     /// The engine declined and gave no cause this shell may act on.
     ///
+    /// ★★★ **Added 2026-09-07 for the causes `ReflowApplyError` does not
+    /// discriminate, and it has narrowed twice since.**
+    /// `ReflowApplyError::Unsupported(String)` packs the remainder into one
+    /// variant with no discriminant — from *"the block's CTM has a degenerate
+    /// (zero) scale"* to a producer quirk with no name — and this shell will
+    /// not parse another crate's prose to guess which.
     ///
     /// So the sentence says the one thing true of every remaining case and
     /// **offers no remedy**. Vague, deliberately: the alternative is a remedy
@@ -353,6 +386,11 @@ pub enum ReflowRefusal {
     /// when it sent the operator hunting for a page reordering that never
     /// happened.
     ///
+    /// ★★ **The two narrowings, because this paragraph asked for them and then
+    /// did not notice they arrived** (corrected 2026-09-14). It used to say the
+    /// engine carries *"ten distinct refusals in one variant"* and to promise
+    /// that *"when a discriminant lands, the one recoverable case gets
+    /// `PageAlreadyEdited` back"*. Two landed:
     ///
     /// * `PageEditedThisSession` — the recoverable one, exactly as forecast.
     ///   [`Self::PageAlreadyEdited`] was reached from it for seven days.
@@ -430,6 +468,19 @@ impl ReflowRefusal {
             // Kept for the same reason `PageSetChanged` below is kept, and
             // watched by `check-unreachable-refusals` rather than by a reader.
             Self::PageAlreadyEdited => reflow_after_edit(),
+            // ★ Deliberately the same remedy as `PageAlreadyEdited` and
+            // deliberately not the same sentence: the operator did something
+            // different to get here, and a sentence that named the wrong cause
+            // would send them looking for an edit they did not make.
+            // ⚠ UNREACHABLE at engine `527b1523` and kept deliberately. Both
+            // engine cases it was written for — *"the page's content was
+            // already edited this session"* and *"the page set was changed this
+            // session"* — were removed by `Pass 257.0` on 2026-09-06, and until
+            // 2026-09-07 `reflow_refusal` mapped every `Unsupported` here, so
+            // this sentence was shown for ten causes and correct for none of
+            // them. It is kept rather than deleted because the guard it
+            // describes is real PDF behaviour that a future engine may reinstate
+            // by name, and because the sentence is already tested.
             Self::PageSetChanged => {
                 "Reflowing a paragraph needs the pages as they were when you opened the file, and \
                  pages have been added, removed or reordered since. Save this file and open it \

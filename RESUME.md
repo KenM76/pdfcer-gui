@@ -127,6 +127,12 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   "consumed" on prose. A comment sweep that looks purely cosmetic took the
   answer rows out of nine surfaces and turned one gate red with no code change.
   Before deleting comments in bulk, grep `tools/gates/` for what parses them.
+  The same sweep also took **833 lines carrying the operator's own words**
+  out of 351 files — his sentence is why a module is shaped the way it is,
+  and no gate watches for it. The oracle is a count, not a diff: comment
+  lines matching the `*"` quote marker, per file, before and after. There
+  are 3,755 of them; if a comment pass lowers that number, it removed
+  evidence, whatever else it removed.
 - **Ten root documents were deleted on 2026-09-15** — `CONTINUE.md`,
   `DOC_DRIFT.md`, `GLYPH_ADOPTION.md`, `HANDOFF.md`, `HOW_IT_SHOULD_WORK.md`,
   `HOW_IT_WORKS_TODAY.md`, `INTERACTION_GAP.md`, `REVIEW_TRIAGE.md`,

@@ -137,6 +137,8 @@ pub fn size_entry(name: &str, size_pt: (f64, f64)) -> String {
 
 /// **Is this sheet DEFINED in inches?**
 ///
+/// ★★ Operator request, 2026-08-20: *"please add imperial sizes too — we use
+/// imperial units — then select B size."*
 ///
 /// The sizes were already there. `PaperSize::ALL` has carried Letter, Legal,
 /// Tabloid, Executive and ANSI A–E since before this dialog was written, and
@@ -372,6 +374,11 @@ mod imperial_tests {
     /// ★★ **Every US and ANSI sheet reads in inches, and every ISO one in
     /// millimetres.**
     ///
+    /// The operator's report of 2026-08-20 was *"please add imperial sizes
+    /// too"*, and every size he wanted was already in the list — labelled in
+    /// millimetres. `ANSI B — 279 × 432 mm` is the sheet he calls B, described
+    /// in units his office does not use, which is indistinguishable from its
+    /// not being there.
     ///
     /// So this asserts the labelling directly, on the two sizes that matter
     /// most to him and on one from each family, because the failure it guards

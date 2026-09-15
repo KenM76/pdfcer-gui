@@ -472,6 +472,10 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
         // ★★★ CTRL+C, CTRL+X AND CTRL+V NEVER ARRIVE AS KEY EVENTS, AND THAT IS
         // WHY THEY HAVE NEVER WORKED.
         //
+        // The operator, twice: *"still no ctrl+c, ctrl+v, ctrl+x"*. On
+        // 2026-08-20 they were bound in the manifest, which was necessary and
+        // **not sufficient** — and the reason is fifteen lines of
+        // `egui-winit-0.35.0/src/lib.rs`:
         //
         // ```rust
         // if is_cut_command(modifiers, active_key)   { events.push(Event::Cut);   return; }

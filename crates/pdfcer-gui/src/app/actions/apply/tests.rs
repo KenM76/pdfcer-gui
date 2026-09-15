@@ -253,6 +253,8 @@ fn a_disclosure_is_hidden_once_the_document_moves_past_it() {
 
 /// **A row click and a canvas click write the same thing.**
 ///
+/// The operator, 2026-08-26: *"when I have an object selected like text the
+/// Tool tab doesn't switch to giving me the editable stuff for that object."*
 ///
 /// There is ONE notion of *"the thing I am working on"* — the canvas
 /// selection. A panel-local `focus` beside it is a second, and a panel reading

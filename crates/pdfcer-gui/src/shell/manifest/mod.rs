@@ -114,6 +114,8 @@ use egui_shell::manifest::{Group, Item, ItemSize, Mode, Shell};
 /// rather than written down twice. See [`super::menus`] for what is in
 /// **Point the two form-field paste chords at the operator's chosen order.**
 ///
+/// `OPERATOR_REQUESTS.md` **O58**. Ken, 2026-08-29: *"let's make it an option to
+/// have it swap to match Acrobat or work the way we have it now."*
 ///
 /// # What it does, and what it deliberately does not
 ///
@@ -239,6 +241,10 @@ pub fn built_in() -> Shell {
         // -------------------------------------------------------------------
         // THE TRAILING REGION — `OPERATOR_REQUESTS.md` O122.
         //
+        // The operator, 2026-09-04: *"beside our read-review-edit buttons at
+        // the top there should be an open in acrobat button."* The far right of
+        // the tab-strip row, past the mode selector, which is a region
+        // `egui-shell` grew for this and which nothing else uses.
         //
         // ★★★ `shown_when("acrobat.available")` is the whole of R9 for this
         // control, and it is the reason the command is registered
@@ -348,6 +354,17 @@ pub fn built_in() -> Shell {
         // -------------------------------------------------------------------
         // ★ Ctrl+N — the universal chord, bound the day its command landed.
         //
+        // Acrobat, Inkscape and SolidWorks all bind Ctrl+N to New, as does
+        // every other document application; there was nothing to decide here
+        // beyond whether it was allowed to be bound at all, and the rule in
+        // `crate::app::keyboard::commands`' header says it is: *"a chord here
+        // dispatches a command, and a command with no dispatch arm would trace
+        // `command-unimplemented` on a keypress that used to do nothing
+        // quietly. They land with their commands."* `file.new` has an arm, so
+        // the chord lands with it — and `Key::N` joins `DERIVED`'s spelling
+        // table in the same edit, because a chord this file binds and that
+        // table cannot spell is a chord no keypress delivers. That is the
+        // defect `Ctrl+O` sat in for the whole life of the ribbon.
         .with_binding("Ctrl+N", "file.new")
         // ★ Ctrl+Alt+N — Inkscape's own chord for the same split, which is the
         // split this pair copies: Ctrl+N makes a document, Ctrl+Alt+N chooses
@@ -361,6 +378,8 @@ pub fn built_in() -> Shell {
         // the File band, so a layout that cannot spell it loses nothing.
         .with_binding("Ctrl+Alt+N", "file.new_from_template")
         .with_binding("Ctrl+O", "file.open")
+        // ★ **Ctrl+P**, 2026-08-20, on the operator's report: *"still no ctrl+c,
+        // ctrl+v, ctrl+x or ctrl+p shortcuts that were requested ages ago"*.
         //
         //
         // The lesson is the file-size one in a different suit: a fact that is true
@@ -542,6 +561,15 @@ pub fn built_in() -> Shell {
 /// greyed while the thing it acts on is plainly selected.
 ///
 ///
+/// It used to read `pub const SELECTION_ANY: &str = format::VISIBLE_WHEN;`,
+/// with a doc comment naming three surfaces that shared one condition. That
+/// was true and it stopped being true when the Format tab grew a **Font**
+/// group: the tab now carries controls for two different kinds of selection --
+/// a page object, addressed by paint-order index, and a swept text range,
+/// addressed by run -- so *"is the Format tab about anything?"* is a strictly
+/// wider question than *"is an object selected?"*. The tab's condition moved
+/// to `selection.formattable`; this one stayed where it was and kept its two
+/// honest readers.
 ///
 /// ★ The alias is what made the drift dangerous rather than merely untidy.
 /// Changing [`format::VISIBLE_WHEN`] in place would have silently retargeted
@@ -787,6 +815,10 @@ pub const CUSTOM_BACKED: &[(&str, &str, &str)] = &[
          run painted in CMYK or a spot colour the swatch is replaced by a sentence, which is a \
          second thing a button has no way to express.",
     ),
+    // -----------------------------------------------------------------------
+    // The Format ▸ Markup group, 2026-09-06 — `RIBBON_IA.md` §5.8's *Markup
+    // annotation* row, and the operator's ask of the same day: *"getting full
+    // editing working for the Markup tools."*
     //
     //
     // ★ Every entry clears the bar for one reason in a different shape — the
@@ -896,6 +928,11 @@ pub(super) fn icon_only(id: &str) -> Item {
 /// A command drawn **large** — icon above label, spanning the band's rows.
 ///
 ///
+/// It used to read *"used only for a group whose single item it is"*, on the
+/// grounds that `sizing`'s layout rule hoists Large items to the front of
+/// their group, so promoting one item of a multi-item group would silently
+/// re-order what `RIBBON_IA.md` settled — and the ribbon IA is not this
+/// file's to amend.
 ///
 /// That reasoning is intact. What changed is that `mockups/pdfcer-shell.html`
 /// is now a specification of this band rather than a sketch of it, the
@@ -960,6 +997,10 @@ mod tests {
     /// ★★★ **Every `Large` item already leads its group**, so promoting one
     /// never reorders the band.
     ///
+    /// This is the rule that replaced [`super::large`]'s old *"only for a
+    /// group whose single item it is"* restriction on 2026-09-04, when
+    /// `mockups/pdfcer-shell.html` became this band's specification and a
+    /// great many controls became Large.
     ///
     /// # Why the rule needs a test rather than a sentence
     ///
@@ -1136,6 +1177,10 @@ mod tests {
 
     /// ★★ **The chords every document application has, asserted as a LIST.**
     ///
+    /// Added 2026-08-20, on the operator: *"still no ctrl+c, ctrl+v, ctrl+x or
+    /// ctrl+p shortcuts that were requested ages ago."* Three of the four were
+    /// bound. `Ctrl+P` was not, and had not been since the manifest was
+    /// written.
     ///
     /// # Why the whole list, and not a line for the one that was missing
     ///

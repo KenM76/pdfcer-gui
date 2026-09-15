@@ -602,6 +602,13 @@ impl Driver {
     ///
     /// # ★ Why a check wants this rather than the status bar's `+`
     ///
+    /// Zoom-to-cursor keeps the point under the pointer fixed, so a check can
+    /// put the pointer on the content it cares about **once** and keep
+    /// rolling — the content stays under it all the way down. The `+` button
+    /// zooms about the viewport centre, which on a page whose interesting
+    /// detail is off-centre magnifies blank paper. The operator's own words,
+    /// 2026-08-22: *"Right now you are just zooming into a blank area on the
+    /// canvas."*
     pub fn scroll_at_held(
         &self,
         p: ScreenPoint,
@@ -998,6 +1005,12 @@ impl Driver {
     /// or the reverse, and every failure it produces is a confident, specific
     /// accusation against code that is fine.
     ///
+    /// Measured on 2026-08-20: `markup_rectangle_arms_from_the_ribbon` and
+    /// `insert_image_places_a_picture` both reported the ribbon as unresponsive
+    /// — *"the click on `ribbon.tab.markup` produced no `ribbon-tab-activated`"*
+    /// — over a build in which the ribbon works, and both had passed in a full
+    /// suite an hour earlier. The old build reproduced it too, which is what
+    /// ruled the application out.
     ///
     /// The message this returns is deliberately long. Whoever meets it is one
     /// step from diagnosing a feature that was never clicked.
@@ -1128,6 +1141,9 @@ impl Driver {
         if self.window_owning(p) == Some(owner) {
             return Ok(());
         }
+        // ★★★ **"OUTSIDE THE WINDOW" AND "COVERED BY ANOTHER WINDOW" ARE
+        // DIFFERENT DIAGNOSES**, and this guard reported both as the second
+        // until 2026-08-27.
         //
         // If the point is not within the target's own client rectangle at all,
         // then whatever owns it — the desktop (`Progman`), a File Explorer

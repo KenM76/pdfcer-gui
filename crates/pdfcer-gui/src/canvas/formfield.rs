@@ -12,6 +12,10 @@
 //!
 //! ## ★★★ Why it was never built, and why that reason was wrong
 //!
+//! `shell::commands::reach::register` recorded `edit.form_create_field` as
+//! blocked on *"core's STRUCTURAL certification gate"*. **There is no such
+//! gate.** Probed on 2026-08-26 against a real drawing:
+//! `EditSession::add_text_field` authors a field and returns its id.
 //!
 //! What the engine refuses is a spec whose tooltip is `Undecided` —
 //! `TooltipDecisionRequired`, an **accessibility** requirement rather than a
@@ -244,6 +248,10 @@ mod tests {
     /// ★★★ **NO KIND IS AUTHORABLE-BUT-INERT ANY MORE**, and the test that
     /// used to say otherwise did its job.
     ///
+    /// It read *"exactly one kind is authorable-but-inert, and it is the push
+    /// button"*, with the instruction: *"if pdfcer ever runs PDF actions, this
+    /// test fails and the failure is the prompt to un-grey the button."* On
+    /// 2026-09-01 it failed for exactly that reason and this is what it became.
     ///
     /// ★★ Inverted rather than deleted, because the WELD is the point. Three
     /// surfaces have to agree about whether a kind is useful once placed — the

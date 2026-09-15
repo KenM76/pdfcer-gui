@@ -145,6 +145,15 @@
 //! the defect. It was the better control before the fix and it is the better
 //! control after it. What expired is the justification's tense, not the choice.
 //!
+//! > `pdfcer-core`'s `EditableTextModel::hit_test` ends with *"fall back to the
+//! > nearest line by baseline distance"* and applies **no distance bound**. So on
+//! > a page carrying any text at all, every point resolves to a run:
+//! > `canvas::textedit::Refusal::NoRun` is unreachable, and with it
+//! > `place::click`'s *"a click that names no run starts a new one"* — the
+//! > 2026-08-19 answer to the operator's *"How do I make new text when I click on
+//! > the canvas and expect to edit there?"* Driven here: clicks 215 pt to the
+//! > right of a run's box and 99 pt below it both resolved that same run. Filed
+//! > rather than worked around.
 
 use crate::checks::driving::{INVOKE_EVENT, SHELL_DIAG_ENV, declared, declared_names, list};
 use crate::checks::text_selection::aim;
@@ -596,6 +605,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //    them `run=12` again from 99 pt below its box.
     //
     //
+    // > its last clause is *"fall back to the nearest line by baseline
+    // > distance"* with **no distance bound at all**. So on a page carrying any
+    // > text, every point resolves to a run, `Refusal::NoRun` is unreachable, and
+    // > `textedit::click`'s *"a click that names no run starts a new one"* — the
+    // > 2026-08-19 answer to the operator's *"How do I make new text when I click
+    // > on the canvas?"* — cannot fire. Filed; see the module header.
     //
     // ⇒ Filed, and answered by `8670523` the same evening: a line is picked only
     // within one line-height of its own box, and `None` otherwise. Re-running

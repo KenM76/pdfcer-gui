@@ -3,6 +3,11 @@
 //!
 //! # ★★★ The defect
 //!
+//! `OPERATOR_REQUESTS.md` O108. Found 2026-09-03 by
+//! `tools/security-coverage.py` — an instrument keyed on `pdfcer-core`'s own API
+//! rather than on any document of ours — while answering the operator's
+//! question *"can we get all of the encryption and signature features that have
+//! been implemented in the engine under one new tab?"*
 //!
 //! **An encrypted PDF could not be opened at all.** The shell detected the case
 //! perfectly and had nowhere to type a password:

@@ -543,7 +543,17 @@ pub const fn insert_dialog_title() -> &'static str {
 /// place in the application that counted differently.
 /// # ★ The orphan clause is now a NUMBER, and it is exact
 ///
+/// This sentence used to hedge — *"**Any** form fields on those pages arrived
+/// as boxes…"* — because the shell had no way to know whether there were any,
+/// so a document with no form controls got a paragraph about form controls.
 ///
+/// `EditSession::insert_pages` returns `InsertOutcome { pages_inserted,
+/// orphaned_widgets }` as of 2026-08-19, and the engine's reply is explicit
+/// that the count is **exact rather than an upper bound**: `/AcroForm` is
+/// document-level and is not merged, and the copy remaps every object number,
+/// so no field in the target can be claiming a widget that has just arrived.
+/// *"There is no case where a counted widget turns out to have an owner, and
+/// you can put the number in front of an operator without hedging it."*
 ///
 /// So `orphans == 0` drops the clause entirely. That is not a cosmetic saving:
 /// a sentence about form controls on a drawing with none trains the operator
@@ -585,6 +595,12 @@ pub const fn insert_dialog_title() -> &'static str {
 ///
 /// # ★ Why the outline case is a boolean and not "always"
 ///
+/// Because it used to be "always", and that made it a **disclaimer rather than
+/// a disclosure**. The sentence said *"Bookmarks and page labels from that file
+/// did not come across"* on every insert, including a CAD drawing whose source
+/// had neither — a paragraph about two things that never existed, which is how
+/// an operator learns to stop reading the sentence that also carries the clause
+/// about form controls.
 ///
 ///
 /// The engine's note on *why* bookmarks never came is kept here because it is
@@ -995,6 +1011,11 @@ mod tests {
     /// ★ **A document with no form controls gets no sentence about form
     /// controls.**
     ///
+    /// The clause used to be unconditional — *"**Any** form fields on those
+    /// pages arrived as boxes…"* — because the shell had no count and had to
+    /// hedge. `InsertOutcome::orphaned_widgets` arrived on 2026-08-19 and the
+    /// engine's reply says the number is **exact rather than an upper bound**,
+    /// so a zero can be believed.
     ///
     /// Worth a test rather than a glance, because the failure is silent in the
     /// direction that matters: a paragraph about form controls on a drawing
@@ -1016,6 +1037,10 @@ mod tests {
 
     /// ★★ A source that had nothing to lose is told nothing about losing it.
     ///
+    /// The sentence used to end *"Bookmarks and page labels from that file did
+    /// not come across"* on **every** insert. On a CAD drawing whose source had
+    /// neither — which is most of them, in this application — that is a
+    /// paragraph about two things that never existed.
     ///
     /// It is worth a test rather than a glance because the cost is not the
     /// wasted words. It is that the same sentence carries the clause about

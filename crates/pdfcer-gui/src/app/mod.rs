@@ -959,6 +959,9 @@ impl PdfcerApp {
             dock,
         } = startup;
 
+        // ★★★ THE RIBBON TAKES THE RESTORED MODE, and until 2026-09-06 it did
+        // not — so *"open in the mode you were last in"* had been dead since
+        // the day it shipped.
         //
         // `RibbonState` was set to the manifest's **first** mode a few dozen
         // lines above, because an unset mode makes the shell show every tab.
@@ -980,6 +983,14 @@ impl PdfcerApp {
         // binary off screen against a `layout.ron` holding `mode: Some(
         // "review")`, twice, once on a profile written fresh for the purpose.
         //
+        // ★ Why this is the operator's defect and not a tidy-up. `modes/mod.rs`
+        // `assemble` carries the whole argument for remembering the mode, from
+        // his own report of 2026-08-26 — *"I can't figure out how to click on
+        // objects to edit them"* — and ends: *"Someone who spent an afternoon
+        // in Edit came back the next morning to a program that had silently
+        // forgotten."* That is precisely what has been happening. It bites
+        // markup hardest, because markup is authored in **Review** and the
+        // program reopened in Read every time.
         //
         // The `or_else` keeps the original behaviour for the three declines
         // `assemble` documents — no stored id, an id the manifest no longer

@@ -89,6 +89,9 @@ fn main() {
 
 /// **Stamp the executable with when it was built and what it was built from.**
 ///
+/// The operator asked, 2026-08-18, for the About box to name *"the date and
+/// time of the build … and the date and time of the builds of the used pdfcer
+/// and iccce"*.
 ///
 /// # ★ Why the engine's stamp is a COMMIT time and not a build time
 ///

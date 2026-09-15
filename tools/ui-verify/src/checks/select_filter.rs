@@ -3,6 +3,12 @@
 //!
 //! # ★★ Why the obvious check would have been worthless
 //!
+//! The tempting assertion is *"clicking Select opens a popup"*. That is already
+//! a unit test, and — more to the point — **it is the claim that is also true of
+//! every inert control.** This project shipped a checkbox wired to a field
+//! nothing read, and on 2026-08-21 it shipped this very popup with a double
+//! toggle that made the button do nothing at all, under 1,628 passing tests, 17
+//! green gates and a smoke launch that confirmed the button's published rect.
 //!
 //! So the claim worth driving is the one an operator would make: **switching a
 //! class off changes what the next click on the same pixel selects.** Nothing

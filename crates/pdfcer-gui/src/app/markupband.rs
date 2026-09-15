@@ -1,6 +1,8 @@
 //! # `app::markupband` — the five Format ▸ Markup controls the ribbon cannot
 //! draw itself
 //!
+//! `RIBBON_IA.md` §5.8's *Markup annotation* row, and the operator's ask of
+//! 2026-09-06: *"getting full editing working for the Markup tools."*
 //!
 //! ## What this module is
 //!
@@ -208,6 +210,15 @@
 //! `pub(crate)` would have been an edit to another author's file to save
 //! twenty lines.
 //!
+//! ⚠ **Corrected 2026-09-06.** This paragraph used to end: *"The two are
+//! allowed to differ, and one of them does — this one also reads `/LE` and the
+//! interior, which the panel offers no control for."* That was true when it was
+//! written and stopped being true the same day: `panels::properties::markup`
+//! gained `fill_row` and `endings_row` in the session that added this band, so
+//! **both surfaces now read all five terms**. The permission still stands — the
+//! two readers are allowed to differ — but the example of a difference is gone,
+//! and a header that keeps a stale example teaches the next reader a fact about
+//! the panel that is no longer so.
 //!
 //! ⚠ What is **not** duplicated is the derivation that matters: both read
 //! through `annot_author::spec_from_dict`, the author's view, which is what
@@ -318,9 +329,20 @@ pub enum MarkupEdit {
     /// `/LE` — the pair of line endings, or the **removal of the key**.
     /// `/Line` only.
     ///
+    /// ★★ A `StyleEdit` since 2026-09-06, and the two arms are two different
+    /// files that draw the same line: `Set` writes the array — including
+    /// `Set((None, None))`, which is *"no arrowheads"* stated explicitly — and
+    /// `Clear` removes `/LE` altogether, so the mark goes back out the way it
+    /// came in. See this module's header for why the second is offered as an
+    /// action rather than as a fifth position in the chooser.
     Endings(StyleEdit<(LineEnding, LineEnding)>),
     /// ★★★ `/BS` `/S` + `/D` — the **line style**: dashed, or solid.
     ///
+    /// `RIBBON_IA.md` §5.8's eighth control, and the only one of the eight that
+    /// had *"no engine verb at all"* until the afternoon of 2026-09-06.
+    /// `MarkupStyle::dash` (`pdfcer-core` `edit.rs:4422`) is that verb, and its
+    /// two arms are the two things this chooser can mean: `Set(dash)` makes the
+    /// border dashed with that pattern, `Clear` makes it solid.
     ///
     /// ★★ **The third arm is `None`, and it is what NOT touching the control
     /// does.** A restyle that does not mention `dash` preserves whatever the

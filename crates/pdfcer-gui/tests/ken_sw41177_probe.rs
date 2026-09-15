@@ -809,6 +809,16 @@ fn measure_page(page: usize) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// 2026-09-09 — two more probes, for two of the operator's four reports that
+// morning: *"we're back to the apply redactions box that just tells me we
+// can't do it"* and *"some text in sw41177 still isn't editable"*. Both are
+// measured against HIS files (three of them, staged under
+// `target/scratch/ken/`), headlessly, with the engine at the revision
+// `Cargo.lock` pins — which is the only way to know whether a fix the engine
+// shipped hours ago reaches his drawing or not.
+// ---------------------------------------------------------------------------
+
 const HIS_FILES: [&str; 3] = [
     "target/scratch/ken/SW41177.pdf",
     "target/scratch/ken/SW41177 INSTALLATION.pdf",
@@ -1199,6 +1209,11 @@ fn how_many_content_streams_does_each_of_his_sheets_carry() {
 /// ⚠⚠ **Step 1 is no longer a WORKAROUND, and the paragraph that said it was
 /// has been removed rather than softened.**
 ///
+/// What it said: the previous probe found reflow refusing on a freshly opened
+/// file, `edit_text`'s own report disclosed that it *"collapsed 7 additional
+/// /Contents stream(s) into the first"*, and that collapse happened to satisfy
+/// the guard — so the feature was *"unlocked by using a different feature
+/// first, and nothing tells him that"*. True on 2026-09-14 in the morning.
 ///
 /// `G015` deleted the guard the same day (engine `025d703d`). Reflow no longer
 /// needs a prior edit, and a workaround kept past its cause is how a shell

@@ -455,6 +455,9 @@ pub(super) fn draw(
 
     // ★★★ **THE SHAPE ITSELF, FOLLOWING THE POINTER** — O63.
     //
+    // **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me the
+    // shape change of the line, it just had a perimeter box around it … there
+    // isn't a real preview like there is in inkscape."*
     //
     // Drawn ABOVE the bounding ghost and below the snap marker. The order is the
     // reading order of the three: the outline says *which* thing is moving, the
@@ -647,6 +650,14 @@ pub(super) fn draw(
     // progress the preview IS the cursor, and it describes what the next click
     // will commit.
     //
+    // ★ It takes the frame's `map`, and the comment here used to say it did not
+    // need one *"because it converts through the renderer's own page
+    // transform"*. That was the defect: the renderer's transform at scale 1.0
+    // lands in **canvas** space — page top-left origin, no zoom — and the
+    // painter speaks screen, so every mark the measure preview drew was offset
+    // by wherever the page sat in the window and drawn at 100 % whatever the
+    // magnification. See `measure::page_to_screen`, which is now the one place
+    // both hops happen.
     if let Some(kind) = active_tool.measure_kind() {
         measure::preview(
             ui,
@@ -730,6 +741,12 @@ fn draw_anchors(
     // the selection at the Part rung the moment a shape is clicked.
     //
     //
+    // The command was registered, drawn and inert for the life of the project
+    // behind a reason that said *"there is nothing for it to show"*. That was
+    // true on 2026-08-15 and stopped being true four days later, when the
+    // multi-node move landed with `overlay::draw_anchors` and with the
+    // enumeration this function already calls. Re-derived on 2026-08-28 as one
+    // of six stale blockers in eleven.
     //
     // ★★ What it gates and what it deliberately does NOT. It gates the draw at
     // its existing scope — the entered object, at the Part rung or the Node
@@ -767,6 +784,12 @@ fn draw_anchors(
     // These answer the question before it — *did the enumeration get far enough
     // to have a count at all* — and without them the two are the same silence.
     //
+    // The four driven checks that read anchors (`tool_row`'s two, `multi_node`,
+    // `bezier_handle`) all begin by asking whether `canvas-anchors` appeared,
+    // and every one of them has to guess when it did not. On the sweep of
+    // 2026-08-29 two guessed *"the program is broken"* and two guessed *"the
+    // aim is wrong"*, on the same fixture at the same `--doc-point`. A reason
+    // token settles that in the trace instead of in four checks' prose:
     //
     // | reason | what it means | what it is about |
     // |---|---|---|

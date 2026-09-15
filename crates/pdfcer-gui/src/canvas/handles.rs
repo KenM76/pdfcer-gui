@@ -435,6 +435,14 @@ pub fn rotate_rect_in(frame: GripFrame) -> Rect {
 ///
 /// # ★★★ The defect this closes, in the operator's own words
 ///
+/// He asked, on 2026-09-04: *"zoom in on the atoms of the banana pdf file and
+/// see what happens when you try to draw a box around a molecule and move it,
+/// or select the ion and move it."* The answer, measured by driving the binary
+/// on that fixture: **an object smaller than 12 pt on screen could not be moved
+/// at all.** Every press landed in a grip, the drag was routed to the resize
+/// machinery, and the engine refused it by name — `resize-declined
+/// reason=Degenerate`. The banana's cells are 0.85 pt across, and the fixture's
+/// own text says reading their labels takes about 12,000 %.
 ///
 /// Two constants, each correct in isolation, made it:
 ///
@@ -740,6 +748,14 @@ pub fn grip_rects_in(frame: GripFrame) -> Vec<(Grip, Rect)> {
 
     // Only ONE condition per mid-edge grip now, and it is about piling.
     //
+    // There used to be two. The second — *"does the perpendicular axis have a
+    // body left after this grip eats 6 pt of it?"* — was the 2026-09-04 fix for
+    // a 160 × 20 pt form field whose centre sat inside its own North grip. It is
+    // gone because [`grip_bounds`] now makes it **unfalsifiable**: the pushed box
+    // always has a body strip, so the condition could never be false and a
+    // condition that cannot fail is not a guard, it is decoration that reads
+    // like one. The `debug_assert` above is what took over its job, and it names
+    // the invariant instead of silently depending on it.
     //
     // ★ The piling condition stays, and stays measured against the PUSHED box:
     // whether a mid-edge grip lands on top of its corner neighbours is a
@@ -816,6 +832,12 @@ pub struct GripSet {
     /// rotation to the next kind that gains a resize verb without anybody
     /// deciding.
     ///
+    /// ★★ That caution paid on the day it was written. Until 2026-08-28 this
+    /// field's doc said *"never true without `resize` today"* — and
+    /// [`GripSet::rotate_only`] now exists, because a ce dimension turns and
+    /// does not scale. A struct that had collapsed the two would have had to be
+    /// un-collapsed to ship that, and the intervening builds would have offered
+    /// eight scale grips around a dimension whose extent is its measurement.
     pub rotate: bool,
 }
 
@@ -855,6 +877,9 @@ impl GripSet {
     /// would be the *"visible control, silently inert"* failure wearing the
     /// costume of a fix.
     ///
+    /// ★ Until 2026-08-28 this said *"an annotation or a form field's box"*.
+    /// The annotation moved to [`Self::all`] when `rotate_annotation` shipped;
+    /// the widget stayed, and it is the only member left.
     pub const fn scale_only() -> Self {
         Self {
             resize: true,

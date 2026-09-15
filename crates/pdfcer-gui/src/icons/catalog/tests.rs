@@ -29,7 +29,47 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     //
     //
     //
+    // So the paragraphs no longer carry a number. `from_key` now says
+    // "one comparison per catalogue entry" and `super::cache` says "one
+    // entry per icon per weight", both of which are true at every size
+    // the set will ever be. THIS assertion is the only figure left, and it
+    // is in a test, where drift fails the build instead of misinforming a
+    // reader. Prefer that shape for any future count.
+    // ★ 137 → 139 later on 2026-09-04: `bold` and `italic`. Not new capability
+    // and not a gap being filled — a **correction**. `format.bold` and
+    // `format.italic` had been registered bare since 2026-08-27 on the ground
+    // that *"Word draws `B` and `I` as glyphs; this build has no such art"*,
+    // which is a statement about SUPPLY, and the operator's standing ruling
+    // (2026-08-06, quoted in `Icon::Back`) is that a missing glyph is AUTHORED.
+    // He asked for this pair by name. The two assets carry the account.
+    // ★ 139 → 140 on 2026-09-05: `line-weights`. O137 — the operator asked for
+    // the deleted "show all lines without their thickness" control by name, the
+    // engine shipped the field it had been missing (`Pass 254.0`), and the
+    // glyph was AUTHORED for it. The same correction shape as `bold`/`italic`
+    // the day before: the absence was about supply, and supply is ours.
+    // ★ 140 → 141 on 2026-09-06: `sign`. The signing capability arrived and
+    // the glyph was AUTHORED for it, on the same 2026-08-06 ruling — a missing
+    // glyph is drawn, not worked around. `sign.svg` carries the constraint that
+    // decided every line of it: NOT a seal, badge, shield or checkmark, because
+    // every one of those reads as VALIDATED and this control makes a signature
+    // rather than judging one.
     //
+    // ★★ It does NOT count as a build-dependent number even though the COMMAND
+    // that names it is behind a Cargo feature. `Icon::ALL` is the art in this
+    // binary, and art is not gated: the asset is a `include_str!` constant with
+    // no dependency on `pdfcer-core`, so a `--no-default-features` build ships
+    // the same 141 glyphs and simply has no button that names one of them. That
+    // is deliberate — gating the art would put a `#[cfg]` in `icons`, which is
+    // a second place that knows about a capability and is exactly what
+    // `SHELL_FRAMEWORK.md` §5b forbids.
+    // ★ 141 → 142 on 2026-09-11: `off-page`, AUTHORED for `edit.offpage` —
+    // the census that answers *"how do I view and edit objects that are off of
+    // the page?"*. The reuse it declined was `redact`, and the reason is the
+    // one the asset's own comment argues at length: the three redaction glyphs
+    // carry a filled bar that means *content is being destroyed*, and this
+    // control destroys nothing until a separate, second press. Borrowing it
+    // would have put the strongest cue in the set on the one command in the
+    // group that does not earn it.
     assert_eq!(
         Icon::ALL.len(),
         142,

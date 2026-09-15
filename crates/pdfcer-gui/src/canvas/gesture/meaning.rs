@@ -266,6 +266,16 @@ pub enum DragKind {
     /// [`GestureOutcome::TextSelect`]. There is no per-drag choice to sample at
     /// the press — no kind, no intent, no grip.
     ///
+    /// ★ That emptiness used to carry an extra claim: *"which is itself the
+    /// reason the gate for it is a mode question rather than an armed-tool one."*
+    /// The inference was wrong and is corrected rather than deleted, because it
+    /// is a tempting one. Carrying no per-drag state says nothing about **who
+    /// decides** the drag happens; it says only that the deciding does not have
+    /// to be *remembered*. Since 2026-08-14 the gate is both — an armed
+    /// [`CanvasTool::Text`], or the pre-existing mode rule — and this variant
+    /// still carries nothing, because
+    /// [`crate::canvas::tool::CanvasTool::Text`] itself carries nothing either.
+    /// See [`crate::canvas::textsel`]'s header §3.
     TextSelect,
     /// The markup tool was armed: **draw**, in the carried shape.
     ///
@@ -667,6 +677,11 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // ★★ A FORM tool, and it is placed BOTH ways at once — which is why it
     // needs no `is_dragged` predicate of its own.
     //
+    // The operator, 2026-08-26: *"when I click one I should be able to click on
+    // the canvas to place the position or drag a box for size"*. Both, for every
+    // kind, and the click is not a degenerate drag that happens to be tolerated
+    // — it is the primary gesture for a check box, whose conventional size is
+    // 14 pt square and which nobody wants to drag out by hand.
     //
     // ★ It sits ABOVE the text-annotation rung rather than below, and the
     // ordering is currently unobservable: the two tools cannot both be armed,
@@ -726,6 +741,8 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     }
     if tool.text_edit_kind().is_some() {
         return PressMeaning {
+            // ★★★ A DRAG WITH THE TEXT TOOL DRAWS A BOX TO TYPE IN — the
+            // operator, 2026-08-21: *"I should be able to make it multi line."*
             //
             // It has to be a drag, and the reason is the file format rather
             // than a preference: a PDF has no paragraph, so each visual line is
@@ -1037,6 +1054,16 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         // ★★ `is_resize()` rather than "not Move", enumerated for that same
         // reason. `Grip::Rotate` is not a resize and must not fall in here.
         //
+        // ⚠ **The reason given here was stale and is corrected 2026-09-05.** It
+        // said *"annotations are offered no rotate handle (`GripSet::scale_only`),
+        // so it cannot arrive"* — false since `rotate_annotation` shipped on
+        // Pass 155.0: `pressing::grabbable` hands a markup `GripSet::all()`,
+        // and a rotate handle is exactly what it draws. What actually keeps
+        // `Rotate` out of this arm is the **rotate arm above**, which claims
+        // every `grip == Some(Grip::Rotate)` its capability allows, plus the
+        // positive `is_resize()` test here — which is why matching on the
+        // property rather than on "not Move" was right for a reason better than
+        // the one written down.
         //
         // ★ `markup_grip` and `widget_grip` are `is_resize()`-gated at their
         // source (`canvas::pressing`), so a rotate press cannot enter this arm

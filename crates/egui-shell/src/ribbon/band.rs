@@ -144,6 +144,12 @@ use super::sizing;
 /// it rather than as a line of its own. The salvage source used the same
 /// constant for the same reason.
 ///
+/// ★ **2 → 3 on 2026-09-04**, from `mockups/pdfcer-shell.html`'s
+/// `.grp .cap { padding: 3px 0 5px }` — the first figure. One point, and it
+/// is here rather than left alone because the operator's instruction was
+/// *"exactly like that including sizing"* and because the caption's font
+/// went up two points in the same pass: a 9 pt caption 2 pt below its row
+/// and an 11 pt caption 2 pt below its row are not the same optical gap.
 pub(crate) const CAPTION_GAP: f32 = 3.0;
 
 /// Clear space between the band's captions and whatever the application puts
@@ -976,6 +982,13 @@ fn measure_group_rows(
         max_rows,
         plan::GROUP_WRAP_WIDTH,
         //
+        // It read `group.preferred_rows().map(|rows| rows as usize)`, with the
+        // note *"`None` is every group that has not asked, which is almost all
+        // of them."* `None` means [`plan::wrap_group`] keeps its
+        // *"it fits on one row, so leave it"* short-circuit, and on 2026-09-04
+        // the band's row budget went to three rows without this call site
+        // moving. The result, **measured off screen at 1400 x 900 on the File
+        // tab from the release binary's own `ribbon.item.*` trace**:
         //
         // ```text
         // file.file      x=8..401   (393 pt)  items=4  rows=1  tops=[41.0]
@@ -984,6 +997,16 @@ fn measure_group_rows(
         // file.export.collapsed                 <- collapsed, at 1400 px
         // ```
         //
+        // **Not one group used a second row.** Every band was 68 pt tall
+        // carrying a single 21.7 pt row of controls, `GROUP_WRAP_WIDTH` (440)
+        // was never tripped because no group is that wide on one row, and two
+        // groups — Recognise and Export — were collapsed into captioned buttons
+        // **with 126 pt of band still unused**. That is the operator's
+        // *"it looks like the edits to the ribbon got halfway done"*, and it is
+        // the half nothing had looked at: `RIBBON_IA.md`'s 2026-09-05 amendment
+        // argued the three-row change from the mockup's rectangles and this
+        // shell's theme metrics, and said so — *"the product's own rectangles
+        // were NOT captured"*.
         //
         // ⇒ A group now asks for the ceiling it is being planned against unless
         // its manifest asks for something else. `wrap_group` still returns the

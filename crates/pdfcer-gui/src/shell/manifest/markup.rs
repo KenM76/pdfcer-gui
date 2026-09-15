@@ -170,6 +170,14 @@ pub(super) fn tab() -> Tab {
             //
             // ## An amendment to `RIBBON_IA.md` §5.5, to be reflected back
             //
+            // §5.5 names five groups — Shapes, Text markup, Notes, Style,
+            // Comments — and this is a **sixth**. `RIBBON_IA.md` is a settled
+            // spec and the standing rule is to propose rather than improvise;
+            // the operator's directive of 2026-09-06 suspends that for this work
+            // by name (*"never ask — placement, wording and scope are yours"*),
+            // so the group is placed and the reasoning is recorded HERE for the
+            // doc edit to be made from. **Do not read the absence of a §5.5 row
+            // as this group being unplanned.**
             //
             // ## Why a group of its own rather than four rows in Style
             //

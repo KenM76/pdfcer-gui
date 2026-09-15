@@ -131,6 +131,10 @@ const BEYOND_RASTER_SLOT: &str = "strip-beyond-raster";
 impl OpenDoc {
     /// How long this document's zoom must stop changing before it is committed.
     ///
+    /// ★ **The operator's, as of 2026-08-17.** [`ZOOM_SETTLE`] was the whole
+    /// answer and is now only the *default* — `manifest::DIRECTED` carried this
+    /// as *"partial G — `ZOOM_SETTLE` is a compiled-in constant today"*, and
+    /// that was accurate: the control was missing, not the value.
     ///
     /// Read from the document's preferences **snapshot** rather than from the
     /// application, for the same reason its settings snapshot exists: this is a
@@ -219,6 +223,13 @@ impl OpenDoc {
     ///
     /// # ★★★ It is also where a raster refusal becomes a zoom CEILING — O186
     ///
+    /// The operator, 2026-09-12: *"zoom should stop at the limit and not end up
+    /// showing an error — the canvas will just stop zooming in and can still
+    /// function."* This function is the one place in the shell a render refusal
+    /// is absorbed, so it is necessarily the place that clause is executed: see
+    /// the `Err` arm's own commentary for the learn-and-pull-back, and
+    /// [`crate::render::ceiling`] for why the number can only come from a
+    /// refusal that has already happened.
     fn absorb_render(&mut self, ctx: &egui::Context, result: RenderOutcome) {
         match result {
             Ok(pixels) => {
@@ -906,6 +917,16 @@ impl PdfcerApp {
         // ★ …and an EDIT is a discrete change too, even though it moves no
         // field of the key.
         //
+        // The key answers "is this a picture of the right page, at the right
+        // scale, with the right annotation stance". It cannot answer "is it a
+        // picture of the right *revision*", because an edit changes none of
+        // those. That third term is `page_texture_epoch`, and adding it here is
+        // what lets `vector_edit` stop nulling the texture — which is what put
+        // a blank page on screen after every edit.
+        // ★★★ Per-page since 2026-08-31 (O74). The third term still answers
+        // "is it a picture of the right REVISION" — it is now the revision of
+        // *this page* rather than of the document, so an edit on sheet 3 no
+        // longer re-rasterises the canvas while it is showing sheet 7.
         let stale_edit = doc.page_texture_epoch != doc.page_epochs.get(doc.view.page_index);
         let stale_discrete =
             stale_edit || current.is_none_or(|k| k.discrete_inputs() != wanted.discrete_inputs());

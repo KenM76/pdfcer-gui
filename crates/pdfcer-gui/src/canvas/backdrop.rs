@@ -155,6 +155,13 @@ pub(super) fn paint(ui: &Ui, doc: &OpenDoc, page: usize, current: usize, rect: e
 ///
 /// ## ★★ …and adding it closed a hole in `covered` itself
 ///
+/// `covered` used to be computed as *"the backdrop's rect if there is a
+/// backdrop, else `paint_rect`"* — with no reference to whether there was a
+/// **texture**. `canvas::present` sets `paint_rect = rect` on the branch where
+/// there is no raster at all, so the state this module was built to detect —
+/// no backdrop, no texture, a state sentence on blank paper — reported
+/// `covered=1.000`. The instrument was blind to its own subject on the one
+/// path where nothing is drawn.
 ///
 /// ⇒ It is now derived from `sharp`, which is `0.000` when `textured` is false,
 /// so the blank case reads `covered=0.000` as the module header's measurement

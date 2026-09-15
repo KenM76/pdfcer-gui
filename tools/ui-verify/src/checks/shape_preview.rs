@@ -3,6 +3,10 @@
 //!
 //! # What this is about
 //!
+//! **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me the
+//! shape change of the line, it just had a perimeter box around it. this goes
+//! for anything I change right now. there isn't a real preview like there is in
+//! inkscape."*
 //!
 //! He was right, and it was a written convention rather than an oversight —
 //! `canvas/handledrag.rs` said *"a preview shows the cursor, the render shows

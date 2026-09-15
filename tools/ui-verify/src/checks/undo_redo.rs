@@ -448,6 +448,13 @@ fn click_qat(
 /// census it publishes there.
 ///
 ///
+/// Both files carried the same eight lines and therefore the same defect: the
+/// census was read with `Trace::last`, which searches the whole capture, so a
+/// panel that had been sent to the back of its dock and had **stopped tracing**
+/// kept answering with the count it published in the previous mode. On the
+/// driven sweep of 2026-09-05 that made this check and `save_copy_round_trip`
+/// fail in identical words against a panel that was working, and the sweep
+/// report read the duplication as corroboration: *"two independent witnesses"*.
 ///
 /// The reader now lives in [`crate::checks::comments_census`], once, and its
 /// header carries the whole finding. Nothing in this file reads the census

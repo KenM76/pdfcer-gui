@@ -8,6 +8,10 @@
 //! > **Every width and height is derived from the space OUTSIDE the scroll area
 //! > and from constants. Nothing is measured from inside it.**
 //!
+//! Breaking that rule is what produced the operator's report of 2026-09-03 —
+//! *"I have two scroll bars in the pop up window that won't go away no matter
+//! how"* — and it was broken in three different ways in succession, each of
+//! which read as obviously correct:
 //!
 //! 1. the content was forced to `ui.available_width()` measured **outside** the
 //!    scroll area, which is one scrollbar wider than the viewport the content
@@ -47,6 +51,11 @@ use crate::text::print as t;
 
 /// The **narrowest** the options column may be squeezed to, in egui points.
 ///
+/// A floor, not a width. It used to be a fixed 400 pt whose stated reason was
+/// that *"a fixed width is what gives the horizontal scrollbar something stable
+/// to measure"* — and that reasoning is what produced the scrollbar deadlock
+/// [`PrintDialog::body`] documents. The scrollbar does not need a stable number
+/// to measure; it needs to be told the truth about how wide the content is.
 ///
 /// Sized to hold the longest radio label in the three tabs without wrapping,
 /// which is what makes it a floor worth having: below this the options start
@@ -469,6 +478,13 @@ impl PrintDialog {
                     // ★★★ R9, AND IT IS THE WHOLE OF ASK 2's DESIGN: WHILE THE
                     // PREVIEW IS POPPED OUT, THIS COLUMN DRAWS NOTHING AT ALL.
                     //
+                    // Not a greyed rectangle. Not a *"the preview is in another
+                    // window"* placard holding the same 340 pt open. Not a
+                    // dotted outline where it used to be. The column and its
+                    // splitter are **absent**, and the options take every point
+                    // they were using — which is why [`Columns::split`] gives
+                    // `options` the whole content width in that case rather
+                    // than merely giving the preview a width of zero.
                     //
                     // A stub here would be the exact thing this project's
                     // no-placeholders rule exists to forbid: a surface that
@@ -564,6 +580,11 @@ impl PrintDialog {
     ///
     /// # ★ Why a real splitter and not a `ui.separator()`
     ///
+    /// Operator request, 2026-09-03: *"the preview should be adjustable
+    /// size."* The preview column was a hard-coded 340 pt, so widening the
+    /// dialog widened the empty space and left the sheet postage-stamp sized —
+    /// which is the wrong way round, because the preview is the reason the
+    /// dialog exists.
     ///
     /// # ★★ The affordance is a CURSOR, and nothing is drawn on the preview
     ///
@@ -654,6 +675,10 @@ impl PrintDialog {
     ///
     /// # ★★★ The label's count is corrected by what the preview has seen
     ///
+    /// Operator request O113, 2026-09-04. It used to be [`Job::clipped`] —
+    /// a geometric count of page boxes exceeding the printable rectangle —
+    /// which on a 1:1 CAD sheet read *"Print — 1 sheet will be clipped"* over
+    /// a preview showing nothing hatched and saying the overhang was blank.
     ///
     /// It is now the geometric count **minus the sheets the preview has
     /// examined and found blank**, with every sheet nobody has looked at still
@@ -699,6 +724,9 @@ impl PrintDialog {
             // this machine uses.
             // ★★★ THE OUTCOME IS DRAWN FIRST, AND THE ORDER IS THE BUG FIX.
             //
+            // Operator report, 2026-08-25: *"when I press print, instead of
+            // closing after printing it just keeps expanding its size in
+            // little steps to infinity."*
             //
             // It did, and the cause was this block sitting AFTER the button
             // block rather than before it. [`Host::buttons`] lays its pair out
@@ -776,6 +804,13 @@ impl PrintDialog {
                         .unwrap_or_else(|| t::commit().to_owned());
                     // ★★★ THREE ROUTES, NOT TWO — `OPERATOR_REQUESTS.md` **O185**.
                     //
+                    // Until 2026-09-14 the footer offered Print and Close, and
+                    // the operator's complaint was that neither said the thing
+                    // he meant: *"I set the printer up, close the window to go
+                    // check something, and it's all gone."* Keeping and
+                    // abandoning were sharing one button, so the button had to
+                    // pick one, and whichever it picked was wrong half the
+                    // time.
                     //
                     // Each arm below sets a [`super::Dismissal`] rather than a
                     // close flag. The reason is read once, at `show`'s single

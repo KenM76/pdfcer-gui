@@ -57,6 +57,10 @@ use super::{PdfcerApp, REGION_CENTRAL_PANEL, keyboard, modes, window};
 /// press nothing. `PDFCER_DIAG_VIEWPORT` already gives a real, laid-out,
 /// invisible window; this gives it something to do.
 ///
+/// It landed with `dialogs::host` on 2026-08-20 because that change had no
+/// other honest oracle: *"a dialog opened in its own OS window"* is a fact
+/// about a second viewport that no unit test can observe and no screenshot of
+/// the main window contains.
 ///
 /// # ★ It reaches the same choke point an operator's chord does
 ///
@@ -81,6 +85,13 @@ fn scripted_invoke() -> Option<String> {
     use std::sync::atomic::{AtomicUsize, Ordering};
     /// ★ How many of the listed commands have been rung.
     ///
+    /// Was an `AtomicBool` while the variable held one id. It became a counter
+    /// on 2026-08-26 for the reason in the header's *"one command and not a
+    /// script"* section, which is still the governing argument and is not
+    /// weakened by this: **a list of doorbells is not a grammar.** There is no
+    /// syntax to learn, no arguments, no conditionals and no state — the ids
+    /// are the same ids the registry already publishes, and each is dispatched
+    /// through the same `dispatch_command` a keystroke reaches.
     ///
     /// What forced it: **a capability can take two commands to reach.** Arming
     /// a form-field tool needs Edit mode first, because the arm declines
@@ -580,6 +591,11 @@ impl eframe::App for PdfcerApp {
         // operator would learn that the program accepts drops *sometimes*, which
         // is worse than never.
         //
+        // Nothing in this shell read that field at all until 2026-08-19. The
+        // operator's report — *"can't drag and drop a jpg file onto a new
+        // pdf"* — was entirely true, and it made a WORKING Insert-image button
+        // look broken, because both were tried in the same minute and only one
+        // of them told him anything.
         //
         //
         // `crate::app::filedrag` records the drop and the point it landed on,

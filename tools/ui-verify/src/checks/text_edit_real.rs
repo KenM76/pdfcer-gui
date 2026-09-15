@@ -4,6 +4,9 @@
 //!
 //! # Why this exists when two text checks already pass
 //!
+//! `text_edit_pins_an_aligned_tail` and `add_text_takes_real_keystrokes` both
+//! pass, and the operator's report on 2026-08-19 was *"text editing on canvas
+//! still doesn't work"* — twice, weeks apart.
 //!
 //! **Both of those checks drive a fixture this repository generated.**
 //! `tail-alignment.pdf` is 924 bytes with three lines of text placed by a
@@ -414,6 +417,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- 4b: ★★★ DID THE CLICK LAND ON TEXT AT ALL? THE AIM GUARD ------------
     //
     //
+    // The sweep hands every check `--pdf fixtures/a1-titleblock.pdf
+    // --doc-point 0,2000,320`. That fixture's page 1 carries fourteen text
+    // runs and EVERY ONE of them is at `x >= 1831.2, y <= 328.32`
+    // (`pdfcer extract-text --pages 1 --json`); the nearest to the aim is
+    // `DRAWING NO` at `x 2151.5-2186.5`. The point is a hundred and fifty
+    // points of blank title-block paper. The shell then did what
+    // `canvas::textedit::place` has done since 2026-08-19, at the operator's
+    // own request — *"How do I make new text when I click on the canvas and
+    // expect to edit there?"* — and turned the Edit draft into an Add draft:
     //
     // ```text
     // text-edit-became-add reason=no-run-under-the-click
@@ -552,6 +564,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ★★ A REFUSAL IS ASKED ABOUT FIRST, AND THE REASON IS WHY.
     //
+    // Until 2026-08-20 this check tested only for the ABSENCE of a commit line
+    // and, on finding none, reported *"THE COMMIT NEVER REACHED THE ENGINE."*
+    // On the operator's own drawing that sentence was **false**: the commit
+    // reached the engine perfectly and the engine REFUSED it —
     //
     //   edit-text-refused page=0 n=1
     //     detail=text to edit ("p") was not found in an editable run on the page
@@ -582,6 +598,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // back with twenty-one spaces in it — so the engine refuses **cleanly**,
     // which is the designed outcome and the safe one.
     //
+    // ⇒ On the sweep of 2026-08-29 this check met exactly that case and reported
+    // *"This is a `pdfcer-core` verdict and belongs in a request"*. It does not.
+    // Nothing in the trace said which path had been taken, so neither the check
+    // nor its reader could tell the two apart — `edit-text-pin` was added for
+    // this, and it answered `one_operator=false find_len=30` on the very first
+    // run.
     //
     // ★ Note the distinction the old note blurred: it said *"this point is on a
     // single-run line"*, and a **run** is not an **operator**. One run, two

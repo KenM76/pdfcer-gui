@@ -2,6 +2,11 @@
 //!
 //! ## The seam
 //!
+//! Split out of [`super`] on 2026-08-21 under R2, when the text box took that
+//! file past the 1,500-line ceiling. It is the seam the file already drew with
+//! its own banner — *"Starting a draft"* — and it is a real subject rather than
+//! a size-driven cut: everything here answers **where does a press put the
+//! caret**, and nothing here knows what typing does afterwards.
 //!
 //! ## The two gestures, and why they are two
 //!
@@ -11,6 +16,12 @@
 //! | **click** on bare page | [`Anchor::Origin`] | `add_text` — one single-line run at a point |
 //! | **drag** a rectangle | [`Anchor::Box`] | `add_text` boxed — a wrapped paragraph |
 //!
+//! ★★ The third arrived on 2026-08-21, on the operator's *"I should be able to
+//! make it multi line."* It has to be a drag, and the reason is the file format
+//! rather than a preference: **a PDF has no paragraph.** Each visual line is its
+//! own show operator at its own absolute position, so something must decide
+//! where the second line starts — a width to wrap against — and a width is a
+//! rectangle somebody draws.
 //!
 //! ## ★ What this module refuses, and why each refusal is a sentence
 //!
@@ -228,6 +239,7 @@ pub fn click(
 
 /// **Open a draft anchored to a dragged rectangle** — the multi-line entrance.
 ///
+/// The operator, 2026-08-21: *"I should be able to make it multi line."*
 ///
 /// # ★ The conversion is `markup::band::endpoints`, not a new one
 ///
@@ -319,6 +331,12 @@ pub fn begin_box(
 /// **Does `run` have no show operator of its own?** `Some(true)` /
 /// `Some(false)`, or `None` when the question could not be asked.
 ///
+/// A thin forward to [`crate::app::state::OpenDoc::run_has_no_anchor`], which
+/// owns the extraction and the cache. It is worth a named function here anyway:
+/// this is the one place in the shell that asks *"can pdfcer-core edit this
+/// run"*, so there is one line to change when the answer changes — which it
+/// did, on 2026-08-20, when form editing landed and this stopped being about
+/// forms at all.
 ///
 /// # Why the answer is cached one level down and not here
 ///
@@ -479,6 +497,10 @@ fn resolve_run(c: &Click<'_>) -> Result<Anchor, Refusal> {
     }
     // ★★★ **THE EDITABILITY CHECK, and it is the last thing before the caret.**
     //
+    // Added 2026-08-20 on the operator's *"Still no editing text on top of the
+    // canvas."* Every stage of this module worked; the commit reached
+    // `pdfcer-core` and was refused, **to the trace only**, so a caret took his
+    // keystrokes and discarded them in silence.
     //
     // The cause is one field this shell was not reading. `GlyphProvenance`
     // carries a byte span AND the name of the buffer that span indexes:

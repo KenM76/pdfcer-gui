@@ -503,6 +503,15 @@ impl DialogsState {
     /// to say something about it before the window opens, and the difference is
     /// worth stating because the two windows look alike.
     ///
+    /// Insert-pages reads its source because *"how many pages does it have?"*
+    /// is a question the window must answer and cannot ask the operator — a
+    /// dialog offering *"pages 1-N"* with no N is a control with nothing in it.
+    /// Nothing this window asks depends on the file's contents: the sheet, the
+    /// margin, the face, the size and the position are all decisions about the
+    /// *output*, and every fact about the *input* — how many pages it became,
+    /// what was split, what could not be written — is knowable only by running
+    /// the import, which `place_text` does after planning and refusing with
+    /// nothing created.
     ///
     /// ⇒ So the file is read exactly once, in the apply arm.
     /// `dialogs::import_text`'s header carries the same argument from the
@@ -668,6 +677,13 @@ impl DialogsState {
             return None;
         }
         //
+        // It read: with no folders configured, say *"pdfcer has no font folders,
+        // so it cannot embed anything."* True until 2026-08-28. Since the
+        // operator answered O47 with *"yes"*, pdfcer's own standard-14 faces
+        // answer when nothing of theirs can — so a document with a missing
+        // Helvetica and no folders at all now **opens the window** instead of
+        // declining, and the only thing a decline can mean is that there was
+        // nothing to do.
         //
         // ⇒ A decline message is a claim about why, and the reasons a program
         // declines change under it. This one would have kept telling operators

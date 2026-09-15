@@ -1,5 +1,11 @@
 //! # `sign` — putting the operator's own digital signature on a document
 //!
+//! The answer to the request this shell filed on **2026-09-03**: *"a document
+//! cannot be signed."* `pdfcer-core` answered it on 2026-09-05 with
+//! `pdfcer_core::sign` — 101 public items across `Pass 10.7` (PKCS#12 identity
+//! loading), `10.8` (the CAdES `SignedData`, PAdES B-B) and `10.9`
+//! (`EditSession::sign`) — whose own module header says it is *"the family the
+//! `pdfcer-gui` request of 2026-09-03 asked for."*
 //!
 //! The window is [`crate::dialogs::sign`]; this module is everything that can
 //! be decided **without a `Ui`** — what the document says about itself, what
@@ -88,6 +94,11 @@
 //!
 //! # 2c. ★★★ SIGNING INTO A BOX THE SENDER PLACED — the half that matters
 //!
+//! What shipped on 2026-09-06 signs by **creating** a signature field. That is
+//! the wrong half for this operator's ordinary day: a drawing goes out for
+//! approval, the sender places a *"sign here"* box on the title block, and it
+//! comes back needing a signature **in that box**. `Pass 10.13` is the other
+//! half, and it changes three things here.
 //!
 //! **1. The field is chosen, not created.** [`Standing::empty_fields`] lists
 //! every `/FT /Sig` field in the document that has no `/V` — read once, when the
@@ -781,6 +792,13 @@ pub enum IdentityFailure {
 /// nothing, the box is offered, and the copy on the control says what will be
 /// inside it before it is chosen.
 ///
+/// ★★ **What is inside it changed under this shell on 2026-09-06.** At the old
+/// pin the appearance was *"a thin frame only — no text"*, and this type's
+/// documentation and [`crate::text::sign::placement_note`] both said so. Engine
+/// `Pass 10.14` (`187fa09`, in the pin since `d6b998f`) **composes** the signer
+/// CN, the date, and the reason and location when given, in Helvetica, shrunk to
+/// fit, and refuses a rectangle too small for them by name
+/// (`SignApplyError::AppearanceOverflow`) before anything is staged. See §2b.
 ///
 /// ⇒ The default is still invisible, and the argument for that survives the
 /// correction intact but is now a **different** argument: not *"the box would be

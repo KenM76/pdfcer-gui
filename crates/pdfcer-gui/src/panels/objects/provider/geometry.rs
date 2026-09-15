@@ -1,5 +1,9 @@
 //! # `provider::geometry` — **the same questions, asked of either index space**
 //!
+//! `OPERATOR_REQUESTS.md` **O70**, 2026-09-01. Everything here answers *"what
+//! is inside this thing?"* for a [`TargetId`] rather than for a page
+//! paint-order index, which is what lets the Part and Node rungs be offered for
+//! something painted inside a form XObject.
 //!
 //! ## ★★ Why a module rather than more methods in [`super`]
 //!
@@ -46,6 +50,10 @@ impl ObjectModelProvider {
     // ★★★ THE SAME FOUR QUESTIONS, ASKED OF EITHER INDEX SPACE
     // ===================================================================
     //
+    // `OPERATOR_REQUESTS.md` O70, 2026-09-01. Everything below this line
+    // answers *"what is inside this thing?"* for a `TargetId` rather than for
+    // a page paint-order index, which is what lets the Part and Node rungs be
+    // offered for something painted inside a form XObject.
     //
     // ## Why they are additions rather than changed signatures
     //

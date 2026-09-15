@@ -79,6 +79,11 @@ const PASTEBOARD_FRACTION: f32 = 1.0;
 ///
 /// # The defect this exists for, measured rather than reasoned
 ///
+/// `OPERATOR_REQUESTS.md` **O186**: *"the canvas will just stop zooming in."*
+/// Driven on 2026-09-13 by
+/// `tools/ui-verify/src/checks/off_sheet.rs` against `fixtures/four-pages.pdf`
+/// — an A1 landscape sheet — in a 970 × 1158 pt canvas, Ctrl+wheeling **in**
+/// with the pointer 84 pt above the sheet's top edge:
 ///
 /// ```text
 /// notches 30     zoom   2320 %          canvas-pos at = 27073.000,-1158.688
@@ -164,6 +169,9 @@ fn sheet_sliver(viewport: f32) -> f32 {
 ///
 /// # ★★★ Why the overhang term exists, in the operator's own words
 ///
+/// O23, 2026-08-21: *"objects should still be reachable even if they are off
+/// the page."* Three weeks later, with the reach and the sight both shipped:
+/// *"how do I view and edit objects that are off of the page?"*
 ///
 ///
 /// # The rule, and why the half viewport
@@ -656,6 +664,17 @@ pub fn offset_holding_anchor_at(
 /// zero yields "the page is centred in the pasteboard", which is a statement
 /// about a page nobody is looking at.
 ///
+/// ★★★ **That lie was `OPERATOR_REQUESTS.md` O26e.** `CanvasFrame::offset` is
+/// the `offset_before` of the next zoom, so every frame spent at deep zoom
+/// recorded a fictitious "before". Nothing went wrong while the tier held —
+/// the deep branch does not consult it — but the moment a zoom-out crossed
+/// back, [`zoom_anchor_offset`] solved against it and put the page's **origin**
+/// under the pointer. Driven, 2026-08-24: descending through the boundary at
+/// 1,185,799 % moved the page point under the viewport centre from
+/// (791.93, 1152.34) to **(−0.02, −0.03)** — the corner of the sheet, with
+/// twelve million pixels of drawing off screen. The operator's report was
+/// *"zoom out … repositions the page so that it is off screen in the far
+/// bottom left corner … from around 2 million %"*.
 ///
 /// # The measurement
 ///

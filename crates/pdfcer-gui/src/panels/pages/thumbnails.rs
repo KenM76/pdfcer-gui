@@ -407,6 +407,16 @@ pub struct ThumbnailCache {
     /// The **pixels-per-point bits** everything above describes, or `None`
     /// before the first frame.
     ///
+    /// ★★★ **The edit epoch LEFT this key on 2026-08-31** —
+    /// `OPERATOR_REQUESTS.md` O74, the operator: *"all of the page previews
+    /// get re-rendered instead of just the one that is being changed."* It was
+    /// a **document-wide** counter used as the invalidation key for a cache
+    /// holding one entry **per page**, so an edit to sheet 12 threw away the
+    /// pictures of the other thirty-five. Measured on his own 36-sheet
+    /// SolidWorks set: twelve visible tiles, **666 ms of UI-thread work per
+    /// edit**, worst frame 282 ms — all of it between his click and its result.
+    /// The per-page answer now lives in [`Self::built_at`], compared against
+    /// [`crate::app::state::pageepoch::PageEpochs`].
     ///
     /// **The page index was never in it, and still is not.** A page change
     /// moves the highlight ring; it changes no picture, and dropping the cache

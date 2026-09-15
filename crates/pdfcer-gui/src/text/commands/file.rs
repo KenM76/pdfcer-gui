@@ -82,6 +82,8 @@ pub const fn file_export_text() -> CommandText {
 ///
 /// # ★★★ The half of the operator's ask that was missing for two days
 ///
+/// > *"also the engine can export PDFs as text. we should have export/import
+/// > for that."* — 2026-09-04
 ///
 ///
 /// # ★★ Why the label says *pages* and not *text*

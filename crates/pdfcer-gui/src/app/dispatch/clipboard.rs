@@ -4,9 +4,24 @@
 //! over **three kinds of operand**, and the whole subject of this module is the
 //! fork that decides which of them a keystroke is about.
 //!
+//! ★ Six now. `edit.copy_as_vector` joined on 2026-09-04 (the copy-OUT) and
+//! `edit.duplicate` on 2026-09-06 (`Ctrl+D`) — and the second of those is the
+//! one that stretches the module's name, because **it never touches the
+//! clipboard at all**. It is here because *"make another one of this"* is what
+//! an operator was doing with Copy-then-Paste before it existed, and because
+//! what it needs is this file's fork: which operand does the gesture mean?
+//! Its own function carries the argument for why it is a separate id from
+//! `edit.paste_duplicate`, which the name invites a reader to assume it is not.
 //!
 //! ## Why this is a module and not four match arms
 //!
+//! `super`'s file crossed R2's 1,500-line ceiling for the fourth time when
+//! `edit.paste_duplicate` arrived on 2026-08-29. It joins [`super::pages`],
+//! [`super::images`] and [`super::textcopy`] as the fourth application of the
+//! same seam, and it is the right seam independently of the line count: the
+//! three-way fork below is the *entire* logic here, and a reader trying to
+//! answer *"what does Ctrl+C do?"* should find it in one screen rather than
+//! interleaved with tool arming and zoom.
 //!
 //! ## ★★★ The fork, in priority order, and why each rung is where it is
 //!
@@ -29,6 +44,8 @@
 //!
 //! ## ★★ The two pastes are two commands, not one command with a modifier
 //!
+//! **Ken, 2026-08-29:** *"ctrl v for paste as new. ctrl shift v for paste as
+//! duplicate."* — `OPERATOR_REQUESTS.md` **O58**.
 //!
 //! They are separate ids because a command is the unit this shell can
 //! *register*, *bind*, *place on a ribbon*, *put in a context menu* and
@@ -106,6 +123,12 @@ pub fn handles(id: &str) -> bool {
             | "edit.copy_as_vector"
             | "edit.paste"
             | "edit.paste_duplicate"
+            // ★★ `edit.duplicate`, 2026-09-06 — and it is the one id here that
+            // never touches the clipboard. It is routed to this module anyway
+            // because *"make another one of this"* is what the operator was
+            // doing with Copy-then-Paste before it existed, and because the
+            // three-rung fork at the head of this file is the machinery it
+            // needs: which operand does the gesture mean?
             | "edit.duplicate"
     )
 }
@@ -467,6 +490,9 @@ fn paste(
 /// ★★★ **`edit.copy_as_vector`** — put the page, or the selection on it, on the
 /// operating system's clipboard as **editable geometry**.
 ///
+/// `OPERATOR_REQUESTS.md` **O120**, 2026-09-03: *"Also I'd like to be able to
+/// copy and paste anything to other software - like copy and paste vector
+/// graphics into word or inkscape for example if possible."*
 ///
 /// # ★★ Why this is a fifth id and not a modifier on `edit.copy`
 ///

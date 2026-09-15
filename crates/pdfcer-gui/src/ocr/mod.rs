@@ -325,6 +325,13 @@ pub struct Recognised {
     /// session as one undoable edit.**
     ///
     ///
+    /// `pdfcer_core::ocr::layer::add_ocr_layer` takes an immutable `&Document`
+    /// and hands back a complete file, which made recognition the one
+    /// capability in pdfcer that was not an *edit*. A shell holding an open
+    /// session could only offer *"here is a different file, somewhere else"*,
+    /// and the operator said what he thought of that on 2026-08-26: *"Why do I
+    /// have to save a copy instead of just go back into my pdf and save over
+    /// it?"*
     ///
     ///
     /// # ★★ And it deletes the unsaved-edits refusal, which no guard could fix
@@ -362,6 +369,9 @@ pub struct Recognised {
     pub words_recognised: usize,
     /// ★ **How many pages produced words**, across a multi-page run.
     ///
+    /// `1` for the single-page case this used to be the only shape of. Reported
+    /// so the dialog can say *"12 of 36 pages"* rather than a word count alone,
+    /// which on a long scan tells the operator nothing about coverage.
     pub pages_written: usize,
     /// How many pages were visited and produced nothing — blank sheets,
     /// photographs with no text, and pages skipped because they already had
@@ -538,6 +548,10 @@ pub struct Request {
     ///
     /// # Why this is a list
     ///
+    /// The operator, 2026-08-26: *"how do I OCR more than one page? Why does
+    /// the tool stop at one? […] Where is the option to select more than one
+    /// page? How did we end up with the most useless and un-userfriendly of
+    /// options for the OCR?"*
     ///
     /// It was a `usize`. Nothing in `pdfcer-core` required that — the engine's
     /// own `add_ocr_layer` takes one page at a time, but its output is a
@@ -717,6 +731,13 @@ pub(in crate::ocr) fn recognise(
     if pages.is_empty() {
         // ★★★ **WHICH nothing, and the distinction was found by driving.**
         //
+        // A full driven run on 2026-08-27 pointed this at the operator's own
+        // CAD sheet — every page of which already has text — and got
+        // `NothingRecognised`, which reads as *"the recogniser could not read
+        // your document"*. It had not looked at it. The remedy for the two is
+        // different: one is "there is nothing readable here", the other is
+        // "turn off the skip if you meant it", and only the second is
+        // actionable.
         //
         // `> 0` rather than `== request.pages.len()`: a run where some pages
         // were blank and some already had text still has the skip as its

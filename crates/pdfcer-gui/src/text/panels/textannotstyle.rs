@@ -29,6 +29,14 @@
 //! style struct — and it restyles a sticky note's icon and colour and a
 //! stamp's colour.
 //!
+//! ⇒ From that moment the sentence made a **false claim about two of the three
+//! subtypes it was shown for**, and false in the direction that matters: it
+//! told the operator a capability did not exist on the very day it did, over a
+//! row open since 2026-09-05 carrying his own *"check that these are fully
+//! editable while you are at it."* That is the `set_button_action` shape
+//! `check-verb-coverage.sh` exists because of — *"if your surface tells the
+//! operator that pdfcer never authors an action, it is now saying something
+//! untrue in the direction that matters."*
 //!
 //! ★ **The fix was not a reworded sentence. It was fewer marks reaching one.**
 //!
@@ -115,6 +123,14 @@ pub const fn markup_icon_foreign() -> &'static str {
 ///
 /// # ★★★ Why the name itself and not a category word
 ///
+/// This replaced *"Not one of these"* on 2026-09-07. That phrase was the
+/// honest answer while the name could not be carried: the engine's reader
+/// flattened an unmodelled `/Name` to `Note`, so the shell knew only that
+/// *something* had been lost and could not say what. `Pass 253.5` carries the
+/// bytes (`StickyIcon::Other`), so the panel can name it — and a chooser that
+/// says **"Sparkle"** tells the operator something a chooser saying **"Not one
+/// of these"** cannot: which of his notes it is, and that pdfcer is going to
+/// keep it.
 ///
 /// ★ Quoted, because it is a value out of his file rather than a word this
 /// program chose, and the quotes are what make a name like *Note 2* read as a

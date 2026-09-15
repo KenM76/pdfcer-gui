@@ -148,6 +148,19 @@ pub(super) fn band() -> Vec<Command> {
         // > lot of ideas are getting invented instead of just using the … most
         // > common method expected."*
         //
+        // He is right, and `view.tool_select` had been **deliberately absent** —
+        // the comment that used to sit here read *"There is deliberately no
+        // `view.tool_select` beside them"*, on the argument that Select is the
+        // default you return to rather than a thing you pick. That argument is
+        // sound and it produced an unusable surface: with no Select control
+        // there was no *row of tools*, so the Hand and the Text tool read as two
+        // unrelated toggles rather than as members of a set, and there was
+        // nowhere for a third and fourth to join. A tool palette is the most
+        // conventional object in this product class; not having one is the
+        // invention.
+        // ★★ **The object clipboard, 2026-08-19** — the operator's report:
+        // *"also the standard copy/paste and I didn't try cut so possibly that
+        // one too aren't implemented."* They were not.
         //
         //
         // `enabled_when("doc.pages")` rather than a selection condition: what is
@@ -329,7 +342,18 @@ pub(super) fn band() -> Vec<Command> {
         // ★★★ **`view.line_weights` — O137, and it is the one entry in this
         // file that was DELETED and is now back.**
         //
+        // Ken, 2026-09-05: *"awhile ago you told me you removed the button to
+        // show all lines without their thickness — thin lines or something like
+        // cad has. The button never worked but I do want that display
+        // option!"* Both halves of that are correct.
         //
+        // Its predecessor `view.thin_lines` was token **213**, was drawn on
+        // this tab, and was **inert**; it was unregistered on 2026-08-17 with
+        // the rest of the Render group because *"`RenderOptions` has neither a
+        // thin-lines nor an antialiasing field"*. That deletion was right —
+        // R8, and a control that does nothing is exactly the defect he
+        // reported. Treating it as closing the question was not: **a capability
+        // nobody can reach is not a capability nobody wants.**
         //
         // ★★ It may exist now **because the field exists now**:
         // `RenderOptions::stroke_display: StrokeDisplay { Actual, Hairline }`,
@@ -565,6 +589,22 @@ pub(super) fn band() -> Vec<Command> {
         // *temporarily* unavailable — which this is, exactly. Opening a second
         // document arms both, and the hover says what they would do.
         //
+        // They exist as commands rather than as bare keyboard handling because
+        // `R8` allows no other way for the shell to learn a capability is
+        // present: the chords in the manifest resolve against this registry,
+        // so a build without them would have Ctrl+Tab bound to nothing rather
+        // than bound to something that silently does nothing.
+        // ★★ **The chevron borrow ended 2026-09-04**, with art adopted from the
+        // outside review of 2026-09-03, and this is the borrow whose cost is
+        // easiest to state in one sentence: **"previous document" and "previous
+        // page" drew the same picture.** `chevron-left` and `chevron-right` are
+        // the PAGE navigation glyphs — the status bar's page stepper wears them,
+        // and they are documented on their variants as *"Previous page"* and
+        // *"Next page"* — so the two verbs an operator most needs to keep apart,
+        // move within this file and move to another file, were one tile each.
+        // Pressing the wrong one does not lose work, but it does lose your
+        // place, and the operator has no way to tell in advance which it will
+        // be.
         //
         // The borrow was also against a WRITTEN reservation rather than merely
         // against taste: `chevron-left.svg`'s own note keeps the bare

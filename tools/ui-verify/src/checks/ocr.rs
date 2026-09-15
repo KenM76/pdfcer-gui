@@ -8,6 +8,12 @@
 //! an environment seam, a file appeared where the harness asked, and the source
 //! was hashed before and after to prove it had not been overwritten.
 //!
+//! All of that existed because `ocr::layer::add_ocr_layer` took an immutable
+//! `&Document` and returned a complete PDF. Recognition was the one capability
+//! in pdfcer that was not an edit, so a shell holding an open session could only
+//! offer *"here is a different file, somewhere else"*. The operator's verdict,
+//! 2026-08-26: *"Why do I have to save a copy instead of just go back into my
+//! pdf and save over it?"*
 //!
 //!
 //! # What no unit test in this workspace observes
@@ -428,6 +434,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     // ★★★ **MAXIMIZE, and this line is a repair.**
     //
+    // Found on 2026-09-01 by writing `checks::ocr_progress` and watching it
+    // SKIP for a reason that turned out to apply to THIS check too: at the
+    // window's default width the `file` tab's **Recognise group collapses**,
+    // and a collapsed group declares `ribbon.group.file.recognise.collapsed`
+    // instead of `ribbon.item.file.ocr`. The harness then reports *"the
+    // application declared no `ribbon.item.file.ocr` region"* — which reads as
+    // the command having been removed, and is in fact the ribbon doing exactly
+    // what a ribbon is for.
     //
     // ★★ This check had therefore been reporting **SKIP** rather than PASS, and
     // a SKIP is not a failure, so nothing was red and nothing prompted a look.
@@ -546,6 +560,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- phase D: the layer reached the OPEN DOCUMENT -----------------------
     //
+    // ★★★ **This phase used to click a Save control.** Until 2026-08-27 the
+    // only way out of this dialog was Save-a-copy, because
+    // `ocr::layer::add_ocr_layer` took an immutable `&Document` and returned a
+    // whole PDF — there was nothing to put the layer *into*. The operator's
+    // objection was exactly that: *"Why do I have to save a copy instead of
+    // just go back into my pdf and save over it?"*
     //
     // `EditSession::add_ocr_layer` (engine Pass 135.0) made recognition an
     // edit. So the thing to assert is no longer *a file appeared where I asked*

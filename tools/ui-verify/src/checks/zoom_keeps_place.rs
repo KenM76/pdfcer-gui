@@ -70,6 +70,12 @@ const STAGE: usize = 8;
 ///
 /// # ★★ A CAP, not a count — the loop climbs until the zoom SATURATES
 ///
+/// The operator, 2026-08-22: *"can you test up to maximum zoom please?"* So the
+/// run does not stop at a chosen depth; it keeps rolling until a whole stage
+/// fails to increase the zoom, which is the application saying it has reached
+/// its ceiling. With the default maximum of 10¹² % that is a long climb — eight
+/// notches multiply the zoom by roughly five, so from a page-fit 76 % it takes
+/// about fifteen stages.
 ///
 /// ★ The cap exists only so that a build broken in the *other* direction — one
 /// that climbs by an epsilon for ever — ends the run instead of wedging the

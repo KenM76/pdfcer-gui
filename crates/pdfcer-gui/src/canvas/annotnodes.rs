@@ -142,6 +142,44 @@
 //! Corpus `ui-conventions/drag-moves.md`, answered row by row because the
 //! unanswered ones are the ones the operator finds.
 //!
+//! - **D1 live-preview** — the shape follows the pointer from the first frame,
+//!   drawn from [`preview_of`], which is the same point list the release
+//!   commits. ★ `from` and `at` arrive **already in canvas space** and are not
+//!   converted again; that double hop is the defect the operator reported on
+//!   2026-08-20 (*"moves at a different speed than my mouse movements"*) and
+//!   `dimdrag::inner` carries the post-mortem.
+//! - **D2 derived-from-commit** — [`edited`] returns the point list, and both
+//!   the preview and the action are built from that one `Vec`.
+//! - **D3 escape-cancels** — WAIVED, as for every drag here: the gesture
+//!   machine owns Escape and drops the drag before this module is reached.
+//!   Nothing is written until `Phase::Complete`.
+//! - **D4 one-undo-entry** — `reshape_annotation` is one `CommandKind`, two
+//!   objects (the dictionary and its `/N` stream), and `reshape_ink` is one
+//!   `CommandKind::ReshapeInk` the same way. One gesture pushes exactly one
+//!   action, so one gesture is one `Ctrl+Z`.
+//! - **D5 modifiers-constrain** — Shift locks the node to one axis, applied by
+//!   [`crate::canvas::vertexroute`] through
+//!   [`crate::canvas::constrain::reposition`], which filters the displacement
+//!   from the press so the grab point survives (D8).
+//! - **D6 snapping** — a node drag snaps, through the same
+//!   [`crate::canvas::measure::snap_point`] query, the same tolerance and the
+//!   same operator settings a measure pick uses. Alt suspends it. One function,
+//!   not two, is what stops a marker sitting away from the point it describes.
+//! - **D7 no-op-is-not-an-edit** — **GAP**, inherited deliberately: a
+//!   zero-travel release still raises the action, exactly as an annotation move
+//!   does, on the engine's own argument that *"a drag that returns to its start
+//!   should not make you special-case your own arithmetic"*.
+//! - **D8 grab-point** — the node moves by the pointer's **delta**, so whatever
+//!   part of the handle was grabbed stays under the finger. A snap overrides
+//!   it, for `dimdrag`'s stated reason: a corner three pixels off the thing it
+//!   snapped to is the worst of the three outcomes.
+//! - **D9 disclosure** — a reshape can drop properties the regenerated
+//!   appearance does not reproduce, and can leave a `/Measure` dictionary
+//!   stating a distance that is no longer true; an ink reshape can replace
+//!   another producer's smoothed stroke with pdfcer's straight segments. All
+//!   three are disclosed off-canvas by `app::actions::annots`; see
+//!   [`crate::text::markup::measure_stale`] and
+//!   [`crate::text::markup::ink_redrawn_straight`].
 
 use pdfcer_core::edit::{EditError, EditSession, InkEdit, VertexEdit};
 use pdfcer_core::object::ObjId;

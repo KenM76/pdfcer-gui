@@ -293,11 +293,19 @@ pub mod overlays;
 /// **Dropping pages onto the page view** — the caret between two sheets, and
 /// the release that inserts or reorders there.
 ///
+/// The operator's request of 2026-08-19: *"…or onto the canvas to add pages
+/// and insert them in between the pages we've dragged to"*. The drag itself
+/// lives in [`crate::pagedrag`], which is what lets a gesture that began in a
+/// panel — possibly in another document — end here.
 pub mod pagedrop;
 
 /// ★★★ **Reading a comment where the comment is** — the pop-up window a click
 /// on a note opens, and the tooltip a hover shows.
 ///
+/// The operator, 2026-09-05: *"I could add a yellow sticky note but even in
+/// read mode I don't think I could figure out how to read it."* He was right,
+/// and the measurement was worse than the report: the only route to a comment
+/// was the Comments panel, on the `markup` tab, which Read is not shown.
 ///
 /// It lives on the **canvas** rather than on the ribbon precisely so that it
 /// is mode-independent by construction — no future edit to a tab list can take
@@ -313,6 +321,12 @@ mod escape;
 /// ★★★ **Reaching an object that is off the page** — which of the canvas's
 /// two interactive rectangles owns this frame's gesture.
 ///
+/// O23's second half. The operator, 2026-09-10: *"how do I view and edit
+/// objects that are off of the page? we added this feature but I didn't see
+/// how to enable it."* There was nothing to enable: the pasteboard — the
+/// viewport of scrollable slack [`geometry::content_extent`] puts on every side
+/// of the strip — sensed hover and refused clicks, so a press out there never
+/// became a gesture and an object dragged past the sheet edge was unreachable.
 ///
 /// Its header carries the whole argument, including why this is a choice
 /// between two responses rather than one widened page rect, and the two

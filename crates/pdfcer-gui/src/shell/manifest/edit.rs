@@ -16,6 +16,8 @@
 //!
 //! # The `Editing on` master toggle is gone
 //!
+//! Operator decision, 2026-08-12: *"make it work the same way other
+//! programs do."*
 //!
 //! No mainstream editor has a global editing switch. Acrobat, Bluebeam,
 //! Word and Illustrator all work the same way: selection and Delete are

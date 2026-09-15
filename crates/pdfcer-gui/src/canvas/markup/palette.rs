@@ -132,6 +132,10 @@ pub const HIGHLIGHTER_ORANGE: [u8; 3] = [255, 98, 0];
 
 /// **Acrobat's underline** — `#1373E8`.
 ///
+/// Its own key, its own colour, and nothing else in the store shares it. This is
+/// the clearest single refutation of the *"one pen for all linework"* argument
+/// [`super::pen`] used to make: Adobe gives underline a colour that is not the
+/// shape pen's and not the strikeout's.
 pub const UNDERLINE_BLUE: [u8; 3] = [19, 115, 232];
 
 /// **Acrobat's strikeout** — `#F86464`, a light red/pink.

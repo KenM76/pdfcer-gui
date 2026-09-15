@@ -221,6 +221,10 @@ pub(super) fn band() -> Vec<Command> {
         // spaces. So the swept range is the operand, and the swept range is
         // what `selection.text` reports.
         //
+        // ★★★ **CORRECTED 2026-09-14 — the condition is now
+        // `selection.text_runs`, and the paragraph above is why it had to
+        // change.** `OPERATOR_REQUESTS.md` O198: *"That entire area is always
+        // greyed out in the menu."*
         //
         // Every sentence above is still true about the **operand**: the engine
         // wants runs, `selection.any` is a paint-order index, and no mapping
@@ -293,6 +297,23 @@ pub(super) fn band() -> Vec<Command> {
         // one of them was ever the operator's. Splitting them is the whole
         // content of this pass:
         //
+        // * *"this build has no such art"* is a statement about **supply**, and
+        //   the operator has ruled on supply — repeatedly, and by name here. The
+        //   standing ruling of 2026-08-06 is carried in `Icon::Back`'s doc
+        //   comment: a missing glyph is **AUTHORED**, not worked around, because
+        //   working around it *"spends the operator's affordance to protect the
+        //   font stack; an icon costs one asset and keeps both."* On 2026-09-04
+        //   he quoted it back at this very pair: *"if bold and italics have no
+        //   art in the set, why weren't they made automatically as I have
+        //   instructed to be done for anything that a glyph is missing for on
+        //   multiple occasions?"* So the supply half is **corrected**, and the
+        //   two commands below name `bold` and `italic`.
+        // * *"a machine-drawn substitute would make PROVENANCE.md false"* was
+        //   never a claim about supply and it is **untouched**. It is answered
+        //   the way the 2026-09-04 icon batch answered it for eleven other
+        //   refusals: the asking happened, and the art is drawn in the §3 style
+        //   contract with its ruling embedded, exactly as
+        //   `icons/assets/PROVENANCE.md` requires of every future asset.
         //
         //
         // ★ The general lesson, and it is the second time in three days this
@@ -335,6 +356,10 @@ pub(super) fn band() -> Vec<Command> {
             .enabled_when("selection.text_runs"),
         command("format.font_colour", t::format_font_colour(), 807)
             .enabled_when("selection.text_runs"),
+        // -------------------------------------------------------------------
+        // The Markup group — `RIBBON_IA.md` §5.8's "Markup annotation" row,
+        // registered 2026-09-06 on the operator's *"getting full editing
+        // working for the Markup tools."*
         //
         //
         // ★★ **All five are `enabled_when(MARKUP_RESTYLABLE)`, which is the

@@ -18,6 +18,11 @@
 //! toggles**, and the only remaining route is a chord that nothing on screen
 //! names.
 //!
+//! `app::window`'s header used to answer this with *"the tooltip on the control
+//! states the chord before the operator presses it"*. That reasoning is
+//! corrected in place there, and the short form is: a tooltip is a disclosure
+//! available to somebody who already knows where to point, and a bound chord
+//! can be pressed from memory or by accident having pointed at nothing.
 //!
 //! ## ★★ These sentences are CLAIM-BEARING, and that governs their shape
 //!

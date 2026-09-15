@@ -434,6 +434,11 @@ impl Session {
     ///
     /// # ★★★ The one caller, and why a panic is the MECHANISM there
     ///
+    /// [`TheRasterWallStopsTheZoomInsteadOfPaintingAnError`] drives the zoom
+    /// until the rasterizer gives out, because that is the only way to observe
+    /// the operator's fourth clause in O186 — *"zoom should stop at the limit
+    /// and not end up showing an error"*. Measured on 2026-09-12 against a
+    /// 5.7 MB dense vector drawing, the way the engine gives out is this:
     ///
     /// ```text
     /// thread '<unnamed>' (10320) panicked at tiny-skia-0.11.4/src/pipeline/lowp.rs:350:28:

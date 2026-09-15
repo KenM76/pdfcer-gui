@@ -1,6 +1,12 @@
 #![cfg(test)]
 //! # `dialogs::textannot_tests` — the sticky-note/text-box/stamp window, proved headlessly
 //!
+//! Split out of [`super::textannot`] on 2026-09-10, when operator request O172
+//! — *"add our own custom stamps and use them, preferrably exactly the same way
+//! acrobat does"* — took that file past R2's 1500-line ceiling. The seam is the
+//! one `dialogs::print::preview_tests` and `egui-shell`'s `dock/width_tests`
+//! already use in this workspace: **the module keeps the code, the sibling
+//! keeps the proof.**
 //!
 //! ## Why the tests were the right half to move
 //!
@@ -159,6 +165,14 @@ fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
 /// kind — the change would be invisible, the text box would grow a strip of
 /// empty window, and nothing here would say so.
 ///
+/// ⚠ **This test was renamed on 2026-09-10, and the old name is the
+/// lesson.** It was `only_the_sticky_notes_window_grew_for_its_chooser`,
+/// and it asserted `stamp.y == WINDOW_PTS.y` with the message *"the stamp
+/// has no chooser and must not have grown"*. That sentence was true when it
+/// was written and became false the moment the stamp got one. A test whose
+/// **name and message state a property the program no longer has** is worse
+/// than no test: it reads as a measurement, and the next person to grep for
+/// *"which kinds have choosers?"* finds an answer rather than a question.
 ///
 ///
 /// Until that day this test asserted `sticky.y > stamp.y`, with the reason

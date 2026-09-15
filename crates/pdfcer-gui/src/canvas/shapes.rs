@@ -4,6 +4,10 @@
 //!
 //! ## What this replaces, and the convention it overrules
 //!
+//! **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me the
+//! shape change of the line, it just had a perimeter box around it. this goes
+//! for anything I change right now. there isn't a real preview like there is in
+//! inkscape."*
 //!
 //! He is right, and it was **deliberate**. `canvas/handledrag.rs` states the
 //! rule this module exists to reverse:
@@ -131,6 +135,8 @@ pub struct ShapePreview {
     /// # ★★ The footprint, not the bounding box — and that is the whole
     /// difference between acceptable and not
     ///
+    /// **Ken, 2026-08-30:** *"yeah do both"*, accepting that erasing the old
+    /// position would take whatever was underneath with it.
     ///
     /// It takes much less than he agreed to. Because the shell has the real
     /// geometry, the erase is the object's **own outline** — stroked at its own
@@ -560,6 +566,12 @@ fn trace(preview: &ShapePreview, asked: usize) {
 ///
 /// # The report
 ///
+/// **Ken, 2026-09-12:** *"The live preview blue outlines that appear when we
+/// drag an object scale with zooming in and out of the page instead of being
+/// independent of zoom - at high zoom levels they end up being the width of the
+/// canvas. I think they keep the same size as the line widths they are moving
+/// and that is ok - but if we set the line width view to the one pixel width
+/// option the preview lines should also be affected by this setting."*
 ///
 /// Two rulings in one paragraph, and they are not the same ruling:
 ///

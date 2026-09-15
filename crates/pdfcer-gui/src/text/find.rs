@@ -336,6 +336,11 @@ pub fn wildcards_tooltip() -> &'static str {
 
 /// The zoom control's label.
 ///
+/// ★ **The operator named this control.** His words, 2026-09-09: *"add a
+/// checkbox option to our search bar called zoom — when I uncheck it just jump
+/// to the page and highlight the found item as before but don't change the
+/// zoom."* A request that carries a name is a request for that name, so the
+/// label is the word he used and the tooltip carries the explanation.
 ///
 /// Phrased as the thing the operator switches **on**, like its three siblings
 /// — see [`match_case`]. On is what this build has always done; off is the new

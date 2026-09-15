@@ -30,6 +30,13 @@
 //! ## ⚠ …and `surface=pasteboard` alone is not the assertion, for a measured
 //! reason
 //!
+//! `canvas::trace::surface` is emitted from the pointer's **position**, every
+//! frame, so `surface=pasteboard` appears whenever the pointer is off the sheet
+//! — *including on a build whose scroll content senses nothing but hover*. The
+//! first draft of this check asserted on exactly that, and when it was run
+//! against a deliberately falsified build (the `Sense` put back to `hover()`,
+//! 2026-09-10) it went red with a message beginning **"the `Sense` is right"**.
+//! It was not right; it was the one thing that had been broken.
 //!
 //! `pastegesture=true` is the field that cannot exist without a drag sense, so
 //! it is the field this check turns on. The general lesson, recorded because it
@@ -86,6 +93,13 @@
 //! dragged home — every one of which works whether or not a single pixel of
 //! square B was ever painted.
 //!
+//! Making it visible is the render half of part B and it has its own check,
+//! `off_page_visible`, which counts ink in a screenshot at square B's centre
+//! against a paper control 60 pt below it. Conflating the two would produce one
+//! check that cannot say which half broke — and they did break separately: the
+//! reach half shipped on 2026-09-10 with the raster still sized to the crop
+//! box, which is exactly the state the operator reported as *"I didn't see how
+//! to enable it"*.
 //!
 //! # Every way this reports SKIP
 //!
@@ -121,6 +135,13 @@ const RIBBON_MODE: &str = "edit";
 /// the DOCUMENT, so the geometry this check depends on no longer varies with
 /// the window size on the day.
 ///
+/// ★★★ `mode.edit` is named FIRST, and it is not decoration. Since
+/// 2026-09-11 the display of off-sheet content is a per-mode preference and
+/// **Read ships with it OFF** — the operator's request: *"by default, read
+/// doesn't show off page items, review and edit do show off page items."*
+/// This check's whole subject is off the sheet, so without an explicit mode it
+/// would run in whatever mode the shell opens in, find nothing, and report a
+/// defect that is a correctly-implemented setting.
 ///
 /// Edit rather than Review because that is the mode this check's gestures
 /// belong in anyway, and because a mode named explicitly cannot drift when a
@@ -336,6 +357,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★★ First: **did the pasteboard ever hold a GESTURE?** — not merely
     // "was the pasteboard chosen".
     //
+    // ⚠ MEASURED, 2026-09-10, and this check got it wrong on its first draft.
+    // `canvas::trace::surface` is emitted every frame from the pointer's
+    // POSITION, so `surface=pasteboard` appears whenever the pointer is off the
+    // sheet — **including on a build whose scroll content senses nothing but
+    // hover.** Asserting on that value alone produced, against a deliberately
+    // falsified build, a failure message reading *"the `Sense` is right"* when
+    // the `Sense` was the one thing that had been broken. A confident wrong
+    // attribution sends the next reader to the wrong file, which is worse than
+    // reporting nothing.
     //
     // `pastegesture=true` is the field a hover-only rectangle cannot produce,
     // because `Response::dragged()` is false forever without a drag sense. It

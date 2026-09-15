@@ -1,6 +1,10 @@
 //! # `panels::properties::formfield` — the properties of a form field clicked
 //! on the page
 //!
+//! **Operator request, 2026-08-26:** *"don't forget that when I click on an
+//! existing form field on the page it's properties should come up in our side
+//! pane for editing it's properties."* This is the side pane's half; the click
+//! is `crate::canvas::forms`'s.
 //!
 //! ## ★★★ What can be changed, what can only be read, and why the difference
 //! is disclosed rather than hidden

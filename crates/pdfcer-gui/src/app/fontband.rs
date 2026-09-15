@@ -194,6 +194,14 @@ pub(super) fn draw(
 /// extraction with provenance capture (392 ms on the operator's benchmark
 /// sheet), and it is what actually reaches `add_enabled_ui` eleven lines above.
 ///
+/// So `enabled=1 live=0` is **a control greyed while every condition in the
+/// shell says it should not be**, and there is no other line in the trace from
+/// which that state can be inferred: the rect report says the control drew, the
+/// condition report says the condition holds, and the control is grey. It is
+/// the precise shape of `OPERATOR_REQUESTS.md` O198 claim 3 — *"that entire
+/// area is always greyed out in the menu"* — reported about a build whose
+/// every condition test passes, and until 2026-09-14 nothing outside this
+/// process could see it.
 ///
 /// ★★ Emitted under [`egui_shell::ribbon::report::ENABLEMENT_EVENT`], the same
 /// event name the shell's own command controls use, so **one grep finds all

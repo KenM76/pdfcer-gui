@@ -881,6 +881,13 @@ fn deleting_a_page_from_a_nested_document_is_caught_at_the_save() {
 
     // ★★★ THE FIXTURE MUST BE NESTED, AND IT IS ASSERTED RATHER THAN NAMED.
     //
+    // Falsified 2026-09-05 by pointing this line at `fixtures/four-pages.pdf`
+    // — a flat tree. The delete then came out clean (on a flat tree the
+    // immediate parent IS the root, so the defect cannot occur), the `Ok` arm
+    // below printed *"pdfcer-core now decrements /Count on every ancestor"* —
+    // a false statement about a build carrying the defect in full — and the
+    // test PASSED. That is precisely the vacuous shape this whole piece of
+    // work exists to avoid, reached by editing one identifier.
     //
     // `depth` is the number of `/Pages` levels above a leaf. Anything below 3
     // cannot exhibit an ancestor-above-the-parent going stale, so the test

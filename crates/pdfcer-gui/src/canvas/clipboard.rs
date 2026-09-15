@@ -2,6 +2,8 @@
 //!
 //! ## What this closes
 //!
+//! The operator, 2026-08-19: *"also the standard copy/paste and I didn't try cut
+//! so possibly that one too aren't implemented."*
 //!
 //! They were not. `Ctrl+C` copied **text** — a swept range, through
 //! `canvas::textsel::clipboard` — and that was the whole of this shell's
@@ -12,9 +14,23 @@
 //!
 //! ## ★★ What is expressible, and what is not — measured, not assumed
 //!
+//! **This table was written 2026-08-19 and every "blocked" row in it has since
+//! expired. Corrected in place on 2026-09-05 rather than left standing beside
+//! its correction, per R5.** The 2026-08-19 reading — *"markup can be copied
+//! through `spec_from_dict`/`add_markup`, page content cannot be put back at
+//! all"* — was true when taken and is kept only in this sentence, because its
+//! shape is the lesson: **a capability claim about another crate is a dated
+//! citation with a shelf life measured in hours.**
 //!
 //!
 //!
+//! ★ **What the annotation row changed, in the operator's terms.** Until
+//! 2026-09-05 this module copied an annotation by reading a `MarkupSpec` out of
+//! its dictionary and authoring a *new* annotation from it — so the eight
+//! subtypes `pdfcer-core` models could be copied and **everything else could
+//! not**. A sticky note, a stamp, a text box, a link and a file attachment all
+//! answered `Ctrl+C` with *"that annotation is not one pdfcer authors."* A
+//! sticky note is the most-copied comment in a review workflow.
 //!
 //! ★★★ **And the lossless route turned out to be lossy in the other
 //! direction.** `copy_selection` carries a markup pdfcer *models* as a spec and
@@ -155,6 +171,9 @@ pub enum Clipped {
     /// ★★★ **A copied selection** — page content, annotations, or both, as one
     /// `ObjectClip`.
     ///
+    /// This variant is what the type's own docs predicted: *"the day page
+    /// content becomes pasteable this type is where that arrives."* `Pass 120.0`
+    /// shipped `ObjectClip` on 2026-08-20 and this is that day.
     ///
     ///
     /// The name was accurate while the only thing a clip could hold was a page
@@ -418,6 +437,11 @@ pub enum Refusal {
     NothingSelected,
     /// The engine refused to copy the selection.
     ///
+    /// ★★ **This variant was `ContentNotAnnotation` until 2026-08-20**, and it
+    /// said: *"`EditSession` has no verb that puts page content back, so a copy
+    /// would be offering a paste that could never happen."* True when it was
+    /// written, and `Pass 120.0` made it false — the operator had been asking
+    /// for cut/copy/paste of page content since the first week.
     ///
     /// What replaces it is the engine's own refusal, which is a genuinely
     /// different fact: a clip it could not assemble. Kept as one variant rather
@@ -446,6 +470,11 @@ pub enum Refusal {
     /// **The selected annotation is no longer on the page it names.**
     ///
     ///
+    /// It used to mean *"the dictionary would not yield a `MarkupSpec`"*, and
+    /// its sentence said so in the operator's terms: *"That annotation is not
+    /// one pdfcer authors — a link, a form field or an attachment — so there is
+    /// nothing for it to copy."* Every word was true of the re-authoring
+    /// clipboard.
     ///
     /// It is false now. A link copies. An attachment copies. A sticky note, a
     /// stamp and a text box copy, with their baked appearances — that is the
@@ -586,6 +615,12 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     //   does not make yet. That is the remaining half of the operator's item 3,
     //   named here rather than left as a silence.
     //
+    // Until then the marker is what makes the chord arrive and the in-memory
+    // clip is what is pasted, so a pdfcer→pdfcer paste is already lossless. What
+    // is missing is pdfcer→pdfcer **across two processes**.
+    // ★★★ **AND A PICTURE BESIDE IT, as of 2026-08-31** —
+    // `OPERATOR_REQUESTS.md` O71: *"so we can copy and paste them … outside of
+    // the pdfcergui."*
     //
     // The marker sentence and the bitmap go on in ONE clipboard transaction,
     // and that is not an optimisation. `EmptyClipboard` is per-open, so two

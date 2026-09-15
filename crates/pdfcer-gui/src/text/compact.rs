@@ -5,6 +5,9 @@
 //!
 //! ## ★★★ Why this command exists, and it is the operator's own request
 //!
+//! `OPERATOR_REQUESTS.md` **O48**, answered *"yes to all three"* on 2026-08-28.
+//! It was raised by this project rather than by him, from a limit found while
+//! wiring Remove-embedded-fonts:
 //!
 //!
 //! §7.5.6's update section is *appended*. Deleted objects get free
@@ -166,6 +169,15 @@ pub fn written(path: &str, before: u64, after: u64) -> String {
 
 /// The engine refused to rewrite this file.
 ///
+/// ★★ A real refusal with a named cause, not a fallback. `pdfcer-core` refuses
+/// a full rewrite by name — since `Pass 281.0` for a **hybrid file whose
+/// `/XRefStm` does not parse**, not for the whole hybrid class this line
+/// claimed until 2026-09-11 — and points at incremental as the supported
+/// path. `app::save`'s header states the rule this obeys:
+/// *"if a future change finds incremental genuinely impossible for some input,
+/// the honest response is to refuse and say so, not to fall back."* This is that
+/// rule read in the other direction, and quietly writing an incremental copy
+/// here would give the operator a file that is not what the command promised.
 #[must_use]
 pub fn refused(detail: &str) -> String {
     format!("pdfcer cannot rewrite this file: {detail}. Save a copy the ordinary way instead.")

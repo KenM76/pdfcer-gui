@@ -248,6 +248,21 @@ fn cannot_carry(subtypes: &[String]) -> String {
 ///
 /// # ★★ The two halves are different kinds of loss and are said differently
 ///
+/// * **`left_behind`** — annotations that will not be on the clipboard at all.
+///   The operator will notice, eventually, and this is what stops it being a
+///   mystery. Worded by [`cannot_carry`], reused rather than re-phrased.
+/// * **`thin`** — annotations that *will* paste, and will paste **without their
+///   author, date, note text and opacity**. This is the one nobody would ever
+///   report: the mark is on the page, it looks right, and what is missing lives
+///   in the pop-up. ★★ **Corrected 2026-09-05: it used to read *"a pop-up this
+///   shell does not draw"*, and that stopped being true the day
+///   `crate::canvas::notepopup` shipped** — which makes the loss *more*
+///   reportable, not less, because the operator can now open the pop-up and
+///   find it empty. The sentence is kept for the same reason it was written;
+///   only its false half is gone. It is `pdfcer-core`'s limit, not
+///   this shell's — `paste_clip_annotations` plants a modelled markup with
+///   `add_markup` rather than `add_markup_with` — and the sentence says so
+///   plainly, because an operator who believes it is their mistake will retry.
 ///
 /// # ★ Why it is not reachable today, said rather than implied
 ///
@@ -631,6 +646,9 @@ mod tests {
 
     /// The OS marker names comments as comments, and a mixed copy as both.
     ///
+    /// ★ `os_marker(0, 1)` was the case that did not exist before 2026-09-05
+    /// and is the one an operator now meets most: a comment copied and pasted
+    /// into an email says *"1 comment copied from pdfcer"*, not *"1 object"*.
     #[test]
     fn the_os_marker_counts_objects_and_comments_separately() {
         assert!(os_marker(0, 1).starts_with("1 comment copied"));

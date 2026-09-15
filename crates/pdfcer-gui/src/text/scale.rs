@@ -49,6 +49,12 @@ pub const fn intro() -> &'static str {
 
 /// Why the ratio path is what a cold-opened dialog offers.
 ///
+/// ★ **This string used to say the other path could not be armed at all**, and
+/// it was accurate until 2026-08-17: *"needs a reference line drawn on the
+/// page, which this build cannot arm yet."* That was exactly the gap the
+/// operator reported — *"still missing the feature where we set the scale by
+/// selecting two lines or points and defining what that distance
+/// represents"* — and the gesture exists now.
 ///
 /// Kept as a sentence rather than deleted, because a cold dialog really does
 /// have only one path that can produce a scale: no line is drawn yet. What

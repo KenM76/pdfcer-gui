@@ -10,6 +10,9 @@
 //! > the engine's documented default face. Unit-tested, **not driven**.
 //! > *Choosing what those three controls are is a decision, not an omission.*
 //!
+//! The decision is made here, and the operator's instruction of 2026-08-19 is
+//! why it is made now rather than deferred again: *"finish off phase 1 and
+//! phase 5. Get everything unblocked on phase 5 — no excuses."*
 //!
 //! Nothing in the engine was blocking it. `AddTextRequest` has carried `face`,
 //! `size` and `color` since it shipped, and `apply.rs`'s arm passed

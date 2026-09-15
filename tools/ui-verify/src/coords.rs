@@ -518,6 +518,13 @@ impl CanvasMapping {
     /// window = image_rect.min + canvas * zoom - scroll
     /// ```
     ///
+    /// ★ This doc comment used to state the first step inline, as
+    /// `canvas_x = doc.x; canvas_y = page_height - doc.y`, and called it *"the
+    /// whole conversion"*. That was true for every fixture in this repository
+    /// and false for the operator's `A-591.pdf`, whose `/Rotate` is 270 — see
+    /// [`PageFrame`] for what it cost. The arithmetic is deliberately no longer
+    /// restated here: a second copy of a conversion, in prose, is a second copy
+    /// to go stale, and this one did.
     ///
     /// # Errors
     ///

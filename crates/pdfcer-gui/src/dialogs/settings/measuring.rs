@@ -52,6 +52,10 @@ use crate::text::settings as t;
 /// usually exact, so a pair a hair off parallel is far more likely an exporter
 /// rounding artefact than a deliberate shallow taper.
 ///
+/// It exists as a setting because the operator asked for it on 2026-08-12 —
+/// *"We should have an option in our settings and allow the user to set the
+/// tolerance for nearly parallel lines"* — which is the standing ambiguity rule
+/// applied by the person it exists for.
 ///
 /// # NOT logarithmic, unlike the word-gap slider
 ///

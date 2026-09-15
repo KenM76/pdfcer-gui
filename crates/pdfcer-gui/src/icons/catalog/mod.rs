@@ -1108,6 +1108,11 @@ pub enum Icon {
     Permissions,
     /// Select everything on the page — `edit.select_all`.
     ///
+    /// A dashed marquee enclosing the pointer. ★★★ **This variant exists
+    /// because a refusal was mistaken for a ruling.** Its absence was argued in
+    /// prose by a build session on 2026-09-01, quoted in four places, and had
+    /// begun to be reported to the operator as settled. He corrected it on
+    /// 2026-09-04: *"I didn't refuse that."*
     ///
     /// ⇒ The lesson is kept beside the art rather than filed away: **a
     /// well-argued refusal written by whoever happened to be building that day

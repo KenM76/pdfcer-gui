@@ -34,6 +34,13 @@
 //!
 //! ## Why the arrangements themselves live in [`defaults`]
 //!
+//! `app/modes.rs` was one file until it reached 1,512 lines against the
+//! 1,500-line gate (R2). It was split rather than trimmed, for the reason
+//! the gate itself gives — *"the right response to this gate firing is to
+//! SPLIT THE MODULE, not to shrink the prose"* — and along the seam the file
+//! had already drawn between its own two halves. `app/mod.rs` has been split
+//! twice under the same rule, into [`crate::app::dispatch`] and
+//! [`crate::app::conditions`], and the pattern is deliberately the same one.
 //!
 //! The two halves answer two different questions:
 //!
@@ -589,6 +596,13 @@ fn adopt(layout: &mut DockLayout, default: &DockLayout, new: &[PanelId]) -> Vec<
 /// The shared tail of the two start-up paths.
 ///
 ///
+/// The operator, 2026-08-26, reporting the consequence rather than the cause:
+/// *"I can't figure out how to click on objects to edit them."* Part of that is
+/// an engine limitation and is filed as one — but the part nothing explained is
+/// that the program opened in **Read** on every launch, where a click on page
+/// content selects nothing at all, and no surface said so. Someone who spent an
+/// afternoon in Edit came back the next morning to a program that had silently
+/// forgotten.
 ///
 /// # The three ways this can decline, all of which land on the first mode
 ///

@@ -23,6 +23,11 @@
 //! | 4 | the apply arm resolves the author and calls the engine | partially |
 //! | 5 | the engine writes `/Contents` and the panel reads it back | yes, on both sides separately |
 //!
+//! Link 3 is the one that has burned this project repeatedly, most recently
+//! **on 2026-08-28 itself**: the O51 scale switches were written into an arm
+//! that never runs, compiled, read correctly, and drew nothing, with every unit
+//! test green. *"Nothing tested that the control is on screen."* This check is
+//! that test for this control.
 //!
 //! # What it does
 //!
@@ -422,6 +427,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(12);
     // ★★★ THE PRECONDITION IS READ FIRST, and the order is the whole point.
     //
+    // Until 2026-08-29 the `selected=1` assertion below stood AHEAD of this
+    // one, so a run in which the `V` never arrived — the case this SKIP exists
+    // to name, and one `scale_switch` has measured at zero arrivals in six —
+    // drew a second rectangle instead of selecting the first, reported
+    // `selected=0`, and went red saying *"the canvas selected the shape and the
+    // Comments panel did not find it"* about a canvas that had selected
+    // nothing. A guard placed after the assertion it guards is not a guard.
     if session.trace()?.events(SELECTED).count() == 0 {
         return Err(Error::new(format!(
             "the click on the shape produced no `{SELECTED}` line, so nothing is selected and a \

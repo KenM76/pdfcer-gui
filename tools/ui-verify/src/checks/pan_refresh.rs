@@ -68,6 +68,8 @@ const RENDER_EVENT: &str = "render-async-done";
 
 /// The worker's **inline** completion line — the other half of the same fact.
 ///
+/// ★★★ Added 2026-08-28, after this check reported *"NO RENDER WAS REQUESTED"*
+/// against a build that had spawned and completed **nineteen** of them.
 ///
 /// `render::worker` has two completion paths and takes whichever is cheaper: a
 /// raster that finishes fast enough is done **inline**, on the frame that asked

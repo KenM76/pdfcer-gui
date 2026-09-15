@@ -483,6 +483,8 @@ pub enum Refusal {
 /// owns a sentence or the build fails.
 ///
 ///
+/// This comment used to end *"and turns a new engine variant into a **compile
+/// error here** rather than a silent fall-through to a catch-all."*
 ///
 /// **That was false the day it was written, and it cannot be made true.**
 /// `EncryptError` is `#[non_exhaustive]`, so [`From`] below is *required* to
@@ -491,6 +493,14 @@ pub enum Refusal {
 /// exhaustiveness is real on the near side of the mirror and imaginary on the
 /// far side, and the sentence claimed the far side.
 ///
+/// ⇒ It was caught by `check-engine-api-drift`, not by a reader:
+/// `EncryptError::RedactionPending` shipped 2026-09-05 **in answer to this
+/// shell's own request**, fell into the wildcard for three days, and delivered
+/// the engine's implementer-voiced message — naming `save_applying_redaction`
+/// and `cancel_pending_redaction` — into a draughtsman's dialog. The gate held
+/// it as a written exemption ending *"DELETE THIS LINE the day the arm is
+/// added"*; the arm is added, the line is deleted, and this paragraph is what
+/// the exemption was standing in for.
 ///
 /// ★★★ **The same shape bit twice in one evening, in unrelated code.** Hours
 /// earlier, `app::actions::textstyle::reflow_refusal`'s wildcard was about to

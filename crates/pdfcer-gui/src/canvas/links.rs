@@ -1,6 +1,7 @@
 //! # `canvas::links` — **following a `/Link`, which this program could not do
 //! at all until now**
 //!
+//! Operator report, 2026-09-01: *"does a clickable table of contents work?"*
 //!
 //! It did not, and the honest description of the state was worse than "there is
 //! a bug". **There was no link-following code path in the shell whatsoever.**

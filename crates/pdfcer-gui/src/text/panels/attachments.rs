@@ -104,6 +104,12 @@ pub const fn where_document() -> &'static str {
 
 /// Where a page-level attachment lives, and the consequence of that.
 ///
+/// ★ The clause about page deletion is the whole reason this string is not
+/// simply *"On page 3"*. A `/FileAttachment` annotation (§12.5.6.15) is
+/// **destroyed when its page is deleted**, and this application can delete a
+/// page from three different surfaces. An operator who has been told is one
+/// who can decide; one who has not finds out from a file that used to have
+/// their supplier's spreadsheet in it.
 #[must_use]
 pub fn where_page(page_number: usize) -> String {
     format!("On page {page_number} — deleting that page takes this file with it")

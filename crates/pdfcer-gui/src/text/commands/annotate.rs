@@ -199,6 +199,9 @@ pub const fn markup_finish() -> CommandText {
 /// where the new corner lands, since the answer is *on the outline*, not under
 /// the pointer: the click is allowed to be several points off the line.
 ///
+/// ★ *"a freehand mark"* joined the list on 2026-09-09 with `pdfcer-core`
+/// `Pass 278.0`. A tooltip that listed three shapes while the row appeared on
+/// a fourth would be the surface disagreeing with itself.
 #[must_use]
 pub const fn markup_add_node() -> CommandText {
     CommandText::new(
@@ -363,6 +366,8 @@ pub const fn measure_perimeter() -> CommandText {
 
 /// `measure.length`
 ///
+/// ★ The operator's ask of 2026-08-20: *"add a length tool that works like the
+/// perimeter tool without needing to close the profile."*
 ///
 /// The label is `Length`, not `Path length` or `Open perimeter`: the operator
 /// asked for a *length tool*, and the word they used is the word to put on it.

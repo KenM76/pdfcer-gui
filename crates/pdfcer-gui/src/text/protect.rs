@@ -1,6 +1,9 @@
 //! # `text::protect` — every operator-facing string on the two Security
 //! controls that **write** protection into a file
 //!
+//! `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04 with the instruction
+//! that ended the question: *"yes add encryption and permissions … Always add
+//! new features. never ask. just do."*
 //!
 //! ## Why this is a second module rather than more of [`crate::text::security`]
 //!
@@ -262,6 +265,10 @@ pub const fn current_owner_password_label() -> &'static str {
 /// ★★★ **Disclosure 3 of O119's three: re-permissioning needs the owner
 /// password.**
 ///
+/// The engine asked for this to be surfaced by name, in its 2026-09-03 reply:
+/// *"`AuthKind` tells you which one opened the file — surface that, because
+/// `remove_encryption` will refuse a user-authenticated session and the operator
+/// should see WHY before pressing it."*
 ///
 /// ★ It is drawn **above the field**, not after a refusal. A refusal that
 /// arrives on press is a program that knew the answer and waited.

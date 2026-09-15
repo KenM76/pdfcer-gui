@@ -161,6 +161,13 @@ pub fn is_ribbon_caption(name: &str) -> bool {
 
 /// Turn one run's trace into the regions this check is about.
 ///
+/// Split out of [`assess`] so that the claim *"this check starts asserting on
+/// its own the day the ribbon declares its captions"* is **testable without a
+/// ribbon**. A test can hand this function a trace containing the lines the
+/// ribbon will emit and observe that the whole chain — parse, match, convert
+/// to capture pixels, resolve — produces a trace-sourced plan. If that claim
+/// were only exercised by running the real ribbon, it would be untested for
+/// exactly as long as it matters.
 ///
 /// `frame` is the live window's measured geometry; it supplies the DPI scale
 /// that turns the application's logical rects into pixels of the capture. See

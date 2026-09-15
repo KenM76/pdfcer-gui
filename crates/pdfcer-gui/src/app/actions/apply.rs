@@ -101,6 +101,13 @@ impl PdfcerApp {
             // `super::document`, one function each, with the two guards they
             // share and the table that orders them.
             //
+            // Moved there on 2026-08-19 when this file crossed R2's 1,500-line
+            // gate. The seam was already drawn in prose above — *"the actions
+            // that are about WHICH document is open"* — and it is a real one:
+            // everything below acts ON the open document, and these four decide
+            // WHICH document is open, or whether there is one. Different
+            // subject, different failure mode. An arm below can be wrong about
+            // a page; one of these can be wrong about an afternoon's work.
             //
             // They stay listed here, by name, rather than behind a single
             // catch-all, because this `match` is the one place a reader can see
@@ -482,6 +489,9 @@ impl PdfcerApp {
                         )
                     })
                 });
+                // ★★★ **And it arrives SELECTED** — 2026-08-26, closing the
+                // operator's *"if I add an image I Expect to click on it to
+                // resize but dragging doesn't resize."*
                 //
                 // He was right about the symptom and it was never the resize: a
                 // driven check had already proved a selected image resizes from
@@ -600,6 +610,13 @@ impl PdfcerApp {
                     // ★★★ `add_markup_with`, not `add_markup` — ONE verb and ONE
                     // undo entry for a translucent mark.
                     //
+                    // This is the engine's own argument, and it is a defect
+                    // argument rather than a convenience one. Authoring at an
+                    // opacity used to take two calls (author, then restyle), and
+                    // that is two undo entries: *"an operator who draws a
+                    // translucent highlight and presses Ctrl+Z once gets an
+                    // OPAQUE highlight, not no highlight. That is a state they
+                    // never asked for and cannot have created any other way."*
                     //
                     // ★ `opacity_option()` answers `None` at fully opaque, which
                     // writes no `/CA` at all — so a build whose operator never
@@ -989,6 +1006,15 @@ impl PdfcerApp {
                 super::redactsel::mark_selection(doc, &appearance);
             }
             //
+            // The cut is along the seam that module's header already draws —
+            // *"a page index is a position, not an identity"* — and it is what
+            // took the panel-selection consequences with it: a delete clears
+            // the picks, a reorder remaps them, a rotation leaves them alone.
+            // Those three answers to one edit are the whole subject over there,
+            // and they were the only part of it living here.
+            // ★ The separation policy travels from the settings store, which
+            // this scope can see and `pages::apply` cannot. See `pages::delete`
+            // for the promise it was until 2026-08-28.
             Action::Page(action) => {
                 super::pages::apply(doc, &mut self.panels, action, self.settings.separations);
             }
@@ -1091,6 +1117,9 @@ impl PdfcerApp {
             // whole argument for the command, which `Action::SelectAllOnPage`
             // points here for.
             //
+            // The operator, 2026-09-01: *"we should be able to select things off
+            // the side of the page, especially since I sometimes drop objects
+            // there, and when I do I can't get them back."*
             //
             // He is describing a ONE-WAY DOOR. `canvas::present` allocates the
             // page's own rectangle as the interaction area, and its comment
@@ -1245,6 +1274,11 @@ impl PdfcerApp {
 /// status line is `app::status`'s to own, not this module's to invent.
 ///
 ///
+/// The paragraph above used to end *"That is the outstanding half"*, and it is
+/// no longer outstanding. The list is now **recorded as well as traced** — as
+/// an [`EditDisclosure`] stamped with the epoch this edit produced — and
+/// [`crate::app::status`] draws it in the bar beside the fill disclosure it
+/// copies, on the row that may not grow (R128).
 ///
 /// Three things about that, each a decision:
 ///

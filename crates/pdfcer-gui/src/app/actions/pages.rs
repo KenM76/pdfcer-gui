@@ -10,6 +10,13 @@
 //!
 //! ## ★ Why these four are not four more arms in `apply.rs`
 //!
+//! Rule R2's own justification decides it, exactly as it decided the
+//! `apply.rs` split from `actions.rs`: *"the value of the limit is that the
+//! file has to have a single subject."* `apply.rs`'s subject is **the
+//! cancel–mutate–bump–invalidate protocol** — what happens when a request to
+//! change the document is granted, and the ordering that makes it safe. That
+//! protocol is the same for every verb and changes only when the protocol
+//! changes.
 //!
 //! This file's subject is a different one, and it is the reason page verbs
 //! could not simply be four more `vector_edit` calls:

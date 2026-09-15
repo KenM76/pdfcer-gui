@@ -1,6 +1,7 @@
 //! `document_tabs_can_be_rearranged` — dragging a tab along the strip moves
 //! it, and does **not** change which document is on screen.
 //!
+//! Requested 2026-08-20: *"can we make it so the tabs can be rearranged"*.
 //!
 //! # Why this needs driving
 //!

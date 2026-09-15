@@ -37,6 +37,12 @@
 //!
 //! ## ★★ Why the oracle is an A/B and not an expected number
 //!
+//! Because *"a rotated rectangle's bounding box is larger, and that is
+//! normative"* is a true sentence that can be used to justify almost any
+//! measurement. It cannot justify **two different pictures from the same total
+//! rotation**. One 60° turn and four 15° turns must produce the same file to
+//! within float noise; that they do not is a claim no argument about bounding
+//! boxes can absorb.
 //!
 //! ## ★ And why the measurement is a DIFF against a bare render
 //!

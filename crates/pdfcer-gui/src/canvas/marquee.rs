@@ -138,6 +138,11 @@ pub fn without_page_wrappers(
 /// **What a band does to the selection it lands on** — `OPERATOR_REQUESTS.md`
 /// O104.
 ///
+/// Until 2026-09-03 a band could only replace or add, which is half of the
+/// operator's report *"I can't unselect things once I have selected them"*. On
+/// a CAD sheet with hundreds of overlapping strokes, taking one object back out
+/// by clicking it precisely is often not practical; a band is how the work is
+/// actually done, and ours had no way to remove.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Combine {
     /// No modifier: the band's hits become the selection.

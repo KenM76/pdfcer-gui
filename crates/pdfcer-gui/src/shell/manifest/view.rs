@@ -92,6 +92,18 @@ pub(super) fn tab() -> Tab {
             // set, and the choice persists per document so opening a
             // drawing set does not inherit a report's setting.
             //
+            // ★ **All four are present as of Phase 4**, and the note that
+            // used to sit here — *"the build behind them is larger than it
+            // looks: the viewer holds a single page index, and the object
+            // provider returns nothing for any page but the current one"* —
+            // was right and is discharged. The page range turned out not to
+            // be a field at all: `viewer::strip` computes which pages are
+            // on screen from where they are laid out and where the viewport
+            // is, and `view.page_index` keeps its single index, now meaning
+            // *"the page the operator is looking at"* — derived from the
+            // scroll position under a continuous mode. The provider still
+            // serves one page, and it is still the right one, because
+            // pressing on a page makes it current before the hit test runs.
             //
             // The order is the scale it describes: fewest pages on screen
             // first, most last. Under P1a a radio's positions are ordered by
@@ -255,6 +267,13 @@ pub(super) fn tab() -> Tab {
                 ],
             ),
             //
+            // ★ **Rulers, grid and guides were N and are now built**, which
+            // completes `RIBBON_IA.md` §5.2's Display row and the last unbuilt
+            // line of `FEATURES.md`'s Phase 3. The note that used to sit here
+            // is discharged rather than reworded, and the three entries are
+            // removed from `super::PLANNED` — where `view.guides` carried the
+            // condition it was waiting on, *"needs a per-document store to
+            // survive a reopen"*, which `crate::canvas::guides` now is.
             //
             // ORDER: rulers, grid, guides — which is the specification's, and
             // is also a dependency order the operator can feel. A grid is read

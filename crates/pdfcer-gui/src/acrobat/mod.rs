@@ -90,6 +90,12 @@
 //!
 //! ### Why the `.pdf` handler is filtered rather than trusted
 //!
+//! Source 3 answers *"what opens PDFs here"*, which is **not** the question.
+//! Verified on this machine, 2026-09-04: `HKLM\SOFTWARE\Classes\.pdf` reads
+//! `OpenPDFStudio.pdf` — a different vendor's product entirely. A fallback that
+//! took whatever the handler named would have put a button labelled *Open in
+//! Acrobat* over a launcher for PDF Studio, which is a lie the operator finds
+//! out about after their document is already closed.
 //!
 //! So a handler command is accepted only when the executable it names is
 //! called `Acrobat.exe` or `AcroRd32.exe`. See [`discover::edition_of`].

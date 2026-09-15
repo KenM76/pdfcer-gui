@@ -22,6 +22,16 @@
 //!
 //! ## ★ The defect this file carried for the whole of v0.1.0, recorded
 //!
+//! This header used to open with the sentence *"`pdfcer-print` is NOT a
+//! dependency of this crate"* and then set out, in full, the two edits that
+//! would make the build print: add the manifest line, then fill the four
+//! holes below. **The manifest line landed and the four holes were never
+//! filled.** `pdfcer-print` sat in `Cargo.toml` and in `Cargo.lock`, was
+//! compiled and linked into every shipped binary, and no source file in the
+//! crate contained the identifier `pdfcer_print` outside a doc comment. So
+//! [`list_printers`] kept returning a refusal, the dialog kept rendering
+//! *"This build cannot reach a print device"*, and the commit button was
+//! never drawn.
 //!
 //! The operator's report was *"the print dialogue didn't work"*, and it was
 //! exactly right. Two things are worth carrying forward from it:

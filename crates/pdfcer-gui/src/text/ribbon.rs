@@ -365,6 +365,11 @@ pub fn group_edit_insert() -> &'static str {
 
 /// Edit ▸ Clipboard.
 ///
+/// ★★ **Back on 2026-08-19**, and the note below — which explains why it was
+/// deleted — is kept verbatim because its reasoning was right and only its
+/// premise expired. It ends *"the next author of an object clipboard needs the
+/// word — which is right here"*, and that is exactly what happened: the word was
+/// read out of that comment and put back into this function.
 ///
 /// It is a small vindication of a rule this project applies everywhere and that
 /// is easy to feel silly about at the time: **delete the code, keep the
@@ -523,6 +528,12 @@ pub fn group_format_font() -> &'static str {
 /// will until `EditSession` grows a verb are named in `manifest::PLANNED`. So
 /// this band carries what can be done to any selection, whatever it is.
 ///
+/// ★ It stopped being the tab's **only** band on 2026-08-27, when the text
+/// run's row of §5.8's table shipped as [`group_format_font`]. That is worth
+/// noting here rather than only there, because this caption's own doc comment
+/// used to assert *"the tab ships with the one band whose content is real"* —
+/// a sentence that was true, that nothing would have failed if it had been
+/// left, and that a reader would have believed.
 #[must_use]
 pub fn group_format_selection() -> &'static str {
     "Selection"

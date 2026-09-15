@@ -10,6 +10,11 @@
 //!
 //! # ★★★ What was wrong, and why "the annotation one is fixed" was not enough
 //!
+//! On 2026-08-29 the R83 pass closed the annotation door: `format.delete`
+//! acquired `visible_when: "selection.delete_permitted"` on the Format tab and
+//! on the `canvas.object` menu, `canvas::keys`' annotation rung acquired a
+//! gate, and `panels::properties::annotdelete` drew the sentence. Its commit
+//! claimed *"where a gate refuses the controls are not drawn at all."*
 //!
 //! That held for **one surface of three**, and for a form field the gate was a
 //! no-op by construction:

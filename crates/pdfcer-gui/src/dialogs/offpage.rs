@@ -3,6 +3,8 @@
 //!
 //! ## ★★★ The third of the operator's question that was still open
 //!
+//! **Ken, 2026-09-10:** *"how do I view and edit objects that are off of the
+//! page? we added this feature but I didn't see how to enable it."*
 //!
 //! The **view** and **edit** halves shipped the same day: the canvas learned to
 //! rasterize a halo past the sheet edge, and the cull learned that a page can be

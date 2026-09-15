@@ -3,13 +3,40 @@
 //!
 //! # The gap this closes — `OPERATOR_REQUESTS.md` **O120**
 //!
+//! The operator, 2026-09-03: *"copy and paste vector graphics into word or
+//! inkscape"*. The engine shipped `emf::export_emf` for exactly that, because
+//! **LibreOffice 24.x cannot read a foreign SVG clipboard entry before 25.2**
+//! and Office's *Paste Special ▸ Picture (Enhanced Metafile)* wants a metafile
+//! too. This shell offers it as the fourth radio in the Export-image window.
 //!
 //! O120's own Status line sets the bar and it is the engine's:
 //!
 //! > *"they get ticked when the GUI half is **driven**, not when it compiles."*
 //!
 //!
+//! This header carried a banner from 2026-09-04 to 2026-09-14 saying the check
+//! had never been run, that it was committed unrun deliberately, and that
+//! *"the first person to run it should expect to fix it rather than to read a
+//! verdict from it."* The banner is replaced rather than kept, because a
+//! warning whose subject is gone stops being a warning and starts being a
+//! false statement — and because the prediction in it was exactly right, in a
+//! way worth recording:
 //!
+//! 1. **The check was wrong; the program was not.** Step 5 compared the
+//!    `format=` field against the enum's `Debug` spelling, `Emf`. On
+//!    2026-09-13, commit `28f5389` (O196) had changed the emitter to the file
+//!    token, `emf` — correctly, and for this project's own standing reason,
+//!    *never `Debug`-format a field a machine reads*. Nothing went red,
+//!    because the only machine reading that field was this check and it had
+//!    never been run. The first sweep to run it duly reported *"the radio
+//!    drew and did not bind"* while quoting `format=emf` in the same sentence.
+//!    ★ **Changing a trace field's spelling is an edit to every reader of
+//!    that field, and an unrun check is a reader that cannot object.** See
+//!    [`EMF_KEY`], which now carries that history where the comparison is.
+//! 2. **With that corrected, the pipeline is whole.** 143,132 bytes on disk,
+//!    `iType == 1`, the `' EMF'` signature, a header whose `nBytes` equals the
+//!    file's length, **4,547 records**, and the shell's `bytes=` matching the
+//!    disk exactly. Driven against `fixtures/a1-titleblock.pdf`.
 //!
 //! —> So O120 is **driven**, which is the bar its own Status line set, and the
 //! operator's *"copy and paste vector graphics into word or inkscape"* has a
@@ -102,6 +129,15 @@ const REQUESTED: &str = "export-image-requested";
 /// emitter uses it: a check reading this trace and a check reading
 /// `preferences.txt` then cannot disagree about what EMF is called.
 ///
+/// ⚠ **This constant was `"Emf"` until 2026-09-14 and the check was RIGHT to
+/// say so when it was written.** On 2026-09-04 the emitter read
+/// `format={:?}` — `Debug` on `ImageFormat`, which prints `Emf`. On
+/// 2026-09-13 commit `28f5389` replaced that with the token, correctly and
+/// for this project's own standing reason (*never `Debug`-format a field a
+/// machine reads*), and **broke the only machine reading the field without
+/// anything going red** — because this check had never been run. The first
+/// sweep to run it, on 2026-09-14, duly reported *"the radio drew and did not
+/// bind"* while quoting `format=emf` in the same sentence.
 ///
 /// ★ The lesson generalises past this file: **changing a trace field's
 /// spelling is an edit to every reader of that field**, and an unrun check is

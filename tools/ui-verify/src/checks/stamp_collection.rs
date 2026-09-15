@@ -58,6 +58,13 @@
 //!
 //! # ★★ Why the row count is three and not "at least one"
 //!
+//! Because the failure this check is most likely to catch is a section that
+//! draws its heading and its count and then nothing — the shape a regression
+//! takes when the loop over `collection.stamps` stops publishing, or when the
+//! engine's name-tree walk returns empty on a file it used to read. A heading
+//! reading *"Stamps: 3 stamps, 1 of them dynamic"* over an empty space is worse
+//! than no section, because the count is then the only number on screen and it
+//! is contradicted by what is under it. Only counting the rows sees that.
 //!
 //! # What this does NOT prove
 //!

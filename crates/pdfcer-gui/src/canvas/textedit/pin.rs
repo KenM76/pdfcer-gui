@@ -18,6 +18,13 @@
 //!
 //! ## Why this is its own module rather than a private detail of the caret
 //!
+//! It was a private detail of the caret until 2026-08-27, inline in
+//! [`super::plan`], and that was correct while exactly one thing edited text.
+//! `format_text` is the second: restyling an existing run takes **the same
+//! `pinned_span` and the same `EditTarget`** as replacing its text — the engine
+//! shaped the two verbs that way deliberately, *"so a shell that has decided
+//! which stream a caret is in does not have to translate that decision between
+//! two verbs."*
 //!
 //! A second copy of that decision is the thing to avoid. The `EditTarget` arm
 //! below is nine lines of code and sixty of argument, and the argument is what
@@ -509,6 +516,10 @@ pub fn operators_in_run(
             glyph.text_start as usize,
             glyph.text_start as usize + glyph.text_len as usize,
         );
+        // ★★★ The per-operator `find` text was built HERE until 2026-08-27,
+        // by walking the glyphs and extending a byte cursor over the run's
+        // text — *"but only over bytes a glyph actually covers. A gap here is a
+        // derived character and must not join the two halves."*
         //
         // That was a **second locator**, living beside the engine's, and it is
         // deleted rather than kept. `Pass 145.0` made a pinned request with an

@@ -310,6 +310,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the centre of the top edge: **dead centre of the box is inside the North
     // grip**, on every zoom below about 60 %.
     //
+    // That is what the 2026-08-29 re-run found once the selection was fixed —
+    // the drag committed `resize-widget-commit … grip=North sy=-42.5314` and the
+    // engine correctly refused the result, *"the new field's rectangle has no
+    // area"*. A drag that becomes a resize is not the defect this check names,
+    // and reporting it as one would send a reader to `dragroute`.
     //
     // ⇒ The grip anchors on the x axis are at 0, w/2 and w, so the points
     // furthest from all of them are w/4 and 3w/4 — that is a property of a

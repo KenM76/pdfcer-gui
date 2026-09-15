@@ -62,8 +62,18 @@
 //!
 //! # ★ Why the zoom is driven by Ctrl+wheel and not by the status bar's `+`
 //!
+//! Zoom-to-cursor keeps the point under the pointer fixed, so the content this
+//! check aims at stays under the aim point all the way down. The `+` button
+//! zooms about the viewport centre, which on a page whose interesting detail is
+//! off-centre magnifies blank paper — the operator's own complaint of
+//! 2026-08-22, *"Right now you are just zooming into a blank area on the
+//! canvas."*
 //!
 //!
+//! The 2026-09-05 sweep filed it as application defect **A4**: *"mouse work
+//! degrades with the render tier — no traced drag outcome between 104 % and
+//! 6,957 %, and no anchor marks published above 942 %."* Four separate probes
+//! were wrong, and none of them was the application:
 //!
 //! | probe | what it reported | what was true |
 //! |---|---|---|
@@ -151,11 +161,24 @@ const RENDER_EVENT: &str = "render-async-done";
 const VIEWPORT_REGION: &str = "canvas-viewport";
 /// `marquee-mode crossing=… mode=… hits=… …` — the band's own line.
 ///
+/// ★★★ It is also **the drag outcome that had no arm** until 2026-09-05, and
+/// its absence produced this check's whole headline. A press on blank paper
+/// inside a selection's bounding box draws a band rather than moving the
+/// selection (`OPERATOR_REQUESTS.md` O72); with nothing reading this line
+/// during the drag probe, that registered as *"nothing at all — no move, no
+/// decline, no resize"*, and the sweep filed *"mouse work dies at every render
+/// tier"* against a build in which the same drag moves the object every time it
+/// is pressed on the ink. See [`drag_selection`].
 const MARQUEE_EVENT: &str = "marquee-mode";
 /// What a marquee-committed selection calls itself.
 const VIA_MARQUEE: &str = "pv.marquee";
 /// `canvas-coverage covered=… sharp=… textured=… backdrop=…`.
 ///
+/// ★★ The operator's own report of 2026-09-04 — *"the canvas does a fading
+/// around the edges on stuff shown at the edges of the view. I don't want this.
+/// it should render true."* — is a claim about exactly this line: `sharp` is
+/// the fraction of the viewport the SHARP raster covers, and anything below
+/// 1.000 is the low-resolution backdrop showing through.
 const COVERAGE_EVENT: &str = "canvas-coverage";
 
 /// The zoom rungs walked, as multipliers.
@@ -212,6 +235,11 @@ const DRAG_PX: f32 = 40.0;
 /// cannot change what a click hits; in canvas points the same tolerance would
 /// be meaninglessly tight at 100 % and meaninglessly loose at 200,000 %.
 ///
+/// ★ Above this the rung's pointer probes are **not run**, and the rung says
+/// so in its own words. The 2026-09-05 sweep ran them anyway and filed
+/// *"clicking directly on the content the zoom is anchored to selected
+/// nothing"* at five rungs — measured with the pointer **312 px** away from
+/// that content.
 const AIM_TOLERANCE_PX: f32 = 6.0;
 
 /// How many wheel notches the pan probe scrolls, and then scrolls back.
@@ -461,6 +489,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // reading by **0.01** — the whole 484 pt viewport spans 0.021 canvas
         // points there.
         //
+        // The 2026-09-05 sweep reported the consequence as an application
+        // defect at five rungs — *"clicking directly on the content the zoom is
+        // anchored to selected nothing"* — when what the click landed on was
+        // blank paper 6.5 points away from the content. Correcting the rest of
+        // the way needs the view PANNED, which this check does not do; naming
+        // that is honest and inventing a defect is not.
         if let Some(residual) = aim_residual(&session, &driver, aim, target_canvas)? {
             let off_px = residual * reached;
             if off_px > AIM_TOLERANCE_PX {
@@ -1283,6 +1317,12 @@ fn nodes_and_handles(
 
 /// **Pan, and watch the leading edge stay sharp.**
 ///
+/// The operator, 2026-09-04: *"the canvas does a fading around the edges on
+/// stuff shown at the edges of the view. I don't want this. it should render
+/// true."* `render::strategy::region_for`'s header records the fix that landed
+/// for it — the snap now centres the window on the grid instead of flooring its
+/// origin, so the guaranteed margin is a quarter of a viewport on **every** side
+/// instead of half a screen on two sides and nothing on the other two.
 ///
 /// This is that claim, driven rather than computed: scroll, then read the
 /// **worst** `sharp=` the canvas reported over the frames that followed.

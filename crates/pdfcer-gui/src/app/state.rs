@@ -856,6 +856,10 @@ pub struct OpenDoc {
     pub selection: SelectionState,
     /// ★★ **The form field selected for editing its properties**, if any.
     ///
+    /// The operator, 2026-08-26: *"when I click on an existing form field on
+    /// the page its properties should come up in our side pane for editing its
+    /// properties."* This is what a click on a widget in Edit mode sets, and
+    /// what `panels::properties::formfield` reads.
     ///
     /// # ★ Why it is NOT part of [`SelectionState`]
     ///
@@ -883,6 +887,10 @@ pub struct OpenDoc {
     /// ★★★ **The backdrop — the last small whole-page raster, kept so the page
     /// is never blank while a sharper one is on its way.**
     ///
+    /// The operator, 2026-08-26: *"the screen should never be blank while
+    /// waiting to render when zooming out — there should be at least a low
+    /// resolution zoom of the newly panned or zoomed out area instead of just
+    /// remaining blank while the higher definition render occurs."*
     ///
     /// Measured before it was built: zooming out from 3590 % held
     /// `canvas-coverage covered=0.000` for about twenty frames. The held

@@ -483,6 +483,12 @@ fn wanted_token() -> String {
 ///
 /// # ★★★ Why this reads a purpose-built line and not the `ui-rect` line
 ///
+/// The first draft of this check read the selection out of `ui-rect`, which
+/// carries a **name** and a **rect** and no text whatsoever. It would have
+/// returned `None` on every build that has ever existed, and the check would
+/// have gone on to print a note saying the chooser *"still reads None after the
+/// press"* — narrating an absence it had never measured, in a tone that reads
+/// as a finding.
 ///
 /// ⚠ That is this project's standing lesson about **unevidenced excuses**: a
 /// check that explains a gap it did not measure turns an open question into a

@@ -79,6 +79,9 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.polygon", t::markup_polygon(), 504)
             .with_icon("shape-polygon")
             .enabled_when("doc.pages"),
+        // ★ **Revision cloud**, registered 2026-08-19 — the operator's item 6,
+        // raised three times in his own words: *"still no revision cloud
+        // tool."*
         //
         // Token **507**, out of the band's own run, because 506 is
         // `markup.finish` and tokens are never reused. The ORDER on the ribbon
@@ -117,6 +120,17 @@ pub(super) fn band() -> Vec<Command> {
         // operator is told the rule before they press, rather than refused after.
         //
         //
+        // This registration and `catalog::measure`'s `measure.finish` carried
+        // the same sentence, word for word, in two files: *"There is no
+        // check-mark, tick or accept glyph in the set, and no existing key means
+        // 'complete this gesture'."* That was a true statement about the
+        // catalogue and it is no longer true — `finish-shape` and `check` were
+        // both adopted from the outside review of 2026-09-03 — so the refusal is
+        // **spent rather than overturned**, the same way
+        // [`crate::icons::Icon::Pages`] and the Attachments paperclip record.
+        // The note is rewritten rather than deleted, because a reader who finds
+        // a bare `.with_icon("finish-shape")` here with no history will
+        // eventually re-derive the wrong lesson from it.
         //
         // What in it was load-bearing and still is:
         //
@@ -172,6 +186,12 @@ pub(super) fn band() -> Vec<Command> {
             .with_icon("finish-shape")
             .enabled_when("markup.finishable"),
         //
+        // The operator, 2026-09-05: *"I also can't edit or delete nodes of a
+        // markup shape once it is drawn."* `canvas::annotnodes` answered the
+        // moving half that day and half-answered the other two — insert and
+        // remove worked, and they needed the Points tool armed **plus** `Ctrl`
+        // or `Ctrl+Shift`, with nothing on screen saying so. These two are the
+        // route somebody can find.
         //
         // ## ★★★ Why neither has a ribbon home, and why that is legitimate
         //

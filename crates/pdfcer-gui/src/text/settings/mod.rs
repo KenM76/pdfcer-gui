@@ -305,6 +305,11 @@ pub const fn font_folders_hint() -> &'static str {
 
 /// Shown in place of an empty list.
 ///
+/// ★★ Its wording changed on 2026-08-28 when the OS-fonts checkbox landed:
+/// "no folders" stopped meaning "nothing to embed from", because the box may be
+/// ticked. An empty-state sentence that contradicts a control four rows below it
+/// is worse than none -- an operator who has ticked the box and reads *"nowhere
+/// to take one from"* has been told their setting does not work.
 #[must_use]
 pub const fn font_folders_none() -> &'static str {
     "No folders of your own yet."
@@ -479,6 +484,39 @@ mod tests {
     ///
     ///
     ///
+    /// ★★★ It caught something larger that time. The same engine Pass changed
+    /// what `format_text` DOES by default — a synthesis request that used to be
+    /// refused is now applied — and that silently removed this shell's Bold
+    /// button, which was built on the refusal. `cargo update` brought both in
+    /// together, and the settings test and one face-by-name assertion were the
+    /// only two things that noticed.
+    // ★ 28 → 29 on 2026-09-02: `spot_colorant_device_model`, new in
+    // `pdfcer-core 0.20`. Ken: *"the engine I think has a couple of new options
+    // for colour rendering that we might need to surface."* He was right, and
+    // the coverage gate two files away fired on the same `cargo update` — the
+    // pair working as designed, one demanding the control and one demanding
+    // the copy.
+    // ★ 29 → 30 on 2026-09-02: `shade_form_fields`. Ken: *"in our display
+    // section we should have an option to shade the form fields like acrobat
+    // does."* Note this one is a SHELL preference rather than an engine
+    // setting, so the sibling coverage test in `dialogs::settings` — which
+    // enumerates the engine's store — could never have demanded it. This
+    // catalog is the only instrument that covers both.
+    // ★ 30 → 31 on 2026-09-04: `acrobat_path` — O122, *"have a setting where
+    // people can change it."* The second SHELL preference in this count and the
+    // first setting in the window about **another program on this machine**, so
+    // neither the engine-store coverage test nor anything else could have
+    // demanded it. Its copy lives in `crate::text::acrobat` rather than here,
+    // because O122's four surfaces are one conversation and were filed
+    // together; this list reaches across for it, which is what keeps the count
+    // honest about a group whose words live elsewhere.
+    // ★★★ 31 → 33 on 2026-09-05, and it is the only entry in this list
+    // that moved the count by TWO. The trust-store work adds one ENGINE setting
+    // (`acrobat_trust_store`, which the sibling completeness test in
+    // `dialogs::settings` demanded — it was red before this control existed)
+    // and one SHELL preference beside it (`acrobat_trust_store_path`, which no
+    // test could have demanded, because the engine deliberately does not model
+    // where the file is: *"locating the file is the shell's job"*).
     //
     // ★★ They are two headers rather than one on purpose. A permission and a
     // location have different blast radii — one governs the pdfcer command line
@@ -486,12 +524,27 @@ mod tests {
     // `radius` line covering both would have to be vague about the one that
     // matters. `dialogs::settings::signatures`' header carries the argument.
     //
+    // ★★ 33 → 34 on 2026-09-05: **one** header over the two auto-hide
+    // toggles, and the singular is the decision rather than a shortcut. They
+    // are one question the operator answers twice — *"how much of the window
+    // do I want the drawing to have?"* — and the sentence that makes the
+    // feature safe to try, that the drawing does not move when a strip comes
+    // and goes, is true of both. Two headers would have to say it twice or
+    // leave it off one of them, which is the trust-store pair's test applied
+    // and answered the other way: those two have different blast radii, these
+    // two have the same one.
     //
     const SETTINGS_COUNT: usize = 35;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
     ///
+    /// The list held exactly the thirteen `pdfcer_core::settings` entries and
+    /// had never grown: the *Drawing the page* group's two preferences were
+    /// added on 2026-08-17 and neither reached it, so the window's own stated
+    /// contract — *"a setting cannot be added without answering all three,
+    /// because the code does not compile otherwise"* — was being checked over a
+    /// subset of the window while reading as though it covered all of it.
     ///
     /// The `header` helper's required arguments did their job: both settings
     /// **do** answer all three. What was missing was any check that they were
@@ -795,6 +848,11 @@ mod tests {
     ///
     /// # The gap this closes, which had already been found once and left open
     ///
+    /// The list above is hand-written, and the comment beside it says so:
+    /// *"a new settings module is invisible to the very test whose job is to
+    /// prove the window and the catalog agree."* That was written on
+    /// 2026-08-28 after `comments.rs` was missed for ten minutes, and it ends
+    /// *"if a third module is ever added, this line is the one to remember"*.
     ///
     ///
     /// ⇒ So this test reads `dialogs/settings/mod.rs` and requires every module

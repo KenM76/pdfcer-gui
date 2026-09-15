@@ -15,6 +15,11 @@
 //! on one surface would be re-spelled on the other two. `canvas::markup::linestyle`
 //! is the one module all three read, and this is the one place its words live.
 //!
+//! ⚠ The count in that first sentence has been wrong before. It read *"Three
+//! tooltips and one suffix"* while the opacity tooltip and the percent suffix
+//! sat forty lines below it, added on 2026-08-28 without the header being told.
+//! A count in prose is a claim nothing checks;
+//! [`tests::the_header_counts_what_this_module_actually_holds`] now does.
 //!
 //! ## Each one answers "what will this change, and when?"
 //!
@@ -487,7 +492,18 @@ pub fn appearance_distorted() -> String {
 ///
 /// # What actually happened, because the operator cannot possibly guess it
 ///
+/// PDF stores a comment **twice**. `/Contents` is the plain string; `/RC` is a
+/// *rich-text version of the same comment* (§12.7.3.4), and §12.5.6.2 pairs
+/// them in as many words — *"Contents (or RC and DS)"*. pdfcer writes
+/// `/Contents` and cannot author rich text, so editing a note used to leave
+/// the two **disagreeing**: the plain copy held the new words and the rich
+/// copy still held the old ones.
 ///
+/// ⚠ **That is not lost content — it is WRONG content, stated confidently**,
+/// and which copy an operator sees depends on their reader. On any markup,
+/// Table 170 makes `/RC` the text *"displayed in the pop-up window"*; on a
+/// `/FreeText`, Table 174 makes it *"used to generate the appearance"*, so
+/// **the page itself** could have shown the old words.
 ///
 /// The engine now removes the stale copy rather than regenerating it —
 /// synthesising rich text from a plain string would invent formatting nobody
@@ -619,6 +635,19 @@ pub fn note_removed(previous: &str) -> Option<String> {
 ///
 /// # The defect this closes, stated as it was found
 ///
+/// `annotation_deletion_refusal` is a **pure query**. Its own doc comment names
+/// this call site in as many words — *"safe to call every frame from a UI (R83:
+/// ask before offering the control)"* — and until this landed **nothing in this
+/// shell called it**. On a certified drawing the Format tab's Delete, the
+/// canvas right-click's Delete and the Delete key were all live, and every one
+/// of them ended in `crate::app::actions::apply::vector_edit`'s `Err` arm,
+/// which wrote one line to the trace and **said nothing at all to the
+/// operator** — it words one un-categorised sentence since O116 (2026-09-04),
+/// which names no cause and so replaces none of these.
+/// That is the identical shape the forms panel's `deletion_refusal`
+/// audit found the day before (`crate::panels::properties::formfield`), one
+/// annotation kind along, and it was found the same way: by asking what the
+/// engine offers rather than by re-reading this shell.
 ///
 /// # ★★ Why an enum rather than one sentence
 ///
@@ -998,6 +1027,19 @@ impl ShapeWord {
     /// sentence that only said "no" would leave them looking for a control that
     /// does not exist.
     ///
+    /// ★★★ **The freehand sentence changed meaning on 2026-09-09, and the old
+    /// one is recorded here so it is never written back.** Until `pdfcer-core`
+    /// `Pass 278.0` it read *"A freehand mark has no corners to edit — it is a
+    /// recorded pen stroke"*, on the engine's then-ruling that per-point ink
+    /// editing was refused on purpose. That ruling was overturned (*"parity
+    /// with Acrobat is this project's floor, not its ceiling"*) and a freehand
+    /// mark's points now drag, add and remove exactly like a polyline's. The
+    /// only way this arm is still reached is an `/Ink` whose `/InkList` the
+    /// engine could not read as an array — `Annotation::ink_list` is `None`,
+    /// `canvas::annotnodes::geometry` draws no anchors, and the sentence has to
+    /// describe **that** mark rather than freehand marks in general. A sentence
+    /// that said "has no corners to edit" after they became editable is the
+    /// stale-negative defect this project has shipped before.
     #[must_use]
     pub const fn no_nodes_line(self) -> &'static str {
         match self {

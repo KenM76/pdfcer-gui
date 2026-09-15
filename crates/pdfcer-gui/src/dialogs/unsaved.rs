@@ -118,6 +118,11 @@ pub const REGION_CANCEL: &str = "unsaved.cancel"; // ui-text-exempt: trace regio
 ///
 /// # ★ Four variants because four `Action`s replace the open document
 ///
+/// Not "close", which is how this would have been built if it had been written
+/// from the tooltip that exposed the defect. `crate::app::lifecycle`'s
+/// `save_pending` doc already names the set — *"an Open, a New or a Close must
+/// not proceed while a save is pending"* — and `Action::NewSized` joined it on
+/// 2026-08-14 **by reusing that predicate rather than growing a second rule**.
 ///
 /// This type is that same set, and building it as a set rather than as a
 /// `bool` on the close path is the whole reason Open cannot quietly keep the
@@ -362,6 +367,12 @@ impl UnsavedDialog {
 
     /// **Whether an answer is parked here and has not been drained.**
     ///
+    /// ★★★ The twin of `signature::SignatureDialog::answered`, and it is here
+    /// because this window carries the **same latent defect** its neighbour
+    /// shipped: [`Self::show`] answers `false` on the very frame a button is
+    /// pressed, and its owner used to read that `false` as *"this dialog is
+    /// finished"* and drop the dialog — with the outcome still inside it —
+    /// before `PdfcerApp::resume_after_unsaved` could take it out.
     ///
     ///
     /// See [`crate::dialogs::retire`] for the rule both now obey.
@@ -514,6 +525,13 @@ pub fn ask_for(status: &Status, intent: PendingIntent) -> Option<UnsavedDialog> 
         return None;
     };
     //
+    // This line used to read `if doc.edit_epoch == 0`, which asks *"has
+    // anything EVER been edited"* and is therefore permanently true after the
+    // first edit. A document the operator had just saved was still asked
+    // about, the prompt's only save button is "Save a copy…" — a picker — and
+    // succeeding at that picker proceeds with the pending intent. So pressing
+    // Save and then Close produced: a filename prompt, and then the document
+    // closing. That is his report, and Save never closed anything.
     //
     // The old comment's argument was sound and is kept: two independent
     // notions of "edited" would eventually disagree. The correction is that

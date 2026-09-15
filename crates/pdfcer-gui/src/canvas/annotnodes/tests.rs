@@ -273,6 +273,12 @@ fn the_three_shapes_with_nodes_report_their_geometry() {
 /// ★★★ **R9: a shape with no editable nodes draws NOTHING** — not a greyed
 /// anchor, not a ghost anchor.
 ///
+/// ★ `/Ink` was the third row of this list until `pdfcer-core` `Pass 278.0`
+/// (2026-09-09), and the paragraph that kept it there is still true of the
+/// rule if not of the shape: `Annotation::ink_list` was **readable** while
+/// every edit on it was refused, so a shell that derived *"draggable"* from
+/// *"readable"* would have drawn anchors that refused every drag. The verbs
+/// exist now, so the anchors do; the ink assertions live in section 5 below.
 #[test]
 fn a_shape_with_no_editable_nodes_shows_no_anchors() {
     let rect = pdfcer_core::page_tree::Rect {

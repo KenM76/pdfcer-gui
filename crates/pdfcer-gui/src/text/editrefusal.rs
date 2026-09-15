@@ -7,6 +7,11 @@
 //!
 //! ## Why it is its own file
 //!
+//! **R2.** [`super::textedit`] crossed 1,500 lines on 2026-09-06, when O142's
+//! ambiguity refusal and `Pass 256.1`'s ambiguous-character refusal arrived
+//! together. The seam was already drawn and already labelled — that file carried
+//! a banner reading *"Why an edit the operator committed did not happen — O140"*
+//! — and the two subjects either side of it are genuinely different questions:
 //!
 //! * above it, **what an edit COSTS**: the pinned-tail disclosure, the
 //!   multi-run note, the reflow refusals. Sentences about an edit that
@@ -635,6 +640,8 @@ impl EditRefusal {
 /// ★★★ **"pdfcer cannot type a `q` into this text"** — the status bar's `⊗`
 /// sentence for `OPERATOR_REQUESTS.md` **O141**, with the character in it.
 ///
+/// The operator, 2026-09-05: *"if the character isn't available in a pdf are we
+/// able to change to a different font?"*
 ///
 /// # Why the character is worth the one allocation this catalog makes
 ///
@@ -1098,6 +1105,11 @@ mod tests {
     fn the_split_run_sentence_says_the_document_is_unchanged() {
         let s = EditRefusal::SplitAcrossPieces.line();
         assert!(s.contains("unchanged"), "{s:?}");
+        // ★★★ RE-POINTED 2026-09-08. This asserted the phrase *"one letter at
+        // a time"*, which was the right cause until `Pass 256.0` taught
+        // `edit_text` to match across consecutive show operators — after which
+        // a line written that way is the case that WORKS, and pinning it kept
+        // the sentence describing the fix to the operator meeting the residue.
         //
         // ⇒ The test's own stated intent is what survives: **the cause has to
         // be in his terms.** So it now asserts that positively, and asserts the

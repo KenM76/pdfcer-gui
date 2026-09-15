@@ -84,6 +84,12 @@
 //!
 //! ## ★★★ The case that tested the boundary hardest, and still did not break it
 //!
+//! `canvas.markup` (2026-09-06) carries two rows whose labels are **deictic** —
+//! *"Add a point here"*, *"Remove this point"* — and whose operand is *the
+//! corner the operator was pointing at when they opened the menu*. Nothing else
+//! in the catalog is written that way, and it looks at first like exactly the
+//! copy a menu owns rather than a command: the words only make sense inside a
+//! popup, at a pointer.
 //!
 //! **They still belong to the command**, and the reason is the one this whole
 //! module is built on. The row's tooltip has to explain the greying — *"Greyed

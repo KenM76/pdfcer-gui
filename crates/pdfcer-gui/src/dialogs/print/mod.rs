@@ -127,6 +127,15 @@
 
 /// **Where a rendered sheet actually carries ink** — operator request O113.
 ///
+/// Split out of [`preview`] rather than added to it, at the seam between
+/// *"what do these pixels say"* and *"how is the preview painted"*. The first
+/// is pure arithmetic over a byte slice and is fully testable with no GUI at
+/// all; the second needs an `egui::Ui`. Keeping them in one file would have
+/// put a page of pixel-threshold reasoning in the middle of a painting
+/// routine and pushed `preview.rs` toward R2's 1500-line ceiling.
+/// **Which sheet the pages want** — operator request O167, 2026-09-10. Pure
+/// arithmetic over the driver's form list and the job's rotated page extents,
+/// separated from the dialog because it is the half a unit test can drive.
 mod autopaper;
 pub(crate) mod ink;
 pub(crate) mod layout;
@@ -408,6 +417,11 @@ pub struct PrintDialog {
     preview_zoom: f32,
     /// How wide the preview column is, in egui points — the splitter's state.
     ///
+    /// Operator request, 2026-09-03: *"the preview should be adjustable
+    /// size."* Lives on the dialog rather than in `egui::Memory` because it is
+    /// part of what the operator has configured about this print, alongside the
+    /// zoom and pan beside it, and those three are reset together when the
+    /// dialog is constructed.
     ///
     /// ★ Always read back through the clamp in [`Self::body`], never used raw:
     /// the bound depends on the window width, which changes under it.
@@ -449,6 +463,14 @@ pub struct PrintDialog {
     ///
     /// # ★ The ink mask rides in the SAME tuple, under the SAME key
     ///
+    /// Added 2026-09-03 for operator request O113, and the placement is the
+    /// point rather than an implementation detail. [`ink::InkMask`] describes
+    /// **these exact pixels** — it is a downsample of this texture's source
+    /// pixmap and of nothing else. A mask held in a separate field, or under a
+    /// key of its own, could outlive the raster it describes, and a mask that
+    /// has outlived its raster is strictly worse than no mask: it would answer
+    /// *"is the overhang blank?"* about a page the operator is no longer
+    /// looking at, and answer it confidently.
     ///
     /// One tuple, one [`preview::PreviewKey`], one lifetime. When the key
     /// misses, all three are replaced together; when the render fails, all

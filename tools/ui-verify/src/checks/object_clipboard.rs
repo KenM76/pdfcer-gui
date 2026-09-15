@@ -6,6 +6,10 @@
 //! > *"can you get cut copy and paste working for objects I select on the
 //! > canvas?"* — asked in the first week and repeatedly since.
 //!
+//! Until 2026-08-20 `Ctrl+C` on a shape put a **sentence** on the status row —
+//! *"pdfcer can copy comments and markup, but it cannot yet put page content
+//! back onto a page"* — which was honest and was still a refusal. `Pass 120.0`
+//! shipped `ObjectClip` and this check is the wiring of it.
 //!
 //! # ★★ Why this cannot be a unit test
 //!

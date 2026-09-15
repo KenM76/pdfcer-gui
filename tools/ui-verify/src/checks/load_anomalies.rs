@@ -43,6 +43,11 @@
 //!
 //! # ★★★ The third check is not a disclosure at all — it is the way out
 //!
+//! `RereadingUnderTheOtherValueIsOffered` drives the **control** that arrived
+//! at the foot of that same block on 2026-09-10. The operator's ruling is that
+//! *"if the user can intervene in a decision that should always be an option"*,
+//! and until that day this shell reported the decision and offered no way to
+//! revisit it.
 //!
 //! It is the check with the most between its ends. A press on that button
 //! travels through an `Action`, both of `app::actions::document`'s guards, a

@@ -17,6 +17,11 @@
 //! > trip. R9: a placeholder is worse than an absence, because an absence is
 //! > honest and a placeholder is a promise."*
 //!
+//! Every word of that was true for two days, and **the absence was filed rather
+//! than shrugged at**. `pdfcer-core` `Pass 252.0` shipped `place_text` and the
+//! `blank_document` primitive underneath it on 2026-09-06 — *"nothing in the
+//! crate could create a page before, only copy one"*, which is why the gap was
+//! two days wide and not one afternoon.
 //!
 //! ⇒ [`crate::dialogs::import_text`] is the window R9 forbade drawing until
 //! there was something behind it. **This window still says nothing about the

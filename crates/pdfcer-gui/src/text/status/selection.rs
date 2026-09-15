@@ -43,6 +43,11 @@
 ///
 /// # Why this line exists at all
 ///
+/// The operator, 2026-08-26: *"when I click on one of the objects all I get is
+/// the page selected."* He was right, and nothing on screen said so — the
+/// selection outline round a page-sized object looks exactly like *"the page
+/// is selected"*, which is a state this program does not have. This is the
+/// sentence that turns that into a diagnosis.
 ///
 /// # The wording
 ///
@@ -74,6 +79,11 @@ pub fn selection_one_unsized(kind: &str) -> String {
 ///
 /// # The sentence this whole change exists to make sayable
 ///
+/// The operator, 2026-08-26: *"when I click on one of the objects all I get is
+/// the page selected."* He was clicking a real object; a page-sized form
+/// XObject wrapped it, the form's `/BBox` won every hit test, and **nothing on
+/// screen said the word "form" anywhere**. The selection outline round the page
+/// edge looked exactly like a state this program does not have.
 ///
 /// The engine now descends into forms, so the click lands on the object he
 /// meant. This clause is what stops the *next* question — *"why can I select
@@ -380,6 +390,13 @@ pub fn selection_with_depth(line: &str, taken: usize, of: usize) -> String {
 /// being subdivided.
 ///
 ///
+/// One variant now owns a list of face names the engine computed, so the enum
+/// holds a `Vec<String>` and cannot be `Copy`. Three doc comments in
+/// [`crate::app::status::decline`] used to argue that this type is `Copy`
+/// *"so that `Declined` stays `Copy` and `Declined::line` stays
+/// `&'static str`"*, and both halves of that sentence have now been overtaken:
+/// `Declined::line` became a [`std::borrow::Cow`] on 2026-09-10 for O141's
+/// *"pdfcer cannot type a `q`"*, and the `Copy` half went here.
 ///
 /// ★ What the argument was actually protecting is intact and is worth naming
 /// so it is not lost with the derive: **the engine's prose must not reach the

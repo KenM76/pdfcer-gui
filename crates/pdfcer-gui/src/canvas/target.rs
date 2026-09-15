@@ -188,6 +188,13 @@ pub trait CanvasTargetProvider {
     /// Every target a marquee rect takes, under `mode` and `forms`.
     ///
     ///
+    /// ★★ `forms` is a parameter as of 2026-09-11, and for the same reason one
+    /// rung up: the engine's [`pdfcer_core::vector::hit_test_rect_deep`] makes
+    /// it explicit *"a deliberate act at the call site rather than a
+    /// surprise"*, and a shell that pinned it to one value inside one
+    /// implementation would be re-taking a decision the engine had just handed
+    /// to the caller. The three callers in this crate do not all want the same
+    /// answer, which is the practical half of the same argument:
     ///
     /// | caller | passes | because |
     /// |---|---|---|
@@ -283,6 +290,12 @@ pub trait CanvasTargetProvider {
     // ★★★ THE SAME THREE QUESTIONS, FOR EITHER INDEX SPACE
     // ===================================================================
     //
+    // `OPERATOR_REQUESTS.md` O70, 2026-09-01. The three above take a page
+    // paint-order index, which is the only address the Part and Node rungs
+    // have ever had — so those rungs were structurally unavailable for
+    // anything painted inside a form XObject. `canvas::input::probe` said so
+    // in a comment: *"the ladder stopping at the Object rung for a leaf,
+    // expressed where the address space runs out."*
     //
     // These take a `TargetId` and are the ones `probe` now asks. The
     // page-index forms stay for the callers that legitimately hold one, and

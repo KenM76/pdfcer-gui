@@ -3,6 +3,9 @@
 //!
 //! # What this is for
 //!
+//! `OPERATOR_REQUESTS.md` **O48**, answered *"yes to all three"* on 2026-08-28.
+//! It was raised by this project rather than by him, from a limit found while
+//! wiring Remove-embedded-fonts:
 //!
 //!
 //! §7.5.6's update section is *appended*, so every space-reclaiming operation

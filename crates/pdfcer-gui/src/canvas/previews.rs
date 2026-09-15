@@ -57,6 +57,9 @@ pub struct Slots {
     /// ★★★ **The selection's own geometry at its new position**, in page space
     /// (`OPERATOR_REQUESTS.md` O63).
     ///
+    /// **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me
+    /// the shape change of the line, it just had a perimeter box around it …
+    /// there isn't a real preview like there is in inkscape."*
     ///
     /// Beside [`Self::ghost`] rather than replacing it, and the two are `Some`
     /// together on most rungs. They answer different questions — *where is it

@@ -3,6 +3,8 @@
 //!
 //! ## The operator's sentence this module exists to answer
 //!
+//! > *"the box outlined when an object is selected should be in the same angled
+//! > orientation as the object."* — 2026-09-07, `OPERATOR_REQUESTS.md` **O147**
 //!
 //!
 //! ## ★★★ THIS MODULE WAS A WORKAROUND FOR ONE DAY, AND IS NOW A THIN ADAPTER

@@ -68,6 +68,27 @@
 //!
 //! ## ★★ Three things no string in this file is allowed to say
 //!
+//! 1. **That any other reader agrees.** The widely-repeated claim that Acrobat
+//!    and the PAdES family report such a document as *"signed, but altered
+//!    since signing"* is, in the engine's words, *"empirical tool behaviour,
+//!    explicitly not sourced"*, and *"must not be cited from here"*. So no
+//!    sentence below predicts what will happen in another application. That is
+//!    a real temptation — it is the most useful thing an operator could be
+//!    told — and it is unsourced, which under the claim-bearing-copy rule
+//!    settles it.
+//! 2. **That a signature is valid, or verified, or checked.** ★★★ **The
+//!    REASON changed on 2026-09-05 and the RULE did not, which is the only
+//!    reason this entry is still here.** It used to rest on the engine's own
+//!    opening line, *"This module verifies nothing"* — and that stopped being
+//!    true at `pdfcer-core` v0.38.0 (`b01964f`), where
+//!    `signature::verify_all_with_trust` does compute the digest and does walk
+//!    the chain. What survives is a **scope** rule rather than a capability
+//!    one: the checking is reported by [`crate::panels::signatures`], as three
+//!    separate labelled facts, and **nothing in this file may borrow that
+//!    verdict**, because every string here is drawn by a save dialog that has
+//!    looked at byte ranges and nothing else. [`verifies_nothing`] is the
+//!    footnote that says so, and since 2026-09-05 it also names the surface
+//!    that has the other answer instead of implying there is none.
 //!
 //!    ⇒ ★★ *This is the seventh recurrence of the project's most expensive
 //!    pattern.* The prohibition was right; its stated justification was a
@@ -94,6 +115,16 @@
 //!
 //! ## Voice
 //!
+//! The catalog's standing conventions apply — sentence case, full sentences
+//! with punctuation for prose, name the thing and what the operator can do.
+//! One addition specific to this area: **no exclamation, no capitals, no
+//! "warning".** The one sentence in this shell that shouts —
+//! `text::compact::signature_line`'s *"CANNOT keep them"* — earns it by
+//! describing a loss that cannot be repaired by any later act. A save that
+//! invalidates a signature is not in that class: the file the operator started
+//! from is still on disk (a copy) or still contains its earlier revision (an
+//! in-place incremental save), so the situation is recoverable and the copy
+//! should not imply otherwise.
 
 /// The title bar of the window that asks before an invalidating save.
 ///
@@ -291,6 +322,13 @@ pub const fn cancel_button() -> &'static str {
 /// looked at all.
 ///
 ///
+/// The sentence used to read *"pdfcer does not check any signature's
+/// certificate or its cryptography."* That was a claim about the **build**,
+/// and it became false the day `signature::verify_all_with_trust` was wired
+/// (`crate::trust::examine`, consumed by `crate::panels::signatures`, which
+/// draws integrity, coverage and trust as three separate labelled lines).
+/// Engine `pdfcer-core` v0.38.0 at `b01964f`; measured against that lock, not
+/// recalled.
 ///
 /// What is still true is the narrower thing this window needed all along:
 /// **this window** has not checked anything — it is arithmetic over byte

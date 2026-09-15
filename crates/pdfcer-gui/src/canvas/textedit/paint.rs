@@ -71,6 +71,8 @@ const PREVIEW_INSET_PT: f32 = 2.0;
 /// the draft. So the operator typed into a bracket and their characters
 /// appeared nowhere at all:
 ///
+/// > *"I can edit text now, but there is no live preview of that either."*
+/// > — 2026-08-20
 ///
 /// ## Why an in-place editor BOX is not the ghost D4a condemns
 ///
@@ -188,6 +190,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     let font = egui::FontId::proportional(height * PREVIEW_FILL);
     // ★★★ A BOX DRAFT WRAPS; EVERY OTHER DRAFT DOES NOT.
     //
+    // The operator, 2026-08-21: *"I should be able to make it multi line."*
     //
     // `Anchor::Box` is the anchor a dragged rectangle produces, and the whole
     // point of that rectangle is a **width to wrap against** — a PDF has no

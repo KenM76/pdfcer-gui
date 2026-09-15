@@ -381,6 +381,16 @@ pub fn typing(
                 }
                 // ★★★ THE DRAFT'S CLIPBOARD — copy, cut and paste. Defect O18.
                 //
+                // All three were absent until 2026-08-21, and the absence was
+                // not an oversight so much as a half-finished thought.
+                // `textsel::clipboard::pending_key` was widened that same week
+                // to STOP answering Ctrl+C while a draft is composing, with a
+                // correct argument: *"the operator is composing, and the
+                // selection they made before the caret landed is not what those
+                // two keys mean any more"*. True — and it left the chord with no
+                // owner at all, so it fell through to the ribbon keymap, reached
+                // `edit.copy`, and copied an OBJECT. The operator pasted into
+                // Notepad and got *"1 object copied from pdfcer"*.
                 //
                 // The lesson is the general one: taking a chord away from a
                 // handler is only half a decision. The other half is naming who
@@ -428,6 +438,9 @@ pub fn typing(
                     draft.caret = insert(&mut draft.text, draft.caret, &pasted);
                     changed = true;
                 }
+                // ★★ **Caret movement**, 2026-08-20, on the operator's report
+                // that *"the cursor just sits at the end of a text line. It
+                // can't be moved to the center of an existing text block."*
                 //
                 // These five arms are what makes the caret a caret. Before
                 // them the draft had no position at all: text was appended and
@@ -485,6 +498,10 @@ pub fn typing(
                 // ★★★ UP AND DOWN WALK THE PAGE'S OWN LINES, AND CROSS INTO
                 // THE NEXT PARAGRAPH.
                 //
+                // The operator, 2026-08-21: *"there was an acrobat feature in
+                // the original pdfcer-gui that attempted to reassemble
+                // individual lines into paragraphs and the cursor would move to
+                // the next block of text using the navigation keys."*
                 //
                 // **Salvage.** `canvas::textedit::blocks` carries the four
                 // lines it came from and the argument; the short form is that
@@ -621,6 +638,8 @@ pub fn typing(
                 }
                 // ★★★ ENTER MEANS TWO THINGS, AND THE ANCHOR DECIDES WHICH.
                 //
+                // The operator, 2026-08-21: *"I should be able to make it multi
+                // line."*
                 //
                 // | anchor | plain Enter | Ctrl+Enter |
                 // |---|---|---|
@@ -692,6 +711,13 @@ pub fn typing(
                         // ★★★ **A LINE ALREADY ON THE PAGE CANNOT BE SPLIT, AND
                         // NOW IT SAYS SO** — O127, defect 2.
                         //
+                        // This used to commit. That is a defensible behaviour
+                        // and it is the wrong one, because it makes Enter mean
+                        // *insert a line break* in two drafts and *finish this
+                        // edit* in the third — so the operator's question
+                        // (*"can the enter key create new lines when we are
+                        // editing?"*) gets a silent, invisible "no" delivered
+                        // as a completed edit.
                         //
                         // ⇒ Enter now means one thing everywhere: **a new
                         // line**. Where the file cannot hold one, the operator
@@ -1227,6 +1253,10 @@ mod tests {
 
     /// ★★★ **Enter means a NEW LINE, and it means it everywhere it can.**
     ///
+    /// `OPERATOR_REQUESTS.md` **O127**, defect 2, and the whole of the answer to
+    /// *"can the enter key create new lines when we are editing or creating
+    /// text?"* Both authoring anchors take a break: the dragged box always did,
+    /// and the clicked point — which used to commit — now does too.
     #[test]
     fn enter_makes_a_new_line_in_both_authoring_drafts() {
         for anchor in [

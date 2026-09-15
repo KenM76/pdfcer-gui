@@ -336,6 +336,14 @@ fn start_a_run(
     session.settle(40);
     // ★★★ **MAXIMIZE, and this line is a repair.**
     //
+    // Found on 2026-09-01 by writing `checks::ocr_progress` and watching it
+    // SKIP for a reason that turned out to apply to THIS check too: at the
+    // window's default width the `file` tab's **Recognise group collapses**,
+    // and a collapsed group declares `ribbon.group.file.recognise.collapsed`
+    // instead of `ribbon.item.file.ocr`. The harness then reports *"the
+    // application declared no `ribbon.item.file.ocr` region"* — which reads as
+    // the command having been removed, and is in fact the ribbon doing exactly
+    // what a ribbon is for.
     //
     // ★★ This check had therefore been reporting **SKIP** rather than PASS, and
     // a SKIP is not a failure, so nothing was red and nothing prompted a look.

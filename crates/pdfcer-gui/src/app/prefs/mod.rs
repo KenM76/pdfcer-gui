@@ -152,6 +152,8 @@ pub use wheel::WheelPaging;
 
 /// The shipped maximum zoom, as a percentage.
 ///
+/// ★★ **The maximum, on the operator's instruction of 2026-08-22** — *"Also
+/// set the default to be able to hit the maximum zoom."*
 ///
 /// It was 800 % for one build, chosen so a fresh install behaved exactly as
 /// the shell had before the setting existed. That was the cautious call and he
@@ -348,6 +350,8 @@ pub struct Prefs {
     /// **Wash the fillable fields, so you can see what can be typed into** —
     /// `OPERATOR_REQUESTS.md` O96.
     ///
+    /// Ken, 2026-09-02: *"in our display section we should have an option to
+    /// shade the form fields like acrobat does."*
     ///
     /// # ★★★ Why this is not the thing rule 4 forbids, and the distinction is
     /// exact
@@ -407,6 +411,12 @@ pub struct Prefs {
     ///
     /// # ★★ Why `Option`, and why collapsing it would be a regression
     ///
+    /// `None` means *"fall through to the per-mode default"*, and it has to
+    /// stay expressible. `MODES_AND_PANELS.md`'s per-mode rule — Read is
+    /// continuous — is a deliberate decision from 2026-08-13, and an operator
+    /// who has never stated a preference must keep getting it. A plain
+    /// `PageDisplay` here would have to pick one, and picking one silently
+    /// overrides that rule for everybody.
     ///
     /// This is the same refusal [`crate::viewer::remembered::recall`] already
     /// makes for its own layer: *nothing recorded* and *recorded as single*
@@ -620,6 +630,8 @@ pub struct Prefs {
     ///
     /// # The defect this exists for
     ///
+    /// The operator, 2026-08-26: *"When I go to settings and select some of the
+    /// standards the save button is greyed out and I can't save the change."*
     ///
     /// Both halves of that are literally true, and the second explains the
     /// first. A preset's *values* were the only thing recorded, and

@@ -186,6 +186,13 @@ pub fn version_line_after(version: &str, commits: u32, modified: bool) -> String
 ///
 /// # Why this says something rather than showing nothing
 ///
+/// The no-placeholders rule (R9) forbids rendering a stub, and it would be
+/// satisfied by drawing no line at all. This says a sentence instead, for the
+/// reason [`component_absent`] already records for `iccce`: **that rule governs
+/// controls, and this is a provenance report.** An operator asking what they
+/// are running is owed *"this is not a released build"*, which is a real answer
+/// and a more useful one than a gap where a version used to be — and a gap is
+/// also indistinguishable from a layout fault.
 ///
 /// It contains **no number**, and that is load-bearing rather than incidental.
 /// The states that reach it — a tarball with no `.git`, a machine with no
@@ -237,6 +244,7 @@ pub fn build_line(stamp: &str, rev: &str) -> String {
 /// nothing. What identifies the engine in a given executable is the revision
 /// and when that revision was committed.
 ///
+/// Reads *"pdfcer 0.7.0 — revision 6af5655, committed 2026-08-18 14:02"*.
 #[must_use]
 pub fn component_line(name: &str, version: &str, rev: &str, committed: &str) -> String {
     let mut line = format!("{name} {version} — revision {rev}");

@@ -1,5 +1,8 @@
 //! # `dialogs::formfield` — the details a placed form control needs
 //!
+//! **Operator request, 2026-08-26:** *"when I click one I should be able to
+//! click on the canvas to place the position or drag a box for size then a pop
+//! up lets me set the details for the feature."* This is the pop-up.
 //!
 //! It opens on `Action::BeginFormField`, which the canvas raises on the click or
 //! release that finishes placing, and it **authors nothing until Accept**. That
@@ -660,6 +663,13 @@ impl FormFieldDialog {
         crate::dialogs::buttonaction::rows(ui, &mut self.draft.action);
         // ★★★ THE INERT NOTE IS GONE, and its deletion is the feature.
         //
+        // Until 2026-09-01 this row ended with a sentence saying pdfcer *"can
+        // place the button but cannot yet give it something to do"*, and the
+        // ribbon command was greyed for the same reason. `pdfcer-core` shipped
+        // `set_button_action` on 2026-08-30 and the reply said, in as many
+        // words: *"if your surface tells the operator that pdfcer never authors
+        // an action, it is now saying something untrue in the direction that
+        // matters."*
         //
         // ★ Two days passed before anyone checked. That is the finding worth
         // keeping: the reply arrived, was read, and the sentence it warned

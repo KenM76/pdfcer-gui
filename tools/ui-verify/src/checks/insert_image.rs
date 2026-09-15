@@ -130,6 +130,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // ★★ **A PNG this harness encodes, or a file named by `PDFCER_UIV_IMAGE`.**
     //
+    // The env seam was added 2026-08-19, on the operator's report that *"the
+    // insert image button doesn't insert it either"* — for a **jpg** — while
+    // this check, which drives exactly that button, was passing.
     //
     // It was passing on a PNG the harness authors itself, and that is the same
     // fixture trap that hid the text-editing defect for three weeks: *a check
@@ -207,6 +210,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★ **The operator's own sequence, when asked for**: a NEW document from
     // the template first, then the insert.
     //
+    // 2026-08-20, verbatim: *"Make a new document from a template … and insert
+    // the image."* He reports the insert doing nothing and has done since it
+    // shipped, while this check — which inserts into an **opened** PDF — has
+    // passed throughout, including against his own file.
     //
     // A created document is not an opened one: `Origin::Created`, no file
     // behind it, `stored_under()` empty. If the difference lives there, this is
@@ -397,6 +404,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: ★★ THE PICTURE IS ACTUALLY ON THE PAGE -------------------------
     //
+    // Every assertion above reads the TRACE, and on 2026-08-20 every one of
+    // them passed against the operator's own 4 MB JPEG while he was reporting
+    // *"I click insert and nothing happens"* — accurately. A trace can say the
+    // verb ran, the document changed and the epoch moved. It cannot say the
+    // canvas repainted, and "the edit landed and the view kept showing its
+    // cached raster" is, from the operator's chair, indistinguishable from a
+    // button that does nothing.
     //
     // What it caught: `EditSession::add_image` returns `Ok`, reports correct
     // disclosures, and leaves a page whose `/Contents` `page_tree::pages` then

@@ -347,11 +347,20 @@ impl MeasureState {
     /// # ★★ This function is read by more than the Escape key, and forgetting
     /// that shipped a tool with NO PREVIEW
     ///
+    /// Its doc comment used to say only *"drives the two-stage Escape's
+    /// stage-1 vs. stage-2 choice — ui-spec §1.3"*, which is true and was not
+    /// the whole truth. `super::preview` opens with
     ///
     /// ```text
     /// if !st.gesture_in_progress() { return; }
     /// ```
     ///
+    /// so a pick kind missing from this disjunction does not merely survive
+    /// Escape — **it draws nothing at all**. The perimeter tool shipped on
+    /// 2026-08-20 with a preview arm that was written, tested for its segments,
+    /// and unreachable, because this function had not learned the new field.
+    /// The operator reported it the same day: *"both these tools need a preview
+    /// just like the measure tool has."*
     ///
     /// It is the exact failure class this project keeps meeting — a feature
     /// whose parts are all correct and whose *join* nobody observed — and the

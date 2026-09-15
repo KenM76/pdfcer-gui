@@ -249,6 +249,11 @@ mod tests {
     fn the_ron_file_reads_as_a_ribbon() {
         let text = built_in_ron();
         for needle in [
+            // ★ Was `Command(id: "file.open")` until 2026-09-04. `file.open`
+            // is now a **Large** item — the mockup draws it as one of the File
+            // group's two big controls — so it serializes with its size and no
+            // longer matches a needle that was really asserting *"a
+            // default-sized command elides its size"*.
             //
             // Both halves of that property are now asserted, which is stronger
             // than what was here before: `file.new_from_template` is the plain
@@ -262,6 +267,13 @@ mod tests {
             "caption: \"Page display\"",
             "id: \"review\"",
             "\"Ctrl+1\": \"mode.read\"",
+            // ★ The contextual Format tab's condition, and it is
+            // `selection.formattable` rather than `selection.any` since
+            // 2026-08-27 — the tab now carries controls for two kinds of
+            // selection, so its condition is the union rather than either
+            // operand. Kept in this list because the needle it is here to
+            // prove is *"a condition round-trips into the file legibly"*, and
+            // that is exactly as true of the new name.
             "visible_when: \"selection.formattable\"",
             "kind: \"colour_swatch\"",
             "Custom(kind: \"font_face\", visible_when: \"mode.edit_content\")",

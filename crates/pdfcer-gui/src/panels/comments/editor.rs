@@ -167,6 +167,11 @@ pub(super) fn note_controls(
 ///
 /// # The gap this closes, in this shell's own words
 ///
+/// 2026-09-05, filed and carried open until the verb landed: *"we can read a
+/// comment thread and cannot add to it."* The **read half already worked** —
+/// this panel's trace has printed `replies=` since the day it was written, and
+/// `crate::canvas::notepopup::thread` draws the conversation inside a comment's
+/// window. What was missing was a destination, and this is it.
 ///
 /// # ★★ Beside *Add note*, not under it, and the pairing is the explanation
 ///

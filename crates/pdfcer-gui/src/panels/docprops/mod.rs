@@ -871,6 +871,14 @@ fn dropped_objects_note(ui: &mut Ui, report: &pdfcer_core::recover::RecoveryRepo
 /// sentence arrives at one place.
 ///
 ///
+/// This section used to read *"No control, no button, no way to act"*, and
+/// explained at length that choosing the other value of a duplicate key is a
+/// **re-load with different `LoadOptions`** rather than an edit, that the shell
+/// had no such route, and that drawing a disabled control for it would be the
+/// placeholder **R9** forbids. Every clause of that was correct. The last one
+/// stopped being true when `ENGINE_BACKLOG.md` rows 280 and 281 were wired, and
+/// a limitation sentence outliving its limitation is a defect in whoever
+/// believes it.
 ///
 /// What is drawn now: the rows, unchanged, followed by **one button** —
 /// [`crate::text::anomalies::reread_first_button`] or its opposite, whichever

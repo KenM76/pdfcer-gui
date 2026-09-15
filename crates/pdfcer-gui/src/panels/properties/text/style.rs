@@ -169,6 +169,14 @@ impl TextStyleDraft {
     ///
     /// # ★★ `options` is not optional, and passing the wrong one is a lie
     ///
+    /// `StylePolicy::Refuse` changes the answer: under it a ladder that reaches
+    /// rung 4 is a **refusal**, not a synthesis. The engine says so at the
+    /// method — *"pass the same `FormatOptions` the commit will use"* — and
+    /// this passes the operator's own posture out of the settings store, the
+    /// same value `crate::app::actions::textstyle` puts on the commit. A
+    /// preview run under a default posture would promise thickened letters to
+    /// an operator who had ticked *never fake it*, which is the exact defect
+    /// the deleted `Refuse`-pinned probe used to cause from the other side.
     ///
     /// ★ A single axis per call, because the two buttons issue two separate
     /// single-axis requests; see [`TextStyleDraft::italic_outlook`] for why

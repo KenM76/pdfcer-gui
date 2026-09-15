@@ -9,6 +9,12 @@
 //!
 //! # ★★★ Why there are two, and why the first one was not enough
 //!
+//! Until 2026-08-29 there was one check, it was named
+//! `…_of_a_shared_form`, its pass note read *"Every other invocation site keeps
+//! naming {original} and is byte-identical"* — and it was pinned to
+//! `page-sized-form.pdf`, **a document with exactly one invocation.** There
+//! were no other invocation sites. The check asserted a sentence about a
+//! population of zero and passed.
 //!
 //! That is not a cosmetic error in a note. It is the same defect the *feature*
 //! had, reproduced in the instrument that was supposed to catch it: the command
@@ -146,6 +152,16 @@
 //! One 200 × 200 pt page whose only page object is a page-sized form holding
 //! three 40 × 40 squares. It is invoked **once**.
 //!
+//! ★★★ This file used to be the shared check's fixture, and the comment that
+//! justified it read: *"It is invoked once, not thirty-six times, and that is
+//! fine — `unshare_form` does not require a form to be shared, and refusing to
+//! privatise a singly-invoked form would be a rule nobody wrote."* Both
+//! sentences were true about the **engine**, which is a verb and does what it
+//! is told. Neither was a defence of the **shell**, which had told the operator
+//! their drawing was on other pages and dirtied their document to give them a
+//! byte-identical clone of it. The rule nobody had written is now written:
+//! `crate::…::UnshareRefusal::NotShared`, and this file is the fixture that
+//! proves it fires.
 //!
 //! ## The sequence
 //!

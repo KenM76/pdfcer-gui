@@ -340,6 +340,12 @@ mod tests {
     /// ★★★ **The print dialog's runaway, reproduced as arithmetic — and the
     /// proof that no pure function could have stopped it.**
     ///
+    /// Operator report, 2026-08-25: the print dialog *"keeps expanding its size
+    /// in little steps to infinity"* after pressing Print. The cause was a
+    /// footer row whose right-to-left button block reached the right edge of
+    /// whatever width it was offered, with a status label appended AFTER it —
+    /// so the row overflowed by the label's width no matter how wide the
+    /// window became.
     ///
     /// This test models exactly that: content that is always `OVERFLOW` wider
     /// than its window. Every individual answer [`fit_target`] gives is

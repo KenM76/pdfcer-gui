@@ -24,6 +24,12 @@
 //! produced no output"* — and it is worth repeating here, because the
 //! same silence is *quieter* for a layout than for a ribbon.
 //!
+//! A silently dropped ribbon item is a missing button, which an operator
+//! notices. A silently dropped *panel* is a panel that used to be in the
+//! dock and now is not, which an operator experiences as *"the
+//! application lost my layout"* — the complaint `MODES_AND_PANELS.md`
+//! records against the benchmark product, whose remedy for a bad layout
+//! file is *"the documented route is to quit and delete that file"*.
 //!
 //! So every drop produces a [`LayoutSkip`] naming the site and the
 //! reason, [`LoadReport`] is returned **by value** so the caller must

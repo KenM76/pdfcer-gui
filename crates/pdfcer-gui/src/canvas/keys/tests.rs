@@ -436,6 +436,9 @@ fn delete_with_nothing_selected_raises_nothing() {
 /// has outlived the reason originally given for it — which is why the reason is
 /// rewritten here rather than left standing.
 ///
+/// **It used to be:** *"the Part rung has no delete verb wired"*. True until
+/// 2026-09-05, when `delete_subpath`, `delete_text_run` and `delete_node` were
+/// wired through [`crate::canvas::deleting`]. The rung has a verb now.
 ///
 /// **What is asserted is unchanged and is the part that mattered all along:**
 /// the Part rung must not raise `DeleteSelection`. One measured CAD export
@@ -1306,6 +1309,11 @@ fn delete_acts_on_an_annotation_when_the_gate_is_open() {
 /// tripwire as working when it had not run at all.
 ///  And why it is compiled out of a RELEASE test run.
 ///
+/// The tripwire is a `debug_assert`, so `cargo test --release` compiles the
+/// panic away and this test then fails for a reason that says nothing about
+/// the program: *"test did not panic as expected"*. Found 2026-09-10 -- the
+/// release suite reported `3313 passed; 1 failed` while the debug suite
+/// reported `3314 passed; 0 failed`, and the difference was entirely this.
 ///
 /// A permanently-red test in one profile is worse than no test, because the
 /// only way to keep using that profile is to learn to ignore the red -- and a

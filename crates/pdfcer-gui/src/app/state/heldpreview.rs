@@ -6,6 +6,11 @@
 //! raster that has not caught up — and everything here is the rule for deciding
 //! which of them the operator should be looking at.
 //!
+//! **Ken, 2026-08-30:** *"the live preview should remain while the update to the
+//! pdf structure runs in the background."* Without the hold, releasing a drag
+//! drops the preview while the raster underneath still shows the object where it
+//! started; the object appears to **snap back** and then jump, which reads as
+//! the program having refused the edit and changed its mind.
 //!
 //! ★ Holding the picture is honest rather than optimistic: the edit **has**
 //! happened, so the held shape is the true state of the document, drawn by the

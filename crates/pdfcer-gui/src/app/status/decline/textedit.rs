@@ -5,6 +5,13 @@
 //!
 //! ## Why it is its own file
 //!
+//! **R2.** [`super`] crossed 1,500 lines the day these two arrived — the second
+//! split from it, after `decline/floor.rs` — and the seam is a real one rather
+//! than a size-driven cut. Everything else in that file answers *"what is a
+//! decline, and how long does it owe its sentence?"*; this answers *"what does
+//! the text caret decline, and who says so?"*, which is a subject with two
+//! call-site families and an argument about **channels** that nothing else on
+//! that surface shares.
 //!
 //! ## ★★★ The argument, once, for both: a sentence in the wrong slot is silence
 //!
@@ -235,6 +242,14 @@ fn record_edit_text(why: crate::text::textedit::EditRefusal) {
 /// - **grepping its `Display` string** — prose that is theirs to reword, which
 ///   `check-ui-strings.sh`'s exclusion 3 rules out in as many words.
 ///
+/// It also said the generic sentence was *"written to be deleted"* the day
+/// `EditError` gained a coarse kind. **It has one.**
+/// `pdfcer_core::text_edit::RefusalKind` shipped at `b1033ab` in direct answer
+/// to this project's 2026-09-04 request, and is deliberately **not**
+/// `#[non_exhaustive]` so the match is proved complete by the compiler. It had
+/// never been consumed here, because both engine-watching gates are keyed on
+/// `EditSession`'s **verbs** and a new *type* is invisible to
+/// `check-verb-coverage.sh` and `check-engine-backlog.sh` alike.
 ///
 /// # `one_operator` is the fact the engine cannot have
 ///

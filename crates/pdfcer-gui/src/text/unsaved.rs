@@ -117,6 +117,14 @@ pub fn edits_at_stake(edits: u64) -> String {
 ///
 /// # Why this did not exist until today
 ///
+/// Because this module was written when it was TRUE that pdfcer had no Save,
+/// and it said so in as many words: *"pdfcer cannot yet save over the file it
+/// opened."* `file.save` landed on 2026-08-20 and this window was never
+/// revisited, so the one prompt an operator meets when they are about to lose
+/// work went on offering a file picker as its only way of not losing it. He
+/// pressed the save button here, got asked for a filename, and the document
+/// closed — which is what he reported as *"it closes the document after
+/// saving."*
 ///
 /// # No ellipsis, and that is the point of the pair
 ///
@@ -248,7 +256,19 @@ mod tests {
         // reject the shipped button, and takes the whole assertion out.
         //
         //
+        // It used to refuse any label reading as a Save over the open file,
+        // *"which this build cannot do"* — true when it was written, false
+        // since `file.save` landed on 2026-08-20, and never revisited. So a
+        // green test was actively holding the stale answer in place: the one
+        // window an operator meets when they are about to lose work offered a
+        // file picker as its only alternative to losing it. `OPERATOR_REQUESTS.md`
+        // O65.
         //
+        // ⇒ The property under test changes from *"nothing claims a save"* to
+        // **"every label states its destination"**, which is the durable
+        // version and would have been the right one all along: it passes on
+        // today's build, would have passed on the 2026-08-20 build, and still
+        // refuses a bare "Save changes" that says nothing about which file.
         for label in [
             save_button(),
             save_copy_button(),

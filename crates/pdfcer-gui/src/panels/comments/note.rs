@@ -1,6 +1,14 @@
 //! # `panels::comments::note` — the note being typed, and the stamp that keeps
 //! it honest
 //!
+//! One annotation's `/Contents` while the operator is editing it, and nothing
+//! else. Split out of [`super`] rather than added to it because this is the
+//! first piece of **inter-frame operator state** the Comments panel has ever
+//! had, and that module's own header says in as many words that it had none:
+//! *"it is a pure function of the document. Nothing in it is expanded, picked,
+//! drafted or remembered."* That sentence is now false and is corrected there;
+//! this file is what made it false, and it is worth its own file so the
+//! argument for the correction is in one place.
 //!
 //! ## ★★★ Why a draft at all, rather than writing on every keystroke
 //!

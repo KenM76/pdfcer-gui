@@ -126,6 +126,12 @@ pub fn insert(text: &mut String, caret: usize, s: &str) -> usize {
 /// meaning for, and putting it in a PDF show string would be authoring a byte
 /// the operator cannot see."* That is still true of typed text.
 ///
+/// It stopped being true of the whole draft on 2026-08-21, when a box gained a
+/// paragraph break — and the guard silently ate it. **The Enter arrived, the
+/// branch was right, `insert` was called, and the newline was filtered out one
+/// call deeper.** The driven check reported *"the paragraph was authored as 1
+/// line"*; the trace showed the key arriving and the length not moving; and the
+/// answer was a filter written for a different question.
 ///
 /// ★ So the filter stays and the newline gets a door of its own. Relaxing
 /// `insert` to permit `\n` would have permitted every other control character
@@ -196,6 +202,8 @@ pub fn delete_forward(text: &mut String, caret: usize) -> usize {
 // Selection
 // ---------------------------------------------------------------------------
 //
+// ★★ Added 2026-08-21 for `OPERATOR_REQUESTS.md` O14 item 11: *"no selection
+// inside a draft — no Shift+arrow, no Ctrl+A, no drag-select."*
 //
 // The whole of a selection is TWO INDICES AND FOUR RULES, and every one of the
 // rules is here rather than in the keystroke handler, because a rule stated at

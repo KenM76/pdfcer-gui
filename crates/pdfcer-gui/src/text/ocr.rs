@@ -105,6 +105,8 @@ pub fn cancelled(attempted: usize) -> String {
 
 /// **What the recogniser is doing right now.**
 ///
+/// Operator request, 2026-09-01: *"so that the user can see that it is doing
+/// something and hasn't frozen on large documents."*
 ///
 /// ★★ Three moving numbers, and each answers a different worry. The page count
 /// answers *"how far"*; the character count answers *"is it still alive"* —
@@ -165,6 +167,11 @@ pub fn intro() -> &'static str {
 
 /// The label on the control that starts recognition.
 ///
+/// ★ **No longer "Recognise this page".** It said that because that was all it
+/// could do, and the operator's 2026-08-26 report — *"how do I OCR more than
+/// one page? Why does the tool stop at one?"* — was as much about the label as
+/// about the capability: a button naming one page is a button that has already
+/// answered the question, wrongly.
 #[must_use]
 pub fn run() -> &'static str {
     "Recognise"
@@ -329,6 +336,12 @@ pub fn no_confidence() -> &'static str {
 /// the words are *in the document*, an ordinary Save writes them, and an
 /// ordinary Undo removes them.
 ///
+/// The operator, 2026-08-26: *"Why do I have to save a copy instead of just go
+/// back into my pdf and save over it or save from there?"* The answer was that
+/// `add_ocr_layer` took an immutable document and handed back a whole file, so
+/// this shell had nothing to put the layer *into*. The engine's Pass 135.0
+/// (2026-08-27) made recognition an edit, and the honest sentence is now the
+/// short one.
 #[must_use]
 pub fn applied_to_document() -> &'static str {
     "The text is now in this document. Save when you are ready, or press Ctrl+Z to take it back out."

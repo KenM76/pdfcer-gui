@@ -286,6 +286,11 @@ pub(super) fn pages_layout(
     }
 
     //
+    // The sentence it replaces said, correctly at the time, that paper came
+    // from the printer's own Windows settings and *"pdfcer cannot change it"*.
+    // `pdfcer-print` shipped `PaperSelection` on 2026-08-18 and that stopped
+    // being true. See `crate::text::print::sheet_from_driver` for why an
+    // expiring disclosure is a class of defect worth naming.
     //
     // It sits beside orientation because they are one decision: both are
     // statements about the sheet the page is going to meet, and an operator

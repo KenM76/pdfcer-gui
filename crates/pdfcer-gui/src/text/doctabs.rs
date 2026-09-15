@@ -209,6 +209,9 @@ pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>
 /// window list. If a report can be about the wrong build, the build has to be
 /// on the outside of the window.
 ///
+/// ★★★ **The day AND the local time** — 2026-09-02, on the operator's ask:
+/// *"add the local compilation time to the top bar at the end of the date you
+/// added."*
 ///
 /// It was the date alone, on the reasoning that a title is read at a glance and
 /// the question is *"is this today's?"*. That reasoning was incomplete, and the
@@ -456,6 +459,12 @@ mod title_stamp_tests {
 
     /// ★★★ **A packaged build shows the time and drops the offset.**
     ///
+    /// The operator's ask (2026-09-02) and the common case: `package-portable`
+    /// stamps local time with a numeric offset, and the offset is noise to
+    /// somebody standing in that zone. What matters is that **the minutes are
+    /// there** — two of his reports have been closed by *"you were running an
+    /// old build"*, and on a day with several publishes the date alone cannot
+    /// separate them.
     #[test]
     fn a_packaged_stamp_shows_the_local_time_without_its_offset() {
         assert_eq!(

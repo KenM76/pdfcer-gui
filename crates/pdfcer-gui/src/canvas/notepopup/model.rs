@@ -47,6 +47,14 @@
 //! §12.5.6.14 Table 183 gives the same key the same meaning on the `/Popup`.
 //! A note authored open must therefore **open on load**, with no click.
 //!
+//! ★★★ **The workaround that was here is GONE — 2026-09-06.** This paragraph
+//! read: *"`pdfcer_core::annot::Annotation` does not model `/Open`. Confirmed
+//! by audit on 2026-09-05: `b"Open"` appears exactly twice in the whole crate,
+//! both write sites in `annot_author.rs`. So this module reads the raw
+//! dictionary through `ObjectGraph::value`."* It was reported as a workaround
+//! under pdfcer decision 058 — *anything the GUI has to work around is a place
+//! the crate boundary was drawn wrong* — and filed as
+//! `request_popup_open_state_cannot_be_read.md`.
 //!
 //! `Pass 253.3` shipped [`pdfcer_core::annot::Annotation::open`], and
 //! [`read_open`] is now two field reads. ⇒ **The shell's copy was deleted the
@@ -176,6 +184,9 @@ pub struct NoteView {
     /// assertion inexpressible, and because `Reply` carries the same fact for
     /// the rows in a thread.
     ///
+    /// ⚠ This used to say *"read only — `pdfcer-core` v0.38.0 has no verb that
+    /// authors an `/IRT`"*. `Pass 253.0` closed that; the Comments panel
+    /// authors replies through `crate::app::actions::annot::AnnotAction::Reply`.
     pub in_reply_to: Option<ObjId>,
 }
 
@@ -390,6 +401,13 @@ fn canvas_rect(rect: pdfcer_core::page_tree::Rect, page: &Page) -> Option<Rect> 
 ///
 /// # The defect this closes
 ///
+/// Until 2026-09-05 a click opened a pop-up for *every* annotation that **could**
+/// carry a note, not for those that **do**. So clicking a revision cloud you
+/// only meant to select produced an empty window over the drawing — and, until
+/// the placement fix landed the same day, one that sat on top of the shape and
+/// swallowed the drag as well. It was recorded as a known limit in [`super`]'s
+/// header and on `OPERATOR_REQUESTS.md` O133 as *"a question about WHEN a pop-up
+/// opens rather than where it goes"*. This is that question, answered.
 ///
 /// # The rule, and why it is not simply "has words"
 ///

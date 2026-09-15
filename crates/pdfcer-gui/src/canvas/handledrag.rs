@@ -2,6 +2,10 @@
 //!
 //! ## What this closes, and the row that was wrong about it
 //!
+//! `pdfcer`'s `gui` column ticked *"edit a Bézier handle"* `[x]`. Their sweep of
+//! 2026-08-19 corrected it to `⬜ nothing`: one of six rows that were true of
+//! the **old** in-repo shell and became false, untouched, when the column's
+//! referent moved to this build.
 //!
 //! ★ **Nothing was blocking it.** `EditSession::move_handle` has existed since
 //! Pass 30.1, with a `Handle` enum, a planner, a `v`/`y` re-spelling path and a

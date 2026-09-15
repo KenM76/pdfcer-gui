@@ -253,6 +253,11 @@ pub const fn text_annot_instruction(kind: TextAnnotKind) -> &'static str {
 /// ★ What a release does for a text-bearing annotation, which is NOT what it
 /// does for a shape.
 ///
+/// The distinction `CanvasTool` was split for: *"A markup band authors on
+/// release, from geometry alone. These cannot: releasing produces an empty box,
+/// and an empty box is not an annotation."* An operator who does not know that
+/// reads a release-that-authors-nothing as a broken tool — which is the same
+/// failure shape as the text-editing complaint that produced this panel.
 #[must_use]
 pub const fn text_annot_release() -> &'static str {
     "Nothing is added to the page until you accept what you have typed."
@@ -320,6 +325,12 @@ pub fn measure_perimeter_live(vertices: usize, length: &str) -> String {
 ///
 /// # ★★ Why the SIZE is in it, and why that is the whole ask
 ///
+/// `OPERATOR_REQUESTS.md` O105: *"selecting more points around a hole doesn't
+/// always get it to narrow down to the size of the hole."* An operator adding
+/// points to a fit is watching a number converge, and until 2026-09-03 there
+/// was no number to watch — the fitted circle was drawn on the canvas and its
+/// value appeared only once the dimension had been placed. So the tool could
+/// not be steered: every correction was a commit-and-undo.
 ///
 /// The count is in it for the reason it is in the perimeter's sentence — it is
 /// the only thing on screen that says *whether the last click registered at

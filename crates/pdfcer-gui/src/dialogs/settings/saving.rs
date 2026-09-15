@@ -49,6 +49,11 @@ use crate::text::settings as t;
 /// every entry, so a 5,000-object file gets a 10,000-byte diff without anybody
 /// editing it.
 ///
+/// The reason it shipped wrong is worth keeping: *"match the source"* needed an
+/// **observation of the base file's bytes** that no channel carried. The
+/// recommendation was right and unimplementable at the same time. The channel
+/// now exists — `xref::observed_entry_eol` reads the form out of the base file
+/// — and the operator's 2026-08-08 ruling was to use it.
 ///
 /// # ★ Three legal forms, and the illegal ones are deliberately absent
 ///

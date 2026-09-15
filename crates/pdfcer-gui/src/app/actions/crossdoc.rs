@@ -40,6 +40,10 @@
 //!
 //! ## 2b. And Shift makes it a move, which is the operator's call
 //!
+//! Requested 2026-08-20: *"can you also make it so you can move the pages
+//! between documents instead of just copy by holding one of the keys like shift
+//! or control, whichever on windows uses to switch from copy to move
+//! operation."*
 //!
 //! **Shift.** Windows has bound the drag modifiers the same way since the
 //! mid-nineties — Ctrl copies, Shift moves, Ctrl+Shift makes a shortcut — and

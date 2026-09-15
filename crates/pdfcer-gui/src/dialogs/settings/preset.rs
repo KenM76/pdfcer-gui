@@ -343,6 +343,12 @@ pub fn row(ui: &mut egui::Ui, draft: &mut Draft) {
             // has no other way to read: WHICH standard the window is showing as
             // selected, and whether the draft has anything to save.
             //
+            // The second is the operator's report of 2026-08-26 — *"select some
+            // of the standards [and] the save button is greyed out"* — and it
+            // is not readable from a `ui_rect`, because an enabled button and a
+            // disabled one are the same size and the same place. Without this
+            // line the only oracle would be a screenshot of a greyed control,
+            // which is a contrast measurement standing in for a state.
             crate::diag::trace_changed(PRESET_SLOT, || {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -361,6 +367,10 @@ pub fn row(ui: &mut egui::Ui, draft: &mut Draft) {
                 if ui.radio(selected, c.label()).clicked() && !selected {
                     c.apply(&mut draft.working);
                     draft.chosen_preset = Some(c.id());
+                    // ★★★ **And into the PREFERENCES, which is what makes Save
+                    // live.** 2026-08-26, on the operator's report that
+                    // *"select some of the standards [and] the save button is
+                    // greyed out"*.
                     //
                     // `Draft::is_dirty` compares working values against
                     // original ones, and all eight PDF/X and PDF/A presets
@@ -872,6 +882,8 @@ mod tests {
     /// ★★★ **The operator's report, as an assertion: choosing a standard must
     /// make Save live.**
     ///
+    /// > *"When I go to settings and select some of the standards the save
+    /// > button is greyed out and I can't save the change."* — 2026-08-26
     ///
     /// Both halves were true and the second explains the first. `is_dirty`
     /// compares values, and [`identical_siblings`] measures that **all eight

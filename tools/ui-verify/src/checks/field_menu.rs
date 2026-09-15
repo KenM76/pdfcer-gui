@@ -8,6 +8,10 @@
 //! > *"always always always I need objects on the canvas to be clickable and
 //! > editable as one would expect given our research of other programs."*
 //!
+//! Click, drag, grips and Delete all reached a form field by 2026-08-28. The
+//! **right-click** did not: `canvas::menus` chose between an object menu and a
+//! view menu, and a `/Widget` is neither — it is not in `SelectionState` at all
+//! — so right-clicking a text box offered *"zoom to fit width"*.
 //!
 //! ## ★★★ Why this check is the FIRST of its kind, which is the finding
 //!
@@ -55,6 +59,14 @@
 //! | C | **right-click it** | `canvas-menu context=canvas.field` |
 //! | D | …and the menu had something in it | a `menu.item.canvas.field.*` region per row, inside `menu.body.canvas.field` |
 //!
+//! ★★★ **D's oracle was `canvas-menu-invoked` and that was a misreading**, kept
+//! here because the misreading is instructive. `MenuHost::attach_with` returns
+//! *"the commands the operator CHOSE"*, and the line is written only when that
+//! vector is non-empty — so it reports an ACTIVATION, not an offer, and a check
+//! that opens a menu and presses nothing can never see it. The rows' own
+//! published rects are the offer, they name which commands were drawn, and they
+//! exist for the same reason this check does: `MenuHost::attach_with` began
+//! reporting them on 2026-08-28 precisely so a harness could see a menu.
 //!
 //! ★ Steps A and B are `widget_move`'s, identical in shape including the
 //! Escape — see that file for why the placement tool staying armed is recorded

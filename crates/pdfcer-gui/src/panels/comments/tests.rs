@@ -19,6 +19,12 @@
 ///
 /// # The defect, and how it was actually found
 ///
+/// On 2026-09-05 the Delete button and the note editor were both drawn,
+/// **live and effective, in Read** — the mode whose entire stated posture
+/// is *the document is not yours to alter*. `deletable` asked
+/// `EditSession::annotation_deletion_refusal`, which answers *"would the
+/// engine refuse this document?"* (encrypted, certified) and says nothing
+/// whatever about the operator's stance. Nothing else asked either.
 ///
 /// It was found by launching the release binary **off screen** on the
 /// comment fixture and reading its trace:

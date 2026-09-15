@@ -15,6 +15,12 @@
 //!
 //! # What it asserts, and why the build block is a trace rather than pixels
 //!
+//! The operator asked on 2026-08-18 for About to carry *"the date and time of
+//! the build … and the date and time of the builds of the used pdfcer and
+//! iccce"*. Those values come from `build.rs` through `env!`, so the thing that
+//! can go wrong is not the wording — that is unit-tested — but a value arriving
+//! **empty**, which renders as `built  from abc1234` and reads as a layout
+//! glitch rather than as a missing stamp.
 //!
 //! Reading four fields out of a PNG is not something this harness can do, so
 //! the application traces them alongside drawing them and this check asserts on

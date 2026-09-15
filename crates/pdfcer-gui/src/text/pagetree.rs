@@ -86,6 +86,12 @@
 //! of the file on disk — and never by inspecting a message.
 //!
 //!
+//! Both ordinary sentences used to end *"This is a fault in pdfcer, it has been
+//! reported, and pdfcer will not write a file it knows is damaged."* Every
+//! clause of that was true when written: `delete_pages` updated the immediate
+//! parent's `/Count` and no ancestor, it had been reported that morning, and
+//! the refusal was the only thing between the operator and a file Acrobat opens
+//! with blank pages at the end.
 //!
 //! **`Pass 251.1` fixed it the same day.** So on this engine the sentence
 //! blames pdfcer for damage pdfcer did not do — and the operator meets that

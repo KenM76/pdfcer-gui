@@ -9,7 +9,11 @@
 //!
 //! ## The operator's ask, twice
 //!
+//! > *"We should also have all the font tools available that Word does."*
+//! > — O37, 2026-08-25
 //!
+//! > *"…when I have an object selected like text the Tool tab doesn't switch
+//! > to giving me the editable stuff for that object."* — O46, 2026-08-26
 //!
 //! ## ★★★ The operand is the TEXT SELECTION, not the object selection
 //!
@@ -44,6 +48,13 @@
 //! stakes every restyle on. `crate::canvas::textedit::pin::object_text` is the
 //! join and carries the argument.
 //!
+//! ⇒ Two consequences for a reader of this file. **(1)** The sentence formerly
+//! ending this paragraph — *"the empty state says so in those words"* — has
+//! moved with the state it describes; `route` and `ROUTE_REGION` are gone from
+//! here, and the block where they stood says where they went and why the region
+//! kept its old spelling. **(2)** This section is now exactly what its heading
+//! claims: the editor for a **swept range**. With nothing swept it returns
+//! `false` and says nothing, because something else is speaking.
 //!
 //! ★ Four of the five controls here are still sweep-only, and that is a
 //! decision rather than a leftover: face, size, bold and italic each need a
@@ -69,6 +80,15 @@
 //! `set_font` selects a real face and refuses when the page carries none.
 //! `gate_synthesis` refuses synthesis when a real face **is** available.
 //!
+//! ★★★ **They are NOT exact complements, and this paragraph used to say they
+//! were.** It read *"so between them every page is covered and there is no
+//! page on which bold is unreachable"*, quoting the engine — who withdrew the
+//! claim in writing on 2026-08-27 after reproducing the counter-example.
+//! `gate_synthesis` prefers a real face by *family*, and the face it prefers
+//! may not map every glyph in the run, in which case `set_font` refuses it and
+//! synthesis is already gated off. On `textedit/format_family.pdf` bold is
+//! reachable by neither verb. Filed, confirmed, and queued first by the
+//! engine; `crate::app::actions::textstyle`'s header carries the whole of it.
 //!
 //! ★★ The conclusion survives its premise, which is why the two buttons still
 //! do not grey. Greying them would mean predicting a refusal that depends on a
@@ -106,6 +126,14 @@
 //! sentence kept alive past its subject is how a shell ends up warning about a
 //! limit that no longer exists.
 //!
+//! ⇒ ★★ And the instrument changed with it. The 2026-08-29 join was previewing
+//! the **R90 gate**: one bit, *"is there a real face on this page that claims
+//! this style"*. The gate is one input to the ladder's decision, not the
+//! decision, and it **cannot see rung 2 by construction** — the standard-14
+//! sibling of the run's own family is not on the page, which is the whole point
+//! of it. On the commonest CAD page there is, a title block set in `Helvetica`
+//! with no bold resource, the old hover promised thickened letters about a
+//! press that binds `Helvetica-Bold` and produces genuinely bold type.
 //!
 //! `EditSession::preview_style_ladder` (`Pass 295.0`, consumed here the day it
 //! shipped) runs `plan_style_ladder` — **the function `format_text` runs** —
@@ -280,6 +308,10 @@ pub struct TextStyleDraft {
     /// was there before any of this landed, and which is still the honest thing
     /// to say when nothing is known.
     ///
+    /// ★★ It was `preview_style_resolution` from 2026-08-29 to 2026-09-11 and
+    /// previewed the **R90 gate**, which is a different question from *"what
+    /// will this button do?"* the moment a rung exists that binds a face the
+    /// page does not carry. [`StyleOutlook`]'s header has the whole account.
     bold_outlook: Option<StyleForecast>,
     /// The italic twin of [`Self::bold_outlook`], probed **separately**.
     ///
@@ -450,6 +482,14 @@ impl TextStyleDraft {
         // ★★★ **The only instrument on this path, and it was added the day
         // the path got more expensive.**
         //
+        // Before 2026-09-11 this module emitted nothing at all. It now makes
+        // TWO `preview_style_ladder` calls per sync, each of which walks the
+        // page's content stream — on top of the `inspect` this function's own
+        // header records at 392 ms on the operator's site plan. The cost is
+        // paid once per `(page, run, edit_epoch)` rather than per frame, so it
+        // lands as a pause when text is SWEPT, which is exactly the shape of
+        // report that arrives as *"selecting text got slow"* and has nothing
+        // behind it to read.
         //
         // ★★ Measured rather than assumed, and reported even when it is
         // cheap: a number nobody logged until somebody complained is a number
@@ -635,6 +675,12 @@ pub fn section(
 }
 
 //
+// It drew one sentence — *"press T for the Text tool and sweep across them"* —
+// whenever a text OBJECT was selected and nothing had been swept, and it was
+// `OPERATOR_REQUESTS.md` O89's second candidate, *"the Properties panel naming
+// the missing step where the swatch would be."* Built 2026-08-29, correct, and
+// still not what he asked for: he wanted the colour, and the panel told him
+// where to go and get it.
 //
 // It has moved WHOLE — sentence, region name, `object_kind` gate and the
 // one-object rule — into [`super::textobject`], which draws a **working colour
@@ -653,6 +699,13 @@ pub fn section(
 ///
 /// # ★★★ The list was the page's fonts and no longer only is
 ///
+/// This doc comment used to open *"`set_font` **selects** an existing resource;
+/// it does not **create** one. Offering Helvetica on a page that carries only
+/// Arial would produce a refusal on press."* That was true, it was the reason
+/// the chooser only ever offered what the page already had, and `Pass 162.0`
+/// ended it: pdfcer now authors a standard-14 `/Font` resource on demand, so
+/// Helvetica on a page built from Arial is a change that works rather than a
+/// refusal.
 ///
 /// ★ The old sentence is kept above rather than deleted because the *rule* it
 /// states has not changed — a chooser must not offer entries that cannot work —

@@ -600,6 +600,13 @@ fn the_one_recoverable_refusal_keeps_its_remedy() {
 /// ending in `_` just gained a variant it will not distinguish, and the one it
 /// will not distinguish is the one you care about."*
 ///
+/// ★★ [`FormatError::SynthesisRefusedByPosture`] became reachable on
+/// 2026-09-11, when `StyleChange::stamp` moved from `set_synthetic` to
+/// `set_style`. It fires **only** when the operator explicitly chose
+/// `StylePolicy::Refuse` and pdfcer then walked every real rung and found
+/// nothing — so collapsing it into `Other` would answer *"never fake it"* with
+/// *"pdfcer could not change that text"*: their own instruction, obeyed
+/// exactly, reported back as a malfunction.
 ///
 /// ★ The **distinctness** sweep is the assertion that does the work. Checking
 /// that each variant maps to something passes trivially; checking that no two
@@ -668,6 +675,12 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
             )),
             R::FaceLacksCharacters(vec![REMEDY_A.to_owned(), REMEDY_B.to_owned()]),
         ),
+        // ★ `rung_one` carries a WHOLE CLAUSE since `Pass 295.0`, not the face
+        // list it used to (`passed`). The old field was interpolated straight
+        // after the words `page faces`, which ran them together — `page
+        // facesHelvetica-Bold` — and, worse, read as *"X was used"* where it
+        // meant *"X was tried and rejected"*. `thiserror`'s format string
+        // cannot branch, so the branch moved to the construction site.
         (
             E::SynthesisRefusedByPosture {
                 style: "bold",
@@ -808,6 +821,14 @@ fn each_engine_decline_reaches_a_refusal_that_suits_it() {
 ///
 /// # Why this test exists, and what it is really guarding
 ///
+/// `O198`: the operator's 36-sheet SOLIDWORKS drawing sets its body text in
+/// `AQHZBV+CenturyGothic`, a composite (Type 0 / CIDFont) face. Within-block
+/// reflow of composite text is a deferred engine feature (`R-INV-4`, FF-E), so
+/// **every** reflow he attempted on that sheet was refused — and until
+/// 2026-09-14 the sentence he got was [`ReflowRefusal::EngineDeclined`]'s
+/// *"something about how this page was drawn stops it doing so safely"*. True,
+/// honest, and useless: it gave him no way to know that trying the paragraph
+/// next to it was pointless for exactly the same reason.
 ///
 /// # ★★ The assertion that matters is the SECOND one
 ///

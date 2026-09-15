@@ -56,6 +56,20 @@
 //! [`Host::buttons`] draws the pair and owns all three obligations, because a
 //! caller that had to remember them would forget one:
 //!
+//! - **Enter** activates the affirmative action — but **not while a text field
+//!   has focus and wants the key**, which is why the check asks
+//!   `ctx.text_edit_focused()` first. A multi-line field would otherwise lose
+//!   the ability to type a newline the moment it sat in a dialog.
+//! - **Escape** is equivalent to Cancel *and* to the close button, so all three
+//!   routes out are one outcome.
+//! - The affirmative button is **drawn** as the default, from the theme's
+//!   **accent** and the foreground the theme pairs with it
+//!   (`Theme::accent_pair`), so the operator knows what Enter will do before
+//!   pressing it. A default nobody can see is not a default; it is a surprise.
+//!   ★ This sentence said *"the theme's own selection fill"* until 2026-09-03,
+//!   and that was the defect rather than a description of it: `selection_fill`
+//!   is a 27 %-opacity canvas tint, so the default button rendered **paler than
+//!   an ordinary button** and read as disabled. See [`Host::buttons`].
 //!
 //! ## G6 — it remembers where it was left
 //!
@@ -394,6 +408,11 @@ impl Host {
     ///
     /// # Why a constant, and why it lives on the host
     ///
+    /// The operator's 2026-09-03 report — *"the print button that is so far off
+    /// in the corner it is touching the edge the window"* — was true of all
+    /// fourteen dialogs, because the `Ui` egui hands a viewport callback is the
+    /// window's root and nothing pads it. The main window never showed it: its
+    /// `CentralPanel` brings egui's own inner margin.
     ///
     /// One number, owned here, so that fourteen dialogs cannot pick fourteen
     /// values and so that nobody has to remember to pad theirs.
@@ -579,6 +598,10 @@ impl Host {
         if opened_at == now {
             // A fresh opening has not been engaged with yet.
             ctx.data_mut(|d| d.remove::<bool>(self.engaged_key));
+            // ★★★ AND IT HAS NOT BEEN FITTED YET EITHER — the operator's
+            // *"the second time I place a stamp the window is too small to
+            // show the Add button"*, 2026-09-10, and it was this line's
+            // absence.
             //
             // `fit_key` and `budget_key` live in `egui::Memory`, keyed on the
             // dialog's id string, exactly as the remembered POSITION does. The

@@ -273,6 +273,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     // ★★ THE PREVIEW, AND ONLY A SCREENSHOT CAN SAY IT DREW.
     //
+    // Captured after the last vertex, with the pointer still on the page.
+    // Everything asserted above reads the trace, and on 2026-08-20 all of it
+    // passed on a build whose preview drew NOTHING - `gesture_in_progress` had
+    // not learned the perimeter's pick, so `measure::preview` returned before
+    // painting a single segment. The operator reported it the same day: *"both
+    // these tools need a preview just like the measure tool has."*
     //
     // A picture rather than an assertion, deliberately. Asserting on accent
     // pixels would need the theme's colour and the polyline's exact route
@@ -377,6 +383,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     // --- 4: ★★ the LENGTH tool is the same gesture and does NOT close ------
     //
+    // The operator, 2026-08-20: *"add a length tool that works like the
+    // perimeter tool without needing to close the profile."*
     //
     // Asserted here rather than in a check of its own, because what is worth
     // proving about Length is a NEGATIVE relative to Perimeter — clicking the
@@ -546,6 +554,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ★★ …and the shell ASKED whether the corner should snap.
     //
+    // `ui-conventions/drag-moves.md` D6, and the gap the 2026-08-20 sweep
+    // named: *"a vertex drag does not snap, while the tool that placed that
+    // vertex does — so you can pick a corner onto geometry and then be unable
+    // to put it back."*
     //
     // What is asserted is that the `snap=` FIELD EXISTS, not that a candidate
     // was found. The destination above is a document point chosen for being far

@@ -17,6 +17,11 @@
 //! it?**
 //!
 //!
+//! The 2026-09-05 full sweep reported this check as **FAIL** with two
+//! findings, filed as A5: *"the float window published no viewport-tagged
+//! `ui-rect`"* and *"`view.dock_all_panels` traced `docked=0`"*. It also
+//! recorded that the same check had been failing with `moved=false` "for
+//! days" in other sweeps.
 //!
 //! **All three were this file's, and not the application's.**
 //!

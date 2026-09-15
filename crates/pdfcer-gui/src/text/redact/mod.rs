@@ -62,6 +62,24 @@
 //! ## ★ A departure from the source, and it is about this shell rather than
 //! about copy
 //!
+//! The old shell's permanence statement already deviated from its own ui-spec,
+//! because apply there wrote a **new file** and left the open document alone.
+//! That was true here too until 2026-09-04, when the operator asked for the
+//! choice every other edit in this shell gives him — *"why can't it just wait on
+//! saving until I choose to save over the existing file or save as a new
+//! file?"* — so the permanence statement now has **three** forms, one per
+//! destination: [`permanence_statement`]`(false)` for a new file,
+//! [`permanence_statement`]`(true)` for replacing the open file, and
+//! [`permanence_statement_deferred`] for the destination that lands in the open
+//! document and writes nothing, which is the default and the one he actually
+//! asked for. The clause that does **not** change between the three is the full
+//! rewrite and the impossibility of getting the content back; what changes is
+//! what happens to the file he opened. What is new is that this shell's *ordinary*
+//! save is incremental
+//! and promises so on `file.save_copy`'s tooltip — which makes
+//! [`single_revision_note`] carry more weight here than it did there: it is the
+//! one place an operator is told that this write does **not** behave like the
+//! save they already know.
 //!
 //! ## Conventions
 //!
@@ -96,7 +114,19 @@ pub fn panel_title() -> &'static str {
 /// failure. Carried verbatim from the old shell's `redact_panel_intro`.
 #[must_use]
 pub fn panel_intro() -> &'static str {
+    // ★ 2026-09-04: *"writes a file"* rather than *"writes a NEW file"*. The
+    // apply dialog now offers to replace the open document as well, so the old
+    // wording promised a property the operator can switch off two clicks later
+    // — and this sentence is read before that dialog is ever opened, which
+    // makes it the worse place to be specific about the destination. The
+    // permanence, which does not vary, stays exactly as emphatic as it was.
     //
+    // ★★ 2026-09-05: *"produces a file"* rather than *"writes a file"*, and
+    // *"once it is written"* on the permanence clause. The default destination
+    // no longer writes at the moment of applying — it arms a save
+    // (`Pass 250.2`) — so a sentence promising a file at that click is a
+    // promise the operator can watch not happen. The permanence is unchanged
+    // and stays exactly as emphatic: what varies is *when*, never *whether*.
     "Mark content, then apply to permanently remove it. Marking is reversible and changes nothing in the file; applying produces a file with the marked content gone, and once it is written that cannot be undone."
 }
 
@@ -421,6 +451,12 @@ pub fn containers_decomposed(containers: u64, promoted: u64) -> String {
 /// tells them this write is different.
 #[must_use]
 pub fn single_revision_note() -> &'static str {
+    // ★ 2026-09-04: *"the file that is written"* rather than *"the new file"*,
+    // because it may not be a new one — the operator can now choose to replace
+    // the document he opened, and on that path this sentence carries MORE
+    // weight rather than less: replacing a file that had five earlier revisions
+    // with a single-revision rewrite is precisely the property that makes the
+    // replacement safe, and is the opposite of what `file.save` does.
     "The file that is written will be a single revision. Any earlier revision of this document — which would still hold the un-redacted content — is not carried into it."
 }
 
@@ -487,6 +523,12 @@ pub fn verification_limit_line(too_short: usize) -> String {
 ///
 /// # ★★★ This sentence was the exact opposite of the truth for nine hours
 ///
+/// It read: *"pdfcer cannot yet remove image pixels, so applying redactions to
+/// this document will be refused until no marked region touches an image."*
+/// That was accurate when it was written on 2026-09-03 — it is the operator's
+/// own report, reproduced with `pdfcer` — and `pdfcer-core` **v0.26.0**
+/// (`Pass 245.0`, the same day) made it false: a region covering image samples
+/// now clears those samples, and a region covering a whole image removes it.
 ///
 /// ⇒ The class this belongs to is the one this project keeps paying for: **a
 /// sentence describing an external limitation is a dated citation, not a
@@ -499,6 +541,14 @@ pub fn verification_limit_line(too_short: usize) -> String {
 ///
 /// # ★★ Why it is still said at MARK time, and why it is not a warning
 ///
+/// The disclosure changed subject rather than going away. It used to say *"this
+/// will be refused"*; it now says *"this will be destroyed"*, and that is the
+/// more important of the two. A raster redaction is irreversible in a way a
+/// text one is not: the samples are overwritten, the image is re-encoded, and
+/// what the operator gets back is a black block where their logo was. Seeing
+/// that fact while the rectangle is being drawn — rather than discovering it in
+/// the saved file — is the same argument the original sentence made, applied to
+/// the opposite outcome.
 ///
 /// ★ It offers no remedy, deliberately, for the reason it always did: telling
 /// him to move the rectangle is advice we cannot check, because on a title
@@ -542,6 +592,8 @@ pub use carriers::{
 /// `crate::redact::proof`'s table for why this is disclosed rather than refused.
 ///
 ///
+/// This sentence used to end at *"somewhere in the saved file"*, and the
+/// operator's report of that day is what a warning of that shape produces:
 ///
 /// > *"it always finds text that wasn't redacted, and it always … counts
 /// > everything I selected as unredactable."*
@@ -561,6 +613,14 @@ pub use carriers::{
 #[must_use]
 pub fn raw_residual_line(text: &str, site: crate::redact::ResidualSite) -> String {
     use crate::redact::ResidualSite as S;
+    // ★★★ The drawn-content hit has its OWN sentence, because the shared one
+    // below opens with "no longer appears in anything this document draws" —
+    // the one thing that is false here. The operator's words, 2026-09-09:
+    // *"the way the error is worded it sounds like it found matching text
+    // somewhere else in the document — which it very well could since I
+    // didn't select it or want it redacted."* So this sentence says where,
+    // says it is probably his unselected text, and tells him what ticking the
+    // box means under each reading.
     if site == S::DrawnContent {
         return format!(
             "⚠  The removed text “{text}” also appears in this document's drawn content OUTSIDE the area you marked — most likely another occurrence of the same words that you did not select. pdfcer cannot tell that apart from removed text left behind. If it is text you did not mean to remove, this is not a leak and you can continue; if you meant to remove every occurrence, cancel and mark those too."
@@ -944,6 +1004,15 @@ pub fn suggested_suffix() -> &'static str {
 /// of them still shows the marks and the content, because the session was not
 /// touched, while the file those bytes came from no longer contains either.
 ///
+/// ★★★ **CORRECTED the same evening.** The replace form used to explain that
+/// staleness with *"because pdfcer cannot apply a redaction into an open
+/// document"*. That was true when it was written and stopped being true a few
+/// hours later, when `Pass 250.1` shipped `EditSession::apply_redactions` and
+/// [`destination_open_document`] became the default. The window is still stale
+/// on the two write-now destinations — that has not changed — but the reason is
+/// now a **choice the operator made**, not a limit of the program, and a
+/// sentence that blames the program for a chosen behaviour teaches him the
+/// wrong thing about a control he is holding.
 pub fn applied_clean(file_name: &str, regions: u64, pages: usize, replaced: bool) -> String {
     if replaced {
         format!(
@@ -992,9 +1061,18 @@ pub fn refusal_message(refusal: &crate::redact::RedactApplyRefusal) -> String {
     use crate::redact::RedactApplyRefusal as R;
     match refusal {
         R::NothingToApply => "Nothing to apply — this document has no redaction marks.".to_owned(),
+        // ★★★ **The ask SHIPPED, and this arm was rewritten rather than
+        // deleted** — 2026-09-11. The note it replaces ended *"delete this arm
+        // when it ships"*, and following that literally would have been wrong.
         //
         // # What the old arm said, and what made it stop being true
         //
+        // It was written on 2026-09-09 against the operator's own `SW41177
+        // MATERIAL REQUIREMENTS.pdf` (Excel for Microsoft 365 writes
+        // hybrid-reference files, §7.5.8.4). At that time the engine refused a
+        // full rewrite of **any** hybrid file, so the sentence said so: *"this
+        // file was saved in PDF's hybrid-reference form... pdfcer cannot yet
+        // rewrite a hybrid file from scratch"*.
         //
         // `Pass 281.0` narrowed the refusal to a hybrid whose `/XRefStm`
         // **does not parse** — the file says it hides objects and pdfcer

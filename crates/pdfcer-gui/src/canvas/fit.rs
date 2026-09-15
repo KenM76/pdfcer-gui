@@ -1,6 +1,9 @@
 //! # `canvas::fit` — **where the view goes when the viewport changes, or a fit
 //! is pressed**
 //!
+//! ★★★ **The subject widened on 2026-08-31** (`OPERATOR_REQUESTS.md` O78) and
+//! the old title — *"spending a fit command's request to place the view"* — is
+//! kept above the new one because the widening is the finding.
 //!
 //! The operator:
 //!

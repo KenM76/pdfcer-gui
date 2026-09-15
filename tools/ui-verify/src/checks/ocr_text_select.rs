@@ -3,6 +3,7 @@
 //!
 //! # The report
 //!
+//! Ken, 2026-09-01: *"I can't seem to copy and paste text we have OCRed."*
 //!
 //! ## ★★★ It was caused by a feature that shipped seven hours earlier
 //!
@@ -63,6 +64,11 @@ use crate::report::CheckReport;
 const SELECTION: &str = "selection-set"; // ui-text-exempt: a trace event name, never displayed
 /// The line a text sweep writes.
 ///
+/// ★★★ `canvas-text-selection`, and the first three drafts said `text-selection`
+/// — which is a SUBSTRING of it. Every `grep` used to confirm the name matched,
+/// the trace looked right, and the check reported *"selected no characters"*
+/// through a settle, a longer settle and a poll loop, because `events()` is an
+/// exact match and none of those three attempts was ever going to work.
 ///
 /// ⇒ A harness constant confirmed by a substring grep is not confirmed. The
 /// instrument that finally answered it was the check reporting what it had

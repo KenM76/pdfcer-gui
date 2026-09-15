@@ -29,6 +29,11 @@
 //!
 //! ## Why a real OS window
 //!
+//! Every dialog in this shell has been one since 2026-08-21, and this one earns
+//! it twice over: it appears in answer to an **Open**, which is a gesture an
+//! operator makes and then looks away from, and a modal question hidden behind
+//! the application window with no taskbar entry is the classic *"the program has
+//! frozen"* report. [`crate::dialogs::host`] gives it the entry.
 //!
 //! ## ★★ What is deliberately NOT here
 //!

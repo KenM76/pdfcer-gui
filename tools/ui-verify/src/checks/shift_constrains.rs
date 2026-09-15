@@ -3,6 +3,13 @@
 //!
 //! # What this is for
 //!
+//! `ui-conventions/drag-moves.md` D5 — *"modifiers constrain, and the
+//! constraint is announced"* — was found **absent from every drag in this
+//! shell** by the conventions sweep of 2026-08-20, and Shift-preserves-aspect
+//! is the sharpest instance: it is *the* resize convention, present in every
+//! program in the class for thirty years. An operator who holds Shift and gets
+//! a free-form resize does not conclude that pdfcer chose differently; they
+//! conclude it is broken.
 //!
 //! # ★★ Why this is a PAIR of drags and not one
 //!
@@ -42,6 +49,14 @@
 //! therefore a property of the drag AND the shape together, never of the drag
 //! alone.**
 //!
+//! Until 2026-08-29 this check chose its travel in **screen pixels** — 90 by 12
+//! — and then asserted that x was dominant. On `SW41177` the selection box is
+//! 390.6 × 41.0 px, so 90 px is 0.230 of the width while 12 px is 0.293 of the
+//! height: the drag was **y-dominant in the only space that decides**, the
+//! shell correctly kept `sy = 1.9888`, and the check reported it as *"the wrong
+//! factor"*. The shell was right; the constant was wrong. It is now a fraction
+//! of the shape, so the premise assertion 3 rests on is true by construction on
+//! any fixture. See [`DRAG_X_OF_SHAPE`] for the measured numbers.
 //!
 //! # ★ Why the trace and not the pixels
 //!

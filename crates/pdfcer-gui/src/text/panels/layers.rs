@@ -127,6 +127,13 @@ pub fn layer_selection_unlayered() -> &'static str {
 ///
 /// # ★ Every other state owes one, including the unknowns
 ///
+/// That is a reversal, and it is deliberate. `Unknown` used to be silent, on
+/// the argument that a line reading *"pdfcer cannot tell you which layer this
+/// is on"* would be a **permanent apology** — true, while `pdfcer-core` could
+/// not answer for any content object at all. `Pass 250.0` retired that
+/// premise: the unknowns below are now rare, specific and individually
+/// actionable, and withholding them would be hiding an inference the operator
+/// cannot see. See `Unresolved`'s own doc comment for the full argument.
 #[must_use]
 pub fn layer_selection_report(m: Membership, row: RowOfAnswer<'_>) -> Option<String> {
     Some(match (m, row) {

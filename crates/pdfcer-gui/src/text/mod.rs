@@ -535,6 +535,15 @@ pub fn window_title() -> &'static str {
 
 /// Shown on the canvas when nothing is open.
 ///
+/// ★ **This sentence changed when `file.open` was wired**, and the change is
+/// the rule rather than an edit. It used to read *"No document open. Start
+/// pdfcer with a PDF path, for example: pdfcer-gui drawing.pdf"*, because at S0
+/// there was no Open command and *"a message that names a control the
+/// operator cannot find is worse than no message."* The command exists now —
+/// on the File tab, on the quick-access toolbar, and on Ctrl+O — so the
+/// message names it. The old wording would have been the same defect in
+/// reverse: telling an operator to restart the application to do something
+/// there is a button for.
 ///
 /// The command line stays in the sentence because it is still true and is
 /// still how a file association or a shell "Open with" reaches pdfcer.
@@ -569,6 +578,12 @@ pub fn canvas_no_pages() -> &'static str {
 /// away the only part of the sentence that helps.
 ///
 ///
+/// It read: *"the renderer's errors are structured, specific diagnostics
+/// ('requested raster size 115200x86400 exceeds MAX_PIXMAP_EDGE')"*. That is
+/// `pdfcer_render::RenderError::BadRasterSize`, and on 2026-09-12 the operator
+/// reported seeing exactly it, painted across a site plan he was editing
+/// (`OPERATOR_REQUESTS.md` O186). Two pixel counts are a precise fact about a
+/// pixmap and no instruction at all to a man looking at a blank sheet.
 ///
 /// So `crate::render::worker` now takes that variant out of the pass-through
 /// and gives it one of this module's own sentences. The example is kept here

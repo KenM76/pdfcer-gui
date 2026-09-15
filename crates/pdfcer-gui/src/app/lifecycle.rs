@@ -160,6 +160,14 @@ impl PdfcerApp {
     /// > fatal, and if the user can intervene in a decision that should always
     /// > be an option along with them not having to intervene."*
     ///
+    /// Three obligations. Two of them shipped here on 2026-09-09: the document
+    /// opens (**not fatal**), and nothing has to be answered before it does
+    /// (**intervention is not required**). The third — **intervention is
+    /// possible** — had no route at all: `crate::panels::docprops` printed
+    /// *"pdfcer kept /UseOutlines and left /UseOC"* and there was nowhere to
+    /// say *use the other one*. A disclosure the operator cannot act on is the
+    /// difference between being told and being asked, and the engine went to
+    /// the trouble of carrying **both** values precisely so this could exist.
     ///
     /// # ★★ Why it is a re-load rather than an edit, in the engine's words
     ///
@@ -641,6 +649,9 @@ impl PdfcerApp {
         // continuous while `file.new` in Edit shows it single-page, with no
         // code here saying anything about `file.new` at all.
         let ribbon_mode = self.ribbon.mode().unwrap_or_default().to_owned();
+        // ★★★ **The middle tier, added 2026-08-31** — `OPERATOR_REQUESTS.md`
+        // O80: *"it should remember my page display preferences from my last
+        // closing of the program."*
         //
         // It already did, per document. What it could not do was answer for a
         // document it had never seen, so a choice made on one drawing meant
@@ -651,6 +662,11 @@ impl PdfcerApp {
         // than from `doc.prefs`, because `doc.prefs` is a snapshot taken when
         // the document opened and this decision is being made AS it opens.
         let default_display = self.prefs.default_page_display;
+        // ★★★ **Off-page display, resolved for the mode this document opens
+        // in** — the operator's request of 2026-09-11: *"by default, read
+        // doesn't show off page items, review and edit do show off page
+        // items … their preference is remembered for each read review edit
+        // modes."*
         //
         // TWO tiers, not three, and the missing one is the point:
         // `crate::app::prefs::offpage` holds the operator's answer PER MODE
@@ -999,6 +1015,14 @@ impl PdfcerApp {
     /// **Save the open document over its own file, and record which revision
     /// is now on disk.**
     ///
+    /// The body of the `Action::Save` arm, lifted out of
+    /// `crate::app::actions::apply` on 2026-08-28 so that the signature
+    /// warning's answer can resume **the same save** rather than re-raise the
+    /// action. `resume_after_unsaved`'s own header carries the argument in its
+    /// general form: re-raising would meet the guard again and put the
+    /// operator in a loop they could only leave by pressing Cancel, and a
+    /// *"but not this time"* flag on the action would put a second, invisible
+    /// meaning on a value the funnel's whole discipline says is plain data.
     ///
     /// So there is one implementation with two callers, and what the second
     /// caller skips is exactly the guard it has just answered.

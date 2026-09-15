@@ -3,6 +3,12 @@
 //!
 //! # The defect
 //!
+//! `canvas::markup::palette` was written on 2026-09-06 from Acrobat DC's own
+//! registry — `HKCU\…\DC\Annots\cAnnots\<subtype>\cstrokeColor`, read twice,
+//! minutes apart, agreeing to six decimals. Shapes are **`#DB3425`**. The value
+//! it replaced had been written from memory, and the same commit found the
+//! highlighter's default is **orange `#FF6200`, not yellow** — *"what everybody
+//! knows was wrong"*.
 //!
 //! A palette written from memory is a defect that ships silently: nothing
 //! crashes, every test is green, and the only symptom is that a drawing marked
@@ -209,6 +215,11 @@ const ACROBAT_RED: Rgb = Rgb {
 /// Two colours this shell has actually drawn shapes in, named so a failure can
 /// say *which* wrong answer it got.
 ///
+/// ★ The yellow is not hypothetical: `(1.0, 1.0, 0.0)` is what the highlighter
+/// carried in this shell until 2026-09-06, *"written from memory"*. The orange
+/// is Acrobat's real highlighter and is the near miss a careless fix would
+/// produce — 46 apart from the red in the green channel, which is inside a
+/// sloppy tolerance and outside this one.
 const NEAR_MISSES: [(&str, Rgb); 3] = [
     (
         "Acrobat's HIGHLIGHTER orange #FF6200 — the right table, the wrong row",

@@ -190,6 +190,12 @@ pub const STICKY_ICONS: &[StickyIcon] = &[
 ///
 /// # ★★★ `Comment`, not the engine's `Note` default — and it is MEASURED
 ///
+/// `ACROBAT_DEFAULTS.md`'s non-colour table reads *"default sticky-note icon —
+/// **`Comment`** — `cAnnot` `tnoteIcon`"*, taken from Acrobat's own registry
+/// hive on this machine. The operator's instruction of 2026-09-06 was to *"make
+/// sure you've used the same default colours and style look for these things as
+/// Adobe"*, and the icon is the same class of answer as the violet `/C` that
+/// instruction already moved.
 ///
 /// The difference from `StickyIcon::default()` is deliberate and is the same
 /// difference [`DEFAULT_STAMP`] carries: `Note` is the right default for a
@@ -692,6 +698,14 @@ pub fn spec(
             contents: text.to_owned(),
             color: Color::Rgb(r, g, b),
             //
+            // It used to read: *"a popup that opened itself on every sticky
+            // would cover the drawing the note is about — and
+            // `MODES_AND_PANELS.md`'s nothing-floats-over-the-canvas stance is
+            // only relaxed for Find."* The first half stands. The second half
+            // is now out of date: `crate::canvas::notepopup` floats a window
+            // over the canvas, deliberately, and its header carries the
+            // argument — a pop-up is **chrome**, the same class of thing as a
+            // selection handle, and nothing about it reaches the page.
             //
             // So the value survives on the first half alone, which is the
             // stronger half anyway: pdfcer collects the note's words in a
@@ -754,6 +768,14 @@ pub fn spec(
                 // ★★★ **The operator's own choice, and this field exists because a
                 // compiler asked for it.**
                 //
+                // Engine `Pass 287.0` made `style` required, so this line had to
+                // be written to build at all — and **that is exactly the moment a
+                // feature gets silently declined.** The reflex is to reach for
+                // whatever reproduces the old behaviour, and here that spelling is
+                // available and named: `font_size: None` is documented as *"derive
+                // it from the box height as builds before Pass 287.0 did"*. It
+                // compiles, passes every test, and quietly keeps the defect the
+                // operator reported on 2026-09-09.
                 //
                 // [`StampSize`] carries the answer instead, and its header holds
                 // the argument: why the default is the derived size rather than
@@ -1213,6 +1235,15 @@ mod tests {
     /// kind is given one.**
     ///
     ///
+    /// ★★ The negative half is asserted **beside** it rather than alone, which
+    /// is the methodology note of 2026-09-06: *"a negative assertion is vacuous
+    /// when the thing that would produce the positive is absent."* Asserting
+    /// only that a text box carries no icon would pass on a [`spec`] that had
+    /// stopped threading the argument at all — it would pass on the code this
+    /// change replaced. The sticky arm proves the operand arrives; the other two
+    /// arms prove it stops where §12.5.6.4 stops, which is also where
+    /// `set_text_annot_style` refuses it by name
+    /// (`EditError::StylePropertyNotApplicable`).
     #[test]
     fn only_a_sticky_note_is_given_an_icon_and_it_is_the_chosen_one() {
         for chosen in STICKY_ICONS {

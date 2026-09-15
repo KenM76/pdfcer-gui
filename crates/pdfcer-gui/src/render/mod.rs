@@ -49,6 +49,10 @@
 //! the whole of a single-page session, and [`settle`]'s strip pass returns on
 //! an `is_empty` check.
 //!
+//! [`settle`] also holds what used to be the second half of
+//! `crate::app::state` — the per-frame staleness decision — moved here when
+//! Phase 4 doubled its size. That file's header already named the seam: it
+//! answers *"what is open"*, and this answers *"what should the picture be"*.
 
 // ★ A NOTE ON THE ORDER OF WHAT FOLLOWS, because it has already eaten four
 // module headers once and the damage is silent.

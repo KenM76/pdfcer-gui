@@ -4,6 +4,11 @@
 //! WHY THIS IS ITS OWN FILE
 //! ===========================================================================
 //!
+//! Split out of `raster_wall.rs` on 2026-09-12, when that file reached 1,614
+//! physical lines against standing rule R2's limit of 1,500. The response the
+//! size gate asks for is to find the seam, not to shrink the prose, and the
+//! seam here is obvious: everything in this file answers *"what did the
+//! application say?"* and nothing in it drives, waits, or decides a verdict.
 //!
 //! That division is worth more than the line count. A trace reader is pure —
 //! one `&Trace` in, one value out — so every function here is readable and

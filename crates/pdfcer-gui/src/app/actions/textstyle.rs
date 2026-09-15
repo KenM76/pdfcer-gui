@@ -848,6 +848,14 @@ fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -> ReflowRef
         // would silently start showing a composite-font sentence the first time
         // the engine refuses a reflow for some other encoding reason.
         //
+        // So the guard reads the engine's own discriminant, and anything else
+        // falls through to the funnel below and earns the honest general
+        // sentence. This costs one comparison and removes an entire class of
+        // "the sentence used to be true" defect. It is worth the arm because
+        // the case is common: a drawing that sets its body text in a CIDFont
+        // refuses every reflow, and `EngineDeclined`'s *"something about how
+        // this page was drawn"* tells the operator nothing they can act on,
+        // where *"the paragraph is set in a composite font"* does.
         E::Refused(refusal)
             if refusal.trigger == pdfcer_core::text_edit::RInvTrigger::Composite =>
         {

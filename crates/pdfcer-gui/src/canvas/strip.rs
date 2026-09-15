@@ -418,6 +418,12 @@ mod tests {
     /// ★★ **The offset stays inside the scrollable range — which is now the
     /// CONTENT's range, not the strip's.**
     ///
+    /// This asserted `Vec2::ZERO` until 2026-08-21, on the reasoning that a
+    /// viewport taller than the whole strip has nowhere to scroll. O23 made
+    /// that false on purpose: there is a pasteboard of one viewport on every
+    /// side, so even a document that fits entirely on screen can be moved
+    /// around — which is the operator's *"move the view of the corner of the
+    /// page to the center of the screen"* for a small document.
     ///
     /// ★ So the assertion is the INVARIANT rather than the number. Pinning the
     /// new number would say nothing about whether it is reachable, and this

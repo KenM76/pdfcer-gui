@@ -100,6 +100,12 @@ pub(super) fn colour_row(
 /// **The interior colour, `/IC` — the Fill row.**
 ///
 ///
+/// `MarkupStyle::interior` shipped in the engine with `set_markup_style` and had
+/// **zero GUI callers** until 2026-09-06. The module header carries the argument
+/// that kept it that way, and carries the correction beside it; the short form
+/// is that *"a filled comment shape hides the drawing it is a comment about"* is
+/// a sound reason to author `interior: None` and not a reason to refuse an
+/// operator the ability to fill a shape they have already placed.
 ///
 /// `canvas::markup::spec` is untouched by this. **No fill at author time, fill
 /// available on restyle.**
@@ -112,6 +118,12 @@ pub(super) fn colour_row(
 /// control down, and R9's answer is the same: the row is absent, the way
 /// [`width_row`] is absent for a highlight.
 ///
+/// ⚠ **Corrected 2026-09-06.** The paragraph above used to justify the list
+/// with *"`apply_markup_style` does not read `style.interior` on those arms"* —
+/// a fact about the engine's source, restated here, where nothing checks it.
+/// The list is now asked for: `MarkupStyleSupport::takes_interior`, through
+/// [`Current::offers_fill`]. The old sentence was not wrong; it was a copy, and
+/// a copy is what this project filed a request to be rid of.
 ///
 /// # ★ The swatch shape mirrors [`colour_row`] exactly, including the Clear
 ///
@@ -333,6 +345,11 @@ pub(super) fn width_row(
 /// `EditError::StylePropertyNotApplicable` at `edit.rs:26478` — so R9 says
 /// absent and the engine agrees in writing.
 ///
+/// ⚠ This paragraph used to read *"[`Current::endings`] is `Some` for a
+/// `MarkupSpec::Line` and nothing else, which matches `apply_markup_style`
+/// exactly."* True, and a restatement of the engine's list inside a shell. The
+/// spec arm still supplies the **pair**, because that is a value; it no longer
+/// decides whether the control exists.
 pub(super) fn endings_row(
     ui: &mut Ui,
     current: &Current,

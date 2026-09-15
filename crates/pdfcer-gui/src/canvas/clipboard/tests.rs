@@ -144,6 +144,11 @@ fn with_annot_selected(index: usize) -> crate::app::state::OpenDoc {
 
 /// ★★★ **A STICKY NOTE CAN BE COPIED**, and until 2026-09-05 it could not.
 ///
+/// This is the operator-facing whole of the change. `Ctrl+C` over a `/Text`
+/// annotation used to answer *"that annotation is not one pdfcer authors …
+/// so there is nothing for it to copy"*, because the clipboard read a
+/// `MarkupSpec` out of the dictionary and `spec_from_dict` has no reader for a
+/// sticky note. A sticky note is the most-copied comment in a review workflow.
 ///
 /// # What the assertions are, and why the obvious one is not enough
 ///

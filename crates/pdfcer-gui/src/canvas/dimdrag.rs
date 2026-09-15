@@ -285,6 +285,9 @@ pub fn selected(doc: &OpenDoc, selection: &SelectionState) -> Option<(DimensionI
     // See the module header: an angular dimension's placement is a radius and
     // an angle, and this module's delta is in points.
     //
+    // Perimeter joined Linear on 2026-08-20, when the engine shipped the kind
+    // and confirmed that `place_dimension` carries it *"with no new semantics
+    // and no new fields"*.
     if !matches!(
         record.kind,
         DimensionKind::Linear { .. } | DimensionKind::Perimeter { .. }

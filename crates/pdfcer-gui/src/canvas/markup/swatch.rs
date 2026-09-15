@@ -25,6 +25,13 @@
 //! Opacity"*. Two of the four ship here and two do not, and the two absences
 //! are different in kind:
 //!
+//! | control | state | why |
+//! |---|---|---|
+//! | **Colour** | ✅ | two swatches, each opening [`super::palette`]'s grid of Acrobat's own colours — see [`super::pen`] on why there are eight slots and two controls |
+//! | **Line width** | ✅ | a drag value in points, over the pen's own range |
+//! | **Fill** | ⬜ | **a design decision about the PEN, and only about the pen** — see the row's own correction below |
+//! | **Opacity** | ✅ | **shipped 2026-08-28** — a percentage drag value writing `/CA`. This row said *"blocked on the engine"* for four months after it stopped being true; see below |
+//! | **Line style** | ✅ | **shipped 2026-09-06** — a four-entry chooser writing `/BS` `/S` and `/D`. §5.5 does not list it; it is here because it is a property of the next mark exactly as the four above are, and because the engine shipped the author-time half (`MarkupOptions::dash`) beside the restyle half on the day the Format tab got its own copy. See [`super::linestyle`] |
 //!
 //! ⚠ The table is now **five rows over a four-item specification**, which is a
 //! table that has outgrown its source rather than one that is wrong. §5.5 was
@@ -37,6 +44,11 @@
 //! ### ★★★ The Fill row, corrected: it was describing ONE of two surfaces and
 //! ### did not say which
 //!
+//! It used to read *"a design decision, not a gap"*, followed by [`super::spec`]'s
+//! argument that a filled comment shape hides the drawing it is a comment about.
+//! That argument is **still correct and still in force** — for this control. What
+//! the row failed to say is that there are *two* fills in this program and it was
+//! only ever talking about one of them:
 //!
 //! | which fill | whose surface | state |
 //! |---|---|---|
@@ -49,6 +61,13 @@
 //! ### ★★★ The Opacity row, corrected: it was FALSE, and false in the direction
 //! ### this project has been wrong in before
 //!
+//! It used to read *"blocked on the engine. Annotation transparency is `/CA`,
+//! which `pdfcer-core` does not write yet — filed, accepted, not started."* That
+//! was true when written and stopped being true on **2026-08-27**, when
+//! `Pass 81.1` landed `MarkupOptions::opacity` in answer to a request this shell
+//! filed itself. `set_markup_style` writes `/CA`; `add_markup_with` authors a
+//! translucent mark in one verb and one undo entry; [`Pen::opacity`] and
+//! `MIN_OPACITY` have existed since the day after.
 //!
 //! ⇒ The control was **already drawn** in [`show`] below, with its own trace
 //! region and its own tooltip, while this table three screens above it said it
@@ -206,8 +225,18 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         // ★★★ OPACITY, and it shipped four months after the row above it said
         // it could not.
         //
+        // This module's header carried a table row reading *"blocked on the
+        // engine … `/CA`, which `pdfcer-core` does not write yet — filed,
+        // accepted, not started"*. It was true when written and stopped being
+        // true on 2026-08-27, when `Pass 81.1` landed `MarkupOptions::opacity`
+        // — in answer to a request this shell filed itself.
         //
         //
+        // It read: *"The row was corrected on 2026-08-28 rather than deleted,
+        // because the SHAPE of the mistake is the useful part."* The control
+        // shipped that day; the header's table row still said **"blocked on the
+        // engine … `pdfcer-core` does not write `/CA` yet"** until 2026-09-06,
+        // nine days later, when somebody was sent to look at it specifically.
         //
         // ⇒ So the correction note was itself the stale claim. That is a sharper
         // instance of the rule it was written to record — *a blocker's reason is

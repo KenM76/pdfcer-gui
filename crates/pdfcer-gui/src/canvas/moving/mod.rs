@@ -253,6 +253,13 @@ pub enum MoveSubject {
     ///
     /// # Why this arrived a month after its delete twin
     ///
+    /// Because until 2026-09-14 there was no verb. `delete_text_run` has
+    /// existed since `pdfcer-core` `Pass 32.0`; `move_text_run` shipped as
+    /// `G017`, and this crate filed the request the day before. Three separate
+    /// code bases had *written down* that the gap existed — two files in the
+    /// old GUI and one design note here — and none had asked for it, which is
+    /// the failure mode `EDITABLE_SURFACES.md` calls *"considered verbs whose
+    /// consideration was filed where the register could not see it"*.
     ///
     /// # ★★ Reaching this variant is CONDITIONAL, unlike every sibling here
     ///
@@ -416,7 +423,17 @@ pub enum Refusal {
     /// [`crate::app::status::decline`] gives it.
     ///
     ///
+    /// It said: *"[`pdfcer_core::vector::FormLeaf::is_editable`] is `false` for
+    /// every leaf the engine produces"*, dated 2026-08-27 against
+    /// `pdfcer-core` v0.14.0, and ended *"when editing-through-recursion
+    /// lands, the remedy is to route to the form-scoped verb"*.
     ///
+    /// **Editing-through-recursion landed at `Pass 188.0`, this shell routed
+    /// to all six form-scoped verbs on 2026-09-01, and the sentence stayed.**
+    /// `is_editable` did not change signature, so nothing broke and nothing
+    /// warned; it changed MEANING. It now answers *"is this leaf a path"*,
+    /// and the engine's own doc says in as many words that a shell greying
+    /// out the whole container on `false` is now wrong.
     ///
     ///
     /// # What actually reaches this variant
@@ -439,6 +456,11 @@ pub enum Refusal {
     /// The entered part has no move verb.
     ///
     ///
+    /// It said: *"a text object's show operator is a 'part', but
+    /// `move_subpath` translates path construction operands and there is
+    /// nothing for it to translate"*, and that was the whole of O188's move
+    /// half — true from this crate's first commit until `pdfcer-core` shipped
+    /// `move_text_run` (`G017`, 2026-09-14).
     ///
     /// **It is no longer the Part rung's answer for a run.** [`eligible`] now
     /// routes a movable run to [`MoveSubject::TextRun`] and an unmovable one to
@@ -727,6 +749,15 @@ pub fn eligible(
                 // selection**, and saying so was a flat contradiction of what
                 // was on screen.
                 //
+                // `object_indices_on` answers about the page's own paint order
+                // and drops every target drawn inside a form XObject —
+                // correctly, because no paint-order verb can address one. Since
+                // 2026-08-27 an ordinary click can produce a selection made
+                // entirely of those, and this arm reported it as *"nothing
+                // selected"* while the operator was looking at an outline round
+                // the thing they were dragging.
+                // ★★★ **A pure form-interior selection MOVES, as of
+                // 2026-09-01** — O70's second slice.
                 //
                 // This arm returned `Refusal::InsideForm` for the life of the
                 // shell, and the refusal was honest: no geometry verb could
@@ -744,6 +775,9 @@ pub fn eligible(
                     Ok(MoveSubject::LeavesInForm { page, leaves })
                 };
             }
+            // ★★★ THE REFUSAL BECAME A FORK — 2026-08-20, and it is the
+            // operator's *"can I please please please have the capability to
+            // move the text after?"*
             //
             // This read:
             //
@@ -1226,6 +1260,9 @@ pub fn drag(
     if phase == Phase::InFlight {
         // ★★★ THE LIVE SHAPE, `OPERATOR_REQUESTS.md` O63.
         //
+        // **Ken, 2026-08-30:** *"if I moved the end of a line, it didn't show me
+        // the shape change of the line, it just had a perimeter box around it …
+        // there isn't a real preview like there is in inkscape."*
         //
         // Built HERE rather than in the painter, and that placement is the whole
         // guarantee: `subject` is the value the release hands to `EditSession`,
@@ -1310,6 +1347,8 @@ pub fn drag(
     }
     // ★★★ HOLD IT. `OPERATOR_REQUESTS.md` O63, third piece.
     //
+    // **Ken, 2026-08-30:** *"the live preview should remain while the update to
+    // the pdf structure runs in the background."*
     //
     // The gesture is over and the Action is raised, but the page raster
     // underneath still shows the object where it STARTED, for one to two

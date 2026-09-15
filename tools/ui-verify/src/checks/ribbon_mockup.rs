@@ -186,6 +186,12 @@ impl Check for RibbonMatchesTheMockupGeometry {
 /// almost everywhere, every pair is discarded, `judged` reaches zero and the
 /// function returns `None` for the entire band.
 ///
+/// That happened on 2026-09-05 and it is written up at the caller, where the
+/// sampling point lives: the reference was taken from inside a **collapsed
+/// group's plate**, `#E8E8EA` against the band's `#F2F2F3` — a channel-sum
+/// distance of **29 against this function's threshold of 24.** Ten points of
+/// grey, and the check went from PASS to *"0 resting band controls were judged
+/// for a frame"*.
 ///
 /// ⇒ **The `None` return is what made that visible at all**, and it is worth
 /// keeping for that reason alone. A version answering `true` when nothing could
@@ -608,6 +614,15 @@ mod tests {
     /// ★★★ **A `ground` that is not the band's colour makes this REFUSE, and
     /// the margin is ten points of grey.**
     ///
+    /// The incident, 2026-09-05: [`assess`] sampled its reference from the
+    /// first `ribbon.group.file.*` region it found, and on that run the first
+    /// one was `…export.collapsed` — a captioned button with a **plate** under
+    /// it and no items inside it. The plate is `#E8E8EA`; the band is
+    /// `#F2F2F3`; the channel-sum distance is **29** against `far`'s threshold
+    /// of 24. Every probe pair was then discarded as "not the background",
+    /// `judged` fell to zero for the whole band, and the check reported
+    /// *"0 resting band controls were judged for a frame"* — a PASS the day
+    /// before, and nothing measured the day after.
     ///
     /// This pins the consequence rather than the cause, deliberately: the
     /// cause is one `find` predicate in [`assess`] and would be re-broken by

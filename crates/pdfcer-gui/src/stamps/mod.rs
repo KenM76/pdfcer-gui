@@ -75,6 +75,12 @@
 //!
 //! ## ★★★ Placing a custom stamp — was NOT here, and now is
 //!
+//! This section used to read *"Placing a custom stamp on a drawing … the
+//! engine has no verb that draws one page's artwork onto another"*, and it was
+//! true when written. **`pdfcer-core` `Pass 293.0` shipped
+//! `EditSession::place_page_artwork`** in answer to this project's own filed
+//! request, and [`library`] is the half above it: which stamps exist, what
+//! they are called, and which page of which file each one is.
 //!
 
 use pdfcer_core::stamp_file::{StampCollection, StampEntry};
@@ -517,6 +523,14 @@ pub fn dynamic_count(collection: &StampCollection) -> usize {
 ///
 /// # ★★★ The field that makes every count below mean one thing again
 ///
+/// Until engine `Pass 290.1` (2026-09-10, `bce4703`) `stamp_file::read` built
+/// its page list with `page_tree::pages(doc).map(…).unwrap_or_default()`, so a
+/// page tree that refused produced an **empty** list, so every
+/// `StampEntry::page_index` came back `None` — and `None` already meant
+/// something else and something specific: *"this name points at a page the
+/// document does not have."* Two opposite facts arrived in one value, and on
+/// the operator's own Acrobat-written signature file pdfcer reported both of
+/// his real signatures as pointing at nothing when neither did.
 ///
 /// The engine now carries the failure separately, which is what lets this
 /// module's wording become a claim again instead of an observation carefully
@@ -539,6 +553,13 @@ pub fn page_tree_unreadable(collection: &StampCollection) -> Option<&str> {
 /// Stamps whose named page is not one of the document's own — or `None` when
 /// that question is unanswerable.
 ///
+/// ★ **`None` is not zero and must never be rendered as zero.** It means the
+/// page tree could not be read, so no `page_index` in the collection carries
+/// information; see [`page_tree_unreadable`] for why the two used to be
+/// indistinguishable and what it cost. A caller that unwrapped this to `0`
+/// would print *"every stamp resolves"* about a document where pdfcer resolved
+/// none of them, which is the same class of defect as the one the engine just
+/// removed, moved one crate along.
 #[must_use]
 pub fn unresolved_count(collection: &StampCollection) -> Option<usize> {
     if collection.page_tree_error.is_some() {

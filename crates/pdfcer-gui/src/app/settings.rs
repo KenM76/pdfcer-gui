@@ -316,6 +316,11 @@ mod tests {
     /// ★★★ **This test outlived the function it was written for, and that is
     /// the point rather than an accident.**
     ///
+    /// It was written on 2026-08-28 against `app::settings::colour_default`, a
+    /// three-line seed this shell carried because `pdfcer-core`'s default was
+    /// still `NeutralBlack` and O52 had reversed the operator's earlier ruling.
+    /// That function shipped with a `debug_assert_ne!` tripwire whose message
+    /// said *"delete it and its call site"*.
     ///
     /// **`Pass 153.0` landed the same day and the tripwire fired.** The seed is
     /// gone, its call site is gone, and this assertion now reads the engine
@@ -841,6 +846,11 @@ mod tests {
     /// > widths. *The one thing worse than not having this feature is having it
     /// > follow him into a file he sends a client.*
     ///
+    /// That was decided in writing on 2026-09-05, **before the engine field
+    /// existed**, and the engine held the same line from its side: its own
+    /// backlog row records that there is deliberately no CLI flag, because *"a
+    /// hairline export would be an unfaithful file, the one outcome the request
+    /// forbids"*.
     ///
     /// # ★★★ Why this is a check and not a paragraph
     ///

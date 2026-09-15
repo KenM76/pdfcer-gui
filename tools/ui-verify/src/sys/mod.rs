@@ -150,6 +150,10 @@ pub mod vk {
     /// greyed with an empty field, deliberately, so a check that cannot type
     /// cannot reach the verb at all.
     ///
+    /// "Detail" is chosen rather than a nonsense string because the check's
+    /// failure text quotes it, and an operator reading *"no group called
+    /// Detail appeared in the list"* is being told something about a drawing
+    /// they recognise. Added 2026-08-18.
     pub const D: u16 = 0x44;
     /// See [`D`].
     pub const T: u16 = 0x54;

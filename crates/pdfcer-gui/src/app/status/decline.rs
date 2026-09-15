@@ -192,6 +192,14 @@ pub(crate) enum Declined {
     /// stays `Copy` and `Declined::line` stays `&'static str`."* **Both halves
     /// are now overtaken, and neither by accident.**
     ///
+    /// `Declined::line` stopped being `&'static str` on 2026-09-10, when O141's
+    /// *"pdfcer cannot type a `q` into this text"* needed to name the
+    /// character; that arm's own docs record that the generic wording had been
+    /// defended in three separate places as a design choice when it was a
+    /// return type. And `Copy` went on 2026-09-11, when
+    /// [`crate::text::status::TextStyleRefusal::FaceLacksCharacters`] took the
+    /// engine's `Refusal::remedy_faces` — the faces that *would* show the run
+    /// — which is a `Vec<String>`.
     ///
     /// ★ The rule the old sentence was really protecting survives untouched:
     /// **no engine prose on this bar.** What travels is a list of `/BaseFont`
@@ -354,6 +362,13 @@ pub(crate) enum Declined {
     /// is that **the name is already on screen** — the operator typed it
     /// seconds ago and it is still in the field they typed it into.
     ///
+    /// ⚠ This paragraph used to open *"It is a `Copy` enum"*. That was never
+    /// the reason and is not even true: this enum derives
+    /// `Clone, Debug, PartialEq, Eq` and has carried non-`Copy` payloads since
+    /// `CustomStampUnavailable` arrived. The argument that matters survives the
+    /// correction intact — and see `FieldPathCrossesTerminal` immediately
+    /// below, which is the case where it does **not** hold and so does carry
+    /// its name.
     ///
     ///
     /// | engine variant | verb | the fact |
@@ -376,6 +391,9 @@ pub(crate) enum Declined {
     /// engine decides. It is also the common case: rename `Rev1` to `Rev2` on
     /// a form that has a `Rev2`.
     ///
+    /// ⚠ It reached the operator as the funnel floor's generic *"That change
+    /// was refused"* from the day the rename surface shipped until
+    /// 2026-09-12, because `actions::forms::rename` mapped only `Ok`.
     FieldNameTaken,
     /// ★★★ **A field name was refused because a dot in it points through a
     /// field that already exists** — `FormAuthorError::FieldPathCrossesTerminal`,
@@ -903,6 +921,11 @@ pub(crate) enum Declined {
     /// ★★★ **Enter was pressed in text that is already on the page, where a
     /// line break cannot go** — `OPERATOR_REQUESTS.md` **O127**, defect 2.
     ///
+    /// Enter means *a new line* in every draft this shell has; in an existing
+    /// show operator the FILE forbids one, so it declines by name instead. It
+    /// used to **commit**, silently — the operator asked *"can the enter key
+    /// create new lines?"* and was answered by an edit finishing under him.
+    /// See `decline/textedit.rs`.
     EnterCannotSplit,
     /// ★★★ **A cut or a paste the active MODE does not do** — 2026-09-05, and
     /// it is the second half of the defect the driven sweep found as A1.
@@ -949,6 +972,12 @@ pub(crate) enum Declined {
     ///
     /// # What this replaces, and it is not a silence
     ///
+    /// [`Self::EditRefused`] was already reaching him — O116 shipped it on
+    /// 2026-09-04 and a driven run on his own file confirms the `⊗` slot draws
+    /// one frame after the refusal. What he read was *"That change was refused,
+    /// and the document is unchanged."* True, complete about the document, and
+    /// **silent about the one thing he wanted**: why, and whether he can do
+    /// anything.
     ///
     /// ⇒ So this is not the founding defect class a second time. It is the
     /// *next* rung of it: a sentence that says nothing actionable is not the

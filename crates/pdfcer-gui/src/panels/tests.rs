@@ -75,6 +75,15 @@ fn every_panel_is_reachable_from_the_ribbon() {
 /// while only one of them could ever be opened — the failure hiding
 /// inside the fix.
 ///
+/// ★★★ **It was a live hazard and on 2026-09-05 it became the live case.**
+/// `file.properties`' tooltip commissioned two subjects in one sentence — the
+/// document's own metadata and the selection's properties — and the temptation
+/// this refuses was to hang the second panel off that same id when the operator
+/// asked for the metadata to *"be in its own document properties tab"*. It has a
+/// new id, `file.document_properties`, and this test is what would have caught
+/// the shortcut: with one id claimed twice, whichever panel
+/// [`Panel::from_command_id`] found first would be the only one ever openable,
+/// and the other would sit in the arrangement drawing nothing.
 #[test]
 fn no_two_panels_share_a_command() {
     let mut seen: Vec<&str> = Vec::new();
@@ -93,6 +102,9 @@ fn no_two_panels_share_a_command() {
 /// mode, and the selection inspector still exists** — `OPERATOR_REQUESTS.md`
 /// O136.
 ///
+/// The operator, 2026-09-05: *"the document properties are still always visible
+/// in the properties tab. it needs to get out of there and be in its own
+/// document properties tab."*
 ///
 /// # ★★★ Why this is one test and not three
 ///

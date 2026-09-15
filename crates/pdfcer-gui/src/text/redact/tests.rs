@@ -232,6 +232,11 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
 /// ★★ **The staged outcome obeys rule 1, and says the two things only it has
 /// to say.**
 ///
+/// ★★★ **REWRITTEN 2026-09-05.** Its predecessor asserted that both forms
+/// said *"Nothing is on disk yet"*, which was the deferred route's own hazard
+/// under `Pass 250.1`: the content had been removed from the document, the
+/// file had not been written, and an operator who handed over the original had
+/// redacted nothing.
 ///
 /// Under `Pass 250.2` that sentence is no longer sufficient, because a second
 /// thing is now also true and is the more surprising of the two: **nothing has
@@ -572,6 +577,11 @@ const EVERY_CARRIER: &[&str] = &[
 
 /// ★★★ **No residual line ever prints an engine key.**
 ///
+/// The fourth wording rule, asserted over the whole vocabulary rather than over
+/// a sample. Until 2026-09-09 the sentence the operator read was literally
+/// *"⚠ struct_tree: present in this document…"* — an identifier the engine
+/// documents as being *"for the carrier"*, i.e. for a program, printed into a
+/// report written for a person.
 ///
 /// ★★ **The assertion is "no underscore", not "does not contain the key", and
 /// the difference is a measurement.** The blunt substring form was written
@@ -668,6 +678,12 @@ fn the_whole_file_sweep_does_not_get_the_generic_carrier_sentence() {
 /// ★★ **The sweep's residual sentence points at the notes, and the notes
 /// section exists.**
 ///
+/// A promise kept across two modules: [`super::residual_sweep_line`] tells the
+/// operator that pdfcer's own notes *"at the foot of this report"* say which
+/// objects were left, and `dialogs::redact::disclosures::engine_notes` is what
+/// puts them there. Before 2026-09-09 `RedactionReport::notes` was read by
+/// nothing in this crate, so a sentence like this one would have pointed at an
+/// empty part of the screen.
 #[test]
 fn the_sweep_sentence_points_somewhere_that_exists() {
     assert!(residual_sweep_line().contains("notes"));

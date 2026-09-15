@@ -151,6 +151,11 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     }
 
     //
+    // The reason it skipped was correct when written and had gone stale twice
+    // over: *"the new application has no Settings dialog at S2"* — it has had
+    // one since 2026-08-17 — and *"neither known binary accepts a scripted way
+    // in"*, which stopped being the blocker the moment the dialog landed with
+    // a ribbon control that can be clicked.
     //
     // That is worth a sentence rather than a quiet deletion, because a SKIP
     // whose reason has expired is the most comfortable kind of untested code:
@@ -303,6 +308,12 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // `driving::scroll_to`, which is now shared and does work on dock panels —
     // three callers in `form_field` rely on it.
     //
+    // **What is still unmeasured, and it is not a legibility gap:** five of the
+    // seven groups have never been observed by anything, so *"does this group
+    // draw at all"* has no instrument. That was found when a new group was
+    // added below the fold on 2026-08-28 and nothing could say whether it
+    // existed. It is a coverage gap wearing a legibility gap's clothes and it
+    // wants its own check, not a bigger version of this one.
     report.note(format!(
         "measures the {} heading(s) currently IN VIEW; the dialog scrolls and this check does not drive the scroll, so headings below the fold are not measured. D2 was a theme-wide foreground/background pairing and would show on the first heading as readily as the last",
         trace_regions.matched.len()

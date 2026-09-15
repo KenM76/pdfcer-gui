@@ -4,6 +4,10 @@
 //!
 //! ## ★★★ This is the one Acrobat cannot do
 //!
+//! `pdfcer-core`, 2026-08-29: *"Acrobat cannot do this between two files at all;
+//! Adobe's own documentation says so by name."* Copying a chapter's bookmark
+//! subtree out of one drawing set and into another is a thing an operator with
+//! a template has always had to do by hand, one bookmark at a time.
 //!
 //! Worth stating plainly because it changes how the controls should read: this
 //! is not a parity feature catching up with a reference implementation, so

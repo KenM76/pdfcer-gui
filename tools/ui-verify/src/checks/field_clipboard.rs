@@ -3,6 +3,8 @@
 //!
 //! # What was wrong
 //!
+//! **Ken, 2026-08-29:** *"wire the request. ctrl v for paste as new. ctrl shift
+//! v for paste as duplicate."*
 //!
 //! Before this, `Ctrl+C` over a selected form field did **nothing** — and not
 //! by refusal. There was no path at all: `canvas::clipboard::copy` reads
@@ -178,6 +180,8 @@ pub struct AFormFieldCanBeCopiedAndPastedBothWays;
 
 /// ★★★ The same three chords under the **Acrobat** paste order — O58.
 ///
+/// Ken, 2026-08-29: *"let's make it an option to have it swap to match Acrobat
+/// or work the way we have it now."*
 ///
 /// # Why this is a second check and not an extra phase of the first
 ///

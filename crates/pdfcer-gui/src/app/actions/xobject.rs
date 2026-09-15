@@ -257,6 +257,18 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 ///
 /// # ★★★ Why this exists: the command shipped without ever asking
 ///
+/// "Give this page its own copy" went out on 2026-08-28 and, for one day,
+/// **nothing in its chain asked whether the form was invoked more than once.**
+/// `catalog/format.rs` gates the control on `selection.in_form`;
+/// `conditions.rs` defines that as *"a leaf id is in the selection for this
+/// page"*; `dispatch/format.rs` adds only *"the leaf resolves to a containing
+/// form"*. And `EditSession::unshare_form` itself guards encryption,
+/// certification, `/Size` suppression, form-not-on-page and nesting — and has
+/// **no is-shared check**, by design: it is a verb, and a verb does what it is
+/// told. So on an ordinary one-page CAD sheet wrapped in a single form the
+/// engine allocated an object, privatised `/Resources`, committed an undo entry
+/// and returned `Ok`, and the shell told the operator that every other page
+/// still shared the original. There were no other pages.
 ///
 /// ⇒ The question is the shell's to ask, and this is where it is asked.
 ///

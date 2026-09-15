@@ -149,6 +149,11 @@ pub fn default_path() -> Option<PathBuf> {
 
 /// **The display mode remembered for `document`, if any.**
 ///
+/// `None` means *"this document has no remembered choice"*, and the caller
+/// answers it with [`PageDisplay::default_for_mode`] — the per-mode default,
+/// which is where "Read opens continuous" lives. It deliberately does **not**
+/// mean "single page": collapsing the two would make a fresh document in Read
+/// mode open paged, which is the operator decision of 2026-08-13 inverted.
 ///
 /// Never fails. A missing file, an unreadable one and a corrupt one all answer
 /// `None`, because every one of them means the same thing to the caller —

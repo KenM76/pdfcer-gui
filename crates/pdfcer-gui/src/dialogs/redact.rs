@@ -40,6 +40,13 @@
 //! disclosive and practically a program that quietly shipped a partially
 //! redacted document.
 //!
+//! ★★★ **2026-09-04 — the destination is the operator's, not this dialog's.**
+//! This section used to end by arguing that the write must always be to a new
+//! file. The operator overruled that: *"why does it have to save to a new file
+//! right away? Why can't it just wait on saving until I choose to save over the
+//! existing file or save as a new file?"* [`Destination`] carries the whole
+//! argument and what survives of the old ruling (the safe default, and
+//! [`suggested_path`] never proposing the source).
 //!
 //! ★★★ **CORRECTED the same evening.** That paragraph ended, at midday, by
 //! naming *"the one half of his request the engine cannot express — deferring
@@ -76,6 +83,33 @@
 //!
 //! Four gates, and each closes a different failure:
 //!
+//! 1. **[`crate::text::redact::confirm_checkbox`]** — always present. Its
+//!    wording targets the exact misunderstanding the feature exists to prevent:
+//!    that applying removes the *marks* rather than the *content*.
+//! 2. **[`crate::text::redact::residual_acknowledgement_checkbox`]** — present
+//!    **only when the report has residuals**. Showing it always would make it a
+//!    box operators tick without reading, which is how every acknowledgement in
+//!    a program becomes worthless. It is also enforced below the UI, at
+//!    [`crate::redact::PreparedRedaction::write_to`], because a greyed control
+//!    is a drawing decision and not a mechanism.
+//! 3. ★ **[`crate::text::redact::overwrite_acknowledgement_checkbox`]** —
+//!    present **only when the operator has chosen to replace the open file**
+//!    (2026-09-04). A different fact from gate 1: that one is about the
+//!    *content*, this one is about the *document*. Somebody can have taken in
+//!    that the text is going for good without noticing that the file they
+//!    opened is going with it. Conditional for gate 2's reason — a box that is
+//!    always there is a box that is always ticked.
+//! 4. **A control whose label is the consequence** — never "OK", never
+//!    "Apply". One label per destination, and the punctuation is part of the
+//!    claim: *"Permanently remove & save as…"* on the new-file destination,
+//!    where the ellipsis promises the picker that really is coming;
+//!    *"… & replace `<name>` now"* on the replace destination, which names the
+//!    file and drops the ellipsis because no further question follows; and
+//!    *"Set up the removal — it happens when I save"* on the default, which
+//!    promises nothing further because no file is involved and **claims no
+//!    immediate removal, because there is none**. An ellipsis on a control that
+//!    asks nothing more is a lie the operator acts on, and so is a label
+//!    claiming a removal that has not happened.
 //!
 //! ★★★ …and, between the destination choice and the button, **a disclosure
 //! rather than a gate**: [`crate::text::redact::removal_happens_at_save`], drawn
@@ -130,6 +164,17 @@
 //! on drawing the marks and the content underneath them while the file those
 //! bytes came from contains neither.
 //!
+//! ★★★ The reason that used to be given for it — *"`EditSession` has no verb
+//! that could"* — is no longer true, and the staleness is now a **consequence
+//! of the destination the operator chose** rather than a limit of the program.
+//! It is still not tidied away by swapping the session underneath, and the old
+//! argument for refusing that manoeuvre stands untouched: a swap discards the
+//! whole undo log without saying so, and `crate::app::save::save_as` refuses it
+//! for the same reason. An operator who wants the open document to change now
+//! has a control that says so. One who chose to write a file gets a file, and
+//! the divergence is **disclosed** rather than hidden, in
+//! `crate::text::redact::applied_clean`'s replace form, which tells him by name
+//! which file to reopen. Rule 4: report separately, and do not pretend.
 //!
 //! ## 6. It is document-scoped, and closing the document discards the bytes
 //!
@@ -217,6 +262,13 @@ const REGION_DESTINATION_NEW_FILE: &str = "redact-apply-destination-new-file"; /
 /// [`REGION_CONFIRM`]'s top and fail if the disclosure ever moves below the
 /// button it is meant to precede.
 ///
+/// ★★ **Renamed from `redact-apply-undo-note` on 2026-09-05**, with
+/// `tools/ui-verify/src/checks/redaction.rs` in the same commit. The old name
+/// described the sentence that used to live here — *"this clears your undo
+/// history"* — and `Pass 250.2` made that false; a region name that still said
+/// `undo` would have aimed a harness at a sentence about undo and found one
+/// about staging, which is the shape of a check that passes while measuring
+/// something else. The geometry assertion it carries is unchanged.
 const REGION_STAGING_NOTE: &str = "redact-apply-staging-note"; // ui-text-exempt: trace region name, never displayed
 
 /// Height kept clear below the report for the checkbox and button rows.
@@ -966,6 +1018,12 @@ impl RedactDialog {
     /// a *prohibition*: [`suggested_path`] still never proposes the source file.
     /// What is gone is the refusal to write the branch at all.
     ///
+    /// ⚠ **Corrected 2026-09-05.** This paragraph said *"[`Destination::NewFile`]
+    /// is still the default"* — and by then [`DEFAULT_DESTINATION`] two hundred
+    /// lines above it read [`Destination::OpenDocument`], moved on 2026-09-04.
+    /// **One file asserting two different defaults about itself**, which is
+    /// worse than a stale sentence in a document nobody reads: this is the
+    /// paragraph a future session consults *before* changing the default.
     ///
     /// ★ The claim it was making is still true of the mechanism, and that is
     /// why it survived a rewrite of the surrounding argument: both defaults are

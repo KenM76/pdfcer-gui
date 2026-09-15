@@ -3,6 +3,8 @@
 //!
 //! # What this is about
 //!
+//! **Ken, 2026-08-30:** *"I think pdfcer added support for several button
+//! features and protections for outgoing submits."*
 //!
 //! Half right. pdfcer cannot yet **author** a button action — still planned, and
 //! a policy decision rather than a missing verb. What it did ship is the

@@ -185,6 +185,8 @@ pub fn opening_fit(ui: &mut Ui, prefs: &mut Prefs) {
 /// 24-point bar has no room for. Both write the same field, so neither can
 /// **Which chord pastes a form field as a new one, and which as a duplicate.**
 ///
+/// `OPERATOR_REQUESTS.md` **O58**. Ken, 2026-08-29: *"let's make it an option to
+/// have it swap to match Acrobat or work the way we have it now."*
 ///
 /// # ★ Here rather than on a keyboard-shortcuts page, and there is no keyboard page
 ///

@@ -7,6 +7,14 @@
 //!
 //! ## Why this is its own module, and it is two reasons rather than one
 //!
+//! **1. The panel is its own panel** — the operator, 2026-09-05: *"the document
+//! properties are still always visible in the properties tab. it needs to get
+//! out of there and be in its own document properties tab."* These strings moved
+//! out of [`super::properties`] with the section they belong to, in the same
+//! commit, because copy that lives in the catalog of a surface it is no longer
+//! drawn on is copy nobody finds when they come to change it. Every one of them
+//! was reached from exactly one file before the move and from exactly one file
+//! after it.
 //!
 //! **2. R2, measured rather than anticipated.** `text/panels/properties.rs`
 //! stood at **1,469 lines against the 1,500-line ceiling** on the day of the

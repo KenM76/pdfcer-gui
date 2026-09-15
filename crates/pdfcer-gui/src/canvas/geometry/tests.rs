@@ -947,6 +947,9 @@ fn the_opening_seed_centres_a_large_page_and_is_a_no_op_for_a_small_one() {
 
 // ---- the pasteboard's overhang term — O23's second half ------------
 //
+// The operator, 2026-09-11: *"how do I view and edit objects that are off of
+// the page?"* The first half of O23 made them reachable and visible; these
+// pin the half that makes them **editable**, which means zoomable-to.
 //
 // Every number below is the one measured on the real canvas: a 470 px-wide
 // viewport, a 200 pt sheet, and an object 100 pt off its left edge.
@@ -1024,6 +1027,13 @@ fn an_object_off_the_page_can_be_centred_at_every_zoom() {
 /// fraction branch and nothing else**. This is the regression guard for the
 /// 99 % case.
 ///
+/// ★ It used to assert that the value was `v * PASTEBOARD_FRACTION` exactly,
+/// and was titled *"keeps exactly the old pasteboard"*. O186 made that false on
+/// purpose — see [`MIN_SHEET_ON_SCREEN`] — so what it asserts now is the thing
+/// it was always *for*: that the overhang term does not bite until the content
+/// genuinely reaches further than the fixed slack. [`pasteboard_rule`] is the
+/// independent restatement, so this still cannot be satisfied by
+/// [`pasteboard`] agreeing with itself.
 #[test]
 fn a_page_with_nothing_off_it_takes_the_fixed_pasteboard_branch() {
     for v in [1.0_f32, 470.0, 578.3, 2000.0] {

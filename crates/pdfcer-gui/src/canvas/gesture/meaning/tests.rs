@@ -67,6 +67,12 @@ use crate::canvas::textedit::TextEditKind;
 ///   the armed-zoom branch, where a press would rubber-band a zoom region
 ///   under an I-beam.
 ///
+/// Over the whole capability lattice rather than the three shipped modes,
+/// for the reason this module's other tests are: a mode is a manifest entry
+/// and can be customized, and the rule is about the flags.
+/// ★★ **This test asserted `drag.is_none()` until 2026-08-21**, and the
+/// sentence it carried — *"a caret is placed, not dragged"* — was true of
+/// the gesture and wrong about the tool.
 ///
 /// The operator: *"I should be able to make it multi line."* Multi-line
 /// needs a width to wrap against, because a PDF has no paragraph and each
@@ -273,6 +279,16 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
 /// gating three of them would look exactly like gating all four right up
 /// until someone dragged a grip.
 ///
+/// ★ **The bare press is no longer `NOTHING`, and that is the text-selection
+/// row arriving.** It used to assert *"no marquee-select, and no selecting
+/// click either"* against `PressMeaning::NOTHING`, which was the right
+/// assertion while Read had no press meaning at all — and would be the wrong
+/// one now, because it would pass on a build that had silently taken text
+/// selection away again. What must remain true is the thing the operator
+/// actually asked for: the press means **text**, never
+/// [`DragKind::Marquee`], so nothing on the page can be selected as
+/// *content*. That is asserted by naming the variant rather than by
+/// asserting an absence.
 ///
 /// The region-zoom row is the one that would be easy to get wrong in the
 /// other direction: marquee-**zoom** is navigation, it is armed

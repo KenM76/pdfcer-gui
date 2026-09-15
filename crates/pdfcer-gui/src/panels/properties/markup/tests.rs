@@ -201,6 +201,14 @@ fn a_subtype_the_style_verb_reads_offers_its_controls() {
 /// interesting one — it is a `/Polygon` in the file and a
 /// `MarkupSpec::Cloud` here — and it is the case this test exists for.
 ///
+/// ⚠ **Corrected 2026-09-06.** This doc used to justify the answer with
+/// *"`apply_markup_style` reads `style.interior` on exactly the first
+/// four"* and to call the alternative *"a subtype-string list"* that would
+/// have got the cloud wrong. Both halves have moved: the mapping is now
+/// `MarkupStyleSupport::for_subtype` — which **is** keyed on the subtype
+/// string, and is right to be, because it is the engine's string keyed by
+/// the engine — and this shell no longer restates what
+/// `apply_markup_style` reads.
 ///
 /// Falsified by pointing `offers_fill` at the interior swatch instead of at
 /// `support.takes_interior`, which turned the line assertion red, and by
@@ -253,6 +261,12 @@ fn the_fill_swatch_reads_back_the_interior_and_knows_when_it_is_absent() {
 /// else** — the set `MarkupStyleSupport::takes_endings` names, and the set
 /// `EditError::StylePropertyNotApplicable` refuses everything outside of.
 ///
+/// ⚠ **Corrected 2026-09-06.** *"which is the set `apply_markup_style` acts
+/// on"* was this shell restating a fact about the engine's source. The
+/// engine now publishes it, so the test asks rather than remembers — and
+/// the pair being asserted is the two questions kept apart: `offers_endings`
+/// (the engine's) and `endings` (the value, from the one spec arm that has
+/// one).
 ///
 /// Falsified by returning `Some((LineEnding::None, LineEnding::None))` from
 /// every arm, which turned the square's value assertion red, and by
@@ -313,6 +327,12 @@ fn the_width_range_matches_the_pen_that_authors() {
 /// ★★★ **What hides a row is the ENGINE's answer, not the shape of the
 /// `MarkupSpec` arm this module read.**
 ///
+/// The assertion that the workaround is gone. Until 2026-09-06 the Fill row
+/// was decided by a four-arm `match` here, the width row by the
+/// `TextMarkup` arm handing over no width, and the choosers by `endings`
+/// being `None` off the `Line` arm — three restatements of a list
+/// `pdfcer-core` owns, filed as: *"the first subtype that gains or loses a
+/// border is the day our copy is wrong and nothing tells us."*
 ///
 /// ★ Every `Current` here is built with **every value present**, so a value
 /// cannot be what differs. A row withheld below is withheld because
@@ -642,6 +662,9 @@ fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
 /// ★★★ **A note whose `/Name` pdfcer does not model is CARRIED, and reported
 /// as one pdfcer does not draw** — rewritten 2026-09-07 with the engine's fix.
 ///
+/// §12.5.6.4's seven names are *"a standard set, not a closed one"*, so
+/// `/Sparkle` is **conforming**. This test used to assert the shape of a
+/// workaround:
 ///
 /// > *"`text_spec_from_dict` normalises it to `Note` on the way past, and
 /// > `set_text_annot_style` re-bakes from that — so a change to the colour

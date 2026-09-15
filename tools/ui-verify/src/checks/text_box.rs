@@ -2,6 +2,7 @@
 //!
 //! # What this is for
 //!
+//! The operator, 2026-08-21: *"I should be able to make it multi line."*
 //!
 //! Until then a text draft was one line and Enter **committed** it, so there
 //! was no keystroke that could produce a second line and no gesture that could

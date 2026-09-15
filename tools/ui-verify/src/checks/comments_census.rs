@@ -2,6 +2,11 @@
 //! for every check that uses it as an oracle.
 //!
 //!
+//! `save_copy_round_trip` and `undo_redo_round_trip` both use the Comments
+//! panel's per-frame census as their proof that an annotation reached the
+//! document. On the driven sweep of 2026-09-05 **both failed, in the same
+//! words**, and the sweep report treated them as *"one application defect with
+//! two independent witnesses"*:
 //!
 //! > *"THE COMMENTS PANEL DOES NOT SEE THE ANNOTATION THAT WAS JUST AUTHORED:
 //! > it listed 12 before the drag and 12 after it. The engine traced
@@ -37,6 +42,11 @@
 //! | [`refresh`] | the same, and if the panel is silent, **puts it back in front** and asks again |
 //! | [`baseline`] | enter the mode, front the panel, and report the starting census |
 //!
+//! `None` is never folded into a number. *"The panel said nothing since the
+//! edit"* and *"the panel said the same number"* are different verdicts about
+//! different subjects — the first is a layout fact and reports SKIP, the second
+//! is a defect and reports FAIL — and the whole of the 2026-09-05 misreport was
+//! the first being printed as the second.
 //!
 //! # ★ What a census asserts, and what it does not
 //!
@@ -82,6 +92,14 @@
 //!
 //! # ★★ `filtered=` is checked, and the reason is this panel's own rule
 //!
+//! `panels::comments` gained filtering by author, type and has-words on
+//! 2026-09-05. Its founding discipline is that *"nothing is silently
+//! omitted"*, and a filter is an omission the **operator** caused. The panel
+//! states it on screen; since the same day it states it on the trace as
+//! `filtered=1`, and every function here refuses a filtered census rather than
+//! comparing it. A narrowed list is not a census of the document, and reading
+//! one as though it were is exactly how a check reports a document as having
+//! lost annotations it still has.
 
 use crate::checks::driving::{
     self, ITEM_PREFIX, TAB_EVENT, declared, declared_names, list, shell_trace,

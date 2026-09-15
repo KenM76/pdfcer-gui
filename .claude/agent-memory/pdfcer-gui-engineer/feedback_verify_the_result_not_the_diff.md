@@ -53,6 +53,18 @@ whose input was the artefact.
   `cargo fmt … | tail -20; echo rc=$?` reported `fmt rc=0` over a hard parse
   error, and the background task's summary said "exit code 0". Read the log.
 
+★★ **The repair for that sweep repeated the lesson before it was finished.**
+Restoring the 833 comment lines that carried an operator quote, a script
+reported `315 files, 658 blocks, 3988 lines restored` and was believed. An
+independent oracle — *count the comment lines matching the `*"` marker, per
+file, pre-sweep versus now* — answered **3,678 of 3,755**. Thirty-four files had
+restored nothing. `.gitattributes` declares `*.rs text eol=lf` but 32 of those
+blobs actually store CRLF, so LF text from `git cat-file` aligned against CRLF
+text on disk produced ONE whole-file `replace` opcode, which the
+"is this block all comment?" filter correctly refused. The script's own report
+counted what it *did*; only the count of what *exists* found the hole. Diff on
+lines stripped of their endings; re-emit with the target file's dominant one.
+
 Siblings: [[a-detectors-scope-is-a-claim]] (the input set was wrong),
 [[a-check-that-cannot-fail-is-not-evidence]] (the assertion could not go red),
 and [[an-assertion-both-outcomes-satisfy-is-not-a-measurement-of-which-one-shipped]].

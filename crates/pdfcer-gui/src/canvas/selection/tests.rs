@@ -881,6 +881,11 @@ fn missing_every_anchor_falls_back_to_the_part_rung() {
 /// **★★★ A subtracting band takes exactly its hits out and leaves the rest** —
 /// `OPERATOR_REQUESTS.md` O104.
 ///
+/// The operator, 2026-09-03: *"I can't unselect things once I have selected
+/// them for redaction."* This is the half a click could not do — on a sheet of
+/// overlapping strokes, removing one object from a selection of twenty by
+/// clicking it precisely is often not practical, and a band is how the work is
+/// actually done.
 #[test]
 fn a_subtracting_band_removes_only_what_it_hit() {
     let mut sel = SelectionState::default();
@@ -1012,6 +1017,12 @@ fn the_grip_box_is_the_union_of_the_selection() {
 
 /// ★★★ **A placed object arrives selected, at the Object rung, alone.**
 ///
+/// The operator, 2026-08-26: *"if I add an image I Expect to click on it to
+/// resize but dragging doesn't resize."* He was right about the symptom and it
+/// was never the resize — a driven check had already proved a selected image
+/// resizes from a corner grip (`resize-commit grip=SouthEast sx=0.6810`). It
+/// arrived **unselected**, so his first press was a press on unselected paper,
+/// which `gesture::meaning` reads as a marquee. He watched a rubber band.
 ///
 /// Three properties, and each is a separate way to get this wrong: the new
 /// object is selected; it is the ONLY thing selected; and the rung is Object,

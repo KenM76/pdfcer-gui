@@ -272,6 +272,9 @@ pub enum Action {
 
     /// ★★★ **Save. In place. Over the file that was opened.**
     ///
+    /// The operator, 2026-08-20: *"can I please have a save button like every
+    /// other program in existence has? We're on week two of this and just have
+    /// a save as button."*
     ///
     /// Matched beside [`Self::SaveCopy`] and above the document guard for the
     /// identical reason: a keymap can reach `Ctrl+S` from any state, and a
@@ -639,6 +642,11 @@ pub enum Action {
     /// ★★ **Everything whose subject is one entry in the document's outline**
     /// — add, rename, and delete-with-its-subtree.
     ///
+    /// Moved into [`super::bookmarks::BookmarkAction`] under **R2** on
+    /// 2026-08-28, when `pdfcer-core` `Pass 156.0` turned a one-verb family into
+    /// a three-verb one. This file's own header named the rule in advance:
+    /// *"the next family of variants to **grow** is the one that will have to
+    /// become a sub-enum beside `PageAction` and `DimensionAction`."*
     ///
     /// Its header carries the two things a reader must not have to rediscover:
     ///
@@ -793,6 +801,11 @@ pub enum Action {
     /// key the file names twice** — the operator's intervention in a parse
     /// decision.
     ///
+    /// Raised by `crate::panels::docprops`, beside the list of places the file
+    /// contradicted itself, and by nothing else. It is the third obligation of
+    /// the operator's own ruling about damaged files — *"if the user can
+    /// intervene in a decision that should always be an option"* — which had
+    /// no route in this shell until 2026-09-10.
     ///
     /// # ★★ It carries a POLICY, not a key and not a value
     ///
@@ -960,6 +973,7 @@ pub enum Action {
         /// ★★★ **The wrap rectangle**, in PDF user space, or `None` for a
         /// single-line run at [`Self::CommitAddText::origin`].
         ///
+        /// The operator, 2026-08-21: *"I should be able to make it multi line."*
         ///
         /// `Some((llx, lly, urx, ury))` reaches `AddTextRequest::with_box`
         /// (`Pass 16.1`), which is what makes multi-line expressible at all: a
@@ -1057,6 +1071,17 @@ pub enum Action {
     /// # ★ Applying it does three things, and the third is why this is not a
     /// one-line arm
     ///
+    /// 1. **sets `view.display`** — the arrangement itself;
+    /// 2. **remembers it against this document**, through
+    ///    [`crate::viewer::remembered`], which is the operator's requirement of
+    ///    2026-08-12: *"so a sheet set does not inherit a report's setting."*
+    ///    Recording it here rather than in the dispatcher is deliberate — a
+    ///    customized keymap can reach the command too, and a choice made by a
+    ///    chord must persist exactly as one made by a click;
+    /// 3. **drops the strip's cached rasters**, because a mode change is the
+    ///    one event that makes a *visible* page stop being visible. Leaving
+    ///    them would hold GPU memory for pages that cannot be reached until the
+    ///    operator switches back.
     SetPageDisplay(crate::viewer::PageDisplay),
     /// Show or hide annotations as a class.
     ///
@@ -1316,6 +1341,20 @@ pub enum Action {
     /// a whole page, mark what is selected, take one mark off, and arm or
     /// disarm the removal that happens at the next save.
     ///
+    /// Moved into [`super::redact::RedactAction`] under **R2** on 2026-09-06,
+    /// when document signing needed a variant this file could not afford. This
+    /// file's own header named the rule in advance — *"the next family of
+    /// variants to **grow** is the one that will have to become a sub-enum
+    /// beside `PageAction` and `DimensionAction`"* — and `super`'s declaration
+    /// of that module nominated **markup** as the candidate on a 2026-08-20
+    /// measurement. Redaction was taken instead, and the reason is worth
+    /// recording rather than quietly departing from a written plan: markup is
+    /// 370 lines across **48 call sites**, redaction is 114 lines across
+    /// **19**, and the module that would receive it — `super::redact` — already
+    /// holds every one of the bodies, which is precisely
+    /// [`super::pages::PageAction`]'s third argument (*"the destination already
+    /// existed"*). Markup remains the next candidate and its measurement
+    /// stands.
     ///
     /// Its header carries the two things a reader must not have to rediscover:
     ///
@@ -1333,6 +1372,12 @@ pub enum Action {
     /// **Select everything on the current page**, including anything that
     /// has been moved OFF it.
     ///
+    /// ★★★ The recovery route for a one-way door. 2026-09-01: *"I sometimes
+    /// drop objects there, and when I do I can't get them back."* The canvas
+    /// senses input over the page rect only — correctly, or a hit area would
+    /// overlap its neighbours in a continuous strip — so an object dragged
+    /// past the edge is unclickable, unbandable and unpainted, while still
+    /// being in the file.
     ///
     /// ★ **The whole argument, including why an infinite rect is the right
     /// way to ask and what this deliberately does NOT fix, is on the apply

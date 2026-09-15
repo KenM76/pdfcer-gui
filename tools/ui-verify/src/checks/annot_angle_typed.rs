@@ -3,6 +3,12 @@
 //!
 //! # What this is for
 //!
+//! The operator, 2026-09-07: *"also the angle should be editable from the
+//! properties."* The **read** half of that has been driven since the day it
+//! shipped — `rotating_a_markup_turns_it` asserts the field shows `270.85`
+//! after a `-89.15` drag. The **write** half had not been driven at all, and by
+//! this project's founding rule that means it was not done, however many unit
+//! tests stood behind it.
 //!
 //! ## ★★★ The two things only a driven run can see, and they are the whole risk
 //!

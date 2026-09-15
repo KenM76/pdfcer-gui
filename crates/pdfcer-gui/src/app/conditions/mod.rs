@@ -494,6 +494,18 @@ impl PdfcerApp {
             //
             // # Why a third name, when two already exist
             //
+            // The contextual Format tab appears *"only while something is
+            // selected"* (`RIBBON_IA.md` §5.8), and since 2026-08-27 it holds
+            // two kinds of control: the Selection group, which acts on a page
+            // **object**, and the Font group, which acts on a swept **text
+            // range**. Those are the two conditions immediately above, and
+            // they are different index spaces — `selection.any` is a
+            // paint-order index, `selection.text` is a run range — so neither
+            // one of them is the tab's condition. Spelling the tab as
+            // `selection.any` means sweeping text in Edit restyles nothing
+            // because the tab carrying the controls never appeared; spelling
+            // it as `selection.text` loses the Delete the tab has carried
+            // since it shipped.
             //
             // ★ The expression language is deliberately one condition name
             // with an optional leading `!` (`egui_shell::commands::Enable`'s

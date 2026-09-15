@@ -61,6 +61,12 @@ fn everything_open() -> ConditionSet {
         .with("doc.open")
         .with("doc.pages")
         .with(manifest::SELECTION_ANY)
+        // ★★ 2026-08-28. Without it `canvas.object` stopped opening, and
+        // the failure was correct: `format.delete` and `format.properties`
+        // moved to the wider `selection.actionable` when a form field
+        // became something they can act on, and this fixture's name
+        // promises *"everything open"* while naming conditions one at a
+        // time.
         //
         // ⇒ A hand-listed "liveliest state" fixture goes stale the moment a
         // command's predicate changes, and it fails on the menu that lost

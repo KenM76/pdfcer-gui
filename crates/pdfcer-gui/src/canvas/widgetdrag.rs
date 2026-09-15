@@ -101,6 +101,13 @@ pub fn grab_box(ctx: &egui::Context, doc: &OpenDoc, map: &PageMapping) -> Option
 
 /// Drive one frame of the drag.
 ///
+/// Returns the ghost outline to draw, in **canvas space**, or `None` when there
+/// is nothing to draw — which covers both *"nothing draggable is selected"* and
+/// *"this is the frame that commits"*.
+/// ★ No `PageMapping`, unlike [`grab_box`]. A grab box has to be projected to
+/// SCREEN space to be hit-tested against a pointer; a ghost is drawn in CANVAS
+/// space, which is what the target list already holds. Taking the mapping here
+/// would be a parameter used to convert a value into the space it started in.
 pub fn drag(
     frame: &Frame,
     ctx: &egui::Context,

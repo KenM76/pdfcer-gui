@@ -585,6 +585,12 @@ pub enum VectorAction {
     ///
     /// # Why it takes a SLICE, and why that retired a refusal
     ///
+    /// One gesture is one command and one undo entry — this project's standing
+    /// rule. `canvas::resizing` used to decline a multi-object resize by name
+    /// (*"pdfcer resizes one shape at a time"*), because `move_nodes` is
+    /// per-object and N objects would have been N commands. That refusal is
+    /// **gone**: the transform takes every index at once and scales them all
+    /// about one pivot, which is what every drawing application does.
     ///
     /// # ★ What the engine collapses, and why the count is not ours
     ///

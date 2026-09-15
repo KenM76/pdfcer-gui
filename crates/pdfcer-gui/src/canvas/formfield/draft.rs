@@ -26,6 +26,9 @@
 //!
 //! ## ★★ What is remembered and what is not, and the hazard in between
 //!
+//! The operator, 2026-08-26: *"remember last settings"*. Everything here is
+//! remembered **except the name**, and the exception is a correctness one
+//! rather than a taste one.
 //!
 //! In PDF, **two widgets that share a fully-qualified name are one field**.
 //! `FieldAuthorOutcome::merged` is the engine reporting exactly that. So

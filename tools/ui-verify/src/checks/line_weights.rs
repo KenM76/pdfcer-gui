@@ -7,6 +7,13 @@
 //! > their thickness — thin lines or something like cad has. The button never
 //! > worked but I do want that display option!"*
 //!
+//! Both halves of that were correct. `view.thin_lines` was registered, drawn on
+//! the View tab, and **inert**; it was unregistered on 2026-08-17 because
+//! `RenderOptions` had no field behind it. The engine shipped
+//! `stroke_display: StrokeDisplay { Actual, Hairline }` (`Pass 254.0`,
+//! `8f9fb3e`) the day this shell asked, so the control is back — and *"the
+//! button never worked"* is precisely the sentence this check exists to prevent
+//! being true a second time.
 //!
 //! # ★★★ Why a driven check when five unit tests already pass
 //!
@@ -410,6 +417,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "{ink_before} ink pixels in the canvas with real widths"
     ));
     //
+    // The guard used to be `ink_before == 0`. On its first run it measured
+    // **138 ink pixels in a canvas of roughly 300,000** — four hundredths of one
+    // per cent — because climbing to 394 % on an A1 sheet lands the view on
+    // **blank paper**: the title block is in a corner and the zoom is anchored
+    // at the centre. 138 is above zero, so the guard let it through, and the
+    // check then reported *"the drawing lost 100.0 % of its ink"* and
+    // *"turning line weights back on did not restore the drawing"*.
     //
     // ⇒ Both sentences were true of the pixels and **false about the
     // application.** They are a statement about 138 pixels of nothing, and the

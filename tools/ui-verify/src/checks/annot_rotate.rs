@@ -575,6 +575,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 8: IS THE OUTLINE NOW DRAWN AT THE MARK'S OWN ANGLE? ---------------
     //
+    // The operator, 2026-09-07: *"the box outlined when an object is selected
+    // should be in the same angled orientation as the object."*
     //
     // ★★ Asserted here rather than in a check of its own, deliberately. Getting
     // a turned annotation on screen costs a draw, a mode change, a select and a

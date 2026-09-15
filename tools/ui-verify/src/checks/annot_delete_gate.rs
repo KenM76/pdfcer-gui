@@ -477,6 +477,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             // this must say *"the trace moved and this check does not know
             // which line moved it"* rather than panic inside a sweep.
             //
+            // What it must NOT say is what it used to say — *"the keystroke
+            // did not reach `canvas::keys` at all"*. Delivery is settled above,
+            // by the loop, and re-litigating it here is how a real defect was
+            // reported as a focus problem.
             return Ok(Some(format!(
                 "Delete was heard — `driving::press_until_traced` saw the event count move — \
                  and then produced neither a `{FUNNEL_EVENT}`, a `{FUNNEL_REFUSED_EVENT}` nor \

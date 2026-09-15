@@ -176,6 +176,10 @@ pub fn cipher_line(cipher: Cipher) -> String {
 ///
 /// # ★★ The engine asked for this by name
 ///
+/// From its 2026-09-03 reply: *"`AuthKind` tells you which one opened the file
+/// — surface that, because `remove_encryption` will refuse a
+/// user-authenticated session and the operator should see WHY before pressing
+/// it."*
 ///
 /// So this is not a curiosity. It is the precondition of a control that does
 /// not exist yet, shown before that control arrives, so the day it does the
@@ -213,6 +217,11 @@ pub const fn permissions_heading() -> &'static str {
 
 /// ★★★ **The engine's own sentence, verbatim.** See the module header.
 ///
+/// Supplied by `pdfcer-core` on 2026-09-03 with the instruction *"take this one
+/// verbatim; it is the sentence the CLI will print too."* Do not re-word it,
+/// do not shorten it for a narrow column, and do not soften *"a request, not a
+/// lock"* — that clause is the whole of what an operator needs to know and it
+/// is the one a marketing instinct would file off.
 #[must_use]
 pub const fn permissions_are_advisory() -> &'static str {
     "PDF permissions are a request, not a lock. A conforming reader honours them; any program that ignores the flag can print, copy or change this document freely. Only the password protects the content — and only the user password, which controls opening it."
@@ -307,6 +316,13 @@ pub const fn not_signed() -> &'static str {
 /// answer. So: *"does not yet check"*, and the clause that will change is
 /// separated from the clause about trust, which will not.
 ///
+/// ★★★ **THAT DAY CAME — 2026-09-05 — and this sentence was false for it.**
+/// The paragraph above said *"when `signature::verify` lands, the first two
+/// clauses change"*. It landed: `pdfcer-core` v0.38.0 (`b01964f`) carries
+/// `signature::verify_all_with_trust`, `crate::trust::examine` calls it, and
+/// `crate::panels::signatures` draws integrity, coverage and trust as three
+/// separate labelled lines. The clause *"It does not yet check the signature
+/// itself"* was untrue from that moment.
 ///
 /// ⚠ **And nothing went red, because this function has ZERO call sites.** The
 /// panel was built against [`crate::text::trust`] and [`crate::text::panels`]
@@ -367,12 +383,26 @@ pub const fn coverage_line(covers: bool) -> &'static str {
 /// that produced the Tool panel, arriving from the opposite direction. So the
 /// tab states the boundary once, in one sentence, as a fact about this build.
 ///
+/// ★★★ **CORRECTED 2026-09-05 — two of its three clauses were false, and it
+/// too has ZERO call sites.** *"Encryption first, signing later"* was the
+/// right prediction and it came true on 2026-09-04: `file.encrypt` and
+/// `file.permissions` are registered, dispatched through
+/// `crate::app::dispatch::security`, drawn on **File ▸ Security**, and
+/// `crate::protect` calls `set_encryption`, `set_permissions` and
+/// `remove_encryption`. So pdfcer can add a password, remove one, and change
+/// these permissions. Only *sign a document* is still true.
 ///
 /// The tab this was written for was superseded by that window and by
 /// [`crate::text::protect`], which is where the live wording lives — so this
 /// sentence sat false and unreferenced for a day. It is scoped to the one
 /// clause that survives, and it now names where the rest went.
 ///
+/// ★★★ **CORRECTED AGAIN 2026-09-06, and the last surviving clause is gone
+/// too.** It read *"It cannot sign a document; that is still being built in the
+/// engine."* Both halves were false by then: `pdfcer_core::sign` shipped on
+/// 2026-09-05 — 101 public items, written in answer to this shell's own
+/// request — and `file.sign` is now registered, dispatched and drawn on the
+/// same File > Security band as its two neighbours.
 ///
 /// ⇒ **This is the THIRD correction to one sentence, and it has had ZERO call
 /// sites throughout.** That is the finding worth keeping: a string nothing

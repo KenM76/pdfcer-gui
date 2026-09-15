@@ -117,6 +117,10 @@ fn which_markup_kinds_does_a_corner_drag_actually_resize() {
         // all — it is the engine failing to recognise its own work — and a
         // report naming the Text box would be naming the wrong subject.
         //
+        // ⚠ Without this row the first run's output reads as *"text boxes and
+        // stickies cannot be resized"*, which is a confident, precise and
+        // possibly wrong sentence. That is the shape of every wrong claim made
+        // on 2026-09-08.
         (
             "Square (the CONTROL)",
             Box::new(|s: &mut EditSession| {

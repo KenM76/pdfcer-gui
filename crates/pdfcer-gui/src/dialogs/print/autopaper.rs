@@ -1,5 +1,7 @@
 //! # `dialogs::print::autopaper` — pick the sheet from the pages
 //!
+//! Operator request **O167**, 2026-09-10: *"we also need the option to auto
+//! select paper size based on the page sizes in the pdf."*
 //!
 //! ## What this module is, and what it deliberately is not
 //!

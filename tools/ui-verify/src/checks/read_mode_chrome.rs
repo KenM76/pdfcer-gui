@@ -10,6 +10,12 @@
 //! > keyboard-only (Ctrl+H, F11) on a tab literally named View. This is the
 //! > single most confusing thing in the current ribbon.
 //!
+//! This shell gave both a control, and for a day that was all it gave them:
+//! `shell::commands::reach` found `view.read_mode` among the eleven registered
+//! commands whose honest status was *"the control should not be drawn yet"*,
+//! with the note that a chord that does nothing **cannot even be greyed**. The
+//! arm landed on 2026-08-15 (`app::window`), and this is the check that says so
+//! from outside the process.
 //!
 //! # ★ Why a unit test cannot cover it, which is the bar for being here
 //!

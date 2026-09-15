@@ -74,6 +74,9 @@
 //!
 //! ### ★★ Why it is superseded anyway
 //!
+//! Because it answered the wrong question. It asked *"can this shell justify
+//! inventing eight colours?"* — and the answer to that is still no. The
+//! operator's ask of 2026-09-06 asks something else:
 //!
 //! > *"Also make sure you've used the same default colours and style look for
 //! > these things as Adobe."*
@@ -311,6 +314,15 @@ pub struct Pen {
     ///
     /// # ★★ Solid ships, and that keeps the standing rule
     ///
+    /// [`Self::opacity`]'s doc states the rule this project applies when a
+    /// capability becomes choosable: *"a build which omits nothing must behave
+    /// as it did before the choice existed, byte for byte."* Unlike the colour
+    /// change of 2026-09-06, this one **does** keep it: the default is
+    /// [`super::linestyle::LineStyle::Solid`], `dash_option` answers `None`, and
+    /// `MarkupOptions::dash: None` authors *"the solid border pdfcer authored
+    /// exclusively before `Pass 258.0`"*
+    /// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4772-4774`). An operator
+    /// who never opens the chooser gets the file they got yesterday.
     ///
     /// # ⚠ Ignored by the text-markup family, and that is the format
     ///
@@ -611,6 +623,15 @@ impl Pen {
     /// transparency carried by `/CA` instead). Feeding the picker's alpha into
     /// `/C` would be a value with nowhere to go.
     ///
+    /// Opacity is therefore a **separate control**, and it is one that **now
+    /// exists** — [`Self::opacity`], drawn beside the swatches in
+    /// [`super::swatch::show`] since 2026-08-28. This paragraph used to end
+    /// *"it is not built yet: `/CA` support was filed against `pdfcer-core` and
+    /// is accepted-and-scheduled rather than shipped"*, which was true when
+    /// written and stopped being true when `Pass 81.1` landed
+    /// `MarkupOptions::opacity`. Corrected rather than deleted, because a stale
+    /// blocker is this project's most-repeated defect and the shape of it is the
+    /// useful part.
     ///
     /// ⇒ The alpha channel is *still* not offered **on the colour picker**, and
     /// that is unchanged and correct: `/C` has three components, and a picker
@@ -759,6 +780,8 @@ mod tests {
     /// are yellow. They are not, in the program the operator compares against:
     /// `cHighlight\cstrokeColor` reads `1.0, 0.384308, 0.0`.
     ///
+    /// The assertion is written as *"not the yellow it used to be"* rather than
+    /// only as *"is the orange"*, so the failure message says what happened.
     #[test]
     fn the_highlighter_is_acrobats_orange_and_not_the_old_yellow() {
         let pen = Pen::default();
@@ -843,6 +866,12 @@ mod tests {
 
     /// The three text-annotation kinds land on three different slots.
     ///
+    /// The mapping `app::actions::apply` depends on. Before 2026-09-06 all
+    /// three took `pen.ink`, so a sticky note came out shape-red where
+    /// Acrobat's `cText` is violet — this is the assertion that would have
+    /// caught that, stated as *"three kinds, three slots"* rather than as three
+    /// hard-coded colours, because the colours may legitimately be edited and
+    /// the separation may not.
     #[test]
     fn the_three_text_annotation_kinds_do_not_share_a_pen() {
         use crate::canvas::textannot::TextAnnotKind;

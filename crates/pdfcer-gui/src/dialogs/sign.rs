@@ -82,6 +82,15 @@
 //!
 //! ## ★ The section headings are NOT `.strong()`
 //!
+//! `crate::dialogs::protect`'s §6, taken rather than re-argued and caught by
+//! `tools/gates/check-strong-text.sh` on the first draft of this file exactly
+//! as it was on that one. egui has no separate role for emphasised text, so
+//! `.strong()` resolves to the **accent-filled widget** colour — pale text on a
+//! pale panel (`DEFECTS.md` D11). The hierarchy here is carried by layout and
+//! wording instead: a rule and a gap between sections, headings that are
+//! phrases (*"Your certificate"*, *"What the signature will say"*, *"On the
+//! page"*) rather than one-word captions, and the muted `.small()` notes below
+//! them to contrast against.
 //!
 //! ## 4. What comes back
 //!

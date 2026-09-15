@@ -24,6 +24,14 @@
 //! | input dies | this is a **pre-existing defect in today's shell**, met whenever he scrolls a long way down a drawing. It outranks O23 entirely, and O23 has been getting the blame |
 //! | input survives | the difference is that the offset was **forced on the frame the content was first laid out**, and the fix is to force it one frame later |
 //!
+//! ★★★ **ANSWERED 2026-09-05: input SURVIVES.** Driven on `four-pages.pdf`, at
+//! a wheel-reached offset of **1,182 pt** with a page still under the pointer,
+//! the canvas answers every movement. Driven on `a1-titleblock.pdf` at 832 pt,
+//! the same. So the second row is the true one, the pasteboard is cleared, and
+//! what remains of O23 is the forced-offset-on-the-first-layout-frame question
+//! — a smaller and much more specific thing than *"the canvas loses the
+//! mouse"*. ⚠ It took a repair to this check to establish that; see the section
+//! at the foot of this header before quoting the answer.
 //!
 //! # ★★ Why the assertion is `canvas-pointer` events and not a selection
 //!

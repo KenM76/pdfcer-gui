@@ -343,6 +343,13 @@ pub fn stable_rect(
 /// answers `None` for a caret that drew perfectly, and the check reports the
 /// feature missing.
 ///
+/// That is not hypothetical either. It is exactly what happened on
+/// 2026-08-19: `pages_drag_shows_where_it_lands` failed with *"NO
+/// `panel-pages-drop-caret` region was ever published"* while the trace
+/// carried `ui-rect name=panel-pages-drop-caret rect=[[258.0 239.1] - [262.0
+/// 331.9]]` four lines above the release. The indicator worked. The check was
+/// reading a change log as a snapshot in the other direction — asking for
+/// presence *now* about a thing whose whole nature is to be gone now.
 ///
 /// # What this asks instead, and why the anchor is required rather than optional
 ///
@@ -432,6 +439,14 @@ pub fn clipped_away(trace: &Trace, ui_rect: &str, name: &str) -> Option<String> 
 /// so a row that was deleted leaves its last declaration standing for ever, and
 /// counting names therefore counts rows that are gone.
 ///
+/// That is not hypothetical. On 2026-08-19 the Manage-groups check reported
+/// *"the round trip did not close: 1 row before, 2 after the delete"* over a
+/// trace containing `dimension-group-delete id=1`, `delete-dimension-group
+/// epoch=3` **and** `ui-rect-gone name=dimension-groups.draw_into.1`. The
+/// delete had worked, at every level, and the check said it had not — a
+/// confident, specific, entirely wrong defect report about a feature that was
+/// correct, produced by a helper being used outside the job its own doc comment
+/// names.
 ///
 /// So: **[`declared_names`] to say what was seen, this to say what is there.**
 /// If a check compares two numbers, it wants this one.
@@ -581,6 +596,13 @@ pub struct BandSearch {
     /// Whether the item only became visible when a **collapsed group's popup**
     /// was opened, as opposed to being on the band at that stop.
     ///
+    /// ★★★ With [`Self::scrolls`], this is the pair that says *"the old
+    /// single-click search could not have completed this run"*, and it is the
+    /// pair rather than either half. Measured 2026-09-03: at 1,100 pt the File
+    /// tab's About sits **one** scroll away and **inside a collapsed group** —
+    /// so a `scrolls >= 2` assertion alone would have skipped, and a
+    /// `found_in_popup` assertion alone would be satisfied by a popup at the
+    /// band's starting position, which the old code searched perfectly well.
     ///
     /// The old order was: popups at stop 0, one scroll, then a **bare** look at
     /// the band. Anything needing a popup at any stop past the first was
@@ -740,6 +762,13 @@ pub fn shell_trace(session: &Session) -> Result<Trace> {
 /// The event name under which a ribbon control publishes **whether it was drawn
 /// pressable**, in both crates.
 ///
+/// ★★★ **Until 2026-09-14 this harness could not measure greying at all**, and
+/// the gap had a shape: `ui_rect` publishes a rectangle for every control,
+/// enabled or not, deliberately, because the consumer's question is *where is
+/// this control* and a greyed control is still drawn somewhere. So a check
+/// could prove the five Font controls were on the band and could not prove that
+/// any one of them could be pressed. `font_group` said so in its own header and
+/// then wrote the word *"greyed"* into a note it had not measured.
 ///
 /// ★★ That is the exact sentence `OPERATOR_REQUESTS.md` O198 claim 3 makes —
 /// *"get the font selector and editing tools like [bold] and italic working.
@@ -1214,6 +1243,13 @@ pub const PRESS_TRIES: usize = 4;
 /// header records a bare `V` arriving **zero times in six** runs with a dock
 /// panel raised.
 ///
+/// A check that presses once, measures nothing, and reports a defect has
+/// reported a defect about a program it never spoke to. That is strictly worse
+/// than reporting nothing, because it is a confident accusation naming a
+/// specific line — and this suite has now produced one of those (`annot_delete_gate`
+/// phase D on 2026-08-29 said *"the keystroke did not reach `canvas::keys` at
+/// all"* about a keystroke whose effect was four lines further up the same
+/// trace). ⇒ A press that cannot be shown to have landed is a **SKIP**.
 ///
 /// # ★★ The caller owes two things, and both are contracts rather than advice
 ///

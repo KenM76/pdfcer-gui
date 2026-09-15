@@ -60,6 +60,14 @@ const VK_CONTROL: u16 = 0x11;
 /// pixel. They are the reason the fixture exists and the only thing on it worth
 /// magnifying.
 ///
+/// The operator, 2026-08-22: *"You should try zooming into the two cells, then
+/// try slightly panning to test. Right now you are just zooming into a blank
+/// area on the canvas."* He was right — the check zoomed about the viewport
+/// centre, which on this page is white paper, so every raster it exercised was
+/// empty. The geometry assertions were still valid (a placement is a placement
+/// whatever the pixels show), but nothing about the run resembled what he does
+/// with it, and a screenshot oracle added later would have had nothing to look
+/// at.
 ///
 /// Located by rendering the region at 30x and measuring: the pair sits at
 /// (540, 560), about 600 micrometres past the tip of the arrow that points at
@@ -136,6 +144,12 @@ const REGION_TIER_REQUIRED: bool = true;
 /// probe per mechanism is the minimum that can honestly claim panning works
 /// "at high zoom".
 ///
+/// ★★ Sized to SATURATE, on the operator's request of 2026-08-22 — *"can you
+/// test up to maximum zoom please?"* A Ctrl+wheel notch multiplies the zoom by
+/// about 1.22, so reaching the default ceiling of 10¹² % from the first probe's
+/// 4,155 % takes roughly a hundred notches. Overshooting costs a few seconds
+/// and is what makes the second probe a statement about the **ceiling** rather
+/// than about some arbitrary depth on the way to it.
 const MORE_PRESSES: usize = 110;
 
 /// How many wheel notches to roll.

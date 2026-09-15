@@ -50,6 +50,13 @@
 //! [`crate::text::redact`]'s rules 1–3 bind here unchanged. This group adds a
 //! fourth, and every string below obeys it:
 //!
+//! > **Say where, in his vocabulary, never in the engine's.** A carrier name is
+//! > the whole actionable content of a residual line: *"the tagged-reading
+//! > structure a screen reader follows"* is something an operator can decide
+//! > about in a second, and *"struct_tree"* is something he can only click
+//! > past. This is the same finding `raw_residual_line` was corrected for on
+//! > 2026-09-04, one sentence over, after his report that the warning *"always
+//! > finds text that wasn't redacted"*.
 //!
 //! ★ **The fallback is the raw key, deliberately.** `CarrierStatus::carrier` is
 //! an open vocabulary — a future engine build may add one — and the choice at

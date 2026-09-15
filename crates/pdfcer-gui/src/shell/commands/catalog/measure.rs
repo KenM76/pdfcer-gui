@@ -192,6 +192,16 @@ pub(super) fn band() -> Vec<Command> {
         // them to commit.
         //
         //
+        // This registration and `catalog::markup`'s `markup.finish` carried the
+        // same sentence, word for word, in two files: *"There is no check-mark,
+        // tick or accept glyph in the set, and no existing key means 'complete
+        // this gesture'."* That was a true statement about the catalogue and it
+        // is no longer true — `check` was adopted from the outside review of
+        // 2026-09-03 — so the refusal is **spent rather than overturned**, the
+        // same way [`crate::icons::Icon::Pages`] and the Attachments paperclip
+        // record. The note is rewritten rather than deleted because the reader
+        // who finds a bare `.with_icon("check")` here with no history will
+        // eventually re-derive the wrong lesson from it.
         //
         // What in it was load-bearing and still is:
         //

@@ -12,6 +12,11 @@
 //! | an object | [`crate::shell::menus::CANVAS_OBJECT`] | there is a thing to act *on*, so the menu is about it |
 //! | blank page | [`crate::shell::menus::CANVAS_EMPTY`] | there is no thing, so the menu is about the *view* |
 //!
+//! ⚠ That table said **"Two menus"** and listed two until 2026-09-06, while
+//! this file resolved five. It is the same decay the parent document's own
+//! heading carried, found the same way — by adding the sixth and reading what
+//! was already written. The count is now [`CanvasMenu`]'s variant list, which
+//! `each_canvas_menu_names_a_context_the_shell_defines` walks.
 //!
 //! `GUI_ROADMAP.md` Phase 1 is why this file exists at all:
 //!
@@ -429,6 +434,15 @@ pub struct Attach<'a> {
 /// Returns the handler tokens the operator chose, for the caller to hand to
 /// the application's one dispatch point. **Nothing here executes anything.**
 ///
+/// ★ It took eight positional arguments until 2026-09-06 under a
+/// `too_many_arguments` allow whose reason ended *"the resulting type would
+/// have no name that was true"*. The markup menu brought four more — the
+/// document, the mapping, the pointer and one capability, every one of them
+/// needed to answer *which corner* — and twelve is past the point where the
+/// argument holds: [`Attach`] does have a true name, it is *one right-click*,
+/// and every field can now carry the note that explains it. The same
+/// conversion `Press`, `Keys`, `Frame`, `Drag`, `Swept` and
+/// [`super::rightclick::Click`] all made.
 #[must_use]
 pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
     let Attach {
@@ -583,6 +597,12 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
     // open at all — the state `offers_anything` is built to prevent, met from
     // the one direction it cannot see.
     //
+    // ★★ It used to say *"both items"*, and that stopped being true on
+    // 2026-08-29: `canvas.field`'s `format.delete` now carries
+    // `selection.delete_permitted` as its `visible_when`, so on a document
+    // whose form structure is frozen the menu offers `format.properties`
+    // alone — one item, still enough for `offers_anything`, and the Delete is
+    // ABSENT rather than greyed (R9).
     //
     //
     // The frame-top condition set answers this from

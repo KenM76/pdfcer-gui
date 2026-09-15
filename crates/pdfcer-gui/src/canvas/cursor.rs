@@ -24,6 +24,9 @@
 //!
 //! ## ★ Why two tones rather than the inversion the operator expected
 //!
+//! The report guessed at the mechanism — *"I assume they change based on if
+//! they are over a black or white or grey object"* — and that guess describes
+//! how this used to work and no longer does anywhere.
 //!
 //! XOR/inverting cursors were a real facility: a monochrome cursor with an AND
 //! mask and an XOR mask, where the XOR bits inverted whatever was underneath.
@@ -580,6 +583,9 @@ static LAST_APPLIED: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32
 /// # ★★ The I-beam is here for the SAME reason the crosshair is, reported
 /// the same way, three weeks apart
 ///
+/// 2026-08-18: *"the crosshairs when over the canvas are white making it hard
+/// to see them."* 2026-08-19: *"the I cursor turns white for text selection so
+/// I cant see it on a white background."*
 ///
 /// One cause. `IDC_IBEAM` is a **monochrome** stock cursor exactly as
 /// `IDC_CROSS` is, coloured by the operator's pointer scheme, and a white

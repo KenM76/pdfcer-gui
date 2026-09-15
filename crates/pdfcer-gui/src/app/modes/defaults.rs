@@ -11,6 +11,14 @@
 //!
 //! ## Why this is its own file
 //!
+//! Split from `app/modes.rs` when that file reached 1,512 lines against the
+//! 1,500-line gate (R2). `app/mod.rs` has been split twice under the same
+//! rule, into `crate::app::dispatch` and `crate::app::conditions`, and the
+//! standing instruction for this gate is the one written into the gate
+//! itself: *"the right response to this gate firing is to SPLIT THE MODULE,
+//! not to shrink the prose."* This project's documentation is the logic, so
+//! trimming it to fit is the one response that would make the file smaller
+//! and the program less well specified.
 //!
 //! **The seam is a real one rather than arithmetic**, and the test for that
 //! is whether the two halves change for different reasons. They demonstrably

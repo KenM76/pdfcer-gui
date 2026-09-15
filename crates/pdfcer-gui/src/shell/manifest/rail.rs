@@ -392,6 +392,12 @@ mod tests {
 
     /// ★★★ The smart selector is on the rail, in `navigate`, **last**.
     ///
+    /// His instruction of 2026-09-05 — *"our smart selector should be visible
+    /// with the other navigate controls in our left rail"* — pinned as data.
+    /// The position matters and is not cosmetic: [`RailFold::PinArmed`] takes
+    /// the **first** selected row, so a toggle placed ahead of the four tools
+    /// would take the pin away from the tool the operator is holding whenever
+    /// the preference was on. See the module-level note beside this group.
     #[test]
     fn the_smart_selector_is_the_last_row_of_navigate() {
         let group = groups()

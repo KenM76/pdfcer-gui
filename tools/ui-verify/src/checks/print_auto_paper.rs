@@ -25,6 +25,13 @@
 //! | `paper=Form(8)` | its answer was turned into a request the driver will see |
 //! | ★ `largest=` fits `sheet=` | **the sheet has something to do with this document** |
 //!
+//! A build that resolved auto to the first form in the driver's list would
+//! emit the first three, correctly, and be completely wrong. The operator's
+//! words were *"based on the page sizes in the pdf"*, and only the fourth row
+//! is about the pages. That is why `largest=` was added to `print-plan` on
+//! 2026-09-10 — while writing this check, which is the fifth time in this
+//! project that sitting down to write a driven check found a trace that could
+//! not tell apart the two states the check existed for.
 //!
 //! So the assertion is the **invariant**, not the value:
 //!

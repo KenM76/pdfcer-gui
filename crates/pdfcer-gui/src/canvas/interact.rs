@@ -419,6 +419,11 @@ pub(super) fn interact(
     // lives in one place with its own reasoning beside it.
     // ★★★ **1b. A press on an unselected object selects it.**
     //
+    // Moved to `canvas::presspick` under R2 on 2026-08-27, and it is a real
+    // seam rather than a convenient cut: `canvas::pressing`'s header opens with
+    // *"changes nothing"*, and this step changes the selection. Putting a
+    // mutation inside the module whose contract is that it only looks would
+    // have made that contract false the day someone relied on it.
     //
     // Its header carries the operator's report, the four gestures it must not
     // disturb, and why this is nine statements rather than a new `DragKind`.
@@ -1243,6 +1248,13 @@ pub(super) fn interact(
         // be permanently false, so the caret would never take a keystroke.
         let owns_keyboard = !ctx.text_edit_focused();
         let _ = crate::canvas::textedit::keys::typing(ui, &ctx, doc, owns_keyboard, actions);
+        // ★ Evidence for *"it doesn't type anything in the box when I type and
+        // nothing gets added"* — the operator, 2026-08-18. Four facts, each
+        // killing a different hypothesis: `draft=false` (the click stored
+        // none), `owns_keyboard=false` (a `TextEdit` has focus, so `typing`
+        // reads no events), `text_events=0` (egui delivered none — the keys
+        // are not reaching this window), `len` not rising (read and stored,
+        // insert not landing).
         //
         // ★ Why a trace rather than a test: the driven check for text editing
         // seeds the draft through `PDFCER_DIAG_TYPE`, the one path that BYPASSES
@@ -1297,6 +1309,13 @@ pub(super) fn interact(
 
     // ★ …and where that answer is a CROSSHAIR, supply our own bitmap.
     //
+    // The operator, 2026-08-18: *"The crosshairs when over the canvas are white
+    // making it hard to see them."* Nothing in this crate drew them — the
+    // platform's stock crosshair is monochrome and its colour belongs to the
+    // operator's pointer scheme, which no application can read. So pdfcer stops
+    // asking for it and hands the OS a two-tone bitmap instead; the full
+    // argument, including why it is not inverted and why the two tones are not
+    // theme colours, is in `canvas::cursor`'s header.
     //
     // The icon is still set above and is the **fallback**: `egui-winit` drops
     // to `cursor_icon` on any integration or platform that cannot take a
@@ -1312,6 +1331,13 @@ pub(super) fn interact(
     // ★★ …and where that answer is an I-BEAM, turn it to match the text under
     // the pointer.
     //
+    // The operator, 2026-08-26: *"In Adobe when I hover over it the I cursor
+    // re-orients itself to match the text orientation […] as it is now the I
+    // cursor doesn't reorient."* Acrobat is right — the I-beam's meaning is
+    // *"text flows this way"*, and over a 90° title-block stamp an upright one
+    // says it about the wrong axis. `canvas::cursor::Tilt` carries the argument
+    // and the reason this shell can do it at all where most applications
+    // cannot.
     //
     // ★ **The cost question answers itself here, and that is why the tilt is
     // applied at this point and not in `tool::cursor_for`.** Turning the beam

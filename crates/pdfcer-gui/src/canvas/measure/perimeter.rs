@@ -10,6 +10,13 @@
 //! > shape. this should come with all the scaling options of the other
 //! > dimensioning tools."*
 //!
+//! — Ken, 2026-08-20. He measures CAD site plans; a perimeter is a fence run, a
+//! kerb line, a wall length. The last sentence is the one that decided the
+//! design: *"all the scaling options"* means it must be a real
+//! [`DimensionKind`] carried by a [`Group`], not a markup annotation with a
+//! number typed into it — so that scale, unit, number format, drafting
+//! standard, layer and the style cascade all come free rather than being
+//! reimplemented badly.
 //!
 //! The engine agreed and shipped its whole half the same day it was filed.
 //!
@@ -22,6 +29,13 @@
 //! | [`MeasureKind::Circular`] | **objects** | **open-ended** — double-click, or the `measure.finish` command |
 //! | **this** | **points**, with snapping | **open-ended**, plus a third ending of its own |
 //!
+//! So the point resolution — the snap query, the derived-candidate two-click
+//! confirm, the operator's snap master toggle — is [`super::click`]'s existing
+//! machinery, untouched, and this module is only asked *"what does one resolved
+//! point mean?"*. And the ending is [`super::circular`]'s answer, already
+//! settled with the operator on 2026-08-14: a **double-click**, because that is
+//! what every polyline tool in every drawing package uses, plus a ribbon
+//! command for a pick that is awkward to double-click on.
 //!
 //! ## ★ The third ending: click the first vertex to CLOSE
 //!

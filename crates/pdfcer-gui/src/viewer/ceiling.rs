@@ -264,6 +264,15 @@ pub fn deep_position_needed(page_pts: (f32, f32), zoom: f32) -> bool {
 
 /// # Tests — the three ceilings, and the ladder that has to be able to reach them
 ///
+/// ★★ **Moved here from [`super`] on 2026-09-12, and the move is the point.**
+/// Every test below asks one question — *how far may this page be magnified?* —
+/// which is the question this file exists to answer, and they were sitting in
+/// `viewer/mod.rs` only because they predate the split that created this file.
+/// `viewer/mod.rs` had reached 1,498 lines of R2's 1,500, so O186's fourth
+/// parameter could not have been tested at all without finding the seam first.
+/// R2's own wording: *"when a file approaches the limit, that is the signal to
+/// find the seam, not to raise the limit."* The seam was already named in this
+/// file's header.
 ///
 /// ★ What deliberately did NOT move: the tests of `super::max_zoom_for_page`,
 /// `super::raster_scale` and `ViewState`'s clamping. Those answer questions

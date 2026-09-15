@@ -418,6 +418,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     //
     //
+    // ★★★ **What this paragraph used to say, and what its one wrong clause
+    // cost.** It said *"`userdata/` is not among the sibling directories it brings,
+    // so every check begins with no preferences file of any kind"*, and concluded
+    // from that that the delete at the top of this function always finds nothing —
+    // which is what made the delete look free. The clause was **true on the day it
+    // was written**. `sandbox::seed_prefs` then began writing a
+    // `userdata/preferences.txt` holding exactly one key — `ask_default_app =
+    // false`, suppressing the O173 startup offer — and **no signature anywhere
+    // changed**, so neither the compiler nor any test could see that this comment
+    // had become the opposite of the truth. Every check now begins with a
+    // preferences file; the delete always found it; and what it removed was the
+    // suppression.
     //
     // ★★ So why keep it. Because the two runs where it is NOT redundant are
     // exactly the two where losing the file would cost the most:
@@ -456,6 +468,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Deletion does not, because an absent `ask_default_app` takes its own
     // compiled-in default, and that one is `true`.
     //
+    // ★★ **What it cost, measured 2026-09-13 by driving the check.** The
+    // control launch's trace carries `dialog-owned title="Open PDFs with pdfcer"
+    // owned=true` and `dialog-focus — focused=Some(true)` forty lines ahead of the
+    // File-tab click, and the click then produced no `ribbon-tab-activated` line at
+    // all: it went to the offer's window, which had the foreground. The check
+    // skipped saying *"the click on `ribbon.tab.file` produced no
+    // `ribbon-tab-activated tab=file` line, so no click reached the ribbon"*, and
+    // **five documents in this repository then recorded that as a ribbon defect** —
+    // "the File-tab route", promoted to a suite-wide blocker on the strength of a
+    // second check reporting the same sentence. The ribbon was never involved. An
+    // absence reported by a check is first a question about the check.
     //
     // ⇒ `sandbox::write_prefs` exists precisely to close this class, and its own
     // doc table names THIS CHECK as one of the three that lost the seed. The repair

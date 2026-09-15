@@ -612,6 +612,12 @@ impl ZoomOutcome {
     ///
     /// ## ★ The surface now exists, and this is deliberately NOT wired to it
     ///
+    /// This sentence used to read *"this predicate is what a caller with a
+    /// notice surface would key on to say so in words. There is no such
+    /// surface in this shell yet."* Both halves are now out of date: the
+    /// status bar words declines (`crate::app::status::decline`, 2026-08-14),
+    /// and the operator's ruling was that **the clamped region zoom must not
+    /// be worded through it.**
     ///
     /// The reason is the two numbered points above, taken seriously. A clamped
     /// framing zoom is **a partial grant, not a decline**:
@@ -1096,6 +1102,11 @@ mod tests {
     /// ★★★ **A region at the page's very corner CAN now be centred** — and
     /// this test is the record of that changing.
     ///
+    /// It used to assert the opposite: that framing a region hard against the
+    /// page's top-left saturated at offset zero, *"there is no page to the
+    /// left of or above the origin to scroll to"*, and the operator simply saw
+    /// it off-centre. That was true when the scroll content was the page and
+    /// nothing else.
     ///
     /// **O23 made it false on purpose.** The operator asked for exactly this:
     ///

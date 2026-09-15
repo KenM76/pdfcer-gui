@@ -62,6 +62,15 @@ pub fn refusal(reason: &Refusal) -> String {
         // ★★★ THE ENGINE'S OWN WORDS, and this variant replaced two of this
         // shell's.
         //
+        // It used to say *"signature fields cannot be copied"* and *"a radio
+        // button needs its own export value"*. Both were true when written and
+        // one stopped being true within the hour: `formclip` copies an UNSIGNED
+        // signature field normally - which hands this shell signature-field
+        // authoring it never had, since there is still no `add_signature_field`
+        // - and refuses a SIGNED one at the copy, because what would travel is
+        // the baked "signed by" artwork into a file nobody signed. The engine
+        // declines to make that object rather than making it and warning about
+        // it, which is the posture redaction takes.
         //
         // ⇒ Passing the engine's sentence through is not laziness. Its refusals
         // are written by the party that knows why, kept current by the party

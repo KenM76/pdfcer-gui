@@ -1,5 +1,7 @@
 //! # `dialogs::compact` — the window before a full rewrite
 //!
+//! `file.save_compacted`, wired 2026-08-28. `OPERATOR_REQUESTS.md` **O48**,
+//! answered *"yes to all three"*.
 //!
 //! ## ★★★ It writes the file BEFORE it opens, and that is the design
 //!
@@ -186,6 +188,11 @@ impl CompactDialog {
 /// that they can act on, and collapsing them to *"could not"* would waste the
 /// only useful thing the refusal carries.
 ///
+/// ★ The first of those read *"a hybrid-reference file"* until 2026-09-11.
+/// `Pass 281.0` narrowed the engine's refusal to the unparseable case, so
+/// compacting an ordinary hybrid now succeeds where this comment said it
+/// could not. The sentence the operator reads is the engine's own and was
+/// never wrong; only the account of it here was.
 pub fn open_for(status: &Status) -> Option<Result<CompactDialog, String>> {
     match status {
         Status::Open(doc) => Some(CompactDialog::open(doc)),

@@ -1,5 +1,10 @@
 //! # `app::prefs::exporting` — what the three export windows remember
 //!
+//! Operator request **O196**, 2026-09-13: *"the export windows forget every
+//! setting."* Three windows, one complaint, and it is the same complaint
+//! **O166** made about the Print window three days earlier — so this module is
+//! deliberately a port of [`super::printing`] rather than a fresh design, down
+//! to the shape of its token functions and the position of its `remember` call.
 //!
 //! ## ⚠ This is NOT O192, and the difference decides what gets built
 //!

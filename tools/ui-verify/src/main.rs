@@ -82,6 +82,10 @@ fn main() -> ExitCode {
 /// If that directory is gone — a binary copied elsewhere, which
 /// `package-portable` does — the check is skipped rather than guessed at.
 ///
+/// ★ `--allow-stale` covers this too, deliberately: one flag for *"yes, I mean
+/// to drive the older build"*, whichever binary is older, rather than a second
+/// flag nobody would remember.
+/// # ★★★ And `--list` is behind this guard, which it was not until 2026-09-14
 ///
 ///
 /// `RESUME.md` names `ui-verify --list | grep -cE '^  [a-z0-9_]+$'` as the way

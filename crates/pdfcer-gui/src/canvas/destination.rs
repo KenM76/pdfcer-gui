@@ -1,5 +1,9 @@
 //! # `canvas::destination` — **arriving where a bookmark points**
 //!
+//! Operator report, 2026-09-01: *"in Acrobat clicking on the nested bookmarks
+//! in the drawing package takes you to a zoomed in area of the page … when we
+//! click on ours it just jumps us to the correct page, but doesn't send us to
+//! the spot on the page the bookmark actually points to."*
 //!
 //! Two halves, in two places, and this is the second:
 //!

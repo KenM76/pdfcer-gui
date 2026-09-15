@@ -299,6 +299,7 @@ pub(super) fn disclosure_line(ui: &mut egui::Ui, region: &str, line: &str) {
 ///
 /// # ★★★ Why it is in the status bar as well as in Properties
 ///
+/// Operator ruling, 2026-08-26: *"disclose it."*
 ///
 /// Properties already carries the detail — how many objects were recovered, how
 /// many were defined more than once, how many needed repairing. But **a
@@ -412,6 +413,10 @@ fn load_anomalies_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 ///
 /// # What the operator sees without this, and why it reads as a bug
 ///
+/// Reported 2026-08-26: *"seems I get different results depending on Zoom
+/// level. The [shading] boxes … on zoom out the colors between our
+/// rendering and the references don't match, but they do when I am zoomed in.
+/// up to 474% they are mismatched, but at 579% they match."*
 ///
 /// Measured the same day, and his bracket contains the answer exactly.
 /// `pdfcer-render` composites a page with transparency in a **subtractive CMYK

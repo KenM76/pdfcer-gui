@@ -35,6 +35,11 @@ impl PrintDialog {
     ///
     /// # ★★★ Why this is extracted rather than left inline
     ///
+    /// Because the behaviour it decides is the operator's 2026-09-03 report —
+    /// *"it doesn't close after I hit the print button [...] there was a dozen
+    /// jobs there"* — and the only way to drive the inline version is to
+    /// actually print. Spooling a real job to his printer to prove a window
+    /// closes is not a test, it is the defect.
     ///
     /// So the decision is separated from the act. `ui-verify` cannot reach it
     /// (no headless route ends in a real spool), and this project's rule is

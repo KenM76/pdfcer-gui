@@ -458,6 +458,10 @@ pub fn disclosure_size_advisory(n: usize, below: bool) -> String {
 
 /// The engine refused the change because the document is certified.
 ///
+/// ★★ Worded rather than traced, because `RESUME.md`'s standing cross-cutting
+/// defect is that *"every engine refusal reaches the operator as SILENCE"*.
+/// Measured 2026-09-06 on `fixtures/certified-comments.pdf`: the engine refuses
+/// with `CertificationForbidsChange` and this is what that has to read as.
 #[must_use]
 pub const fn refused_certified() -> &'static str {
     "This document carries a certification signature that does not permit structural page \

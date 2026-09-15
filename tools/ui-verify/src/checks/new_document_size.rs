@@ -380,6 +380,11 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 /// Three clicks and a 20-frame settle apiece changed nothing, which is the tell:
 /// **a retry that does not help means the aim, not the wait.**
 ///
+/// ★★ `RESUME.md` records the identical fault in `checks::ocr::click_region` on
+/// 2026-08-27, and its conclusion verbatim: *"If you convert a check to drive a
+/// dialog, use `driving::frame_of`; it is safe on a main-window region and costs
+/// nothing."* That check was fixed; this one was written afterwards without it.
+/// A note is not a mechanism.
 ///
 /// # Errors
 ///

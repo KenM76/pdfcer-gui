@@ -3,6 +3,11 @@
 //!
 //! # What this is for
 //!
+//! `pdfcer`'s `gui` column ticked *"multi-node select-and-move"* `[x]` for
+//! months. Their own sweep of 2026-08-19 corrected it: *"objects move together;
+//! nodes one at a time"*, one of six rows that were true of the **old** in-repo
+//! shell and became false, without anyone touching them, when the column's
+//! referent moved to this build.
 //!
 //! It was false in an unusually quiet way. The selection model had held a
 //! multi-node set since the Node rung landed — `SelectionState::pick_within`
@@ -13,6 +18,12 @@
 //!
 //! # ★★ And the operator could not see the anchors AT ALL
 //!
+//! `FEATURES.md` recorded, against `view.show_points`, that *"this build draws
+//! no anchor mark at any rung"*. So the Node rung could be entered, a set could
+//! be picked, and there was **no surface anywhere** that said which points were
+//! in it. The marks and the multi-node move landed together on 2026-08-19
+//! because they are one feature: a set the operator cannot see is not a set
+//! they can choose.
 //!
 //! That is also what makes this check possible. An anchor's screen position is
 //! a fact about the page's *decomposition* — a harness cannot compute it
