@@ -35,14 +35,13 @@
 //! why the repair is a bounded wait on the *destination* path rather than a
 //! change to the framing every zoom in the product shares.
 //!
-//! ## ★ A point is framed as a region, not scrolled to
+//! ## ★ A rectangle is framed; a point is scrolled to
 //!
-//! `/XYZ` names a single coordinate, and framing a point has no answer — a zoom
-//! onto zero area is either everything or nothing. `zoom_to_rect` already
-//! solves *"put this on screen"* against the viewport, the margin and the
-//! ceiling; adding a second "scroll to a point" solver would be two answers to
-//! one question, and they would disagree at the edges of the page where it
-//! matters most.
+//! `/FitR` asks for a magnification and gets one, through `zoom_to_rect`.
+//! `/XYZ` and the two one-axis fits ask for a *position*, and go to
+//! [`crate::canvas::destscroll`] instead — this module parks the scroll, it
+//! does not solve it. O200 / D47 is the report that separated the two, and
+//! `destscroll`'s header carries the argument.
 
 use egui::Context;
 
@@ -106,7 +105,7 @@ const WAITED_MEMORY_KEY: &str = "pdfcer-canvas-destination-waited"; // ui-text-e
 /// strip laying the destination page out on the **first** frame after the
 /// scroll moves, so one would do. Four is that one plus room for the two
 /// one-shots that can each own a frame ahead of it — a fit's placement (rank 3
-/// in [`crate::canvas::offset`]) and a page command's scroll (rank 6) — and it
+/// in [`crate::canvas::offset`]) and a page command's scroll (rank 7) — and it
 /// is still only about 65 ms, far short of a spring-back the operator could
 /// mistake for their own gesture being undone.
 pub const MAX_WAIT_FRAMES: u32 = 4;
@@ -246,21 +245,54 @@ pub(crate) fn arrive(
     // is arithmetic about the wrong page. See [`arrive_step`].
     let frame_page = zoom::last_frame(ctx).map(|frame| frame.page);
     let step = arrive_step(pending.page(), page_index, frame_page, waited);
-    let region = match step {
-        ArriveStep::Frame => match pending {
-            PendingDestination::Rect { page, rect } => doc
-                .pages
-                .get(page)
-                .and_then(|p| crate::canvas::geometry::pdf_rect_to_canvas(rect, p)),
-            PendingDestination::Point { page, left, top } => doc
-                .pages
-                .get(page)
-                .and_then(|p| crate::canvas::geometry::pdf_point_to_canvas_region(left, top, p)),
-        },
-        // A destination still in flight, or one being given up on: nothing to
-        // frame this frame.
-        ArriveStep::Hold | ArriveStep::Drop => None,
-    };
+    // The two shapes part company here, and the split is `OPERATOR_REQUESTS.md`
+    // O200 / `DEFECTS.md` D47.
+    //
+    // A RECTANGLE is framed, unchanged: `/FitR` is a request for a
+    // magnification, every SolidWorks drawing bookmark measured in the
+    // operator's own packages is one, and O154 is the report that asked for it.
+    //
+    // A POINT is scrolled to, and acquires no magnification of its own. It used
+    // to be grown into a 150 pt square and handed to the same framing solver,
+    // which is how a Word table-of-contents link — `/XYZ x y null`, a
+    // destination that explicitly declines to name a zoom — arrived several
+    // hundred percent magnified. The scroll is parked rather than solved here
+    // for the reason this whole module exists: the offset needs the strip
+    // layout, which is next frame's. See [`crate::canvas::destscroll`].
+    let mut region = None;
+    if step == ArriveStep::Frame {
+        match pending {
+            PendingDestination::Rect { page, rect } => {
+                region = doc
+                    .pages
+                    .get(page)
+                    .and_then(|p| crate::canvas::geometry::pdf_rect_to_canvas(rect, p));
+            }
+            PendingDestination::Point { page, left, top } => {
+                // Falls back to where the view is now only when nothing
+                // recorded an origin — a destination raised by something other
+                // than `app::actions::view`, which does not happen today and
+                // would otherwise silently become "wherever we ended up".
+                let origin_x = doc.dest_origin_x.unwrap_or(doc.last_scroll_offset.x);
+                doc.dest_scroll = doc
+                    .pages
+                    .get(page)
+                    .and_then(|p| crate::canvas::destscroll::fracs_for(left, top, p))
+                    .map(|(frac_x, frac_y)| crate::canvas::destscroll::DestScroll {
+                        page,
+                        frac_x,
+                        frac_y,
+                        origin_x,
+                        waited: 0,
+                    });
+                // The scroll is decided in `canvas::offset`, which runs before
+                // the canvas draws — so without this a reactive shell would
+                // hold the parked scroll until something else asked for a
+                // frame, and it would then land seconds after the click.
+                ctx.request_repaint();
+            }
+        }
+    }
     // ★★ Traced on EVERY step, whether or not it lands. A destination that was
     // parked and then dropped — wrong page, un-invertible geometry, a page that
     // never appeared — is indistinguishable from one that was never raised, and
@@ -272,8 +304,9 @@ pub(crate) fn arrive(
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
             "destination-arrive page={page_index} step={step:?} frame_page={frame_page:?} \
-             waited={waited} framed={} pending={pending:?}",
-            region.is_some()
+             waited={waited} framed={} scrolled={} pending={pending:?}",
+            region.is_some(),
+            doc.dest_scroll.is_some()
         )
     });
     match step {
@@ -288,6 +321,11 @@ pub(crate) fn arrive(
         }
         ArriveStep::Frame | ArriveStep::Drop => {
             doc.pending_destination = None;
+            // Cleared with the destination it belongs to, whichever way the
+            // destination ended. A remembered origin that outlived its own
+            // destination would be spent by the NEXT one as a horizontal
+            // position the operator had left minutes earlier.
+            doc.dest_origin_x = None;
             ctx.data_mut(|d| d.insert_temp(waited_id, 0u32));
             if let Some(region) = region {
                 // ★ The outcome is reported by `zoom::zoom_to_rect` itself, on

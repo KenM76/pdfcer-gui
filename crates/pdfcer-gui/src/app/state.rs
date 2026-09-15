@@ -613,6 +613,26 @@ pub struct OpenDoc {
     /// **Where a bookmark asked the view to land.** A one-shot, parked on
     /// `fit_placement`'s pattern; see `canvas::destination`.
     pub pending_destination: Option<crate::canvas::destination::PendingDestination>,
+    /// **A point destination that has been resolved and is waiting to be
+    /// scrolled to.** See [`crate::canvas::destscroll`]; `OPERATOR_REQUESTS.md`
+    /// O200.
+    ///
+    /// Beside [`Self::find_reveal`] because it is the same kind of thing for
+    /// the same reason: a one-shot view position that has to span frames,
+    /// written when the destination resolves and spent on the first frame that
+    /// is drawing the page it names.
+    pub dest_scroll: Option<crate::canvas::destscroll::DestScroll>,
+    /// **The horizontal scroll offset the view had when a destination was
+    /// raised**, before anything navigated.
+    ///
+    /// O200's second clause is about *"the current horizontal position of the
+    /// page"* — the operator's, at the moment they clicked. By the time
+    /// `canvas::destination::arrive` can resolve a point,
+    /// `canvas::strip::page_scroll_offset` has already brought the named page
+    /// into view and centred it horizontally, so reading the offset then would
+    /// measure that centring rather than where the operator was looking.
+    /// Recorded here by `app::actions::view`, which runs before any of it.
+    pub dest_origin_x: Option<f32>,
     /// **The viewport the active fit was last placed against**, so a resize
     /// can re-place the page and nothing else can — `OPERATOR_REQUESTS.md`
     /// O55.
@@ -1238,6 +1258,8 @@ impl OpenDoc {
             // `canvas::offset` places a freshly opened document.
             recentre: false,
             pending_destination: None,
+            dest_scroll: None,
+            dest_origin_x: None,
             view_viewport: None,
             // Nothing to reveal on a document nobody has searched yet — and,
             // like every other field here, fresh by construction rather than

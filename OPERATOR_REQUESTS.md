@@ -87,6 +87,111 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O200–O204 — five reports in one message, FILED BEFORE ANY WORK
+
+**Source:** his message. Every paragraph became a row below, in the order he
+wrote them, before any of it was measured. A row that says FILED means his
+words are recorded and nothing else has happened yet.
+
+## O200 — ◑ **BUILT AND UNIT-FALSIFIED; THE DRIVEN CHECK IS WRITTEN AND HAS NOT BEEN RUN — NOT CLOSED, that is yours** — a link that should only jump now zooms, and it should not move the page sideways either
+
+> *"after we made it so bookmarks in drawing files exported from solidworks
+> zoom to the correct spot on the page, this behaviour carried over onto links
+> in word documents saved as pdfs such as table of contents where they should
+> just jump the position on the page pointed to without changing the zoom. If
+> the position jumped to is visible on the page with the current horizontal
+> position of the page, the horizontal position shouldn't be changed."*
+
+This is a **regression report against whichever row made SolidWorks bookmarks
+zoom correctly**, and it names the mechanism: a destination that carries no
+zoom of its own must not acquire one. Two claims, and the second is the one
+most likely to be dropped if the row is read narrowly:
+
+1. A destination whose zoom is unspecified — `/XYZ x y null`, `/Fit*` where the
+   producer meant "leave it alone", or a Word TOC link — must leave the zoom
+   exactly as it is.
+2. **Horizontal position is only changed when it has to be.** If the target
+   point is already inside the visible horizontal span at the current scroll,
+   the horizontal scroll does not move at all. Vertical still goes to the
+   target.
+
+The scope is every navigation that lands on a destination: bookmarks, internal
+links, the outline panel, search results, and anything else that shares the
+same "go to destination" path.
+
+**Where it stands.** Both claims are built, and the second one is built as the
+structural property rather than as a convention: a destination that names a
+point is answered by `canvas::destscroll::solve`, which returns a scroll offset
+and **cannot return a magnification, because it does not have one to return**.
+Per axis — an axis the destination left unstated defers to whatever placed the
+view that frame; a stated horizontal already on screen from where you were
+looking when you clicked is held exactly there; anything else lands one canvas
+margin inside the edge. `DEFECTS.md` D47 is the rule and names its enforcers.
+
+The SolidWorks half cannot regress: those bookmarks are `/FitR` — 86 of them in
+`SW41177.pdf` — and travel the rectangle path, which was not touched. What was
+touched is the point path, which is what a Word table of contents uses.
+
+**Verified by:** nine unit tests in `canvas::destscroll`, falsified by planting
+the old behaviour (exactly two go red, and they are the two that name the two
+claims). `tools/ui-verify/src/checks/point_destination.rs` drives the real
+binary over `fixtures/xyz-null-zoom.pdf`, whose two links differ in one number
+so that "held" has a control and "moved" has a witness — **written, registered,
+and not yet run**, because running it takes the cursor and the keyboard.
+
+## O201 — **FILED** — pages should already be rendered when he scrolls to them, and the visible ones come first
+
+> *"on multipage documents I noticed with scanned pdf I have to wait for pages
+> to load as a I scroll to them. As many pages as we can should be rendered and
+> ready to be shown as I scroll. The ones on screen should always take
+> precedence to be rendered first."*
+
+Three requirements, not one:
+
+1. **Render ahead.** Pages outside the viewport are rendered before he reaches
+   them, as many as memory allows.
+2. **A priority order, not a queue.** Whatever is on screen jumps the queue —
+   a prefetch already in flight must never delay a visible page.
+3. **A budget.** "As many as we can" is a memory question, and a scanned
+   multi-page document is the worst case for it, which is why he saw it there.
+
+## O202 — **FILED** — form objects have no way to set their colour, before or after placement
+
+> *"the forms objects have no way to edit their colour before or after
+> placement."*
+
+Both halves are named: a colour chosen **before** placement (a tool option,
+carried into the next field placed) and a colour changed **after** placement
+(the properties of a selected field). Scope is every form field kind, and
+"colour" for a field is more than one colour — at minimum background and
+border, and text colour where the field draws text.
+
+## O203 — **FILED** — placing a form item shows no preview of what a single click will produce
+
+> *"when placing form items, there should be a live preview of their size and
+> placement of what we will get if we just click once to place them."*
+
+The click-to-place path has a default size; nothing shows it. He wants the
+outline that a single click would produce following the cursor, which is a
+pre-commit affordance and therefore explicitly allowed by rule 4 — it is the
+cursor, not content marking.
+
+## O204 — **FILED** — Tab escapes into the ribbon instead of moving through the form
+
+> *"when I press tab while in a form I end up tabbing through the menus instead
+> of the form items. The tab should tab through whatever space I have clicked
+> on (example if I have an object selected on the canvase it should tab through
+> to the next object as expected, and if I've clicked on a form item it should
+> tab forward and shift-tab backwards to the next one."*
+
+The report is about forms; **the request is a general rule about focus scope**:
+Tab moves within the surface he last clicked. Named cases:
+
+- A form field focused: Tab to the next field, Shift+Tab to the previous, in
+  the document's own field order.
+- An object selected on the canvas: Tab to the next object.
+- And by extension, a panel he clicked into keeps its own Tab.
+
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 
 **Source:** `C:\Users\Ken\OneDrive\pdfTests\FEATURE.txt`, written, read the same morning. Every paragraph in it became a row below, in the

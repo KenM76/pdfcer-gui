@@ -13,12 +13,9 @@
 //! | 3 | **a fit command's placement** | the operator's most recent explicit instruction about the view. It also SPENDS a pending zoom anchor: a wheel anchor armed a frame earlier says "hold this page point", and a fit has just decided the page goes somewhere else |
 //! | 4 | **an anchored zoom** | the whole point of the anchor is that one page point does not move as the zoom does |
 //! | 5 | **a find reveal** | the operator asked to be taken somewhere, and a one-shot navigation outranks nothing else in flight |
-//! | 6 | **a middle-drag pan** | a live gesture — and it is LAST for the reason it wins anyway: it re-arms itself on the next frame, while every one-shot above it is spent once |
-//!
-//! A **seventh** arrives with Phase 4 — a page *command* under a continuous
-//! mode, which has to scroll the strip to the page it named — and it sits
-//! between 5 and 6, by the same reasoning: a one-shot the operator asked for,
-//! above a gesture that re-arms itself.
+//! | 6 | **a point destination's scroll** | the same argument as the reveal, and one more: it must outrank the page-change scroll below, which would otherwise satisfy the destination's page turn without visiting the point. O200 |
+//! | 7 | **a page command's scroll** | under a continuous mode a page command has to scroll the strip to the page it named, and that is a one-shot the operator asked for |
+//! | 8 | **a middle-drag pan** | a live gesture — and it is LAST for the reason it wins anyway: it re-arms itself on the next frame, while every one-shot above it is spent once |
 //!
 //! ## Why it returns an offset instead of configuring the area
 //!
@@ -111,9 +108,9 @@ pub(super) struct Decision {
     /// The winning arm's name, or [`Decision::NONE`]'s `"none"`.
     ///
     /// One token per arm, in the same order the chain tests them: `deep`,
-    /// `handover`, `fit`, `zoom-anchor`, `reveal`, `page-scroll`, `pan`,
-    /// `open-seed`. Diagnostic only — it reaches the operator through nothing
-    /// but a `PDFCER_DIAG` line.
+    /// `handover`, `fit`, `zoom-anchor`, `reveal`, `dest-scroll`,
+    /// `page-scroll`, `pan`, `open-seed`. Diagnostic only — it reaches the
+    /// operator through nothing but a `PDFCER_DIAG` line.
     pub source: &'static str,
 }
 
@@ -178,6 +175,10 @@ pub(super) fn decide(
     // solved here lands in a content rectangle that does not exist. See
     // `OpenDoc::pasteboard_overhang`.
     let overhang = (doc.pasteboard_overhang.x, doc.pasteboard_overhang.y);
+    // Where the view is sitting right now, in content space. Read here with
+    // the overhang, before `doc` is borrowed mutably below, and used by the
+    // dest-scroll arm as the offset an axis that must not move is held at.
+    let doc_offset = doc.last_scroll_offset;
     // ★ Takes the RECT rather than a page index, as of O177. Every offset
     // solved above arrives measured against *something* — a page for the zoom
     // anchor and the reveal, a whole facing row for a fit and for the
@@ -293,6 +294,35 @@ pub(super) fn decide(
         doc.tracked_page = doc.view.page_index;
         // ui-text-exempt: diagnostic token, never displayed in the UI
         return Decision::won("reveal", to_strip((offset.x, offset.y)));
+    } else if let Some(offset) = crate::canvas::destscroll::take_dest_scroll_offset(
+        doc,
+        current_display,
+        (vp.x, vp.y),
+        doc_offset,
+        &to_strip,
+    ) {
+        // A bookmark or link whose destination named a POINT rather than a
+        // rectangle — `OPERATOR_REQUESTS.md` O200. Ranked here for the reveal's
+        // reason and one more of its own:
+        //
+        // * BELOW the fit and the zoom anchor, because a `/FitH` or a `/XYZ`
+        //   that carried an explicit magnification raises one of those itself,
+        //   one frame earlier, and this scroll is meant to be solved against
+        //   the size that produced.
+        // * ABOVE the page-change scroll, which would otherwise satisfy the
+        //   destination's page turn by parking the view at the top of the sheet
+        //   and leave the point unvisited.
+        //
+        // Already converted to strip space: `destscroll` is handed `to_strip`
+        // rather than reimplementing it, because the visibility test the
+        // request turns on has to be made in the same space the answer is.
+        //
+        // The side effect runs before the return, as the reveal's does: a
+        // destination has navigated, so the page it landed on is the tracked
+        // one.
+        doc.tracked_page = doc.view.page_index;
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won("dest-scroll", offset);
     } else if let Some(offset) = crate::canvas::strip::page_scroll_offset(doc, layout, (vp.x, vp.y))
     {
         // ui-text-exempt: diagnostic token, never displayed in the UI

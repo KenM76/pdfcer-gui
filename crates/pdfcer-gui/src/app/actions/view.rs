@@ -53,7 +53,14 @@ pub(super) fn apply(doc: &mut OpenDoc, action: Action, page_count: usize, max_zo
         // ★★ **A bookmark's destination**, parked rather than performed:
         // the landing needs a viewport, which this phase has none of.
         // `canvas::destination` drains it and carries the argument.
-        Action::GoToDestination(to) => doc.pending_destination = Some(to),
+        Action::GoToDestination(to) => {
+            // Recorded HERE and nowhere later: O200's second clause asks about
+            // the horizontal position the operator was at, and by the time the
+            // destination can be resolved the strip has already scrolled to the
+            // named page and centred it. See `OpenDoc::dest_origin_x`.
+            doc.dest_origin_x = Some(doc.last_scroll_offset.x);
+            doc.pending_destination = Some(to);
+        }
         // ui-text-exempt: a panic message, read from a stack trace by whoever
         // widened the caller's variant set without widening this. Never shown.
         other => debug_assert!(false, "{other:?} is not a view verb"),

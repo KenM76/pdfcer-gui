@@ -1,0 +1,59 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 1224 792] /Resources << /Font << /Helv << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Annots [6 0 R 7 0 R] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 1224 792] /Resources << /Font << /Helv << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 8 0 R >>
+endobj
+5 0 obj
+<< /Length 210 >>
+stream
+BT /Helv 14 Tf 44 710 Td (Near: jump to a point already across the page.) Tj ET
+BT /Helv 14 Tf 44 650 Td (Far: jump to a point off the right of the view.) Tj ET
+0.6 G 1 w 
+36 700 264 30 re S
+36 640 264 30 re S
+endstream
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Link /Border [0 0 0] /Rect [36 700 300 730] /A << /Type /Action /S /GoTo /D [4 0 R /XYZ 168 500 null] >> >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Link /Border [0 0 0] /Rect [36 640 300 670] /A << /Type /Action /S /GoTo /D [4 0 R /XYZ 1150 500 null] >> >>
+endobj
+8 0 obj
+<< /Length 253 >>
+stream
+BT /Helv 14 Tf 44 760 Td (Top of page two.) Tj ET
+0 G 2 w 
+148 500 m 188 500 l S
+168 480 m 168 520 l S
+BT /Helv 14 Tf 194 495 Td (near destination) Tj ET
+1130 500 m 1170 500 l S
+1150 480 m 1150 520 l S
+BT /Helv 14 Tf 1000 495 Td (far destination) Tj ET
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000127 00000 n 
+0000000327 00000 n 
+0000000505 00000 n 
+0000000765 00000 n 
+0000000914 00000 n 
+0000001064 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+1367
+%%EOF

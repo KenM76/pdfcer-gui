@@ -1084,6 +1084,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(quit_unsaved::ClosingTheProgramAsksBeforeLosingUnsavedWork),
         Box::new(link_follow::ALinkGoesToThePageItNames),
         Box::new(link_follow::ALinkItCannotFollowSaysSo),
+        // The pair that enforces D47, and they are a pair: the first is the
+        // control and the second is the witness, so a run that reports one
+        // without the other has measured half a conditional.
+        Box::new(point_destination::APointDestinationLeavesTheMagnificationAlone),
+        Box::new(point_destination::APointDestinationOffScreenMovesTheHorizontal),
         Box::new(ocr::OcrRecognisesAPageAndTheDocumentKeepsIt),
         // The three about a run in progress. After the one-page check, because
         // a build in which recognition does not work at all should say so

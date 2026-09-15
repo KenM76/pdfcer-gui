@@ -217,6 +217,9 @@ pub mod deleting;
 /// Arriving where a bookmark points, once the viewport is known. Split from
 /// `interact` under R2: landing on a destination is its own subject.
 pub mod destination;
+/// Landing on a destination that named a POINT rather than a rectangle: the
+/// per-axis scroll that must not acquire a magnification. O200, D47.
+pub mod destscroll;
 pub mod dimdrag;
 /// Which of the three move verbs one drag reaches. Split out of `interact`
 /// under R2; its header carries the argument that a fork whose branches can

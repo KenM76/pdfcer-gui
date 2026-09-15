@@ -484,6 +484,41 @@ grep -rln 'panel' tools/ui-verify/src/checks/*.rs | xargs grep -ln 'press_chord\
 
 and read each one's step order.
 
+### D47 — RULE: a destination that names a point scrolls, and never sets the magnification
+
+§12.3.2.2 Table 151 lets a destination leave any of `left`, `top` and `zoom`
+unstated, meaning *leave that one as it is*, and states the 0-means-null
+equivalence for `zoom` alone. So a `/XYZ` with a null zoom — the shape every
+Word table-of-contents link has — asks for a position and for no magnification
+whatsoever, and a `/FitH` or `/FitV` names exactly one magnification, its own.
+
+The arrival is decided per axis: an unstated axis defers to whatever placed the
+view this frame; a stated horizontal already on screen **from where the operator
+was looking when they clicked** is held there; any other stated axis puts the
+point one `CANVAS_MARGIN` inside the viewport edge. The vertical carries no
+visibility test, because a destination is normally reached by a click on the
+page the operator is already reading and a vertical that declined to move would
+make the link do nothing.
+
+`canvas::destscroll::solve` is the mechanism, and it is a pure function of the
+parked destination, the point in strip space, the wanted offset, the current
+offset and the viewport. It returns an offset and which axes it held. **It
+cannot raise a zoom because it does not return one** — the property that makes
+the rule structural rather than a convention.
+
+"Where the operator was looking" is `OpenDoc::dest_origin_x`, recorded by
+`app::actions::view` on the frame the verb is raised.
+`canvas::strip::page_scroll_offset` brings the named page into view and centres
+it horizontally on the frame the page turns, so an origin read any later
+measures that centring instead of the operator.
+
+Enforced by `canvas::destscroll`'s unit tests — planting the pre-repair
+behaviour turns `a_point_destination_can_only_answer_with_a_position` and
+`a_visible_point_holds_the_horizontal_where_the_operator_left_it` red, and
+nothing else — and by `tools/ui-verify/src/checks/point_destination.rs` over
+`fixtures/xyz-null-zoom.pdf`, whose two links differ only in the destination's
+`left`, so "held" has a control and "moved" has a witness.
+
 ---
 
 ## Constraints
@@ -864,20 +899,6 @@ turning anything red — the exact shape this project has been bitten by before
 Distinguish "no window enumerator on this platform" — which is a property of the
 build host and can be probed once — from "this launch did not produce a window",
 which is a failure.
-
-### D47 — OPEN: `/FitH` and `/FitV` raise two actions, and the second discards the first
-
-`crates/pdfcer-gui/src/app/actions/destination.rs` pushes `Action::Fit(..)` then
-`Action::GoToDestination(Point { .. })`, but a `Point` is never scrolled to:
-`canvas::destination::arrive` widens it to a `DESTINATION_CONTEXT_PT` square and
-hands that to `canvas::zoom::zoom_to_rect`, which raises its own `ZoomTo`. The
-fit's magnification is replaced by whatever framing 150 pt of paper needs — on a
-large sheet, several hundred percent.
-
-A link or bookmark therefore resolves to the right page and arrives far past the
-view the destination asked for. This is a design change, not a local fix: there
-is one framing solver and it takes a rectangle, so a scroll-to-a-point route
-would move every `/XYZ` arrival too.
 
 ### D48 — OPEN: the Objects row menu's one-item shape rests on a condition that expired
 

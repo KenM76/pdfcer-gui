@@ -428,6 +428,12 @@ pub mod form_selection;
 /// symptom an operator would report. Its header carries the argument.
 pub mod link_follow;
 
+/// **A destination that names a point scrolls, and never sets the
+/// magnification** — the driven half of D47, over a fixture whose two links
+/// differ only in the destination's `left`, so "held" has a control and
+/// "moved" has a witness. Its header carries the argument.
+pub mod point_destination;
+
 /// ★★★ **A MARKUP shape's nodes can be moved and deleted, and a refusal is
 /// SHOWN** — the operator's report in its literal form, for the
 /// half that is a comment shape rather than a ce dimension. It is the only

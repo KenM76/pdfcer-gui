@@ -1009,37 +1009,3 @@ pub fn pdf_rect_to_canvas(
     // is not minimal is empty rather than wrong-looking.
     Some(egui::Rect::from_two_pos(a, b))
 }
-
-/// **How much paper to show around a point destination**, in PDF points.
-///
-/// ★★ A `/XYZ` destination names a single coordinate, and framing a point has
-/// no answer — a zoom onto zero area is either everything or nothing. Acrobat
-/// puts the point at the top-left and keeps the current magnification when the
-/// destination's zoom is null; this shell frames a region around it instead,
-/// because its one framing solver takes a rectangle and adding a second
-/// "scroll to a point" solver would be two answers to one question.
-///
-/// 150 pt is about 5 cm of paper each way — enough that a detail on a drawing
-/// arrives with its surroundings rather than magnified onto a coordinate, and
-/// small enough that it is recognisably a destination rather than a page fit.
-pub const DESTINATION_CONTEXT_PT: f64 = 150.0;
-
-/// **A PDF-space point as the canvas-space region to frame around it.**
-///
-/// A missing axis falls back to the page's own extent on that axis, which is
-/// §12.3.2.2's *"leave this one as it is"* expressed as a framing: the axis
-/// that was not specified ends up showing the whole page rather than an
-/// invented position.
-#[must_use]
-pub fn pdf_point_to_canvas_region(
-    left: Option<f64>,
-    top: Option<f64>,
-    page: &pdfcer_core::page_tree::Page,
-) -> Option<egui::Rect> {
-    let (w, h) = crate::viewer::page_extent_pts(page);
-    let l = left.unwrap_or(0.0);
-    let t = top.unwrap_or(f64::from(h));
-    let r = (l + DESTINATION_CONTEXT_PT).min(f64::from(w));
-    let b = (t - DESTINATION_CONTEXT_PT).max(0.0);
-    pdf_rect_to_canvas((l, b, r, t), page)
-}

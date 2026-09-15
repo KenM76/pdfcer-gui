@@ -38,22 +38,22 @@
 //! family, an unrecognised entry, no destination at all. Each of those gets
 //! the page turn and nothing more; see the fallback arm of [`actions_for`].
 //!
-//! ## The `FitH` and `FitV` rows state the intent, not the outcome — `DEFECTS.md` D47
+//! ## A `Point` is scrolled to, and it is the ONLY thing that sets the
+//! ## magnification here
 //!
-//! Both raise two actions, and the second overrides the first. After
-//! `Action::Fit(..)` comes `Action::GoToDestination(Point { .. })`, but a
-//! `Point` is never scrolled to: `canvas::destination::arrive` turns it into a
-//! `DESTINATION_CONTEXT_PT`-square region through
-//! `canvas::geometry::pdf_point_to_canvas_region` and hands that to
-//! `canvas::zoom::zoom_to_rect`, which raises its own `ZoomTo`. The
-//! magnification the fit chose is discarded and replaced by whatever framing
-//! 150 pt of paper requires — on a large sheet, several hundred percent. A link
-//! or bookmark that resolves correctly and arrives on the right page still
-//! lands magnified far past the view the destination asked for.
+//! Every row above that produces a `Point` produces a *position* and nothing
+//! else. The magnification, if the destination asked for one, comes from the
+//! `Action::Fit(..)` or `Action::ZoomTo(..)` raised beside it, one step earlier
+//! in the same list — and because actions are applied in order, the scroll is
+//! solved against the size that produced. `canvas::destscroll` does not read
+//! the zoom at all.
 //!
-//! This is a design change rather than a local fix: there is one framing solver
-//! and it takes a rectangle, so giving the destination path a second
-//! scroll-to-a-point route would move every `/XYZ` arrival too.
+//! That ordering is the repair of `DEFECTS.md` D47: a `Point` used to be grown
+//! into a 150 pt square and handed to the framing solver, which raised its own
+//! `ZoomTo` and discarded whatever the fit had just decided. A `/FitH` arrived
+//! at whatever magnification 150 pt of paper requires — on a large sheet,
+//! several hundred percent — and a Word table-of-contents link, `/XYZ x y
+//! null`, arrived magnified despite explicitly declining to name a zoom.
 //!
 //! **`null` is not zero.** Table 151 lets `left`, `top` and `zoom` each be
 //! null, meaning *"leave this one as it is"* — and the standard states the
@@ -250,6 +250,38 @@ mod tests {
         assert!(
             k.contains(&"scroll"),
             "a zero LEFT is a real coordinate: {k:?}"
+        );
+    }
+
+    /// **D47 / O200.** A `/XYZ` whose zoom is null — the shape every Word
+    /// table-of-contents link has — asks for a position and for no
+    /// magnification whatsoever. The actions must say so: a page turn and a
+    /// scroll, nothing else. If a `fit` or a `zoom` ever appears here, the
+    /// operator's view is being changed by a destination that declined to
+    /// change it.
+    #[test]
+    fn a_null_zoom_xyz_asks_for_a_position_and_nothing_else() {
+        let k = kinds(&DestView::Xyz {
+            left: Some(72.0),
+            top: Some(720.0),
+            zoom: None,
+        });
+        assert_eq!(k, vec!["page", "scroll"]);
+    }
+
+    /// **D47.** A one-axis fit names exactly one magnification, and it is the
+    /// fit's. The scroll that follows carries the position only — it used to
+    /// be widened into a 150 pt square and reframed, which threw the fit's
+    /// answer away one frame after it was applied.
+    #[test]
+    fn a_one_axis_fit_names_exactly_one_magnification() {
+        assert_eq!(
+            kinds(&DestView::FitH { top: Some(540.0) }),
+            vec!["page", "fit-width", "scroll"]
+        );
+        assert_eq!(
+            kinds(&DestView::FitV { left: Some(72.0) }),
+            vec!["page", "fit-page", "scroll"]
         );
     }
 
