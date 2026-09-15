@@ -423,8 +423,8 @@ pub enum Action {
         /// modified gesture rather than the default.
         take: bool,
     },
-    /// **A canvas gesture refused because what is selected lives inside a
-    /// form XObject** — say so on the status bar.
+    /// **A canvas gesture refused, with something to say about it** — put the
+    /// sentence on the status bar.
     ///
     /// # ★ The one action that changes nothing and is still an action
     ///
@@ -436,25 +436,28 @@ pub enum Action {
     /// holding `&OpenDoc` and not `&mut` **asks**. The full argument is at
     /// `canvas::moving::decline`, which is the only thing that raises this.
     ///
-    /// **No payload**, and the reason survived the 2026-09-11 split that gave
-    /// [`crate::app::status::decline::Declined::InsideForm`] one. The store's
-    /// variant has two arms because two call sites reach it with opposite
-    /// facts; **the canvas is only one of them and only ever has one fact** —
-    /// a part or node entered inside a form whose kind is not a path — so the
-    /// apply arm names
-    /// [`crate::text::status::InsideFormRefusal::NotAPath`] as a constant.
+    /// # ★★★ It gained a payload on 2026-09-15, on its own stated condition
     ///
-    /// ★ Widening this to carry a `Declined` would turn a single choke point
-    /// into a general "print any decline" channel, which is how a choke point
-    /// becomes a bypass. Adding an `InsideFormRefusal` payload would be milder
-    /// and is still wrong today: it would let the canvas claim a fact it has
-    /// no way to establish. Add it the day the canvas can raise the second
-    /// one, not before.
+    /// This was `DeclineInsideForm`, carrying nothing. Its documentation weighed
+    /// two payloads, rejected both, and set the terms for changing its mind:
+    /// *"Widening this to carry a `Declined` would turn a single choke point
+    /// into a general 'print any decline' channel… Adding an `InsideFormRefusal`
+    /// payload would be milder and is still wrong today: it would let the canvas
+    /// claim a fact it has no way to establish. **Add it the day the canvas can
+    /// raise the second one, not before.**"* `OPERATOR_REQUESTS.md` **O188** is
+    /// that day — a drag on one line inside a block of text, refused in silence.
+    ///
+    /// ⇒ **The payload that landed is neither of the two it weighed.**
+    /// [`super::CanvasDecline`] is a two-armed list of sentences written in this
+    /// crate: not the whole of `Declined`, so there is no general channel; and not
+    /// the engine's taxonomy, so the canvas still cannot claim a fact about the
+    /// file. It names which of its OWN refusals happened, and that type's docs
+    /// carry the cost a third arm would have — and why it is `pub`.
     ///
     /// ★ **A selection is still not an edit** — no `vector_edit`, no epoch
     /// bump, no cache invalidation, for the reason `Action::SelectObject`
     /// gives.
-    DeclineInsideForm,
+    DeclineOnCanvas(super::CanvasDecline),
     /// Multiply the current zoom by a factor — the Ctrl+wheel path.
     ///
     /// Carries the factor rather than a target zoom because that is what

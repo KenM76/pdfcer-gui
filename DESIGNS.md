@@ -699,7 +699,42 @@ unchanged, exactly as it does for `move_subpath`.
 
 ---
 
-### 7. Draft engine feature request — DO NOT FILE FROM THIS DOCUMENT
+### 7. Draft engine feature request — ~~DO NOT FILE FROM THIS DOCUMENT~~
+
+#### ★★★ FILED 2026-09-14 as `G017`, and the draft below was NOT copied
+
+`D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\`
+`request_G017_move_text_run_the_missing_twin_of_delete_text_run.md`.
+
+**The heading said DO NOT FILE FROM THIS DOCUMENT and it was right.** Every
+`file:line` in the draft below was re-measured against the pinned revision
+`2eb48ff` before the request was written, and the material ones had moved:
+
+| draft said | measured 2026-09-14 |
+|---|---|
+| `delete_text_run` at `edit.rs:13951` | `:13990` |
+| `move_subpath` at `edit.rs:14001` | `:14040` |
+| the shell's refusal at `canvas/moving/mod.rs:591` | `:698`, plus an in-form twin at `:716` |
+| the decline test at `canvas/moving/tests.rs:509-534` | `:526` |
+| `format.rs:4594`, `:5108-5110` | `:4624`, `:5138` (and `:5583`) |
+| `reflow_apply.rs:609-611` | `:692` |
+
+★★ **And one CLAIM had gone stale, not just a number.** The draft's second
+row reads as though the whole `*_in_form` family is absent. It is not: the
+engine ships **six** — five moves and one whole-object delete. The real gap is
+narrower and therefore more pointed: inside a form XObject the Part and Node
+rungs **can move and cannot delete**. The filed request states the asymmetry
+rather than the absence. ⇒ *A citation that supports the ask is still a
+claim to measure.*
+
+⚠ **The draft below is left verbatim**, not corrected in place. It is the
+record of what was argued before it was filed, and editing it would destroy
+the only evidence of what the re-measurement changed. **Read the filed file,
+not this one**, for anything a machine or the engine will act on.
+
+---
+
+#### The draft as it stood on 2026-09-12
 
 > ### Request: `move_text_run` — the missing twin of `delete_text_run`
 >

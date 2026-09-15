@@ -321,6 +321,31 @@ impl Declined {
             // what the engine answered about a request that no longer exists;
             // there is no predicate to re-ask, and `retire` owns stale.
             Self::EditText(_) => true,
+            // ★★★ On the TENSE argument, and it is `ClipboardMode`'s case
+            // rather than `EditRefused`'s — a distinction worth stating
+            // because the two `true`s look identical and are reached for
+            // opposite reasons. `EditRefused` **cannot** be re-asked (the fact
+            // came from an error value this shell may not interpret). This one
+            // **must not** be: the condition it reports is the one the
+            // sentence asks the operator to change.
+            //
+            // The remedy in the wording is literally *press Escape to select
+            // the whole block and drag that*, and Escape changes the
+            // selection. ⇒ A live predicate keyed on *is a run still entered
+            // at the Part rung?* would **delete the instruction at the instant
+            // the operator began to follow it**, and the symptom would be a
+            // sentence that flickers once and is gone — indistinguishable, from
+            // his side, from the silence O188 was raised about.
+            //
+            // ★★ That is also why `still_true` gained no fifth parameter here.
+            // The draft threaded `selection_at_part_rung: bool` through twenty
+            // -one call sites in `decline/tests.rs` to build the one mechanism
+            // this arm exists to refuse.
+            //
+            // What earns the `true` is the past tense: *that drag did nothing,
+            // and the document is unchanged* was true when it was written
+            // whatever the next frame does. `retire` owns stale.
+            Self::TextRunCannotMoveAlone => true,
         }
     }
 }

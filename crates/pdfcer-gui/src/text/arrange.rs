@@ -1,12 +1,21 @@
-//! # `text::arrange` — every sentence the two ways of *arranging* a mark can owe
+//! # `text::arrange` — every sentence the three ways of *arranging* something
+//! on the page can owe
 //!
-//! Two gestures share this catalog because they share a subject — **a mark that
-//! is already on the page, moved without being redrawn**:
+//! Three gestures share this catalog because they share a subject — **something
+//! that is already on the page, moved without being redrawn**:
 //!
 //! | gesture | module | what it changes |
 //! |---|---|---|
 //! | the **arrow-key nudge** | [`crate::canvas::moving::nudge`] | where the mark sits, by a whole point at a time |
 //! | **Bring to front / Send to back** and their one-step twins | [`crate::app::dispatch::markup`] → [`crate::app::actions::reorder`] | which mark is drawn on top where two overlap |
+//! | the **pointer drag** | [`crate::canvas::moving`] | where page content sits, continuously |
+//!
+//! ★★ The third row arrived on 2026-09-15 with `OPERATOR_REQUESTS.md` O188, and
+//! it widened the subject from *a mark* to *something on the page*: a drag moves
+//! page content — a drawn line, a label, a whole title block — where the other two
+//! move annotations only. The header said *a mark* for three weeks because the
+//! only gestures here were markup gestures, which is a fact about which
+//! sentences had been written rather than about what *arranging* means.
 //!
 //! They are one file rather than two for the reason [`crate::text::rotating`]
 //! and [`crate::text::resizing`] are two: those hold sentences for gestures
@@ -56,6 +65,32 @@
 //! nothing relevant before the press, and silence after it is the shape this
 //! project keeps finding — a key that works everywhere else doing nothing here,
 //! with no way on screen to learn why.
+//!
+//! ## ★★★ The one contradiction inside this file, named rather than left
+//! for an operator to find
+//!
+//! [`not_a_markup`] answers an arrow key pressed on page content, and it says:
+//!
+//! > *“The arrow keys nudge a selected markup. **Drag this with the pointer
+//! > instead.**”*
+//!
+//! [`run_cannot_move_alone`] answers a drag on **one line inside a block of
+//! text**, and it says pdfcer cannot do that yet. So there is exactly one
+//! selection — a text run entered at the Part rung — for which the first sentence
+//! sends the operator straight into the second. Press an arrow, be told to drag,
+//! drag, be told to press Escape.
+//!
+//! ★★ **It is recorded and not “fixed”, deliberately.** The obvious repair is to
+//! widen `not_a_markup` with an *unless it is one line of text* clause, and that
+//! would make the common case — a whole object, a whole annotation, anything the
+//! pointer really does move — read like a legal notice in order to pre-empt a
+//! case the very next gesture explains properly. Widening a true sentence is
+//! writing a new sentence, and the new one would be worse for everybody who is
+//! not in the narrow case.
+//!
+//! ⇒ What the two owe each other is that they stay **findable together**, which
+//! is what this file is for. Whoever reworks either one now has to read this
+//! paragraph first.
 //!
 //! ## The rule every sentence follows
 //!
@@ -214,6 +249,80 @@ pub const fn dimension_use_the_pointer() -> &'static str {
 pub const fn degenerate_page() -> &'static str {
     "pdfcer cannot work out this page's geometry, so nothing on it can be nudged. Other pages \
      are unaffected."
+}
+
+// ===========================================================================
+// The pointer drag — the one refusal out of eleven that had nothing to say
+// ===========================================================================
+
+/// **A drag on one line inside a block of text, refused** — `OPERATOR_REQUESTS.md`
+/// O188, 2026-09-15.
+///
+/// # ★★★ Why this refusal gets a sentence when nine of its ten siblings do not
+///
+/// [`crate::canvas::moving::Refusal`] has eleven variants and
+/// [`crate::canvas::moving::Refusal::worded`] hands exactly two of them to the
+/// status bar. The standing argument for the silence of the other nine is in
+/// that function, and it is good: *nothing selected*, *the drag never travelled*
+/// and *no part entered* all describe states the operator put themselves in and
+/// can see, and a bar that narrates the obvious stops being read.
+///
+/// This one fails that test on every clause. The operator has an outline drawn
+/// round one label, presses inside it, drags it across the sheet, and **nothing
+/// happens with no sentence anywhere**. They did not make a mistake, they cannot
+/// see the cause, and from where they sit dragging is simply broken — which is
+/// this project's founding defect shape, arriving on the newest gesture.
+///
+/// # ★★ The order of the clauses is the argument, not the style
+///
+/// | clause | what it is doing |
+/// |---|---|
+/// | *“That drag was on one line inside a block of text”* | names what was under the pointer, because the outline does not distinguish a run from an object |
+/// | *“Delete removes that line on its own”* | **the offer, and it comes before the limit** |
+/// | *“pdfcer cannot move a single line yet”* | the limit, said as *yet*, because a core verb is what is missing |
+/// | *“press Escape to select the whole block and drag that”* | R83: a refusal that names its remedy |
+///
+/// The offer is before the limit because of what O188 actually asked for. He
+/// asked to take a title block apart — remove pieces **and** move them — and the
+/// removing half has shipped and been driven since 2026-09-05. He had not found
+/// it. A refusal that spends its one line on what is impossible teaches him
+/// nothing he did not already learn from the drag doing nothing; a refusal that
+/// leads with the half that works answers the request it was raised by.
+///
+/// # ★★ Past tense, and it decides the retirement rule
+///
+/// *“That drag **was** on”*, not *“This **is**”*. A present-tense sentence about the
+/// selection becomes false the instant the operator presses Escape — which is the
+/// remedy it just asked for — so it would have to be filtered on the selection,
+/// and the filter would delete the instruction at the moment they began to
+/// follow it. [`crate::app::status::decline::Declined::TextRunCannotMoveAlone`]'s
+/// arm in `app::status::decline::fresh` carries that ruling; this wording is what
+/// makes it available.
+///
+/// # Both capability claims are measured, not assumed
+///
+/// Copy that tells an operator something works is a claim, and it needs the same
+/// citation a limitation claim does.
+///
+/// * **Delete reaches one run.** [`crate::canvas::deleting`]'s routing table
+///   sends the Part rung on a text object to `EditSession::delete_text_run`, and
+///   that module's tests assert it. The engine can still refuse the call
+///   (§9.4.2, a following run it cannot reposition); that refusal has a sentence
+///   of its own, which is what makes this an **offer** rather than a guarantee.
+/// * **Escape ascends exactly one rung.** Decision 025's L1, in
+///   [`crate::canvas::keys`]. From the Part rung it lands on the whole text
+///   object — which `move_objects`/`transform_objects` really does move, so the
+///   remedy is a gesture that works and not a hope.
+///
+/// ★ Says **block of text** rather than *show operator*, *run* or *`Tj`*. The
+/// operator can see a block of text and a line inside it; they cannot see any of
+/// the other three, and a sentence in the file format's vocabulary reads as an
+/// internal error whatever it says — this file's standing rule.
+#[must_use]
+pub const fn run_cannot_move_alone() -> &'static str {
+    "That drag was on one line inside a block of text. Delete removes that line on its own, \
+     but pdfcer cannot move a single line yet — press Escape to select the whole block \
+     and drag that."
 }
 
 // ===========================================================================

@@ -347,6 +347,19 @@ pub use action::Action;
 // markup, which the written plan had nominated.
 pub use redact::RedactAction;
 pub use vector::VectorAction;
+// ★★★ The third payload type, and the only one whose bodies live outside
+// this module — `Action::DeclineOnCanvas`'s two-armed vocabulary, which is
+// declared beside the store it feeds because that is where the argument for
+// keeping it short belongs.
+//
+// It is re-exported here because `crate::app::status::decline` is
+// `pub(super)` and `crate::canvas` therefore cannot name that path, while the
+// canvas is the only surface that raises this action. That is the same
+// relationship `Action` itself has: the store stays shut, the vocabulary for
+// asking it for a sentence does not. Callers outside `crate::app` write
+// `actions::CanvasDecline`, and nothing outside `crate::app` can reach
+// `record_canvas`, which is still `pub(crate)` behind the `pub(super)` path.
+pub use crate::app::status::decline::CanvasDecline;
 
 // ---------------------------------------------------------------------------
 // ★ EVERYTHING BELOW THIS LINE IS TEST-ONLY, AND THAT IS A GATE REQUIREMENT

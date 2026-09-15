@@ -204,6 +204,21 @@ impl Declined {
             // wording of "that shape did not change" cannot grow up beside
             // them.
             Self::MarkupNodeRefused(why) => (*why).line(),
+            // ★★ Reaches across to `crate::text::arrange` on the rule every arm
+            // above cites: a string lives with the surface that owns its
+            // subject, and this one's subject is **something already on the
+            // page that did not move** — which is that catalog's whole
+            // definition, and was widened from *a mark* to *something on the
+            // page* by this very sentence.
+            //
+            // ★★★ It lands two screens below `arrange::not_a_markup`, which
+            // tells an operator whose ARROW KEY did nothing to *drag this with
+            // the pointer instead* — false for exactly the selection this
+            // sentence refuses. That contradiction is written down in
+            // `text::arrange`'s header rather than papered over, and the two
+            // sentences being adjacent is the point: whoever reworks either
+            // one has to read it.
+            Self::TextRunCannotMoveAlone => crate::text::arrange::run_cannot_move_alone(),
         };
         std::borrow::Cow::Borrowed(fixed)
     }

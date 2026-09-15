@@ -737,6 +737,14 @@ pub mod geometry_fields;
 /// green on 1,628 unit tests and a smoke launch confirming its rect. Every one
 /// of those observed the button, which was never the broken part.
 pub mod max_zoom;
+/// ★★★ **A drag on one line of text is refused, and the operator is TOLD**
+/// — O188. The refusal is correct (`pdfcer-core` has no verb that moves one
+/// show operator) and was silent, which is this project's founding defect class:
+/// he dragged, nothing moved, nothing said why. Its oracle is a three-stage
+/// chain across the `Action` boundary, because the status bar's decline slot is
+/// shared by every decline in the application and its presence alone is
+/// satisfied equally by the wrong sentence and by a stale one.
+pub mod move_line_of_text;
 /// ★ Shift-picked anchors move TOGETHER — the row `pdfcer`'s own `gui` column
 /// ticked `[x]` and their 2026-08-19 sweep corrected to "objects move together;
 /// nodes one at a time". The capability was in the selection model from the day

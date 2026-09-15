@@ -16,10 +16,24 @@
 //! 2. **A ghost is drawn if and only if the release would commit** — the
 //!    preview may not promise a move the engine is going to refuse, which is
 //!    why [`super::eligible`] is asked once per frame *and* once on release.
-//! 3. **Every refusal is named**, not silently absorbed. There are nine, and
-//!    the newest — `InsideForm` — is the only one that reaches the operator in
-//!    words, because it is the only one describing a state they did not put
-//!    themselves in and cannot see.
+//! 3. **Every refusal is named**, not silently absorbed. There are **eleven**,
+//!    and **two** of them reach the operator in words: `InsideForm`, and since
+//!    2026-09-15 `NoVerbForPart(Run)`. The test for which is not *is this a
+//!    refusal* but **can the operator see the cause** — those two describe a
+//!    state they did not put themselves in and cannot see, and the other nine
+//!    do not. [`super::Refusal::worded`] holds the argument and the match, and
+//!    that match is exhaustive so a twelfth refusal cannot join the silent
+//!    nine by default.
+//!
+//!    ★★★ **This paragraph said** *“There are nine, and the newest —
+//!    `InsideForm` — is the **only** one that reaches the operator in words”*
+//!    **until 2026-09-15, and both halves were wrong.** There were eleven when
+//!    it was written, and `NoVerbForPart(Run)` passes the very test the
+//!    sentence goes on to state. It is kept visible rather than quietly
+//!    replaced because the lesson is not the count: a confident sentence at
+//!    the top of the file where a decision lives is why nobody re-opened that
+//!    decision for three weeks, while a drag on one line of a title block did
+//!    nothing in silence. `OPERATOR_REQUESTS.md` **O188**.
 //!
 //! ## `#![cfg(test)]` at the top, and why it is the marker rather than the name
 //!
@@ -532,6 +546,169 @@ fn a_text_run_at_the_part_rung_declines_rather_than_moving_the_object() {
         "moving the enclosing object because a run was selected is the wrong action, \
          not a lenient one"
     );
+}
+
+/// ★★★ **A refused drag on one line of text says so** —
+/// `OPERATOR_REQUESTS.md` O188.
+///
+/// The test above asserts that the drag is *refused*, which was already true
+/// and was never the complaint. This asserts the half that was missing: that
+/// the refusal reaches the operator. Ken drew a box round one label in a title
+/// block, dragged it across the sheet, and got nothing happening with no
+/// sentence anywhere — which from where he sits is dragging being broken.
+///
+/// ★ Asserts the ACTION, not the status bar. The store is written by the
+/// apply phase (`app::actions::apply`) and the wording lives in
+/// `text::arrange::run_cannot_move_alone`; what this module is responsible for
+/// is asking. The driven `ui-verify` check is what asserts the sentence
+/// actually lands on the bar, per R1 — a unit test cannot see the chain in
+/// front of the verb.
+#[test]
+fn a_refused_drag_on_one_line_of_text_asks_for_a_sentence() {
+    let mut actions = Vec::new();
+    decline(
+        &SelectionState::default(),
+        Refusal::NoVerbForPart(PartKind::Run),
+        &mut actions,
+    );
+    assert_eq!(
+        actions,
+        vec![Action::DeclineOnCanvas(
+            CanvasDecline::TextRunCannotMoveAlone
+        )],
+        "a drag on one line inside a block of text must raise its sentence, not \
+         refuse in silence"
+    );
+}
+
+/// The form-interior twin still asks for its own sentence — the arm that
+/// existed before O188, asserted here because O188 rewrote the mechanism
+/// underneath it from an `==` comparison to [`super::Refusal::worded`].
+#[test]
+fn a_refused_drag_inside_a_form_still_asks_for_its_own_sentence() {
+    let mut actions = Vec::new();
+    decline(
+        &SelectionState::default(),
+        Refusal::InsideForm,
+        &mut actions,
+    );
+    assert_eq!(
+        actions,
+        vec![Action::DeclineOnCanvas(CanvasDecline::InsideFormNotAPath)],
+        "the 2026-08-27 refusal must survive the rewrite that generalised it"
+    );
+}
+
+/// ★★ **Every refusal describing a state the operator can SEE raises
+/// nothing at all.**
+///
+/// One rule, asserted once, rather than one assert per case. A status bar that
+/// narrates the obvious — *nothing is selected*, *the drag did not travel* —
+/// stops being read, and that would cost the two sentences that matter.
+///
+/// ★ `NoVerbForPart(Subpath)` is in this list. It is unreachable today
+/// (`eligible` routes a subpath at the Part rung to `move_subpath`), and it is
+/// asserted anyway, because an unreachable case that is written down is a claim
+/// the next reader can check.
+#[test]
+fn the_refusals_the_operator_can_see_raise_nothing() {
+    for reason in silent_refusals() {
+        let mut actions = Vec::new();
+        decline(&SelectionState::default(), reason, &mut actions);
+        assert!(
+            actions.is_empty(),
+            "{reason:?} describes a state the operator can see, so it must not \
+             put a sentence on the bar; got {actions:?}"
+        );
+    }
+}
+
+/// ★★ **Every refusal traces a distinct, stable, lower-kebab token.**
+///
+/// `reason=` in `canvas-move-declined` is read by `tools/ui-verify`, and it was
+/// a `{:?}` of the variant until 2026-09-15 — a rendering of the source, which
+/// moves when a variant is renamed or gains a field, with no compiler
+/// diagnostic and no failing test. Two collide-checks and a shape-check are
+/// what make [`super::Refusal::token`] a contract rather than a second `Debug`.
+#[test]
+fn every_refusal_traces_a_distinct_stable_token() {
+    let all = all_refusals();
+    let mut seen: Vec<&'static str> = Vec::new();
+    for reason in &all {
+        let token = reason.token();
+        assert!(
+            !token.is_empty() && token.chars().all(|c| c.is_ascii_lowercase() || c == '-'),
+            "{reason:?} traces {token:?}, which is not a lower-kebab token \
+             a harness can grep for"
+        );
+        assert!(
+            !seen.contains(&token),
+            "{reason:?} traces {token:?}, which another refusal already uses — a \
+             collision makes a driven check assert the wrong cause"
+        );
+        seen.push(token);
+    }
+}
+
+/// Every [`Refusal`], for the two completeness tests above.
+///
+/// # ★★★ A hand-written list inside a completeness test is the classic hole,
+/// # so this one is behind a compile-time guard
+///
+/// A test that types out its own input set is blind to the twelfth thing, and
+/// the count still adds up. The `match` at the end of this function is
+/// exhaustive and has **no wildcard**, so adding a variant to [`Refusal`] is a
+/// compile error *here*, in the function whose whole job is to list them.
+///
+/// ⇒ **And the limit of that, stated rather than implied:** somebody could
+/// satisfy the compiler by adding an arm and not the vector entry two lines
+/// above it. The guard puts the omission in the right file, in the right
+/// function, next to its fix. It does not make the omission impossible.
+fn all_refusals() -> Vec<Refusal> {
+    let all = vec![
+        Refusal::NoObjectModel,
+        Refusal::NothingSelected,
+        Refusal::UnaddressableObject,
+        Refusal::InsideForm,
+        Refusal::NotAPath(3),
+        Refusal::NoPartEntered,
+        Refusal::NoVerbForPart(PartKind::Subpath),
+        Refusal::NoVerbForPart(PartKind::Run),
+        Refusal::NoNodeEntered,
+        Refusal::NodeNotFound(1),
+        Refusal::NoTravel,
+        Refusal::DegeneratePage,
+    ];
+    for reason in &all {
+        match reason {
+            Refusal::NoObjectModel
+            | Refusal::NothingSelected
+            | Refusal::UnaddressableObject
+            | Refusal::InsideForm
+            | Refusal::NotAPath(_)
+            | Refusal::NoPartEntered
+            | Refusal::NoVerbForPart(_)
+            | Refusal::NoNodeEntered
+            | Refusal::NodeNotFound(_)
+            | Refusal::NoTravel
+            | Refusal::DegeneratePage => {}
+        }
+    }
+    all
+}
+
+/// The refusals that owe the operator nothing — every [`Refusal`] for which
+/// [`super::Refusal::worded`] answers `None`, derived rather than re-typed.
+///
+/// ★ Derived from [`all_refusals`] through `worded` itself, which is why the
+/// silence test cannot drift out of step with the decision it is asserting: if
+/// a tenth refusal is given a sentence, it leaves this set automatically, and
+/// if a twelfth is added silently it joins this set and is asserted.
+fn silent_refusals() -> Vec<Refusal> {
+    all_refusals()
+        .into_iter()
+        .filter(|reason| reason.worded().is_none())
+        .collect()
 }
 
 /// The Node rung reaches `move_node`, and the destination is the anchor's

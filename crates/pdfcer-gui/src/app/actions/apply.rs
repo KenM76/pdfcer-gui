@@ -398,10 +398,17 @@ impl PdfcerApp {
             Action::Selection(action) => super::selecting::apply_action(doc, action),
             // ★ A canvas gesture that refused, asking for its sentence. It
             // changes nothing about the document — see the variant's docs for
-            // why it is an action at all, and why it carries no payload.
-            Action::DeclineInsideForm => crate::app::status::decline::record_inside_form(
-                crate::text::status::InsideFormRefusal::NotAPath,
-            ),
+            // why it is an action at all, and `decline::CanvasDecline` for why
+            // the payload is a two-armed list of this crate's own sentences
+            // rather than a `Declined`.
+            //
+            // ★★ The `InsideFormRefusal::NotAPath` constant that used to be
+            // spelled out here moved into `record_canvas`, beside the arm it
+            // belongs to, where the reason it is a constant can be stated. An
+            // apply arm naming a refusal KIND was an apply arm holding a fact
+            // about the file, which is the thing this action is careful not to
+            // let the canvas do.
+            Action::DeclineOnCanvas(what) => crate::app::status::decline::record_canvas(what),
             Action::ZoomBy(factor) => doc.view.zoom_by(factor, max_zoom),
             Action::ZoomIn => doc.view.zoom_in(max_zoom),
             Action::ZoomOut => doc.view.zoom_out(max_zoom),

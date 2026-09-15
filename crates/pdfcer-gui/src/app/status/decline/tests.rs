@@ -292,11 +292,19 @@ fn no_two_declines_share_a_sentence() {
         Declined::NothingToFrame,
         Declined::CanvasNotDrawn,
         Declined::SaveFailed,
-        // ★ Four now. The un-categorised engine refusal is the one most at
-        // risk of being written as a paraphrase of a neighbour, because it is
-        // the one with the least to say — and a decline that reads like
-        // another decline tells the operator the wrong thing happened.
+        // ★ The un-categorised engine refusal is the one most at risk of
+        // being written as a paraphrase of a neighbour, because it is the one
+        // with the least to say — and a decline that reads like another
+        // decline tells the operator the wrong thing happened.
         Declined::EditRefused,
+        // ★★ Five, 2026-09-15 (`OPERATOR_REQUESTS.md` O188). Not a
+        // formality for this one: its sentence is fetched by a call into
+        // `text::arrange`, two modules away from every other entry here, so
+        // nothing but this loop would notice it paraphrasing a neighbour. And
+        // the neighbour it is nearest to is `EditRefused` directly above —
+        // both answer *the thing you just tried did not happen*, and only one
+        // of them is allowed to say why.
+        Declined::TextRunCannotMoveAlone,
     ];
     for (i, a) in all.iter().enumerate() {
         for b in &all[i + 1..] {
@@ -661,10 +669,11 @@ fn a_paste_the_mode_refuses_reaches_the_bar_through_the_dispatcher() {
 /// Two tests above — [`no_two_declines_share_a_sentence`] and
 /// [`a_mode_refusal_reads_like_no_other_decline`] — assert that declines do not
 /// read alike, and both do it against a **hand-written list**. Between them
-/// they name four of the enum's variants. The other twenty-five are invisible
-/// to the checks built to find exactly this, and the count still adds up: the
-/// tests pass, the suite grows, and a new decline that paraphrases an old one
-/// ships without a single thing going red.
+/// they name **five** of the enum's **thirty-two** variants (measured
+/// 2026-09-15). The other twenty-seven are invisible to the checks built to
+/// find exactly this, and the count still adds up: the tests pass, the suite
+/// grows, and a new decline that paraphrases an old one ships without a single
+/// thing going red.
 ///
 /// This function has no assertions and never runs. Its `match` has **no `_`
 /// arm**, so the compiler refuses the build the moment a variant is added, and
@@ -679,13 +688,30 @@ fn a_paste_the_mode_refuses_reaches_the_bar_through_the_dispatcher() {
 /// # ⚠ What this is NOT
 ///
 /// It is not the census. The honest state, written down rather than implied:
-/// **four of twenty-nine variants are compared for a distinct sentence**, plus
-/// the six clipboard-mode refusals against those four. Building the full
+/// **five of thirty-two variants are compared for a distinct sentence**, plus
+/// the six clipboard-mode refusals against those five. Building the full
 /// pairwise census needs one representative of each of the eight payload enums
 /// and would very likely surface a genuine collision or two — which is worth
 /// doing and is not worth doing inside O172's commit, because a collision is a
 /// **wording decision** and this file is not where wording decisions are made.
 /// Filed as its own job rather than left as an intention.
+///
+/// # ★★★ Both of those counts were STALE when they were read, 2026-09-15
+///
+/// They said *four of twenty-nine* and *the other twenty-five* while the enum
+/// held **thirty-one** — so the paragraph written to stop a count drifting had
+/// itself drifted, in the two numbers that are the whole reason it is a
+/// measurement rather than a mood. Nothing could have caught it: prose has no
+/// compiler, and the tripwire below guards the **match**, not the sentence
+/// describing the match.
+///
+/// ⇒ Dated above, and the command that measures them is here so the next
+/// reader re-measures instead of trusting:
+///
+/// ```text
+/// awk 'NR>152' app/status/decline.rs \
+///   | grep -cE '^    [A-Z][A-Za-z]*(\(|,| \{)'
+/// ```
 #[allow(dead_code)]
 fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
     match declined {
@@ -725,7 +751,13 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         // both of these. The compiler found them in the first build. A
         // hand-written list is wrong the day it is written, not later.
         | Declined::ResizeNotRebuildable { .. }
-        | Declined::ResizeFixedSizeMarker { .. } => {}
+        | Declined::ResizeFixedSizeMarker { .. }
+        // ★★★ The day this tripwire paid for itself, 2026-09-15. O188 added
+        // `TextRunCannotMoveAlone` in another file and the build broke HERE,
+        // which is the only place that would have made the author add it to
+        // the list above as well. Nothing else in the suite would have gone
+        // red, and the count would still have added up.
+        | Declined::TextRunCannotMoveAlone => {}
     }
 }
 

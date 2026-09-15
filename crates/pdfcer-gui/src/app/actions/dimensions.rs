@@ -541,13 +541,20 @@ pub enum DimensionAction {
     /// the one bar."* The canvas is outside that boundary and cannot reach the
     /// store, so a gesture that needs to decline has to hand the fact inward.
     ///
-    /// [`crate::app::actions::Action::DeclineInsideForm`] is the standing
+    /// [`crate::app::actions::Action::DeclineOnCanvas`] is the standing
     /// precedent for exactly this — an action whose entire body is one
     /// `decline::record_*` call — and this one rides on `DimensionAction`
     /// rather than joining it at the top level for a reason that is
-    /// unglamorous and real: `app/actions/action.rs` sits at **exactly 1,500
-    /// lines**, which is R2's ceiling with no headroom, and this file has
-    /// three hundred to spare. The subject is a ce dimension either way.
+    /// unglamorous and real: `app/actions/action.rs` has been within a few
+    /// lines of R2's 1,500 ceiling for as long as this variant has existed
+    /// (**1,495 on 2026-09-15**, after O188 rewrote `DeclineOnCanvas`'s doc
+    /// block in place precisely because there was no room to add a second
+    /// variant), and this file has three hundred to spare. The subject is a
+    /// ce dimension either way.
+    ///
+    /// ★ The count is dated because an undated line count in prose is a
+    /// measurement that goes stale invisibly; the sentence it replaced said
+    /// *exactly 1,500* and had been wrong for some time.
     ///
     /// ⇒ ★ It is deliberately NOT `record_note`. That channel draws
     /// *"⚑ About your last edit:"*, and `app::status::decline`'s own header

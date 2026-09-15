@@ -115,7 +115,7 @@ use egui::{Pos2, Vec2};
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::Point;
 
-use crate::app::actions::{Action, VectorAction};
+use crate::app::actions::{Action, CanvasDecline, VectorAction};
 use crate::canvas::gesture::Phase;
 use crate::canvas::selection::{SelectionLevel, SelectionState};
 use crate::panels::objects::provider::{ObjectModelProvider, PartKind};
@@ -411,6 +411,131 @@ pub enum Refusal {
     /// well-defined page-space displacement. Declining is the only honest
     /// answer; authoring garbage geometry is not.
     DegeneratePage,
+}
+
+impl Refusal {
+    /// The stable identifier this refusal is **traced** under.
+    ///
+    /// # ★★★ Why a token, when `{reason:?}` was already printing something
+    ///
+    /// Because `Debug` renders the **source**, not a contract. The trace line
+    /// below is grepped by `tools/ui-verify`, and a `{:?}` field moves whenever
+    /// a variant is renamed or gains a payload, with no compiler diagnostic and
+    /// no failing test — the check simply stops matching and goes quietly green
+    /// on an absence. Two of the eleven variants below already put a `usize`
+    /// inside the field.
+    ///
+    /// ★★ **The `Debug` rendering is kept, beside this rather than instead of
+    /// it**, in the trace's `detail=` field. [`Self::NotAPath`] and
+    /// [`Self::NodeNotFound`] carry the only indication of *which object*, and
+    /// dropping it to gain stability would have traded one loss for another.
+    /// One field a machine reads, one field a human reads.
+    ///
+    /// ★ Kebab-case, one word per concept, on
+    /// [`crate::canvas::pick::PickClass::token`]'s precedent — including the
+    /// per-arm `// ui-text-exempt:` comment, which `check-ui-strings.sh`
+    /// requires arm by arm rather than once per function.
+    ///
+    /// ⇒ **The unit is a distinguishable cause, not a variant**, which is why
+    /// there are twelve tokens for eleven variants: `NoVerbForPart` splits by
+    /// part kind because its two cases have opposite outcomes — one speaks to
+    /// the operator and one is unreachable — and a harness that could not tell
+    /// them apart would assert the wrong cause while looking green.
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::NoObjectModel => "no-object-model",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::NothingSelected => "nothing-selected",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::UnaddressableObject => "unaddressable-object",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::InsideForm => "inside-form",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::NotAPath(_) => "not-a-path",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::NoPartEntered => "no-part-entered",
+            // ★★★ Split by part kind on 2026-09-15, because
+            // `tests::every_refusal_traces_a_distinct_stable_token` refused the
+            // collision the first draft had here and was right to. **The unit a
+            // token names is a distinguishable CAUSE, not an enum variant.**
+            // These two instances of one variant have opposite
+            // operator-facing outcomes — the Run case puts a sentence on the
+            // status bar (O188) and the Subpath case is unreachable — so a
+            // driven check that could not tell them apart would be asserting
+            // the wrong cause, and `detail=` is the `Debug` field it must not
+            // parse to make up the difference.
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::NoVerbForPart(PartKind::Run) => "no-verb-for-text-run",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::NoVerbForPart(PartKind::Subpath) => "no-verb-for-subpath",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::NoNodeEntered => "no-node-entered",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::NodeNotFound(_) => "node-not-found",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::NoTravel => "no-travel",
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::DegeneratePage => "degenerate-page",
+        }
+    }
+
+    /// What this refusal owes the operator in words, or `None` if the answer
+    /// is silence.
+    ///
+    /// # ★★★ Exhaustive on purpose — a `_ => None` would be the defect
+    ///
+    /// Two arms return a sentence and nine return `None`, and it would be four
+    /// lines shorter to write the two and catch the rest with a wildcard. That
+    /// shorter version has one property this one does not: **a twelfth refusal
+    /// would join the silent nine without anybody deciding that it should.**
+    ///
+    /// Written out, adding a variant to [`Refusal`] is a compile error until
+    /// somebody answers *does this one owe the operator a sentence?* — which is
+    /// the question that was never asked about `NoVerbForPart`, and
+    /// `OPERATOR_REQUESTS.md` **O188** is what that costs: a box drawn round one
+    /// label, a drag across the sheet, and nothing happening with no sentence
+    /// anywhere.
+    ///
+    /// # Why the other nine stay silent, and why it is still the right default
+    ///
+    /// They describe states the operator put themselves in and can see: nothing
+    /// selected, a drag that travelled no distance, a rung entered with nothing
+    /// named in it. A status bar that narrates the obvious is a status bar that
+    /// stops being read, which would cost the two sentences that matter. The
+    /// test is not *is this a refusal* but **can the operator see the cause**.
+    ///
+    /// ★★ [`PartKind::Subpath`] is answered explicitly rather than folded in
+    /// with `NoVerbForPart(_)`. `eligible` routes a subpath at the Part rung to
+    /// `move_subpath`, so that combination is unreachable today — and an
+    /// unreachable arm that is written down is a claim the next reader can
+    /// check, where one hidden behind a wildcard is an assumption.
+    pub(crate) const fn worded(self) -> Option<CanvasDecline> {
+        match self {
+            // The operator can see an outline round the thing they dragged, the
+            // drag does nothing, and there is no way on screen to learn why.
+            // Reachable by an ordinary click since 2026-08-27, so not rare.
+            Self::InsideForm => Some(CanvasDecline::InsideFormNotAPath),
+            // ★★★ O188. Identical shape, on a different rung: one line inside a
+            // block of text, outlined, dragged, silent. The sentence leads with
+            // what DOES work — Delete reaches one line — because that half
+            // shipped on 2026-09-05 and he had not found it.
+            Self::NoVerbForPart(PartKind::Run) => Some(CanvasDecline::TextRunCannotMoveAlone),
+            // Unreachable: `eligible` sends a subpath at the Part rung to
+            // `move_subpath`. Named anyway — see the docs above.
+            Self::NoVerbForPart(PartKind::Subpath) => None,
+            Self::NoObjectModel
+            | Self::NothingSelected
+            | Self::UnaddressableObject
+            | Self::NotAPath(_)
+            | Self::NoPartEntered
+            | Self::NoNodeEntered
+            | Self::NodeNotFound(_)
+            | Self::NoTravel
+            | Self::DegeneratePage => None,
+        }
+    }
 }
 
 /// Convert a **canvas-space** drag delta into a **PDF page-space** one.
@@ -833,6 +958,10 @@ fn context(
     // Found by driving it — `the_ladder_goes_as_deep_inside_a_container_as_
     // outside_one` reported `canvas-move-declined level=Part reason=InsideForm`
     // with every other line in the trace looking correct.
+    //
+    // ★ That is verbatim what the run printed and is left as printed. The
+    // field is a stable token since 2026-09-15, so the same line reads
+    // `reason=inside-form detail=InsideForm` today — see `Refusal::token`.
     let entered = selection.entered_object().map(|e| e.object);
     Some(MoveContext {
         non_path: selection
@@ -1072,20 +1201,18 @@ pub fn drag(
 /// and finds the cause on the same line rather than inferring it from an
 /// absence — the same contract `canvas-delete-declined` already honours.
 fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action>) {
-    // ★★ **One refusal out of the eight has something to say to the operator,
-    // and it is the one they will meet without having made a mistake.**
+    // ★★ **Two refusals out of the eleven have something to say to the
+    // operator, and they are the two you meet without having made a mistake.**
     //
-    // The rest describe states the operator put themselves in and can see:
-    // nothing selected, a rung with no verb, a drag that travelled zero
-    // distance. A sentence in the status bar for any of those would be a bar
-    // that narrates the obvious, and a surface that narrates the obvious stops
-    // being read.
+    // Which two, and why, is [`Refusal::worded`]'s subject and the argument
+    // lives there rather than here — beside the exhaustive match that makes
+    // adding a twelfth refusal a compile error until somebody decides.
     //
-    // `InsideForm` is different in kind. The operator has an outline round the
-    // thing they are dragging, the drag does nothing at all, and there is no
-    // way on screen to learn why — from where they sit, dragging is broken.
-    // Since 2026-08-27 that state is reachable by an ordinary click, so it is
-    // no longer rare.
+    // ★★★ This comment said *“one refusal out of the eight”* until
+    // 2026-09-15. There were eleven. The count had been wrong for long enough
+    // that nobody re-read the sentence it introduced, and the sentence was the
+    // reason `NoVerbForPart` was never weighed — which is `OPERATOR_REQUESTS.md`
+    // O188, a drag on one line of a title block doing nothing in silence.
     //
     // ★ Recorded from the CANVAS, which no other decline in this application
     // does. It is sound for the reason `status::decline`'s header gives for the
@@ -1104,15 +1231,16 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
     // panel that wants to change something **asks**, because it holds
     // `&OpenDoc` and not `&mut`, and `Action` is that channel. The canvas has
     // the same relationship to the application state and gets the same answer.
-    if reason == Refusal::InsideForm {
-        actions.push(Action::DeclineInsideForm);
+    if let Some(what) = reason.worded() {
+        actions.push(Action::DeclineOnCanvas(what));
     }
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "canvas-move-declined level={:?} sel={} reason={reason:?}",
+            "canvas-move-declined level={:?} sel={} reason={} detail={reason:?}",
             selection.level(),
             selection.len(),
+            reason.token(),
         )
     });
 }

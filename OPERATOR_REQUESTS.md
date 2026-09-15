@@ -583,6 +583,50 @@ with the Add Text tool.
 one `BT..ET` block, one `Tj`, or one show-operator — because the answer decides
 whether this is a selection-model change in the shell or a new engine verb.
 
+### ★★★ MEASURED AND ANSWERED 2026-09-14 — it was BOTH, and half of it already shipped
+
+The engine's unit is **one show operator**, and the answer split the row in
+three. `DESIGNS.md` §6 carries the full measurement; the outcome:
+
+| his ask | verdict |
+|---|---|
+| **delete** one piece | ★★ **Already shipped, since 2026-09-05.** `delete_text_run` is wired, driven, and measured on his own sheet (18 runs → 17, page objects unchanged). He could do this the whole time. |
+| **move** one piece | — **The engine has no verb.** Every other part kind has both halves; text has the delete and not the move. Filed as `G017`. |
+
+★★★ **So the report was not really about moving — it was about SILENCE.** The
+delete works and he had not found it; the move is refused and said nothing. A
+gesture that is declined without a word is indistinguishable from a broken
+one, and this project exists because of that exact shape.
+
+**(B) BUILT 2026-09-14 — the refusal now speaks, and it names the remedy.**
+Dragging one line inside a block of text puts a sentence on the status bar:
+*“That drag was on one line inside a block of text. Delete removes that line on
+its own, but pdfcer cannot move a single line yet — press Escape to select the
+whole block and drag that.”* ★ It names Delete deliberately, which is a
+partial answer to **(A)** as well: the sentence is where he is most likely to
+learn that the delete he asked for already exists.
+
+★★ **Verified by driving the binary, not by a passing test.**
+`a_refused_drag_on_one_line_of_text_says_so` clicks into Edit mode, arms the
+Points tool, selects one line, drags it, and then reads three lines written by
+three different subsystems — the refusal, the sentence crossing the `Action`
+boundary, and the status bar actually drawing it. **Falsified twice** before it
+was believed: once by removing the sentence (it failed on the middle link) and
+once by retiring it on the frame it is written (it failed on the last), each
+with its own message and the other assertions still green.
+
+**(C) FILED 2026-09-14 as `G017`** in the engine request channel —
+`move_text_run`, with the mechanism ruled out (`q`/`Q` cannot appear inside a
+text object, so it must be operand rewriting), the hard case named
+(`RunPositioning::Inherited` has no coordinates to rewrite), and both policies
+for the successor problem offered rather than guessed at. Every citation was
+re-measured against the pinned revision first; several had drifted ~40 lines.
+
+⚠ **(A) is still open.** The delete is reachable only through the Points tool
+(`A`, then click); a double-click on text opens the caret instead, which is
+O70's ruling and correct. The new sentence tells him Delete works, but only
+after he has tried to drag. A route he can find *before* failing is owed.
+
 ---
 
 ## O189 — ◑ **FILED 2026-09-12** — dragging pages between documents leaves the bookmarks behind

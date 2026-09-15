@@ -786,6 +786,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(deeper_rung_delete::DeletingALineLeavesTheRestOfTheShapeAlone),
         Box::new(deeper_rung_delete::DeletingAPointLeavesTheRestOfTheLineAlone),
         Box::new(deeper_rung_delete::DeletingALabelLeavesTheOtherLabelsAlone),
+        // ★★ Immediately after the label delete, and deliberately: it stands on
+        // the SAME rung of the SAME fixture, reached by the same chord and the same
+        // click, and differs only in the gesture that follows. So a failure here
+        // with the three above green is a statement about the MOVE path alone,
+        // while a failure of all four is a statement about the Part rung on text —
+        // which is the first fork a reader needs and is free if the order holds it.
+        Box::new(move_line_of_text::ARefusedDragOnOneLineOfTextSaysSo),
         Box::new(autosize_overflow::AFieldTooSmallForItsTextSaysSo),
         Box::new(tool_row::TheTextToolTypesOnOneClick),
         Box::new(tool_row::AClickOnBlankPaperStartsNewText),

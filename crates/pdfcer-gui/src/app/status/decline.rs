@@ -1112,6 +1112,59 @@ pub(crate) enum Declined {
     /// because the fact recorded is *what the engine answered about a request
     /// that no longer exists*. The operator's next command retires it.
     EditText(crate::text::textedit::EditRefusal),
+    /// ★★★ **A drag on one line inside a block of text, refused in silence
+    /// until now** — `OPERATOR_REQUESTS.md` **O188**, 2026-09-15.
+    ///
+    /// The operator draws a box round one label in a title block, presses inside
+    /// it, drags it across the sheet — and nothing happens, with no sentence
+    /// anywhere. `canvas::moving` refused with `Refusal::NoVerbForPart(Run)` and
+    /// wrote a trace line only.
+    ///
+    /// # ★★★ Why this one, when nine of the eleven refusals stay silent
+    ///
+    /// `canvas::moving::decline`'s standing argument is good and is not being
+    /// overturned: *nothing selected*, *the drag never travelled* and *no part
+    /// entered* describe states the operator put themselves in and can see, and a
+    /// bar that narrates the obvious stops being read at all.
+    ///
+    /// This refusal fails that test on every clause. The operator did not make a
+    /// mistake; they cannot see the cause; and from where they sit the drag
+    /// gesture is simply broken. That is this project's founding defect shape —
+    /// a control that works everywhere else doing nothing here, with no way on
+    /// screen to learn why — arriving on the newest gesture in the program.
+    ///
+    /// # No payload, and it is not [`Self::EditRefused`]'s kind of no-payload
+    ///
+    /// That one carries nothing because its taxonomy was too wide to copy. This
+    /// one carries nothing because **there is exactly one way to be it**: all
+    /// four `NoVerbForPart` construction sites in `canvas::moving` can only
+    /// produce [`crate::panels::objects::provider::PartKind::Run`], two of them
+    /// unreachable by construction because a run has no anchors to descend to. A
+    /// payload would have one inhabitant.
+    ///
+    /// The wording is [`crate::text::arrange::run_cannot_move_alone`], which
+    /// carries the argument for the order of its four clauses and the citations
+    /// for both capability claims it makes.
+    ///
+    /// # Retirement: the `retire`-only class, on the TENSE argument
+    ///
+    /// [`Self::still_true`] answers `true`, joining [`Self::ClipboardMode`] and
+    /// [`Self::EditText`] — and here the tense argument is not merely the best
+    /// available, it is the only safe one.
+    ///
+    /// The obvious alternative is a live predicate: keep the sentence only while
+    /// the selection is still a run at the Part rung. ⇒ **That would delete the
+    /// instruction at the instant the operator began to follow it**, because the
+    /// remedy the sentence names — *press Escape to select the whole block* —
+    /// changes the selection. It is [`Self::ClipboardMode`]'s trap exactly: *the
+    /// condition this reports is the one the sentence asks the operator to
+    /// change.*
+    ///
+    /// What earns the `true` is that the wording is a **report of a past
+    /// moment** — *that drag did nothing, and the document is unchanged* — true
+    /// when it was written whatever the next frame does. The operator's next
+    /// command retires it through [`retire`].
+    TextRunCannotMoveAlone,
 }
 
 impl Declined {
@@ -1361,6 +1414,32 @@ mod fresh;
 /// split is about where the code lives, and a call site should not have to
 /// learn that a submodule exists.
 pub(crate) use fresh::History;
+
+/// ★★★ **What a refused CANVAS GESTURE may say, and the one writer that
+/// says it** — O188, 2026-09-15.
+///
+/// Its own file rather than a function in `record`, for `clipboard`'s and
+/// `textedit`'s stated reason: it carries an argument of its own — why an
+/// action raised by a read-only surface must carry a two-armed vocabulary and
+/// not a [`Declined`] — and that argument would be buried among twenty
+/// siblings. ★ The size gate decided it as well: this file stood at 1,367
+/// lines and the variant above is fifty-seven of them.
+mod canvas;
+/// Re-exported so `app::actions` says `decline::CanvasDecline` and
+/// `decline::record_canvas(..)`. `floor`'s rule: the split is about where the
+/// code lives, and a call site should not have to learn that a submodule exists.
+///
+/// ★★★ **The two halves are re-exported at different visibilities, and
+/// that asymmetry is the design rather than an oversight.** The TYPE is `pub`
+/// because it is half of a `pub` variant's signature (`private_interfaces`;
+/// `canvas::CanvasDecline`'s own docs carry the argument, and the reason
+/// `app::prefs`'s way out was not available). The WRITER stays `pub(crate)`,
+/// behind this module's `pub(super)` path, so it remains reachable only from
+/// inside `crate::app` — which is the boundary that matters: *a decline is
+/// written by the one dispatcher and read by the one bar*. Naming a sentence
+/// is not writing one.
+pub use canvas::CanvasDecline;
+pub(crate) use canvas::record_canvas;
 
 /// See `decline/tests.rs`.
 #[cfg(test)]
