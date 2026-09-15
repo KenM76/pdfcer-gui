@@ -134,4 +134,5 @@
 - [A doc arguing for a guard claims the guard exists](feedback_a_doc_comment_that_argues_for_a_guard_is_a_claim_the_guard_exists.md) — the gate went; its defence survived in five files.
 - [A capability greyed everywhere is one selection defect](feedback_a_capability_greyed_everywhere_is_one_selection_defect.md) — three dead surfaces, one predicate; ask at tolerance ZERO.
 - [Tidying an input changes every instrument reading it](feedback_tidying_an_input_changes_every_instrument.md) — the sweep was right; it blinded a gate and killed 18 citations.
+- [A command judged through a pipe reports the pipe's exit code](feedback_a_command_judged_through_a_pipe_reports_the_pipes_exit_code.md) — a FAILED release build read as exit 0.
 - [The injected memory warning is a snapshot](feedback_the_injected_memory_warning_is_a_snapshot.md) — 36 h stale; it nearly bought a 136-file rename. Measure.
