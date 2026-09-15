@@ -54,6 +54,30 @@ dead text inside a doc comment -- where it renders as itself and nobody notices
 -- or a compile error. Three occurrences have been caught by hand; this catches
 the fourth.
 
+MECHANISM 3 -- A PLACEHOLDER THAT WAS NEVER SUBSTITUTED
+--------------------------------------------------------
+
+The patch scripts in this project spell their glyphs two ways: by CONCATENATING
+a named constant (`"... " + STAR * 3 + " ..."`), and by writing a brace token
+into the payload (`"...{STAR}..."`) for a later `.format()` or an f-string. Both
+are fine. **Mixing them in one payload is not**, because the brace form is inert
+unless something formats it, and a payload assembled by concatenation never is.
+
+Measured 2026-09-15 in `DESIGNS.md`: a block built almost entirely by
+concatenation carried a single `*{LQ}one status sentence{RQ}*`, which reached
+the file verbatim and rendered as itself. It was found by eye, immediately, only
+because the session that wrote it happened to re-grep -- the rest of the block
+was correct, so nothing looked wrong at any distance.
+
+MARKDOWN ONLY, and the narrowing is MEASURED rather than assumed. The same
+pattern in Rust is a captured format identifier and is correct and idiomatic:
+`{PREFIX}`, `{MIN_COLUMN_WIDTH}`. Counted on 2026-09-15 across `crates/` and
+`tools/`: **2,311** legitimate occurrences in `.rs`, and **zero** in `.md`
+anywhere in the tree. A gate whose claim is "this construct never appears here"
+is only worth registering where the current count is zero; in Rust it would
+need 2,311 carve-outs and would mean nothing. In Markdown it means exactly one
+thing.
+
 RUST ONLY, and the narrowness is deliberate. In a `.py` file the brace-less
 escape is correct and idiomatic -- it is how the patch scripts spell their own
 markers -- and in a `.md` file it is ambiguous, because a document quoting a
@@ -126,17 +150,38 @@ GLUED = re.compile(r"(?<!" + BACKSLASH * 2 + r"n)(?<=[A-Za-z])[" + STAR + WARN +
 # passes.
 UNDECODED = re.compile(BACKSLASH * 2 + r"u[0-9a-fA-F]{4}(?!" + BACKSLASH + r"{)")
 
+# An all-capitals brace token. Markdown only -- see MECHANISM 3. The length
+# bound keeps it from matching a long prose fragment that merely happens to be
+# shouted inside braces.
+UNSUBSTITUTED = re.compile(r"\{[A-Z][A-Z0-9_]{0,15}\}")
+
+# A Markdown code fence. Mechanism 3 does not look inside one, and the reason is
+# the header's own rule turned on itself: a document quoting a Rust `writeln!`
+# with a captured identifier is quoting CORRECT code, and a gate that calls a
+# correct quotation a defect gets carved out until it means nothing. Today the
+# count inside fences is also zero -- this is a guard against the first true
+# quotation, not a concession to an existing one.
+FENCE = re.compile(r"^\s*(```|~~~)")
+
 # A line that is ABOUT the hazard rather than suffering from it. A document
 # recording the lesson has to be able to spell the thing it forbids.
 ABOUT_THE_HAZARD = re.compile(
     r"never decoded|raw string|hazard|residue|verbatim|brace-less"
 )
 
+# A line that is ABOUT mechanism 3 rather than suffering from it, kept separate
+# from `ABOUT_THE_HAZARD` on purpose: widening one carve-out to excuse a second
+# mechanism is how a detector loses the claim it was registered to make.
+ABOUT_THE_PLACEHOLDER = re.compile(r"unsubstituted|placeholder|residue|hazard")
+
 GLUED_MECHANISM = "a marker translated INSIDE a word"
 UNDECODED_MECHANISM = "an undecoded unicode escape"
+UNSUBSTITUTED_MECHANISM = "a placeholder that was never substituted"
 
 
-def scan(lines: list[str], rust: bool) -> list[tuple[int, str, str]]:
+def scan(
+    lines: list[str], rust: bool, markdown: bool = False
+) -> list[tuple[int, str, str]]:
     """Every residue hit in one file's lines, as `(line number, mechanism, line)`.
 
     Split from [`offences`] so it can be falsified without a file on disk, which
@@ -145,11 +190,22 @@ def scan(lines: list[str], rust: bool) -> list[tuple[int, str, str]]:
     file, and planting in a real file is how an experiment gets left behind.
     """
     hits: list[tuple[int, str, str]] = []
+    fenced = False
     for number, line in enumerate(lines, start=1):
+        if markdown and FENCE.match(line):
+            fenced = not fenced
+            continue
         if GLUED.search(line):
             hits.append((number, GLUED_MECHANISM, line))
         if rust and UNDECODED.search(line) and not ABOUT_THE_HAZARD.search(line):
             hits.append((number, UNDECODED_MECHANISM, line))
+        if (
+            markdown
+            and not fenced
+            and UNSUBSTITUTED.search(line)
+            and not ABOUT_THE_PLACEHOLDER.search(line)
+        ):
+            hits.append((number, UNSUBSTITUTED_MECHANISM, line))
     return hits
 
 
@@ -168,7 +224,7 @@ def offences(path: str) -> list[tuple[int, str, str]]:
         return []
     # The brace-less escape is a defect in Rust and nowhere else -- see the
     # header. Python uses it correctly; Markdown may be quoting Python.
-    return scan(lines, rust=path.endswith(".rs"))
+    return scan(lines, rust=path.endswith(".rs"), markdown=path.endswith(".md"))
 
 
 def self_test() -> int:
@@ -214,6 +270,44 @@ def self_test() -> int:
         print("SELF-TEST FAIL: a valid Python escape reported outside Rust")
         ok = False
 
+    # ---- mechanism 3: a placeholder that was never substituted -----------
+    # The first line is the real 2026-09-15 damage from `DESIGNS.md`, copied
+    # exactly. The second is the legitimate Rust form, asserted NOT to fire
+    # outside Markdown -- 2,311 of those are in this tree and every one of them
+    # is correct. The third is a document explaining the mechanism, which has to
+    # be able to spell the thing it forbids.
+    braces = [
+        "ordinary prose with no braces anywhere in it",
+        "> prediction of *{LQ}one status sentence{RQ}* would not have budgeted",
+        'writeln!(f, "{PREFIX} the dock reported {MIN_COLUMN_WIDTH}")?;',
+        "an unsubstituted {TOKEN} is residue, and this line is ABOUT it",
+    ]
+    hits = [h[0] for h in scan(braces, rust=False, markdown=True)]
+    if hits != [2, 3]:
+        print("SELF-TEST FAIL: placeholder scan expected [2, 3], got " + str(hits))
+        ok = False
+
+    # The Markdown-only narrowing, falsified in the direction that matters: the
+    # identical Rust line is captured-identifier formatting and must be silent.
+    if scan([braces[2]], rust=True, markdown=False):
+        print("SELF-TEST FAIL: a Rust captured identifier reported as a placeholder")
+        ok = False
+
+    # And the fence carve-out, falsified BOTH ways: the same Rust line inside a
+    # Markdown fence is a quotation and must be silent, while a line after the
+    # fence closes must be seen again -- a toggle that latched open would make
+    # every mechanism-3 claim below the first fence vacuous.
+    fenced = [
+        "```rust",
+        braces[2],
+        "```",
+        "> and back in prose, *{LQ}still wrong{RQ}*",
+    ]
+    hits = [h[0] for h in scan(fenced, rust=False, markdown=True)]
+    if hits != [4]:
+        print("SELF-TEST FAIL: fenced scan expected [4], got " + str(hits))
+        ok = False
+
     print("self-test: " + ("PASS" if ok else "FAIL"))
     return 0 if ok else 1
 
@@ -243,7 +337,8 @@ def main() -> int:
         print(
             "check-patch-residue: clean - "
             + str(walked)
-            + " files walked, no marker translated inside a word and no undecoded escape"
+            + " files walked, no marker translated inside a word, no undecoded"
+            + " escape and no unsubstituted placeholder"
         )
         return 0
 
@@ -258,6 +353,11 @@ def main() -> int:
     print("then fix the script's helper: a token-translating helper must not be applied to")
     print("a payload it was not written for, and a payload containing a backslash must")
     print("spell it with a placeholder rather than as an escape.")
+    print("")
+    print("A placeholder that was never substituted is the third mechanism and it has a")
+    print("different repair: the payload mixed two spellings. Pick ONE -- concatenate the")
+    print("named constant, or format the whole payload -- because a brace token inside a")
+    print("concatenated payload is inert and reaches the file as itself.")
     return 1
 
 

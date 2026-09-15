@@ -658,6 +658,38 @@ register could not see it … writing them down felt like discharging them."*
 not know the route. This is a reply and possibly a one-line status sentence, not
 a build.
 
+> ★★★ **SCORED 2026-09-15, AND THE PREDICTION ABOVE IS THE WORST ONE IN THIS
+> DOCUMENT. It shipped as `7ad3ec1`: twenty-seven files, roughly 2,600 lines
+> added, including a new 496-line `canvas/runmenu.rs` and an 858-line driven
+> check.** The estimate was not off by a factor; it was off by a *category*.
+> 
+> ⇒ **The error has a name and it is worth carrying: a capability whose route
+> nobody can find has no route, and *telling* someone a route is not the same
+> act as *building* one.** What existed was a chord that armed the Points tool
+> followed by a click — reachable, driven, and mentioned nowhere in the program.
+> A sentence in a status bar would have documented an undiscoverable gesture
+> rather than replacing it, and the operator would still have had to fail once
+> (double-click opens the caret, correctly, per O70) before the sentence could
+> help him. The row `format.select_text_line` in the `canvas.object` menu is
+> the route; it is absent rather than greyed where the click missed a line (R9),
+> which is why it is registered with `shown_when` and not with an enabled
+> predicate.
+> 
+> ★★ **And the cost was not in the row — it was in making FOUR subsystems agree
+> on one index.** The menu names a run, the command raises a run, the selection
+> sets a part and the status bar discloses a rung; the driven check asserts all
+> four name the same one, aimed at `run:2/6` so that a build quietly returning
+> `.first()` fails instead of passing by coincidence. **That** is the work a
+> one-line reply would have hidden, and it is invisible from the outside, which
+> is exactly why the estimate read as cheap.
+> 
+> ⚠ **The check's own oracle was wrong for four hours and only running the
+> falsification recipes found it** — the `status-rung` trace was emitted from
+> *above* the `match` it was meant to measure, keyed on the same discriminant
+> its arms are keyed on, so gutting the clause left the check green. A
+> prediction of *“one status sentence”* would not have budgeted for the
+> instrument being wrong about the sentence.
+
 **(B) Make the move decline audible.** `canvas/moving/mod.rs:1074` — add
 `NoVerbForPart(PartKind::Run)` to the refusals that raise an operator-facing
 action, with a sentence that says what IS available rather than what is not:
@@ -673,6 +705,35 @@ session, so **neither is done here.**
 Drafted as §7 below. **Not filed** — this document is a survey.
 
 #### 6.3 When the verb lands — the shell work is small and already shaped
+
+> ★★★ **SCORED 2026-09-15. ALL THREE PREDICTED EDITS WERE CORRECT, ALL THREE
+> WERE MADE, AND THEY WERE A FRACTION OF THE WORK** — `4eff7e8`, twenty files,
+> ~1,955 lines added. `MoveSubject::TextRun`, `VectorAction::MoveTextRun` and
+> the apply arm calling `session.move_text_run` all exist and all sit where
+> this section said they would; so did the claim that the ghost, the preview
+> outline and the drag-hold need nothing.
+> 
+> ⇒ **The failure mode is specific and it will recur: a plan that enumerates
+> the edits a capability needs has enumerated the SUCCESS path only.** Three
+> things it did not mention, each larger than any of the three:
+> 
+> 1. **The in-form twin.** `VectorAction::MoveTextRunInForm` is a fourth arm in
+>    a **different address space**, and the title block — the place the
+>    operator actually wants this — is a form. A survey that scopes to page
+>    content scopes away his drawings.
+> 2. **The refusals.** Two reasons a line cannot move, each needing its own
+>    sentence and its own pre-press answer (`text_run_move_refusal_of`), because
+>    one vague refusal covering both is the same as no answer.
+> 3. **A fixture that could produce the refused case at all.** No document on
+>    hand carried a run with no `Td` of its own, so one had to be generated
+>    (`tools/gen-inherited-runs-fixture.py`, `fixtures/inherited-runs.pdf`).
+>    ★ A refusal you cannot MAKE HAPPEN cannot be driven, and a refusal that
+>    cannot be driven is a sentence nobody has read.
+> 
+> ★★ **Getting the check green (`b68e3f8`) then found two defects in the
+> HARNESS and none in the program**, which is the third time this month that
+> ratio has held, and it is the argument for costing the instrument as part of
+> the feature rather than as overhead attached to it.
 
 Because the rung, the identity, the hit test, the outline and the routing all
 exist, wiring a `move_text_run` is the same three edits `move_subpath` needed:
@@ -2446,8 +2507,8 @@ direction that does not need a second complaint to discover.
 #### Class
 
 **(c) already shipped and merely undiscoverable — plus a small deletion.** The
-highest-return, lowest-cost item in O183, and the one that makes #2, #4, #8a and
-##9 stop being complaints.
+highest-return, lowest-cost item in O183, and the one that makes items 2, 4,
+8a and 9 stop being complaints.
 
 **Proposed driven checks:**
 `clicking_a_ce_dimension_does_not_open_the_comment_window`,
