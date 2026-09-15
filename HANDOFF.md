@@ -2115,7 +2115,7 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
   tempt you into: editing any `.rs` or `.toml`, anywhere in the repository,
   while it runs.**
 
-  A full driven sweep is **221 checks** (2026-09-13) in twelve chunks plus the
+  A full driven sweep is **226 checks** (2026-09-14) in twelve chunks plus the
   ALONE table — the figure grows with every check added, so read it from
   `ui-verify --list` rather than from this paragraph — each
   check launching its own copy of the application, and it takes about an hour and
