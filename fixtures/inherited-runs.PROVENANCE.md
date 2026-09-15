@@ -71,7 +71,15 @@ live in one fixture rather than three.
 
 ### Status of these numbers
 
-**Computed, not yet re-measured against a rendered page.** They are hand-summed
+**CONFIRMED by a driven run on 2026-09-15** (`ui-verify --check
+dragging_one_line_of_text_moves_it_or_says_why`, PASS). All three aims landed
+on three *different* runs and produced the three different answers the table
+below predicts -- which is the strongest confirmation this fixture admits,
+because a mis-aimed press would have produced a neighbour's answer and the
+check reports what it got. The paragraph that follows is kept as the reasoning
+that stood before that run.
+
+**Computed, then re-measured against a rendered page.** They are hand-summed
 AFM advances; Helvetica metrics are fixed by the specification, so the arithmetic
 is the only thing that can be wrong, and a wrong x lands on a neighbouring run
 whose answer differs -- which the check reports rather than swallows. When a

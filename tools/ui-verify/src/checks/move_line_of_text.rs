@@ -467,16 +467,26 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(20);
 
-    // --- 2: arm the Points tool ---------------------------------------------
+    // --- 2: read the canvas mapping -----------------------------------------
     //
-    // ★ Once, before the first click — see the module header. The tool stays
-    // armed for all three drags, which also means the two later rows do not get
-    // a fresh `dispatch_command` and therefore do not get a free
-    // `decline::retire`. That is deliberate and it is what the per-row control
-    // in [`one_aim`] is for.
-    driver.press(vk::A)?;
-    session.settle(12);
-
+    // ★★★ **The Points tool is armed inside [`one_aim`], NOT once here, and the
+    // reason is measured rather than stylistic.** This check's first shape armed
+    // it once before the loop, on the reasoning that a tool stays armed and the
+    // two later rows would then not get a free `decline::retire` from a fresh
+    // command. The first driven run refuted that in one line: the ladder was at
+    // `Object` on row 1, so the click had gone to the arrow tool.
+    //
+    // The cause is `canvas::keys`' own documented Escape contract — *"pressing
+    // Escape twice puts the tool down; pressing it once corrects a mis-aimed
+    // pick"*. Row 1 presses Escape with **nothing selected**, so there is no
+    // pick to correct and that single press is the one that puts the tool down.
+    // Arming before a clearing Escape disarms; arming after it does not.
+    //
+    // ★★ The general shape, worth carrying: **a setup step that runs once and a
+    // clearing step that runs per row are in a race, and the clearing step
+    // wins.** The fix is not to drop the clearing step — it is what keeps each
+    // row's status-bar control honest — but to put every precondition it
+    // destroys downstream of it.
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, PAGE)?;
     let frame = session.frame()?;
@@ -518,10 +528,40 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// its baseline was taken*, which cost this project a green check over a
 /// planted defect. Each row establishes its own.
 ///
-/// The clearing gesture is a press of **Escape**, which is a command, and
-/// `decline::retire` runs at the top of `dispatch_command`. It also ascends the
-/// selection ladder, which is wanted: every row starts from no selection and
+/// The clearing gesture is a press of **Escape**. It ascends the selection
+/// ladder, which is what this row needs: every row starts from no selection and
 /// descends to the Part rung by its own click, so no row inherits a rung.
+///
+/// # ★★★ WHAT ESCAPE DOES *NOT* DO, MEASURED ON 2026-09-15
+///
+/// This function's first shape treated an empty status-bar slot as a
+/// **precondition** and skipped the row when the slot was still on screen,
+/// reasoning that *"Escape is a command, and `decline::retire` runs at the top
+/// of `dispatch_command`."* The first driven run refuted it: row 2 skipped with
+/// the slot still live, and the trace carries no `ui-rect-gone
+/// name=status-group:decline` anywhere — so the sentence really was still
+/// drawn.
+///
+/// The cause is that **Escape is claimed by the canvas before it can become a
+/// command.** With a selection standing, `canvas::keys` spends it ascending the
+/// ladder, so `dispatch_command` never runs and neither does `retire`.
+/// `canvas::keys`' own header states the contract plainly — *"pressing Escape
+/// twice puts the tool down; pressing it once corrects a mis-aimed pick"* —
+/// and neither of those is a command.
+///
+/// ★★ **That is behaviour, not a defect, and the fix was to stop needing it.**
+/// Both of this check's sentences are `still_true` for the reason
+/// `decline::fresh` calls *"the FILE cannot change under it"*: they report a
+/// property of the document, so no later moment makes them stale and they are
+/// meant to outlive a deselection. A check that demanded an empty slot was
+/// asserting a retirement policy this project deliberately does not have.
+///
+/// ★★★ **So the per-row link is a MARK, not an absence.** Every assertion below
+/// is anchored at a `Trace::mark` taken immediately before this row's drag and
+/// reads `last_after`. A sentence left standing by an earlier row cannot
+/// satisfy them, because the events that carry it are behind the mark. The
+/// slot's live-ness is still read — and reported — but as a note, which is
+/// the difference between measuring a thing and gating on it.
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 fn one_aim(
     session: &Session,
@@ -539,16 +579,21 @@ fn one_aim(
     session.settle(14);
     let before = session.trace()?;
     if driving::declared(&before, ui_rect, DECLINE_REGION).is_some() {
-        return Err(Error::new(format!(
-            "the status bar's `{DECLINE_REGION}` slot is still on screen after Escape, so \
-             anything this row found there afterwards would prove nothing. Escape is a \
-             command and `decline::retire` runs at the top of `dispatch_command`, so a \
-             decline surviving it is its own defect and worth filing separately. SKIPPED \
-             rather than failed, because this check's subject is a different one and it can \
-             no longer measure it — row: {what}. Trace: {}.",
-            session.trace_path().display()
-        )));
+        report.note(format!(
+            "a decline from an earlier row is still on the status bar as this row begins \
+             — measured rather than assumed, and NOT a precondition: see this function's \
+             header for the Escape contract that makes it expected. Row: {what}."
+        ));
     }
+
+    // --- arm the Points tool ------------------------------------------------
+    //
+    // ★★★ After the Escape above, never before it: see step 2 in [`drive`] for
+    // the measurement. On a text object this is what makes a single click land
+    // on the Part rung at all — a double-click opens the caret and never
+    // touches the ladder, and the arrow tool's click selects the whole block.
+    driver.press(vk::A)?;
+    session.settle(10);
 
     // --- select the line ----------------------------------------------------
     let window_point = mapping.doc_to_window(DocPoint::new(PAGE, aim.at.0, aim.at.1))?;
