@@ -236,7 +236,7 @@ a claim that sixty things are unbuilt.
 
 ---
 
-## `wanted` — a real gap — **35 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `wanted` — a real gap — **36 of 176** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -278,7 +278,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | Selectable-object diagnostics: when the model disagrees with the canvas. Four … | **One of the four is surfaced and three are not.** `app::status::notes::findings` reports `oc_sections_hidden` — content on a layer the operator's own file hid — among its nine render findings. `paths_with_undecoded_colour`, `paths_invisible_by_alpha` and `shadings_unmodelled` are nowhere, and they are the three that say *the object list and the picture disagree*, which is the one class of confusion an operator cannot diagnose by looking harder. The surface already exists: the Render-diagnostics dialog. |
 | **★ Stop decomposing the same page twice per edit** — `EditSession::page_objects(page_index)` (`pdfcer-core/src/edit.rs:15246`), memoised and consulted by the editing verbs … | **★ 2026-09-11 channel audit.** Called from **two integration tests and nowhere in `src/`** — `tests/engine_overlay_skew.rs:310`, `tests/page_generation_covers.rs:129`. Production still runs this shell's own parse at `crates/pdfcer-gui/src/panels/objects/provider/mod.rs:394`, cached separately on `OpenDoc` at `app/cache.rs:421`. So every edit pays the session's decomposition **and** ours; the request that asked for this measured the duplicate at roughly 450 ms on the benchmark drawing. ⚠ The two are **not** interchangeable by name — ours is `OpenDoc::page_objects(&self)`, the engine's is `EditSession::page_objects(&mut self, page_index)`, and a grep for the bare name returns 164 hits that are almost all ours. **An absence claim here has to name the receiver.** Wiring it needs a decided answer on cache invalidation, since the engine memoises against the session revision and we key on our own. |
-| **Move one text run independently of others sharing its text object** — `move_text_run` / `move_text_run_in_form` (`Pass 305.0`, `G017`, 2026-09-14) | ⬜ **`wanted`, and it is the half of O188 the operator actually asked for.** This shell filed `G017` on 2026-09-14 and the engine shipped both verbs the same day, with the signature as written. Everything on this side is already built and waiting: the Part rung, the hit test, the ghost, the preview outline and the refusal funnel — `DESIGNS.md` O188 §6.3 names the three edits (`canvas/moving/mod.rs`'s `MoveSubject` arm, a `VectorAction::MoveTextRun` twin, and the apply arm). ★★ **Wiring it RETIRES a shipped sentence, and that is the part to get right:** O188(B)'s refusal says *"pdfcer cannot move a single line yet"*, and the driven check `a_refused_drag_on_one_line_of_text_says_so` asserts it — so the check has to change in the same commit as the verb, or a green suite will be pinning a lie. ⚠ **Two refusals must still be surfaced**, and they are not the old one: `TextRunHasNoPositionOfItsOwn` (the run inherits its position) and `MoveWouldMoveNextRun` (the run after it does), both remedied by *move the whole text object*. ⚠ **And one disclosure**: for a `TD`/`T*`/`'`/`"`/implicit-origin run the engine INSERTS a `Td` and says so on `PlannedEdit::disclosures` — off-canvas, per rule 4, and a move can owe two of them. |
 | **Delete a subpath, a node or a text run INSIDE a form XObject** — `delete_subpath_in_form`, `delete_node_in_form`, `delete_text_run_in_form` (`Pass 305.0`, `G017`, 2026-09-14) | ⬜ **`wanted`.** Filed as the second row of `G017` with an offer to take it separately; the engine took it together, on `R245`'s argument — inside a form the Part and Node rungs could move and NOT delete, while the same rungs on page content could do both, so an operator learns a rule on the page and it stops being true inside a title block. ★ This shell's Part rung is **unreachable inside a form** today for a different reason (`part_hits_of` matches on a page-object index and returns nothing for a leaf), so this row needs that seam opened first and is larger than the move above. |
 
 ### ce dimensions
@@ -357,7 +356,7 @@ from here and no box in it is ticked by this pass.
 
 ---
 
-## `blocked` — waiting on something named — **8 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `blocked` — waiting on something named — **8 of 176** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it is waiting on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat, and this project has found seven stale blockers already.
 
@@ -443,14 +442,14 @@ rule.
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 176** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess. **This section is empty**, and that is a claim: see *★★ Why nothing is `unknown`* in the header before you trust it.
 
 
 ---
 
-## `declined` — deliberately no surface — **14 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `declined` — deliberately no surface — **14 of 176** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -491,7 +490,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **117 of 174** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **118 of 176** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Sixty-five of ninety (★ 64 → 65 on 2026-09-04, when the encryption-authoring row moved out of `blocked` on the operator's O119 ruling), which is the single largest finding of this triage. Each row names the surface or the call site, and where this project's own record dates the work, the date. These rows are kept, never deleted — `EDITABLE_SURFACES.md`'s own rule, and the argument is the valuable part.
 
@@ -512,6 +511,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Move one text run independently of others sharing its text object** — `move_text_run` / `move_text_run_in_form` (`Pass 305.0`, `G017`, 2026-09-14) | ✅ **`shipped`, wired 2026-09-15, and DRIVEN the same day.** Filed `G017` on the 14th; the engine shipped both verbs that day with the signature as written. `VectorAction::MoveTextRun` / `MoveTextRunInForm` go through `vector_edit_on_page`, so the inserted-`Td` disclosure is recorded off-canvas by the same mechanism as every other one. ★★ **The wiring RETIRED a shipped sentence, which was the hard half.** O188(B)'s *"pdfcer cannot move a single line yet"* became TWO sentences, because the engine distinguishes two causes and the operator's next action differs: `TextRunHasNoPositionOfItsOwn` and `MoveWouldMoveNextRun`. Its old *offer* clause was dropped, not carried — delete's own refusal mirrors the second case, so the offer would have been false for a selection reachable from the refusal carrying it. ⚠ `fixtures/inherited-runs.pdf` exists because `paragraph.pdf` cannot reach either refusal; `dragging_one_line_of_text_moves_it_or_says_why` drives all three answers. |
 | **Use a real bold face before synthesising one** — `StyleLadder` / `StyleRung` / `std14_styled` (`pdfcer-core/src/text_edit/format.rs:931`, `:957`; `fontdata/mod.rs:259`) … | **✅ WIRED 2026-09-11 — NOT DRIVEN.** `StyleChange::stamp` calls `FormatRequest::style(…)` (`app/actions/textstyle.rs`), so the ladder runs. ★★★ **Rung 2 is what mattered, and it fires on his commonest page:** a title block carrying only `Helvetica` has no bold resource, so the R90 gate passed and the strokes were thickened — where `Helvetica-Bold`, standard-14 and needing no font file, binds. Asserted on the run's `/Font` resource key CHANGING, which synthesis cannot do. The `Refuse`-pinned probe, the gate pre-check and the whole `RealFaceAvailable` retry are deleted with it. ⚠ **Owed: a driven check** — the machine was occupied. |
 | **Make a run bold (or italic) without choosing between two verbs** — `FormatRequest::set_style` … | **✅ WIRED 2026-09-11 — NOT DRIVEN.** The rung is disclosed off-canvas (`ladder_note`, rule 4) and `SynthesisRefusedByPosture` reaches a NAMED refusal ahead of the wildcard. ★★★ **The three gaps filed that morning were answered and consumed the same day** (`Pass 295.0`, `7160932`). `preview_style_ladder` runs the planner the COMMIT runs, which killed the headline defect: the old hover previewed the R90 gate, which cannot see rung 2 by construction, so on a `Helvetica` title block it promised thickened letters where the press binds `Helvetica-Bold`. `same_family` restored `text_style_used_other_family` hours after it was retired and added `text_style_used_sibling_face`; `None` is never flattened to `Some(false)`. Typed `passed_over` + `Refusal::character` put the passed-over faces on the **hover** — not the status line, where `disclosure_style_ladder` already covers them. The `preview_style_resolution` join, its ordering constraint in `sync` and `StyleOutlook::FaceCannotCover` died together, being one workaround. ⚠ **Owed: a driven check.** |
 | Text on a rotated baseline — a CAD title block's `Tm = [0 1 -1 0 e f]` … | **Consumed — `canvas::textsel` reads `line.direction`.** This is the field the engine's row says *"`pdfcer-gui` filed the request and has not yet consumed"*; it is read in the line model and in the selection geometry, which is what makes a swept selection follow a CAD title block's rotated baseline instead of boxing it page-axis. The row is stale. |

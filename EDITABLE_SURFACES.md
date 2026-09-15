@@ -783,12 +783,52 @@ it was typed.
 
 ★★ One further gap was found while closing the three and is recorded here
 because nothing else in this file is keyed on it: **the Part and Node rungs
-INSIDE a form XObject still cannot delete, and that is an engine gap rather than
-a shell one.** `pdfcer-core`'s six `*_in_form` verbs are five moves and one
-whole-object delete; there is no `delete_subpath_in_form`,
-`delete_node_in_form` or `delete_text_run_in_form`. `canvas::deleting` declines
-those two rungs with `Refusal::InsideForm` and says so on the status row,
-pointing at what does work (Escape out to the whole shape, then Delete).
+INSIDE a form XObject still cannot delete.** `canvas::deleting`'s `part_rung`
+and `node_rung` both test `entry.object.is_leaf()` before anything else and
+return `Refusal::InsideForm`, which the status row states, pointing at what does
+work (Escape out to the whole shape, then Delete).
+
+★★★ **THE SENTENCE THAT USED TO FOLLOW WAS TRUE FOR NINE DAYS AND IS NOW
+FALSE.** Verbatim: *"`pdfcer-core`'s six `*_in_form` verbs are five moves and
+one whole-object delete; there is no `delete_subpath_in_form`,
+`delete_node_in_form` or `delete_text_run_in_form`."* The clause *"and that is
+an engine gap rather than a shell one"*, which the paragraph above used to
+carry, goes with it. `G017`'s second row shipped **all three** on
+2026-09-14, and they are in the revision this build is already linked against:
+`delete_text_run_in_form`, `delete_subpath_in_form` and `delete_node_in_form`,
+at `edit.rs:15000`, `:15030` and `:15062` of the locked engine.
+
+★★ **The engine's reason for building them is worth carrying, because it is
+an argument this shell should be making about its own surfaces.** From
+`delete_text_run_in_form`'s doc comment: *"An asymmetry in one direction is a
+gap; an asymmetry that runs the opposite way inside a different container is a
+trap, because the operator learns a rule on page content and it stops being
+true when the same content is inside a title block"* (`R245`). On a SolidWorks
+set **the title block IS a form**, drawn on every sheet, so the container the
+trap lives in is the one his drawings are full of.
+
+⇒ **The gap therefore did not close — it MOVED, from the engine to this
+shell, and it got easier.** The verbs exist and are called by nothing. What
+stands between them and the operator is not a seam: it is two `is_leaf()`
+guards and three missing `DeleteSubject` arms. The comment above the first
+guard still gives the old justification in as many words — *"a form-interior
+part has no delete verb of any kind"* — which is the same stale-citation
+shape this register was built to catch, now sitting in source rather than in
+prose.
+
+⚠ **And the wiring owes a DISCLOSURE that the page-content twins do not.**
+The in-form family returns `FormSurgeryOutcome`, whose `invocations` count says
+how many pages the shared stream is drawn on; the engine's own doc says *"a
+shell should show it"*. Deleting one line out of a title block deletes it from
+**every sheet**, and that is a sentence the operator is owed BEFORE the press,
+not after — the same shape the whole-object `delete_objects_in_form` already
+puts a count in front of.
+
+| Verb | Engine Pass | Status |
+|---|---|---|
+| `delete_text_run_in_form` | `G017` second row, 2026-09-14 | ★★ **`wanted`, and the one of the three that O198 actually needs.** His request is about text on a SolidWorks sheet, and that text is inside the title-block form on every sheet but the body of the drawing. `MoveTextRun` / `MoveTextRunInForm` shipped in this shell on 2026-09-15 and the delete half did not, so the move/delete asymmetry `R245` names is currently **ours**. Route: a `DeleteSubject::TextRunInForm` arm carrying `leaf` instead of `object`, the `is_leaf()` guard in `part_rung` lifted above the arm rather than deleted, and the R83 pre-check (`text_run_delete_would_move_next`) asked on the leaf's run list rather than the page object's. |
+| `delete_subpath_in_form` | `G017` second row, 2026-09-14 | ★★ **`wanted`, same guard, same two-line fix.** The delete twin of `move_subpath_in_form`, which this shell HAS wired since `Pass 188.0` — so a line inside a drawing view can be dragged but not removed, which is exactly the trap read from the operator's side. |
+| `delete_node_in_form` | `G017` second row, 2026-09-14 | ★★ **`wanted`, same guard.** ★ It is the one that will owe a **second** sentence on top of the `invocations` count: `delete_node`'s page-content twin returns a non-empty `PlannedEdit::disclosures` when the deletion discarded a curve, and the in-form verb plans through the same `plan_delete_node`, so it will produce the same list — which `vector_edit_on_page` already records without anything being written by hand. ★ `ManyNodes` applies unchanged: there is still no plural delete. |
 
 | Verb | Engine Pass | Status |
 |---|---|---|
@@ -824,6 +864,22 @@ pointing at what does work (Escape out to the whole shape, then Delete).
 | `embed_refusal` | 67.0 phase E | ⛔ **Declined as a duplicate guard, argued at `app/actions/fonts.rs:34`:** `embed_fonts` runs it itself *"before any mutation"* and returns the refusal as an `Err`, so a pre-flight here would be a second implementation of a guard the engine already owns. ⚠ **The residual, named:** it is a pure query safe to call every frame, so a *window* gated on it would be R83 work this surface has not done — on an encrypted or certified drawing the Embed-fonts window still opens, the operator chooses donor faces, and the decline arrives from the funnel afterwards. Quality work on an existing surface, not a missing capability. |
 | `unembed_refusal` | 67.0 phase B | ⛔ **The same ruling, the same file (`fonts.rs:72`), the same residual.** ★ And note what the engine deliberately leaves **out** of it: PDF/A. Unembedding genuinely breaks ISO 19005 conformance, *"but it is a consequence the operator may knowingly accept, not a structural impossibility. The core reports it and the shells gate on it."* This shell's gate on that is the sentence in `dialogs::unembed`, read before the press — so even wired, this query would not be where the PDF/A decision lives. |
 | `info_bytes` | — | ⛔ **Session query, superseded by the sibling that carries the disclosure.** `panels::docprops` reads every `/Info` field through `info_text` (`docprops/mod.rs:269`), which returns `InfoText { text, exact }`, and `exact` is the whole reason: when it is `false`, re-encoding the string would **not** reproduce the document's own bytes, so the panel must not write the field back and says so on the row. Raw bytes have no operator meaning and would discard the one flag stopping this shell from replacing a `/Title` with pdfcer's guess at it. ★ The name has been in this crate all along — in that module's header, arguing that an old blocker had cleared — which is precisely the prose the tightened instrument stopped counting as a call. |
+
+---
+
+### ★★★ The two the API-DRIFT gate found, 2026-09-15 — both belong to the move that shipped the same day, and one of them is a refusal the operator can reach
+
+Neither is an `EditSession` verb, so neither could have been found by
+`check-verb-coverage.sh`: they are an **undo-stack kind** and an **error
+variant**, and `tools/gates/check-engine-api-drift.py` is the instrument that
+reads those. They arrived in the same engine window as `G017`'s
+`move_text_run`, which this shell wired on 2026-09-15 — so the drift report
+is not a list of strangers, it is the rest of a capability we took half of.
+
+| Item | Verdict |
+|---|---|
+| `pdfcer_core::edit::CommandKind::MoveTextRun` | ★★ **Consumed opaquely, and the one place where naming it would matter is blocked in a crate this work may not touch.** This shell holds a `CommandKind` as a **value** and never matches a variant of it for an operator-facing purpose: `app::actions::history` asks `undo_kind` to answer *is there anything to undo* and writes the kind to the diagnostic channel (`undo kind=…`), which is where the operation is currently named. ★★★ **The tooltip that WOULD name it is a known, argued gap and it is not one variant wide.** `text::commands::edit_undo`'s header states it: writing *"Undo move one line of text (Ctrl+Z)"* is a `CommandKind → &'static str` catalogue and nothing more, and the blocker is `egui_shell::CommandRegistry` exposing `get`, `iter` and `register` and **no mutable accessor**, with `PdfcerApp::commands` built once. So the answer to this arrival is *nothing, deliberately* — and when the registry gains a `get_mut`, the catalogue lands **45 rows at once**, not one. ★ Recorded rather than exempted because an exemption would say *this shell will never hold it*, and that is the opposite of true. |
+| `pdfcer_core::vector::edit::VectorEditError::DegenerateTextMatrix` | ★★ **`wanted`, reachable in principle on the drag this shell shipped this week, and it currently arrives as a CAUSE-LESS decline.** `plan_move_text_run` raises it when the run's own `Tm` is singular, so a page-space drag has no unambiguous text-space pre-image — the engine's words, worth keeping: *"A `0 0 0 0 0 0 Tm` is a real thing producers emit."* ★★★ **The shell's pre-check does not cover it, by construction.** `text_run_move_refusal` answers the two §9.4.2 cases (`TextRunHasNoPositionOfItsOwn`, `MoveWouldMoveNextRun`) and is asked *before* the press; a singular matrix is discovered *during* planning, so it comes back through `vector_edit_on_page`'s `Err` arm as `text::status::edit_declined_by_engine` — true, not silent, and carrying no remedy. ⇒ **And this one needs no engine ask, which is why it is `wanted` rather than `blocked`:** `TextRun::text_matrix` is public, `Matrix::inverse` is public, and the shell already reads text matrices on the caret path (`canvas::textedit::disposition`). The refusal could be worded ahead of the press, in the shape the other two already have. ⚠ **What is NOT measured is whether the state is REACHABLE**, and R9 forbids shipping a sentence for a condition that cannot occur: a singular `Tm` collapses the run's ink to zero area, so its `bounds` are degenerate and a canvas pick may never land on it. **The measurement that settles it** is a fixture carrying `0 0 0 0 100 700 Tm (X) Tj`, opened, with the Objects panel asked whether the run is listed and the Points tool asked whether it can be entered. Until that is run, building the sentence would be guessing at which side of R9 it falls on. |
 
 ---
 
