@@ -133,6 +133,11 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   lines matching the `*"` quote marker, per file, before and after. There
   are 3,755 of them; if a comment pass lowers that number, it removed
   evidence, whatever else it removed.
+  Those restored paragraphs carry 662 dated lines, 220 star markers and 170
+  history phrasings, every one of them inside a block that holds one of his
+  quotes. The global rule against dates, decoration and history is about
+  narration a reader does not need; it is not a licence to take his sentence
+  back out. Judge a comment by whether it carries the `*"` marker first.
 - **Ten root documents were deleted on 2026-09-15** — `CONTINUE.md`,
   `DOC_DRIFT.md`, `GLYPH_ADOPTION.md`, `HANDOFF.md`, `HOW_IT_SHOULD_WORK.md`,
   `HOW_IT_WORKS_TODAY.md`, `INTERACTION_GAP.md`, `REVIEW_TRIAGE.md`,
