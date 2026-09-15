@@ -53,3 +53,30 @@ so the default would overwrite the last known-good fallback. Then check the
 changelog block and correct its span by hand. Related:
 [[feedback_publish_the_portable_zip_to_github_every_release]],
 [[feedback_gh_release_create_tags_remotely_so_git_describe_goes_stale]].
+
+## ★★★ 2026-09-15 — a function lifted OUT of a runner brings its side effects with it
+
+To falsify a new `tally()` in `sweep-full.sh` I did the right thing — ran it
+against the real log of the sweep it was written to catch, plus a clean control
+and an empty file — by `sed`-ing the function out of the script and calling it
+with `LOG=` pointed at each input. It reported correctly every time.
+
+It also **appended its findings to every log it read.** `tally()` ends each
+line with `| tee -a "$LOG"`, which is exactly right inside the runner and
+destructive inside a harness: six stray lines went into the 2026-09-15 sweep
+log — the evidence behind a defect entry and two `RESUME` claims — and two more
+into a live re-run that was still being written by a background process.
+
+⇒ **A falsification harness must never read the artefact in place.** `cp` to
+scratch and point the harness at the copy, then prove it: measure the input’s
+byte count before and after a run and require them equal. That check takes one
+line and would have caught this on the first of four runs instead of the fourth.
+
+**The general shape, which is not about `tee`:** code extracted from its
+context keeps every side effect the context made safe. A logger, a cache write,
+a lock file, a `tee` — all invisible when you are reading the function for what
+it *computes*. Before lifting anything out to test it, read it once more asking
+only *what does this WRITE?*
+
+Related: [[a-checks-own-gesture-can-satisfy-the-condition-it-was-written-to-catch]],
+[[never-drive-the-published-build]] — the same rule one level up.

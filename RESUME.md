@@ -104,9 +104,24 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
     only a trace the source marks as never displayed, so he signs without seeing
     what the stamp says while the engine records *a rectangle too small for them*
     as a real outcome. Off-canvas, in the signing dialog's result.
-15. **Run a full driven sweep.** Ninety-five minutes taking the real cursor and
-    keyboard, so only while he is away. Diff the SKIP set by NAME against the
-    previous baseline in `target/scratch/`, in both directions.
+15. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
+    last one reported `passed=86 failed=3 skipped=141` and **128 of those skips
+    were one stuck notification toast**, so it measured nothing for more than
+    half its roster while printing a tally that reads like a result. Ninety-five
+    minutes taking the real cursor and keyboard, so only while he is away, and
+    start `target/scratch/toast-watchdog.ps1` alongside it. Diff the SKIP set by
+    NAME against the previous baseline in `target/scratch/`, in both directions.
+16. **The Set-scale window never appears, and the ordering story for it is
+    disproved — D64.** `app::frame`'s `ui` is one function: ribbon at 724, the
+    command drain at 954, `dialogs.show` at 995 — so a dispatch always precedes
+    `dialogs.show` in the same frame, and `export_text` shows a dialog drawing
+    in the frame of its own press. Do not cut a frame boundary at `canvas-pos`;
+    the ribbon's line is the frame's first event, and cutting it wrongly
+    invents a one-frame lag. What is actually measured: `scale-open` and
+    `scale-seeded` fire, then no `viewport-inner` and no `dialog:set-scale`.
+    Settle it by driving the binary with a trace line added immediately before
+    the `scale` call in `dialogs::show`. Do not apply the repaint-at-dispatch
+    fix this row used to prescribe.
 
 ## Traps
 
@@ -114,6 +129,18 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   prior, never a verdict.** Load alone removes coverage with nothing turning
   red, so diff skips by NAME and run one; and a session that reads the first
   harness fault as proof of a harness bug stops where a program defect once sat.
+- **A stuck notification toast voids a whole sweep and reports it as SKIP.**
+  Windows refuses `SetForegroundWindow` to a background process while anything
+  else owns the desktop, so a single `Windows.UI.Core.CoreWindow` belonging to
+  `ShellExperienceHost` that takes the foreground and never yields turns every
+  check that clicks or types into a skip. It cost 128 of 230 checks in one run,
+  from about chunk 121 to the end, and `WM_CLOSE` does not dismiss it. The
+  harness names the holder and its pid in **every** refusal — but a `grep` for
+  that sentence finds a fraction of them, because the log’s own line-wrapper
+  splits the phrase across two lines. Unwrap before counting
+  (`' '.join(text.split())`). `target/scratch/toast-watchdog.ps1` dismisses such a
+  toast during a run, matched on window class plus the host’s full executable
+  path and never on image name.
 - **While a sweep runs, no `.rs` and no `.toml` may change, `Cargo.lock`
   included.** `staleness_complaint` (`tools/ui-verify/src/launch.rs:788`) scans
   those two extensions and aborts every remaining chunk on a binary older than

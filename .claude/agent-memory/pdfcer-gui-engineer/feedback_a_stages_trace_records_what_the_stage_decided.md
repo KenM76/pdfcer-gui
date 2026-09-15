@@ -1,6 +1,6 @@
 ---
 name: a-stages-trace-records-what-the-stage-decided
-description: A start-up trace line reports what that stage adopted, not what the frame settled on — a later stage can overrule it and the trace still reads green
+description: Two ways a trace lies about a frame: a stage line reports what that stage adopted rather than what the frame settled on, and a frame boundary you infer from the log shape rather than the draw order invents lag that is not there
 metadata:
   type: feedback
 ---
@@ -52,3 +52,32 @@ Sibling shape, same session: **an ordering argument written about statements is
 not a claim about frames.** `destination::actions_for` orders zoom before scroll
 for exactly the right reason, and a one-frame lag between deciding a zoom and
 applying it defeats it anyway (`DEFECTS.md` D23).
+
+## ★ SECOND, 2026-09-15 — the trace has no frame boundary, so I invented one and it was wrong
+
+A trace is a flat stream. To count frames I picked a recurring line — the
+canvas's — and treated the line after it as the end of a frame. It is the end of
+the **canvas**, not of the frame, and everything drawn later in the same
+`update` (dialogs, overlays, the status bar) then appears to belong to the next
+frame. That cut put a ribbon command's line at the end of frame N and the dialog
+it opens at the start of frame N+1, in **every** trace, consistently — which is
+exactly what a real one-frame-late defect looks like. I filed it as D64, wrote
+`RESUME` item 16 on it, prescribed a fix, and published a cross-project RAG
+entry. All four were wrong. The ribbon is the *first* surface the update draws,
+so its line OPENS the frame and the dialog draws in the same one.
+
+⇒ **A consistent, clean, repeatable number derived from a log's SHAPE is not a
+measurement of the program — it is a measurement of my cut.** The three greps
+that disproved it (`fn ` boundaries in the file, the ribbon's step number, the
+`dialogs.show` line number) were available before the first sentence was
+written, and reading the draw order first would have made the wrong cut
+impossible.
+
+**How to apply:** before counting anything per-frame in a trace, **read the
+update function's draw order** and use the first surface's first line as the
+boundary — or emit a real marker at the top of `update` and stop inferring. And
+when a derived number comes out suspiciously uniform across every sample,
+suspect the derivation before the program: a constant is what an artefact looks
+like. Related: [[a-value-cannot-identify-which-producer-made-it]],
+[[an-oracle-built-from-the-system-under-test-needs-an-independent-calibration]],
+[[a-count-command-can-be-wrong-not-just-its-quoted-answer]].

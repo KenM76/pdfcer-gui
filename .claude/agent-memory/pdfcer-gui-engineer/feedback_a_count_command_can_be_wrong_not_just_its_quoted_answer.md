@@ -73,3 +73,66 @@ a contradiction. Had the drift gone the other way it would have been quoted.
 * **The fix is not a bigger `-n`**; it is to stop aggregating in the shell.
   A Python loop that opens each path and counts `b'\n'` cannot be batched, and
   it is four lines.
+
+---
+
+**Fourth instance, 2026-09-15, and the mechanism is the FILE, not the command:
+no trailing newline.** A 128-name work list written with
+`open(p,'w').write(NL.join(names))` has 127 newlines, so `wc -l` answers **127**.
+The list then fed a chunked re-run whose `N` came from that count — one check
+would have been dropped, silently, from a run whose entire purpose was to close a
+coverage gap.
+
+* `wc -l` counts newline CHARACTERS, not lines, and every generator that joins
+  rather than terminates produces a file it under-counts by exactly one. So does
+  every text editor that trims the final newline.
+* **The cheap check is `tail -c 1 file | od -c`** — one command, unambiguous — or
+  cross-count with `grep -c ""`, which counts the unterminated last line.
+* ⇒ The family rule now covers four distinct mechanisms: the input's shape (two
+  lines per record), a second section in the same output, the shell batching
+  between pipe stages, and the file's final byte. **An off-by-one in a count is
+  the least alarming-looking wrong answer there is**, which is why it is the one
+  that reaches a runner.
+
+**Fifth, same day, and this one had a CORRECT instrument standing beside it.**
+To check a generated work list for stray CR bytes I ran
+`od -c f | grep -c '\r'` and got **187** — alarming, on a 128-line file. The
+truth was **0**: `tr -cd '' < f | wc -c` said zero, and a `grep -qx`
+round-trip selected from the file correctly. I never did establish what the
+backslash pattern matched after two layers of shell quoting, and that is the
+point — **I did not need to.**
+
+⇒ When a count is surprising, do not debug the count: **reach for a second,
+simpler instrument that cannot have the same failure mode.** `tr -cd` counts
+bytes and has no pattern language to get wrong. Ten seconds, and it settles the
+question the escaping argument never would.
+
+**And the corollary that actually costs time:** I had *already* been bitten by
+this exact thing an hour earlier — a grep over wrapped log text answering 15
+where the truth was 129. A pattern-matching count over text you did not format
+is a claim about the formatter and the quoting, never only about the subject.
+
+## ★ SIXTH, 2026-09-15 — a zero count that MEANT "no defect", from a pattern that matched nothing
+
+Investigating why one dialog never drew, I counted frame boundaries between the
+ribbon press and the dialog's first rect with `/canvas-place frames=/`. It
+returned **0 for every trace**, including the three where the dialog demonstrably
+drew. I read that as *"dialogs draw in the same frame as the press"* and wrote it
+down as a measurement that killed the frame-timing hypothesis.
+
+The real line is `canvas-place src=none want=none frames=34`. The pattern matched
+nothing, anywhere. Matching on the line name alone gave 1, 1, 1 and 1 — the
+latency is a constant one frame, which was the defect.
+
+⇒ **The trap is that the wrong answer was the reassuring one.** A zero here does
+not look like a broken instrument; it looks like *"no frame boundary, therefore
+no timing problem"*. A count that arrives as evidence AGAINST a hypothesis
+deserves the same falsification as one that arrives for it — more, because
+nobody re-checks a number that closed a question.
+
+**The tell, free and immediate:** the same command run with no filter should have
+returned hundreds of per-frame lines. **Run the pattern against a case you know
+the answer for before believing it against one you don't** — here, any trace at
+all would have shown a non-zero total. Related:
+[[a-check-that-cannot-fail-is-not-evidence]],
+[[a-disproof-is-a-measurement-too-and-the-dead-hypothesis-was-the-truth]].

@@ -1289,6 +1289,137 @@ machinery and its doc comments describe a rung that cannot fire.
 
 Related: D55, the same shape one layer up — built, tested, and reaching
 nobody.
+### D63 — OPEN: the zoom anchor is lost on about one wheel notch in a hundred and thirty
+
+`zooming_does_not_throw_away_where_the_operator_panned` fails in roughly half of
+runs against the same binary, the same fixture and the same aim point. Four
+consecutive runs gave FAIL at 2314%, FAIL at 56770%, PASS, PASS. The steady
+per-notch drift is 27-36% of the tolerance across every one of about 130
+notches; the failing notch jumps to about 460% of it — at 2314% zoom that is
+1.8737 pt of drift against a 0.4062 pt tolerance, which is some forty screen
+pixels. It is the gesture the operator uses to find their way around a drawing.
+
+**It is not the check, and two sampling hypotheses were measured dead before
+this row was written.**
+
+- `held()` (`checks/zoom_keeps_place.rs`) assembles one reading from two
+  independently emitted trace events: `zoom` from the last `canvas` line, `at`
+  from the last `canvas-pos` line. They are not 1:1 — `canvas-pos` is emitted
+  about twice as often, with runs of up to seventeen consecutive `canvas-pos`
+  lines between two `canvas` lines — so a reading can pair one frame’s zoom with
+  another frame’s position. But `at` never moves inside such a run (42 runs, zero
+  change), so the stale pairing cannot produce the jump.
+- `settled()` accepts two byte-identical reads three frames apart, which a render
+  stall could fake mid-animation. Each trace holds exactly one
+  plateau-then-resume and it is the idle before the first notch, so no settle was
+  faked.
+
+Both readings are therefore of genuinely settled views and the jump is the
+application’s. The failing notch sits at a different magnification every time, so
+it is not a threshold; the randomness points at state carried between notches
+rather than at arithmetic at one zoom.
+
+Where to look: `canvas-place src=` flips between `zoom-anchor` and `deep`, and one
+of the two failures was the first notch after that handover.
+`geometry::zoom_anchor_offset` and `DeepAnchor::zoomed_about` are the two sites
+the check’s own failure text already names, as O24e and O24f.
+
+**Do not widen the tolerance.** `settled()`’s doc comment argues that at length
+and the argument holds here: widening is the one change that removes the only
+evidence the defect exists.
+
+### D64 — OPEN: the Set-scale window never appears, and the frame-ordering explanation for it is disproved
+
+The command runs and its state is built. The live `measure_calibrate` trace
+carries `ribbon-command-invoked id=measure.set_scale`, then
+`measure-group-fallback reason=no-measure-state`, then
+`scale-open group=GroupId(0) path=cold` and
+`scale-seeded group=GroupId(0) name="Default" ratio_paper=1 ratio_real=100`, so
+`Dialogs::scale` is `Some` with a seeded group. After that the trace carries no
+`viewport-inner` line and no `ui-rect name=dialog:set-scale` — the region name
+`ScaleDialog` emits from inside `Host::show`'s closure (`dialogs/scale.rs:115`,
+recorded at `:519`). The trace then stops, having produced one frame where the
+check's `settle(16)` asked for sixteen.
+
+**Three explanations are ruled out by measurement, and one of them was published
+here and is wrong.**
+
+*Frame ordering is not the cause.* `app::frame`'s `ui` is a single function: the
+ribbon is Step 1b at line 724, the `Action::Command` drain is at 954, and
+`dialogs.show` is Step 2b at 995. A dispatch therefore always precedes
+`dialogs.show` **within the same frame**, and the `export_text` trace shows the
+consequence directly — `ribbon-command-invoked` opens frame 88 and
+`ui-rect name=dialog:export-text` is emitted later in that same frame 88. A
+dialog draws in the frame of the press, not the frame after it. Any reading that
+counts a frame boundary at `canvas-pos` will cut the unit in the wrong place and
+manufacture a one-frame lag that is not there.
+
+*`ScaleDialog::hidden` is not the cause.* It returns true only when the selected
+canvas tool is `Measure(MeasureKind::Scale)`. The trace carries zero
+`measure-tool` lines, and `CanvasTool`'s `#[default]` is `Select`
+(`canvas/tool/mod.rs:176`), which is what `canvas::tool::selected`'s `get_temp`
+falls back to.
+
+*The no-document guard is not the cause.* `dialogs::show` returns early at
+`dialogs/mod.rs:908` when the status is not `Status::Open`, and
+`close_document_scoped` would drop `self.scale` on the way out. But `scale-open`
+read the dimension model through `doc.session` in the same frame, so the status
+was `Open` when the command ran.
+
+**What is left, and it cannot be settled by reading.** Either `dialogs::show`
+does not reach `self.scale.as_mut().map(|d| d.show(...))` at `mod.rs:1026`, or it
+reaches it and `Host::show`'s closure does not run. The trace cannot distinguish
+them: a frame with no dialog open ends at `canvas-pos`, and so does this one, so
+"the frame finished and drew nothing" and "the frame was cut short" leave the
+same evidence.
+
+Next step is R1 — drive the binary with the Set-scale command and a long settle,
+and add a trace line inside `dialogs::show` immediately before the `scale` call
+so the two survivors become distinguishable. Until that runs, nothing here
+prescribes a fix; the repaint-at-dispatch fix this entry previously proposed was
+derived from the disproved ordering and must not be applied on its authority.
+
+For the operator this is a ribbon button that does nothing.
+
+
+### D65 — OPEN: a check occasionally gets no window in 30 s, and both instances followed an abnormally torn-down predecessor
+
+Two of the 100 verdicts in the clean re-run skipped with *"no window appeared for
+pid N within 30s"*. The application is not silently failing to start: the
+`dimension_groups` trace carries nine lines — `start`, `shell commands=162`,
+`layout-load`, `layout-skip`, `mode-restore`, `mode-changed`, `recent-load`,
+`paste-chords`, `pick-filter-load` — and then stops. `pick-filter-load` is
+`PdfcerApp::new`'s last traced field (`app/mod.rs:1094`); the next trace a
+healthy launch emits is `ui-scale-initial`. So `new` completed and the stall is
+in the window and renderer creation that follows it, which traces nothing.
+
+**The ordering is the lead.** `ui-verify` runs one check at a time — it takes the
+real cursor — so nothing is contending in parallel. But in the log each
+no-window skip sits immediately after a check whose application was killed while
+it held more than a plain window:
+
+| killed predecessor | state when killed | next check |
+|---|---|---|
+| `measure_calibrates_by_picking_two_points` (FAIL) | `Dialogs::scale` is `Some`; a child viewport was being created — see D64 | `set_scale_reads_the_group_it_is_about_to_overwrite` — no window |
+| `measure_hover_shows_what_it_will_take` (SKIP) | `Measure(Linear)` armed, mid-render | `dimension_groups_panel_makes_a_group` — no window |
+
+`Session`'s `Drop` (`tools/ui-verify/src/launch.rs:737`) does `kill()` then
+`wait()`, so the predecessor's *process* is reaped before the next launch. What a
+`TerminateProcess` does not reap synchronously is the graphics device, and a
+dialog opened through `show_viewport_immediate` is a second surface on it.
+
+**Not yet established, and it must not be written down as though it were.** The
+same two checks also skipped in the previous sweep, for a different reason
+(foreground-void), so "these two are simply fragile" is not excluded, and neither
+is an ordering coincidence in a sample of two.
+
+The experiment, which needs the machine: run the two no-window checks on their
+own, in isolation, with no predecessor — and then run each immediately after its
+observed predecessor. If isolation passes and the pair reproduces, the cause is
+the teardown and the fix is in the harness, not the application. A control
+binary that does nothing but open a window belongs in the same run, so "the
+machine could not make a window at all" is separable from "this application could
+not".
 
 ---
 

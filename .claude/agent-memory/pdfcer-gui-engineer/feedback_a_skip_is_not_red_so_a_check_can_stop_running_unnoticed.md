@@ -74,3 +74,35 @@ enumeration has never once succeeded in this run.
 boundary without removing it and costs every genuinely dead launch the extra
 wait. The defect is not the duration; it is that the duration's expiry is
 reported as a property of the platform instead of a property of the moment.
+
+## ★★★ 2026-09-15 — the cause was outside the software entirely: one desktop toast
+
+Full sweep, 230 checks: `passed=86 failed=3 skipped=141`. **128 of those 141
+skips were a single stuck Windows notification** — a `Windows.UI.Core.CoreWindow`
+owned by `ShellExperienceHost` that took the foreground around chunk 121 and
+never yielded. Windows refuses `SetForegroundWindow` to a background process
+while anything else owns the desktop, so every check that clicks or types
+skipped. Per chunk the refusals ran 0, 11, 14, 2, 0, 1, then **20, 18, 18, 19,
+18 of 20** — from chunk 121 on the sweep measured essentially nothing, for ninety
+minutes, and still printed a tally.
+
+⇒ **The previous two entries here blamed the check, the build, or machine load.
+This one was the operating system’s own UI, and nothing in the repository could
+have prevented it.** A harness that drives the real cursor shares the desktop
+with every notification, updater and modal on the machine; that is a standing
+hazard of R1, not an accident.
+
+**The shape of the tell:** a skip count that RISES MONOTONICALLY through a run
+is a shared-resource story, never a per-check one. Check-specific causes are
+scattered; an environmental cause has a start time. Plot skips per chunk before
+reading any individual skip reason — it separates the two classes in one look,
+and it is what should have been done in the first ten minutes instead of the
+first ninety.
+
+**How to apply:** `WM_CLOSE` does not dismiss a UWP toast; restarting
+`ShellExperienceHost` does, and Windows respawns it. Run
+`target/scratch/toast-watchdog.ps1` alongside any sweep — it matches on window
+class plus the host’s full executable path, never on image name, per
+[[never-kill-pdfcer-gui-by-name-he-uses-it-all-day]]. And a sweep runner should
+refuse to print a bare tally when one skip reason dominates: see
+[[a-runners-sentinel-is-a-claim-about-the-runner]].

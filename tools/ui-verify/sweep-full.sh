@@ -71,6 +71,9 @@
 #   target/scratch/sweep-full.log    the whole transcript, chunk-delimited
 #   target/scratch/uv-full/          per-check captures and traces
 #   target/scratch/uv-full-<name>/   captures for each ALONE check
+#   target/scratch/sweep-skips-foreground-voided.txt
+#                                    the checks whose verdict the DESKTOP took,
+#                                    one name per line, ready to re-run
 #
 # The log ends with `=== SWEEP-DONE`. Its absence means the sweep was killed,
 # which is a different fact from "every check passed" and must not be read as
@@ -107,6 +110,26 @@
 #    set of chunk return codes. A sweep that ran nothing now says `passed=0`
 #    beside `SWEEP-DONE`, and a zero is something a reader can disbelieve.
 #
+# ## ★★★ And a TALLY that adds up still is not coverage — measured 2026-09-15
+#
+# `passed=86 failed=3 skipped=141`, over a roster of 230. Every number true,
+# every `rc=` printed, the sentinel present. **128 of those 141 skips were one
+# stuck Windows notification toast** holding the foreground from about chunk 121
+# to the end, so from there on nothing was clicked and nothing was measured. Per
+# chunk the refusals ran 0, 11, 14, 2, 0, 1, then 20, 18, 18, 19, 18 out of 20.
+#
+# The `NOTHING RAN` guard below could not catch it: it required `passed` **and**
+# `failed` to be zero, and the expensive case is the partial one. So the tally is
+# now followed by a `=== SKIPS` line splitting the skips into the ones that are
+# results about the application and the ones that are results about the desktop,
+# and the second set is written out by name so re-running it is a file rather
+# than an afternoon.
+#
+# ★ A skip count that CLIMBS through a run is a shared-resource story and never
+#   a per-check one. That shape is the thing to look for, in this runner or any
+#   other: check-specific causes scatter, an environmental cause has a start
+#   time. Plot skips per chunk before reading a single skip reason.
+#
 # ⇒ Exit status: **0** only when every chunk returned 0; **1** a check failed,
 # **2** a command line was wrong, **3** something did not run.
 set -u
@@ -115,6 +138,8 @@ cd "$(dirname "$0")/../.." || exit 1
 
 OUT=target/scratch
 LOG=$OUT/sweep-full.log
+VOIDED=$OUT/sweep-skips-foreground-voided.txt
+CLASSIFY=tools/ui-verify/skips-by-cause.sh
 LIST=$OUT/checks.txt
 DRIVE=$OUT/drive
 
@@ -124,16 +149,82 @@ mkdir -p "$OUT" "$DRIVE" || exit 1
 # **The sweep's own verdict line.** Counts what is in the log rather than what
 # the script believes it did — the two came apart on 2026-09-11 and the header
 # says how. Printed on every exit path, including the aborts.
+# ── Splitting the SKIPs by cause ──────────────────────────────────────────
+#
+# A skip reason is several wrapped lines under its `[SKIP] name` heading, and
+# the wrap point moves with whatever coordinates the sentence printed earlier.
+# So a phrase is found by gathering the whole block and squashing its
+# whitespace, never by grepping for it. Measured 2026-09-15: `grep -c` on the
+# refusal sentence answered 15 where the truth was 129, because the phrase fell
+# across two lines in 114 of them — and that wrong answer was taken as evidence
+# that the harness only sometimes names the culprit. It names it every time.
+#
+# Emits one `V <name>` line per desktop-voided skip and a final `C <fg> <other>`
+# count line. The `tr -d` is load-bearing: awk's file redirection writes CRLF on
+# this platform, and a work list with CR on every line matches nothing under the
+# `grep -qx` that a re-run uses to select checks — a coverage loss with no
+# symptom.
+skips_by_cause() {
+    # Delegates, so the runner and a re-run cannot drift apart in how they
+    # classify a skip. The tool prints the desktop-voided names, then one
+    # summary line; it exits 2 when the log holds no verdict at all, which is
+    # the case this whole guard exists for and is handled by the caller.
+    bash "$CLASSIFY" "$LOG" --names
+}
+
 tally() {
-    passed=$(grep -c "^\[PASS\]" "$LOG" 2>/dev/null || echo 0)
-    failed=$(grep -c "^\[FAIL\]" "$LOG" 2>/dev/null || echo 0)
-    skipped=$(grep -c "^\[SKIP" "$LOG" 2>/dev/null || echo 0)
+    passed=$(grep -c "^\[PASS\]" "$LOG" 2>/dev/null || true)
+    failed=$(grep -c "^\[FAIL\]" "$LOG" 2>/dev/null || true)
+    skipped=$(grep -c "^\[SKIP" "$LOG" 2>/dev/null || true)
     codes=$(grep -o "rc=[0-9]*" "$LOG" 2>/dev/null | sort -u | tr "
 " " ")
+
+    cause=$OUT/.skip-cause
+    skips_by_cause > "$cause"
+    classified=$?
+    # Last line is the summary; everything above it is the voided name list.
+    sed "$ d" "$cause" > "$VOIDED"
+    summary=$(tail -1 "$cause")
+    fg_skips=$(printf "%s" "$summary" | sed -n "s/.*desktop-voided=\([0-9]*\).*/\1/p")
+    real_skips=$(printf "%s" "$summary" | sed -n "s/.*genuine=\([0-9]*\).*/\1/p")
+    fg_skips=${fg_skips:-0}
+    real_skips=${real_skips:-0}
+    if [ "$classified" -ne 0 ]; then
+        echo "sweep-full: the log holds no verdict line. Nothing was classified." >&2
+        : > "$VOIDED"
+    fi
+
     echo "=== TALLY passed=$passed failed=$failed skipped=$skipped codes: $codes" | tee -a "$LOG"
+    echo "=== SKIPS  desktop-voided=$fg_skips genuine=$real_skips" | tee -a "$LOG"
+
     if [ "$passed" -eq 0 ] && [ "$failed" -eq 0 ]; then
         echo "sweep-full: NOTHING RAN. Not one check reached the application." >&2
         echo "            A sweep with no results is not a clean sweep." >&2
+    fi
+
+    # ★ The guard above only ever fired on a TOTAL void, and the expensive case
+    #   is the partial one. On 2026-09-15 a sweep printed
+    #   `passed=86 failed=3 skipped=141` — a tally that reads like a result —
+    #   while 128 of those 141 skips were ONE stuck Windows notification toast
+    #   holding the foreground from about chunk 121 to the end. More than half
+    #   the roster measured nothing, for ninety minutes, and the only sentence
+    #   saying so was buried once per skipped check, where nobody reads it
+    #   because a SKIP is not red.
+    #
+    #   A skip count that climbs through a run is a shared-resource story and
+    #   never a per-check one, so the cause is named here rather than left to be
+    #   reconstructed from two hundred individual reasons.
+    if [ "$fg_skips" -gt 0 ]; then
+        holder=$(tr -s "[:space:]" " " < "$LOG" \
+            | grep -o "THE FOREGROUND IS HELD BY: [^)]*)" | sort | uniq -c \
+            | sort -rn | head -1 | sed "s/^ *[0-9]* THE FOREGROUND IS HELD BY: //")
+        echo "sweep-full: $fg_skips of $skipped skips are NOT results about the" >&2
+        echo "            application. Windows refused to bring the window to" >&2
+        echo "            the front, so those checks never clicked anything." >&2
+        echo "            Most often: $holder" >&2
+        echo "            Those names are in $VOIDED. Re-run them; do not read" >&2
+        echo "            the tally above as coverage. Start" >&2
+        echo "            target/scratch/toast-watchdog.ps1 alongside the re-run." >&2
     fi
 }
 

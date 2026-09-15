@@ -60,3 +60,33 @@ DISCARDS everything past boundary 3.”*
   cell containing `|`, a newline, or a leading `-` is a hazard, and the cells
   most likely to contain one are exactly the cells that quote how the number
   beside them was measured.
+
+---
+
+## ★★★ Third instance, 2026-09-15 — the same hazard while READING, and it
+produced a false finding about someone else’s code
+
+The first two were about a delimiter written INTO a document. This one is a
+formatter’s newline inserted into output I was grepping.
+
+`ui-verify` names the window holding the foreground in every refusal:
+*"THE FOREGROUND IS HELD BY: ..."*. `grep -c` over the sweep log found **15**
+occurrences against 128 refusals, so I concluded the harness only sometimes
+identifies the culprit, went looking for the missing code path, and spent the
+time instead re-deriving the culprit by hand with a `GetForegroundWindow`
+P/Invoke. The harness had named it, with its pid, **129 times out of 129**. The
+log wraps its reason text at a fixed column, and the wrap point depends on the
+coordinates printed earlier in the sentence — so the phrase fell across two
+lines in 114 of them, in a different place each time.
+
+⇒ **`grep` is line-oriented and a wrapped log has no stable lines.** Any count
+of a multi-word phrase in human-formatted output is a claim about the
+formatter's column width. Unwrap first — `' '.join(text.split())` — then count.
+
+**The tell I walked past:** 15 is not a plausible fraction of 128 for a code
+path that either exists or does not. A partial count of something that should be
+all-or-nothing is a measurement defect before it is a finding — the same shape
+as [[a-count-command-can-be-wrong-not-just-its-quoted-answer]]. And the wrong
+conclusion was specifically an accusation about code I had not read, which is
+[[a-driven-failure-is-a-claim-about-the-check-too]] pointed at a harness instead
+of a check.

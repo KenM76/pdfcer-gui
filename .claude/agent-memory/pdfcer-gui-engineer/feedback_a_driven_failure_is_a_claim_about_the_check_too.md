@@ -103,3 +103,49 @@ is the shape of a conclusion arrived at first.
   claims — a panic followed by the refusal's own trace line — or you have an
   assertion both outcomes satisfy. See
   [[an-assertion-both-outcomes-satisfy-is-not-a-measurement-of-which-one-shipped]].
+
+## ★★★ AND THE SECTION ABOVE WAS WRITTEN INSTEAD OF THE FIX — 2026-09-15
+
+Read the 2026-09-13 section again. It names *these two checks*, says they climb
+into the wall and do not declare it, and explains why that is wrong. Then the
+next full sweep, two days later, produced the identical two red lines, and I
+spent an hour re-deriving the same conclusion from the same two traces.
+
+⇒ **A lesson filed in memory in place of a fix is a defect with a subscription.**
+Memory is for the generalisation. The instance goes in the code, in the same
+session, or it comes back at full price. The tell that this has happened: you
+are reading a memory entry that describes the failure in front of you in the
+present tense.
+
+**And the fix the old entry prescribed was not the one I first drafted.** Its
+last bullet says `expect_thread_panic()` must never stand alone — declare the
+panic and you have silenced the detector for the whole session, so a worker
+that *genuinely died* now passes too. The repair therefore has two halves: the
+declaration, plus `panic_was_converted`, which requires one `raster-limit`
+line carrying a `panic=` field per panic in the capture. Measured 1:1 across
+three traces before the rule was written.
+
+## ★★ A check's failure paragraph is authored BEFORE the run — 2026-09-15
+
+`the_wheel_turns_pages_when_the_operator_asks_it_to` failed with three
+confident paragraphs naming `OpenDoc::prefs` as a snapshot that ignores the
+preference. **Its own trace disproves that on the same page**: `status page=0
+pages=1 ... wheel=flip`. The preference arrived. The document had **one page**.
+There was nowhere to go.
+
+⇒ A `defect()` string and a failure paragraph are written when the check is
+written. They are the author's *prior*, and they cannot have been informed by
+what the run measured. Read the artifact before the accusation — and the first
+thing to read is whether the fixture could contain the subject at all.
+
+The repair is the pair, not either half: **pin** the document
+(`fixtures/four-pages.pdf`, following `page_display_recentres.rs`) **and
+assert** the page count from the status line. Pinning alone is a claim about
+what is on disk; asserting alone leaves the sweep with no coverage.
+
+★ The audit this opened is in `target/scratch/sweep-triage-20260915.md`: twenty
+checks take `--pdf`, pin nothing, and reason about a page index. The grep
+over-reports, because `sweep-full.sh`'s `ALONE` table is a second way to get a
+different document and is invisible to a file-level search — `page_cache.rs`
+is fed an 8-page scan that way. Two mechanisms, one of them unfindable from the
+check's own source: worth knowing before trusting any audit of fixtures.
