@@ -1,21 +1,10 @@
-//! # `app::state::ink` — **what the render tier needs to know about a page's
-//! # colour**
+//! # `app::state::ink` — what the render tier needs to know about a page's colour
 //!
-//! One method, split out of [`super`] on 2026-09-01 under R2 when the
-//! form-edit counter (`OPERATOR_REQUESTS.md` O70 / the decomposition cache key)
-//! took that file to 1,524 lines.
-//!
-//! ## ★ Why this is the seam
-//!
-//! Everything else on `OpenDoc` is about the **document**: its session, its
-//! pages, its selection, its caches, the epoch that invalidates them. This is
-//! about the **renderer** — it answers a question `crate::render::strategy`
-//! asks, in that module's own vocabulary, and it is the only method on the type
-//! whose caller is the raster tier rather than a surface.
-//!
-//! ⇒ Two subjects with two rates of change, which is this project's test for a
-//! seam. `state.rs` changes when the document model does; this changes when the
-//! ink strategy does, and it has not changed since it was written.
+//! The seam: everything else on `OpenDoc` is about the **document** — its
+//! session, pages, selection, caches, and the epoch that invalidates them.
+//! These methods are about the **renderer**, answering a question
+//! `crate::render::strategy` asks in that module's own vocabulary. Two subjects
+//! with two rates of change, which is this project's test for a seam.
 
 use super::OpenDoc;
 
@@ -45,43 +34,27 @@ impl OpenDoc {
         }
     }
 
-    /// ★★★ **Ask the engine whether `page` composites in ink, once per
-    /// page per open document**, so [`Self::ink_at`] has an answer before the
-    /// first raster rather than one raster later.
+    /// **Ask the engine whether `page` composites in ink, once per page per
+    /// open document**, so [`Self::ink_at`] has an answer before the first
+    /// raster rather than one raster later.
     ///
-    /// # What changed, and why the old arrangement was not wrong
+    /// `pdfcer_render::page_composites_in_ink` is the **same computation** the
+    /// renderer performs, not a second one — the engine's own test asks each
+    /// fixture and then renders it and requires the two to agree. A pre-flight
+    /// that can disagree with the render is worse than no pre-flight, because a
+    /// caller acts on it.
     ///
-    /// This shell used to learn a page's blending space by **rendering it and
-    /// reading the counters afterwards** — `cmyk_buffer_engaged ||
-    /// cmyk_buffer_refused`, written in `crate::render::settle`. The engine has
-    /// since confirmed that inference is exactly the union it computes
-    /// internally, so it was correct; it simply cost a full page raster to
-    /// answer a question the page's own `/Group` dictionary answers.
+    /// # ★★ Why this takes the render options when [`Self::ink_at`] does not
     ///
-    /// `Pass 296.4` (`8d2f6bb`, consumed 2026-09-11) made
-    /// `page_composites_in_ink` public. It is **the same computation**, not a
-    /// second one: it calls the renderer's own `page_blend_space` with the
-    /// policy taken out of the `RenderOptions` passed in, and the engine's test
-    /// asserts the **agreement** — each fixture is asked and then rendered and
-    /// the two are required to match. A pre-flight that can disagree with the
-    /// render is worse than no pre-flight, because a caller acts on it.
-    ///
-    /// # ★★ Why it takes the render options, when [`Self::ink_at`]'s ceiling
-    /// # deliberately does not
-    ///
-    /// These are two different values and the distinction is easy to lose.
-    ///
-    /// `ink_at` reads `Settings::max_cmyk_buffer_bytes` **directly** rather
-    /// than through `SettingsExt::render_options`, because that is a budget and
-    /// the question it serves is asked before there is a render to run.
-    ///
+    /// `ink_at` reads `Settings::max_cmyk_buffer_bytes` directly: that is a
+    /// **budget**, and its question is asked before there is a render to run.
     /// This function needs the options themselves, because
-    /// `page_blend_space_source` is the setting that **changes the answer**:
+    /// `page_blend_space_source` is the setting that **changes the answer** —
     /// the same page can composite in ink under one policy and not under
     /// another, and the annotation scope can remove page content from the
     /// question entirely. Passing anything but the options a render would
-    /// actually use would reintroduce exactly the disagreement the engine's
-    /// agreement test exists to forbid.
+    /// actually use reintroduces exactly the disagreement the engine's
+    /// agreement test forbids.
     ///
     /// # It is the SPACE question, not the BUDGET question
     ///
@@ -126,12 +99,10 @@ impl OpenDoc {
         //
         // The `..` is REQUIRED: `PageInk` is `#[non_exhaustive]`, so this
         // pattern is NOT a tripwire on the engine growing a third field - it
-        // cannot be, by construction. The instrument that catches that is
-        // `tools/gates/check-engine-api-drift.sh`, which enumerates every
-        // public item at the pinned revision and fails on one this repository
-        // names nowhere. Stating which mechanism actually holds the line is the
-        // point of this paragraph; a comment claiming the compiler does would
-        // be a contract nothing enforces.
+        // cannot be, by construction. `tools/gates/check-engine-api-drift.sh`
+        // is the instrument that catches that, by enumerating every public item
+        // at the pinned revision and failing on one this repository names
+        // nowhere.
         let pdfcer_render::PageInk {
             composites_in_ink,
             source,
@@ -140,22 +111,13 @@ impl OpenDoc {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             //
-            // `source.token()`, NOT the `Debug` derive, and the difference is
-            // the whole reason this call exists. The derive spells
-            // `PageGroup`; pdfcer's own metrics line spells `page_group`. Two
-            // stable spellings of one fact across a boundary whose entire
-            // purpose is that both sides agree, which means a log from the CLI
-            // and a log from this shell would not compare.
-            //
-            // This trace DID take the derive, for about an hour on
-            // 2026-09-11, because `token()` was `pub(crate)`. The alternative
-            // was a `PageGroup => "page_group"` table written here - the exact
-            // drift `token()` exists to prevent, and one that goes stale in
-            // silence the day a fourth variant arrives (R74). So it was
-            // reported under decision 058 instead, and `Pass 296.8`
-            // (`f392b19`, consumed 2026-09-11) published the function. The
-            // three tokens are a contract now: a variant may be added, an
-            // existing spelling may not change without that being breaking.
+            // ★ `source.token()`, NEVER the `Debug` derive. The derive spells
+            // `PageGroup`; pdfcer's own metrics line spells `page_group`, and
+            // two spellings of one fact across a boundary whose whole purpose
+            // is that both sides agree means a CLI log and a shell log do not
+            // compare. Do not write a local `PageGroup => "page_group"` table
+            // either - that is the drift `token()` exists to prevent, and it
+            // goes stale in silence the day a further variant arrives.
             //
             // The tokens are IDENTIFIERS, not sentences. Nothing here is shown
             // to an operator - the sentences he reads are this shell's, in

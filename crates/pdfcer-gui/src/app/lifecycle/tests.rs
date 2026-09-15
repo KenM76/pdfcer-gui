@@ -1,32 +1,23 @@
 //! # `app::lifecycle::tests` — what is guaranteed about a document arriving
 //! and leaving
 //!
-//! Split out of [`super`] on 2026-09-10 under rule **R2**, when the
-//! re-read-under-a-different-reading route (`ENGINE_BACKLOG.md`'s
-//! *"Re-open a self-contradicting file under a chosen load policy"*) needed
-//! lines in a file that stood at **exactly 1,500** — the ceiling
-//! `tools/gates/check-file-size.sh` enforces. **Nothing moved but its
-//! address.**
+//! The seam [`super`]'s own header draws: `lifecycle.rs` answers *"what happens
+//! when a document arrives, and what has to be forgotten when it leaves?"* and
+//! grows when a loading verb or a forgetting step is added. This file answers
+//! *"what must never be true after one of those transitions?"* and grows when a
+//! way of getting that wrong is found. Different rate, different reader: the
+//! second is what somebody opens after a panel described the previous document.
 //!
-//! ★ The seam is the one [`super`]'s own header already draws twice.
-//! `lifecycle.rs` answers *"what happens when a document arrives, and what has
-//! to be forgotten when it leaves?"* and grows when a loading verb or a
-//! forgetting step is added. This file answers *"what must never be true after
-//! one of those transitions?"* and grows when a way of getting that wrong is
-//! found. Different rate, different reader: the second is what somebody opens
-//! after a panel described the previous document.
-//!
-//! ★★ The suite's centre of gravity is the **forgetting**. Three of its
-//! assertions exist because state that outlives a document — panel expansion
-//! sets, the Properties focus, the mid-navigation flag — is invisible when it
-//! is wrong: the new document simply shows somebody else's rows, and nothing
-//! anywhere says so.
+//! The suite's centre of gravity is the **forgetting**. State that outlives a
+//! document — panel expansion sets, the Properties focus, the mid-navigation
+//! flag — is invisible when it is wrong: the new document simply shows somebody
+//! else's rows, and nothing anywhere says so.
 
-// ★ The INNER `#![cfg(test)]` is redundant — the module is declared
-// `#[cfg(test)] mod tests;` — and it is here anyway, because
-// `tools/gates/check-ui-strings.sh` exclusion 2 recognises a test-only FILE by
-// exactly this attribute. Without it every assertion message below is read as
-// operator copy outside the catalog.
+// The inner `#![cfg(test)]` is redundant to the compiler — the module is
+// declared `#[cfg(test)] mod tests;` — and is here anyway because
+// `tools/gates/check-ui-strings.sh` exclusion 2b recognises a test-only *file*
+// by exactly this attribute. Without it every assertion message below is read
+// as operator copy outside the catalog.
 #![cfg(test)]
 
 use super::*;
@@ -36,20 +27,16 @@ use crate::panels::objects::test_support::engine_fixture;
 // =======================================================================
 // Opening a document is what forgets the panels' state
 //
-// Moved here with `open_path` when `state.rs` was split under R2. They are
-// the test for whether that split was along a seam: every one of them is
-// about the **transition**, and none reads a field of `OpenDoc` except to
-// check it was reset.
+// Every assertion below is about the **transition**; none reads a field of
+// `OpenDoc` except to check it was reset.
 // =======================================================================
 
-/// **★ Opening a document forgets the panels' view state.**
+/// **Opening a document forgets the panels' view state.**
 ///
-/// The second half of the `DocKey` deletion. Expansion sets and the
-/// Properties focus are paint-order indices that live on `PdfcerApp`, so
-/// they genuinely do outlive a document. The old answer was to compare a
-/// document identity every frame; the answer here is that documents are
+/// Expansion sets and the Properties focus are paint-order indices that live
+/// on `PdfcerApp`, so they genuinely do outlive a document. Documents are
 /// opened in exactly one place, so forgetting is one statement at the one
-/// moment it is true.
+/// moment it is true — rather than a document identity compared every frame.
 ///
 /// Without it, opening a second document leaves the Objects panel with
 /// rows expanded for a page that no longer exists and the Properties
@@ -73,14 +60,14 @@ fn opening_a_document_forgets_the_panels_focus_and_expansion() {
 }
 
 // =======================================================================
-// Phase 4 — which arrangement a document opens in
+// Which arrangement a document opens in
 // =======================================================================
 
-/// ★ **Read mode opens a document continuous; every other mode opens it
+/// **Read mode opens a document continuous; every other mode opens it
 /// single page.**
 ///
-/// `MODES_AND_PANELS.md`'s table and the operator decision of 2026-08-13,
-/// asserted through the **open path** rather than through
+/// `MODES_AND_PANELS.md`'s table and the operator's decision, asserted through
+/// the **open path** rather than through
 /// `PageDisplay::default_for_mode` — which is already tested in its own
 /// module. What this adds is that `open_path` actually consults it: the
 /// rule existing and the rule being applied are two different facts, and
@@ -138,14 +125,14 @@ fn token_for(app: &PdfcerApp, id: &str) -> egui_shell::commands::HandlerToken {
         .handler
 }
 
-/// ★ **`file.new` raises `Action::New`, and applying it makes a document.**
+/// **`file.new` raises `Action::New`, and applying it makes a document.**
 ///
 /// Driven through the real token lookup rather than by calling the arm,
 /// exactly as `the_close_command_empties_the_shell` is, so a command that
 /// stopped being registered fails here instead of silently taking the
-/// `command-unimplemented` path — which is the failure `file.open` and
-/// `file.close` both shipped with, and which no test that called the
-/// function directly could ever have caught.
+/// `command-unimplemented` path. A test that calls the arm directly cannot
+/// see that failure at all: the verb works and the control that raises it
+/// does nothing.
 ///
 /// The starting state is `Empty`, which is the state New exists for: an
 /// operator who has just launched pdfcer with no argument.
@@ -172,9 +159,10 @@ fn the_new_command_makes_a_blank_document_from_nothing() {
     );
 }
 
-/// ★ **New replaces what is open, and forgets what belonged to it.**
+/// **New replaces what is open, and forgets what belonged to it.**
 ///
-/// The reason [`PdfcerApp::adopt`] was extracted rather than copied. A New
+/// Why New and open share [`PdfcerApp::adopt`] rather than each doing the
+/// forgetting themselves. A New
 /// that left the panels' paint-order indices behind would show the Objects
 /// panel expanded over rows of a four-page drawing that is no longer open,
 /// on a document that has one blank page — and every test of `open_path`
@@ -207,7 +195,7 @@ fn new_replaces_the_open_document_and_forgets_its_panel_state() {
     assert!(app.panels.tree_mut().objects_expanded.is_empty());
 }
 
-/// ★ **Successive new documents are numbered, and the number is visible.**
+/// **Successive new documents are numbered, and the number is visible.**
 ///
 /// `crate::text::files::untitled`'s own test pins that the *function*
 /// numbers; this pins that the **application** advances the ordinal, which
@@ -233,7 +221,7 @@ fn each_new_document_is_numbered_from_one() {
     assert_eq!(second.path, PathBuf::from("Untitled 2.pdf"));
 }
 
-/// ★ **A document with no file gets no Recent row — and one with a file
+/// **A document with no file gets no Recent row — and one with a file
 /// still does.**
 ///
 /// Both halves, because the interesting failure is not "New was skipped"
@@ -269,9 +257,10 @@ fn a_created_document_is_not_remembered_but_an_opened_one_is() {
     assert_eq!(app.recent.entries().len(), 1);
 }
 
-/// ★ **`stored_under` is the whole of the difference, in both directions.**
+/// **`stored_under` is the whole of the difference, in both directions.**
 ///
-/// The predicate three call sites consult. Asserted as a pair rather than
+/// The predicate that decides whether a document has anywhere to keep its
+/// per-file preferences. Asserted as a pair rather than
 /// one at a time, because a version that answered `None` for everything
 /// would satisfy every assertion about created documents in this file and
 /// would silently stop persisting page-display and guide choices for real
@@ -294,7 +283,7 @@ fn only_a_document_with_a_file_has_somewhere_to_store_its_preferences() {
     assert_eq!(opened.stored_under(), Some(fixture.as_path()));
 }
 
-/// ★ **A new document lands in the mode's default arrangement, not in a
+/// **A new document lands in the mode's default arrangement, not in a
 /// remembered one.**
 ///
 /// The sibling of `read_mode_opens_a_document_continuous_and_the_others_paged`,
@@ -329,7 +318,7 @@ fn a_new_document_takes_the_modes_default_arrangement() {
     }
 }
 
-/// …and a FAILED open forgets it too.
+/// …and a *failed* open forgets it too.
 ///
 /// Whatever was showing is gone either way, and stale expansion state
 /// over a document that could not be read is the worse of the two states

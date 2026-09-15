@@ -2,38 +2,32 @@
 //!
 //! ## Why this is its own file
 //!
-//! R2, on 2026-08-19, when the Node tool and the Bézier-handle hit test pushed
-//! `canvas::interact` past 1,500 lines. It is a real seam rather than a
-//! convenient cut: everything here answers one question — *if the primary
-//! button went down at this point, right now, what would happen?* — and nothing
-//! here changes anything. `interact`'s remaining sections advance a gesture,
-//! route a click and paint; this one only looks.
+//! Everything here answers one question — *if the primary button went down at
+//! this point, right now, what would happen?* — and nothing here changes
+//! anything. `canvas::interact`'s remaining sections advance a gesture, route a
+//! click and paint; this one only looks.
 //!
-//! ## ★★ The precedence, in one place, because it was learned three times
+//! ## ★★ The precedence, in one place
 //!
 //! Four different things can be under the pointer at once, and the order they
-//! are asked in is the whole behaviour:
+//! are asked in is the whole behaviour. **The most specific thing under the
+//! pointer wins, and specificity is depth down the selection ladder:**
 //!
-//! | # | claimant | why it outranks the next |
-//! |---|---|---|
-//! | 1 | a **Bézier handle** of a selected anchor | it sits *inside* the selection box, so anything asked before it would swallow every press on one |
-//! | 2 | an **anchor**, reached through the inflated move box | an anchor sitting on the bounding box's edge is half outside it |
-//! | 3 | a **resize grip** — Object rung only | it scales the whole object, which is the wrong subject at an inner rung |
-//! | 4 | the **selection body** → move | the least specific claim, so it answers last |
+//! 1. a **Bézier handle** of a selected anchor — it sits *inside* the
+//!    selection box, so anything asked before it swallows every press on one;
+//! 2. an **anchor**, reached through the inflated move box — an anchor sitting
+//!    on the bounding box's edge is half outside it, so the box is inflated
+//!    rather than the grips suppressed a second time;
+//! 3. a **resize grip**, Object rung only — it scales the whole object, which
+//!    is the wrong subject at an inner rung, and left unconfined it covers the
+//!    corner **anchors**, making the end point of every path undraggable while
+//!    the middle ones work;
+//! 4. the **selection body** → move — the least specific claim, so it answers
+//!    last.
 //!
-//! **The most specific thing under the pointer wins, and specificity is depth
-//! down the selection ladder.** That sentence is the rule, and each clause of
-//! it was paid for separately on 2026-08-19:
-//!
-//! 1. the corner resize grips covered the corner **anchors**, so the end points
-//!    of every path were undraggable while the middle ones worked — fixed by
-//!    confining the eight grips to the Object rung;
-//! 2. the move box still did not *reach* an anchor sitting on its own edge,
-//!    which is the same defect from the other side and needed an **inflation**
-//!    rather than another suppression;
-//! 3. `grip_at` answered `Move` for every press on a **handle**, so every
-//!    attempt to shape a curve moved the whole object — and that one is entirely
-//!    plausible from a chair, because the object *did* move.
+//! ⚠ Every one of those failures is silent. `grip_at` answering `Move` for a
+//! press on a **handle** moves the whole object instead of shaping the curve,
+//! and that is entirely plausible from a chair, because the object *did* move.
 //!
 //! ## ★ Everything here reads `press_origin`, not the current pointer
 //!
@@ -63,19 +57,19 @@ use crate::canvas::{
 /// ★★★ ONE value, read by the hit test, the painter and the drag — which is
 /// rule **H7**, and the reason this is a struct rather than two functions.
 ///
-/// That row exists because it failed on 2026-08-20: a dimension's vertex
-/// handles were painted from the selection and hit-tested behind a capability
-/// the mode did not have, so they were **visible and untouchable in the very
-/// mode that authors dimensions**. A handle painted and not hit-tested is the
-/// "visible control, silently inert" failure; one hit-tested and not painted is
-/// worse — an invisible target that steals the press aimed at what is under it.
+/// Two surfaces deriving the answer separately diverge in one direction or the
+/// other, and both directions are failures. A handle painted and not
+/// hit-tested is the "visible control, silently inert" failure — grips
+/// **visible and untouchable in the very mode that authors them**. One
+/// hit-tested and not painted is worse: an invisible target that steals the
+/// press aimed at what is under it.
 #[derive(Debug, Clone, Copy)]
 pub struct Grabbable {
     /// The frame the grips are laid out in, in screen space, or `None` when
     /// nothing is grabbable.
     ///
-    /// ★★★ **A [`handles::GripFrame`] rather than a `Rect` since 2026-09-07**
-    /// (`OPERATOR_REQUESTS.md` O147). A turned annotation's grips sit on the
+    /// ★★★ **A [`handles::GripFrame`] rather than a `Rect`** —
+    /// `OPERATOR_REQUESTS.md` O147. A turned annotation's grips sit on the
     /// turned outline, and this is the one value the painter, the hit test and
     /// the cursor all read — so it is the only place the two frames can be
     /// distinguished without three surfaces re-deciding it independently, which
@@ -105,11 +99,11 @@ pub struct Grabbable {
     ///
     /// A marquee starts when a press finds no grip. `handles::grip_at` ends
     /// `bounds.contains(pointer).then_some(Grip::Move)`, so while anything is
-    /// selected, a press **anywhere inside its union bounding box** became a
-    /// move. Select a title-block border once — a hollow rectangle spanning
-    /// the sheet — and the marquee became unreachable on the entire drawing,
-    /// because every press was inside the box and none of them was on the
-    /// object.
+    /// selected a press **anywhere inside its union bounding box** reads as a
+    /// move. Select a title-block border — a hollow rectangle spanning the
+    /// sheet — and that alone would put the marquee out of reach on the whole
+    /// drawing, because every press is inside the box and none of them is on
+    /// the object.
     ///
     /// ⇒ Where this is `true`, [`look`] confirms the press actually lands on
     /// a selected object before honouring `Grip::Move`. Where it is `false`
@@ -155,10 +149,10 @@ pub struct Grabbable {
 
 /// **Which handles a markup annotation of this `/Subtype` offers.**
 ///
-/// Lifted out of [`grabbable`] on 2026-09-08 so it can be asserted without an
-/// `OpenDoc` — and lifting it is the seam this file's own header argues for:
-/// *one value, one decision, two consumers*. The painter and the hit test both
-/// receive whatever this returns.
+/// Its own function so it can be asserted without an `OpenDoc`, and the seam
+/// this file's own header argues for: *one value, one decision, two
+/// consumers*. The painter and the hit test both receive whatever this
+/// returns.
 ///
 /// ★ `""` for a selection that is not an annotation answers the full set,
 /// which is correct by construction: the only caller reaches this line inside
@@ -186,27 +180,28 @@ const STICKY_SUBTYPE: &str = "Text"; // ui-text-exempt: a PDF /Subtype name, nev
 /// unless its own kind is selected, so it is exhaustive rather than a precedence
 /// anybody has to remember:
 ///
-/// | selected | box | grips |
-/// |---|---|---|
-/// | a **ce dimension** | its `/Rect` | the **rotate handle alone** — `rotate_dimension` turns one and no verb scales one, and none ever will |
-/// | a **markup** annotation | its `/Rect` | everything — `resize_annotation` scales it and `rotate_annotation` turns it |
-/// | a **form field's** box | the widget's rect | the eight scale grips, through `edit_widget(… with_rect)`; a widget's rotation is `/MK /R` and is not built |
-/// | page **content** | the selection's union | everything, and only at the Object rung |
+/// - a **ce dimension** → its `/Rect`, and the **rotate handle alone**:
+///   `rotate_dimension` turns one, no verb scales one, and none ever will.
+/// - a **markup** annotation → its `/Rect`, and everything:
+///   `resize_annotation` scales it and `rotate_annotation` turns it.
+/// - a **form field's** box → the widget's rect, and the eight scale grips,
+///   through `edit_widget(… with_rect)`; a widget's rotation is `/MK /R` and
+///   is not built.
+/// - page **content** → the selection's union, everything, and only at the
+///   Object rung.
 ///
-/// ## ★★★ The last two rows were ONE row until 2026-08-28, and splitting them
-/// was the whole of the wiring
+/// ## ★★★ The markup and the widget are separate arms, and the separation
+/// is the wiring
 ///
-/// A markup annotation and a form field's box shared a branch — `grab_box(…)
-/// .or_else(widgetdrag::grab_box)` — because they offered the identical grip
-/// set. They no longer do: `rotate_annotation` shipped on `Pass 155.0` and
-/// nothing rotates a widget, so an `or_else` that answered `scale_only()` for
-/// both would have left a markup with no rotate handle for the same reason a
-/// widget has none — **which is not the same reason at all**, and the code
-/// would have said it was.
+/// The two offer different grip sets, for different reasons, so they cannot
+/// share a branch: `rotate_annotation` turns a markup and nothing rotates a
+/// widget. A `grab_box(…).or_else(widgetdrag::grab_box)` answering
+/// `scale_only()` for both would leave a markup with no rotate handle for the
+/// same reason a widget has none — **which is not the same reason at all**,
+/// and the code would say it was.
 ///
-/// ⇒ The dimension row moved the other way in the same change: from *no grips*
-/// to *the ninth only*. Two rows, two directions, one day. See
-/// [`handles::GripSet`]'s own header for the table of verbs behind them.
+/// ⇒ The dimension goes the other way again: a box, and the ninth grip only.
+/// See [`handles::GripSet`]'s own header for the table of verbs behind them.
 #[must_use]
 pub fn grabbable(
     ctx: &egui::Context,
@@ -241,8 +236,8 @@ pub fn grabbable(
         };
     }
     if let Some(bounds) = annotdrag::grab_box(map, selection) {
-        // ★★★ Everything, as of 2026-08-28. `resize_annotation` scales a markup
-        // and `rotate_annotation` turns one, and the second is BETTER behaved
+        // ★★★ Everything. `resize_annotation` scales a markup and
+        // `rotate_annotation` turns one, and the second is BETTER behaved
         // than the first rather than worse: a rotation composes into the
         // `/Matrix` a producer already wrote (§12.5.5 step (a)), so it works on
         // a stamp Acrobat made, where a resize has to refuse artwork pdfcer did
@@ -253,26 +248,22 @@ pub fn grabbable(
         // a locked markup is offered no handles at all rather than nine that
         // the file forbids.
         // ★★★ **…EXCEPT A STICKY NOTE, which is a fixed-size marker** —
-        // 2026-09-08, `OPERATOR_REQUESTS.md` O155.
+        // `OPERATOR_REQUESTS.md` O155.
         //
-        // `/Text`'s `/Rect` says WHERE it is, not HOW BIG: 12.5.6.4 makes it
-        // behave as `NoZoom/NoRotate`, and 12.5.3 anchors it at the rect's
-        // UPPER-LEFT corner (the engine's doc said lower-left until
-        // 2026-09-09; corrected, and `canvas::clicking` with it). So a corner
-        // drag is a gesture with no meaning, `resize_annotation` refuses it —
-        // by name since `Pass 277.0`, `ResizeFixedSizeMarker` — and it is
-        // right to.
+        // `/Text`'s `/Rect` says WHERE it is, not HOW BIG: §12.5.6.4 makes it
+        // behave as `NoZoom/NoRotate`, and §12.5.3 anchors it at the rect's
+        // UPPER-LEFT corner — the corner `canvas::clicking` places it from. So
+        // a corner drag is a gesture with no meaning and `resize_annotation`
+        // refuses it by name, `EditError::ResizeFixedSizeMarker`.
         //
-        // ⇒ Eight squares round it was this project's own named failure —
-        // *visible control, silently inert* — and it shipped: he grabbed a
-        // corner, dragged, and got a decline whose stated reason was **false**
-        // ("pdfcer did not draw it", about a marker pdfcer had drawn).
+        // ⇒ Eight squares round it would be this project's own named failure,
+        // *visible control, silently inert*: a control the operator can see,
+        // aim at and drag, whose release the engine can only decline.
         //
         // ⚠ The subtype is read from the ENGINE's own `/Subtype`, carried on
         // the selection, rather than from a list of kinds maintained here. A
         // second copy of "which subtypes are fixed-size" is how the painter and
-        // the hit test come to disagree — `GripSet`'s header records the
-        // morning that happened.
+        // the hit test come to disagree; `GripSet`'s header carries that rule.
         let subtype = selection.annot().map_or("", |a| a.target.subtype.as_str());
         return Grabbable {
             bounds: Some(bounds),
@@ -304,6 +295,8 @@ pub fn grabbable(
             outline: true,
         };
     }
+    // ⚠ Every deeper rung gets `GripSet::default()` — no resize, no rotate —
+    // while Delete now reaches all three rungs. `DEFECTS.md` D50.
     let at_object_rung = selection.level() == SelectionLevel::Object;
     let bounds = overlay::grip_box(map, selection).map(|b| {
         if at_object_rung {
@@ -312,10 +305,10 @@ pub fn grabbable(
             b.expand(overlay::ANCHOR_PX)
         }
     });
-    // ★★★ **…AND NOT IN A MODE THAT CANNOT EDIT CONTENT** — 2026-08-31, O71.
+    // ★★★ **…AND NOT IN A MODE THAT CANNOT EDIT CONTENT** — O71.
     //
-    // A content selection is reachable in Read as of that row: the ordinary
-    // pointer picks an IMAGE there so it can be copied out of pdfcer. Everything
+    // A content selection is reachable in Read: the ordinary pointer picks an
+    // IMAGE there so it can be copied out of pdfcer. Everything
     // else about that selection is the same, and the grips must not be — every
     // one of them commits a geometry edit the mode forbids, so offering them
     // would draw eight controls whose drag the funnel then refuses.
@@ -466,11 +459,11 @@ pub fn look(
     // first.
     //
     // `overlay::grip_box` derives its answer from the selection's cached
-    // content outlines, which `select_annot` clears - an annotation is not
+    // content outlines, which `select_annot` clears — an annotation is not
     // content and has nothing decomposed to cache. So over a selected dimension
-    // it answers `None`, the press fell through to a marquee, and pressing on
-    // the dimension REPLACED the selection the operator was trying to drag.
-    // That is the operator's report of 2026-08-20 in its mechanical form.
+    // it answers `None`, and without this row the press falls through to a
+    // marquee: pressing on the dimension REPLACES the selection the operator
+    // was trying to drag.
     //
     // `dimdrag::grab_box` is `Some` only for a dimension a placement drag can
     // actually finish, so no gesture is ever started that could not commit.
@@ -555,14 +548,13 @@ pub fn look(
     // ★★★ **THE ANNOTATION UNDER THE ROTATE HANDLE, AND IT IS DERIVED FROM
     // `grip` RATHER THAN FROM A SECOND HIT TEST.**
     //
-    // This is the whole guard against the failure this canvas has produced four
-    // times — *a working gesture aimed at the wrong verb*, which never looks
-    // broken from a chair because something moves. The most recent instance
-    // (`canvas::presspick`) is exactly this shape: `covers()` asked its own
-    // question about where the pointer was, tested the selection's **move box**
-    // alone, and the rotate handle sits OUTSIDE that box — so a press on the
-    // handle selected the object underneath and the rotate became a
-    // select-and-move.
+    // This is the whole guard against *a working gesture aimed at the wrong
+    // verb*, which never looks broken from a chair because something moves.
+    // `canvas::presspick` is exactly this shape: a `covers()` that asks its own
+    // question about where the pointer was, testing the selection's **move
+    // box** alone, misses the rotate handle, which sits OUTSIDE that box — so
+    // a press on the handle selects the object underneath and the rotate
+    // becomes a select-and-move.
     //
     // ⇒ **Nothing here asks a second question.** `grip` above came from
     // `handles::grip_at`, over `grabbable`'s box, with `grabbable`'s `GripSet`
@@ -635,9 +627,9 @@ pub fn look(
             })
     });
 
-    // ★★ Which NODE of a selected markup shape the press landed on — `Pass
-    // 255.0`, and the operator's *"I also can't edit or delete nodes of a
-    // markup shape once it is drawn."*
+    // ★★ Which NODE of a selected markup shape the press landed on — the
+    // operator's *"I also can't edit or delete nodes of a markup shape once it
+    // is drawn."*
     //
     // Sampled here with the other hit tests so a press has one meaning decided
     // in one place (this module's header), and resolved to a VALUE rather than
@@ -652,8 +644,8 @@ pub fn look(
     //
     // Cheap to ask — it answers `None` immediately unless a markup annotation
     // with editable geometry is selected, and the shapes with editable
-    // geometry are `/Polygon`, `/PolyLine`, `/Line` and (since `pdfcer-core`
-    // `Pass 278.0`) `/Ink`, whose anchors are one per point of every stroke.
+    // geometry are `/Polygon`, `/PolyLine`, `/Line` and `/Ink`, whose anchors
+    // are one per point of every stroke.
     // The hit test itself is one distance per anchor in screen space, so a
     // dense freehand mark costs a few hundred subtractions per press.
     let markup_node = origin.and_then(|p| annotnodes::node_at(doc, map, selection, p));
@@ -684,38 +676,31 @@ pub fn look(
     let widget_body =
         origin.is_some_and(|p| widgetdrag::grab_box(ctx, doc, map).is_some_and(|b| b.contains(p)));
 
-    // ★★★ **A RESIZE GRIP IS NOT INSIDE THE BOX IT RESIZES** — 2026-09-05.
+    // ★★★ **A RESIZE GRIP IS NOT INSIDE THE BOX IT RESIZES.**
     //
     // `handles::grip_rects` centres each grip **on** a corner of the anchor
     // box, so half of every corner grip's live area is outside the box by
     // construction — `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = 6 pt of it — and
     // `handles::grip_bounds` pushes the whole anchor box further out again on a
     // small selection (O57). A press on that outer half answers `Some(Grip::NE)`
-    // and `markup_body == false`.
+    // and `markup_body == false`. ⇒ These two flags exist so that
+    // `gesture::press_kind`'s annotation and widget arms key on the **grip**
+    // and never on the body.
     //
-    // `gesture::press_kind`'s annotation arm was gated on the **body** alone, so
-    // that press fell through to the `caps.edit_content` branch — which is
-    // **false in Review, the mode markup is authored in** — and the gesture was
-    // eaten: no resize, no decline, no line in the trace. That is the second
-    // half of what the 2026-09-05 sweep reported as *"an annotation can be
-    // ROTATED and cannot be MOVED or RESIZED"*, measured by
-    // `the_line_weight_switch_reaches_the_resize` pressing at screen (532, 493)
-    // on a box declared `[[443.3 493.1] - [531.0 578.8]]`: one point right of
-    // its edge and one tenth of a point above it, dead centre of the NE grip.
+    // ⚠ Gated on the body alone, such a press falls through to the
+    // `caps.edit_content` branch — **false in Review, the mode markup is
+    // authored in** — and the gesture is eaten: no resize, no decline, no line
+    // in the trace. It presents to the operator as *"an annotation can be
+    // ROTATED and cannot be MOVED or RESIZED"*, and the surviving rotation is
+    // what makes it hard to read: the rotate handle sits well clear of the box,
+    // so it was never reachable through a body test and has its own arm keyed
+    // on `grip == Some(Grip::Rotate)`, while the eight scale grips *look* as
+    // though they are on the box. ⇒ **A control drawn at the edge of a
+    // rectangle is not inside that rectangle**, and any gate that assumes it is
+    // will pass every test written from a picture.
     //
-    // ★★ ROTATION SURVIVED, and that asymmetry is the whole diagnosis. The
-    // rotate handle sits well clear of the box, so it could never have been
-    // reached through a body test — it was given its own arm keyed on
-    // `grip == Some(Grip::Rotate)`. The eight scale grips were left keyed on the
-    // body because they *look* as though they are on it. ⇒ **A control drawn at
-    // the edge of a rectangle is not inside that rectangle**, and any gate that
-    // assumes it is will pass every test written from a picture.
-    //
-    // ★ Content selections never had this defect: `press_kind`'s content branch
-    // matches on `grip` directly with no body test, which is why
-    // `resize_scales_a_shape` has passed throughout. The bug is in the two arms
-    // that were added later and copied the body test from the *move* they were
-    // written for.
+    // ★ `press_kind`'s content branch matches on `grip` directly with no body
+    // test, so a content resize is not exposed to this at all.
     //
     // The ownership question — *whose* grip is this? — is answered by the same
     // two functions `grabbable` consults, in the same priority order, so a grip
@@ -743,14 +728,13 @@ pub fn look(
         caps,
     );
 
-    // ★★★ **WHAT THIS PRESS WAS UNDERSTOOD TO BE** — 2026-09-08, the
-    // instrument `HANDOFF_20260908_RESIZE.md` asks for.
+    // ★★★ **WHAT THIS PRESS WAS UNDERSTOOD TO BE.**
     //
-    // Until this line **every press on this canvas was unobservable.** The
-    // open `resize_scales_a_shape` red presents as *"the grip drag committed
-    // nothing and declined nothing"*, and nothing anywhere said what the press
-    // became instead — so four separate explanations were reached by reading
-    // source, and all four were wrong.
+    // Without this line a press on this canvas is **unobservable**. A failed
+    // grip drag presents only as *"the drag committed nothing and declined
+    // nothing"*, and nothing says what the press became instead — which leaves
+    // the fault to be diagnosed by reading source, and reading source produces
+    // confident wrong answers.
     //
     // ⇒ The inputs AND the outcome on one line, because the fault can be in
     // either and only the pair distinguishes them:
@@ -870,15 +854,13 @@ mod tests {
     use super::*;
 
     /// ★★★ **A STICKY NOTE IS OFFERED NO RESIZE GRIPS, AND EVERY OTHER MARKUP
-    /// STILL IS** — `OPERATOR_REQUESTS.md` O155, 2026-09-08.
+    /// STILL IS** — `OPERATOR_REQUESTS.md` O155.
     ///
-    /// `/Text`'s `/Rect` says **where** the marker is, not **how big**: the
-    /// engine authors it `NoZoom/NoRotate` and its own doc says *"only its
-    /// lower-left corner matters in practice"*. So `resize_annotation` refuses
-    /// a corner drag, correctly — and this shell drew eight squares round it
-    /// anyway, which is the *visible control, silently inert* failure it is
-    /// built to avoid. He met it as a decline whose stated reason was **false**
-    /// ("pdfcer did not draw it", about a marker pdfcer had drawn).
+    /// `/Text`'s `/Rect` says **where** the marker is, not **how big**: a
+    /// conforming reader draws it as though `NoZoom/NoRotate` were set and
+    /// anchors it at the rect's upper-left corner, so `resize_annotation`
+    /// declines a corner drag by name. Eight squares round it would be the
+    /// *visible control, silently inert* failure this shell exists to remove.
     ///
     /// ⚠ **Three assertions, and the third is the one that keeps this honest.**
     /// A build that answered `move_only` for *everything* satisfies the first
@@ -913,10 +895,8 @@ mod tests {
     /// ★ The subtype is matched EXACTLY, not by prefix or case.
     ///
     /// `/Text` is a sticky note; `/FreeText` is a text box and resizes. A
-    /// `contains` or a case-insensitive compare would catch the second with the
-    /// first — and `/FreeText` had *just* been made resizable by the engine
-    /// when this was written, so the regression would have landed on the same
-    /// day the capability did.
+    /// `contains` or a case-insensitive compare catches the second with the
+    /// first and silently removes the resize from every text box.
     #[test]
     fn freetext_is_not_caught_by_the_sticky_rule() {
         assert!(markup_grips("FreeText").resize);

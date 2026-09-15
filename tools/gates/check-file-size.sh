@@ -2,56 +2,82 @@
 # check-file-size.sh — no .rs file may exceed 1,500 lines. Standing rule R2.
 #
 # ===========================================================================
-# WHY THIS GATE EXISTS
+# THE PROPERTY ASSERTED
 # ===========================================================================
 #
-# The GUI this project replaces has a single `main.rs` of 25,005 code lines.
-# That number is not an aesthetic complaint; it is the direct cause of several
-# entries in DEFECTS.md, and it is why this rebuild exists at all:
+# Every `.rs` file under `crates/` and `tools/` is within the line limit, so
+# that each one has a single subject a reader can hold whole.
 #
-#   * Nobody can hold 25,000 lines in their head, so the same concept gets
-#     re-implemented in two places and the copies drift. D5 (the shortcut
-#     reference disagreeing with the actual key bindings) is exactly that.
-#   * A reviewer cannot see that a keyboard guard at line 13,777 interacts
-#     with a focus request at line 16,891. D1 is exactly that: two correct-
-#     looking lines three thousand lines apart that together break the Delete
-#     key.
+# ===========================================================================
+# WHY A HUMAN CANNOT HOLD IT
+# ===========================================================================
+#
+# A file does not become unreadable at a moment anybody can point at. It grows
+# fifty lines at a time, each addition locally reasonable, and the cost falls
+# on a different person later — so nobody is ever holding both the growth and
+# its consequence at once. The consequences are of a shape review cannot catch
+# either:
+#
+#   * The same concept re-implemented in two places, because nobody could see
+#     the first one, and the copies then drift. DEFECTS.md D5 is that shape: a
+#     hand-maintained keyboard reference disagreeing with the keymap.
+#   * Two individually correct lines that are only wrong together, too far
+#     apart for any reviewer to have been expected to see both. DEFECTS.md D1
+#     is that shape: two spellings of "is the operator typing?", each
+#     defensible, that between them suppress every unmodified key.
 #   * Tooling degrades. `cargo fmt` on a file that size, an LLM reading it, a
 #     grep for a symbol — all become approximate.
 #
-# 1,500 lines is not a magic number. It is roughly "one sitting", and it is
-# small enough that the file has to have a single subject. The value of the
-# limit is that it is enforced from the first commit rather than adopted after
-# the file is already unmanageable — 25,005 lines is not a decision anybody
-# made, it is a decision nobody ever made.
+# The GUI this project replaces carries a single `main.rs` in the tens of
+# thousands of lines. That size was never a decision anybody made; it is a
+# limit nobody ever set. The value of this gate is that the limit is enforced
+# from the first commit rather than adopted once a file is already
+# unmanageable.
+#
+# 1,500 lines is not a magic number. It is roughly one sitting, and small
+# enough that a file has to have one subject.
 #
 # ===========================================================================
-# WHAT IS COUNTED, AND WHY IT IS TOTAL LINES
+# WHAT IT COUNTS, AND WHAT IT PROVABLY CANNOT SEE
 # ===========================================================================
 #
-# Total physical lines, comments and blanks included. Deliberately NOT "code
-# lines":
+# Total physical lines, comments and blanks included — deliberately NOT "code
+# lines". This project asks for verbose documentation, so a code-line metric
+# would be the one that quietly rewards deleting the docs to get under a
+# threshold, and a file whose comments make it 2,900 lines long is still a
+# file nobody can navigate. The READING COST is the thing being limited.
 #
-#   * This project asks for verbose documentation (a standing instruction), so
-#     a "code lines" metric would be the one that quietly rewards deleting the
-#     docs to get under a threshold. That is the wrong incentive to build into
-#     a gate.
-#   * A file whose 1,400 comment lines make it 2,900 lines long is still a file
-#     nobody can navigate. The reading cost is the thing being limited.
+# Blind spots, all of them real:
 #
-# The right response to this gate firing is to SPLIT THE MODULE, not to shrink
-# the prose. If a file genuinely needs to be longer — a generated table, a
-# large const catalog — that is an operator decision and it belongs in the
-# EXEMPT list below with a reason, not in a silent threshold bump.
+#   * Complexity. A 200-line file can be worse than a 1,400-line one, and this
+#     gate has no opinion about either. Length is a proxy for "one subject"
+#     and nothing more.
+#   * Anything outside `crates/` and `tools/`, anything not named `*.rs`, and
+#     anything on a `fixtures/` or `target/` path — see `is_exempt()`.
+#   * A file at 1,499 lines. It prints the three largest on success so that a
+#     file one feature away from firing is visible, but it cannot fail on one,
+#     and the cheapest moment to split a module is before it has to be split
+#     in a hurry.
+#
+# The right response to a failure is to SPLIT THE MODULE, not to shrink the
+# prose. A file that genuinely cannot be split — a generated table, a large
+# const catalog — is an operator decision and belongs in `is_exempt()` with
+# its reason written down, never in a silent threshold bump.
 #
 # ===========================================================================
-# USAGE / EXIT CODES
+# USAGE, THE EXIT CONTRACT, AND HOW TO FALSIFY IT
 # ===========================================================================
 #   tools/gates/check-file-size.sh [LIMIT]
 #
-#   0  every .rs file is within the limit
+#   0  every .rs file scanned is within the limit
 #   1  at least one file is over
-#   2  PRECONDITION ABSENT — nothing to scan (no .rs files anywhere yet)
+#   2  PRECONDITION ABSENT — no `crates/` or `tools/` directory here, or no
+#      `.rs` file under them. NOT a pass: "nothing over the limit" and
+#      "nothing at all" must not produce the same green tick, and `run-all.sh`
+#      prints skips in their own block and exits 3.
+#
+# To falsify: run `tools/gates/check-file-size.sh 50` — it must go red and
+# name files. Run it from a directory with no `crates/` and it must exit 2.
 
 set -euo pipefail
 

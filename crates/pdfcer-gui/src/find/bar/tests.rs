@@ -1,23 +1,17 @@
 //! # `find::bar` — the tests
 //!
-//! Split out of `bar.rs` under **R2** on 2026-09-09, when the *Zoom* control
-//! (`OPERATOR_REQUESTS.md` O163) took that file to 1,593 lines — 93 over the
-//! ceiling. The seam is the obvious one and the one this crate takes
-//! everywhere else (`app::prefs::tests`, `panels::tests`): the assertions are
-//! the part of a module that is not in the shipped binary, and they are read
-//! at a different time from the widget code they check.
-//!
-//! `use super::*` therefore reaches `find::bar` exactly as it did when this
-//! was an inline `mod tests`, and nothing about what is asserted changed in
-//! the move.
+//! The assertions for [`super`], in a file of their own — the seam this crate
+//! takes everywhere else (`app::prefs::tests`, `panels::tests`): assertions are
+//! the part of a module that is not in the shipped binary, and they are read at
+//! a different time from the widget code they check. `use super::*` reaches
+//! `find::bar` exactly as an inline `mod tests` would.
 //!
 //! ★★ **The inner `#![cfg(test)]` is load-bearing and is not a duplicate of
 //! the outer `#[cfg(test)] mod tests;`.** Without it,
 //! `tools/gates/check-ui-strings.sh` walks this file as ordinary source and
 //! reports every assertion message as a user-visible string that should live
-//! in `ui_text` — exclusion 2b in that gate. It is the same line every other
-//! split test file in this crate carries, and it was reported by that gate
-//! within minutes of this split, exactly as designed.
+//! in `ui_text` — exclusion 2b in that gate. Every split test file in this
+//! crate carries the same line, for the same reason.
 #![cfg(test)]
 
 use super::*;
@@ -66,9 +60,8 @@ fn an_ordinary_empty_result_on_a_text_page_offers_nothing() {
 /// costs one page extraction on a cache miss, and the bar draws on every
 /// frame it is open; a version that evaluated the closure first would put
 /// that extraction on the frame budget while looking identical in every
-/// other test here. That is `HANDOFF.md` §2's defect 9 exactly: the right
-/// work, charged at the wrong moment, invisible to a suite that only asks
-/// whether it happened.
+/// other test here. That is a whole defect class: the right work, charged at
+/// the wrong moment, invisible to a suite that only asks whether it happened.
 #[test]
 fn the_page_is_not_extracted_unless_the_search_found_nothing() {
     for readout in [
@@ -95,9 +88,9 @@ fn the_page_is_not_extracted_unless_the_search_found_nothing() {
 
 /// The offer raises the command the ribbon registers, not a spelling of it.
 ///
-/// An id written at a call site and nowhere else goes stale in silence —
-/// `HANDOFF.md` §5's whole subject — and the symptom here would be a button
-/// that traces `command-unimplemented` and does nothing.
+/// An id written at a call site and nowhere else goes stale in silence, and
+/// the symptom here is a button that traces `command-unimplemented` and does
+/// nothing.
 #[test]
 fn the_offer_raises_the_registered_recognise_command() {
     let mut registry = egui_shell::commands::CommandRegistry::new();
@@ -394,10 +387,10 @@ fn toggling_zoom_leaves_the_search_options_alone() {
 /// emoji-icon-font) cannot draw renders as a tofu box, which is defect
 /// D2's shape — an invisible label — on a control the operator has to hit.
 ///
-/// The status bar has the identical test and it has already paid for
-/// itself once: that catalog was written with `◀ ▶ ▸ ▾`, **all four of
-/// which are missing**, and they would have shipped as tofu on the two
-/// controls an operator touches most. This test is not a duplicate of it —
+/// The status bar has the identical test, and the reason is concrete: `◀ ▶
+/// ▸ ▾` are **all four missing** from that font set, so a catalog written
+/// with them renders as tofu on the two controls an operator touches most.
+/// This test is not a duplicate of it —
 /// it cannot see this file's strings, and this file cannot see the status
 /// bar's.
 #[test]
@@ -539,8 +532,8 @@ fn the_box_is_the_same_size_whatever_the_readout_says() {
 ///
 /// Driven through a real frame rather than by calling the arm, so what is
 /// under test is the wiring — the failure this catches is a button that
-/// draws, is enabled, and reports nothing, which is the shape three of the
-/// old shell's panels shipped in.
+/// draws, is enabled, and reports nothing — a shape a panel can ship in with
+/// every unit test green, because no unit test touches the wiring.
 #[test]
 fn the_step_buttons_are_inert_until_there_is_something_to_step() {
     let ctx = Context::default();

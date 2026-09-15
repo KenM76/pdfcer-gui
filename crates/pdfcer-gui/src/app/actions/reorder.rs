@@ -1,9 +1,9 @@
 //! # `app::actions::reorder` — putting a page's annotations in a new order
 //!
-//! One verb, split out of [`super::forms`] on 2026-09-02 under R2 when that file
-//! crossed the 1,500-line ceiling. `OPERATOR_REQUESTS.md` O99.
+//! One verb, its own file under R2 rather than a section of
+//! [`super::forms`]. `OPERATOR_REQUESTS.md` O99.
 //!
-//! ## ★★ Why it is worth its own file rather than a shorter comment
+//! ## Why it is worth its own file rather than a shorter comment
 //!
 //! Because the interesting part is not the call — it is one line — but the
 //! **three things the operator did not ask for** and which the engine reports so
@@ -11,11 +11,11 @@
 //! than that, and every one of the three below is a consequence an operator
 //! would not predict from the gesture they made.
 //!
-//! ## ★★★ Two callers, one verb, and OPPOSITE surprises — 2026-09-06
+//! ## Two callers, one verb, and OPPOSITE surprises
 //!
-//! Until today the only caller was the **form-field tab-order panel**, and the
-//! three disclosures below are written for it. [`arrange`] is the second, and it
-//! arrives from the other end of the same array:
+//! The three disclosures below are written for the **form-field tab-order
+//! panel**. [`arrange`] is the other caller, and it arrives from the other end
+//! of the same array:
 //!
 //! | the operator did | what they meant | what the engine reports | the surprise |
 //! |---|---|---|---|
@@ -29,7 +29,7 @@
 //! call: the disclosure is *"the thing you were not looking at"*, and they were
 //! looking at different things.
 //!
-//! ★ The second number is a **subtraction**, not a field. `AnnotsReorder`
+//! The second number is a **subtraction**, not a field. `AnnotsReorder`
 //! reports `moved` and `non_widgets_moved`; how many widgets moved is
 //! `moved - non_widgets_moved`, computed at the one call site that cares rather
 //! than asked of the engine, because it is a fact about this caller's intent
@@ -40,7 +40,7 @@ use pdfcer_core::object::ObjId;
 
 /// **Put a page's annotations in a new order** — `OPERATOR_REQUESTS.md` O99.
 ///
-/// # ★★★ Three disclosures, and two of them are about things the operator did
+/// # Three disclosures, and two of them are about things the operator did
 /// not ask for
 ///
 /// A tab order is a list of *fields*. `/Annots` order is more than that, and the
@@ -58,7 +58,7 @@ use pdfcer_core::object::ObjId;
 ///   had to be copied first. Nothing is wrong, and it is a structural change to
 ///   the file that nobody asked for.
 ///
-/// ★★ `moved == 0` is a **success with nothing to say**: the order given was the
+/// `moved == 0` is a **success with nothing to say**: the order given was the
 /// order the page already had, the engine recorded no command, and there is
 /// nothing to disclose. It is the common case for a drag that ends where it
 /// started, and it must not read as a refusal.
@@ -72,7 +72,7 @@ pub(super) fn reorder_annotations(
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 //
-                // ★ `moved=` beside `entries=`, because a reorder that moved
+                // `moved=` beside `entries=`, because a reorder that moved
                 // nothing and a reorder that moved everything produce the same
                 // `entries` and want opposite readings.
                 format!(
@@ -103,12 +103,12 @@ pub(super) fn reorder_annotations(
 }
 
 // ===========================================================================
-// ★★★ Z-ORDER — the operator's half of the same array
+// Z-ORDER — the operator's half of the same array
 // ===========================================================================
 
 /// **Where an Arrange command puts the selected mark.**
 ///
-/// # ★★ Why all four, when only two were asked for
+/// # Why all four, when only two were asked for
 ///
 /// The brief for this work said to ship the two ends *"and consider Bring
 /// forward / Send backward too if the verb supports a single-step move cheaply;
@@ -131,7 +131,7 @@ pub(super) fn reorder_annotations(
 pub enum ArrangeTo {
     /// Last in `/Annots`, so it is painted over everything else.
     ///
-    /// ★ **Last, not first.** §12.5.6 paints annotations in array order, so the
+    /// **Last, not first.** §12.5.6 paints annotations in array order, so the
     /// *end* of the array is the top of the stack — the opposite of what "front"
     /// suggests to anyone thinking of a list. Getting this backwards is a defect
     /// that looks correct in every review and is obvious the first time a mark
@@ -158,7 +158,7 @@ impl ArrangeTo {
 
 /// **Put one markup annotation at a new depth in its page's paint order.**
 ///
-/// # ★★★ The order is computed HERE, at apply time, and not at the press
+/// # The order is computed HERE, at apply time, and not at the press
 ///
 /// The obvious arrangement is for the dispatcher — which has the selection and
 /// the document in front of it — to work out the new array and put it on the
@@ -175,7 +175,7 @@ impl ArrangeTo {
 /// rather than a rectangle, and for the same reason: *a value resolved at the
 /// press is a value that may have moved under you.*
 ///
-/// # ★★ What is held still, and it is not the operator's choice
+/// # What is held still, and it is not the operator's choice
 ///
 /// A `/TrapNet` annotation **shall be the last element** of `/Annots`
 /// (ISO 32000-1 §12.5.6.21, restated §14.11.6.2 — the trap network prints after
@@ -203,7 +203,7 @@ pub(super) fn arrange(doc: &mut OpenDoc, page: usize, id: ObjId, to: ArrangeTo) 
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 //
-                // ★ `widgets=` beside `non_widgets=`, because this caller's
+                // `widgets=` beside `non_widgets=`, because this caller's
                 // disclosure is the difference and a reader of the trace should
                 // not have to do the subtraction to check it.
                 format!(
@@ -219,7 +219,7 @@ pub(super) fn arrange(doc: &mut OpenDoc, page: usize, id: ObjId, to: ArrangeTo) 
                 )
             });
             let mut notes = Vec::new();
-            // ★ FIRST, because it is the one that says the command may not have
+            // FIRST, because it is the one that says the command may not have
             // done what the operator asked. `record_notes` joins them behind one
             // lead-in and *"the first sentence is the one an operator reads if
             // they read only one"*.
@@ -285,7 +285,7 @@ fn plan(doc: &OpenDoc, page: usize, id: ObjId, to: ArrangeTo) -> Option<Vec<ObjI
         ArrangeTo::Backward => from.saturating_sub(1),
     };
     if target == from {
-        // ★★ A command that changes nothing must SAY so. The engine would report
+        // A command that changes nothing must SAY so. The engine would report
         // `moved == 0` and that is *"a success with nothing to say"* for a drag
         // that ended where it started — but this operator pressed a labelled
         // button on purpose, and a press that neither moves anything nor says
@@ -313,7 +313,7 @@ fn plan(doc: &OpenDoc, page: usize, id: ObjId, to: ArrangeTo) -> Option<Vec<ObjI
 mod tests {
     use super::*;
 
-    /// ★★★ **Front is the END of the array.**
+    /// **Front is the END of the array.**
     ///
     /// §12.5.6 paints annotations in `/Annots` order, so the last entry is drawn
     /// last and therefore on top. "Front" and "last" are the same place, and a
@@ -321,7 +321,7 @@ mod tests {
     /// answer — which would compile, pass a review, and paint every *Bring to
     /// front* underneath everything.
     ///
-    /// ★ Falsified: swapping the `Front` and `Back` arms in [`plan`] leaves this
+    /// Falsified: swapping the `Front` and `Back` arms in [`plan`] leaves this
     /// green and turns [`the_ends_of_the_array_are_the_ends_of_the_stack`] red,
     /// which is the division of labour intended — this one pins the *vocabulary*
     /// and that one pins the *arithmetic*.
@@ -355,7 +355,7 @@ mod tests {
 
     /// The permutation arithmetic, without a document.
     ///
-    /// ★★ A free function mirroring [`plan`]'s middle, because `plan` needs an
+    /// A free function mirroring [`plan`]'s middle, because `plan` needs an
     /// `OpenDoc` and the thing worth pinning is the index maths. This is
     /// **two statements of one rule**, which this crate usually refuses — it is
     /// accepted here for `dispatch::routes`' stated reason, that the two sit in
@@ -371,7 +371,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The ends of the array are the ends of the stack**, and a step is
+    /// **The ends of the array are the ends of the stack**, and a step is
     /// one place.
     #[test]
     fn the_ends_of_the_array_are_the_ends_of_the_stack() {
@@ -399,7 +399,7 @@ mod tests {
         assert_eq!(moved(0, 0, ArrangeTo::Front), 0);
     }
     // -----------------------------------------------------------------
-    // ★★★ Against a REAL document, because the arithmetic above is a
+    // Against a REAL document, because the arithmetic above is a
     // mirror and a mirror cannot catch the two halves disagreeing
     // -----------------------------------------------------------------
 
@@ -418,7 +418,7 @@ mod tests {
             .collect()
     }
 
-    /// ★★★ **Bring to front puts the mark LAST in the file**, read back from
+    /// **Bring to front puts the mark LAST in the file**, read back from
     /// the document rather than from the plan.
     ///
     /// The oracle is `page_annotations` **after** the edit, which is not the
@@ -427,7 +427,7 @@ mod tests {
     /// returned the ends the wrong way round would satisfy every assertion in
     /// the arithmetic tests above — they are a mirror of it — and fail here.
     ///
-    /// ★ Falsified: swapping the `Front` and `Back` arms of [`plan`]'s `match`
+    /// Falsified: swapping the `Front` and `Back` arms of [`plan`]'s `match`
     /// turns both halves of this red, and leaves
     /// [`the_ends_of_the_array_are_the_ends_of_the_stack`] green. That is the
     /// point of writing both.
@@ -473,7 +473,7 @@ mod tests {
         assert_eq!(after.first(), Some(&last), "back is the START of /Annots");
     }
 
-    /// ★★ **A single step moves exactly one place**, and it is the claim the
+    /// **A single step moves exactly one place**, and it is the claim the
     /// brief asked to be honest about: a whole-array verb does not make a
     /// one-place move approximate, it makes it a permutation like any other.
     #[test]
@@ -493,7 +493,7 @@ mod tests {
         assert_eq!(after[1], before[2], "exactly one entry swapped past it");
     }
 
-    /// ★★★ **A mark already at the front changes nothing and SAYS so.**
+    /// **A mark already at the front changes nothing and SAYS so.**
     ///
     /// The sentence is the point. The engine reports `moved == 0` and
     /// [`reorder_annotations`] calls that *"a success with nothing to say"* —
@@ -502,7 +502,7 @@ mod tests {
     /// neither moves anything nor says anything is indistinguishable from a
     /// broken control.
     ///
-    /// ★ Falsified: deleting the `if target == from` branch in [`plan`] turns
+    /// Falsified: deleting the `if target == from` branch in [`plan`] turns
     /// the second assertion red — the edit goes through the funnel, the engine
     /// reports `moved == 0`, and the operator is told nothing.
     #[test]

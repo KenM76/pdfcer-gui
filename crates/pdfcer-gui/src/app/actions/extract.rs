@@ -1,19 +1,12 @@
 //! # `app::actions::extract` — the one page verb that writes a NEW FILE
 //!
-//! Extract a set of sheets into a document of their own. Split out of
-//! [`super::pages`] under **R2** on 2026-08-28, when the operator's separation
-//! policy reached the delete verb and took that file past 1,500 lines.
+//! Extract a set of sheets into a document of their own.
 //!
-//! ## ★★ Why this is the seam, and not the enum
+//! ## Why this verb is not beside the other page verbs
 //!
-//! [`super::pages`]' own header records the argument for the enum living *with*
-//! its bodies — one family, one place a sixth verb has to answer the
-//! invalidation question — and that argument still holds. Moving it back out
-//! to make a line count work would be undoing a decision for a reason that has
-//! nothing to do with why it was made.
-//!
-//! What genuinely does not belong beside the others is **this** verb, and the
-//! distinction is not size:
+//! [`super::pages`] keeps its enum *with* its bodies — one family, one place a
+//! sixth verb has to answer the invalidation question. What does not belong
+//! beside the others is **this** verb, and the distinction is behavioural:
 //!
 //! | every other page verb | extract |
 //! |---|---|
@@ -28,11 +21,9 @@
 //! a native modal no synthetic input can reach, and the same "write, then
 //! report on both channels" shape.
 //!
-//! ## What stayed behind
-//!
-//! `super::pages::apply`'s routing arm. This module is bodies only, which is
-//! the same division `super::annots` and `super::bookmarks` keep: the arm
-//! routes, the module acts.
+//! The routing arm stays in `super::pages::apply`. This module is bodies only,
+//! which is the division `super::annots` and `super::bookmarks` keep too: the
+//! arm routes, the module acts.
 
 use std::path::{Path, PathBuf};
 
@@ -48,7 +39,7 @@ use crate::app::state::OpenDoc;
 /// drop — which is `crate::app::save`'s §2 argument for `file.save_copy`,
 /// reaching the same conclusion for the same reason.
 ///
-/// # ★ The view is the SESSION's, not the file's
+/// # The view is the SESSION's, not the file's
 ///
 /// `doc.session.view()` rather than the loaded `Document`, so an extraction
 /// carries the operator's **unsaved edits** — decision 018, and the same choice
@@ -124,13 +115,14 @@ fn write_extract(doc: &OpenDoc, pages: &[usize], target: &Path) {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 //
-                // `pages=` beside `bytes=` for `HANDOFF.md` §2's reason about
-                // the ink trail: a build that extracted the wrong count — the
-                // whole document, say, or one page where three were picked —
-                // writes a perfectly good PDF, and this field is the only
-                // thing in the line that would differ. `path` is Debug-quoted
-                // exactly as `save-copy`'s is, so a Windows path with a space
-                // in it cannot make every field after it unreadable.
+                // `pages=` is what was written and `asked=` is what was
+                // requested, and both are here so the line can disagree with
+                // itself. A build that extracted the wrong count — the whole
+                // document, say, or one page where three were picked — writes
+                // a perfectly good PDF; the only evidence is that these two
+                // fields no longer match. `path` is Debug-quoted exactly as
+                // `save-copy`'s is, so a Windows path with a space in it
+                // cannot make every field after it unreadable.
                 "extract path={target:?} pages={} bytes={} asked={}",
                 report.pages,
                 bytes.len(),
@@ -157,7 +149,7 @@ fn write_extract(doc: &OpenDoc, pages: &[usize], target: &Path) {
 /// allowed to diverge: an extraction of pages 3–7 could one day suggest a name
 /// that says so, and a save-a-copy never could.
 ///
-/// # ★ It is never the file that was opened
+/// # It is never the file that was opened
 ///
 /// The promise [`crate::text::files::extract_pages_suffix`] makes, as a
 /// mechanism. The extension is forced to `.pdf` for `save_copy`'s reason: the
@@ -194,7 +186,7 @@ mod tests {
     /// `crate::app::save`'s stated reason: a test that writes beside the
     /// fixtures leaves a file somebody eventually commits.
     ///
-    /// ★ A **copy** of `super::super::pages`' helper rather than an import, and
+    /// A **copy** of `super::super::pages`' helper rather than an import, and
     /// deliberately so: it is five lines, and a test helper reaching across a
     /// module boundary makes two suites fail together for reasons neither is
     /// about. The directory name differs from that one's for the same reason —
@@ -220,7 +212,7 @@ mod tests {
         doc.edit_epoch += 1;
     }
 
-    /// **★★ The extracted file is a real document containing exactly the pages
+    /// **The extracted file is a real document containing exactly the pages
     /// that were asked for.**
     ///
     /// The round trip in the smallest form a unit test can hold, and the same
@@ -263,7 +255,7 @@ mod tests {
         let _ = std::fs::remove_file(&target);
     }
 
-    /// **★ An extraction carries the operator's unsaved edits.**
+    /// **An extraction carries the operator's unsaved edits.**
     ///
     /// Decision 018, asserted rather than trusted: the view handed to
     /// `pageops::extract` is the **session's**, so a rotation made in this
@@ -296,7 +288,7 @@ mod tests {
         let _ = std::fs::remove_file(&target);
     }
 
-    /// ★ **The suggested name is never the file that was opened.**
+    /// **The suggested name is never the file that was opened.**
     ///
     /// `save::suggested_path`'s guarantee, for the second write-destination
     /// this shell asks about. An operator who accepts the suggestion without

@@ -1,8 +1,7 @@
 //! # `app::actions::history` — stepping the command log, in both directions
 //!
-//! `Direction`, its four per-direction answers, and [`history_step`] — lifted
-//! out of [`super::apply`] on 2026-08-19 when that file crossed R2's 1,500-line
-//! ceiling for the second time in one day.
+//! `Direction`, its four per-direction answers, and [`history_step`] — a
+//! separate file from [`super::apply`] under **R2**'s 1,500-line ceiling.
 //!
 //! ## Why this is the seam
 //!
@@ -40,7 +39,7 @@
 //! that forgot to invalidate.
 //!
 //! `tests::an_undo_is_an_edit_and_moves_the_epoch_like_one` in [`super::apply`]
-//! is the assertion, and it stayed there deliberately: it is about what an
+//! is the assertion, and it lives there deliberately: it is about what an
 //! `Action` does, which is that module's subject.
 
 use pdfcer_core::edit::{EditError, EditSession};
@@ -149,7 +148,7 @@ impl Direction {
 ///
 /// Writing those four again here would be the fifth hand-written copy of a
 /// protocol whose entire reason for existing is that hand-written copies omit
-/// steps. The rule is `HANDOFF.md` §6's: one choke point.
+/// steps. The rule is one choke point.
 ///
 /// # The disclosure list is empty, and that is a statement
 ///
@@ -162,9 +161,10 @@ impl Direction {
 ///
 /// # Why the empty stack is checked HERE and not in the dispatcher
 ///
-/// The dispatcher's arms route (`HANDOFF.md` §6). This function has to ask the
-/// session what is on the log before it can act anyway, so asking in both
-/// places would be two spellings of one question — and the one that drifted
+/// The dispatcher's arms route, and routing is all they do. This function has
+/// to ask the session what is on the log before it can act anyway, so asking in
+/// both places would be two spellings of one question — and the one that
+/// drifted
 /// would produce a control that is greyed while the bar says something else.
 /// The decline is recorded through `crate::app::status::decline`, in the apply
 /// phase, exactly as `crate::app::save`'s failure is and for the reason that

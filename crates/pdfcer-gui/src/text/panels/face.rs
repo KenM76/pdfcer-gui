@@ -3,14 +3,14 @@
 //! One control, two surfaces, one catalog. The Properties panel's *This text*
 //! section and the ribbon's Format ▸ Font group draw the **same** face chooser
 //! through [`crate::panels::properties::face`], so its wording lives in its own
-//! module rather than inside [`super::properties`] — where it had been until
-//! 2026-08-29, and where it was beginning to be the largest single subject in a
-//! 1,466-line file.
+//! module rather than inside [`super::properties`]: the face chooser is the
+//! largest single subject either surface has, and it owes a disclosure neither
+//! of the others does.
 //!
-//! ## ★★★ Why this module exists at all, and what it is obliged to say
+//! ## What this module is obliged to say
 //!
-//! `pdfcer-core` v0.15.0 (`Pass 162.0`) closed the last of the four things the
-//! operator named as not fully editable. Its release note, verbatim:
+//! `pdfcer-core`'s release note for the capability these strings describe,
+//! verbatim:
 //!
 //! > **FONTS** — text can be restyled to a face the document **DOES NOT
 //! > CONTAIN**, for the fourteen faces every PDF reader is required to have.
@@ -44,12 +44,12 @@
 //! - **Sentence case, no trailing period on labels; full sentences with
 //!   punctuation for prose.**
 //! - **Name the thing and what the operator can do about it.**
-//! - **Never state a capability the build does not have** — and, the half this
-//!   module had to learn, never keep stating a *limit* the build no longer has.
+//! - **Never state a capability the build does not have** — and, the half that
+//!   costs more here, never keep stating a *limit* the build does not have.
 
 /// Label for the face chooser, in the Properties panel.
 ///
-/// ★ The **ribbon's** copy of this control has no label beside it: the group's
+/// The **ribbon's** copy of this control has no label beside it: the group's
 /// caption already says *Font*, the control shows the current face, and Word's
 /// own font-name box carries no label for the same two reasons. A label there
 /// would be the third occurrence of the word within one inch of ribbon. In the
@@ -62,22 +62,20 @@ pub const fn text_face_label() -> &'static str {
 /// Shown in the face chooser when **nothing at all** can be offered for this
 /// run.
 ///
-/// ★★★ **A real state, and one that got rarer rather than going away.**
+/// **A real state, and a rare one.**
 ///
-/// Before the pre-flight (`Pass 142.1`) the chooser listed every `/BaseFont` on
-/// the page and an operator found out which ones could not work by pressing
-/// them. After it, the list held only faces `set_font` had already accepted
-/// **for this run** — and on a page where that set was empty, an empty combo
-/// read as a broken control, so this sentence was written.
+/// The chooser lists only faces the pre-flight has already accepted **for this
+/// run**, drawn from two sources: the page's own `/BaseFont`s and the standard
+/// fourteen. On a page where both sets come back empty the combo would be
+/// empty, which reads as a broken control — so this sentence is drawn instead.
 ///
-/// ★★ Since `Pass 162.0` the list also carries the fourteen standard faces, so
-/// reaching this sentence now means something stronger than it used to: not one
-/// font on this page can show these characters **and** every one of the fourteen
-/// is either already on the page in a form that cannot show them, or was not
-/// offered. In practice that is a run of characters no `WinAnsi`-encoded face
-/// covers — a symbol font's own glyphs, most often a title-block logo.
+/// Reaching it therefore means something strong: not one font on this page can
+/// show these characters **and** every one of the fourteen is either already on
+/// the page in a form that cannot show them, or was not offered. In practice
+/// that is a run of characters no `WinAnsi`-encoded face covers — a symbol
+/// font's own glyphs, most often a title-block logo.
 ///
-/// ★ It names the reason at the level an operator can act on: the fonts are
+/// It names the reason at the level an operator can act on: the fonts are
 /// there, and what they cannot do is show *these characters*. That is why a
 /// title-block label in a symbol font offers nothing while the paragraph beside
 /// it offers four.
@@ -89,7 +87,7 @@ pub const fn text_face_none() -> &'static str {
 
 /// Hover for a face whose `/BaseFont` is shared by a second resource.
 ///
-/// ★★ Two rows reading identically is otherwise indistinguishable from a bug,
+/// Two rows reading identically is otherwise indistinguishable from a bug,
 /// and the survey behind the Fonts panel found **two subsets of one face in
 /// 87 % of embedding files** — so this is the routine case, not the exotic one.
 /// The operator has a real choice between them and pdfcer reaches the one the
@@ -102,7 +100,7 @@ pub const fn text_face_ambiguous() -> &'static str {
 
 /// The heading over the rows the **page already carries**.
 ///
-/// ★ *"On this page"* rather than *"In this document"*, and the difference is
+/// *"On this page"* rather than *"In this document"*, and the difference is
 /// the engine's rather than a preference. `preview_font_resources` enumerates
 /// the `/Font` resources of **one page's** resource dictionary — §7.8.3 makes a
 /// resource name local to the stream it is used from — so a face on page 4 is
@@ -110,7 +108,7 @@ pub const fn text_face_ambiguous() -> &'static str {
 /// saying *document* would be describing a scope the answer below it does not
 /// have.
 ///
-/// ★★ The heading is drawn **even when there is only one group**, and that is
+/// The heading is drawn **even when there is only one group**, and that is
 /// deliberate: the operator's question is *which of these will change my file*,
 /// and a list whose two halves are labelled only when both are present teaches
 /// them to read the labels sometimes.
@@ -121,7 +119,7 @@ pub const fn face_group_on_page() -> &'static str {
 
 /// The heading over the rows pdfcer would **add to the document**.
 ///
-/// ★★★ It is worded as an **act**, not as a category. *"Standard fonts"* would
+/// It is worded as an **act**, not as a category. *"Standard fonts"* would
 /// be the librarian's heading and would leave the operator to work out that
 /// picking one writes to their file; *"pdfcer can add"* says what the click does
 /// before it is clicked, which is R83's whole shape — the operator learns before
@@ -131,12 +129,11 @@ pub const fn face_group_addable() -> &'static str {
     "pdfcer can add these"
 }
 
-/// ★★★ **The disclosure this feature owes**, said once, where the choice is
-/// made.
+/// **The disclosure this feature owes**, said once, where the choice is made.
 ///
 /// # The inference the operator cannot see
 ///
-/// `pdfcer-core`'s own release note for `Pass 162.0`: pdfcer *"authors the font
+/// `pdfcer-core`'s own release note: pdfcer *"authors the font
 /// resource on demand, with widths, embedding nothing."* §9.6.2.2 permits that
 /// for exactly these fourteen faces — a four-key dictionary with no
 /// `/FontFile`, no `/FontDescriptor`, and no glyph outlines anywhere in the
@@ -151,7 +148,7 @@ pub const fn face_group_addable() -> &'static str {
 /// same file opened elsewhere may genuinely differ, and nothing on this canvas
 /// can say so — so the sentence has to.
 ///
-/// # ★★ Once, and where they choose
+/// # Once, and where they choose
 ///
 /// It is a **visible label under the group heading**, not a hover, and not a
 /// hover repeated on each of fourteen rows. Fourteen copies of one sentence is
@@ -166,11 +163,11 @@ pub const fn face_group_addable() -> &'static str {
 /// |---|---|
 /// | *"adds it to the document"* | the act. A row in a font menu does not otherwise read as a write. |
 /// | *"the face's name and its letter widths — not the font program"* | what is actually written. It is also the answer to *"will my file get big?"*, without quoting a byte count this shell has not measured. |
-/// | *"drawn with each reader's own copy"* | ★★★ the inference above. The clause the whole disclosure exists for. |
+/// | *"drawn with each reader's own copy"* | the inference above. The clause the whole disclosure exists for. |
 /// | *"Every PDF reader carries these fourteen, so it will always show"* | the reassurance that keeps the clause above from reading as a warning against using the feature. Sourced from the engine's release note — *"the fourteen faces every PDF reader is required to have"* — and not from a general claim about readers. |
 /// | *"on another machine the letters may be set a little differently"* | the consequence, in the operator's terms. Not "metrics may vary": what they will see is a line that wraps one word earlier. |
 ///
-/// ★ It does **not** promise that the fourteen render *identically* everywhere.
+/// It does **not** promise that the fourteen render *identically* everywhere.
 /// They do not — that is the entire content of the third clause — and a
 /// sentence claiming they did would be the comfortable version of this
 /// disclosure rather than the true one.
@@ -183,19 +180,18 @@ pub const fn face_addable_disclosure() -> &'static str {
 }
 
 // ===========================================================================
-// ★★★ O141 — the offer that turns a refused character into a face that has it
+// O141 — the offer that turns a refused character into a face that has it
 // ===========================================================================
 //
-// The operator, 2026-09-05: *"if the character isn't available in a pdf are we
-// able to change to a different font?"*
+// The operator: *"if the character isn't available in a pdf are we able to
+// change to a different font?"*
 //
-// Yes, and every piece already existed — the engine refuses by name, the
-// refusal carries the character, and this chooser has offered the standard
-// fourteen since `Pass 162.0`. **Nothing connected the refusal to the
-// chooser.** These five strings are the connection's words; the surface is
+// Yes. The engine refuses by name, the refusal carries the character, and this
+// chooser offers the standard fourteen; these five strings are what connects
+// the refusal to the chooser, and the surface is
 // `crate::panels::properties::refusedchar`.
 //
-// ★ They live in THIS module rather than in `crate::text::textedit` because
+// They live in THIS module rather than in `crate::text::textedit` because
 // the surface they belong to *is* a face chooser: it draws the same two-group
 // popup through `panels::properties::face::popup_body` and owes the same
 // disclosure. Splitting the offer's words from the chooser's words is how two
@@ -204,7 +200,7 @@ pub const fn face_addable_disclosure() -> &'static str {
 
 /// The heading over the offer block.
 ///
-/// ★★ It names the **character's** problem, not the font's, and not the
+/// It names the **character's** problem, not the font's, and not the
 /// operator's. *"Unsupported font"* would be the engine's noun; *"That
 /// character isn't available"* would be the operator's own phrasing handed back
 /// to them without an answer. What an operator needs at the top of this block
@@ -214,14 +210,13 @@ pub const fn refused_char_heading() -> &'static str {
     "A character this font cannot type"
 }
 
-/// ★★★ **The sentence that names the character** — the half `Declined::line`
+/// **The sentence that names the character** — the half `Declined::line`
 /// structurally cannot say.
 ///
 /// The status bar's `⊗` slot returns `&'static str` and is truncated to 45 % of
 /// the bar; a panel can interpolate and wrap. So the naming happens here, beside
-/// the control that answers it, which is also where
-/// `REVIEW_TRIAGE.md`'s *"every disclosure above the thing it qualifies"* wants
-/// it.
+/// the control that answers it — which is also where a disclosure belongs,
+/// above the thing it qualifies rather than below it.
 ///
 /// # Why the FONT is named too
 ///
@@ -230,7 +225,7 @@ pub const fn refused_char_heading() -> &'static str {
 /// the shortened `/BaseFont` — the same spelling the chooser's rows use — so the
 /// name in this sentence and the name in the list are the same string.
 ///
-/// # ★★ Why *"the letters your page already prints"* and never *"subset"*
+/// # Why *"the letters your page already prints"* and never *"subset"*
 ///
 /// O141's framing, in the operator's own words: he asked this question without
 /// the word, and *"the operator should be able to get from the refusal to a face
@@ -248,19 +243,14 @@ pub fn refused_char_named(character: char, font: &str) -> String {
 
 /// The instruction under [`refused_char_named`], and the label on the chooser.
 ///
-/// # ★★★ It promised TWO gestures until 2026-09-05, and now promises one
+/// # It promises ONE gesture, because the shell performs the other
 ///
-/// It read: *"Pick a font that has the “q”, then click in the text and type it
-/// again"* — an accurate description of a route that stopped one gesture short
-/// of what the operator asked for. `Ctrl+Enter` calls `commit_into` and then
-/// `abandon` whether or not the engine accepted, so the words he typed were
-/// thrown away by the refusal and he had to produce them a second time from
-/// memory.
-///
-/// They are kept now ([`crate::canvas::textedit::Committing`]) and travel with
-/// the refusal, so **taking the offer re-applies the edit he already made**. The
-/// sentence says so, because a control that quietly does more than it claims is
-/// as hard to trust as one that does less.
+/// The operator's typed words are kept ([`crate::canvas::textedit::Committing`])
+/// and travel with the refusal, so **taking the offer re-applies the edit he
+/// already made**. A sentence adding *"then click in the text and type it
+/// again"* would describe a route one gesture longer than the one that runs,
+/// and a control that quietly does more than it claims is as hard to trust as
+/// one that does less.
 #[must_use]
 pub fn refused_char_offer(character: char) -> String {
     format!("Pick a font that has the “{character}” and pdfcer will put your change in with it:")
@@ -269,36 +259,19 @@ pub fn refused_char_offer(character: char) -> String {
 /// **No face pdfcer can author will take this character either** — the honest
 /// dead end, named rather than drawn as an empty list.
 ///
-/// # ★★★ This function REPLACED a caveat, and the replacement is the feature
+/// # Why there is no caveat here, and a sentence instead
 ///
-/// What stood here until 2026-09-08 was `refused_char_untested`, and it read:
+/// `preview_font_resources_for` coverage-tests a candidate string and the
+/// refused character **is** that candidate, so every row in the offer is a face
+/// that will take it. A caveat warning that a row might refuse anyway would
+/// teach the operator to distrust a list that is exact.
 ///
-/// > *"pdfcer has not checked these against your “{character}” — if the one you
-/// > pick cannot write it either, pdfcer will say so and change nothing."*
+/// ⇒ The price of that exactness is that the list can be **empty** — and it is,
+/// for any character outside `WinAnsiEncoding`, because none of the standard 14
+/// can encode one. Drawing the offer heading (*"Pick a font that has the 中"*)
+/// above an empty combo would be an instruction the operator cannot follow.
 ///
-/// That was honest and it was **the right sentence while it was true**. The
-/// offer was coverage-tested against *the characters already in the run*, not
-/// the one the operator was trying to type, so any row in it might refuse.
-/// Filing it rather than filtering was deliberate: filtering would have meant
-/// re-deriving `R221`'s encoding rule inside this crate, which drifts from the
-/// commit path the first time the rule changes.
-///
-/// ⇒ **`Pass 142.2` removed the caveat's subject.**
-/// `preview_font_resources_for` coverage-tests a candidate string, the refused
-/// character is now that candidate, and every row in the list is a face that
-/// **will** take it. A caveat warning about a row that can no longer appear
-/// would be a sentence teaching the operator to distrust a list that is now
-/// exact — so it is deleted rather than reworded.
-///
-/// # What it exposed, and why this sentence exists at all
-///
-/// Filtering to *faces that work* means the list can now be **empty** — and it
-/// is, for any character outside `WinAnsiEncoding`, because none of the
-/// standard 14 can encode one. Before the filter that state was impossible;
-/// after it, drawing the old heading (*"Pick a font that has the 中"*) above an
-/// empty combo would be an instruction the operator cannot follow.
-///
-/// ★ So the dead end is **named**, and it names the two things the operator can
+/// So the dead end is **named**, and it names the two things the operator can
 /// still do — neither of which is pdfcer's to perform, which is why they are
 /// offered as information rather than as buttons that would refuse.
 #[must_use]
@@ -311,31 +284,31 @@ pub fn refused_char_no_face(character: char) -> String {
     )
 }
 
-/// ★★ **What the block says on the frame the face swap lands** — the second
+/// **What the block says on the frame the face swap lands** — the second
 /// half of the route, now carried out rather than described.
 ///
 /// The swap is an edit, so it retires the offer; without this the block would
 /// vanish at the moment the operator most needs to be told what happened, and
 /// they would be left looking at a page that changed for a reason nothing named.
 ///
-/// ★ It names the face that is now in force, because that is the one fact the
+/// It names the face that is now in force, because that is the one fact the
 /// canvas cannot show them: on a metric-compatible swap — `Arimo-Bold` to
 /// `Helvetica-Bold` moved the operator's own line by 0.005 pt — the page looks
 /// exactly as it did, and a block saying nothing would leave them unsure whether
 /// anything happened at all.
 ///
-/// ★★★ It said *"Click in it and type the “q” again"* until 2026-09-05. It does
-/// not any more, because the block re-applies the edit itself on this very
-/// frame — and an instruction to do something the program has already done is
-/// worse than none: the operator follows it, types the character into a document
-/// that already has it, and gets a second copy.
+/// ⚠ **It must not tell the operator to type the character again.** The block
+/// re-applies the edit itself on this very frame, and an instruction to do
+/// something the program has already done is worse than none: the operator
+/// follows it, types the character into a document that already has it, and
+/// gets a second copy.
 #[must_use]
 pub fn refused_char_swapped(character: char, font: &str) -> String {
     format!("This text is now set in {font}, and pdfcer is putting your “{character}” in with it.")
 }
 
-/// ★★ **The one state that still asks the operator to type it again**, and it
-/// is the wording every other sentence here retired on 2026-09-05.
+/// **The one state that asks the operator to type it again**, and the only
+/// one in this module that does.
 ///
 /// Reached when the refusal arrived with **no carried words** —
 /// `RefusedCharacter::typed` is `None`, which happens if the plan that produced
@@ -344,8 +317,8 @@ pub fn refused_char_swapped(character: char, font: &str) -> String {
 /// paper over it: rather than guess at what the operator typed, it swaps the
 /// face (which is real and useful on its own) and asks for the character again.
 ///
-/// ★ So this is not a leftover. It is the honest sentence for the one state in
-/// which the instruction is true, and keeping it is what lets
+/// So it is the honest sentence for the one state in which the instruction is
+/// true, and keeping it separate is what lets
 /// [`refused_char_swapped`] and [`refused_char_blocked`] be unambiguous about
 /// their own states. A single sentence covering all three would have to hedge,
 /// and a hedged instruction is one the operator cannot follow.
@@ -357,43 +330,19 @@ pub fn refused_char_swapped_type_again(character: char, font: &str) -> String {
     )
 }
 
-/// ★★★ **What the block says when the swap landed and the character still would
-/// not go in** — the third state, added 2026-09-05, and **re-worded on
-/// 2026-09-06 when the one cause it used to name stopped existing.**
+/// **What the block says when the swap landed and the character still would not
+/// go in** — the third state, and the one that names **no cause at all**.
 ///
-/// # ★★★ What this sentence used to say, and why saying it now would be a lie
+/// # ⚠ It must not name a cause, and the reason is structural
 ///
-/// Until engine v0.41.0 it read, in full:
+/// It is tempting to delete this function and its `retried` arm on the grounds
+/// that the retype always lands now — `plan_edit` takes a `&DocumentView<'_>`
+/// so a newly authored `/Font` resolves without a save and a reopen, and
+/// [`crate::canvas::textedit::facewall`] asserts that success in both request
+/// shapes. **That reasoning is wrong.**
 ///
-/// > *"…pdfcer cannot type into a font it has just added to a file until that
-/// > file has been saved and opened again. Save this document, open it, and
-/// > type the "q" once more — it will go in then. This limit is pdfcer's own
-/// > and is on the list to fix."*
-///
-/// Every clause of that was true and measured. `EditSession::format_text`
-/// allocated the new `/Font` in the session overlay; `EditSession::edit_text`
-/// planned with `plan_edit(&self.base, …)`; `resolve_font_dict` dereferenced
-/// the run's `Tf` name through the base revision and answered `None`. The save
-/// and the reopen were not a guess at a remedy — they were literally what two
-/// invocations of `pdfcer.exe` did, and
-/// `fixtures/subset-font-floor.PROVENANCE.md` records the four commands.
-///
-/// **`Pass 257.0` (engine `5e95805`, released in v0.41.0) removed that cause.**
-/// Every text-edit planner takes `&DocumentView<'_>`, every `EditSession` verb
-/// passes `self.view()`, and there is no coercion from `&Document`, so the
-/// class is a compile error rather than a refusal.
-/// [`crate::canvas::textedit::facewall`] now asserts the **success** in both
-/// request shapes, with no save and no reopen between the verbs.
-///
-/// # ★★★ So why does this sentence still exist? Because the STATE does.
-///
-/// [`crate::canvas::textedit::facewall`]'s own module header instructed its
-/// reader to **delete** this function and the `retried` arm that shows it, on
-/// the reasoning that the retype would now always land and the state would
-/// become unreachable. **That reasoning is wrong, and the error is worth
-/// naming**, because it is the same shape as the defect the sentence was about.
-///
-/// The block is not reached by recognising this cause. It is reached by
+/// The block is not reached by recognising any particular cause. It is reached
+/// by
 /// **arithmetic**, as the section below explains: *the retype was raised and
 /// the document did not change*. That condition is agnostic about **why**, and
 /// there are other whys — an offered face that turns out not to cover the
@@ -403,12 +352,12 @@ pub fn refused_char_swapped_type_again(character: char, font: &str) -> String {
 /// standing cross-cutting defect this project already has on its own list
 /// (*"every engine refusal reaches the operator as SILENCE"*).
 ///
-/// ⇒ **A state and its explanation have different lifetimes.** The explanation
-/// expired; the state did not. So the cause is struck and the state keeps its
-/// voice — which is the conservative direction, because an operator told *"it
-/// did not go in"* can still act, and one told nothing cannot.
+/// ⇒ **A state and its explanation have different lifetimes.** A cause that
+/// stops existing does not take the state with it, so this sentence keeps its
+/// voice and names nothing — the conservative direction, because an operator
+/// told *"it did not go in"* can still act, and one told nothing cannot.
 ///
-/// # ★★ Why this state is reached by ARITHMETIC and not by reading the error
+/// # Why this state is reached by ARITHMETIC and not by reading the error
 ///
 /// The block never inspects the engine's refusal. It knows what it asked for and
 /// it watches `doc.edit_epoch`: the swap moves it once, and had the retype
@@ -418,11 +367,11 @@ pub fn refused_char_swapped_type_again(character: char, font: &str) -> String {
 /// which is precisely what `app::status::decline::textedit`'s header forbids and
 /// what a string match on *"unresolvable"* would have been.
 ///
-/// ★ That mechanism is exactly why the old wording was a hazard the moment the
-/// engine moved: **a surface that cannot see a cause must not name one.** It
-/// named the only cause anybody had met, which read as a measurement and was an
-/// inference. The replacement says what the block actually knows — the face
-/// changed, the character did not go in — and stops there.
+/// ⇒ That mechanism is the whole of the wording rule here: **a surface that
+/// cannot see a cause must not name one.** Naming the only cause anybody has
+/// met reads to the operator as a measurement while being an inference. The
+/// sentence says what the block actually knows — the face changed, the
+/// character did not go in — and stops there.
 ///
 /// # What it must NOT do
 ///
@@ -446,7 +395,7 @@ pub fn refused_char_blocked(character: char, font: &str) -> String {
 mod tests {
     use super::*;
 
-    /// ★★★ **The disclosure carries all three facts it exists to carry.**
+    /// **The disclosure carries all three facts it exists to carry.**
     ///
     /// Asserted by content rather than by exact text, because the wording will
     /// be improved and the facts must not be lost in the improving. Each of the
@@ -468,7 +417,7 @@ mod tests {
         assert!(line.contains("reader's own copy"), "{line}");
     }
 
-    /// ★★ **The two group headings are not paraphrases of each other.**
+    /// **The two group headings are not paraphrases of each other.**
     ///
     /// They are the only thing distinguishing two rows that may read
     /// identically — `Helvetica` the page carries and `Helvetica` pdfcer would
@@ -487,14 +436,13 @@ mod tests {
         );
     }
 
-    /// ★ **The empty-list sentence accounts for BOTH sources**, since the
-    /// standard fourteen joined the page's own fonts.
+    /// **The empty-list sentence must account for BOTH sources** — the page's
+    /// own fonts and the standard fourteen.
     ///
-    /// It said *"No other font on this page can show these characters"* until
-    /// 2026-08-29, which was exhaustive when the page was the only source and
-    /// became a half-answer the moment it was not. An operator reading the old
-    /// sentence beside a list that elsewhere offers `Times-Roman` out of thin
-    /// air would reasonably ask why it is not offered here.
+    /// *"No other font on this page can show these characters"* is exhaustive
+    /// only while the page is the only source. An operator reading that beside
+    /// a list which elsewhere offers `Times-Roman` out of thin air would
+    /// reasonably ask why it is not offered here.
     #[test]
     fn the_empty_sentence_accounts_for_the_standard_fourteen() {
         let line = text_face_none();
@@ -502,7 +450,7 @@ mod tests {
         assert!(line.contains("fourteen"), "{line}");
     }
 
-    /// ★★★ **The offer names the character, every time, in every sentence that
+    /// **The offer names the character, every time, in every sentence that
     /// mentions it** — `OPERATOR_REQUESTS.md` O141.
     ///
     /// The whole of what the status bar cannot do. A block that said *"a
@@ -511,7 +459,7 @@ mod tests {
     /// what they do not know is **which** keystroke the document refused — on a
     /// pasted line it can be a character they never saw themselves type.
     ///
-    /// ★ Asserted over a character outside ASCII on purpose. A build that
+    /// Asserted over a character outside ASCII on purpose. A build that
     /// formatted with `{:?}` or escaped for a byte-oriented surface would print
     /// `'\u{20ac}'` and pass a test written against `'q'`.
     #[test]
@@ -533,7 +481,7 @@ mod tests {
         }
     }
 
-    /// ★★ **Both font-naming sentences name the font**, and they name two
+    /// **Both font-naming sentences name the font**, and they name two
     /// different ones.
     ///
     /// [`refused_char_named`] names the face that **refused**;
@@ -553,24 +501,16 @@ mod tests {
         );
     }
 
-    /// ★★★ **The offer promises that pdfcer will finish the job, and neither
+    /// **The offer promises that pdfcer will finish the job, and neither
     /// sentence tells the operator to retype anything.**
     ///
-    /// # This test asserted the OPPOSITE until 2026-09-05, and the inversion is
-    /// the point
+    /// The block re-applies the operator's edit itself
+    /// ([`crate::panels::properties::refusedchar`]), so a *"type it again"*
+    /// instruction is not merely unnecessary — it is **harmful**: an operator
+    /// who follows it types the character into a document that already has it
+    /// and gets two.
     ///
-    /// It was `the_offer_says_to_type_the_character_again`, and it required both
-    /// sentences to contain *"type it again"* — a correct assertion about a
-    /// route that stopped one gesture short of what the operator asked for.
-    /// `Ctrl+Enter` threw his draft away on the refusal, so choosing a face left
-    /// him to produce his own edit a second time from memory.
-    ///
-    /// The block re-applies it now
-    /// ([`crate::panels::properties::refusedchar`]), so the instruction is not
-    /// merely unnecessary — it is **harmful**: an operator who follows it types
-    /// the character into a document that already has it and gets two.
-    ///
-    /// ★ Asserted in the negative as well as the positive, because a build that
+    /// Asserted in the negative as well as the positive, because a build that
     /// re-applied the edit *and* kept the old wording would pass a
     /// promise-only test while producing exactly that double edit.
     #[test]
@@ -595,22 +535,17 @@ mod tests {
         }
     }
 
-    /// ★★★ **The third state names the obstacle, the remedy and whose limit it
-    /// is** — and it is the one sentence here that asks the operator to type
-    /// again, because in that state it is true.
+    /// **The third state names the face that IS in force and no cause at all.**
     ///
-    /// The face swap landed and the character still would not go in — and since
-    /// 2026-09-06 **pdfcer does not know why**, because `Pass 257.0` removed the
-    /// only cause this state had ever been observed to have and the block is
-    /// reached by arithmetic rather than by recognising a refusal.
+    /// The face swap landed and the character still would not go in, and
+    /// **pdfcer does not know why**: the block is reached by arithmetic — the
+    /// edit epoch not moving — rather than by recognising a refusal.
     ///
-    /// ★★★ So the obligations asserted here changed direction. The old test
-    /// required the sentence to carry the *remedy* (*"saved and opened again"*).
-    /// This one requires it to carry **no cause at all**, which is the harder
-    /// property to hold: a later session improving the wording will be tempted
-    /// to put an explanation back, and the explanation it reaches for will be
-    /// the one written in the git history of this very file — which is now
-    /// false. The negative assertions below exist to stop exactly that.
+    /// ⚠ *Carrying no cause* is the harder property to hold, which is why it is
+    /// asserted rather than left to a comment. A later session improving the
+    /// wording will be tempted to put an explanation back, and the explanation
+    /// it reaches for will be one this surface cannot see. The negative
+    /// assertions below exist to stop exactly that.
     #[test]
     fn the_blocked_sentence_names_no_cause_it_cannot_see() {
         let line = refused_char_blocked('%', "Courier");
@@ -642,25 +577,20 @@ mod tests {
         );
     }
 
-    /// ★★★ **The dead end says the document survived it, and says what the
+    /// **The dead end says the document survived it, and says what the
     /// operator can still do.**
     ///
-    /// # What this test replaced, and why the assertion changed shape
+    /// # Why the dead end is a sentence and not a caveat
     ///
-    /// It was `the_caveat_says_what_happens_when_the_face_refuses_too`, over
-    /// `refused_char_untested` — the sentence warning that a row in the offer
-    /// might refuse the character it was being offered for. That warning was
-    /// true while the offer was coverage-tested against the run's **existing**
-    /// text; `Pass 142.2` made the refused character itself the candidate, so
-    /// no row in the list can refuse any more and the caveat's subject is gone.
-    ///
-    /// ⇒ What the filter exposed instead is an **empty** offer, for any
+    /// The offer is coverage-tested against the refused character itself, so no
+    /// row in the list can refuse it and there is nothing for a caveat to warn
+    /// about. What that exactness exposes instead is an **empty** offer, for any
     /// character no standard-14 face can encode. This is the sentence drawn
-    /// there, and the old test's real assertion carries over unchanged: **say
-    /// that nothing was changed.** A dead end that does not say so reads as a
+    /// there, and its load-bearing assertion is: **say that nothing was
+    /// changed.** A dead end that does not say so reads as a
     /// failure the operator has to go and check.
     ///
-    /// ★ Plus the half the old sentence could not have: a dead end owes the
+    /// Plus the half the old sentence could not have: a dead end owes the
     /// operator the *next* thing to try, even when that thing is not pdfcer's
     /// to do.
     #[test]

@@ -19,7 +19,7 @@
 //! names a key, a rectangle, a tint and an enabled flag, and there is
 //! nothing about a ribbon in any of them.
 //!
-//! # ★ The one thing that could *not* be borrowed
+//! # The one thing that could *not* be borrowed
 //!
 //! [`crate::ribbon::CustomItem`] carries `tab` and `group` — the two
 //! coordinates that say where in a ribbon a custom control sits. A menu

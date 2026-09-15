@@ -1,7 +1,7 @@
 //! # `app::actions::exporttext` — the plan a text export is made of, and the
 //! pure parts of making one
 //!
-//! `file.export_text`, wired 2026-09-04 on the operator's ask:
+//! `file.export_text`, on the operator's ask:
 //!
 //! > *"also the engine can export PDFs as text. we should have export/import
 //! > for that."*
@@ -19,36 +19,31 @@
 //!
 //! ---
 //!
-//! # ★★★ THE IMPORT HALF DOES NOT EXIST, AND THIS IS WHERE THAT IS RECORDED
+//! # THE IMPORT HALF IS ONE FEATURE OF THREE, AND THIS SAYS WHICH
 //!
-//! The operator asked for **"export/import"**, one word with a slash in it, and
-//! only one side of the slash was buildable. Writing down *which* side and
-//! *why* is the whole of what this section is for, because the next reader's
-//! first question is going to be "where is the import".
-//!
-//! `pdfcer-core` was read for it — `text_edit/`, `text_extract/`, `edit.rs`'s
-//! `impl EditSession`, `ocr/`, and `D:\Dev\pdfcer\docs\core-api\` parts 1–3.
-//! *"Import text"* turns out to be three different features wearing one name,
-//! and the engine offers none of the three:
+//! The operator asked for **"export/import"**, one word with a slash in it.
+//! *"Import text"* is three different features wearing one name, and the
+//! engine offers one of them — which is the one that ships. The next reader's
+//! first question is going to be *"where is the import"*, and the answer
+//! depends entirely on which of the three they meant:
 //!
 //! | what an operator could mean | the nearest verb | why it is not that feature |
 //! |---|---|---|
-//! | **Make a PDF out of a text file** | ✅ **`EditSession::place_text` since `Pass 252.0`, wired as `file.import_text` on 2026-09-07** — see `crate::app::actions::importtext`. The row below is the superseded analysis, kept because it is what the request was argued from and because a corrected claim whose history is erased cannot be audited. | ~~There is no document builder at all. `pdfcer_core::build` is *build provenance* — the compile stamp — not document construction. The shell can make a blank page (`app::blank`, `set_media_box`) and `EditSession::add_text` can put a run on it, but `add_text` is **one page, one call, at coordinates**: it does not paginate, and `addtext.rs:32` is explicit that overflow past the page is *"EMITTED regardless — these are disclosures, never clips"*. So a two-page text file would produce one page with the second page's words present in the content stream and painted off the sheet. That is a data-loss trap wearing the shape of a feature.~~ ⇒ **And the analysis was right about the shape of the answer**: `place_text` paginates, and `blank_document` is the page-creating primitive whose absence this row identified. The engine's reply names that absence in the same words — *"nothing in the crate could create a page before, only copy one"*. |
-//! | **Replace a page's text with a text file's** | `EditSession::edit_text` (`edit.rs:8675`) | Addresses **one located run**, via a `find` string or a pinned operator span. There is no *"replace page N's text with this string"*. And the mapping cannot be reconstructed from an export: `plain_text()`'s line breaks and word spaces are pdfcer's own derivation (negative result S5), one glyph is not one character (§9.10.3), and 13 % of runs carry glyphs from more than one show operator (`operator_span_invariant.rs`, measured over 4,289 fixtures). A round trip built on that would edit the wrong text and say it had succeeded. |
-//! | **Put a text layer over a scan** | `EditSession::add_ocr_layer` (`edit.rs:7313`) | Takes `&[OcrPageLayer]`, whose one payload field is `recognised: &crate::ocr::OcrPage` — **positioned words**, produced by the recogniser from the raster. A `.txt` file has no positions, so there is nothing to hand it. This is `file.ocr`, and it already ships. |
+//! | **Make a PDF out of a text file** | `EditSession::place_text`, plus `blank_document` for the page itself | **This one ships**, as `file.import_text` — see [`crate::app::actions::importtext`]. `place_text` paginates, which is the property that makes it a feature rather than a trap: `EditSession::add_text` is one page, one call, at coordinates, and a two-page text file put through it would paint the second page's words off the sheet and report success. |
+//! | **Replace a page's text with a text file's** | `EditSession::edit_text` | Addresses **one located run**, via a `find` string or a pinned operator span. There is no *"replace page N's text with this string"*. And the mapping cannot be reconstructed from an export: `plain_text()`'s line breaks and word spaces are pdfcer's own derivation (negative result S5), one glyph is not one character (§9.10.3), and 13 % of runs carry glyphs from more than one show operator (`operator_span_invariant.rs`, measured over 4,289 fixtures). A round trip built on that would edit the wrong text and say it had succeeded. |
+//! | **Put a text layer over a scan** | `EditSession::add_ocr_layer` | Takes `&[OcrPageLayer]`, whose one payload field is `recognised: &crate::ocr::OcrPage` — **positioned words**, produced by the recogniser from the raster. A `.txt` file has no positions, so there is nothing to hand it. This is `file.ocr`, and it already ships. |
 //!
-//! ⇒ **Nothing was faked.** No half-import shipped, no control was drawn that
-//! declines when pressed, and the window says nothing about a round trip. A
-//! request naming what a shell would need has been filed at
-//! `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\request_there_is_no_route_from_a_text_file_back_into_a_pdf.md`.
+//! ⇒ **Nothing is faked for the two that do not ship.** No half-import is
+//! drawn, no control declines when pressed, and the window says nothing about
+//! a round trip.
 //!
 //! ---
 //!
-//! # ★★ The default plan writes the CLIPBOARD's own bytes
+//! # The default plan writes the CLIPBOARD's own bytes
 //!
-//! `file.copy_document_text` has been putting
-//! `extract_document_view(…).plain_text()` on the clipboard since 2026-08-20.
-//! At [`TextExportPlan`]'s defaults this export writes exactly that string,
+//! `file.copy_document_text` puts `extract_document_view(…).plain_text()` on
+//! the clipboard. At [`TextExportPlan`]'s defaults this export writes that
+//! same string,
 //! byte for byte — same extraction options (the settings funnel), same
 //! `plain_text()`, same U+000C between pages, no BOM, no line-ending rewrite.
 //!
@@ -60,7 +55,7 @@ use std::path::{Path, PathBuf};
 
 /// How one page is separated from the next in the written file.
 ///
-/// ★ Two values rather than a `bool`, because the two are not *"a marker, on or
+/// Two values rather than a `bool`, because the two are not *"a marker, on or
 /// off"* — they are two different characters-in-the-file, one of which is the
 /// engine's and one of which is pdfcer's own prose. A `bool` would have made
 /// the second look like a formatting preference rather than like added content.
@@ -79,7 +74,7 @@ pub enum PageSeparator {
     FormFeed,
     /// A visible line naming the page that follows — `crate::text::export_text::page_marker`.
     ///
-    /// ★ **Text pdfcer wrote, which the document does not contain.** Offered
+    /// **Text pdfcer wrote, which the document does not contain.** Offered
     /// because a form feed is invisible in several editors and an operator
     /// reading a forty-page export needs to know where they are; disclosed in
     /// the window *and* in the receipt, because the window is gone by the time
@@ -104,7 +99,7 @@ pub enum LineEndings {
 /// Rides `super::write::WriteAction::Text`, so `Clone` and `PartialEq` for that
 /// enum's derives — [`super::imageexport::ImagePlan`]'s reason, stated there.
 ///
-/// ★ The pages are **resolved**, not a scope and a string. The window has
+/// The pages are **resolved**, not a scope and a string. The window has
 /// already parsed the typed range — it needs the answer to decide whether
 /// Export is pressable — so re-parsing in the apply phase would be a second
 /// reading of the same box against a document that may have changed pages in
@@ -132,7 +127,7 @@ const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 ///
 /// Beside the document, named after it, with `.txt`.
 ///
-/// # ★★★ `set_file_name`, NEVER `set_extension` — and this is a defect that
+/// # `set_file_name`, NEVER `set_extension` — and this is a defect that
 /// has already shipped once in this crate
 ///
 /// `Path::set_extension` replaces everything after the **last** dot. A document
@@ -147,11 +142,10 @@ const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 /// shape, and the two files that collide are the two an operator is most likely
 /// to want side by side.
 ///
-/// ★ The DXF export shipped with exactly this bug for weeks, under a **comment
-/// asserting the behaviour it did not have** — *"appending would produce
-/// `plan.rev2.dxf` either way"*. It was found on 2026-09-04 by the image
-/// export, which tested the helper against `plan.rev2.pdf` on its first run and
-/// watched it fail. This function is written the safe way and
+/// A `set_extension` here would truncate at the first dot, and the mistake is
+/// invisible to review because the comment asserting *"appending would produce
+/// `plan.rev2.txt` either way"* reads as true until the helper meets a stem
+/// with a dot in it. This function is written the safe way and
 /// [`tests::a_revision_in_the_stem_survives_the_suggested_name`] is the test
 /// that keeps it that way — **a claim in a comment is not a test.**
 ///
@@ -187,7 +181,7 @@ pub struct Assembled {
     pub empty_pages: Vec<usize>,
     /// Characters in [`Self::text`], excluding anything pdfcer added.
     ///
-    /// ★ Excluding the added markers and separators deliberately: the receipt
+    /// Excluding the added markers and separators deliberately: the receipt
     /// promises the operator a count of **their** words, and a number inflated
     /// by pdfcer's own page markers would make the same document report a
     /// different size depending on a formatting checkbox.
@@ -206,7 +200,7 @@ pub struct Assembled {
 /// # The algorithm, and the two things it must not get wrong
 ///
 /// 1. **A separator goes between pages, never before the first or after the
-///    last.** `plain_text()`'s own rule (`mod.rs:1459-1467`: `if i > 0`). A
+///    last.** `plain_text()`'s own rule. A
 ///    leading form feed makes a one-page export start with a page break that
 ///    means nothing; a trailing one leaves every file ending in a phantom page.
 /// 2. **An empty page still counts as a page.** It contributes a separator and
@@ -214,7 +208,7 @@ pub struct Assembled {
 ///    is even when page 4 was a scan. Skipping it would silently renumber the
 ///    file.
 ///
-/// ★ The marker replaces the form feed rather than joining it. Writing both
+/// The marker replaces the form feed rather than joining it. Writing both
 /// would give a reader two page boundaries per page and a `split('\u{000C}')`
 /// that no longer lines up with the visible marks.
 #[must_use]
@@ -279,7 +273,7 @@ mod tests {
     // The filename — the defect that already shipped once
     // ======================================================================
 
-    /// ★★★ **`plan.rev2.pdf` must suggest `plan.rev2.txt`, not `plan.txt`.**
+    /// **`plan.rev2.pdf` must suggest `plan.rev2.txt`, not `plan.txt`.**
     ///
     /// The DXF path shipped this bug for weeks behind a comment asserting the
     /// opposite. It is asserted here rather than described, because the whole
@@ -322,7 +316,7 @@ mod tests {
     // The page range — called, not copied
     // ======================================================================
 
-    /// ★ **The typed range is the print dialog's parser**, reached through
+    /// **The typed range is the print dialog's parser**, reached through
     /// [`super::imageexport::resolve_pages`].
     ///
     /// Asserted here as well as in `dialogs::print::tabs` because the claim
@@ -372,7 +366,7 @@ mod tests {
     // Assembly — separators, empty pages, counts
     // ======================================================================
 
-    /// ★ The form feed goes BETWEEN pages: never leading, never trailing.
+    /// The form feed goes BETWEEN pages: never leading, never trailing.
     ///
     /// This is `plain_text()`'s own `if i > 0`, and asserting it here is what
     /// keeps this export producing the clipboard's own string rather than one
@@ -396,7 +390,7 @@ mod tests {
         assert_eq!(three.markers_added, 0);
     }
 
-    /// ★★ **An empty page still occupies its place**, so page numbers after it
+    /// **An empty page still occupies its place**, so page numbers after it
     /// are not silently shifted.
     #[test]
     fn an_empty_page_keeps_its_place_and_is_named() {
@@ -477,7 +471,7 @@ mod tests {
     // Encoding
     // ======================================================================
 
-    /// ★★ The default plan writes the string unchanged — the clipboard's own
+    /// The default plan writes the string unchanged — the clipboard's own
     /// bytes. This is the invariant the whole design rests on.
     #[test]
     fn the_default_plan_writes_the_string_unchanged() {
@@ -505,7 +499,7 @@ mod tests {
         assert_eq!(&bytes[3..], "Ø50".as_bytes());
     }
 
-    /// ★ CRLF conversion must not double a `\r` the document already carried.
+    /// CRLF conversion must not double a `\r` the document already carried.
     #[test]
     fn windows_line_endings_do_not_double_an_existing_carriage_return() {
         let plan = TextExportPlan {

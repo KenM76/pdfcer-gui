@@ -1,9 +1,9 @@
 //! # `native_window::win32` — the Windows half
 //!
 //! See the crate docs for why this exists at all. This file is the Windows
-//! side: six imported functions, two public entry points, no state.
+//! side: hand-written declarations, two public entry points, no state.
 //!
-//! ## The second entry point, added 2026-08-31
+//! ## The second entry point, and why the toolkit cannot answer it
 //!
 //! [`cursor_position`] exists for the same reason [`own_window`] does — the
 //! toolkit will not say something the operating system knows. **During an OLE
@@ -29,8 +29,8 @@
 //!
 //! ## ★ Why the declarations are hand-written rather than a crate
 //!
-//! Because four symbols is not worth a dependency, and `tools/ui-verify`
-//! already sets the precedent in this repository for exactly this reason: it
+//! Because a handful of symbols is not worth a dependency, and
+//! `tools/ui-verify` sets the precedent in this repository for that reason: it
 //! declares its own `user32` externs rather than pulling in `windows-sys`,
 //! whose feature surface is larger than this whole module.
 //!
@@ -47,9 +47,9 @@ type Hwnd = *mut c_void;
 ///
 /// ★ The name is a trap and the SDK documents it as one: this index sets the
 /// window's *owner*, not its *parent*. A parent would make the dialog a child
-/// control clipped inside the application's client area, which is precisely
-/// the in-viewport behaviour this project spent a day getting rid of. An owner
-/// is a peer top-level window that stays above the one it belongs to.
+/// control clipped inside the application's client area — the in-viewport
+/// behaviour this whole module exists to leave behind. An owner is a peer
+/// top-level window that stays above the one it belongs to.
 const GWLP_HWNDPARENT: i32 = -8;
 
 /// The `POINT` the SDK fills in, laid out exactly as `windef.h` declares it.
@@ -156,8 +156,9 @@ pub fn own_window(owner: isize, title: &str) -> bool {
 ///
 /// # ★★ Why a caller wants this rather than the toolkit's pointer position
 ///
-/// Only one caller should: [`crate::app::filedrag`], during a file drag. In
-/// every other situation `egui`'s pointer position is better in three ways —
+/// Only one caller should: an application's file-drag path, while a file drag
+/// is in flight. In every other situation `egui`'s pointer position is better
+/// in three ways —
 /// it is in the toolkit's own coordinate space, it is the position as of the
 /// frame being drawn rather than as of *now*, and it does not cross a syscall.
 ///

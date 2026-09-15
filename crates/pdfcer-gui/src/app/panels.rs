@@ -9,35 +9,27 @@
 //! | pressing it when open | **closes** it | shows it again, idempotently |
 //! | callers | `view.panel_*`, `file.fonts` | `file.properties`, `markup.comments` |
 //!
-//! ## Why this is its own file
+//! ## Where this sits among its siblings
 //!
-//! Split from `app/mod.rs` when that file crossed the 1,500-line gate for the
-//! fourth time — the earlier splits produced `dispatch.rs`, `conditions.rs`
-//! and `gating.rs`. The seam is the same shape as all three: `mod.rs` composes
-//! a frame, `dispatch.rs` answers *what does this verb do*, `conditions.rs`
-//! answers *what is true right now*, `gating.rs` answers *what is this mode
-//! allowed to do*, and this file answers *where does a panel go, and what does
-//! pressing its control mean*.
+//! `mod.rs` composes a frame, `dispatch.rs` answers *what does this verb do*,
+//! `conditions.rs` answers *what is true right now*, `gating.rs` answers *what
+//! is this mode allowed to do*, and this file answers *where does a panel go,
+//! and what does pressing its control mean*.
 //!
-//! ## ★ The distinction is load-bearing, and a test proved it
+//! ## The distinction is load-bearing
 //!
-//! The toggle's first draft changed `show_panel` itself, which turned **every**
-//! panel command into a toggle — including `file.properties`. That is offered
-//! by the **Objects row context menu** to describe the row just clicked, so
-//! right-clicking a second row and choosing Properties would have *closed* the
-//! description instead of re-pointing it at the new row.
-//!
+//! Making the toggle a property of `show_panel` would turn **every** panel
+//! command into a toggle, including `file.properties`. That one is offered by
+//! the **Objects row context menu** to describe the row just clicked, so
+//! right-clicking a second row and choosing Properties would *close* the
+//! description instead of re-pointing it at the new row;
 //! `app::tests::the_properties_command_puts_the_panel_on_screen_in_every_mode`
-//! caught it, and its comment had said so in advance:
+//! holds that property.
 //!
-//! > *Idempotent: asking twice is not a toggle. The `objects.row` context menu
-//! > offers this command to describe the row just clicked, and a second
-//! > invocation that hid the description would be actively hostile.*
-//!
-//! It is worth recording that the argument was already written down and was
-//! still walked into. The lesson is not "read the tests" — it is that a change
-//! phrased as *"make panel commands toggles"* silently assumes every command
-//! that reaches a panel is a panel **control**, and two of them are not.
+//! The trap in the phrasing *"make panel commands toggles"* is that it assumes
+//! every command reaching a panel is a panel **control**, and two of them are
+//! not: a command whose question is *"is this panel open?"* toggles, and a
+//! command whose question is *"tell me about this thing"* shows.
 
 use crate::app::PdfcerApp;
 
@@ -45,15 +37,14 @@ impl PdfcerApp {
     /// **Show `panel`, or close it if it is already on screen.**
     ///
     /// What the *panel toggle controls* call — `view.panel_*` and
-    /// `file.fonts`. Operator decision, 2026-08-14: pressing the control for a
-    /// panel that is open closes it, which is what Acrobat, VS Code and
-    /// Inkscape all do and therefore what the standing *"make it work the way
-    /// other programs do"* tie-breaker asks for. Before this they were
-    /// show-only, so such a control rendered **pressed and did nothing** — a
-    /// visible control that is silently inert, which `RIBBON_IA.md` P3 does not
-    /// excuse.
+    /// `file.fonts`. Pressing the control for a panel that is open closes it,
+    /// which is what Acrobat, VS Code and Inkscape all do and therefore what
+    /// the standing *"make it work the way other programs do"* tie-breaker
+    /// asks for. A show-only control for an open panel renders **pressed and
+    /// does nothing** — a visible control that is silently inert, which
+    /// `RIBBON_IA.md` P3 does not excuse.
     ///
-    /// # ★ Why this is a second entry point rather than a change to
+    /// # Why this is a second entry point rather than a change to
     /// [`Self::show_panel`]
     ///
     /// Because **not every command that shows a panel is a toggle**, and the
@@ -62,8 +53,7 @@ impl PdfcerApp {
     /// clicked; if it toggled, right-clicking a second row and choosing
     /// Properties would *close* the description instead of re-pointing it —
     /// which `app::tests::the_properties_command_puts_the_panel_on_screen_in_every_mode`
-    /// calls "actively hostile", and it is right. That test caught this
-    /// function's first draft, which toggled everything.
+    /// holds against.
     ///
     /// So the rule is about the **control**, not the panel: a control whose
     /// job is *"is this panel open?"* toggles; a control whose job is *"tell me

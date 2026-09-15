@@ -7,22 +7,19 @@
 //! > *called* from exactly one FILE — `redact/mod.rs` — and exactly the number
 //! > of times that module accounts for by name.
 //!
-//! ★★★ **CORRECTED 2026-09-04, and again 2026-09-05.** The property first read
-//! *"called in exactly one place — [`super::prepare_redaction_apply`]"*, which
-//! was true until `Pass 250.1` gave the engine a second removal surface. It
-//! then read *"exactly twice, and both callers prove"*, which was true until
-//! `Pass 250.2` replaced that second surface with **three**:
+//! ★★★ **The subject is a TABLE, not one identifier.** The engine's removal is
+//! more than one surface: `apply_redactions` itself, plus
 //! `apply_redactions_deferred` (stage), `save_applying_redaction` (perform, at
 //! save) and `cancel_pending_redaction` (disarm).
 //!
 //! ⇒ **A monopoly pinned to one identifier watches the feature walk out of the
 //! module the day the engine splits the verb.** So [`SUBJECTS`] is a table of
 //! (identifier, expected count) rather than a constant, and the argument for
-//! each row is in [`super`] §2.4 beside the function that owns it. The count
-//! for `apply_redactions` went **down** on the 2026-09-05 pass, from two to
-//! one, because the collapsing route was deleted rather than kept — and an
-//! exact count is what made that deletion an edit somebody had to write down
-//! instead of a number that quietly still fitted under a ceiling.
+//! each row is in [`super`] §2.4 beside the function that owns it.
+//!
+//! ★ And each row is an exact **count**, never a ceiling. A route that is
+//! deleted lowers the number, and an exact count makes that deletion an edit
+//! somebody has to write down rather than a figure that quietly still fits.
 //!
 //! ★ `cancel_pending_redaction` is pinned even though it removes nothing. It
 //! *disarms* a removal, which is the same surface seen from behind: a second
@@ -40,9 +37,9 @@
 //! bypasses the type entirely: `let (bytes, _report) =
 //! pdfcer_core::redact::apply_redactions(&doc, &opts)?; std::fs::write(p,
 //! &bytes)?;` is four lines, needs nothing from this module, and produces
-//! exactly the artefact `Pass 72.0` warns about — *"a shell calling
-//! `redact::apply_redactions` directly and writing the bytes ships an
-//! unverified redaction and will not know."*
+//! exactly the artefact this module exists to prevent: **a shell that calls
+//! `redact::apply_redactions` directly and writes the bytes ships an
+//! unverified redaction and will not know.**
 //!
 //! It is not a hypothetical. `pdfcer`'s `redact-apply` does precisely that
 //! at the engine's HEAD and exits `SUCCESS` on a file it never verified. The
@@ -297,10 +294,9 @@ mod tests {
     /// its verdict means anything.
     ///
     /// A floor rather than an exact count, deliberately: an exact number is a
-    /// figure in prose that drifts (`HANDOFF.md` §10's fifth bullet, five times
-    /// and counting), while a floor only ever fails for the reason it exists —
-    /// a walker that stopped early. The crate had around 150 source files when
-    /// this was written.
+    /// figure in prose, and figures in prose drift, while a floor only ever
+    /// fails for the reason it exists — a walker that stopped early. The crate
+    /// holds around 150 source files.
     const MIN_FILES_SWEPT: usize = 100;
 
     /// The subject the self-test fixtures below are written around.
@@ -321,8 +317,8 @@ mod tests {
     ///
     /// The assertion this module exists to make. A failure here means one of
     /// three things, and the message says which: a second path to the engine's
-    /// removal has appeared (the `Pass 72.0` artefact, an unverified redaction
-    /// that will not know it is one); a legitimate call has moved out of the
+    /// removal has appeared — an unverified redaction that will not know it is
+    /// one; a legitimate call has moved out of the
     /// proving file; or a route has been added or deleted and this table has
     /// not been told.
     ///
@@ -414,22 +410,19 @@ mod tests {
     /// one directory where it would leave the un-redacted content in a prior
     /// revision of a file the operator has been told is redacted.
     ///
-    /// # ★★★ The exception, added 2026-09-04 and RE-ARGUED 2026-09-05
+    /// # ★★★ The exception
     ///
     /// `redact/tests.rs` **does** call the forbidden verb, deliberately and
-    /// repeatedly, and it must. What it is proving changed completely on
-    /// 2026-09-05 and the exception survived the change, which is worth
-    /// recording because the two arguments are opposites:
+    /// repeatedly, and it must. It performs exactly the save the ban forbids
+    /// and asserts it is **refused by name** (`WriteError::RedactionPending`),
+    /// because the un-redacted content is still live in the staged session, so
+    /// the guarantee is a refusal rather than a property of the bytes.
     ///
-    /// * **Until `Pass 250.2`**, the suite performed exactly the save the ban
-    ///   forbids and asserted the removed text was **not in the result** —
-    ///   because the collapsing verb's whole answer to our §4.1 was that an
-    ///   incremental save of a collapsed session is safe, and the only way to
-    ///   hold the engine to that was to make the save and look.
-    /// * **Since `Pass 250.2`**, the suite performs the same call and asserts it
-    ///   is **refused by name** (`WriteError::RedactionPending`) — because the
-    ///   un-redacted content is now still live in the session, so the guarantee
-    ///   is a refusal rather than a property of the bytes.
+    /// ★ The shape survives a change of engine contract. Were a removal to
+    /// collapse into the session instead of staying pending, the same call
+    /// would be made and the assertion would become *the removed text is not in
+    /// the result* — the measurement is a save that is actually made and looked
+    /// at, whichever guarantee the engine offers.
     ///
     /// ⇒ Either way, *"the guarantee is the engine's; the measurement is ours"*,
     /// and a ban that also forbade the measurement would leave the whole

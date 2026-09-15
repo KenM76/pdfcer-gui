@@ -243,9 +243,10 @@ fn an_edit_survives_the_round_trip_through_a_saved_copy() {
 ///   decomposition and the page-text cache, and retires a rule-4 disclosure
 ///   the operator may not have read, to record an event that changed nothing
 ///   on screen;
-/// * **zeroing** `edit_epoch` — turns off `dialogs::ocr`'s `UnsavedEdits`
-///   refusal, whose whole job is to stop OCR producing a recognised copy
-///   with the operator's edits silently missing;
+/// * **zeroing** `edit_epoch` — puts it below `saved_epoch`, so
+///   `actions::acrobat`'s `edit_epoch.saturating_sub(saved_epoch)` reports
+///   **zero** unsaved changes in a dialog that is on screen precisely because
+///   there are some;
 /// * writing `path`/`origin` — that is Save **As**, a command this build
 ///   does not have, and doing it here would rename the operator's open
 ///   document because they asked for a copy.

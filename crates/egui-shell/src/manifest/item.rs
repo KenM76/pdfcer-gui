@@ -1,19 +1,12 @@
 //! # `manifest::item` — what one entry in a group is, and how much room it asks
 //! for
 //!
-//! Split out of [`super`] under **R2** on 2026-09-06, when
-//! `SHELL_FRAMEWORK.md` §5b's conditional-item field
-//! ([`Item::Command::capability`]) took `manifest/mod.rs` past the 1,500-line
-//! ceiling. **The seam was already drawn in the source**: [`ItemSize`] and
-//! [`Item`] are the only two types in that file that describe *a control in a
-//! band* rather than *a region of the shell* — [`super::Tab`],
+//! [`ItemSize`] and [`Item`] are the manifest's only two types that describe
+//! *a control in a band* rather than *a region of the shell* — [`super::Tab`],
 //! [`super::Group`], [`super::Qat`], [`super::Trailing`] and
 //! [`super::Keymap`] are all containers, and these two are the thing they
-//! contain.
-//!
-//! ★ Both are re-exported from [`super`], so **no call site moved**. The
-//! ceiling exists to stop a file becoming two subjects, not to make callers
-//! learn where a type sleeps.
+//! contain. Both are re-exported from [`super`], so a call site names the
+//! manifest and never this file.
 //!
 //! # The three questions an item answers, and they are different questions
 //!
@@ -34,21 +27,21 @@ use serde::{Deserialize, Serialize};
 
 /// **How much room a control asks for, and how much of itself it shows.**
 ///
-/// `RIBBON_SCALING.md` §5.1, learned by photographing Word at twelve widths.
-/// Word has exactly three sizes and a group mixes them freely — one Large
-/// button beside a column of three Small ones is its Clipboard group — and
-/// that mixing is where its density comes from. Measured: at 884 client points
-/// Word puts **ten** groups on the band and this shell put **three**, because
-/// every control here was Medium and nothing could be narrower.
+/// `RIBBON_SCALING.md` §5.1 has the measurements. Word has exactly three
+/// sizes and a group mixes them freely — one Large button beside a column of
+/// three Small ones is its Clipboard group — and that mixing is where its
+/// density comes from: at 884 client points Word fits **ten** groups on the
+/// band, which a band of uniformly Medium controls cannot approach, because
+/// nothing in it can be narrower than a label.
 ///
-/// ★ [`Self::Medium`] is the default **and is exactly the presentation this
-/// shell had before sizes existed**, so a manifest that says nothing renders
-/// identically. That is what makes the vocabulary safe to introduce in one
-/// change rather than behind a flag.
+/// ★ [`Self::Medium`] is the default, so a manifest that states no size
+/// renders exactly as one written before sizes existed. A vocabulary whose
+/// default is the status quo can be introduced in one change rather than
+/// behind a flag.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum ItemSize {
-    /// Icon, gap, label, on one row. The default, and every control's
-    /// presentation before `RIBBON_SCALING.md`.
+    /// Icon, gap, label, on one row. The default, and the presentation a
+    /// control gets when the manifest says nothing about its size.
     #[default]
     Medium,
     /// **Icon only.**
@@ -134,8 +127,7 @@ pub enum Item {
         ///
         /// # What it means, in one table
         ///
-        /// `SHELL_FRAMEWORK.md` §5b, which specified this field and left it as
-        /// *"the gap that must be closed"* until 2026-09-06:
+        /// `SHELL_FRAMEWORK.md` §7 specifies this field:
         ///
         /// | item | command registered? | result |
         /// |---|---|---|
@@ -160,10 +152,11 @@ pub enum Item {
         /// so the **skip report** can say which capability was absent, and for
         /// nothing else.
         ///
-        /// That is what keeps `SHELL_FRAMEWORK.md` §5b's one rule true — *a
+        /// That is what keeps `SHELL_FRAMEWORK.md` §7's one rule true — *a
         /// capability's presence is expressed by registering its command, and
         /// by nothing else*. A field the shell interpreted would be a second
-        /// place that knows, and the exe→DLL move would stop being a swap.
+        /// place that knows, and the move from statically linked modules to
+        /// loaded ones would stop being a swap.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         capability: Option<String>,
     },
@@ -193,34 +186,24 @@ pub enum Item {
         ///
         /// # ★★ Why this is a second copy of the field rather than a wrapper
         ///
-        /// [`Self::visible_condition`] used to close with a standing
-        /// instruction, and it is quoted rather than deleted because the
-        /// reasoning is sound and the decision to depart from it has to be
-        /// argued rather than assumed:
+        /// Copying a field onto a second variant is normally the wrong shape:
+        /// two copies of a rule are two chances for it to drift, and a wrapper
+        /// holding one `visible_when` beside any item would state it once.
         ///
-        /// > A separator and a custom item cannot carry one yet; when one
-        /// > needs to, the field moves onto a **wrapper** rather than being
-        /// > copied into three variants, because three copies of a rule is
-        /// > three chances for it to drift.
+        /// **What makes the copy safe is that the rule is not in the field.**
+        /// It is in [`Self::visible_condition`] — one accessor, one match,
+        /// read by exactly one predicate (`crate::ribbon::sizing::visible`).
+        /// Two variants declaring a `visible_when` produce two serde
+        /// attributes and two arms of that one match; they do not produce two
+        /// statements of *when an item is drawn*.
         ///
-        /// The need arrived on 2026-08-27: pdfcer's Format tab carries a Font
-        /// group whose face chooser, size field and colour swatch are all
-        /// custom items, and the whole group must be **absent** in a mode that
-        /// cannot edit page content — R9's rule that an unavailable
-        /// *capability* renders nothing while a temporarily unavailable one
-        /// greys. Without this field, three of that group's seven controls
-        /// would draw in Read mode and the application would have to fake
-        /// their absence by drawing nothing into a slot the band had already
-        /// reserved, which leaves a hole rather than reflowing the group.
-        ///
-        /// **What makes the copy safe is that the rule was never in the
-        /// field.** It is in [`Self::visible_condition`] — one accessor, one
-        /// match, read by exactly one predicate
-        /// (`crate::ribbon::sizing::visible`). Two variants declaring a
-        /// `visible_when` produce two serde attributes and two arms of that
-        /// one match; they do not produce two statements of *when an item is
-        /// drawn*. The drift the old note feared is drift in the **rule**, and
-        /// the rule stayed single.
+        /// A custom item needs the field because a group built entirely from
+        /// custom items must be able to go **absent** rather than grey — R9's
+        /// rule that an unavailable *capability* renders nothing while a
+        /// temporarily unavailable one greys and explains itself on hover.
+        /// Without it the application can only fake absence by drawing
+        /// nothing into a slot the band has already reserved, which leaves a
+        /// hole where a reflow was wanted.
         ///
         /// **What would still justify the wrapper**, and this is the trigger
         /// to watch for: a *second* per-position property — an `enabled_when`,
@@ -327,10 +310,10 @@ impl Item {
                 visible_when: Some(condition.into()),
                 capability,
             },
-            // ★ A custom item takes one too, since 2026-08-27. A separator
-            // still does not and returns untouched, for the reason
-            // [`Self::visible_condition`] gives: a divider's visibility is a
-            // fact about its neighbours, not about itself.
+            // ★ A custom item takes one too. A separator does not, and
+            // returns untouched, for the reason [`Self::visible_condition`]
+            // gives: a divider's visibility is a fact about its neighbours,
+            // not about itself.
             Item::Custom { kind, payload, .. } => Item::Custom {
                 kind,
                 payload,
@@ -374,11 +357,10 @@ impl Item {
     /// ★ `None` means *always*, which is what the overwhelming majority of
     /// items are.
     ///
-    /// ★★ **This function is where the rule lives, and that is what let the
-    /// field be copied onto a second variant** on 2026-08-27. The note that
-    /// used to sit here forbade the copy and named a wrapper as the remedy;
-    /// [`Item::Custom`]'s `visible_when` carries the argument for departing
-    /// from it, and the trigger that would still bring the wrapper back.
+    /// ★★ **This function is where the rule lives**, which is what makes it
+    /// safe for two variants to declare the field. [`Item::Custom`]'s
+    /// `visible_when` carries that argument in full, and names the trigger
+    /// that would move the field onto a wrapper instead.
     ///
     /// A **separator** still cannot carry one, and deliberately: a rule for
     /// when a divider disappears is a rule about its *neighbours*, which is
@@ -402,12 +384,12 @@ impl Item {
     /// dropping the item is the intended configuration*; `None` means *this
     /// item's command is mandatory and its absence is a bug*. See
     /// [`Item::Command::capability`] for the whole rule and
-    /// `SHELL_FRAMEWORK.md` §5b for why the two cases must stay
+    /// `SHELL_FRAMEWORK.md` §7 for why the two cases must stay
     /// distinguishable.
     ///
     /// ⚠ **Read by the merge and by nothing else.** It is deliberately not a
     /// question the ribbon renderer, a panel or an application ever asks: the
-    /// one rule §5b keeps is that a capability's presence is expressed by
+    /// one rule §7 keeps is that a capability's presence is expressed by
     /// registering its command, and a second reader of this field would be a
     /// second place that knows.
     #[must_use]

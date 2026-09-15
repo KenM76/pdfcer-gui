@@ -1,22 +1,22 @@
 //! A synthetic TrueType face, assembled in memory, so that this crate's
 //! layout tests can measure **real text**.
 //!
-//! # ★ Why this file exists — the defect it retires
+//! # ★ Why this file exists
 //!
 //! `egui-shell` depends on `egui` with `default-features = false`. That
 //! is a deliberate dependency-posture decision (`Cargo.toml` says why),
-//! and it has a consequence nobody wrote down until it cost two defects:
+//! and it has a consequence that is easy to miss:
 //!
 //! > With `default_fonts` off there is **no font data at all**, so every
 //! > galley measures ≈ 0 × 0 and every width comparison in the ribbon is
 //! > trivially satisfied.
 //!
-//! The whole ribbon width layer — group measurement, the overflow
-//! reservation, the band budget, the mode selector's track — had therefore
-//! only ever been exercised against text of zero width. Its tests passed
-//! because there was nothing for them to fail against.
+//! Without a font of its own, the whole ribbon width layer — group
+//! measurement, the overflow reservation, the band budget, the mode
+//! selector's track — is exercised against text of zero width, and its
+//! tests pass because there is nothing for them to fail against.
 //!
-//! Worse, the failure was **conditional on who was building**:
+//! Worse, the failure is **conditional on who is building**:
 //!
 //! | Command | What `egui-shell`'s tests get |
 //! |---|---|
@@ -24,11 +24,11 @@
 //! | `cargo test --workspace` | `pdfcer-gui` → `eframe` → `egui/default_fonts` → **real** widths |
 //!
 //! Cargo unifies features across a workspace build, so the same test
-//! source measured different text depending on which sibling crate
-//! happened to be in the build graph. Two real defects (an overflow
-//! affordance placed off screen, and a `usize` underflow in a failure
-//! message) lived in the gap between those two columns, invisible to the
-//! narrower command.
+//! source measures different text depending on which sibling crate
+//! happens to be in the build graph. Anything that only goes wrong at
+//! non-zero text width — an overflow affordance placed off screen, a
+//! `usize` underflow in a failure message — lives in the gap between those
+//! two columns, invisible to the narrower command.
 //!
 //! # What this module guarantees
 //!
@@ -71,12 +71,12 @@
 //! | Glyph ids | Characters | Advance (font units, 1000/em) |
 //! |---|---|---|
 //! | 0 | `.notdef` | 480 |
-//! | 1 – 95 | U+0020 – U+007E, one glyph each | 250 – 700, by character |
+//! | 1 – 95 | U+0020 – U+007E, one glyph each | 250 – 780, by character |
 //! | 96 | `…` U+2026 | 900 |
 //! | 97 | `⏷` U+2304 (the overflow chevron) | 700 |
 //! | 98 | `�` U+FFFD (epaint's replacement char) | 700 |
 //!
-//! Advances are **proportional, not monospaced** — `W` is 700 units and
+//! Advances are **proportional, not monospaced** — `W` is 780 units and
 //! `l` is 280 — because a monospaced synthetic font would hide precisely
 //! the class of bug real proportional text causes: a string whose width
 //! is not a function of its character count. `"⏷ 8 more"` being wider than
@@ -469,9 +469,9 @@ pub(crate) fn definitions() -> egui::FontDefinitions {
 /// The proof is not ceremony. A font that failed to load leaves `egui`
 /// measuring every string as zero — the precise condition this module
 /// exists to eliminate — and every width assertion downstream would then
-/// pass for the wrong reason, silently, exactly as they did before this
-/// file was written. So three things are checked, and a failure here is a
-/// failure of the test suite rather than a warning in a log:
+/// pass, silently, for the wrong reason. So three things are checked, and
+/// a failure here is a failure of the test suite rather than a warning in
+/// a log:
 ///
 /// 1. A sample string has a positive width.
 /// 2. A longer string is wider than a shorter one.

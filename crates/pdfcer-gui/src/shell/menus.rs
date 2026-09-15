@@ -862,18 +862,13 @@ pub fn built_in() -> Menus {
         // `file.properties`' own tooltip commissions exactly that: "…and the
         // properties of whatever is selected on the page."
         //
-        // ★ `format.delete` is deliberately NOT here, and the reason is
-        // destructive rather than tidy. The Objects panel's focus is **not**
-        // the selection — `panels::ObjectTreeUi::focus`'s own docs and
-        // `the_panel_focus_has_not_quietly_become_a_selection` defend the
-        // distinction — so a Delete on this menu would be enabled by
-        // `selection.any`, which describes the CANVAS selection, and would
-        // remove objects the operator never pointed at. That is the exact
-        // failure that test exists to prevent, arriving through a menu.
-        //
-        // A Delete that acts on the row belongs here the day the row click
-        // becomes a selection gesture and that focus field is deleted, which
-        // is the commit `ObjectTreeUi::focus` names.
+        // ★ `format.delete` is NOT here. It was kept off while an Objects row
+        // click wrote a panel-local focus rather than a selection: a Delete
+        // gated on `selection.any` would then have removed whatever was
+        // selected on the CANVAS rather than the row under the pointer. The row
+        // click is a selection gesture now (`panels::objects` raises
+        // `SelectionAction::SelectObject`), so that reasoning has expired and
+        // the omission is unexamined. `DEFECTS.md` D48.
         // -------------------------------------------------------------------
         // -------------------------------------------------------------------
         // document.tab — the strip under the ribbon.

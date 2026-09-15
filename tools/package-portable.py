@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Build the pdfcer-gui portable distribution into ``D:\\builds``.
 
-★★★ PUBLISH ONLY WHAT AN OPERATOR WOULD NOTICE — MEASURED 2026-08-26
-===================================================================
+PUBLISH ONLY WHAT AN OPERATOR WOULD NOTICE
+==========================================
 
 **Each mirror to OneDrive costs the machine roughly 27,000 kernel handles, and
 OneDrive does not give them back.**
 
-Measured, with a control, because the first version of this claim was two data
-points and a correlation:
+Measured, with a control, because two data points and a correlation are not a
+cause:
 
     349,214 handles -> 404,185   over ~2 hours, TWO publishes   (+55,000)
     404,179 handles -> 404,185   over 32 minutes, NO publish    (+6)
@@ -46,33 +46,32 @@ Those are commits, and the commit is the record. A build in `OneDrive\` is a
 thing the operator *runs*, and mirroring one costs his machine real resources
 that are not returned until OneDrive restarts.
 
-★ 2026-09-09, 01:30 — SECOND amendment, and it retracts the first: it is NOT
-the handle count at all. Launches kept dying identically at **157,522**
-handles with Outlook closed, and a twelve-hour-old RELEASE build died 2 of 4
-the same way. USER/GDI objects (~2 k), both atom tables, commit (40 GB free)
-and free RAM were measured and are not it either. What is measured is an
-intermittent session-level failure of `SetPropW` that worsened monotonically
-with the number of force-killed instances that night (~60), and only a logoff
-resets it. The handle rule above stays as a leak observation; do not read it
-as the cause of this panic. `D:/dev/rag/egui/an_intermittent_setpropw_…` has
-the table.
+THE HANDLE COUNT IS NOT THE CAUSE OF THAT PANIC, measured: launches die
+identically at **157,522** handles with Outlook closed, and a release build
+half a day old can die 2 of 4 the same way. USER/GDI objects (~2 k), both atom
+tables, commit (40 GB free) and free RAM are measured and are not it either.
+What IS measured is an intermittent session-level failure of `SetPropW` that
+worsens monotonically with the number of force-killed instances (~60 in one
+night) and is reset only by a logoff. The handle rule above stands as a leak
+observation; it is not the cause of this panic.
+`D:/dev/rag/egui/an_intermittent_setpropw_…` has the table.
 
-★ 2026-09-09 amendment, measured: with the machine at **398,880** handles and
-two consecutive launches dying with this exact error, the holder was
-**OUTLOOK at 202,737 handles** — more than half — with OneDrive at 19,481.
-The mirror step's contribution is real and this rule stands; but the process
-that carries the machine to the ceiling is Outlook, and a launch failure with
-this message should be answered by reading `Get-Process | Sort Handles`
+WHICH PROCESS HOLDS THE HANDLES, measured: with the machine at **398,880**
+handles and two consecutive launches dying with this exact error, the holder
+was **OUTLOOK at 202,737 handles** — more than half — with OneDrive at
+19,481. The mirror step's contribution is real and this rule stands; but the
+process that carries the machine to the ceiling is Outlook, and a launch
+failure with this message is answered by reading `Get-Process | Sort Handles`
 before blaming a publish.
 
-★ Stopping does not undo what has leaked. The count stays where it is; only a
+Stopping does not undo what has leaked. The count stays where it is; only a
 OneDrive restart clears it. So the rule is about not making it worse, and the
 already-accumulated total is the operator's to clear.
 
 WHY THIS EXISTS
 ===============
 
-Operator request, 2026-08-13: *"When complete compile integrated with
+Operator request: *"When complete compile integrated with
 pdfcer in d:\\builds as a single exe like pdfcer does. ... Basically I want
 this to get to where I can use it to replace acrobat reader first."*
 
@@ -84,13 +83,12 @@ THIS workspace already produces one self-contained executable carrying
 pdfcer's engine — the integration the request asks for is a property of
 the dependency graph, not a merge that has to happen first.
 
-★ The FORM of that dependency has changed twice and this docstring has
-been wrong after each change, which is why it now says as little about it
-as possible: read `crates/pdfcer-gui/Cargo.toml`, which carries the
-argument. In one line: it was a path, then a GitHub revision pin
-(2026-08-14), and is now `git = "file:///D:/Dev/pdfcer", branch = "main"`
-(2026-08-17). **The static-linking property above held under all three**
-and is the only part this script depends on.
+The FORM of that dependency is not this docstring's to state — it moves, and
+a restatement here goes stale in silence. Read
+`crates/pdfcer-gui/Cargo.toml`, which carries the argument; it is
+`git = "file:///D:/Dev/pdfcer", branch = "main"`. **The static-linking
+property above holds under a path dependency, a revision pin and a git branch
+alike**, and it is the only part this script depends on.
 
 What DOES depend on the form is how the engine is identified — see
 `locked_engine_rev`, which reads `Cargo.lock` rather than the engine
@@ -98,13 +96,11 @@ tree's HEAD, because a git dependency compiles a committed revision out
 of cargo's cache and the tree can be both dirty and ahead of it.
 
 That matters because the alternative reading — fold the new shell into
-`D:\\Dev\\pdfcer` and package from there — would have shipped a REGRESSION
-when this script was written. That is no longer the reason it is wrong,
-and the change is worth recording rather than quietly deleting: measure,
-redaction, the settings dialog and text editing have all since landed
-HERE. Fold-in is now a scheduling decision under PROJECT_PLAN.md §7
-rather than a thing that would cost four capabilities, and shipping from
-here still costs nothing and keeps the old build installable beside it.
+`D:\\Dev\\pdfcer` and package from there — buys nothing this script does not
+already have. Measure, redaction, the settings dialog and text editing all
+live HERE, so fold-in is a scheduling decision under PROJECT_PLAN.md §7
+rather than a precondition, and shipping from here costs nothing and keeps
+the old build installable beside it.
 
 WHAT IT PRODUCES
 ================
@@ -157,7 +153,7 @@ the difference is not cosmetic — **this binary is built from two trees**:
 * the **engine**, `D:\\Dev\\pdfcer`, which another session edits live; and
 * the **shell**, this workspace.
 
-Both are now git repositories (this one since `2a504ef`, 2026-08-13), so
+Both are git repositories, so
 the name carries a short HEAD for each: ``<engine>-<shell>``.
 
 `source_digest()` survives that, and the reason is specific to how this
@@ -174,26 +170,21 @@ goes in the folder name; the digest goes in `BUILD-INFO.txt`, and is
 appended to the name too when the shell tree is dirty, because that is
 exactly the case where the commit alone is not an identity.
 
-★ THE `-enginedirty` SUFFIX IS GONE — REMOVED 2026-08-17
-========================================================
+THERE IS NO `-enginedirty` SUFFIX
+=================================
 
-It used to read *"load-bearing"*, and under a **path** dependency it was:
+Under a **path** dependency such a suffix would be load-bearing:
 `D:\\Dev\\pdfcer` is read-only to this project but not to its own session,
-so the engine tree moved underneath builds, and a path build compiles
-that tree. If it carried uncommitted changes under `crates/`, the linked
-engine was not the commit in the folder name.
+so the engine tree moves underneath builds, and a path build compiles that
+tree. Uncommitted changes under `crates/` would mean the linked engine is
+not the commit in the folder name.
 
-The dependency is now `git = "file://…", branch = "main"`. Cargo builds a
+The dependency is `git = "file://…", branch = "main"`. Cargo builds a
 committed revision out of `~/.cargo/git/`, so **the engine's working tree
-is not compiled at all** and a suffix claiming it was would be false.
-
-The removal is recorded rather than done quietly, because it demonstrates
-the thing the old text was itself warning about. The narrow-test argument
-it made — *"changes under `docs/`, `fixtures/` and `.claude/` cannot reach
-a compiler … a warning that fires when nothing is wrong is one that gets
-ignored when something is"* — was right, and the suffix became exactly
-that kind of warning the moment the dependency form changed underneath it.
-**A guard is only as valid as the mechanism it was reasoned about.**
+is not compiled at all** and a suffix claiming it was would be false — and
+a warning that fires when nothing is wrong is one that gets ignored when
+something is. **A guard is only as valid as the mechanism it was reasoned
+about**, and the mechanism here is the dependency form.
 
 Two things replace it, and neither is a claim about the payload:
 
@@ -269,27 +260,28 @@ ENGINE_CRATES = ["pdfcer-core", "pdfcer-render", "pdfcer-print"]
 #: Where a finished build is mirrored so it syncs to the operator's other
 #: machines.
 #:
-#: Operator instruction, 2026-08-17: *"can you put the last latest 2 builds on
+#: Operator instruction: *"can you put the last latest 2 builds on
 #: my onedrive? just put them in a folder called pdfcer-gui1 and pdfcer-gui2 and
 #: rotate the latest build between them."*
 MIRROR_ROOT = Path("C:/Users/Ken/OneDrive")
 
 #: The two mirror slots, rotated so the newest build replaces the OLDER one.
 #:
-#: ★ Two rather than one, and the reason is the whole point of the request: the
+#: Two rather than one, and the reason is the whole point of the request: the
 #: previous build stays reachable. This shell is mid-rebuild and every release
-#: can regress something — the operator's own report that started this week was
-#: exactly that. A single mirrored folder would overwrite the last known-good
-#: build with the one that broke, on a drive that then syncs the loss to every
-#: other machine.
+#: can regress something. A single mirrored folder would overwrite the last
+#: known-good build with the one that broke, on a drive that then syncs the
+#: loss to every other machine.
 #:
-#: ★ Rotation is decided by MTIME, not by a counter in a file. A counter is
-#: state that can disagree with the directory it describes — deleted by hand,
-#: lost on a fresh machine, or written by a run that then failed to copy. The
-#: directories' own timestamps cannot drift from the directories, so the rule
-#: "replace whichever slot is older" is derivable from the mirror itself and
-#: needs nothing remembered. An empty or missing slot is treated as infinitely
-#: old, so the first two builds fill both slots before anything is overwritten.
+#: Rotation is decided by the `Built:` stamp inside each slot's own
+#: `BUILD-INFO.txt` — not by a counter in a file, and not by the directory's
+#: mtime. A counter is state that can disagree with the directory it describes
+#: (deleted by hand, lost on a fresh machine, or written by a run that then
+#: failed to copy); an mtime describes the DIRECTORY rather than the build in
+#: it, so merely running the exe out of a slot makes the older build look like
+#: the newer one. `mirror` carries the full argument. An empty or missing slot,
+#: or one whose stamp will not parse, counts as infinitely old, so the first
+#: two builds fill both slots before anything is overwritten.
 MIRROR_SLOTS = ["pdfcer-gui1", "pdfcer-gui2"]
 DEFAULT_DEST = Path("D:/builds")
 
@@ -298,15 +290,15 @@ DEFAULT_DEST = Path("D:/builds")
 #: first, then the third-party notice that belongs beside it, then the two
 #: documents an operator opens.
 #:
-#: ★ `THIRD_PARTY_LICENSES.md` joined this list on 2026-08-14 and is not
-#: optional. It is generated by `cargo-about` from `Cargo.lock`, and its
+#: `THIRD_PARTY_LICENSES.md` is in this list and is not optional. It is
+#: generated by `cargo-about` from `Cargo.lock`, and its
 #: hand-written epilogue carries the licences of the data and font assets the
 #: engine embeds — assets `cargo-about` cannot see and that ship inside
 #: `pdfcer-gui.exe` regardless. A notice file that exists in the repository and
 #: not in this list reaches nobody, and looks exactly like one that does, so
 #: `tools/gates/check-shipped-assets.py` reads THIS LIST and fails if the
 #: notice is missing from it.
-# ★ `MANUAL.md` FIRST, because it is the only one written FOR the operator.
+# `MANUAL.md` FIRST, because it is the only one written FOR the operator.
 #
 # The others are an engineering README, a capability sheet and two licence
 # files. A folder whose most approachable document is a project README —
@@ -323,7 +315,7 @@ PAYLOAD_DOCS = [
 #: Asset directories copied WHOLE into the portable folder, as
 #: `(source relative to the ENGINE tree, destination relative to the package)`.
 #:
-#: ★ ONE ENTRY, ADDED 2026-08-14 WITH THE OCR FEATURE.
+#: ONE ENTRY, FOR THE OCR MODEL WEIGHTS.
 #:
 #: Some assets cannot be linked into the executable and have to travel beside
 #: it as loose files. The `ocrs` OCR model weights are that case:
@@ -346,10 +338,10 @@ PAYLOAD_DOCS = [
 #: from memory anywhere: there is **no version number**, so the hash is the
 #: identity.
 #:
-#: The operator accepted them into this MIT package on 2026-08-14 —
+#: The operator accepted them into this MIT package —
 #: *"yes ship that model in the mit repo with proper credit."*
 #:
-#: ★ THE COUPLING, WHICH IS THE POINT AND NOT AN OBSTACLE.
+#: THE COUPLING, WHICH IS THE POINT AND NOT AN OBSTACLE.
 #: `tools/gates/check-shipped-assets.py` cross-checks this list against its own
 #: register of redistributed engine assets, so this line cannot exist alone:
 #: the gate fails until `about.hbs` (the notice that ships) and
@@ -373,10 +365,10 @@ _sys.path.insert(0, str(Path(__file__).resolve().parent))
 import engine_path as _engine_path  # noqa: E402
 
 PAYLOAD_ASSET_DIRS: list[tuple[str, str]] = [
-    # ★★ DERIVED, not written out. Under the temporary rename shim the engine's
-    # crate directory still carries its old name, and a literal here would have
-    # named a directory that does not exist — so the packager would have found
-    # nothing to copy and shipped a portable build with NO OCR MODELS, silently.
+    # DERIVED, not written out. Under the temporary rename shim the engine's
+    # crate directory still carries its old name, so a literal here names a
+    # directory that does not exist — the packager then finds nothing to copy
+    # and ships a portable build with NO OCR MODELS, silently.
     # `tools/engine_path.py` carries the argument; it reads the manifest Cargo
     # actually builds from, so this follows the engine's rename by itself.
     (f"crates/{_engine_path.crate_name('core')}/assets/models/ocrs", "models/ocrs"),
@@ -391,9 +383,9 @@ PAYLOAD_ASSET_DIRS: list[tuple[str, str]] = [
 BINARIES = ["pdfcer-gui.exe"]
 
 #: Prefixes under the ENGINE tree that can reach a compiler. Generous on
-#: purpose: under-reporting here produces the false reassurance the
-#: `-enginedirty` suffix exists to prevent, while over-reporting costs
-#: only an unnecessary suffix.
+#: purpose: under-reporting here lets a tree that was edited where it matters
+#: be reported and named as a clean one, while over-reporting costs only an
+#: unnecessary suffix and a line of noise.
 BUILD_AFFECTING = (
     "crates/",
     "Cargo.toml",
@@ -420,9 +412,10 @@ def git(*args: str, cwd: Path = ENGINE) -> str:
     `encoding="utf-8"` is not optional, and the reason is recorded in
     pdfcer's packager: `text=True` alone decodes with the LOCALE codec,
     cp1252 on this machine, and pdfcer's commit subjects are full of
-    em-dashes — so a changelog rendered `Pass 54.1 â€” a group can be
-    deleted`. `errors="replace"` so a stray non-UTF-8 byte in some future
-    commit degrades one character instead of failing a build.
+    em-dashes — so a changelog renders every one of them as `â€”`
+    in the middle of a subject line. `errors="replace"` so a stray non-UTF-8
+    byte in some future commit degrades one character instead of failing a
+    build.
     """
     return subprocess.run(
         ["git", *args],
@@ -439,8 +432,8 @@ def locked_engine_rev(repo: Path) -> str | None:
     """The engine revision `Cargo.lock` says this build actually links.
 
     **This, not the engine tree's HEAD, is the engine's identity.** The
-    distinction became real on 2026-08-17, when `pdfcer-gui` moved from a
-    path dependency to `git = "file:///D:/Dev/pdfcer", branch = "main"`: a
+    distinction is real because `pdfcer-gui` takes the engine as
+    `git = "file:///D:/Dev/pdfcer", branch = "main"` rather than by path: a
     path dependency compiles the working tree, a git dependency compiles a
     committed revision out of `~/.cargo/git/`, and the two can differ by
     any number of commits plus whatever is uncommitted.
@@ -546,7 +539,7 @@ def previous_build(dest: Path) -> tuple[str, str, str] | None:
     build of THIS project in `dest`, or `None`.
 
     `shell_commit` is `""` for builds packaged before this workspace was
-    put under git (2026-08-13), whose `BUILD-INFO.txt` has no `Shell:`
+    put under git, whose `BUILD-INFO.txt` has no `Shell:`
     line. Callers must treat it as "no baseline" rather than as a ref —
     which is why the changelog below verifies every ref it is handed.
 
@@ -644,17 +637,16 @@ def run_verification(repo: Path) -> tuple[bool, str]:
     # runner then SKIPs both, which makes it exit 3, which fails `--verify`
     # while every gate that actually ran was clean.
     #
-    # ★ Honest provenance, because the next reader deserves it: this was
-    # OBSERVED under a nested, sandboxed shell where `python` and `rustc`
-    # were invisible too, so the sandbox — not the profile — was that
-    # instance's cause, and this prepend did NOT fix it there. It is kept
-    # because the non-login-shell case is real, independent, and costs two
-    # lines. It has not been verified against that case.
+    # This prepend is UNVERIFIED against that case, and saying so is part of
+    # the reasoning: under a nested, sandboxed shell `python` and `rustc` are
+    # invisible too, so there the sandbox rather than the profile is the cause
+    # and prepending fixes nothing. It is kept because the non-login-shell
+    # case is real, independent, and costs two lines.
     #
-    # The half that WAS verified and fixed is `run-all.sh`'s message: it
-    # reported `cargo: command not found` as "the workspace does not
-    # currently load", which was flatly false and pointed the reader at the
-    # one place the problem was not.
+    # The other half is `run-all.sh`'s message, which must report
+    # `cargo: command not found` as what it is rather than as "the workspace
+    # does not currently load" — a message that names the one place the
+    # problem is not costs more than no message at all.
     env = os.environ.copy()
     cargo = shutil.which("cargo")
     if cargo:
@@ -747,13 +739,13 @@ def self_test() -> int:
     # 3. The asset-directory copy works, and reports a missing source rather
     #    than skipping it.
     #
-    #    ★ This exists because `PAYLOAD_ASSET_DIRS` is EMPTY. An empty list
-    #    means `copy_asset_dirs` never runs in a real package, so without this
-    #    the first execution of that loop would be the day somebody added a
-    #    12 MB licensed asset to a release — which is the worst possible day
-    #    to discover a typo in a `copytree` call. The engine tree is
-    #    synthesised here rather than read, so the test neither touches
-    #    `D:\\Dev\\pdfcer` nor depends on it being mounted.
+    #    `PAYLOAD_ASSET_DIRS` is short, and an entry joins it on the day a
+    #    licensed asset starts shipping — so without this the first real
+    #    execution of that loop after an edit is a release carrying 12 MB of
+    #    somebody else's work, which is the worst possible day to discover a
+    #    typo in a `copytree` call. This drives the loop on every self-test
+    #    instead. The engine tree is synthesised here rather than read, so the
+    #    test neither touches `D:\\Dev\\pdfcer` nor depends on it being mounted.
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
         engine = root / "engine"
@@ -795,7 +787,7 @@ def self_test() -> int:
 
     # 4. The GitHub asset is ROOTED AT THE BUILD FOLDER.
     #
-    #    ★ This is the invariant that decides what happens on the operator's
+    #    This is the invariant that decides what happens on the operator's
     #    machine, and it is invisible from here: an archive of loose contents
     #    unzips perfectly, reports no error, and scatters an exe and eight
     #    documents across whatever directory he was standing in. The only
@@ -856,14 +848,11 @@ def self_test() -> int:
 def _bash() -> str:
     """The bash to run the gates with, **by absolute path**.
 
-    # ★★ This is the real cause of a quirk this project has documented and
-    # worked around since it started
+    THE GATES READING AS "SKIPPED" UNDER `--verify` IS NOT A PATH PROBLEM.
 
-    `HANDOFF.md` §7 has carried a note for weeks: *"`--verify` may report the
-    gates as skipped because a spawned bash does not inherit `~/.cargo/bin`."*
-    The workaround was to run the gates by hand and state the result in
-    `--note`. The diagnosis was wrong, and no amount of PATH manipulation was
-    ever going to fix it.
+    The tempting diagnosis — *a spawned bash does not inherit `~/.cargo/bin`,
+    so run the gates by hand and state the result in `--note`* — is wrong,
+    and no amount of PATH manipulation can fix what it describes.
 
     `subprocess.run(["bash", ...])` does not resolve `bash` the way this
     machine's shell does. Windows `CreateProcess` searches its own PATH and
@@ -877,15 +866,14 @@ def _bash() -> str:
 
     A Linux PATH. Windows `cargo.exe` is not on it under that name and never
     will be, so prepending `~/.cargo/bin` — which the caller does, and which
-    its own comment already admitted "did NOT fix it" where it was observed —
-    could not have worked.
+    its own comment records as unverified against this case — cannot work.
 
     It also explains the *other* symptom, which looked unrelated: WSL bash
     refuses a script with CRLF line endings (`cd: $'\r': No such file or
-    directory`), while Git Bash tolerates it. Two scripts had drifted to CRLF
-    despite `.gitattributes` pinning `*.sh text eol=lf`, so `--verify` failed
-    with a line-ending error that the same file ran fine under by hand. One
-    root cause, two unrecognisable symptoms.
+    directory`), while Git Bash tolerates it. A script that drifts to CRLF
+    despite `.gitattributes` pinning `*.sh text eol=lf` then fails `--verify`
+    with a line-ending error while the same file runs fine by hand. One root
+    cause, two unrecognisable symptoms.
 
     `shutil.which` uses Python's own resolution and returns Git Bash here.
     Passing its absolute path removes the ambiguity entirely.
@@ -912,14 +900,14 @@ KEEP_BUILDS = 3
 def _force_writable(func, path: str, _exc: object) -> None:
     """``shutil.rmtree`` error handler: clear the read-only bit and retry once.
 
-    ★ **Why this is needed, found on 2026-08-27.** The first prune refused with
+    **Why this is needed.** An unguarded prune refuses with
     ``[WinError 5] Access is denied`` on ``models\\ocrs`` — the recognition
     weights are copied out of a payload directory whose files carry the
     read-only attribute, and ``DeleteFile`` honours it. On Windows that
     attribute is a property of the *file*, not a permission, so the fix is to
     clear it rather than to elevate anything.
 
-    ★★ It retries **once** and lets a second failure propagate. A handler that
+    It retries **once** and lets a second failure propagate. A handler that
     kept trying would turn "a sync client has this folder open" — the ordinary
     reason a delete fails here — into a hang inside a build script, and the
     caller already treats a failure to prune as a nuisance rather than as a
@@ -937,25 +925,26 @@ def _force_writable(func, path: str, _exc: object) -> None:
 def prune(dest: Path, keep: int) -> None:
     """Delete superseded ``pdfcergui-*`` build folders, keeping the newest *keep*.
 
-    ★ **Why this exists.** The operator, 2026-08-27: *"all this compiling has
-    filled the drive with temporary files. you'll have to clean yours up."*
-    ``D:\builds`` held **39** of these, 1.27 GB, because this script had written
-    one on every keeper build since 2026-08-13 and never removed one. On a
-    volume at 97 % that is not a rounding error, and it is entirely this
-    script's doing.
+    **Why this exists.** The operator: *"all this compiling has filled the
+    drive with temporary files. you'll have to clean yours up."* A script that
+    writes a build folder on every keeper build and removes none reaches **39**
+    of them, 1.27 GB, measured in ``D:\builds`` — on a volume at 97 % that is
+    not a rounding error, and it is entirely this script's doing.
 
-    ★★ **It touches only its own folders.** ``D:\builds`` is shared — ScripTree
+    **It touches only its own folders.** ``D:\builds`` is shared — ScripTree
     releases and the engine's own ``pdfcer-*`` packages live there too — so the
     filter is `pdfcergui-*` and nothing else is enumerated, let alone deleted. A
     cleanup that swept a sibling project's releases would be a far worse outcome
     than the disk being full.
 
-    ★ **Newest by MODIFICATION TIME, not by name.** The folder name begins with
+    **Newest by MODIFICATION TIME, not by name.** The folder name begins with
     a timestamp and sorting by it would usually agree — but `--slot` can rewrite
     an older build, a restored backup carries its original name, and a
     name-sorted deletion would then remove the one that was most recently
-    verified. `mirror` already learned this exact lesson about the two OneDrive
-    slots; the same reasoning applies to the same kind of decision here.
+    verified. `mirror` makes the same kind of decision for the two OneDrive
+    slots and goes one step further there, reading each build's own `Built:`
+    stamp, because a slot the operator runs the exe out of has its mtime bumped
+    by the run.
 
     A failure to delete is **not** fatal: a folder held open by Explorer or by a
     sync client is a nuisance, not a reason to fail a build that has already
@@ -970,13 +959,12 @@ def prune(dest: Path, keep: int) -> None:
     for folder in folders[keep:]:
         size = sum(f.stat().st_size for f in folder.rglob("*") if f.is_file())
         try:
-            # ★ `onerror` and not `onexc`. The newer keyword landed in Python
+            # `onerror` and not `onexc`. The newer keyword landed in Python
             # 3.12 and this machine runs **3.11.9**, where passing it is a
-            # `TypeError` inside the handler-less path — i.e. the prune would
-            # fail for a reason that has nothing to do with the folder. Caught
-            # by checking `inspect.signature` rather than by assuming, after
-            # writing `onexc` first. The two take the same three positional
-            # arguments, so only the keyword differs.
+            # `TypeError` inside the handler-less path — i.e. the prune fails
+            # for a reason that has nothing to do with the folder. Checked
+            # against `inspect.signature` rather than assumed. The two take the
+            # same three positional arguments, so only the keyword differs.
             shutil.rmtree(folder, onerror=_force_writable)
         except OSError as error:
             print(f"package-portable: could not remove {folder.name}: {error}")
@@ -997,13 +985,12 @@ def mirror(out: Path, forced: str | None = None) -> None:
     replaces a good mirrored build with a broken one — the rotation only ever
     sees builds that were worth keeping.
 
-    # ★ It replaces the OLDER slot, and that is the whole design
+    # It replaces the OLDER slot, and that is the whole design
 
     The two slots exist so the previous build stays reachable. This shell is
-    mid-rebuild; every release can regress something, and the operator report
-    that started this week was exactly that. Overwriting the single most recent
-    mirror would put the last known-good build under the one that broke — on a
-    drive that then syncs the loss to every other machine.
+    mid-rebuild and every release can regress something, so overwriting the
+    single most recent mirror would put the last known-good build under the one
+    that broke — on a drive that then syncs the loss to every other machine.
 
     Which slot is older is read from **the build's own `Built:` stamp**, out of
     the `BUILD-INFO.txt` that build wrote. A missing or empty slot, or one whose
@@ -1011,17 +998,17 @@ def mirror(out: Path, forced: str | None = None) -> None:
     builds fill both slots before anything is overwritten, and an unreadable
     slot is replaced rather than trusted.
 
-    # ★★ IT USED TO READ THE DIRECTORY'S MTIME, AND THAT WAS WRONG TWICE OVER
+    # NOT THE DIRECTORY'S MTIME, AND THE REASON IS NOT THE OBVIOUS ONE
 
-    The argument for mtime was good and the conclusion was not:
+    The argument against a counter is sound: a counter is state that can
+    disagree with the thing it describes — deleted by hand, absent on a fresh
+    machine, or written by a run that then failed to copy — while a
+    directory's timestamp cannot drift from the directory.
 
-    > *"A counter is state that can disagree with the thing it describes:
-    > deleted by hand, absent on a fresh machine, or written by a run that then
-    > failed to copy. A directory's timestamp cannot drift from the directory."*
-
-    True — and the wrong question. A directory's mtime describes **the
-    directory**, and what the rotation needs is the age of **the build inside
-    it**. Those are different facts, and two ordinary events separate them:
+    It is also the answer to the wrong question. A directory's mtime describes
+    **the directory**, and what the rotation needs is the age of **the build
+    inside it**. Those are different facts, and two ordinary events separate
+    them:
 
     1. **The operator RUNS the build from the slot.** pdfcer then creates
        `userdata/` beside the exe and writes their settings, dock layout and
@@ -1030,15 +1017,13 @@ def mirror(out: Path, forced: str | None = None) -> None:
        overwrites the good, newer one. **The two-slot guarantee is destroyed by
        the operator merely using the build**, which is what the slots are for.
 
-    2. **A failed mirror bumps the slot it failed on.** Observed 2026-08-20 at
-       19:59: `pdfcer-gui1` held the previous day's build and was correctly chosen
-       as the target; OneDrive held it locked, the rename failed clean — and the
-       attempt had already touched the directory. Three minutes later the same
-       slot read as the *newest*, so the run overwrote `pdfcer-gui2`, which held
-       that afternoon's build. Nothing was corrupted and nothing was lost that
-       git does not have, but the fallback silently aged by a day. Repeat the
-       lock and it ages indefinitely, one build at a time, while every run
-       reports success.
+    2. **A failed mirror bumps the slot it failed on.** A slot correctly chosen
+       as the target, then held locked by OneDrive so that the rename fails
+       clean, has still been touched by the attempt. Minutes later that slot
+       reads as the *newest*, so the next run overwrites the OTHER one — the
+       good, newer build. Nothing is corrupted and nothing is lost that git does
+       not have, but the fallback silently ages. Repeat the lock and it ages
+       indefinitely, one build at a time, while every run reports success.
 
     The `Built:` stamp has the property the mtime was reached for and does not
     have: **it is written by the run that produced the build and by nothing
@@ -1086,27 +1071,26 @@ def mirror(out: Path, forced: str | None = None) -> None:
             return -1.0
         return -1.0
 
-    # ★★ `--slot` OVERRIDES THE ROTATION, and the case it exists for is
+    # `--slot` OVERRIDES THE ROTATION, and the case it exists for is
     # RETRACTION.
     #
     # The rotation protects the newest build, which is right when the newest
     # build is good. It is exactly wrong when the newest build is the one being
-    # withdrawn: on 2026-08-20 a published build linked an engine revision whose
-    # reflow could displace 1,676 labels on a text edit, and the replacement run
-    # correctly aimed at the OTHER slot — the day-old fallback — leaving the
-    # hazard in place and destroying the one good copy.
+    # withdrawn: a replacement run then aims, correctly by the rotation's own
+    # rule, at the OTHER slot — the older fallback — leaving the hazard in
+    # place and destroying the one good copy.
     #
     # A rotation cannot know that. "This build is bad" is a fact only the
     # operator or the person retracting it has, so it is an argument rather than
     # an inference. `choices=` means a typo is an error rather than a directory
     # created beside the two real ones.
     target_name = forced or min(MIRROR_SLOTS, key=age_key)
-    # ★ Print BOTH slots' ages and which one is about to go.
+    # Print BOTH slots' ages and which one is about to go.
     #
     # The rotation is the one part of this script whose correctness the operator
     # cannot see afterwards — a successful mirror looks identical whether it
-    # replaced the right slot or the wrong one, which is exactly how the mtime
-    # defect survived. Naming the two dates makes a wrong choice visible on the
+    # replaced the right slot or the wrong one, which is how a wrong choice
+    # survives unnoticed. Naming the two dates makes it visible on the
     # run that makes it rather than on the day the fallback is needed.
     for slot in MIRROR_SLOTS:
         age = age_key(slot)
@@ -1120,7 +1104,7 @@ def mirror(out: Path, forced: str | None = None) -> None:
     target = MIRROR_ROOT / target_name
     keeps = [s for s in MIRROR_SLOTS if s != target_name]
 
-    # ★ KEEP `userdata/` ACROSS A ROTATION.
+    # KEEP `userdata/` ACROSS A ROTATION.
     #
     # These slots are not archives — the operator can run the exe straight out
     # of one, and the moment they do, pdfcer creates `userdata/` beside it and
@@ -1156,11 +1140,11 @@ def mirror(out: Path, forced: str | None = None) -> None:
     def _force(func, path, _exc):
         """Clear the read-only bit and retry — `rmtree`'s error handler.
 
-        ★ OneDrive needs this and a local directory does not. A synced folder
+        OneDrive needs this and a local directory does not. A synced folder
         can carry the read-only attribute (it is how the client marks
         cloud-backed items), and `os.unlink`/`os.rmdir` then fail with
-        `WinError 5 Access is denied` on a file the operator plainly owns. The
-        first real rotation failed exactly there, on `models\ocrs`.
+        `WinError 5 Access is denied` on a file the operator plainly owns —
+        a rotation fails exactly there, on `models\ocrs`.
 
         `onerror` rather than `onexc` because this machine runs Python 3.11;
         `onexc` arrived in 3.12 and using it here would raise `TypeError` on
@@ -1173,20 +1157,16 @@ def mirror(out: Path, forced: str | None = None) -> None:
         os.chmod(path, stat.S_IWRITE)
         func(path)
 
-    # ★★ STAGE, THEN SWAP. The old order destroyed the fallback it exists to
-    #    protect — measured, on 2026-08-20.
+    # STAGE, THEN SWAP. NOTHING IS EVER DELETED IN PLACE.
     #
-    # This block used to be `rmtree(target)` followed by `copytree(out, target)`,
-    # with the failure path printing:
-    #
-    #     The build in {out} is fine; only the OneDrive copy did not happen.
-    #
-    # That sentence was **false**, and it was false in the worst available
-    # direction. The slot is cleared first, so a failure anywhere after the
-    # `rmtree` leaves it EMPTY — and on 2026-08-20 it did: `pdfcer-gui1` was
-    # locked by another process, the `rmtree` partially succeeded, the
-    # `copytree` raised `WinError 32`, and the operator's previous build was
-    # gone. The message said the copy "did not happen".
+    # `rmtree(target)` followed by `copytree(out, target)` destroys the
+    # fallback this rotation exists to protect, and its natural failure message
+    # — *"the build in {out} is fine; only the OneDrive copy did not happen"* —
+    # is **false in the worst available direction**. The slot is cleared first,
+    # so a failure anywhere after the `rmtree` leaves it EMPTY: the slot is
+    # locked by another process, the `rmtree` partially succeeds, the
+    # `copytree` raises `WinError 32`, and the operator's previous build is
+    # gone while the message says the copy "did not happen".
     #
     # The two-slot rotation exists for exactly one reason, stated in
     # `RESUME.md`: *"the previous build stays intact beside the new one, to fall
@@ -1194,20 +1174,17 @@ def mirror(out: Path, forced: str | None = None) -> None:
     # build has removed the only property it was built to provide, silently, at
     # the moment a build is most likely to be wrong.
     #
-    # ★★★ AND `rmtree` IS NOT ATOMIC EITHER, WHICH THE FIRST FIX MISSED.
-    #
-    # The first repair, earlier the same day, was *stage then clear then copy* —
-    # and it failed again, in the same way, on the very next run:
+    # AND `rmtree` IS NOT ATOMIC EITHER, WHICH IS WHY *STAGE, CLEAR, COPY* IS
+    # NOT THE FIX. It fails in the same way, and reports:
     #
     #     mirror FAILED - [WinError 32] … pdfcer-gui1
     #       pdfcer-gui1 is locked by another process … It still holds the
     #       previous build; nothing was replaced.
     #
-    # `pdfcer-gui1` was empty afterwards. `shutil.rmtree` walks depth-first and
-    # deletes as it goes, so a lock on **one file** leaves everything it had
-    # already removed removed. Moving the clear later in the sequence bought
-    # nothing, because the clear is itself the non-atomic act — and the message
-    # was confidently wrong for the second time in one day.
+    # — with the slot empty afterwards. `shutil.rmtree` walks depth-first and
+    # deletes as it goes, so a lock on **one file** leaves everything it has
+    # already removed removed. Moving the clear later in the sequence buys
+    # nothing, because the clear is itself the non-atomic act.
     #
     # The lock is not incidental, either: the only process holding it is
     # **OneDrive's own sync client**, which opens files it is uploading. On a
@@ -1318,23 +1295,22 @@ def archive_build(out: Path) -> Path:
     rooting, because an archive of loose contents is still a valid archive
     and the damage lands on the operator, not here.
     """
-    # ★★ WHY THIS IS IN THE TOOL AND NOT IN A RELEASE RUNBOOK.
+    # WHY THIS IS IN THE TOOL AND NOT IN A RELEASE RUNBOOK.
     #
-    # It was not, for the first eleven releases. Every one of them was zipped
-    # by hand with PowerShell's ``Compress-Archive`` at the point of publishing
-    # — which is to say, by a session that had to remember to, from a folder it
-    # had to name correctly, into a file name it had to construct to match the
-    # convention. **One of those hand-zips carried a `-dirty` build**, because
-    # the hand step happened at a moment the tree was not the moment the
-    # packager measured.
+    # Zipping by hand with PowerShell's ``Compress-Archive`` at the point of
+    # publishing means a session that has to remember to, from a folder it has
+    # to name correctly, into a file name it has to construct to match the
+    # convention — and **a hand-zip can carry a `-dirty` build**, because the
+    # hand step happens at a moment that is not the moment the packager
+    # measured.
     #
-    # ⇒ The archive is a FUNCTION OF THE BUILD FOLDER, so it belongs beside the
+    # The archive is a FUNCTION OF THE BUILD FOLDER, so it belongs beside the
     # thing that writes the build folder. Made here, it is byte-identical to
     # what was mirrored to OneDrive by construction, it is named from the same
     # three facts (timestamp, engine revision, shell revision), and there is no
     # window in which the tree can move between the stamp and the archive.
     #
-    # ★ It is made AFTER `mirror()` deliberately, for the same reason `mirror()`
+    # It is made AFTER `mirror()` deliberately, for the same reason `mirror()`
     # runs last: every payload file, `BUILD-INFO.txt` included, is on disk by
     # now. An archive taken earlier is an archive of a directory still being
     # written, and the failure is silent — a zip is a valid zip whether or not
@@ -1426,7 +1402,7 @@ def main() -> int:
 
     # --- refresh the engine, BEFORE the identity is read --------------------
     #
-    # ★★ OPERATOR INSTRUCTION, 2026-08-17: *"always update core render and
+    # OPERATOR INSTRUCTION: *"always update core render and
     # print before building the latest."*
     #
     # Automated rather than written down as a step, because a step that has to
@@ -1436,15 +1412,14 @@ def main() -> int:
     # taken without this silently ships an engine older than the repository
     # has, with nothing anywhere to say so.
     #
-    # That is not a hypothetical cost. A stale pin left this shell eight
-    # commits behind `1e7a0be`, the fix that made `Separation`, `DeviceN`,
-    # `Lab`, `CalGray` and `CalRGB` IMAGES decode instead of being dropped from
-    # the raster — eighteen pictures missing from the operator's own file, with
-    # the OLD shell rendering it correctly while the rebuild did not. The
-    # engine repository moved 8, then 12, then 4, then 6 commits ahead of the
-    # lock inside a single afternoon.
+    # That is not a hypothetical cost. The engine repository can move 8, then
+    # 12, then 4, then 6 commits ahead of the lock inside a single afternoon,
+    # and a shell eight commits behind an image-decoding fix drops
+    # `Separation`, `DeviceN`, `Lab`, `CalGray` and `CalRGB` IMAGES from the
+    # raster — eighteen pictures missing from the operator's own file, with
+    # the OLD shell rendering it correctly while the rebuild does not.
     #
-    # ★ BEFORE the identity block below, and that ordering is the whole point:
+    # BEFORE the identity block below, and that ordering is the whole point:
     # `locked_engine_rev` reads `Cargo.lock`, so updating afterwards would name
     # one revision in the folder and link another. It is also before `--verify`,
     # because tests must run against the engine that is going to ship.
@@ -1477,53 +1452,49 @@ def main() -> int:
             print("           otherwise this build is older than the engine repository.")
         elif before and after and before != after:
             print(f"  engine {before[:7]} -> {after[:7]}")
-            # ★ The trap this automation creates, and it caught its author
-            # within one run of being written.
+            # The trap this automation creates.
             #
             # Updating the engine as a build step means the revision that
             # SHIPS can differ from the one whatever tests were last run
             # against — including a `cargo test` the operator ran by hand five
             # minutes earlier, and including the revision quoted in a `--note`
-            # typed before the update happened. Both went wrong on the first
-            # real use: the note said `3c4c00e`, the binary linked `0d6f4ac`.
+            # typed before the update happened. Both fail quietly: the note
+            # names one revision and the binary links another.
             #
             # `--verify` closes it, because the update runs BEFORE the identity
             # block and therefore before verification. Without it, say so — a
             # build whose engine moved under it and was never re-tested is
             # exactly the state `BUILD-INFO.txt`'s verification line exists to
             # report, and a warning here reaches the person who can still act.
-            # ★★★ **AND THE UPDATE HAS JUST DIRTIED THE TREE THIS SCRIPT IS
-            # ABOUT TO STAMP. Measured 2026-09-11, cutting
-            # v0.5.0-dev.20260911.1.**
+            # **AND THE UPDATE HAS JUST DIRTIED THE TREE THIS SCRIPT IS
+            # ABOUT TO STAMP.**
             #
             # `cargo update` rewrites `Cargo.lock`. The identity block, forty
             # lines below, reads `git describe --dirty`. So whenever the pin
             # moves, a build packaged from a **provably clean tree** is named
             # `-dirty` **by construction**:
             #
-            #     pdfcergui-20260911-0631-1eb1c7c-5e1ba78-dirty-d95f2bedd9c9
-            #                                              ^^^^^
+            #     pdfcergui-<stamp>-<engine>-<shell>-dirty-<digest>
+            #                                        ^^^^^
             #
-            # The standing rule is *package from a clean tree*, the rule was
-            # being followed, and the only modification in that tree was one
-            # this script had written thirty seconds earlier. **A tool that
+            # The standing rule is *package from a clean tree*; the rule can
+            # be followed exactly and the only modification in the tree is
+            # still one this script wrote thirty seconds earlier. **A tool that
             # mutates its subject before measuring it reports the mutation as
             # the subject's fault, and every particular of the report is
             # true.** That is why it survives review: there is nothing to
             # disagree with.
             #
-            # ★★ The SECOND defect is the one the workaround causes, and it is
+            # The SECOND defect is the one the workaround causes, and it is
             # worse because it is quiet. Commit the lock and re-package into
             # the same slot, and [`changelog`] diffs against **the build it
             # finds in the destination** — which is now the RETRACTED one. The
-            # corrected package reported *"Shell commits since the previous
-            # build (5e1ba78): 7e439eb Engine pin ... (documentation only)"*:
-            # ONE commit, a pin bump, for a release carrying **21** and five
-            # operator-visible landings. Nothing threw. The number that should
-            # have been 21 was 1, and `BUILD-INFO.txt` exists for no other
-            # purpose than to carry that number.
+            # corrected package then reports ONE commit, a pin bump, for a
+            # release carrying **21** of them and five operator-visible
+            # landings. Nothing throws, and `BUILD-INFO.txt` exists for no
+            # other purpose than to carry that number.
             #
-            # ⇒ **A changelog that diffs against "the last artefact" rather
+            # **A changelog that diffs against "the last artefact" rather
             # than "the last artefact the operator has" is silently wrong for
             # exactly as long as a retraction is in play.**
             #
@@ -1593,29 +1564,27 @@ def main() -> int:
         build = [p for p in changed if p.startswith(BUILD_AFFECTING)]
         return build, [p for p in changed if p not in build]
 
-    # ★★ THE ENGINE'S IDENTITY IS THE LOCKED REVISION, NOT THE TREE'S HEAD —
-    # rewritten 2026-08-17 when the dependency form changed.
+    # THE ENGINE'S IDENTITY IS THE LOCKED REVISION, NOT THE TREE'S HEAD.
     #
-    # This used to read `git rev-parse HEAD` in the engine tree, which was
-    # correct while `pdfcer-gui` took the engine by PATH: a path dependency
-    # compiles the working tree, so the tree's HEAD (plus a dirty flag) was
-    # what got linked.
+    # `git rev-parse HEAD` in the engine tree answers a different question. It
+    # would be right only under a PATH dependency, which compiles the working
+    # tree, so that tree's HEAD (plus a dirty flag) is what gets linked.
     #
-    # It is now `git = "file:///D:/Dev/pdfcer", branch = "main"`. Cargo clones
-    # that repository and builds a **specific commit** out of `~/.cargo/git/`,
-    # so the working tree is not compiled at all. Two consequences, and both
-    # would have made the old code lie:
+    # The dependency is `git = "file:///D:/Dev/pdfcer", branch = "main"`. Cargo
+    # clones that repository and builds a **specific commit** out of
+    # `~/.cargo/git/`, so the working tree is not compiled at all. Two
+    # consequences, and both make HEAD a lie here:
     #
-    #   1. **A dirty engine worktree can no longer reach the binary.** The
-    #      `-enginedirty` suffix would have fired on a build it does not
+    #   1. **A dirty engine worktree cannot reach the binary.** An
+    #      `-enginedirty` suffix would fire on a build it does not
     #      describe — and this script's own docstring says a warning that
     #      fires when nothing is wrong is one that gets ignored when
     #      something is.
     #   2. **HEAD can be AHEAD of what was linked.** `Cargo.lock` pins a
     #      revision and only `cargo update` moves it, so committing in the
-    #      engine does not change this build. Naming HEAD would have credited
-    #      the binary with commits it does not contain, which is the more
-    #      dangerous error of the two.
+    #      engine does not change this build. Naming HEAD credits the binary
+    #      with commits it does not contain, which is the more dangerous error
+    #      of the two.
     #
     # So the identity is read from `Cargo.lock`, which is the only artefact
     # that records what was actually compiled. `git log` in the engine tree is
@@ -1649,10 +1618,10 @@ def main() -> int:
     name = f"pdfcergui-{stamp}-{engine_short}-{shell_short}"
     if shell_dirty_build:
         name += f"-dirty-{src}"
-    # ★ No `-enginedirty`. It was removed on 2026-08-17 with the dependency
-    # change above: the engine is built from a committed revision out of
-    # cargo's git cache, so its working tree cannot reach this binary and a
-    # suffix claiming otherwise would be false. The tree's state is still
+    # No `-enginedirty`, for the dependency reason above: the engine is built
+    # from a committed revision out of cargo's git cache, so its working tree
+    # cannot reach this binary and a suffix claiming otherwise would be false.
+    # The tree's state is still
     # REPORTED in `BUILD-INFO.txt` — it is useful context about the
     # repository — it is just no longer a claim about the payload.
     out = args.dest / name
@@ -1811,15 +1780,15 @@ def main() -> int:
             "code itself is in no commit and cannot be recovered from the hash.\n"
             f"{listed}{more}\n"
         )
-    # ★ The engine tree's state is CONTEXT now, not a warning about the
-    # payload. Since 2026-08-17 the engine is compiled from a committed
-    # revision out of cargo's git cache, so nothing uncommitted in
-    # D:\Dev\pdfcer can reach this binary — see `locked_engine_rev`.
+    # The engine tree's state is CONTEXT, not a warning about the payload.
+    # The engine is compiled from a committed revision out of cargo's git
+    # cache, so nothing uncommitted in D:\Dev\pdfcer can reach this binary —
+    # see `locked_engine_rev`.
     #
     # It is still reported, because it answers the question an operator
     # actually has when a fix they know landed is not in the build: *is the
-    # engine ahead of what I am running?* That question used to be
-    # unanswerable and it is the one that cost eighteen images on a real file.
+    # engine ahead of what I am running?* Unanswered, that question costs
+    # eighteen images on a real file.
     if dirty_build or dirty_other:
         changed = dirty_build + dirty_other
         listed = "\n".join(f"  {q}" for q in changed[:10])
@@ -1926,14 +1895,14 @@ are in the program itself: File > pdfcer > About pdfcer.
         print(f"  {f.name:<26} {f.stat().st_size:>10,} bytes")
     print(f"  {'TOTAL':<26} {total:>10,} bytes")
 
-    # ★ LAST — after `BUILD-INFO.txt` has been written into `out`.
+    # LAST — after `BUILD-INFO.txt` has been written into `out`.
     #
-    # The first version called this while the warning text was still being
-    # assembled, several statements before the file existed, and the mirrored
-    # slot came out **without a BUILD-INFO.txt** — missing the one document
-    # that says which engine and which shell the binary is. The exe was
-    # otherwise perfect, which is what made it easy to miss: the folder looks
-    # complete unless you go looking for the file that identifies it.
+    # Called while the warning text is still being assembled, several
+    # statements before that file exists, this mirrors a slot **without a
+    # BUILD-INFO.txt** — missing the one document that says which engine and
+    # which shell the binary is. The exe is otherwise perfect, which is what
+    # makes it easy to miss: the folder looks complete unless you go looking
+    # for the file that identifies it.
     #
     # Mirroring is the last thing that happens for exactly this reason. Every
     # payload file is on disk by now, and a mirror taken at any earlier point
@@ -1947,7 +1916,7 @@ are in the program itself: File > pdfcer > About pdfcer.
 
     prune(out.parent, keep=KEEP_BUILDS)
 
-    # ★ The engine's WORKING TREE is no longer a warning — it cannot reach the
+    # The engine's WORKING TREE is not a warning — it cannot reach the
     # binary. What IS worth a console line is the engine being ahead of the
     # locked revision, because that is the question an operator has when a fix
     # they know landed is not in the build they are holding.

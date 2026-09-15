@@ -45,37 +45,32 @@
 //! ## The single dispatcher
 //!
 //! There is **one** callback for every panel body, on every side, docked
-//! or overflowed. That is carried across deliberately from the previous
-//! implementation, whose standing rule R80 required exactly one, and
-//! whose own notes explain what the alternative costs: a float-or-dock
-//! dual mode meant *"two code paths for the same content, each
-//! duplicating open-state, position/size and focus handling, for zero
-//! operator benefit at this scale."*
+//! or overflowed. A float-or-dock dual mode would be two code paths for
+//! the same content, each duplicating open-state, position, size and
+//! focus handling, for no operator benefit at this scale.
 //!
 //! It also keeps a future tear-out honest. `MODES_AND_PANELS.md` records
-//! the finding that `show_viewport_immediate` takes `FnMut` with no
-//! `Send + Sync + 'static` bound, *"so a torn-out panel therefore keeps
-//! the identical `panel_body(...)` signature as the docked one — the
-//! one-dispatcher rule survives intact."* Nothing here forecloses that.
+//! that `show_viewport_immediate` takes `FnMut` with no
+//! `Send + Sync + 'static` bound, so a torn-out panel keeps the identical
+//! body signature as the docked one and the one-dispatcher rule survives
+//! intact. Nothing here forecloses that.
 //!
 //! ## Why this is built on `egui` directly
 //!
-//! `SHELL_FRAMEWORK.md` §3 lists this module as a *"panel host over
-//! `egui_tiles`"*, and it is not, for a reason worth stating plainly
-//! rather than leaving to be discovered: **`egui_tiles` is not a declared
-//! dependency of this crate**, and its manifest was not this agent's to
-//! edit at the time this landed. That is the constraint. What follows is
-//! why the outcome is nonetheless the right one on the merits, and what
-//! it costs.
+//! **`egui_tiles` is not a declared dependency of this crate** — the dock
+//! is built on `egui` panels directly, and `SHELL_FRAMEWORK.md` §3 says
+//! so. What follows is why that is the right outcome on the merits, and
+//! what it costs.
 //!
-//! Every requirement that made the engine attractive is present here:
-//! columns, stacks, tabs, draggable splitters, per-group active tabs. And
-//! four of the twelve failure modes are answered *better* by owning the
-//! layout than by wrapping a library:
+//! Every requirement that makes a general tiling engine attractive is
+//! present here: columns, stacks, tabs, draggable splitters, per-group
+//! active tabs. Several of `MODES_AND_PANELS.md`'s failure modes are
+//! answered *better* by owning the layout than by wrapping a library, and
+//! so is persistence:
 //!
 //! | Failure mode | With a general tiling engine | Here |
 //! |---|---|---|
-//! | #8 tab overflow | The engine hides overflowing tabs behind scroll arrows with `ScrollBarVisibility::AlwaysHidden` — the same class of failure. The previous implementation capped default groups at **two panes** to dodge it. | [`tabs`] reserves the affordance before the first tab is measured, and the cap is retired. |
+//! | #8 tab overflow | The engine hides overflowing tabs behind scroll arrows with `ScrollBarVisibility::AlwaysHidden` — the same class of failure, which is why a host built on it has to cap a default group at **two panes** to dodge it. | [`tabs`] reserves the affordance before the first tab is measured, so no pane cap is needed. |
 //! | #3 hidden tab dictates width | Avoided by that engine too, but by a property of *its* internals (`min_size` is a global scalar) — true today, and not a contract. | [`plan::MIN_COLUMN_WIDTH`] is a constant this crate owns, and a test asserts no minimum consults a label. |
 //! | #7 coupled splitters | Whatever the engine's share algebra does. | `plan::drag_boundary` writes to exactly two slice entries. |
 //! | (f) persistence | The engine's `Tree` derives serde behind its **default** feature, which this workspace disables — so the persistence had to be hand-written over an owned schema regardless. | The schema *is* the model; there is nothing to translate. |
@@ -104,8 +99,8 @@
 //! `D:/dev/rag/egui/bottom_panel_height_change_retriggers_fit_to_viewport_zoom.md`
 //! records a measured 230 % → 224 % → 215 % zoom drift caused by a panel
 //! whose height was **content-driven** sitting next to a per-frame
-//! fit-to-viewport zoom. The rule it produced is pdfcer's R128: *a panel
-//! whose size feeds a fit-to-viewport computation has a fixed size.*
+//! fit-to-viewport zoom. The rule it produced is R128: *a panel whose
+//! size feeds a fit-to-viewport computation has a fixed size.*
 //!
 //! A user-resizable dock looks like a direct violation. It is not, and
 //! the distinction is the one the RAG entry itself draws: the loop is
@@ -118,10 +113,10 @@
 //!   `resizable(false)` all fail to: *"Only `exact_size` closes it."*
 //! - Nothing a panel body draws can change that number. A body that
 //!   overflows is clipped, not accommodated — **and the dock enforces
-//!   that itself, because `exact_size` alone does not.** Measured
-//!   2026-09-09: `Panel::show` takes its rect back from the frame's
-//!   content union and, when that union is wider than `exact_size`,
-//!   keeps the width by sliding the panel inward by the excess. The
+//!   that itself, because `exact_size` alone does not.** `Panel::show`
+//!   takes its rect back from the frame's content union and, when that
+//!   union is wider than `exact_size`, keeps the width by sliding the
+//!   panel inward by the excess. The
 //!   width stays exact; the position does not, and the central panel
 //!   beside it shrinks by the same amount. So `draw_stack` draws each
 //!   body in a child ui whose union is never merged into the side
@@ -135,13 +130,13 @@
 //! And the harder half of R128 is respected by omission: **the
 //! application's content area is not inside a dock compartment.** The
 //! dock draws side panels; the application draws its canvas in whatever
-//! remains. `MODES_AND_PANELS.md` recommends the single wide tree
-//! spanning left ▸ canvas ▸ right as *"the real unlock"* for cross-dock
-//! dragging, and immediately adds that it *"puts the canvas inside a
-//! resizable pane and fires R128 directly. So the fit-zoom must be
-//! converted to cached-recompute-on-explicit-trigger first, as its own
-//! landing, before the wide tree is attempted."* That landing has not
-//! happened, so the canvas stays outside.
+//! remains. `MODES_AND_PANELS.md` names the single wide tree spanning
+//! left ▸ canvas ▸ right as the answer to cross-dock dragging, and
+//! immediately adds that it puts the canvas inside a resizable pane and
+//! fires R128 directly — so the fit-to-viewport zoom has to become
+//! cached-recompute-on-explicit-trigger first, as its own landing, before
+//! the wide tree is attempted. That landing has not happened, so the
+//! canvas stays outside.
 //!
 //! ## Module map
 //!
@@ -152,16 +147,24 @@
 //! | [`tabs`] | One stack's tab bar and its reserved overflow menu. |
 //! | [`tab_menu`] | The seam an application uses to own a tab's secondary click: [`Dock::with_tab_menu`] and the [`TabMenu`] it hands out. |
 //! | [`splitter`] | The draggable boundary, its cursor and its feedback. |
+//! | [`float`] | A panel torn out of the dock: the value, the state machine and the placement arithmetic. |
+//! | [`floatwin`] | The window a floated panel is drawn in, and the header strip that offers the way back. |
+//! | [`rail`] | The permanent vertical strip down a side's outer edge. |
+//! | [`banner`] | The permanent strip above one side's columns. |
+//! | `collapse` | The two controls that minimise a side and bring it back. |
+//! | `stack` | One stack's frame: its tab bar, then its active panel's body. |
+//! | `apply` | The one place the layout is mutable — `Dock::show`'s third phase. |
+//! | [`frame_report`] | What one frame drew, as a value the application can assert on. |
+//! | `overflow_probe` | Which widget ran past the side's edge. |
 //! | [`report`] | The rect stream a verification harness reads. |
 //! | `ctx` | The per-frame context and the intent queue. |
 //! | `width_tests` | Layout tests against **real** font metrics. |
 
-/// The two controls that minimise a side and bring it back — split out under
-/// R2 on 2026-08-20. Its header carries the operator's ask and the argument for
-/// why a collapsed side must leave something on screen.
+/// **The two controls that minimise a side and bring it back.** Its header
+/// carries the operator's ask and the argument for why a collapsed side must
+/// leave something on screen.
 /// **The one place the layout is mutable** — `Dock::show`'s third phase.
-/// Split out under R2; its header carries the property every arm depends
-/// on.
+/// Its header carries the property every arm depends on.
 mod apply;
 pub mod banner;
 mod collapse;
@@ -414,11 +417,10 @@ impl<'a> Dock<'a> {
     /// **Tell the dock which panels the rail can raise**, so a stack whose
     /// every panel is on the rail draws no tab strip of its own.
     ///
-    /// # ★★★ The measurement that produced this — 2026-09-05
+    /// # ★★★ The measurement that produced this
     ///
     /// The operator: *"we also don't need tabs in the left side bar when the
-    /// left rail is visible."* A live trace of the shipped build says why, in
-    /// three lines:
+    /// left rail is visible."* A live trace says why, in three lines:
     ///
     /// ```text
     /// ui-rect name=rail.tabs.view.panel_pages      rect=[[3.0 130.0] - [49.0 164.0]]
@@ -487,8 +489,8 @@ impl<'a> Dock<'a> {
         // ★ An EMPTY stack is not suppressed. `all` over an empty list is
         // `true`, which would be the wrong answer for the wrong reason — and
         // although `DockLayout::normalize` forbids an empty stack, a predicate
-        // whose correctness depends on a normalization performed elsewhere is
-        // the shape this project keeps paying for.
+        // whose correctness depends on a normalization performed somewhere
+        // else holds only for as long as that other place does.
         // ⚠ `.all(reach)` and NOT `.all(|p| reach(p))`, which clippy calls a
         // redundant closure and is right about. Named here because the two
         // spellings are not interchangeable to a reader: `reach` is `&mut dyn
@@ -699,11 +701,10 @@ impl<'a> Dock<'a> {
             } else {
                 // ★★ The RAIL — the way back from a collapsed side.
                 //
-                // Before 2026-08-20 a hidden side drew nothing, so the only
-                // route back was a ribbon command the operator had to know
-                // existed. A collapsed panel with no visible handle is a panel
-                // that has been lost rather than minimised, which is the
-                // difference the operator was asking about.
+                // A hidden side that drew nothing would leave the only route
+                // back a ribbon command the operator has to know exists. A
+                // collapsed panel with no visible handle is a panel that has
+                // been lost rather than minimised.
                 collapse::draw_collapsed_rail(ui, &mut ctx, side, &mut report);
             }
         }
@@ -749,9 +750,10 @@ impl<'a> Dock<'a> {
             DockSide::Right => egui::Panel::right(egui::Id::new(("egui-shell-dock", side.key()))),
         };
 
-        // ★ 2026-09-08: the parent's `available_rect_before_wrap` was published
-        // here for one build and measured CONSTANT on frames where `.frame`
-        // below moved 0.3–0.4 pt; the wobble is inside egui's `Panel::show`.
+        // ★ The parent's `available_rect_before_wrap` is CONSTANT on frames
+        // where `.frame` below moves 0.3–0.4 pt, so the movement comes from
+        // inside egui's `Panel::show` and not from the space this call is
+        // handed.
         let shown = panel
             // ★ `exact_size`, and only `exact_size`. See the module
             // header's R128 section: this is the one API that makes the
@@ -797,8 +799,8 @@ impl<'a> Dock<'a> {
                 // layout would take height from a panel body on every frame —
                 // and it is dock chrome, not a panel's content.
                 collapse::draw_collapse(ctx, ui, side, area);
-                // The union of everything drawn in the body — what egui's frame
-                // takes back as the panel's rect (2026-09-09 wobble hunt).
+                // The union of everything drawn in the body — what egui's
+                // frame takes back as the panel's rect.
                 ctx.reporter.report(ui, ui.min_rect(), || {
                     format!("{}.body_min", report::side(side))
                 });
@@ -1056,25 +1058,20 @@ mod tests {
 
     /// ★★ **A collapsed side draws NO PANELS and still leaves a rail.**
     ///
-    /// This test asserted `sides_drawn == [Left]` until 2026-08-20 — that a
-    /// hidden side contributed nothing at all. That was the behaviour, and it
-    /// was the defect:
+    /// The operator's ask — *"add the little tabs that allow the left and
+    /// right panels to be minimized."* — is an affordance in both directions,
+    /// and the way back is the half that is easy to omit. A side that drew
+    /// nothing could only be restored from a ribbon command the operator had
+    /// to know existed, so a panel collapsed by accident would be a panel
+    /// **lost** rather than minimised. Every program in the class leaves a
+    /// rail: VS Code's activity bar, Visual Studio's auto-hide tabs,
+    /// Photoshop's collapsed dock strip.
     ///
-    /// > *"add the little tabs that allow the left and right panels to be
-    /// > minimized."* — the operator, 2026-08-20
-    ///
-    /// He was asking for the affordance in both directions, and the half that
-    /// was missing is the way back. A side that drew nothing could only be
-    /// restored from a ribbon command the operator had to know existed, so a
-    /// panel collapsed by accident was a panel **lost** rather than minimised.
-    /// Every program in the class leaves a rail: VS Code's activity bar, Visual
-    /// Studio's auto-hide tabs, Photoshop's collapsed dock strip.
-    ///
-    /// So the report now lists the side — because a rail IS on screen and the
-    /// report is the honest answer to *"what is on screen"* — and the
-    /// assertions that matter are unchanged and are the real content of this
-    /// test: **no panel body is constructed, and nothing on that side counts as
-    /// on-screen.** A collapsed side must cost nothing but its rail.
+    /// So a collapsed side **is** listed in `sides_drawn` — a rail is on
+    /// screen and the report is the honest answer to *"what is on screen"* —
+    /// and the two assertions that carry the rule are that **no panel body is
+    /// constructed, and nothing on that side counts as on-screen.** A
+    /// collapsed side costs nothing but its rail.
     #[test]
     fn a_collapsed_side_draws_no_panels_and_leaves_a_rail() {
         let mut layout = sample();
@@ -1333,11 +1330,10 @@ mod tests {
     /// records two independent reasons a working `ScrollArea` shows no
     /// scrollbar — the default is `floating()` (transparent when the
     /// pointer is elsewhere), and `solid()` alone draws the handle in
-    /// `widgets.inactive.bg_fill`, which on a light panel is near-white
-    /// on near-white. Both were hit in sequence on one surface, and the
-    /// first fix appeared not to work because the second was waiting
-    /// behind it. Fixed once here, for every panel body, and asserted so
-    /// it stays fixed.
+    /// `widgets.inactive.bg_fill`, which on a light panel is near-white on
+    /// near-white. Either alone hides the bar, so fixing one of them looks
+    /// exactly like no fix at all. Both are settled here, once, for every
+    /// panel body, and asserted so they stay settled.
     #[test]
     fn a_panel_body_inherits_a_visible_scrollbar_style() {
         let mut state = DockState::new(sample());

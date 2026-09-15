@@ -1,8 +1,7 @@
 //! # `app::dispatch::pageclip` — **cut, copy and paste whole pages**
 //!
-//! `OPERATOR_REQUESTS.md` **O59**, item 2. Ken, 2026-08-29, to the engine
-//! session: *"can you make sure we have cut, copy, and paste available for
-//! everything and if not implement?"*
+//! `OPERATOR_REQUESTS.md` **O59**, item 2 — Ken: *"can you make sure we have
+//! cut, copy, and paste available for everything and if not implement?"*
 //!
 //! ## ★★★ Why these are their own commands and NOT `Ctrl+C`
 //!
@@ -50,8 +49,7 @@
 //! the action applier has no `egui::Context`, so a single-call cut could not
 //! put its own clip anywhere. Copy-then-delete costs one extra page-tree walk
 //! and keeps the undo entry count at one, which was the property the engine's
-//! verb existed to guarantee. Recorded here so the next reader does not
-//! rediscover the constraint by trying.
+//! verb existed to guarantee.
 //!
 //! ## ★★ What the operator must be told, and when
 //!
@@ -61,13 +59,13 @@
 //! | when | what | why it cannot wait / cannot be earlier |
 //! |---|---|---|
 //! | **at the copy** | *"a form field was left behind"* | `PageClip::fields_dropped` — a field whose boxes straddle a copied and an uncopied sheet cannot travel, and the operator selected **pages**, not fields, so nothing they did says a field is about to go missing |
-//! | **at the paste** | *"boxes arrived that nothing can fill"* | `InsertOutcome::orphaned_widgets` — a page's `/Annots` reaches its widgets and the `/AcroForm` that owns them does not travel, so they draw like fields and are dead. The engine measured two on its own smoke test |
+//! | **at the paste** | *"boxes arrived that nothing can fill"* | `InsertOutcome::orphaned_widgets` — a page's `/Annots` reaches its widgets and the `/AcroForm` that owns them does not travel, so they draw like fields and are dead |
 //!
-//! ★★★ The second is the one the engine flagged as *"the one that produces a
-//! document that looks right and is not"*, and it is invisible by construction:
-//! an orphaned widget draws exactly like a live field. There is no screenshot
-//! that shows the difference, so the status row is the only place it can be
-//! said — which is rule 4's surviving half, again.
+//! ★★★ The second is the one that **produces a document that looks right and
+//! is not**, and it is invisible by construction: an orphaned widget draws
+//! exactly like a live field. There is no screenshot that shows the difference,
+//! so the status row is the only place it can be said — which is rule 4's
+//! surviving half, again.
 
 use eframe::egui;
 
@@ -79,7 +77,8 @@ use crate::app::state::Status;
 /// **Whether this module owns `id`.**
 ///
 /// Listed rather than prefix-matched, for `dispatch::clipboard::handles`'
-/// reason: `pages.*` holds six other verbs that are not this module's.
+/// reason: the `pages.` prefix also covers the verbs [`super::pages`] owns and
+/// the two that stay in [`super`], none of which belong here.
 #[must_use]
 pub fn handles(id: &str) -> bool {
     matches!(id, "pages.copy" | "pages.cut" | "pages.paste")
@@ -210,7 +209,7 @@ fn paste(app: &mut PdfcerApp, ctx: &egui::Context, actions: &mut Vec<Action>) {
 mod tests {
     use super::*;
 
-    /// The three ids, and none of the six `pages.*` verbs that are not ours.
+    /// This module's ids, and none of the `pages.*` verbs that are not ours.
     ///
     /// ★ The negative half is the half that matters. `dispatch::pages` owns
     /// `pages.delete` and this module raises `PageAction::DeletePages`, so a

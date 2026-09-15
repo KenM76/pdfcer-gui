@@ -4,8 +4,9 @@
 //!
 //! Deliberately, structurally the same as [`crate::manifest::Skip`]: a
 //! **site**, a **reason**, both as data, with `Display` for diagnostics
-//! and neither of them operator-facing copy. That module's header makes
-//! the argument in full and it applies here without amendment:
+//! and neither of them operator-facing copy. That type's own
+//! documentation makes the argument in full, and it applies here without
+//! amendment:
 //!
 //! > A structured value rather than a message, deliberately. The shell
 //! > has no business deciding how another application words a note to its
@@ -18,20 +19,17 @@
 //!
 //! # Why a dropped item is disclosed rather than silent
 //!
-//! The manifest module records the episode that produced this rule, and
-//! it is worth repeating here because the failure it describes is
-//! *quieter* for a layout than for a ribbon:
-//!
-//! > An absent trace line is indistinguishable from a step that ran and
-//! > produced no output, so a typo presented as **a feature failing to
-//! > respond** rather than as a step that never executed.
+//! [`crate::verify`] states the rule a dropped step has to obey — *"An
+//! absent trace line is indistinguishable from a step that ran and
+//! produced no output"* — and it is worth repeating here, because the
+//! same silence is *quieter* for a layout than for a ribbon.
 //!
 //! A silently dropped ribbon item is a missing button, which an operator
 //! notices. A silently dropped *panel* is a panel that used to be in the
 //! dock and now is not, which an operator experiences as *"the
-//! application lost my layout"* — the exact complaint
-//! `MODES_AND_PANELS.md` records against the benchmarked product, whose
-//! only remedy for a bad layout file is *"quit and delete that file"*.
+//! application lost my layout"* — the complaint `MODES_AND_PANELS.md`
+//! records against the benchmark product, whose remedy for a bad layout
+//! file is *"the documented route is to quit and delete that file"*.
 //!
 //! So every drop produces a [`LayoutSkip`] naming the site and the
 //! reason, [`LoadReport`] is returned **by value** so the caller must
@@ -168,8 +166,8 @@ pub enum LayoutSkipReason {
     /// The layout mounts a panel the application does not register.
     ///
     /// **This is the expected, healthy case, not an error.**
-    /// `SHELL_FRAMEWORK.md` §5b: *a capability's presence is expressed by
-    /// registering its command, and by nothing else.* A panel belonging
+    /// `SHELL_FRAMEWORK.md` §7: *"A capability's presence is expressed by
+    /// registering its command, and by nothing else."* A panel belonging
     /// to a feature that was compiled out is simply absent from the
     /// registry, and its saved mount is dropped here — with no `#[cfg]`
     /// anywhere in this crate, and with the operator's arrangement of
@@ -196,9 +194,9 @@ pub enum LayoutSkipReason {
     ///
     /// Usually a consequence of another skip rather than a fault of its
     /// own: a stack whose only panel was unregistered has nothing left to
-    /// show. Reported separately because *"the Signatures panel is not in
-    /// this build"* and *"a compartment vanished"* are two facts an
-    /// operator may need to connect.
+    /// show. Reported separately because *"that panel is not in this
+    /// build"* and *"a compartment vanished"* are two facts an operator
+    /// may need to connect.
     EmptyContainer,
     /// A stored number was not a usable size, and was replaced.
     InvalidSize {

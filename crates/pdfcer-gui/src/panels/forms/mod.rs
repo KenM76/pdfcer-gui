@@ -1,9 +1,5 @@
 //! # `panels::forms` — filling this document's interactive form
 //!
-//! Salvaged from the old shell's `main.rs` (roughly lines 7843–9425, mapped
-//! here by `SALVAGE.md`'s Class C table). **The filling half came across; the
-//! authoring half did not** — see "What was deliberately left behind" below.
-//!
 //! ## What this panel is for
 //!
 //! The operator's goal for this build is *"replace Acrobat Reader first"*, and
@@ -12,28 +8,27 @@
 //! reviewed native recompute of script-driven fields, an appearance redraw and
 //! a flatten. Nothing here adds, renames or moves a field.
 //!
-//! ★★ **One exception, added 2026-08-28, and it is stated rather than left to
-//! be discovered:** the [`groups`] section removes a *field group* — a name the
-//! form files fields under — and every field beneath it. It is here and not on
-//! an authoring surface because a grouping node is reachable from nowhere else:
-//! it has no widget to click on the page, no row in the fill list, and no entry
-//! in the tab order, so the Properties pane can never be pointed at one. See
-//! that module's header.
+//! **One exception, stated rather than left to be discovered:** the [`groups`]
+//! section removes a *field group* — a name the form files fields under — and
+//! every field beneath it. It is here and not on an authoring surface because a
+//! grouping node is reachable from nowhere else: it has no widget to click on
+//! the page, no row in the fill list, and no entry in the tab order, so the
+//! Properties pane can never be pointed at one. See that module's header.
 //!
-//! ## ★ This is the first panel that changes the document
+//! ## This panel writes `/V`, and that changes nothing about the discipline
 //!
-//! Every other panel in [`crate::panels`] is a report, and two
-//! ([`crate::panels::layers`], [`crate::panels::bookmarks`]) change what is
-//! *drawn* without changing what would be *saved*. This one writes `/V`.
+//! Most of [`crate::panels`] is a report, and [`crate::panels::layers`] changes
+//! what is *drawn* without changing what would be *saved*. This one writes to
+//! the document.
 //!
-//! It changes nothing about the discipline. The body is handed `&OpenDoc` — a
-//! **shared** reference, so this is a compile-time fact and not a convention —
-//! it reads, and it raises a [`crate::app::actions::Action`]. What is new is
-//! only that the action reaches an `EditSession` verb at the far end; see
-//! [`edit`] for the four-step mutation protocol that makes that safe, and for
-//! why nothing travels back.
+//! The body is handed `&OpenDoc` — a **shared** reference, so this is a
+//! compile-time fact and not a convention — it reads, and it raises a
+//! [`crate::app::actions::Action`]. The only thing peculiar to this panel is
+//! that the action reaches an `EditSession` verb at the far end; see [`edit`]
+//! for the four-step mutation protocol that makes that safe, and for why
+//! nothing travels back.
 //!
-//! ## Rule 4, and the two places this panel had to move a disclosure
+//! ## Rule 4: disclosure lives off-canvas
 //!
 //! `D:\Dev\FeatureRequests\pdfce_FeatureRequests\README.md`'s rule 4 in one
 //! clause: *"Disclosure lives off-canvas: a status line, a results panel, a
@@ -43,53 +38,49 @@
 //! *would a screenshot of the editing canvas differ from a screenshot of the
 //! same document saved and reopened?*
 //!
-//! That is worth stating twice here because the old shell's Forms panel did
-//! draw on the canvas: hovering a row **highlighted the field's rectangle on
-//! the page** (its "Pass 47.3"), through a `self.highlighted_field` the canvas
-//! overlay read. It was answering a real question — *"which of these is the
-//! one I am about to type into?"* — and the answer is welcome under rule 4's
-//! fourth clause, which permits *"a snap indicator, a hover highlight, a
-//! rubber-band, a selection handle — these are the cursor"*. It is still not
-//! carried, and the reason has **changed**: the mechanism now exists (see
-//! [`crate::canvas::forms`], which places every fillable widget in canvas
-//! space and is `pub(crate)`), so what is missing is only the panel→canvas
-//! channel for *which row is hovered*. Named rather than silently dropped, and
-//! named as a *permitted* affordance so nobody later reads its absence as a
-//! rule.
+//! The **spotlight** is the one thing this panel puts on the canvas, and it is
+//! permitted rather than an exception. Rule 4's fourth clause allows *"a snap
+//! indicator, a hover highlight, a rubber-band, a selection handle — these are
+//! the cursor"*, and a spotlight is exactly that: transient, following the
+//! operator's attention, gone the moment they look elsewhere. It answers *"which
+//! of these is the one I am about to type into?"* It travels through
+//! [`spotlight`], which is a channel and nothing more — this panel still writes
+//! no content to the page and must not start to.
 //!
-//! ## ★ The page is now a second way in, and this panel is still the first
+//! ## The page is a second way in, and this panel is the accessible one
 //!
 //! [`crate::canvas::forms`] lets an operator click a field where it is drawn
-//! and type into it — the gesture every reader has and this build did not.
-//! Nothing about this panel changed to make room for it: the two surfaces share
-//! [`rows::block_reason`], [`rows::commit`] and the whole [`edit::FormEdit`]
-//! vocabulary, so there is one rule for what is fillable, one rule for when a
-//! draft is written, and one place a form verb is called.
+//! and type into it. The two surfaces share [`rows::block_reason`],
+//! [`rows::commit`] and the whole [`edit::FormEdit`] vocabulary, so there is one
+//! rule for what is fillable, one rule for when a draft is written, and one
+//! place a form verb is called.
 //!
-//! What this panel gained is two obligations, both of them disclosure:
+//! Two of this panel's obligations exist **because** the page is fillable, and
+//! both are disclosure:
 //!
 //! 1. **[`fill_disclosure`]** — the two things a fill decides that the document
-//!    cannot afterwards be asked (an auto-size pdfcer chose, characters it
-//!    replaced). Those were previously discarded on the argument that
-//!    everything is re-derivable next frame; that argument is true of six of
-//!    `FillOutcome`'s eight facts and false of these two. See [`edit`]'s header.
+//!    cannot afterwards be asked: an auto-size pdfcer chose, and characters it
+//!    replaced. Six of `FillOutcome`'s eight facts are re-derivable from the
+//!    next frame's re-read of the document; these two are not, because in the
+//!    saved file they are indistinguishable from an author's decision. See
+//!    [`edit`]'s header.
 //! 2. **[`canvas_routing`]** — which fields the page cannot be clicked for, and
 //!    why. Without it the canvas silently shrinks the capability from the
 //!    operator's point of view.
 //!
-//! **This panel remains the accessible surface, and that is not a courtesy.**
-//! Its rows are real widgets with tab order, AccessKit exposure and `/TU`
-//! labels; a box projected onto a page raster has none of those, because the
-//! thing underneath it is a picture with no text alternative.
+//! **This panel is the accessible surface, and that is not a courtesy.** Its
+//! rows are real widgets with tab order, AccessKit exposure and `/TU` labels; a
+//! box projected onto a page raster has none of those, because the thing
+//! underneath it is a picture with no text alternative.
 //!
-//! Two disclosures the old shell reported **after** an edit are reported
-//! **before** one here, and both moves are improvements rather than
-//! translations:
+//! **Two facts are disclosed BEFORE the edit rather than after it**, because
+//! both are knowable before anything is typed and a note that arrives after the
+//! click is a note the operator can only act on by undoing:
 //!
-//! | Fact | Old shell | Here |
-//! |---|---|---|
-//! | this form carries an XFA packet, so a fill may not stick | a status note after each fill, from `FillOutcome::xfa_may_disagree` | one line above the list, from `AcroForm::xfa` — a property of the FILE, knowable before anything is typed |
-//! | this check box has no appearance for the state you selected | a status note after the click | the control is **disabled**, because core would refuse the call — see [`rows`]' header for the defect this replaced |
+//! - *this form carries an XFA packet, so a fill may not stick* — one line above
+//!   the list, read from `AcroForm::xfa`, a property of the FILE.
+//! - *this check box has no appearance for the state you selected* — the control
+//!   is **disabled**, because core would refuse the call. See [`rows`]' header.
 //!
 //! ## Two counts that are not the counts to display
 //!
@@ -119,26 +110,25 @@
 //! `pdfcer_core::form_script::recompute` — arithmetic pdfcer reproduces itself,
 //! never a script it ran.
 //!
-//! The Calculated Fields section carries that whole posture across from the
-//! old shell, including its two rule-4 disclosures: a **derived evaluation
-//! order** when the form fails to list its calculated fields in `/CO` (pdfcer
-//! inferred something, and another reader may compute different values), and
-//! **coerced operands** where a blank or non-numeric input counted as zero.
-//! Skips are listed **before** the changes, because a field pdfcer declined to
-//! compute is the thing an operator most needs to notice and a list of
-//! successful changes above it reads as completeness.
+//! The Calculated Fields section carries two rule-4 disclosures: a **derived
+//! evaluation order** when the form fails to list its calculated fields in
+//! `/CO` (pdfcer inferred something, and another reader may compute different
+//! values), and **coerced operands** where a blank or non-numeric input counted
+//! as zero. Skips are listed **before** the changes, because a field pdfcer
+//! declined to compute is the thing an operator most needs to notice and a list
+//! of successful changes above it reads as completeness.
 //!
 //! The section is collapsed by default and **never auto-runs**: merely opening
 //! a form must not change a computed `/V`.
 //!
 //! ## What was deliberately left behind
 //!
-//! Roughly half the salvaged range, all of it `Edit ▸ Forms` **authoring**:
-//! field creation, field deletion, widget deletion, field renaming with its
-//! ancestor breadcrumb, and the grouping-node roster. Also the FDF/XFDF/CSV
-//! import and export surface, which needs a file dialog this stage does not
-//! have. Each answers to a different ribbon command and, in the deletion and
-//! renaming cases, to a **different certification gate** — see
+//! Everything that is `Edit ▸ Forms` **authoring**: field creation, field
+//! deletion, widget deletion, field renaming with its ancestor breadcrumb, and
+//! the grouping-node roster. Also the FDF/XFDF/CSV import and export surface,
+//! which needs a file dialog this stage does not have. Each answers to a
+//! different ribbon command and, in the deletion and renaming cases, to a
+//! **different certification gate** — see
 //! [`crate::text::forms::forms_structural_certification_disabled_tooltip`].
 //! They land with the commands that name them.
 //!
@@ -161,11 +151,9 @@ pub mod edit;
 mod groups;
 /// One field, one row — the per-field controls.
 pub mod rows;
-/// ★★ **The panel→canvas channel** — which field the panel is pointing at, so
-/// the canvas can spotlight it (`OPERATOR_REQUESTS.md` O98). This header has
-/// named that gap since the panel was written, and named it as a PERMITTED
-/// affordance under rule 4's fourth clause; the module is that channel and
-/// nothing more.
+/// **The panel→canvas channel** — which field the panel is pointing at, so the
+/// canvas can spotlight it (`OPERATOR_REQUESTS.md` O98). A permitted affordance
+/// under rule 4's fourth clause; the module is that channel and nothing more.
 pub mod spotlight;
 /// The order this form is tabbed through, per page — a **read-only** second
 /// list beside the fill list. See that module's header for what it is, why it
@@ -193,11 +181,11 @@ use self::rows::RowContext;
 
 /// The ribbon command that opens this panel.
 ///
-/// Named here as well as (eventually) on `crate::panels::Panel` so this
-/// module's own reachability test can assert it without waiting on the enum
-/// variant. See [`tests::the_forms_command_is_reachable_from_the_ribbon`] for
-/// what that test is defending against, and why a panel with no route from the
-/// ribbon is a defect three panels in the old shell actually shipped.
+/// Named here as well as on `crate::panels::Panel` so this module's own
+/// reachability test can assert it without going through the enum. See
+/// [`tests::the_forms_command_is_reachable_from_the_ribbon`] for what that test
+/// defends against: a panel with a body, a rail entry and no control an operator
+/// can click is a panel that passes every harness step and ships unreachable.
 pub const COMMAND_ID: &str = "view.panel_forms";
 
 /// Draw the Forms panel.
@@ -217,7 +205,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
     // filled three fields must see those three values; `EditSession::view` is
     // the base revision with every unsaved edit applied, which is the same
     // thing the canvas rasterizes.
-    // ★★ **Put the spotlight out before the rows draw, so that a focused row can
+    // **Put the spotlight out before the rows draw, so that a focused row can
     // light it again this frame** — `OPERATOR_REQUESTS.md` O98.
     //
     // Clear-then-set rather than tracking a transition: with no focused row the
@@ -228,9 +216,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
     crate::panels::forms::spotlight::clear(ui.ctx());
 
     let view = doc.session.view();
-    // ★★ NEITHER of these returns early any more, and the reason is the
-    // same one the Bookmarks panel's empty-outline return was removed for on
-    // the same day.
+    // **NEITHER of these may return early**, however empty the form looks.
     //
     // A document with no `/AcroForm` can still carry `/Widget` annotations, and
     // **pdfcer makes exactly that**: `insert_pages` copies everything reachable
@@ -240,17 +226,14 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
     // and belong to nothing.
     //
     // The Tab-order section below is the one surface that lists those widgets
-    // and offers to register them. Returning here put it **behind a guard that
-    // the very state it exists for cannot pass** — the panel said "this
-    // document has no form" and offered nothing, in the one document that most
-    // needed the remedy.
+    // and offers to register them. A return here puts it **behind a guard that
+    // the very state it exists for cannot pass** — the panel says "this document
+    // has no form" and offers nothing, on the one document that most needs the
+    // remedy.
     //
-    // Found by a driven run, not by reading: the check that inserts a form's
-    // pages and then registers one of the orphans got as far as opening this
-    // panel and stopped. Both sentences are still shown, because both are true
-    // and an operator opening the panel on an ordinary drawing deserves to be
-    // told why it is empty. What has changed is that they are no longer the
-    // last thing the panel does.
+    // Both sentences are still shown, because both are true and an operator
+    // opening the panel on an ordinary drawing deserves to be told why it is
+    // empty. They are simply not the last thing the panel does.
     let form = pdfcer_core::forms::parse_acroform(&view);
     let fillable = match &form {
         None => {
@@ -269,26 +252,16 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
         // skipped rather than drawn empty — R9: an unavailable capability
         // renders nothing.
         //
-        // ★★ WRAPPED IN A SCROLL AREA, which the filling path does not need
-        // and this path does.
+        // WRAPPED IN A SCROLL AREA, which the filling path does not need and
+        // this path does.
         //
         // The dock gives a panel body a fixed rectangle and no scrolling of its
-        // own — `egui-shell`'s dock says so in as many words: *"any `ScrollArea`
-        // a panel body creates inherits this"*, meaning the body is expected to
-        // create one. On the filling path the field list's own scroll area is
-        // that mechanism and it takes the rest of the pane.
-        //
-        // This path has no field list, so nothing was scrolling and the
-        // Tab-order section's content simply ran past the bottom of the pane.
-        // A driven run measured the panel body at y=466..770 with the Register
-        // buttons laid out at y=773..797 — **outside the panel on both axes**,
-        // drawn, published, and unreachable at any pane size, because there was
-        // nothing to scroll.
-        //
-        // Fourth instance today of one shape: a control that must be reachable
-        // placed where the container cannot show it. The other three were fixed
-        // by moving the control; this one by giving the container the mechanism
-        // it was assumed to have.
+        // own; the body is expected to create its own `ScrollArea`. On the
+        // filling path the field list's scroll area is that mechanism and it
+        // takes the rest of the pane. This path has no field list, so without
+        // one here the Tab-order section's content is laid out past the bottom
+        // of the pane — drawn, published, and unreachable at any pane size,
+        // because nothing scrolls.
         egui::ScrollArea::vertical()
             .id_salt("pdfcer-forms-no-fields")
             .show(ui, |ui| {
@@ -306,7 +279,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
         .session
         .fill_refusal()
         .map(|_| t::form_field_certification_disabled_tooltip());
-    // ★ FLATTEN ASKS A DIFFERENT GATE, and the difference is not academic.
+    // FLATTEN ASKS A DIFFERENT GATE, and the difference is not academic.
     //
     // Filling takes core's `/P`-aware gate; flattening removes the form, which
     // is a STRUCTURAL change and takes the strict one. On the ordinary
@@ -314,34 +287,21 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
     // permitted and flattening is refused, so reusing `fill_refusal` here
     // would render an enabled Flatten button whose every press errors.
     //
-    // ★ This asks `flatten_refusal`, and the borrowed answer it replaced is
-    // worth recording because the correction went both ways.
-    //
-    // This originally asked `deletion_refusal`, because core exposed no
-    // flatten query and the two routed through what looked like the identical
-    // check. It was named as a borrowed answer and reported as a boundary
-    // finding rather than left silent — and the report was **half wrong**.
-    //
-    // `flatten_refusal` was added (pdfcer `fa243df`). But the accompanying
-    // claim that `deletion_refusal` under-reported was rejected, correctly:
-    // it predicts DELETION and matches `deletion_preflight` exactly. The
-    // comparison was against flatten, which is a different operation. Acting
-    // on it would have disabled a Delete control that would have worked — an
-    // over-reporting refusal query is a different bug, not a safe one, and
-    // there is now a test in core whose job is to stop exactly that.
-    //
-    // The two gates really do differ, just not the way it was reported:
-    // deletion and flatten share the strict certification gate, and flatten
-    // additionally CREATES page content, so it carries a suppression guard
-    // deletion does not. Two checks of three — which works until it does not,
-    // on documents that are not exotic.
+    // It must ask `EditSession::flatten_refusal` specifically, and not borrow
+    // `deletion_refusal`. The two are close enough to look interchangeable —
+    // both take the strict certification gate — but flatten additionally
+    // CREATES page content, so it carries a suppression guard deletion does
+    // not. Two checks of three, which works until it does not, on documents
+    // that are not exotic. The reverse substitution is worse rather than safer:
+    // `deletion_refusal` matches `deletion_preflight` exactly, so using it here
+    // would over-report and disable a Delete control that would have worked.
     let structural_refusal: Option<&'static str> = doc
         .session
         .flatten_refusal()
         .map(|_| t::forms_structural_certification_disabled_tooltip());
 
     header(ui, form, fill_refusal);
-    // ★ Directly under the header, above every control: what the LAST edit
+    // Directly under the header, above every control: what the LAST edit
     // decided on the operator's behalf, and which fields the page cannot be
     // clicked for. Both are answers to "why did that not happen where I
     // expected?", and both belong before the thing they are about rather than
@@ -358,7 +318,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
     reset_section(ui, doc, fill_refusal, &mut edits);
     whole_form_controls(ui, form, fill_refusal, structural_refusal, &mut edits);
     ui.separator();
-    // ★ THE SECOND LIST, and it answers a different question from the one
+    // THE SECOND LIST, and it answers a different question from the one
     // below it — see [`tab_order`]'s header.
     //
     // It is placed BETWEEN the whole-form controls and the fill list, and the
@@ -378,14 +338,13 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
     // only thing it can raise is `Action::GoToPage` — navigation, not a form
     // verb, and `FormEdit` has no variant that could carry it.
     tab_order::section(ui, doc, &view, Some(form), actions);
-    // ★★ THE THIRD LIST, and it is placed here for the two constraints
-    // [`groups`]' header sets out.
+    // THE THIRD LIST, and it is placed here for the two constraints [`groups`]'
+    // header sets out.
     //
     // It must be **above** the fill list, because that list's own `ScrollArea`
     // takes the rest of the pane and the panel's top level does not scroll — so
     // anything after it is laid out past the bottom of a container with no way
-    // to reach it. This panel has already shipped that defect once, measured in
-    // a driven run at y=773 in a body ending at y=770.
+    // to reach it.
     //
     // It sits beside Tab order rather than beside the fill list because the two
     // are the panel's **structural** surfaces: that one lists controls the form
@@ -474,16 +433,13 @@ fn header(ui: &mut egui::Ui, form: &AcroForm, fill_refusal: Option<&'static str>
 /// `crate::app::status` that this work does not own. Named rather than
 /// silently absent — see [`edit::last_fill_disclosure`].
 ///
-/// # Why the panel used to discard these, and why that argument does not
-/// survive
+/// # Why these two, and only these two
 ///
-/// [`edit`]'s header carries the original reasoning — *"every fact those notes
-/// carried is derivable from the document the panel re-reads on the next
-/// frame"* — and it is correct for six of `FillOutcome`'s eight facts. It is
-/// **false** for the two below, and the falsity is exactly the point: an
-/// auto-size pdfcer chose and a character pdfcer replaced both look, in the saved
-/// file, precisely like an author's decision. Re-reading the field cannot
-/// distinguish them, so there is nothing to derive and the note has to be
+/// Six of `FillOutcome`'s eight facts are derivable from the document the panel
+/// re-reads on the next frame, which is why they are discarded. These two are
+/// not: an auto-size pdfcer chose and a character pdfcer replaced both look, in
+/// the saved file, precisely like an author's decision. Re-reading the field
+/// cannot distinguish them, so there is nothing to derive and the note has to be
 /// carried.
 ///
 /// Shown only while it describes the revision on screen, which is what the
@@ -520,20 +476,19 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// they have to be said, or the capability has silently shrunk from the
 /// operator's point of view and they have no way to find out why.
 ///
-/// # ★ The counts come from the canvas's own walk, not from a second one
+/// # The counts come from the canvas's own walk, and must never be re-derived
 ///
 /// [`crate::canvas::forms::placed`] is **the** classification of this form —
 /// the one whose boxes the canvas hit-tests — and it hands back
-/// [`crate::canvas::forms::boxes::Routing`] from the same pass. This panel reads that, and
-/// deliberately does not repeat the rule.
+/// [`crate::canvas::forms::boxes::Routing`] from the same pass. This panel reads
+/// that and does not repeat the rule.
 ///
-/// The first draft did repeat it, and repeating it was wrong twice over. Once
-/// for the ordinary reason: two statements of one rule drift, and a panel
-/// promising "3 fields can only be filled here" over a canvas that declined
-/// four is worse than no count. And once for a reason no review would have
-/// caught — the re-derivation asked each widget's `/P` to work out which page
-/// it was on, which is the silent defect
-/// [`crate::canvas::forms::boxes::place`]'s ★ section describes and which **no test against
+/// Repeating it is wrong twice over. Once for the ordinary reason: two
+/// statements of one rule drift, and a panel promising "3 fields can only be
+/// filled here" over a canvas that declined four is worse than no count. And
+/// once for a reason no review catches — a re-derivation naturally asks each
+/// widget's `/P` to work out which page it is on, which is the silent defect
+/// [`crate::canvas::forms::boxes::place`] documents and which **no test against
 /// the fixture corpus can reach**.
 ///
 /// It is also free: the walk is cached per `(document, revision)` and the
@@ -611,7 +566,7 @@ fn calculated_fields(
             if plan.not_reproducible > 0 {
                 ui.label(t::recompute_not_considered(plan.not_reproducible));
             }
-            // ★ A rule-4 disclosure: pdfcer INFERRED an evaluation order the
+            // A rule-4 disclosure: pdfcer INFERRED an evaluation order the
             // document was required to state, the inference decides the
             // numbers below, and another reader may compute different ones.
             if plan.order_source.is_pdfcer_choice() {
@@ -651,7 +606,7 @@ fn calculated_fields(
                 plan.changes.len(),
                 plan.coerced_operands(),
             ));
-            // ★ EVERY PROPOSED VALUE IS ON SCREEN BEFORE THE BUTTON THAT
+            // EVERY PROPOSED VALUE IS ON SCREEN BEFORE THE BUTTON THAT
             // COMMITS IT. Rule 4's disclosure obligation, satisfied by the
             // values being visible and the commit being a deliberate click on
             // a control at a fixed position — not by a confirm box anchored to
@@ -693,7 +648,7 @@ fn calculated_fields(
 /// lists every field it would clear, with its current value, before offering
 /// the button — the loss is what has to be on screen, not the outcome.
 ///
-/// # ★ The preview comes from core, and is filtered here
+/// # The preview comes from core, and is filtered here
 ///
 /// `EditSession::reset_preview` returns a row for **every** field in scope,
 /// including ones that are ineligible and ones that already hold their reset
@@ -770,7 +725,7 @@ fn reset_section(
 /// and a Flatten button under a forty-row list is a button an operator scrolls
 /// past without meeting.
 ///
-/// # ★ Redraw comes first, and the order is load-bearing
+/// # Redraw comes first, and the order is load-bearing
 ///
 /// Flatten works by invoking each widget's **existing** `/AP` as a page
 /// XObject. A field with no drawn appearance has nothing to invoke, so
@@ -855,7 +810,7 @@ fn field_list(
     let mut ui_state = FormsUi::load(ui, doc);
     ui_state.prune(form);
 
-    // ★ The draft is moved OUT of `ui_state` for the duration of the rows and
+    // The draft is moved OUT of `ui_state` for the duration of the rows and
     // put back afterwards, because `RowContext` borrows it mutably and
     // `ui_state.drafts` is borrowed mutably at the same time. Two mutable
     // borrows of one struct is the ordinary Rust shape here and the ordinary
@@ -866,20 +821,20 @@ fn field_list(
         page_numbers: &page_numbers,
         fill_refusal,
         doc: Some(doc),
-        // ★★★ **What the operator is typing ON THE PAGE, asked once for the
-        // whole frame** — the 2026-09 review's row A12c.
+        // **What the operator is typing ON THE PAGE, asked once for the whole
+        // frame.**
         //
         // Beside `page_numbers` and `fill_refusal` because it is the same kind
         // of thing: a fact about the document that is identical for every row,
         // and one a 400-field form must not ask 400 times. `canvas::forms`
         // holds one focus, so the answer is one field or none.
         //
-        // ★ Asked from the PANEL rather than pushed by the canvas, which is
-        // the direction `canvas::forms::placed` already established between
-        // these two modules: the surface that owns the answer publishes it,
-        // and the surface that needs it reads it. The reverse — the canvas
-        // writing into `FormsUi` — would put a second writer on state whose
-        // whole correctness argument is its `(path, epoch)` key.
+        // Asked from the PANEL rather than pushed by the canvas, which is the
+        // direction `canvas::forms::placed` sets between these two modules: the
+        // surface that owns the answer publishes it, and the surface that needs
+        // it reads it. The reverse — the canvas writing into `FormsUi` — would
+        // put a second writer on state whose whole correctness argument is its
+        // `(path, epoch)` key.
         live_canvas_draft: crate::canvas::forms::live_draft(ui.ctx(), doc),
         button_draft: &mut button_draft,
         actions,
@@ -900,26 +855,10 @@ fn field_list(
 
 /// Turn one [`FormEdit`] into the action that carries it across the funnel.
 ///
-/// **This is the single line of wiring this module is waiting on**, and it is
-/// isolated into a function of its own so that the change is one edit in one
-/// place rather than nine call sites.
+/// A function of its own rather than nine inline `push` calls, so the mapping
+/// from this panel's vocabulary to the action funnel is stated once.
 ///
-/// # What `crate::app::actions` needs
-///
-/// One variant:
-///
-/// ```text
-/// /// One form-filling verb — see `crate::panels::forms::edit`.
-/// Form(crate::panels::forms::edit::FormEdit),
-/// ```
-///
-/// and one arm in `PdfcerApp::apply`:
-///
-/// ```text
-/// FieldAction::Edit(edit) => crate::panels::forms::edit::apply(doc, &edit),
-/// ```
-///
-/// That is the whole of it. The mutation protocol, the epoch bump, the texture
+/// It does nothing but wrap. The mutation protocol, the epoch bump, the texture
 /// invalidation and the refusal trace all live in [`edit::apply`], for the
 /// reasons that module's header sets out — chiefly that the six form outcome
 /// types do not unify into `vector_edit`'s `Result<Vec<String>, EditError>`.
@@ -929,14 +868,11 @@ fn raise(actions: &mut Vec<Action>, edit: FormEdit) {
 
 /// The Forms panel's own inter-frame state: one text draft per field.
 ///
-/// # ★ Why this is not on `crate::panels::PanelsState`
+/// # This is not on `crate::panels::PanelsState`, and the preferred shape is
 ///
-/// It should be, and the constraint is a boundary rather than a design
-/// judgement: `PanelsState` is defined in `crate::panels`' own `mod.rs`, which
-/// this work may add exactly one `pub mod forms;` line to. The **preferred**
-/// shape, for whoever lifts that constraint, is a `forms: FormsUi` field
-/// beside `tree: ObjectTreeUi`, dropped by `PanelsState::forget_document`
-/// exactly as everything else there is.
+/// A `forms: FormsUi` field beside `tree: ObjectTreeUi`, dropped by
+/// `PanelsState::forget_document` exactly as everything else there is. Written
+/// down so the current home is read as a position rather than a preference.
 ///
 /// # Why egui's memory is nonetheless a sound home, and not a smuggled mutation
 ///
@@ -947,7 +883,7 @@ fn raise(actions: &mut Vec<Action>, edit: FormEdit) {
 /// can change a pixel of the page; only [`FormEdit`] can, and only through the
 /// funnel.
 ///
-/// # ★ The key is `(path, edit_epoch)`, which is what makes UNDO correct
+/// # The key is `(path, edit_epoch)`, which is what makes UNDO correct
 ///
 /// This is [`crate::panels::PanelsState::sync`]'s discipline applied to a
 /// different kind of state, and the epoch half is the interesting one.
@@ -989,7 +925,7 @@ pub struct FormsUi {
     drafts: BTreeMap<String, String>,
     /// **Which push button's action chooser is open, and what it is set to.**
     ///
-    /// ★ Held here rather than in `egui`'s temp data for the reason every other
+    /// Held here rather than in `egui`'s temp data for the reason every other
     /// field of this struct is: it is keyed to a `(document, epoch)` pair and
     /// pruned with the form. A chooser left open over a field that an edit has
     /// removed would be a control editing something that is not there.
@@ -1055,29 +991,22 @@ mod tests {
     use egui_shell::CommandRegistry;
     use std::collections::BTreeSet;
 
-    /// **★ This panel is reachable from the ribbon.**
+    /// **This panel is reachable from the ribbon.**
     ///
-    /// The check three panels in the old shell shipped without. Its
-    /// `panels_structure.rs` header records what that cost:
-    ///
-    /// > All three shipped with a `PaneSubject`, a panel body, a rail entry
-    /// > and a diagnostic step — and no control an operator could click.
-    /// > Their only callers were the harness step handlers, so every
-    /// > verification passed while the panels were unreachable in a real
-    /// > build.
+    /// The failure this defends against is invisible to every other kind of
+    /// check: a panel can have a `PaneSubject`, a body, a rail entry and a
+    /// diagnostic step, be driven successfully by the harness through all of
+    /// them, and still offer no control an operator could click.
     ///
     /// Two assertions, and both are needed. A command **the manifest
     /// references** is one the ribbon draws a control for; a command **the
     /// registry holds** is one that has a label, a tooltip and an enable
     /// predicate. Either alone is half a control.
     ///
-    /// Written here rather than left to
-    /// `crate::panels::tests::every_panel_is_reachable_from_the_ribbon`
-    /// because that sweep iterates `Panel::ALL`, and this panel is not on that
-    /// enum yet — the enum lives in a file this work may not extend. When the
-    /// variant lands, the sweep covers this too and this test becomes the
-    /// belt to its braces; it is deliberately the *same* two assertions so
-    /// that is a clean duplication rather than a divergent one.
+    /// `crate::panels::tests::every_panel_is_reachable_from_the_ribbon` sweeps
+    /// `Panel::ALL` and covers this panel too. This is the belt to that sweep's
+    /// braces, and deliberately the *same* two assertions, so the duplication is
+    /// clean rather than divergent.
     #[test]
     fn the_forms_command_is_reachable_from_the_ribbon() {
         let shell = manifest::built_in();
@@ -1102,7 +1031,7 @@ mod tests {
         );
     }
 
-    /// **★ The "you can fill here" count agrees with what the rows draw.**
+    /// **The "you can fill here" count agrees with what the rows draw.**
     ///
     /// The whole of the third bite, pinned. [`offers_a_control`] and
     /// [`rows::row`]'s dispatch are two statements of one rule, and the
@@ -1178,7 +1107,7 @@ mod tests {
             );
         }
 
-        // ★ Rich text is the case `block_reason` deliberately does NOT cover:
+        // Rich text is the case `block_reason` deliberately does NOT cover:
         //   the row offers a CONVERSION, not a box, so it must not be counted
         //   as somewhere the operator can type.
         let rich = Field {
@@ -1196,7 +1125,7 @@ mod tests {
             "a rich-text field was counted as one the operator can type into"
         );
 
-        // ★ And the bit-26 overload: a radio group with RadiosInUnison set
+        // And the bit-26 overload: a radio group with RadiosInUnison set
         //   carries the SAME bit as RichText. If the count asked the flag
         //   directly it would drop every such group out of the fillable total.
         let unison = Field {
@@ -1215,7 +1144,7 @@ mod tests {
         );
     }
 
-    /// **★ An edit forgets the drafts, which is what makes undo correct.**
+    /// **An edit forgets the drafts, which is what makes undo correct.**
     ///
     /// The defect this prevents, in full: the operator types "Anna", tabs away
     /// so it commits, then presses Ctrl+Z. The document reverts to empty. If

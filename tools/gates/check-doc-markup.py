@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 """check-doc-markup.py — Markdown this repository writes but no reader sees.
 
-WHAT THIS GATE IS FOR
+THE PROPERTY ASSERTED
 =====================
 
 Every other documentation gate here asks whether a sentence is TRUE. This one
-asks whether it is **visible**. The two failures it catches have the same
-signature and it is the worst one available: the file on disk is complete, the
-text editor shows an ordinary line, `git diff` shows nothing unusual, and a
-renderer throws the content away without a warning anywhere.
+asks whether it is **visible**: that no Markdown file in the working tree
+contains a construct a renderer silently discards.
+
+The two failures it catches share the worst signature available: the file on
+disk is complete, the text editor shows an ordinary line, `git diff` shows
+nothing unusual, and a renderer throws the content away without a warning
+anywhere. No other gate here looks at rendered output, so nothing else can see
+either one.
 
 MECHANISM 1 — A TABLE ROW WITH MORE CELLS THAN ITS HEADER
 ---------------------------------------------------------
@@ -21,26 +25,14 @@ directions, and only one of them is safe:
 
 So one unescaped pipe inside a cell does not shift the layout. It deletes every
 character after the header's last column boundary, for the reader, permanently,
-in silence.
+in silence. What is lost is not incidental: the tail of a row is where the
+"why" column lives, so the cell the row exists for is exactly the cell that goes.
 
-★★★ Measured on 2026-09-12, before this gate existed: **five rows** in four of
-this project's own documents were being truncated, and what was lost was not
-incidental:
-
-| file | what a reader never saw |
-|---|---|
-| `FEATURES.md` Source row | roughly two thousand characters -- every superseded measurement in the stack, back to the first |
-| `FEATURES.md` `/F` flags row | the whole second half, including the rule that an unknown flag must fail the build |
-| `RIBBON_IA.md` Format-tab row | the **entire** "which side moved, and why" cell, which is the column the row exists for |
-| `GLYPH_ADOPTION.md` `line-width` | the evidence sentence for the deferral |
-| `ENGINE_BACKLOG.md` rotation row | the file list naming where the work landed |
-
-★★ Four of the five were broken by **a document quoting a command or a literal
-that contains a pipe** -- a shell pipeline, a PDF flag pair (`Print` and
-`NoZoom`), a closure parameter, another table row. That is the same shape as
-the `Source` row broken on 2026-09-06 by the `xargs` invocation it quoted, and
-it names the rule: **a document that quotes its own measurement command can be
-broken by it.** Escape the pipe; do not reword the quotation.
+**The dominant cause is a document quoting a command or a literal that contains
+a pipe** — a shell pipeline, a PDF flag pair, a closure parameter, another table
+row. The shape to recognise: **a document that quotes its own measurement
+command can be broken by it.** Escape the pipe as a backslash-pipe; do not
+reword the quotation, because the quotation is usually the point.
 
 MECHANISM 2 — AN EMPHASIS MARKER THAT CAN NEITHER OPEN NOR CLOSE
 -----------------------------------------------------------------
@@ -51,46 +43,25 @@ A line **ending in a space followed by `**`** is therefore inert in both
 directions: whatever it was meant to bold renders with two literal asterisks in
 it and no emphasis at all.
 
-That is easy to produce when a long bold heading is wrapped by hand across two
-lines, and impossible to see in an editor. One was written into `HANDOFF.md` on
-2026-09-12 and caught by eye; this gate is so that the next one is not.
+The shape to recognise: a long bold heading wrapped by hand across two lines.
+It is trivial to produce and impossible to see in an editor.
 
 THE INPUT SET IS THE WORKING TREE, NOT THE INDEX
 ------------------------------------------------
 
-This gate listed its input with a bare `git ls-files "*.md"` until 2026-09-13.
-That lists **the index**, so a Markdown file written and not yet `git add`-ed
-was not scanned at all.
+Files are listed with `--cached --others --exclude-standard` — tracked files,
+plus untracked files that are not gitignored. The two sets are disjoint, so
+nothing is scanned twice, and `--exclude-standard` keeps `target/` and the
+portable build folders out without this file having to name them.
 
-★★★ **That is the worst possible blind spot for this particular gate.** A
-brand-new document is exactly where these two defects live, because nobody has
-ever rendered it: the hand-wrapped bold heading and the unescaped pipe inside a
-quoted command are both produced while writing, and both are invisible in an
-editor. A gate that waits until the file is committed before looking at it is
-looking after the only moment that mattered.
-
-It now passes `--cached --others --exclude-standard` — tracked files, plus
-untracked files that are not gitignored. The two sets are disjoint, so nothing
-is scanned twice, and `--exclude-standard` keeps `target/` and the portable
-build folders out without this file having to name them.
-
-★ **Four instances, and the OLDEST is the finding.** `check-old-name-absent`
-reported **41 of 41 green** and then failed the packager's pre-flight on the
-**same tree** thirty minutes later, with nothing edited in between — all that
-changed was `git add`. Its first repair excluded one directory, which treated
-the instance and left the mechanism, so it recurred. This gate is the third, and
-it had never fired at all -- it was found by the audit rather than by a failure.
-
-★★★ **And the first was `tools/check-suite-name-absent.py`, whose docstring
-already states the generalisation in this tree** — *"a gate whose input set is
-'what is already committed' cannot see the commit you are about to make"* — and
-that gate paid for it with a red CI run. It was written **before** both
-`check-old-name-absent` failures. So the lesson was recorded, correctly and
-prominently, one directory up, and did not propagate.
-⇒ **A lesson in a docstring is not an instrument.** Nothing swept the other
-gates for the pattern until one of them broke in the release path, and the sweep
-took four minutes. When a finding generalises, the next act is a grep across
-every sibling, in the same session, not a paragraph.
+An index-only listing would be **the worst possible blind spot for this
+particular gate.** A brand-new document is exactly where these two defects live,
+because nobody has ever rendered it: the hand-wrapped bold heading and the
+unescaped pipe inside a quoted command are both produced while writing, and both
+are invisible in an editor. A gate that waits until the file is committed before
+looking at it is looking after the only moment that mattered. The tell for that
+defect in the wild is the TIMING, not the content: green before the commit, red
+after it, with nothing edited — all that changed was `git add`.
 
 ⇒ **The question to ask at each hit: which side of `git add` does this gate's
 subject live on?** A gate about what a reader sees, what ships, or what is on
@@ -99,9 +70,16 @@ index — `check-engine-api-drift` reads the engine's `.rs` bytes at a git
 revision deliberately, because its subject is the pinned commit that compiles,
 not whatever the engine's working tree happens to hold.
 
-★ **And falsify it in one step:** plant the violation in an **untracked**
-file. A gate with this hole cannot see one at all, so the difference between
-the broken and the repaired version is a single run.
+`check-gate-input-scope.py` is the instrument that keeps every sibling here on
+the right side of that question; this gate is one of its subjects.
+
+WHAT IT PROVABLY CANNOT SEE
+---------------------------
+
+It is a line scanner, not a CommonMark parser. Beyond the deliberate exclusions
+below, it does not model HTML blocks, reference-style links, nested blockquotes,
+or a table indented inside a list item; and it says nothing at all about whether
+the rendered text is *correct*, only that it survives rendering.
 
 WHAT IS DELIBERATELY NOT FLAGGED
 --------------------------------
@@ -110,26 +88,37 @@ WHAT IS DELIBERATELY NOT FLAGGED
   would be noise, and noise is how a gate gets carved out until it means
   nothing. The distinction is the finding; it is not softness.
 * **Anything inside a fenced code block.** Rust closure syntax (`|e| ...`) and
-  shell pipelines inside fences are code, not tables. The first draft of
-  mechanism 1 had no fence handling and reported a `DEFECTS.md` code sample as
-  a broken table -- a gate that reports a correct file is a gate that gets
-  disabled.
+  shell pipelines inside fences are code, not tables. Without fence handling,
+  mechanism 1 reports code samples as broken tables — and a gate that reports a
+  correct file is a gate that gets disabled. Fences are BLANKED rather than
+  removed, so every surviving index still equals its real line number.
 * **A run of pipe-leading lines with no delimiter row under the first.** GFM
   requires `|---|---|` to make a table at all. Without it the lines are
   ordinary paragraph text and their pipes mean nothing.
 
-USAGE
-=====
+USAGE AND EXIT CODES — the project's three-state gate contract
+==============================================================
 
   tools/gates/check-doc-markup.py              scan every *.md in the tree
   tools/gates/check-doc-markup.py --self-test  falsify the mechanism
 
-Exit: 0 clean, 1 violations, 2 could not run (not a git checkout).
+  0  clean    — every table row within its header's column count, no inert `**`
+  1  FAIL     — one or more of either, each printed with `file:line`
+  2  SKIPPED  — not a git checkout, or no Markdown in the working tree
 
-★ The self-test falsifies in BOTH directions for both mechanisms, per this
+HOW TO FALSIFY IT
+-----------------
+
+`--self-test` exercises both mechanisms in BOTH directions, per this
 repository's rule that a check which cannot fail is not evidence: it plants an
 over-wide row, an under-wide row, an escaped pipe, a fenced code sample and a
-pipe-leading paragraph with no delimiter row, and asserts exactly one hit.
+pipe-leading paragraph with no delimiter row, and asserts exactly one hit. It
+then asserts the same code sample UNFENCED *is* reported, which is the only way
+to tell fence handling from a scanner that has stopped matching.
+
+To falsify the input-set rule in one step, plant a violation in an **untracked**
+file. A gate reading the index cannot see one at all, so the difference between
+the broken and the repaired version is a single run.
 """
 
 import os
@@ -297,8 +286,9 @@ def self_test():
 
     # ---- the fence handling itself ---------------------------------------
     # Falsified directly: without `strip_fences` the code sample above is a
-    # four-pipe row under a two-pipe header, which is exactly the false
-    # positive that made the first draft unusable.
+    # four-pipe row under a two-pipe header. That false positive is the one
+    # that makes this gate unusable, because a gate reporting a correct file
+    # gets disabled rather than fixed.
     unfenced = ["| Key | Why |", "|---|---|",
                 "| doc.entered.is_some_and(|e| e.subpath.is_some()) |"]
     if not scan_tables(unfenced):

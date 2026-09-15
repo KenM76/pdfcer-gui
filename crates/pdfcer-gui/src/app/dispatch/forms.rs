@@ -1,9 +1,9 @@
-//! # `app::dispatch::forms` — what the five form-field commands do
+//! # `app::dispatch::forms` — what the form-field commands do
 //!
-//! One arm of [`super::PdfcerApp::dispatch_command`], lifted into its own file.
-//! The dispatcher is a routing table and this is a route; what it gained by
-//! moving is that the **reasoning** below is no longer sitting in the middle of
-//! ninety-eight unrelated arms, and R2 stopped being breached by four lines.
+//! One arm of [`super::PdfcerApp::dispatch_command`], in its own file. The
+//! dispatcher is a routing table and this is a route; the **reasoning** below
+//! is the reason it is not an arm, because it is about form fields rather than
+//! about routing and would be unfindable among the dispatcher's other arms.
 //!
 //! ## The whole of what a form command does: it arms a tool
 //!
@@ -27,26 +27,23 @@
 //! **But `egui` refusing a click on a disabled widget is the entire mechanism
 //! of greying.** Every other route into the dispatcher — a keyboard chord, the
 //! QAT, a context menu, the `PDFCER_DIAG_INVOKE` harness seam — never touches
-//! the ribbon at all. Driving the release binary with that id armed the tool
-//! and traced `form-tool-armed kind=PushButton`. Ninety-nine commands carry an
-//! `enabled_when`; the greying on all of them was a drawing, not a rule.
+//! the ribbon at all. Driving the release binary with that id arms the tool and
+//! traces `form-tool-armed kind=PushButton`. **An `enabled_when` is a drawing
+//! instruction, not a rule**, and that holds for every command that carries one.
 //!
-//! ### ★★ The obvious repair was written, and the test suite refused it
+//! ### ★★ Why there is no blanket guard at the top of `dispatch_command`
 //!
-//! One guard at the top of `dispatch_command`: refuse any command whose
-//! `enable` predicate is false. Ninety-nine controls fixed in six lines. It
-//! compiled, and two tests failed — one of which carries the argument in its
-//! own header:
+//! The obvious repair — refuse any command whose `enable` predicate is false —
+//! is wrong, and the apply layer's own tests assert against it: *"the
+//! dispatcher must not consult one. `undo.available` greys the control and the
+//! apply arm declines an empty stack **in words** — both of which are somebody
+//! else's job."*
 //!
-//! > *"the dispatcher must not consult one. `undo.available` greys the control
-//! > and the apply arm declines an empty stack **in words** — both of which are
-//! > somebody else's job."*
-//!
-//! That is right, and it is the more important half of the rule. **Greying is a
-//! hint; the worded decline is the answer.** A choke point that swallowed the
-//! command would have made `Ctrl+Z` on an empty stack do nothing at all *and*
-//! say nothing at all — strictly worse than the status line it produces today,
-//! and the exact shape of the silent-control defect this project keeps finding.
+//! **Greying is a hint; the worded decline is the answer.** A choke point that
+//! swallowed the command would make `Ctrl+Z` on an empty stack do nothing at
+//! all *and* say nothing at all — strictly worse than the status line it
+//! produces, and the exact shape of the silent-control defect this project
+//! keeps finding.
 //!
 //! So enforcement lives where the words can live, which is the arm. What that
 //! costs is one branch per command that needs it; what it buys is that an
@@ -78,21 +75,17 @@ pub(super) fn arm(app: &PdfcerApp, ctx: &egui::Context, id: &str, kind: FormFiel
         });
         return;
     }
-    // ★★★ **THE INERT-KIND BRANCH IS GONE, and its deletion is dated.**
+    // ★★ **No branch here refuses an inert kind, and that is load-bearing
+    // rather than an oversight.** `FormFieldKind::is_useful_once_placed`
+    // answers `true` for every kind the enum currently carries, so such a
+    // branch could not fire — and a branch that cannot fire is a mechanism with
+    // no caller, which rots silently and is believed anyway.
     //
-    // It read: *"the two are welded by `only_the_push_button_is_inert` … on the
-    // day pdfcer runs PDF actions, one predicate flips and both surfaces
-    // follow."* That day was 2026-08-30, when `pdfcer-core` shipped
-    // `EditSession::set_button_action`, and this shell consumed it on
-    // 2026-09-01. `FormFieldKind::is_useful_once_placed` now answers `true` for
-    // all five, so the branch could never fire and a branch that cannot fire is
-    // a mechanism with no caller — which rots, silently, and is believed.
-    //
-    // ★★ The GUARD survives, and it moved to where it can still fail:
-    // `canvas::formfield`'s `no_kind_is_authorable_but_inert`. A sixth kind that
-    // pdfcer can author and cannot use fails that test, and its message names
-    // both halves of the repair — a condition `app::conditions` does not set,
-    // AND a worded decline here. Both, because of the finding this file's header
+    // ★★ The guard lives where it can still fail:
+    // `canvas::formfield`'s `no_kind_is_authorable_but_inert`. A new kind pdfcer
+    // can author and cannot use fails that test, and its message names both
+    // halves of the repair — a condition `app::conditions` does not set, AND a
+    // worded decline here. Both, because of the finding this file's header
     // records at length: **greying is drawn, never enforced**, and every route
     // into the dispatcher except a ribbon click ignores it.
     let _ = crate::canvas::tool::arm_form(ctx, kind);
@@ -100,39 +93,20 @@ pub(super) fn arm(app: &PdfcerApp, ctx: &egui::Context, id: &str, kind: FormFiel
 
 /// **Flatten every field in the document**, or decline in words.
 ///
-/// # ★★★ This control was drawn, on the Edit tab, and inert — for the whole
-/// life of the project
+/// # ★★ Flattening is NOT a destructive verb, and takes no blocking modal
 ///
-/// `edit.form_flatten` was registered with an icon and an `enabled_when`,
-/// placed in Edit ▸ Forms, and had **no dispatch arm**. Its entry in
-/// `shell::commands::reach::register`'s SCAFFOLDED list gave the reason:
+/// It is one `EditSession` command and therefore one `Ctrl+Z`, and
+/// `EditSession::flatten_fields` **appends** an overlay stream while leaving
+/// existing content byte-verbatim — so under the default incremental save the
+/// prior revision still holds the field values. Its irreversibility is
+/// conditional on the save mode, not structural. That is why the panel's own
+/// button carries delete-shaped weight — a rich, honest tooltip and one undo
+/// step — rather than redaction's blocking modal, and the same reasoning
+/// applies to this ribbon route unchanged. `text::forms`'
+/// `forms_flatten_tooltip` is where the wording lives.
 ///
-/// > ~~The third of the unbuilt forms-authoring verbs, on `FEATURES.md`'s same
-/// > row — and the one that is irreversible on the document, so it also needs
-/// > the disclosure surface a destructive verb takes before it can honestly be
-/// > offered.~~
-///
-/// **Both halves of that were wrong by 2026-08-27, and neither could fail a
-/// test.**
-///
-/// * *"Unbuilt"* — `EditSession::flatten_fields` exists, and this shell has
-///   been calling it since the Forms panel shipped
-///   (`panels::forms::edit`'s `FormEdit::Flatten` arm). The row it cites is
-///   stale in the same way: field creation shipped as O39 on 2026-08-26.
-/// * *"Irreversible"* — it is one `EditSession` command and therefore one
-///   `Ctrl+Z`, and `text::forms`' `forms_flatten_tooltip` had already argued
-///   the point at length: flatten **appends** an overlay stream and leaves
-///   existing content byte-verbatim, so under the default incremental save the
-///   prior revision still holds the values. Its irreversibility is conditional
-///   on the save mode, not structural. That argument is why the panel's own
-///   button is *"delete-shaped weight: a rich, honest tooltip and one undo
-///   step — NOT redaction's blocking modal"*, and it applies here unchanged.
-///
-/// ⇒ A capability the operator could reach only by opening a panel, behind a
-/// ribbon control that did nothing, with a written reason that had quietly
-/// stopped being true. `edit.form_flatten`'s own manifest comment already said
-/// what the fix was for: *"a command buried in a panel is reachable only by
-/// someone who already opened the panel."*
+/// ★ It is on the ribbon *as well as* in the Forms panel because a command
+/// buried in a panel is reachable only by someone who already opened the panel.
 ///
 /// # ★★ Why this raises the SAME action as the panel button, and takes no
 /// extra gate
@@ -158,10 +132,9 @@ pub(super) fn arm(app: &PdfcerApp, ctx: &egui::Context, id: &str, kind: FormFiel
 /// `flatten_refusal`, not `fill_refusal`. Flattening removes the form, which
 /// is a structural change, and on the ordinary real-world shape — a certified
 /// fillable form at `/P 2` — filling is permitted while flattening is refused.
-/// The panel's own comment carries the full history of that distinction,
-/// including the half-wrong boundary report that produced it; this arm asks
-/// the same question so the greyed panel button and the declining ribbon
-/// control cannot disagree.
+/// `panels::forms` owns the statement of that distinction; this arm asks the
+/// same question so the greyed panel button and the declining ribbon control
+/// cannot disagree.
 pub(super) fn flatten(app: &PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     let Status::Open(doc) = &app.status else {
         return;

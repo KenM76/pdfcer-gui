@@ -37,20 +37,16 @@
 //! *irreversible*. Where the salvage source's wording said something worth
 //! keeping, it is kept close to verbatim.
 //!
-//! ★★★ **The two examples this paragraph used to quote were both FALSE by
-//! 2026-09-05, and they were quoted here as models of good voice.** They were
-//! *"pdfcer does not check whether they are valid"* (untrue once
-//! `signature::verify_all_with_trust` was wired) and *"Marking is reversible;
-//! applying is not"* (untrue on the default destination once `Pass 250.2`
-//! made applying stage the next save). Both have been corrected in place —
-//! see [`edit_redact`] and [`crate::text::commands::view::view_panel_signatures`].
+//! ★★★ **DO NOT QUOTE A LIVE TOOLTIP HERE AS AN EXEMPLAR.** A header that
+//! holds one up as a model makes a SECOND COPY of that string's claim, in a
+//! file nobody opens when the claim expires. Two such exemplars stood in this
+//! paragraph and both were false before anyone noticed — one denying
+//! verification the engine had grown, one calling an apply irreversible after
+//! it began staging into the next save.
 //!
-//! ⇒ **The lesson is about the QUOTING, not the sentences.** A header that
-//! holds up a live string as an exemplar makes a second copy of that string's
-//! claim, in a file nobody edits when the claim expires. Name the *shape* of
-//! the good sentence, not its text. The examples that survive above are the
-//! ones that describe a permanent property of a tooltip rather than a
-//! measurement of the build.
+//! ⇒ Name the **shape** of the good sentence, not its text. The examples
+//! above survive because each describes a permanent property of a tooltip
+//! rather than a measurement of the build.
 //!
 //! Two things are trimmed:
 //!
@@ -90,25 +86,24 @@ impl CommandText {
     }
 }
 
-/// **The View tab's entries**, split out on 2026-08-20 when this file crossed
-/// rule R2's ceiling.
-///
-/// Re-exported below, so nothing changed for a caller: every call site still
-/// writes `crate::text::commands::view_zoom_in()`. See that module's header
-/// for why the seam was drawn there and nowhere else.
-/// ★ The File tab's Save As copy, split out on 2026-09-02 under R2 — the same
-/// seam [`annotate`] and [`view`] already are. Re-exported so callers keep
+/// ★ The File tab's Save As copy, a module of its own under R2 — the same seam
+/// [`annotate`] and [`view`] are drawn on. Re-exported, so callers keep
 /// spelling it `text::commands::file_save_as`.
 mod file;
 pub use file::{file_export_image, file_export_text, file_import_text, file_save_as};
+
+/// **The View tab's entries**, a module of its own under R2.
+///
+/// Glob-re-exported, so a caller sees no seam at all: every call site still
+/// writes `crate::text::commands::view_zoom_in()`. See that module's header
+/// for why the cut is there and nowhere else.
 mod view;
 
 pub use view::*;
 
-/// ★ The **Format tab's** command copy, split out on 2026-09-14 under R2 —
-/// the same seam [`file`], [`view`], [`annotate`], [`markupstyle`] and
-/// [`arrange`] already are. This file had reached 1,490 lines, ten from the
-/// ceiling, and the command being written that day was a Format one.
+/// ★ The **Format tab's** command copy, a module of its own under R2 — the
+/// same seam [`file`], [`view`], [`annotate`], [`markupstyle`] and [`arrange`]
+/// are drawn on.
 ///
 /// Glob-re-exported, so callers keep spelling it
 /// `text::commands::format_select_form()`.
@@ -141,27 +136,23 @@ pub const fn file_open() -> CommandText {
 /// what the three reference applications do, and from this operator's own
 /// A-series drawings — rather than an accident to be hidden.
 ///
-/// ★ **The last sentence was a claim, and it stopped being true on
-/// 2026-08-14.**
+/// ★★ **The last sentence is about the SHAPE of saving, not about what this
+/// build cannot do**, and the difference is the whole reason it is worded the
+/// way it is. It once read *"this build cannot yet write a document to disk"*
+/// — accurate while `file.save_copy` had no dispatch arm, and a lie to the
+/// operator's face the day it got one, with a control two groups away keeping
+/// the document the tooltip said could not be kept.
 ///
-/// It read: *"This build cannot yet write a document to disk, so a new document
-/// lasts as long as the window does."* That was accurate when it was written —
-/// `file.save_copy` was registered with no dispatch arm — and `file.save_copy`
-/// is now wired, so leaving it would have told the operator that the document
-/// in front of them cannot be kept when a control two groups away keeps it.
+/// New is still the command where the shape of saving bites first: `Save a
+/// copy…` asks for a destination every time and never adopts it, so a created
+/// document keeps its `Untitled` name however often it is saved — Inkscape's
+/// behaviour for the same verb. See `crate::app::save` §3.4.
 ///
-/// It is replaced rather than deleted, because the thing an operator will
-/// otherwise find out the hard way has changed rather than gone: New is still
-/// the command where the *shape* of saving bites first. `Save a copy…` asks for
-/// a destination every time and never adopts it, so a created document keeps
-/// its `Untitled` name however often it is saved — which is what the new
-/// sentence says, and which is Inkscape's behaviour for the same verb. See
-/// `crate::app::save` §3.4.
-///
-/// The record of the correction is kept here for the reason `HANDOFF.md` §10
-/// gives about prose that quotes a fact: this is the fifth such drift the
-/// project has recorded, and the only defence that works is noticing them at
-/// the site of the change that invalidated them.
+/// ⇒ ⚠ **A tooltip that denies a capability is a claim about the rest of the
+/// program, and nothing re-reads it when the rest of the program changes.**
+/// The only defence that works is catching it at the site of the change that
+/// invalidated it, which means whoever wires a command reads the tooltips that
+/// mention its absence.
 #[must_use]
 pub const fn file_new() -> CommandText {
     CommandText::new(
@@ -197,24 +188,21 @@ pub const fn file_new_from_template() -> CommandText {
 
 /// `file.close`
 ///
-/// ★★ **The tooltip that was a promise nothing kept, from the day it shipped
-/// until 2026-08-19.** *"You are asked what to do about unsaved edits first"* —
-/// and nothing asked. `Action::Close` consulted `save_pending`, which is
-/// permanently `false` by design, and then dropped the `EditSession`. Every
-/// edit made since the file was opened went with it, silently, with no prompt
-/// and no undo.
+/// ★★ **This tooltip is a SPECIFICATION that sat on the ribbon for weeks
+/// unmet.** *"You are asked what to do about unsaved edits first"* — and
+/// nothing asked: `Action::Close` consulted `save_pending`, permanently
+/// `false` by design, then dropped the `EditSession`. Every edit since the file
+/// was opened went with it, silently, with no prompt and no undo.
 ///
 /// The sentence is **unchanged**, because it was never wrong about what pdfcer
-/// should do — it was a specification sitting on the ribbon, and the build had
-/// not met it. `crate::dialogs::unsaved` is the surface that now does.
+/// should do. `crate::dialogs::unsaved` is the surface that now meets it.
 ///
-/// The generalisable half is worth keeping here, where the next tooltip gets
-/// written: **an operator-visible string that describes behaviour is a claim,
-/// and nothing in this project checks a claim of that shape.** The ui-strings
-/// gate asserts the string lives in `text/`; the catalog tests assert it is a
+/// ⇒ ⚠ **An operator-visible string that describes behaviour is a claim, and
+/// nothing in this project checks a claim of that shape.** The ui-strings gate
+/// asserts the string lives in `text/`; the catalog tests assert it is a
 /// sentence and that no two labels collide; no gate can ask whether it is
-/// *true*. This one was found by an outside audit, three weeks after the fact,
-/// by someone reading the tooltip and then reading the code.
+/// *true*. Only a reader holding the tooltip and the code side by side can,
+/// and that is why these doc comments name the route rather than the promise.
 #[must_use]
 pub const fn file_close() -> CommandText {
     CommandText::new(
@@ -247,11 +235,11 @@ pub const fn file_recent() -> CommandText {
 
 /// `file.save`
 ///
-/// ★★★ **Save. In place. Added 2026-08-20, on the operator:** *"can I please
-/// have a save button like every other program in existence has? We're on week
-/// two of this and just have a save as button."*
+/// ★★★ **Save. In place. On the operator's instruction:** *"can I please have
+/// a save button like every other program in existence has? We're on week two
+/// of this and just have a save as button."*
 ///
-/// # The argument that used to stand here, and why it does not
+/// # Why the argument against it does not hold here
 ///
 /// [`file_save_copy`]'s doc comment said, and still says of itself:
 ///
@@ -346,7 +334,7 @@ pub const fn file_save_compacted() -> CommandText {
 /// so both are in the tooltip where an operator meets them before the refusal
 /// rather than after it.
 ///
-/// ## ★★★ Rewritten 2026-09-04 — `OPERATOR_REQUESTS.md` **O127**, defect 3
+/// ## ★★★ Why it leads with the preconditions — `OPERATOR_REQUESTS.md` **O127**
 ///
 /// > *"I also haven't seen the reflow option actually work with anything when I
 /// > press it."*
@@ -430,7 +418,7 @@ pub const fn file_import_form_data() -> CommandText {
     )
 }
 
-/// `file.export_form_data`/// `file.export_form_data`
+/// `file.export_form_data`
 #[must_use]
 pub const fn file_export_form_data() -> CommandText {
     CommandText::new(
@@ -441,21 +429,21 @@ pub const fn file_export_form_data() -> CommandText {
 
 /// `file.copy_page_text`
 ///
-/// ★ **Was `edit_copy_page_text`, in the EDIT TAB section, until 2026-08-14.**
-/// The command moved to File ▸ Export by operator decision — copying is not
-/// authoring, and the File tab is the one tab every mode shows — so this
-/// catalog entry moved with it, because this file is ordered by tab and a
-/// command's text sitting under the wrong heading is how the next reader
-/// concludes the command is somewhere it is not.
+/// ★ **It lives under FILE, not EDIT, because copying is not authoring** and
+/// the File tab is the one tab every mode shows. ⚠ This file is ordered by
+/// tab, and a command's text sitting under the wrong heading is how the next
+/// reader concludes the command is somewhere it is not — so moving a command
+/// between tabs moves its entry here too.
 ///
-/// **The wording is unchanged, deliberately.** Nothing about what the command
-/// does has moved, and a tooltip rewritten during a re-parenting is a change
-/// nobody asked for arriving inside one they did. The chord it names is still
-/// `Ctrl+Shift+C`, still bound in `crate::shell::manifest`'s keymap — now to
-/// this id — and the sentence about inferred word and line breaks is still the
-/// thing an operator cannot guess: a PDF is under no obligation to record where
-/// a word ends, so pdfcer infers it from letter positions and says how much of
-/// the copy was inferred.
+/// **A re-parenting does not rewrite the wording.** Nothing about what the
+/// command does changes when its tab does, and a tooltip rewritten during a
+/// move is a change nobody asked for arriving inside one they did.
+///
+/// The chord is `Ctrl+Shift+C`, bound to this id in
+/// `crate::shell::manifest`'s keymap. The sentence about inferred word and
+/// line breaks is the thing an operator cannot guess: a PDF is under no
+/// obligation to record where a word ends, so pdfcer infers it from letter
+/// positions and says how much of the copy that was.
 #[must_use]
 pub const fn file_copy_page_text() -> CommandText {
     CommandText::new(
@@ -468,10 +456,10 @@ pub const fn file_copy_page_text() -> CommandText {
 
 /// `file.copy_document_text`
 ///
-/// Was `edit_copy_document_text`; see [`file_copy_page_text`] for the move.
-/// Wording unchanged, including the warning about the window not responding,
-/// which is the honest description of a synchronous extraction over every page
-/// and is the kind of sentence a re-parenting must not quietly lose.
+/// Under File for [`file_copy_page_text`]'s reason. ★ The warning about the
+/// window not responding is the honest description of a synchronous extraction
+/// over every page, and is exactly the kind of sentence a re-parenting must not
+/// quietly lose.
 #[must_use]
 pub const fn file_copy_document_text() -> CommandText {
     CommandText::new(
@@ -492,20 +480,19 @@ pub const fn file_print() -> CommandText {
 
 /// `file.properties`
 ///
-/// ## ★★★ The tooltip lost its first half on 2026-09-05, and that is the point
+/// ## ★★★ ONE COMMAND, ONE SUBJECT — and this tooltip names only one panel
 ///
-/// It read: *"The document's own title, author, subject and keywords, and the
-/// properties of whatever is selected on the page."* One command, two subjects
-/// — and the panel drew both, the document half permanently, at the foot of a
-/// surface whose subject is the selection. The operator: *"the document
-/// properties are still always visible in the properties tab. it needs to get
-/// out of there and be in its own document properties tab."*
+/// It once read *"The document's own title, author, subject and keywords, AND
+/// the properties of whatever is selected on the page"* — two subjects in one
+/// sentence, and the panel drew both, the document half permanently, at the
+/// foot of a surface whose subject is the selection. The operator: *"the
+/// document properties are still always visible in the properties tab. it
+/// needs to get out of there and be in its own document properties tab."*
 ///
-/// So the second subject is [`file_document_properties`], and this sentence now
-/// describes exactly one panel. ★ Corrected rather than merely shortened: the
-/// old wording is the sentence three modules quoted as their commission, and
-/// leaving it here would have kept a control promising something a different
-/// control does.
+/// The second subject is [`file_document_properties`]. ⚠ **A tooltip that
+/// conjoins two subjects survives the split of the surfaces**, and then
+/// promises on this control what a different control does — which is why the
+/// wording was replaced rather than shortened.
 ///
 /// ★ It names the three kinds of thing that can be selected, because the panel
 /// is empty until one of them is and an operator hovering an empty panel's
@@ -521,8 +508,8 @@ pub const fn file_properties() -> CommandText {
 
 /// `file.document_properties`
 ///
-/// ★★★ **The operator's own words for the surface**, 2026-09-05: *"it needs to
-/// get out of there and be in its own **document properties** tab."* The label
+/// ★★★ **The operator's own words for the surface**: *"it needs to get out of
+/// there and be in its own **document properties** tab."* The label
 /// is what names the dock tab — `PdfcerApp::new` builds every `PanelInfo` from
 /// its command's label — so this string is the tab he asked for, spelled the
 /// way he asked for it.
@@ -851,8 +838,8 @@ pub const fn edit_form_choice() -> CommandText {
 /// ★★★ **Select everything on this page, including what has slid off it.**
 ///
 /// The tooltip names the RECOVERY rather than the mechanism, because that is
-/// what sends an operator looking for it. 2026-09-01: *"I sometimes drop
-/// objects there, and when I do I can't get them back."*
+/// what sends an operator looking for it — *"I sometimes drop objects there,
+/// and when I do I can't get them back."*
 ///
 /// ★ "Select all" is the label because it is the phrase every hand already
 /// knows and a ribbon group competes for width. The off-the-sheet half — the
@@ -895,12 +882,12 @@ pub const fn edit_form_create_field() -> CommandText {
     )
 }
 
-/// `edit.form_manage_fields`
 #[must_use]
 /// `edit.form_manage_fields`
 ///
-/// ★★ **"retype" was struck on 2026-08-28**, because it was a promise nothing
-/// can keep. Acrobat has offered no field-type conversion since Acrobat 6, and
+/// ★★ **The tooltip must not offer to "retype" a field**, because that is a
+/// promise nothing can keep. Acrobat has offered no field-type conversion
+/// since Acrobat 6, and
 /// `pdfcer-core` models the same limit by making the request **unrepresentable**
 /// rather than by accepting it and returning an error — so there is not even a
 /// control to grey. A tooltip is a contract, and this clause had been offering
@@ -956,20 +943,20 @@ pub const fn edit_find() -> CommandText {
 
 /// `edit.redact`
 ///
-/// ★★★ **CORRECTED 2026-09-05.** The closing clause read *"Marking is
-/// reversible; applying is not."* That was true of every route this shell had
-/// until `Pass 250.2` (engine `pdfcer-core` v0.38.0 at `b01964f`), which made
-/// the **default** destination arm the next save instead of rewriting at the
-/// click: the undo log survives, the page does not change, and a Cancel
-/// disarms it. `crate::text::redact::panel_intro` was rewritten for that the
-/// same day; these two tooltips were not, because the work opened the panel's
-/// catalog and not this one.
+/// ★★★ **The closing clause must NOT read *"Marking is reversible; applying is
+/// not."*** On the default destination, applying arms the next save rather
+/// than rewriting at the click: the undo log survives, the page does not
+/// change, and a Cancel disarms it.
 ///
-/// What is unchanged, and stays exactly as emphatic, is that **once a file
-/// with the marks applied has been written, nothing brings the content
-/// back.** What moved is *when*, never *whether* — which is the same
-/// distinction `panel_intro`'s own note draws, and it is deliberately worded
-/// to match so an operator comparing the two is not comparing two accounts.
+/// What stays exactly as emphatic is that **once a file with the marks applied
+/// has been written, nothing brings the content back.** The distinction is
+/// *when*, never *whether*.
+///
+/// ⚠ This tooltip and `crate::text::redact::panel_intro` describe the same
+/// staging to the same operator, and are worded to match on purpose — ★ **a
+/// change to one is a change to both**, or an operator comparing them is
+/// comparing two accounts. A change to the panel's catalog that leaves this
+/// one alone is precisely how they last came apart.
 #[must_use]
 pub const fn edit_redact() -> CommandText {
     CommandText::new(
@@ -982,9 +969,9 @@ pub const fn edit_redact() -> CommandText {
 
 /// `edit.redact_apply`
 ///
-/// ★★★ **CORRECTED 2026-09-05** — see [`edit_redact`] above for the whole
-/// account. The sentence read *"This cannot be undone."* On the default
-/// destination the click now stages the removal into the next save
+/// ★★★ **It must not say *"This cannot be undone."*** — see [`edit_redact`]
+/// above for the whole account. On the default destination the click stages
+/// the removal into the next save
 /// (`crate::redact::stage_into_session`), which is undoable and cancellable;
 /// the irreversible moment is the write, and both ordinary save routes refuse
 /// by name while a redaction is armed rather than writing a half-redacted
@@ -1003,13 +990,12 @@ pub const fn edit_redact_apply() -> CommandText {
 ///
 /// # ★ Why this does NOT name the operation, and what it would take to
 ///
-/// `SALVAGE.md` records the old shell as having *"undo tooltips naming the
-/// specific operation"*, and the engine still supplies everything needed for
-/// one: `EditSession::undo_kind` answers *what would be undone* without
-/// undoing it, over 44 `CommandKind` variants. Writing *"Undo add annotation
-/// (Ctrl+Z)"* is therefore catalog work and nothing more — a
-/// `CommandKind → &'static str` mapping in this file, with a fallback for the
-/// kinds this shell cannot author.
+/// The engine supplies everything a named one would need:
+/// `EditSession::undo_kind` answers *what would be undone* without undoing it,
+/// over 66 `CommandKind` variants. Writing *"Undo add annotation (Ctrl+Z)"* is
+/// therefore catalog work and nothing more — a `CommandKind → &'static str`
+/// mapping in this file, with a fallback for the kinds this shell cannot
+/// author.
 ///
 /// **The blocker is the registry, not the catalog.** `egui_shell`'s
 /// `Command::tooltip` is a `String` fixed at registration;
@@ -1021,8 +1007,8 @@ pub const fn edit_redact_apply() -> CommandText {
 /// 1. a `get_mut` (or a `tooltip` closure) on `CommandRegistry` — which is a
 ///    change to `crates/egui-shell`, the crate `check-shell-purity.sh` keeps
 ///    application-agnostic and which this work is not permitted to touch; or
-/// 2. rebuilding the whole 101-command registry every frame so one string can
-///    differ — which pays a hundred allocations a frame for one tooltip, and
+/// 2. rebuilding the whole registry every frame so one string can differ —
+///    which pays an allocation per command per frame for one tooltip, and
 ///    changes the **accessible name** of an icon-only control under the
 ///    operator's pointer, since `egui_shell::ribbon::a11y` promotes the
 ///    tooltip to the name when there is no visible label.
@@ -1056,8 +1042,8 @@ pub const fn edit_redo() -> CommandText {
 // ===========================================================================
 // MARKUP AND MEASURE — in `annotate`
 //
-// ★ **Moved out on 2026-08-14 under R2**, at the seam that module's header
-// argues for: these two tabs are what an operator *adds on top of* the page,
+// ★ **A module of its own under R2**, at the seam that module's header argues
+// for: these two tabs are what an operator *adds on top of* the page,
 // which is the line `app::modes::Capabilities` already draws between
 // `edit_content` and the two authoring flags, and the line `shell::manifest`
 // already draws by keeping `markup.rs` and `measure.rs` as files of their own.
@@ -1079,10 +1065,9 @@ pub use annotate::{
     measure_two_line,
 };
 
-/// ★ The five Format ▸ Markup controls, split out on 2026-09-06 under **R2**:
-/// this file stood at 1,438 of its 1,500 lines and five entries written to this
-/// project's register do not fit in 62. The seam is [`annotate`]'s, one step
-/// along the same line — that module holds the strings of the commands that
+/// ★ The five Format ▸ Markup controls, a module of their own under **R2**.
+/// The seam is [`annotate`]'s, one step along the same line — that module
+/// holds the strings of the commands that
 /// **place** a mark, and this one the strings of the commands that **restyle
 /// one already placed**. Re-exported by name, not by glob, so a function added
 /// over there still has to be named here to reach the crate.
@@ -1093,7 +1078,7 @@ pub use markupstyle::{
     format_opacity,
 };
 
-/// ★ The four Markup ▸ Arrange controls, split out on 2026-09-06 under **R2**
+/// ★ The four Markup ▸ Arrange controls, a module of their own under **R2**
 /// for [`markupstyle`]'s reason and along the same seam one step further:
 /// [`annotate`] holds the strings of the commands that **place** a mark,
 /// `markupstyle` those that **restyle** one already placed, and this one those

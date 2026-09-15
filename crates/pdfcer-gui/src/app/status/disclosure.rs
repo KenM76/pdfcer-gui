@@ -444,26 +444,25 @@ fn load_anomalies_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 ///
 /// # ★★ Why this is a disclosure and not just a fix
 ///
-/// It is *both*, and the fix is not ours to make alone. The engine's ceiling is
-/// deliberate — `ARCHITECTURE.md` §10 forbids an untrusted-input-sized
-/// allocation without one — and its fallback is honest. What is wrong is where
-/// **this shell** stops asking for whole-page rasters: `render::strategy`
-/// switches to the region tier at `MAX_PIXMAP_EDGE`, which for A4 is zoom
-/// 2071 %. Between 534 % and 2071 % the GUI asks for a raster the engine cannot
-/// composite properly, and that four-times band of zoom is entirely this
-/// shell's choice.
+/// It is *both*, and the tier half of the fix has landed. The engine's ceiling
+/// is deliberate — `ARCHITECTURE.md` §10 forbids an untrusted-input-sized
+/// allocation without one — and its fallback is honest. What used to be wrong
+/// was where **this shell** stopped asking for whole-page rasters: it switched
+/// to the region tier at `MAX_PIXMAP_EDGE` only, which for A4 is zoom 2071 %,
+/// so between 534 % and 2071 % it asked for a raster the engine could not
+/// composite properly. A **region** render below the ceiling composites in
+/// CMYK at any zoom (`--region 0,60,596,260 --scale 8` → `cmyk_buffer=1`),
+/// because the buffer is sized to the region rather than to the page.
 ///
-/// Measured, so the fix is known to work: a **region** render below the ceiling
-/// composites in CMYK at any zoom (`--region 0,60,596,260 --scale 8` →
-/// `cmyk_buffer=1`). The buffer is sized to the region, not to the page. So the
-/// repair is for `strategy::for_page` to respect the pixel ceiling as well as
-/// the edge ceiling — which needs `MAX_CMYK_BUFFER_BYTES` to be public, and it
-/// is `pub(crate)` today. That is filed as an engine request rather than
-/// guessed at with a hardcoded 13,421,772, which would be a measured limit
-/// copied into a second place to rot.
+/// `render::strategy::for_page` now asks the pixel question as well as the
+/// edge one, by calling the engine's own `pdfcer_render::will_composite_in_cmyk`
+/// rather than by copying a byte figure into this crate. The band is closed
+/// for every page that has been learned to ask for ink.
 ///
-/// Until then the operator is **told**, which is rule 4's surviving half doing
-/// exactly its job: this is an inference the operator cannot see — a screenshot
+/// The line remains because the budget is an **operator setting**
+/// (`Settings::max_cmyk_buffer_bytes`): set it below what a page needs and the
+/// engine still falls back, correctly and silently. Then the operator is
+/// **told**, which is rule 4's surviving half doing exactly its job: this is an inference the operator cannot see — a screenshot
 /// of the page says nothing about which space it was composited in — so it owes
 /// an off-canvas report. Nothing is marked on the canvas.
 ///

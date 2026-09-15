@@ -3,7 +3,7 @@
 //! One function. It is the path the **placement dialog** commits through, and
 //! its sibling [`super::paste`] is the path a **clipboard** commits through.
 //!
-//! ## ★★ Why those are two paths and not one
+//! ## Why those are two paths and not one
 //!
 //! `paste`'s own header carries the long form; in a sentence: `New*Field` is a
 //! **spec** — geometry plus a dozen booleans — so authoring from it can only
@@ -12,8 +12,7 @@
 //! the values came from an existing field, which is why the paste route carries
 //! a clip instead.
 //!
-//! Split out of `super` under R2 on 2026-08-30, when widget rotation took that
-//! file past 1,500 lines for the second time in one session.
+//! Its own file under **R2**, along that seam.
 
 use crate::app::state::OpenDoc;
 
@@ -25,13 +24,12 @@ use crate::app::state::OpenDoc;
 /// a kind does not have is simply not read here, which is what makes that
 /// asymmetry cost one `match` instead of five dialogs.
 ///
-/// ## ★★ The tooltip is the whole reason this verb was thought impossible
+/// ## The tooltip is the whole reason this verb was thought impossible
 ///
 /// `TooltipChoice` has three states and the default is `Undecided`, which every
 /// one of these five verbs **refuses**: an interactive control owes a screen
-/// reader a name, and the engine will not invent one silently. That refusal was
-/// recorded in this project's own backlog as *"core's STRUCTURAL certification
-/// gate"* and parked the feature for nine days. It is not a gate; it is a
+/// reader a name, and the engine will not invent one silently. That refusal
+/// reads like a structural gate blocking the feature; it is not one. It is a
 /// required field of the dialog above.
 ///
 /// So an empty tooltip becomes `TooltipChoice::Declined` rather than being left
@@ -40,7 +38,7 @@ use crate::app::state::OpenDoc;
 /// decision and is sometimes correct — a decorative button beside a labelled
 /// one. `Undecided` is nobody having been asked.
 ///
-/// ## ★ Rule 4 — the outcome is disclosed, off-canvas, in full
+/// ## Rule 4 — the outcome is disclosed, off-canvas, in full
 ///
 /// `FieldAuthorOutcome` carries four things the operator **cannot see on the
 /// page**, and the one that matters most is `merged`: a name that matches an
@@ -50,13 +48,6 @@ use crate::app::state::OpenDoc;
 /// of rule 4 that survives decision 059 — *render normally; report separately* —
 /// so every flag the engine raises becomes a status line and none of them
 /// becomes a mark on the canvas.
-/// ★ Reunited with this function on 2026-09-12. It was left behind in `super`
-/// by the R2 split that moved `author` here on 2026-08-30, where a contiguous
-/// `///` run merged it into the next item's doc comment — so this function had
-/// no documentation and `group_is_a_field` had two functions' worth. Nothing
-/// warned: a doc comment is valid prose wherever it sits, and the only observer
-/// that could have caught it is `cargo doc`, which nobody runs on a binary
-/// crate. See `tools/gates/check-orphan-docs.py`.
 pub(in crate::app::actions) fn author(
     doc: &mut OpenDoc,
     page: usize,
@@ -69,13 +60,11 @@ pub(in crate::app::actions) fn author(
         NewRadioButton, NewTextField, TooltipChoice,
     };
 
-    // ★★★ There was a PRE-CHECK here until 2026-09-11 — `group_is_a_field`,
-    // which modelled the engine's dotted-name rule and refused before the verb
-    // ran. It is gone, the engine's own refusal is read instead at the bottom
-    // of the closure below, and `super`'s deletion note carries the argument:
-    // a duplicate model of somebody else's rule drifts, and this one had.
+    // NO PRE-CHECK. The engine's dotted-name rule is not modelled here; its
+    // own refusal is read at the bottom of the closure below instead. A
+    // duplicate model of somebody else's rule drifts away from it silently.
     let name = draft.name.trim().to_owned();
-    // ★ Empty means DECLINED, not undecided. See the header — this one line is
+    // Empty means DECLINED, not undecided. See the header — this one line is
     // the difference between a feature and a nine-day blocker.
     let tooltip = if draft.tooltip.trim().is_empty() {
         TooltipChoice::Declined
@@ -90,7 +79,7 @@ pub(in crate::app::actions) fn author(
         width: draft.border_width.max(0.0),
     };
     let kind = draft.kind;
-    // ★★★ The epoch BEFORE, so the selection below is set only if the field was
+    // The epoch BEFORE, so the selection below is set only if the field was
     // actually authored. `vector_edit` bumps it on success and leaves it alone
     // on a refusal, which is the one signal available here -- the closure's
     // `Result` is consumed inside the funnel.
@@ -98,7 +87,7 @@ pub(in crate::app::actions) fn author(
     let placed_name = draft.name.trim().to_owned();
     // What the button is to do, and the name to address it by afterwards.
     //
-    // ★ `fqn` is the trimmed name, which for a field authored here IS the
+    // `fqn` is the trimmed name, which for a field authored here IS the
     // fully-qualified one: `add_push_button` places a top-level field, so there
     // is no parent to prefix. A field nested under a parent would need the
     // dotted path, and that case cannot arise from this dialog.
@@ -109,7 +98,7 @@ pub(in crate::app::actions) fn author(
     // reports the first verb, and reporting a second failure through it would
     // claim the button was not placed.
     let mut refused: Option<String> = None;
-    // ★ Whether the two commands became one undo entry. `true` until something
+    // Whether the two commands became one undo entry. `true` until something
     // says otherwise, because the ordinary case is the fold succeeding and a
     // sentence is owed only when it does not.
     let mut folded = true;
@@ -123,7 +112,7 @@ pub(in crate::app::actions) fn author(
                 spec.tooltip = tooltip;
                 spec.multiline = draft.multiline;
                 spec.password = draft.password;
-                // ★ Gated on `comb_ok` rather than on the flag alone, so the
+                // Gated on `comb_ok` rather than on the flag alone, so the
                 // dialog's rule and the authored field cannot disagree: comb
                 // divides the width into `max_len` cells, and without a
                 // maximum there is nothing to divide by.
@@ -186,29 +175,23 @@ pub(in crate::app::actions) fn author(
                 spec.read_only = draft.read_only;
                 spec.border = border;
                 let placed = session.add_push_button(&spec);
-                // ★★★ AND THEN GIVE IT SOMETHING TO DO.
+                // AND THEN GIVE IT SOMETHING TO DO.
                 //
                 // Creation authors an INERT button, deliberately and
                 // permanently: `pdfcer-core`'s decision 009 posture A says a
                 // button must not gain behaviour as a side effect of being
-                // drawn, and `NewPushButton` is untouched by `Pass 183.0`.
+                // drawn, and no field of `NewPushButton` carries one.
                 // Giving one an action is a separate, named verb a caller has
                 // to go out of its way to call — which is exactly what this is.
                 //
-                // ★★★ TWO COMMANDS, ONE UNDO ENTRY — since 2026-09-01.
+                // TWO COMMANDS, ONE UNDO ENTRY.
                 //
-                // This read *"two commands, therefore two undo entries, and it
-                // is a workaround rather than a design"*, because
-                // `EditSession::coalesce_last` was private. It was reported per
-                // decision 058 rather than absorbed silently, and `pdfcer-core`
-                // made it `pub` the same day, choosing the general fix over a
-                // combined verb for the reason the request argued: the
-                // two-verbs-one-gesture shape recurs, and a combined verb fixes
-                // one instance of it.
+                // Two verbs for one operator gesture would otherwise be two
+                // `Ctrl+Z` presses. `EditSession::coalesce_last` is the general
+                // answer to that shape, which recurs; the fold is below, after
+                // both verbs have run.
                 //
-                // The fold is below, after both verbs have run.
-                //
-                // ★ The action is written ONLY when one was chosen. The default
+                // The action is written ONLY when one was chosen. The default
                 // is `Nothing`, whose `to_core` is `None`, and calling
                 // `set_button_action(name, None)` on a button that has never
                 // had one would be a second command that changes nothing — an
@@ -216,7 +199,7 @@ pub(in crate::app::actions) fn author(
                 match (placed, action.to_core()) {
                     (Ok(outcome), Some(deed)) => {
                         match session.set_button_action(&fqn, Some(deed)) {
-                            // ★★ The success line, and it exists for one
+                            // The success line, and it exists for one
                             // reason: a driven check has no other oracle. The
                             // button on the page is drawn identically whether
                             // or not `/A` was written — which is rule 4 working
@@ -234,7 +217,7 @@ pub(in crate::app::actions) fn author(
                                         replaced.as_deref().unwrap_or("none")
                                     )
                                 });
-                                // ★★ FOLD, IMMEDIATELY, and check the answer.
+                                // FOLD, IMMEDIATELY, and check the answer.
                                 //
                                 // Three things the public contract states that
                                 // the private one never had to, and all three
@@ -255,7 +238,7 @@ pub(in crate::app::actions) fn author(
                                 //    There is no handle saying which commands
                                 //    are ours, so this is the only safe moment.
                                 //
-                                // ★ The label names the GESTURE, not the last
+                                // The label names the GESTURE, not the last
                                 // verb — which is what a label is for, and why
                                 // `cut_field` relabels a single-target cut
                                 // rather than leaving it saying "undo delete".
@@ -271,7 +254,7 @@ pub(in crate::app::actions) fn author(
                                 }
                                 Ok(outcome)
                             }
-                            // ★★★ The button IS placed and the action is not.
+                            // The button IS placed and the action is not.
                             // Say so: silence here is the exact defect this
                             // feature removes — a button that looks right and
                             // does nothing — arriving by a different door. The
@@ -295,24 +278,24 @@ pub(in crate::app::actions) fn author(
                 }
             }
         };
-        // ★★★ THE ENGINE'S REFUSAL, WORDED WITH THE NAME THE ENGINE FOUND.
+        // THE ENGINE'S REFUSAL, WORDED WITH THE NAME THE ENGINE FOUND.
         //
         // `correctable` maps an `EditError` to the decline that says what the
         // operator can do about it; today the only one an `add_*` verb raises
         // is `FieldPathCrossesTerminal`, which carries the fully-qualified name
         // of the existing field standing in the way.
         //
-        // ★★ Recorded from INSIDE the closure, which is not incidental. The
+        // Recorded from INSIDE the closure, which is not incidental. The
         // funnel's floor words every refusal no verb claimed, and its contract
         // (`decline::floor`) is that a recorder firing in here **speaks first**
         // and the floor yields to it. Recording after the funnel returned would
         // be a second sentence for one gesture, in the wrong order.
         //
-        // ★ Not a `record_note`. A note reports something that happened; this
+        // Not a `record_note`. A note reports something that happened; this
         // reports that nothing did — the engine refuses before it stages a byte
         // or pushes an undo entry, so there is no edit to annotate.
         //
-        // ★ The wildcard inside `correctable` is what makes this safe to leave
+        // The wildcard inside `correctable` is what makes this safe to leave
         // alone as the engine grows: a refusal with no arm reaches the trace in
         // the engine's own words and the bar in the floor's, which is a worse
         // sentence but never a wrong one.
@@ -324,7 +307,7 @@ pub(in crate::app::actions) fn author(
         outcome.map(|o| super::disclosures(&o, kind))
     });
 
-    // ★★ The second verb's refusal, off-canvas, after the funnel has committed
+    // The second verb's refusal, off-canvas, after the funnel has committed
     // the first. `record_note` keys on the epoch the funnel has just bumped, so
     // the sentence retires with the next edit the way every other note does.
     //
@@ -334,7 +317,7 @@ pub(in crate::app::actions) fn author(
     if let Some(note) = refused {
         crate::app::actions::record_note(doc.edit_epoch, note);
     } else if !folded {
-        // ★★ Said, not swallowed. The engine's contract is explicit that a
+        // Said, not swallowed. The engine's contract is explicit that a
         // `false` here means the work is done and only the grouping failed —
         // so the button is placed and does what it was asked to do, and the
         // only thing wrong is that undoing it takes two presses. An operator
@@ -346,7 +329,7 @@ pub(in crate::app::actions) fn author(
         );
     }
 
-    // ★★★ SELECT WHAT WAS JUST PLACED. `OPERATOR_REQUESTS.md` **O53**.
+    // SELECT WHAT WAS JUST PLACED. `OPERATOR_REQUESTS.md` **O53**.
     //
     // Every program in this class leaves a newly drawn object selected --
     // Acrobat, Word, PowerPoint, Visio, Illustrator, Inkscape -- and they
@@ -354,13 +337,13 @@ pub(in crate::app::actions) fn author(
     // question with a convergent default (`dialogs::formfield` takes Acrobat's)
     // and this is not: it is the half none of them differ on.
     //
-    // ★★ It is what makes the operator's next gesture work. He drew a checkbox
+    // It is what makes the operator's next gesture work. He drew a checkbox
     // and reported *"I can't select it on the canvas to move or resize"*; with
     // the tool put down AND the field selected, the grips are already there and
     // the drag is already live. Requiring a click to select something he just
     // created is a step no other editor asks for.
     //
-    // ★ Widget 0, because a field authored here has exactly one -- `add_*_field`
+    // Widget 0, because a field authored here has exactly one -- `add_*_field`
     // places a single widget. A field with several is one that grew later,
     // through `merge_document` or a hand-edited file, and there is no "the new
     // one" to name in that case.

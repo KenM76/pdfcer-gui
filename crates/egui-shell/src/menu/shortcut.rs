@@ -9,7 +9,7 @@
 //! since the 1980s does this, and the reason it works is that the user did
 //! not have to go looking.
 //!
-//! # ★ The rule that makes it maintainable: one source, derived
+//! # The rule that makes it maintainable: one source, derived
 //!
 //! The chord shown here is **computed from
 //! [`crate::manifest::Keymap`]** — the same map the application consults
@@ -30,7 +30,7 @@
 //! [`Shortcuts`] is a built-once reverse index rather than a linear scan
 //! per item per frame.
 //!
-//! # ★ When one command has several chords
+//! # When one command has several chords
 //!
 //! A keymap may bind two chords to one command — `Del` and `Ctrl+D` both
 //! deleting, say. A menu row has space for one, and *"show them all"* is
@@ -212,7 +212,7 @@ mod tests {
         assert_eq!(s.len(), 3);
     }
 
-    /// **★ The chosen chord does not depend on insertion order.**
+    /// **The chosen chord does not depend on insertion order.**
     ///
     /// The failure this prevents is nasty and would never be reported as a
     /// bug in this file: an operator adds an unrelated binding, the
@@ -264,7 +264,7 @@ mod tests {
         assert_eq!(modifier_count("F11"), 0);
         assert_eq!(modifier_count("Ctrl+E"), 1);
         assert_eq!(modifier_count("Ctrl+Shift+P"), 2);
-        // ★ The two spellings in which the key *is* the separator.
+        // The two spellings in which the key *is* the separator.
         //
         // `"+"` and `"Ctrl++"` both count 0, and that is a stated limit
         // rather than a bug: this module does not parse chords (see the

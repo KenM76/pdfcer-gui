@@ -1,5 +1,8 @@
-//! # `added_text_duplicates_on_a_later_edit` — the reproduction for
-//! # `OPERATOR_REQUESTS.md` **O127**, defect 1
+//! # `added_text_duplicates_on_a_later_edit` — page text added after an
+//! # earlier edit is folded in exactly ONCE
+//!
+//! The reproduction for `OPERATOR_REQUESTS.md` **O127**, defect 1, and now this
+//! project's standing guard on the engine contract it named.
 //!
 //! ## The report, verbatim
 //!
@@ -10,98 +13,74 @@
 //! > if you make a text box, switch tools and make another one, then the first
 //! > one doesn't start making duplicates."*
 //!
-//! ## ★★★ The cause, and it is not in this repository
-//!
-//! `D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs`, `text_edit_command`, the
-//! line reading `if first_edit {`:
-//!
-//! ```text
-//! let content_before = self.state.get(&content_id).cloned();
-//! let first_edit = content_before.is_none();
-//! …
-//! if first_edit {
-//!     for id in page.contents.iter().skip(1) { …empty it… }
-//! }
-//! ```
+//! ## The mechanism, and it lives in `pdfcer-core` rather than here
 //!
 //! Two engine facts have to be held at once, and neither is wrong on its own:
 //!
-//! | verb | what it does to `/Contents` |
-//! |---|---|
-//! | `add_text` (also `add_image`, `paste_objects`, `flatten_fields`) | **appends a NEW stream object** and leaves `contents[0]` byte-verbatim |
-//! | every content surgery — `move_objects`, `transform_objects`, `edit_text`, `format_text`, `delete_object`, `reflow_block` | reads the **whole `/Contents` list concatenated**, splices, and writes the entire result back into **`contents[0]`** |
+//! * `add_text` — and equally `add_image`, `paste_objects`, `flatten_fields` —
+//!   **appends a NEW stream object** to the page's `/Contents` and leaves
+//!   `contents[0]` byte-verbatim.
+//! * Every content surgery — `move_objects`, `transform_objects`, `edit_text`,
+//!   `format_text`, `delete_object`, `reflow_block`, all of them through
+//!   `vector_surgery_inner` — reads the **whole `/Contents` list concatenated**,
+//!   splices, and writes the entire result back into **`contents[0]`**.
 //!
-//! ⇒ The second verb therefore **has** to empty `contents[1..]`, or the added
-//! run is on the page twice: once folded into `contents[0]`, once still in its
-//! own entry. It does empty them — but only `if first_edit`, i.e. only the very
-//! first time that session rewrites `contents[0]`.
+//! So the second verb **has** to empty `contents[1..]`, or the added run is on
+//! the page twice: once folded into `contents[0]`, once still in its own entry.
+//! `text_edit_command` empties them, and the predicate it uses is the contract
+//! these tests hold it to: **every extra whose CURRENT payload is non-empty, on
+//! EVERY surgery.**
 //!
-//! The premise behind that gate is stated in the engine's own doc comment —
-//! *"on a subsequent edit the extras are already emptied"* — and **`add_text`
-//! falsifies it**, because it appends a new, non-empty extra *after* the
-//! sweep has already happened.
+//! Sweeping once per session is the near miss, and it is near enough to look
+//! right: it rests on the premise that a later edit finds the extras already
+//! emptied, and `add_text` falsifies that premise by appending a fresh
+//! non-empty extra *after* the sweep has happened.
 //!
-//! ## ★★ Why the operator's ordering is exactly the one that trips it
+//! ## Why the operator's ordering is exactly the one that finds it
 //!
-//! | step | `/Contents` | `contents[0]` rewritten yet? | `first_edit` | result |
-//! |---|---|---|---|---|
-//! | add T1 | `[C0, A1]` | no | — | A1 holds T1 |
-//! | **drag it** | `[C0, A1]` | no | **true** | `C0 := C0+A1`, A1 emptied — **correct**, and this is his *"if you add text once it works"* |
-//! | add T2 | `[C0, A1ᵉ, A2]` | yes | — | A2 holds T2 |
-//! | **drag anything** | same | yes | **false** | `C0 := C0+A2` **and A2 is left as it was** → T2 is on the page **twice** |
-//! | add T3, drag again | `[C0, A1ᵉ, A2, A3]` | yes | false | T2 ×3, T3 ×2 — *"a duplicate for every new text box that you added regardless of which one you move"* |
+//! Place a box and drag it: `contents[0]` is rewritten for the first time and
+//! the appended stream is emptied with it — his *"if you add text once it
+//! works"*. Place a second box, and a new non-empty extra now sits beside an
+//! **already-rewritten** `contents[0]`. Drag anything at all — *"regardless of
+//! which one you move"* — and that extra is folded in; leave it unemptied and
+//! the second box is on the page twice, three times after the next edit, and so
+//! on. The defect grows, which is why the count and not the presence is the
+//! assertion.
 //!
-//! ★ And the exception he noticed is the same table read differently:
-//! *"if you make a text box, switch tools and make another one, then the first
-//! one doesn't start making duplicates."* Switching tools is how he gets to the
-//! Select tool to drag the first box — and that drag is the `first_edit == true`
-//! row, which sweeps the first box into `contents[0]` for good. It is the
-//! **only** box that can never duplicate afterwards.
+//! His own exception is the same rule read from the other end: *"if you make a
+//! text box, switch tools and make another one, then the first one doesn't
+//! start making duplicates."* Switching tools is how he reaches the Select tool
+//! to drag the first box, and that drag sweeps the first box into `contents[0]`
+//! for good. It is the one box that can never duplicate afterwards, whatever
+//! the sweep predicate is — which is what separates a fault in the sweep from a
+//! fault in the fold.
 //!
-//! ⇒ So the accumulating container really is a list that is appended to on each
-//! placement and never emptied on commit. It is `/Contents`, it lives in
-//! `pdfcer-core`, and what drains it is not a tool change — it is the session's
-//! *first* content surgery, once, ever.
-//!
-//! ## ★★★ Why this is a test and not a paragraph in a request
+//! ## Why this is a test and not a paragraph in a request
 //!
 //! `D:\Dev\pdfcer` is READ-ONLY to this project, so the fix is not ours to
 //! make. `engine_overlay_skew.rs` — the file beside this one — established the
-//! shape and then proved its worth: **a test written to pass on the broken
-//! engine and fail on the fixed one, carrying its own instruction to whoever
-//! sees it go red.** All three of that file's tripwires fired on the day the
-//! engine landed `Pass 186.0`, and inverting them took minutes.
+//! shape for a claim about a crate this project may not change: **a test
+//! written to pass on the broken engine and fail on the fixed one, carrying its
+//! own instruction to whoever sees it go red.** A test asserting the *correct*
+//! behaviour instead would be a red test in a green repository for as long as
+//! the request stays open, and would be muted inside a week.
 //!
-//! A test asserting the *correct* behaviour would be a red test in a green
-//! repository for as long as the request stays open, and would be muted inside
-//! a week. So [`text_added_after_an_earlier_edit_is_duplicated_by_the_next_one`]
-//! asserts the **defect**, and says in its failure message what to do when it
-//! stops reproducing.
+//! The engine now sweeps on every surgery, so every expectation here reads `1`
+//! and the file has changed job: it stopped being a claim about somebody else's
+//! crate and became this project's regression net under an engine it does not
+//! control and updates weekly. What the assertions mean did not change shape —
+//! one placement, one copy; a second placement after an edit, still one copy;
+//! **and a further edit does not add another**. A sweep that emptied the extras
+//! only sometimes would still satisfy the first two.
 //!
-//! Beside it, [`three_placements_then_one_move_leave_three_runs`] asserts the
-//! **count** on the ordering that is correct today. That is the assertion
-//! `OPERATOR_REQUESTS.md` O127 asks for by name — *"three placements then one
-//! move must produce three objects, not six"* — and it is the guard that stops
-//! a future engine change from breaking the half that works.
+//! ## The blind spot this file exists to cover
 //!
-//! ## ★★ What was never tested, which is the more valuable finding
-//!
-//! A sweep of `D:\Dev\pdfcer\crates\pdfcer-core\tests` finds:
-//!
-//! * **no file that mentions both `add_text` and `move_object`/`transform_objects`**;
-//! * `session_overlay_skew.rs` does one `add_image` then one `edit_text`, and
-//!   one `add_image` then one `transform_objects` — both are the
-//!   `first_edit == true` branch, the branch that works;
-//! * `contents_append_shapes.rs` does two appends in one session and asserts
-//!   only that the `/Contents` **array shape** stays flat — no surgery follows
-//!   it and nothing looks at the page's words;
-//! * `add_text.rs` does one add and an undo.
-//!
-//! ⇒ **Every existing test places once, or edits once.** The defect survives
-//! the first placement and appears on the second, which is precisely what a
-//! fixture exercising one of anything cannot see. That is the same shape as
-//! `HANDOFF.md`'s redaction verifier, which was only ever run on synthetic
-//! pages with no embedded font.
+//! **A fixture that places once, or edits once, cannot see this class of
+//! defect.** It survives the first placement and appears on the second, so any
+//! session that does one of anything is running the branch that works — which
+//! is how a page-content invariant can be well tested and still have nothing
+//! standing between it and this failure. Both orderings are driven here, in one
+//! file, for that reason.
 
 use pdfcer_core::edit::EditSession;
 use pdfcer_core::text_edit::AddTextRequest;
@@ -187,17 +166,16 @@ fn last_object(session: &mut EditSession) -> usize {
         - 1
 }
 
-/// ★★★ **Three placements and one move leave three runs, not six.**
+/// **Three placements and one move leave three runs, not six.**
 ///
-/// `OPERATOR_REQUESTS.md` O127's own words for what this file had to assert.
-/// This is the ordering that is **correct today** — every add happens before
-/// the session's first content surgery, so that surgery's `first_edit` branch
-/// sweeps all three appended streams into `contents[0]` and empties them.
+/// The ordering in which every add happens **before** the session's first
+/// content surgery, so that one surgery folds all three appended streams into
+/// `contents[0]` and empties them in the same command.
 ///
 /// It is here as the guard rather than as the reproduction: it is the half that
-/// works, it is the half a fix to the gate must not break, and a count
-/// assertion is the only thing that can tell "swept correctly" from "swept
-/// twice".
+/// works even under a once-per-session sweep, it is therefore the half a change
+/// to the sweep predicate must not break, and a count assertion is the only
+/// thing that can tell "swept correctly" from "swept twice".
 #[test]
 fn three_placements_then_one_move_leave_three_runs() {
     let mut s = session();
@@ -225,73 +203,46 @@ fn three_placements_then_one_move_leave_three_runs() {
     }
 }
 
-/// ★★★ **THE REPRODUCTION.** Text added *after* the session's first content
-/// edit is duplicated by the next content edit.
+/// **THE REPRODUCTION.** Text added *after* the session's first content edit
+/// is folded into `contents[0]` exactly once, not twice.
 ///
-/// # This test asserts the DEFECT, and here is what to do when it fails
+/// # The sequence is the operator's, step for step
 ///
-/// ★★★ **INVERTED 2026-09-05, and this paragraph is the record of why.**
+/// Place a box, move it — this is his *"if you add text once it works"*. Place
+/// a second box, move something. Under a sweep that runs only on the first
+/// rewrite of `contents[0]` the second box is now on the drawing twice, and
+/// invisibly so: the two copies sit exactly on top of one another until one of
+/// them is nudged, which is why the report arrived as *"duplicates when you try
+/// to move the instances after"* rather than as *"my text is doubled"*.
 ///
-/// It *was* written to pass on the broken engine and fail on the fixed one. It
-/// went red the moment the lock moved to `pdfcer-core` `b1033ab`, which is
-/// exactly what it was for — **a test asserting somebody else's limitation is
-/// the only thing that notices when the limitation ends.** Confirmed at source
-/// before inverting, as the instructions below required: `edit.rs`'s
-/// `text_edit_command` now sweeps on **every** surgery (`Pass 251.0`), reading
-/// `self.value` — the overlay-or-base current payload — and emptying every
-/// non-empty entry of `page.contents[1..]` rather than only on the first
-/// rewrite.
+/// # The `ZZFIRST` expectation is not redundant
 ///
-/// The three expectations are now `1`, `1`, `1`. What they assert has not
-/// changed shape: one placement, one copy; a second placement after an edit,
-/// still one copy; **and a further edit does not add another** — that last is
-/// the half of his report that said *"a duplicate for every new text box you
-/// added"*, and a fix that emptied the extras only sometimes would still fail
-/// it. The two assertions mean different things and both are kept.
+/// It asserts the operator's own exception — *"if you make a text box, switch
+/// tools and make another one, the first one doesn't start making
+/// duplicates"* — and it is what makes a failure here specific. The first box
+/// already lives inside `contents[0]`, so it must **not** gain a copy whatever
+/// the extras do; `ZZFIRST` going red means the fold itself is wrong, while
+/// `ZZSECOND` alone going red means the extras were folded in and left behind.
 ///
-/// ⚠ The `ZZFIRST` expectation was **already `1` and is unchanged**. It is the
-/// operator's own exception — *"if you make a text box, switch tools and make
-/// another one, the first one doesn't start making duplicates"* — and it is
-/// what localised the defect to the `first_edit` gate in the first place. It
-/// asserted correct behaviour before the fix and asserts it after, which is
-/// why it did not move.
+/// # If this test goes red
 ///
-/// ---
-///
-/// The original instructions, kept verbatim because the next person to invert a
-/// tripwire will want the shape of it:
-///
-/// It was written to **pass on the broken engine and fail on the fixed one**,
-/// which is the shape `engine_overlay_skew.rs` established for a claim about a
-/// crate this project may not change. If you are reading this because the test
-/// went red:
-///
-/// 1. **The engine has been fixed.** Confirm against
-///    `D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs`, `text_edit_command` — the
-///    `if first_edit {` gate should now empty every non-empty entry of
-///    `page.contents[1..]`, not only on the first rewrite.
-/// 2. **Invert this test**: change the two expectations from `2` to `1` and
-///    rewrite this comment to describe the fixed behaviour, exactly as
-///    `engine_overlay_skew.rs` was inverted on 2026-08-31.
-/// 3. Close the row in `ENGINE_BACKLOG.md`.
+/// Read `pdfcer-core`'s `edit.rs`, `text_edit_command`, and check the predicate
+/// that empties `page.contents[1..]`: it must empty every extra whose CURRENT
+/// payload is non-empty — the overlay-or-base value, read per surgery — rather
+/// than only on the session's first rewrite. A once-per-session predicate
+/// passes [`three_placements_then_one_move_leave_three_runs`] and fails this
+/// one, and that pair of verdicts is itself the diagnosis.
 ///
 /// Do **not** merely delete it. The count is the only oracle that separates
 /// "the extras were swept" from "the extras were folded in and left behind",
 /// and both look identical to every other test in either repository.
-///
-/// # ★ The sequence is the operator's, step for step
-///
-/// Place a box, move it (this is his *"if you add text once it works"*), place
-/// a second box, move something. The second box is now on the drawing twice —
-/// and it is invisible until the move, because the two copies sit exactly on
-/// top of one another until one of them is nudged.
 #[test]
 fn text_added_after_an_earlier_edit_is_duplicated_by_the_next_one() {
     let mut s = session();
 
-    // Placement one, and the drag that follows it. `first_edit` is true here,
-    // so this surgery folds the appended stream into `contents[0]` and empties
-    // it — the branch that works.
+    // Placement one, and the drag that follows it. This is the session's
+    // first rewrite of `contents[0]`, so the appended stream is folded in and
+    // emptied — the branch that works under any sweep predicate.
     add(&mut s, "ZZFIRST", 700.0);
     let first = last_object(&mut s);
     nudge(&mut s, first);
@@ -303,8 +254,8 @@ fn text_added_after_an_earlier_edit_is_duplicated_by_the_next_one() {
     );
 
     // Placement two. `contents[0]` is already in the session's overlay, so
-    // `first_edit` will be false for every surgery from here on and this
-    // appended stream will never be emptied.
+    // every surgery from here on is a LATER rewrite — and this freshly
+    // appended stream is the extra a once-per-session sweep would never reach.
     add(&mut s, "ZZSECOND", 680.0);
     assert_eq!(
         copies_of(&s, "ZZSECOND"),
@@ -333,20 +284,17 @@ fn text_added_after_an_earlier_edit_is_duplicated_by_the_next_one() {
     );
 }
 
-/// ★★ **It compounds**: a third placement adds a third copy of the second.
+/// **AND IT MUST NOT COMPOUND**: a further edit adds no further copy.
 ///
 /// The half of the report that says *"a duplicate for every new text box that
-/// you added"*. Each surgery re-folds the still-live extras into `contents[0]`,
-/// so a run placed after the first edit gains one copy per subsequent edit
-/// rather than settling at two.
+/// you added"*. Each surgery re-folds whatever the extras currently hold into
+/// `contents[0]`, so a run placed after the first edit would gain one copy per
+/// subsequent edit rather than settling at two — growth, not a one-off.
 ///
-/// Asserting the growth as well as its existence is what makes this a
-/// reproduction rather than a snapshot: a fix that emptied the extras only
-/// *sometimes* would leave this red while the test above went green, and the
-/// two failures mean different things.
-///
-/// Inverted with its neighbour when the engine is fixed — every expectation
-/// here becomes `1`.
+/// Asserting the absence of growth as well as the absence of the duplicate is
+/// what makes this a reproduction rather than a snapshot: a sweep that emptied
+/// the extras only *sometimes* leaves this red while its neighbour goes green,
+/// and the two failures mean different things.
 #[test]
 fn each_further_edit_adds_another_copy() {
     let mut s = session();

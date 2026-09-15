@@ -34,25 +34,21 @@ fn plain_password_dialog() -> ProtectDialog {
 /// **A document on disk that really does decline something**, and a
 /// `Permissions…` window over it.
 ///
-/// ★★★ This helper exists because the first draft of
-/// [`the_form_opens_seeded_from_the_document_not_from_a_default`] **passed
-/// under its own falsification**, and that is worth recording rather than
-/// quietly fixing. The test built its dialog over the plain fixture and
-/// asserted `ticks == standing.initial_ticks()`. On an unprotected document
-/// every bit is granted, so replacing the seeding expression with a hard-coded
-/// *eight ticks* — the exact defect the build brief names — produced a passing
-/// test.
+/// This helper exists because
+/// [`the_form_opens_seeded_from_the_document_not_from_a_default`] **cannot be
+/// falsified on the plain fixture**. An unprotected document grants every bit,
+/// so `ticks == standing.initial_ticks()` holds just as well when the seeding
+/// expression is replaced by a hard-coded *eight ticks* — which is the exact
+/// defect that test exists to catch.
 ///
-/// `HANDOFF.md` §2's defect 8 in its purest form: *a test that checks a
-/// relation rather than a magnitude is satisfied by any absurdity in the right
-/// direction.* Two values that are equal for a reason unrelated to the code
-/// under test are the same trap.
-///
-/// ⇒ So the assertion moved to a document written with **`Print` alone**, where
-/// a hard-coded default and the file's own answer are different lists and
-/// cannot be confused. `granted` is what the caller wants written; the file
-/// comes back also granting `AccessibilityExtract`, which the engine sets on
-/// every write (see [`crate::protect::always_granted`]).
+/// ⇒ **A test that checks a relation rather than a magnitude is satisfied by
+/// any absurdity in the right direction**, and two values that are equal for a
+/// reason unrelated to the code under test are the same trap. So the assertion
+/// is made over a document written with **`Print` alone**, where a hard-coded
+/// default and the file's own answer are different lists and cannot be
+/// confused. `granted` is what the caller wants written; the file comes back
+/// also granting `AccessibilityExtract`, which the engine sets on every write
+/// (see [`crate::protect::always_granted`]).
 fn restricted_permissions_dialog(tag: &str, granted: &[PermissionBit]) -> ProtectDialog {
     use pdfcer_core::document::Document;
     use pdfcer_core::edit::{EditSession, EncryptionSettings};
@@ -72,11 +68,12 @@ fn restricted_permissions_dialog(tag: &str, granted: &[PermissionBit]) -> Protec
         .expect("the plain fixture encrypts");
 
     let mut path = std::env::temp_dir();
-    // ★ Tagged per caller AND per process. The caller tag stops two THREADS
+    // Tagged per caller AND per process. The caller tag stops two THREADS
     // of one `cargo test` fighting over a file; it does nothing about two
-    // `cargo test` PROCESSES, which have the same callers as each other.
-    // That second half bit on 2026-09-13 and presented as a regression in
-    // whichever test lost the race -- see `check-test-temp-paths.py`.
+    // `cargo test` PROCESSES, which have the same callers as each other. Two
+    // concurrent runs that share one path present as a regression in whichever
+    // test loses the race, which is why the process id is here and why
+    // `check-test-temp-paths.py` requires it.
     path.push(format!(
         "pdfcer-dialog-protect-{tag}-{}.pdf",
         std::process::id()
@@ -90,23 +87,22 @@ fn restricted_permissions_dialog(tag: &str, granted: &[PermissionBit]) -> Protec
     ProtectDialog::open(&doc, Task::Permissions)
 }
 
-/// ★★★ **The form opens showing what the FILE says, not what is convenient.**
+/// **The form opens showing what the FILE says, not what is convenient.**
 ///
 /// The build brief's strongest requirement on this surface, asserted at the
 /// seam where it could be lost: *"a permissions dialog that opens with
 /// everything ticked, on a document that forbids printing, has told him a
 /// falsehood before he touches anything."*
 ///
-/// ★★★ **It is asserted on a document that FORBIDS something**, and the first
-/// draft was not — see [`restricted_permissions_dialog`] for the falsification
-/// this test failed and what changed because of it. On the plain fixture the
-/// answer genuinely IS eight ticks, so a hard-coded eight ticks and the file's
-/// own answer are the same list and the assertion cannot tell them apart.
+/// **It is asserted on a document that FORBIDS something**, and it has to be:
+/// on the plain fixture the answer genuinely IS eight ticks, so a hard-coded
+/// eight ticks and the file's own answer are the same list and no assertion
+/// here can tell them apart. See [`restricted_permissions_dialog`].
 #[test]
 fn the_form_opens_seeded_from_the_document_not_from_a_default() {
     let dialog = restricted_permissions_dialog("seeded", &[PermissionBit::Print]);
 
-    // ★ THE ASSERTION THAT BITES: the document declines six of the eight, so a
+    // THE ASSERTION THAT BITES: the document declines six of the eight, so a
     // form seeded from a constant would have eight `true`s here.
     let ticked: Vec<PermissionBit> = dialog
         .ticks
@@ -152,7 +148,7 @@ fn the_form_opens_seeded_from_the_document_not_from_a_default() {
     assert!(plain.encrypt_metadata, "the engine's own default");
 }
 
-/// ★★★ **O119 disclosure 2, and R9: a signed document draws no form.**
+/// **O119 disclosure 2, and R9: a signed document draws no form.**
 ///
 /// Not a greyed form and not a button that refuses on press — the phase is
 /// `Refused` before anything is drawn, so [`ProtectDialog::body`] takes the
@@ -204,7 +200,7 @@ fn the_confirm_control_is_shut_until_every_condition_is_met() {
         "an owner password and its match is a complete form"
     );
 
-    // ★ The two passwords must differ — the owner password ignores `/P`
+    // The two passwords must differ — the owner password ignores `/P`
     // entirely, so if it also opens the document the permission list below is
     // decoration.
     d.user = "ownerpw".to_owned();
@@ -218,7 +214,7 @@ fn the_confirm_control_is_shut_until_every_condition_is_met() {
     d.user_again = "userpw".to_owned();
     assert!(d.ready_to_confirm());
 
-    // ★ And choosing to replace closes it again until the extra
+    // And choosing to replace closes it again until the extra
     // acknowledgement is given.
     d.choose_destination(Destination::ReplaceOriginal);
     assert!(
@@ -229,7 +225,7 @@ fn the_confirm_control_is_shut_until_every_condition_is_met() {
     assert!(d.ready_to_confirm());
 }
 
-/// ★★ **The greyed confirm names WHICH condition is outstanding.**
+/// **The greyed confirm names WHICH condition is outstanding.**
 ///
 /// `OPERATOR_REQUESTS.md` O77's sweep found seven greyed controls with no hover
 /// explanation. Several different conditions gate this one button and they
@@ -267,7 +263,7 @@ fn the_greyed_confirm_names_the_outstanding_condition() {
     assert_eq!(line, t::overwrite_outstanding());
 }
 
-/// ★★★ **Changing the destination retires the acknowledgement.**
+/// **Changing the destination retires the acknowledgement.**
 ///
 /// `crate::dialogs::redact::choose_destination`'s rule, and it stops the one
 /// sequence that would otherwise leave a live button over a withdrawn consent:
@@ -285,7 +281,7 @@ fn changing_the_destination_retires_the_acknowledgement() {
         !d.overwrite_acknowledged,
         "returning to replace does not restore a consent that was withdrawn"
     );
-    // ★ Re-selecting the SAME destination is not a change and must not retire
+    // Re-selecting the SAME destination is not a change and must not retire
     // a tick the operator has just given.
     d.overwrite_acknowledged = true;
     d.choose_destination(Destination::ReplaceOriginal);
@@ -312,7 +308,7 @@ fn changing_the_job_re_seeds_the_ticks_from_the_file() {
     );
 }
 
-/// ★★★ **The accessibility bit is never offered as a choice.**
+/// **The accessibility bit is never offered as a choice.**
 ///
 /// `pdfcer-core` sets bit 10 on every file it writes (rule W19), so a tick-box
 /// the operator could clear would come back ticked in the result. The row is a
@@ -320,7 +316,7 @@ fn changing_the_job_re_seeds_the_ticks_from_the_file() {
 /// regardless of what the tick says — so the list passed to the engine is what
 /// the written file will actually say.
 ///
-/// ★ The second half is the one that would rot silently: a future edit that
+/// The second half is the one that would rot silently: a future edit that
 /// made the checkbox editable would still pass the first assertion.
 #[test]
 fn the_accessibility_bit_is_never_offered_as_a_choice() {
@@ -343,13 +339,13 @@ fn the_accessibility_bit_is_never_offered_as_a_choice() {
     );
 }
 
-/// ★★★ **A `{:?}` on this dialog does not print a password.**
+/// **A `{:?}` on this dialog does not print a password.**
 ///
-/// `crate::secret`'s header names the exact cost: *"a `{:?}` on an action
-/// carrying a password writes it into the trace file `tools/ui-verify` keeps as
-/// evidence."* Five fields here hold one, as `String` rather than `Secret`,
-/// because `egui::TextEdit` binds to a `String` — so the type cannot do the
-/// protecting and [`ProtectDialog`]'s hand-written `Debug` must.
+/// [`crate::secret`]'s header names the cost: a `{:?}` on anything carrying a
+/// password writes it into the trace file `tools/ui-verify` keeps as evidence.
+/// Five fields here hold one, as `String` rather than `Secret`, because
+/// `egui::TextEdit` binds to a `String` — so the type cannot do the protecting
+/// and [`ProtectDialog`]'s hand-written `Debug` must.
 ///
 /// A derived `Debug` would pass every other test in this file.
 #[test]
@@ -398,7 +394,7 @@ fn each_failure_says_something_different() {
             assert_ne!(a, b, "two failures share one sentence");
         }
     }
-    // ★ The one that turns a dead end into a next step: it names which password
+    // The one that turns a dead end into a next step: it names which password
     // DID work, so an operator told "that is the user password" goes and finds
     // the other one instead of re-typing the one they have.
     assert!(lines[3].contains("user password"), "{}", lines[3]);

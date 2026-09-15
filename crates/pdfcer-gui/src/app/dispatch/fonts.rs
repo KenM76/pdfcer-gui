@@ -1,7 +1,4 @@
-//! # `app::dispatch::fonts` — the Tools tab's two font commands
-//!
-//! Split out of [`super`] under **R2** on 2026-08-28, when that file crossed
-//! 1,500 lines for the fifth time.
+//! # `app::dispatch::fonts` — the Tools tab's font commands
 //!
 //! ## ★★ The seam, and why it is a subject rather than a size
 //!
@@ -14,11 +11,12 @@
 //! nothing happen.
 //!
 //! ★ They are otherwise mirror images, and the asymmetry is worth stating
-//! because it explains why only one of them was blocked on a preference:
+//! because it explains why only one of them depends on a preference:
 //! **embedding needs an operand from outside the document** — a font file on
 //! the operator's disk, found through a folder list they maintain, because
-//! `pdfcer-core` *"never goes looking"* — and **removal needs none**, since it
-//! deletes what the document already carries.
+//! `EmbedRequest::supplied` is a donor map the *caller* resolves and the engine
+//! never searches a disk itself — and **removal needs none**, since it deletes
+//! what the document already carries.
 //!
 //! ## ★ The harness seam lives here, not in the preference
 //!
@@ -72,7 +70,7 @@ pub(crate) fn folders(prefs: &Prefs) -> Vec<PathBuf> {
     // `search_path` owns the second step, including the rule that a folder
     // already listed by hand is not added twice -- so an operator who typed
     // `C:\Windows\Fonts` into the list and then ticked the box does not spend
-    // two of their sixteen slots saying one thing.
+    // two of their `prefs::fonts::MAX_FOLDERS` slots saying one thing.
     let mut out = crate::app::prefs::fonts::search_path(&prefs.font_folders, prefs.use_os_fonts);
     if let Ok(extra) = std::env::var(FONT_DIR_ENV) {
         // Semicolon-separated, matching the platform's own `PATH` convention
@@ -89,21 +87,14 @@ pub(crate) fn folders(prefs: &Prefs) -> Vec<PathBuf> {
 
 /// Dispatch a font command.
 ///
-/// ★★★ **`tools.embed_fonts` — registered, drawn on the Tools tab and inert for
-/// the whole life of the project.** Wired 2026-08-28.
+/// ★★ **`tools.embed_fonts` depends on the font-folder preference, not on the
+/// engine verb.** The verb exists; what it will not do is find a donor. Read
+/// [`folders`] before concluding this command is blocked on `pdfcer-core`.
 ///
-/// Its `SCAFFOLDED` reason quoted a premise that had expired — *"at S3 `Action`
-/// carries zoom and page navigation and nothing else"* — and the entry itself
-/// flagged that. Re-deriving it turned up a **second, unrecorded** dependency
-/// that was the real one: `EmbedRequest::supplied` is a donor map *"the shell
-/// resolved for it"*, and pdfcer never goes looking. So the command was blocked
-/// on a font-folder preference that did not exist until the same day, and that
-/// dependency was in neither register.
-///
-/// ⇒ **A blocker can be correct for the wrong reason.** It is the least visible
-/// of the five ways this project's scaffold list has gone wrong: nothing about
-/// such an entry looks stale, and the only thing that finds it is asking what
-/// the verb's own *request struct* requires rather than whether the verb exists.
+/// ⇒ The general rule, because it costs a re-derivation every time it is
+/// forgotten: **ask what a verb's own request struct requires, not whether the
+/// verb exists.** A command can be unreachable because an operand has no
+/// source in this shell, and nothing about the verb's signature says so.
 ///
 /// ## ★ It can decline with a sentence, and the sentence is recorded
 ///
@@ -132,22 +123,18 @@ pub(crate) fn dispatch(id: &str, dialogs: &mut DialogsState, status: &Status, pr
                 format!("embed-fonts-declined folders={}", folders.len()),
             )
         }
-        // ★★ **`tools.unembed_fonts` — the LAST scaffolded command the font
-        // work reached, and the only one of the ten whose recorded blocker was
-        // TRUE.**
+        // ★★ **`tools.unembed_fonts` needs its confirmation window**, because
+        // most of what unembedding costs is invisible on the canvas — a broken
+        // PDF/A claim, an invalidated signature, a renamed font, and a byte
+        // saving an incremental save will not actually deliver.
+        // `dialogs::unembed` is that window and the only place those are stated
+        // before the press.
         //
-        // It said the confirmation window this needs does not exist, because
-        // *"three of unembedding's four consequences are invisible on the
-        // canvas"*. It did not, and they are. `dialogs::unembed` is that
-        // window; there is now a fourth consequence in it that nobody had
-        // written down.
-        //
-        // => A blocker naming a SURFACE THAT DOES NOT EXIST is the strong kind.
-        // It cannot go stale by accident, because nothing makes a window appear
-        // except somebody building one. That is the distinction worth keeping
-        // after an audit found six of eleven entries wrong: the register is not
-        // noise, it is unevenly reliable, and the reliable entries are the ones
-        // whose truth condition is inside this repository.
+        // => A blocker that names a SURFACE THAT DOES NOT EXIST is the reliable
+        // kind, and worth preferring when one is written: it cannot go stale by
+        // accident, because nothing makes a window appear except somebody
+        // building one. A blocker that names an engine capability can expire
+        // silently the moment the engine ships it.
         "tools.unembed_fonts" => (
             dialogs.open_unembed_fonts(status),
             // ui-text-exempt: diagnostic trace, never displayed.

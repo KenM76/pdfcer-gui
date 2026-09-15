@@ -23,26 +23,9 @@
 //! or a `Vec<Shape>` builder. Nothing reads global state, nothing mutates a
 //! document, and every rule below is unit-tested without a window.
 //!
-//! ## Where it came from
-//!
-//! Salvaged from the old shell's `crates/pdfcer-gui/src/canvas.rs:1584-1892`
-//! (`D:\Dev\pdfcer`, read-only to this project) — the block headed *"Fuzzy snap
-//! indicator — GUI-side logic + rendering primitives (Pass 12.M1)"*, together
-//! with its six unit tests at `:3046-3136`. The doc comments come across
-//! verbatim, because `SALVAGE.md`'s procedure is explicit that *"the old GUI's
-//! value is disproportionately in its doc comments; a snippet leaves those
-//! behind and the next engineer re-derives a decision that was already made and
-//! already paid for."* The `reason = "…"` strings on the `dead_code` allows are
-//! the one exception, and §"The `reason` strings were rewritten" below says why.
-//!
-//! The old block's own header recorded that these primitives were built
-//! *"against the announced contract"* before their consumer existed — the
-//! substrate's *"design against the contract, name the asks"* idiom. That is
-//! still exactly their status; only the name of the consumer has changed.
-//!
 //! ## What consumes it
 //!
-//! The **Phase 7 measure tools**, landing in
+//! The **measure tools**, in
 //! [`crate::canvas::measure`](super::measure) (`canvas/measure/`). They own the
 //! tool-mode frame the indicator draws in, so they are the ones who:
 //!
@@ -55,8 +38,7 @@
 //! | decide whether a click commits or only proposes | [`snap_commit_clicks`] |
 //! | paint the indicator | [`snap_marker_shapes`] |
 //!
-//! The paint call is a one-liner in the measure-tool overlay handler, unchanged
-//! in shape from the old shell's:
+//! The paint call is a one-liner in the measure-tool overlay handler:
 //!
 //! ```ignore
 //! painter.extend(snap::snap_marker_shapes(screen_at, kind, tint, size));
@@ -71,9 +53,8 @@
 //! [`snap_tolerance`] is a one-line wrapper that pairs it with
 //! [`SNAP_SCREEN_TOLERANCE_PX`]. `mapping`'s header states the invariant
 //! plainly — *"there is no second place in `canvas/` that divides by `zoom`"* —
-//! and a salvaged duplicate would have been exactly that second place. The old
-//! shell's `canvas::screen_tolerance_to_page` therefore does **not** come
-//! across; what came across is its snap-specific default and the test that pins
+//! and a snap-local copy of the conversion would be exactly that second place.
+//! What lives here instead is the snap-specific default and the test that pins
 //! the snap radius's zoom-invariance.
 //!
 //! **Screen → page position.** [`super::mapping::PageMapping::to_page`]. The
@@ -83,8 +64,7 @@
 //! ## The tint comes from the caller, and which role it must be
 //!
 //! [`snap_marker_shapes`] takes `color: Color32` rather than reaching for a
-//! theme itself. That is the old shell's shape and it is kept, for the reason
-//! that made it right there: the marker is painted *inside* the measure tool's
+//! theme itself, for one reason: the marker is painted *inside* the measure tool's
 //! overlay pass, which already knows whether it is drawing a live proposal or a
 //! committed dimension, and a painter that resolved its own colour would have to
 //! be told that anyway — as a second argument, in a second vocabulary.
@@ -96,20 +76,21 @@
 //! first of them; see its docs for the honest `None` it can return and what that
 //! `None` currently means in this shell.
 //!
-//! ## The `reason` strings were rewritten, deliberately
+//! ## ⚠ The `#[allow(dead_code)]` attributes below are stale
 //!
-//! Every item below still carries `#[allow(dead_code, reason = …)]`, because in
-//! this shell the consumer is *arriving* and has not arrived: `canvas/measure/`
-//! exists with a `mod.rs` and two empty leaves.
+//! Every item below carries `#[allow(dead_code, reason = …)]` describing itself
+//! as waiting for a consumer. `canvas/measure/` is that consumer and it has
+//! arrived: `resolve.rs` calls [`snap_query_enabled`] and
+//! [`active_snap_candidate`], `mod.rs` calls [`next_snap_index`],
+//! [`snap_commit_clicks`] and [`snap_marker_shapes`], `canvas::painting` calls
+//! [`snap_marker_shapes`], and [`super::mapping::PageMapping::snap_tolerance`]
+//! reads [`SNAP_SCREEN_TOLERANCE_PX`]. Only the free [`snap_tolerance`] has no
+//! caller. Removing the six dead allows is a code change and is not one this
+//! comment can make.
 //!
-//! But the inherited reasons all said *"consumed by the Pass 12.M2 measure
-//! tools"*. Pass 12.M2 is a milestone in **another repository**, and pointing a
-//! live annotation at it would be a claim about this crate that nobody here can
-//! check — the same class of stale status-in-a-table that `SALVAGE.md`'s
-//! correction note is about (*"a status word in a table is a claim, and it
-//! decays"*). So each reason now names the consumer in **this** shell. The
-//! provenance is not lost; it is recorded here, in prose, where it is a
-//! statement about history rather than a promise about the future.
+//! **A `reason` string is a live annotation, and pointing one at a milestone in
+//! another repository is a claim nobody in this crate can check.** Each reason
+//! therefore names the consumer in **this** shell.
 
 use egui::{Color32, Pos2, Shape, Stroke};
 use pdfcer_core::vector::{SnapCandidate, SnapKind};
@@ -174,7 +155,7 @@ pub const SNAP_COMMITTED_ROLE: &str = "dimension_selected"; // ui-text-exempt: a
 /// engine would reject anyway, both live in
 /// [`super::mapping::screen_tolerance_to_page`] and are **not** re-implemented
 /// here — see this module's header on why a second divider by `zoom` in
-/// `canvas/` would be the defect rather than the salvage.
+/// `canvas/` would be a defect.
 ///
 /// # Why this takes a bare `zoom` and not a [`super::mapping::PageMapping`]
 ///
@@ -270,8 +251,8 @@ pub fn snap_commit_clicks(kind: SnapKind) -> u8 {
 ///
 /// # The tint is an argument, and it must be a named role
 ///
-/// `color` is supplied by the caller — the old shell's shape, kept. The caller
-/// is the measure tool's overlay pass, and the colour it must supply for a
+/// `color` is supplied by the caller. The caller is the measure tool's overlay
+/// pass, and the colour it must supply for a
 /// pre-commit indicator is the `"preview"` role: [`SNAP_INDICATOR_ROLE`], via
 /// [`snap_indicator_tint`]. Nothing in this function chooses a colour, which is
 /// why `tools/gates/check-theme-colors.sh` has nothing to say about it.
@@ -398,20 +379,19 @@ pub fn snap_marker_shapes(at: Pos2, kind: SnapKind, color: Color32, size: f32) -
 /// on the preset where it happens."* Substituting a fallback here would undo
 /// that, one layer further from the palette.
 ///
-/// # ★ It used to return `None` on every frame, and that WAS the finding
+/// # ★ The `Option` is load-bearing, and a `None` here is silent on screen
 ///
-/// This section read: *"`pdfcer-gui` does **not** yet call
-/// `Overlays::install` anywhere; the application-role map the shell provides
-/// is unused."* True for a whole phase, during which the snap marker silently
-/// fell back to the selection stroke — the exact shape of failure the `Option`
-/// makes invisible, because nothing looks broken and the cue is simply not
-/// there.
+/// A context with no installed role map answers `None` for every role, and the
+/// snap marker then falls back to the selection stroke — the exact shape of
+/// failure an `Option` makes invisible, because nothing looks broken and the
+/// cue is simply not there.
 ///
-/// `crate::canvas::overlays::install` now runs beside `Theme::apply` in
-/// `crate::app::frame`, so the role resolves. The `Option` stays, and stays
-/// meaningful: it is still the honest answer for a role a future preset forgets
-/// to define, and `overlays`' own test asserts that none of the roles this
-/// canvas reads is one of them, on every preset rather than on the default.
+/// `crate::canvas::overlays::install` runs beside `Theme::apply` in
+/// `crate::app::frame`, which is what makes the role resolve in the shipped
+/// binary. The `Option` stays, and stays meaningful: it is the honest answer
+/// for a role a preset forgets to define, and `overlays`' own test asserts that
+/// none of the roles this canvas reads is one of them, on every preset rather
+/// than on the default.
 #[must_use]
 pub fn snap_indicator_tint(ctx: &egui::Context) -> Option<Color32> {
     egui_shell::theme::Overlays::of(ctx).get(SNAP_INDICATOR_ROLE)
@@ -424,14 +404,11 @@ mod tests {
 
     /// **The snap catch radius is zoom-invariant on screen.**
     ///
-    /// Carried from the old shell's
-    /// `screen_tolerance_converts_inversely_with_zoom`, re-pointed at
-    /// [`snap_tolerance`]. The old test asserted the raw conversion; that
-    /// function now lives in [`super::super::mapping`] and is tested there, so
-    /// re-asserting it here would be the duplicate this salvage set out to
-    /// avoid. What is *not* tested there and is tested here is the pairing —
-    /// that the SNAP radius is the one being converted, and that the degenerate
-    /// contract survives the wrapper.
+    /// The raw conversion lives in [`super::super::mapping`] and is tested
+    /// there, so re-asserting it here would be a duplicate. What is *not*
+    /// tested there and is tested here is the pairing — that the SNAP radius is
+    /// the one being converted, and that the degenerate contract survives the
+    /// wrapper.
     #[test]
     fn the_snap_tolerance_converts_inversely_with_zoom() {
         // A fixed 10px catch radius is 10 page units at 100%, 5 at 200%, 20 at
@@ -448,11 +425,11 @@ mod tests {
     /// **The snap radius is LOOSER than the selection radius, and the direction
     /// is the point.**
     ///
-    /// New here; the old shell stated the asymmetry in prose on both constants
-    /// and asserted it nowhere. A tuning pass that nudged one of the two numbers
-    /// could silently invert the relation, and the result would not look like a
-    /// bug — selection would just start grabbing neighbours while snapping got
-    /// fussy, which is the pair of symptoms the prose exists to prevent.
+    /// Prose on both constants states the asymmetry; only an assertion enforces
+    /// it. A tuning pass that nudged one of the two numbers could silently
+    /// invert the relation, and the result would not look like a bug —
+    /// selection would just start grabbing neighbours while snapping got fussy,
+    /// which is the pair of symptoms the prose exists to prevent.
     ///
     /// Both sides are constants, so this is a `const` block: the invariant is
     /// checked when the test module is *compiled*, and an inversion fails the
@@ -525,31 +502,28 @@ mod tests {
     /// Every snap kind the **engine** offers draws something, and the derived
     /// centerline's glyph is not the routine one's.
     ///
-    /// # ★★★ This test carried its own copy of the engine's list until 2026-09-13
+    /// # ★★★ It consumes `SnapKind::all()` and never a hand-written list
     ///
-    /// It opened `let kinds = [SnapKind::Node, — eight of them — SnapKind::Axis];`
-    /// and looped over that, under a name promising **every** kind. The array was
-    /// right, and had always been right, which is the whole difficulty with the
-    /// shape: a hand-written list agrees with the real one on every day except
-    /// the one that matters, and on that day it does not go red — it goes green
-    /// over eight of nine while its name still claims completeness.
+    /// A hand-written `let kinds = [SnapKind::Node, …, SnapKind::Axis];` under a
+    /// name promising **every** kind agrees with the real list on every day
+    /// except the one that matters, and on that day it does not go red — it goes
+    /// green over eight of nine while its name still claims completeness.
     ///
-    /// ## What was actually protecting it, and why that is not the same thing
+    /// ## What would otherwise protect it, and why that is not the same thing
     ///
-    /// Be precise about the severity, because the first draft of this comment
-    /// overstated it. `SnapKind` is **not** `#[non_exhaustive]` (see
+    /// `SnapKind` is **not** `#[non_exhaustive]` (see
     /// `pdfcer-core/src/vector/snap.rs`), and [`snap_marker_shapes`] matches it
     /// **exhaustively with no wildcard arm**. So a ninth variant upstream breaks
-    /// this crate's build today, at that match, and the stale array would be
-    /// found while fixing the error.
+    /// this crate's build at that match, and a stale array would be found while
+    /// fixing the error.
     ///
     /// ⇒ That is real protection. It is also **somebody else's**, and it is one
     /// ordinary edit from being gone: the day a `_ => Vec::new()` arm is added to
     /// `snap_marker_shapes` — a reasonable thing to write, and the exact thing
-    /// that was written in `info_label` for `InfoField` — the compile error
-    /// disappears, the new kind silently draws nothing, and the one test whose
-    /// job was to catch a kind that renders nothing never looks at it. The two
-    /// safeguards fail in the same instant because they were never independent.
+    /// `info_label` does for `InfoField` — the compile error disappears, the new
+    /// kind silently draws nothing, and the one test whose job was to catch a
+    /// kind that renders nothing never looks at it. The two safeguards fail in
+    /// the same instant because they were never independent.
     ///
     /// ## ⇒ The general question, and it is not the one the name asks
     ///
@@ -564,13 +538,10 @@ mod tests {
     /// is the only difference that matters.
     ///
     /// Consuming `SnapKind::all()` makes this test's coverage its own property
-    /// rather than a side effect of how the neighbouring function is written.
-    /// `tools/gates/check-completeness-tests.py` had it registered as a FOREIGN
-    /// row for that reason; the engine added the accessor in the same bump that
-    /// turned `InfoField::all()` into a slice, and for the same stated reason —
-    /// its rationale is worth reading at `SnapKind::all()` itself, where it
-    /// records that this project reported the shape after finding the identical
-    /// defect in its own tests within the hour.
+    /// rather than a side effect of how the neighbouring function is written,
+    /// and it is why `tools/gates/check-completeness-tests.py` has no FOREIGN
+    /// row for this site. The accessor's own rationale is worth reading at
+    /// `SnapKind::all()`.
     ///
     /// **What this still cannot catch** — a kind whose marker is
     /// indistinguishable *on screen* from another kind's. Only the one pair below
@@ -626,9 +597,11 @@ mod tests {
     /// **With no `Overlays` set installed, the tint is `None` rather than a
     /// substitute colour.**
     ///
-    /// This is the state this shell is in today (see [`snap_indicator_tint`]'s
-    /// docs), and it is asserted rather than merely noted so that the day the
-    /// application starts installing a set, this test is the thing that says so.
+    /// A bare [`egui::Context`] has no role map, and the honest answer for a
+    /// role that is not defined is `None` rather than a substitute colour — see
+    /// [`snap_indicator_tint`]'s docs for what a `None` costs on screen. The
+    /// shipped binary installs a set in `crate::app::frame`; this asserts the
+    /// uninstalled path answers honestly rather than guessing.
     #[test]
     fn an_uninstalled_overlay_set_yields_no_tint_rather_than_a_fallback() {
         let ctx = egui::Context::default();

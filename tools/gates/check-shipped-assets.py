@@ -21,28 +21,23 @@ That is not a flaw in `cargo-about`; it is a gap between two tools, and a gap
 between tools is exactly where an obligation goes missing without anyone
 deciding to drop it.
 
-WHY IT ARRIVED HERE, WHICH IS ITSELF THE FINDING
-================================================
+WHY AN ATTRIBUTION SURFACE IS NOT OPTIONAL HERE
+===============================================
 
-Until 2026-08-14 **this repository had no attribution surface of any kind** —
-no `PROVENANCE.md`, no `cargo-about`, no third-party licence text anywhere in
-the program or the package. That was defensible while pdfcer-gui shipped only
-permissively-licensed *code*, whose notices the `LICENSE` file and the Cargo
-metadata cover.
+A project that ships only permissively-licensed *code* can live on its
+`LICENSE` file and its Cargo metadata. This one cannot: it ships the `ocrs` OCR
+model weights, which are **CC-BY-SA-4.0**, and that licence's BY clause
+requires the notice to reach the **end user** rather than merely a reader of
+the source tree. That distinction is the whole shape of this gate and the
+reason check 4 exists.
 
-It stopped being defensible when the operator decided on 2026-08-14 to ship
-the `ocrs` OCR model weights, which are **CC-BY-SA-4.0**. That licence's BY
-clause requires the notice to reach the **end user**, not merely a reader of
-the source tree — which is the whole distinction this gate is built around and
-the reason check 4 exists.
-
-Building the surface then turned up something nobody had gone looking for:
-**three third-party works this binary already redistributes**, with no notice
-anywhere. `pdfcer-render`'s `font::bundled` embeds fourteen BSD-3-Clause CFF
-faces with `include_bytes!`, and `pdfcer-core`'s `fontdata::tables` compiles in
-Adobe metric and glyph-list data. They arrive through path dependencies and
-static linking, so they are inside `pdfcer-gui.exe` whether or not anyone in
-this repository thought about them. The gate covers them explicitly — see
+It is also not the only such work, and the others are the easiest to miss
+because nobody in this repository chose them: **three third-party works this
+binary redistributes** arrive through path dependencies and static linking.
+`pdfcer-render`'s `font::bundled` embeds fourteen BSD-3-Clause CFF faces with
+`include_bytes!`, and `pdfcer-core`'s `fontdata::tables` compiles in Adobe
+metric and glyph-list data. They are inside `pdfcer-gui.exe` whether or not
+anyone here thought about them, so the gate covers them explicitly — see
 `REDISTRIBUTED_ENGINE_ASSETS`.
 
 WHAT IT CHECKS
@@ -59,8 +54,8 @@ For every asset directory this workspace redistributes — its own, under
 3. Every shipped file in the directory is accounted for: at least one of the
    files actually present must be named, unless the note explicitly states it
    covers the whole directory.
-4. ★ The directory is cited in **`about.hbs`**, the `cargo-about` template.
-5. ★ PORT CHANGE — the directory is also cited in
+4. The directory is cited in **`about.hbs`**, the `cargo-about` template.
+5. PORT CHANGE — the directory is also cited in
    **`crates/pdfcer-gui/src/text/about.rs`**, the in-application surface.
 
 Checks 4 and 5 are the ones that reach the OPERATOR rather than the
@@ -71,8 +66,8 @@ it does NOT ship.
 `cargo-about` renders, so a hand-written section in its static epilogue flows
 into the generated `THIRD_PARTY_LICENSES.md` and therefore into every release.
 
-★ WHY THIS PORT ADDS A FIFTH CHECK, WHEN THE ENGINE MANAGES WITH FOUR
-=====================================================================
+WHY THIS PORT ADDS A FIFTH CHECK, WHEN THE ENGINE MANAGES WITH FOUR
+===================================================================
 
 Because the engine is a CLI and this is a GUI, and the difference is not
 cosmetic.
@@ -122,11 +117,10 @@ TWO CHECKS THE ENGINE HAS NO NEED FOR
    never regenerated, and the release carries a notice missing the very
    section that was just written.
 
-   `HANDOFF.md` §10 records exactly this failure mode for a different
-   generated file: the RON manifest "has no compiler behind it and no failure
-   until someone else runs the round-trip", and it has now been found stale
-   twice in one day. A generated compliance artifact deserves better than
-   somebody remembering.
+   **A generated file has no compiler behind it.** Its template and its output
+   drift apart in silence and nothing fails until somebody else happens to run
+   the round-trip, which is why every generated artifact in this tree is gated
+   rather than trusted. A compliance artifact deserves that more than most.
 
 WHY NOT JUST TRUST A REVIEWER
 =============================
@@ -135,8 +129,8 @@ Because the failure is silent and delayed. A model file added today ships in
 every release from now on; the moment anyone notices is after distribution,
 and un-distributing is not a thing. A gate costs one CI second.
 
-★ WHY THIS GATE IS PYTHON WHEN EVERY OTHER GATE HERE IS BASH
-============================================================
+WHY THIS GATE IS PYTHON WHEN EVERY OTHER GATE HERE IS BASH
+==========================================================
 
 Stated because the inconsistency is real and someone will want to fix it.
 
@@ -190,11 +184,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 
 #: The engine tree. Read-only to this project — this gate only ever READS it.
-# ★★★ DERIVED, NOT ASSUMED — see `tools/engine_path.py`.
+# DERIVED, NOT ASSUMED — see `tools/engine_path.py`.
 #
-# This was a hard-coded literal until 2026-09-03, when the project's rename
-# pointed it at a directory the engine had not created yet and this instrument
-# went silently blind. `engine_path.locate` reads the git URL out of the
+# A hard-coded literal here names whatever directory was true when it was
+# typed; a rename on either side then aims this instrument at a directory that
+# does not exist, and it reports *nothing to check* rather than a failure —
+# silent blindness. `engine_path.locate` reads the git URL out of the
 # manifest Cargo actually builds from, so it follows the temporary
 # `package = ...` shim and will follow the engine's rename without anybody
 # remembering that this line exists.
@@ -258,24 +253,24 @@ class EngineAsset:
 
 #: Engine asset directories `pdfcer-gui.exe` redistributes.
 #:
-#: ★ THE SECOND ENTRY ARRIVED 2026-08-14, AND IS WHY THIS GATE WAS BUILT.
+#: THE SECOND ENTRY IS WHY THIS GATE EXISTS.
 #:
 #: `crates/pdfcer-core/assets/models/ocrs` — the CC-BY-SA-4.0 OCR model weights,
 #: 12,240,008 bytes over two `.rten` files, accepted into the MIT portable
-#: folder by the operator on 2026-08-14. It is `how="copied"` rather than
+#: folder by the operator. It is `how="copied"` rather than
 #: `how="linked"`: `pdfcer_core::ocr::models::resolve_model_dir` resolves them
 #: from a `models/<engine>` directory beside the executable, so they are loose
 #: files in the portable folder and the packager has to put them there.
 #:
 #: That declaration is load-bearing in **both** directions, which is the whole
-#: shape this gate was written for. `how="copied"` makes check 6b demand an
+#: shape of this gate. `how="copied"` makes check 6b demand an
 #: entry in `PAYLOAD_ASSET_DIRS` — an attribution for files nobody receives is
 #: as wrong as files received with no attribution — while checks 4 and 5 demand
 #: the notice and the About dialog. Declaring the asset and forgetting any one
 #: of the three fails here rather than shipping.
 REDISTRIBUTED_ENGINE_ASSETS: list[EngineAsset] = [
     EngineAsset(
-        # ★ Derived: under the temporary rename shim the engine's directories
+        # Derived: under the temporary rename shim the engine's directories
         # still carry their old names. See `tools/engine_path.py`.
         path=f"crates/{engine_path.crate_name('render')}/assets/fonts",
         how="linked",
@@ -358,13 +353,11 @@ def _shipped_files(directory: Path) -> list[Path]:
 def _asset_dirs_under(crates: Path) -> list[Path]:
     """Every directory under `crates` that holds shipped asset files.
 
-    ★ PORT CHANGE — the engine scans `crates/*/assets/` only. This shell's own
+    PORT CHANGE — the engine scans `crates/*/assets/` only. This shell's own
     art lives at `crates/pdfcer-gui/src/icons/assets/`, INSIDE the module that
-    reads it, and `icons::assets`' header gives the reason: the rebuild ran
-    several agents over one tree and the boundaries between them were
-    directories, so the icon work's territory was `src/icons/`. A gate that
-    only looked one level under a crate root would have found nothing at all
-    in this repository and reported it as clean — the exact shape of failure
+    reads it, and `icons::assets`' header gives the reason. A gate that looked
+    only one level under a crate root would find nothing at all in this
+    repository and report it as clean — the exact shape of failure
     `check-ui-strings.sh` was ported here to fix.
 
     So: any directory NAMED `assets`, at any depth, plus its subdirectories.
@@ -387,11 +380,11 @@ def _asset_dirs_under(crates: Path) -> list[Path]:
 def _cites(haystack: str, label: str) -> bool:
     """Does `haystack` cite `label`, under EITHER spelling of the engine crates?
 
-    ★★ Added 2026-09-03 with the rename. The declared path is *derived* from the
-    manifest so it points at the directory that exists today — which, under the
-    temporary `package = ...` shim, still carries the engine's OLD crate name.
-    The attributions in `about.hbs` and `about.rs`, by contrast, were renamed
-    with the rest of this repository and name the destination.
+    The declared path is *derived* from the manifest, so it points at the
+    directory that exists today — which, under the temporary `package = ...`
+    shim, still carries the engine's OLD crate name. The attributions in
+    `about.hbs` and `about.rs`, by contrast, carry this repository's own
+    spelling and name the destination.
 
     Both are right. An attribution is a statement about the work being
     redistributed, not about a directory layout that is mid-migration, and
@@ -399,7 +392,7 @@ def _cites(haystack: str, label: str) -> bool:
     churn in the one file whose whole job is to be stable for the people we ship
     to.
 
-    ⇒ So the citation test normalises. When the engine's rename lands the two
+    So the citation test normalises. When the engine's rename lands the two
     spellings converge and this becomes an identity.
     """
     if label in haystack:
@@ -469,7 +462,7 @@ def check_directory(
         # positive, repeated knowingly.
         return problems
 
-    # ★ Check 4 — does the licence reach the people who get a BINARY?
+    # Check 4 — does the licence reach the people who get a BINARY?
     #
     # Against the RENDERED template, not the raw file: see `rendered`, which
     # exists because the raw form let a "this one is deliberately absent"
@@ -487,7 +480,7 @@ def check_directory(
             f"      worked example to copy."
         )
 
-    # ★ Check 5 — and does it reach someone who never opens the folder?
+    # Check 5 — and does it reach someone who never opens the folder?
     if not _cites(in_app, label):
         problems.append(
             f"  {label}{where}\n"
@@ -516,11 +509,11 @@ def _load_packager():
         return None
     module = importlib.util.module_from_spec(spec)
 
-    # ★ A GATE MUST NOT DIRTY THE WORKING TREE.
+    # A GATE MUST NOT DIRTY THE WORKING TREE.
     #
     # Importing a module writes `tools/__pycache__/package-portable.*.pyc`, and
-    # that directory is tracked in this repository — so the first run of this
-    # gate showed up in `git status` as a modified file. A check that changes
+    # that directory is tracked in this repository — so an unguarded import
+    # shows up in `git status` as a modified file. A check that changes
     # the thing it is checking is a check whose "clean" result is one degree
     # less trustworthy, and on a project whose packager stamps a source digest
     # into every build, a gate that moves bytes is worse than merely untidy.
@@ -642,20 +635,16 @@ _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 def rendered(about: str) -> str:
     """`about.hbs` with its HTML comments removed.
 
-    ★ THIS FUNCTION EXISTS BECAUSE THE GATE CAUGHT ITS OWN AUTHOR.
+    Check 4 asks "is this directory cited in the template", and asking that of
+    the RAW file does not work. `about.hbs`'s epilogue carries a long comment
+    explaining which directories are **deliberately absent** from it, naming
+    each one by path — so a directory declared redistributed before its notice
+    is written is "cited" by a paragraph whose entire content is *this
+    directory is not attributed here*, and check 4 passes over a real
+    violation.
 
-    Check 4 asks "is this directory cited in the template", and the first
-    implementation asked it of the raw file. `about.hbs`'s epilogue carries a
-    long comment explaining which directories are **deliberately absent** from
-    it — including, by name, the path of the OCR model weights that had not
-    shipped yet.
-
-    So the first violation planted against this gate — declaring those weights
-    redistributed before writing their notice — was **not** caught by check 4.
-    The template "cited" the directory in a paragraph whose entire content was
-    *this directory is not attributed here*. A comment saying a thing is
-    missing is the one string that must never satisfy a check for its
-    presence.
+    **A comment saying a thing is missing is the one string that must never
+    satisfy a check for its presence.**
 
     It is the same reasoning `check-theme-colors.sh` already applies to Rust —
     "a comment mentioning a colour is prose, not a drawn colour". Here a
@@ -697,10 +686,9 @@ def self_test() -> int:
       6. the same, declared as OWN WORK        -> must NOT be caught (exemption)
       7. fully documented in both surfaces     -> must NOT be caught
 
-    ★ Case 5 is not hypothetical and not defensive. It is the violation this
-    gate FAILED to catch the first time one was planted against it, on the day
-    it was written — see [`rendered`]. It is here so that the fix cannot be
-    undone by someone simplifying `rendered` away.
+    Case 5 is not hypothetical and not defensive: it is the violation the
+    raw-file form of check 4 lets through — see [`rendered`]. It is here so
+    that the fix cannot be undone by someone simplifying `rendered` away.
     """
     import tempfile
 

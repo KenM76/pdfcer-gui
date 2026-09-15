@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 """check-test-temp-paths.py - a scratch path under %TEMP% must name its process.
 
-WHAT THIS GATE IS FOR
+THE PROPERTY ASSERTED
 =====================
+
+Every place in the workspace that asks for the system temporary directory
+builds a path that is unique per PROCESS, or says in writing why it does not
+need to be.
 
 A test that writes to a FIXED path under the system temporary directory is
 shared mutable state between every process on the machine that runs that test.
@@ -19,26 +23,19 @@ whichever process lost the race. It reads exactly like a regression in the
 feature that test covers, and it passes when re-run alone, which reads exactly
 like a flake. Neither reading points at shared state.
 
-WHAT HAPPENED, 2026-09-13
--------------------------
-
-`protect::tests::changing_the_password_keeps_what_the_document_allowed` went red
-during a release run and passed alone. Two `cargo test --workspace` invocations
-were in flight; both called `scratch("change-pw")`, which returned
-`%TEMP%/pdfcer-protect-change-pw.pdf` with nothing process-unique in it. One
-process was still writing the encrypted copy when the other opened it, so
-`Document::load_with_password` read a truncated PDF and the assertion that
-failed was about permissions - five lines past the corruption.
-
-Eleven sites in this tree had the same shape. Several of them call
-`std::fs::remove_dir_all` on the way in, which makes it worse than a torn read:
-one process deletes the other's fixture mid-test.
+The concrete shape: two runs both call a helper that returns
+`%TEMP%/<crate>-<tag>.pdf` with nothing process-unique in it. One is still
+writing the file when the other opens it, so the reader gets a truncated
+document and the assertion that fails is about whatever it checked next -
+several lines past the corruption. Sites that call `std::fs::remove_dir_all`
+on the way in are worse than a torn read: one process deletes the other's
+fixture mid-test.
 
 ★ WHY A COMMENT WAS NOT ENOUGH, AND THIS IS THE REASON THE GATE EXISTS
 -----------------------------------------------------------------------
 
-Two of the eleven already carried a confident note saying the hazard was
-handled:
+Some sites with this defect already carried a confident note saying the hazard
+was handled:
 
     // Tagged per caller: `cargo test` runs these in parallel, and two tests
     // writing one path is a flake that reproduces about a third of the time.
@@ -49,10 +46,10 @@ the same set of callers as each other and therefore ask for the same filenames.
 
 **A note that names a hazard and fixes half of it is worse than no note at
 all**: the next reader sees the hazard named, sees a mechanism beside it, and
-stops looking. `canvas::guides` had carried the correct pattern
-(`std::process::id()` in the directory name) since it was written, so the
-convention existed in this tree and simply was not uniform - which is the
-textbook condition for a rule that lives only in prose.
+stops looking. The correct pattern (`std::process::id()` in the name) already
+existed elsewhere in this tree the whole time, so the convention was present
+and simply not uniform - which is the textbook condition for a rule that lives
+only in prose.
 
 ⇒ A lesson in a docstring is not an instrument. This file is the instrument.
 
@@ -67,11 +64,11 @@ Every `std::env::temp_dir()` call site in the workspace must either
 
 There is deliberately no third option and no taxonomy. A nanosecond timestamp
 is, in practice, just as unique across processes - four helpers in this tree
-used one - and the gate still requires the pid beside it. The reason is that a
-rule reading *"a process-unique component, and here is how the gate recognises
-one"* has a classification in it, and a classification is where the next
-exception goes. `std::process::id()` or a written exemption: that cannot drift,
-and it costs a compliant site one token.
+pair one with the pid - and the gate still requires the pid beside it. The
+reason is that a rule reading *"a process-unique component, and here is how the
+gate recognises one"* has a classification in it, and a classification is where
+the next exception goes. `std::process::id()` or a written exemption: that
+cannot drift, and it costs a compliant site one token.
 
 WHAT THE EXEMPTION IS FOR, AND BOTH CASES ARE REAL
 --------------------------------------------------
@@ -80,14 +77,15 @@ WHAT THE EXEMPTION IS FOR, AND BOTH CASES ARE REAL
      at it and does not care which one; two processes wanting the same
      non-existent path is not a collision. Four sites.
 
-  2. **A stable name is the point.** `#[ignore]`d generators and dumps
-     (`canvas::cursor`'s crosshair dump, `canvas::forms::boxes`' drawn-field
-     fixture) exist so a human can run them deliberately and then go and open
-     the file they named. A pid in the name would mean hunting for it. Three
-     sites.
+  2. **A stable name is the point.** `#[ignore]`d generators and dumps exist so
+     a human can run them deliberately and then go and open the file they
+     named. A pid in the name would mean hunting for it. Three sites.
 
 The marker requires a reason on the line, so the exemption is a decision on the
-record rather than an absence the gate happens not to notice.
+record rather than an absence the gate happens not to notice. The two counts
+above are also the cheapest staleness check there is: if the printed exemption
+tally stops matching them, either a site was added without a reason or a
+pattern stopped matching.
 
 HOW A SITE'S EXTENT IS DECIDED, AND WHY IT IS NOT JUST "THE LINE"
 =================================================================
@@ -141,6 +139,26 @@ comments removed and the interiors of string literals blanked. The raw line is
 what the evidence and the exemption marker are searched in, because an exemption
 IS a comment.
 
+WHAT IT PROVABLY CANNOT SEE
+---------------------------
+
+* **Any other route to a fixed scratch path.** A hard-coded `C:/Temp/...`, a
+  `TMPDIR` read through `std::env::var`, a crate such as `tempfile` used with a
+  fixed name - none of them mention `env::temp_dir`, and none is reported. The
+  claim is about one function, not about temporary files in general.
+* **Whether a pid in the name is actually USED.** The evidence test is textual:
+  `process::id()` somewhere in the extent satisfies it. A site that computes the
+  pid and then discards it passes.
+* **Whether an exemption's stated reason is TRUE.** The marker records a
+  decision; it does not verify one. A site claiming "never created" that creates
+  the file is invisible here and only a reader can catch it.
+* **A local helper *named* `temp_dir`** taking a tag, of which this tree has
+  four. `SITE` requires the empty argument list precisely so those are not
+  reported - which also means the gate says nothing about what such a helper
+  builds, only about the `env::temp_dir()` call inside it.
+* **Anything outside `.rs`**, and anything a Rust macro generates rather than
+  spells.
+
 INPUT SET
 ---------
 
@@ -148,13 +166,27 @@ INPUT SET
 tree, not the index, per `check-gate-input-scope`. A scratch path written and
 not yet staged is precisely the one nobody has run twice yet.
 
-USAGE
-=====
+USAGE AND EXIT CODES - the project's three-state gate contract
+==============================================================
 
   tools/gates/check-test-temp-paths.py              audit the workspace
   tools/gates/check-test-temp-paths.py --self-test  falsify the mechanism
 
-Exit: 0 clean, 1 violations, 2 could not run.
+  0  clean    - every site carries the pid or a written exemption
+  1  FAIL     - one or more bare sites, or a bare import, each with `file:line`
+  2  SKIPPED  - not a git working tree, or no `.rs` files found
+
+HOW TO FALSIFY IT
+-----------------
+
+`--self-test` runs the detector over synthetic Rust covering both directions:
+compliant one-line and split-across-statements sites, a bare site, an exempted
+site with the marker inside the extent and another with it in the comment run
+above, the bare import, and - the assertion that matters most - a compliant
+site placed next to a bare one in both orders, which must still report exactly
+one violation. A window-based extent passes every other case and fails that
+one. Registered in `run-all.sh` ahead of the real run: a check that has never
+been watched fail is not evidence.
 """
 
 import os

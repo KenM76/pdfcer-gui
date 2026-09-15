@@ -1,15 +1,14 @@
 //! Tests for the two things that happen at a dock's outer edge — the rail's
 //! **auto-hide**, and the **tab strip it lets a stack do without**.
 //!
-//! Both landed on 2026-09-05, both from one message, and they are tested in one
-//! file because the dangerous interaction is between them: a rail that can
-//! disappear, drawn beside a stack that has given up its own switch, is exactly
-//! the arrangement in which a panel becomes unreachable. This project has
-//! shipped three unreachable panels with every gate green
-//! (`SHELL_LAYOUT_PROPOSAL.md` §5), and the pair of features here is the
-//! first arrangement since that could do it again.
+//! They are tested in one file because the dangerous interaction is between
+//! them: a rail that can disappear, drawn beside a stack that has given up its
+//! own switch, is exactly the arrangement in which a panel becomes
+//! unreachable. A panel can publish a perfectly healthy rectangle and still be
+//! reachable by nothing — three have shipped that way with every gate green —
+//! so *a rectangle exists* is never the question these tests ask.
 //!
-//! # ★★★ What each test is pointed at, and the shape it refuses
+//! # What each test is pointed at, and the shape it refuses
 //!
 //! | Test | The build it would fail against |
 //! |---|---|
@@ -19,7 +18,7 @@
 //! | [`the_panel_beside_a_hiding_rail_is_the_same_width_revealed_and_hidden`] | one that reclaimed the sliver on reveal — R128, the panel reflowing under the pointer that revealed it |
 //! | [`a_hiding_rail_always_publishes_a_trigger_wide_enough_to_hit`] | one whose sliver was thinner than a pointer can find, i.e. a rail with no way back |
 //!
-//! # ★★ Fonts, and why these tests do not need the synthetic face
+//! # Fonts, and why these tests do not need the synthetic face
 //!
 //! [`super::width_tests`]' header is the authority on the trap: this crate
 //! builds `egui` without `default_fonts`, so a label measures zero and any test
@@ -117,7 +116,7 @@ fn frame(
 
 const ALL_THREE: [&str; 3] = ["pages", "bookmarks", "layers"];
 
-/// ★★★ **The feature.** Three panels, all on the rail: no tab strip.
+/// **The feature.** Three panels, all on the rail: no tab strip.
 ///
 /// Two assertions rather than one, and the second is the one that matters. The
 /// count says the dock *decided* to suppress; the absence of every
@@ -145,7 +144,7 @@ fn a_stack_whose_panels_are_all_on_the_rail_draws_no_tab_strip() {
             .filter(|n| n.starts_with("dock.tab."))
             .collect::<Vec<_>>()
     );
-    // ★ And the panel is still there. A "suppression" that also stopped
+    // And the panel is still there. A "suppression" that also stopped
     // drawing the body would satisfy both assertions above.
     assert_eq!(
         r.bodies.len(),
@@ -156,15 +155,15 @@ fn a_stack_whose_panels_are_all_on_the_rail_draws_no_tab_strip() {
     assert!(r.rect("dock.left.toolrail").is_some(), "the rail was drawn");
 }
 
-/// ★★★ **`all`, not `any`** — one panel the rail cannot raise keeps the strip
+/// **`all`, not `any`** — one panel the rail cannot raise keeps the strip
 /// for the whole stack.
 ///
 /// The plausible wrong implementation suppresses when the rail covers the
 /// **active** panel, or when it covers *most* of them. Either leaves the
 /// uncovered panel with no switch of any kind: it is not on the rail, and the
 /// tab that was its only other route has just been taken away. That panel is
-/// then reachable by nothing at all, which is the defect
-/// `SHELL_LAYOUT_PROPOSAL.md` §5 made a precondition of this whole surface.
+/// then reachable by nothing at all — the defect this whole surface was
+/// allowed to be built only because it could be refused mechanically.
 ///
 /// The fixture makes the uncovered panel the **active** one deliberately, so a
 /// build that checked only the active tab would also be caught.
@@ -184,7 +183,7 @@ fn a_panel_the_rail_cannot_raise_keeps_the_strip_for_the_whole_stack() {
     assert!(r.any_named("dock.tab."), "and the strip was actually drawn");
 }
 
-/// ★★★ **Walked across the width series, never at two endpoints.**
+/// **Walked across the width series, never at two endpoints.**
 ///
 /// [`rail::resolve_width`] returns zero when reserving 52 pt would leave the
 /// panel body under [`super::plan::MIN_COLUMN_WIDTH`] — *absent rather than
@@ -229,7 +228,7 @@ fn a_side_too_narrow_for_the_rail_keeps_its_tab_strip_at_every_width() {
             narrow_seen = true;
         }
     }
-    // ★ The series must actually straddle the threshold, or the implication
+    // The series must actually straddle the threshold, or the implication
     // above is satisfied vacuously by a run in which the rail was never absent.
     assert!(
         narrow_seen,
@@ -239,7 +238,7 @@ fn a_side_too_narrow_for_the_rail_keeps_its_tab_strip_at_every_width() {
     assert!(wide_seen, "no width in the series suppressed anything");
 }
 
-/// ★★★ **THE NO-REFLOW GUARANTEE.** The panel beside a hiding rail is the same
+/// **THE NO-REFLOW GUARANTEE.** The panel beside a hiding rail is the same
 /// width whether the rail is showing or not.
 ///
 /// This is R128 for the rail, and it is the property that makes auto-hide
@@ -359,14 +358,14 @@ fn frame_with_pointer(state: &mut DockState, side_width: f32) -> Rendered {
     }
 }
 
-/// ★★★ **There is always a way back, and it is big enough to hit.**
+/// **There is always a way back, and it is big enough to hit.**
 ///
 /// The trigger region is published on every frame the side is drawn — hidden or
 /// not — and is never thinner than [`crate::peek::Peek::MIN_TRIGGER_PTS`]. That
 /// is the entire reason it is safe to suppress a tab strip beside a rail that
 /// can hide: the rail is never *gone*, only narrow.
 ///
-/// ⚠ Asserted against the **width of the published rectangle**, not against the
+/// Asserted against the **width of the published rectangle**, not against the
 /// constant. A build that reserved ten points and then published a rectangle
 /// clipped to nothing would satisfy a constants-only test and would strand
 /// every panel on the side.

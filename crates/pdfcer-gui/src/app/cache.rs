@@ -10,32 +10,24 @@
 //! | [`FontCache`] | the document's font inventory | `edit epoch` | the Fonts panel, the Properties panel |
 //! | [`PageTextCache`] | the current page's **extracted text** | `(page index, edit epoch)` | canvas text selection, `file.copy_page_text` |
 //!
-//! ## ★ Why this is a module of its own — the seam, stated
+//! ## Why this is a module of its own — the seam, stated
 //!
-//! `app/state.rs` reached 1,468 lines against the 1,500-line gate (rule R2),
-//! and the S4 selection move was about to add to it. A size gate is only
-//! useful if the split it forces is a **real** seam rather than an arbitrary
-//! cut at line 750, so the question was which of `state.rs`'s subjects is
-//! separable without leaving a dangling half-explanation behind.
+//! `state.rs` answers *"what is open, and what is the operator looking at?"*
+//! — [`crate::app::state::Status`]'s three-way failure distinction,
+//! [`OpenDoc`]'s view fields, the raster bookkeeping that keeps the page
+//! texture honest. The caches answer a different question: *"what expensive
+//! thing derived from the document do several surfaces need, and how do we
+//! compute it once?"* They share one argument (the cost of `pdfcer-core`
+//! recomputation), one hazard (staleness against `edit_epoch`), and one
+//! structural device (a `Cell` key beside a `RefCell` payload, for the borrow
+//! reason below). None of that is shared with anything left behind.
 //!
-//! These two are. Everything else in `state.rs` answers *"what is open, and
-//! what is the operator looking at?"* — [`crate::app::state::Status`]'s
-//! three-way failure distinction, [`OpenDoc`]'s view fields, the raster
-//! bookkeeping that keeps the page texture honest. These two answer a
-//! different question: *"what expensive thing derived from the document do
-//! several surfaces need, and how do we compute it once?"* They share one
-//! argument (the cost of `pdfcer-core` recomputation), one hazard (staleness
-//! against `edit_epoch`), and one structural device (a `Cell` key beside a
-//! `RefCell` payload, for the borrow reason below). None of that is shared
-//! with anything left behind.
+//! The seam is the one the caches themselves imply: *a cache is bounded by the
+//! lifetime of what it describes* is a statement about caches as a class
+//! rather than about any one of them, and it is why they hang off [`OpenDoc`]
+//! rather than off `crate::panels::PanelsState`.
 //!
-//! The seam is also the one the caches themselves already implied: they were
-//! moved off `crate::panels::PanelsState` onto `OpenDoc` earlier in this same
-//! stage, and the whole argument for that move — *a cache should be bounded by
-//! the lifetime of what it describes* — is a statement about caches as a
-//! class, not about any one of them.
-//!
-//! ## ★ Why interior mutability, and why that is not a smell here
+//! ## Why interior mutability, and why that is not a smell here
 //!
 //! A panel body is handed `&OpenDoc`, never `&mut` — that is the
 //! actions-not-mutations invariant, and it is not negotiable
@@ -52,7 +44,7 @@
 //! through an [`crate::app::actions::Action`], or *"what can change what is
 //! drawn?"* stops having a complete answer.
 //!
-//! ## ★ Why neither cache can panic on a double borrow
+//! ## Why neither cache can panic on a double borrow
 //!
 //! The `RefCell` hazard is a `borrow_mut` taken while a `Ref` is still alive.
 //! It is unreachable here by a borrow-checker argument rather than by care,
@@ -136,7 +128,7 @@ pub(in crate::app) struct PageObjectCache {
 /// The current page's **extracted text**, held for as long as the document is
 /// open.
 ///
-/// # ★ Why this cache exists, and the measurement that forced it
+/// # Why this cache exists
 ///
 /// `crate::find`'s header records the trap in its own words:
 ///
@@ -144,8 +136,9 @@ pub(in crate::app) struct PageObjectCache {
 /// > over the **whole document** on every call […] There is no cache in
 /// > `pdfcer-core` and none here.
 ///
-/// That was measured at **331–449 ms per search** on the project's fixtures,
-/// which is why Find never searches on a keystroke. Canvas text selection
+/// That costs a measurable fraction of a second on the project's benchmark
+/// sheet — `crate::find`'s own `find … ms=` trace line is how it is measured
+/// — which is why Find never searches on a keystroke. Canvas text selection
 /// cannot pay that: a drag is sixty frames a second, and each frame has to
 /// know which glyphs the pointer has swept over.
 ///
@@ -167,10 +160,10 @@ pub(in crate::app) struct PageObjectCache {
 ///
 /// [`extract_page_view`]: pdfcer_core::text_extract::extract_page_view
 ///
-/// # ★ The revision is the SESSION's, and that is not the same choice Find made
+/// # The revision is the SESSION's, and that is not the same choice Find made
 ///
-/// `extract_page_view` takes a `DocumentView`, and core made the revision the
-/// caller's explicit decision (Pass 17.1, decision 018 §8) precisely because
+/// `extract_page_view` takes a `DocumentView`, and core makes the revision the
+/// caller's explicit decision (decision 018 §8) precisely because
 /// the two consumers want different answers: *"What does this FILE say?"*
 /// against the base document, *"What does the page IN FRONT OF ME say?"*
 /// against the session.
@@ -199,23 +192,26 @@ pub(in crate::app) struct PageTextCache {
     pub(in crate::app) text: RefCell<Option<Result<PageText, String>>>,
 }
 
-/// **Which of the current page's runs are drawn from inside a form XObject** -
+/// **Which of the current page's runs have no show operator of their own** -
 /// the editability answer, cached because the question is asked on every click
 /// that lands on text.
 ///
-/// # ★★ Why this exists at all
+/// # Why this exists at all
 ///
-/// `pdfcer-core` edits text in the **page's own content stream** and not inside
-/// a `Do`-invoked form XObject - a named non-goal of that cut
-/// (`pdfcer-core/src/text_edit/edit.rs:79`). The only published way to tell the
-/// two apart is `GlyphProvenance::content_stream`, and provenance is only
-/// populated when the extraction asked for it, which [`PageTextCache`]
-/// deliberately does not.
+/// The text surgery in `pdfcer-core` rewrites the show operator a run came
+/// from, so a run that names no operator of its own has nothing to anchor on
+/// and cannot take a caret. The only published way to tell those runs apart is
+/// `GlyphProvenance::content_stream`, and provenance is only populated when the
+/// extraction asked for it, which [`PageTextCache`] deliberately does not.
 ///
 /// So answering *"can this run be edited?"* costs **a second extraction of the
 /// whole page, with provenance on**.
 ///
-/// ★ **Measured on two documents, and the range is the point.** The operator
+/// The name says *form* and the question does not: form content is editable,
+/// and what is left in the refused set is the `/ActualText` case described on
+/// the field below.
+///
+/// **Measured on two documents, and the range is the point.** The operator
 /// pointed out - correctly - that testing on the densest sheet available makes
 /// everything look slow:
 ///
@@ -231,11 +227,10 @@ pub(in crate::app) struct PageTextCache {
 ///
 /// The cache is still the right answer, and the dense end is why: 336 ms
 /// inside the click handler froze the UI thread for a third of a second on
-/// every click that landed on text - a visible hitch on exactly the documents
-/// this application exists for, and one that made a driven check flake because
-/// the trace it was waiting on had not been written by the time the settle
-/// window closed. A performance defect presenting as harness flakiness is a
-/// shape this project has been caught by before.
+/// every click that lands on text - a visible hitch on exactly the documents
+/// this application exists for, and one that makes a driven check flake
+/// because the trace it waits on has not been written by the time the settle
+/// window closes.
 ///
 /// # What is cached, and why it is a `Vec<bool>` rather than the extraction
 ///
@@ -252,7 +247,7 @@ pub(in crate::app) struct PageTextCache {
 /// **Every clickable `/Link` on the current page, and the reader that resolves
 /// where each one goes** (ISO 32000-1 §12.5.6.5, §12.3.2).
 ///
-/// # ★★★ Why this is TWO caches with two different keys
+/// # Why this is TWO caches with two different keys
 ///
 /// They have genuinely different lifetimes, and collapsing them would make the
 /// expensive one page-scoped:
@@ -274,7 +269,7 @@ pub(in crate::app) struct PageTextCache {
 /// and the per-page link list is rebuilt beside it whenever the operator turns
 /// a page.
 ///
-/// # ★★ The reader is a SNAPSHOT and going stale is silent
+/// # The reader is a SNAPSHOT and going stale is silent
 ///
 /// It resolves against the page order it was built with. A page delete, a page
 /// insert or a new named destination invalidates it — and a stale one does not
@@ -316,15 +311,13 @@ pub(in crate::app) struct FormRunCache {
     /// One flag per run: `true` when that run has **no show operator of its
     /// own** and therefore nothing for the text surgery to anchor on.
     ///
-    /// ★★ **This used to mean "inside a form XObject", and it stopped meaning
-    /// that on 2026-08-20** when `Pass 119.0` made form content editable. The
-    /// old reading refused a caret on 99 % of the text on a CAD drawing — the
-    /// operator's own estimate — so the change is recorded here rather than
-    /// left to be inferred from a renamed field.
+    /// **It does not mean "inside a form XObject".** Form content is
+    /// editable, and reading this flag as the form set refuses a caret on 99 %
+    /// of the text on a CAD drawing — the operator's own estimate.
     ///
-    /// What is left is the case that was always unreachable: an `/ActualText`
-    /// run, where the producer supplied a replacement string for a span of
-    /// glyphs, so the run covers no operator a pinned span could name.
+    /// What it means is the `/ActualText` case: the producer supplied a
+    /// replacement string for a span of glyphs, so the run covers no show
+    /// operator a pinned span could name.
     ///
     /// `None` means the extraction did not run or provenance was unavailable -
     /// which the caller must read as **"not measured"**, never as "yes". A
@@ -359,7 +352,7 @@ pub(in crate::app) struct FontCache {
 impl OpenDoc {
     /// The current page's decomposition, building it on first use.
     ///
-    /// # ★ This is THE decomposition — there is deliberately only one
+    /// # This is THE decomposition — there is deliberately only one
     ///
     /// The Objects panel lists it, the Properties panel describes a row of
     /// it, the diagnostic `objects n=` line counts it, and the canvas
@@ -369,36 +362,29 @@ impl OpenDoc {
     /// [`ObjectModelProvider::page_objects`]' own docs call this the shared
     /// escape hatch that exists to prevent it.
     ///
-    /// **The canvas's second decomposition is gone.** Until this stage's
-    /// wiring pass, `canvas::show` built its own `ObjectModelProvider` per
-    /// gesture, because the only cache was on the panels and the canvas had no
-    /// route to it. That was one extra full decomposition per click and per
-    /// marquee release on the same page the Objects panel had already
-    /// decomposed. The canvas now calls this method, so *"what did I click?"*
-    /// and *"what is in this list?"* are answered from one value by
-    /// construction rather than by two code paths that happen to agree.
+    /// **The canvas has no decomposition of its own.** It calls this method,
+    /// so *"what did I click?"* and *"what is in this list?"* are answered
+    /// from one value by construction rather than by two code paths that
+    /// happen to agree. A private `ObjectModelProvider` built per gesture
+    /// would be one extra full decomposition per click and per marquee
+    /// release, on a page the Objects panel has already decomposed.
     ///
     /// # Why it lives on `OpenDoc` and needs no identity key
     ///
-    /// It was on `crate::panels::PanelsState` until S4, guarded by a `DocKey`
-    /// built partly from the `Arc<EditSession>`'s **address** — because a
-    /// cache hanging off the application outlives the document it describes,
-    /// so it has to say *which* document that was, and an address is the only
-    /// token that was available. `crate::panels`' own header records that key,
-    /// its ABA hazard, and why a `Weak` clone would have been a worse fix
-    /// than the bug.
+    /// A cache hanging off the *application* outlives the document it
+    /// describes, so it has to say **which** document that was — and the only
+    /// token available is the `Arc<EditSession>`'s address, which is not an
+    /// identity and carries an ABA hazard.
     ///
-    /// Moving it here dissolves the question rather than answering it, for
-    /// the reason already in [`OpenDoc::new`]'s doc comment: *"opening a
-    /// document constructs a whole new `OpenDoc`, so a cached texture or a
-    /// page index can never refer to a page from a previous file."* A cache
-    /// held **inside** that structure inherits the guarantee for free — there
-    /// is no "which document is this?" to get wrong, because the answer is
-    /// "the one you are holding". So `DocKey` was deleted rather than
-    /// repaired, and what remains is `(page, epoch)`: two plain values, no
-    /// address, no ABA. The canvas's `DocumentToken` — the same idea, built
-    /// the same way, for the selection — was deleted for the same reason in
-    /// the same stage, once the selection moved onto `OpenDoc` beside this.
+    /// Living here dissolves that question rather than answering it, for the
+    /// reason [`OpenDoc::new`]'s doc comment gives: *"opening a document
+    /// constructs a whole new `OpenDoc`, so a cached texture or a page index
+    /// can never refer to a page from a previous file."* A cache held
+    /// **inside** that structure inherits the guarantee for free — there is no
+    /// "which document is this?" to get wrong, because the answer is "the one
+    /// you are holding". So the key is `(page, epoch)`: two plain values, no
+    /// address, no ABA. The canvas selection lives on [`OpenDoc`] beside this
+    /// for the same reason.
     ///
     /// # Returns
     ///
@@ -436,7 +422,7 @@ impl OpenDoc {
     /// so the operator can see what he placed off the sheet" — O23's "see"
     /// half.
     ///
-    /// # ★★★ It PEEKS. It does not build, and that is the whole point
+    /// # It PEEKS. It does not build, and that is the whole point
     ///
     /// [`Self::page_objects`] builds on first use, and on the operator's own
     /// benchmark sheet that build is **469 ms**:
@@ -517,17 +503,17 @@ impl OpenDoc {
     /// **What this page's decomposition is keyed on**, and it is not the edit
     /// epoch.
     ///
-    /// # ★★★ The 469 ms this removes, measured on the operator's own drawing
+    /// # The 469 ms this removes, measured on the operator's own drawing
     ///
     /// ```text
     /// page-objects-built page=0 objects=129758 leaves=10256 ms=469
     /// ```
     ///
     /// That is one decomposition of the benchmark CAD sheet. Keyed on
-    /// `edit_epoch` — which every mutating action bumps — it was paid again
-    /// after **every** edit, including edits that cannot have touched page
-    /// content at all. Authoring a form field is an `/Annots` change; so is
-    /// placing a stamp, a note, or a ce dimension. Each of those froze the
+    /// `edit_epoch` — which every mutating action bumps — it would be paid
+    /// again after **every** edit, including edits that cannot have touched
+    /// page content at all. Authoring a form field is an `/Annots` change; so
+    /// is placing a stamp, a note, or a dimension. Each would freeze the
     /// window for about half a second to rebuild a model that had not changed,
     /// which is `OPERATOR_REQUESTS.md` O74 at its most expensive point:
     /// *"the last thing that should matter is updating the preview."*
@@ -538,7 +524,7 @@ impl OpenDoc {
     /// and holds still for an annotation, which is exactly the distinction the
     /// epoch cannot make.
     ///
-    /// # ★★ …and a counter of our own, because the digest has one blind spot
+    /// # …and its coverage is measured, because it is not obvious
     ///
     /// **Measured, not assumed** —
     /// `crates/pdfcer-gui/tests/page_generation_covers.rs`, three tests, one per
@@ -548,33 +534,22 @@ impl OpenDoc {
     /// |---|---|
     /// | a content edit (`move_objects`) | moves |
     /// | an annotation edit (`add_markup`) | holds still ✓ the win |
-    /// | **an edit inside a form XObject** (`move_node_in_form`) | ★ **holds still** |
+    /// | **an edit inside a form XObject** (`move_node_in_form`) | moves |
     ///
-    /// The third is a real hazard rather than a curiosity: `PageObjects`
-    /// addresses content **by index**, so a stale model makes the next drag
-    /// edit whatever that index names in the *wrong* model — the engine's own
-    /// phrase is *"silent corruption of the operator's drawing, reported as
-    /// success"*. It is consistent with its account of the memo: the descended
-    /// form set is kept beside the key because it is an **output** of the
-    /// decomposition, and this accessor digests the key alone.
+    /// The third row is the one worth measuring rather than assuming: the
+    /// digest folds in the descended-form set, which its name does not say.
+    /// `PageObjects` addresses content **by index**, so a model that held
+    /// still across a form edit would make the next drag edit whatever that
+    /// index names in the *wrong* model — the engine's own phrase is *"silent
+    /// corruption of the operator's drawing, reported as success"*.
     ///
-    /// ⇒ **That was true for four hours.** It was filed as a boundary finding
-    /// per decision 058 rather than absorbed, the reproduction test asserted
-    /// the limitation so it would go red when the engine closed it, and the
-    /// engine closed it the same night (`6e2b69e`): the digest now folds in
-    /// the descended-form set. The shell-side counter that carried the gap has
-    /// been **deleted**, which is what the tripwire existed to trigger.
-    ///
-    /// ★ The third time in two days this shape has paid out. A test that
-    /// asserts a limitation is a request that files its own closure.
-    ///
-    /// ★ **The fallback is the epoch**, not a constant. If the generation
+    /// **The fallback is the epoch**, not a constant. If the generation
     /// cannot be read — a page index the session does not have, a document
     /// mid-close — this returns the epoch, which rebuilds on every edit exactly
     /// as before. Slow is the safe direction; a constant would freeze the model.
     fn page_objects_revision(&self) -> u64 {
         match self.content_generation.get() {
-            // ★★★ The digest, but ONLY while the epoch it was measured at is
+            // The digest, but ONLY while the epoch it was measured at is
             // still current. See `OpenDoc::content_generation`: a measurement
             // can be missed (the render worker holds the other `Arc` handle),
             // and a digest taken before an edit describes a page that has
@@ -597,11 +572,10 @@ impl OpenDoc {
     /// — and that silence is safe by construction: the stamp stored with the
     /// digest is compared against the live epoch before it is trusted.
     ///
-    /// ★ It is `&mut self` because the engine's accessor is, and the engine's
+    /// It is `&mut self` because the engine's accessor is, and the engine's
     /// accessor is because *"which forms a page paints is an OUTPUT of the
-    /// decomposition"* — this shell's own sentence, quoted back at it in the
-    /// reply that shipped the fix. There is no way to fold the form set into
-    /// the digest without walking, and walking populates a memo.
+    /// decomposition"*: there is no way to fold the form set into the digest
+    /// without walking, and walking populates a memo.
     pub(in crate::app) fn refresh_content_generation(&mut self) {
         let page = self.view.page_index;
         let epoch = self.edit_epoch;
@@ -713,7 +687,7 @@ impl OpenDoc {
     /// [`DestinationReader`]. Every call after it is two comparisons. See
     /// [`LinkCache`] for why those two costs are keyed separately.
     ///
-    /// ★ It is called from a **hover**, sixty times a second, which is why the
+    /// It is called from a **hover**, sixty times a second, which is why the
     /// caching is not optional. The first sketch of this feature resolved links
     /// per frame and would have walked the page tree of a 36-sheet drawing on
     /// every mouse move.
@@ -734,11 +708,11 @@ impl OpenDoc {
     /// already built. Idempotent, and two comparisons on every call after the
     /// first.
     fn ensure_page_links(&self, page_index: usize) {
-        // ★ The reader FIRST and on its own key. It is the O(document) half and
+        // The reader FIRST and on its own key. It is the O(document) half and
         // it survives a page turn; the links below do not. See [`LinkCache`].
         if self.links.reader_for.get() != Some(self.edit_epoch) {
             self.links.reader_for.set(Some(self.edit_epoch));
-            // ★ The SESSION view, never the base document's — the same rule
+            // The SESSION view, never the base document's — the same rule
             // `ensure_page_objects` states at length. A reader built from the
             // base revision would resolve against the page order before the
             // operator's page deletes, which is precisely the stale-snapshot
@@ -766,7 +740,7 @@ impl OpenDoc {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ Emitted on a BUILD, never on a cache hit — so the number of
+                // Emitted on a BUILD, never on a cache hit — so the number of
                 // these lines in a run is the number of resolutions actually
                 // paid for. That is the measurement a prose claim about cost
                 // would otherwise drift from, and this file has the same note
@@ -809,13 +783,12 @@ impl OpenDoc {
         if self.form_runs.built_for.get() == Some(key) {
             return;
         }
-        // ★ Recorded here, before the work — but **the order is not what
-        // makes a failed extraction cheap**, and this comment said it was
-        // until it was falsified on 2026-09-09 by moving the `set` below the
-        // extraction and watching nothing go red.
+        // Recorded here, before the work — but **the order is not what makes
+        // a failed extraction cheap**, and it cannot be: moving the `set`
+        // below the extraction changes nothing.
         //
-        // It cannot be. The store at the bottom of this function runs whether
-        // the extraction succeeded or not, so the attempt is recorded either
+        // The store at the bottom of this function runs whether the
+        // extraction succeeded or not, so the attempt is recorded either
         // way and the next frame is a `Cell` read either way. The property
         // that stops a third of a second per frame being spent re-learning a
         // deterministic failure is that **the key is recorded on the failure
@@ -824,39 +797,32 @@ impl OpenDoc {
         // measurement and the test that catches it.
         self.form_runs.built_for.set(Some(key));
         let started = Instant::now();
-        // ★★★ **The shared extraction, not a private one.** This used to run
-        // its own `with_provenance(true)` extract right here, which meant a
-        // single click on a text run with the Properties panel open paid for
-        // the same `PageText` twice — once here, once inside `pin::inspect` —
-        // and threw one away. `crate::app::cache::provenance` carries the
-        // measurement (392 ms each, on the operator's benchmark sheet) and the
-        // argument for why the run indices are identical either way.
+        // **The shared extraction, not a private one.** A private
+        // `with_provenance(true)` extract here would make a single click on a
+        // text run with the Properties panel open pay for the same `PageText`
+        // twice — once here, once inside `pin::inspect` — and throw one away.
+        // `crate::app::cache::provenance` carries the measurement (392 ms
+        // each, on the operator's benchmark sheet) and the argument for why
+        // the run indices are identical either way.
         let built = self.provenance_page_text(self.view.page_index).map(|text| {
-            // ★★★ THE ENGINE'S OWN QUERY, since `Pass 118.0` — and the whole
-            // point of it was proved on 2026-08-20.
-            //
-            // This matched on `GlyphProvenance::content_stream` by hand until
-            // that morning — a shell encoding a fact about the surgery's
-            // internals, which is precisely the workaround this project's own
-            // request warned would outlive its bug:
+            // **The engine's own query**, `TextRun::editability`, rather than
+            // a hand-rolled match on `GlyphProvenance::content_stream`. A
+            // hand-rolled match is a shell encoding a fact about the surgery's
+            // internals — precisely the workaround this project's own request
+            // warned would outlive its bug:
             //
             // > *"the day form editing lands, my guard silently keeps refusing
             // > until I notice and delete it."*
             //
-            // `TextRun::editability` shipped that afternoon. **`Pass 119.0`
-            // landed form editing that evening**, `editability()` began
-            // answering `Editable` for form content, and the entire cost to
-            // this shell was deleting one arm that a `#[deprecated]` attribute
-            // pointed straight at. The hand-rolled guard would have gone on
-            // refusing carets on 99 % of the text on a CAD drawing until
-            // somebody noticed.
+            // `editability()` answers `Editable` for form content, so the
+            // shell tracks the engine rather than guessing at it; a guard of
+            // its own would go on refusing carets on 99 % of the text on a CAD
+            // drawing until somebody noticed. What is left is the case a
+            // hand-rolled match cannot see at all: `NoAnchor`, an
+            // `/ActualText` run covering no show operators, which has nothing
+            // for the surgery to anchor on.
             //
-            // What is left is the case the hand-rolled version could not see at
-            // all: `NoAnchor`, an `/ActualText` run covering no show operators,
-            // which has nothing for the surgery to anchor on and was being
-            // offered a caret.
-            //
-            // ★ `Unknown` is NOT treated as "no". It is the state a caller
+            // `Unknown` is NOT treated as "no". It is the state a caller
             // reaches by default — provenance not captured — and the engine
             // made the type an enum rather than a `bool` specifically so it
             // cannot be confused with a measured refusal. We asked with
@@ -873,11 +839,11 @@ impl OpenDoc {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             //
-            // ★ The count of these lines IS the measurement, as it is for
+            // The count of these lines IS the measurement, as it is for
             // `page-text` - one line per extraction, so a harness can tell a
-            // cache that works from one that does not. `in_form` beside `runs`
-            // is what makes the engine's boundary visible on a real document:
-            // on the benchmark CAD sheet it is most of them.
+            // cache that works from one that does not. `no_anchor` beside
+            // `runs` is what makes the refused set visible on a real
+            // document.
             format!(
                 "form-runs page={} ms={} runs={} no_anchor={}",
                 self.view.page_index,
@@ -891,14 +857,14 @@ impl OpenDoc {
         *self.form_runs.flags.borrow_mut() = built;
     }
 
-    /// ★ **Does this page carry any extractable text at all?**
+    /// **Does this page carry any extractable text at all?**
     ///
     /// The question *"is this page an image rather than a document"*, answered
     /// as a **cache read** rather than as an extraction. Read by
     /// [`crate::find::bar`] to decide whether to offer OCR when a search comes
     /// back empty, and it is the whole reason that offer is affordable.
     ///
-    /// # ★ Why this is not "the search found nothing"
+    /// # Why this is not "the search found nothing"
     ///
     /// The operator's rule for the Find offer, and the trap inside it: the
     /// trigger is *"this document is images"*, **not** *"this search had no
@@ -930,8 +896,7 @@ impl OpenDoc {
     /// is already `Empty`, i.e. after a committed search has run a
     /// whole-document extraction — which is strictly more expensive than this
     /// and has just been paid. Calling it every frame the bar is open would be
-    /// `HANDOFF.md` §2's defect 9 in miniature: the right work, charged at the
-    /// wrong moment.
+    /// the right work charged at the wrong moment.
     ///
     /// Whitespace does not count as text. A page carrying one space is an
     /// image page with a stray operator on it, and an offer suppressed by that
@@ -976,18 +941,18 @@ impl OpenDoc {
         self.page_text.built_for.set(Some(key));
         let started = Instant::now();
         let built = self.current_page().map(|page| {
-            // ★ The SESSION view, never the base document's — see
+            // The SESSION view, never the base document's — see
             // `PageTextCache`'s header. The operator is dragging across glyphs
             // they can see, and the base revision may no longer describe them.
             //
-            // ★ Through the funnel, and NOT `ExtractOptions::default()`.
+            // Through the funnel, and NOT `ExtractOptions::default()`.
             //
             // This call site is why `crate::app::settings::SettingsExt` exists:
             // it is the extraction the canvas's text selection, the find bar
             // and `file.copy_page_text` all read, and a bare `::default()` here
-            // silently discarded three of the operator's settings — the word
-            // gap, the unmappable sentinel and the replacement-text precedence.
-            // The old shell had exactly this line and exactly that consequence.
+            // silently discards three of the operator's settings — the word
+            // gap, the unmappable sentinel and the replacement-text
+            // precedence.
             //
             // `capture_provenance` stays off: it is the substrate for *editing*
             // text and this feature only reads it. `canvas::textedit` turns it
@@ -1003,7 +968,7 @@ impl OpenDoc {
         });
         let elapsed = started.elapsed();
         if let Some(built) = &built {
-            // ★ Not de-duplicated through `trace_changed`: two extractions are
+            // Not de-duplicated through `trace_changed`: two extractions are
             // two events, and the count of these lines IS the measurement (see
             // `page_text`'s docs). A gate that silenced the second would make a
             // harness unable to tell a cache that works from one that does not.
@@ -1056,7 +1021,7 @@ impl OpenDoc {
 }
 
 impl OpenDoc {
-    /// ★ **Drop every value derived from a text extraction.**
+    /// **Drop every value derived from a text extraction.**
     ///
     /// Called from `PdfcerApp::adopt_settings` and from nowhere else, because
     /// there is exactly one thing that invalidates these without also
@@ -1114,14 +1079,13 @@ mod tests {
     // The cache move — what replaced `panels::DocKey`
     // =======================================================================
 
-    /// **★ The decomposition cache carries NO document identity, and does
+    /// **The decomposition cache carries NO document identity, and does
     /// not need one.**
     ///
-    /// The `DocKey` deletion, asserted rather than argued. That key existed
-    /// because the cache hung off the *application* and outlived the document
-    /// it described, so it had to say **which** document — and the only token
-    /// available was an `Arc` address, which is not an identity (see
-    /// `OpenDoc::page_objects`).
+    /// Asserted rather than argued. A cache hanging off the *application*
+    /// outlives the document it describes, so it would have to say **which**
+    /// document — and the only token available is an `Arc` address, which is
+    /// not an identity (see `OpenDoc::page_objects`).
     ///
     /// This replaces one document with another **in the same binding**, the
     /// sequence that would exercise an address reuse. There is nothing to get
@@ -1132,7 +1096,7 @@ mod tests {
     #[test]
     fn a_documents_decomposition_cannot_outlive_the_document() {
         let mut doc = open_fixture(FOUR_PAGES);
-        // ★★ The frame's own first step, performed here because this test is
+        // The frame's own first step, performed here because this test is
         // about the KEY and the key's second half is measured there.
         //
         // `page_objects_revision` reads a digest that `app::frame` takes once
@@ -1141,7 +1105,7 @@ mod tests {
         // digest, which is what this assertion is for.
         doc.refresh_content_generation();
         assert_eq!(doc.page_objects().expect("page 0").page_index(), 0);
-        // ★ The page, not the whole key: the second half is a content digest
+        // The page, not the whole key: the second half is a content digest
         // and is a different number per fixture, which is exactly what this
         // test is about — that the key does not carry over to another
         // document.
@@ -1160,7 +1124,7 @@ mod tests {
             Some(0),
             "a fresh document starts un-built, whatever address it landed on"
         );
-        // ★★ And the two documents' keys DIFFER, which is the property that
+        // And the two documents' keys DIFFER, which is the property that
         // makes the previous line safe. Two documents whose page 0 happened to
         // share a key would serve one's decomposition for the other — the
         // failure this test is named for — and a page index alone cannot rule
@@ -1178,11 +1142,10 @@ mod tests {
     /// the operator is on page 1 would make every index in the Objects panel
     /// address the wrong object.
     ///
-    /// ★ It asserts that the key **CHANGED**, not what it changed to. The
-    /// second half stopped being `edit_epoch` on 2026-08-31 — it is now the
-    /// engine's content digest, mixed with this shell's form-edit counter (see
-    /// [`super::OpenDoc::page_objects_revision`]) — and a test pinning the
-    /// literal would have had to be rewritten for a change it exists to be
+    /// It asserts that the key **CHANGED**, not what it changed to. The second
+    /// half is not `edit_epoch` but the engine's content digest (see
+    /// [`super::OpenDoc::page_objects_revision`]), and a test pinning the
+    /// literal would have to be rewritten for a change it exists to be
     /// indifferent to. What matters is that a rebuild happened, which is what
     /// a changed key means and all it means.
     #[test]
@@ -1200,11 +1163,11 @@ mod tests {
         // An edit renumbers objects without moving page, so the revision is
         // the other half.
         //
-        // ★★ Driven through a REAL content edit rather than by setting
-        // `edit_epoch` by hand, and that change is the point of the swap: the
-        // key no longer reads the epoch, so a test that bumped it would now
-        // assert nothing at all — it would pass on a build whose cache never
-        // invalidated. `move_objects` is the cheapest content edit there is.
+        // Driven through a REAL content edit rather than by setting
+        // `edit_epoch` by hand: the key does not read the epoch, so a test
+        // that bumped it would assert nothing at all — it would pass on a
+        // build whose cache never invalidated. `move_objects` is the cheapest
+        // content edit there is.
         let before = doc.page_objects.built_for.get();
         let objects = doc
             .page_objects()
@@ -1213,7 +1176,7 @@ mod tests {
             .objects
             .len();
         assert!(objects > 0, "the fixture's page 3 must carry an object");
-        // ★ `Arc::get_mut`, the shape this crate uses everywhere a test needs
+        // `Arc::get_mut`, the shape this crate uses everywhere a test needs
         // the session mutably: the session is shared with the render worker
         // through an `Arc`, and a test that cloned it would be editing a copy.
         std::sync::Arc::get_mut(&mut doc.session)
@@ -1279,13 +1242,14 @@ mod tests {
     // The page-text cache
     // =======================================================================
 
-    /// ★ **The page's text is extracted once per `(page, epoch)`**, and asking
+    /// **The page's text is extracted once per `(page, epoch)`**, and asking
     /// twice does not extract twice.
     ///
     /// The property the whole feature's affordability rests on: a text drag
-    /// asks for this on every frame of the gesture, and `crate::find`'s header
-    /// records what an unconditional extraction costs — 331–449 ms, for the
-    /// *document*. Holding the first `Ref` across the second call is the
+    /// asks for this on every frame of the gesture, and an unconditional
+    /// whole-document extraction costs a measurable fraction of a second —
+    /// `crate::find`'s header states that cost and its `find … ms=` trace line
+    /// measures it. Holding the first `Ref` across the second call is the
     /// assertion rather than an accident of how the test is written: it is also
     /// the case that would panic if the validity key lived inside the `RefCell`
     /// instead of beside it.

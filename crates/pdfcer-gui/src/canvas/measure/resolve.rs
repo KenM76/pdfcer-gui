@@ -1,10 +1,8 @@
 //! # `canvas::measure::resolve` — one derivation of *"where would this click
 //! land, and on what"*
 //!
-//! Split out of [`super`] when R2's 1,500-line limit was reached, and the seam
-//! is real rather than convenient: everything here answers a question **about
-//! the pointer**, and everything left behind is about the tools and their
-//! state.
+//! The seam against [`super`]: everything here answers a question **about the
+//! pointer**, and everything there is about the tools and their state.
 //!
 //! ## ★★ Why this is one function and not two
 //!
@@ -13,25 +11,25 @@
 //! the operator aims at and the point the next click commits must be *the same
 //! value*, not two derivations that agree by construction.
 //!
-//! The cost of two is on the record. The marker was once resolved against a raw
-//! screen position while the click used a converted canvas one, so they
-//! disagreed by the scroll origin over the zoom — **zero at the top-left of an
-//! unscrolled page at 100 %**, growing from there. It survived four days,
-//! looked like *"sometimes it is fine"*, and no unit test could see it because
-//! both functions were individually correct.
+//! ⚠ Two derivations fail invisibly. Resolve the marker against a raw screen
+//! position while the click uses a converted canvas one and the two disagree by
+//! the scroll origin over the zoom — **zero at the top-left of an unscrolled
+//! page at 100 %**, growing from there. That reads as *"sometimes it is fine"*,
+//! and no unit test can see it, because both functions are individually
+//! correct.
 //!
 //! ## ★ Neither reader may require stored state
 //!
 //! `MeasureState` is not written to `egui::Memory` until the operator has
 //! clicked once — [`super::load`] builds a default and only the click paths
-//! store it. Both this function and the paint site used to bail on that, which
-//! meant the entire hover affordance switched on **after the first pick of a
-//! gesture**: the snap marker and the entity highlight were dead in exactly the
-//! moment they do their work.
+//! store it. A reader that bails on the empty case therefore switches the whole
+//! hover affordance on **after the first pick of a gesture**, leaving the snap
+//! marker and the entity highlight dead in exactly the moment they do their
+//! work: *"the measuring tools don't give me any indication of what is being
+//! selected"*.
 //!
-//! That was reported as *"the measuring tools don't give me any indication of
-//! what is being selected"*, and it is why both sites now fall back to a value
-//! built from the armed kind rather than declining.
+//! ⇒ Both this function and the paint site fall back to a value built from the
+//! armed kind rather than declining.
 //!
 //! A read must not write. Persisting from here would make moving the pointer an
 //! edit to shared state, and arming is the only thing that should decide what
@@ -51,11 +49,11 @@ use super::{MEASURE_MEMORY_KEY, MeasureKind, MeasureState, hover, snap};
 /// **Resolve a raw pointer position to the point the pick will actually
 /// commit**, and say which candidate it came from.
 ///
-/// This is the call the salvaged [`crate::canvas::snap`] primitives were
-/// waiting for. Until it existed every pick was the raw pointer position,
-/// which on a CAD sheet is the difference between a dimension that measures a
-/// line and one that measures *near* a line — and the second is worse than no
-/// dimension, because it is wrong by an amount nobody can see.
+/// This is what puts [`crate::canvas::snap`]'s primitives on the pick path. A
+/// pick taken at the raw pointer position is, on a CAD sheet, the difference
+/// between a dimension that measures a line and one that measures *near* a
+/// line — and the second is worse than no dimension, because it is wrong by an
+/// amount nobody can see.
 ///
 /// # The four gates, in order, and what each is for
 ///
@@ -103,35 +101,30 @@ pub(in crate::canvas) fn snapped(
 /// **Snap a point the way a measure pick would**, for a caller that is not a
 /// measure tool.
 ///
-/// ★★ Added 2026-08-20 for the perimeter's vertex drag, and the reason it is
-/// here rather than a second snap in `canvas::dimdrag` is the rule this project
-/// has paid for twice: **a predicate with two claimants must exist exactly
-/// once.** `text_edit_focused()` cost the Delete key and then the space bar
-/// because two places each had their own idea of one question. *"Where would
-/// this land if it snapped"* is one question, and the operator's answer to it —
-/// the master toggle, the Alt override, the tolerance, the Tab cycle — is one
-/// set of settings. A drag that snapped by its own rules would honour a
-/// different "Snap to content" switch from the tool beside it.
+/// ★★ The perimeter's vertex drag is the caller. It routes here rather than
+/// snapping by its own rules because **a predicate with two claimants must
+/// exist exactly once**: *"where would this land if it snapped"* is one
+/// question, and the operator's answer to it — the master toggle, the Alt
+/// override, the tolerance, the Tab cycle — is one set of settings. A drag with
+/// its own snap would honour a different "Snap to content" switch from the tool
+/// beside it.
 ///
 /// # The gap this closes, in the operator's terms
 ///
-/// `ui-conventions/drag-moves.md` D6, found by the 2026-08-20 sweep:
-///
-/// > **A vertex drag does not snap**, while the tool that placed that vertex
-/// > does — so you can pick a corner onto geometry and then be unable to put it
-/// > back.
-///
-/// That is the worst shape a missing convention can take: the tool teaches the
-/// operator that corners land exactly on lines, and then takes it away for the
-/// one gesture whose entire purpose is correcting a corner that landed wrong.
+/// `ui-conventions/drag-moves.md` D6 requires a snap to announce its target
+/// while the drag is live. A vertex drag that does not snap at all, while the
+/// tool that placed that vertex does, is worse than a silent one: the tool
+/// teaches the operator that corners land exactly on lines, then withdraws it
+/// for the one gesture whose entire purpose is correcting a corner that landed
+/// wrong.
 ///
 /// # ★ It builds a `MeasureState` rather than requiring one
 ///
-/// [`super::load`] persists nothing and [`super::read`] answers `None` until the operator has
-/// clicked a measure tool at least once. A vertex drag can happen in a session
-/// where no measure tool was ever armed, so requiring stored state would mean
-/// *snapping switches on only after you have used a different tool* — the same
-/// defect [`resolve_hover`] records at length, which shipped and was reported.
+/// [`super::load`] persists nothing and [`super::read`] answers `None` until
+/// the operator has clicked a measure tool at least once. A vertex drag can
+/// happen in a session where no measure tool was ever armed, so requiring
+/// stored state would mean *snapping switches on only after you have used a
+/// different tool* — the defect [`resolve_hover`]'s own body records.
 ///
 /// The fallback carries `snap_master: true`, the shipped default, and a
 /// `snap_cycle` of 0. Tab-cycling between two nearby candidates is therefore
@@ -197,29 +190,23 @@ pub(in crate::canvas) struct Resolved {
 /// ★ `canvas_pos` is **CANVAS** space, not screen space, and the name says so
 /// because getting it wrong is invisible.
 ///
-/// # The defect this parameter was renamed after
+/// # ⚠ Why the name is load-bearing
 ///
-/// It was called `pointer`, and `canvas::interact` handed it `screen_pos`
-/// **unconverted** while every sibling call on the same value wrote
-/// `map.to_page(p)`. The operator found it, 2026-08-18:
+/// Hand this an unconverted `screen_pos` and the **click** path still commits
+/// the right place — it converts through `Pick::canvas_point` — while only the
+/// **preview** resolves its candidate near a different part of the page. A
+/// wrong answer beside a right one, offset by the scroll origin over the zoom,
+/// so it is zero at the top-left of an unscrolled page at 100 % and grows from
+/// there. The operator sees it before any test does:
 ///
 /// > *"when I click on measure it on the drawing the crosshairs click the
 /// > right place under them, but the preview of what is being selected is
 /// > offset from the crosshairs instead of being underneath them."*
 ///
-/// That is exactly what the bug produces, and the shape is worth keeping. The
-/// **click** path (`click`, via `Pick::canvas_point`) was handed a properly
-/// converted point and committed the right place; only the **preview** read
-/// the raw screen position, so the snap candidate was resolved near a
-/// different part of the page. A wrong answer next to a right one, with
-/// nothing to say which was which — and the offset is the scroll origin over
-/// the zoom, so it is zero at the top-left of an unscrolled page at 100 % and
-/// grows from there. It would look like "sometimes it is fine".
-///
 /// `Pos2` cannot carry its own space, so the only defences available are the
 /// parameter's **name** and this paragraph. `canvas::mapping`'s header is the
-/// standing argument for why these conversions live in one place; this is the
-/// case that proves the argument was about the call sites too.
+/// standing argument for why these conversions live in one place; the call
+/// sites are the other half of it.
 pub(in crate::canvas) fn resolve_hover(
     ctx: &egui::Context,
     doc: &OpenDoc,
@@ -231,15 +218,13 @@ pub(in crate::canvas) fn resolve_hover(
 ) -> Option<Resolved> {
     // ★★ Traced at ENTRY, naming the gate that declines.
     //
-    // The first version of this instrument sat at the bottom, after five `?`
-    // early returns, and emitted **nothing at all** on a run where the pointer
-    // was demonstrably over the page — which told a reader only that the
-    // function had not finished, not which gate stopped it. An instrument that
-    // reports only the success path cannot diagnose a failure, and this suite
-    // has spent a day on the cost of a confident wrong diagnosis.
+    // An instrument below the five `?` early returns emits **nothing at all**
+    // on a run where the pointer is demonstrably over the page, which tells a
+    // reader only that the function did not finish — not which gate stopped it.
+    // A trace that reports only the success path cannot diagnose a failure.
     //
-    // The five gates are individually cheap and each of them means something
-    // different about the application, so each is named.
+    // The five gates are individually cheap and each means something different
+    // about the application, so each is named.
     let st_present = ctx
         .data_mut(|d| d.get_temp::<MeasureState>(egui::Id::new(MEASURE_MEMORY_KEY)))
         .map(|s| s.page_index);
@@ -258,24 +243,18 @@ pub(in crate::canvas) fn resolve_hover(
         x: f64::from(pdf.x),
         y: f64::from(pdf.y),
     };
-    // ★★ NO state means a freshly armed tool, not a reason to decline —
-    // and the `?` that used to be here is why the operator reported that *"the
-    // measuring tools don't give me any indication of what is being selected"*.
+    // ★★ NO state means a freshly armed tool, not a reason to decline. A `?`
+    // here is what the operator reports as *"the measuring tools don't give me
+    // any indication of what is being selected"*.
     //
-    // [`load`] builds a default when memory is empty and **does not store it**;
-    // only the click and gesture paths call [`store`]. So `MeasureState` does
-    // not exist in `egui::Memory` until the operator has already picked once,
-    // and this function returned `None` on every frame before that — taking the
-    // snap marker with it.
-    //
-    // The effect was that the whole hover affordance switched on *after the
-    // first click of a gesture*. The paint site's own comment says what that is
-    // worth, and it had been describing an intention rather than the behaviour:
-    //
-    // > It has to appear while the operator is still deciding *where to click
-    // > first* — that is when it does its work. Gating it on a gesture already
-    // > being in progress would show it only after the first pick, i.e.
-    // > everywhere except the place it is needed most.
+    // `load` builds a default when memory is empty and **does not store it**;
+    // only the click and gesture paths call `store`. So `MeasureState` does not
+    // exist in `egui::Memory` until the operator has already picked once, and a
+    // function that declines on its absence returns `None` on every frame
+    // before that — taking the snap marker with it, so the whole hover
+    // affordance switches on *after the first click of a gesture*. The
+    // affordance has to appear while the operator is still deciding **where to
+    // click first**; that is when it does its work.
     //
     // ★ A read must not write, which is why this builds a value rather than
     // calling `load` and storing it. `resolve_hover` runs on every frame the
@@ -307,8 +286,7 @@ pub(in crate::canvas) fn resolve_hover(
     // A hover affordance that draws nothing has three indistinguishable causes
     // from outside: the pointer is over blank paper, the decomposition is not
     // available, or the query found nothing within tolerance. A driven check
-    // that sees no highlight cannot tell which, and this suite has spent a day
-    // learning what a confident wrong diagnosis costs.
+    // that sees no highlight cannot tell which.
     //
     // So the line is emitted on every resolved frame with the three facts that
     // separate the cases: whether there was a model at all, what the tolerance
@@ -333,19 +311,15 @@ pub(in crate::canvas) fn resolve_hover(
 /// ★★ The measure hover for this frame, resolved while the decomposition is
 /// still borrowed.
 ///
-/// Lifted out of `canvas::interact` when R2 asked for four lines back. The
-/// constraint that shapes it: the page decomposition is borrowed **only here**
-/// and dropped before anything is painted, so this query cannot happen at paint
-/// time — and it must not be repeated. See this module's header for what two
-/// derivations of one answer cost when the marker and the click disagreed by
-/// the scroll origin over the zoom.
+/// The constraint that shapes it: the page decomposition is borrowed **only
+/// here** and dropped before anything is painted, so this query cannot happen
+/// at paint time — and it must not be repeated. See this module's header for
+/// what two derivations of one answer cost.
 ///
-/// ★ **It returned a second value until 2026-09-03** — the circular pick set's
-/// object outlines — and the pair travelled together because both needed the
-/// borrow. The pick set is a list of POINTS now (`pick::CircularPick`), which
-/// the preview reads straight out of `egui::Memory` and projects itself, so it
-/// needs no decomposition and no channel through three call sites. The whole
-/// borrow hazard went with it.
+/// ★ One value out, not two. The circular pick set is a list of POINTS
+/// (`pick::CircularPick`) which the preview reads straight out of
+/// `egui::Memory` and projects itself, so it needs no decomposition and no
+/// channel back through three call sites; only the hover needs the borrow.
 ///
 /// `kind` is `None` for every non-measure tool, and then this costs one
 /// `Option` check and runs no query at all: panning a 129,758-object drawing
@@ -374,17 +348,16 @@ pub(in crate::canvas) fn frame(
     kind.and_then(|kind| {
         resolve_hover(
             ctx, doc, page_index,
-            // ★ CONVERTED — `resolve_hover` takes CANVAS space, and this line
-            // handed it `screen_pos` raw until 2026-08-18. The click path
-            // converted and the preview did not, so the marker sat away from
-            // the pointer by the scroll origin over the zoom while the click
-            // landed correctly. The operator reported it as *"the crosshairs
-            // click the right place under them, but the preview … is offset"*.
+            // ★ CONVERTED — `resolve_hover` takes CANVAS space. Hand it
+            // `screen_pos` raw and the click still lands correctly while the
+            // marker sits away from the pointer by the scroll origin over the
+            // zoom: *"the crosshairs click the right place under them, but the
+            // preview … is offset"*.
             //
-            // Every other reader of `screen_pos` on this path already wrote
-            // this conversion (the gesture's own `pos`, the hit test, the
-            // trace), which is what made the odd one out invisible: it looked
-            // like the others because it named the same variable.
+            // Every other reader of `screen_pos` on this path writes this same
+            // conversion (the gesture's own `pos`, the hit test, the trace),
+            // which is what would make an odd one out invisible — it names the
+            // same variable as the rest.
             canvas_pos, targets, map,
             // ★ The armed kind, which this closure already had and was
             // throwing away. `resolve_hover` needs it so a freshly armed tool
@@ -398,9 +371,8 @@ pub(in crate::canvas) fn frame(
 
 #[cfg(test)]
 mod tests {
-    //! The snap resolution's own tests, moved here from `measure/mod.rs` on
-    //! 2026-08-20 under R2 — with `snapped` and `snap_point`, which is where
-    //! they always belonged.
+    //! The snap resolution's own assertions, beside `snapped` and
+    //! `snap_point`.
 
     use super::*;
     use crate::canvas::measure::{MeasureKind, MeasureState};
@@ -492,9 +464,9 @@ mod tests {
     /// every zoom.**
     ///
     /// Both are screen-pixel constants divided by the same zoom, so the
-    /// relation is scale-invariant — asserting it at one zoom would be the
-    /// *"relation rather than magnitude"* trap `HANDOFF.md` §2 names, so the
-    /// magnitudes are checked too.
+    /// relation is scale-invariant — and an assertion on a relation alone
+    /// passes for a build whose magnitudes have both gone wrong together, so
+    /// the magnitudes are checked too.
     #[test]
     fn the_snap_radius_is_wider_than_the_selection_radius_at_every_zoom() {
         for zoom in [0.05_f32, 0.5, 1.0, 4.0, 32.0] {

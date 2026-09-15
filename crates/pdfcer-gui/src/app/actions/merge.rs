@@ -4,42 +4,38 @@
 //!
 //! > *"Also the Merge files and Split files buttons don't do anything."*
 //!
-//! They did not. `tools.merge_files` was registered, drawn on the Tools tab,
-//! given an icon and a tooltip promising *"Combine several PDFs into one new
-//! file"*, and had **no arm** in `PdfcerApp::dispatch_command` — so every press
-//! fell to the catch-all, traced `command-unimplemented`, and did nothing an
-//! operator could see. This module is the arm's body.
+//! This module is the body of `tools.merge_files`. Without it the command is
+//! registered, drawn on the Tools tab, given an icon and a tooltip promising
+//! *"Combine several PDFs into one new file"* — and every press falls to
+//! `PdfcerApp::dispatch_command`'s catch-all, traces `command-unimplemented`,
+//! and does nothing an operator can see.
 //!
-//! ## ★★★ The engine was never the blocker, and the record said it was
+//! ## The engine is not the blocker
 //!
 //! `pdfcer_core::pageops::merge` implements Acrobat's Combine Files behaviour
 //! **whole** — per-source bookmark generation, `Doc0_`/`Doc1_` duplicate-field
-//! auto-renaming, the first source's `/Info`, no inherited page-label scheme —
-//! and nothing in this shell had ever called it.
-//!
-//! The reachability register recorded the blocker as *"Salvage, Class C … the
-//! pane has not been brought across"*, which names a missing **host**. Ten
-//! lines below it in the same file, `tools.font_folders` had been retired from
-//! that same list on 2026-08-28 with the finding that closes this one:
+//! auto-renaming, the first source's `/Info`, no inherited page-label scheme.
+//! What was missing here was a caller, never a capability, and the rule that
+//! catches that class of entry in the reachability register is worth keeping
+//! next to the verb it unblocked:
 //!
 //! > *"A blocker naming a missing HOST is weaker than one naming a missing
 //! > capability, and it goes stale the moment any other host will do."*
 //!
 //! A dialog is a host. So is a picker. Nothing about combining files on disk
-//! needed the salvaged batch pane, and the entry survived an audit that
-//! deleted six of eleven neighbours for exactly this shape of reason.
+//! needs a batch pane.
 //!
 //! ## Why this is not `vector_edit`
 //!
 //! Because a merge **produces new file bytes and touches neither the session
-//! nor the undo log**. That is `app::actions::extract`'s argument, made at its
-//! line 45, and this is the same shape one step further out: extract reads the
-//! open document, this reads several documents none of which need be open.
+//! nor the undo log**. That is `app::actions::extract`'s argument, and this is
+//! the same shape one step further out: extract reads the open document, this
+//! reads several documents none of which need be open.
 //!
 //! Nothing here bumps `edit_epoch`, drops a raster, invalidates a cache or
 //! writes an undo entry, because nothing about the open document changed.
 //!
-//! ## ★★ Rule 4, and it decides what this may draw
+//! ## Rule 4, and it decides what this may draw
 //!
 //! A merge writes somewhere else. **Nothing about it may appear in the page
 //! view of the open document** — no badge on the source pages, no provisional
@@ -78,11 +74,11 @@ use std::path::{Path, PathBuf};
 ///
 /// One trace line naming the counts, and the engine's own disclosures on the
 /// status row. Failures are traced and reported; nothing is silent, which is
-/// the standing rule this whole command was violating.
+/// the standing rule for a verb whose whole effect is off screen.
 pub(crate) fn write_merge(status: &crate::app::state::Status, sources: &[PathBuf], target: &Path) {
     use pdfcer_core::document::Document;
 
-    // ★ The revision the sentence is stamped with, or `None` with nothing
+    // The revision the sentence is stamped with, or `None` with nothing
     // open. Both status-row channels — `app::status::disclosure` and
     // `app::status::decline` — take an `&OpenDoc`, so **with no document open
     // there is nowhere on screen for a sentence to go.**
@@ -125,7 +121,7 @@ pub(crate) fn write_merge(status: &crate::app::state::Status, sources: &[PathBuf
                         "merge-files-failed path={path:?} detail={error}"
                     )
                 });
-                // ★ The whole merge stops rather than the unreadable source
+                // The whole merge stops rather than the unreadable source
                 // being skipped. A combine that silently produced a document
                 // missing one of the files the operator chose is the worst
                 // available outcome: it succeeds, it writes, and the loss is
@@ -140,7 +136,7 @@ pub(crate) fn write_merge(status: &crate::app::state::Status, sources: &[PathBuf
 
     // 2. The titles, which are what make per-source bookmarks appear.
     //
-    // ★ `OutlinePolicy::PerSource` fires only when `titles` is non-empty, so
+    // `OutlinePolicy::PerSource` fires only when `titles` is non-empty, so
     // supplying these is not cosmetic — it is the difference between a combined
     // document with a top-level bookmark per source and one with no outline at
     // all. The file **stem** rather than the full name, because the extension
@@ -155,20 +151,18 @@ pub(crate) fn write_merge(status: &crate::app::state::Status, sources: &[PathBuf
         })
         .collect();
 
-    // ★★ The FILE NAMES, which are a different list from the titles above and
-    // are what re-point a cross-file bookmark — `Pass` of 2026-09-06.
+    // The FILE NAMES, a different list from the titles above: these are what
+    // re-point a cross-file bookmark.
     //
-    // A bookmark in one source that opens another of the files being merged
-    // used to be **dropped**; given these it is repointed at that file's pages
-    // inside the combined document, and `AssembleReport::outline_items_relinked`
-    // counts how many. The engine shipped this unasked, with `&[]` preserving
-    // the old behaviour — and `&[]` is exactly what a mechanical fix to the new
-    // three-argument signature would have passed, silently keeping the drop.
+    // A bookmark in one source that opens another of the files being merged is
+    // repointed at that file's pages inside the combined document, and
+    // `AssembleReport::outline_items_relinked` counts how many. Passing `&[]`
+    // here compiles and drops every such bookmark silently, so this argument is
+    // load-bearing rather than decorative.
     //
-    // ⇒ **A compile error is an invitation to read the reply, not to satisfy
-    // the compiler.** The full file NAME here, not the stem: it is matched
-    // against a `/Launch` or `/GoToR` file specification written by whoever
-    // authored the bookmark, and that specification carries the extension.
+    // The full file NAME, not the stem: it is matched against a `/Launch` or
+    // `/GoToR` file specification written by whoever authored the bookmark, and
+    // that specification carries the extension.
     let files: Vec<Vec<u8>> = sources
         .iter()
         .map(|p| {

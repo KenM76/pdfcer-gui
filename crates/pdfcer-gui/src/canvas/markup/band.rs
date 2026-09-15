@@ -1,39 +1,34 @@
 //! # `canvas::markup::band` — the two-point rubber band
 //!
 //! Rectangle, Ellipse, Arrow and Highlight: **press, drag out a shape,
-//! release.** One of the four gesture families [`super`]'s header tabulates,
-//! and the one that shipped first — this file is that original gesture, moved
-//! out unchanged when [`super::vertex`] and [`super::ink`] arrived and it
-//! stopped being the only one.
+//! release.** One of the four gesture families [`super`]'s header tabulates;
+//! [`super::vertex`] and [`super::ink`] own the other shapes.
 //!
-//! ## ★ What moved, what did not, and why the seam is here
+//! ## ★ The seam against [`super`]
 //!
-//! Everything in this file was in `canvas/markup.rs` until 2026-08-14. What
-//! stayed behind is *what a markup is* — the kinds, the geometry, `spec`,
-//! `action`, the pen — and what came here is *how this family is gestured*: the
+//! [`super`] holds *what a markup is* — the kinds, the geometry, `spec`,
+//! `action`, the pen. This file holds *how this family is gestured*: the
 //! canvas→page conversion for two points, the one function that touches the
 //! frame, and the band that is drawn while the button is down.
 //!
-//! **The seam is a subject and not a line count**, which matters because a line
-//! count would have suggested a different cut. The test for it is the one
-//! `tools/gates/check-file-size.sh` states in its own header: the two sides
-//! change for different reasons. A new markup *kind* changes [`super`] — a
-//! variant, an `rgb` arm, a `spec` arm — and does not touch this file unless it
-//! is band-shaped. A change to *how a band is drawn* — a snap, a modifier that
-//! constrains the aspect ratio, a different preview — changes this file and
-//! nothing in [`super`].
+//! **The seam is a subject and not a line count**, and the test is that the two
+//! sides change for different reasons. A new markup *kind* changes [`super`] —
+//! a variant, an `rgb` arm, a `spec` arm — and does not touch this file unless
+//! it is band-shaped. A change to *how a band is drawn* — a snap, a modifier
+//! that constrains the aspect ratio, a different preview — changes this file
+//! and nothing in [`super`].
 //!
 //! ## The band draws the shape it is about to author, not a box round it
 //!
-//! Rule 4's pre-commit affordance, applied literally: see [`draw_preview`],
-//! which is where the argument lives, and which the old shell got wrong in a way
-//! worth knowing about (it previewed an ellipse as the inscribed *circle*).
+//! Rule 4's pre-commit affordance, applied literally. [`draw_preview`] carries
+//! the argument, including what an ellipse previewed as its inscribed *circle*
+//! costs.
 //!
 //! ## A click with no drag places nothing
 //!
 //! [`super`]'s header carries that decision in full, including the two reasons
-//! the old shell's 120 × 60 default box and its 4-point page-space threshold are
-//! both deliberately absent. The mechanical half of it lives here: [`drag`] is
+//! a 120 × 60 default box and a 4-point page-space threshold are both
+//! deliberately absent. The mechanical half of it lives here: [`drag`] is
 //! reached only from `GestureOutcome::Markup`, which only a real drag produces,
 //! and a zero-extent drag is refused by [`super::action`].
 
@@ -213,11 +208,10 @@ const HEAD_ANGLE: f32 = 0.42;
 /// on, which is the single most reversible property of the thing being
 /// committed.
 ///
-/// The old shell previewed a Circle as `circle_stroke` with the *smaller* of
-/// the two half-extents, i.e. as the inscribed **circle** rather than the
-/// ellipse it was about to author. That is drawn correctly here instead: on a
-/// wide drag the two differ by the whole aspect ratio, and the operator would
-/// have released expecting the circle they were shown.
+/// ⚠ The near miss is `circle_stroke` at the *smaller* of the two
+/// half-extents — the inscribed **circle** rather than the ellipse about to be
+/// authored. On a wide drag the two differ by the whole aspect ratio, and the
+/// operator releases expecting the circle they were shown.
 ///
 /// # The colours are document colours, and that is why they are literals
 ///
@@ -280,10 +274,9 @@ pub fn draw_preview(
             );
         }
         // ★ Not reachable, and spelled rather than wildcarded so a NINTH kind
-        // has to be classified here rather than silently drawing nothing. That
-        // is not a hypothetical any more: `MarkupKind::Cloud` landed on
-        // 2026-08-19 and this arm is one of exactly two places in the crate the
-        // compiler stopped it, which is what the spelling was for.
+        // has to be classified here rather than silently drawing nothing. This
+        // arm is one of exactly two places in the crate where the compiler
+        // stops a newly added `MarkupKind`, which is what the spelling is for.
         //
         // `drag` refuses a non-band kind at its first line, so no `Preview` can
         // carry one; the four that land here draw their own previews, in the
@@ -382,14 +375,13 @@ mod tests {
     /// ★ **The markup lands where the operator dragged, not at the page
     /// centre.**
     ///
-    /// The regression test for *"they just drop things into the center of the
-    /// pdf window."* It is written as a **magnitude** assertion against the
-    /// dragged corners and, separately, as a statement that the result is
-    /// nowhere near the media-box centre — because `HANDOFF.md` §2's lesson is
-    /// that a test asserting a relation rather than a magnitude is satisfied by
-    /// any absurdity in the right direction. "The shape is on the page" would
-    /// have passed on the defective build; "the shape's corners ARE the corners
-    /// dragged" cannot.
+    /// The operator: *"they just drop things into the center of the pdf
+    /// window."* It is written as a **magnitude** assertion against the dragged
+    /// corners and, separately, as a statement that the result is nowhere near
+    /// the media-box centre, because a test asserting a relation rather than a
+    /// magnitude is satisfied by any absurdity in the right direction. "The
+    /// shape is on the page" passes on the defective build; "the shape's
+    /// corners ARE the corners dragged" cannot.
     #[test]
     fn the_markup_lands_where_the_drag_was_and_not_at_the_page_centre() {
         let page = test_page(612.0, 792.0, 0);
@@ -675,10 +667,9 @@ mod tests {
     /// Compared as the *whole* `Color32` against a value rebuilt from the pen,
     /// rather than channel by channel, because `egui::Color32` stores
     /// **premultiplied** components: `r()` on a translucent colour returns the
-    /// multiplied byte, so a per-channel comparison against the opaque pen fails
-    /// for a wash that is completely correct. Worth the note — the first version
-    /// of this test made exactly that mistake and reported a working wash as
-    /// broken.
+    /// multiplied byte, so a per-channel comparison against the opaque pen
+    /// fails for a wash that is completely correct — a false failure against
+    /// working code, which is why the whole value is compared.
     #[test]
     fn the_highlight_wash_is_the_pen_colour_with_an_alpha() {
         let pen = super::super::pen_color(

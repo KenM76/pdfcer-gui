@@ -1,24 +1,16 @@
-//! # `app::state::fixtures` — **how a test opens a document, and why there are two roots**
+//! # `app::state::fixtures` — how a test opens a document, and the fixture names
 //!
-//! Two functions, `#[cfg(test)]` only. Split out of `app::state` under **R2** on
-//! 2026-08-30: that file sat at exactly 1,500 lines — the ceiling — so it had
-//! room for nothing at all, and test-only helpers are the part of it that is not
-//! in the shipped binary.
+//! `#[cfg(test)]` only: the two openers, and the constants naming the files they
+//! resolve. A constant naming a fixture is meaningless without the function that
+//! says which of the two roots it is relative to, so the two live together.
 //!
-//! ## ★★ The distinction the two functions exist to make un-gettable-wrong
-//!
-//! There are two fixture corpora and they mean different things:
-//!
-//! | root | what it is |
-//! |---|---|
-//! | `D:\Dev\pdfcerixtures` | the **engine's** own corpus. READ-ONLY, per this project's governing rule |
-//! | `fixtures/` here | the pages this shell had to author because no engine fixture exercised the condition — right-aligned text, a node-draggable polyline, an image-only scan, a page of rotated strings, a button that submits to a web server |
-//!
-//! ⇒ Two named functions rather than one taking a root or a flag. A single
-//! function with a boolean would let a call site pick the wrong tree by getting
-//! the boolean backwards, and the failure would be *"the fixture is missing"* on
-//! a machine where both trees exist — a message pointing at the wrong problem.
-//! Two functions cannot be got backwards; they can only be got *wrong*, loudly.
+//! ★ There are two fixture corpora and they mean different things. The engine's
+//! own corpus under `D:\Dev\pdfcer\fixtures` is READ-ONLY here; `fixtures/` in
+//! this repository holds the pages this shell had to author because no engine
+//! fixture exercised the condition. Hence two named openers rather than one
+//! taking a root or a flag: a boolean can be got backwards, and the failure
+//! would read *"the fixture is missing"* on a machine where both trees exist —
+//! a message pointing at the wrong problem.
 
 use super::OpenDoc;
 use pdfcer_core::document::Document;
@@ -29,13 +21,10 @@ use pdfcer_core::edit::EditSession;
 /// machine rather than an approximation of it.
 ///
 /// At module level rather than inside `mod tests`, and `pub(crate)`, because
-/// three other modules' tests need the identical starting point:
-/// [`crate::app::cache`]'s assert against caches whose fields are declared on
-/// [`OpenDoc`], `crate::app::status`'s drive the bar over a real document, and
-/// `crate::find`'s run a real search and a real reveal against real page
-/// geometry. A second fixture opener would be a second way to assemble an
-/// `OpenDoc` — exactly what [`OpenDoc::new`]'s own docs argue against — so the
-/// visibility widens rather than the function being copied.
+/// tests all over the crate need the identical starting point. A second fixture
+/// opener would be a second way to assemble an `OpenDoc` — exactly what
+/// [`OpenDoc::new`]'s own docs argue against — so the visibility widens rather
+/// than the function being copied.
 #[cfg(test)]
 pub(crate) fn open_fixture(rel: &str) -> OpenDoc {
     let path = crate::panels::objects::test_support::engine_fixture(rel);
@@ -46,15 +35,6 @@ pub(crate) fn open_fixture(rel: &str) -> OpenDoc {
 
 /// Open a fixture from **this** repository's `fixtures/`, the same way
 /// [`open_fixture`] opens one of the engine's.
-///
-/// Two openers rather than one taking a root, because the two roots mean
-/// different things and the difference is the project's governing rule:
-/// `D:\Dev\pdfcer\fixtures` is READ-ONLY and is the engine's own corpus, while
-/// `fixtures/` here holds the pages this shell had to author because no engine
-/// fixture exercised the condition — right-aligned text, a node-draggable
-/// polyline, an image-only scan, and now a page of rotated strings. A single
-/// function with a flag would let a call site pick the wrong tree by getting a
-/// boolean backwards; two named functions cannot.
 #[cfg(test)]
 pub(crate) fn open_local_fixture(rel: &str) -> OpenDoc {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -71,14 +51,8 @@ pub(crate) fn open_local_fixture(rel: &str) -> OpenDoc {
 }
 
 // ---------------------------------------------------------------------------
-// The fixture NAMES, moved here 2026-09-01 under R2
+// The fixture names
 // ---------------------------------------------------------------------------
-//
-// ★ They lived at the bottom of `state.rs` and belong beside the opener that
-// resolves them: a constant naming a file is only meaningful with the function
-// that says which of the two fixture roots it is relative to, and that
-// function is in this file. Moving them is what took `state.rs` back under the
-// gate when the decomposition cache's form-edit counter pushed it over.
 
 #[cfg(test)]
 pub(crate) const FOUR_PAGES: &str = "pageops/four-pages.pdf";
@@ -101,8 +75,8 @@ pub(crate) const FOUR_PAGES: &str = "pageops/four-pages.pdf";
 /// field and was simply never registered, which is the recoverable case. A
 /// bare kid with no `/T` refuses with `WidgetHasNoFieldIdentity` before any
 /// name is examined, which would make a name-refusal test pass for the wrong
-/// reason. The generator's header lists all five of `adopt_plan`'s
-/// preconditions and the byte that clears each.
+/// reason. The generator's header lists `adopt_plan`'s preconditions and the
+/// byte that clears each.
 #[cfg(test)]
 pub(crate) const ORPHAN_WIDGET: &str = "orphan-widget.pdf";
 
@@ -118,19 +92,18 @@ pub(crate) const PAINTED_LAYERS: &str = "layers/painted-layers.pdf";
 /// **Two pages, one approval signature.** Built by
 /// `tools/gen-signed-fixture.py`, whose header carries why the engine's own
 /// signature fixtures (all one page, none to spare) could not be used; its
-/// three load-bearing properties are asserted in `crate::dialogs::signature`.
+/// load-bearing properties are asserted in `crate::dialogs::signature`.
 #[cfg(test)]
 pub(crate) const SIGNED_TWO_PAGES: &str = "signed-two-pages.pdf";
 /// **A document whose catalog names `/PageMode` twice, with two different
-/// values** — the shape of engine decision 145's file, hand-authored because
-/// nothing else in either corpus reaches `Document::load_anomalies()`.
+/// values** — hand-authored because nothing else in either corpus reaches
+/// `Document::load_anomalies()`.
 ///
-/// ★ Two facts make it worth its bytes and both are asserted rather than
-/// assumed: it **loads** (before `Pass 283.0` the engine refused a file like
-/// this whole), and it produces **exactly one** anomaly with the kept and
-/// discarded values the operator would see. `fixtures/contradicts-itself.PROVENANCE.py`
-/// is the generator and carries the full account, including why its xref is
-/// deliberately sound.
+/// ★ Both of the facts that make it worth its bytes are asserted rather than
+/// assumed: it **loads**, and it produces **exactly one** anomaly carrying the
+/// kept and discarded values the operator would see.
+/// `fixtures/contradicts-itself.PROVENANCE.py` is the generator, and says why
+/// its xref is deliberately sound.
 #[cfg(test)]
 pub(crate) const CONTRADICTS_ITSELF: &str = "contradicts-itself.pdf";
 
@@ -156,18 +129,17 @@ pub(crate) const RECOVERED_WITH_LOSSES: &str = "recovered-with-losses.pdf";
 /// **The control for [`RECOVERED_WITH_LOSSES`]**: the same damage, the same
 /// recovery path, and nothing the scan could not keep.
 ///
-/// ★★★ It is a RECOVERED file rather than a sound one, and that is the whole
-/// point of it. A driven check that opened a sound document to prove the
-/// dropped-object block is absent would be satisfied by three different states
-/// -- the panel never opened, the document was never recovered, or the block is
-/// correctly driven by `objects_dropped` -- and an assertion satisfied by all
-/// three measures none of them. This file differs from its sibling in exactly
-/// one property, so the check's two launches isolate exactly one variable.
+/// ★ It is a RECOVERED file rather than a sound one, and that is the whole
+/// point of it. A driven check that opened a *sound* document to prove the
+/// dropped-object block is absent would also pass if the panel never opened or
+/// the document was never recovered, so it would measure nothing. This file
+/// differs from its sibling in exactly one property, so the two launches
+/// isolate exactly one variable.
 ///
-/// ⚠ Its property is asserted through the engine by
-/// `crate::panels::docprops::tests::the_control_fixture_for_the_dropped_disclosure_really_recovers_and_drops_nothing`,
-/// in the suite that runs on every `cargo test`, so that a fixture that stopped
-/// being a control surfaces there rather than as a red driven check blaming the
-/// application. `fixtures/recovered-no-losses.PROVENANCE.py` carries the rest.
+/// Its property is asserted through the engine in `crate::panels::docprops`,
+/// in the suite that runs on every `cargo test`, so a fixture that stopped
+/// being a control surfaces there rather than as a red driven check blaming
+/// the application. `fixtures/recovered-no-losses.PROVENANCE.py` carries the
+/// rest.
 #[cfg(test)]
 pub(crate) const RECOVERED_NO_LOSSES: &str = "recovered-no-losses.pdf";

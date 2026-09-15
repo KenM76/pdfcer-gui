@@ -8,20 +8,20 @@
 //! ## Most of this is salvaged verbatim, and the doc comments came with it
 //!
 //! Nine of the entries below came across from the old shell's `ui_text.rs`
-//! (`D:\Dev\pdfce\crates\pdfce-gui\src\ui_text.rs:9530-9625`) **with their
-//! doc comments**, because in this project a doc comment on a string is
-//! usually the record of the defect the wording was changed to fix.
-//! `SALVAGE.md`'s procedure forbids re-deriving a decision already paid for.
+//! **with their doc comments**, because in this project a doc comment on a
+//! string is usually the record of the defect the wording was changed to fix.
+//! ⚠ **Fresh words re-derive a decision already paid for, without access to
+//! the evidence that bought it.**
 //!
-//! The two that carry the most history:
+//! The two that carry the most reasoning:
 //!
 //! - [`comments_all_without_notes`] exists because pdfcer's own markup
-//!   authoring cannot write `/Contents` on a geometric shape — `MarkupSpec`
-//!   has no contents field on any variant, deliberately
-//!   (`D:\Dev\pdfcer\crates\pdfcer-core\src\annot_author.rs:210-212`) — so a
-//!   document whose annotations pdfcer drew shows a column of identical "no
-//!   note" captions. `docs/core-api/03-capabilities.md:1085` makes saying so
-//!   **mandatory copy**: *"A bare 'No note text' column reads as data loss."*
+//!   authoring cannot write `/Contents` on a geometric shape —
+//!   `pdfcer_core::annot_author::MarkupSpec` has no text-bearing variant on
+//!   purpose — so a document whose annotations pdfcer drew shows a column of
+//!   identical "no note" captions. `docs/core-api/03-capabilities.md` §3.4
+//!   makes saying so **mandatory copy**: *"A bare 'No note text' column reads
+//!   as data loss."*
 //! - [`comments_none`] names what is **excluded**, because a document that is
 //!   nothing but form fields would otherwise show an empty comment list and
 //!   look broken.
@@ -57,32 +57,26 @@
 //!   punctuation for prose.**
 //! - **Never state a capability the build does not have.**
 //!
-//! ### ★★★ CORRECTED 2026-09-05 — the Delete paragraph had outlived its reason
+//! ### ★★★ A SENTENCE ABOUT WHAT THE BUILD CANNOT DO HAS A SHELF LIFE
 //!
-//! This section read, from 2026-08-14 until that date:
+//! This panel once carried, as a reasoned decision, *"this build's panel has
+//! no Delete, because `Action` carries no variant that could delete an
+//! annotation."* ⚠ **The reason was correct, was written down, and stopped
+//! being true without anything in this file changing.**
+//! `AnnotAction::Delete { page, id }` exists, `crate::app::actions::annots::delete`
+//! reaches `EditSession::delete_annotation` through it, and the canvas Delete
+//! key and the Format tab both use it — leaving this panel, the reviewer's own
+//! work list, as the one surface that could not do the plainest thing on it.
 //!
-//! > Two of the old shell's Comments strings were deliberately **not**
-//! > salvaged for exactly this reason: `comment_row_delete` and its five
-//! > deletion siblings. This build's panel has no Delete, because `Action`
-//! > carries no variant that could delete an annotation and inventing one is
-//! > not this panel's to do.
+//! The operator's standard for this panel is *"the review features should
+//! look and act the same as they do in Acrobat Reader"*, and Acrobat lets a
+//! reviewer delete their own comment.
 //!
-//! **The stated reason stopped being true.** `AnnotAction::Delete { page, id }`
-//! exists, `crate::app::actions::annots::delete` calls
-//! `EditSession::delete_annotation` through it, and the canvas Delete key and
-//! the Format tab have both been using it — while this panel, the reviewer's
-//! own work list, was the one surface that could not. The operator's report of
-//! 2026-09-05 (*"the review features should look and act the same as they do
-//! in Acrobat Reader"*) is what sent somebody to check, and a reviewer
-//! deleting their own comment is the plainest thing on that list.
-//!
-//! ⇒ [`comment_row_delete`] and [`comment_row_delete_tooltip`] are below.
-//! **Corrected in place and dated rather than left standing beside the
-//! truth**, which is R5 — and this is the sixth time in this project a
-//! limitation sentence has outlived its reason. *A sentence about what the
-//! build cannot do is a dated citation with a shelf life measured in hours.*
-//! Where the claim can be an assertion, it should be one; the assertion here
-//! is `crate::panels::comments::tests::the_delete_control_reaches_the_engine`.
+//! ⇒ [`comment_row_delete`] and [`comment_row_delete_tooltip`] are below, and
+//! the rule this cost is: **where a claim about a capability can be an
+//! ASSERTION, it must be one.** Here it is
+//! `crate::panels::comments::tests::the_delete_control_reaches_the_engine`,
+//! which goes red the day the wiring stops being real — which prose cannot.
 
 /// The count line, above the list.
 ///
@@ -164,18 +158,18 @@ pub fn comments_excluded(widgets: usize, popups: usize, trap_nets: usize) -> Opt
 /// Shown when EVERY listed annotation lacks `/Contents`.
 ///
 /// Salvaged verbatim, and it is **mandatory copy** rather than a nicety —
-/// `docs/core-api/03-capabilities.md:1085` requires it in these words, and
+/// `docs/core-api/03-capabilities.md` §3.4 requires it in these words, and
 /// records why: pdfcer's own markup tools cannot attach a note to a shape
-/// (`MarkupSpec` has no contents field on any variant, and that is
-/// deliberate), so a document whose annotations pdfcer authored shows a column
+/// (`pdfcer_core::annot_author::MarkupSpec` has no text-bearing variant, on
+/// purpose), so a document whose annotations pdfcer authored shows a column
 /// of identical "no note" captions. Said once at the top rather than left to
 /// be inferred from the repetition.
 ///
-/// ★ **Note-text authoring for geometric markup is a filed request** — one of
-/// the three this project owes pdfcer, per `HANDOFF.md` §1. The day it lands,
-/// this sentence stops being true for newly drawn markup and stays true for
-/// everything drawn before it, which is why it is worded as a fact about the
-/// shapes rather than as a promise about the future.
+/// ★ **Note-text authoring for geometric markup is a filed request against
+/// the engine** (`ENGINE_BACKLOG.md`). ⚠ The sentence is therefore worded as a
+/// fact about THE SHAPES — which stays true for everything already drawn —
+/// rather than as a claim about what pdfcer can never do, which would go false
+/// the day the verb lands.
 #[must_use]
 pub fn comments_all_without_notes() -> &'static str {
     "None of these carry note text. Shapes drawn in pdfcer do not have a note attached to them yet, so this is expected rather than missing data."
@@ -424,14 +418,13 @@ pub fn comment_row_goto_tooltip(page_number: usize) -> String {
 /// to write some. A single "Note…" would make the operator read the row above
 /// the button to find out what pressing it does.
 ///
-/// # ★ Why this exists only from 2026-08-28
+/// # ★ Why two labels can exist at all
 ///
-/// `pdfcer-core` had no verb that could set `/Contents` on an annotation that
-/// **already exists** until `Pass 154.0`, so every shape this shell drew was
-/// permanently wordless and this panel was a viewer. That is recorded in
-/// [`comments_all_without_notes`]' doc comment as a *capability that does not
-/// exist yet*; it exists now, and the sentence there has been corrected rather
-/// than deleted.
+/// Setting `/Contents` on an annotation that **already exists** is an engine
+/// verb, and while it was missing every shape this shell drew was permanently
+/// wordless and this panel was a viewer. It exists now — which is why
+/// [`comments_all_without_notes`] is worded as a fact about shapes pdfcer drew
+/// rather than as a denial of the capability.
 #[must_use]
 pub fn comment_row_add_note() -> &'static str {
     "Add note"
@@ -575,7 +568,7 @@ pub fn comment_row_selected_heading(heading: &str) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// The filter strip, and Delete — added 2026-09-05
+// The filter strip, and Delete
 // ---------------------------------------------------------------------------
 
 /// ★★★ **The disclosure a filtered list owes**, above the rows.
@@ -671,19 +664,17 @@ pub fn comment_sort_subtype() -> &'static str {
 /// ★★★ **Delete this comment** — the control this panel spent its whole life
 /// without.
 ///
-/// # The header that forbade this string was true and stopped being true
+/// # Why it is worth a doc comment of its own
 ///
-/// `crate::panels::comments`' header said, until 2026-09-05: *"This build has
-/// no Delete, because `crate::app::actions::Action` has no variant that could
-/// carry the intent."* That was correct when written. `AnnotAction::Delete`
-/// has existed since; the canvas Delete key and the Format tab have both been
-/// reaching `EditSession::delete_annotation` through it, and only this panel —
-/// **the reviewer's own work list** — could not. A reviewer deletes their own
-/// comment, and Acrobat has it.
+/// ★★ This control was once forbidden by a written, correct reason — that no
+/// `Action` variant could carry the intent — and the reason expired silently.
+/// `AnnotAction::Delete` reaches `EditSession::delete_annotation`, the canvas
+/// Delete key and the Format tab both use it, and this panel — **the
+/// reviewer's own work list** — was the last surface that could not do the
+/// thing a reviewer most obviously does.
 ///
-/// ⇒ The sixth time this project has found a *"we cannot do this"* sentence
-/// outliving its reason. Corrected in place and dated, in that module's header
-/// and in this one's, rather than left as two answers.
+/// ⇒ **A prohibition needs a tripwire in the same way a shim does.** The one
+/// here is `crate::panels::comments::tests::the_delete_control_reaches_the_engine`.
 #[must_use]
 pub fn comment_row_delete() -> &'static str {
     "Delete comment"
@@ -703,21 +694,20 @@ pub fn comment_row_delete_tooltip() -> &'static str {
 }
 
 // ===========================================================================
-// ANSWERING A COMMENT — `EditSession::add_reply`, `Pass 253.0`
+// ANSWERING A COMMENT — `EditSession::add_reply`
 // ===========================================================================
 //
-// ★★★ These strings did not exist until 2026-09-06, and the sentence that
-// explains why is one this project has now written eight times: **there was no
-// verb.** `pdfcer-core` modelled `/IRT` and `/RT` from `Pass 38.5` and could
-// write neither, so this panel could display a conversation and not continue
-// one. R9 forbade a greyed Reply button for a capability no state of the
-// program could reach, so nothing was drawn and nothing was worded.
+// ★★★ These strings exist because the engine gained the verb, and the shape
+// worth remembering is the one they were blocked on: `pdfcer-core` MODELLED
+// `/IRT` and `/RT` long before it could WRITE either, so this panel could
+// display a conversation and not continue one. R9 forbids a greyed Reply
+// button for a capability no state of the program can reach, so nothing was
+// drawn and nothing was worded.
 //
-// ⇒ The lesson attached to that, and the reason this comment is here rather
-// than in a commit message: **an absence with a reason is still an absence
-// with a shelf life.** The reason expired the afternoon `Pass 253.0` landed,
-// and a catalog that had said "there is no Reply and there cannot be" would
-// have gone on saying it.
+// ⇒ **An absence with a reason is still an absence with a shelf life.** A
+// catalog that had said "there is no Reply and there cannot be" would have
+// gone on saying it the afternoon the verb landed, with nothing in this file
+// changed and nothing to notice.
 
 /// The control that opens the reply editor on a row.
 ///

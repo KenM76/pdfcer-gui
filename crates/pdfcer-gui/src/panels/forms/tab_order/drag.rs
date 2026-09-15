@@ -14,7 +14,7 @@
 //! that both mean *"it will go here"* and draw it two different ways is a
 //! discoverability defect, and the second one is where it gets introduced.
 //!
-//! ## ★★★ The one thing that is genuinely different, and it is the hard part
+//! ## The one thing that is genuinely different, and it is the hard part
 //!
 //! **A row is not an array entry.** The page rail reorders pages, and a page is
 //! a page — the list the operator drags and the array the engine permutes are
@@ -99,7 +99,7 @@ const CARET_PTS: f32 = 2.0;
 
 /// How much of the caret's colour survives when the drop would change nothing.
 ///
-/// ★ **Dimmed, not hidden** — the page rail's argument, unchanged and load
+/// **Dimmed, not hidden** — the page rail's argument, unchanged and load
 /// bearing: drawing nothing over a boundary that would not land cannot be told
 /// apart from the panel having stopped tracking the pointer, and the no-op
 /// boundary is where **every** drag begins, because a row starts out hovering
@@ -152,7 +152,7 @@ pub(super) fn end(ctx: &egui::Context) -> Option<Drag> {
 /// dropped at, where `0` is before the first row and `slots.len()` is after the
 /// last.
 ///
-/// # ★★★ The rule: widgets move among widget slots; nothing else moves at all
+/// # The rule: widgets move among widget slots; nothing else moves at all
 ///
 /// The alternative — permuting the array wholesale, so a widget travels with
 /// whatever entries happen to sit beside it — was considered and rejected. Two
@@ -204,7 +204,7 @@ pub(super) fn reordered(
     // function introduced.)
     let mut sources: Vec<usize> = slots.to_vec();
     let moved = sources.remove(from);
-    // ★ The off-by-one every insertion-caret implementation has to get right: a
+    // The off-by-one every insertion-caret implementation has to get right: a
     // gap index counts boundaries in the ORIGINAL list, and removing the
     // dragged row has already shifted every boundary after it down by one.
     let at = if to_gap > from { to_gap - 1 } else { to_gap };
@@ -233,8 +233,9 @@ pub(super) const fn lands(from: usize, to_gap: usize) -> bool {
 /// theme's, never a literal, and the same source the page rail's caret, the
 /// current-page ring and the canvas guide preview all take, so a preset that
 /// changes the accent changes every one of them together. **Not
-/// `visuals().selection.stroke`**: that is `egui`'s selected-*widget* channel
-/// and reading it here was defect T2 (`REVIEW_TRIAGE.md` §2b).
+/// `visuals().selection.stroke`**: that is `egui`'s selected-*widget* channel,
+/// which a preset is free to move independently, and a caret drawn from it
+/// drifts away from every other selection mark in the application.
 pub(super) fn paint(ui: &egui::Ui, drop: Option<&DropTarget>) {
     let Some(drop) = drop else {
         return;
@@ -390,7 +391,7 @@ mod tests {
         assert_eq!(out, vec![a[2], a[0], a[1]]);
     }
 
-    /// ★ The off-by-one, both sides of it. Dropping at a row's own two
+    /// The off-by-one, both sides of it. Dropping at a row's own two
     /// boundaries is a no-op, and the array comes back untouched — which is
     /// what makes `moved == 0` the engine's report rather than a spurious edit.
     #[test]
@@ -404,7 +405,7 @@ mod tests {
         assert!(lands(1, 3));
     }
 
-    /// ★★★ The property this module exists for: a `/Link` between two widgets
+    /// The property this module exists for: a `/Link` between two widgets
     /// keeps its index while the widgets move around it.
     ///
     /// Slots `0` and `2` are widget rows; slot `1` is something else. Dragging

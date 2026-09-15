@@ -2,24 +2,26 @@
 /target
 **/target
 
-# ui-verify artefacts — screenshots and diag traces are evidence for a
-# single run, not source. Anything worth keeping is copied to evidence/.
+# ui-verify run output. A screenshot or a diag trace describes ONE run of
+# ONE build; it is not source and it does not survive the next run's meaning.
 /tools/ui-verify/out
 *.diag.txt
 
-# ★★★ A SWEEP's own output directory. 2026-08-28: one four-attempt sweep left
-# 257 MB across 324 files under `evidence/sweep-*`, and committing it added
-# 1,128,177 lines to a repository whose entire source is a fraction of that.
-#
-# ⇒ The distinction the block above already draws, applied one level out: a
-# TRACE is evidence for a single run and a SUMMARY is a record. Keep the
-# summary — `sweep-*/‹family›.txt`, a few hundred lines naming what passed —
-# and never the per-check traces and PNGs behind it.
-#
-# ★ The operator's disk is tight and `target/` already grows unbounded; a
-# habit of committing run output is the same problem in a place nothing prunes.
+# ★★★ A sweep's output directory, under the same rule one level out: a TRACE
+# is evidence for a single run, a SUMMARY is a record. `sweep-*/‹family›.txt`
+# — a few hundred lines naming what passed — may be committed; the per-check
+# traces and PNGs behind it may not. A single sweep produces hundreds of
+# megabytes across hundreds of files, the operator's disk is tight, and
+# `target/` already grows unbounded without a second unpruned pile beside it.
 /evidence/sweep-*/*/
 /evidence/sweep-*/*.png
+
+# ★★ `evidence/` ITSELF IS NOT IGNORED, and that is deliberate. It holds the
+# pixel oracle's calibration input `crop_settings.png`, which `ui-verify`
+# READS: `profile.rs`'s `pdfcer-legacy` region set is expressed as fractions
+# of that image, and `tests/pixel_oracle_against_real_evidence.rs` SKIPs —
+# green, silently — when it is absent. Anything else that lands in this
+# directory is a tool's output; only an input a check reads belongs in git.
 
 # OS / editor
 Thumbs.db

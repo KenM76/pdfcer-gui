@@ -17,9 +17,9 @@
 //! answers are both right for somebody:
 //!
 //! * **Scroll the page.** The wheel moves within the sheet and never leaves
-//!   it. This is what the build has always done, so it is the default — an
-//!   option that changes what the operator already has is not an option, it is
-//!   a surprise.
+//!   it. This is what the build does with no preference set, so it is the
+//!   default — an option that changes what the operator already has is not an
+//!   option, it is a surprise.
 //! * **Flip pages.** The wheel turns to the next or previous sheet. On a
 //!   drawing set opened at fit-page — which is how this shell opens documents
 //!   by default — there is *nothing to scroll*, so today's wheel does nothing
@@ -33,9 +33,8 @@
 //!
 //! 1. **Ctrl+wheel is untouched.** `egui` routes a modified wheel event to
 //!    `zoom_delta` and contributes nothing to the scroll delta, so zoom is not
-//!    a case this module has to exclude — it never arrives here. Breaking that
-//!    separation is, per `canvas`'s own header, *"the single most common way a
-//!    from-scratch viewer feels wrong"*.
+//!    a case this module has to exclude — it never arrives here. `crate::canvas`
+//!    owns why that separation must not be broken.
 //! 2. **The control renders only where the choice exists** — R9. Under a
 //!    continuous mode nothing is drawn, rather than a disabled stub explaining
 //!    that the setting does not apply.

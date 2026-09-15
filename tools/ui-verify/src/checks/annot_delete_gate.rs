@@ -2,31 +2,31 @@
 //! comments, and says so.**
 //!
 //! The driven assertion for `EditSession::annotation_deletion_refusal`, which
-//! `crate::panels::properties::annotdelete` consumes and which — until
-//! 2026-08-29 — **nothing in `pdfcer-gui` called at all**.
+//! `crate::panels::properties::annotdelete` consumes.
 //!
-//! # ★★★ What was wrong, and why only driving can prove it fixed
+//! # The failure this refuses, and why only driving can prove it gone
 //!
-//! On a certified or encrypted drawing this shell drew three live Delete
-//! controls — the Format tab's, the canvas object menu's, and the Delete key —
-//! and every press of them reached `delete_annotation`, was refused, and landed
-//! in `app::actions::apply::vector_edit`'s `Err` arm, which writes one line to
-//! the trace and *says nothing to the operator*. Worse, `actions::annots::delete`
-//! then cleared the selection **anyway**, because it clears after the funnel
-//! rather than on success — so the press removed the panel sentence that would
-//! have explained the refusal, had there been one.
+//! On a certified or encrypted drawing there are three routes to a Delete —
+//! the Format tab's control, the canvas object menu's, and the Delete key. A
+//! build that leaves all three live sends every press into
+//! `delete_annotation`, which refuses; the refusal lands in
+//! `app::actions::apply::vector_edit`'s `Err` arm, which writes one line to the
+//! trace and *says nothing to the operator*. Worse,
+//! `actions::annots::delete` clears the selection **anyway**, because it clears
+//! after the funnel rather than on success — so the press also removes the
+//! panel sentence that would have explained the refusal, had there been one.
 //!
-//! Three visible controls, silently inert, and a gesture that destroyed its own
+//! Three visible controls, silently inert, and a gesture that destroys its own
 //! explanation. That is the shape this project is named after.
 //!
-//! ⇒ Every unit test in the crate can assert the *rules*. None of them can
+//! Every unit test in the crate can assert the *rules*. None of them can
 //! assert the **sequence**: a manifest `visible_when` resolved by `egui-shell`
 //! against a condition set rebuilt per frame, a canvas hit test against a real
 //! page, a real keystroke through `canvas::keys`' ladder, and a panel section
 //! drawn into a dock slot. R1: a capability is not verified until the running
 //! binary has been driven through it.
 //!
-//! # ★★★ The fixture pair, and why the check drives BOTH
+//! # The fixture pair, and why the check drives BOTH
 //!
 //! `fixtures/certified-comments.pdf` and `fixtures/threaded-comments.pdf` are
 //! **one document differing in one dictionary** — the catalog's `/Perms`. Same
@@ -41,7 +41,7 @@
 //! dictionary, any difference the harness sees between the two runs is caused
 //! by that dictionary and by nothing else.
 //!
-//! # ★★ The absence assertions, and what makes them admissible
+//! # The absence assertions, and what makes them admissible
 //!
 //! Two of this check's five assertions are that something is **not** there —
 //! `properties.annot_delete.collateral` on the certified run, and the funnel's
@@ -66,7 +66,7 @@
 //! | D | press Delete **until the trace shows it was heard** | `canvas-delete-declined … reason=annot-delete-refused`, and **neither** `delete-annotation` nor `delete-annotation-refused` |
 //! | E | relaunch on the **ordinary** twin, click the same point | `annot-delete-gates … refused=0`, and `properties.annot_delete.refused` **not** declared |
 //!
-//! # ★ Why Review mode rather than Edit
+//! # Why Review mode rather than Edit
 //!
 //! `canvas::keys`' annotation rung is gated on `caps.author_markup`, which is
 //! true in Review and in Edit both — but in Review `caps.edit_content` is
@@ -96,7 +96,7 @@ const INVOKE: &str = "mode.review,file.properties";
 /// The certified fixture. See the module header and
 /// `tools/gen-certified-fixture.py`.
 ///
-/// ★★★ **Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — so
+/// **Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — so
 /// two levels up, not three. Written as `../../../fixtures/…` when this check
 /// was authored, which resolves to `D:/Dev/fixtures/…`: a directory that does
 /// not exist and never will. The `pdf.exists()` guard below turned that into a
@@ -110,7 +110,7 @@ const CERTIFIED: &str = "../../fixtures/certified-comments.pdf";
 const ORDINARY: &str = "../../fixtures/threaded-comments.pdf";
 /// The line the canvas writes when a click selects an annotation.
 const SELECT_EVENT: &str = "annot-select";
-/// ★★★ The per-frame census `panels::properties::annotdelete` writes.
+/// The per-frame census `panels::properties::annotdelete` writes.
 ///
 /// The verb suffix is not decoration: `tools/gates/check-trace-names.py`
 /// forbids a module's own summary line from sharing its first token with a
@@ -122,14 +122,14 @@ const SELECT_EVENT: &str = "annot-select";
 const GATES_EVENT: &str = "annot-delete-gates";
 /// The line `canvas::keys` writes when the Delete rung declines.
 const DECLINED_EVENT: &str = "canvas-delete-declined";
-/// ★★★ The **funnel's** own line for a delete that reached the engine.
+/// The **funnel's** own line for a delete that reached the engine.
 ///
 /// Asserted **absent** in phase D. Its presence would mean the gate let the
 /// action through and the engine refused it — which is the pre-fix behaviour
 /// exactly, and which no region assertion above would catch, because the panel
 /// would still have drawn its sentence on the frames before the press.
 const FUNNEL_EVENT: &str = "delete-annotation";
-/// ★★★ The **funnel's refusal** line — the one the pre-fix build actually wrote.
+/// The **funnel's refusal** line — the one the pre-fix build actually wrote.
 ///
 /// `app::actions::apply::vector_edit` writes `<label>` on success and
 /// `<label>-refused` on an `Err`, and it is the second that a Delete which
@@ -137,19 +137,21 @@ const FUNNEL_EVENT: &str = "delete-annotation";
 /// `AnnotAction::Delete`, `EditSession::delete_annotation` refused it, and this
 /// line went to the trace **and nothing went to the operator**.
 ///
-/// ★★ Reading it is what turns phase D from an accusation into a diagnosis. On
-/// 2026-08-29 this check reported *"the keystroke did not reach `canvas::keys`
-/// at all — check that the canvas had focus"* while the trace carried this line
-/// four rows above the region the same phase went on to read: the key had
-/// arrived, been processed, and been silently refused. The failure was real and
-/// severe — `canvas::keys::Keys::annot_delete_refused` was a constant `false`,
-/// because `canvas::interact` filled it from `annotdelete::refuses_selected`,
-/// which reads `doc.selection` at a point in the frame where the selection has
-/// been moved off the document — and the check's own message pointed at focus.
+/// Reading it is what turns phase D from an accusation into a diagnosis. A
+/// phase that does not read it reports *"the keystroke did not reach
+/// `canvas::keys` at all — check that the canvas had focus"* over a trace
+/// carrying this very line four rows above the region it goes on to read: the
+/// key arrived, was processed, and was silently refused. The failure hiding
+/// behind that wording has nothing to do with focus —
+/// `canvas::keys::Keys::annot_delete_refused` stuck at `false`. That is why
+/// `canvas::interact` passes the selection in explicitly
+/// (`annotdelete::refuses(doc, &selection)`) rather than letting the helper
+/// re-read `doc.selection`, which by that point in the frame has already been
+/// moved off the document.
 ///
-/// ⇒ A check that reads only the line it hopes for can only say *"nothing
-/// happened"*. Naming the line that means *"the wrong thing happened"* is what
-/// lets it say which.
+/// **A check that reads only the line it hopes for can only say *"nothing
+/// happened"*.** Naming the line that means *"the wrong thing happened"* is
+/// what lets it say which.
 const FUNNEL_REFUSED_EVENT: &str = "delete-annotation-refused";
 /// The refusal sentence's region, published only when a gate refuses.
 const REFUSED_REGION: &str = "properties.annot_delete.refused";
@@ -160,14 +162,15 @@ const PAGE_REGION: &str = "page";
 
 /// The square's `/Rect` centre, in PDF user space on page 1.
 ///
-/// ★ Derived from `SQUARE_RECT` in `tools/gen-certified-fixture.py`
+/// Derived from `SQUARE_RECT` in `tools/gen-certified-fixture.py`
 /// (`[120 560 320 700]`), and stated as a point rather than as a page fraction
 /// — unlike most checks in this suite, which place their own operand and can
 /// therefore choose a fraction. Here the operand is **in the fixture**, so the
-/// aim has to be where the fixture put it. `HANDOFF.md` §2's defect-8 rule
-/// still applies from the other side: phase B asserts that the click actually
-/// selected the square by object id, so a click that missed reports as a miss
-/// rather than as a broken gate.
+/// aim has to be where the fixture put it. **An assertion that checks a
+/// relation rather than a magnitude is satisfied by any absurdity in the right
+/// direction**, and that applies here from the other side: phase B asserts that
+/// the click actually selected the square *by object id*, so a click that
+/// missed reports as a miss rather than as a broken gate.
 const SQUARE_CENTRE: DocPoint = DocPoint {
     page: 0,
     x: 220.0,
@@ -231,7 +234,7 @@ fn open_and_select(
             ctx.profile.default_exe
         ))
     })?;
-    // ★ NOT `ctx.pdf`, and the reason is the same one `signature_save` gives:
+    // NOT `ctx.pdf`, and the reason is the same one `signature_save` gives:
     // the oracle here is bound to a document whose certification, annotation
     // geometry and reply threading are all known, so a `--pdf` an operator
     // passed would be measured against an expectation that is not about it.
@@ -282,7 +285,7 @@ fn open_and_select(
 
     // ---- select the square ---------------------------------------------
     //
-    // ★ The click is asserted by OBJECT ID rather than by "something got
+    // The click is asserted by OBJECT ID rather than by "something got
     // selected". The fixture's page also carries a signature widget at
     // `[60 60 300 120]`, and a click that landed there would take the form
     // surface's branch and produce a `selected_field` — at which point the gate
@@ -377,13 +380,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ---- D: the keystroke ------------------------------------------------
     //
-    // ★★ The most valuable single assertion in the check, and the only one that
+    // The most valuable single assertion in the check, and the only one that
     // catches the pre-fix build directly. The regions above would all have been
     // right on a build whose *panel* asked the query and whose *ladder* did
     // not: the sentence would be drawn, and Delete would still raise the
     // action, be refused into the trace, and clear the selection — taking the
     // sentence away with it.
-    // ★★★ **Pressed until the trace shows it was heard, not pressed once.**
+    // **Pressed until the trace shows it was heard, not pressed once.**
     //
     // See `driving::press_until_traced`'s header for the rule and the day that
     // bought it. The three names are the complete list of what this key can
@@ -392,7 +395,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // key never arrived"*, which is the same false negative wearing the
     // opposite face.
     //
-    // ★ Repeating the press is safe on THIS fixture by construction — every
+    // Repeating the press is safe on THIS fixture by construction — every
     // delete on a certified document is refused, so a press that lands changes
     // nothing about the file — and the loop stops on the first one that lands
     // regardless. It would not be safe on the ordinary twin, which is why phase
@@ -417,7 +420,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     let trace = certified.session.trace()?;
-    // ★★★ The pre-fix build's signature, and the arm that names it.
+    // The pre-fix build's signature, and the arm that names it.
     //
     // Checked BEFORE `FUNNEL_EVENT` because on a certified document it is the
     // one that actually appears: the delete reaches the engine and the engine
@@ -464,7 +467,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )));
         }
         None => {
-            // ★ Unreachable by construction, and written out anyway.
+            // Unreachable by construction, and written out anyway.
             //
             // `press_until_traced` returned `true`, which means one of the three
             // names appeared; the two funnel arms above returned; so this one is
@@ -474,7 +477,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             // this must say *"the trace moved and this check does not know
             // which line moved it"* rather than panic inside a sweep.
             //
-            // ★★ What it must NOT say is what it used to say — *"the keystroke
+            // What it must NOT say is what it used to say — *"the keystroke
             // did not reach `canvas::keys` at all"*. Delivery is settled above,
             // by the loop, and re-litigating it here is how a real defect was
             // reported as a focus problem.
@@ -506,7 +509,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ---- E: the ordinary twin -------------------------------------------
     //
-    // ★★★ Without this, a build whose gate refused unconditionally passes
+    // Without this, a build whose gate refused unconditionally passes
     // everything above. The two fixtures differ in one dictionary, so a
     // difference here is caused by that dictionary and by nothing else.
     let ordinary = match open_and_select(ctx, report, ORDINARY, "ordinary")? {

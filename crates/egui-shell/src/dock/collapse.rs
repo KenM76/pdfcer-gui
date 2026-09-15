@@ -3,27 +3,25 @@
 //!
 //! ## Why this is its own file
 //!
-//! R2, on 2026-08-20, when the pair pushed `dock` past 1,500 lines. It is a
-//! real seam rather than a convenient cut: everything here answers one
-//! question — *how does an operator make a side go away, and how do they get it
-//! back?* — and nothing here draws a panel, lays out a column or resolves a
-//! width.
+//! Everything here answers one question — *how does an operator make a side go
+//! away, and how do they get it back?* — and nothing here draws a panel, lays
+//! out a column or resolves a width.
 //!
-//! ## The operator's ask, and the half that was missing
+//! ## The rule the pair exists to hold
 //!
-//! > *"add the little tabs that allow the left and right panels to be
-//! > minimized."* — 2026-08-20
+//! The operator's ask: *"add the little tabs that allow the left and right
+//! panels to be minimized."*
 //!
-//! The model already had `visible`, and a ribbon command already flipped it. So
-//! minimising was *possible* and had no affordance, and — worse — a collapsed
-//! side drew **nothing at all**, which meant the only route back was a command
-//! the operator had to know existed.
+//! A model flag and a ribbon command make minimising *possible*; they do not
+//! make it an affordance, and on their own they leave a collapsed side drawing
+//! **nothing at all**, so the only route back is a command the operator has to
+//! know exists.
 //!
-//! A panel with no visible handle has not been minimised. It has been **lost**,
-//! and somebody who collapsed one by accident has no way to discover what
-//! happened. Every program in the class leaves a rail: VS Code's activity bar,
-//! Visual Studio's auto-hide tabs, Photoshop's collapsed dock strip. The shape
-//! varies; the presence does not.
+//! **A panel with no visible handle has not been minimised. It has been
+//! *lost*** — and somebody who collapsed one by accident has no way to discover
+//! what happened. Every program in the class leaves a rail: VS Code's activity
+//! bar, Visual Studio's auto-hide tabs, Photoshop's collapsed dock strip. The
+//! shape varies; the presence does not.
 //!
 //! ## The two controls are mirror images, and the chevrons must agree
 //!
@@ -59,9 +57,9 @@ const RAIL_WIDTH_PTS: f32 = 16.0;
 
 /// How tall the clickable part of a collapse control or a rail is, in points.
 ///
-/// ★ Larger than the glyph it contains, deliberately. `handles` H4: the live
-/// target may exceed the drawn affordance and must never be smaller. A chevron
-/// is a few points across and would be a miserable thing to hit.
+/// ★ Larger than the glyph it contains, deliberately. A live target may exceed
+/// the drawn affordance and must never be smaller than it. A chevron is a few
+/// points across and would be a miserable thing to hit.
 const RAIL_HIT_PTS: f32 = 22.0;
 
 /// How far down the rail's chevron sits.
@@ -74,21 +72,10 @@ const RAIL_TOP_PAD_PTS: f32 = 6.0;
 
 /// **The rail a collapsed side leaves behind** — the way back.
 ///
-/// The operator's ask of 2026-08-20: *"add the little tabs that allow the
-/// left and right panels to be minimized."* The minimising half is
-/// [`draw_collapse`]; this is the half that makes it reversible.
-///
-/// # ★★ Why a collapsed side must leave something on screen
-///
-/// Before this, a hidden side drew **nothing**. The only route back was a
-/// ribbon command the operator had to know existed and go looking for. A
-/// panel with no visible handle has not been minimised, it has been *lost*
-/// — and an operator who collapsed it by accident has no way to discover
-/// what happened.
-///
-/// Every program in the class leaves a rail: VS Code's activity bar,
-/// Visual Studio's auto-hide tabs, Photoshop's collapsed dock strip. The
-/// shape varies; the presence does not.
+/// The minimising half is [`draw_collapse`]; this is the half that makes it
+/// reversible. Without it the only route back is a ribbon command the
+/// operator has to know exists — see the module header on why a panel with
+/// no visible handle is lost rather than minimised.
 ///
 /// # It is not drawn for an EMPTY side
 ///
@@ -152,10 +139,11 @@ pub(super) fn draw_collapsed_rail(
 /// **The collapse control on an open side** — the little tab that minimises
 /// it.
 ///
-/// Drawn at the top of the side, on its INNER edge, so it sits against the
-/// canvas rather than against the window frame. That is where every
-/// program in the class puts it, and the reason is that the operator's
-/// hand is already over the document.
+/// Drawn at the top of the side, at the **trailing end of the tab row** —
+/// the right-hand end on both sides, which is the inner edge for the left
+/// dock and the outer edge for the right one. The inline note at the
+/// placement says why the tab row, not the canvas edge, is the constraint
+/// that binds.
 ///
 /// # It raises an intent rather than writing the layout
 ///
@@ -175,12 +163,12 @@ pub(super) fn draw_collapse(ctx: &mut Ctx<'_>, ui: &mut egui::Ui, side: DockSide
     // ★★ ALWAYS THE TRAILING END OF THE TAB ROW — the right-hand end of the
     // dock, on both sides.
     //
-    // The first attempt put it on each side's INNER edge, on the argument that
-    // the operator's hand is already over the document. That is true and it is
-    // not the constraint that binds: **tabs start at the dock's left edge in
-    // both docks**, so on the right-hand dock the inner edge is exactly where
-    // the first tab is — and the chevron landed on top of it. Caught by looking
-    // at a screenshot, which is the only oracle a layout collision has.
+    // Putting it on each side's INNER edge reads well — the operator's hand is
+    // already over the document — and is wrong, because **tabs start at the
+    // dock's left edge in both docks**: on the right-hand dock the inner edge
+    // is exactly where the first tab is, and the chevron lands on top of it.
+    // Two controls occupying one rectangle is a collision no test sees; only a
+    // screenshot does.
     //
     // So the rule is the one every program in the class uses: the collapse
     // control sits at the END of the tab row, where the tabs are not. For the

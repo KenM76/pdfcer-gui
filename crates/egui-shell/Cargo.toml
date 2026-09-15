@@ -20,17 +20,20 @@
 # half. This manifest is the positive half: the crate cannot accidentally
 # reach for something it has not declared.
 #
-# NOT PRESENT, DELIBERATELY, AT THIS STAGE (S0):
+# TWO PERMITTED DEPENDENCIES THAT ARE NOT HERE, AND WHY:
 #
-#   eframe      — the shell defines a look and a manifest; it does not yet
-#                 own a window or an event loop. Adding eframe now would
-#                 pull winit, glow and the whole windowing stack into a
-#                 crate whose tests are all headless. It arrives when the
-#                 shell actually hosts a frame.
-#   egui_tiles  — arrives with the `dock` module at S3. Until there is a
-#                 panel host there is nothing for it to do, and an unused
-#                 dependency is a licence and audit surface with no
-#                 counterpart in the build.
+#   eframe      — this crate defines a look, a manifest and a set of
+#                 widgets; it does not own a window or an event loop. The
+#                 host application owns those. Taking eframe would pull
+#                 winit, glow and the whole windowing stack into a crate
+#                 whose tests are all headless.
+#   egui_tiles  — the `dock` module is built on `egui` directly and does
+#                 not use it. `src/dock/mod.rs` carries the full argument
+#                 and the table of what owning the layout buys and costs;
+#                 `src/dock/float.rs` adds the persistence half. Anything
+#                 that reads as though a tiling engine were present is
+#                 describing the alternative that was weighed, not this
+#                 build.
 #
 # Every version here is `.workspace = true` so the pin lives in one place
 # (the workspace root) and matches `D:\Dev\pdfcer` exactly. A dependency

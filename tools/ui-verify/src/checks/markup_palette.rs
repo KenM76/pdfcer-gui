@@ -103,9 +103,10 @@
 //! ★ Measured on the first driven run of this check, 2026-09-06, with the
 //! darkest quarter of the strip's ink averaged: **`#EB9D96`** — a pale pink, 105
 //! away from `#DB3425` in blue. A tolerance wide enough to call that Acrobat's
-//! red would be wide enough to call almost anything Acrobat's red. The capture is
-//! in `evidence/`: the rectangle in it is plainly the right colour to a human eye
-//! and plainly not `#DB3425` to a byte comparison.
+//! red would be wide enough to call almost anything Acrobat's red — and the
+//! run's own capture shows why the two verdicts disagree: the rectangle in it
+//! is plainly the right colour to a human eye and plainly not `#DB3425` to a
+//! byte comparison.
 //!
 //! ## The measure that survives it: the direction away from the paper
 //!
@@ -742,8 +743,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // markup."* — a rounded dark panel that landed **inside the interior box**
     // and read as 14 ink pixels of near-black. The check duly reported
     // *"THE SHAPE IS FILLED, NOT OUTLINED"* about a build that had drawn a
-    // perfectly ordinary outline, and the capture in `evidence/` shows the
-    // tooltip sitting exactly where the reading was taken.
+    // perfectly ordinary outline, and the run's own capture showed the tooltip
+    // sitting exactly where the reading was taken.
     //
     // ⇒ **A driven check photographs the pointer as well as the program.** That
     // is `markup_rectangle::PARK`'s rule for a hovered ribbon control, one layer

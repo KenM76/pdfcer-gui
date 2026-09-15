@@ -22,6 +22,16 @@ Every `file:line` is in this workspace. `D:\Dev\pdfcer` is the engine, and it is
 read-only from here (`DEVELOPING.md` §1): an engine defect is written up and
 handed over, never applied.
 
+**Before a row is written, prove the measurement was of the thing the row
+names.** A defect report is itself a claim, and it gets the standard this
+file applies to everybody else’s. The failure is not rare and it is not
+obvious from inside: D39 is two driven checks that reported being unable to
+detect their own planted defect, and the reason went unidentified because
+the reports were believed. The questions that catch it are *what did the
+instrument actually sample*, *would the healthy case produce this same
+reading*, and *does a control that differs in exactly one property still
+reproduce it*.
+
 ---
 
 ## Standing rules
@@ -577,6 +587,36 @@ precisely why it is invisible.
 **Cite by symbol name, or pair the line with the engine pin.** OPEN: the existing
 citations have not been swept; a sample of eight all landed on unrelated code.
 
+### D28 — RULE: an `f32` step size belongs to the CONTENT EXTENT, not to a zoom
+
+The canvas's scroll offset is an `f32` over a content space of `page x zoom`
+where one unit is one screen pixel, so the spacing between representable
+positions is the `f32` ulp **at that extent**. Quoting it against a zoom instead
+hides the page size, and a comment that did so was wrong by 256x: 2,048 px is
+the ulp at an extent of 2.05e10, not at the trillion-percent zoom the sentence
+named.
+
+**State the extent, and state the sheet any percentage was derived on.** Two
+documents at the same zoom are at different extents, so a step quoted against a
+zoom is true of one sheet and false of the next.
+
+### D29 — RULE: a zoom percentage derived from a constant is not written down
+
+The sub-pixel hand-over predicate is `longest * zoom > SUB_PIXEL_CONTENT_EXTENT`
+(`crates/pdfcer-gui/src/viewer/ceiling.rs`), and the constant is `1_048_576.0`
+= 2^20 — about 132,000 % on US Letter and about 86,000 % on a large sheet. Four
+prose sites had gone on quoting *"about two million percent"* and
+*"~1,000,000 %"*, the figures that were right while the constant was 2^24.
+
+**Cite `SUB_PIXEL_CONTENT_EXTENT`; derive the percentage only where a reader
+needs a feel for the magnitude, and name the sheet it was derived for.** A bare
+percentage is a claim that decays the moment the constant moves, and the file
+that moves the constant does not contain the percentage — so nothing recomputes
+and nothing goes red.
+
+Two of the four sites were `detects:` lines, which print the stale figure in
+**every sweep report**: a wrong number gains readership as it ages.
+
 ---
 
 ## Open defects
@@ -603,71 +643,44 @@ The shared-name decision needs **re-deciding**, not just renaming — the consum
 are `canvas/handles.rs:84`, `canvas/overlay/anchors.rs:275` and
 `canvas/painting.rs:474`.
 
-### D27 — OPEN: `MAX_MAX_ZOOM_PERCENT` is a trillion where its own comment says a hundred billion
+### D27 — OPEN: the maximum-zoom ceiling is the first rung measured not to draw
 
-`crates/pdfcer-gui/src/app/prefs/mod.rs:204` declares `1e12`. The doc comment
-immediately above it (`:186-195`) calls the value *"a hundred billion percent,
-which is the deepest zoom the page has been confirmed to actually DRAW at"* and
-says it is *"set an order of magnitude inside the confirmed-working range rather
-than at the edge of it"* — and records the measurement it rests on: drawn at
-8.6e9x, not drawn at 1e10x. The literal is at the edge, not inside it, and
-contradicts the measurement it sits on.
+`app::prefs::MAX_MAX_ZOOM_PERCENT` is `1e12` — a trillion **percent**, which is
+a zoom **factor** of 1e10. Driving the real binary found a US Letter page drawn
+at 8.6e9x and **not** drawn at 1e10x, so the permitted ceiling is exactly the
+rung that fails. `DEFAULT_MAX_ZOOM_PERCENT` aliases it, so a fresh install ships
+at that rung.
 
-`DEFAULT_MAX_ZOOM_PERCENT` aliases it (`:176`), so a fresh install ships at the
-disputed rung.
+The raster is not what fails: the strip renders with no failed tiles and shows
+no page, because the strip's extent is still `page × zoom` in `f32` and reaches
+6e12 points there.
 
-### D28 — OPEN: `viewpos.rs:195` quotes a jump size for the wrong extent
+Two resolutions, and choosing between them is the operator's: lower the constant
+into the confirmed range, or stop building the strip in `page × zoom` space at
+deep zoom. The constant's own doc comment states the measurement and names this
+defect; what is open is the code change, not the description.
 
-`crates/pdfcer-gui/src/canvas/viewpos.rs:195` reads `// 2,048-pixel jumps.` for a
-trillion-percent zoom. 2,048 is the `f32` ulp at about 2.05e10 — the extent
-`viewer/ceiling.rs` actually drove, which is 2.6 **billion** percent on a Letter
-sheet. At a trillion percent the extent is 7.92e12 and the ulp is 2^19 = 524,288
-px, so the comment is wrong by 256x.
+### D30 — OPEN: the Comments rail tab's reachability is asserted in no mode
 
-Repair: quote the content **extent**, not a zoom, since the ulp is a property of
-the extent.
-
-### D29 — OPEN: the sub-pixel hand-over threshold is stated as a stale percentage
-
-The predicate is `longest * zoom > SUB_PIXEL_CONTENT_EXTENT`
-(`crates/pdfcer-gui/src/viewer/ceiling.rs:291`) and the constant is `1_048_576.0`
-= 2^20 (`ceiling.rs:50`) — about 132,000 % on US Letter and about 86,000 % on a
-large sheet. Four prose sites still say *"about two million percent"* or
-*"~1,000,000 %"*, which was right for 2^24:
-
-- `crates/pdfcer-gui/src/canvas/deep.rs:6,8-9`
-- `crates/pdfcer-gui/src/viewer/ceiling.rs:10`
-- `tools/ui-verify/src/checks/zoom_keeps_place.rs` and
-  `tools/ui-verify/src/checks/zoom_out_keeps_place.rs` — in their `detects:`
-  lines, so the stale figure prints in **every sweep report**.
-
-Repair: cite `SUB_PIXEL_CONTENT_EXTENT` rather than restating a derived
-percentage. A percentage derived from a constant is a claim that decays the moment
-the constant moves, and `ceiling.rs:53` records the move in the same file whose
-header was never updated.
-
-### D30 — OPEN: "five panel tabs" is written where the rail declares six
-
-`RailFold::Never` now holds `view.panel_pages`, `view.panel_bookmarks`,
+`RailFold::Never` holds `view.panel_pages`, `view.panel_bookmarks`,
 `view.panel_layers`, `view.panel_signatures`, `markup.comments` and `file.fonts`
-(`crates/pdfcer-gui/src/shell/manifest/rail.rs:119-182`). Live prose sites:
+(`crates/pdfcer-gui/src/shell/manifest/rail.rs`). `TABS` in
+`tools/ui-verify/src/checks/left_rail.rs:75` lists five of the six and omits
+`rail.tabs.markup.comments`, so the check whose whole subject is *"the one group
+the rail may never fold"* does not cover the entry added most recently.
 
-| site |
-|---|
-| `crates/egui-shell/src/dock/rail.rs:62`, `:808`, and the assertion string at `:1043` |
-| `crates/egui-shell/src/manifest/rail.rs:68` |
-| `crates/pdfcer-gui/src/shell/manifest/rail.rs:22` |
-| `crates/pdfcer-gui/src/shell/manifest/mod.rs:278` |
-| `crates/pdfcer-gui/src/app/rail.rs:4` |
-| `tools/ui-verify/src/checks/left_rail.rs:34`, `:74`, `:230`, `:329` |
-| `tools/ui-verify/src/checks/reaching.rs:157` |
+Repair: add the id to `TABS`. The assertion strings quote their own count, so
+they follow from the array rather than needing a second edit.
 
-Re-measure with `grep -rn 'five panel\|all five panels' crates/ tools/`.
+No comment in `pdfcer-gui` states the **rail group's** count any more. That was
+the shape where **the file that changed does not contain the number that went
+wrong** — the rule the count protected is *the rail may never fold this group*,
+so state the rule and let the count come from the manifest. Counts of other
+sets survive and are correct: `app::modes::defaults` says Edit's left side holds
+five navigators, which is a different set and a different claim.
 
-This is the shape where **the file that changed does not contain the number that
-went wrong**. The rule the count is protecting is the real content — the rail may
-never fold this group — so state the rule and let the count come from the
-manifest.
+The assertion strings in `left_rail.rs` still describe the group by the size of
+this check's subset. They follow from `TABS`, so the repair above fixes them.
 
 ### D31 — OPEN: "the engine cannot create a document" is false
 
@@ -735,6 +748,15 @@ underneath it loses.
 This is the half-closed row of form recursion: the deep hit test descends into
 form XObjects correctly, and the leaf predicate for an image never tightened.
 
+★ **The form half was closed by EXCLUSION, and that is why this one cannot
+reuse it.** A form is not its own variant — it is `VectorObject::Image` with
+`source == ImageSource::Form` — so `hit_test_point_deep` closed its half with a
+`continue` over exactly that pattern, on the argument that a form’s `/BBox` is
+an extent declaration rather than ink. The arm this row asks to be tightened is
+therefore **the same arm forms travel through**, minus the `continue`. Closing
+D37 means writing an alpha test against the image’s own samples; there is no
+second exclusion available, because a raster image genuinely is a candidate.
+
 ### D38 — OPEN: `summary::describe_object` runs per visible row on every frame with no cache
 
 Called inside the row map at `crates/pdfcer-gui/src/panels/objects/mod.rs:797` and
@@ -754,6 +776,497 @@ neither was ever named.
 
 Re-run the review over `git log 539835f^..HEAD` before trusting that part of the
 suite.
+
+### D40 — OPEN: the OCR tooltip promises a frozen window, and the window does not freeze
+
+`crates/pdfcer-gui/src/text/ocr.rs:302` ships *"It takes a few seconds per page,
+and the window will not respond while it does."* The recogniser runs on a
+detached worker (`crates/pdfcer-gui/src/ocr/job.rs:115` spawns it, and
+`crates/pdfcer-gui/src/ocr/mod.rs:47` describes the shape as *"a `std::thread`
+plus a channel"*), and the dialog draws a spinner, a page count, **Stop** and
+**Cancel** while it runs.
+
+The sentence therefore tells the operator the one thing that would stop them
+starting a long run, and it is false. Fix is a string change in `ui_text`, not a
+behaviour change.
+
+### D41 — OPEN: every resize refusal is recorded at epoch 0 and is never readable
+
+`crates/pdfcer-gui/src/canvas/resizing.rs::decline` calls `record_note` with a
+literal `0` where every other caller passes the document's epoch.
+`crate::app::actions::last_edit_disclosure` is an **equality** filter
+(`d.epoch == epoch`, `crates/pdfcer-gui/src/app/actions/disclosure.rs:110-116`)
+and the status bar passes `doc.edit_epoch`, so the note is readable only until
+the document's first edit. From then on every refused resize is recorded and
+invisible for the life of the session.
+
+The site carries a long note saying exactly this, which is why it is easy to
+mistake for handled. It is not: the symptom is **silence**, and nobody reports
+silence. A fixed sentinel cannot express *"retire on the operator's next act"* —
+that needs an ordering the filter does not have.
+
+### D42 — OPEN: a pasted object does not arrive selected; a placed one does
+
+`crates/pdfcer-gui/src/app/actions/apply.rs` calls
+`doc.selection.select_placed(..)` after a place, so the operator can move or
+style what they just put down. `VectorAction::PasteObjects`
+(`crates/pdfcer-gui/src/app/actions/vector.rs`) never touches `doc.selection`,
+so a paste lands unselected and the next gesture starts from nothing.
+
+Every application in the class selects what it just pasted. The engine returns
+`PasteOutcome::objects_pasted`, and the paste appends, so the indices are
+derivable the same way the place path derives its one.
+
+### D43 — OPEN: arrow-key nudge moves annotations only, and `MANUAL.md` says otherwise
+
+`crates/pdfcer-gui/src/canvas/moving/nudge.rs` is built entirely on
+`EditSession::move_annotation`. `MANUAL.md:836` tells the operator the arrow
+keys *"Nudge what is selected one point — a quarter point with Ctrl"*.
+
+With a content object selected the keys do nothing and say nothing, which reads
+as a dead keyboard rather than an unsupported operand. Either the manual row
+names annotations, or the nudge routes a content selection through the transform
+verb the drag path already uses.
+
+### D44 — OPEN: a resize grip is offered on objects the engine refuses to transform
+
+`crates/pdfcer-gui/src/canvas/resizing.rs:172-176` records that the preflight is
+**not built**. `transform_preview` is `&self` and side-effect-free, so
+`preview(..).is_ok()` *is* the predicate, and the engine's own guidance maps
+`DegenerateCtm` to **do not offer a handle**. Today the handle is offered, the
+drag is accepted, and the refusal arrives at the end — where D42 then swallows
+it.
+
+### D45 — OPEN: a path that both fills and strokes reports only its fill colour
+
+`visible_colour` (`crates/pdfcer-gui/src/panels/objects/summary.rs:540-548`)
+tests `style.fill` first and returns, so a `B`-operator path — filled *and*
+stroked, and the common case for a CAD-exported hatched region with a border —
+reports one colour and gives no hint a second exists.
+
+The priority itself is right: it was written to stop a stroke-only path
+advertising a fill colour that appears nowhere. What is missing is the
+both-present case, which needs two fields rather than a different winner.
+
+### D46 — OPEN: `Session::launch` names a cause it never measured, and the failure is SKIPPED
+
+`tools/ui-verify/src/launch.rs:344-348` returns *"no window appeared for pid …
+On a platform that cannot enumerate windows this is always the outcome, and the
+check is correctly reported as SKIPPED rather than failed."*
+
+The function measured a timeout. It did not measure whether the platform can
+enumerate windows, and the same branch is reached by a binary that crashed at
+startup, a modal that stole the window, or a machine under load. Because the
+outcome is classified **SKIPPED**, a launch failure removes coverage without
+turning anything red — the exact shape this project has been bitten by before
+(*"a SKIP is not red"*).
+
+Distinguish "no window enumerator on this platform" — which is a property of the
+build host and can be probed once — from "this launch did not produce a window",
+which is a failure.
+
+### D47 — OPEN: `/FitH` and `/FitV` raise two actions, and the second discards the first
+
+`crates/pdfcer-gui/src/app/actions/destination.rs` pushes `Action::Fit(..)` then
+`Action::GoToDestination(Point { .. })`, but a `Point` is never scrolled to:
+`canvas::destination::arrive` widens it to a `DESTINATION_CONTEXT_PT` square and
+hands that to `canvas::zoom::zoom_to_rect`, which raises its own `ZoomTo`. The
+fit's magnification is replaced by whatever framing 150 pt of paper needs — on a
+large sheet, several hundred percent.
+
+A link or bookmark therefore resolves to the right page and arrives far past the
+view the destination asked for. This is a design change, not a local fix: there
+is one framing solver and it takes a rectangle, so a scroll-to-a-point route
+would move every `/XYZ` arrival too.
+
+### D48 — OPEN: the Objects row menu's one-item shape rests on a condition that expired
+
+`crates/pdfcer-gui/src/shell/menus.rs` gives `OBJECTS_ROW` a single item,
+`file.properties`. `format.delete` was kept off it because an Objects row click
+wrote a panel-local **focus**, not a selection — so a Delete gated on
+`selection.any` would have removed whatever was selected on the canvas rather
+than the row under the pointer.
+
+A row click now raises `SelectionAction::SelectObject`
+(`crates/pdfcer-gui/src/panels/objects/mod.rs`), which is the exact condition
+both comment sites named as the day Delete could be added. Nobody revisited
+them. Deletion is not lost — the click selects and the canvas Delete then
+applies — so this is a discoverability gap, not a dead end, and the decision to
+add or not add is the operator's.
+
+The wider point is the register's: **a rationale that names its own expiry
+condition needs something that fires when the condition is met.** Two files
+carried this one for the life of the selection model without noticing.
+
+### D49 — OPEN: four Select-filter rows are inert, and their tooltips promise otherwise
+
+`PickFilter` (`crates/pdfcer-gui/src/canvas/pick.rs`) carries eleven classes and
+the popup writes all eleven. The pick path reads three:
+`crates/pdfcer-gui/src/canvas/input.rs:131` (`Part`), `:137` (`Node`) and `:218`
+(`filter.allows(class)`), where `class` comes from `PickClass::of_object`, which
+can only ever return `Path`, `Text`, `Image` or `FormXObject`.
+
+**Markup, Dimensions, Form fields and Characters can therefore never reach a
+read.** The annotation pick (`canvas::selection::annot::under_pointer`) takes no
+filter at all, and `canvas::textsel` contains no `allows` call.
+
+Their tooltips say the opposite — *"Off: clicks pass through notes, shapes and
+stamps."*, *"Off: clicks pass through form fields, and none can be filled in."*
+(`crates/pdfcer-gui/src/text/pick.rs`). `PickClass::Link` is inert too and its
+tooltip **says so**, which is the shape the other four need until they are
+wired.
+
+### D50 — OPEN: the resize and rotate grips vanish below the Object rung
+
+`crates/pdfcer-gui/src/canvas/pressing.rs` binds `at_object_rung` and offers
+`GripSet::all()` only there; every deeper rung gets `GripSet::default()`, which
+is both flags false — no resize grips, no rotate handle — and drops the outline
+too.
+
+Delete no longer has this shape (it asks `canvas::deleting::subject`, which has
+an arm per rung), so the ladder is now inconsistent with itself: descending it
+keeps deletion and loses transformation, with nothing said. Either the grips
+follow Delete down the ladder, or the disappearance is disclosed.
+
+### D51 — OPEN: invisible OCR text is an object-selection target, against this project's own spec
+
+`HOW_IT_SHOULD_WORK.md` states that OCR-invisible text (`Tr 3`) **is not** an
+object-selection target and **is** a target for the character sweep. Neither
+half is implemented: there is no render-mode predicate anywhere in this crate's
+hit-test or selection path, and the engine deliberately bounds invisible text
+(`pdfcer_core::vector::decompose`, `text_hit` tests run bounds only).
+
+So a scan with a recognised layer over it answers a click with the invisible
+text rather than the image the operator can see. The one mitigation that exists
+runs the other way and only in Read: `crates/pdfcer-gui/src/canvas/clicking.rs`
+makes the image arm yield when a word is under the pointer, gated on
+`!caps.edit_content` — so it does not apply in Edit, which is the mode where
+object selection is the point.
+
+The engine's behaviour is right for the engine. The filter belongs here.
+
+### D52 — OPEN: `page_cache` warms the cache it then measures
+
+`tools/ui-verify/src/checks/page_cache.rs` drives forty wheel notches away and
+forty back, and asserts no page is rastered twice. A smooth continuous scroll
+rehomes each page it passes into the strip cache
+(`crates/pdfcer-gui/src/render/settle.rs`: *"scrolling to a page is precisely
+the gesture that guarantees the page is already cached"*), so the gesture fills
+the cache by travelling through it, and scrolling **further** makes this more
+true rather than less.
+
+Both halves are affected: nothing is evicted either, so the return leg asserts
+against a precondition that never occurs. The repair is a discontinuity — a page
+jump or Ctrl+End — and an assertion on `strip-raster-evicted`.
+
+### D53 — OPEN: `egui-shell`'s rail fixture is named for this application and no longer resembles it
+
+`crates/egui-shell/src/dock/rail.rs` builds its test rail in `fn pdfcer_rail()`,
+whose `tabs` group lists `view.panel_pages`, `view.panel_bookmarks`,
+`view.panel_layers`, `view.panel_signatures` and **`view.panel_fonts`**. The
+real group is in `crates/pdfcer-gui/src/shell/manifest/rail.rs` and holds six
+items, the last two being `markup.comments` and **`file.fonts`** — and that
+manifest carries an explicit warning against the very id the fixture invents,
+because `Panel::command_id` is the source of truth and a symmetric-looking id
+would give the rail a tab that opens nothing.
+
+The fixture does not need to mirror the application: its subject is *a
+`RailFold::Never` group is drawn entire at every rung*, which is a property of
+any such group. The name is what makes it a trap. A reader who reaches into
+`egui-shell` for the reference shape gets an id this repository has already
+decided does not exist, and the assertion that the group "still holds all five
+panel tabs" reads as a statement about the product rather than about a local
+array.
+
+It is also the one place where R7 is bent in spirit while passing in letter:
+`check-shell-purity.sh` looks for `pdfcer-*` dependencies and for
+`pdfcer_core` / `pdfcer_render` in source, so a function name naming the
+downstream application goes through.
+
+Repair: rename it to `sample_rail()` and let its ids be plainly synthetic. The
+fixture's value is the shape, not the names.
+
+### D54 — OPEN: the pixel oracle's only calibration input is deletable, and its absence is green
+
+`tools/ui-verify/src/profile.rs`'s `SETTINGS_HEADINGS_LEGACY` region set is
+`Calibration::Image("evidence/crop_settings.png")` — seven headings expressed as
+fractions of that one 1860×1035 image, valid against nothing else. It is the
+harness's own acceptance evidence: `tools/ui-verify/tests/`
+`pixel_oracle_against_real_evidence.rs` is what demonstrates the oracle
+separates text a person can read from text a person cannot, on a real
+antialiased screenshot rather than on synthetic images whose legibility was
+decided by whoever drew them.
+
+**That file is an input no committed tool can rebuild**, and every other route
+to `evidence/` writes rather than reads — `ctx.out(...)` output, `make-icon.py`'s
+review strip, a sweep's traces. It is therefore the one artefact in this
+repository whose deletion silently disarms a test, and it has already happened
+once: it was removed with the rest of the directory's binaries and the suite
+stayed green for twelve days, because the test's missing-file path prints a
+reason and returns rather than failing. That path is correct in itself — an
+absent artefact is not a regression in the code — but it means **the only
+signal is a line in `--nocapture` output nobody reads**.
+
+Repair: a gate that resolves every `Calibration::Image` path in `profile.rs`
+against the working tree and fails when one is absent. The input set comes from
+the source that declares it, so a new calibrated profile is covered the day it
+is written rather than the day somebody remembers the gate exists.
+
+Related: D2, whose evidence this image is.
+
+### D55 — OPEN: the line-weight disclosure is written, tested, and spoken to nobody
+
+`text/resizing.rs:103` `line_weight_disclosure()` returns the sentence that
+explains why a scaled object's stroke width did not change with it. A crate-wide
+grep finds exactly two references: the definition, and the unit test at
+`text/resizing.rs:221` that asserts the sentence explains itself. **No
+production code calls it.**
+
+This is a Rule 4 failure of the half that survives. A resize that leaves `/LW`
+alone is an inference the operator **cannot see** — the line looks the same
+before and after, which is the point — and the rule says an invisible inference
+still owes an off-canvas report. The report exists as a string and never reaches
+a surface.
+
+The test is what keeps the function compiling, so the usual signal is absent:
+`pub` suppresses `dead_code`, and a unit test discharges the rest. The shape is
+the one `check-region-names.py` was written for, one layer up — *a declaration
+with a test but no caller looks exactly like a feature*.
+
+Repair: emit it from the same place the refusals reach, on any resize whose
+selection carries a stroke and whose `scale_stroke_width` is false. Note that
+the refusal path itself is compromised by D41, so fixing this without fixing
+that produces a sentence stamped epoch 0 that the status line will not show
+after the document's first edit.
+
+Related: D41 (the epoch-0 stamp that hides resize refusals), and
+`OPERATOR_REQUESTS.md` O51, which added the switch this sentence describes.
+
+### D56 — OPEN: a pushed grip box can never earn a mid-edge grip, and says nothing
+
+`handles.rs:156` `MIN_BODY_STRIP_PX` = `GRIP_SIZE_PX + 2 × (GRIP_SIZE_PX / 2 +
+GRIP_GRAB_SLACK_PX)` = **20**, and `grip_bounds` pushes a small object's anchor
+box out to exactly that. `handles.rs:117` `MIN_MID_GRIP_EXTENT_PX` =
+`GRIP_SIZE_PX × 3.0` = **24**, and `handles.rs:785` measures the piling test
+against the **pushed** box, deliberately: whether a mid-edge grip lands on its
+corner neighbours is a question about the spacing it is drawn at.
+
+Both decisions are right on their own and their composition is not: 20 < 24, so
+**every object small enough to be pushed is below the mid-edge threshold by
+construction**. The four mid-edge grips are unconditionally withheld from
+precisely the objects the push exists to make grabbable. A 0.85 pt cell gets
+four corner grips; a comfortable selection gets eight; nothing tells the
+operator why, and the difference is not recorded anywhere outside this row.
+
+Not necessarily a bug in either constant — it may be the right outcome, since a
+mid-edge grip on a 20 pt box would sit 8 pt from both its neighbours. What is
+wrong is that it is **undisclosed and unasserted**: no test pins the relation
+between the two constants, so changing either silently changes which objects get
+eight grips.
+
+Repair: assert the relation where both constants are declared, so a future
+change to `GRIP_SIZE_PX` or `GRIP_GRAB_SLACK_PX` has to state which side of it
+is intended; and decide whether a small object should have eight grips at all.
+
+### D57 — OPEN: Delete inside a form XObject refuses in the engine's name, and the engine allows it
+
+`canvas/deleting.rs`'s `Refusal::InsideForm` fires from `part_rung` and
+`node_rung` whenever the entered target `is_leaf()`, and the operator is told
+this is a limit of `pdfcer-core`. It is not. The **pinned** engine — `Cargo.lock`
+names `git+file:///D:/Dev/pdfcer?branch=main#b2f54228eb53884367ca32016b9ff94ee8c48970`
+— declares `delete_text_run_in_form`, `delete_subpath_in_form` and
+`delete_node_in_form` as `pub fn` on `EditSession`, beside the six form-interior
+move verbs this shell already calls. Nothing upstream forbids the delete.
+
+**Two defects, and the second is the one that costs.** The refusal itself is
+defensible while the wiring is absent: a key that silently does nothing is worse
+than one that says why. What is not defensible is **attributing it upstream**. A
+refusal worded as *the engine cannot* closes the question for everyone who reads
+it — the next session does not check, `ENGINE_BACKLOG.md` keeps a `wanted` row
+pointed at work that arrived, and the capability stays unreached for as long as
+the sentence stands. This one stood across a pin bump that shipped the verbs.
+
+The genuinely missing half is local and named: a leaf carries no page
+paint-order index, so `part_hits_of` matches nothing for it and the Part rung
+cannot be **entered** inside a form at all. That seam is the work, and it is the
+same seam the in-form move verbs were taken through, so there is a worked
+example in `canvas::moving`.
+
+Repair, in order: open `part_hits_of` to leaves; route the three verbs through
+the existing `vector_edit_on_page` funnel so the delete gets an undo entry and a
+cache invalidation like every other; retire the variant. Until the first step
+lands, the refusal stays and its wording is already corrected in source.
+
+★ The generalisation, because this is the third instance: **a comment asserting
+that the engine cannot do something is a citation with a shelf life of hours,
+and it is the only kind of claim in this repository that no gate can falsify.**
+`check-engine-backlog.sh` reads the engine's `FEATURES.md` table and cannot see a
+verb this shell decided not to call; `check-verb-coverage.sh` scores a verb as
+consumed on a doc-comment mention. An absence claim about the engine belongs in
+`ENGINE_BACKLOG.md`, where it is re-triaged, and never in a refusal's prose,
+where it is believed.
+
+Related: D41 (resize refusals stamped epoch 0), and `ENGINE_BACKLOG.md`'s
+*"Delete a subpath, a node or a text run INSIDE a form XObject"* row, whose
+verdict is correct — it is `wanted` because **we** do not reach it — and whose
+reason paragraph should name this row.
+
+### D58 — OPEN: three tests read a fixture directory that no longer exists, and one of them passes
+
+`D:/Dev/temp/pdfcer/` is gone. The operator's drawing is at
+`D:/Dev/pdfTests/SW41177/SW41177.pdf`. Three tests still name the old path:
+
+| site | what it does when the file is absent |
+|---|---|
+| `canvas/textsel/tests.rs:286` | `assert!(path.exists(), …)` — fails, and the message says where to re-point it. `#[ignore]`d, so only a deliberate run sees it. |
+| `ocr/fixture.rs:731` | `Document::load(…).unwrap()` — panics. `#[ignore]`d. |
+| `app/actions/forms/tests.rs:635` | `if !path.exists() { return; }` — **returns, and the test reports green.** It is not `#[ignore]`d, so it runs in the ordinary suite. |
+
+The first two are the right shape and merely carry a dead address. The third
+is the defect. `a_field_can_be_authored_and_only_the_tooltip_is_required`
+exists to assert a **pair** — that authoring a text field succeeds with a
+tooltip and fails with exactly `TooltipDecisionRequired` without one — and
+that pair is the whole reason the test distinguishes "authoring works" from
+"authoring happens to work on this fixture". With the fixture gone it asserts
+nothing at all, and the suite's green count does not move, because a skipped
+body and a passing body are the same number.
+
+The early `return` was defensible when written: the fixture is a customer
+drawing, it is not committed and never will be, and a developer without it
+should not get a red suite. What is wrong is that the skip is **silent**. A
+fixture-dependent test that cannot find its fixture has two honest options —
+`#[ignore]` so the runner reports it as ignored rather than passed, or
+`eprintln!` the reason so the skip appears in `--nocapture`. It currently
+takes neither.
+
+Repair: re-point all three at `D:/Dev/pdfTests/SW41177/SW41177.pdf`, and give
+the third the same `assert!`-with-an-address shape the first already has, or
+`#[ignore]` it. All three are **code** and are out of scope for a
+comment-only pass.
+
+The generalisation is D54's, pointed at a path instead of an image: **an
+input a check reads from outside the repository is a dependency with no
+build system behind it.** Nothing rebuilds it, nothing notices when it moves,
+and the check that depends on it goes quiet rather than red.
+`tools/ui-verify/src/checks/text_edit_real.rs:50-64` recorded this move when
+it happened and is the reason it was findable at all.
+
+Related: D54 (a deletable calibration input whose absence is green).
+
+### D59 — OPEN: the Security tab’s boundary sentence has no call site
+
+`text/security.rs` `cannot_author()` returns the sentence that tells the
+operator what pdfcer can and cannot do about passwords, permissions and
+signing, and where the honest limit falls — that pdfcer authors a signature
+and reports what it could check about one, and that whether a recipient
+trusts it is not pdfcer’s to say. A crate-wide grep for the name returns two
+test **function names** that happen to contain the phrase, two comments that
+cite it as a cautionary example, and the definition. **No surface draws it.**
+
+The function is deliberately kept rather than deleted, and its own doc
+comment argues why: a tab that states a boundary is informative, and a
+boundary that is merely absent reads as a half-built feature. That reasoning
+is sound and is not what this row disputes. What is wrong is that the
+boundary is stated to nobody, so the reasoning is currently paying for
+nothing.
+
+**A refusal string nothing draws cannot be caught by looking at the screen,
+and cannot be caught by a driven check.** It has no pixels, publishes no
+region, and is corrected only when somebody greps past it — which is why
+this one has now been wrong about encryption, wrong about permissions and
+wrong about signing, in that order, each time by outliving a capability’s
+arrival. `check-unreachable-refusals` does not cover it and cannot be made to:
+that gate photographs every **engine** code line mentioning a symbol some
+sentence here depends on being dead, and fails when the photograph and the
+engine disagree. It is an instrument pointed upstream. A shell string with no
+caller is a fact about this crate alone, and nothing currently looks for one.
+
+Repair, in either order: draw it on the Security tab, or widen the
+unreachable-refusal gate to shell-authored sentences so the next one is
+found by the build rather than by a reader. Drawing it is the smaller job
+and settles this row; widening the gate is what stops the shape recurring.
+
+Related: D55, the same shape one layer down — a disclosure written, tested
+and spoken to nobody.
+
+### D60 — OPEN: a press-drag beginning on an unselected object rubber-bands
+
+`canvas/gesture/meaning.rs` classifies a drag by where the press landed, and
+`DragKind::Marquee`’s own doc states the rule: *“The press was on empty paper,
+**or on unselected content**: rubber-band.”* Only a press already inside the
+selection’s body is a `Move`. So picking an object up requires two gestures —
+click it, then drag it — and the one-gesture form silently does something
+else.
+
+**This is a convention defect rather than a broken mechanism**, which is why
+no test catches it: every marquee check passes, the move checks pass, and the
+behaviour is exactly what the code says. Acrobat, Illustrator, Inkscape and
+SolidWorks drawing views all select-and-move on a press-drag over an object,
+and reserve the band for a press on empty paper. An operator who drags an
+object and gets a selection box reads it as the drag having missed.
+
+★★ **The repair is not a free swap, and that is the open question.** The band
+is direction-sensitive (`FEATURES.md`: right-to-left crosses, left-to-right
+encloses), and on a dense CAD sheet nearly every point is on ink — so making
+a press on ink mean *move* removes most of the places a crossing band can be
+started from. That trade is the decision this row is waiting on, not the
+classification change, which is one arm.
+
+### D61 — OPEN: the engine’s `ImageSource::Form` doc describes a build without leaves
+
+`pdfcer-core`’s `vector::decompose::ImageSource` documents `Form` as *“treated
+as one opaque selectable object bounded by its `/BBox`; 9a does NOT recurse
+into the form’s own content (per-form path decomposition is a fast-follow)”*,
+and the enum’s own header adds that *“all three are bbox-selectable”*. Both
+halves are false in the same file: `PageObjects` carries `leaves`, and
+`vector::hit::hit_test_point_deep` skips forms outright so that the leaves
+painted from inside them can win the click.
+
+This shell depends on the behaviour, not on the comment — `FEATURES.md`’s
+*“clicking an object inside a form XObject selects that object”* is built on
+`hit_test_point_deep` and is driven. The cost is to the next reader: the
+comment is the most authoritative-looking statement about forms in the engine,
+it sits immediately above the variant, and it says the opposite of what the
+crate does.
+
+`D:\Dev\pdfcer` is read-only from here, so **this is a row and a hand-off,
+never an edit**. Recorded under D32’s precedent: a stale engine comment is not
+this project’s to fix and is this project’s to notice, because believing it
+costs a wrong diagnosis rather than a compile error.
+
+### D62 — OPEN: the ribbon’s re-wrap rung cannot fire, because both row limits are 3
+
+`plan::GROUP_ROWS` and `plan::MAX_GROUP_ROWS` are both `3` (`plan/mod.rs:292`,
+`:314`). A group’s natural width is `measure_group_rows(…, GROUP_ROWS)`
+(`band.rs:979`) and its re-wrapped width is `measure_group_rows(…,
+MAX_GROUP_ROWS)` (`band.rs:433`) — the same function, the same group, the same
+ceiling — so `Candidate::rewrapped` always equals `Candidate::natural`,
+`gains_from(State::Rewrapped)` is therefore always false (`collapse.rs:163`),
+and `fit` never advances a group to that rung (`collapse.rs:228`). S5’s middle
+rung is unreachable in the running program: the band steps from natural
+straight to collapsed, which is the *stall at one width and jump at the next*
+the rung exists to prevent.
+
+The compressed-height branch at `band.rs:864` is dead by the same arithmetic.
+`wrap_group` never returns more rows than the ceiling it is handed, and both
+ceilings are 3, so `rows.counts.len() > plan::GROUP_ROWS` cannot hold.
+
+**Nothing is red, and that is the reason to write this down.** `collapse.rs`’s
+ladder tests build `Candidate` literals whose `natural` and `rewrapped` are
+deliberately different, so every assertion about the middle rung passes
+against widths the measurement can no longer produce. A test that calls the
+verb cannot see the chain in front of it.
+
+Repair is a decision, not a typo. Either lower `GROUP_ROWS` so the natural
+split is narrower than the ceiling — `MAX_GROUP_ROWS`’ own doc cites Word’s
+Font group at two rows at 1900 pt and three at 1000 — or delete
+`State::Rewrapped`, `Candidate::rewrapped`, `rewrap_is_legible` and the
+compressed-height branch and say in `plan/mod.rs` that the ladder has two
+rungs. What is not available is holding both constants at 3 while the
+machinery and its doc comments describe a rung that cannot fire.
+
+Related: D55, the same shape one layer up — built, tested, and reaching
+nobody.
 
 ---
 

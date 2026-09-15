@@ -1,31 +1,29 @@
 //! # `ribbon::overflow` — the band scrolls; it does not hide behind a menu
 //!
-//! **S4 of `RIBBON_SCALING.md`.** The last rung of the width ladder, reached
-//! only after every group has re-wrapped (S5) and every group that may collapse
-//! has collapsed (S3).
+//! **`RIBBON_SCALING.md` §3.3.** The last rung of the width ladder in that
+//! document's §1, reached only after every group has re-wrapped and every group
+//! that may collapse has collapsed (§3.2).
 //!
-//! ## What replaced what, and why
+//! ## An arrow, not a menu
 //!
-//! Until 2026-08-25 the band's last resort was a **`⏷ N more` dropdown**:
-//! groups past the fold left the band entirely and reappeared inside a popup.
-//! It worked, it was discoverable, and it is gone, on the operator's
-//! instruction — *"do the scroll like Word"*, asked twice.
+//! The band scrolls, on the operator's instruction — *"do the scroll like
+//! Word"*, asked twice.
 //!
-//! Word's answer, measured in `evidence/word-ribbon/ribbon-0460.png`: a `›` at
-//! the band's right edge that **shifts the band sideways**. Every group stays a
-//! group, in its place, in manifest order; the window is a viewport onto a row
-//! that is wider than it.
+//! Word's answer, photographed at 460 pt by `tools/word-ribbon-study.ps1`: a
+//! `›` at the band's right edge that **shifts the band sideways**. Every group
+//! stays a group, in its place, in manifest order; the window is a viewport
+//! onto a row that is wider than it.
 //!
-//! ★ The two are not interchangeable and the trade is worth stating, because
-//! the dropdown was better at one thing. A menu **names what is hidden** — it
-//! says *"3 more"* and lists them. An arrow does not; it makes the operator
-//! push and look. What the arrow gives back is that a group never changes its
-//! nature: it is never simultaneously "on the ribbon" and "in a menu", which is
-//! two mental models for one surface. The convention across the product class
-//! is the arrow, and *"use the conventional interaction, never invent one"*
-//! settles ties like this one.
+//! The alternative is a `⏷ N more` dropdown, and the trade is worth stating
+//! because the dropdown is better at one thing. A menu **names what is
+//! hidden** — it says *"3 more"* and lists them. An arrow does not; it makes
+//! the operator push and look. What the arrow gives back is that a group never
+//! changes its nature: it is never simultaneously "on the ribbon" and "in a
+//! menu", which is two mental models for one surface. The convention across
+//! the product class is the arrow, and *"use the conventional interaction,
+//! never invent one"* settles ties like this one.
 //!
-//! ## ★★ Why scrolling is LAST, and why that ordering is not taste
+//! ## Why scrolling is LAST, and why that ordering is not taste
 //!
 //! Because scrolling is the only rung that puts a command **off screen**.
 //! Re-wrapping keeps every control visible and labelled. Collapsing keeps every
@@ -47,10 +45,9 @@
 //! * it is session-scoped and never written to disk, so a window resized on
 //!   another monitor cannot strand a tab scrolled past its own contents.
 //!
-//! ★★★ **It is clamped against a freshly computed layout on every frame, not
-//! trusted.** This is the one place S4 could reintroduce the feedback loop this
-//! project has paid for three times (R128's zoom drift, the About window's
-//! creep, the print dialog's runaway). The stored index is an *input* to
+//! **It is clamped against a freshly computed layout on every frame, not
+//! trusted.** This is the one place S4 could reintroduce the feedback loop
+//! R128 forbids. The stored index is an *input* to
 //! layout, so a stale one — left behind by a widened window — would show blank
 //! space at the right of the band, and a naive fix that recomputed `first` from
 //! what was drawn would be a measurement feeding the size that produced it.
@@ -85,16 +82,17 @@ impl Direction {
 
     /// The `ui_rect` name this arrow publishes.
     ///
-    /// ★★ The RIGHT arrow keeps the old dropdown's name, `ribbon.overflow`,
-    /// and that is deliberate rather than lazy. Region names are a **cross-repo
-    /// stability contract** with `tools/ui-verify`, and this control answers
-    /// exactly the questions the dropdown's checks were written to ask: is the
-    /// affordance on screen at every width, is it hit-testable under real
-    /// metrics, does any visible group overlap it. The mechanism behind it
-    /// changed; the thing being asserted about did not, and renaming it would
-    /// have broken four checks to record an implementation detail.
+    /// The RIGHT arrow's name is `ribbon.overflow`, which names the question
+    /// rather than the glyph. Region names are a **cross-repo stability
+    /// contract** with `tools/ui-verify`, and what those checks ask of this
+    /// control is: is the affordance on screen at every width, is it
+    /// hit-testable under real metrics, does any visible group overlap it.
+    /// None of that is a claim about the mechanism, so naming the region after
+    /// the mechanism would put an implementation detail into a cross-repo
+    /// contract.
     ///
-    /// The left arrow is new, so it gets a new name.
+    /// The left arrow answers a question nothing asked before, so it carries a
+    /// name of its own.
     const fn region(self) -> &'static str {
         match self {
             Self::Left => "ribbon.scroll.left",
@@ -139,8 +137,8 @@ pub(crate) fn set_first(ui: &egui::Ui, ctx: &Ctx<'_>, tab_id: &str, at: usize) {
 /// nothing wrong and there is nothing for them to press.
 ///
 /// The tempting fix is to notice the blank space after drawing and pull the
-/// band back. That is a measurement feeding the size that produced it, and this
-/// project has paid for that shape three times over. So instead: compute, from
+/// band back. That is a measurement feeding the size that produced it — the
+/// feedback loop R128 forbids. So instead: compute, from
 /// the offered width and the group widths alone, the largest `first` at which
 /// the remaining groups still reach the right edge — and clamp to it before
 /// anything is drawn.
@@ -152,13 +150,12 @@ pub(crate) fn clamp(widths: &[f32], available: f32, separator: f32) -> usize {
     if n == 0 {
         return 0;
     }
-    // ★ A degenerate width is NOT special-cased to 0, and the difference is a
-    // real bug this test caught: returning 0 at width 0 and `n-1` at width 1
-    // would mean growing the band by one point scrolls it to the far end, which
-    // is the monotonicity violation `widening_never_pushes_the_band_further_
-    // right` exists to forbid. Letting the loop below answer keeps the function
-    // monotonic across its whole domain, including the part of it nobody can
-    // see.
+    // A degenerate width is NOT special-cased to 0. Returning 0 at width 0 and
+    // `n-1` at width 1 would mean growing the band by one point scrolls it to
+    // the far end, which is the monotonicity violation
+    // `widening_never_pushes_the_band_further_right` exists to forbid. Letting
+    // the loop below answer keeps the function monotonic across its whole
+    // domain, including the part of it nobody can see.
     let available = if available.is_finite() {
         available.max(0.0)
     } else {
@@ -188,13 +185,14 @@ pub(crate) fn clamp(widths: &[f32], available: f32, separator: f32) -> usize {
 /// Draw one arrow, and report whether it was pressed.
 ///
 /// `rect` is computed by the caller from the band's own edge **before any group
-/// is laid out**, for the reason `plan`'s header gives about the old dropdown:
-/// the affordance must not be the thing that gets squeezed out when the band is
-/// short of room, because it is the only way back.
-/// ★ Returns the `Response`, not a bare `clicked()`. The band publishes its
-/// `Id` as `BandOutcome::overflow_id`, which is how a driven check finds the
-/// control to click without knowing where it is — the same contract the
-/// dropdown had, and two tests fail loudly if it stops being honoured.
+/// is laid out**, for the reason `plan`'s header gives: the affordance must
+/// not be the thing that gets squeezed out when the band is short of room,
+/// because it is the only way back.
+///
+/// Returns the `Response`, not a bare `clicked()`. The band publishes its `Id`
+/// as `BandOutcome::overflow_id`, which is how a driven check finds the control
+/// to click without knowing where it is; two tests fail loudly if it stops
+/// being honoured.
 pub(crate) fn arrow(
     ui: &mut egui::Ui,
     ctx: &mut Ctx<'_>,
@@ -219,8 +217,7 @@ pub(crate) fn arrow(
         )
         .inner;
 
-    // A glyph is not an accessible name. The count is the information, exactly
-    // as it was for the dropdown this replaces.
+    // A glyph is not an accessible name. The count is the information.
     let name = announce.clone();
     response
         .widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, name.clone()));
@@ -256,10 +253,10 @@ mod tests {
         assert_eq!(clamp(&w, 500.0, 8.0), 0);
     }
 
-    /// ★★ **The clamp is monotonic in the width**, swept rather than
+    /// **The clamp is monotonic in the width**, swept rather than
     /// spot-checked — the same discipline the compaction ladder's own test
-    /// applies, and for the same reason: the one claim this project got wrong
-    /// this week came from comparing two widths and no others.
+    /// applies, and for the same reason: two widths compared and no others is
+    /// how a monotonicity claim passes while being false in between.
     #[test]
     fn widening_never_pushes_the_band_further_right() {
         let w = [90.0, 140.0, 60.0, 200.0, 75.0];

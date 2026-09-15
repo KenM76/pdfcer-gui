@@ -2,15 +2,12 @@
 //!
 //! ## Why this module exists at all
 //!
-//! `ui-conventions/drag-moves.md` D5 says *"modifiers constrain, and the
-//! constraint is announced"*, and the conventions sweep of 2026-08-20 found it
-//! **absent from every drag in this shell** — the sharpest single gap of the
-//! fourteen, because Shift-preserves-aspect is not an advanced feature, it is
-//! *the* resize convention. Every program in the class has it and has had it
-//! for thirty years; PowerPoint, Illustrator, Inkscape, Figma, Visio, AutoCAD
-//! and the old pdfcer shell all answer Shift the same way. An operator who holds
-//! Shift and gets a free-form resize does not conclude that pdfcer chose
-//! differently. They conclude it is broken, and they are close enough to right.
+//! `ui-conventions/drag-moves.md` D5: modifiers constrain, and the constraint
+//! is announced. Shift-preserves-aspect is not an advanced feature, it is *the*
+//! resize convention — PowerPoint, Illustrator, Inkscape, Figma, Visio and
+//! AutoCAD all answer Shift the same way. An operator who holds Shift and gets
+//! a free-form resize does not conclude that pdfcer chose differently. They
+//! conclude it is broken, and they are close enough to right.
 //!
 //! ## ★★ The reason it is ONE module and not five call sites
 //!
@@ -18,16 +15,14 @@
 //! move, resize, Bézier handle, ce-dimension label, ce-dimension vertex — and
 //! the arithmetic for four of them is *the same arithmetic*. If each spelled it
 //! for itself, they would agree on the day they were written and separate under
-//! maintenance, which is this project's most expensively-learned lesson:
+//! maintenance.
 //!
 //! > **A predicate with two claimants must exist exactly once.**
-//! > `text_edit_focused()` cost the Delete key, then the space bar, because two
-//! > places each had their own idea of *"is anybody typing"*.
-//! > (`CONTINUE.md` §3, and `tools/gates/check-typing-guard.sh` now fails the
-//! > build on a second copy.)
 //!
-//! So: one axis rule, one aspect rule, one announcement, and the five call
-//! sites are wiring.
+//! That rule is enforced mechanically for the typing guard —
+//! `tools/gates/check-typing-guard.sh` fails the build on a second copy of
+//! `text_edit_focused()` — and held by construction here: one axis rule, one
+//! aspect rule, one announcement, and the five call sites are wiring.
 //!
 //! ## The two rules, and why each is the one every program uses
 //!
@@ -250,24 +245,19 @@ pub fn aspect(sx: f32, sy: f32) -> (f32, f32) {
 //
 // ★★ APPLY AND ANNOUNCE ARE ONE CALL, and that is the point of this section.
 //
-// The first cut of this feature had each of the four drags in `canvas::interact`
-// do the pair for itself — check the modifier, call [`axis`] or [`aspect`],
-// call [`announce`]. Three problems, and the third is the one that matters:
+// A caller cannot reach the arithmetic without the announcement, or the
+// announcement without the arithmetic, because a drag that constrains silently
+// is not a smaller version of this feature — it is `drag-moves` D5's stated
+// failure mode: the operator holds Shift, gets a result they did not expect,
+// and cannot tell whether the modifier did anything.
 //
-// 1. it put eighty lines of the same shape into a file already at R2's ceiling;
-// 2. it spelled "is Shift down" four times, which is the predicate-with-two-
-//    claimants failure that cost this project the Delete key and then the
-//    space bar;
-// 3. **a fifth drag could apply a constraint and forget to announce it** — and
-//    a silent constraint is not a smaller version of this feature, it is
-//    `drag-moves` D5's stated failure mode exactly: *"the operator holds Shift,
-//    gets a result they did not expect, and cannot tell whether the modifier
-//    did anything."*
+// Letting each drag pair the two for itself would also spell "is Shift down" at
+// every call site, which is the predicate-with-two-claimants failure the module
+// header forbids.
 //
-// So the announcement is not reachable without the arithmetic and the
-// arithmetic is not reachable without the announcement. Each function takes
-// `active` rather than reading the modifier itself, because *which* modifier
-// constrains is the canvas's decision and this module's job is what it does.
+// Each function takes `active` rather than reading the modifier itself, because
+// *which* modifier constrains is the canvas's decision and this module's job is
+// what it does.
 
 /// **A constrained translation**: the delta to move by, announced.
 ///
@@ -337,9 +327,8 @@ pub fn announce(ctx: &egui::Context, lock: Lock) {
     //
     // A drag runs at 60 Hz and the announcement is re-made every frame of it.
     // Tracing unconditionally would put sixty identical lines a second on the
-    // channel and bury every other event — the lesson `canvas-pointer` taught
-    // when a stationary pointer emitted fifty identical lines in nine seconds,
-    // and the reason `canvas::moving::drag` traces its refusal only on release.
+    // channel and bury every other event — the same reason `canvas::moving::drag`
+    // traces its refusal only on release.
     //
     // The previous value is already in memory, so "has it changed" costs the
     // read this function was going to do anyway. What survives on the channel

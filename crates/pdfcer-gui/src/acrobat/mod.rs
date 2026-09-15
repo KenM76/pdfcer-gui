@@ -13,11 +13,11 @@
 //! > closed when opened in acrobat with and ok button to continue - there will
 //! > be a cancel button as well."*
 //!
-//! ## 1. ★★★ What this module is FOR, in one sentence
+//! ## 1. What this module is for
 //!
-//! pdfcer **gives the file up**. It does not open a second window over a
-//! document it is still holding: it closes the document, and only then does
-//! Acrobat get the path.
+//! pdfcer **gives the file up**. It does not leave a second editor looking at
+//! a document this program is still holding: Acrobat is handed the path and
+//! the document is then closed, so that one program owns the file.
 //!
 //! That is the operator's own instruction — point 6 of the request — and the
 //! reason is worth stating rather than merely obeying. **Acrobat takes its own
@@ -32,7 +32,7 @@
 //! So the confirmation is not ceremony. Closing a document is a thing that
 //! happens to the operator's work, and it is announced before it happens.
 //!
-//! ## 2. The four questions, and the four different answers
+//! ## 2. The state of the open document chooses the answer
 //!
 //! | State of the open document | What happens | Why |
 //! |---|---|---|
@@ -53,7 +53,7 @@
 //! answer that loses nothing and the answer that loses everything are not two
 //! points on a scale here; only one of them is a coherent request.
 //!
-//! ## 3. ★★ The seam: where the impurity is, and what stays testable
+//! ## 3. The seam: where the impurity is, and what stays testable
 //!
 //! Two things in this module can only be true of a real machine — reading the
 //! Windows registry, and starting a process — and both are behind a trait so
@@ -66,15 +66,14 @@
 //!
 //! Everything above those two lines — which candidate wins, whether Pro beats
 //! Reader, whether a configured override beats discovery, whether the button
-//! is drawn at all, which of the three dialogs is raised — is decided by
+//! is drawn at all, which dialog is raised — is decided by
 //! [`resolve`] and [`prompt_for`], which take values and return values. The
 //! test suite never touches a registry and never starts a process, and that is
 //! not a convenience: a test that shelled out to `reg.exe` would pass or fail
 //! according to what Adobe installer last ran on the machine running it, which
 //! makes it a report about the machine rather than about the code.
 //!
-//! ## 4. ★★★ Discovery reads Windows' own registration. It never guesses a
-//! path.
+//! ## 4. Discovery reads Windows' own registration; it never guesses a path
 //!
 //! `C:\Program Files\Adobe\…` is wrong the first time somebody installs
 //! anywhere else, and **this operator's own working volume is `D:`**. So the
@@ -90,7 +89,7 @@
 //! 3. **The registered `.pdf` handler's command**, as a fallback, parsed for
 //!    its executable.
 //!
-//! ### ⚠ Why the `.pdf` handler is filtered rather than trusted
+//! ### Why the `.pdf` handler is filtered rather than trusted
 //!
 //! Source 3 answers *"what opens PDFs here"*, which is **not** the question.
 //! Verified on this machine, 2026-09-04: `HKLM\SOFTWARE\Classes\.pdf` reads
@@ -128,14 +127,15 @@
 //! - `crates/pdfcer-gui/src/lib.rs` carries `#![forbid(unsafe_code)]`, which
 //!   cannot be relaxed by an inner `allow`. Calling `advapi32`'s
 //!   `RegGetValueW` from this crate is therefore not available at all.
-//! - The workspace has no registry crate — no `winreg`, no `windows-registry`
-//!   (checked against `Cargo.lock`, 2026-09-04) — and this work is not
-//!   permitted to edit `Cargo.toml`.
+//! - No crate in this workspace depends on a registry crate, and this work is
+//!   not permitted to edit a `Cargo.toml` to add one. (`winreg` does appear in
+//!   `Cargo.lock`, but only as a build-dependency of `embed-resource`, which
+//!   is not a dependency this crate can call into.)
 //! - `native-window` is the crate that quarantines `unsafe`, but it exists to
-//!   hold *four `user32` calls for window ownership* and says so in its own
-//!   manifest. Growing it a registry reader would make it "the unsafe crate"
-//!   rather than "the window-ownership crate", which is the drift its
-//!   documentation was written to prevent.
+//!   hold the window-manager and clipboard calls a GUI toolkit will not
+//!   express, and its manifest says so. Growing it a registry reader would
+//!   make it "the unsafe crate" rather than a crate named for a capability,
+//!   which is the drift its own documentation was written to prevent.
 //!
 //! `reg.exe` ships with Windows, needs no dependency, and its output is a
 //! two-line format that has been stable since NT. It is read at most a handful
@@ -144,7 +144,7 @@
 //! feel. And it is behind [`Registrations`], so the day a registry crate is
 //! permissible the swap is one file.
 //!
-//! ★ The one non-obvious part is [`windows::CREATE_NO_WINDOW`]: a GUI process
+//! The one non-obvious part is [`windows::CREATE_NO_WINDOW`]: a GUI process
 //! that spawns a console program on Windows gets a **console window flashed on
 //! screen** unless it says otherwise. Without that flag, discovery would blink
 //! a black box over the operator's document every time the shell started.
@@ -159,7 +159,7 @@ use std::path::{Path, PathBuf};
 
 /// Which Acrobat this is.
 ///
-/// ★ **Pro beats Reader**, and [`Edition::rank`] is where that is written down.
+/// **Pro beats Reader**, and [`Edition::rank`] is where that is written down.
 /// Pro is the superset: somebody who has both installed reached for Pro when
 /// they bought it, and a button that sent them to Reader would be answering a
 /// question they did not ask. Reader is the fallback, not the preference.
@@ -222,7 +222,7 @@ impl Source {
     /// Preference order — **lower wins**, and it is a *tie-break*, not the
     /// first sort key.
     ///
-    /// ★ The ordering between [`Self::AppPaths`] and [`Self::PdfHandler`] only
+    /// The ordering between [`Self::AppPaths`] and [`Self::PdfHandler`] only
     /// ever decides between two candidates of the **same** edition, because
     /// [`resolve`] sorts on [`Edition::rank`] first. A Reader found in
     /// `App Paths` therefore does **not** beat a Pro found through the `.pdf`
@@ -259,7 +259,7 @@ pub struct Viewer {
 /// The two registry questions this module asks, and the one filesystem
 /// question — the seam that keeps [`resolve`] pure.
 ///
-/// # ★ Why `exists` is on this trait and not `Path::exists`
+/// # Why `exists` is on this trait and not `Path::exists`
 ///
 /// It is the same kind of fact as the other two: something only the real
 /// machine can answer, which a test must be able to state. A [`resolve`] that
@@ -279,7 +279,7 @@ pub trait Registrations {
     /// The registered `.pdf` handler's `shell\open\command`, raw.
     ///
     /// Typically `"C:\…\Acrobat.exe" "%1"`. May name any program at all — see
-    /// this module's §4 ⚠ — so the caller filters it.
+    /// this module's §4 — so the caller filters it.
     fn pdf_handler_command(&self) -> Option<String>;
 
     /// Whether `path` is a file that exists right now.
@@ -315,7 +315,7 @@ pub trait Launcher {
 /// field as a path would turn the escape hatch into a trap that permanently
 /// suppresses the button.
 ///
-/// # ★ Why a configured path that does not exist yields `None` rather than a
+/// # Why a configured path that does not exist yields `None` rather than a
 /// `Viewer`
 ///
 /// It is tempting to honour whatever the operator typed on the grounds that
@@ -326,7 +326,7 @@ pub trait Launcher {
 /// visible where it was made, next to the field that caused it. See
 /// [`crate::dialogs::settings`].
 ///
-/// # ★★ A configured path does NOT fall back to discovery
+/// # A configured path does NOT fall back to discovery
 ///
 /// If the operator typed a path and it does not exist, [`resolve`] answers
 /// `None` — it does not quietly go and find a different Acrobat. Falling back
@@ -366,7 +366,7 @@ pub fn resolve(registrations: &dyn Registrations, configured: Option<&str>) -> O
 
     if let Some(raw) = registrations.pdf_handler_command()
         && let Some(path) = discover::executable_from_command(&raw)
-        // ⚠ The filter this module's §4 exists for: the registered handler is
+        // The filter this module's §4 exists for: the registered handler is
         // whatever opens PDFs here, which on the operator's own machine is
         // another vendor's product.
         && let Some(edition) = discover::edition_of(&path)
@@ -392,7 +392,7 @@ pub fn resolve(registrations: &dyn Registrations, configured: Option<&str>) -> O
 /// them. See this module's §2.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Prompt {
-    /// ★ **The document has never been written anywhere**, so there is no file
+    /// **The document has never been written anywhere**, so there is no file
     /// for Acrobat to open.
     ///
     /// A refusal, not a question — there is nothing to confirm and no button
@@ -419,7 +419,7 @@ pub enum Prompt {
 /// one answer in this crate, and a second one written here would be a second
 /// thing to keep in step with the tab strip's unsaved marker.
 ///
-/// ★ `has_file` is asked **first**, and the order is the whole content of the
+/// `has_file` is asked **first**, and the order is the whole content of the
 /// function. A never-saved document is also a dirty one, so testing dirtiness
 /// first would offer *"Save and open"* over a document with nowhere to save
 /// to — a button that either does nothing or silently opens a file picker the
@@ -438,11 +438,11 @@ pub const fn prompt_for(has_file: bool, has_unsaved_edits: bool) -> Prompt {
 /// Hand `file` to `viewer`.
 ///
 /// A thin wrapper over the [`Launcher`] seam, present so that call sites read
-/// as intent and so the trace line has one home. The caller has already closed
-/// the document — see this module's §1 — and that ordering is the caller's to
-/// keep, not this function's: a launch that fails must not leave the document
-/// closed *and* unopened anywhere, so the close happens after a successful
-/// spawn.
+/// as intent and so the trace line has one home. The ordering around it is the
+/// caller's to keep, not this function's: the document is closed **after** a
+/// successful spawn, because a launch that failed after the close would leave
+/// the operator with no document on screen and no Acrobat either. See
+/// [`crate::app::actions::acrobat`].
 ///
 /// # Errors
 ///

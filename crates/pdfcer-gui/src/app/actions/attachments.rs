@@ -1,13 +1,13 @@
 //! # `app::actions::attachments` — the three verbs whose subject is a whole
 //! FILE living inside the document
 //!
-//! Split out of [`super::action`] under **R2** on the day the capability
-//! acquired a surface. `super`'s declaration of `action` states the rule this
-//! follows — *"the next family of variants to **grow** is the one that will
-//! have to become a sub-enum"* — and a family that arrives with three verbs at
-//! once has grown before it was written.
+//! A sub-enum rather than three variants of [`super::action::Action`].
+//! `super`'s declaration of `action` states the rule that puts them here —
+//! *"the next family of variants to **grow** is the one that will have to
+//! become a sub-enum"* — and a family of three verbs has grown before it is
+//! written.
 //!
-//! ## ★★★ What makes these a family, and it is not "they are all about
+//! ## What makes these a family, and it is not "they are all about
 //! attachments"
 //!
 //! A subject label would be the weak answer, and this enum has a structural one
@@ -42,7 +42,7 @@
 //! 3. **The operand cannot be an index and cannot be an `ObjId` either.** See
 //!    [`AttachmentRef`], which is the interesting type in this module.
 //!
-//! ## ★★ The one refusal this module surfaces, and the three it does not
+//! ## The one refusal this module surfaces, and the three it does not
 //!
 //! `EditSession::attach_file` refuses four ways. Three of them —
 //! `DocumentEncrypted`, the certification gate, and
@@ -86,7 +86,7 @@ use crate::text::panels::attachments as t;
 
 /// **Which attachment**, addressed the only two ways a PDF makes possible.
 ///
-/// # ★★★ Why this is not an index, and not an `ObjId` either
+/// # Why this is not an index, and not an `ObjId` either
 ///
 /// `super::bookmarks`' header argues at length that an outline row must be
 /// addressed by `ObjId` rather than by a position, because every edit to a tree
@@ -145,12 +145,12 @@ pub enum AttachmentRef {
 /// for why the operand is neither an index nor an object id.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AttachmentAction {
-    /// ★★★ **Embed a file in this document** (ISO 32000-1 §7.11.4.1, inclusion
+    /// **Embed a file in this document** (ISO 32000-1 §7.11.4.1, inclusion
     /// route 2).
     ///
     /// Raised by `crate::panels::attachments::attach` and by nothing else.
     ///
-    /// # ★★ It carries no path, and that is the whole design of this variant
+    /// # It carries no path, and that is the whole design of this variant
     ///
     /// The picker opens inside the **apply** phase, exactly as
     /// `super::write::WriteAction::FormData`'s does and for its stated reason.
@@ -163,7 +163,7 @@ pub enum AttachmentAction {
     /// is otherwise unwritable because no synthetic input reaches a native
     /// dialog.
     ///
-    /// # ★★ The description travels, because it can only be set now
+    /// # The description travels, because it can only be set now
     ///
     /// `attach_file` takes `description: Option<&str>` and writes it to the
     /// file specification's `/Desc` (Table 44, whose own row says `/Desc`
@@ -185,7 +185,7 @@ pub enum AttachmentAction {
     },
     /// **Attach the clipboard's file to this document.**
     ///
-    /// # ★★★ `replacing` is carried, and it is not a convenience
+    /// # `replacing` is carried, and it is not a convenience
     ///
     /// `attach_file` does `entries.retain(|(k, _)| k != &name_bytes)` before
     /// inserting, so a same-named attachment is **replaced** — silently, with
@@ -204,12 +204,12 @@ pub enum AttachmentAction {
         /// Whether a file of this name is already listed in the destination.
         replacing: bool,
     },
-    /// ★★★ **Remove one document-level attachment** — the index entry, the file
+    /// **Remove one document-level attachment** — the index entry, the file
     /// specification and the bytes, as ONE undo entry.
     ///
     /// Raised by `crate::panels::attachments` and by nothing else.
     ///
-    /// # ★★★ What "removed" does NOT mean, and why this variant carries a name
+    /// # What "removed" does NOT mean, and why this variant carries a name
     ///
     /// `detach_file`'s own doc comment states the obligation this shell is
     /// under, and it is unusually direct:
@@ -231,10 +231,12 @@ pub enum AttachmentAction {
     ///
     /// # Why there is no confirmation dialog
     ///
-    /// `HANDOFF.md`'s rule is *confirmed or clearly undoable*, and this is the
-    /// second: one press is one `EditSession` command — the engine plans the
-    /// tree patch and both object removals inside it — so one `Ctrl+Z` puts the
-    /// file back whole. The consequence the operator actually needs is not
+    /// A destructive verb must be *confirmed or clearly undoable*, and this is
+    /// the second: one press is one `EditSession` command — `detach_file`
+    /// removes the tree entry, the file specification and the stream *"all
+    /// three, as ONE undo entry"* — so one `Ctrl+Z` puts the file back whole.
+    ///
+    /// The consequence the operator actually needs is not
     /// *"are you sure?"* but *"this does not erase the bytes"*, and a
     /// confirmation dialog is a bad place to put that because it arrives
     /// **after** the decision. It is on the panel, beside the button, before
@@ -246,7 +248,7 @@ pub enum AttachmentAction {
         /// anything.
         name: String,
     },
-    /// ★★★ **Write one attachment's bytes out to a file the operator picks.**
+    /// **Write one attachment's bytes out to a file the operator picks.**
     ///
     /// Raised by `crate::panels::attachments` and by nothing else.
     ///
@@ -259,7 +261,7 @@ pub enum AttachmentAction {
     /// seam `super::export` draws is *"what class of thing does this verb act
     /// on?"*, and by that seam this belongs beside its two siblings.
     ///
-    /// # ★★ Why the bytes are not carried
+    /// # Why the bytes are not carried
     ///
     /// `super::write::WriteAction::Compacted` carries a whole serialised
     /// document, and its doc says why: the confirmation window quoted a
@@ -270,7 +272,7 @@ pub enum AttachmentAction {
     /// earlier in the same frame would leave the copy describing a revision
     /// that is no longer open.
     ///
-    /// ★ It would also break an explicit engine contract.
+    /// It would also break an explicit engine contract.
     /// `extract_attachment`'s docs warn that *"the view must be the one the
     /// `Attachment` was listed from"* — an `Attachment` carries object ids, and
     /// an id only means something relative to a document — so the listing and
@@ -294,7 +296,7 @@ pub enum AttachmentAction {
 /// and [`super::pages::apply`], because the caller is the one place that owns
 /// the borrow and the arm should be one line.
 ///
-/// ★ **Two of the three do not go through [`super::apply::vector_edit`]**, and
+/// **Two of the three do not go through [`super::apply::vector_edit`]**, and
 /// the exception is principled rather than convenient: that function is the
 /// cancel–mutate–bump–invalidate protocol for an edit, and
 /// [`AttachmentAction::SaveCopy`] performs no edit. Running it through anyway
@@ -303,7 +305,7 @@ pub enum AttachmentAction {
 /// is still true. [`AttachmentAction::Attach`] and
 /// [`AttachmentAction::Detach`] **do** mutate and **do** go through it.
 ///
-/// ★ The `page` argument passed to `vector_edit` is `0` for both mutating
+/// The `page` argument passed to `vector_edit` is `0` for both mutating
 /// verbs, and that is honest rather than lazy: a document-level attachment
 /// belongs to the catalogue and to no page. [`super::bookmarks::apply`] passes
 /// `0` for the identical reason, and its comment records that the parameter
@@ -353,7 +355,7 @@ fn paste(doc: &mut OpenDoc, clip: &pdfcer_core::attachments::AttachmentClip, rep
 /// operator picked and pdfcer cannot read must decline **before** the session is
 /// touched, so a failed attach leaves no undo entry to step past.
 ///
-/// # ★ The name written into the PDF is the file's own base name
+/// # The name written into the PDF is the file's own base name
 ///
 /// Not the full path. §7.11.2.1 says a file-specification string's bytes
 /// *"shall be passed to the operating system without interpretation"*, so
@@ -406,7 +408,7 @@ fn attach(doc: &mut OpenDoc, description: Option<&str>) {
         // ui-text-exempt: diagnostic trace, never displayed. The name and the
         // SIZE, not the bytes.
         //
-        // ★★★ `attach-file-READ`, not `attach-file`, and the suffix is not
+        // `attach-file-READ`, not `attach-file`, and the suffix is not
         // decoration. `vector_edit` writes its own `attach-file page=… n=…`
         // line for the same edit two statements below, and a harness reads a
         // trace by its FIRST TOKEN — so two lines sharing a name means
@@ -414,13 +416,9 @@ fn attach(doc: &mut OpenDoc, description: Option<&str>) {
         // and no `bytes`, and a check asserting on them reports *"the verb did
         // nothing"* about a verb that worked.
         //
-        // ⇒ This project has made that exact mistake twice — `text-style` on
-        // 2026-08-27 and `import-form-data` on 2026-08-28, the second by the
-        // session that had written up the first — and the fix agreed then was a
-        // **naming convention at the point of use**: a module's own line takes
-        // a verb suffix, the funnel keeps the bare name. This is that
-        // convention, and it was caught here by a driven check being written
-        // rather than by a reader.
+        // ⇒ The convention that avoids it is **at the point of use**: a
+        // module's own line takes a verb suffix, the funnel keeps the bare
+        // name.
         format!(
             "attach-file-read name={name:?} bytes={size} described={}",
             description.is_some()
@@ -430,7 +428,7 @@ fn attach(doc: &mut OpenDoc, description: Option<&str>) {
     super::apply::vector_edit(doc, "attach-file", 0, 1, |session| {
         match session.attach_file(&name, &bytes, description) {
             Ok(_) => Ok(vec![t::attached(&name, size)]),
-            // ★ The refusal is inspected here and the error is still returned,
+            // The refusal is inspected here and the error is still returned,
             // which is `super::forms::adopt`'s pattern and its argument:
             // recording is for the operator, returning is for the trace, and
             // the two are not the same text and must not become each other.
@@ -447,7 +445,7 @@ fn attach(doc: &mut OpenDoc, description: Option<&str>) {
 /// **Remove one document-level attachment**, as one undoable command,
 /// disclosing that its bytes are still in the file.
 ///
-/// # ★★★ The disclosure is the point of this function
+/// # The disclosure is the point of this function
 ///
 /// `detach_file` returns `()`. There is no count to report, no residue to
 /// describe, and nothing on screen changes except a row disappearing — which
@@ -471,7 +469,7 @@ fn attach(doc: &mut OpenDoc, description: Option<&str>) {
 fn detach(doc: &mut OpenDoc, key: &[u8], name: &str) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
-        // ★ `-requested`, for `attach-file-read`'s reason two functions up: the
+        // `-requested`, for `attach-file-read`'s reason two functions up: the
         // funnel writes its own bare `detach-file` line for the same edit on
         // the next statement, and two lines sharing a first token means a
         // harness reading either one reads the wrong one.
@@ -484,7 +482,7 @@ fn detach(doc: &mut OpenDoc, key: &[u8], name: &str) {
 
 /// **Write one attachment out to a file the operator picks.**
 ///
-/// # ★★ The listing and the extraction happen in one breath, and that is a
+/// # The listing and the extraction happen in one breath, and that is a
 /// contract rather than a style
 ///
 /// `extract_attachment`'s doc comment is explicit:
@@ -500,7 +498,7 @@ fn detach(doc: &mut OpenDoc, key: &[u8], name: &str) {
 /// cache one. It re-lists, resolves the operand it was given, and extracts,
 /// all against one borrow of one session.
 ///
-/// # ★★★ The name is sanitised before it touches the filesystem
+/// # The name is sanitised before it touches the filesystem
 ///
 /// [`Attachment::name`] is **attacker-controlled text** and nothing in
 /// ISO 32000-1 constrains it: `..\..\..\Windows\System32\evil.exe`,
@@ -509,7 +507,7 @@ fn detach(doc: &mut OpenDoc, key: &[u8], name: &str) {
 /// *"so the **safe** call is the short one"*, and this is the extraction path
 /// its docs say should reach for it.
 ///
-/// ★ And the sanitiser's answer is **reported**, not merely used. The listing
+/// And the sanitiser's answer is **reported**, not merely used. The listing
 /// shows the raw name — because a reader that quietly repairs its evidence is
 /// not a reader — so the row and the file on disk can legitimately disagree,
 /// and `SafeName::hazards` is carried precisely so the sentence can say what
@@ -582,7 +580,7 @@ fn save_copy(doc: &mut OpenDoc, at: &AttachmentRef, name: &str) {
             if safe.changed {
                 notes.push(t::name_was_changed(&raw, &safe.value, &safe.hazards));
             }
-            // ★ Said on the way OUT rather than only in the panel's header,
+            // Said on the way OUT rather than only in the panel's header,
             // because this is the moment it becomes actionable: bytes now exist
             // on disk that may be ciphertext, and the operator is about to open
             // them. See `AttachmentNotes::may_be_encrypted` for why the flag is
@@ -607,7 +605,7 @@ fn save_copy(doc: &mut OpenDoc, at: &AttachmentRef, name: &str) {
 /// A free function, and pure, so [`tests`] can hold it to the two properties
 /// that matter without a `Ui` and without a running application.
 ///
-/// # ★ Why the comparison is byte-for-byte and case-sensitive
+/// # Why the comparison is byte-for-byte and case-sensitive
 ///
 /// §7.9.6 requires name-tree keys to be *"compared for equality on a simple
 /// byte-by-byte basis"* — not by any collation, not case-folded, not
@@ -626,7 +624,7 @@ fn resolve<'a>(listed: &'a [Attachment], at: &AttachmentRef) -> Option<&'a Attac
             AttachmentKind::PageAnnotation { annot_id, .. },
             AttachmentRef::PageAnnotation { annot },
         ) => *annot_id == Some(*annot),
-        // ★ `AttachmentKind` is `#[non_exhaustive]`, so a kind this build has
+        // `AttachmentKind` is `#[non_exhaustive]`, so a kind this build has
         // never seen must resolve to **nothing** rather than to whatever is
         // nearest. A verb that acted on the wrong file because a match arm
         // guessed is the one failure this whole type exists to prevent.
@@ -672,7 +670,7 @@ mod tests {
         listed
     }
 
-    /// ★★ **A document-level reference finds the document-level attachment, and
+    /// **A document-level reference finds the document-level attachment, and
     /// a page-level reference finds the page-level one.**
     ///
     /// The assertion is not "resolve returns something". It is that the two
@@ -711,7 +709,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A key that is not in the tree resolves to nothing**, rather than to
+    /// **A key that is not in the tree resolves to nothing**, rather than to
     /// the nearest row.
     ///
     /// The failure this forbids is the one that would make the whole
@@ -747,7 +745,7 @@ mod tests {
         );
     }
 
-    /// ★ **Keys are compared byte-for-byte, so case matters.**
+    /// **Keys are compared byte-for-byte, so case matters.**
     ///
     /// §7.9.6 requires exactly this — *"compared for equality on a simple
     /// byte-by-byte basis"* — and a lenient comparison is the kind of
@@ -813,7 +811,7 @@ mod tests {
         assert_ne!(detach, save);
     }
 
-    /// ★★ **A hostile name never reaches the save dialog.**
+    /// **A hostile name never reaches the save dialog.**
     ///
     /// The fixture is the engine's own, and it exists because these names are
     /// authorable in a real document. What is asserted is the property the

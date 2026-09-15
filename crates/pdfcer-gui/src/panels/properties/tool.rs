@@ -7,56 +7,52 @@
 //! > *"I never understood why there is a tool dock when everything can be in
 //! > object and properties."*
 //!
-//! ## ★★★ Nothing here is new. Every control was in the Tool panel yesterday
+//! ## Why the armed tool's options live in Properties
 //!
-//! `SHELL_LAYOUT_PROPOSAL.md` §3 said a one-line tool strip *"deletes the armed
-//! options block"* and ranked the proposal last for it. That objection was
-//! correct about what a 28 pt row can hold and wrong about where the controls
-//! belong. They are not the tool's; they are **properties of what is about to
-//! be drawn**, which is the same category of thing as the properties of what is
-//! already drawn — and this panel is the surface that owns that category.
+//! A one-line tool strip cannot hold them — a 28 pt row has no room for a font
+//! picker, a size, a swatch and a disclosure note. But that is an argument
+//! about a strip, not about where these controls belong. They are not the
+//! tool's; they are **properties of what is about to be drawn**, which is the
+//! same category of thing as the properties of what is already drawn, and this
+//! panel is the surface that owns that category.
 //!
-//! | control | was | is now |
-//! |---|---|---|
-//! | text pen **font** picker | `panels::tool::armed::options` | [`text_pen`] |
-//! | text pen **size** | same | [`text_pen`] |
-//! | text pen **colour** swatch | same | [`text_pen`] |
-//! | the pen's disclosure note | same | [`text_pen`] |
-//! | the circular measure's **pick list**, one removable row per point | `panels::tool::armed::measure_points` | [`measure_points`] |
-//! | *Scale line weight* | `panels::tool::armed::scale_switches` | [`scale_switches`] |
-//! | *Keep the inner margins* | same | [`scale_switches`] |
-//! | *Allow the artwork to distort* | same | [`scale_switches`] |
-//! | the switches' note | same | [`scale_switches`] |
+//! | control | block |
+//! |---|---|
+//! | text pen **font** picker | [`text_pen`] |
+//! | text pen **size** | [`text_pen`] |
+//! | text pen **colour** swatch | [`text_pen`] |
+//! | the pen's disclosure note | [`text_pen`] |
+//! | the circular measure's **pick list**, one removable row per point | [`measure_points`] |
+//! | *Scale line weight* | [`scale_switches`] |
+//! | *Keep the inner margins* | [`scale_switches`] |
+//! | *Allow the artwork to distort* | [`scale_switches`] |
+//! | the switches' note | [`scale_switches`] |
 //!
-//! Every string is the one that was already written
-//! ([`crate::text::tool`]); every store is the one that was already read
-//! (`canvas::textedit::pen`, `canvas::measure`, `canvas::scaling`). This is a
-//! move, and it is written as one so that a diff shows a move.
+//! Every string is [`crate::text::tool`]'s; every store is the canvas's
+//! (`canvas::textedit::pen`, `canvas::measure`, `canvas::scaling`). This module
+//! draws them and owns none of them.
 //!
-//! ## ★★ Where it sits in the panel, and why it is now TWO places
+//! ## Where it sits in the panel, and why it is TWO places
 //!
 //! [`Slot`] decides, per block, and the two answers have different reasons.
 //!
 //! **[`Slot::AboveTheSelection`]** — the text pen and the circular measure's
 //! pick list — for the two reasons this section has always given:
 //!
-//! 1. **It is where the operator's eye already goes.** These controls sat in
-//!    the top-right corner of the window, in the Tool panel's own stack. The
-//!    panel changed; the corner did not.
+//! 1. **It is where the operator's eye already goes** — the top-right corner
+//!    of the window, which is where the armed tool's settings have always been
+//!    found.
 //! 2. **An armed tool is the more immediate subject.** When somebody has armed
 //!    the text pen, the question they are about to ask is *what size?*, not
 //!    *what is that path's line width?*
 //!
 //! **[`Slot::BelowTheSelection`]** — the three resize switches — because
-//! reason 2 is false for them and was believed anyway until 2026-09-14. This
-//! header used to finish that sentence *"and when nothing is armed but Select,
-//! this section is three switches that state how the next resize behaves, which
-//! is still a statement about the next gesture."* It is a statement about the
-//! next gesture, and it was above a description of the CURRENT one, on screen
-//! whenever Select is armed, which is nearly always. `Slot`'s own doc carries
-//! the photograph and the clipped rectangles. `OPERATOR_REQUESTS.md` O198.
+//! reason 2 is false for them. They *are* a statement about the next gesture,
+//! but Select is armed nearly always, so placing them above the description of
+//! the CURRENT selection puts a hypothetical ahead of the thing on screen.
+//! `Slot`'s own doc carries the measurement. `OPERATOR_REQUESTS.md` O198.
 //!
-//! ## ★★★ It is deliberately NOT part of `something_drew`
+//! ## It is deliberately NOT part of `something_drew`
 //!
 //! `OPERATOR_REQUESTS.md` **O75** collapses the *This document* section
 //! whenever a selection-scoped section has spoken. This section is **not**
@@ -102,14 +98,14 @@ pub const REGION_SCALE_DISTORT: &str = "properties.tool.scale.distort"; // ui-te
 pub const REGION_MEASURE_POINTS: &str = "properties.tool.measure_points"; // ui-text-exempt: trace region name, never displayed
 /// The prefix of one picked point's row; its index in the set is appended.
 ///
-/// ★ Per ROW rather than one rect for the list, because the whole capability
+/// Per ROW rather than one rect for the list, because the whole capability
 /// `OPERATOR_REQUESTS.md` O107 asks for is *removing a particular point*, and a
 /// check that could only find "the list" could not press one.
 pub const REGION_MEASURE_POINT_PREFIX: &str = "properties.tool.measure_point."; // ui-text-exempt: trace region name, never displayed
 
 /// Which block of controls an armed tool brings with it.
 ///
-/// # ★★★ A real function, not a `match` buried in a draw call
+/// # A real function, not a `match` buried in a draw call
 ///
 /// The mapping *tool → controls* is the whole of what this module decides, and
 /// it is the thing that broke last time: the three scale switches were written
@@ -138,13 +134,13 @@ pub enum Block {
 #[must_use]
 pub fn block_for(tool: CanvasTool) -> Option<Block> {
     match tool {
-        // ★★★ `Select` is the RESTING state, and its options are the resize
-        // switches. This is the arm whose absence made those switches dead code
-        // the first time they were written: the old panel drew the armed block
-        // only when something *was* armed, so a `Select` arm inside it could
-        // never be reached.
+        // `Select` is the RESTING state, and its options are the resize
+        // switches. A panel that drew tool settings only when something *was*
+        // armed would make this arm unreachable and those switches dead code,
+        // which is why the block's slot is decided separately from whether a
+        // tool is armed — see [`Slot`].
         CanvasTool::Select => Some(Block::ScaleSwitches),
-        // ★ **Add only, not Edit.** `TextEditKind::Add` writes a NEW run, so a
+        // **Add only, not Edit.** `TextEditKind::Add` writes a NEW run, so a
         // face, a size and a colour are exactly what it needs. `Edit` replaces
         // the words inside a run that already has all three, and pdfcer cannot
         // restyle a run it did not write — showing these controls there would
@@ -165,36 +161,29 @@ pub fn block_for(tool: CanvasTool) -> Option<Block> {
 
 /// Where in the panel a [`Block`] belongs.
 ///
-/// # ★★★ Added 2026-09-14, and the measurement that forced it
+/// # Why placement is a per-block decision and not one rule
 ///
-/// Every block drew at the TOP of the panel, above every selection-scoped
-/// section, on this module's own two reasons: the controls had been in the
-/// top-right corner before O123 moved them, and *"an armed tool is the more
-/// immediate subject"*. The first reason is about muscle memory and is still
-/// good. The second is true of the text pen and the circular measure, and it is
-/// **false of the resize switches**, because [`block_for`] hands those back for
-/// `CanvasTool::Select` — the RESTING state — so they are on screen whenever
-/// an operator is doing the ordinary thing of clicking at objects.
+/// *"An armed tool is the more immediate subject"* is true of the text pen and
+/// the circular measure and **false of the resize switches**, because
+/// [`block_for`] hands those back for `CanvasTool::Select` — the RESTING
+/// state — so they are on screen whenever an operator is doing the ordinary
+/// thing of clicking at objects.
 ///
-/// ★★ What that cost, photographed by `ui-verify clicking_text_offers_its_colour`
-/// on 2026-09-14 in an 1100 x 800 window with one text object clicked:
+/// The cost of getting that wrong is measured. Put every block at the top and,
+/// in an 1100 x 800 window with one text object clicked, the panel's whole
+/// visible height is *When you resize something*, its three switches and its
+/// five-line note; the first two rows of the text editor are half clipped
+/// (`properties.text.bold … shown=0.46 floor=0.60`) and the Colour swatch sits
+/// at y 783-807 in a viewport ending at 766 — `shown=0.00`, off the bottom,
+/// reachable only by scrolling past a preference the operator did not ask
+/// about. `ui-verify clicking_text_offers_its_colour` is the check that holds
+/// this.
 ///
-/// > The Properties panel's whole visible height was *When you resize
-/// > something*, its three switches and its five-line note. Under them, half
-/// > clipped, the first two rows of the text editor
-/// > (`properties.text.bold ... shown=0.46 floor=0.60`). The Colour swatch was
-/// > at y 783-807 in a viewport ending at 766 — `shown=0.00`, off the bottom,
-/// > reachable only by scrolling past a preference the operator had not asked
-/// > about to reach the controls for the thing he had just clicked.
-///
-/// ★ **That is `OPERATOR_REQUESTS.md` O75 recreated in a different block.** His
-/// sentence then was *"the Properties section is always showing the This
-/// document properties instead of just the properties of the objects I am
-/// editing"*, and the rule it left behind is the one applied here: a section
-/// that draws with no reference to the selection must not sit above the
-/// sections that describe it. His O198 sentence — *"the properties area is
-/// uneditable"* — is what that looks like from outside when the editable part
-/// is below the fold.
+/// The rule it enforces is `OPERATOR_REQUESTS.md` O75's, applied one block
+/// down: **a section that draws with no reference to the selection must not sit
+/// above the sections that describe it.** The operator's O198 sentence —
+/// *"the properties area is uneditable"* — is what the violation looks like
+/// from outside, when the editable part is below the fold.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Slot {
     /// Above every selection-scoped section, at the top of the panel.
@@ -217,10 +206,9 @@ pub enum Slot {
 
 /// Which [`Slot`] a block draws in.
 ///
-/// ★★ A function rather than a `match` inside the draw call, for
-/// [`block_for`]'s reason stated again: the placement is a DECISION, it is the
-/// decision this module got wrong until 2026-09-14, and a decision that needs a
-/// `Ui` to observe is a decision no unit test can put a question to.
+/// A function rather than a `match` inside the draw call, for [`block_for`]'s
+/// reason stated again: the placement is a DECISION, and a decision that needs
+/// a `Ui` to observe is a decision no unit test can put a question to.
 #[must_use]
 pub fn slot_of(block: Block) -> Slot {
     match block {
@@ -240,7 +228,7 @@ pub(super) fn armed_section(ui: &mut Ui) -> bool {
 
 /// The standing preferences, drawn at the foot of the panel.
 ///
-/// ★ Called AFTER `object_section`, which is the only section that can say
+/// Called AFTER `object_section`, which is the only section that can say
 /// *"nothing is selected"*. That ordering is deliberate and is the one thing
 /// about this call that is easy to get backwards: these switches are not a
 /// description of a selection, so they must not be able to push one off the
@@ -314,7 +302,7 @@ fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
     });
     ui.label(egui::RichText::new(t::text_pen_note()).small().weak());
 
-    // ★ Written back only when it CHANGED. An unconditional `insert_temp` would
+    // Written back only when it CHANGED. An unconditional `insert_temp` would
     // be harmless and would also make the trace line below fire sixty times a
     // second, which is the difference between a log a reader can use and one
     // they cannot.
@@ -346,7 +334,7 @@ fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
 /// distinguishable from the junction. The list is the only surface that answers
 /// *"what is actually in this fit?"*
 ///
-/// ★★ **The removal is applied AFTER the loop, never inside it.** `st` is a
+/// **The removal is applied AFTER the loop, never inside it.** `st` is a
 /// copy read out of `egui::Memory` and `points` borrows it; a removal that
 /// mutated mid-iteration would shift every row below the one pressed while the
 /// loop was still drawing them — the classic one-frame mis-aim, where the
@@ -410,13 +398,13 @@ fn measure_points(ui: &mut Ui, ctx: &egui::Context) {
 /// the one that makes the result imperfect and a control that degrades the
 /// output belongs after the two that do not.
 ///
-/// ★ **Always drawn, never greyed** while Select is armed — live with nothing
+/// **Always drawn, never greyed** while Select is armed — live with nothing
 /// selected and with a form field selected. An operator sets a modifier
 /// *before* the gesture it modifies; greying them until an annotation happens
 /// to be selected would hide the control exactly when somebody is deciding how
 /// to resize.
 ///
-/// ★★★ **One published rect per switch**, not one for the block. A driven check
+/// **One published rect per switch**, not one for the block. A driven check
 /// aiming at "the options row" and then guessing which line is the second
 /// checkbox would be encoding a layout, and it goes wrong silently — by ticking
 /// the wrong switch — the day a label wraps to two lines at a narrower dock.
@@ -429,7 +417,7 @@ fn scale_switches(ui: &mut Ui, ctx: &egui::Context) {
 
     let stroke = ui.checkbox(&mut current.scale_stroke_width, t::scale_stroke_label());
     crate::diag::ui_rect_visible(REGION_SCALE_STROKE, stroke.rect, ui.clip_rect());
-    // ★ The `/RD` switch is spelled as an opt-OUT in the engine and in
+    // The `/RD` switch is spelled as an opt-OUT in the engine and in
     // `canvas::scaling`, and it is presented here as one too — *"keep"*, not
     // *"scale"*. An inverted label over an opt-out field is the single easiest
     // way to ship a control that does the opposite of what it says.
@@ -480,7 +468,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **Every control the Tool panel held is reachable from a tool this
+    /// **Every control the Tool panel held is reachable from a tool this
     /// section actually draws for.**
     ///
     /// Asserted against [`block_for`] — **the function [`section_in`] dispatches
@@ -512,7 +500,7 @@ mod tests {
         assert_eq!(block_for(CanvasTool::Hand), None);
     }
 
-    /// ★★ **The three blocks are reachable from three DIFFERENT tools**, so no
+    /// **The three blocks are reachable from three DIFFERENT tools**, so no
     /// two of them can be shadowed by one arm.
     ///
     /// The failure this catches is subtle and has happened here before: an arm
@@ -545,11 +533,11 @@ mod tests {
         );
     }
 
-    /// ★★★ **The resting tool's block draws BELOW the selection, and the two
+    /// **The resting tool's block draws BELOW the selection, and the two
     /// authoring tools' blocks draw above it** — `OPERATOR_REQUESTS.md` O198.
     ///
     /// This is the unit half of the placement decision, and it is worth a test
-    /// for the reason the placement was wrong for three weeks: the rule is not
+    /// because the rule is easy to misread: it is not
     /// *"tool settings go at the top"*, it is *"a block that draws with no
     /// reference to the selection must not sit above the sections that describe
     /// it"*, and the two read identically until you notice that `Select` — the
@@ -557,7 +545,7 @@ mod tests {
     /// whenever an operator is doing the ordinary thing of clicking at objects,
     /// which is exactly when the sections below it matter most.
     ///
-    /// ★★ Asserted through [`slot_of`], the function [`section_in`] dispatches
+    /// Asserted through [`slot_of`], the function [`section_in`] dispatches
     /// on, rather than against a copy of its `match` — `block_for`'s own test
     /// gives the reason at length and it is the same reason.
     #[test]
@@ -567,7 +555,7 @@ mod tests {
         assert_eq!(slot_of(Block::MeasurePoints), Slot::AboveTheSelection);
     }
 
-    /// ★★ **Exactly one block occupies the foot of the panel.**
+    /// **Exactly one block occupies the foot of the panel.**
     ///
     /// A second one would stack two unrelated standing preferences under
     /// whatever the panel had just said about the selection, and — because

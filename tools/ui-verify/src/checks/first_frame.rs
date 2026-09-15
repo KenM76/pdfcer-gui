@@ -3,45 +3,33 @@
 //!
 //! # What this is for
 //!
-//! Every other check in this suite drives a gesture. This one drives **nothing**
-//! — it opens a document, enters Edit, and asks what an operator sees before
-//! they have touched anything. That is the only question the last three weeks of
-//! this project actually turned on.
+//! Every other check in this suite drives a gesture. This one drives
+//! **nothing** — it opens a document, enters Edit, and asks what an operator
+//! sees before they have touched anything.
 //!
-//! The sequence it exists to break:
+//! ★★★ The defect shape it exists to break, which this project has walked
+//! through end to end: a tool is registered, drawn, chord-bound and covered by
+//! passing driven checks, and the operator reports it MISSING. Diagnosing that
+//! as a discoverability defect and shipping a panel that NAMES the tool does
+//! not fix it, because **naming a four-step route is not removing it**. And a
+//! panel that lists tools is itself a list that can go stale — naming the tools
+//! that were there when it was written and not the one added since.
 //!
-//! 1. `edit.text` and `edit.add_text` were registered, drawn, chord-bound and
-//!    covered by passing driven checks. The operator reported them missing.
-//! 2. Diagnosed as *"a discoverability defect"*. The Tool panel shipped, naming
-//!    both, with their chords and their ribbon tab.
-//! 3. **He came back the same day and still could not type.** Naming a
-//!    four-step route is not removing it.
-//! 4. The route was removed (one text tool, one click) — and the Tool panel's
-//!    own list was **nearly shipped stale**, still naming the six old tools and
-//!    not the new **Points** tool.
-//!
-//! # ★★★ What changed on 2026-09-04, and why this check was rewritten rather
-//! than deleted
+//! # ★★★ The question survives its answer changing
 //!
 //! `OPERATOR_REQUESTS.md` **O123** dissolved the Tool panel: *"The Tool panel
 //! becomes a one-line tool status (name, one sentence, 'Put this tool down');
-//! its buttons duplicate the ribbon and go."* So the four `tool.row.*` regions
-//! this check used to demand **no longer exist**, and the list it defended is
-//! gone by instruction.
+//! its buttons duplicate the ribbon and go."*
 //!
-//! ⚠ **Deleting the check along with them would have been the wrong move, and
-//! the reason is the one this whole file is about.** What was under test was
-//! never *"is there a list"* — it was *"does the first frame, with no clicks,
-//! tell the operator something true about what they can do."* That question
-//! survives its answer changing, and the surface that answers it now is
-//! `crate::app::toolstatus`: a strip the right dock reserves above its columns,
-//! permanent, uncloseable, present at frame one.
-//!
-//! ★ If this check had been deleted, the *"nearly shipped stale"* failure of
-//! step 4 would have lost its only driven guard, and the new strip would have
-//! shipped with none — which is the SKIP-shaped hole `SHELL_LAYOUT_PROPOSAL.md`
-//! §3.5 warns about in as many words: *"any check written against the existing
-//! Tool panel must not be deleted along with it."*
+//! ⚠ **This check is written against the QUESTION, not against the surface that
+//! answers it.** What is under test is not *"is there a list"* — it is *"does
+//! the first frame, with no clicks, tell the operator something true about what
+//! they can do."* The surface answering it now is `crate::app::toolstatus`: a
+//! strip the right dock reserves above its columns, permanent, uncloseable,
+//! present at frame one. ★ A check retired along with the surface it happened
+//! to name takes the guard with it, and the replacement surface then ships with
+//! none — so a check is rewritten onto the new surface, never deleted with the
+//! old one.
 //!
 //! # ★★ The two regions, and why BOTH are asserted
 //!
@@ -58,12 +46,12 @@
 //!
 //! # ★★★ And a pixel, because a rectangle cannot say that anything was painted
 //!
-//! `SHELL_LAYOUT_PROPOSAL.md` §3.5, on this exact check: *"It is vacuous if it
-//! asserts only the region's presence, because the banner has a constant height
-//! and will publish a rect whether or not it painted anything."* So the strip's
-//! rectangle is sampled with [`crate::pixels::region_not_uniform`]. A strip that
-//! laid out correctly and painted nothing is a flat block of panel colour, and
-//! that is precisely what `is_uniform` reports.
+//! ★★ **The banner has a constant height and publishes a rect whether or not
+//! it painted anything**, so a check asserting only the region's presence is
+//! vacuous. The strip's rectangle is therefore sampled with
+//! [`crate::pixels::region_not_uniform`]: a strip that laid out correctly and
+//! painted nothing is a flat block of panel colour, and that is precisely what
+//! `is_uniform` reports.
 //!
 //! This is the two-channel discipline `read_mode_chrome.rs` states: *"the rect
 //! is exact and cheap and would be satisfied by a build that moved the canvas
@@ -72,11 +60,11 @@
 //!
 //! # ★ Why "inside the client area" is still a real assertion
 //!
-//! Because the failure this project has already shipped once is a control drawn
-//! **below the fold**: the dimension-groups window was tall enough to push its
-//! own title bar off the desktop, which is the operator's complaint #3. A strip
-//! that draws at y = 1400 in a 900-pixel window is drawn, publishes a rect, and
-//! is invisible.
+//! Because a control drawn **below the fold** is a shipped failure mode here: a
+//! window tall enough to push its own title bar off the desktop is one the
+//! operator has reported. ★ A strip that draws at y = 1400 in a 900-pixel
+//! window is drawn, publishes a healthy rect, and is invisible — so the rect
+//! must be checked against the CLIENT AREA and not merely for existence.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
 use crate::checks::{Check, CheckContext};

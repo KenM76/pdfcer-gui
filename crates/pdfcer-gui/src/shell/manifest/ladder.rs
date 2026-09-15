@@ -23,9 +23,9 @@
 //!
 //! ## The rule the ranking follows
 //!
-//! Word's, measured from `evidence/word-ribbon/`: **the group that never
-//! collapses is the one carrying the verb the operator came to the tab for**,
-//! not the smallest one. Clipboard is wider than Editing and outlives it at
+//! Word's, read off the series `tools/word-ribbon-study.ps1` photographs:
+//! **the group that never collapses is the one carrying the verb the operator
+//! came to the tab for**, not the smallest one. Clipboard is wider than Editing and outlives it at
 //! every width from 1900 down to 460, because Paste is why you are on the Home
 //! tab.
 //!

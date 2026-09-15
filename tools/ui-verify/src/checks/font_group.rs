@@ -940,10 +940,9 @@ mod tests {
 
     /// ★★★ The regression this guard was written for, in three lines.
     ///
-    /// These are the actual values from
-    /// `evidence/sweep-20260828/sw/font-group.trace.txt`, where the check ran
-    /// at `--doc-point 0,300,500` — a drawing view on `SW41177.pdf` — and
-    /// reported the program's correct silence as O37's complaint returning.
+    /// These are the actual values from a run at `--doc-point 0,300,500` — a
+    /// drawing view on `SW41177.pdf` — where the check reported the program's
+    /// correct silence as O37's complaint returning.
     /// The verdict must be a SKIP that names the kind, so the reader is sent to
     /// the fixture coordinate rather than to `panels::properties::text`.
     #[test]

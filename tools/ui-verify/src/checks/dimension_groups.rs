@@ -2,38 +2,37 @@
 //! opens, a group made in it reaches the document and comes back joinable, and
 //! the same group can then be renamed and removed.
 //!
-//! # ★ It drove a WINDOW until 2026-08-19, and the rewrite is the point
+//! # ★ The surface is a DOCK PANEL, not a window
 //!
-//! The surface moved into the dock that day, because a window whose content
-//! outgrew the screen could push its own title bar — and its only ✕ — off the
-//! desktop, and the operator could not close it. `crate::checks` has no way to
-//! notice that from a passing check: every assertion below passed against the
-//! window on the run that shipped it.
+//! A window whose content outgrows the screen can push its own title bar — and
+//! its only ✕ — off the desktop, leaving the operator no way to close it.
+//! `crate::checks` has no way to notice that from a passing check: every
+//! assertion below is satisfied by a window just as well as by a panel, so the
+//! surface is a panel by decision and not by evidence.
 //!
-//! Two things about this check changed with the surface and both are worth
-//! naming, because they are what a driven check is *for*:
+//! Two things follow from the surface being a panel, and both are worth naming,
+//! because they are what a driven check is *for*:
 //!
-//! 1. **It clicks fold headings now.** Five of the panel's six sections start
+//! 1. **It clicks fold headings.** Five of the panel's six sections start
 //!    shut, so the regions this check aims at do not exist until a heading is
 //!    pressed. That is not a cost — it means the check proves the folds work,
 //!    which is half of what the operator asked for and the half a unit test
 //!    cannot see.
-//! 2. **It no longer asserts a window opened.** It asserts a panel *body*
+//! 2. **It asserts no window opened.** It asserts a panel *body*
 //!    region appeared, which is a weaker claim about layout and a stronger one
 //!    about reach: the panel is the last tab of a stack in Review's right dock,
 //!    so its region appearing proves the ribbon control raised a tab that was
 //!    behind another one.
 //!
 //! # ★★★ THE CONTROL IS A TOGGLE, AND THIS CHECK ESTABLISHES ITS OWN
-//! PRECONDITION — 2026-08-28
+//! PRECONDITION
 //!
-//! The 2026-08-28 sweep failed this check with *"the arm ran, traced neither a
-//! decline nor an unimplemented line, and no panel appeared"*, and the fault
-//! was **the check's**. `app::panels::toggle_panel` closes a panel that is
-//! already on screen and raises one that is not; the check pressed the ribbon
-//! control unconditionally, so on a run where the panel was already the active
-//! tab of its stack the press **shut** it — and the check then reported a
-//! defect in a panel that had been working and visible one frame earlier.
+//! `app::panels::toggle_panel` closes a panel that is already on screen and
+//! raises one that is not. A check that presses the ribbon control
+//! unconditionally therefore shuts the panel on any run where it was already
+//! the active tab of its stack, and then reports *"the arm ran, traced neither
+//! a decline nor an unimplemented line, and no panel appeared"* — a defect
+//! named in a panel that was working and visible one frame earlier.
 //!
 //! ⇒ **A driven check may not press a toggle without first reading the state
 //! it toggles.** The guard is three lines: ask whether the panel's own body
@@ -43,12 +42,10 @@
 //! now*, which is the same predicate `DockLayout::is_on_screen` answers inside
 //! the application.
 //!
-//! ★ The convention is `properties_metadata`'s, quoted rather than reinvented:
-//! *"Only if it is not already, because `file.properties` is a panel TOGGLE and
-//! pressing it when the panel is open would close the thing under test."*
-//! `bookmark_add` cites the same sentence. Three panel checks, one rule, one
-//! wording — because three wordings become three rules and then three
-//! behaviours.
+//! ★ The convention is `properties_metadata`'s and `bookmark_add`'s, worded the
+//! same way here rather than reinvented: press a panel toggle only if the panel
+//! is not already up. Three panel checks, one rule, one wording — because three
+//! wordings become three rules and then three behaviours.
 //!
 //! ★★ What the guard costs, stated rather than hidden: on a run that takes the
 //! already-showing branch, nothing presses the ribbon control, so *that* run
@@ -60,10 +57,9 @@
 //!
 //! # The gap this closes
 //!
-//! `measure.manage_groups` was registered, drawn on Measure ▸ Scale and
-//! **inert** for the whole life of this build. The operator hit it by name on
-//! 2026-08-18: *"I still can't get to edit dimension groups when I click on
-//! it."*
+//! A command can be registered, drawn on Measure ▸ Scale, and **inert**.
+//! Nothing about a ribbon entry proves an arm stands behind it, which is why
+//! this check presses the real control rather than calling the arm.
 //!
 //! # Why this needs driving, and not a unit test
 //!
@@ -94,13 +90,13 @@
 //! panel in this project's history that shipped with a body, a rail entry and
 //! no control anyone could click.
 //!
-//! The radio is also the *point of the feature*. `MeasureState::group` had
-//! existed since the Phase 7 salvage, documented as the group picker, and
-//! **nothing in the build ever wrote to it**: a second group could be created
-//! and joined by nothing. A row with a radio on it is the only evidence that
-//! the group is reachable rather than merely recorded.
+//! The radio is also the *point of the feature*. `MeasureState::group` is the
+//! group picker, and a build in which nothing writes to it is a build where a
+//! second group can be created and joined by nothing. A row with a radio on it
+//! is the only evidence that the group is reachable rather than merely
+//! recorded.
 //!
-//! # ★ And the round trip, added 2026-08-19 with the verbs it exercises
+//! # ★ The round trip, and the verbs it exercises
 //!
 //! Create, **rename**, **delete** — ending with the list exactly as long as it
 //! started. Each verb alone would show only that its arm exists; together they
@@ -135,10 +131,10 @@ use crate::sys::vk;
 const MODE: &str = "review";
 /// The panel body's own region.
 ///
-/// ★ Renamed from `dialog:dimension-groups` when the surface moved into the
-/// dock. The prefix is load-bearing in the trace — a reader scanning for what
-/// drew has to be able to tell a floating window from a docked body — so it
-/// moved with the surface rather than being kept for the harness's convenience.
+/// ★ The `panel:` prefix is load-bearing in the trace — a reader scanning for
+/// what drew has to be able to tell a floating window from a docked body — so
+/// the region names the kind of surface rather than being kept short for the
+/// harness's convenience.
 const PANEL: &str = "panel:dimension-groups";
 /// The dock's own region for this panel's body.
 ///
@@ -154,7 +150,7 @@ const PANEL_BODY: &str = "dock.body.measure.manage_groups";
 /// when a press took the **closing** branch.
 ///
 /// ★ Read only to improve a failure message, and it is the one line that can
-/// tell the 2026-08-28 failure apart from a panel that genuinely did not draw.
+/// tell a press that SHUT the panel apart from a panel that never drew.
 /// The two look identical from outside — no body region either way — and they
 /// have opposite fixes: one is the harness's precondition, the other is the
 /// panel's own body.
@@ -254,26 +250,20 @@ fn fold(session: &Session, driver: &Driver, ui_rect: &str, key: &str) -> Result<
     let region = format!("{HEADING}{key}");
     let Some(heading) = crate::checks::driving::stable_rect(session, ui_rect, &region, 12)? else {
         // ★★★ **Two very different reasons to have no rect, and they must not
-        // share an answer.** This returned `Ok(None)` for both until
-        // 2026-08-26, and the caller reports `Ok(None)` as a FAIL reading *"the
-        // panel declares no `dimension-groups.heading.add` region, so there is
-        // no way to open the new-group controls"*.
-        //
-        // On the full driven run of 2026-08-26 that failure printed, in its own
-        // next sentence, **"Headings declared: dimension-groups.heading.add."**
-        // The report contradicted itself in two consecutive lines: the region
-        // was there, and `stable_rect` had simply never seen it hold still for
-        // twelve reads.
-        //
-        // A self-contradicting failure is worse than a silent one. It names a
-        // defect in the application — *a document is stuck with the groups it
-        // already has* — for a condition that is entirely the harness's: a dock
-        // still settling. Somebody would have gone looking in the panel.
+        // share an answer.** The caller reports `Ok(None)` as a FAIL reading
+        // *"the panel declares no `dimension-groups.heading.add` region, so
+        // there is no way to open the new-group controls"* — and that same
+        // report then lists the declared headings, which on a settling dock
+        // includes the very one it just said was absent. A report that
+        // contradicts itself in two consecutive lines is worse than a silent
+        // one: it names a defect in the application — *a document is stuck with
+        // the groups it already has* — for a condition that is entirely the
+        // harness's, and somebody goes looking in the panel.
         //
         // So: declared-but-unsettled is an `Err`, which the caller reports as a
-        // **SKIP**, exactly as the body-precondition below already does and for
-        // the identical reason — *a check that could not aim has learned
-        // nothing*. Only genuinely-absent stays `Ok(None)`.
+        // **SKIP**, exactly as the body-precondition below does and for the
+        // identical reason — *a check that could not aim has learned nothing*.
+        // Only genuinely-absent stays `Ok(None)`.
         // ★ `declared_names`, not `declared` — and the difference is exactly
         // what produced the self-contradicting report. `declared` answers with
         // the LAST rect published for a name and gives back nothing once a
@@ -299,12 +289,12 @@ fn fold(session: &Session, driver: &Driver, ui_rect: &str, key: &str) -> Result<
     // ★★★ **The precondition, and it is the finding this helper exists to
     // report rather than to work around.**
     //
-    // Aim only if the heading is still inside the panel's own body. Measured on
-    // 2026-08-19: raising this panel re-lays the DOCK out over several frames,
-    // the dock's left edge moved right by ~120 pt after the body had published
-    // its headings, and the click at a heading's centre landed **on the
-    // canvas** — the trace ends with `page=27 off=[0.0 12255.3]`, a document
-    // scrolled twenty-seven sheets by a click that was aiming at a fold.
+    // Aim only if the heading is still inside the panel's own body. Raising
+    // this panel re-lays the DOCK out over several frames: the dock's left edge
+    // moves right by ~120 pt after the body has published its headings, and a
+    // click at a heading's centre then lands **on the canvas** — a trace ending
+    // `page=27 off=[0.0 12255.3]` is a document scrolled twenty-seven sheets by
+    // a click that was aiming at a fold.
     //
     // `stable_rect` closes the read-then-act interval and does not close this
     // one, because the heading's rect never becomes wrong: **the panel moves
@@ -314,8 +304,7 @@ fn fold(session: &Session, driver: &Driver, ui_rect: &str, key: &str) -> Result<
     // So this returns `Err`, which the caller reports as a **SKIP** — a check
     // that could not aim has learned nothing, and reporting it as a FAIL would
     // name the fold for a dock's behaviour. The dock's own instability is a
-    // real finding and is recorded in `CONTINUE.md`; it is not this check's
-    // verdict to give.
+    // real finding; it is not this check's verdict to give.
     let body = crate::checks::driving::declared(&session.trace()?, ui_rect, PANEL_BODY);
     if let Some(body) = body
         && !body.contains_rect(heading)
@@ -436,18 +425,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // — mounted, the active tab of its stack, on a visible side — and raises it
     // in every other case. So a check that presses the control unconditionally
     // is not driving a command, it is driving a *flip*, and its outcome depends
-    // on a state it never read. That is exactly what the 2026-08-28 sweep
-    // caught: the arm ran, traced neither a decline nor an unimplemented line,
-    // and no panel body appeared — the panel had been the active tab and the
-    // click SHUT it. The check reported a defect in a panel that worked.
+    // on a state it never read. The failure that produces looks like this: the
+    // arm runs, traces neither a decline nor an unimplemented line, and no
+    // panel body appears — because the panel was the active tab and the click
+    // SHUT it. The check then reports a defect in a panel that works.
     //
     // ★ The guard is the convention this suite already has, in
-    // `properties_metadata` (*"Only if it is not already, because
-    // `file.properties` is a panel TOGGLE and pressing it when the panel is
-    // open would close the thing under test"*) and in `bookmark_add`, which
-    // cites it. Written the same way here rather than invented differently:
-    // three copies of one rule that read alike are one rule; three that read
-    // differently are three rules that will drift.
+    // `properties_metadata` and `bookmark_add`: press a panel toggle only if
+    // the panel is not already up, because pressing it when the panel is open
+    // closes the thing under test. Written the same way here rather than
+    // invented differently — three copies of one rule that read alike are one
+    // rule; three that read differently are three rules that will drift.
     //
     // ★★ `PANEL` is the oracle for "already showing" and it is the right one
     // because the application declares that region **from inside the panel's
@@ -475,10 +463,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         );
     } else {
         // ★ Through `declared_or_in_overflow`, not `declared`. At the harness's
-        // window width a band can legitimately fold controls into the overflow
-        // — which on 2026-08-18 produced two FALSE failures that were believed
-        // and written down as harness limitations. Looking in both places is
-        // the fix that stopped that recurring.
+        // window width a band legitimately folds controls into the overflow, so
+        // a check that looks only at the band reports a present control as
+        // missing. Looking in both places is what keeps that false failure from
+        // being believed and written down as a harness limitation.
         let Some(item) = declared_or_in_overflow(
             &session,
             &driver,
@@ -523,9 +511,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // ★★ The toggle's OWN line, and it is here because the guard above is
         // not proof. `app::panels::toggle_panel` traces `panel-closed id=… `
         // whenever it took the closing branch, so this separates *"the press
-        // shut a panel that was up"* — the 2026-08-28 failure, which the
-        // precondition is supposed to have made impossible — from *"the press
-        // raised nothing"*. If it ever appears again, the guard read a state
+        // shut a panel that was up"* — which the precondition is supposed to
+        // have made impossible — from *"the press raised nothing"*. If it
+        // appears at all, the guard read a state
         // the dock disagreed with, and that is a finding about the two
         // predicates rather than about this panel.
         let closed = trace
@@ -568,8 +556,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `live_names`, not `declared_names` — the three counts in this check
     // compare row populations across an edit, and the `ui-rect` channel is a
     // change log in which a deleted row's last rect stands for ever. See
-    // `driving::live_names`, whose doc records the false failure this check
-    // produced before the distinction existed.
+    // `driving::live_names` for the distinction.
     let before = live_names(&trace, ui_rect, DRAW_INTO);
     if before.is_empty() {
         return Ok(Some(format!(
@@ -580,24 +567,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     // ★★★ **The fold phases are NOT DRIVEN, and this note is the finding.**
     //
-    // The first version of this check pressed `dimension-groups.heading.
-    // appearance`, asserted the appearance block drew, pressed it again and
-    // asserted it was gone. It failed, and the panel was fine — three
-    // successive fixes to the harness did not make it pass:
+    // Pressing `dimension-groups.heading.appearance`, asserting the appearance
+    // block drew, pressing it again and asserting it was gone fails against a
+    // panel that is fine, and three harness remedies do not make it pass:
     //
     // 1. **more settle time.** The heading moves 15 pt after the panel opens,
     //    because raising it re-lays the *dock* out and the body reflows. Waiting
-    //    longer did not help: the motion is triggered by the act being
+    //    longer does not help: the motion is triggered by the act being
     //    measured, not by the passage of time.
-    // 2. **`stable_rect`** — read, settle, re-read until two agree. It closed
-    //    the read-then-act interval and the click still toggled nothing.
+    // 2. **`stable_rect`** — read, settle, re-read until two agree. It closes
+    //    the read-then-act interval and the click still toggles nothing.
     // 3. **an aim precondition** — refuse to click unless the heading is still
     //    inside the dock's own `dock.body.…` rect. It passes, so the click is
     //    landing inside the panel, and no fold opens.
     //
-    // On one run the trace ended `page=27 off=[0.0 12255.3]` — a document
-    // scrolled twenty-seven sheets by a click aimed at a fold heading — so at
-    // least some of the presses reach the canvas behind the panel.
+    // A trace ending `page=27 off=[0.0 12255.3]` — a document scrolled
+    // twenty-seven sheets by a click aimed at a fold heading — says at least
+    // some of the presses reach the canvas behind the panel.
     //
     // **What that means and what it does not.** It does not mean the folds are
     // broken: `crate::panels::dimension_groups`' own unit tests cover the
@@ -607,10 +593,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // gap in the instrument.
     //
     // It is recorded as a note rather than papered over with a retry loop,
-    // because `CONTINUE.md` §7's rule cuts both ways: *a harness assertion is a
-    // claim about the program AND about the harness, and only one of them is
-    // under test.* Three fixes aimed at the program's side would have been
-    // three wrong reports.
+    // because the rule cuts both ways: *a harness assertion is a claim about
+    // the program AND about the harness, and only one of them is under test.*
+    // Three fixes aimed at the program's side would have been three wrong
+    // reports.
     //
     // The phases below still drive the panel's whole authoring round trip —
     // create, rename, delete — because those controls are inside folds that
@@ -660,8 +646,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: add it ---------------------------------------------------------
     //
-    // ★★★ **Scroll to it first**, and the reason took three runs to establish
-    // on 2026-08-27 because the harness was reporting the wrong diagnosis.
+    // ★★★ **Scroll to it first**, and the reason is not the one the harness
+    // reports first.
     //
     // The panel body is a `ScrollArea::vertical`, so `dimension-groups.add`
     // publishes a rect in the **scrolled content**, which is not necessarily a
@@ -669,13 +655,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Add-a-group fold open, that rect lands at logical y 824 — twenty-four
     // points below the bottom edge of the window.
     //
-    // That is not a defect: an operator sees the scrollbar and scrolls. It was
-    // reported as one three times over, because `confirm_uncovered` said only
-    // *"the point belongs to another window"* and then guessed at `osk.exe`.
-    // It blamed `osk.exe` (not running), then File Explorer, then `Progman` —
-    // the desktop — which is what finally gave it away: the desktop owns a
-    // pixel when nothing of the application is there. The guard names the
-    // window now and tells "off the window" from "covered".
+    // That is not a defect: an operator sees the scrollbar and scrolls. A guard
+    // that says only *"the point belongs to another window"* and then guesses
+    // at the owner reports it as one, naming in turn `osk.exe`, File Explorer
+    // and `Progman` — the desktop, which is the tell: the desktop owns a pixel
+    // when nothing of the application is there. `confirm_uncovered` names the
+    // owning window and tells "off the window" from "covered".
     //
     // ⇒ **A rect from inside a scroll region is a content coordinate.** Scroll,
     // then re-read the rect, then click. Re-reading is the load-bearing half:

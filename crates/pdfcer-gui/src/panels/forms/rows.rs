@@ -20,54 +20,33 @@
 //! field can be blocked several ways at once and the most specific answer is
 //! the useful one.
 //!
-//! ## ★ The salvaged appearance check could not fire, and the replacement
-//! asks a question the model can answer
+//! ## A check box with no ON state is disabled, never offered and refused
 //!
-//! Recorded because it is the single correction this module makes to code that
-//! was otherwise carried across intact, and because the shape of the mistake
-//! is one anybody could repeat.
+//! `pdfcer_core::forms::Widget::on_states` lists the button on-state names a
+//! widget's `/AP` `/N` subdictionary defines, **excluding `Off`** (§12.7.4.2.3).
+//! Two rules follow from that exclusion:
 //!
-//! The old shell disclosed, **after** a check box was toggled, that the
-//! document had no drawn appearance for the state just selected. The predicate
-//! behind it was:
-//!
-//! ```text
-//! let has_ap_for_target = |on: bool| {
-//!     on || field.widgets.iter().any(|w| w.on_states.iter().any(|st| st == b"Off"))
-//! };
-//! ```
-//!
-//! `pdfcer_core::forms::Widget::on_states` is documented as *"the button
-//! on-state names this widget's `/AP` `/N` subdictionary defines, **excluding
-//! `Off`**"*. So the right-hand disjunct is **always false**, and the
-//! predicate reduces to `on`: every *clear* reported "no appearance for that
-//! state" and every *tick* reported none, whatever the document actually
-//! contained. The disclosure fired on exactly the wrong half of the clicks.
-//!
-//! It cannot simply be repaired, because the fact it wanted is not in the
-//! model: `on_states` excludes `Off` by construction, so nothing a shell can
-//! read says whether `/AP` `/N` `/Off` exists. (That is a `pdfcer-core`
-//! boundary finding, recorded in [`super::edit`]'s KNOWN GAPS alongside the
-//! other two.)
-//!
-//! What **is** knowable is the other direction, and it turns out to matter
-//! more: if `on_states` is empty, there is no ON state at all, and
-//! `EditSession::set_button_state` refuses any name but `Off` that no widget
-//! defines — `EditError::FieldStateUnknown`. So the box is drawn **disabled**
-//! with [`crate::text::forms::form_field_no_on_state_note`] beside it, which
-//! is R83 rather than a disclosure after the fact: the control that would
-//! always error is not offered.
+//! - **Never ask `on_states` whether an `Off` appearance exists.** A predicate
+//!   of the shape `on || widgets.any(|w| w.on_states.contains("Off"))` reduces
+//!   to `on`, because the right-hand disjunct is false by construction — it
+//!   compiles, it reads like a real check, and it answers the wrong half of the
+//!   clicks. The fact itself lives on `Widget::has_off_appearance`, which core
+//!   keeps deliberately separate for exactly this reason.
+//! - An **empty** `on_states` means there is no ON state at all.
+//!   `EditSession::set_button_state` refuses any name but `Off` that no widget
+//!   defines — `EditError::FieldStateUnknown` — so the box is drawn disabled
+//!   with [`crate::text::forms::form_field_no_on_state_note`] beside it. R83
+//!   rather than a disclosure after the fact: the control that would always
+//!   error is not offered at all.
 //!
 //! ## Deliberately absent: field creation, deletion, renaming, widget moving
 //!
-//! The old shell's rows carried a Rename editor with an ancestor breadcrumb, a
-//! per-widget Delete, a whole-field Delete and a grouping-node roster —
-//! roughly half of its 1,600 lines. None of it is here. Those are `Edit ▸
-//! Forms` **authoring** commands (`edit.form_create_field`,
-//! `edit.form_manage_fields`), they answer to core's *structural*
-//! certification gate rather than the fill gate, and a reader that fills a
-//! form does not create fields in it. They land with the commands that name
-//! them.
+//! A Rename editor, a per-widget Delete, a whole-field Delete and a
+//! grouping-node roster are `Edit ▸ Forms` **authoring** commands
+//! (`edit.form_create_field`, `edit.form_manage_fields`). They answer to core's
+//! *structural* certification gate rather than the fill gate, and a reader that
+//! fills a form does not create fields in it. They land with the commands that
+//! name them.
 
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -108,14 +87,13 @@ pub(super) struct RowContext<'a> {
     pub fill_refusal: Option<&'static str>,
     /// **The open document**, for the one row that has to ask it a question.
     ///
-    /// ★★ `Option`, and the `None` is not defensive padding: this module's
-    /// tests build a `RowContext` to exercise labelling and blocking rules
-    /// without a document, and they must go on being able to. A row that needs
-    /// the document simply is not drawn without one — which is R9's rule
-    /// applied to a test harness rather than to an operator.
+    /// `Option`, and the `None` is not defensive padding: this module's tests
+    /// build a `RowContext` to exercise labelling and blocking rules without a
+    /// document. A row that needs the document is not drawn without one — R9's
+    /// rule applied to a test harness rather than to an operator.
     ///
-    /// ★ Only `panels::forms::button` uses it. Every other row is a pure
-    /// function of the `Field` it was handed, and that is a property worth
+    /// Only `panels::forms::button` reads it. Every other row is a pure
+    /// function of the `Field` it was handed, and that property is worth
     /// keeping: it is why this module's rules can be unit-tested at all.
     pub doc: Option<&'a OpenDoc>,
     /// **What the operator is typing into a field ON THE PAGE right now**, as
@@ -123,15 +101,15 @@ pub(super) struct RowContext<'a> {
     /// [`crate::canvas::forms::live_draft`], which is the one place this is
     /// decided.
     ///
-    /// ★★★ The 2026-09 review's row **A12c**: *"the Fill-form panel does not
-    /// update while you type on the page."* Two draft stores, reconciled only
-    /// by a commit, and a commit only on focus loss — so a row sat beside the
-    /// field it describes showing the *previous* value for the whole of a
-    /// typing gesture. [`text_row`] now prefers this over its own draft, which
-    /// is not a synchronisation between two stores but the removal of one of
-    /// them from the answer.
+    /// [`text_row`] prefers this over its own draft. That is not two stores
+    /// being synchronised but one of them being removed from the answer: while
+    /// the page owns the keyboard there is exactly one uncommitted value for
+    /// the field. Without it the panel row sits beside the field it describes
+    /// showing the *previous* value for the whole of a typing gesture, because
+    /// the two stores reconcile only at a commit and a commit happens only on
+    /// focus loss.
     ///
-    /// ★★ Asked **once per frame**, in [`super::field_list`], exactly like
+    /// Asked **once per frame**, in [`super::field_list`], exactly like
     /// [`Self::page_numbers`] and [`Self::fill_refusal`] and for the same
     /// reason: it is a fact about the document that is identical for every
     /// row, and a 400-field form would otherwise read and clone the canvas's
@@ -148,7 +126,7 @@ pub(super) struct RowContext<'a> {
     pub button_draft: &'a mut Option<(String, crate::canvas::formfield::action::ButtonDoes)>,
     /// Where a push button's action change is raised.
     ///
-    /// ★ Separate from `out: &mut Vec<FormEdit>`, which carries **fills**.
+    /// Separate from `out: &mut Vec<FormEdit>`, which carries **fills**.
     /// Setting an action is not a fill — it is a structural change to the
     /// field, in `FieldAction`'s vocabulary rather than `FormEdit`'s — and
     /// giving it a `FormEdit` variant would have put a document-structure verb
@@ -184,20 +162,15 @@ pub(super) fn row(
     // field also happens to be a push button.
     if let Some(note) = ctx.fill_refusal.or_else(|| block_reason(field)) {
         blocked_row(ui, field, note);
-        // ★★★ …AND a push button gets its action row anyway — 2026-09-01.
+        // …and a push button still gets its action row.
         //
-        // `block_reason` answers *"this field cannot be FILLED"*, and for a
-        // push button that is permanently true and always was: it runs an
-        // action rather than holding a value, which is exactly what the note
-        // above says. Until today that was the whole of what this shell had to
-        // say about one.
+        // **Not fillable is not the same as not editable.** `block_reason`
+        // answers *"this field cannot be FILLED"*, and for a push button that
+        // is permanently true: it runs an action rather than holding a value,
+        // which is what the note above says. The action row offers the thing a
+        // push button actually has, so the two must not be collapsed.
         //
-        // ★★ Not fillable is not the same as not editable, and conflating them
-        // is what kept this row from existing. The distinction is now drawn
-        // where it belongs: the note explains why there is no value box, and
-        // the section below offers the thing a push button actually has.
-        //
-        // ★ Gated on the DOCUMENT-wide refusal being absent. A certified or
+        // Gated on the DOCUMENT-wide refusal being absent. A certified or
         // encrypted document refuses `set_button_action` too, and offering a
         // Change control that the engine would decline is the affordance-for-
         // an-impossible-act shape R9 exists to prevent.
@@ -274,14 +247,14 @@ fn row_label(field: &Field, ctx: &RowContext<'_>) -> String {
 /// "this is a signature" is what the field permanently is. Reporting the less
 /// specific reason first would be less useful.
 ///
-/// # ★ The rich-text check is NOT here, and must not move here
+/// # The rich-text check is NOT here, and must not move here
 ///
 /// A rich-text field gets a row of its own ([`rich_text_row`]) rather than a
 /// refusal, because there **is** something an operator can do with it: convert
 /// it, disclosed and deliberately. Folding it in here would replace an offer
 /// with a shrug.
 ///
-/// # ★ `FieldFlags::RICH_TEXT` shares its bit with `RADIOS_IN_UNISON`
+/// # `FieldFlags::RICH_TEXT` shares its bit with `RADIOS_IN_UNISON`
 ///
 /// Bit 26 is the only overloaded position in the whole `/Ff` family, and
 /// `field.flags.has(FieldFlags::RICH_TEXT)` **compiles and is wrong on every
@@ -290,7 +263,7 @@ fn row_label(field: &Field, ctx: &RowContext<'_>) -> String {
 /// site because this is the function someone extends when a new refusal is
 /// added.
 ///
-/// # ★ `pub(crate)`, because a second surface asks it rather than restating it
+/// # `pub(crate)`, because a second surface asks it rather than restating it
 ///
 /// [`crate::canvas::forms::classify`] decides whether a field may be clicked
 /// **on the page**, and the first thing it must decide is whether the field may
@@ -347,8 +320,8 @@ fn blocked_row(ui: &mut egui::Ui, field: &Field, note: &'static str) {
 /// So the row shows the value read-only and offers a **disclosed downgrade**:
 /// convert the field to a plain one. Deliberate, named and lossy, which is why
 /// it is a button the operator presses rather than something that happens when
-/// they start typing. `SALVAGE.md` requires the disclosure to travel with the
-/// capability; the old shell carried it, and it is carried here.
+/// they start typing. The disclosure travels with the capability: the button is
+/// never offered without the sentence that says what it costs.
 ///
 /// # Why the `/RV` is parsed every frame
 ///
@@ -424,14 +397,14 @@ fn rich_text_row(ui: &mut egui::Ui, field: &Field, out: &mut Vec<FormEdit>) {
 /// question: the name has to match, because a live draft for *Address* says
 /// nothing whatever about the *Name* row it is being asked beside.
 ///
-/// # ★ A pure function, for the reason [`commit`] is one
+/// # A pure function, for the reason [`commit`] is one
 ///
 /// The rule it states — *the page wins for the field the page is typing into,
 /// and for no other* — is one line of code and two ways to get it wrong, both
 /// silent: mirror unconditionally and every text row in the form shows one
-/// field's draft; mirror never and A12c is back. Neither is visible in a diff
-/// and neither needs an `egui::Ui` to demonstrate, so it is tested rather than
-/// looked at.
+/// field's draft; mirror never and the panel lags a whole typing gesture behind
+/// the page. Neither is visible in a diff and neither needs an `egui::Ui` to
+/// demonstrate, so it is tested rather than looked at.
 fn mirrored<'a>(live: Option<&'a (String, String)>, fqn: &str) -> Option<&'a str> {
     live.filter(|(name, _)| name == fqn)
         .map(|(_, draft)| draft.as_str())
@@ -454,29 +427,24 @@ fn text_row(
     let stored = field.value.display_text();
     let draft = drafts.entry(fqn.clone()).or_insert_with(|| stored.clone());
 
-    // ★★★ **THE PAGE WINS WHILE THE PAGE HAS THE KEYBOARD** — the 2026-09
-    // review's row A12c, *"the Fill-form panel does not update while you type
-    // on the page."*
+    // **THE PAGE WINS WHILE THE PAGE HAS THE KEYBOARD.** Without this the row
+    // shows the value from before the operator started typing on the page, for
+    // as long as they keep typing — two boxes on screen disagreeing about one
+    // field, with no way to tell which is the truth.
     //
-    // Two draft stores existed and only a commit reconciled them, so this row
-    // showed the value from before the operator started typing, for as long as
-    // they kept typing — two boxes on screen at once, disagreeing about one
-    // field, with no way for the operator to tell which was the truth.
+    // An ASSIGNMENT rather than a second store kept in step: the row's own
+    // draft is overwritten with the page's, so there is exactly one
+    // uncommitted value for this field at any instant and no reconciliation to
+    // get wrong. Safe because `live` is `Some` only while the page's editor
+    // owns the keyboard (`canvas::forms::live_draft` checks `egui`'s focus, and
+    // `egui` has one focused widget), so it cannot run on a frame where the
+    // operator is typing into the box below.
     //
-    // ★★ This is an ASSIGNMENT rather than a second store being kept in step.
-    // The row's own draft is simply overwritten with the page's, which means
-    // there is exactly one uncommitted value for this field at any instant and
-    // no reconciliation to get wrong. It is safe because `live` is `Some` only
-    // while the page's editor owns the keyboard (`canvas::forms::live_draft`
-    // checks `egui`'s focus, and `egui` has one focused widget), so this
-    // cannot run on a frame where the operator is typing into the box below.
-    //
-    // ★ Left where it is — after `or_insert_with`, before `/MaxLen` — on
-    // purpose. Before the seeding it would be undone by it; after the
-    // truncation it would smuggle past a limit both surfaces enforce. Here the
-    // mirrored value goes through exactly the same character clamp a typed one
-    // does, which is what keeps the two surfaces' `/MaxLen` behaviour one rule
-    // rather than two.
+    // Position matters — after `or_insert_with`, before `/MaxLen`. Before the
+    // seeding it would be undone by it; after the truncation it would smuggle
+    // past a limit both surfaces enforce. Here the mirrored value goes through
+    // the same character clamp a typed one does, which is what keeps the two
+    // surfaces' `/MaxLen` behaviour one rule rather than two.
     if let Some(live) = live
         && draft.as_str() != live
     {
@@ -534,38 +502,33 @@ fn text_row(
         );
     }
 
-    // ★★★ **POINT THE SPOTLIGHT AT THIS FIELD** — `OPERATOR_REQUESTS.md` O98,
+    // **POINT THE SPOTLIGHT AT THIS FIELD** — `OPERATOR_REQUESTS.md` O98,
     // *"when I click on fields in it … it should highlight the field on the
     // canvas that is being filled."*
     //
-    // ★★ On **focus**, not on click, and the difference is his own word
-    // *"filled"*. A click that lands in the value box focuses it, so clicking
-    // lights it up — but so does arriving by Tab, and so does still being there
-    // three keystrokes later. A click-only trigger would put the spotlight out
-    // the moment the operator started typing, which is exactly when they want
-    // to know which box on the page they are typing into.
+    // On **focus**, not on click, and the difference is his own word *"filled"*.
+    // A click that lands in the value box focuses it, so clicking lights it up —
+    // but so does arriving by Tab, and so does still being there three
+    // keystrokes later. A click-only trigger would put the spotlight out the
+    // moment the operator started typing, which is exactly when they want to
+    // know which box on the page they are typing into.
     //
-    // ★ Written every frame the box has focus rather than once on the
-    // transition: that is what keeps it alive with no timer and no teardown,
-    // and `spotlight::set` is idempotent.
+    // Written every frame the box has focus rather than once on the transition:
+    // that is what keeps it alive with no timer and no teardown, and
+    // `spotlight::set` is idempotent.
     if response.has_focus() {
         crate::panels::forms::spotlight::set(ui.ctx(), fqn);
     }
 
-    // ★★ The value box's own rectangle, so a driven check can CLICK a row.
+    // The value box's own rectangle, so a driven check can CLICK a row. Without
+    // a per-row region there is nothing to aim a pointer at and the spotlight
+    // is unverifiable by the only method that counts.
     //
-    // Added 2026-09-02 with O98's check, and it had to be added before the
-    // check could exist: this panel published no per-row region at all, so
-    // there was nothing to aim a pointer at and the whole feature was
-    // unverifiable by the only method that counts. That is the third time on
-    // this project a feature has needed the instrument built before the
-    // evidence could be gathered.
-    //
-    // ★ Keyed on the row INDEX rather than the field name. The name is the
-    // right identity for the spotlight channel — it crosses a frame boundary,
-    // and an index into a walk of the form is only valid for the revision it
-    // was taken from — but it is the wrong identity for a region name, because
-    // a fully-qualified name legitimately contains dots, spaces and any byte a
+    // Keyed on the row INDEX rather than the field name. The name is the right
+    // identity for the spotlight channel — it crosses a frame boundary, and an
+    // index into a walk of the form is only valid for the revision it was taken
+    // from — but it is the wrong identity for a region name, because a
+    // fully-qualified name legitimately contains dots, spaces and any byte a
     // PDF string can hold, and a region name is parsed out of a trace line.
     //
     // `ui_rect_visible` rather than `ui_rect`: this panel is a scroll area, and
@@ -603,7 +566,7 @@ fn text_row(
 /// They are the sort of thing that stays correct for months and then gets
 /// "simplified" into `if response.changed()`.
 ///
-/// # ★ `pub(crate)`, because the canvas commits by the identical rule
+/// # `pub(crate)`, because the canvas commits by the identical rule
 ///
 /// [`crate::canvas::forms`] fills the same fields from the page, and both of
 /// the conditions above bind there for exactly the reasons they bind here —
@@ -775,9 +738,9 @@ fn radio_states(field: &Field) -> Vec<String> {
 /// # `/V` stores the EXPORT value and the operator must see the DISPLAY one
 ///
 /// `/Opt` entries may be `[export display]` pairs, so rendering `/V` verbatim
-/// shows an operator `MX` where the form says `Mexico`. The old shell caught
-/// this with a screenshot of a fixture built with export deliberately unequal
-/// to display; the mapping is carried here.
+/// shows an operator `MX` where the form says `Mexico`. Every read of a
+/// selection goes through the export → display mapping below; a fixture whose
+/// export differs from its display is what makes the omission visible at all.
 ///
 /// A `/V` that matches no option is a real state — set by another program, or
 /// left behind when the option list changed — so it is shown as stored, with
@@ -891,7 +854,7 @@ fn choice_selections(field: &Field) -> Vec<String> {
 mod tests {
     use super::*;
 
-    /// **★ Tabbing through a field writes nothing.**
+    /// **Tabbing through a field writes nothing.**
     ///
     /// The second half of [`commit`]'s condition, and the one that is easy to
     /// drop. Reading a form means tabbing through every field in it; if that
@@ -918,14 +881,13 @@ mod tests {
         assert_eq!(commit(true, "Ann", "Anna"), Some("Ann".to_owned()));
     }
 
-    /// ★★★ **The page's draft reaches its own row, and reaches no other.**
+    /// **The page's draft reaches its own row, and reaches no other.**
     ///
-    /// Row **A12c**. Both halves are asserted because both are silent
-    /// failures: without the first the panel goes on showing the value from
-    /// before the operator started typing on the page — two boxes disagreeing
-    /// about one field — and without the second every text row in the form
-    /// shows whatever is being typed into one of them, which is worse than the
-    /// lag it replaced.
+    /// Both halves are asserted because both are silent failures: without the
+    /// first the panel goes on showing the value from before the operator
+    /// started typing on the page — two boxes disagreeing about one field — and
+    /// without the second every text row in the form shows whatever is being
+    /// typed into one of them, which is worse than the lag it replaces.
     #[test]
     fn the_pages_draft_reaches_its_own_row_and_no_other() {
         let live = ("Name".to_owned(), "Ann".to_owned());

@@ -1,15 +1,16 @@
 //! # `app::save` — writing a copy of the open document to a file the operator
 //! names
 //!
-//! The body of `file.save_copy`, and **the first time anything an operator
-//! authored in this shell can leave the process**. Until 2026-08-14 the command
-//! was registered, drawn on the File tab, drawn on the quick-access toolbar,
-//! bound to `Ctrl+S`, printed "(Ctrl+S)" in its own tooltip — and had no
-//! dispatch arm, so it traced `command-unimplemented` and did nothing. Every
-//! feature this project has shipped (dimensions, markup, text marks, form
-//! fills, page operations, a newly created document) was unwritable to disk.
-//! That is `DEFECTS.md` D1's shape with the most consequential verb in an
-//! editor behind it.
+//! The body of `file.save_copy`, and **the route by which anything an operator
+//! authored in this shell leaves the process**. A command can be registered,
+//! drawn on the File tab, drawn on the quick-access toolbar, bound to `Ctrl+S`
+//! and print "(Ctrl+S)" in its own tooltip while having no dispatch arm at all
+//! — it then traces `command-unimplemented` and does nothing, and every feature
+//! this project has shipped (dimensions, markup, text marks, form fills, page
+//! operations, a newly created document) is unwritable to disk. That is
+//! `DEFECTS.md` D1's shape with the most consequential verb in an editor behind
+//! it, which is why the dispatch arm is part of this module's contract rather
+//! than an afterthought.
 //!
 //! ## 1. The save mode is **incremental**, and it was decided by a shipped
 //!    promise rather than by this module
@@ -36,20 +37,19 @@
 //! rewrite by name (`WriteError::HybridFullRewrite`) and points at incremental
 //! as the supported path, which is the same posture from the other side.
 //!
-//! ★ **Narrowed at `Pass 281.0`, and this paragraph said the old thing until
-//! 2026-09-11.** It read *"refuses a full rewrite of a hybrid-reference
-//! file"*. `save_full` now refuses only a hybrid whose `/XRefStm` **does not
-//! parse** — the file says it hides objects and pdfcer cannot tell which.
-//! Ordinary hybrid files, which is most of what Microsoft Office exports,
-//! rewrite fine. The wide refusal survives in `save_full_encrypted` and
-//! `save_full_decrypted`, so **adding or removing encryption still refuses any
-//! hybrid**. The posture being cited here is unchanged either way.
+//! ★ **The exact width of that refusal, which is narrower than it sounds.**
+//! `save_full` refuses only a hybrid whose `/XRefStm` **does not parse** — the
+//! file says it hides objects and pdfcer cannot tell which. Ordinary hybrid
+//! files, which is most of what Microsoft Office exports, rewrite fine. The
+//! wide refusal — any hybrid at all — stands in `save_full_encrypted` and
+//! `save_full_decrypted`, so **adding or removing encryption refuses every
+//! hybrid**. The posture being cited here is the same either way.
 //!
-//! ### ★★★ 1.1 …EXCEPT while a redaction is staged, 2026-09-05
+//! ### ★★★ 1.1 …EXCEPT while a redaction is staged
 //!
 //! There is exactly one state in which this module writes a **single-revision
-//! full rewrite** instead, and it is not a fallback: a staged redaction
-//! (`pdfcer-core` `Pass 250.2`). All three save verbs go through
+//! full rewrite** instead, and it is not a fallback: a staged redaction.
+//! All three save verbs go through
 //! [`write_copy`], and [`write_copy`] asks `EditSession::has_pending_redaction()`
 //! before it asks anything else.
 //!
@@ -57,8 +57,8 @@
 //!
 //! 1. **It is not optional.** While a redaction is staged the engine refuses
 //!    `to_incremental_bytes` **and** `to_full_bytes` by name
-//!    (`WriteError::RedactionPending`, `pdfcer-core/src/edit.rs:8348` and
-//!    `:8374`), because the un-redacted content is still live in the session.
+//!    (`WriteError::RedactionPending`, raised from both writers), because the
+//!    un-redacted content is still live in the session.
 //!    A build that did not route would not leak — it would simply stop being
 //!    able to save at all, loudly, on every verb.
 //! 2. **It suspends §1's promise, so §1's promise gets a sentence.** The
@@ -124,14 +124,15 @@
 //! open in front of the operator is still exactly as unsaved as it was, at its
 //! own path.
 //!
-//! And it is wrong concretely, with a live consumer: `dialogs::ocr`'s
-//! `preflight` refuses recognition when `doc.edit_epoch != 0`, because
-//! `add_ocr_layer` writes an incremental revision over the document **as
-//! opened** and would therefore silently omit the operator's edits. Zeroing the
-//! epoch here would turn that named refusal off and hand the operator a
-//! recognised copy with their work missing from it — a plausible, working,
-//! wrong file, which `pdfcer-core`'s writer module calls the worst possible
-//! failure shape for this subsystem.
+//! And it is wrong concretely. `edit_epoch` is only half of a **pair**: every
+//! consumer that asks *"is there unsaved work?"* asks it against `saved_epoch`
+//! — `save::has_unsaved_edits`, and `actions::acrobat`'s
+//! `edit_epoch.saturating_sub(saved_epoch)`, which is the count the unsaved
+//! dialog reads out. Zeroing one side puts `edit_epoch` **below** `saved_epoch`,
+//! the subtraction saturates to `0`, and the unsaved dialog offers *"you have 0
+//! unsaved changes"* over work that is genuinely unsaved. The warning still
+//! appears — `has_unsaved_edits` asks `!=`, not `>` — so what the operator gets
+//! is a prompt that contradicts itself, which is worse than either answer.
 //!
 //! ### 3.3 `save_pending()` still answers `false`
 //!
@@ -203,14 +204,16 @@
 //! ruling for a dismissed Open — the operator changed their mind, and that is a
 //! complete and correct outcome that must not put a line anywhere.
 //!
-//! ## 6. ★★★ What a save says about a DIGITAL SIGNATURE, added 2026-08-28
+//! ## 6. ★★★ What a save says about a DIGITAL SIGNATURE
 //!
-//! Until then: nothing, on any surface, before or after, on any of the three
-//! write paths this module owns. `pdfcer-core` exposes
-//! `EditSession::signature_impact_of_save` and `EditSession::changes_structure`
-//! written specifically so a front end could answer the question, and this
-//! shell called neither. A structural edit followed by `Ctrl+S` wrote a
-//! revision over a signed document and said nothing about it.
+//! Saying nothing is the failure this section exists to prevent. A structural
+//! edit followed by `Ctrl+S` writes a revision over a signed document, and a
+//! shell that mentions it on no surface — before or after, on any of the three
+//! write paths this module owns — has invalidated a signature silently.
+//! `pdfcer-core` exposes `EditSession::signature_impact_of_save` and
+//! `EditSession::changes_structure` specifically so a front end can answer the
+//! question, so the answer is there for the asking and the only way to get it
+//! wrong is not to ask.
 //!
 //! The whole design lives in [`crate::dialogs::signature`]; what belongs in
 //! this header is the half this module performs:
@@ -318,12 +321,11 @@ fn signature_note(doc: &OpenDoc) -> Option<String> {
 /// `tools/ui-verify`'s `save_copy_round_trip`, which answers the dialog through
 /// the seam and then re-opens the file that came out.
 ///
-/// ★ **Returns whether a file was actually written**, added 2026-08-19.
+/// ★ **Returns whether a file was actually written.**
 ///
-/// It returned `()` until then, and the reason it now answers is a caller that
-/// did not exist: `crate::dialogs::unsaved`'s *Save a copy…* button, which
-/// **only proceeds with the close or open it is standing in front of if the
-/// save succeeded.**
+/// The caller that needs the answer is `crate::dialogs::unsaved`'s *Save a
+/// copy…* button, which **only proceeds with the close or open it is standing
+/// in front of if the save succeeded.**
 ///
 /// The three false cases are not the same thing and it is worth saying so,
 /// because a future hand will be tempted to distinguish them:
@@ -343,7 +345,7 @@ fn signature_note(doc: &OpenDoc) -> Option<String> {
 ///
 /// # ★★★ Why this is a different command from [`save_copy`], and not a flag
 ///
-/// Operator, 2026-09-02, `OPERATOR_REQUESTS.md` O95:
+/// Operator, `OPERATOR_REQUESTS.md` O95:
 ///
 /// > *"we need a Save As option so that we are then making edits in the save as
 /// > file instead of the original just like other programs have it."*
@@ -542,31 +544,24 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 /// And `saved_epoch` must never be reset to make an answer come out right:
 /// `edit_epoch` is the cache key for the decomposition, the page text, the
 /// texture and every live rule-4 disclosure. Two numbers, one question each.
-/// # ★★★ 2026-09-04 — the third term, and the silent loss it closes
+/// # ★★★ The third term, and the silent loss it closes
 ///
-/// **Added on 2026-09-04 as `session.has_applied_redaction()`; CORRECTED on
-/// 2026-09-05 to `session.has_pending_redaction()`.** Both halves of that are
-/// recorded rather than the survivor alone, because the reason the term exists
-/// outlived the verb it was first written against and would have been lost with
-/// it.
+/// **`session.has_pending_redaction()` — and it must be the *pending* verb,
+/// never `has_applied_redaction()`.** [`crate::redact::stage_into_session`]
+/// leaves base, overlay and undo untouched and sets one flag, so
+/// `has_applied_redaction()` is **`false` for the life of every session this
+/// shell creates**: a term that can never be true, which is worse than an
+/// absent one because it reads as a guard.
 ///
-/// **What it was for.** `EditSession::apply_redactions` (`Pass 250.1`) applied
-/// a redaction into the session by **collapsing** it: the redacted bytes became
-/// the session's new base and the edit and undo stacks were emptied. So
-/// immediately afterwards `is_modified()` answered **`false`** — correctly, on
-/// its own terms, because the session no longer differed from its base. With
-/// two terms this predicate therefore answered **clean** on a document whose
-/// most consequential edit had not been written: no tab marker, no question on
-/// Close, no question on Quit. Apply a redaction, close the document, and it is
-/// gone with nothing asked.
+/// **What the term is for at all.** A redaction that reaches the session
+/// without passing through the edit stacks leaves `is_modified()` answering
+/// **`false`** — correctly, on its own terms, because the session does not
+/// differ from its base. With two terms this predicate then answers **clean**
+/// on a document whose most consequential edit has not been written: no tab
+/// marker, no question on Close, no question on Quit. Arm a removal, close the
+/// document, and it is gone with nothing asked.
 ///
-/// **Why the verb changed.** This shell no longer collapses. `Pass 250.2`'s
-/// [`crate::redact::stage_into_session`] leaves base, overlay and undo
-/// untouched and sets one flag, so `has_applied_redaction()` is now **`false`
-/// for the life of every session this shell creates** — a term that can never
-/// be true, which is worse than an absent one because it reads as a guard.
-///
-/// **And the hole it would have left is a real, reachable state**, not a
+/// **And the hole it closes is a real, reachable state**, not a
 /// theoretical one: open a drawing that already carries `/Redact` marks from an
 /// earlier session, press *Review & apply*, choose *this document*. Nothing is
 /// edited — the marks were already in the file — so `is_modified()` is `false`;
@@ -579,16 +574,16 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 /// `edit_epoch != saved_epoch` term is what turns it off again once the
 /// redaction has actually been written.
 ///
-/// ★ **It is strictly better behaved than the term it replaces**, in the one
-/// way that matters. `has_applied_redaction()` was permanently sticky — once
-/// true, true for the life of the session — so `redact → save → edit → undo`
-/// answered **dirty** on a document that matched its file, costing a spurious
-/// prompt that could never be cleared. `has_pending_redaction()` is turned off
+/// ★ **It is the better behaved of the two terms in the one way that
+/// matters.** `has_applied_redaction()` is permanently sticky — once true,
+/// true for the life of the session — so `redact → save → edit → undo` answers
+/// **dirty** on a document that matches its file, costing a spurious prompt
+/// that can never be cleared. `has_pending_redaction()` is turned off
 /// by [`crate::redact::cancel_staged_redaction`], so a document whose staging
 /// the operator called off goes genuinely clean again.
 ///
-/// ⚠ **It is still not a save gate**, and the distinction moved rather than
-/// went away. Saving while a redaction is staged is not merely permitted, it is
+/// ⚠ **It is not a save gate**, and the distinction is an easy one to lose.
+/// Saving while a redaction is staged is not merely permitted, it is
 /// the *only* way the redaction ever happens — [`write_copy`] routes it through
 /// `save_applying_redaction`. This predicate asks whether there is something to
 /// save, never whether saving is permitted.
@@ -600,17 +595,17 @@ pub fn has_unsaved_edits(doc: &OpenDoc) -> bool {
 
 /// ★★★ **Save. In place. The one every other program has.**
 ///
-/// The operator, 2026-08-20:
+/// The operator:
 ///
 /// > *"can I please have a save button like every other program in existence
 /// > has? We're on week two of this and just have a save as button."*
 ///
-/// There is no defence. `Ctrl+S` was bound to [`save_copy`], which asks where
-/// to put it every single time, and overwrite-in-place had been written down as
-/// *"an operator scope decision"* and then been nobody's problem. That is the
-/// same failure as `Ctrl+P` never being bound and the text caret never having
-/// an index: **the basics were never audited as basics**, because every test
-/// asked *"does the thing I built work?"* and nothing asked *"does the thing
+/// There is no defence for the shape he is describing: `Ctrl+S` bound to
+/// [`save_copy`], which asks where to put it every single time, with
+/// overwrite-in-place written down as *"an operator scope decision"* and then
+/// nobody's problem. It is the same failure as an unbound `Ctrl+P` or a text
+/// caret with no index: **the basics have to be audited as basics**, because a
+/// suite that asks *"does the thing I built work?"* never asks *"does the thing
 /// everyone expects exist?"*.
 ///
 /// # ★★ It writes to a TEMPORARY FILE and renames, and that is not ceremony
@@ -771,14 +766,14 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★ `appended=` beside `bytes=` on `HANDOFF.md` §2's own
-                    // advice about the ink trail: a build that wrote a plain
-                    // copy of the base file — no revision appended, the
-                    // operator's edits silently absent — produces a file that
-                    // opens, has the right page count and looks correct, and
-                    // its trace line would be identical but for this one
-                    // field. `identical=` is the same fact from the other
-                    // side and is `true` exactly when nothing was edited.
+                    // ★ `appended=` beside `bytes=`, on the ink-trail rule:
+                    // a build that writes a plain copy of the base file — no
+                    // revision appended, the operator's edits silently absent
+                    // — produces a file that opens, has the right page count
+                    // and looks correct, and its trace line would be
+                    // identical but for this one field. `identical=` is the
+                    // same fact from the other side and is `true` exactly when
+                    // nothing was edited.
                     //
                     // `epoch=` says WHICH revision was written, which is the
                     // only way a reader of a trace can tell a save that
@@ -860,8 +855,8 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
 /// (`appended=`, `verbatim=`, `identical=`) are properties of an incremental
 /// update and every one of them would be a fabrication here; this line carries
 /// what a full-rewrite removal actually did. A reader of a trace must be able to
-/// tell the two events apart, and `HANDOFF.md` §2's ink-trail rule is that they
-/// are told apart by fields, not by hoping.
+/// tell the two events apart, and the ink-trail rule is that they are told
+/// apart by fields, not by hoping.
 fn redaction_receipt(doc: &OpenDoc, target: &Path, report: &pdfcer_core::redact::RedactionReport) {
     let residuals = crate::redact::residual_count(report, None);
     crate::diag::trace(|| {
@@ -924,8 +919,7 @@ fn redaction_refusal_note(doc: &OpenDoc, error: &SaveError) {
     }
 }
 
-/// **The extra sentence a save refused by the page-tree guard owes** —
-/// 2026-09-05.
+/// **The extra sentence a save refused by the page-tree guard owes.**
 ///
 /// [`redaction_refusal_note`]'s shape exactly, for its reasons, one variant
 /// along: `record_save_failure` puts *"the copy was not written — check that
@@ -1023,10 +1017,9 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
     // Two settings ride on this — the cross-reference entry line ending and the
     // trailing newline — and both change the bytes of the file the operator is
     // about to receive. A bare `::default()` here would honour neither, which is
-    // exactly what the old shell did: `xref_entry_eol`'s whole default was
-    // changed on an operator ruling because a fixed form produced a
-    // ten-thousand-byte diff on an unedited file, and the GUI could not honour
-    // anything but the default anyway.
+    // a live setting rather than a formality: `xref_entry_eol`'s default is
+    // what it is on an operator ruling, because a fixed form produces a
+    // ten-thousand-byte diff on an unedited file.
     //
     // The producer policy is the funnel's, which is `Preserve` — carried over
     // from `identity()` rather than chosen, because what pdfcer writes into
@@ -1035,7 +1028,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
     use crate::app::settings::SettingsExt;
     let options = doc.settings.save_options();
 
-    // ★★★ THE FORK — 2026-09-05, `pdfcer-core` `Pass 250.2`. See §1.1.
+    // ★★★ THE FORK — see §1.1.
     //
     // Asked of the SESSION rather than of a flag this module keeps, for
     // `has_a_file`'s reason applied to a different question: a second source of
@@ -1069,8 +1062,8 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
         )
     };
 
-    // ★★★ THE ABSENCE PROOF, between the bytes and the syscall — 2026-09-04,
-    // and it is the shell's own, independent of the engine, on every save verb.
+    // ★★★ THE ABSENCE PROOF, between the bytes and the syscall — the
+    // shell's own, independent of the engine, on every save verb.
     //
     // `crate::redact::PreparedRedaction::write_to` makes this check one
     // statement from the write on the two destinations that produce a file
@@ -1109,7 +1102,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
         return Err(SaveError::RedactionLeak { survivors });
     }
 
-    // ★★★ THE STRUCTURAL GUARD, 2026-09-05 — the second proof this shell keeps
+    // ★★★ THE STRUCTURAL GUARD — the second proof this shell keeps
     // at this boundary, and it is here for the identical reason the first one
     // is. `crate::pagetree` carries the whole argument, the measured cost, and
     // the lesson; the three facts a reader of THIS function needs are:
@@ -1187,7 +1180,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
 /// **Which writer produced the bytes that reached the file, and what it
 /// reported.**
 ///
-/// Added 2026-09-05 with the staged-redaction route, and it is an enum rather
+/// It exists for the staged-redaction route, and it is an enum rather
 /// than `(SaveReport, Option<RedactionReport>)` because the two writers do not
 /// both run: `EditSession::save_applying_redaction` produces no
 /// [`SaveReport`] at all — it returns bytes and a
@@ -1230,7 +1223,7 @@ enum SaveError {
     Write(std::io::Error),
     /// ★★★ **The bytes were built and pdfcer found redacted text in them.**
     ///
-    /// Added 2026-09-04 with the deferred redaction route. It means the save
+    /// The deferred redaction route's own guard. It means the save
     /// was refused *before any byte reached the file system*, and it is the one
     /// variant here that reports a **pdfcer defect** rather than a property of
     /// the document or of the disk: the engine's removal and pdfcer's own
@@ -1249,13 +1242,13 @@ enum SaveError {
     /// ★★★ **A redaction is staged and the removal itself was refused, so no
     /// save of any kind could be built.**
     ///
-    /// Added 2026-09-05. It is the one variant here the operator can reach by
+    /// It is the one variant here the operator can reach by
     /// doing something perfectly reasonable, and the sequence is worth naming
     /// because it is the trap the deferred route brings with it:
     ///
     /// 1. mark, then *Review & apply* ▸ *this document* — the removal is armed;
-    /// 2. **undo the marks**, which now works, and is the whole point of
-    ///    `Pass 250.2`;
+    /// 2. **undo the marks**, which works, and is the whole point of staging
+    ///    rather than collapsing;
     /// 3. press `Ctrl+S`.
     ///
     /// The staging is still armed and there is nothing left to remove, so
@@ -1272,7 +1265,7 @@ enum SaveError {
     /// ★★★ **The bytes were built and their page tree does not agree with
     /// itself, so writing them would hand the operator a damaged file.**
     ///
-    /// Added 2026-09-05, from his own report: *"I tested deleting pages from a
+    /// From his own report: *"I tested deleting pages from a
     /// pdf. when I open the document in Acrobat there are blank pages at the
     /// end of the document equalling the number of pages I deleted."*
     ///
@@ -1488,7 +1481,7 @@ pub fn compacted(doc: &OpenDoc, bytes: &[u8], before: u64) -> bool {
     }
 }
 
-/// What must never be true of a file this shell wrote, in its own file since
-/// 2026-09-04 — see [`tests`]'s header for the seam.
+/// What must never be true of a file this shell wrote — see [`tests`]'s header
+/// for the seam.
 #[cfg(test)]
 mod tests;

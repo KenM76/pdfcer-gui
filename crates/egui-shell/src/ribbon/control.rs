@@ -1,11 +1,10 @@
 //! # `ribbon::control` — drawing ONE control
 //!
-//! Split out of [`super::band`] on 2026-08-25, when S4 and S5 pushed that file
-//! past the project's 1,500-line ceiling (R2). The seam is a real one and not a
-//! line count: everything here answers *"how is a single item drawn?"*, and
-//! everything left in `band` answers *"how are the groups arranged?"*.
+//! The seam [`super::band`]'s header describes from the other side:
+//! everything here answers *"how is a single item drawn?"*, and everything in
+//! `band` answers *"how are the groups arranged?"*.
 //!
-//! Three functions, in the order they call each other:
+//! The public entry points, in the order they call each other:
 //!
 //! | function | question |
 //! |---|---|
@@ -13,10 +12,9 @@
 //! | [`render_command`] | at what SIZE, and does the registry even have it? |
 //! | [`command_button`] | the button itself: icon, optional label, selection, enablement, tooltip |
 //!
-//! ★ Nothing here knows about rows, groups, captions or the band's width. That
-//! is what makes the split hold rather than merely relieve pressure: a change
-//! to how the band scales cannot reach into this file, and a change to how a
-//! button looks cannot reach out of it.
+//! Nothing here knows about rows, groups, captions or the band's width. That
+//! is what makes the seam hold: a change to how the band scales cannot reach
+//! into this file, and a change to how a button looks cannot reach out of it.
 
 use egui::{Atoms, RichText, Vec2, vec2};
 
@@ -83,18 +81,18 @@ pub(crate) fn render_item_at(
 
 /// Report that `id` is enabled or not, but only when the answer has changed.
 ///
-/// ★★★ **On change, never per frame.** An unconditional emit is forty-odd lines
+/// **On change, never per frame.** An unconditional emit is forty-odd lines
 /// a frame at sixty frames a second, which is not a log anybody reads; it is
 /// also the difference between a diagnostic left permanently on and one that
 /// gets switched off. The previous answer is kept in `egui`'s own temp data
 /// under an id derived from the command's, so it lives exactly as long as the
 /// context does and costs nothing when tracing is off.
 ///
-/// ★★ **The first frame always emits**, because there is no previous answer to
+/// **The first frame always emits**, because there is no previous answer to
 /// match — which is what a harness needs, since a check that clicks and then
 /// greps cannot rely on having been present for a transition it did not cause.
 ///
-/// ★ This function knows nothing about what any id MEANS, which is R7: it
+/// This function knows nothing about what any id MEANS, which is R7: it
 /// reports that a control registered under some id was drawn pressable or not.
 /// Whether `format.bold` should have been is the application's business.
 fn report_enablement(ctx: &egui::Context, id: &str, enabled: bool) {
@@ -129,19 +127,17 @@ pub(crate) fn render_command(
     report_enablement(ui.ctx(), &command.id, enabled);
     let selected = ctx.conditions.is_set(&selected_condition(&command.id));
 
-    // ★ The three sizes — `RIBBON_SCALING.md`, and `sizing`'s header for the
+    // The three sizes — `RIBBON_SCALING.md`, and `sizing`'s header for the
     // measured case.
     //
-    // This used to be one line passing a hard-coded `shows_label: true`, with
-    // a comment arguing that *"icon-only belongs to the QAT … in the band
-    // there are forty and the label is the only thing that makes one
-    // findable"*. That is right about findability and was wrong about every
-    // control: driving Word at 884 client points put ten groups on the band
-    // where this shell put three, and the difference is that Word mixes sizes
-    // within a group. The label is not what makes `B` findable; its position
-    // in a cluster of type controls is.
+    // A band that drew every control at one size would be a band that fits
+    // far fewer groups than the product class does: driving Word at 884
+    // client points puts ten groups on the band, and the reason is that Word
+    // mixes sizes within a group. Findability does not require a label on
+    // every control — what makes `B` findable is its position in a cluster of
+    // type controls.
     //
-    // The findability argument survives where it applies: `Medium` is still
+    // The findability argument still governs where it applies: `Medium` is
     // the default, and a `Small` that has not earned its icon-only rendering
     // falls back to it rather than drawing a mystery.
     let response = match size {
@@ -150,32 +146,30 @@ pub(crate) fn render_command(
         ItemSize::Medium => command_button(ui, ctx, &command, true, selected, enabled, false),
     };
 
-    // ★ **Where this control was drawn** — published on the frame it was
+    // **Where this control was drawn** — published on the frame it was
     // drawn, under the stable name [`report::band_item`] builds.
     //
-    // The band used to report its groups and their captions and nothing
-    // else, which made every *command* in the ribbon unlocatable from
-    // outside the process. A caption's rect answers "is this label
-    // legible"; it cannot answer "did clicking Rectangle arm anything",
-    // because nothing outside the window could find the Rectangle button
-    // in order to click it. So the only evidence available for a ribbon
-    // click's whole chain — click → dispatch → tool armed → control
-    // renders pressed — was a set of unit tests, one per link, none of
-    // which observes the links being connected. That is precisely the
-    // shape of the icon-painter defect this crate already shipped: every
-    // part tested, the join untested, the join wrong.
+    // Group rects alone would make every *command* in the ribbon
+    // unlocatable from outside the process. A caption's rect answers "is
+    // this label legible"; it cannot answer "did clicking Rectangle arm
+    // anything", because nothing outside the window could find the
+    // Rectangle button in order to click it. Without this name the only
+    // evidence available for a ribbon click's whole chain — click →
+    // dispatch → tool armed → control renders pressed — is a set of unit
+    // tests, one per link, none of which observes the links being
+    // connected: every part tested, the join untested.
     //
     // Reported for **every** command, enabled or disabled, selected or
-    // not, in the band and in the overflow menu alike — because the
-    // question a consumer asks is *where is this control*, and a control
-    // that is greyed is still a control that was drawn somewhere. A
-    // report conditioned on state would go quiet in exactly the cases a
+    // not, in the band and in a collapsed group's popup alike — because
+    // the question a consumer asks is *where is this control*, and a
+    // control that is greyed is still a control that was drawn somewhere.
+    // A report conditioned on state would go quiet in exactly the cases a
     // harness most wants to look at.
     //
     // The shell learns nothing about what the id *means*. It publishes
     // that a control registered under some id occupied some rectangle;
-    // what `markup.rectangle` is for is the application's business, and
-    // this crate could not name it without becoming a PDF viewer.
+    // what an id like `tool.rectangle` stands for is the application's
+    // business, and naming it here would make this crate an application.
     ctx.reporter
         .report(response.rect, || report::band_item(&command.id));
 
@@ -248,8 +242,8 @@ pub(crate) fn command_button(
             if !enabled {
                 ui.disable();
             }
-            // ★★★ **FRAMELESS AT REST** — 2026-09-04, and this one line is
-            // the operator's biggest single complaint about the band:
+            // **FRAMELESS AT REST** — this one line answers the operator's
+            // biggest single complaint about the band:
             //
             // > "Every ribbon item in the real build is drawn with a visible
             // >  button FRAME. Every one — New, Open…, Recent, Close, Save,

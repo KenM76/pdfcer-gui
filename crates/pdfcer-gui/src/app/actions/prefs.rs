@@ -1,6 +1,8 @@
-//! ★★★ **The verbs whose subject is a PREFERENCE, not a document** — split out
-//! of [`action`] and [`apply`] under **R2** on 2026-09-12, the day
-//! **O187** made the family a family by giving it a second member.
+//! **The verbs whose subject is a PREFERENCE, not a document.**
+//!
+//! Its own module under **R2**, not because [`apply`] ran out of room but
+//! because a preference verb answers to a different set of rules than every
+//! other arm there.
 //!
 //! # What makes this a family rather than a size-driven cut
 //!
@@ -41,7 +43,7 @@
 //!    preference across a restart does not justify a modal in front of
 //!    somebody who is in the middle of searching.
 //!
-//! # ⚠ Why the operand is carried and never re-read
+//! # Why the operand is carried and never re-read
 //!
 //! The arm runs **after** the frame that raised it. The widget that was ticked
 //! may not exist any more — a panel can close, a dock tab can change, the Find
@@ -51,7 +53,7 @@
 //! reason; here it is not a style rule but the difference between a preference
 //! that sticks and one that sticks when the panel happens to still be open.
 //!
-//! ★ [`PrefAction::PagePreviews`](prefs::PrefAction::PagePreviews) takes this one
+//! [`PrefAction::PagePreviews`](prefs::PrefAction::PagePreviews) takes this one
 //! step further and carries
 //! **both** of its two values even when only one changed, because
 //! `Prefs::save` is a whole-file write. See its own doc.
@@ -72,8 +74,8 @@ use crate::app::prefs::Prefs;
 /// why the *live* half is already applied by the time one of these is raised.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PrefAction {
-    /// ★ **Persist the Find bar's *Zoom* control** — `OPERATOR_REQUESTS.md`
-    /// **O163**, 2026-09-09.
+    /// **Persist the Find bar's *Zoom* control** — `OPERATOR_REQUESTS.md`
+    /// **O163**.
     ///
     /// # Why this is not a [`crate::find::FindRequest`]
     ///
@@ -84,12 +86,12 @@ pub enum PrefAction {
     /// silently drop it, which is precisely the failure that property
     /// describes.
     FindZoom(bool),
-    /// ★★★ **Persist the Pages panel's previews tick and its time limit** —
-    /// `OPERATOR_REQUESTS.md` **O187**, 2026-09-12: *"the draw page previews
+    /// **Persist the Pages panel's previews tick and its time limit** —
+    /// `OPERATOR_REQUESTS.md` **O187**: *"the draw page previews
     /// timeout needs to be remembered, and setting it to 0 should set it to
     /// infinity (never time out)"*.
     ///
-    /// # ★ Why one variant carries both, when they are two controls
+    /// # Why one variant carries both, when they are two controls
     ///
     /// Because they are one **decision surface** — a checkbox and the box
     /// beside it — and `Prefs::save` is a whole-file write. Two variants would
@@ -100,7 +102,7 @@ pub enum PrefAction {
     /// frame, so the module header's carry-never-re-read rule still holds for
     /// both halves.
     ///
-    /// # ⚠ It would survive inside the document guard today, and is above it
+    /// # It would survive inside the document guard today, and is above it
     /// anyway
     ///
     /// The Pages panel is only drawn with a document open, so unlike
@@ -146,7 +148,7 @@ impl PrefAction {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     //
-                    // ★ `budget_ms` PLAIN, and `0` reaching the trace as `0`
+                    // `budget_ms` PLAIN, and `0` reaching the trace as `0`
                     // rather than as a word: a harness reads this field, and a
                     // Debug-formatted or prettified value in a field a machine
                     // parses has already produced one driven check in this repo

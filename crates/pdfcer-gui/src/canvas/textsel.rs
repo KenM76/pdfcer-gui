@@ -1,43 +1,28 @@
 //! # `canvas::textsel` — selecting text on the page, and copying what was selected
 //!
-//! The gesture Acrobat Reader has and this shell did not. `FEATURES.md`
-//! recorded the gap in the operator's own terms:
+//! The operator's rule for Read mode is *"the document shouldn't allow editing
+//! and should allow only selecting of objects that acrobat reader would
+//! allow."* `app::modes::capability` owns the first half — Read refuses every
+//! content gesture. This module is the second half, and it is a widening rather
+//! than a narrowing: **Reader allows text selection**, so a Read mode that
+//! refused it would be less than "only what Reader allows", not a cautious
+//! reading of it.
 //!
-//! > **Read selects no text.** Acrobat Reader lets you select and copy text,
-//! > and Read mode should; this shell has no canvas text-selection gesture at
-//! > all […] so *"only what Reader would allow"* is currently a strict subset
-//! > of what was asked for.
-//!
-//! The ask it closes was given on 2026-08-14: *"in read mode the document
-//! shouldn't allow editing and should allow only selecting of objects that
-//! acrobat reader would allow."* `app::modes::capability` answered the first
-//! half — Read refuses every content gesture — and in doing so made the second
-//! half visible: **Reader allows text selection**, so a Read mode that refuses
-//! it is not "only what Reader allows", it is less.
-//!
-//! It also unblocks three Phase 6 markup kinds. `FEATURES.md` lists underline,
-//! strikeout and squiggly as *"engine-ready, but they mark text and there is no
-//! text-selection gesture yet"*; `pdfcer_core::annot_author::MarkupSpec::
-//! TextMarkup` takes a `Vec<Quad>`, and [`TextSelection::quads`] is that vector
-//! one projection away. Nothing here authors anything — see §6.
-//!
-//! ★ **Those three landed on 2026-08-14**, in [`crate::canvas::markup::text`],
-//! and the sentence above turned out to be one word wrong: the vector is not a
-//! projection *away*, it is a projection *back*. See §5.1 —
-//! [`TextSelection::page_quads`] now travels beside the canvas boxes, produced
-//! by the same pass over the same glyphs, because inverting the canvas
-//! projection at the authoring site would have been the second derivation this
-//! module exists to make unavailable.
+//! The gesture is also what makes the text-marking annotations reachable.
+//! Underline, strikeout and squiggly mark *text*, and
+//! `pdfcer_core::annot_author::MarkupSpec::TextMarkup` takes a `Vec<Quad>` —
+//! which is [`TextSelection::page_quads`], produced by the same pass over the
+//! same glyphs as the canvas boxes (§5.1). Nothing here authors anything; the
+//! authoring lives in [`crate::canvas::markup::text`], and §6 says why.
 //!
 //! ---
 //!
 //! ## 1. ★ The interaction decisions, and which application each came from
 //!
-//! Standing instruction (`HANDOFF.md` §3.4, sharpened 2026-08-14): *"make your
-//! best educated guesses to match what inkscape, acrobat, and SolidWorks do"*,
-//! recording which one was followed and why, and — where they disagree —
-//! saying which won. **Acrobat wins ties about *reading*, because Acrobat is
-//! what pdfcer replaces.**
+//! The operator's standing instruction is to *"make your best educated guesses
+//! to match what inkscape, acrobat, and SolidWorks do"*, recording which one was
+//! followed and why, and — where they disagree — saying which won. **Acrobat
+//! wins ties about *reading*, because Acrobat is what pdfcer replaces.**
 //!
 //! | Question | Acrobat | Inkscape | SolidWorks | Shipped | Why |
 //! |---|---|---|---|---|---|
@@ -84,10 +69,10 @@
 //! Reading is the subject here, so Acrobat wins — and there is a second,
 //! stronger reason that is about this shell rather than about convention: a
 //! caret promises an **insertion point**, and there is nothing to insert.
-//! Phase 5 (in-place text editing) is explicitly last in the operator's order
-//! and `HANDOFF.md` says *"do not start it early"*. A caret drawn now would be
-//! an affordance for a feature that does not exist, which is the
-//! no-placeholders invariant read straight (`PROJECT_PLAN.md` §3).
+//! Phase 5 (in-place text editing) is last in the operator's order and must not
+//! be started early. A caret drawn before it exists is an affordance for a
+//! feature that does not, which is the no-placeholders invariant read straight
+//! (`PROJECT_PLAN.md` §3).
 //!
 //! `pdfcer-core` already publishes everything a caret needs
 //! ([`EditableTextModel::caret_x`], `caret_left`, `caret_right`, `caret_up`,
@@ -106,9 +91,8 @@
 //! in a mode that selects page content there is no select-all, because
 //! `canvas::selection` has no "every object on the page" verb and inventing one
 //! inside a keyboard handler would put a selection rule somewhere other than
-//! the module that owns selection rules. So Ctrl+A does nothing in Edit today,
-//! exactly as it did before this change — no regression, one honest gap, and
-//! the shape of the fix recorded here.
+//! the module that owns selection rules. So Ctrl+A does nothing in Edit: one
+//! honest gap, with the shape of the fix recorded here.
 //!
 //! ---
 //!
@@ -121,8 +105,8 @@
 //! Acrobat's second mode — `Alt`+drag for a **rectangular** text selection — is
 //! genuinely useful on the drawing sheets this application exists for, where a
 //! parts table's column is a rectangle and emphatically not a range. It is
-//! **not built**, and the reason is the one the brief for this work put first:
-//! *"one derivation, so what is shown and what is copied cannot diverge"*. A
+//! **not built**, and the reason is this module's first rule: one derivation, so
+//! what is shown and what is copied cannot diverge. A
 //! rectangular selection is a second selection model — its copy is column-wise,
 //! its reading order is its own, and it cannot be expressed as a
 //! `(TextPosition, TextPosition)` pair at all — so it would be a second
@@ -141,15 +125,12 @@
 //!
 //! ---
 //!
-//! ## 3. ★ THE MODE GATE — moved out, and where it went
+//! ## 3. ★ THE MODE GATE
 //!
-//! **[`gate`], and its header is the whole argument.** It used to be this
-//! section — ~190 lines on why text selection needs no capability, why it still
-//! has to be told apart from the content marquee, what the rule yields mode by
-//! mode, and what changed when [`crate::canvas::tool::CanvasTool::Text`] gave it
-//! a second disjunct. It moved with [`takes_the_press`] and with the three tests
-//! that are about it, when this file crossed R2's 1,500-line limit for the
-//! second time.
+//! **[`gate`], and its header is the whole argument** — why text selection needs
+//! no capability, why it still has to be told apart from the content marquee,
+//! and what the rule yields mode by mode. [`takes_the_press`] and the tests that
+//! are about it live there too.
 //!
 //! The one-line version, so a reader here is not sent away for nothing:
 //!
@@ -195,9 +176,9 @@
 //!
 //! ## 5. ★ One derivation: what is highlighted IS what is copied
 //!
-//! The brief's own requirement, and the defect it names: *"Highlight the
-//! selected text, drawn from the same quads the copy will use — one derivation,
-//! so what is shown and what is copied cannot diverge."*
+//! The requirement, and the defect it names: the highlight is drawn from the
+//! same quads the copy uses — **one derivation, so what is shown and what is
+//! copied cannot diverge.**
 //!
 //! [`resolve`] is that one derivation. It takes the ordered pair of
 //! [`TextPosition`]s **once**, walks the covered runs **once**, and in that
@@ -242,19 +223,17 @@
 //!   [`crate::canvas::markup`]'s own §1 is built around, reintroduced by an
 //!   optimisation worth eight bytes a line.
 //!
-//! ### Why the highlight does not repeat Find's defect
+//! ### Why the highlight stays readable
 //!
-//! `HANDOFF.md` §2's defect 3 is *"Find's current-hit highlight completely
-//! covered the word it highlighted"*, found by driving the binary and fixed by
-//! taking the wash from alpha 168 down to 96. The lesson recorded on
-//! `overlay::CURRENT_ALPHA` is general: *the operator's next act after finding a
-//! hit is to READ it*.
+//! The rule `overlay::CURRENT_ALPHA` carries is general: *the operator's next act
+//! after finding a hit is to READ it*, so a wash opaque enough to cover the word
+//! it marks has failed at its job.
 //!
 //! It applies here with more force, not less — a selection is what you are
 //! about to copy, and an operator who cannot read it cannot tell whether they
 //! swept the right words. So the selection wash reuses the same themed colour at
-//! the same low end (`overlay::TEXT_SELECTION_ALPHA`), with the compile-time
-//! bound that made Find's fix stick, and it is drawn **unstroked**: Find strokes
+//! the same low end (`overlay::TEXT_SELECTION_ALPHA`), under the compile-time
+//! bound that keeps it there, and it is drawn **unstroked**: Find strokes
 //! its current hit to distinguish it from its neighbours, and a text selection
 //! has no neighbours to be distinguished from. A stroke per line box would also
 //! draw a visible seam between two lines of one selection, which is a boundary
@@ -330,31 +309,29 @@
 //!
 //! ## 8. ★★ Text that does not run along the page's x axis
 //!
-//! The operator, 2026-08-26, on a vertical file-path stamp in `SW41177.pdf`'s
-//! title block: *"the I cursor doesn't reorient and it pastes each letter onto
-//! its own line."*
+//! A vertical file-path stamp in a CAD title block is the case that names the
+//! two failures, in the operator's words: *"the I cursor doesn't reorient and it
+//! pastes each letter onto its own line."*
 //!
-//! One cause, and it is upstream of this module: **`pdfcer-core` publishes a
-//! glyph's advance as a length and never publishes its direction**, so the
-//! extraction's line segmentation — which breaks whenever the baseline y moves
-//! — puts every letter of a 90° line on a line of its own. [`writing`] is the
-//! full argument and the recovery; what matters *here* is which of this
-//! module's rules changed and which did not.
+//! The engine owns the hard half. `pdfcer_core::text_edit::Line::direction` is
+//! the unit vector taken from the §9.4.4 text rendering matrix, shared by every
+//! glyph on the line by construction, and the extraction resolves a baseline
+//! step into the **line's own frame** rather than into page axes — so a 90° line
+//! is one line and not one derived break per letter. What is left to this module
+//! is banding: which frame a glyph's cell is measured in.
 //!
 //! | rule | rotated text |
 //! |---|---|
-//! | §5, one derivation | **unchanged, and it is what makes the fix safe.** The regrouping is consulted once, inside [`resolve`], and both the boxes and the string are built from it in the same walk |
-//! | §4, content order | **unchanged.** Nothing is reordered; a rotated line is the same glyphs in the same order, banded differently |
-//! | box shape | a rotated line's glyph cells are accumulated **in the line's own frame** and emitted as one banded [`Quad`], where a horizontal line's are accumulated in page axes exactly as before |
-//! | the copied string | a `DerivedLineBreak` run the regrouping proves is *internal to* a rotated line copies as nothing; every other break survives untouched — [`writing::adjacent`] |
+//! | §5, one derivation | **holds, and it is what makes the rotated path safe.** The direction is consulted once, inside [`resolve`], and both the boxes and the string are built in that same walk |
+//! | §4, content order | **holds.** Nothing is reordered; a rotated line is the same glyphs in the same order, banded differently |
+//! | box shape | a rotated line's glyph cells are accumulated **in the line's own frame** (`bands::Band::Rotated`) and emitted as one banded [`Quad`]; a horizontal line's are accumulated in page axes |
+//! | the copied string | unfiltered. Every run the extraction emits is copied, because the extraction emits no derived break inside a rotated line for this module to have to skip |
 //!
-//! ★ **A page with no rotated text never reaches any of it.**
-//! [`writing::lines`] answers with an empty [`writing::Rotated`] after one pass
-//! over the run list, and every branch below is keyed on that being non-empty.
-//! That is deliberate and structural rather than incidental: the alternative —
-//! one grouping rule that handles both — would have put every ordinary
-//! document's selection through new code to fix a case that arises on a
-//! minority of drawing sheets.
+//! ★ **A page with no rotated text never reaches any of it.** `is_rotated`
+//! answers `false` for every line, every glyph takes the page-axis branch, and
+//! no line frame is ever built. That is deliberate and structural: one grouping
+//! rule handling both cases would put every ordinary document's selection
+//! through the rotated code to serve a minority of drawing sheets.
 //!
 //! ★ The canvas wash is a `Rect`, so for a **quadrant** rotation (90°, 180°,
 //! 270° — every rotated stamp a CAD exporter emits) the band is axis-aligned in
@@ -368,9 +345,9 @@
 //! The two chords (`Ctrl+A`, `Ctrl+C`), the guard in front of them and the one
 //! function that writes the clipboard live in [`clipboard`], re-exported flat so
 //! every call site still writes `textsel::copy` and `textsel::pending_key`.
-//! Split there rather than anywhere else because [`clipboard::copy`] is reached
-//! by two **ribbon commands** that have no selection at all — see that module's
-//! header for the seam and for the R2 measurement that forced it.
+//! The seam is there rather than anywhere else because [`clipboard::copy`] is
+//! reached by two **ribbon commands** that have no selection at all — see that
+//! module's header.
 
 use std::collections::HashMap;
 
@@ -676,28 +653,12 @@ pub struct PageContext<'a> {
     pub epoch: u64,
 }
 
-/// **Update the selection from a drag** — press at `from`, pointer now at `to`,
-/// both in canvas space.
-///
-/// The anchor is re-derived from `from` on every frame rather than kept from
-/// the press, and that is not laziness: `PointerFrame::press_origin` already
-/// guarantees `from` is *where the button actually went down* (its own header
-/// records the 94-point error that guarantee exists to fix), so re-deriving is
-/// exact, and it removes the one state a drag could otherwise carry across
-/// frames and get wrong.
-///
-/// Returns `None` when the drag covers no glyphs — a sweep across blank paper
-/// selects nothing rather than the nearest word, which is what Acrobat does and
-/// what stops a stray drag on a drawing sheet's margin producing a selection the
-/// operator did not make.
 /// **Run one frame of a sweep gesture against the open document**, and trace it.
 ///
-/// The `GestureOutcome::TextSelect` arm's whole body, lifted out of
-/// [`crate::canvas::interact`] on 2026-09-02 under R2 when that file crossed the
-/// 1,500-line ceiling. It belongs here rather than there for the reason every
-/// arm in that match states about itself: **the arm is wiring**, and every rule
-/// it applied — which extraction options, what a degenerate drag means, when a
-/// range has changed enough to trace — already lives in this module.
+/// The body of [`crate::canvas::interact`]'s `GestureOutcome::TextSelect` arm.
+/// It lives here rather than there because the arm is *wiring*: every rule it
+/// applies — which extraction options, what a degenerate drag means, when a
+/// range has changed enough to trace — is a rule this module owns.
 ///
 /// # Returns
 ///
@@ -724,9 +685,11 @@ pub fn sweep(
 ) -> Option<TextSelection> {
     let selection =
         if let (Some(page_text), Some(page)) = (doc.page_text(), doc.pages.get(page_index)) {
-            // ★ The SAME options the extraction ran with -- see
-            // `PageContext::opts` for why a bare `ExtractOptions::default()` here
-            // would be a defect rather than a shortcut.
+            // ★ THE page's extraction, from `OpenDoc::page_text` — never a fresh
+            // one built here. A second extraction with its own options would
+            // segment lines differently from the one the page was drawn and
+            // cached from, so a sweep would select against text that does not
+            // match what is on screen.
             let ctx = PageContext {
                 text: &page_text,
                 page,
@@ -749,17 +712,14 @@ pub fn sweep(
     selection
 }
 
-/// ★★★ **Re-resolve a selection against the revision that just replaced it**
-/// — `OPERATOR_REQUESTS.md` **O198**, the bold-then-italic half.
+/// ★★★ **Re-resolve a selection against the revision that just replaced it.**
 ///
-/// The operator, 2026-09-14: *"get the font selector and editing tools like
-/// bold and italic working."* One of the several things wrong with that area
-/// was that a restyle worked exactly ONCE per sweep. Pressing Bold is an edit;
-/// an edit bumps [`crate::app::state::OpenDoc::edit_epoch`];
+/// What makes a restyle repeatable without re-sweeping. Pressing Bold is an
+/// edit; an edit bumps [`crate::app::state::OpenDoc::edit_epoch`];
 /// [`TextSelection::live`] then answers `false`, the wash vanishes and
-/// [`TextSelection::runs`] returns an empty list, so pressing Italic
-/// immediately afterwards restyled nothing and the operator had to re-sweep the
-/// same words between every pair of presses.
+/// [`TextSelection::runs`] returns an empty list. Without this, pressing Italic
+/// straight afterwards restyles nothing and the operator has to sweep the same
+/// words again between every pair of presses (`OPERATOR_REQUESTS.md` O198).
 ///
 /// # ★★★ THE STALENESS RULE IS NOT RELAXED. THE GEOMETRY IS REBUILT.
 ///
@@ -777,8 +737,7 @@ pub fn sweep(
 /// A restyle changes how text looks and never what it says. So the covered
 /// string is an invariant the caller can check, and this function checks it:
 /// **if the re-resolved selection does not cover character-for-character what
-/// the old one covered, `None` is returned and the selection is dropped**, as
-/// it was before this function existed.
+/// the old one covered, `None` is returned and the selection is dropped.**
 ///
 /// That is what makes this safe against the thing module header §7 is really
 /// afraid of — a `(run, byte)` position naming different glyphs after the run
@@ -795,8 +754,8 @@ pub fn sweep(
 ///
 /// `None` when the positions no longer resolve to anything, when they resolve
 /// to different characters, or when the page carries no extractable text. The
-/// caller assigns the result, so `None` is "drop it" — the pre-existing
-/// behaviour, reached by measurement instead of by assumption.
+/// caller assigns the result, so `None` means "drop the selection" — reached by
+/// measurement rather than by assumption.
 #[must_use]
 pub fn reresolve(ctx: &PageContext<'_>, previous: &TextSelection) -> Option<TextSelection> {
     if previous.page != ctx.index {
@@ -807,6 +766,20 @@ pub fn reresolve(ctx: &PageContext<'_>, previous: &TextSelection) -> Option<Text
     (renewed.text == previous.text).then_some(renewed)
 }
 
+/// **Update the selection from a drag** — press at `from`, pointer now at `to`,
+/// both in canvas space.
+///
+/// The anchor is re-derived from `from` on every frame rather than kept from the
+/// press, and that is not laziness: `PointerFrame::press_origin` guarantees
+/// `from` is *where the button actually went down* (its own header records the
+/// 94-point error that guarantee exists to close), so re-deriving is exact, and
+/// it removes the one piece of state a drag could otherwise carry across frames
+/// and get wrong.
+///
+/// Returns `None` when the drag covers no glyphs — a sweep across blank paper
+/// selects nothing rather than the nearest word, which is what Acrobat does and
+/// what stops a stray drag on a drawing sheet's margin producing a selection the
+/// operator did not make.
 pub fn drag(ctx: &PageContext<'_>, from: Pos2, to: Pos2) -> Option<TextSelection> {
     let model = model(ctx);
     let anchor = hit(&model, ctx, from)?;
@@ -887,8 +860,7 @@ pub fn select_all(ctx: &PageContext<'_>) -> Option<TextSelection> {
 
 /// Build the derived line/column/block structure over `ctx.text`.
 ///
-/// Rebuilt per gesture event rather than cached, which is the same judgement
-/// the old shell recorded (*"cheap, index-only"*) and is affordable for a
+/// Rebuilt per gesture event rather than cached, and affordable for a
 /// structural reason: the model **borrows** the `PageText` and owns no glyph
 /// data, so recognition is a clustering pass over indices rather than a copy of
 /// the page. The expensive half — the content-stream walk — is the thing that
@@ -965,25 +937,17 @@ pub fn word_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<()> {
 /// **always answers**, falling back to the nearest line when no line's box
 /// contains the point — which is deliberate and is Acrobat's behaviour: a drag
 /// begun in the margin selects from the nearest text rather than from nothing.
-///
-/// ★ Moved here on 2026-09-12. It sat above `word_at`, run
-/// together with that item's doc comment — so it documented `word_at`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Option<TextPosition> {
     let pdf = crate::viewer::canvas_to_pdf_space(canvas, ctx.page)?;
-    // ★★ ONE call, since 2026-08-27. `EditableTextModel::hit_test` **projects
-    // the point onto the line** now (`Pass 139.2`), so a press on the middle of
-    // a 90° letter lands on that letter.
+    // ★★ ONE call, and no shell-side rotated-band pass in front of it.
+    // `EditableTextModel::hit_test` projects the point onto the line, so a press
+    // in the middle of a 90° letter lands on that letter.
     //
-    // Until that Pass this line was preceded by a shell-side rotated band that
-    // had to answer first, because the engine's line boxes were built on the
-    // same axis-aligned assumption its segmentation was: for a 90° glyph the
-    // box was hung off the wrong corner and overlapped the ink by about a
-    // third, so every press missed every box and the nearest-line fallback
-    // decided. That produced a sweep one letter short and a sweep that selected
-    // nothing. Both are fixed upstream; the band is deleted rather than kept as
-    // a fallback, per pdfcer decision 058 — a private copy of a rule the engine
-    // now owns keeps compiling and keeps returning something plausible.
+    // Do not reintroduce a private band here as a fallback: a shell copy of a
+    // rule the engine owns keeps compiling and keeps returning something
+    // plausible long after the two have diverged, and the symptom — a sweep one
+    // letter short, or a sweep that selects nothing — looks like a gesture bug
+    // rather than a duplicated rule.
     //
     // The nearest-line fallback inside `hit_test` is deliberate and is
     // Acrobat's behaviour: a drag begun in the margin selects from the nearest
@@ -1031,16 +995,15 @@ fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Op
 #[must_use]
 pub fn tilt_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<f32> {
     let pdf = crate::viewer::canvas_to_pdf_space(canvas, ctx.page)?;
-    // ★ The engine's own answer since `Pass 139.2`: `Line::direction` is the
-    // unit vector every glyph on that line shares, sourced from the §9.4.4 text
-    // rendering matrix rather than corroborated from geometry. Until then this
-    // was a two-pass shell-side census over glyph origins, and its own header
-    // recorded that the census could come up empty on exactly the page it was
-    // written for. Deleted rather than kept, per pdfcer decision 058.
+    // ★ The engine's own answer: `Line::direction` is the unit vector every
+    // glyph on that line shares, sourced from the §9.4.4 text rendering matrix
+    // rather than recovered from glyph origins. A shell-side census over origins
+    // can come up empty on exactly the sparse rotated stamp it would be written
+    // for, which is why the direction is read and never inferred.
     //
     // Containment, not nearest-line — see the doc above. `Line::bbox` is
-    // computed in the line's own frame now, so for a 90° line it is the tall
-    // narrow box the ink actually occupies.
+    // computed in the line's own frame, so for a 90° line it is the tall narrow
+    // box the ink actually occupies.
     let model = model(ctx);
     let dir = model
         .lines()
@@ -1107,10 +1070,6 @@ fn is_rotated(model: &EditableTextModel<'_>, line: usize) -> bool {
 /// Returns `None` for a range covering no glyphs. That is the *only* way a
 /// caller clears a selection through this module, which is what makes "an empty
 /// selection is `None`" true everywhere rather than in most places.
-///
-/// ★ Moved here on 2026-09-12. It sat above `is_rotated`, run
-/// together with that item's doc comment — so it documented `is_rotated`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 fn resolve(
     model: &EditableTextModel<'_>,
     ctx: &PageContext<'_>,
@@ -1143,21 +1102,11 @@ fn resolve(
         let Some(glyph) = model.glyph(*gref) else {
             continue;
         };
-        // ★ Which frame this glyph's cell is measured in. A glyph on a rotated
-        // line is banded with its own line, in that line's axes; every other
-        // glyph keeps the engine's line and the engine's axes, byte for byte as
-        // before. The two never mix, because a `Band` carries which it is.
-        //
-        // A glyph the line clustering did not claim still has to be drawn, or a
-        // selection would silently highlight less than it copies. `Band::Loose`
-        // keyed per glyph gives those a box each — visibly correct, and rare
-        // enough that the cost is not worth a second clustering rule.
-        // ★★ Which band, and it turns on the ENGINE's `Line::direction` now.
-        //
-        // Until 2026-08-27 the rotated case came from a shell-side census that
-        // recovered the direction from glyph origins, because the extraction
-        // did not publish one. It does (`Pass 139.2`), every glyph on a line
-        // shares it by construction, and the census is deleted.
+        // ★ Which frame this glyph's cell is measured in, decided on the
+        // ENGINE's `Line::direction`. A glyph on a rotated line is banded with
+        // its own line, in that line's axes; every other glyph keeps the
+        // engine's line and page axes. The two never mix, because a `Band`
+        // carries which it is.
         //
         // A glyph the line clustering did not claim still has to be drawn, or a
         // selection would silently highlight less than it copies. `Band::Loose`
@@ -1220,21 +1169,12 @@ fn resolve(
         } else {
             run.text.len()
         };
-        // ★★ There is no artefact filter here any more, and its absence is the
-        // point of `Pass 139.1`.
-        //
-        // Until 2026-08-27 the extraction broke a line whenever |Δy| exceeded a
-        // ratio of the size — measured in PAGE axes — so text advancing in y
-        // changed baseline at every single glyph and a vertical stamp came out
-        // as one `DerivedLineBreak` per letter. That is the operator's report
-        // in his own words: *"it pastes each letter onto its own line."* This
-        // loop used to identify those breaks and skip them.
-        //
-        // `layout::classify` now resolves the step into the LINE's frame, so
-        // the breaks are not emitted at all. On the engine's `rotated-text.pdf`
-        // the derived break count went 22 -> 3. A filter that removes something
-        // no longer produced is a filter that will one day remove something
-        // real, so it is deleted rather than left as insurance.
+        // ★★ Every run is copied verbatim, including the extraction's derived
+        // word spaces and line breaks. There is deliberately no filter here for
+        // spurious breaks inside a rotated line: the extraction resolves a
+        // baseline step into the line's own frame, so it emits none. A filter
+        // against something that is no longer produced is a filter that will one
+        // day remove something real.
         if let Some(slice) = run.text.get(lo..hi) {
             text.push_str(slice);
         }
@@ -1293,10 +1233,9 @@ fn ordered(a: TextPosition, b: TextPosition) -> (TextPosition, TextPosition) {
 
 /// **Answer the text selection's own two chords, Ctrl+A and Ctrl+C.**
 ///
-/// Moved here from `canvas::interact` on 2026-08-20 under R2, and it belongs
-/// here: every rule it enforces is a rule about *this* module, and the caller
-/// that used to hold them could not have got them right without knowing all of
-/// them.
+/// They live here rather than in the caller because every rule they enforce is a
+/// rule about *this* module, and a caller holding them would have to know all of
+/// them to get any of them right.
 ///
 /// ★ These two live apart from [`crate::canvas::keys::canvas_keys`] because
 /// both need the page's **extraction** — one to build a range over it, one to
@@ -1311,15 +1250,14 @@ fn ordered(a: TextPosition, b: TextPosition) -> (TextPosition, TextPosition) {
 /// module's header records that the *other* half of Ctrl+A — select every
 /// object — is a known gap rather than an oversight.
 ///
-/// ★★ **[`pending_key`] FIRST, and the ordering is the fix for a defect that
-/// shipped and that driving the binary caught.** The chord is read off
-/// `egui::InputState` — one map lookup — and the page's extraction is fetched
-/// **only** when one fired. The first version asked for the extraction in order
-/// to discover that no chord had been pressed, which built it on the first
-/// frame of every reading canvas: measured at **392 ms at open** on
-/// `ncored-benchmark-cad-drawing.pdf`, paid by an operator who had touched
-/// nothing. It is the same gate `canvas::interact` step 4 puts in front of
-/// `page_objects()`, for the same reason.
+/// ★★ **[`pending_key`] FIRST, and the ordering is load-bearing.** The chord is
+/// read off `egui::InputState` — one map lookup — and the page's extraction is
+/// fetched **only** when one fired. Asking for the extraction in order to
+/// discover that no chord was pressed builds it on the first frame of every
+/// reading canvas: **392 ms at open** on `ncored-benchmark-cad-drawing.pdf`,
+/// paid by an operator who has touched nothing. It is the same gate
+/// `canvas::interact` step 4 puts in front of `page_objects()`, for the same
+/// reason.
 pub fn keys(
     ctx: &egui::Context,
     doc: &crate::app::state::OpenDoc,

@@ -6,7 +6,7 @@
 //! amendment P1a (`RIBBON_IA.md` §2), and a mirror is a second surface for
 //! one command, not a second command.
 //!
-//! ## ★ The one place this file deliberately repeats the ribbon
+//! ## The one place this file deliberately repeats the ribbon
 //!
 //! [`fit_actual_size`] and [`fit_actual_size_tooltip`] say what
 //! `crate::text::commands::view_zoom_actual` says, in the same words. That
@@ -26,9 +26,9 @@
 //!
 //! **Both entries are now true**, and the wording being identical to the
 //! ribbon's is what made fixing them one edit rather than two. The action
-//! behind them raises `Action::ZoomTo(1.0)` (see the ★ section of
+//! behind them raises `Action::ZoomTo(1.0)` (see the section of
 //! [`crate::app::status`]'s module docs for that half), and the chord they
-//! name has one owner (see [`crate::app::keyboard`]'s ★ section for this
+//! name has one owner (see [`crate::app::keyboard`]'s section for this
 //! one). The same holds for the three mirrored fit tooltips: each is now
 //! word-for-word its `crate::text::commands` twin, chord included.
 //!
@@ -61,27 +61,21 @@
 //!   `Ctrl+0` because the manifest keymap binds it there and
 //!   `crate::app::keyboard::commands` enacts what the keymap says. Fit page
 //!   and Fit width name **none**, because none reaches them: `Ctrl+0` is
-//!   actual size's and `Ctrl+2` is `mode.review`'s. Both used to be named
-//!   here, and both were half of a chord with two owners — the rule is what
-//!   caught it, and the rule is why the correction is an omission rather
-//!   than a substitution. Do not invent a replacement chord to fill the gap;
-//!   bind one in the manifest first, and it may be named the same day.
+//!   actual size's and `Ctrl+2` is `mode.review`'s. A string that named
+//!   either here would be claiming half of a chord that has another owner.
+//!   Do not invent a replacement chord to fill the gap; bind one in the
+//!   manifest first, and it may be named the same day.
 //! - **Never state a capability the build does not have.** The Find toggle
 //!   `RIBBON_IA.md` §6 specifies has **no strings here**, and that is now a
 //!   filing decision rather than an absence: the toggle exists, and its label
 //!   and tooltip live in [`crate::text::find`] beside the rest of the Find
 //!   surface's copy. One area per consumer is this catalog's organising
 //!   principle, and the toggle's consumer is a control the Find module owns.
-//!   (It used to say the toggle had no strings *because it had no command*.
-//!   That is no longer true, and the sentence is corrected rather than
-//!   deleted, because "this used to be absent and is now built" is exactly
-//!   what a catalog header should make legible.)
 
 /// **The Render-notes vocabulary** — every sentence the renderer's honesty
-/// report can produce, split out 2026-09-10 under R2 when the appearance-less
-/// annotation became the tenth finding and took this file to 1,509 lines.
+/// report can produce.
 ///
-/// ★ Re-exported whole, on [`selection`]'s precedent: a catalog area is keyed
+/// Re-exported whole, on [`selection`]'s precedent: a catalog area is keyed
 /// by the consumer it serves — here `app::status::notes` and nothing else —
 /// so no call site changed and `t::diagnostics_clean` resolves where it always
 /// did.
@@ -98,34 +92,31 @@ mod formdelete;
 mod refused;
 mod selection;
 
-/// ★ Re-exported for the reason stated on [`selection`]'s block below, and it
+/// Re-exported for the reason stated on [`selection`]'s block below, and it
 /// earns a file of its own rather than a place in this catalog because its
 /// argument is long: a **decline** that repeats a panel's **standing
 /// description** almost word for word has to justify every word it does not
 /// share with it, or the two surfaces become two paraphrases of one fact.
 pub use formdelete::field_delete_declined_structural;
 
-/// ★ Re-exported on [`formdelete`]'s precedent and for the same two reasons —
-/// R2 forced a file, the subject decided which one — with one addition that is
-/// this entry's whole difficulty: **it is the only sentence in this catalog
+/// Re-exported on [`formdelete`]'s precedent, with one addition that is this
+/// entry's whole difficulty: **it is the only sentence in this catalog
 /// that names no cause**, because the engine exposes none this shell may
 /// switch on. Its file carries the argument for every word it does not say,
 /// including why it does not point the operator at Render diagnostics.
 pub use refused::edit_declined_by_engine;
 /// **Resize refusals** — the un-rebuildable appearance and the fixed-size
-/// marker, split out 2026-09-09 when the second pushed this file past R2.
+/// marker.
 mod resize;
 pub use resize::{resize_fixed_size_marker, resize_not_rebuildable};
 
-/// ★ Re-exported rather than moved-and-repathed.
+/// Re-exported rather than moved-and-repathed.
 ///
 /// A catalog area is keyed by the **consumer** it serves, not by the file it
-/// happens to live in, and `crate::app::status::selected` is still the one
-/// consumer of every one of these. Splitting the file to satisfy R2 while
-/// leaving `t::selection_one` resolving exactly where it always did is the
-/// difference between a structural fix and a churn commit — no call site in
-/// this crate changed, and none should have to when a catalog area is
-/// reorganised internally.
+/// happens to live in, and `crate::app::status::selected` is the one consumer
+/// of every one of these. `t::selection_one` therefore resolves from this
+/// module whatever file the sentence lives in: no call site in this crate
+/// should have to move when a catalog area is reorganised internally.
 /// **Sentences about the program being busy** — a different species from
 /// everything else in this catalog: a STATE rather than an event, with no
 /// retirement rule. Its header carries the distinction.
@@ -133,10 +124,10 @@ pub mod waiting;
 pub use waiting::{line_weights_no_effect, line_weights_off, page_catching_up};
 
 pub use selection::{
-    // ★ `InsideFormRefusal` replaced the flat `selection_inside_form_declined`
-    // on 2026-09-11. The old name is NOT re-exported as an alias: it was
-    // wrong about a shipped capability, and an alias would let a call site
-    // keep asking for the wrong sentence by its old name and compile.
+    // A type rather than a flat function, because the refusal has more than
+    // one shape and a caller must say which it means. No flat alias is exported
+    // beside it: an alias would let a call site ask for a sentence that is
+    // wrong about a shipped capability, by name, and compile.
     InsideFormRefusal,
     TextStyleRefusal,
     inside_container,
@@ -145,27 +136,23 @@ pub use selection::{
     selection_one_in_form,
     selection_one_in_form_unsized,
     selection_one_unsized,
-    // ★ The Part rung's four, 2026-09-15 — O188(A). Two clauses and two
-    // hovers, and they come in pairs because the clause is the readout and
-    // the hover is the verbs; a call site that took one without the other
-    // would be stating a rung with no way out of it.
+    // The Part rung's four — O188(A). Two clauses and two hovers, and they
+    // come in pairs because the clause is the readout and the hover is the
+    // verbs; a call site that took one without the other would be stating a
+    // rung with no way out of it.
     selection_part_of_path,
     selection_part_of_path_hint,
     selection_part_of_text,
     selection_part_of_text_hint,
     selection_with_depth,
-    // ★ The six ladder sentences, one per outcome the engine can report
+    // The six ladder sentences, one per outcome the engine can report
     // (`StyleLadder::rung`, split at rung 1 by `StyleLadder::same_family`),
     // plus the `Warn`-posture one.
     //
-    // ★★ `text_style_faked_instead` was retired on 2026-09-11 with the
-    // hand-rolled retry it served, and `selection.rs` carries a tombstone
-    // saying what it said. `text_style_used_other_family` was retired the same
-    // morning and **restored the same afternoon**, when `Pass 295.0` shipped
-    // the `same_family` verdict it needed; its tombstone became the record of
-    // the round trip. `text_style_used_real_face` is the name that did not come
-    // back: it named both `/BaseFont`s because the shell could not tell the two
-    // cases apart, and the pair below is what telling them apart looks like.
+    // There is deliberately no single sentence naming both `/BaseFont`s: a
+    // substitution within the family and one across families are different
+    // outcomes, the engine distinguishes them, and one sentence covering both
+    // would tell the operator less than the engine already knows.
     text_style_already_that_way,
     text_style_faked,
     text_style_faked_warning,
@@ -173,7 +160,7 @@ pub use selection::{
     text_style_used_other_family,
     text_style_used_sibling_face,
     text_style_used_standard_face,
-    // ★ O69's sibling of `too_many_anchors` below. It lives in `selection`
+    // O69's sibling of `too_many_anchors` below. It lives in `selection`
     // rather than in this file because this file is at 1,482 lines against
     // R2's 1,500, and it is re-exported here so a caller says
     // `text::status::too_many_anchors_in_part` beside
@@ -185,7 +172,7 @@ pub use selection::{
 // ---------------------------------------------------------------------------
 // The edit disclosure — rule 4's surviving half for the vector verbs
 //
-// ★ Almost every word an operator reads here was written by `pdfcer-core`,
+// Almost every word an operator reads here was written by `pdfcer-core`,
 // and that is the point of this section rather than a shortcut through it.
 //
 // `EditSession`'s vector verbs return `Result<Vec<String>, EditError>`, and
@@ -213,7 +200,7 @@ pub use selection::{
 ///    fact about the operator's own document that they cannot see by looking
 ///    at it. A mark is what tells them apart at a glance.
 ///
-///    ★ **It is deliberately NOT `⚠`, and that is a measurement rather than
+///    **It is deliberately NOT `⚠`, and that is a measurement rather than
 ///    a preference.** `⚠` (U+26A0) is what
 ///    [`crate::text::forms::forms_fill_autosize_note`] and twelve other
 ///    forms sentences carry, and **egui's bundled font set cannot draw it**
@@ -230,7 +217,7 @@ pub use selection::{
 ///    it is **reported**, which is what a boundary finding gets. What is in
 ///    this project's gift is not to add a fourteenth undrawable mark, and
 ///    `⚑` is the closest drawable neighbour: measured present in the same
-///    bundled set, alongside `✱ ★ ☆ ! ○ ■ • · † ‡ ⊗ ◊ №`. It is also the
+///    bundled set, alongside `✱ ☆ ! ○ ■ • · † ‡ ⊗ ◊ №`. It is also the
 ///    mark this file would recommend for the other thirteen, so a future
 ///    correction converges rather than adding a third spelling.
 /// 2. **A lead-in naming the gesture**, because the sentence outlives the
@@ -263,7 +250,7 @@ pub fn edit_disclosure_line(notes: &[String]) -> String {
 // ---------------------------------------------------------------------------
 // The worded decline — a framing zoom that had nothing to frame
 //
-// ★ A DECLINE IS NOT A DISCLOSURE, AND THE COPY HAS TO SAY SO
+// A DECLINE IS NOT A DISCLOSURE, AND THE COPY HAS TO SAY SO
 //
 // The section above frames sentences `pdfcer-core` wrote about work that
 // *happened*: a rectangle really was rewritten as four lines, and the operator
@@ -292,7 +279,7 @@ pub fn edit_disclosure_line(notes: &[String]) -> String {
 // decline would read as a rendering failure, which is exactly how an operator
 // decides a surface is broken and stops reading it.
 //
-// # ★ What is deliberately NOT worded here
+// # What is deliberately NOT worded here
 //
 // **The raster-ceiling-clamped region zoom.** A framing zoom that asked for
 // more magnification than the page's raster allows still zooms, still centres
@@ -317,13 +304,13 @@ pub fn edit_disclosure_line(notes: &[String]) -> String {
 ///
 /// `crate::canvas::zoom::zoom_to_selection` raises
 /// `ZoomOutcome::NoBounds` in three situations — nothing is selected, the
-/// selection is on another page, or it no longer resolves against the current
+/// selection is on another page, or it does not resolve against the current
 /// decomposition after an edit. That function's own docs rule that from the
 /// operator's side those are **one** situation: *"there is nothing on screen
 /// for this command to act on."* Three sentences would ask the operator to
 /// care about a distinction that has one remedy.
 ///
-/// # ★ Why it describes the state and does not instruct
+/// # Why it describes the state and does not instruct
 ///
 /// `view.zoom_selection` is greyed on `selection.bounds`, so this is *mostly*
 /// unreachable from the ribbon. The two ways it is reached are both cases in
@@ -332,7 +319,7 @@ pub fn edit_disclosure_line(notes: &[String]) -> String {
 /// 1. **By chord.** A keymap reaches any command from any state, and the
 ///    manifest binds this one; nobody who presses a chord has clicked a
 ///    control that promised anything.
-/// 2. **★ In the race.** The condition is evaluated on the frame that *draws*
+/// 2. **In the race.** The condition is evaluated on the frame that *draws*
 ///    the control and the verb runs on the frame that *applies* it, so a
 ///    selection that evaporates in between — a mode change that clears it, an
 ///    edit that dissolves what it named — leaves the operator having clicked
@@ -377,7 +364,7 @@ pub fn zoom_declined_not_drawn() -> &'static str {
 /// indistinguishable from a save that never ran, which is precisely the "the
 /// button does nothing" state this project exists to remove.
 ///
-/// # ★ Why it does not carry the engine's reason
+/// # Why it does not carry the engine's reason
 ///
 /// `crate::app::save::SaveError`'s `Display` output goes to the trace, and
 /// `check-ui-strings.sh`'s exclusion 3 states in as many words that a `Display`
@@ -402,7 +389,7 @@ pub fn save_copy_failed() -> &'static str {
 
 /// Shown when the Settings window's Save reached no disk.
 ///
-/// # ★ Why this is not [`save_copy_failed`]'s sentence, though both are writes
+/// # Why this is not [`save_copy_failed`]'s sentence, though both are writes
 ///
 /// Because the two have to say **opposite things about the operator's work**,
 /// and getting that backwards costs them either their trust or their time.
@@ -444,8 +431,8 @@ pub fn settings_not_saved() -> &'static str {
 /// `app::modes::capability::offers_command` lets it through in every mode
 /// because it sits on no tab. An operator who presses `Ctrl+Z` is looking at the
 /// page, not at an 18 pt icon in the title bar, and silence there is
-/// indistinguishable from a chord that never arrived — which is the state
-/// `HANDOFF.md` §2 exists to remove.
+/// indistinguishable from a chord that never arrived. **A gesture that is
+/// refused must say so on the route it was made on.**
 ///
 /// It is the same argument [`save_copy_failed`] makes about *its* route, one
 /// step earlier: that one arrives after the operator invested a dialog, this one
@@ -526,7 +513,7 @@ pub fn zoom_in_tooltip() -> &'static str {
 /// placeholder the project's invariants forbid.
 #[must_use]
 pub fn zoom_percent(percent: f64) -> String {
-    // ★ `{:.0}` rather than an integer cast — O24j. The value now spans 10 % to
+    // `{:.0}` rather than an integer cast — O24j. The value now spans 10 % to
     // a trillion percent and no integer type covers it without either
     // saturating or being wider than the thing it describes. Rounding at the
     // formatter keeps the readout an exact whole number of percent at every
@@ -555,7 +542,7 @@ pub fn zoom_percent_tooltip() -> &'static str {
 ///
 /// **Identical to `crate::text::commands::view_zoom_actual`'s label**, on
 /// purpose — see this module's header for why a mirror repeats rather than
-/// paraphrases, and [`crate::app::status`]'s ★ section for why the claim it
+/// paraphrases, and [`crate::app::status`]'s section for why the claim it
 /// makes is not yet true.
 #[must_use]
 pub fn fit_actual_size() -> &'static str {
@@ -564,11 +551,11 @@ pub fn fit_actual_size() -> &'static str {
 
 /// Hover text for Actual size.
 ///
-/// ★ **It names `Ctrl+0` again, and that sentence is now true.** The chord
+/// **It names `Ctrl+0` again, and that sentence is now true.** The chord
 /// had two owners — the manifest keymap bound it to `view.zoom_actual` while
 /// `crate::app::keyboard` bound it to Fit page and reached it first — so this
 /// tooltip had to advertise no chord at all, with a test pinning the
-/// omission. `crate::app::keyboard`'s ★ section has the whole account; the
+/// omission. `crate::app::keyboard`'s section has the whole account; the
 /// outcome is that the manifest is the only place a chord is bound, and it
 /// binds this one here.
 ///
@@ -593,14 +580,13 @@ pub fn fit_width() -> &'static str {
 /// the first resize would be conspicuously wrong, and the tooltip is where
 /// the operator learns which of the two this is.
 ///
-/// ★ **It no longer names `Ctrl+2`.** That chord belongs to `mode.review`
+/// **It names no chord.** `Ctrl+2` belongs to `mode.review`
 /// (`MODES_AND_PANELS.md` Part 1 §6, and `crate::text::commands::mode_review`
-/// names it), and `crate::app::keyboard` bound it here as well — one chord,
-/// two owners, of which this was the half nothing but this string admitted
-/// to. Fit width keeps this button, its View ▸ Zoom control and its
-/// `canvas.empty` context-menu entry; what it does not have is a chord, and
-/// the rule in this module's header is to say so by omission rather than to
-/// name one that does something else.
+/// names it), and naming it here would claim half of a chord with another
+/// owner. Fit width is reached from this button, from its View ▸ Zoom control
+/// and from its `canvas.empty` context-menu entry; what it does not have is a
+/// chord, and the rule in this module's header is to say so by omission
+/// rather than to name one that does something else.
 #[must_use]
 pub fn fit_width_tooltip() -> &'static str {
     "Scale the page so its full width is visible, and keep it fitted as the \
@@ -615,14 +601,14 @@ pub fn fit_page() -> &'static str {
 
 /// Hover text for Fit page.
 ///
-/// ★ **It no longer names `Ctrl+0`.** See [`fit_actual_size_tooltip`]: that
-/// chord now has one owner, the manifest keymap, and the manifest binds it to
-/// actual size. Fit page is reached from this button, from View ▸ Zoom and
-/// from the `canvas.empty` context menu.
+/// **It names no chord.** See [`fit_actual_size_tooltip`]: `Ctrl+0` has one
+/// owner, the manifest keymap, and the manifest binds it to actual size. Fit
+/// page is reached from this button, from View ▸ Zoom and from the
+/// `canvas.empty` context menu.
 ///
 /// Word for word `crate::text::commands::view_zoom_fit_page`'s tooltip, which
-/// has never named a chord — the two mirrors of one command now say exactly
-/// the same thing, which is what the header claims they should.
+/// names no chord either — two mirrors of one command saying exactly the same
+/// thing, which is what the header requires of them.
 #[must_use]
 pub fn fit_page_tooltip() -> &'static str {
     "Scale the page so all of it is visible, and keep it fitted as the \
@@ -642,7 +628,7 @@ pub fn fit_height() -> &'static str {
 /// command — and, like its two siblings, it names no chord, because it has
 /// none.
 ///
-/// ★ It says nothing about the page overflowing sideways, deliberately. That
+/// It says nothing about the page overflowing sideways, deliberately. That
 /// is what *"its full height is visible"* already means on a sheet wider than
 /// the window, and a tooltip that warned about it would be describing the
 /// operator's own document back at them.
@@ -668,10 +654,10 @@ pub fn wheel_flip_pages() -> &'static str {
 
 /// Hover text for the wheel-paging toggle.
 ///
-/// ★ It states **both** answers, because the label can only state one and the
+/// It states **both** answers, because the label can only state one and the
 /// operator needs to know what turning it off gives them back.
 ///
-/// ★★ And it names the two things the setting does **not** touch. Ctrl+wheel
+/// And it names the two things the setting does **not** touch. Ctrl+wheel
 /// always zooms, and a continuous display always scrolls — an operator who
 /// tried the toggle in a continuous mode and saw no difference would
 /// reasonably conclude it was broken, which is why the control is not drawn
@@ -745,7 +731,7 @@ pub fn page_box_tooltip() -> &'static str {
 
 /// Shown beside the box when a committed number was outside the document.
 ///
-/// ★ **The point of this string is that the clamp is not silent.** Typing
+/// **The point of this string is that the clamp is not silent.** Typing
 /// `99` into a 42-page document and landing on 42 with no explanation is
 /// indistinguishable from the box ignoring what was typed — and an operator
 /// who cannot tell those apart stops trusting the control. Naming the number
@@ -773,7 +759,7 @@ pub fn page_rejected_note() -> &'static str {
 
 /// `adopt_widget` refused: the name is already another field's.
 ///
-/// # ★ Why the sentence explains the standard rather than just refusing
+/// # Why the sentence explains the standard rather than just refusing
 ///
 /// Because the refusal looks arbitrary otherwise. Every other program the
 /// operator uses will happily hold two things with one name in one file, and
@@ -795,7 +781,7 @@ pub const fn adopt_declined_name_taken() -> &'static str {
 
 /// `adopt_widget` refused: the widget carries no name and none was typed.
 ///
-/// # ★ The word this sentence must not use is "restore"
+/// # The word this sentence must not use is "restore"
 ///
 /// The operator's mental model at this moment is *"something was lost, and I
 /// am putting it back"*, and for the common case that is exactly right — a
@@ -820,7 +806,7 @@ pub const fn adopt_declined_no_name() -> &'static str {
 
 /// The disclosure after a widget was registered.
 ///
-/// # ★ Three facts, each conditional, and none of them is "done"
+/// # Three facts, each conditional, and none of them is "done"
 ///
 /// `AdoptOutcome` carries three things the operator cannot see and would not
 /// guess, and each is dropped when it is not true rather than being reported as
@@ -852,7 +838,7 @@ pub fn adopted(name: &str, typed: bool, acroform_created: bool) -> String {
 /// **`edit.form_flatten` was invoked on a document whose certification forbids
 /// it.**
 ///
-/// # ★★ Why the ribbon control is live at all, when the panel's is greyed
+/// # Why the ribbon control is live at all, when the panel's is greyed
 ///
 /// The Forms panel asks `EditSession::flatten_refusal` every frame and greys
 /// its own Flatten with the reason on hover, because it is already reading the
@@ -875,7 +861,7 @@ pub fn adopted(name: &str, typed: bool, acroform_created: bool) -> String {
 /// **What it would cost**, because "the signature would be broken" is the fact
 /// that makes the refusal reasonable rather than arbitrary.
 ///
-/// ★ It does **not** offer a way round. There is one — remove the signature —
+/// It does **not** offer a way round. There is one — remove the signature —
 /// and pdfcer will not suggest defeating a certification as a workaround for a
 /// convenience.
 #[must_use]
@@ -888,7 +874,7 @@ pub const fn flatten_declined_certified() -> &'static str {
 /// grew past the size the engine will composite in subtractive CMYK, so
 /// blending fell back to sRGB and the colours moved.
 ///
-/// # ★★ Every word of this was chosen against a specific misreading
+/// # Every word of this was chosen against a specific misreading
 ///
 /// **"at this zoom"**, not "on this page". The operator's report was
 /// *"different results depending on Zoom level"*, and the thing that must land
@@ -906,7 +892,7 @@ pub const fn flatten_declined_certified() -> &'static str {
 /// never reach; calling it wrong would overstate it and invite a bug report
 /// about a page that is fine.
 ///
-/// ★ It does not apologise and does not promise a fix. What it owes the
+/// It does not apologise and does not promise a fix. What it owes the
 /// operator is the fact and the remedy, and it gives both in one line that fits
 /// a status bar.
 #[must_use]
@@ -918,12 +904,12 @@ pub fn blend_space_status_line() -> String {
 
 /// The status-bar line for a document whose index pdfcer had to rebuild.
 ///
-/// ★★★ One sentence, stating the fact and where to look, and stopping. It does
+/// One sentence, stating the fact and where to look, and stopping. It does
 /// not warn, does not instruct, and carries no counters — the numbers live in
 /// Properties, and a status line long enough to hold three of them would push
 /// the zoom and page controls off a narrow window.
 ///
-/// ★ It says **"rebuilt"** rather than "repaired" or "fixed". Repaired implies
+/// It says **"rebuilt"** rather than "repaired" or "fixed". Repaired implies
 /// the file is now correct; rebuilt says what actually happened — pdfcer
 /// reconstructed the index by scanning, which is a best reading of damaged
 /// bytes and may or may not be the one the author intended. The operator's
@@ -933,7 +919,7 @@ pub const fn recovered_status_line() -> &'static str {
     "This file's index was damaged — pdfcer rebuilt it to open the document. The Properties panel says what was recovered."
 }
 
-/// ★★★ **Why zooming in stopped**, on the bottom bar — `OPERATOR_REQUESTS.md`
+/// **Why zooming in stopped**, on the bottom bar — `OPERATOR_REQUESTS.md`
 /// O186's fourth clause, in the operator's own words:
 ///
 /// > *"If this error is caused by some other limitation that will always happen,
@@ -950,7 +936,7 @@ pub const fn recovered_status_line() -> &'static str {
 /// saying why, which is the silently-inert control the project has already been
 /// corrected about twice.
 ///
-/// # ★★ What it does NOT say, and why each omission is deliberate
+/// # What it does NOT say, and why each omission is deliberate
 ///
 /// **It does not name the percentage.** The zoom readout is three controls to
 /// the right on the same bar, showing exactly the number the zoom stopped at,
@@ -971,7 +957,7 @@ pub const fn recovered_status_line() -> &'static str {
 /// said "try zooming out" would be advice about the thing they were already
 /// doing when it stopped.
 ///
-/// # ★ Why it says the limit was measured on *this sheet*
+/// # Why it says the limit was measured on *this sheet*
 ///
 /// Because the number is genuinely per-page and the operator will otherwise read
 /// it as a property of pdfcer. Measured: an E-size sheet gave out at raster
@@ -984,7 +970,7 @@ pub const fn raster_stop_status_line() -> &'static str {
     "Zoom stopped here — this page cannot be drawn any larger. The limit was measured on this sheet; other pages may go further."
 }
 
-/// ★★★ **Show points was switched on and the object has more anchors than the
+/// **Show points was switched on and the object has more anchors than the
 /// canvas will draw.**
 ///
 /// # The state this exists for, and why silence was the wrong answer
@@ -1003,12 +989,12 @@ pub const fn raster_stop_status_line() -> &'static str {
 /// owes an off-canvas report.* The canvas is not marked — nothing is drawn on
 /// the page to indicate suppression — and the status bar carries the number.
 ///
-/// ★ It names **both** numbers. The count alone would not say the cap is the
+/// It names **both** numbers. The count alone would not say the cap is the
 /// reason; the cap alone would not say how far past it they are. An operator
 /// who sees *"5,903 … 400"* knows immediately that no setting is going to help
 /// and that the answer is to enter a part.
 ///
-/// ★★ It also names the remedy, and the remedy is real: descending into a
+/// It also names the remedy, and the remedy is real: descending into a
 /// subpath narrows the anchor list to that subpath, which is nearly always
 /// under the cap. That is the route the Points tool takes and it is one click.
 #[must_use]
@@ -1033,7 +1019,7 @@ mod tests {
         assert_ne!(diagnostics_toggle(false), diagnostics_toggle(true));
     }
 
-    /// ★ **`pdfcer-core`'s sentences reach the operator unaltered, and on one
+    /// **`pdfcer-core`'s sentences reach the operator unaltered, and on one
     /// line.**
     ///
     /// Two properties, and both are load-bearing:
@@ -1076,7 +1062,7 @@ mod tests {
         );
     }
 
-    /// ★ **A decline does not read like a disclosure.**
+    /// **A decline does not read like a disclosure.**
     ///
     /// The whole reason the worded decline got its own strings — rather than
     /// borrowing the line the vector verbs already put in this bar — is that
@@ -1143,7 +1129,7 @@ mod tests {
         }
     }
 
-    /// ★ **The decline does not tell the operator they did something wrong.**
+    /// **The decline does not tell the operator they did something wrong.**
     ///
     /// `view.zoom_selection` is greyed on `selection.bounds`, so the sentence
     /// is reached by a chord — or, worse, in the race where the selection
@@ -1187,7 +1173,7 @@ mod tests {
         diagnostics_ops_unknown,
     ];
 
-    /// ★ **One is singular everywhere it can be.**
+    /// **One is singular everywhere it can be.**
     ///
     /// Not pedantry: these lines are read in a small weak font at the edge
     /// of the window, and "1 glyphs" is the kind of thing a reader notices
@@ -1228,7 +1214,7 @@ mod tests {
         );
     }
 
-    /// **★ The clamp note names both numbers.**
+    /// **The clamp note names both numbers.**
     ///
     /// The whole value of the note is that it distinguishes "your number was
     /// out of range" from "the box ignored you". A note that named only the
@@ -1291,16 +1277,13 @@ mod tests {
         }
     }
 
-    /// **★ Each fit tooltip names exactly the chord that reaches it.**
+    /// **Each fit tooltip names exactly the chord that reaches it.**
     ///
-    /// This test used to pin the *opposite* facts — Actual size naming no
-    /// chord, Fit page naming `Ctrl+0`, Fit width naming `Ctrl+2` — because
-    /// `Ctrl+0` and `Ctrl+2` each had two owners and this file was the
-    /// surface that had to keep quiet about it. With one owner per chord
-    /// (`crate::app::keyboard`'s ★ section) the three claims invert, and the
-    /// test inverts with them rather than being deleted: the property worth
-    /// defending was never "Actual size is silent", it was **"a status-bar
-    /// tooltip names a chord if and only if that chord reaches the control"**.
+    /// The property defended here is not that any particular one of the three
+    /// is silent. It is **"a status-bar tooltip names a chord if and only if
+    /// that chord reaches the control"** — which, with one owner per chord
+    /// (`crate::app::keyboard`), means Actual size names `Ctrl+0` and the
+    /// other two name nothing.
     ///
     /// The three assertions below are the direct expression of that, and the
     /// last two are the ones that matter most — a chord *removed* from the
@@ -1326,7 +1309,7 @@ mod tests {
         );
     }
 
-    /// **★ The mirrors say exactly what the ribbon says.**
+    /// **The mirrors say exactly what the ribbon says.**
     ///
     /// The header's claim, asserted rather than trusted. Three status-bar
     /// controls mirror three View ▸ Zoom commands under amendment P1a, and a

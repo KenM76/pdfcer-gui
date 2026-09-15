@@ -1,31 +1,17 @@
 //! # `app::state::layers` — **which optional-content groups the operator has
 //! hidden**
 //!
-//! Split out of [`super`] on 2026-09-12 under **R2**, when O177's one-shot
-//! pushed `app/state.rs` past the 1,500-line ceiling.
+//! The subject is one question: **what does the renderer have to be told about
+//! optional content?** Its whole weight is the core API trap that
+//! `pdfcer_render::LayerVisibility` *replaces* the document's own `/D`
+//! configuration rather than merging with it, which makes the three-state shape
+//! below load-bearing — collapsing two of its states is a disclosure defect.
 //!
-//! ## Why this is a seam rather than an arbitrary cut
-//!
-//! Everything else in `app::state` answers *"what is open, and what is the
-//! operator looking at?"*. This answers a narrower and quite different
-//! question: **what does the renderer have to be told about optional
-//! content**, and it carries a whole argument of its own about a core API trap
-//! — that `pdfcer_render::LayerVisibility` *replaces* the document's own
-//! `/D` configuration rather than merging with it, so the three-state shape
-//! below is load-bearing and collapsing two of its states is a disclosure
-//! defect. That argument has nothing to say about page rasters, selection,
-//! undo depth or window identity, which is the test for a seam: a reader here
-//! for layers needs none of the rest, and a reader there needs none of this.
-//!
-//! ## Visibility
-//!
-//! [`LayerOverride`] is `pub(in crate::app)` rather than `pub(super)`, which
-//! reproduces **exactly** the reach it had while it was declared one level up:
-//! `pub(super)` inside `app/state.rs` meant "visible in `crate::app`", and
-//! `pub(super)` written here would mean "visible in `crate::app::state`" —
+//! [`LayerOverride`] is `pub(in crate::app)` rather than `pub(super)`
+//! deliberately: `pub(super)` here would mean "visible in `crate::app::state`",
 //! narrower than the `OpenDoc::layers` field that holds it, which is a
-//! private-interface error rather than a tightening. Spelled absolutely so the
-//! move cannot change what can see it.
+//! private-interface error. The reach is spelled absolutely so moving the type
+//! cannot change what can see it.
 
 use std::collections::BTreeSet;
 

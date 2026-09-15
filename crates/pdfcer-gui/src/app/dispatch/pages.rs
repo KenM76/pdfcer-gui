@@ -1,8 +1,5 @@
 //! # `app::dispatch::pages` — the Pages tab's command arms
 //!
-//! Split out of [`super`] under **R2** on 2026-08-18, when
-//! `pages.insert_from_file` took that file past 1,500 lines.
-//!
 //! ## The seam
 //!
 //! `super`'s subject is *"a command id becomes an intent"* across the whole
@@ -60,15 +57,15 @@ pub(crate) fn handles(id: &str) -> bool {
 /// `id` is guaranteed to be one [`handles`] claims — the caller's arm is
 /// guarded on it — so the fall-through below is unreachable and says so rather
 /// than guessing.
-/// ★ **`&mut` since `pages.resize` landed**, and the widening is deliberate
-/// rather than incidental. Every other arm here builds an `Action` and pushes
-/// it; that one opens a window, which lives on `PdfcerApp::dialogs`. The
-/// alternative was to put the arm in [`super`] beside `pages.merge_into` and
-/// `pages.insert_from_file`, which are in that file for exactly this reason —
-/// and [`super`] is at **1,500 of its 1,500 lines**, so there is no room to.
-/// Widening the receiver costs the call site nothing (it is already inside a
-/// `&mut self` method and reborrows) and keeps every Pages arm in the file
-/// named after the Pages tab.
+///
+/// ★ **The receiver is `&mut PdfcerApp` for `pages.resize` alone.** Every other
+/// arm here builds an `Action` and pushes it; that one opens a window, which
+/// lives on `PdfcerApp::dialogs`. The alternative — putting the arm in
+/// [`super`] beside `pages.merge_into` and `pages.insert_from_file` — would
+/// scatter the Pages tab across two files to save a `mut`. Widening the
+/// receiver costs the call site nothing (it is already inside a `&mut self`
+/// method and reborrows) and keeps every Pages arm in the file named after the
+/// Pages tab.
 pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     match id {
         // ★★★ **Change the paper the picked sheets sit on.**
@@ -100,14 +97,11 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
             app.dialogs.open_page_size(doc, &pages);
         }
         // ===============================================================
-        // ★★ THE PAGE VERBS — six commands, one operand rule, five arms
+        // ★★ THE PAGE VERBS — one operand rule, shared by every arm below
         //
-        // Every one of these was registered, drawn on the Pages tab, listed
-        // in the page tile's context menu and — for four of them — bound to
-        // a chord (`[`, `]`, `Alt+Up`, `Alt+Down`), with **no arm at all**.
-        // Every press traced `command-unimplemented`, which is defect D1's
-        // shape six times over, and `FEATURES.md` claimed the panel shipped
-        // *"a context menu of the six page verbs"*.
+        // Each of these is reachable from the Pages tab, the page tile's
+        // context menu and, for some, a chord. They must agree about what
+        // they act on, which is what the operand rule below is for.
         //
         // # The operand is the panel's multi-select, asked for once
         //
@@ -125,8 +119,9 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // how they differ, and the consequence at this site is that no
         // `pages.*` command is gated on `selection.any` and none should be:
         // with nothing picked these act on the current page, which is a
-        // defined answer and not a disabled state. **No new `enabled_when`
-        // condition was needed**, so §5's fifth obligation does not apply.
+        // defined answer and not a disabled state. No new `enabled_when`
+        // condition is needed for a page verb, and adding one would turn a
+        // defined answer into a dead control.
         //
         // # The arms route; they do not compute
         //
@@ -170,22 +165,20 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // named after, so the engine is never asked a question whose answer
         // is "nothing".
         //
-        // ★ **It is traced and not worded, and that is a scope statement
-        // rather than a judgement that it should not be.** The surface for
-        // a worded decline is `crate::app::status::decline`, which was
-        // being rewritten by the concurrent undo/redo work while this
-        // landed; adding two variants to `Declined` mid-rewrite is how two
-        // sessions produce one broken file. The two refusals carry
-        // *distinct* reason tokens so the follow-up is a mapping rather
-        // than an investigation: `at-the-edge` wants a sentence naming the
-        // boundary, `nothing-to-move` one naming the document.
+        // ★ **These two refusals are traced and not yet worded**, which is a
+        // gap rather than a decision: the surface for a worded decline is
+        // `crate::app::status::decline`, and neither refusal has a variant
+        // there. They carry *distinct* reason tokens so that closing the gap
+        // is a mapping rather than an investigation — `at-the-edge` wants a
+        // sentence naming the boundary, `nothing-to-move` one naming the
+        // document.
         //
         // The two are traced separately because they are different facts
         // with different remedies — pick a different sheet, or there is
         // nothing to be done — and a reader of a trace from a machine they
         // cannot see should not have to guess which nothing happened. That
-        // is the same rule `measure.finish` and `markup.finish` follow four
-        // arms above.
+        // is the same rule `measure.finish` and `markup.finish` follow in
+        // [`super::measure`] and [`super::markupnodes`].
         "pages.move_up" | "pages.move_down" => {
             use crate::panels::pages::ops::{MoveDirection, move_order};
             let direction = if id == "pages.move_up" {

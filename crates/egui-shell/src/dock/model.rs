@@ -21,11 +21,9 @@
 //!   lets an operator put a narrow navigator beside a wide inspector
 //!   without giving up either.
 //! - **Stack** — vertical compartments within a column, each with a
-//!   draggable boundary. This is the shape the previous implementation's
-//!   `default_left_tree` built by hand, and its reasoning is worth
-//!   carrying over verbatim: *"reaching one surface must not hide another
-//!   you are using AT THE SAME TIME"*. A stack boundary is how two
-//!   surfaces stay visible together.
+//!   draggable boundary. The rule it serves: *reaching one surface must
+//!   not hide another you are using at the same time*. A stack boundary
+//!   is how two surfaces stay visible together.
 //! - **Tab** — several panels in one stack, one visible at a time. The
 //!   compact form, for surfaces that are consulted in bursts rather than
 //!   watched continuously.
@@ -62,15 +60,14 @@
 //! will be; `SHELL_FRAMEWORK.md` §2 states the rule and
 //! `tools/gates/check-shell-purity.sh` enforces its negative half.
 //!
-//! The previous implementation used a closed `enum DockPanel`, and its
-//! own doc comment records the cost of that choice honestly: every panel
-//! the application could ever dock had to be a variant compiled into the
-//! shell, and adding one meant editing the framework. Its tests then had
-//! to sweep `DockPanel::ALL` to prove no variant had become unreachable —
-//! a real invariant, and one that only exists because the type was
-//! closed. Here, the equivalent invariant is
-//! [`DockLayout::unregistered_panels`], which the application can ask
-//! about at any time; the shell has no list to sweep because it has no
+//! The alternative — a closed `enum DockPanel` — costs exactly what it
+//! sounds like: every panel the application could ever dock has to be a
+//! variant compiled into the shell, adding one means editing the
+//! framework, and the shell then owes a sweep of every variant to prove
+//! none has become unreachable. That sweep is a real invariant, and one
+//! that exists only because the type is closed. Here the equivalent
+//! question is [`DockLayout::unregistered_panels`], which the application
+//! can ask at any time; the shell has no list to sweep because it has no
 //! list.
 //!
 //! # Fail-soft is a property of the model, not only of the loader
@@ -88,15 +85,13 @@
 //! | every share is finite and positive | replacing with an equal share |
 //! | no panel is mounted twice | dropping the later mount |
 //!
-//! The last one deserves its reasoning stated, because the previous
-//! implementation enforced it with a test rather than with code and said
-//! why: two live copies of one surface each have *"its own scroll
-//! position and its own idea of which tab is active"*, and any
-//! `activate` call raises whichever it finds first. *"That is a
-//! state-drift bug with no visible cause, so it is cheaper to forbid than
-//! to debug."* That reasoning is carried across intact; what changed is
-//! that the model now repairs it rather than a test merely detecting it,
-//! because a hand-edited file is a source a test cannot reach.
+//! The last one deserves its reasoning stated. Two live copies of one
+//! surface each have their own scroll position and their own idea of
+//! which tab is active, and any `activate` call raises whichever it finds
+//! first — a state drift with no visible cause, cheaper to forbid than to
+//! debug. It is repaired here rather than merely asserted in a test,
+//! because the input that produces it is a hand-edited file no test of
+//! the defaults can reach.
 
 use serde::{Deserialize, Serialize};
 
@@ -579,11 +574,11 @@ impl DockLayout {
     /// whether its body is being drawn.
     ///
     /// The honest answer to "is the operator looking at this panel", and
-    /// the query a command like "show Properties" must consult rather
-    /// than keeping a boolean of its own. The previous implementation
-    /// records why: a separate `properties_open` flag *"could disagree
-    /// with what was on screen"*, and a control whose selected state is a
-    /// stale copy of the truth is worse than one with no state at all.
+    /// the query a command like "show Properties" must consult rather than
+    /// keeping a boolean of its own. A separate `properties_open` flag is a
+    /// second copy of one fact and can disagree with what is on screen, and
+    /// a control whose selected state is a stale copy of the truth is worse
+    /// than one with no state at all.
     ///
     /// Note the deliberate limit of the claim: it does not consider
     /// whether the side is visible, because that is a second, separately
@@ -617,10 +612,9 @@ impl DockLayout {
     ///
     /// Returns `false` if the panel is not mounted, which **must not be
     /// an error**: the caller's fallback is to mount it or to restore a
-    /// default arrangement, not to refuse. The previous implementation
-    /// made the same choice and stated the same reason, and it survives a
-    /// change of engine because it is a statement about the caller's
-    /// options rather than about the tree.
+    /// default arrangement, not to refuse. That is a statement about the
+    /// caller's options rather than about the tree, so it holds whatever
+    /// the tree is made of.
     ///
     /// Also makes the side visible, because "show me the Layers panel"
     /// meaning "select its tab inside a dock you cannot see" is a command
@@ -717,11 +711,10 @@ impl DockLayout {
 
     /// Every mounted panel whose id the catalog does not recognise.
     ///
-    /// The application's equivalent of the previous implementation's
-    /// `DockPanel::ALL` sweep — the question *"is anything mounted that
-    /// nothing can draw?"* — asked from the side that actually knows the
-    /// answer. The shell has no list of its own to sweep, because it has
-    /// no list.
+    /// The question *"is anything mounted that nothing can draw?"*, asked
+    /// from the side that actually knows the answer. A shell with a closed
+    /// panel enum would sweep its own variants; this one has no list of its
+    /// own to sweep, because it has no list.
     #[must_use]
     pub fn unregistered_panels(&self, catalog: &dyn PanelCatalog) -> Vec<PanelId> {
         self.panels()
@@ -846,12 +839,10 @@ pub struct PanelInfo {
     ///
     /// This is also the tab's accessible name, which is why it carries
     /// the burden: a screen-reader user hearing "Pages" learns nothing a
-    /// sighted user does not already see, whereas "Pages — jump to a
-    /// page, reorder or rotate sheets" is the information. The previous
-    /// implementation asserted the distinction with a test that a tooltip
-    /// must be meaningfully longer than its label; that test is carried
-    /// across as [`PanelRegistry::thin_tooltips`], which the application
-    /// calls in *its* suite because it owns the strings.
+    /// sighted user does not already see, whereas "Pages — jump to a page,
+    /// reorder or rotate sheets" is the information.
+    /// [`PanelRegistry::thin_tooltips`] is the check, and the application
+    /// calls it in *its* suite because it owns the strings.
     pub tooltip: String,
 }
 
@@ -888,7 +879,7 @@ impl PanelInfo {
 /// Everything the application can dock.
 ///
 /// Populated at runtime, exactly like [`crate::commands::CommandRegistry`]
-/// — and for the reason `SHELL_FRAMEWORK.md` §5b gives: *a capability's
+/// — and for the reason `SHELL_FRAMEWORK.md` §7 gives: *a capability's
 /// presence is expressed by registering it, and by nothing else.* A panel
 /// belonging to a feature that was compiled out is simply not registered,
 /// its saved mount is dropped with a disclosed reason, and no `#[cfg]`
@@ -949,17 +940,14 @@ impl PanelRegistry {
     /// Every registered panel whose tooltip does not add information
     /// beyond its label.
     ///
-    /// A helper the *application* asserts on, because the application
-    /// owns the strings. Carried across from the previous
-    /// implementation's `every_panel_tooltip_adds_information_beyond_its_label`,
-    /// which encoded a real rule: a tooltip states **when to reach for**
-    /// a surface, and a tooltip that restates the label has spent a
+    /// A helper the *application* asserts on, because the application owns
+    /// the strings. The rule it encodes: a tooltip states **when to reach
+    /// for** a surface, and a tooltip that restates the label has spent a
     /// disclosure opportunity on nothing.
     ///
-    /// The threshold — twenty characters beyond the label — is the same
-    /// one that test used. It is a heuristic and it is deliberately
-    /// generous; its job is to catch `tooltip: "Pages"`, not to grade
-    /// prose.
+    /// The threshold is twenty characters beyond the label. It is a
+    /// heuristic and it is deliberately generous; its job is to catch
+    /// `tooltip: "Pages"`, not to grade prose.
     #[must_use]
     pub fn thin_tooltips(&self) -> Vec<&PanelInfo> {
         self.iter()
@@ -982,7 +970,8 @@ impl PanelCatalog for PanelRegistry {
 mod tests {
     use super::*;
 
-    /// A three-column, four-panel arrangement used by several tests.
+    /// A two-sided arrangement with a tabbed stack in it, used by several
+    /// tests.
     fn sample() -> DockLayout {
         DockLayout::new(
             SideLayout::new([
@@ -1017,11 +1006,9 @@ mod tests {
 
     /// A backgrounded tab reports `false`, and activation raises it.
     ///
-    /// Carried across from the previous implementation, which kept the
-    /// equivalent test deliberately after its default layout stopped
-    /// exercising it: *"without this the function would be effectively
-    /// untested and a future edit could break it with every test still
-    /// green."*
+    /// Kept even when the shipped default arrangement happens to have no
+    /// backgrounded tab: without it the function is effectively untested
+    /// and an edit can break it with every test still green.
     #[test]
     fn a_backgrounded_panel_can_be_brought_forward() {
         let mut layout = sample();
@@ -1083,10 +1070,9 @@ mod tests {
     ///
     /// Two live copies of one surface each have their own scroll position
     /// and their own idea of which tab is active, and `activate` raises
-    /// whichever it finds first. The previous implementation forbade this
-    /// with a test; here the model repairs it, because the input that
-    /// causes it is a hand-edited file that no test of the defaults can
-    /// reach.
+    /// whichever it finds first. The model **repairs** it rather than a
+    /// test merely forbidding it, because the input that causes it is a
+    /// hand-edited file that no test of the defaults can reach.
     #[test]
     fn a_panel_mounted_twice_keeps_only_its_first_mount() {
         let mut layout = DockLayout::new(

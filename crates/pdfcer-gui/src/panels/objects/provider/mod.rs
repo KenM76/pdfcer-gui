@@ -1,13 +1,9 @@
 //! # `panels::objects::provider` — front-to-back page object decomposition
 //!
 //! The thin `pdfcer-gui` adapter that plugs `pdfcer-core`'s read-only vector
-//! object model (`pdfcer_core::vector`) into the shell. Salvaged from the old
-//! shell's `object_provider.rs` (694 code lines, 313 test lines) per
-//! `SALVAGE.md`'s Class A row. Decision 011 §2.1 set its shape:
-//!
-//! > Pass 9a's real provider is a thin `pdfcer-gui` adapter that CALLS INTO
-//! > `pdfcer-core`'s read-only object model (which stays GUI-free); the
-//! > adapter owns the trait impl, the object model owns none of it.
+//! object model (`pdfcer_core::vector`) into the shell. The shape is fixed:
+//! this adapter CALLS INTO the object model, which stays GUI-free; the adapter
+//! owns the trait impl and the object model owns none of it.
 //!
 //! ## What lives here vs in core (GUI–core separation)
 //!
@@ -45,76 +41,44 @@
 //!
 //! ---
 //!
-//! # What is live at S3, and what is waiting for S4
+//! # Who reads this surface
 //!
-//! This whole file came across, because `SALVAGE.md`'s procedure forbids
-//! salvaging by snippet — *"the old GUI's value is disproportionately in its
-//! doc comments; a snippet leaves those behind and the next engineer
-//! re-derives a decision that was already made and already paid for."* But
-//! only some of it has a consumer today, and pretending otherwise would be
-//! its own dishonesty:
+//! | Method group | Consumer |
+//! |---|---|
+//! | [`ObjectModelProvider::build`], [`page_objects`](ObjectModelProvider::page_objects) | the Objects panel's row list |
+//! | [`part_kind`](ObjectModelProvider::part_kind), [`part_count`](ObjectModelProvider::part_count), [`subpath_count`](ObjectModelProvider::subpath_count), [`text_run_count`](ObjectModelProvider::text_run_count) | the Objects panel's **object → part → point** nesting |
+//! | [`subpath_node_points`](ObjectModelProvider::subpath_node_points), [`object_node_points`](ObjectModelProvider::object_node_points), [`subpath_handle_points`](ObjectModelProvider::subpath_handle_points) | the Objects panel's point rows and the Properties panel's node readout |
+//! | [`hit_test_all`](ObjectModelProvider::hit_test_all), [`hit_test`](ObjectModelProvider::hit_test), [`hit_test_rect`](ObjectModelProvider::hit_test_rect), [`bounds`](ObjectModelProvider::bounds) | the canvas selection layer, through [`crate::canvas::target::CanvasTargetProvider`] |
+//! | [`part_hits`](ObjectModelProvider::part_hits), [`subpath_hits`](ObjectModelProvider::subpath_hits), [`text_run_hits`](ObjectModelProvider::text_run_hits), [`nearest_node`](ObjectModelProvider::nearest_node), [`nearest_handle`](ObjectModelProvider::nearest_handle) | click-to-select and the level ladder |
+//! | [`part_bounds_canvas`](ObjectModelProvider::part_bounds_canvas) and friends | the selection outlines |
+//! | [`object_sample_points`](ObjectModelProvider::object_sample_points) | the measure tools' snap query and the Taubin best-fit circle |
 //!
-//! | Method group | S3 consumer | Waiting on |
-//! |---|---|---|
-//! | [`ObjectModelProvider::build`], [`page_objects`](ObjectModelProvider::page_objects) | the Objects panel's row list | — |
-//! | [`part_kind`](ObjectModelProvider::part_kind), [`part_count`](ObjectModelProvider::part_count), [`subpath_count`](ObjectModelProvider::subpath_count), [`text_run_count`](ObjectModelProvider::text_run_count) | the Objects panel's **object → part → point** nesting | — |
-//! | [`subpath_node_points`](ObjectModelProvider::subpath_node_points), [`object_node_points`](ObjectModelProvider::object_node_points), [`subpath_handle_points`](ObjectModelProvider::subpath_handle_points) | the Objects panel's point rows and the Properties panel's node readout | — |
-//! | [`hit_test_all`](ObjectModelProvider::hit_test_all), [`hit_test`](ObjectModelProvider::hit_test), [`hit_test_rect`](ObjectModelProvider::hit_test_rect), [`bounds`](ObjectModelProvider::bounds) | none | **S4** — the canvas selection layer and the `CanvasTargetProvider` trait |
-//! | [`part_hits`](ObjectModelProvider::part_hits), [`subpath_hits`](ObjectModelProvider::subpath_hits), [`text_run_hits`](ObjectModelProvider::text_run_hits), [`nearest_node`](ObjectModelProvider::nearest_node), [`nearest_handle`](ObjectModelProvider::nearest_handle) | none | **S4** — click-to-select and the level ladder |
-//! | [`part_bounds_canvas`](ObjectModelProvider::part_bounds_canvas) and friends | none | **S4** — selection outlines |
-//! | [`object_sample_points`](ObjectModelProvider::object_sample_points) | none | **S5** — the measure tools' snap query and Taubin best-fit circle |
+//! **Every one of them is under test below**, independently of the trait: a
+//! method proven here cannot be broken by a change to how the canvas reaches
+//! it.
 //!
-//! **Every one of them is under test below.** That is the difference between
-//! carrying a method forward and leaving a stub: the S4 canvas will attach a
-//! trait to a working, proven implementation rather than to code nobody has
-//! run since it was pasted.
+//! ## Two invariants this file is responsible for
 //!
-//! ## What changed at salvage
-//!
-//! 1. **`use eframe::egui` → `use egui`**, the crate-wide S0 convention.
-//! 2. **The `CanvasTargetProvider` trait impl became inherent methods.**
-//!    The trait lives in `canvas/` and does not exist yet. The three
-//!    methods keep their names and their exact semantics, and
-//!    [`ObjectModelProvider::hit_test`] — which was the *trait's provided
-//!    method* over `hit_test_all` — is written out here as an inherent
-//!    method with its derivation intact, so the two still cannot disagree.
-//!    Re-attaching the trait at S4 is a one-line `impl` block over methods
-//!    that already have the right signatures.
-//! 3. **[`TargetId`] moved here from `canvas`.** It is the *encoding*, and
-//!    the encoding belongs with the thing that mints it. When `canvas`
-//!    grows its substrate it re-exports this rather than defining a second
-//!    one — two id types over one index space is precisely the divergence
-//!    this file's own docs warn about.
-//! 4. **One test did not come across:
-//!    `screen_tolerance_keeps_the_on_screen_catch_radius_constant`.** It
-//!    asserts a law about `canvas::screen_tolerance_to_page` and
-//!    `canvas::SELECT_SCREEN_TOLERANCE_PX`, neither of which exists in this
-//!    crate yet, and re-declaring those constants here to keep a test green
-//!    would put the tolerance in two places — which is the *cause* of the
-//!    defect the test guards, not a way to guard it. It lands in `canvas/`
-//!    at S4 with the functions it is about. **The substantive regression
-//!    test came across intact**:
-//!    [`tests::selection_tolerance_is_honoured_per_query_not_baked_in`]
-//!    proves the tolerance is a per-query parameter rather than a baked
-//!    constant, which is the half that lives here.
-//! 5. **Two doc cross-references were repointed** at things that exist:
-//!    `crate::canvas::EmptyTargetProvider` (the shippable no-op provider)
-//!    and `crate::vector_edit_tool::nearest_anchor` are both S4/S5 modules,
-//!    so the claims they anchored are stated directly instead of by link.
-//!
-//! No arithmetic, no tolerance rule, no hit ordering and no index
-//! convention changed.
+//! * **[`TargetId`] is minted here and nowhere else.** It is the *encoding*,
+//!   and the encoding belongs with the thing that mints it — `canvas`
+//!   re-exports this rather than defining a second one, because two id types
+//!   over one index space is exactly the divergence these docs warn about.
+//! * **The tolerance is a per-query parameter, never a baked constant.**
+//!   [`tests::selection_tolerance_is_honoured_per_query_not_baked_in`] holds
+//!   it there. Declaring a second copy of a screen-pixel tolerance in this
+//!   module would put one rule in two places, which is the cause of the
+//!   defect that test guards rather than a way to guard it.
 
 /// **The same questions, asked of either index space** — the `_of` family that
 /// lets the Part and Node rungs be offered for something painted inside a form
-/// XObject (`OPERATOR_REQUESTS.md` O70). Split out 2026-09-01 under R2; its
-/// header carries why that is a seam rather than an arbitrary cut.
+/// XObject (`OPERATOR_REQUESTS.md` O70). Its header carries why the `_of`
+/// family is a seam rather than an arbitrary cut.
 mod geometry;
 
 /// **The Point rung's pick sets** — which anchors belong to which subpath,
 /// which number each answers to, which Bézier handle shapes which side of a
-/// node, and which of them a press picks. Split out 2026-09-15 under R2; its
-/// header carries why the rung is a seam rather than an arbitrary cut.
+/// node, and which of them a press picks. Its header carries why the rung is a
+/// seam rather than an arbitrary cut.
 mod node_rung;
 
 use egui::{Pos2, Rect};
@@ -188,19 +152,16 @@ pub enum TargetId {
     /// paint-order verbs — see the type docs — and that is a statement
     /// about the INDEX SPACE, which is what this type is for.
     ///
-    /// ★★ It is **not** a statement about editability, and this doc said it
-    /// was until 2026-09-11: *"`is_editable` is `false` for every leaf until
-    /// the engine grows editing-through-recursion"*. The engine grew it at
-    /// `Pass 188.0` and `is_editable` now means *"this leaf is a path"*.
-    /// A leaf reached through this variant is edited by the **form-scoped**
-    /// verbs — `move_objects_in_form`, `move_subpath_in_form`,
-    /// `move_node_in_form`, `move_nodes_in_form`, `move_handle_in_form`,
-    /// `delete_objects_in_form` — every one of which this shell calls.
+    /// ★★ It is **not** a statement about editability. `is_editable` on a leaf
+    /// means *"this leaf is a path"*, and a leaf reached through this variant
+    /// is edited by the **form-scoped** verbs — `move_objects_in_form`,
+    /// `move_subpath_in_form`, `move_node_in_form`, `move_nodes_in_form`,
+    /// `move_handle_in_form`, `delete_objects_in_form` — every one of which
+    /// this shell calls.
     ///
-    /// ★ [`Self::page_object_index`] returning `None` is still the guard it
-    /// always was. What it guards is *do not hand a leaf index to a
-    /// paint-order verb*, which remains exactly true; it never meant *do not
-    /// edit this*.
+    /// ★ [`Self::page_object_index`] returning `None` guards one thing only:
+    /// *do not hand a leaf index to a paint-order verb*. It does not mean *do
+    /// not edit this*, and reading it that way withholds working verbs.
     Leaf(u64),
 }
 
@@ -261,14 +222,13 @@ impl TargetId {
 /// distance-preserving — a pure rotation + Y-flip + translation), so this is
 /// also, in effect, a ~3 pt page-space tolerance.
 ///
-/// **This used to be the only tolerance**, applied at every zoom level, and
-/// that was a bug: the pointer is divided by `zoom` before it reaches
-/// [`ObjectModelProvider::hit_test`], so a constant canvas-space tolerance
-/// is a *shrinking* on-screen catch radius — 1.5 px at 50% zoom, 0.75 px at
-/// 25%. Objects were effectively unclickable whenever the operator zoomed
-/// out to see a whole drawing. The live tolerance arrives as a parameter,
-/// derived at the call site from a screen-pixel constant divided by the
-/// zoom.
+/// ⚠ **It is a fallback and must never become the tolerance.** The pointer is
+/// divided by `zoom` before it reaches [`ObjectModelProvider::hit_test`], so a
+/// constant canvas-space tolerance is a *shrinking* on-screen catch radius —
+/// 1.5 px at 50 % zoom, 0.75 px at 25 %, i.e. objects that stop being
+/// clickable exactly when the operator zooms out to see a whole drawing. The
+/// live tolerance arrives as a parameter, derived at the call site from a
+/// screen-pixel constant divided by the zoom.
 pub const FALLBACK_SELECT_TOLERANCE: f64 = 3.0;
 
 /// The object-model-backed provider for one page (module docs).
@@ -289,9 +249,8 @@ pub struct ObjectModelProvider {
     /// ★★★ Held for exactly one question:
     /// [`crate::canvas::target::CanvasTargetProvider::container_is_worth_selecting`],
     /// which needs to know whether a form covers the whole sheet. It is
-    /// `page_device_geometry(page, 1.0)`'s first two returns, which were
-    /// discarded here until 2026-09-01 — the transform was wanted and the
-    /// size was not.
+    /// `page_device_geometry(page, 1.0)`'s first two returns, kept alongside
+    /// the transform this provider is really built from.
     ///
     /// ★ `None` makes that predicate answer `true`, which is the behaviour
     /// before it existed. A provider that cannot measure must not guess.
@@ -311,14 +270,8 @@ pub struct ObjectModelProvider {
 /// | Drag to move | `move_subpath` | `move_text_run` — **but conditionally**, see [`RunMoveBlock`] |
 /// | Descend to Point | yes | no (a run has no anchors) |
 ///
-/// ★★★ **The move cell read "nothing — no core verb exists" until
-/// 2026-09-15**, and it had been true for the whole life of this crate. The
-/// engine shipped `move_text_run` and `move_text_run_in_form` on 2026-09-14
-/// (`G017`), which is `OPERATOR_REQUESTS.md` O188's move half and the thing
-/// the operator asked for by name.
-///
-/// ★★ Note the word **conditionally**, because it is the part that survives
-/// the delivery. A subpath can always be moved; a run can be moved only when
+/// ★★ Note the word **conditionally**. A subpath can always be moved; a run
+/// can be moved only when
 /// the file gave it a position of its own. That asymmetry does not go away
 /// with a verb — it is a property of ISO 32000-1 sub-clause 9.4.2, where a
 /// show operator may take its origin from the previous one's advance — so
@@ -404,7 +357,7 @@ impl ObjectModelProvider {
     /// be visually indistinguishable from a success state that happens to
     /// have no content.
     ///
-    /// # Pass a SESSION view, not the base document (decision 018)
+    /// # Pass a SESSION view, not the base document
     ///
     /// Callers pass `&session.view()`. Passing `&session.document().view()`
     /// decomposes the *base revision*, so hit-testing, marquee selection and
@@ -413,10 +366,9 @@ impl ObjectModelProvider {
     /// must be built from the *same* view, or the canvas shows one document
     /// and responds as another.
     ///
-    /// At S3 the second half of that hazard is what bites: the Objects panel
-    /// would list the pre-edit object set while the canvas draws the
-    /// post-edit page, and the panel exists precisely to answer "what am I
-    /// looking at".
+    /// The Objects panel is where that bites hardest: it would list the
+    /// pre-edit object set while the canvas draws the post-edit page, and the
+    /// panel exists precisely to answer "what am I looking at".
     #[must_use]
     pub fn build(view: &DocumentView<'_>, page: &Page, page_index: usize) -> Option<Self> {
         Self::build_or_reason(view, page, page_index).ok()
@@ -438,13 +390,11 @@ impl ObjectModelProvider {
     /// that a page did not decompose and nothing about why, which is a
     /// question it then has to answer by hand.
     ///
-    /// Before the decomposition cache moved onto `OpenDoc`, the trace kept
-    /// that detail by running **its own** `decompose_page` — a second
-    /// decomposition of the same page, which is precisely the *"two
-    /// decompositions quietly diverge"* pattern decision 011 warns about and
-    /// [`Self::page_objects`]' own docs exist to prevent. This constructor is
-    /// what let that second call be deleted: one decomposition, and the
-    /// failure reason survives it.
+    /// ⇒ The alternative — letting the trace run **its own** `decompose_page`
+    /// to recover the reason — is a second decomposition of the same page, and
+    /// two decompositions of one page quietly diverge. This constructor is what
+    /// makes that unnecessary: one decomposition, and the failure reason
+    /// survives it.
     ///
     /// The error is stringified here rather than propagated as a
     /// `ContentError` so the cache that stores it does not have to name a
@@ -460,22 +410,18 @@ impl ObjectModelProvider {
         page: &Page,
         page_index: usize,
     ) -> Result<Self, String> {
-        // ★★★ **TIMED, and the line is the instrument this shell owes the
-        // engine** — 2026-08-31.
+        // ★★★ **TIMED, because this shell measures its own loop rather than
+        // inheriting the engine's numbers.**
         //
-        // `pdfcer-core`'s reply to
-        // `request_one_edit_costs_two_decompositions_of_the_same_page` measured
-        // its own side and asked for ours by name: *"we have not measured your
-        // loop; measure it rather than take that sentence."* It also corrected
-        // a causal reading this project got wrong — the decode is roughly three
-        // quarters of the cost and the decomposition the remaining quarter,
-        // where this project had assumed one number was the other.
+        // The engine's measurement of `decompose_page` says the decode is
+        // roughly three quarters of the cost and the decomposition the
+        // remaining quarter — which is a statement about the engine's side, not
+        // about how often this shell asks for one.
         //
         // ⇒ So the line carries **what was built** as well as how long: a
         // rebuild that produced no leaves is a different event from a slow one,
-        // and between `a24868e` and `a8586cc` the engine's own memo returned
-        // exactly that — a full object list with the deep-selection model
-        // silently missing.
+        // and a full object list with the deep-selection model silently missing
+        // is a real failure mode that a duration alone cannot show.
         let started = std::time::Instant::now();
         let objects =
             decompose_page(view, page, Matrix::IDENTITY).map_err(|err| err.to_string())?;
@@ -553,8 +499,8 @@ impl ObjectModelProvider {
     /// decomposed objects through — the Objects panel's row list today, the
     /// snap engine and the Taubin best-fit circle later — so each reuses the
     /// ONE decomposition this provider built rather than running a second
-    /// `decompose_page` per frame. That avoids the exact "two decompositions
-    /// quietly diverge" pattern decision 011 warns against.
+    /// `decompose_page` per frame — because two decompositions of one page
+    /// quietly diverge.
     ///
     /// Everything in [`PageObjects`] is in **PDF user / page space** — the
     /// frame the model stores — so a caller with a canvas-space point
@@ -767,11 +713,10 @@ impl ObjectModelProvider {
     // -----------------------------------------------------------------
     // The canvas target-provider surface.
     //
-    // These four were `impl CanvasTargetProvider for ObjectModelProvider`
-    // in the old shell. The trait lives in `canvas/` and lands at S4; the
-    // methods are inherent here in the meantime, with their signatures and
-    // semantics unchanged, so re-attaching the trait is an `impl` block
-    // and nothing else.
+    // These are inherent methods, and `canvas::target` attaches
+    // `CanvasTargetProvider` to them in one `impl` block that forwards. The
+    // split is deliberate: the geometry and its tests live here, beside the
+    // decomposition they read, and the trait stays a seam rather than a home.
     // -----------------------------------------------------------------
 
     /// Every target under the pointer, **front-most first**, *including what
@@ -787,12 +732,13 @@ impl ObjectModelProvider {
     ///
     /// # THE DEEP QUERY, AND WHY A FORM IS NOT IN THE ANSWER
     ///
-    /// The operator, 2026-08-26: *"when I click on one of the objects all I
-    /// get is the page selected."*
+    /// The operator: *"when I click on one of the objects all I get is the page
+    /// selected."*
     ///
-    /// He was clicking a real object. It was inside a form XObject, and this
-    /// method used to call `pdfcer_core::vector::hit_test_point_all`, which
-    /// sees a form as **one opaque object bounded by its `/BBox`**. A form
+    /// He was clicking a real object inside a form XObject.
+    /// `pdfcer_core::vector::hit_test_point_all` — the shallow query, which
+    /// this method must **not** use — sees a form as **one opaque object
+    /// bounded by its `/BBox`**. A form
     /// declaring the whole `MediaBox` and drawing one small line is legal and
     /// common - 8.10.1 makes `/BBox` a *clipping* extent, a statement about
     /// where painting is allowed, not about where ink is. So a page-sized form
@@ -928,8 +874,7 @@ impl ObjectModelProvider {
     /// answer here, because the engine's answer is *both, always*. The two
     /// methods are therefore not two spellings of one fact; they are the two
     /// different facts two different verbs need, and offering only one of them
-    /// is what left `unshare_form` unreachable from this shell until
-    /// 2026-08-28.
+    /// leaves `unshare_form` unreachable from this shell.
     ///
     /// # Why `containment[0]` and not `parent()`
     ///
@@ -974,10 +919,8 @@ impl ObjectModelProvider {
     ///
     /// Defined as the head of [`Self::hit_test_all`] rather than as a second
     /// query, so "what does a plain click select?" and "what does cycling
-    /// start from?" cannot come to different answers. This was the trait's
-    /// *provided* method in the old shell — i.e. the same derivation,
-    /// enforced by the trait rather than by this comment; the comment is what
-    /// carries the guarantee until the trait comes back.
+    /// start from?" cannot come to different answers. A second independent
+    /// implementation of "topmost" is the one way those two can disagree.
     #[must_use]
     pub fn hit_test(&self, page_index: usize, point: Pos2, tolerance: f64) -> Option<TargetId> {
         self.hit_test_all(page_index, point, tolerance)
@@ -988,13 +931,12 @@ impl ObjectModelProvider {
     /// Every object a canvas-space marquee rect takes, under `mode` and
     /// `forms`.
     ///
-    /// # ★★★ `mode` is a parameter as of 2026-09-02, and it is `OPERATOR_REQUESTS.md` O88
+    /// # ★★★ Why `mode` is a parameter — `OPERATOR_REQUESTS.md` O88
     ///
-    /// This used to hard-code [`MarqueeMode::Enclosed`], on decision 011's
-    /// reasoning — *a marquee that grabs everything it grazes is unusable on a
-    /// dense drawing, which is the document class pdfcer is for*. That reasoning
-    /// is still right and is still the **default**; what was wrong was that it
-    /// was the **only** answer.
+    /// [`MarqueeMode::Enclosed`] is the **default**, and the reasoning for it
+    /// holds: a marquee that grabs everything it grazes is unusable on a dense
+    /// drawing, which is the document class pdfcer is for. What it may not be
+    /// is the **only** answer.
     ///
     /// The operator's report: *"I can't box select the tables in the left or
     /// right top corners … it only picks up the lines of each table."* Both
@@ -1019,27 +961,17 @@ impl ObjectModelProvider {
     /// which the two modes agree, and stating the mode keeps the call readable
     /// rather than resting on that coincidence.
     ///
-    /// # ★★★ The engine answers this now — and the duplicate it replaced is the
-    /// reason to trust the replacement
+    /// # ★★★ The ENGINE answers this, and this shell states no enclosure rule
     ///
-    /// Until 2026-09-11 the body below was two answers stapled together: the
-    /// engine's shallow `hit_test_rect` for the page's own list, plus a
-    /// hand-written loop over `objects.leaves` applying `contained_by` /
-    /// `intersects` here. That loop was **reported to the request channel when
-    /// it was written**, under decision 058, in these words:
+    /// The body below is one call to [`hit_test_rect_deep`]. It must stay one
+    /// call: a hand-written loop over `objects.leaves` applying `contained_by`
+    /// / `intersects` here would be a second statement of the enclosure rule in
+    /// another crate, and it would drift the day `MarqueeMode` grows a third
+    /// mode or the day `Enclosed` stops meaning `contained_by` — **silently**,
+    /// because a local copy keeps compiling and keeps returning something
+    /// plausible.
     ///
-    /// > *"It is still a second statement of the enclosure rule, in another
-    /// > crate… it will drift the day `MarqueeMode` grows a third mode, or the
-    /// > day `Enclosed` stops meaning `contained_by` — and it will drift
-    /// > **silently**, because our copy will keep compiling and keep returning
-    /// > something plausible."*
-    ///
-    /// The engine shipped [`hit_test_rect_deep`] in answer, and said *delete
-    /// your extension*. It was not deleted, and on 2026-09-02 our copy grew a
-    /// `MarqueeMode` the engine's version had to grow separately — which is the
-    /// predicted drift, arrived on schedule. It is deleted now.
-    ///
-    /// ★★ **What the engine's version does that ours did not**: it interleaves
+    /// ★★ **What the engine's version does that a local loop cannot**: it interleaves
     /// the two lists on [`pdfcer_core::vector::FormLeaf::paint_order`] instead
     /// of appending every leaf after every object, so a marquee's result and a
     /// click's result order the same objects the same way. Front-most **last**,
@@ -1051,8 +983,7 @@ impl ObjectModelProvider {
     /// engine's default
     ///
     /// [`FormMarquee::Exclude`] is the engine's default and the one that makes
-    /// a marquee agree with a click, which is the argument this method's own
-    /// comment used to make. **This shell's callers pass
+    /// a marquee agree with a click. **This shell's callers pass
     /// [`FormMarquee::Include`] anyway**, and the reason is a property of this
     /// shell rather than a disagreement with the engine:
     ///

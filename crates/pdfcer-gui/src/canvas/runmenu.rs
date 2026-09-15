@@ -10,11 +10,11 @@
 //!
 //! That request has three halves and this is the third.
 //!
-//! | half | state |
-//! |---|---|
-//! | **(B)** delete one line | shipped — `EditSession::delete_text_run`, reachable at the Part rung |
-//! | **(C)** move one line | **the engine has no verb** — request `G017`; the drag now declines with a worded sentence instead of silently |
-//! | **(A)** *find* either of them | **this file** |
+//! * **(B)** delete one line — shipped: `EditSession::delete_text_run`,
+//!   reachable at the Part rung.
+//! * **(C)** move one line — **the engine has no verb**, request `G017`; the
+//!   drag declines with a worded sentence rather than silently.
+//! * **(A)** *find* either of them — **this file**.
 //!
 //! The note filed with (B) and (C) stated (A) in one line, and it is the line
 //! this module exists to discharge:
@@ -25,10 +25,10 @@
 //! > works, but only after he has tried to drag. **A route he can find
 //! > *before* failing is owed.**
 //!
-//! ## ★★★ What was actually wrong: one route, announced nowhere
+//! ## ★★★ One route, announced nowhere
 //!
-//! Measured on 2026-09-14 across every gesture this canvas has. The Part rung
-//! on a text object — the rung at which *one line* is the operand — was
+//! Measured across every gesture this canvas has: without this module the Part
+//! rung on a text object — the rung at which *one line* is the operand — is
 //! reachable by **exactly one** sequence:
 //!
 //! > be in Edit mode, arm the **Points** tool (chord `A`, `view.tool_node`)
@@ -36,12 +36,14 @@
 //!
 //! Everything else lands at the Object rung and stays there:
 //!
-//! | gesture | where it lands | why |
-//! |---|---|---|
-//! | plain click, Select tool | Object | `SelectionState::click` → `click_at_object_rung`, which discards the hit's part outright |
-//! | marquee | Object | hard-set, and correctly — a band names a region, and a region contains objects |
-//! | double-click | the **caret** | O70's ruling, and correct: text under a double-click means *type here* |
-//! | right-click | Object | `menus::right_clicked_object` asks `hit_test`, not `probe` |
+//! * **plain click, Select tool** — Object: `SelectionState::click` →
+//!   `click_at_object_rung`, which discards the hit's part outright.
+//! * **marquee** — Object, hard-set and correctly: a band names a region, and
+//!   a region contains objects.
+//! * **double-click** — the **caret**. O70's ruling, and correct: text under a
+//!   double-click means *type here*.
+//! * **right-click** — Object: `menus::right_clicked_object` asks `hit_test`,
+//!   not `probe`.
 //!
 //! ⇒ So the one working route required knowing a chord that no surface names,
 //! *and* arming it in advance. An operator who clicks the line first and then
@@ -51,26 +53,18 @@
 //!
 //! ## ★★ Why a MENU ROW and not a new gesture
 //!
-//! `DESIGNS.md` §6.2 says by name *"do not add a context-menu item"*, and this
-//! file adds one. The two are not in conflict, and the distinction is worth
-//! stating, because a later reader will find that sentence and this file and
-//! have to decide which won.
+//! The standing rule is *use the conventional interaction, never invent one*,
+//! and it bars a menu row that **performs an edit**: the conventional way to
+//! move a piece of something is to drag it, not to pick a row called *Move*.
+//! That is the *move* half, and it is not this file.
 //!
-//! That prohibition is about the **descent gesture** for the *move* half: the
-//! premise above it is *"use the conventional interaction, never invent one"*,
-//! and the conventional way to move a piece of something is to drag it, not to
-//! pick a menu row called *Move*. It rules out a menu row that **performs an
-//! edit**. It says nothing about a row that **changes what is selected**,
-//! which is the other kind of row entirely — and which this menu already has
-//! two of: `format.select_form` and `format.unshare_form` both re-aim the
-//! selection from the canvas menu, for the identical reason (the operator's
-//! hand is on the thing, and the ribbon is three inches away).
-//!
-//! `HOW_IT_SHOULD_WORK.md` §2.10 then asks for this directly — a **Select ▸**
-//! recovery path, which it calls *"the cheapest safety net in this whole
-//! document"* — and `canvas::annotnodes::menu`'s two shipped rows are the same
-//! shape, built for the same reason, one surface along: a Points-tool chord
-//! route that was *"announced nowhere"*, given a row somebody can read.
+//! A row that **changes what is selected** is the other kind of row entirely.
+//! This menu already carries two — `format.select_form` and
+//! `format.unshare_form` both re-aim the selection from the canvas, for the
+//! reason this row exists too: the operator's hand is on the thing, and the
+//! ribbon is three inches away. `canvas::annotnodes::menu`'s two shipped rows
+//! are the same shape one surface along — a Points-tool chord route nothing
+//! announced, given a row somebody can read.
 //!
 //! ★ And `canvas::menus`' own rule that *"a right-click never descends"* is
 //! not breached. The right-click still selects the **whole object**, exactly
@@ -88,13 +82,11 @@
 //! the two things already parked there for the identical reason: which canvas
 //! menu is open (`canvas::menus`' `MENU_MEMORY_KEY`) and which corner a markup
 //! right-click landed on (`canvas::annotnodes::menu`'s `PICK_MEMORY_KEY`).
-//! That module's header carries the whole argument and it is unchanged here:
-//!
-//! > `egui` opens a popup ON the secondary click and draws it on every
-//! > subsequent frame until it is dismissed. The pointer moves during those
-//! > frames — onto the menu itself, which is not over the text any more — so
-//! > recomputing from the live pointer would swap the row's meaning out from
-//! > under the operator's hand while they were reading it.
+//! `egui` opens a popup ON the secondary click and redraws it every frame until
+//! it is dismissed, and the pointer moves during those frames — onto the menu
+//! itself, which is not over the text any more — so recomputing from the live
+//! pointer would swap the row's meaning out from under the operator's hand
+//! while they were reading it.
 //!
 //! ⇒ [`park`] is called once, on the click. [`parked`] is read on every frame
 //! the menu is drawn (to decide the row's condition) **and** again when the
@@ -242,11 +234,9 @@ impl RunPick {
 /// # ★★ Why `part_hits_of` and not a hit test of this module's own
 ///
 /// Because the alternative is two spellings of *"which run is under this
-/// point"*, and this project has already paid for that shape — most recently
-/// when `part_hits_of` was generalised across index spaces and silently
-/// dropped its `Run` arm, which shipped the Points tool broken on text with
-/// every unit test green (`canvas::target`, 2026-09-01). One query, two
-/// callers, no drift.
+/// point"*, and the failure mode of that shape is silent: a change to one
+/// spelling's index handling leaves the other answering a different line, with
+/// every unit test of both still green. One query, two callers, no drift.
 ///
 /// # ★ The coordinates
 ///

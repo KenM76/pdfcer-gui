@@ -1,18 +1,17 @@
 //! # `ribbon::scroll_tests` — the band's horizontal scroll, driven
 //!
-//! Split out of [`super::width_tests`] on 2026-08-25 when that file passed the
-//! 1,500-line ceiling (R2). The seam is real: every test in `width_tests`
+//! Separate from [`super::width_tests`] to keep that file under the
+//! 1,500-line ceiling (R2), and the seam is real: every test in `width_tests`
 //! renders a **fresh, unscrolled** band at a series of widths, and every test
 //! here has to **drive a click first**, because the left arrow does not exist
 //! until something has scrolled.
 //!
-//! ★★★ That difference is not incidental — it is the reason the defect this
-//! module opens with survived a width sweep that was already testing the right
-//! arrow correctly. `no_visible_group_overlaps_the_overflow_affordance` walks
-//! every width and has since the band was written; it could never have caught
-//! the left arrow's overlap, because there is no width at which an unscrolled
-//! band draws a left arrow. **A guard can be correct, thorough, and blind by
-//! construction.**
+//! ★★★ That difference is not incidental — it is why a width sweep can test
+//! the right arrow exhaustively and say nothing at all about the left one.
+//! `no_visible_group_overlaps_the_overflow_affordance` walks every width and
+//! cannot catch a left-arrow overlap, because there is no width at which an
+//! unscrolled band draws a left arrow. **A guard can be correct, thorough, and
+//! blind by construction.**
 
 use egui::{Pos2, Rect, Vec2};
 
@@ -21,14 +20,13 @@ use super::width_tests::{SLACK, context};
 use super::{Ribbon, RibbonState, report};
 
 /// ★★★ **No visible group runs under the LEFT scroll arrow either** — the twin
-/// of the test above, and it caught a real defect the moment it was written.
+/// of the right-hand affordance's overlap test, and the only thing that holds
+/// the left arrow's reservation in place.
 ///
-/// The right-hand affordance has had an overlap test since the day the band
-/// was written, because its reservation is taken from the band's right edge
-/// before any group is laid out. S4's left arrow had no such test, and it
-/// needed one: `groups_rect` begins at `full.min`, the left arrow's rect is
-/// `full.min .. full.left() + reserve`, and the arrow is drawn **after** the
-/// groups. They overlapped exactly.
+/// The right-hand affordance's reservation is taken from the band's right edge
+/// before any group is laid out. The left arrow needs the mirror of that: its
+/// rect is `full.min .. full.left() + reserve`, it is drawn **after** the
+/// groups, and unless `groups_rect` starts past it the two overlap exactly.
 ///
 /// What that costs an operator is worse than a cosmetic overlap. The arrow
 /// wins the hit test, so on a scrolled band **the leading control is
@@ -37,23 +35,21 @@ use super::{Ribbon, RibbonState, report};
 /// what it says.
 ///
 /// ★ The band must be SCROLLED for the left arrow to exist at all, which is why
-/// this test drives a click rather than merely rendering. That requirement is
-/// precisely why the defect was not caught by the existing sweep: every
-/// width-sweep test in this module renders a fresh, unscrolled band, and there
-/// is no width at which an unscrolled band draws a left arrow.
+/// this test drives a click rather than merely rendering — and why no
+/// width-sweep test can stand in for it: those render a fresh, unscrolled band,
+/// and there is no width at which an unscrolled band draws a left arrow.
 #[test]
 fn no_visible_group_overlaps_the_left_scroll_arrow() {
     let ctx = context();
     let shell = shell();
     let registry = registry();
 
-    // ★★ SWEPT, not fixed at one width — and the first draft was fixed at one
-    // width and asserted NOTHING. At 180 pt a scrolled band draws no group at
-    // all (only the two arrows), so the loop body never ran and the test
-    // reported green over the very defect it was written to catch. The
-    // `examined` counter below is what makes that failure loud instead of
-    // silent, and this project wrote the lesson down the same morning: two
-    // samples either side of a transition look exactly like no transition.
+    // ★★ SWEPT, not fixed at one width. At 180 pt a scrolled band draws no
+    // group at all — only the two arrows — so a single-width version of this
+    // test can run its loop body zero times and report green over the very
+    // defect it exists to catch. The `examined` counter below is what makes
+    // that failure loud instead of silent: two samples either side of a
+    // transition look exactly like no transition.
     let mut examined = 0_usize;
 
     for width in (200..900).step_by(37).map(|w| w as f32) {

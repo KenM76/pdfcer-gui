@@ -2,8 +2,8 @@
 //!
 //! # The rule this module exists to obey
 //!
-//! `RIBBON_IA.md` records the requirement in one sentence, and it is the
-//! whole design:
+//! `MODES_AND_PANELS.md` §"Reset has scopes" records the requirement in
+//! one sentence, and it is the whole design:
 //!
 //! > *"an operator who only wanted the right dock back must not lose
 //! > their left one."*
@@ -15,12 +15,11 @@
 //! spent a month settling on the other side. So they do not use it, and
 //! the mess stays.
 //!
-//! `MODES_AND_PANELS.md`'s peer table makes the same point from the
-//! outside: the benchmarked application has **no in-app layout reset at
-//! all** (*"the documented route is to quit and delete that file"*), and
-//! of the products that do, the one singled out for having got it right
-//! is the one with a **two-tier** reset. Failure mode #12 lists in-app
-//! reset alongside named workspaces as *table stakes, not luxuries*.
+//! The same document's peer table makes the point from the outside: the
+//! benchmark product has **no in-app layout reset at all** — *"the
+//! documented route is to quit and delete that file"* — and the furthest
+//! any peer goes is a **two-tier** reset. Failure mode #12 lists in-app
+//! reset alongside named workspaces as *"table stakes, not luxuries"*.
 //!
 //! # What a reset restores, and what it deliberately does not
 //!

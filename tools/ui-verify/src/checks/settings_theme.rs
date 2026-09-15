@@ -9,18 +9,10 @@
 //! shipped binary and never handed to the `Context`. Every colour an operator
 //! had ever seen in this shell was `egui`'s stock light style.
 //!
-//! It had two halves. The first — *`Theme::apply` is never called* — was fixed
-//! on 2026-08-14. D10's own text named the second and said what blocked it:
-//!
-//! > There is also **no way to choose a preset**: the settings dialog is one of
-//! > the unsalvaged Class-B surfaces, so even once `apply` is wired, the preset
-//! > is whatever the code picks until that dialog lands.
-//!
-//! The application's install site agreed from the other end, calling its
-//! hard-coded preset *"a placeholder in the honest sense: the mechanism is real
-//! and reachable, and only the chooser is missing."*
-//!
-//! The chooser landed on 2026-08-17. This is the check that says so.
+//! It had two halves — `Theme::apply` never being called, and there being **no
+//! way to choose a preset** — and either half alone leaves the operator looking
+//! at `egui`'s stock style. Both are wired now; this is the check that says so,
+//! in pixels, every run.
 //!
 //! # ★ What this measures, and why nothing cheaper would do
 //!
@@ -76,14 +68,13 @@
 //! It closes the window with the ✕, which the application treats as a Cancel,
 //! so the session ends on whatever the operator had.
 //!
-//! # ★★★ The third thing this file gained on 2026-09-04
+//! # ★★★ The third assertion, and why it is in this file
 //!
-//! An outside review of the harness (`REVIEW_TRIAGE.md` rows **PartC** and
-//! **A20x**) named three holes, all of them in this file's subject. Two were
-//! about the presets themselves and are answered next door in
-//! [`super::theme_page`], whose header carries them; the third is here,
-//! because it is about this check's own window. All three are the same
-//! species: **a thing the suite believed and had never driven.**
+//! Three holes sit in this file's subject. Two are about the presets
+//! themselves and are answered next door in [`super::theme_page`], whose
+//! header carries them; the third is here, because it is about this check's
+//! own window. All three are the same species: **a thing the suite believes
+//! and has never driven.**
 //!
 //! ## 3. Cancel really reverting a live theme change — a SILENT one-line coupling
 //!
@@ -357,11 +348,11 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- D. the picture, before ---------------------------------------------
     //
-    // ★★ THE DIALOG'S OWN WINDOW, not the application's. Settings became a real
-    // OS window on 2026-08-21, and a capture of the application shows the page
-    // where the dialog used to be — while the sampler goes on sampling and
-    // reports a confident colour about a piece of the drawing. A measurement of
-    // the wrong surface is indistinguishable from a measurement of a broken one.
+    // ★★ THE DIALOG'S OWN WINDOW, not the application's. Settings is a real OS
+    // window, so a capture of the application shows the PAGE in the region the
+    // dialog occupies — and the sampler goes on sampling, reporting a confident
+    // colour about a piece of the drawing. A measurement of the wrong surface
+    // is indistinguishable from a measurement of a broken one.
     let before_frame = frame_of(&session, &trace, ui_rect, DIALOG)?;
     let before_path = ctx.out("settings_theme.before.png");
     let before_image = crate::capture::frame_to_png(&session, &before_frame, &before_path)?;
@@ -485,7 +476,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
-    // --- H. the Cancel contract — `REVIEW_TRIAGE.md` A20x -------------------
+    // --- H. the Cancel contract ----------------------------------------
     //
     // Everything above proves the theme went ON. This proves it comes OFF, and
     // the module header carries the argument for why that half is the one whose

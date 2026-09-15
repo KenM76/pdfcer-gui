@@ -157,7 +157,7 @@ pub struct CommentRow {
     pub appearance_unresolved: bool,
     /// How this annotation relates to another one, if it does.
     pub relation: Option<Relation>,
-    /// ★★★ **The annotation this one answers** — `/IRT` (Table 170), as an
+    /// **The annotation this one answers** — `/IRT` (Table 170), as an
     /// object id rather than as a classification.
     ///
     /// [`Self::relation`] answers *what kind of relationship is this*;
@@ -166,20 +166,17 @@ pub struct CommentRow {
     /// caption on the row, and this decides **where a Go to press has to land**
     /// — see [`thread_root`].
     ///
-    /// # Why it is here from 2026-09-06 and was not before
-    ///
-    /// Because until `crate::canvas::notepopup::model::notes_on` stopped
-    /// drawing replies as independent notes, *Go to* on a reply row could open
-    /// the reply's own bubble and there was nothing to resolve. That bubble was
-    /// drawn **at the parent's own coordinates** — `add_reply` places a reply
-    /// on its parent's `/Rect` — so the moment this shell could author replies,
-    /// the topmost note under a comment icon became the newest answer to it and
-    /// the comment itself became unreachable on the canvas. Excluding replies
-    /// fixed that and made this field necessary in the same stroke.
+    /// `add_reply` places a reply on its parent's own `/Rect`, so
+    /// `crate::canvas::notepopup::model::notes_on` draws no window for a reply:
+    /// a bubble at those coordinates would sit on top of the comment it
+    /// answers, and the newest answer would make the comment itself
+    /// unreachable. That exclusion is what leaves a reply row with no window of
+    /// its own to open, and this field is how [`thread_root`] finds the one
+    /// that will be drawn.
     ///
     /// `None` for an ordinary comment, and also for a reply whose `/IRT` is a
     /// direct dictionary — `pdfcer-core` models a dangling `/IRT` rather than
-    /// repairing it (`annot.rs:431`), and so does this.
+    /// repairing it, and so does this.
     pub in_reply_to: Option<ObjId>,
 }
 
@@ -190,10 +187,10 @@ pub struct CommentRow {
 /// *"Text displayed for the annotation, **or** (if the type does not display
 /// text) an alternate human-readable description"* for accessibility
 /// (§14.9.3). Which one it is depends on the subtype, and `pdfcer-core`
-/// deliberately models the raw value **without** that interpretation, because
-/// *"a UI labelling this 'comment' is right for markup and wrong for a Link"*
-/// — the interpretation *"belongs to whoever displays it"*
-/// (`annot.rs:315-324`). This enum is this panel accepting that job.
+/// deliberately models the raw value **without** that interpretation: a label
+/// reading "comment" is right for markup and wrong for a `/Link`, so the
+/// interpretation belongs to whoever displays it. This enum is this panel
+/// accepting that job.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Note {
     /// A note somebody wrote, on a subtype that displays text.
@@ -202,9 +199,11 @@ pub enum Note {
     /// text of its own — a `/Link`, a `/Movie`, a `/PrinterMark`.
     Description(String),
     /// `/Contents` is absent. **Not an error**, and the ordinary case on every
-    /// shape pdfcer itself drew: `MarkupSpec` has no contents field on any
-    /// variant, deliberately, so note text on geometric markup is an engine
-    /// capability that does not exist yet (a filed request, `HANDOFF.md` §1).
+    /// shape pdfcer itself drew: `pdfcer_core::annot_author::MarkupSpec` has no
+    /// contents field on any variant, so geometric markup is authored without a
+    /// note and acquires one only through a later `set_markup_note`, which
+    /// [`super::editor`] offers on exactly the rows that display their
+    /// `/Contents`.
     Absent,
 }
 
@@ -235,9 +234,8 @@ pub enum Relation {
 /// Whether a subtype's `/Contents` is an accessibility description rather
 /// than a note.
 ///
-/// The list is §12.5.6.2's, quoted in `pdfcer-core`'s own docs: *"`Link` /
-/// `Movie` / `Widget` / `PrinterMark` / `TrapNet` use it purely as an
-/// accessibility alternate"* (`annot.rs:321-322`).
+/// The list is §12.5.6.2's: `Link`, `Movie`, `Widget`, `PrinterMark` and
+/// `TrapNet` use `/Contents` purely as an accessibility alternate.
 ///
 /// `Widget` and `TrapNet` are in the list even though [`collect`] excludes
 /// both, and that is deliberate: this predicate answers *"what does the
@@ -264,8 +262,8 @@ fn contents_is_description(subtype: &str) -> bool {
 /// A **ce dimension** is a `/Line` annotation carrying `/IT /LineDimension`, a
 /// baked `/AP` and a record in the document's `/PieceInfo` sidecar — and
 /// `pdfcer_core::annot::Annotation` models **none** of those three: `/IT` is
-/// among the per-subtype keys it deliberately does not carry
-/// (`annot.rs:284-288`), and the sidecar is a different structure entirely.
+/// among the per-subtype keys it deliberately does not carry, and the sidecar
+/// is a different structure entirely.
 /// The authoritative answer is the sidecar's own model, whose
 /// `DimensionRecord::annot` is the annotation each record was written for.
 ///
@@ -277,9 +275,8 @@ fn contents_is_description(subtype: &str) -> bool {
 /// silently alter — and a row that showed the first as plain "Line" would be
 /// true about the file and useless to the operator.
 ///
-/// This is also the constructive half of the old shell's exclusion argument.
 /// ce dimensions are **not** filtered out, because filtering by subtype would
-/// also hide a genuine `/Line` markup somebody drew; the sidecar is what lets
+/// also hide a genuine `/Line` markup somebody drew. The sidecar is what lets
 /// the panel tell the two apart *without* filtering either.
 ///
 /// # Cost
@@ -307,12 +304,10 @@ pub fn ce_dimension_annots(session: &pdfcer_core::edit::EditSession) -> BTreeSet
 /// resolved once at open, and its index is the page index every row carries.
 /// `ce_dimensions` comes from [`ce_dimension_annots`].
 ///
-/// # The exclusion rule, which is settled law
+/// # The exclusion rule
 ///
-/// Carried across whole from the old shell (`main.rs:7031-7051`), with its
-/// argument rather than as a code snippet. See
-/// [`crate::panels::comments`]' header, which states all four clauses and the
-/// one place this build departs.
+/// [`crate::panels::comments`]' header states all four clauses and the reason
+/// for each.
 #[must_use]
 pub fn collect<G: ObjectGraph + ?Sized>(
     graph: &G,
@@ -322,7 +317,7 @@ pub fn collect<G: ObjectGraph + ?Sized>(
     let mut listing = Listing::default();
     for (page_index, page) in pages.iter().enumerate() {
         for annot in page_annotations(graph, page.id) {
-            // ★ THE EXCLUSION, and the order of the three tests does not
+            // THE EXCLUSION, and the order of the three tests does not
             // matter because nothing can be two of them: `/Subtype` has one
             // value. It is written as three separate arms rather than one
             // `||` so each kind can be counted, which is what lets the panel
@@ -389,7 +384,7 @@ fn row(page_index: usize, annot: &Annotation, ce_dimensions: &BTreeSet<ObjId>) -
     }
 }
 
-/// ★★★ **Which comment's window shows this row** — walk `/IRT` up to the
+/// **Which comment's window shows this row** — walk `/IRT` up to the
 /// annotation at the head of the thread.
 ///
 /// Returns `id` itself for an ordinary comment, which is the overwhelmingly
@@ -409,11 +404,11 @@ fn row(page_index: usize, annot: &Annotation, ce_dimensions: &BTreeSet<ObjId>) -
 /// — is the worse trade by a distance, because it costs the *parent's* window
 /// on every comment anybody ever answers.
 ///
-/// # ★★ Bounded, because a `/IRT` cycle is legal syntax
+/// # Bounded, because a `/IRT` cycle is legal syntax
 ///
 /// §7.3.10 makes a dangling reference not an error and says nothing at all
-/// about a circular one, and `pdfcer-core` surfaces `/IRT` *"unresolved, same
-/// as `popup`: a dangling `/IRT` is modelled, not repaired"* (`annot.rs:431`).
+/// about a circular one, and `pdfcer-core` surfaces `/IRT` unresolved: a
+/// dangling `/IRT` is modelled, not repaired.
 /// A file that says `a` replies to `b` and `b` replies to `a` is therefore a
 /// file this panel must survive, and an unbounded walk over one would hang the
 /// frame that is trying to draw. [`MAX_THREAD_DEPTH`] is the same bound
@@ -421,7 +416,7 @@ fn row(page_index: usize, annot: &Annotation, ce_dimensions: &BTreeSet<ObjId>) -
 /// out, the deepest annotation reached is returned, which is a real row in the
 /// document and therefore a Go to that lands somewhere rather than nowhere.
 ///
-/// ★ A row whose parent is not in `rows` — a `/IRT` pointing at a `/Widget`,
+/// A row whose parent is not in `rows` — a `/IRT` pointing at a `/Widget`,
 /// at a `/Popup`, or at nothing — also stops the walk and returns what it has.
 /// Same reason: this resolves a **destination**, and the honest failure of a
 /// destination resolver is the nearest real place, never a panic and never an
@@ -437,7 +432,7 @@ pub fn thread_root(rows: &[CommentRow], id: ObjId) -> ObjId {
         else {
             break;
         };
-        // ★★★ **The parent must be a row in this list before the walk moves
+        // **The parent must be a row in this list before the walk moves
         // to it**, and putting that check here rather than at the end is the
         // difference between returning a real destination and returning an
         // object number.
@@ -497,7 +492,7 @@ mod tests {
         collect(&session.view(), &pages, &ce)
     }
 
-    /// **★ A pop-up is excluded, and it is counted rather than dropped.**
+    /// **A pop-up is excluded, and it is counted rather than dropped.**
     ///
     /// `popup-not-painted.pdf` carries exactly one annotation and it is a
     /// `/Popup`. The listing is therefore empty — which is the *correct*
@@ -525,7 +520,7 @@ mod tests {
         );
     }
 
-    /// **★ A form field is excluded — the Forms panel owns those.**
+    /// **A form field is excluded — the Forms panel owns those.**
     ///
     /// `Annotation::is_widget` is the exact predicate, reused rather than
     /// re-derived: *"a second one would be a divergence waiting to happen."*
@@ -544,13 +539,11 @@ mod tests {
         }
     }
 
-    /// **★ A `/TrapNet` is excluded.**
+    /// **A `/TrapNet` is excluded.**
     ///
     /// Prepress output state — it records the trapping a RIP applied to the
-    /// page. Neither a comment nor anything a person wrote. See
-    /// `crate::panels::comments`' header for why this build keeps the old
-    /// shell's exclusion even though the reason the old shell gave for it (a
-    /// Delete whose every press would be refused) does not apply here.
+    /// page. Neither a comment nor anything a person wrote, so it is not
+    /// listed; `crate::panels::comments`' header carries the full argument.
     #[test]
     fn a_trapnet_is_excluded_and_counted() {
         let l = listing("annot/undeletable.pdf");
@@ -567,13 +560,13 @@ mod tests {
         );
     }
 
-    /// **★ ce dimensions are NOT excluded, and are named as what they are.**
+    /// **ce dimensions are NOT excluded, and are named as what they are.**
     ///
-    /// The heart of the old shell's exclusion argument, from both sides at
-    /// once. They are `/Line` annotations, so they appear here; excluding them
-    /// by subtype would also hide a genuine `/Line` markup an operator drew.
-    /// And because the sidecar can tell the two apart, the row says
-    /// "ce dimension" instead of "Line" without the filter ever being involved.
+    /// Both sides of the exclusion argument at once. They are `/Line`
+    /// annotations, so they appear here; excluding them by subtype would also
+    /// hide a genuine `/Line` markup an operator drew. And because the sidecar
+    /// can tell the two apart, the row says "ce dimension" instead of "Line"
+    /// without the filter ever being involved.
     #[test]
     fn a_ce_dimension_is_listed_and_recognised() {
         let (session, pages) = open("dimension/linear-dim.pdf");
@@ -637,7 +630,7 @@ mod tests {
         }
     }
 
-    /// **★ A reply is recognised through `effective_reply_type`.**
+    /// **A reply is recognised through `effective_reply_type`.**
     ///
     /// `thread.pdf` carries `/IRT` links. Table 170 makes `/RT` default to
     /// `R`, so an annotation with `/IRT` and no `/RT` **is** a reply — and a
@@ -670,13 +663,12 @@ mod tests {
         );
     }
 
-    /// **★ A suppressed annotation is listed and flagged, never dropped.**
+    /// **A suppressed annotation is listed and flagged, never dropped.**
     ///
-    /// `03-capabilities.md:1100`: *"A Comments panel that silently omits it is
-    /// hiding document content; list it and mark it hidden."* Hidden
-    /// annotations are a recognised document-forensics vector, which is why
-    /// core counts them rather than dropping them and why this panel is the
-    /// off-canvas surface that reports them.
+    /// A panel that silently omitted a suppressed annotation would be hiding
+    /// document content. Hidden annotations are a recognised document-forensics
+    /// vector, which is why core counts them rather than dropping them and why
+    /// this panel is the off-canvas surface that reports them.
     #[test]
     fn a_hidden_annotation_is_listed_and_flagged() {
         for fixture in ["annot/flags-hidden.pdf", "annot/flags-noview.pdf"] {
@@ -690,19 +682,11 @@ mod tests {
         }
         // …and the flag DISCRIMINATES, which is the half that makes the
         // marker mean something. Asserted within one document rather than
-        // across two, and the reason is a small empirical surprise worth
-        // recording: `demo-annotated.pdf` — the ordinary-looking fixture, and
-        // the obvious choice for "a document that flags nothing" — carries a
-        // suppressed `/Stamp` of its own. A test written the obvious way
-        // failed, and it was right to: a document with one hidden annotation
-        // among three is exactly the shape this panel exists to disclose, and
-        // "an ordinary document" was an assumption about a fixture rather
-        // than a property of the code.
-        //
-        // So the assertion is the one that actually holds and actually
-        // proves something: on a document with a mix, the flag is set on some
-        // rows and not others. A predicate that returned `true` for
-        // everything would satisfy the sweep above and fail here.
+        // across two: `demo-annotated.pdf` looks like an ordinary fixture but
+        // carries a suppressed `/Stamp` of its own, so no fixture in this
+        // corpus may be assumed to flag nothing. A document with a mix is in
+        // any case the shape this panel exists to disclose, and a predicate
+        // reduced to `true` would satisfy the sweep above and fail here.
         let mixed = listing("annot/demo-annotated.pdf");
         assert!(
             mixed.rows.iter().any(|r| r.suppressed),
@@ -764,40 +748,27 @@ mod tests {
         }
     }
 
-    /// ★★★ **The subtype a note edit is judged on is the ENGINE's, and this
+    /// **The subtype a note edit is judged on is the ENGINE's, and this
     /// panel's copy of the same vocabulary must not drift from it.**
     ///
-    /// This test replaced `only_the_text_box_row_warns_that_the_page_will_not_change`
-    /// on 2026-09-06, and what changed underneath it is worth stating rather
-    /// than losing in a diff.
+    /// [`CommentRow::subtype`] is filled from `pdfcer-core`'s own
+    /// `Annotation::subtype_label` — the raw `/Subtype` name — and
+    /// `crate::text::textannot::paints_its_note` is a **string match on that
+    /// same vocabulary**. The status-line disclosure asks it with
+    /// `MarkupNoteChange::subtype`, which is the same string from the same
+    /// producer, so the two are coupled by the spelling of a name and by
+    /// nothing else. Title-casing this panel's subtype for display, or swapping
+    /// it for an enum, is the first step toward them coming apart, and the
+    /// symptom is a *missing* sentence — which no screenshot shows.
     ///
-    /// The old test wired the note editor's **before-the-write** warning — a
-    /// line saying a text box's painted words could not be changed once it was
-    /// placed. `pdfcer-core` `95a936e` made that false the same afternoon
-    /// (`set_markup_note` re-bakes the `/AP` itself), the warning was deleted
-    /// from [`super::editor`], and a test whose whole subject is a deleted
-    /// control is not a guard, it is scenery.
-    ///
-    /// ★ What the old test guarded that is still real: [`CommentRow::subtype`]
-    /// is filled from `pdfcer-core`'s own `Annotation::subtype_label` — the raw
-    /// `/Subtype` name — and `crate::text::textannot::paints_its_note` is a
-    /// **string match on that same vocabulary**. The surviving status-line
-    /// disclosure asks it with `MarkupNoteChange::subtype`, which is the same
-    /// string from the same producer, so the coupling did not go away; it moved
-    /// one surface over. A well-meant change that title-cased this panel's
-    /// subtype for display, or swapped it for an enum, would still be the first
-    /// step toward the two coming apart, and the symptom is a *missing*
-    /// sentence, which no screenshot shows.
-    ///
-    /// Reusing the row above's list is the point — it is this panel's own
+    /// Reusing the row above's list is the point: it is this panel's own
     /// enumeration of what displays its `/Contents`, i.e. exactly the rows that
-    /// get an editor — so the two cannot be brought into disagreement by adding
+    /// get an editor, so the two cannot be brought into disagreement by adding
     /// a subtype to one list and not the other.
     ///
     /// The positive assertion is first and is load-bearing. A version that only
     /// looped the `!paints_its_note` claims would pass on a `paints_its_note`
-    /// that had been reduced to `false`, which is the exact hole the engine
-    /// warned about when it shipped `Pass 258.1`.
+    /// reduced to `false`.
     #[test]
     fn the_panels_subtype_vocabulary_is_the_one_the_disclosure_asks() {
         use crate::text::textannot::paints_its_note;

@@ -1,9 +1,8 @@
 //! # `panels::bookmarks` — the document's outline, as navigation
 //!
-//! Salvaged from the old shell's `panels_structure.rs`, unchanged in
-//! substance. **This is the only one of the six panels that can act on the
-//! document at all**: it pushes [`Action::GoToPage`], which is the one thing
-//! stage S3's action enum can carry that a panel wants.
+//! It navigates — [`Action::GoToPage`] — and it authors: add, rename, remove,
+//! reorder, expand, and cut/copy/paste of a whole branch. Every one of those
+//! leaves as an [`Action`]; nothing here touches the document.
 //!
 //! "Bookmarks", not "Outline": the PDF specification calls the structure an
 //! outline (§12.3.3) and every other reader calls the things in it
@@ -39,24 +38,20 @@
 //! send an operator hunting for damage in a perfectly ordinary document; not
 //! showing the third at all would hide a real defect.
 //!
-//! ## ★★ The two unnavigable kinds stopped being DISABLED WIDGETS on
-//! 2026-08-29, and the distinction is unchanged
+//! ## The two unnavigable kinds are LIVE controls, not disabled widgets
 //!
-//! This table used to read *"disabled"* in the second column, and the rows were
-//! `add_enabled(false, …)` buttons. That was right while a row's only job was
-//! navigation — R83, never offer a control for something that cannot work — and
-//! it quietly cost something the paragraph below already claimed: a disabled
-//! `egui::Button` reports no click at all, so a **heading** could never be
-//! selected, and could therefore never be the parent for an add, although this
-//! file said it was *"the likeliest one"*.
+//! A row has four jobs — navigate, select, drag, expand — and three of them work
+//! perfectly on a bookmark that leads nowhere. So the row is a live control and
+//! it is **navigation alone** that is withheld: no [`Action::GoToPage`] is
+//! raised, the label is drawn weak, and the tooltip says which of the two kinds
+//! it is.
 //!
-//! A row now has four jobs — navigate, select, drag, expand — and three of them
-//! work perfectly on a heading. So the row is a live control and it is
-//! **navigation alone** that is withheld: no [`Action::GoToPage`] is raised,
-//! the label is drawn weak, and the tooltip says which of the two kinds it is.
-//! R83 is satisfied more precisely than before, because the thing withheld is
-//! now the thing that cannot work rather than everything that shares a widget
-//! with it.
+//! Disabling the whole row would be R83 applied too coarsely. A disabled
+//! `egui::Button` reports no click at all, so a **heading** could not be
+//! selected and could therefore never be the parent for an add — and a heading
+//! is the likeliest parent there is, since a heading is what an operator files
+//! things under. What R83 requires withheld is the thing that cannot work, not
+//! everything that shares a widget with it.
 //!
 //! Neither unnavigable kind is a navigation *affordance*. Both are still drawn,
 //! because a heading's children hang off it and omitting the parent would show
@@ -68,36 +63,30 @@
 //! deliberate: a variant added to core must default to *"pdfcer could not
 //! follow this"*, never to a guess.
 //!
-//! # ★★★ The list honours `/Count`'s SIGN, and it did not until 2026-08-29
+//! # The list honours `/Count`'s SIGN
 //!
-//! A **collapsed** bookmark's children are no longer drawn. `read_outline`
+//! A **collapsed** bookmark's children are not drawn, although `read_outline`
 //! resolves the whole tree whatever the sign says — `OutlineItem::children` is
-//! populated for a closed item exactly as for an open one — and this panel used
-//! to recurse into all of it unconditionally.
+//! populated for a closed item exactly as for an open one. The panel has to
+//! honour the sign because [`reorder`]'s disclosure triangle writes it: a
+//! control that changes the file and changes **nothing on screen** is a control
+//! that appears not to work, and the operator's next act is to press it again.
 //!
-//! That was defensible while there was no way to change the sign: the panel
-//! showed more than the document asked for, which is more than it was owed and
-//! less than a lie. It stopped being defensible the moment
-//! [`reorder`]'s disclosure triangle arrived, because a control that writes
-//! `/Count`'s sign into the file and changes **nothing on screen** is a control
-//! that appears not to work.
+//! Three sentences elsewhere in this panel are about rows that are genuinely
+//! not on the screen, and depend on this:
 //!
-//! Three sentences elsewhere in this panel became literally true with the
-//! change, having been true only of the file before it:
-//!
-//! * [`crate::text::panels::bookmark_add_under_collapsed`] — *"the new one will
-//!   not appear until you expand it"*;
+//! * [`crate::text::panels::bookmark_add_under_collapsed`], which promises the
+//!   new bookmark will not appear until the parent is expanded;
 //! * [`crate::text::panels::bookmarks::bookmark_move_into_collapsed`], its
 //!   counterpart for the move;
 //! * [`edit`]'s subtree warning, which is about a branch the operator cannot
-//!   see and now genuinely cannot see.
+//!   see.
 //!
-//! ★ **The count above the list is a different number from the number of rows,
+//! **The count above the list is a different number from the number of rows,
 //! and that is correct.** `outline.diagnostics.items` counts every item pdfcer
 //! read at every level, collapsed branches included — the document's real size.
-//! The rows are what is visible. They agreed before this change and are allowed
-//! to differ now, because the summary is about the document and the list is
-//! about the screen.
+//! The rows are what is visible. The summary is about the document and the list
+//! is about the screen, so they are allowed to differ.
 //!
 //! # The truncation disclosure sits ABOVE the list
 //!
@@ -112,50 +101,48 @@
 //! the wrong row responding to a hover. The item's `ObjId` (`num`,
 //! `generation`) is unique across the document, so it cannot.
 
-/// ★ Writing a bookmark — the half this panel did not have until
-/// `EditSession::add_outline_item` shipped on 2026-08-19.
+/// Writing a bookmark — `EditSession::add_outline_item` and the row that
+/// drives it.
 ///
-/// Its header carries the `/Count` trap the engine called *"the entire
-/// difficulty of the feature"*: a bookmark added under a **collapsed** parent
-/// does not change the document's total, so a surface reporting a diff reports
-/// zero for a correct save — and, more to the point for an operator, the
-/// bookmark is genuinely not visible until the parent is expanded.
+/// Its header carries the `/Count` trap, which is the whole difficulty of the
+/// feature: a bookmark added under a **collapsed** parent does not change the
+/// document's total, so a surface reporting a diff reports zero for a correct
+/// save — and, more to the point for an operator, the bookmark is genuinely not
+/// visible until the parent is expanded.
 pub mod add;
-/// ★ Cut, copy and paste of a bookmark and everything filed under it — O59
+/// Cut, copy and paste of a bookmark and everything filed under it — O59
 /// item 3, and the one operation in this panel Acrobat cannot do between two
 /// files at all.
 mod clip;
 
-/// ★ Renaming a bookmark, and removing one with everything under it - the half
-/// this panel did not have until `EditSession::set_outline_title` and
-/// `EditSession::delete_outline_item` shipped on 2026-08-28.
+/// Renaming a bookmark, and removing one with everything under it —
+/// `EditSession::set_outline_title` and `EditSession::delete_outline_item`.
 ///
 /// Its header carries the two decisions a reader must not have to re-derive:
 /// why the delete is **undoable rather than confirmed** (one press is one
 /// engine command, so `Ctrl+Z` restores the whole subtree, and the sentence an
 /// operator needs is *"this takes the eleven underneath"* rather than *"are you
-/// sure?"*), and - since 2026-08-29 - where reorder and re-parent went when
-/// they arrived, which is [`reorder`] and not another button in that block.
+/// sure?"*), and why reorder and re-parent belong to [`reorder`] rather than to
+/// another button in that block.
 pub mod edit;
-/// ★★★ Moving a bookmark by **dragging** it, and the triangle that opens or
-/// closes one - the half this panel did not have until
-/// `EditSession::move_outline_item` and `EditSession::set_outline_open` shipped
-/// on 2026-08-29 as `pdfcer-core` `Pass 161.0`.
+/// Moving a bookmark by **dragging** it, and the triangle that opens or closes
+/// one — `EditSession::move_outline_item` and `EditSession::set_outline_open`.
 ///
 /// Its header carries the three things a reader must not re-derive: why the
 /// gesture is copied from [`crate::panels::pages`] rather than invented, why a
-/// **tree** needs a depth at each landing where a grid needs only a gap - and
-/// the three-band split that supplies it - and why expansion is a **separate
-/// verb** rather than a flag on the move, which is the engine's own instruction:
-/// *"whether a move should reveal a collapsed destination has two defensible
-/// answers and both now exist."*
+/// **tree** needs a depth at each landing where a grid needs only a gap — and
+/// the three-band split that supplies it — and why expansion is a **separate
+/// verb** rather than a flag on the move, which is the engine's own division:
+/// whether a move should reveal a collapsed destination has two defensible
+/// answers, so neither is built into the other.
 pub mod reorder;
 /// The two questions this panel asks of an outline - *where is this id?* and
 /// *how many bookmarks are under this one?* - in the one place they can be
 /// tested.
 ///
-/// Split out of [`add`] when [`edit`] needed both. Its header carries why both
-/// walks are generic over the tree (`OutlineItem` is `#[non_exhaustive]` and
+/// Shared by [`add`], [`edit`] and [`reorder`], which is why it is not filed
+/// under any of them. Its header carries why both walks are generic over the
+/// tree (`OutlineItem` is `#[non_exhaustive]` and
 /// this crate cannot build one, so a recursion written over it directly is a
 /// recursion no test here can reach) and why the subtree count reads the
 /// **tree** rather than `/Count`.
@@ -163,24 +150,18 @@ pub mod tree;
 
 /// The panel's state, between frames.
 ///
-/// ★ **Moved here from [`add`] on 2026-08-28**, when [`edit`] arrived. It was
-/// never the add row's private state - the row it holds is the row the whole
-/// panel is pointed at - and leaving it in `add` would have made the rename and
-/// remove controls reach through the module that writes new bookmarks to find
-/// the one they act on. `crate::panels::PanelsState` names the type and not its
-/// path, so the move is invisible to every caller.
+/// It lives at the panel's root rather than inside [`add`] because the row it
+/// holds is the row the **whole panel** is pointed at: [`edit`], [`clip`] and
+/// [`reorder`] all read it, and filing it under the module that writes new
+/// bookmarks would make three of them reach through a fourth to find the item
+/// they act on.
 ///
-/// ★ **The selected bookmark is an `ObjId`, not a path through the tree.**
-/// `OutlineItem::id` carries it for exactly this, and its own doc says why:
-/// *"identity is what a GUI needs and the tree cannot otherwise supply ...
-/// selecting a bookmark ... keys off the object, not off a path through the
-/// tree that any edit invalidates."*
-///
-/// An index into the walk would name a different bookmark after every add,
-/// which is the hazard the engine hit **in its own CLI** - *"the indices shift
-/// after every add ... I got this wrong myself while driving the command and
-/// nested something two levels deeper than intended, and the output looked
-/// entirely plausible."*
+/// **The selected bookmark is an `ObjId`, not a path through the tree.**
+/// `OutlineItem::id` exists for exactly this: identity is what a GUI needs and
+/// a tree walk cannot otherwise supply it. An index into the walk names a
+/// different bookmark after every add, because the indices shift — and the
+/// outline that results looks entirely plausible, so nothing downstream reports
+/// the error.
 #[derive(Default)]
 pub struct BookmarksUi {
     /// What has been typed into the **new bookmark's** title field.
@@ -192,7 +173,7 @@ pub struct BookmarksUi {
     /// one they had selected, and a shared buffer would swap one into the
     /// other.
     pub(super) title: String,
-    /// ★ **The row the operator last clicked**, or `None` for none.
+    /// **The row the operator last clicked**, or `None` for none.
     ///
     /// One field, three meanings, all of them true of the row that was pointed
     /// at - which is what makes the overload honest rather than a shortcut:
@@ -217,7 +198,7 @@ pub struct BookmarksUi {
     /// row is stale, and [`Self::rename_draft_for`] re-seeds from the document
     /// instead of offering it.
     pub(super) rename: Option<(pdfcer_core::object::ObjId, String)>,
-    /// ★★ **The bookmark currently being dragged**, or `None` for no drag in
+    /// **The bookmark currently being dragged**, or `None` for no drag in
     /// flight.
     ///
     /// # Why it lives here rather than in the `egui::Context`
@@ -239,10 +220,10 @@ pub struct BookmarksUi {
     ///
     /// Same rule, same reason as [`Self::selected`]: an id survives an edit and
     /// a position does not. A drag that stored *"the fourth row"* would be
-    /// holding a number the drop it is about to perform invalidates — which is
-    /// the hazard `OutlinePlacement`'s own doc comment names for this exact
-    /// surface: *"A shell that reads a panel, lets the operator drag a row, and
-    /// then calls with the index it read has a race with its own undo stack."*
+    /// holding a number the drop it is about to perform invalidates — the
+    /// race `OutlinePlacement`'s own doc comment names for this exact surface:
+    /// a shell that reads a panel, lets the operator drag a row, then calls
+    /// with the index it read is racing its own undo stack.
     pub(super) drag: Option<pdfcer_core::object::ObjId>,
 }
 
@@ -293,7 +274,7 @@ impl BookmarksUi {
     ///
     /// *Stale* means **held for a different bookmark** - see [`Self::rename`].
     ///
-    /// ★ **The draft does NOT follow the document while it is being typed**,
+    /// **The draft does NOT follow the document while it is being typed**,
     /// deliberately, and that differs from `panels::docprops`'s
     /// epoch-reseed. The difference is what the two fields are: a metadata box
     /// commits on focus loss and is otherwise idle, so re-seeding it costs
@@ -331,29 +312,20 @@ use crate::text::panels as t;
 
 /// Draw the Bookmarks panel.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
-    // ★★★ MAY THIS MODE AUTHOR? — added 2026-09-03 on an outside review.
+    // MAY THIS MODE AUTHOR?
     //
-    // The reviewer's report: **Read mode offers "Add a bookmark"** — a title
-    // field, a parent line and an Add button, in the mode whose whole promise
-    // is that it cannot change the document. `MODES_AND_PANELS.md`'s panel
-    // table already draws the distinction by name, giving Read *"Comments
-    // (read)"* against Review's *"Comments (authoring)"*; Bookmarks was granted
-    // to Read with no authoring qualifier and nobody split the panel.
+    // `MODES_AND_PANELS.md` grants Bookmarks to Read, and it is right to:
+    // navigating by bookmark is reading. But Read's whole promise is that it
+    // cannot change the document, and half this panel's controls author.
     //
-    // ★★ Why this panel needs a capability read at all, when the taxonomy
-    // usually does the gating for free. The normal mechanism is **command
-    // placement**: `measure` is not a tab Read is shown, so Read cannot reach
-    // the Measure panel and the panel needs no flag of its own. That cannot
-    // work here, because Read *should* reach this panel — navigating by
-    // bookmark is reading. The panel is the right one; half its controls are
-    // not.
-    //
-    // ★ The precedent is `panels::tool::idle`, which reads
-    // `canvas::tool::capabilities(ctx)` off the `Context` for the same reason
-    // and frames it as R9: *"an unavailable capability renders nothing"*. This
-    // is the second such read in the crate, and it is deliberately the same
-    // call rather than a new predicate, so the panel and the canvas can never
-    // disagree about what the mode permits.
+    // The usual gate is **command placement** — `measure` is not a tab Read is
+    // shown, so Read cannot reach the Measure panel and that panel needs no
+    // flag of its own. It cannot work here, because the panel is the right one
+    // for Read and only some of its controls are not. So the mode is read
+    // directly, through the same `canvas::tool::capabilities(ctx)` call
+    // `panels::tool::idle` makes rather than through a new predicate, so the
+    // panel and the canvas can never disagree about what the mode permits.
+    // R9: an unavailable capability renders nothing.
     //
     // `authors_anything()` rather than `edit_content`: a bookmark is document
     // structure, not page content, so Review — which authors markup and
@@ -383,12 +355,11 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     }
     if outline.items.is_empty() {
         ui.label(t::bookmarks_empty());
-        // ★ NOT an early return any more. A document with no bookmarks is
-        // exactly the one an operator most wants to add the first one to, and
-        // returning here is what made this panel read-only-looking for its
-        // whole life — the sentence said "none" and offered nothing.
+        // NOT an early return. A document with no bookmarks is exactly the
+        // one an operator most wants to add the first one to, so the add row
+        // is drawn before the function gives up.
         //
-        // ★ …in a mode that authors. In Read the sentence above is the whole
+        // …in a mode that authors. In Read the sentence above is the whole
         // panel, which is the correct Read answer: *this document has no
         // bookmarks*, with nothing offered to change that.
         if authoring {
@@ -402,36 +373,24 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // at its smallest: the click is recorded while the tree is being walked
     // and turned into an `Action` once the walk is over.
     let mut harvest = Harvest::default();
-    // ★★ The authoring row is drawn BEFORE the list, and that ordering is
-    // the fix for a feature that shipped unreachable.
+    // The authoring row is drawn BEFORE the list, and the ordering is load
+    // bearing: **a control that must always be reachable cannot be placed after
+    // an unbounded `ScrollArea`.** A row laid out after a list of 122 bookmarks
+    // lands below the bottom of the panel — drawn, publishing its region, and
+    // unclickable — and capping the list with a reserve only moves the
+    // overflow: it works at the pane height it was tuned against and fails
+    // quietly at every other one. Reserve-and-hope is not a second option; it
+    // is the same defect with a tuning parameter. Nothing follows the scroll
+    // area here, so nothing can be pushed past the end of the panel at any pane
+    // height with any size of outline.
     //
-    // A driven run on a 122-bookmark drawing found the panel body occupying
-    // y=133..770 and this row laid out at y=899..923 — **below the bottom of
-    // the panel**, with no way to reach it. The row drew. It published its
-    // region. Every unit test passed. And `add_outline_item`, wired that
-    // morning, could not be used on any document with a real outline, which is
-    // every document somebody would want to add a bookmark to.
+    // It also reads better. A control's position is a claim about what it acts
+    // on, and this row acts on the LIST — it files the new bookmark under
+    // whichever row was last clicked — so above the list is where the claim is
+    // true, and the operator sees the destination before they scroll rather
+    // than after.
     //
-    // The first attempt capped the list with a reserve, which moved the row
-    // from y=899 to y=769 in a panel ending at 770 — still overflowing, by less.
-    // That is the shape of a fix that is a **magic number**: it works at the
-    // pane height it was tuned against and fails quietly at every other one.
-    //
-    // Putting the row first removes the arithmetic entirely. Nothing follows
-    // the scroll area, so nothing can be pushed past the end of the panel, at
-    // any pane height, with any size of outline. The rule generalises and is
-    // worth stating: **a control that must always be reachable cannot be placed
-    // after an unbounded `ScrollArea`.** Reserve-and-hope is not a second
-    // option; it is the same defect with a tuning parameter.
-    //
-    // It also reads better, for the reason the Manage-groups window's Add
-    // button was moved on the same pass: this row acts on the LIST — it files
-    // the new bookmark under whichever row was last clicked — and a control's
-    // position is a claim about what it acts on. Above the list it is making
-    // that claim correctly, and the operator sees the destination before they
-    // scroll rather than after.
-    //
-    // ★ Gated on the mode, and the whole authoring block goes together — the
+    // Gated on the mode, and the whole authoring block goes together — the
     // add row, the rename-and-remove block below it, and the drag hint. Half a
     // form is worse than none: an operator shown a title field with no Add
     // button, or a drag hint for a gesture the mode refuses, has been told the
@@ -439,7 +398,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     if authoring {
         add::show(ui, doc, state.bookmarks_mut(), actions);
     }
-    // ★ The rename-and-remove block, and it is drawn ONLY when a row has been
+    // The rename-and-remove block, and it is drawn ONLY when a row has been
     // clicked. That is R9 rather than tidiness: with nothing selected there is
     // no bookmark for either verb to name, so the controls would be offering a
     // capability that cannot act. They are absent, not greyed — greying is for
@@ -450,12 +409,12 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // skipped in one place, and so that module never has to consider an id that
     // no longer names anything — the ordinary state one frame after an undo of
     // a delete, and the state `add::show` above has already cleared.
-    // ★ The drag is the one gesture in this panel with no widget to look at, so
+    // The drag is the one gesture in this panel with no widget to look at, so
     // it is the one that has to be written down. See
     // `crate::text::panels::bookmarks::bookmark_drag_hint`: R83 forbids
     // offering a control that cannot work, and its quieter twin is that a
     // gesture nobody is told about is a capability the program does not have.
-    // ★ The drag hint goes with the drag. In Read the reorder gesture is not
+    // The drag hint goes with the drag. In Read the reorder gesture is not
     // offered, so a sentence teaching it would be describing a capability the
     // mode does not have — R83's quieter twin, inverted.
     if authoring {
@@ -479,35 +438,24 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
             // spans the list rather than stopping under the longest title, and
             // a band test over the label alone would miss the pointer whenever
             // it was to the right of a short name.
-            // ★★★ THE PER-SELECTION CONTROLS LIVE IN HERE, and they used to live
-            // above this scroll area. That shipped two controls an operator
-            // could not click.
+            // THE PER-SELECTION CONTROLS LIVE IN HERE, inside the scroll area.
             //
             // The dock gives a panel body a FIXED rectangle and no scrolling of
-            // its own — `egui-shell`'s dock says so in as many words, and the
-            // corollary is that the body is expected to create one. This body
-            // created one around its LIST and left everything above it laid out
-            // in whatever space the panel happened to have.
+            // its own, so the body is expected to create one — and anything the
+            // body lays out *outside* that scroll area has only the space the
+            // panel happens to have. With the selection block above the
+            // scroller, Remove and Copy are laid out tens of points below the
+            // bottom edge of their own panel: drawn, publishing a rect, and
+            // unclickable. `D:/dev/rag/egui/` records the shape — a panel
+            // unreachable in a real build with every gate green — and it is
+            // invisible to any test that does not select a bookmark first.
             //
-            // Measured 2026-08-29 with the panel body at `y = 159.3 .. 447.7`:
-            //
-            //     ui-rect name=bookmarks.delete rect=[[0.0 500.3] - [55.3 524.3]]
-            //     ui-rect name=bookmark-copy    rect=[[0.0 528.3] - [37.2 552.3]]
-            //
-            // ⇒ **Remove was 53 points below the bottom of its own panel and
-            // Copy was 81.** Both were drawn, both published a rect, and neither
-            // could be clicked. That is the shape `D:/dev/rag/egui/` records as
-            // *panels that shipped unreachable in real builds with every gate
-            // green* — and it survived because it is invisible to any test that
-            // does not select a bookmark first. Nothing did, until the clipboard
-            // work needed to.
-            //
-            // ★ Inside the scroll area rather than given a scroll area of their
+            // Inside the scroll area rather than given a scroll area of their
             // own: two sibling scrollers in one narrow panel is two scrollbars
             // and two places the operator's wheel might go. One region that
             // scrolls is what every other panel here does.
             //
-            // ★★ ABOVE the rows, not below, because they are about the row that
+            // ABOVE the rows, not below, because they are about the row that
             // is already selected — putting them under a list of forty
             // bookmarks would mean scrolling past the list to act on something
             // at the top of it.
@@ -515,7 +463,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 .bookmarks_mut()
                 .selected
                 .and_then(|id| tree::find(&outline.items, id));
-            // ★ `authoring` gates this too — see the top of `body`. Rename,
+            // `authoring` gates this too — see the top of `body`. Rename,
             // Remove, Copy and Cut all change the document, so in Read the
             // selection is for navigating with and nothing more.
             if let Some(item) = selected.filter(|_| authoring) {
@@ -525,12 +473,12 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 // restructuring the whole panel to read the outline twice.
                 let item = item.clone();
                 edit::show(ui, &item, state.bookmarks_mut(), actions);
-                // ★ Copy and Cut sit with the other verbs that act on the SELECTED
+                // Copy and Cut sit with the other verbs that act on the SELECTED
                 // bookmark, under the same heading, because that is the question the
                 // operator is answering when they are looking at this block.
                 clip::copy_row(ui, doc, &item, actions);
             }
-            // ★★ PASTE IS OUTSIDE THE `if`, and that is the whole difference between
+            // PASTE IS OUTSIDE THE `if`, and that is the whole difference between
             // it and the two above.
             //
             // Copy and Cut act on a selected bookmark, so with none selected there is
@@ -560,54 +508,37 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         });
 
     let ui_state = state.bookmarks_mut();
-    // ★★★ **A DRAG DOES NOT SELECT THE ROW IT BEGAN ON, AND THAT IS A MEASURED
-    // DEFECT RATHER THAN A PREFERENCE.**
+    // **A DRAG DOES NOT SELECT THE ROW IT BEGAN ON**, although
+    // `panels::pages`' tile does, on a rule worth keeping — *a gesture's verbs
+    // must apply to the tile the operator pointed at*.
     //
-    // It did, for one build. `panels::pages`' tile selects on `drag_started`,
-    // on a rule worth keeping — *a gesture's verbs must apply to the tile the
-    // operator pointed at* — and the same line here also put the row's name in
-    // the *Selected bookmark* block, so an operator who let go over nothing
-    // could still see what they had been carrying. Both arguments are good.
+    // The difference is that the *Selected bookmark* block is **drawn above the
+    // list** and only when something is selected. Selecting on press therefore
+    // GROWS THE PANEL ABOVE THE ROWS, mid-gesture: measured at 187 points, with
+    // the strip narrowing by fourteen more as a scroll bar appears with it. The
+    // row the operator is aiming at slides a third of a panel's height out from
+    // under the pointer at the instant they commit to the drag, and the drop
+    // lands on empty space above the list — a gesture that does nothing, with
+    // no explanation.
     //
-    // The block is **drawn above the list**, and it is only drawn when
-    // something is selected. So selecting on press GROWS THE PANEL ABOVE THE
-    // ROWS, mid-gesture. Driven, 2026-08-29,
-    // `a_bookmark_can_be_dragged_and_a_branch_collapsed`, from the trace:
+    // ⇒ R128's feedback loop, and the rule is more general than this surface:
+    // **a surface may not change size in response to a gesture that is aimed at
+    // it.**
     //
-    // ```text
-    // before the press   bookmark-row id=64 row=[[0 542] - [274 566]]
-    // after the press    bookmark-row id=64 row=[[0 729] - [260 753]]   +187
-    // ```
-    //
-    // **One hundred and eighty-seven points**, and the strip narrowed by
-    // fourteen as a scroll bar appeared with it. The row the operator was
-    // aiming at slid a third of a panel's height out from under the pointer at
-    // the instant they committed to the drag, and the drop then landed on empty
-    // space above the list — `bookmark-drag-released … landing=none`, a gesture
-    // that did nothing with no explanation, which is this project's founding
-    // defect shape.
-    //
-    // ⇒ That is R128's feedback loop, and this is its **third** instance in
-    // this codebase: `bottom_panel_height_...` in the egui RAG was the first,
-    // `panels::pages`' drag caption the second, measured at 49 points and
-    // recorded in that module's header with the same trace shape. The rule it
-    // yields is more general than any of the three: **a surface may not change
-    // size in response to a gesture that is aimed at it.**
-    //
-    // ★ Nothing is lost. `BookmarksUi::drag` carries the operand, captured at
+    // Nothing is lost. `BookmarksUi::drag` carries the operand, captured at
     // the press, so the move acts on the row the operator pointed at exactly as
     // the pages rule requires. What is given up is the *Selected bookmark*
-    // block naming the row in flight — which was a convenience, and which cost
-    // the gesture it was decorating.
+    // block naming the row in flight — a convenience that cost the gesture it
+    // was decorating.
     //
-    // ★ And selection is unchanged as a **click**: egui reports no `clicked()`
+    // And selection is unchanged as a **click**: egui reports no `clicked()`
     // for a press that travelled, so a press-and-release without movement still
     // selects, and a drag does not. Those are two gestures with two meanings,
     // which is what every other outline panel does.
     if let Some(id) = harvest.started {
         ui_state.drag = Some(id);
     }
-    // ★ Runs unconditionally and BEFORE the click is applied. A drag that has
+    // Runs unconditionally and BEFORE the click is applied. A drag that has
     // started has to be able to end — see `reorder::settle` on why the release
     // is read from raw pointer input — and egui reports no `clicked()` for a
     // press that travelled, so the two cannot both fire for one gesture.
@@ -621,7 +552,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         ));
     }
     if let Some((page, view)) = harvest.go {
-        // ★★ One place turns a destination into moves, so the bookmarks panel
+        // One place turns a destination into moves, so the bookmarks panel
         // and anything else that navigates to one cannot disagree about what
         // `/XYZ` means. See `app::actions::destination`.
         crate::app::actions::destination::actions_for(page, &view, actions);
@@ -630,7 +561,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 
 /// Everything one walk of the outline has to carry back out of it.
 ///
-/// # ★ Why a struct rather than five `&mut` parameters
+/// # Why a struct rather than five `&mut` parameters
 ///
 /// [`rows`] is recursive, so every output it collects is threaded through every
 /// level. Five out-parameters would be five places to transpose two of the same
@@ -639,21 +570,21 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 /// drag began on), which is exactly the pair a reader cannot check by eye at a
 /// call site.
 ///
-/// [`crate::panels::pages::grid_rows`] takes them loose and carries a
-/// `clippy::too_many_arguments` waiver saying *"bundling them into a struct
-/// would name a type whose only purpose is to be destructured immediately"*.
-/// That argument holds there and does not hold here, and the difference is the
+/// [`crate::panels::pages::grid_rows`] takes them loose under a
+/// `clippy::too_many_arguments` waiver, on the argument that a struct there
+/// would name a type whose only purpose is to be destructured immediately. That
+/// holds for a flat grid and not for a tree, and the difference is the
 /// recursion: a bundle passed down four levels is written once, and four loose
 /// parameters are written at every level.
 #[derive(Default)]
 struct Harvest {
-    /// The page a click asked to go to, 0-based.
     /// The page a click asked for, **with the view that came with it**.
     ///
-    /// ★ A pair rather than a page, since 2026-09-01. Carrying only the page
-    /// is what made every bookmark on a drawing sheet arrive in the same place.
+    /// A pair rather than a page: on a drawing sheet several bookmarks name
+    /// different details of one page, so a page number alone lands all of them
+    /// in the same place.
     go: Option<(usize, pdfcer_core::outline::DestView)>,
-    /// ★ The row that was clicked, recorded as well as navigated to. A bookmark
+    /// The row that was clicked, recorded as well as navigated to. A bookmark
     /// click means "take me there" first and always; making it ALSO mean "and
     /// this is the parent for the next one" is free, because both are true of
     /// the row the operator pointed at, and it saves a second selection gesture
@@ -671,7 +602,7 @@ struct Harvest {
 
 /// How wide the disclosure triangle's slot is, in points.
 ///
-/// ★ Reserved on a **leaf** as well, with `add_space`, so every title at one
+/// Reserved on a **leaf** as well, with `add_space`, so every title at one
 /// level starts at one x. A tree whose rows step in and out by the width of a
 /// triangle depending on whether they have children reads as a rendering fault,
 /// and it is the first thing an eye notices in a list of names.
@@ -683,52 +614,39 @@ const DISCLOSURE_WIDTH_PTS: f32 = 14.0;
 /// Indentation carries the structure. See the module docs on why the indent
 /// is keyed by the item's object id rather than by its index.
 ///
-/// # ★★★ It recurses only when the row is open, and it did not used to
+/// # It recurses only when the row is OPEN
 ///
-/// This walk was unconditional for the whole life of the panel: every child of
-/// every bookmark was drawn, whatever `/Count`'s sign said. That was defensible
-/// while there was no way to change the sign — the panel showed the operator
-/// everything, which is more than the document asked for and less than a lie.
+/// A walk that recursed unconditionally would draw every child of every
+/// bookmark whatever `/Count`'s sign said, which would leave the disclosure
+/// triangle writing the sign into the file and changing **nothing on screen** —
+/// a control that appears not to work, and the operator's next act is to press
+/// it again. Honouring the sign here is also what makes three sentences
+/// elsewhere in the panel literally true:
+/// [`crate::text::panels::bookmark_add_under_collapsed`], its move counterpart,
+/// and [`edit`]'s subtree warning are all about a branch the operator cannot
+/// see.
 ///
-/// It stopped being defensible the moment the disclosure triangle arrived. A
-/// control that writes `/Count`'s sign into the file and changes **nothing on
-/// screen** is a control that appears not to work, and the operator's next act
-/// is to press it again. So the sign is now honoured here, and three other
-/// sentences in this panel became literally true with it:
-/// [`crate::text::panels::bookmark_add_under_collapsed`]'s *"the new one will
-/// not appear until you expand it"*, its move counterpart, and
-/// [`edit`]'s subtree warning, which was always about a branch the operator
-/// could not see and can now genuinely not see.
-///
-/// ★ **The count above the list is unaffected and is a different number.**
+/// **The count above the list is a different number.**
 /// `outline.diagnostics.items` is every item pdfcer read, at every level,
 /// collapsed branches included — the document's real size — and the number of
-/// rows drawn here is what is visible. They were the same before this change
-/// and are now allowed to differ, which is correct: the panel's summary is
-/// about the document and its list is about the screen.
+/// rows drawn here is what is visible. They are allowed to differ: the panel's
+/// summary is about the document and its list is about the screen.
 ///
-/// # ★★ Every row is an enabled control now, and that is a widening
+/// # Every row is an enabled control, and only navigation is withheld
 ///
-/// A row whose destination pdfcer cannot resolve used to be an
-/// `add_enabled(false, …)` button, and a disabled `egui::Button` reports no
-/// click at all. That was right when a row's only job was navigation — R83,
-/// never offer a control for something that cannot work — and it quietly cost
-/// something this panel's own comments claimed it had: a **heading** with no
-/// destination could never be selected, so it could never be the parent for an
-/// add, although this file said *"indeed it is the likeliest one, since a
-/// heading is what an operator files things under."*
+/// A row has four jobs — navigate, select, drag, expand — and three of them work
+/// perfectly on a bookmark that leads nowhere. So the row is enabled and it is
+/// **navigation alone** that is withheld: the click raises no
+/// [`Action::GoToPage`], the label is drawn weak, and the tooltip says which of
+/// the two unclickable kinds it is. The three-state distinction the module
+/// header sets out is carried by the label's colour and its words rather than
+/// by a dead widget, because a disabled `egui::Button` reports no click at all
+/// and a **heading** that cannot be clicked cannot be selected as the parent
+/// for an add — which is the likeliest thing an operator wants of one.
 ///
-/// A row now has four jobs — navigate, select, drag, expand — and three of them
-/// work perfectly on a heading. So the row is enabled and it is **navigation
-/// alone** that is withheld: the click raises no [`Action::GoToPage`], the
-/// label is drawn weak, and the tooltip says which of the two unclickable kinds
-/// it is. The three-state distinction the module header sets out is unchanged;
-/// what changed is that it is now carried by the label's colour and its words
-/// rather than by a dead widget.
-///
-/// ★ `enabled=` in the row's trace line still means **navigable**, which is
-/// what every reader of it assumes and what `tools/ui-verify`'s
-/// `bookmark_edit` check skips on.
+/// `enabled=` in the row's trace line means **navigable**, which is what every
+/// reader of it assumes and what `tools/ui-verify`'s `bookmark_edit` check
+/// skips on.
 fn rows(
     ui: &mut egui::Ui,
     items: &[pdfcer_core::outline::OutlineItem],
@@ -741,17 +659,16 @@ fn rows(
         // The page a click would reach, if any. Only a resolved page
         // destination is navigable — a named destination pdfcer could not
         // look up, or a remote file, is shown and not offered.
-        // ★★★ **The view comes with the page** — 2026-09-01.
-        //
-        // This read `Some(Destination::Page { page_index, .. })`, and that `..`
-        // is where the operator's zoom went: *"it just jumps us to the correct
-        // page, but doesn't send us to the spot on the page the bookmark
-        // actually points to."*
+        // **The view comes with the page**, and matching
+        // `Destination::Page { page_index, .. }` is where it would be thrown
+        // away. Operator, `OPERATOR_REQUESTS.md` O90: *"it just jumps us to the
+        // correct page, but doesn't send us to the spot on the page the
+        // bookmark actually points to."*
         //
         // On a drawing package every bookmark names a DETAIL — `/XYZ` or
-        // `/FitR` on a shared sheet — so discarding the view reduced the whole
+        // `/FitR` on a shared sheet — so discarding the view reduces the whole
         // outline to a page list, and several bookmarks pointing at different
-        // details all arrived in the same place.
+        // details all arrive in the same place.
         let target = match &it.destination {
             Some(Destination::Page {
                 page_index, view, ..
@@ -773,7 +690,7 @@ fn rows(
             it.title.clone()
         };
 
-        // ★ The label carries the three-state distinction now that the widget
+        // The label carries the three-state distinction now that the widget
         // no longer can: a row that cannot be jumped to is drawn weak, which is
         // the same signal a disabled button gave and the same one the Fonts
         // panel uses for a face it cannot act on. The tooltip says which kind.
@@ -818,22 +735,19 @@ fn rows(
             has_children: !it.children.is_empty(),
         });
         crate::diag::trace(|| {
-            // ★★★ TWO rectangles, and a harness needs both. `rect=` is the
+            // TWO rectangles, and a harness needs both. `rect=` is the
             // **label**, which is what a check presses to select or to lift a
-            // row — its meaning is unchanged from the day this line was
-            // written, and `bookmark_edit` aims with it. `row=` is the
+            // row, and `bookmark_edit` aims with it. `row=` is the
             // **full-width strip**, which is what a drop is tested against, and
             // its centre is deliberately somewhere no widget is: a check aiming
             // at a landing band must land on the row, not on the title.
             //
-            // Keeping `rect=` as the label rather than widening it is the whole
-            // of why the existing check still works. A key that changes meaning
-            // in place is the shape of change that breaks a harness silently —
-            // every line still parses, every field is still there, and the
-            // clicks land somewhere else.
+            // `rect=` must keep meaning the label rather than being widened to
+            // the strip. A key that changes meaning in place is the shape of
+            // change that breaks a harness silently — every line still parses,
+            // every field is still there, and the clicks land somewhere else.
             //
-            // ★ `id=` and `open=` were added with the drag. A check that aims
-            // at a row needs to name WHICH bookmark it hit — `title=` is
+            // `id=` is how a check names WHICH bookmark it hit — `title=` is
             // ambiguous the moment a document has two chapters called
             // "Details" — and `open=` is the only evidence a trace can give
             // that the disclosure triangle did anything, because what it
@@ -851,21 +765,18 @@ fn rows(
             )
         });
         if resp.clicked() {
-            // ★★★ WHICH ROW WAS ACTUALLY PRESSED, and whether it navigates.
+            // WHICH ROW WAS ACTUALLY PRESSED, and whether it navigates.
             //
-            // Added 2026-09-02 to close a gap named in `CONTINUE.md`: the driven
-            // check `a_bookmark_lands_on_the_detail_it_names` fails
-            // intermittently inside a batch with `zoom 0.382 → 0.382`, and
-            // **cannot tell its two causes apart** — the destination was not
-            // applied, or the click landed on a different row (or on none). Both
-            // leave the zoom where it was, and the check's own message has to
-            // hedge between them.
+            // A check that watches the zoom — `a_bookmark_lands_on_the_detail_it_names`
+            // is the one — **cannot tell its two failure causes apart** without
+            // this. An unchanged zoom means either that the destination was not
+            // applied or that the click landed on a different row, or on none,
+            // and both leave the zoom exactly where it was.
             //
-            // A trace of the press settles it in one line. `bookmark-row`
-            // already reports where every row IS; this reports which one was
-            // hit, which is the other half and the one no rectangle can supply.
+            // `bookmark-row` reports where every row IS; this line reports which
+            // one was hit, which is the half no rectangle can supply.
             //
-            // ★ `navigates=` beside the title, because a heading with no
+            // `navigates=` beside the title, because a heading with no
             // destination is a perfectly good row to click and changes nothing
             // — so "the right row was pressed and the zoom did not move" is only
             // a defect when the row had somewhere to go.
@@ -882,9 +793,7 @@ fn rows(
             // The id is recorded whether or not the row navigates. A heading
             // with no destination is unclickable-looking and is still a
             // perfectly good PARENT — indeed it is the likeliest one, since a
-            // heading is what an operator files things under. That sentence was
-            // aspirational until the row stopped being a disabled widget; see
-            // this function's header.
+            // heading is what an operator files things under.
             harvest.picked = Some(it.id);
             if let Some(p) = target.clone() {
                 harvest.go = Some(p);
@@ -895,7 +804,7 @@ fn rows(
         // that wandered a few pixels before releasing would start a move the
         // operator meant as something else. `panels::pages` records the same.
         //
-        // ★ A second drag cannot start while one is in flight. Without the
+        // A second drag cannot start while one is in flight. Without the
         // guard, dragging over the list would arm a new drag on every row the
         // pointer crossed — egui reports `drag_started` from whichever widget
         // the press is attributed to — and the bookmark that finally moved
@@ -911,7 +820,7 @@ fn rows(
             });
         }
 
-        // ★★★ Only when the row is OPEN. See this function's header: a
+        // Only when the row is OPEN. See this function's header: a
         // triangle that wrote `/Count`'s sign and left the list unchanged would
         // be a control that appears not to work.
         if it.open && !it.children.is_empty() {
@@ -924,20 +833,19 @@ fn rows(
 
 /// Draw the disclosure triangle, or reserve its width on a leaf.
 ///
-/// # ★★ A leaf gets no triangle, and that is R83 rather than tidiness
+/// # A leaf gets no triangle, and that is R83 rather than tidiness
 ///
-/// §12.3.3 Table 153 makes `/Count` *"required if the item has any
-/// descendants"*, so an item without them carries none and has no
-/// open-or-closed state to set. `EditSession::set_outline_open` answers
-/// `Ok(false)` for one rather than refusing — *"asking a leaf to expand is what
-/// a 'collapse all' sweep does to every row it walks, and refusing would make
-/// the sweep's caller filter first for no gain"* — so a triangle on a leaf
-/// would be a control that reaches the engine and correctly does nothing.
-/// Never offer a control for something that cannot work.
+/// §12.3.3 Table 153 requires `/Count` only of an item that has descendants,
+/// so an item without them carries none and has no open-or-closed state to set.
+/// `EditSession::set_outline_open` answers `Ok(false)` for a leaf rather than
+/// refusing — a *collapse all* sweep asks every row it walks, and refusing would
+/// make the sweep's caller filter first for no gain — so a triangle on a leaf
+/// would be a control that reaches the engine and correctly does nothing. Never
+/// offer a control for something that cannot work.
 ///
 /// The width is reserved anyway. See [`DISCLOSURE_WIDTH_PTS`].
 ///
-/// # ★ The hover text says the state is saved into the document
+/// # The hover text says the state is saved into the document
 ///
 /// The one genuinely surprising fact about this control, and the reason it is
 /// disclosed **before** the press rather than after: every other tree an
@@ -971,9 +879,9 @@ fn disclosure(ui: &mut egui::Ui, item: &pdfcer_core::outline::OutlineItem, harve
         .on_hover_text(tip);
     // `ui_rect_visible` rather than `ui_rect`: this is inside a `ScrollArea`,
     // and a triangle scrolled out of view must not keep publishing a rectangle
-    // a driven check would then click on. `diag.rs`'s header records the
-    // false-failure that rule exists for, and `bookmark_edit` paid for it again
-    // on 2026-08-29 by aiming three thousand points below the panel.
+    // a driven check would then click on — a long outline otherwise sends a
+    // check aiming at a row thousands of points below the panel. `diag.rs`'s
+    // header records the rule.
     crate::diag::ui_rect_visible(
         &format!("{}{}", reorder::REGION_DISCLOSE_PREFIX, item.id.num),
         response.rect,
@@ -984,7 +892,7 @@ fn disclosure(ui: &mut egui::Ui, item: &pdfcer_core::outline::OutlineItem, harve
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ `open=` is the state being ASKED FOR, not the one the row is
+            // `open=` is the state being ASKED FOR, not the one the row is
             // in, so a check reads the request rather than having to invert it.
             format!(
                 "bookmark-disclosure item={} open={} children={}",
@@ -1006,9 +914,9 @@ mod tests {
     /// core; the tooltip prints it 1-based.**
     ///
     /// The off-by-one that would otherwise be invisible: `page_index` is
-    /// *"ALREADY 0-based into `pages`"* per `pdfcer-core`'s consumer map, and
-    /// [`Action::GoToPage`] takes the same 0-based index — so the raw value
-    /// travels, and the `+ 1` happens only where a human reads it.
+    /// already 0-based into `pages`, and [`Action::GoToPage`] takes the same
+    /// 0-based index — so the raw value travels, and the `+ 1` happens only
+    /// where a human reads it.
     ///
     /// Getting that backwards produces a panel that navigates one page past
     /// every bookmark, which looks like a document defect.

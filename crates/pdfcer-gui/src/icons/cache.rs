@@ -5,11 +5,7 @@
 //! [`egui::TextureHandle`] per [`CacheKey`], so nothing is rasterized twice
 //! unless the display scale changes or a control becomes selected.
 //!
-//! Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\icons.rs` (Class A,
-//! `SALVAGE.md`), with the two structural decisions and their reasoning
-//! carried across intact.
-//!
-//! ## ★ Why the tint is not in the key
+//! ## Why the tint is not in the key
 //!
 //! Because it cannot be: the raster is a white coverage mask (see
 //! [`super::svg`], "Theming") and the colour arrives at draw time. Putting
@@ -26,16 +22,8 @@
 //! that shows a stale, wrongly-sized glyph after the window moves to a
 //! 150% monitor, which is the exact blur this pipeline exists to prevent.
 //!
-//! ## ★ Why it is a thread-local rather than application state
+//! ## Why it is a thread-local rather than application state
 //!
-//! Carried across from the salvage source, where the reason was a concrete
-//! borrow-checker one: the toolbar body held `&self.status` (the open
-//! document) across almost its whole length while *also* taking
-//! `&mut self.markup_color` inside menu closures. Threading a
-//! `&mut IconCache` through that would have forced those disjoint field
-//! borrows into a whole-`self` borrow and failed to compile.
-//!
-//! The reason it stays a thread-local here is a different one, and stronger.
 //! The seam this module ultimately serves is `egui_shell`'s
 //! `IconPainter` — a `dyn FnMut(&egui::Painter, &IconRequest)`. The painter
 //! is handed a `Painter` **precisely so that it cannot allocate layout**,
@@ -70,21 +58,19 @@ use super::{Icon, IconWeight};
 /// (dragging a window between a 100% and a 150% monitor) cannot accumulate
 /// stale textures without bound.
 ///
-/// # ★ Raised from 256 to 512 on 2026-08-14, and the arithmetic is the reason
+/// # The arithmetic this number has to satisfy, and does not
 ///
-/// The set grew from 47 glyphs to 72 in the pass that filled the ribbon's
-/// remaining text buttons. At 47 the first axis was 94 entries a size, so two
-/// display scales fitted inside 256 with room to spare; at 72 it is **144**,
-/// and two scales is **288** — over the old cap. The failure that would
-/// produce is not a crash or a wrong pixel, which is exactly why it is worth
-/// writing down: the cache would clear wholesale and re-rasterize the entire
-/// visible ribbon on a frame, repeatedly, on any machine whose window is
-/// dragged between two monitors of different scale. A hitch, blamed on the
-/// renderer, caused by a constant nobody re-derived when the set changed
-/// size.
+/// One entry per icon per weight per distinct physical size. `Icon::ALL` holds
+/// **143** icons and [`IconWeight`] has two variants, so **one** display scale
+/// is already 286 entries and two is 572 — past this cap. **Re-derive this
+/// number whenever the icon set grows**; it is `Icon::ALL.len() * 2 * (the
+/// number of display scales a session should hold without churning)`.
 ///
-/// 512 holds three scales at the present count. Anything that grows the set
-/// again should re-run this arithmetic rather than trusting the number.
+/// Exceeding it is not a crash and not a wrong pixel, which is why it is worth
+/// writing down: the cache clears wholesale and re-rasterizes the entire
+/// visible ribbon, repeatedly, on any machine whose window is dragged between
+/// two monitors of different scale. A hitch, blamed on the renderer, caused by
+/// a constant nobody re-derived when the set changed size.
 ///
 /// Clearing wholesale rather than evicting least-recently-used is
 /// deliberate: it is one line, it happens approximately never, and the
@@ -227,7 +213,7 @@ pub(super) fn with_cache<R>(f: impl FnOnce(&mut IconCache) -> R) -> R {
 mod tests {
     use super::*;
 
-    /// ★ The load-bearing property: the ribbon asks for the same icon every
+    /// The load-bearing property: the ribbon asks for the same icon every
     /// frame, and only the FIRST ask may rasterize.
     ///
     /// Tint is not part of the key by design (mask + tint), so re-asking
@@ -254,7 +240,7 @@ mod tests {
         assert_eq!(cache.len(), 1);
     }
 
-    /// ★ A display-scale change changes the physical size, and that MUST
+    /// A display-scale change changes the physical size, and that MUST
     /// produce a new raster — reusing the old one is exactly the
     /// blurry-on-HiDPI bug this pipeline exists to avoid.
     #[test]

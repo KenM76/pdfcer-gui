@@ -1,44 +1,35 @@
 //! # viewer — the page-view state machine and its geometry
 //!
-//! **Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\viewer.rs`** (Class A,
-//! `SALVAGE.md`: 509 code lines, 413 test lines, *"zoom ladder with provable
-//! reversibility, fit modes re-derived per frame, per-page raster ceiling
-//! accounting for `pixels_per_point`. Well tested."*). Carried across with
-//! its documentation and its entire test suite intact, per the salvage
-//! procedure's rule that a snippet leaves the reasoning behind and the next
-//! engineer re-derives a decision that was already paid for.
+//! **Salvaged whole from the old GUI's `viewer.rs`** — its documentation and
+//! its entire test suite carried across rather than lifted as snippets,
+//! because a snippet leaves the reasoning behind and the next engineer
+//! re-derives a decision that was already paid for. What came across is the
+//! zoom ladder with provable reversibility, the fit modes re-derived per
+//! frame, and the per-page raster ceiling that accounts for
+//! `pixels_per_point`; each is argued below.
 //!
-//! Changes made during salvage, and only these:
+//! Two of the geometry functions here carry `#[allow(dead_code, reason = …)]`
+//! because their first consumer has not landed yet. They are kept rather than
+//! deleted because each is the *pair* of a live function, and **a bridge with
+//! only one direction implemented is how the two ends drift apart.**
 //!
-//! - `use eframe::egui::…` became `use egui::…` — this crate names `egui`
-//!   directly (see `Cargo.toml`), so the re-export hop is gone.
-//! - Two functions that have no consumer until stage S4 gained an explicit
-//!   `#[allow(dead_code, reason = …)]`, in the same shape the original
-//!   already used for its own not-yet-called geometry bridges. They are
-//!   kept rather than deleted because they are the *pair* of a live
-//!   function, and a bridge with only one direction implemented is how the
-//!   two ends drift apart.
-//! - Nothing else. No arithmetic changed, no test was weakened.
+//! **A page *range* is not a field here, and its absence is the design.** A
+//! range is not something a view *holds*: which pages are on screen falls out
+//! of where the pages are laid out and where the viewport is. So [`strip`]
+//! computes it and [`ViewState`] keeps exactly one index, meaning *"the page
+//! the operator is looking at"* — read off the scroll position under a
+//! continuous mode, set by navigation under a paged one. See
+//! [`strip::Strip::page_at_view`].
 //!
-//! **Phase 4 landed the page *range*, and it is not a field here.** This
-//! module's own known-future-work note used to read *"a page range rather than
-//! a single `page_index` (`GUI_ROADMAP` Phase 4.1, the continuous-scroll
-//! prerequisite)"*, and the answer turned out to be that a range is not
-//! something a view *holds*. Which pages are on screen falls out of where the
-//! pages are laid out and where the viewport is, so [`strip`] computes it and
-//! [`ViewState`] keeps exactly one index — now meaning *"the page the operator
-//! is looking at"*, derived from the scroll position under a continuous mode
-//! and set by navigation under a paged one. See [`strip::Strip::page_at_view`].
+//! The view's fourth axis is [`ViewState::display`]: which of the four
+//! arrangements is active. It is orthogonal to the three below and is
+//! documented in [`display`].
 //!
-//! What [`ViewState`] did gain is [`ViewState::display`]: which of the four
-//! arrangements is active. It is a fourth axis of the view, orthogonal to the
-//! three below, and it is documented in [`display`].
-//!
-//! **Phase 3.1 is done and it needed nothing from this module.** Anchoring a
-//! zoom is a question about the *scroll offset*, not about the ladder, so the
-//! rule and the solve live in [`crate::canvas::zoom`] and
-//! [`crate::canvas::geometry`]. Two things here are reused rather than
-//! reimplemented, and that reuse is the point:
+//! **Anchoring a zoom is not this module's question.** It is a question about
+//! the *scroll offset* rather than about the ladder, so the rule and the solve
+//! live in [`crate::canvas::zoom`] and [`crate::canvas::geometry`]. Two things
+//! here are reused by them rather than reimplemented, and that reuse is the
+//! point:
 //!
 //! * [`fit_scale`] under [`FitMode::Page`] computes the scale that frames a
 //!   **region** for zoom-to-selection and marquee-zoom, exactly as it computes
@@ -113,7 +104,7 @@ pub mod display;
 // `recent.txt`.
 pub mod ceiling;
 pub mod deep;
-/// ★★★ **Where the view is, when the scroll offset can no longer say** —
+/// **Where the view is, when the scroll offset can no longer say** —
 /// O24 step 2.
 ///
 /// A scroll offset is `f32` into a content space of `page × zoom`, and one
@@ -124,22 +115,22 @@ pub mod deep;
 /// `DeepAnchor` replaces it with a page point in `f64` plus where on screen
 /// that point sits, which is a statement whose precision does not decay with
 /// the zoom.
-/// ★★ **How far this page can actually be zoomed** — the three limits that
+/// **How far this page can actually be zoomed** — the three limits that
 /// bind at three different depths, reconciled in one place.
 ///
 /// Its header carries which is which: the raster ceiling stops mattering
 /// once the region tier engages, the `f32` scroll offset's is what the shell
 /// can honestly offer today, and the operator's setting is the third.
-/// ★ **The zoom levels the `+` and `−` buttons step through**, and the rule
+/// **The zoom levels the `+` and `−` buttons step through**, and the rule
 /// for what happens past the last named rung.
 ///
 /// Split out under R2. Its header carries the one property that matters: the
-/// two steps must be exact inverses, above the ladder as well as on it —
-/// O24g was the half that was not.
+/// two steps must be exact inverses, **above** the ladder as well as on it —
+/// and above it is the half that is easy to get wrong (O24g).
 pub mod ladder;
 // How the zoom is decided from the viewport: the three fitting modes, the
 // ratio each takes, and which axes each one PLACES the view on. Split out
-// under R2 on 2026-08-24, when O28 and O29 took this file past 1,500 lines.
+// under R2, this project's 1,500-line-per-file ceiling.
 pub mod fit;
 pub mod remembered;
 // Where every page sits, in one coordinate space. The answer to Phase 4.1's
@@ -205,7 +196,7 @@ pub struct ZoomAnchor {
     /// **Which page every other field in this struct is about** — the page
     /// that was being acted on when the anchor was armed.
     ///
-    /// # ★★★ Why an anchor has to name its page (`OPERATOR_REQUESTS.md` O26d)
+    /// # Why an anchor has to name its page (`OPERATOR_REQUESTS.md` O26d)
     ///
     /// `frac`, `offset_before` and `display_before` are all measured against
     /// **one page**: the anchor says *"the point at this fraction of THAT
@@ -223,7 +214,7 @@ pub struct ZoomAnchor {
     /// the offset clamps to the end of its range, and the page lands in a
     /// corner of the screen with the rest of the drawing off it.
     ///
-    /// ★ Under [`PageDisplay::Single`] there is one page at the origin and
+    /// Under [`PageDisplay::Single`] there is one page at the origin and
     /// this field is always the current one, so nothing about that path
     /// changes. It is the strip that made "which page" a question.
     pub page: usize,
@@ -232,11 +223,11 @@ pub struct ZoomAnchor {
 /// Which page is shown, at what scale, how that scale is chosen, and in what
 /// arrangement.
 ///
-/// ## ★ `PartialEq` is here for one test, and it is the right one
+/// ## `PartialEq` is here for one test, and it is the right one
 ///
-/// Added 2026-08-17 with [`crate::app::prefs::Prefs::seed_view`], whose
-/// contract is *"seeding from the shipped preferences leaves a freshly opened
-/// view untouched"*. That property is only assertable as **whole-struct
+/// Derived for [`crate::app::prefs::Prefs::seed_view`], whose contract is
+/// *"seeding from the shipped preferences leaves a freshly opened view
+/// untouched"*. That property is only assertable as **whole-struct
 /// equality**: checking the fields the seeder writes would pass while a fifth
 /// field was silently clobbered, and checking the fields it does not write
 /// requires listing them, which is the same restatement drifting in a second
@@ -252,7 +243,7 @@ pub struct ViewState {
     /// **The page the operator is looking at**, 0-based into the flattened
     /// page vector.
     ///
-    /// # ★ What this means under a continuous mode, and who writes it
+    /// # What this means under a continuous mode, and who writes it
     ///
     /// Under [`PageDisplay::Single`] and [`PageDisplay::Facing`] it is the
     /// page (or the spread) being *shown*, and navigation is the only thing
@@ -327,41 +318,45 @@ pub struct ViewState {
     /// **`view.show_points` — draw an object's anchors without descending into
     /// it.**
     ///
-    /// Wired 2026-08-28, after the blocker on that command was re-derived and
-    /// found stale. The recorded reason was *"there is nothing for it to
-    /// show — this build draws no anchor mark at any rung"*, which was true
-    /// when it was written and stopped being true on 2026-08-19 when the
-    /// multi-node move landed with `canvas::overlay::draw_anchors`. The dead
-    /// sentence had **three copies** and `FEATURES.md` contradicted it twelve
-    /// lines from one of them.
+    /// What it shows is `canvas::overlay::draw_anchors` — the same mark the
+    /// multi-node move draws on, so the anchors an operator asks to see and the
+    /// anchors a drag acts on cannot disagree.
     ///
-    /// ★ Default **off**, with the other three: it is a drafting aid, and an
+    /// **A recorded blocker outlives the thing that justified it.** This
+    /// command's read *"there is nothing for it to show — this build draws no
+    /// anchor mark at any rung"*, which is a claim about the build, and a claim
+    /// about the build is re-derived against the build before it is believed.
+    /// A reason that is merely written down, and copied, goes on refusing a
+    /// command long after the refusal stopped being true.
+    ///
+    /// Default **off**, with the other three: it is a drafting aid, and an
     /// operator who has not asked for hollow squares over their drawing should
     /// not get them. `crate::app::prefs` can make that an opening preference
     /// the day somebody wants one.
     pub show_points: bool,
-    /// ★★★ **`view.line_weights` — are strokes drawn at the widths the file
+    /// **`view.line_weights` — are strokes drawn at the widths the file
     /// declares, or every one of them at one device pixel?**
     ///
-    /// `OPERATOR_REQUESTS.md` **O137**, in his words, 2026-09-05:
+    /// `OPERATOR_REQUESTS.md` **O137**, in his words:
     ///
     /// > *"awhile ago you told me you removed the button to show all lines
     /// > without their thickness — thin lines or something like cad has. The
     /// > button never worked but I do want that display option!"*
     ///
-    /// # ★★★ Which convention this is, because the two are opposites
+    /// # Which convention this is, because the two are opposites
     ///
-    /// | | | precedent |
-    /// |---|---|---|
-    /// | **this, turned OFF** | every stroke drawn at **one device pixel**, whatever the file declares | AutoCAD `LWDISPLAY` off |
-    /// | *not* this | sub-pixel strokes bumped **up** to one pixel so they do not vanish | Acrobat's *enhance thin lines* |
+    /// * **This, turned OFF** — every stroke drawn at **one device pixel**,
+    ///   whatever the file declares. The precedent is AutoCAD's `LWDISPLAY`
+    ///   switched off.
+    /// * ***Not* this** — sub-pixel strokes bumped **up** to one pixel so they
+    ///   do not vanish. That is Acrobat's *enhance thin lines*.
     ///
     /// **One makes thick things thin. The other makes thin things thick.** He
     /// said *"without their thickness"* and named CAD, so this is the first.
     /// Shipping the second would be worse than shipping nothing, because it
     /// would look like the feature working while doing the opposite.
     ///
-    /// # ★★ Why the field is named for the WEIGHTS and `true` is the default
+    /// # Why the field is named for the WEIGHTS and `true` is the default
     ///
     /// Every other toggle in this group is `false` by default and means *draw
     /// something extra*. This one is `true` and means *keep drawing the
@@ -376,23 +371,23 @@ pub struct ViewState {
     /// is not being drawn faithfully"*, which is the harder sentence to read
     /// off a ribbon button.
     ///
-    /// # ★★★ It is the ONLY member of this group that changes the RASTER
+    /// # It is the ONLY member of this group that changes the RASTER
     ///
     /// Rulers, grid, guides and show-points are all drawn by the canvas
     /// **over** a finished page texture; none of them can make a cached raster
     /// wrong. This one is a [`pdfcer_render::RenderOptions`] field
-    /// (`stroke_display`, engine `Pass 254.0`), so a texture drawn while it was
-    /// on is a *different picture* from one drawn while it was off — and a
-    /// cache that served the old one would make the toggle look inert, which is
-    /// precisely the defect O137 reports about its predecessor.
+    /// (`stroke_display`), so a texture drawn while it was on is a *different
+    /// picture* from one drawn while it was off — and a cache that served the
+    /// old one would make the toggle look inert, which is precisely the defect
+    /// O137 reports about its predecessor.
     ///
-    /// ⇒ It is therefore a **staleness key**:
+    /// It is therefore a **staleness key**:
     /// [`crate::app::state::OpenDoc::render_key_for`] feeds
     /// [`Self::stroke_display`] into [`crate::render::worker::RenderKey::new`],
     /// and `the_render_key_moves_when_line_weights_are_turned_off` is what
     /// stops that being forgotten.
     ///
-    /// # ★★★ Canvas only — the constraint decided in writing before the engine
+    /// # Canvas only — the constraint decided in writing before the engine
     /// field existed
     ///
     /// Print, print preview and **every** export — PDF, DXF, PNG, JPEG, SVG,
@@ -408,15 +403,16 @@ pub struct ViewState {
     /// backlog row: there is deliberately **no CLI flag**, because a hairline
     /// export would be an unfaithful file.
     ///
-    /// # ★ Fills are untouched
+    /// # Fills are untouched
     ///
-    /// Only `S`/`s`/`B`/`B*`-painted strokes reach the engine's `stroke_params`
-    /// (`pdfcer-render/src/interpret.rs:8806-8812`), so a hatch built out of
-    /// thin *fills* cannot vanish. Said here because an operator whose hatching
-    /// is fill-based would otherwise expect it to thin out with everything
-    /// else.
+    /// The width is resolved at one place in the engine,
+    /// `Interpreter::stroke_params`, which every stroking operator goes through
+    /// (`S`, `s`, `B`, `B*`, `b`, `b*`, and stroked text render modes) and
+    /// which **no fill reaches**. So a hatch built out of thin *fills* cannot
+    /// thin out or vanish. Said here because an operator whose hatching is
+    /// fill-based would otherwise expect it to follow the toggle.
     ///
-    /// # ★ Per document, not global
+    /// # Per document, not global
     ///
     /// It lives here, beside `zoom` and `rulers`, so two open drawings can
     /// disagree: comparing a hairline read of a dense sheet against a faithful
@@ -425,7 +421,7 @@ pub struct ViewState {
     /// `crate::text::commands::view_line_weights` for that decision and where a
     /// preference would go if he asks for one.
     pub line_weights: bool,
-    /// ★★★ **`view.off_page` — may the canvas show, and reach, the marks
+    /// **`view.off_page` — may the canvas show, and reach, the marks
     /// that sit outside the sheet?**
     ///
     /// A CAD export often carries geometry beyond its own `/MediaBox` — a
@@ -437,10 +433,10 @@ pub struct ViewState {
     /// is the cost: an operator who is only reading pays for it in scroll
     /// distance and in the grey gap it opens between one sheet and the next.
     /// So the flag gates exactly two things, both in [`crate::canvas::tier`]:
-    /// the pasteboard **overhang** (⇒ no band, no gap — the layout is
-    /// byte-for-byte what it was before the feature existed) and the **halo
-    /// raster tier** (⇒ nothing off-sheet is drawn or reachable). Nothing
-    /// else in the shell reads it.
+    /// the pasteboard **overhang** — off means no band and no gap, a layout
+    /// byte-for-byte identical to one with no off-page support at all — and
+    /// the **halo raster tier**, off meaning nothing outside the sheet is
+    /// drawn or reachable. Nothing else in the shell reads it.
     ///
     /// **Default `false` — but the mode decides.** Read opens with it off,
     /// Review and Edit with it on, and the operator's own answer is
@@ -465,6 +461,7 @@ impl Default for ViewState {
     /// drafting review. Read mode's continuous default is applied by the open
     /// path (which knows the mode and the document), not by this `Default` —
     /// so a `ViewState` built with no context is the conservative one.
+    ///
     /// **All three View ▸ Display toggles start off**, and that is not
     /// timidity. A ruler, a grid and a set of guides are all chrome drawn over
     /// or beside the drawing, and pdfcer's first duty on opening a sheet is to
@@ -488,11 +485,11 @@ impl Default for ViewState {
             rulers: false,
             grid: false,
             guides: false,
-            // ★ Off, with the other three. See the field's own note: an
+            // Off, with the other three. See the field's own note: an
             // operator who has not asked for hollow squares over their drawing
             // should not get them.
             show_points: false,
-            // ★★★ **ON**, and it is the one member of this group whose default
+            // **ON**, and it is the one member of this group whose default
             // is not `false` — because `true` here means *draw the document as
             // it says it should be drawn*, not *draw something extra*. A fresh
             // view therefore rasterizes byte for byte what every build before
@@ -500,7 +497,7 @@ impl Default for ViewState {
             // weights OFF. See the field's own docs for why the toggle is
             // named for the weights rather than for the hairline.
             line_weights: true,
-            // ★ Off, and this is the one default that is routinely
+            // Off, and this is the one default that is routinely
             // *overridden* on the way in: `crate::app::prefs::offpage`
             // answers per ribbon mode (Read off, Review and Edit on) and
             // remembers the operator's own answer for each. Off here for
@@ -512,7 +509,7 @@ impl Default for ViewState {
 }
 
 impl ViewState {
-    /// ★★★ **[`Self::line_weights`] as the engine spells it** — the one place
+    /// **[`Self::line_weights`] as the engine spells it** — the one place
     /// this shell's `bool` becomes a [`pdfcer_render::font::StrokeDisplay`].
     ///
     /// # Why the conversion is a named function and not an `if` at the call
@@ -527,7 +524,7 @@ impl ViewState {
     /// toggle look inert, which is the defect O137 reports about the button
     /// this replaces.
     ///
-    /// # ★★ Why the return type is the engine's ENUM and not a `bool`
+    /// # Why the return type is the engine's ENUM and not a `bool`
     ///
     /// `StrokeDisplay` is `#[non_exhaustive]` with two variants today —
     /// `Actual` and `Hairline` — and the engine made it an enum deliberately so
@@ -536,7 +533,7 @@ impl ViewState {
     /// anywhere in this shell would, that day, come to mean *"one of the two"*.
     /// So the boolean stops here and the engine's vocabulary starts here.
     ///
-    /// ★ `Hairline` is the **off** position. `true` means faithful widths; see
+    /// `Hairline` is the **off** position. `true` means faithful widths; see
     /// the field.
     #[must_use]
     pub const fn stroke_display(&self) -> pdfcer_render::font::StrokeDisplay {
@@ -625,18 +622,17 @@ impl ViewState {
         reason = "the zoom readout is a status-bar control and lands at stage S2; kept with the ladder it reports on so the rounding rule cannot be re-derived differently" // ui-text-exempt: clippy lint justification, never displayed
     )]
     pub fn zoom_percent(&self) -> f64 {
-        // ★★★ `f64`, not `u32` — `OPERATOR_REQUESTS.md` O24j.
+        // `f64`, not `u32` — `OPERATOR_REQUESTS.md` O24j.
         //
-        // A saturating `as u32` cast clamps at 4,294,967,295, so the status
-        // bar read **4294967295%** at a trillion percent — u32::MAX presented
-        // as a measurement. Seen in the deep-zoom screenshot gallery, and it
-        // is the kind of number an operator quite reasonably reads as a crash.
+        // A saturating `as u32` cast clamps at 4,294,967,295, so at a trillion
+        // percent the status bar states **4294967295%** — `u32::MAX` presented
+        // as a measurement, which is a number an operator quite reasonably
+        // reads as a crash. Three digits were enough while `MAX_ZOOM` was 8.0;
+        // O24 raised the reachable ceiling to 10¹².
         //
-        // ★ The type was right when `MAX_ZOOM` was 8.0 and every reachable
-        // value fitted in three digits. O24 raised the ceiling to 10¹² and did
-        // not revisit it — which is the recurring shape of this whole request:
-        // a limit lifted in one place while a narrower type downstream keeps
-        // enforcing the old one silently.
+        // **A limit lifted in one place leaves every narrower type downstream
+        // enforcing the old one silently**, and a readout is where that
+        // surfaces as a plausible-looking number rather than as a refusal.
         f64::from(self.zoom * 100.0).max(0.0)
     }
 }
@@ -716,7 +712,7 @@ pub fn max_zoom_for_page(page_pts: (f32, f32), pixels_per_point: f32) -> f32 {
 ///
 /// Returns `pixels_per_point` when it is a usable density and `1.0` otherwise.
 ///
-/// # ★★★ Why this is a named function rather than a `.max()` at each site
+/// # Why this is a named function rather than a `.max()` at each site
 ///
 /// Four places divide or multiply by the display density — [`raster_scale`],
 /// [`ceiling::zoom_ceiling`]'s learned clause, `render::settle`'s
@@ -726,15 +722,14 @@ pub fn max_zoom_for_page(page_pts: (f32, f32), pixels_per_point: f32) -> f32 {
 /// disagreement between them is a shell that clamps at one zoom and explains
 /// itself at another.
 ///
-/// ★★ The tempting spelling is `pixels_per_point.max(f32::MIN_POSITIVE)`, and it
+/// The tempting spelling is `pixels_per_point.max(f32::MIN_POSITIVE)`, and it
 /// is **wrong in the one case that matters**. `f32::max` returns the *other*
 /// operand when one is `NaN`, so a `NaN` density becomes `f32::MIN_POSITIVE` —
 /// and a division by it produces infinity, which is the most destructive
-/// possible answer rather than a conservative one. It shipped here on
-/// 2026-09-12 in two of the four sites above and was caught by writing the
-/// `NaN` row of a unit test; the sentence that was supposed to explain a zoom
-/// limit would have been switched off permanently, silently, in exactly the
-/// state it exists for.
+/// possible answer rather than a conservative one. The consequence is not
+/// abstract: the sentence that explains a zoom limit would be switched off
+/// permanently and silently, in exactly the state it exists for. The `NaN` row
+/// of this function's unit test is what holds the guard to it.
 ///
 /// `1.0` is the right fallback because it is the *identity*: a scale and a zoom
 /// are the same number at unit density, so a caller that cannot learn the
@@ -764,18 +759,14 @@ pub fn raster_scale(
     quality: crate::app::prefs::RenderQuality,
 ) -> f32 {
     let ppp = sane_pixels_per_point(pixels_per_point);
-    // ★ The operator's quality multiplier — 2026-08-17.
+    // The operator's quality multiplier — `RIBBON_IA.md` §5.2's
+    // View ▸ Render ▸ Quality.
     //
-    // `RIBBON_IA.md` §5.2 commissioned this as View ▸ Render ▸ Quality and
-    // `manifest::DIRECTED` carried it as *"partial G — the raster-scale
-    // multiplier is a compiled-in constant today. What is new is the knob, not
-    // the value."* That description was optimistic: there was no multiplier at
-    // all, compiled-in or otherwise. This function was `zoom * ppp` exactly.
-    //
-    // So the knob and the value arrived together, and `Normal` is `1.0` — one
-    // raster pixel per device pixel, which is what the line above produced
-    // before and is what a build that never opens the Settings window still
-    // gets, byte for byte.
+    // `Normal` is `1.0`: one raster pixel per device pixel, which is exactly
+    // `zoom * ppp` and is therefore what a build whose operator never opens the
+    // Settings window gets, byte for byte. The knob multiplies that, so the
+    // setting can only ever be a deliberate departure from the default — there
+    // is no compiled-in quality constant anywhere else for it to disagree with.
     zoom * ppp * quality.multiplier()
 }
 
@@ -791,22 +782,21 @@ pub fn raster_scale(
 /// exactly one place — the same place that holds the canvas↔user conversion
 /// this extent has to agree with.
 ///
-/// # ★★ What DID change, 2026-09-10, and why it was a real defect
+/// # Why NOT [`pdfcer_render::page_device_geometry`]'s pixmap dimensions
 ///
-/// This used to call [`pdfcer_render::page_device_geometry`] at scale `1.0`
-/// and return its `u32` pixmap dimensions. Those are **ceiled**, so a page
-/// measuring 2383.937 × 1683.78 pt was laid out as 2384 × 1684 — a canvas
-/// space 0.22 pt taller than the page whose coordinates it carried, because
-/// `PageFrame::user_to_canvas` translates in points and puts that page's
-/// bottom edge at 1683.78.
+/// Those are `u32` and therefore **ceiled**, which makes them the wrong
+/// measure of a page for a layout that translates in points. A page measuring
+/// 2383.937 × 1683.78 pt lays out as 2384 × 1684 — a canvas space 0.22 pt
+/// taller than the page whose coordinates it carries, because
+/// `PageFrame::user_to_canvas` puts that page's bottom edge at 1683.78.
 ///
-/// At 100 % that is a fifth of a pixel and nobody could see it. At 1040 % the
-/// ratio is multiplied by a page 17,509 pt tall on screen and
-/// `render::region::region_on_screen` painted a region raster **2.3 pt** away
-/// from where the page's own rect says it belongs — measured by `ui-verify`'s
-/// `panning_at_deep_zoom_stays_where_it_was_put`, which is the only instrument
-/// in the project that compares a raster's *painted* rect against a rect
-/// recomputed independently from the page.
+/// **A rounding error in a layout is multiplied by the zoom.** At 100 % that
+/// gap is a fifth of a pixel and invisible; at 1040 %, against a page 17,509 pt
+/// tall on screen, it puts `render::region::region_on_screen`'s region raster
+/// **2.3 pt** away from where the page's own rect says it belongs. Measured by
+/// `ui-verify`'s `panning_at_deep_zoom_stays_where_it_was_put`, the only
+/// instrument in the project that compares a raster's *painted* rect against a
+/// rect recomputed independently from the page.
 ///
 /// The full argument, including why the pixmap still being a fraction of a
 /// pixel larger than the page is harmless and why the ceiled extent's version
@@ -1034,16 +1024,16 @@ mod tests {
         assert_eq!(crate::text::status::zoom_percent(v.zoom_percent()), "34%");
     }
 
-    /// ★★★ O24j — **the readout must survive the ceiling it now offers.**
+    /// O24j — **the readout must survive the whole ceiling the zoom offers.**
     ///
-    /// `zoom_percent` returned a `u32`, and `as u32` saturates — so at a
-    /// trillion percent the status bar showed **4294967295%**, `u32::MAX`
-    /// presented as a measurement. Found in the deep-zoom screenshot gallery,
-    /// which is the only instrument that reads the number an operator reads.
+    /// A `u32` return here saturates, and a saturated `as u32` reads as
+    /// **4294967295%** on the status bar: `u32::MAX` presented as a
+    /// measurement, at a zoom the ladder genuinely reaches.
     ///
-    /// ★ Asserted against the FORMATTED string, because that is the artefact
-    /// with the defect in it. A test of the numeric value would have passed on
-    /// a build that formatted it through a narrower type further downstream.
+    /// Asserted against the FORMATTED string, because that is the artefact an
+    /// operator reads. A test of the numeric value passes on a build that
+    /// narrows the type further downstream, which is where such a defect
+    /// actually lives.
     #[test]
     fn the_readout_survives_the_whole_configured_range() {
         let mut v = ViewState::default();
@@ -1051,7 +1041,7 @@ mod tests {
             (1.0_f32, "100%"),
             (8.0, "800%"),
             (1.0e6, "100000000%"),
-            // ★★ Not "1000000000000%", and the difference is not a defect.
+            // Not "1000000000000%", and the difference is not a defect.
             // `ViewState::zoom` is an `f32`, so the nearest representable
             // value to 10¹⁰ is 9,999,999,827,968 / 1000 — and the readout
             // shows what the view IS rather than what was asked for. Pinned

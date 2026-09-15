@@ -1,29 +1,25 @@
 //! # `text::panels::properties::markup` — every word the **markup style**
 //! section of the Properties panel says
 //!
-//! ## Why this is a separate file
+//! ## Why the markup section has a file of its own
 //!
-//! R2. `properties.rs` carried four subjects — the markup's style, the
-//! selection's geometry, the selected text's style and the document's own
-//! properties — and it passed 1,500 lines on 2026-09-07 when the geometry
-//! section grew an **Angle** field. The markup section is the largest of the
-//! four and the most self-contained: nothing outside it reads these strings,
-//! and `pdfcer-core`'s `set_markup_style` is the single verb every one of them
-//! is about.
+//! `properties.rs` carries four subjects — the markup's style, the selection's
+//! geometry, the selected text's style and the document's own properties. The
+//! markup section is the largest of the four and the most self-contained:
+//! nothing outside it reads these strings, and `pdfcer-core`'s
+//! `set_markup_style` is the single verb every one of them is about.
 //!
-//! ## ★★ These strings age faster than any others in the catalogue
+//! ## These strings are claims about the engine, and they age
 //!
-//! Three of them have been corrected for being **factually wrong about the
-//! engine** rather than badly worded, and two of those corrections happened
-//! within hours of the sentence being written — the engine shipped the
-//! capability the same afternoon the limitation was described. The comment
-//! blocks recording each of those are kept verbatim, including the struck-out
-//! reasoning, because the shape of the mistake is the useful part.
+//! Several of them state what `set_markup_style` will or will not do. The
+//! engine grows capabilities faster than a limitation sentence can be
+//! re-read, and a limitation sentence that has gone stale is worse than none:
+//! it withholds a capability the operator has, in words that sound
+//! authoritative.
 //!
-//! ⇒ **A limitation sentence on this project has a shelf life measured in
-//! hours.** Before repeating any claim here about what `set_markup_style` will
-//! or will not do, re-read the verb at the current pin. Do not quote this file
-//! as a source about the engine; it is a record of what was true on a date.
+//! ⇒ **Before repeating any claim here about what the engine will or will not
+//! do, re-read the verb at the current pin.** Do not quote this file as a
+//! source about the engine; it is a record of what this shell chose to say.
 
 // ===========================================================================
 // The selected markup's style — `set_markup_style`
@@ -37,7 +33,7 @@ pub const fn markup_heading() -> &'static str {
 
 /// The line under it: what kind of mark is selected.
 ///
-/// ★ The file's own `/Subtype`, translated. An operator placed a *rectangle*
+/// The file's own `/Subtype`, translated. An operator placed a *rectangle*
 /// and the file calls it `Square`; they placed an *arrow* and the file calls it
 /// `Line`. Showing the file's word would be correct and useless — the standing
 /// rule in `text::commands` is that a label is the operator's vocabulary and an
@@ -58,7 +54,7 @@ pub fn markup_subtype(subtype: &str) -> String {
         "FreeText" => "Text box",
         "Text" => "Sticky note",
         "Stamp" => "Stamp",
-        // ★ Not "Unknown". A subtype this catalogue has no word for is still a
+        // Not "Unknown". A subtype this catalogue has no word for is still a
         // real mark the operator can see and is about to restyle, and the
         // file's own spelling is the most honest thing left to show them.
         other => other,
@@ -86,12 +82,12 @@ pub const fn markup_width_suffix() -> &'static str {
 
 /// The Line style row's label.
 ///
-/// ★ *"Line style"* is `RIBBON_IA.md` §5.8's own name for the row and is what
+/// *"Line style"* is `RIBBON_IA.md` §5.8's own name for the row and is what
 /// the Format tab's command is called, so the two surfaces agree. It sits
 /// directly under *Line width*, and the shared first word is doing work: the two
 /// rows are one subject and read as a pair.
 ///
-/// ★★ Not *"Dash pattern"*. The chooser's first entry is **Solid**, and under a
+/// Not *"Dash pattern"*. The chooser's first entry is **Solid**, and under a
 /// label reading *Dash pattern* that entry would read as *no dash pattern* — the
 /// absence of the thing the label names rather than one of its values. The entry
 /// names themselves are `crate::text::markup`'s, because three surfaces show
@@ -119,7 +115,7 @@ pub const fn markup_opacity_suffix() -> &'static str {
 
 /// The button that removes a property, restoring the file's own default.
 ///
-/// ★ *"Clear"*, not *"Reset"* or *"Default"*. It removes the key from the
+/// *"Clear"*, not *"Reset"* or *"Default"*. It removes the key from the
 /// annotation dictionary, and what happens then is that the **standard's**
 /// default applies — which is not necessarily what the mark looked like when
 /// the operator placed it. "Reset" would promise a return to a previous state
@@ -129,7 +125,7 @@ pub const fn markup_clear() -> &'static str {
     "Clear"
 }
 
-/// ★★ What restyling costs, said once under the whole section.
+/// What restyling costs, said once under the whole section.
 ///
 /// Two facts an operator cannot see and would otherwise discover from a
 /// changed file:
@@ -165,29 +161,19 @@ pub const fn markup_locked() -> &'static str {
      still delete it."
 }
 
-/// ★★★ **What is possible on a mark this shell cannot restyle** — the sentence
-/// that replaced three live controls that could not commit.
+/// **What is possible on a mark this shell cannot restyle** — the sentence
+/// that stands where live controls that could not commit would otherwise be.
 ///
-/// The defect, the reachability test that fixes it, and why R9 wants a sentence
-/// here rather than an empty space, are all in
-/// `crate::panels::properties::markup`'s header. This doc records the part that
-/// belongs to the **words**: that each of the four claims was checked against
-/// the engine on 2026-09-06 before it was written, because a limitation
-/// sentence has an hours-long shelf life on this project and a false one is
-/// worse than none.
+/// The reachability test behind it, and why R9 wants a sentence here rather
+/// than an empty space, are in `crate::panels::properties::markup`'s header.
+/// This doc records the part that belongs to the **words**: each claim below
+/// is checked against a named engine verb, because a limitation sentence
+/// nobody checked is the one way this string can lie.
 ///
-/// # ⚠⚠⚠ AND IT BECAME PARTLY FALSE THAT AFTERNOON — the shelf life was hours
-///
-/// **What this returned until 2026-09-06 (afternoon)**, kept verbatim because
-/// it was reasonable when written and the correction is the useful part:
-///
-/// > *"pdfcer does not redraw this kind of mark, so its colour, line width and
-/// > opacity cannot be changed here. You can still move it, resize it, delete
-/// > it, and edit the note it carries."*
-///
-/// True of the only style verb that existed; `set_text_annot_style` shipped
-/// that afternoon and restyles two of the three subtypes it was shown for.
-/// [`crate::text::panels::textannotstyle`]'s header has the whole account.
+/// ⚠ **This sentence is only reached where NEITHER style verb reaches.**
+/// `set_text_annot_style` restyles subtypes `set_markup_style` refuses, and
+/// [`crate::text::panels::textannotstyle`]'s header has that account. A claim
+/// here that the mark cannot be restyled at all would be false for those.
 ///
 /// - **move** — `move_annotation` refuses a ce dimension and a form widget by
 ///   name, then works from `/Rect` and whatever geometry keys are present.
@@ -220,7 +206,7 @@ pub const fn markup_fill_label() -> &'static str {
 
 /// What sits beside the fill swatch when the mark has no `/IC` at all.
 ///
-/// ★ It exists because a swatch cannot show *absence*. With no `/IC` the swatch
+/// It exists because a swatch cannot show *absence*. With no `/IC` the swatch
 /// falls back to black, and a black square beside the word "Fill" says "this
 /// shape is filled black" — which is the opposite of the truth. Acrobat draws a
 /// red diagonal through its no-colour swatch for exactly this reason; this
@@ -247,7 +233,7 @@ pub const fn markup_line_end_label() -> &'static str {
 
 /// One line-ending style, in the operator's words.
 ///
-/// ★ Table 176 names ten endings and pdfcer authors three of them —
+/// Table 176 names ten endings and pdfcer authors three of them —
 /// `annot_author::LineEnding` has exactly `None`, `OpenArrow` and `ClosedArrow`,
 /// and its own doc comment calls the rest "a documented not-yet-authored
 /// remainder". The chooser offers what the engine can draw, because a
@@ -274,7 +260,7 @@ pub const fn markup_line_ending_name(
 
 /// The disclosure under the two line-ending choosers.
 ///
-/// ★ It is owed because the readback is **lossy in one direction and silent
+/// It is owed because the readback is **lossy in one direction and silent
 /// about it**: `annot_author::read_line_endings` degrades any Table 176 ending
 /// pdfcer does not author down to `None`, so a `/Line` a foreign producer gave
 /// a `/Butt` or a `/Diamond` end reads here as *No end* — and the mark on the
@@ -289,15 +275,14 @@ pub const fn markup_line_ending_note() -> &'static str {
 /// **The fifth state of the arrowhead controls — take the setting OUT of the
 /// file rather than write "none" into it.**
 ///
-/// # ★★★ Two states, one picture, and why the operator is offered both
+/// # Two states, one picture, and why the operator is offered both
 ///
-/// `MarkupStyle::endings` became a `StyleEdit` on 2026-09-06, in answer to this
-/// shell's own request (`pdfcer-core` `edit.rs:4390`, and the field's own doc
-/// comment at `edit.rs:4373`): `Set` writes `/LE`, and `Clear` **removes the
-/// key**. Until that day *"draw no arrowheads"* was expressible and *"have no
-/// `/LE` at all"* was not, so an operator who turned an arrow's heads off got a
-/// document that no longer matched the one they opened, differing in a key
-/// neither this panel nor the Format tab shows.
+/// `MarkupStyle::endings` is a `StyleEdit` rather than a plain value: `Set`
+/// writes `/LE`, and `Clear` **removes the key**. Both are needed because
+/// *"draw no arrowheads"* and *"have no `/LE` at all"* are different
+/// documents. With only the first, an operator who turned an arrow's heads off
+/// would get a file differing from the one they opened in a key neither this
+/// panel nor the Format tab shows.
 ///
 /// Table 176 makes `/None` the default for both ends, so `/LE [/None /None]`
 /// and an absent `/LE` draw the same line. The difference is **bytes**, and
@@ -307,7 +292,7 @@ pub const fn markup_line_ending_note() -> &'static str {
 /// byte-identical to what my client sent me"* — a question undo does not
 /// answer, because undo covers the session and not the round trip.
 ///
-/// # ★★ Why these words
+/// # Why these words
 ///
 /// *"Clear"* is the verb this panel already uses for `/C`, `/IC` and `/CA`, and
 /// [`markup_clear`] argues it: the word is honest about the **act** — the key
@@ -315,7 +300,7 @@ pub const fn markup_line_ending_note() -> &'static str {
 /// anything pdfcer remembers — where *"Reset"* or *"Default"* would promise a
 /// return to a previous state pdfcer never recorded.
 ///
-/// ★ It carries a noun where the other three do not. A bare *"Clear"* in a list
+/// It carries a noun where the other three do not. A bare *"Clear"* in a list
 /// whose first entry is already *"No arrowheads"* reads as a second name for
 /// that entry, which is the one misreading this control cannot afford: those
 /// two produce identical pictures and different files, so an operator who
@@ -332,14 +317,13 @@ pub const fn markup_endings_clear() -> &'static str {
 /// Why an operator would press [`markup_endings_clear`] when the line looks
 /// identical either way.
 ///
-/// ★ The hover carries the whole distinction, because the control cannot: the
+/// The hover carries the whole distinction, because the control cannot: the
 /// two states are indistinguishable on the page and the difference only shows
-/// up in a byte comparison of the saved file. `REVIEW_TRIAGE.md`'s rule — a
-/// caveat below the thing it qualifies arrives after the operator has drawn
-/// their conclusion — is why it is a hover on the control rather than a note
-/// underneath it.
+/// up in a byte comparison of the saved file. A caveat below the thing it
+/// qualifies arrives after the operator has drawn their conclusion, which is
+/// why it is a hover on the control rather than a note underneath it.
 ///
-/// ★ It names the **consequence** an operator has met (a drawing that comes
+/// It names the **consequence** an operator has met (a drawing that comes
 /// back different from the one that went out) rather than the mechanism (a
 /// dictionary key). Both surfaces read this one string, so the Format tab and
 /// this panel cannot come to explain the same act two different ways.
@@ -351,7 +335,7 @@ pub const fn markup_endings_clear_hint() -> &'static str {
      was not there before is a difference someone will find."
 }
 
-/// ★★★ The narrowing the colour swatches perform, said where the operator can
+/// The narrowing the colour swatches perform, said where the operator can
 /// see it — **before** the click rather than after.
 ///
 /// §12.5.2 lets `/C` and `/IC` be a 0-, 1-, 3- or **4**-component array, and the
@@ -370,7 +354,7 @@ pub const fn markup_colour_narrowed() -> &'static str {
      Picking a new colour here records an RGB one in its place."
 }
 
-/// ★★ What regenerating an appearance LOST, in the operator's terms.
+/// What regenerating an appearance LOST, in the operator's terms.
 ///
 /// `set_markup_style` redraws a mark from the geometry pdfcer models, so
 /// anything the original expressed *outside* that model is gone from the new
@@ -379,41 +363,35 @@ pub const fn markup_colour_narrowed() -> &'static str {
 /// rule 4's surviving half — **an inference the operator cannot see still owes
 /// an off-canvas report.**
 ///
-/// ★ Every sentence says **what they will see**, not what a key is called. An
+/// Every sentence says **what they will see**, not what a key is called. An
 /// operator who is told *"the `/BE` border effect was dropped"* has been told
 /// nothing; one who is told *"its cloudy edge is now a plain outline"* can look
 /// at the page and decide whether they mind.
 ///
-/// # ★★★ TWO OF THESE NARROWED ON 2026-09-06, AND ONE OF THEM WAS LEFT SAYING
-/// # SOMETHING FALSE
+/// # ⚠ THESE VARIANTS FIRE NARROWLY, AND A SENTENCE WRITTEN FOR THE WIDE CASE
+/// # IS A FALSE DISCLOSURE
 ///
-/// `DroppedProperty::BorderStyle` and `::DashPattern` *"now fire much less
-/// often"* — the engine's words — because a dashed border is read back and
-/// re-authored rather than solidified
-/// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4220-4241`, and the variants'
-/// own docs at `edit.rs:4884-4904`). That is the same narrowing `BorderEffect`
-/// took after `Pass 98.0`, and it is disclosed here because **a narrowed
-/// disclosure whose wording was written for the wide case is a false
-/// disclosure**, which rule 4 forbids in exactly the direction it forbids
-/// silence.
-///
-/// What each one now means, read out of the emission site rather than assumed:
+/// `DroppedProperty::BorderStyle` and `::DashPattern` fire far less often than
+/// their names suggest, because `pdfcer-core` reads a dashed border back and
+/// re-authors it rather than solidifying it. **A disclosure whose wording was
+/// written for a wider case than the one that fires is a false disclosure**,
+/// which rule 4 forbids in exactly the direction it forbids silence — so what
+/// each variant means is read out of the emission site rather than assumed:
 ///
 /// | variant | fires when |
 /// |---|---|
 /// | `BorderStyle` | `/BS` `/S` names a style pdfcer does not redraw — `/B`, `/I`, `/U` — **or `/S /D` whose dash was not carried** |
 /// | `DashPattern` | `/BS` `/D` is present and the dash was not carried: an array §8.4.3.6 does not admit, or a caller that **cleared** it |
 ///
-/// ⚠ **The `BorderStyle` string used to name only a bevel, an inset and an
-/// underline, and after the narrowing that became wrong.** The `/S /D` row is
-/// new to it: an operator who presses **Solid** on a dashed mark clears the
-/// dash, the original dictionary still says `/S /D`, and both variants fire — so
-/// the old wording would have told them their mark had a *bevel*. It now names
-/// the dash case too, and both sentences are phrased as facts about the new
-/// outline rather than about a cause, so each is true whether the change was
-/// asked for or merely disclosed.
+/// ⚠ **The `BorderStyle` string must name the dash case and not only a bevel,
+/// an inset and an underline.** An operator who presses **Solid** on a dashed
+/// mark clears the dash, the original dictionary still says `/S /D`, and both
+/// variants fire; a sentence naming only the three redraw failures would tell
+/// that operator their mark had a *bevel*. Both sentences are therefore
+/// phrased as facts about the new outline rather than about a cause, so each
+/// is true whether the change was asked for or merely disclosed.
 ///
-/// ★ The redundancy on a requested clear is accepted rather than engineered
+/// The redundancy on a requested clear is accepted rather than engineered
 /// away. Suppressing a disclosure when the shell believes the operator asked for
 /// it would put the decision *"was this loss requested?"* into
 /// `app::actions::apply`'s routing arm, which that arm's own note forbids — it

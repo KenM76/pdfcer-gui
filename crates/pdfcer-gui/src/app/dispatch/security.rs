@@ -1,54 +1,37 @@
-//! `app::dispatch::security` — the File > Security band's commands, and the one
-//! line of `dispatch.rs` they cost
+//! `app::dispatch::security` — the File ▸ Security band's commands
 //!
-//! ## ★★ Renamed from `dispatch::protect` on 2026-09-06, when `file.sign`
-//! joined the band
+//! ## ★★ The subject, and why the module is not called `protect`
 //!
-//! The old name described two of the three: encrypting and re-permissioning are
-//! *protection*, and signing is not — a signature protects nothing, it asserts
-//! authorship. Keeping the name would have made it a description of the
-//! module's history rather than of its contents, which is the thing this
-//! project's own `native-clipboard` manifest argues against by name.
+//! *Protection* describes encrypting and re-permissioning and not signing — a
+//! signature protects nothing, it asserts authorship. The module is named after
+//! what all of its commands share instead: the **File ▸ Security band**. Each
+//! writes something into the file that is about the file rather than about any
+//! page, none is an undoable content edit, and each produces a new document
+//! rather than changing the one on screen.
 //!
-//! What all three ARE is the **File > Security band**: each writes something
-//! into the file that is about the file rather than about any page, none is an
-//! undoable content edit, and each produces a new document rather than changing
-//! the one on screen. That is the subject, and the module is now named after
-//! it.
+//! `OPERATOR_REQUESTS.md` **O119**: *"yes add encryption and permissions"*.
+//! `file.encrypt` and `file.permissions` open one window
+//! ([`crate::dialogs::protect`]) with two starting points.
 //!
-//! `OPERATOR_REQUESTS.md` **O119**, approved and wired 2026-09-04: *"yes add
-//! encryption and permissions"*. `file.encrypt` and `file.permissions`, which
-//! open one window ([`crate::dialogs::protect`]) with two starting points.
+//! # Why this is a module and not arms in [`super`]
 //!
-//! # Why this is a module and not two arms in [`super`]
+//! **R2, on [`super::panels`]' precedent.** The encryption commands are the
+//! only ones in the program that **write a whole new file out of the open
+//! document's encryption**; they share a window, a `Task` and a set of
+//! disclosures, and none of that has anything to say to the rest of
+//! `dispatch.rs`.
 //!
-//! **R2, and [`super::panels`]' precedent, taken deliberately rather than
-//! invented.** That module's own header records the situation exactly:
+//! ⇒ **R2's line ceiling is not a budget to spend down to; it is a signal that
+//! a file has stopped being one subject.** Compressing prose to get back under
+//! it answers the number and not the signal.
 //!
-//! > Split out of [`super`] under **R2** on 2026-09-04: `dispatch.rs` was at
-//! > 1,460 lines and four arms carrying their own reasoning would not fit under
-//! > the 1,500-line ceiling.
-//!
-//! By the afternoon of the same day `dispatch.rs` was at **1,496 lines before
-//! this feature existed** — a concurrent track had added its own arms — so two
-//! more arms with a paragraph of reasoning between them took it to 1,518 and
-//! `tools/gates/check-file-size.sh` went red naming it. Compressing the prose
-//! got it to 1,508, which is a smaller violation and still a violation.
-//!
-//! ⇒ **The ceiling is not a budget to spend down to; it is a signal that a file
-//! has stopped being one subject.** The seam here is a real one and the same
-//! shape [`super::panels`] found: these two commands are the only ones in the
-//! program that **write a whole new file out of the open document's
-//! encryption**, they share a window, a `Task` and a set of disclosures, and
-//! none of that has anything to say to the hundred other arms in `dispatch.rs`.
-//!
-//! ★ The alternative — an exemption in the gate — is explicitly an operator
-//! decision, not a build session's, and the gate says so in its own failure
-//! text. Splitting is what the rule asks for.
+//! ★ The alternative — an exemption in `tools/gates/check-file-size.sh` — is
+//! explicitly an operator decision, not a build session's, and the gate says so
+//! in its own failure text. Splitting is what the rule asks for.
 //!
 //! # What [`super`] keeps
 //!
-//! One guard arm and a two-line comment:
+//! One guard arm:
 //!
 //! ```ignore
 //! id if security::claims(id) => self.dispatch_security(id),
@@ -57,8 +40,8 @@
 //! …which is [`super::panels`]' arrangement precisely, including the pairing of
 //! a `claims` predicate with a dispatcher over the same list. The pair is
 //! pinned by [`tests::the_guard_and_the_dispatcher_claim_the_same_ids`], so a
-//! third Security command added to one and not the other fails a named test
-//! rather than becoming a control that traces `command-unimplemented`.
+//! Security command added to one and not the other fails a named test rather
+//! than becoming a control that traces `command-unimplemented`.
 //!
 //! # ★★ What this dispatch deliberately does NOT decide
 //!
@@ -149,9 +132,9 @@ mod tests {
     /// other becomes a registered control that does nothing — indistinguishable
     /// from the outside from one that was never wired.
     ///
-    /// Asserted against the **registry** rather than against a third hard-coded
-    /// list, so a third Security command registered tomorrow fails here rather
-    /// than passing a test that lists the same two ids a third time.
+    /// Asserted against the **registry** rather than against another hard-coded
+    /// list, so a Security command registered tomorrow fails here rather than
+    /// passing a test that lists the same ids again.
     #[test]
     fn the_guard_and_the_dispatcher_claim_the_same_ids() {
         // ★ Built here rather than reaching for a shared helper: the
@@ -202,13 +185,13 @@ mod tests {
 
     /// The mapping [`PdfcerApp::dispatch_security`] applies, without an app.
     ///
-    /// ★ A second spelling of three lines, and it is the honest cost of
+    /// ★ A second spelling of the mapping, and it is the honest cost of
     /// asserting a decision that is otherwise only reachable through a
     /// `&mut PdfcerApp`. It is pinned to the real one by
-    /// [`each_command_reaches_its_own_task`] reading the same two ids the
-    /// registry test above proves are registered — so the two cannot drift
-    /// about *which* commands exist, only about what they map to, and that
-    /// mapping is three lines long and in view.
+    /// [`each_command_reaches_its_own_task`] reading the same ids the registry
+    /// test above proves are registered — so the two cannot drift about *which*
+    /// commands exist, only about what they map to, and that mapping is short
+    /// enough to hold both spellings in view.
     fn task_of(id: &str) -> Task {
         match id {
             "file.permissions" => Task::Permissions,

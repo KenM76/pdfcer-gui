@@ -1132,8 +1132,10 @@ pub struct OpenDoc {
     /// [`crate::app::cache::provenance`] for the six duplicate extractions it
     /// replaced and the 392 ms measurement behind it.
     pub(super) provenance_text: crate::app::cache::provenance::ProvenanceTextCache,
-    /// Which runs on the current page are inside a form XObject, and therefore
-    /// cannot be edited by this cut of `pdfcer-core`. See `FormRunCache`.
+    /// Which runs on the current page name no show operator of their own, and
+    /// therefore cannot take a caret. See `FormRunCache`, whose name is
+    /// historical - the refused set stopped being the form-XObject set on
+    /// 2026-08-20 and is now the `/ActualText` case.
     pub(super) form_runs: crate::app::cache::FormRunCache,
     /// **The current page's clickable links**, and the document-wide reader
     /// that resolves where they go. Read through [`Self::page_links`]; see

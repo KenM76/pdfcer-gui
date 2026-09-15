@@ -1,16 +1,13 @@
 //! The Quick Access Toolbar — the handful of controls that must never
 //! sit behind a tab switch.
 //!
-//! # Why it exists, in the words of the defect it prevents
+//! # Why it exists — the defect it prevents
 //!
-//! The salvage source's own doc comment records what happens without one,
-//! and it is the clearest possible statement of the requirement:
-//!
-//! > The consequence, confirmed by capturing each tab of the running
-//! > application on 2026-08-08: an operator on **Measure** — this
-//! > operator's own stated primary activity — had **no undo, no zoom and
-//! > no page control** without first leaving the tab they were working
-//! > in.
+//! Without one, an operator working in the tab their job actually lives in
+//! has **no undo, no zoom and no navigation control** without first leaving
+//! that tab. Capturing each tab of a running application shows it directly:
+//! the controls used continuously are the ones that are absent from every
+//! tab but the one that happens to own them.
 //!
 //! A ribbon emits only the *active* tab's band. Anything an operator uses
 //! continuously therefore cannot live in a band, because using it means
@@ -45,12 +42,11 @@
 //! that case turns an accessibility failure into a *cosmetic* one, and
 //! makes the failure impossible to ship rather than merely discouraged.
 //!
-//! There is a second, human reason to be reluctant about icon-only, and
-//! the salvage source states it about one specific control:
-//!
-//! > A bare disk glyph says "Save" — i.e. "overwrite what I opened" —
-//! > which is the small lie `save_button`'s own doc comment was written
-//! > to forbid. Convention loses to not misleading anyone.
+//! There is a second, human reason to be reluctant about icon-only, and it
+//! is easiest to see on one control: a bare disk glyph says "Save" — i.e.
+//! "overwrite what I opened" — so an application whose save command does
+//! something else has drawn a small lie. Convention loses to not misleading
+//! anyone.
 //!
 //! That judgement is the **application's**, not the shell's: only the
 //! application knows that its save command does something a disk glyph
@@ -77,12 +73,12 @@ use super::report;
 /// actually supplied a painter that can draw the icon.
 ///
 /// The first two are the accessibility rule described in the module
-/// header. The third is a *rendering* rule and it was learned the
-/// embarrassing way: an application that registers icon keys but supplies
-/// no [`super::Ribbon::with_icon_painter`] used to get a row of blank
-/// boxes — a control with no label, no glyph and no explanation. That is
-/// precisely the placeholder the shell's no-placeholders rule forbids,
-/// and it looks to an operator exactly like the application is broken.
+/// header. The third is a *rendering* rule: an application that registers
+/// icon keys but supplies no [`super::Ribbon::with_icon_painter`] would
+/// otherwise get a row of blank boxes — controls with no label, no glyph
+/// and no explanation. That is precisely the placeholder the shell's
+/// no-placeholders rule forbids, and it looks to an operator exactly like
+/// the application is broken.
 ///
 /// Declaring an icon is an intention; being able to paint one is a
 /// capability, and only the second may be traded against the label.
@@ -96,16 +92,15 @@ pub(crate) fn shows_label(command: &Command, can_paint_icons: bool) -> bool {
 
 /// The width the QAT will occupy, measured **before** it is drawn.
 ///
-/// # ★ Why this exists at all — the QAT used to be unmeasured
+/// # ★ Why an unmeasured QAT is not an option
 ///
 /// The tab-strip row reserves space outermost-first
 /// ([`super::plan::plan_strip_row`]), and a reservation you cannot measure
-/// is not a reservation. Before this function existed the QAT was simply
-/// emitted into a left-to-right layout and whatever it took, it took —
-/// which is the immediate-mode spelling that produces
-/// `MODES_AND_PANELS.md` failure mode #8. Measured at a 180 pt viewport
-/// with real font metrics, the two-control QAT of the test manifest ran
-/// from **x = −6** to x = 160 and the tabs behind it were entirely off
+/// is not a reservation. Emitting the QAT into a left-to-right layout and
+/// taking whatever it takes is the immediate-mode spelling that produces
+/// `MODES_AND_PANELS.md` failure mode #8: measured at a 180 pt viewport
+/// with real font metrics, the two-control QAT of the test manifest runs
+/// from **x = −6** to x = 160, with the tabs behind it entirely off
 /// screen.
 ///
 /// The measurement mirrors [`render`] line for line, and it has to:
@@ -164,12 +159,12 @@ pub(crate) fn measure(ui: &egui::Ui, ctx: &Ctx<'_>, qat: Option<&Qat>) -> f32 {
 /// command with a key and no painter draws an empty square, and that
 /// square has width.
 ///
-/// Budgeting it on `ctx.icons.is_some()` instead was a real defect and a
-/// subtle one: the measured QAT came out narrower than the drawn one by
-/// `icon_pts + icon_spacing` per control, the row granted it that narrower
-/// figure, and the controls then overflowed their own region and were
-/// drawn across the first tab. `the_tab_strip_never_runs_under_the_mode_selector_or_the_qat`
-/// caught it at 128 pt.
+/// Budgeting it on `ctx.icons.is_some()` instead is the subtle way to get
+/// this wrong: the measured QAT comes out narrower than the drawn one by
+/// `icon_pts + icon_spacing` per control, the row grants it that narrower
+/// figure, and the controls then overflow their own region and are drawn
+/// across the first tab. `the_tab_strip_never_runs_under_the_mode_selector_or_the_qat`
+/// catches it at 128 pt.
 ///
 /// The rule this restates is [`super::band::measure_item`]'s, which has
 /// always had it right: **measure what the renderer draws, not what the
@@ -394,12 +389,11 @@ mod tests {
     /// intention alone produces a control with no glyph, no text and no
     /// explanation — a blank box.
     ///
-    /// This is not hypothetical. `pdfcer-gui` wired the ribbon at S2 with a
-    /// full set of icon keys and no painter, and its QAT rendered as four
-    /// empty rectangles. Every unit test passed; a screenshot caught it.
-    /// The lesson is the same one `DEFECTS.md` D2 taught — a property that
-    /// only exists once something is *rendered* cannot be asserted from
-    /// the values that went into it.
+    /// This is not hypothetical: an application can register a full set of
+    /// icon keys and no painter, pass every unit test, and draw a QAT of
+    /// empty rectangles. It is the rule `DEFECTS.md` D2 states — a property
+    /// that only exists once something is *rendered* cannot be asserted
+    /// from the values that went into it.
     #[test]
     fn a_control_keeps_its_label_when_the_application_cannot_paint_icons() {
         let full = Command::new("file.open", "Open…", HandlerToken::new(1))

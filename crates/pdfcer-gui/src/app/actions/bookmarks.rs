@@ -1,16 +1,9 @@
-//! # `app::actions::bookmarks` — the three verbs whose subject is one entry in
-//! the document's outline
+//! # `app::actions::bookmarks` — the verbs whose subject is one entry in the
+//! document's outline
 //!
-//! Split out of [`super::action`] under **R2** on 2026-08-28, the day the
-//! family grew from one verb to three. `super`'s own declaration of `action`
-//! wrote the rule down in advance — *"the next family of variants to **grow**
-//! is the one that will have to become a sub-enum beside `PageAction` and
-//! `DimensionAction`"* — and named markup as the measured candidate on the
-//! grounds that markup was the largest. Markup did not grow that week;
-//! bookmarks did, from `AddBookmark` alone to add, rename and delete, when
-//! `pdfcer-core` `Pass 156.0` shipped `set_outline_title` and
-//! `delete_outline_item`. The measurement stands and is still the answer the
-//! day markup grows; the rule was about growth, and this is what grew.
+//! A sub-enum beside `PageAction` and `DimensionAction`, filed under the rule
+//! `super`'s declaration of `action` states: the family of variants that
+//! **grows** is the one that becomes a sub-enum.
 //!
 //! ## What makes these a family rather than a size-driven cut
 //!
@@ -29,16 +22,15 @@
 //! its own doc comment says so: *"identity is what a GUI needs and the tree
 //! cannot otherwise supply."*
 //!
-//! ⇒ So the shared property is not *"they are all about bookmarks"*, which
-//! would be a subject label. It is that **all three are resolvable after the
-//! frame that raised them**, which is the one thing the action funnel requires
-//! of an operand and the one thing a tree position cannot promise.
+//! So the shared property is not *"they are all about bookmarks"*, which would
+//! be a subject label. It is that **every one of them is resolvable after the
+//! frame that raised it**, which is the one thing the action funnel requires of
+//! an operand and the one thing a tree position cannot promise.
 //!
-//! ## ★★ `/Count` is two different quantities, and the sign carries open/closed
+//! ## `/Count` is two different quantities, and the sign carries open/closed
 //!
-//! §12.3.3 is where implementations of this feature go wrong, and the engine
-//! sent the table to this shell unprompted because it expected us to build a
-//! panel:
+//! §12.3.3 is where implementations of this feature go wrong. The engine's
+//! table:
 //!
 //! | | root `/Outlines` (Table 152) | an item (Table 153) |
 //! |---|---|---|
@@ -61,35 +53,23 @@
 //!    read of that sign, and §12.3.3 defines no `/Open` key, so the sign is the
 //!    only carrier there is.
 //!
-//! ## ★ Reorder and re-parent are here now, and this paragraph used to say
-//! they were not
+//! ## What is deliberately absent
 //!
-//! It read: *"**Reorder and re-parent.** The engine's note of 2026-08-28 lists
-//! them as not shipped … so there is no variant for either and no drag handle
-//! in the panel. R9: a capability that does not exist renders nothing."* That
-//! was correct for one day. `pdfcer-core` `Pass 161.0` shipped
-//! `move_outline_item` and `set_outline_open`, and [`BookmarkAction::Move`] and
-//! [`BookmarkAction::SetOpen`] are the surface for them.
+//! A verb that deletes the whole outline. `EditError::OutlineRootIsNotAnItem`
+//! refuses the root by name, because deleting it is *"a different act that gets
+//! its own verb when it is wanted"*, and this shell does not want it yet.
 //!
-//! The sentence is kept rather than deleted because it is the record of the
-//! rule being applied correctly: nothing was greyed, nothing was drawn as a
-//! promise, and the day the engine could honour the gesture the panel grew it.
-//! That is R9 working, not R9 being overtaken.
+//! Where a capability the engine does not have would need a control, this
+//! module grows **no variant** and the panel draws **no handle** — R9: a
+//! capability that does not exist renders nothing, not a greyed promise.
 //!
-//! **What is still deliberately absent:** a verb that deletes the whole
-//! outline. `EditError::OutlineRootIsNotAnItem` refuses the root by name,
-//! because deleting it is *"a different act that gets its own verb when it is
-//! wanted"*, and this shell does not want it yet.
+//! ## The `ObjId` rule binds the destination too
 //!
-//! ## ★★ The family's shared property survived the growth, and that is the
-//! test of whether the cut was right
-//!
-//! Both new variants address their operand by `ObjId` — and
-//! [`BookmarkAction::Move`] addresses its **destination** that way too, because
-//! `OutlinePlacement` is built from anchors rather than positions for the
-//! reason its own doc comment gives about this exact surface: *"A shell that
-//! reads a panel, lets the operator drag a row, and then calls with the index
-//! it read has a race with its own undo stack."*
+//! [`BookmarkAction::Move`] addresses its **destination** by `ObjId` as well as
+//! its operand, because `OutlinePlacement` is built from anchors rather than
+//! positions, for the reason its own doc comment gives about this exact
+//! surface: *"A shell that reads a panel, lets the operator drag a row, and
+//! then calls with the index it read has a race with its own undo stack."*
 
 use pdfcer_core::object::ObjId;
 
@@ -100,24 +80,19 @@ use crate::app::state::OpenDoc;
 /// See the module header for what makes them a family: every one of them names
 /// its operand by `ObjId`, because an outline is a tree that every edit to it
 /// renumbers.
-/// ★ `Eq` was dropped on 2026-08-29 when [`BookmarkAction::Paste`] arrived.
-///
-/// `pdfcer_core::outline::OutlineClip` derives `PartialEq` and not `Eq`, because
-/// a bookmark's colour is three `f64`s and floats have no total equality. That
-/// is the engine's correct choice and it propagates: an enum holding one cannot
-/// be `Eq` either.
-///
-/// Nothing depended on it — `Eq` over `PartialEq` buys a `HashMap` key and no
-/// action is ever one — but it is recorded rather than silently removed,
-/// because a dropped trait bound is exactly the kind of change a diff makes
-/// look deliberate and a reader cannot date.
+/// **`PartialEq` and not `Eq`**, and the bound cannot be restored.
+/// `pdfcer_core::outline::OutlineClip`, which [`BookmarkAction::Paste`]
+/// carries, is `PartialEq` only — a bookmark's colour is three `f64`s and
+/// floats have no total equality — and an enum holding one cannot be `Eq`.
+/// Nothing needs it: `Eq` over `PartialEq` buys a `HashMap` key, and no action
+/// is ever one.
 #[derive(Debug, Clone, PartialEq)]
 pub enum BookmarkAction {
-    /// ★ **Add a bookmark to the document's outline.**
+    /// **Add a bookmark to the document's outline.**
     ///
     /// Raised by `crate::panels::bookmarks::add` and by nothing else.
     ///
-    /// # ★ Why nothing here counts anything
+    /// # Why nothing here counts anything
     ///
     /// `EditSession::add_outline_item` maintains `/Count`, and `/Count` is two
     /// different quantities — see the module header's table. The consequence
@@ -147,14 +122,13 @@ pub enum BookmarkAction {
         /// The 0-based page it points at — the one the operator is looking at.
         page: usize,
     },
-    /// ★ **Rename a bookmark** — write a new `/Title` onto one outline item.
+    /// **Rename a bookmark** — write a new `/Title` onto one outline item.
     ///
-    /// Raised by `crate::panels::bookmarks::edit` and by nothing else.
-    /// `pdfcer-core` `Pass 156.0`; the engine's covering note calls it *"the
-    /// commonest bookmark edit there is"*, which is why it is the verb the
-    /// panel puts first once a row is selected.
+    /// Raised by `crate::panels::bookmarks::edit` and by nothing else. The
+    /// commonest bookmark edit there is, which is why it is the verb the panel
+    /// puts first once a row is selected.
     ///
-    /// # ★ The verb with no structural risk, and saying so is load-bearing
+    /// # The verb with no structural risk, and saying so is load-bearing
     ///
     /// `set_outline_title`'s own doc comment is unusually reassuring, and the
     /// reassurance is a fact a reader of *this* file needs:
@@ -163,7 +137,7 @@ pub enum BookmarkAction {
     /// > the `/First`/`/Last`/`/Next`/`/Prev`/`/Count` machinery depends on
     /// > it."*
     ///
-    /// ⇒ **A rename cannot move, orphan, hide or renumber anything.** That is
+    /// **A rename cannot move, orphan, hide or renumber anything.** That is
     /// why this arm reports no disclosure at all: there is no consequence the
     /// operator cannot see. The new title appears in the row they are looking
     /// at, on the next frame, and that is the whole of what happened. Every
@@ -183,9 +157,9 @@ pub enum BookmarkAction {
     ///
     /// Encoding is the engine's problem and is documented as deliberately not
     /// ours: `set_outline_title` routes through *"the same `crate::textstring`
-    /// path every other text string uses"*, because `Pass 150.0` shipped a
-    /// defect from two paths disagreeing about PDFDocEncoding. So an em dash or
-    /// an accented name in this `String` needs nothing from this crate.
+    /// path every other text string uses"*, one path so that two cannot
+    /// disagree about PDFDocEncoding. So an em dash or an accented name in this
+    /// `String` needs nothing from this crate.
     Rename {
         /// The outline item whose `/Title` is being replaced.
         item: ObjId,
@@ -194,12 +168,11 @@ pub enum BookmarkAction {
         /// is the same defect as no row.
         title: String,
     },
-    /// ★★★ **Delete a bookmark AND everything under it.**
+    /// **Delete a bookmark AND everything under it.**
     ///
     /// Raised by `crate::panels::bookmarks::edit` and by nothing else.
-    /// `pdfcer-core` `Pass 156.0`.
     ///
-    /// # ★★ The subtree goes too, and that is a decision with a reason
+    /// # The subtree goes too, and that is a decision with a reason
     ///
     /// The engine takes Acrobat's behaviour and states the alternative it
     /// rejected, which is the part worth carrying here because it is the part
@@ -210,7 +183,7 @@ pub enum BookmarkAction {
     /// > one chapter heading would find its ten sections spliced into the top
     /// > level. Deleting what was asked for is the predictable act."*
     ///
-    /// ⇒ This is therefore a verb whose blast radius is **larger than the thing
+    /// This is therefore a verb whose blast radius is **larger than the thing
     /// the operator clicked**, and the whole of the UI obligation follows from
     /// that one sentence. It is stated before the press by
     /// `crate::panels::bookmarks::edit`, from the tree the panel already drew,
@@ -220,8 +193,8 @@ pub enum BookmarkAction {
     ///
     /// # Why there is no confirmation dialog, and it IS a choice
     ///
-    /// `HANDOFF.md`'s rule is *confirmed or clearly undoable*, and this is the
-    /// second. One press produces **one** `EditSession` command, so one
+    /// A destructive act must be **confirmed or clearly undoable**, and this
+    /// is the second. One press produces **one** `EditSession` command, so one
     /// `Ctrl+Z` puts the entire subtree back — the engine plans every relink
     /// (`/Prev`, `/Next`, the parent's `/First`/`/Last`, every open ancestor's
     /// `/Count`) inside that one command, so there is no half-undone state to
@@ -246,20 +219,17 @@ pub enum BookmarkAction {
         /// The outline item to remove, together with its whole subtree.
         item: ObjId,
     },
-    /// ★★★ **Move a bookmark — reorder it among its siblings, or re-parent it
+    /// **Move a bookmark — reorder it among its siblings, or re-parent it
     /// under a different one — carrying its whole subtree.**
     ///
     /// Raised by `crate::panels::bookmarks::reorder` and by nothing else.
-    /// `pdfcer-core` `Pass 161.0`, the half of bookmark editing this shell
-    /// shipped without: `Pass 156.0` gave it rename and delete, and the
-    /// engine's covering note is blunt about what was still missing —
     ///
-    /// > *"an outline in the wrong **order** could only be fixed by deleting a
-    /// > branch and re-authoring it, which loses every destination, colour and
-    /// > style on it and is not an edit any operator would call a
-    /// > reorganisation."*
+    /// Without it an outline in the wrong **order** could only be fixed by
+    /// deleting a branch and re-authoring it, which loses every destination,
+    /// colour and style on it — not an edit any operator would call a
+    /// reorganisation.
     ///
-    /// # ★★ The subtree travels, and the destination does not move
+    /// # The subtree travels, and the destination does not move
     ///
     /// `move_outline_item`'s own words: *"A chapter dragged under a different
     /// part takes its sections with it."* That matches
@@ -268,12 +238,12 @@ pub enum BookmarkAction {
     /// children wherever `/Parent` points, and there is no API path that leaves
     /// them behind.
     ///
-    /// ⇒ So this verb, like the delete, has a **blast radius larger than the
+    /// So this verb, like the delete, has a **blast radius larger than the
     /// row the operator clicked** — and unlike the delete, the size of it is
     /// reported by the engine rather than counted by the panel. See [`move_to`]
     /// for the two numbers and why both are needed.
     ///
-    /// # ★★★ Why the placement is an anchor and NEVER an index
+    /// # Why the placement is an anchor and NEVER an index
     ///
     /// `OutlinePlacement`'s own doc comment states the rule and names the
     /// failure this shell would otherwise walk into:
@@ -301,7 +271,7 @@ pub enum BookmarkAction {
     /// `LastChild { parent: Some(..) }`. The panel's three drop bands produce
     /// all of them.
     ///
-    /// # ★ The expansion of the destination is NOT folded in here
+    /// # The expansion of the destination is NOT folded in here
     ///
     /// The engine shipped [`Self::SetOpen`] alongside this verb and said why in
     /// a sentence that binds this shell:
@@ -315,12 +285,12 @@ pub enum BookmarkAction {
     /// has children keeps its `/Count` sign — and discloses the consequence
     /// instead. A `reveal: bool` on this variant would bury a second state
     /// change inside an unrelated command and would produce **one** undo entry
-    /// ★★★ **Put a copied bookmark subtree into this document's outline.**
+    /// **Put a copied bookmark subtree into this document's outline.**
     ///
     /// `OPERATOR_REQUESTS.md` **O59** item 3. Raised by
     /// `panels::bookmarks::clip::paste_row` and by nothing else.
     ///
-    /// ★★ **Acrobat cannot do this between two files at all**, by Adobe's own
+    /// **Acrobat cannot do this between two files at all**, by Adobe's own
     /// documentation. There is therefore no established behaviour to match and
     /// no borrowed wording — which is why the disclosure below is written from
     /// what the operation does rather than from what a reference implementation
@@ -333,7 +303,7 @@ pub enum BookmarkAction {
     /// bookmark arrives, shows, keeps its title, and does nothing when clicked.
     /// Nothing on screen distinguishes it from one that works.
     ///
-    /// ★ The panel warns about this **before** the press as well, from
+    /// The panel warns about this **before** the press as well, from
     /// `OutlineClip::deepest_page()` against the page count. The two are not
     /// duplicates: the panel's is a prediction the operator can act on, and
     /// this one is what actually happened. A prediction alone would be a guess
@@ -353,12 +323,12 @@ pub enum BookmarkAction {
         /// Where it is going, as an anchor. Never a position.
         to: pdfcer_core::edit::OutlinePlacement,
     },
-    /// ★★ **Expand or collapse a bookmark** — flip the sign on its `/Count`.
+    /// **Expand or collapse a bookmark** — flip the sign on its `/Count`.
     ///
     /// Raised by `crate::panels::bookmarks::reorder`'s disclosure triangle and
-    /// by nothing else. `pdfcer-core` `Pass 161.0`.
+    /// by nothing else.
     ///
-    /// # ★★★ This is a document edit, and every other program makes it a view
+    /// # This is a document edit, and every other program makes it a view
     /// setting
     ///
     /// The single most surprising thing about this verb, and the reason the
@@ -376,7 +346,7 @@ pub enum BookmarkAction {
     /// defect — it is what the format is — and it is why the disclosure is on
     /// the control rather than in a release note.
     ///
-    /// # ★★ The magnitude is the engine's problem, and getting it wrong is
+    /// # The magnitude is the engine's problem, and getting it wrong is
     /// silent
     ///
     /// `set_outline_open` propagates the flip up the ancestor chain by the
@@ -421,7 +391,7 @@ pub enum BookmarkAction {
 /// easily omitted (the epoch bump and the structural resync) fail *silently*,
 /// leaving an edit that happened in the document and did not happen on screen.
 ///
-/// ★ The `page` argument passed to `vector_edit` is **`0` for all three**, and
+/// The `page` argument passed to `vector_edit` is **`0` for all three**, and
 /// that is honest rather than lazy: an outline is document-level, no page is
 /// being edited, and the parameter exists only so the diagnostic trace can say
 /// which sheet a geometry edit touched. [`super::dimensions::apply`] passes `0`
@@ -432,7 +402,7 @@ pub enum BookmarkAction {
 /// unable to check the commonest thing to get wrong.
 pub(super) fn apply(doc: &mut OpenDoc, action: BookmarkAction) {
     match action {
-        // ★ One bookmark, one undo entry, and NO count reported.
+        // One bookmark, one undo entry, and NO count reported.
         //
         // See the variant: `/Count` is two quantities and its sign is the
         // open/closed flag, so a bookmark added under a collapsed ancestor
@@ -475,7 +445,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: BookmarkAction) {
 ///
 /// `OPERATOR_REQUESTS.md` **O59** item 3.
 ///
-/// # ★★★ The disclosure, and why a zero drops the clause entirely
+/// # The disclosure, and why a zero drops the clause entirely
 ///
 /// `OutlinePasteOutcome::destinations_dropped` counts bookmarks that arrived
 /// **without** their destination, because it named a page this document does
@@ -488,7 +458,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: BookmarkAction) {
 /// report an absence — which is `rename`'s argument below, applied to the arm
 /// that does have something to say when there is something.
 ///
-/// # ★ It reports what happened; the panel predicted it
+/// # It reports what happened; the panel predicted it
 ///
 /// `panels::bookmarks::clip::paste_row` warns before the press, from
 /// `OutlineClip::deepest_page()` against the page count. The two are not
@@ -500,7 +470,7 @@ fn paste(
     clip: &pdfcer_core::outline::OutlineClip,
     to: pdfcer_core::edit::OutlinePlacement,
 ) {
-    // ★ Page 0: an outline is a document-level structure reached from the
+    // Page 0: an outline is a document-level structure reached from the
     // catalogue's `/Outlines` and never from a page, so there is no page this
     // edit is "on". `vector_edit` wants one for its trace and its invalidation;
     // zero is the honest answer and is what `super::bookmarks`' other arms pass.
@@ -561,18 +531,18 @@ fn rename(doc: &mut OpenDoc, item: ObjId, title: &str) {
 /// **Delete one bookmark and its whole subtree**, as one undoable command,
 /// disclosing how many items went.
 ///
-/// # ★★ The count is the disclosure, and it comes from the engine
+/// # The count is the disclosure, and it comes from the engine
 ///
 /// `delete_outline_item` returns `usize` — the number of items actually
 /// removed, the clicked one included. That number is the answer to the question
 /// this verb raises and cannot answer any other way: **the subtree went too**,
 /// and on a collapsed parent the operator could not see how large it was.
 ///
-/// This is `HANDOFF.md`'s *"disclose off-canvas, never on the page"* in its
-/// plainest form. The panel already stated the expected size before the press,
-/// from the tree it had drawn; this states what the engine actually removed.
+/// **Disclose off-canvas, never on the page**, in its plainest form. The panel
+/// already stated the expected size before the press, from the tree it had
+/// drawn; this states what the engine actually removed.
 ///
-/// ★ **The two numbers are allowed to differ, and that is the reason both are
+/// **The two numbers are allowed to differ, and that is the reason both are
 /// said.** `read_outline` gives up part-way on a cycle, on excessive depth, or
 /// on exhausting its item budget — the panel draws a truncation notice when it
 /// does — so the shell's pre-press count is a count of *what pdfcer could
@@ -610,7 +580,7 @@ fn delete(doc: &mut OpenDoc, item: ObjId) {
 /// **Move one bookmark and its whole subtree**, as one undoable command,
 /// disclosing what the operator could not watch.
 ///
-/// # ★★★ Three disclosures, from three different sources, and each is needed
+/// # Three disclosures, from three different sources, and each is needed
 ///
 /// | Sentence | Source | Answers |
 /// |---|---|---|
@@ -629,13 +599,13 @@ fn delete(doc: &mut OpenDoc, item: ObjId) {
 /// > it; recomputing it shell-side would be a second implementation of the sign
 /// > convention."*
 ///
-/// ⇒ So the engine's number is reported verbatim, and the branch size is a
+/// So the engine's number is reported verbatim, and the branch size is a
 /// **separate sentence from a separate source**, offered only when the item was
 /// collapsed — which is exactly when the two disagree. This is the same posture
 /// [`delete`] takes about its own before-and-after counts, with the difference
 /// that there the two numbers answer one question and here they answer two.
 ///
-/// # ★★ Why the collapsed-destination check is made AFTER the call
+/// # Why the collapsed-destination check is made AFTER the call
 ///
 /// Because it is a fact about the document the move produced, and only the move
 /// knows where the bookmark went. `OutlineMove::to_parent` names it — and it is
@@ -645,12 +615,12 @@ fn delete(doc: &mut OpenDoc, item: ObjId) {
 /// leaves a parent that already had children exactly as the operator set it,
 /// and **opens one that was a leaf**.
 ///
-/// ★ The immediate parent is enough, and a walk to the root would be a walk
+/// The immediate parent is enough, and a walk to the root would be a walk
 /// nothing could reach. A drop lands on a row, a row is drawn only when every
 /// ancestor above it is open, so a collapsed grandparent implies a destination
 /// that was never on screen to be dropped on.
 ///
-/// ★ `to_parent` may be the **outline root**, for a move to the top level.
+/// `to_parent` may be the **outline root**, for a move to the top level.
 /// `read_outline` reports the root's *children* as its top-level items and
 /// never the root itself, so the lookup answers `None` and no sentence is
 /// drawn — which is correct: the top level is always visible.
@@ -660,10 +630,9 @@ fn delete(doc: &mut OpenDoc, item: ObjId) {
 /// A sentence, through `app::status::decline`, recorded from **inside** the
 /// closure — [`crate::app::status::decline::record_resize_not_rebuildable`]'s
 /// placement and its stated reason: whether the engine will refuse is not
-/// knowable before the call. `vector_edit`'s `Err` arm traces, and since O116
-/// (2026-09-04) words an un-categorised decline naming neither this verb nor a
-/// remedy — so **a refusal must be a sentence** still means *this* sentence,
-/// recorded here.
+/// knowable before the call. `vector_edit`'s `Err` arm traces, and words an
+/// un-categorised decline naming neither this verb nor a remedy — so **a
+/// refusal must be a sentence** means *this* sentence, recorded here.
 ///
 /// The panel forecasts and refuses the one case an operator can act on — a drop
 /// into the bookmark's own subtree — before raising this action at all, so what
@@ -691,7 +660,7 @@ fn move_to(doc: &mut OpenDoc, item: ObjId, to: pdfcer_core::edit::OutlinePlaceme
         let report = match session.move_outline_item(item, to) {
             Ok(report) => report,
             Err(error) => {
-                // ★★★ Which sentence, decided here and nowhere else. The panel
+                // Which sentence, decided here and nowhere else. The panel
                 // raises a drop it has already forecast as impossible —
                 // deliberately, see `panels::bookmarks::reorder::settle` — so
                 // this arm is the one place that tells the operator's own
@@ -706,7 +675,7 @@ fn move_to(doc: &mut OpenDoc, item: ObjId, to: pdfcer_core::edit::OutlinePlaceme
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
-            // ★ Every field of the engine's report, plus the shell's own branch
+            // Every field of the engine's report, plus the shell's own branch
             // size. A line saying only "a move applied" would be identical for
             // a build that reordered where it should have re-parented, or that
             // reported the branch size where it should have reported what moved
@@ -753,7 +722,7 @@ fn move_to(doc: &mut OpenDoc, item: ObjId, to: pdfcer_core::edit::OutlinePlaceme
 /// **Expand or collapse one bookmark**, as one undoable command, disclosing
 /// nothing.
 ///
-/// # ★★ Why the disclosure list is empty, and it is the same ruling as
+/// # Why the disclosure list is empty, and it is the same ruling as
 /// [`rename`]'s
 ///
 /// `vector_edit` surfaces whatever this returns to `app::status`, and that
@@ -764,14 +733,14 @@ fn move_to(doc: &mut OpenDoc, item: ObjId, to: pdfcer_core::edit::OutlinePlaceme
 /// has for consequences — evicting the previous edit's real disclosure — to
 /// describe something already on screen.
 ///
-/// ★ The fact that **is** surprising is disclosed, and it is disclosed
+/// The fact that **is** surprising is disclosed, and it is disclosed
 /// **before** the press, on the triangle's hover text: this writes into the
 /// document. See
 /// [`crate::text::panels::bookmarks::bookmark_expand_tooltip`], which carries
 /// the argument. A consequence an operator can still decide against belongs in
 /// front of the control, not behind it.
 ///
-/// # ★ One label for both directions
+/// # One label for both directions
 ///
 /// `vector_edit`'s label is a string literal by construction —
 /// `tools/gates/check-trace-names.py` reads it out of the call site — so the
@@ -830,7 +799,7 @@ mod tests {
         assert_ne!(add, delete);
     }
 
-    /// ★ **A rename of the same item to two different titles is two different
+    /// **A rename of the same item to two different titles is two different
     /// actions**, and a rename of two different items to the same title is
     /// too.
     ///
@@ -873,7 +842,7 @@ mod tests {
         assert_ne!(same_title_new_item.0, same_title_new_item.1);
     }
 
-    /// ★ **The generation number is part of the identity.**
+    /// **The generation number is part of the identity.**
     ///
     /// `ObjId` is `(num, generation)`, and a delete addressed to `7 0 R` must
     /// not compare equal to one addressed to `7 1 R`. This is cheap to assert

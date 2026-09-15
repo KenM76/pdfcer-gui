@@ -3,30 +3,27 @@
 //! One public function, [`choose`], and the whole argument for its answer. It
 //! decides the single field of
 //! [`pdfcer_core::text_edit::EditOptions`](pdfcer_core::text_edit::EditOptions) —
-//! the [`FollowerDisposition`] — that the old shell never decided at all.
+//! the [`FollowerDisposition`] — which a caller that constructs
+//! `EditOptions::default()` never decides at all.
 //!
-//! ## What was wrong, and it is two bugs rather than one
+//! ## The two commits this rule exists to prevent
 //!
-//! `DEFECTS.md` **D4b** lists two cases where the old shell's text edit was not
-//! merely unhelpful but **wrong on commit**, and both have the same shape: the
-//! engine already carries the mechanism, and the GUI never selected it. The old
-//! shell had exactly one call site
-//! (`D:\Dev\pdfce\crates\pdfce-gui\src\main.rs`, `commit_text_edit_draft`) and
-//! it passed `EditOptions::default()` — i.e. [`FollowerDisposition::Reflow`] —
-//! unconditionally, for every run on every page of every document.
+//! `DEFECTS.md` **D4b** lists two cases where a text edit is not merely
+//! unhelpful but **wrong on commit**, and both have the same shape: the engine
+//! already carries the mechanism, and a shell that passes
+//! `EditOptions::default()` — i.e. [`FollowerDisposition::Reflow`] —
+//! unconditionally never selects it, for any run on any page of any document.
 //!
-//! Both claims below were **verified against the engine's source** rather than
-//! taken from the defect register, because `HANDOFF.md` §11 records that this
-//! project has already filed one wrong claim about that repository.
+//! Both claims below are **checked against the engine's source** rather than
+//! taken from the defect register. A claim about that repository that has not
+//! been read there is a claim this shell has invented.
 //!
 //! ### 1. A right-aligned, centred or justified tail moves the wrong way
 //!
-//! [`FollowerDisposition::Pin`] exists for precisely this, and says so in its
-//! own doc comment (`pdfcer-core/src/text_edit/edit.rs`, the `FollowerDisposition`
-//! enum):
-//!
-//! > Pin survivors in place with a compensating `TJ` number (the Pass-8.0
-//! > path), **for a justified / right-aligned tail that must not move.**
+//! [`FollowerDisposition::Pin`] exists for precisely this, and its own doc
+//! comment in the engine (`pdfcer-core`'s `FollowerDisposition`) says so: it
+//! pins survivors in place with a compensating `TJ` number, **for a justified
+//! or right-aligned tail that must not move.**
 //!
 //! Under `Reflow` the engine walks the operators after the anchor and adds `ΔA`
 //! to every following absolute `Tm`'s `e`. On a **left**-aligned line that is
@@ -40,13 +37,9 @@
 //!
 //! This is the sharper of the two, and it is the one that bites this operator's
 //! documents specifically, because rotated text is what a CAD title block is
-//! made of. The engine's reflow branch is, verbatim
-//! (`pdfcer-core/src/text_edit/edit.rs`, inside `plan_edit`):
-//!
-//! ```text
-//! Rec::Tm([a, b, c, d, e, f]) => {
-//!     let moved = emit_tm([*a, *b, *c, *d, *e + delta, *f]);
-//! ```
+//! made of. The engine's reflow branch (`pdfcer-core`'s `plan_edit`) rewrites
+//! each follower `Tm` by adding the cumulative advance to element `e` and
+//! leaving `a`, `b`, `c` and `d` alone.
 //!
 //! `ΔA` is an advance in **text space**. `e` is the translation component of
 //! `Tm`, and `Tm` maps text space to **user space**, so a text-space advance of
@@ -55,8 +48,11 @@
 //! unscaled in x. On a 90°-rotated title-block line the baseline runs up the
 //! page and the engine slides the tail *sideways*.
 //!
-//! There is **no rotation guard on this path**. The reflow-apply path has one —
-//! `reflow_apply.rs`'s `check_uniform_axis_aligned` refuses when
+//! There is **no rotation guard on this path**. The engine's `same_line`
+//! requires a follower to carry the *same* rotation as the anchor, which is not
+//! the same as refusing rotation: a rotated line whose tail is rotated to match
+//! is exactly the case that gets shifted along the wrong axis. The
+//! reflow-**apply** path does guard — `check_uniform_axis_aligned` refuses when
 //! `|b| > MTX_EPS || |c| > MTX_EPS`, with `MTX_EPS = 1e-6` — and this module
 //! ports that predicate ([`is_upright`]) rather than inventing a second
 //! tolerance.
@@ -198,13 +194,14 @@ pub enum Reason {
     /// rung sits **above** it: a line made of separate pieces is not a line
     /// that grows, whatever its alignment reads as.
     ///
-    /// # ★ It is not a refusal, and it used to be
+    /// # ★ It is a disposition and NOT a refusal
     ///
-    /// `canvas::textedit::resolve_run` returned `Refusal::SpansRuns` for exactly
-    /// this shape until 2026-08-19, which refused nearly every click on a CAD
-    /// sheet. The measurement and the operator's report are in that function's
-    /// own comment. What survives of the refusal is its **disclosure**, which
-    /// was always the useful half — see `crate::text::textedit`.
+    /// Refusing this shape outright — `canvas::textedit::resolve_run` answering
+    /// `Refusal::SpansRuns` — refuses nearly every click on a CAD sheet, because
+    /// a CAD sheet is made of multi-piece lines. The measurement is in that
+    /// function's own comment. The useful half of a refusal is its
+    /// **disclosure**, and that is what this reason carries — see
+    /// `crate::text::textedit`.
     SharesTheLine,
     /// The engine detected a non-left alignment whose tail is flush against
     /// something. `Pin`.
@@ -346,11 +343,11 @@ pub fn choose(
 /// The [`EditOptions`] a commit built from `reason` must carry.
 ///
 /// A one-line adapter, and it exists so that **no call site constructs
-/// `EditOptions` itself**. That is the whole defect this module fixes stated as
-/// a rule: the old shell's single call site wrote `EditOptions::default()`, and
-/// a default is what you get whenever the type is constructible at the point of
-/// use. Here the only way to obtain one is to have already answered the
-/// question.
+/// `EditOptions` itself**. That is the whole defect this module prevents stated
+/// as a rule: a default is what a call site gets whenever the type is
+/// constructible at the point of use, and the default is wrong for two whole
+/// classes of run. Here the only way to obtain one is to have already answered
+/// the question.
 #[must_use]
 pub fn options(reason: Reason) -> EditOptions {
     EditOptions::default().with_disposition(reason.disposition())
@@ -456,7 +453,7 @@ mod tests {
     }
 
     /// ★★ **A line made of several pieces PINS, whatever its alignment reads
-    /// as** — and this is the assertion the whole 2026-08-19 fix rests on.
+    /// as** — the assertion the whole multi-run rung rests on.
     ///
     /// The failure it forbids is concrete: a SolidWorks parts table writes one
     /// show operator per cell, and every cell is left-flush, so the alignment
@@ -506,12 +503,12 @@ mod tests {
         );
     }
 
-    /// **`Reflow` is what the engine defaults to**, so the fall-back changes
-    /// nothing about a document the old shell handled correctly.
+    /// **`Reflow` is what the engine defaults to**, so the fall-back is
+    /// byte-identical to what a caller that never decided would have passed.
     ///
-    /// This is the assertion that says the fix is not a regression: every case
-    /// the old build got right — an upright, left-aligned or unclassifiable run
-    /// — still commits with exactly the options it used to.
+    /// This is the assertion that says the rule adds a decision rather than
+    /// changing one: an upright, left-aligned or unclassifiable run commits with
+    /// exactly the options `EditOptions::default()` carries.
     #[test]
     fn the_fallback_is_byte_identical_to_what_the_old_shell_passed() {
         let fallback = options(choose(UPRIGHT, UPRIGHT, false, None));
@@ -520,9 +517,9 @@ mod tests {
 
     /// **`pins_the_tail` agrees with `disposition`, for every reason.**
     ///
-    /// An arithmetic-identity test in the shape `HANDOFF.md` §10 asks for: two
-    /// derived facts about one value, asserted to agree, rather than a comment
-    /// asking the next reader to keep them in step.
+    /// An arithmetic-identity test: two derived facts about one value, asserted
+    /// to agree, rather than a comment asking the next reader to keep them in
+    /// step.
     #[test]
     fn pins_the_tail_agrees_with_the_disposition_for_every_reason() {
         for r in [

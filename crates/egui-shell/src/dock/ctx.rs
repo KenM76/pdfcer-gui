@@ -3,16 +3,16 @@
 //!
 //! # Why a context struct rather than seven parameters
 //!
-//! The side renderer, the tab bar, the overflow menu and the splitters
-//! all need the same five things: the panel registry, the theme, the rect
-//! reporter, an id salt, and somewhere to record what the operator did.
-//! Threading those as parameters makes every new capability a signature
-//! change in four files, and — worse — makes it possible for one surface
-//! to be handed a *different* registry than another, producing a dock
-//! whose tabs and whose menu disagree about which panels exist. One
-//! value, constructed once per frame, removes both. This mirrors
-//! [`crate::ribbon::ctx`] deliberately, so a reader who has understood
-//! one has understood the other.
+//! The side renderer, the tab bar, the overflow menu and the splitters all
+//! need the same things: the panel registry, the theme, the rect reporter,
+//! an id salt, and somewhere to record what the operator did. Threading
+//! those as parameters makes every new capability a signature change in
+//! every surface, and — worse — makes it possible for one surface to be
+//! handed a *different* registry than another, producing a dock whose tabs
+//! and whose menu disagree about which panels exist. One value,
+//! constructed once per frame, removes both. This mirrors
+//! [`crate::ribbon::ctx`] deliberately, so a reader who has understood one
+//! has understood the other.
 //!
 //! # ★ Why the layout is read-only while it is drawn
 //!
@@ -27,11 +27,9 @@
 //!
 //! 1. **Borrow gymnastics.** The body callback is the application's, it
 //!    holds `&mut` to the application, and the layout is being iterated.
-//!    Every solution is a `mem::replace` dance — which the previous
-//!    implementation had to do, and documented as a gotcha future readers
-//!    would otherwise rediscover: *"`Tree<Pane>` derives only
-//!    `Clone, PartialEq` — not `Default` — so `std::mem::take` will not
-//!    compile."*
+//!    Every way out is a `mem::replace` dance around a tree type that is
+//!    unlikely to be `Default`, so even `mem::take` is unavailable and the
+//!    dance has to carry its own placeholder.
 //! 2. **Half-applied frames.** A tab activated in the middle of a draw is
 //!    visible to the compartments drawn after it and invisible to the
 //!    ones drawn before, so one frame shows two different truths.
@@ -106,8 +104,8 @@ pub(crate) enum Intent {
     },
     /// ★★ **Collapse a side, or bring it back.**
     ///
-    /// The operator's ask of 2026-08-20: *"add the little tabs that allow the
-    /// left and right panels to be minimized."*
+    /// The operator's ask: *"add the little tabs that allow the left and right
+    /// panels to be minimized."*
     ///
     /// An intent rather than a direct write for the reason every other one here
     /// is: the layout is mutated in exactly one place, after the frame has
@@ -210,8 +208,9 @@ pub(crate) struct Ctx<'a> {
     /// reserving 52 pt would leave the panel body below `plan::MIN_COLUMN_WIDTH`.
     /// A build that asked *"is a rail configured for this side"* would therefore
     /// suppress the tab strip on exactly the narrow windows where the rail is
-    /// not there — leaving a stack of panels with no switch of any kind, which
-    /// is the unreachable-panel defect this project has shipped three times.
+    /// not there — leaving a stack of panels with no switch of any kind. A
+    /// panel that is laid out, publishes a rectangle and cannot be reached
+    /// passes every gate in this repository.
     ///
     /// So the question asked is *"was it drawn"*, answered after the fact by the
     /// code that drew it.
@@ -234,11 +233,10 @@ impl Ctx<'_> {
     /// is the property `egui` needs: an id that changed when a tab was
     /// activated would end the in-flight interaction that caused the
     /// activation, and an id that changed when a panel moved would reset
-    /// a splitter drag mid-gesture.
-    ///
-    /// The previous implementation names the same hazard about its
-    /// engine's tree id: *"changing it between frames would silently
-    /// reset every in-flight interaction."*
+    /// a splitter drag mid-gesture. An id that changes between frames
+    /// silently resets every in-flight interaction keyed on it, and the
+    /// symptom — a drag that stops responding partway — never points back
+    /// at the id.
     pub(crate) fn id(&self, role: &str, side: DockSide, column: usize, stack: usize) -> Id {
         self.id_salt.with((role, side, column, stack))
     }

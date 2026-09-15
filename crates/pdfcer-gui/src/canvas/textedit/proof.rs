@@ -24,16 +24,15 @@
 //!
 //! Every assertion here is made **twice**: once through
 //! [`super::disposition::options`], which is the shipped decision, and once
-//! through `EditOptions::default()`, which is **verbatim what the old shell
-//! passed at its only call site**. The second run is not decoration — it is what
+//! through `EditOptions::default()`, which is what a shell that made no
+//! decision at all would pass. The second run is not decoration — it is what
 //! makes the first one evidence:
 //!
-//! * a build with the fix reverted produces exactly `EditOptions::default()`, so
-//!   the falsifying run *is* the broken build, executed;
-//! * a fixture that did not actually exercise the defect would make both runs
-//!   agree, and the `assert_ne!` between them would fail — so this cannot pass
-//!   by flattering the thing it measures, which is `HANDOFF.md` §10's
-//!   ink-simplification lesson in a different suit.
+//! * a build with the rule removed produces exactly `EditOptions::default()`,
+//!   so the falsifying run *is* the broken build, executed;
+//! * a fixture that does not actually exercise the defect makes both runs
+//!   agree, and the `assert_ne!` between them then fails — so this cannot pass
+//!   by flattering the thing it measures.
 //!
 //! ## Why the fixture's content stream is uncompressed
 //!
@@ -335,32 +334,26 @@ fn upright_left_aligned_text_still_reflows() {
 /// * under `EditOptions::default()` — the old shell's only call site — it is
 ///   rewritten with `e` increased by the advance delta, and the string is gone.
 ///
-/// # ★★★ THIS TEST CHANGED MEANING ON 2026-08-20, AND THE REASON IS A FIX
+/// # ★★★ The second run here is an INVERTED control
 ///
-/// It used to end with a **falsifier**: an assertion that `EditOptions::default()`
-/// — plain `Reflow`, what the old shell always passed — *does* move line 3's
-/// `Tm`, proving the fixture exercised the defect. That assertion now fails,
-/// and the honest response is not to delete it.
+/// It asserts that `EditOptions::default()` — plain `Reflow` — *also* leaves
+/// line 3's `Tm` alone, and that is the engine's property rather than this
+/// shell's: the engine continues a line only through a `Tm` that differs in
+/// `e` alone — same orientation, same scale, same baseline — and lines 2 and 3
+/// of this block sit on different baselines.
 ///
-/// The engine's `Pass 121.1` narrowed the reflow walk. It used to shift every
-/// absolute `Tm` it passed until a `Td`/`TD`/`T*` boundary; it now continues a
-/// line **only through a `Tm` that differs in `e` alone** — same orientation,
-/// same scale, same baseline. Lines 2 and 3 of this block sit on different
-/// baselines, so reflow no longer reaches them at all.
+/// That narrowing is worth a guard of its own. Against a walk that shifted
+/// every absolute `Tm` until a `Td`/`TD`/`T*` boundary, a four-character edit
+/// on the operator's real drawing reported `followers_repositioned=1676` and
+/// changed **34,059 pixels across the whole sheet**, because a CAD stream
+/// positions everything with `Tm` and never emits the `Td` such a walk looks
+/// for. The same edit changes 42 pixels inside one label.
 ///
-/// The number that earned that change, measured on the operator's real drawing:
-/// a four-character edit reported `followers_repositioned=1676` and changed
-/// **34,059 pixels across the whole sheet**, because a CAD stream positions
-/// everything with `Tm` and never emits the `Td` the walk was looking for.
-/// After the fix the same edit changed 42 pixels inside one label.
-///
-/// So the control is **inverted**, and it is worth more inverted than it was
-/// before: it now asserts that *the engine's own default is safe for this
-/// shape*, which is precisely the property `Pass 121.1` established and
-/// precisely what would break if the walk were ever loosened again. The shell's
-/// `Pin` rule is now belt-and-braces here rather than the only defence — and
-/// the case where it is still the only defence has its own test and its own
-/// block in the fixture: see [`a_same_baseline_follower_is_the_case_pinning_still_prevents`].
+/// ⇒ So the shell's `Pin` rule is belt-and-braces for this shape rather than
+/// the only defence, and this assertion fires if the walk is ever loosened
+/// again. The case where `Pin` IS the only defence has its own test and its
+/// own block in the fixture: see
+/// [`a_same_baseline_follower_is_the_case_pinning_still_prevents`].
 #[test]
 fn the_right_aligned_tail_is_left_exactly_where_it_was() {
     const TAIL: &str = "412.64 668.00 Tm";
@@ -394,9 +387,9 @@ fn the_right_aligned_tail_is_left_exactly_where_it_was() {
 /// text-space advance of `Δ` should displace it by `(0, Δ)`. The engine's reflow
 /// branch writes `e + Δ`, i.e. `(Δ, 0)`: the right magnitude on the wrong axis.
 ///
-/// This is the assertion that would have caught D4b case 2 in the old shell, and
-/// it could not have been written there, because no fixture in either repository
-/// contained rotated text.
+/// D4b case 2, asserted in the bytes. It needs a fixture carrying rotated text,
+/// which is why `fixtures/tail-alignment.pdf` exists in this repository rather
+/// than being borrowed from the engine's.
 #[test]
 fn the_rotated_tail_is_not_slid_along_the_wrong_axis() {
     const TAIL: &str = "0 1 -1 0 90.00 420.00 Tm";
@@ -419,10 +412,10 @@ fn the_rotated_tail_is_not_slid_along_the_wrong_axis() {
         "a rotated follower must be re-emitted verbatim; `{TAIL}` is not in the \
          appended revision"
     );
-    // ★ Inverted on 2026-08-20 for the same reason as its right-aligned
-    // sibling, and here the engine's rule bites harder: a rotated follower
-    // differs from the edited run in `a`, `b`, `c` AND `d`, so `Pass 121.1`'s
-    // "differs in `e` alone" test ends the line at the first character of it.
+    // ★ Inverted for the same reason as its right-aligned sibling, and here
+    // the engine's rule bites harder: a rotated follower differs from the
+    // edited run in `a`, `b`, `c` AND `d`, so the "differs in `e` alone" test
+    // ends the line at the first character of it.
     //
     // ★★ Note what is NOT weakened by this. The shell still answers
     // `Reason::Rotated` and still pins, and it must: the engine's rule is about
@@ -441,26 +434,21 @@ fn the_rotated_tail_is_not_slid_along_the_wrong_axis() {
 
 /// ★★★ **The case pinning still uniquely prevents: two runs on ONE baseline.**
 ///
-/// Block D of the fixture, added 2026-08-20 with this test, and it exists
-/// because `Pass 121.1` left the other three blocks unable to falsify anything.
+/// # Why a fixture that cannot exhibit the hazard proves nothing
 ///
-/// # Why a fixture that cannot exhibit the hazard is a fixture that proves
-/// # nothing
+/// Reflow reaches no follower in blocks A, B or C — every one of them sits on a
+/// different baseline or at a different orientation — so both falsifying
+/// assertions above are inverted controls, and **a quiet falsifier is a test
+/// that has stopped measuring**: the two `Pin` assertions beside them would go
+/// on passing against a build that pinned nothing, because nothing was going to
+/// move either way.
 ///
-/// The engine's fix stopped reflow reaching any follower in blocks A, B or C —
-/// every one of them sits on a different baseline or at a different
-/// orientation. That is correct and it is what the fix was for. It also meant
-/// that both falsifying assertions in this file went quiet, and **a quiet
-/// falsifier is a test that has stopped measuring**: the two `Pin` assertions
-/// beside them would have gone on passing against a build that pinned nothing,
-/// because nothing was going to move either way.
-///
-/// So the fixture grew the one shape reflow still acts on: two show operators
-/// at the same `f`, differing in `e` alone. That is a single visual line drawn
-/// as two runs — a table cell beside another, a title-block field beside its
-/// label — which is the overwhelmingly common shape on this operator's
-/// documents and the one case where *"the rest of the line"* genuinely is the
-/// rest of a line.
+/// Block D is the one shape reflow still acts on: two show operators at the
+/// same `f`, differing in `e` alone. That is a single visual line drawn as two
+/// runs — a table cell beside another, a title-block field beside its label —
+/// which is the overwhelmingly common shape on this operator's documents and
+/// the one case where *"the rest of the line"* genuinely is the rest of a
+/// line.
 ///
 /// This is therefore the test that tells the shipped rule from a build that
 /// pins nothing, and the `assert_ne!` is what stops it passing vacuously.

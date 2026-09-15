@@ -953,7 +953,8 @@ impl Current {
     /// ⇒ So the only question left is the engine's *does this subtype have a
     /// border?*, and `takes_border` is it. That is the same predicate
     /// `set_markup_style` guards `style.dash` with
-    /// (`pdfcer-core` `edit.rs:26463-26476`), so a chooser drawn here cannot
+    /// (`pdfcer_core::edit::EditSession::set_markup_style`), so a chooser drawn
+    /// here cannot
     /// produce the `StylePropertyNotApplicable` refusal — which is the belt this
     /// module's header describes, with the engine's braces behind it.
     const fn offers_dash(self) -> bool {

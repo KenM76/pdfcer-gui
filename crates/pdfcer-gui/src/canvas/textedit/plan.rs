@@ -7,20 +7,12 @@
 //! move, and — since `OPERATOR_REQUESTS.md` **O142** — whether this shell is
 //! entitled to let the engine choose an occurrence at all.
 //!
-//! ## Why this is its own file
+//! ## The seam against [`super`]
 //!
-//! It was the bottom half of [`super`] until 2026-09-06, under a section banner
-//! reading *"Planning the commit — where D4b's two fixes actually take effect"*.
-//! O142's occurrence guard pushed that file to 1,512 lines, twelve over R2, and
-//! the banner was already naming the seam: everything above it is about a caret
-//! and a draft — where the operator clicked, what he typed, when a draft opens
-//! and closes — and everything below it is about **one request to
-//! `pdfcer-core`**. Two subjects, one boundary, already drawn.
-//!
-//! ★ R2's own text says to split along the seams rather than raise the limit,
-//! and this is what that looks like when the seam is honest: no call site
-//! changed, because [`plan`] and [`Plan`] are re-exported from [`super`] where
-//! every caller already looks for them.
+//! [`super`] is about a caret and a draft — where the operator clicked, what he
+//! typed, when a draft opens and closes. This file is about **one request to
+//! `pdfcer-core`**. [`plan`] and [`Plan`] are re-exported from [`super`], so
+//! every caller looks for them in one place regardless.
 //!
 //! ## What a reader should take away before changing anything here
 //!
@@ -34,10 +26,9 @@
 //! ⚠ **The single most dangerous line in this file is the one that clears
 //! `pinned_span`.** The pin is the only disambiguator `EditRequest` carries;
 //! dropping it hands the choice of *which* occurrence to edit to the engine's
-//! scan order. [`Plan::occurrences`] and [`page_occurrences`] carry the whole
-//! argument for when that is permitted, and `super::glyphwall` holds it as
-//! tests over two fixtures — one where the edit must land, one where it must be
-//! refused.
+//! scan order. [`Plan::occurrences`] carries the whole argument for why that is
+//! never permitted, and `super::glyphwall` holds it as tests over two fixtures
+//! — one where the edit must land, one where it must be refused.
 
 use pdfcer_core::text_edit::{
     BlockRecognitionOptions, EditOptions, EditRequest, EditableTextModel, ReflowEngine,
@@ -67,10 +58,10 @@ pub struct Plan {
     /// and then thrown away. It is carried out because the apply arm cannot
     /// otherwise tell two identical engine refusals apart:
     ///
-    /// | run | what `EditError::NoMatch` means |
-    /// |---|---|
-    /// | one operator | the page moved under the caret — *"pdfcer could not find the text this edit named"* |
-    /// | several | **the reconstructed `find` could never have matched**, because no single operator holds it |
+    /// * **one operator** — the page moved under the caret: *"pdfcer could not
+    ///   find the text this edit named"*;
+    /// * **several** — the reconstructed `find` could never have matched,
+    ///   because no single operator holds it.
     ///
     /// The engine answers `RefusalKind::NotFound` for both, correctly and
     /// necessarily: from its side the request named text that is not in any one
@@ -85,79 +76,42 @@ pub struct Plan {
     /// argues is worse than the silence it replaces.
     pub one_operator: bool,
 
-    /// ★★★ **How many times the text being edited appears on the page** — and
-    /// therefore whether the pin could safely be dropped so that the engine's
-    /// cross-operator matcher could reach it. `OPERATOR_REQUESTS.md` **O142**,
-    /// the operator's own report of 2026-09-05:
+    /// ★★★ **How many times the text being edited appears on the page** — the
+    /// count that would license dropping the provenance pin so that the
+    /// engine's cross-operator matcher could reach a split run.
+    /// `OPERATOR_REQUESTS.md` **O142**, the operator:
     ///
     /// > *"on page 2 there is a spelling mistake — clien instead of client. if I
     /// > try to edit the edit is not accepted."*
     ///
-    /// `None` when the pin was exact — [`Self::one_operator`] is `true`, the
-    /// `find` was dropped, and the request names an operator rather than a
-    /// string, so there is nothing to be ambiguous about. `Some(n)` when the run
-    /// spans operators and the `find` is therefore the only route: `n` is how
-    /// many times that string occurs in the page's text.
+    /// **Always `None`.** Nothing in [`plan`] counts, because
+    /// [`EditRequest::span_from_pin`](pdfcer_core::text_edit::EditRequest)
+    /// disambiguates by the pin instead: the span search **starts at the pinned
+    /// operator** rather than at the first operator on the page, with every
+    /// other guard unchanged. `find` says *what*; the pin says *which one*.
     ///
-    /// # ★★★ RETIRED 2026-09-08 — always `None`, and the field is kept as a
-    /// tripwire rather than deleted
+    /// # ⚠ The count is NOT a fallback, and the difference is not a nuance
     ///
-    /// It used to hold *how many times the clicked run's text occurs on the
-    /// page*, and it decided whether the provenance pin could be **dropped**.
-    /// That whole apparatus is gone, and the reason is worth stating because
-    /// it is the second time this project has kept a count that the engine
-    /// then made unnecessary.
-    ///
-    /// ## What it was for
-    ///
-    /// `Pass 256.0` taught `edit_text` to match a `find` across consecutive
-    /// show operators, which is the shape of the operator's CAD files — one
-    /// glyph per operator. Its contract carried one clause that governed
-    /// everything here:
-    ///
-    /// > *"A pinned request never spans."*
-    ///
-    /// So a request carrying **both** a `find` and a `pinned_span` was
-    /// confined to the single operator the pin names, and on his line that
-    /// operator holds one character. To reach a split run the pin had to come
-    /// **off** — and the pin was the only disambiguator `EditRequest` carried.
-    /// The count was the licence: drop it only when the text occurs once.
-    ///
-    /// ## What replaced it
-    ///
-    /// [`EditRequest::spanning_from`](pdfcer_core::text_edit::EditRequest::spanning_from)
-    /// (`Pass 272.0`, shipped in answer to this shell's own request). The
-    /// span search **starts at the pinned operator** instead of at the first
-    /// operator on the page, with every existing guard unchanged. `find` says
-    /// *what*; the pin says *which one*. There is nothing left to count.
-    ///
-    /// ## ★★★ And the engine's reply corrected the advice, not just the code
-    ///
-    /// The old fallback — *"drop the pin when the count is 1"* — was believed
-    /// to be merely a risk of editing the wrong occurrence. It is worse than
-    /// that:
-    ///
-    /// > *`find_replace` does not edit "whichever occurrence comes first".
-    /// > `find_anchor` tries a **single-operator** match across the whole page
-    /// > before the spanning search runs at all. So a single-operator
-    /// > occurrence anywhere on the page beats a spanning one above it.*
+    /// `find_replace` does not edit "whichever occurrence comes first".
+    /// `find_anchor` tries a **single-operator** match across the whole page
+    /// before the spanning search runs at all, so a single-operator occurrence
+    /// anywhere on the page beats a spanning one above it.
     ///
     /// ⇒ **A spanning run is unreachable by `find` alone whenever a
     /// single-operator twin exists anywhere on that page** — in a title block,
-    /// in a note, however far away. Dropping the pin did not merely risk the
-    /// wrong occurrence; on a page like his BOM sheet it could make the right
-    /// one impossible to reach. The engine's own words: *"if you have a pin,
-    /// use `spanning_from`. Do not drop the pin as a fallback; it is not a
-    /// weaker version of the same thing."*
+    /// in a note, however far away. Dropping the pin does not merely risk the
+    /// wrong occurrence; on a BOM sheet it can make the right one impossible to
+    /// reach. The engine's ruling: *"if you have a pin, use `spanning_from`. Do
+    /// not drop the pin as a fallback; it is not a weaker version of the same
+    /// thing."*
     ///
-    /// ## Why the field survives
+    /// # Why the field is kept wired
     ///
-    /// Because a `None` that is *always* `None` is cheap, and because
-    /// [`super::glyphwall`] holds a fixture with two identical split runs on
-    /// one page whose test now asserts the **edit lands** where it used to
-    /// assert the refusal. If a future engine withdraws `span_from_pin`, this
-    /// field and its refusal are the route that has to come back — and it must
-    /// come back *with the correction above*, not as it was.
+    /// A `None` that is always `None` is cheap, and [`super::glyphwall`] holds
+    /// a fixture with two identical split runs on one page asserting that the
+    /// edit **lands**. If a future engine withdraws `span_from_pin`, this field
+    /// and the refusal it fed are the route that has to come back — and it must
+    /// come back with the correction above, never as the count alone.
     pub occurrences: Option<usize>,
 }
 
@@ -212,29 +166,27 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     // the operator his line is written one letter at a time on the strength of
     // an extraction that never ran.
     let mut one_operator = true;
-    // ★ Always `None` since 2026-09-08 — see [`Plan::occurrences`], which
-    // carries the whole argument. Nothing in this function counts any more.
+    // ★ Always `None` — see [`Plan::occurrences`], which carries the whole
+    // argument. Nothing in this function counts.
     let occurrences = None;
 
     // ★★ **This extraction is its own, and it is NOT `doc.page_text()`.**
     //
-    // That was the first shape of this function and it was silently broken.
-    // `app::cache`'s extraction runs with `ExtractOptions::default()`, and
-    // `capture_provenance` **defaults to off** — the engine says so in terms:
-    // *"`None` unless the extraction set `ExtractOptions::capture_provenance`;
-    // this keeps the default Pass 4 output byte-for-byte unchanged."* With it
-    // off, `model.provenance(..)` answers `None` for every glyph, and this
-    // function would have:
+    // `app::cache`'s extraction runs with `ExtractOptions::default()`, and the
+    // engine's contract is that provenance is `None` unless the extraction set
+    // `ExtractOptions::capture_provenance` — which **defaults to off**, so that
+    // the default output stays byte-for-byte unchanged. Reading the shared
+    // cache here would therefore make `model.provenance(..)` answer `None` for
+    // every glyph, and this function would:
     //
-    // * left `pinned_span` at `None`, so the surgery would locate the **first**
+    // * leave `pinned_span` at `None`, so the surgery locates the **first**
     //   operator whose text matches rather than the one the caret is in — which
     //   on a title-block sheet with two runs reading `REV A` edits the wrong
     //   one; and
-    // * fallen back to the identity matrices below, so **the rotation guard
-    //   would never fire** and D4b case 2 would be unfixed while every unit test
-    //   in `disposition` stayed green. That is precisely `HANDOFF.md` §2's
-    //   shape: a correct decision function, wired to a value that is always the
-    //   same.
+    // * fall back to the identity matrices below, so **the rotation guard would
+    //   never fire** and D4b case 2 would be unfixed while every unit test in
+    //   `disposition` stayed green — a correct decision function wired to a
+    //   value that is always the same.
     //
     // Widening the shared cache was the other option and is the worse one: every
     // caller of `page_text()` — Find, both copy verbs, the text sweep — would
@@ -268,39 +220,32 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
             let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
             // ★★ The pin, and the buffer it indexes — [`pin::of_run`].
             //
-            // Both facts, from one call, over the model just recognised. They
-            // lived here inline until 2026-08-27; `format_text` became the
-            // second verb that needs exactly the same measurement, and the
-            // sixty lines of argument behind the `EditTarget` choice are what
-            // makes it right, so they moved somewhere both callers reach them
-            // rather than being paraphrased twice.
+            // Both facts, from one call, over the model just recognised. The
+            // measurement lives in [`pin`] rather than inline because
+            // `format_text` needs exactly the same one, and the argument behind
+            // the `EditTarget` choice is long enough that two paraphrases of it
+            // would drift apart.
             if let Some(p) = pin::of_run(&model, run) {
                 request.pinned_span = Some(p.span);
                 matrices = (p.text_matrix, p.ctm);
                 request.target = p.target;
                 // ★★★ **The find string is DROPPED when the pin is exact.**
                 //
-                // `EditRequest::whole_operator` (`Pass 152.0`): an empty `find`
-                // beside a pin means *"this whole show operator"*, which is
-                // precisely what a caret in a run means and what a rebuilt
-                // `find` was only ever an approximation of.
+                // `EditRequest::whole_operator`: an empty `find` beside a pin
+                // means *"this whole show operator"*, which is precisely what a
+                // caret in a run means and what a rebuilt `find` can only ever
+                // approximate.
                 //
-                // ## Why the approximation had to go
+                // ## Why the approximation is not good enough
                 //
                 // A run's `text` is not in 1:1 correspondence with its glyphs —
-                // `/ToUnicode` may map one glyph to several characters — so the
-                // reconstructed find *"fails invisibly on unligatured test text
-                // and routinely on real typeset copy"*, in the engine's words.
-                // On this operator's own CAD drawings it is worse than that:
-                // `text_extract` synthesises inter-glyph spacing (a trace of one
-                // of his title-block cells showed **twenty-one** spaces), so the
+                // `/ToUnicode` may map one glyph to several characters — so a
+                // reconstructed find fails invisibly on unligatured text and
+                // routinely on real typeset copy. On CAD drawings it is worse:
+                // `text_extract` synthesises inter-glyph spacing (one measured
+                // title-block cell carried **twenty-one** of them), so the
                 // string this shell holds contains characters no show operator
                 // ever wrote and the match can never succeed.
-                //
-                // ⇒ That was reported as *"text editing is weird"*, filed as a
-                // defect against the engine, and answered by naming a capability
-                // that already existed. The workaround is deleted rather than
-                // kept beside the fix.
                 //
                 // ## ★★ And why only when the run is one operator
                 //
@@ -314,67 +259,49 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // outcomes are indistinguishable from outside the process and
                 // one of them is correct.
                 //
-                // A driven run on the operator's own drawing produced
-                // `edit-text-refused … detail=text to edit ("0.00[21 spaces]0.030")
-                // was not found in an editable run`, and **nothing anywhere said
-                // whether the pin path had been taken.** So the check reported a
-                // program defect and aimed the reader at `pdfcer-core`, when the
-                // honest reading might have been *"this run spans two operators,
-                // the find-based form was used deliberately, and it failed
-                // cleanly as designed"*.
-                //
-                // ⇒ Those two need different responses — one is a request to the
-                // engine, the other is the shell working — and a trace that
-                // cannot separate them turns a correct build into a filed
-                // defect. `find_len` carries the number that made the string
-                // unmatchable, because a reader seeing 30 characters for a
-                // six-character cell has the whole story in one line.
+                // A refusal reading `edit-text-refused … detail=text to edit
+                // (…) was not found in an editable run` means a program defect
+                // if the pin path was taken, and *"this run spans operators, the
+                // find-based form was used deliberately, and it failed cleanly
+                // as designed"* if it was not. Those need different responses —
+                // one is a request to the engine, the other is nothing — and a
+                // trace that cannot separate them turns a correct build into a
+                // filed defect. `find_len` carries the number that made the
+                // string unmatchable, because a reader seeing 30 characters for
+                // a six-character cell has the whole story in one line.
                 one_operator = pin::spans_one_operator(&model, run);
-                // ★★★ **O142 — HIS TYPO, and the one line that was stopping it.**
+                // ★★★ **O142 — a typo inside a run written one glyph at a
+                // time**, and the request shape that reaches it.
                 //
-                // Until 2026-09-06 this block did exactly two things: trace, and
-                // clear the `find` when the pin was exact. On a split run it
-                // left BOTH the `find` and the `pinned_span` set, and that
-                // combination is unmatchable by construction — `Pass 256.0`'s
-                // contract says *"a pinned request never spans"*, so the engine
-                // looks for a 36-character string inside the one operator the
-                // pin names, which on his file holds a single character.
+                // A plain pin confines the match to the one operator it names,
+                // which on a per-glyph CAD run holds a single character — so a
+                // 36-character `find` cannot fit and the engine answers
+                // `NotFound`, correctly, to the question it was asked.
+                // `span_from_pin` lets the match **begin** at the pinned
+                // operator and continue across the following ones, and the pin
+                // therefore stays on: the shell never has to choose between
+                // *addressing this occurrence* and *reaching a split run*. See
+                // [`Plan::occurrences`] for why taking the pin off is not the
+                // weaker version of that, but a different and unsafe thing.
                 //
-                // He reported it as *"if I try to edit the edit is not
-                // accepted"*, and the refusal he got —
-                // `text to edit ("Final quality walkthrough with clien") was not
-                // found in an editable run on the page` — was the engine
-                // answering the question it had been asked, correctly.
-                //
-                // ⇒ The remedy is to take the pin OFF, which is what lets the
-                // cross-operator matcher run. The count is what makes that safe;
-                // see [`Plan::occurrences`] for why the pin cannot simply be
-                // dropped unconditionally, and [`page_occurrences`] for why a
-                // count over extracted text is a conservative stand-in for a
-                // count over operator text.
-                //
-                // ★★ Measured on his own file, one `EditSession` per shape,
-                // page 2, the run at doc-point `1,200.4,537.1`:
+                // ★★ Measured on the operator's own file, one `EditSession`
+                // per shape, page 2, the run at doc-point `1,200.4,537.1`:
                 //
                 // | request | result |
                 // |---|---|
-                // | whole-run `find` + pin — what this shell sent | `NotFound` |
+                // | whole-run `find` + plain pin | `NotFound` |
                 // | whole-run `find`, no pin | **OK**, `operators_spanned=36` |
-                // | `"clien"` + pin | `NotFound` |
+                // | `"clien"` + plain pin | `NotFound` |
                 // | `"clien"`, no pin | **OK**, `operators_spanned=5` |
                 //
-                // ★★★ Note what the second row falsifies: the whole-run `find`
-                // — spaces and all — matches perfectly once the pin is off. The
-                // standing diagnosis had been that extraction synthesises the
-                // spaces in that string and no operator holds them, so no
-                // widening of the matcher could ever reach it. **On this file
-                // that is not true**: 36 characters, 36 operators, spaces
-                // included. The synthesised-space case is real and is documented
-                // above, but it belongs to his CAD drawings and was not what
-                // blocked his typo. The narrower `find` was therefore never
-                // needed, and it would have been strictly worse — the changed
-                // span alone (`"n"` → `"nt"`) occurs **33 times** on that page,
-                // where the whole run occurs once.
+                // ★★★ The second row is what settles the choice of `find`: the
+                // whole-run string — synthesised spaces and all — matches
+                // perfectly once the match is allowed to span, 36 characters
+                // over 36 operators. The synthesised-space case documented
+                // above is real, but it belongs to the CAD drawings and is not
+                // what blocks this typo. A narrower `find` is strictly worse:
+                // the changed span alone (`"n"` → `"nt"`) occurs **33 times**
+                // on that page, where the whole run occurs once.
                 //
                 // ## ★★★ The one worry about the whole-run form, MEASURED
                 //
@@ -404,47 +331,30 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // whole-run form is not, and that difference is **deliberately
                 // not** the deciding one: 0.042 pt is invisible, whereas the
                 // narrow form's ambiguity is a wrong edit on a signed document.
-                // `glyphwall::a_typo_in_a_run_written_one_glyph_at_a_time_can_be
-                // _corrected` holds the bound so the day it stops being invisible
-                // is a test failure and not a report from him.
-                // ★★★ **SPAN FROM THE PIN** (`Pass 272.0`, 2026-09-08) —
-                // the line that replaced the whole occurrence-counting
-                // apparatus, and the engine shipped it the same day this
-                // shell asked for it.
+                // [`super::glyphwall`]'s typo test holds the bound, so the day
+                // it stops being invisible is a test failure rather than a
+                // report from the operator.
                 //
-                // A plain pin confines the match to one operator, which on a
-                // per-glyph CAD run holds one character; a 36-character `find`
-                // cannot fit and the engine answered `NotFound`. This flag
-                // lets the match **begin** at the pinned operator and continue
-                // across the following ones, with every existing guard
-                // untouched — same `spannable` test, same `same_line`
-                // tolerance, same trim-to-what-the-match-touches rule.
-                //
-                // ⇒ So the pin stays on, always, and the shell no longer has
-                // to choose between *addressing this occurrence* and
-                // *reaching a split run*. It was previously forced to pick
-                // one, and picked refusal.
+                // ★★★ **SPAN FROM THE PIN**, which is what makes all of the
+                // above reachable. Every existing guard is untouched — same
+                // `spannable` test, same `same_line` tolerance, same
+                // trim-to-what-the-match-touches rule — so the only thing it
+                // changes is where the search starts.
                 //
                 // ⚠ **Do NOT reintroduce "drop the pin when the text is
-                // unique" as a fallback.** The engine's reply is explicit that
-                // it is not a weaker version of this: `find_anchor` tries a
-                // single-operator match across the *whole page* first, so a
-                // single-operator twin anywhere on the sheet beats a spanning
-                // occurrence above it — which can make the clicked run
-                // unreachable rather than merely ambiguous.
+                // unique" as a fallback**; see [`Plan::occurrences`].
                 if !one_operator {
                     request.span_from_pin = true;
                 }
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★ `span_from_pin` replaced `occurrences=` here on
-                    // 2026-09-08. It is the field that now says how the
-                    // request is addressed, and it is spelled as `0`/`1`
-                    // rather than `{:?}` on a `bool` for the reason that
-                    // banned `{:?}` from every parsed field in this tree: a
-                    // `Debug` spelling of a domain value has already produced
-                    // two false failure reports.
+                    // ★ `span_from_pin` is the field that says how the request
+                    // is addressed. It is spelled as `0`/`1` rather than
+                    // `{:?}` on a `bool` for the reason that bans `{:?}` from
+                    // every parsed field in this tree: a `Debug` spelling is a
+                    // Rust rendering of a domain value, and a parser reading it
+                    // is reading the language rather than the program.
                     format!(
                         "edit-text-pin page={page} run={run} one_operator={one_operator} \
                          find_len={} span_from_pin={} pinned={}",
@@ -477,7 +387,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
 
     let reason = disposition::choose(matrices.0, matrices.1, shares_the_line, finding);
     // ★★★ **The words the operator typed, kept where a refusal can find them**
-    // — `OPERATOR_REQUESTS.md` O141, 2026-09-05. See [`LAST_COMMIT`].
+    // — `OPERATOR_REQUESTS.md` O141. See [`LAST_COMMIT`].
     LAST_COMMIT.with_borrow_mut(|slot| {
         *slot = Some(Committing {
             page,
@@ -494,22 +404,3 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
         occurrences,
     }
 }
-
-// ★★★ `page_occurrences` LIVED HERE and was deleted on 2026-09-08.
-//
-// Roughly sixty lines of documentation arguing why a count taken over
-// EXTRACTED text was a safe proxy for a count over decoded OPERATOR text: the
-// two differ, every way they differ pushes the count **up**, so `n == 1` meant
-// the engine had *at most* one candidate and the proxy could only ever refuse
-// an edit that would have been safe.
-//
-// The argument was correct. It answered a question that no longer exists:
-// `EditRequest::spanning_from` disambiguates by the pin, so nothing here needs
-// to know how many times anything occurs. See [`Plan::occurrences`] for the
-// whole story, **including the engine's correction that the fallback this
-// count licensed was never safe in the way it was believed to be**.
-//
-// It is recorded as a comment rather than left as dead code because the
-// reasoning is the valuable part and the function is not: a future change that
-// wants to count occurrences should read why this one was conservative in the
-// direction it was, and then check whether it still needs to count at all.

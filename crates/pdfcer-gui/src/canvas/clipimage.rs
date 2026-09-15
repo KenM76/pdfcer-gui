@@ -3,15 +3,16 @@
 //!
 //! ## What this closes
 //!
-//! The operator, 2026-08-31 (`OPERATOR_REQUESTS.md` **O71**):
+//! The operator (`OPERATOR_REQUESTS.md` **O71**):
 //!
 //! > *"In read mode the regular pointer should also allow us to select images
 //! > so we can copy and paste them as well as text outside of the pdfcergui."*
 //!
-//! **Outside** is the requirement. `canvas::clipboard` has carried a rich
-//! internal clip since 2026-08-20 — an `ObjectClip`, a `MarkupSpec`, structure
-//! a bitmap cannot express — and it is the right payload for pdfcer→pdfcer work
-//! and meaningless to Word.
+//! **Outside** is the requirement. `canvas::clipboard` carries a rich internal
+//! clip — an `ObjectClip`, a `MarkupSpec`, structure a bitmap cannot express —
+//! which is the right payload for pdfcer→pdfcer work and meaningless to Word.
+//! This module is the other half of the same copy: a picture any program can
+//! paste.
 //!
 //! ## ★★★ Where the pixels come from, and why not the page
 //!
@@ -19,8 +20,8 @@
 //!
 //! `ObjectClip::to_pdf` returns a standalone document whose `/MediaBox` is
 //! exactly the selection's bounding box, with the content translated to the
-//! origin — the engine built it *"for a host shell's OS-clipboard interop"*,
-//! which is this. Rendering that gives:
+//! origin, and it exists for exactly this consumer: a host shell putting a
+//! selection on the operating system's clipboard. Rendering that gives:
 //!
 //! | | clip PDF | crop of the page |
 //! |---|---|---|
@@ -153,9 +154,9 @@ fn scale_for(w_pt: f64, h_pt: f64) -> Option<f32> {
 ///
 /// # ★ Why premultiplied is the input
 ///
-/// Because that is `tiny_skia`'s contract and therefore `pdfcer-render`'s: its
-/// pixmap data is premultiplied RGBA8, *"handed over unchanged — the engine's
-/// stated contract"*, as `render::worker` says of the same buffer. Treating it
+/// Because that is `tiny_skia`'s contract and therefore `pdfcer-render`'s: the
+/// pixmap data is premultiplied RGBA8 and is handed over unchanged, which is
+/// the same buffer and the same contract `render::worker` consumes. Treating it
 /// as straight alpha would double-darken every edge, which reads as a picture
 /// with a dirty outline rather than as a bug.
 ///
@@ -187,9 +188,10 @@ mod tests {
 
     /// ★★ **A small selection is scaled UP, and a huge one is capped.**
     ///
-    /// The two ends, asserted as magnitudes rather than as relations: "the
-    /// scale is bigger for a smaller clip" is satisfied by any absurdity in the
-    /// right direction, which is the failure `HANDOFF.md` §2 records.
+    /// The two ends, asserted as magnitudes rather than as relations. A
+    /// relational assertion — "the scale is bigger for a smaller clip" — is
+    /// satisfied by any absurdity in the right direction, so it stays green
+    /// while the numbers are wrong.
     #[test]
     fn the_scale_fills_the_target_and_stops_at_the_ceiling() {
         // 100 pt wide → 16× fills 1,600 px.

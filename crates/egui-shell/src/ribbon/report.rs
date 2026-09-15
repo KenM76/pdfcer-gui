@@ -73,12 +73,12 @@ pub const PREFIX: &str = "ribbon";
 /// the question a consumer asks is *where is this control*, and a control that
 /// is greyed is still a control that was drawn somewhere. That rule is right,
 /// and it leaves a hole the exact shape of an operator saying *"that entire
-/// area is always greyed out"* — a harness could prove the five font controls
-/// were on screen and could not prove that one of them could be pressed. The
-/// join (predicate, conditions, renderer, this frame) had no oracle outside the
-/// process at all, so it was asserted by a unit test that re-evaluates the
-/// predicate against the conditions, which is the two halves agreeing with each
-/// other rather than the shipped frame answering.
+/// area is always greyed out"* — a harness can prove a band's controls were on
+/// screen and cannot prove that any of them could be pressed. The join
+/// (predicate, conditions, renderer, this frame) has no oracle outside the
+/// process at all; without this line it can only be asserted by a unit test
+/// that re-evaluates the predicate against the conditions, which is the two
+/// halves agreeing with each other rather than the shipped frame answering.
 ///
 /// ★★ It is a separate LINE rather than a field on the rect report because
 /// [`RectSink`] is `FnMut(&str, Rect)` and is consumed by three other surfaces
@@ -235,17 +235,16 @@ pub fn trailing_item(command_id: &str) -> String {
 ///
 /// # Why this exists at all
 ///
-/// Until this landed, the ribbon published a rect for every *group
-/// caption*, every *tab*, every *mode segment* and every *QAT control*,
-/// and **nothing for the forty controls an operator actually clicks**. So
-/// no process outside the application could say where the `Rectangle`
-/// button was, and therefore nothing outside the application could click
-/// it and observe what happened.
+/// The group caption, the tab, the mode segment and the QAT control all
+/// publish a rect; the controls an operator actually clicks are inside a
+/// group, and without this name no process outside the application could
+/// say where one of them is, so nothing outside the application could
+/// click one and observe what happened.
 ///
-/// That gap has a precise cost, and this crate has already paid it once.
-/// The icon painter existed, was tested, and was never handed to the
-/// ribbon — a defect invisible to every unit test in two crates, found
-/// only by reading the width of a rect the *running* window declared (see
+/// That gap has a precise cost. A capability can be present, unit-tested,
+/// and never wired into the frame — an icon painter that is never handed
+/// to the ribbon is invisible to every unit test in two crates and shows
+/// up only in the width of a rect the *running* window declares (see
 /// [`qat_item`]'s consumer, `tools/ui-verify`'s `qat_icons` check). A
 /// control whose rect is unpublished is a control no such check can ever
 /// be written for.

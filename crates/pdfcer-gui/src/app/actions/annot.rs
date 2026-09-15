@@ -1,41 +1,39 @@
 //! # `app::actions::annot` — the verbs whose subject is a whole annotation
 //!
 //! Move it, resize it, remove it, write the note on it, **answer it, and
-//! record whether its window opens**. Split out of
-//! [`super::action`] under **R2** on 2026-08-28, when `ResizeAnnotation` grew
-//! the operator's Tool-row scale switches and took that file past 1,500 lines
-//! for the fifth time. It grew the two note verbs the same evening, when
-//! `pdfcer-core` `Pass 154.0` answered the blocker that had kept the Comments
-//! panel read-only.
+//! record whether its window opens**. Held here rather than in
+//! [`super::action`] so that the action enum stays inside R2's 1,500-line
+//! ceiling.
 //!
-//! ## ★★ Why THIS family, when the file's header still names markup
+//! ## Which family comes out next
 //!
-//! [`super::action`]'s header pre-measured **markup** as the next sub-enum and
-//! it is still the largest. The rule it states is *"the next family of variants
-//! to **grow**"*, and today that was this one — the same reading that took the
-//! text family out this morning. The markup measurement stands and is still the
-//! answer the day markup grows.
+//! [`super::action`]'s header names **markup** as its largest sub-enum and the
+//! obvious candidate. The rule it states is *"the next family of variants to
+//! **grow**"*, and growth is what decides: size alone does not move a family
+//! out of that file.
 //!
-//! ## ★★★ What these all share, and it is not "they are annotations"
+//! ## What these all share, and it is not "they are annotations"
 //!
-//! **None of them takes a page index.** Every other authoring verb in this
-//! crate does. The reason is a property of the engine's annotation verbs:
-//! `move_annotation`, `resize_annotation`, `delete_annotation`,
-//! `set_markup_note` and `clear_markup_note` all find their operand by
-//! **stable object id**, so a page number would be a second
+//! **None of them uses a page index to FIND its operand.** Every other
+//! authoring verb in this crate does. The reason is a property of the engine's
+//! annotation verbs: `move_annotation`, `resize_annotation`,
+//! `delete_annotation`, `set_markup_note` and `clear_markup_note` all find
+//! their operand by **stable object id**, so a page number would be a second
 //! way of naming a thing that is already named — and one that goes wrong the
 //! moment a page is reordered between the gesture and the queue draining.
 //!
-//! ⇒ That is why `Delete` carries a page and the others do not: its page is
-//! for the **trace and the disclosure**, not for finding the annotation. The
-//! asymmetry is real and is documented on the variant rather than smoothed
-//! away, because smoothing it would mean adding a page to two verbs that must
-//! not use one.
+//! Two variants carry a page anyway and neither is an address. `Delete`'s is
+//! for the **trace and the disclosure**. `Arrange`'s is the engine's own
+//! operand — the `/Annots` array being permuted belongs to a page. Both
+//! asymmetries are documented on the variant rather than smoothed away,
+//! because smoothing them would mean handing a page to the verbs that must not
+//! use one.
 //!
-//! ## ★ `CommitMarkup` (and, until 2026-09-08, `PasteMarkup`) is deliberately NOT here
+//! ## `CommitMarkup` and `PasteMarkup` are deliberately NOT here
 //!
-//! They **author** an annotation, which needs a page, a spec and a pen. These
-//! three act on one that exists. Authoring and editing are different subjects
+//! They **author** an annotation, which needs a page, a spec and a pen. The
+//! verbs here act on one that exists. Authoring and editing are different
+//! subjects
 //! however much they share a noun, and a sub-enum drawn around the noun rather
 //! than around the subject would be the larger of the two families and the less
 //! useful one.
@@ -43,7 +41,7 @@
 /// The verbs whose subject is a whole annotation that already exists.
 #[derive(Debug, Clone, PartialEq)]
 pub enum AnnotAction {
-    /// ★★★ **Move a markup annotation by a page-space delta**, as one undoable
+    /// **Move a markup annotation by a page-space delta**, as one undoable
     /// command.
     ///
     /// Raised by `crate::canvas::annotdrag` on the release of a drag, and by
@@ -53,7 +51,7 @@ pub enum AnnotAction {
     /// the absolute-coordinate geometry keys — which any *other* tool rebuilds
     /// an appearance from — are the half that would be silently left behind.
     ///
-    /// ★ No page, for [`Self::DeleteAnnotation`]'s reason inverted: that one
+    /// No page, for [`Self::Delete`]'s reason inverted: that one
     /// carries a page purely for its trace and its disclosure, and this one
     /// needs neither — `move_annotation` finds the annotation by id, and the
     /// disclosure it owes is about a pop-up rather than a sheet.
@@ -66,13 +64,13 @@ pub enum AnnotAction {
         /// upward in PDF user space (§8.3.2.3).
         dy: f64,
     },
-    /// ★★★ **Change where a markup annotation sits in its page's paint
+    /// **Change where a markup annotation sits in its page's paint
     /// order** — Bring to front, Bring forward, Send backward, Send to back.
     ///
     /// Raised by `crate::app::dispatch::markup` from the ribbon's Arrange group
     /// and from nothing else.
     ///
-    /// # ★★ It carries an INTENT, not an order — and that is the whole design
+    /// # It carries an INTENT, not an order — and that is the whole design
     ///
     /// `EditSession::reorder_annotations` takes the page's whole `/Annots`
     /// permutation, and the obvious shape for this variant is therefore
@@ -84,16 +82,17 @@ pub enum AnnotAction {
     /// refuses a stale one by name (`AnnotsNotAPermutation`) rather than applying
     /// it approximately.
     ///
-    /// ⇒ So the array is read at apply time, in
+    /// So the array is read at apply time, in
     /// [`crate::app::actions::reorder::arrange`]. This is the same rule
     /// [`Self::Move`] follows by carrying a **delta** rather than a rectangle,
     /// and its reason restated: a value resolved at the press is a value that may
     /// have moved under you.
     ///
-    /// # ★ It takes a page, unlike its neighbours, and the header's rule holds
+    /// # It takes a page, and the header's rule still holds
     ///
-    /// This module's header says *"none of them takes a page index"*, because
-    /// every annotation verb finds its operand by stable object id. That is still
+    /// This module's header says *"none of them uses a page index to find its
+    /// operand"*, because every annotation verb finds its operand by stable
+    /// object id. That is still
     /// true of the operand — the mark is named by [`Self::Arrange::id`] — and the
     /// page here is not an address for it. It is `reorder_annotations`' **own**
     /// operand: the array being permuted belongs to a page, and the engine takes
@@ -108,7 +107,7 @@ pub enum AnnotAction {
         /// Which end, or which single step.
         to: crate::app::actions::reorder::ArrangeTo,
     },
-    /// ★★★ **Scale a markup annotation about an anchor**, as one undoable
+    /// **Scale a markup annotation about an anchor**, as one undoable
     /// command. `OPERATOR_REQUESTS.md` **O51**.
     ///
     /// Raised by `crate::canvas::resizing` on the release of a grip drag, and
@@ -116,7 +115,7 @@ pub enum AnnotAction {
     /// shape this shell asked the engine for so it would match
     /// `transform_objects`, and the argument is at that call site.
     ///
-    /// ★★ [`Self::uniform`] travels because the engine **asked for it by
+    /// [`Self::uniform`] travels because the engine **asked for it by
     /// name**, and it is not a number the engine could derive equally well: it
     /// reports what the operator did with their hand — a Shift-constrained
     /// corner drag versus a free edge drag. Neither PDF nor SVG has a per-axis
@@ -135,7 +134,7 @@ pub enum AnnotAction {
         sy: f64,
         /// Whether the two factors are equal. See the variant docs.
         uniform: bool,
-        /// ★★ **The operator's Tool-row switches, CARRIED rather than read at
+        /// **The operator's Tool-row switches, CARRIED rather than read at
         /// apply time** — `OPERATOR_REQUESTS.md` O51.
         ///
         /// The same rule `CommitMarkup` follows and for its stated reason: a
@@ -145,18 +144,17 @@ pub enum AnnotAction {
         /// comment says why that is safe there — it is raised by a dialog the
         /// operator is sitting in, on the frame they press Accept.
         ///
-        /// ★ Nobody can tick a checkbox during a drag, so the two would agree
+        /// Nobody can tick a checkbox during a drag, so the two would agree
         /// today. Carrying it is what keeps that an observation rather than a
         /// dependency.
         modifiers: crate::canvas::scaling::Modifiers,
     },
-    /// ★★★ **Turn a markup annotation about a pivot**, as one undoable command.
-    /// `Pass 155.0`.
+    /// **Turn a markup annotation about a pivot**, as one undoable command.
     ///
     /// Raised by `crate::canvas::rotating` on the release of a rotate-handle
     /// drag, and by nothing else.
     ///
-    /// # ★★★ Why there is no options type, unlike [`Self::Resize`]
+    /// # Why there is no options type, unlike [`Self::Resize`]
     ///
     /// **Because a rotation is an isometry.** Every length is preserved,
     /// including the drawn stroke width — so the whole question
@@ -169,7 +167,7 @@ pub enum AnnotAction {
     /// together, **rotate needs no confirmation step and no distortion
     /// warning.** Resize does."*
     ///
-    /// # ★★ A foreign appearance turns correctly, where it cannot be scaled
+    /// # A foreign appearance turns correctly, where it cannot be scaled
     ///
     /// [`Self::Resize`] has to refuse artwork pdfcer did not draw: §12.5.5's
     /// placement matrix scales it *after* stroking and no scalar `/BS /W`
@@ -180,10 +178,10 @@ pub enum AnnotAction {
     /// Nothing is redrawn and nobody's artwork is replaced. It works on a stamp
     /// Acrobat made.
     ///
-    /// ⇒ Which is why the operator gets no confirmation, no warning and no
+    /// Which is why the operator gets no confirmation, no warning and no
     /// second thought on this gesture, and gets all three on the resize.
     ///
-    /// # ★ `pivot` in page space, and `degrees` anticlockwise
+    /// # `pivot` in page space, and `degrees` anticlockwise
     ///
     /// The **same anchor-plus-scalar shape** [`Self::Move`] and [`Self::Resize`]
     /// already take, which the engine chose deliberately so this shell's grip
@@ -191,7 +189,7 @@ pub enum AnnotAction {
     /// screen→page negation that gets it here; see that module's header for why
     /// it happens exactly once.
     ///
-    /// ★ No page, for this module's stated reason: `rotate_annotation` finds
+    /// No page, for this module's stated reason: `rotate_annotation` finds
     /// its operand by stable object id.
     Rotate {
         /// The annotation, by stable object id.
@@ -205,8 +203,8 @@ pub enum AnnotAction {
         /// affordance rather than a limit of the verb.
         degrees: f64,
     },
-    /// ★★★ **Set an annotation's angle ABSOLUTELY** — `Pass 155.2`, and the
-    /// verb a typed properties field needs.
+    /// **Set an annotation's angle ABSOLUTELY** — the verb a typed properties
+    /// field needs.
     ///
     /// [`Self::Rotate`] is a **delta** and is right for a drag: a hand on a
     /// rotate grip expresses *turn it by this much*. A typed field expresses
@@ -215,7 +213,7 @@ pub enum AnnotAction {
     /// comment carries this shell's own argument for it verbatim: *"the first
     /// time those disagree the object silently ends up somewhere else."*
     ///
-    /// # ★★ It REFUSES rather than assuming zero
+    /// # It REFUSES rather than assuming zero
     ///
     /// `EditError::AnnotationRotationUnreadable`, when there is no appearance
     /// stream or the `/Matrix` is not a rotation-plus-uniform-scale. Assuming
@@ -226,7 +224,7 @@ pub enum AnnotAction {
     /// unreachable from here, and it is worded anyway because *"should be
     /// unreachable"* is not a guarantee.
     ///
-    /// # ⚠ The outcome's `degrees` is the DELTA the engine worked out
+    /// # The outcome's `degrees` is the DELTA the engine worked out
     ///
     /// Not the absolute target that was asked for. The outcome describes the
     /// edit, which is the same convention every other transform verb follows;
@@ -243,13 +241,12 @@ pub enum AnnotAction {
         /// Degrees **anticlockwise** from the authored orientation, absolute.
         degrees: f64,
     },
-    /// ★★★ **Turn a ce dimension about a pivot**, as one undoable command.
-    /// `Pass 159.0`.
+    /// **Turn a ce dimension about a pivot**, as one undoable command.
     ///
     /// Raised by `crate::canvas::rotating` on the release of a rotate-handle
     /// drag over a selected ce dimension, and by nothing else.
     ///
-    /// # ★★★ A separate variant, because [`Self::Rotate`] REFUSES a dimension
+    /// # A separate variant, because [`Self::Rotate`] REFUSES a dimension
     /// by name
     ///
     /// `rotate_annotation` returns `AnnotationMoveWrongVerb` for a ce dimension
@@ -260,13 +257,13 @@ pub enum AnnotAction {
     /// the baked `/AP` and leave the sidecar geometry — the thing the number is
     /// derived from — where it was.
     ///
-    /// ⇒ Two variants rather than one with a kind flag, for exactly the reason
+    /// Two variants rather than one with a kind flag, for exactly the reason
     /// `canvas::selection::annot::AnnotKind` is an enum: **a bool is a fact a
     /// caller may forget to read; a variant is one the compiler makes them
     /// handle.** The routing decision is made once, in `canvas::rotating`, over
     /// a `match` that cannot fall through.
     ///
-    /// # ★★ The measured value cannot change, and the UI is built around that
+    /// # The measured value cannot change, and the UI is built around that
     ///
     /// A rotation preserves every distance, so the number is identical either
     /// side of it **by construction** rather than because pdfcer holds it. The
@@ -275,7 +272,7 @@ pub enum AnnotAction {
     /// a stale binding."* There is therefore no before/after value on the
     /// outcome and none carried here.
     ///
-    /// # ★★★ What DOES change, and is disclosed
+    /// # What DOES change, and is disclosed
     ///
     /// A `Linear` dimension locked to horizontal or vertical **cannot stay
     /// locked through a rotation**, and the engine relaxes it to *aligned*
@@ -285,7 +282,7 @@ pub enum AnnotAction {
     /// *"an operator whose dimension silently stopped being axis-locked will
     /// find out later and blame something else."*
     ///
-    /// # ★ It carries a `DimensionId`, not an `ObjId`
+    /// # It carries a `DimensionId`, not an `ObjId`
     ///
     /// The one place this sub-enum departs from its own header's rule, and
     /// deliberately: `rotate_dimension` takes the **sidecar record's** id, and
@@ -307,6 +304,12 @@ pub enum AnnotAction {
         /// Degrees anticlockwise in PDF user space.
         degrees: f64,
     },
+    /// **Remove an annotation from the document**, as one undoable command.
+    /// `EditSession::delete_annotation`.
+    ///
+    /// The engine cascades: a `/Popup` companion goes with its parent, and
+    /// `/IRT` referrers are kept but un-linked rather than deleted with it —
+    /// a reviewer's reply is their words, not the mark it hung off.
     Delete {
         /// The page it is on — for the trace and the disclosure, not for the
         /// verb, which finds the annotation by id wherever it lives. A reply
@@ -316,7 +319,7 @@ pub enum AnnotAction {
         /// The annotation, by stable object id.
         id: pdfcer_core::object::ObjId,
     },
-    /// ★★★ **Write the note on an annotation that already exists** —
+    /// **Write the note on an annotation that already exists** —
     /// `/Contents`, and conditionally `/T` and `/M` — as one undoable command.
     ///
     /// Raised by the Comments panel's editor and by nothing else. It is the
@@ -326,14 +329,13 @@ pub enum AnnotAction {
     /// > draw the shape → **it is selected** → type the comment in the panel
     /// > beside the page.
     ///
-    /// The first half has worked since Phase 6. The second half had **no verb
-    /// behind it at all** until `Pass 154.0`, which is why this shell's
-    /// Comments panel was read-only for the life of the project: `MarkupOptions`
-    /// is an author-time structure, and a cloud, a highlight and an arrow are
-    /// authored on mouse-release from geometry alone, with no text-entry moment
-    /// to hang a note off.
+    /// The second half needs a verb of its own, and `MarkupOptions` is not it:
+    /// it is an author-time structure, and a cloud, a highlight and an arrow
+    /// are authored on mouse-release from geometry alone, with no text-entry
+    /// moment to hang a note off. Without `set_markup_note` a Comments panel
+    /// can only read.
     ///
-    /// ★ **No page.** Like [`Self::Move`] and [`Self::Resize`], the engine finds
+    /// **No page.** Like [`Self::Move`] and [`Self::Resize`], the engine finds
     /// its operand by stable object id — see this module's header for why a page
     /// index would be a second, weaker name for a thing already named.
     SetNote {
@@ -344,7 +346,7 @@ pub enum AnnotAction {
         /// a comment, and `pdfcer-core` models the two as separate verbs for
         /// that reason.
         text: String,
-        /// ★★★ **Whether the annotation already carries a `/T`, and its byline
+        /// **Whether the annotation already carries a `/T`, and its byline
         /// must therefore be left alone.**
         ///
         /// This is the flag that decides whether correcting somebody else's
@@ -354,7 +356,7 @@ pub enum AnnotAction {
         /// `true` means *send no author at all* rather than *send the existing
         /// one back*.
         ///
-        /// ★ It travels on the action rather than being read at apply time
+        /// It travels on the action rather than being read at apply time
         /// because the panel drew the row and knows what the byline said; an
         /// apply-time re-read would be a second walk of the annotation for a
         /// fact the raising surface already had, and two reads of one fact is
@@ -369,7 +371,7 @@ pub enum AnnotAction {
     /// operator's: *"an empty comment is a comment, and a reviewer deleting
     /// their remark is not the same as leaving a blank one."*
     ///
-    /// ★ It is **not** a delete. The shape stays, its geometry is untouched, and
+    /// It is **not** a delete. The shape stays, its geometry is untouched, and
     /// `Ctrl+Z` restores the words. The wording of the control and of its
     /// disclosure both say so, because a canvas cannot: a shape with a note and
     /// the same shape without one are the same picture.
@@ -377,15 +379,14 @@ pub enum AnnotAction {
         /// The annotation, by stable object id.
         id: pdfcer_core::object::ObjId,
     },
-    /// ★★★ **Answer a comment** — a new `/Text` annotation carrying `/IRT`
-    /// and `/RT /R`, as one undoable command. `EditSession::add_reply`,
-    /// `pdfcer-core` `Pass 253.0` (§12.5.6.2, Table 170).
+    /// **Answer a comment** — a new `/Text` annotation carrying `/IRT` and
+    /// `/RT /R`, as one undoable command. `EditSession::add_reply`
+    /// (§12.5.6.2, Table 170).
     ///
     /// Raised by the Comments panel's editor when its draft is aimed at a
     /// reply rather than at the row's own `/Contents`, and by nothing else.
     ///
-    /// # ★★ Why this is a separate variant and not [`Self::SetNote`] with a
-    /// flag
+    /// # Why this is a separate variant and not [`Self::SetNote`] with a flag
     ///
     /// Because it reaches a **different engine verb with a different
     /// outcome**. `set_markup_note` edits a dictionary that already exists;
@@ -397,15 +398,15 @@ pub enum AnnotAction {
     /// worst thing this surface can do — and would arrive as a silently
     /// mishandled field rather than as a compile error.
     ///
-    /// ★ **No page**, like every neighbour in this module: `add_reply` finds
-    /// the parent by stable object id and places the reply on *the parent's
-    /// own page*, resolved by its own page-tree walk
-    /// (`pdfcer-core/src/edit.rs:26981-27002`). A page carried from the panel
+    /// **No page**, like every neighbour in this module: `add_reply` finds the
+    /// parent by stable object id and places the reply on *the parent's own
+    /// page*, resolved by the same page-tree walk `locate_annotation` does.
+    /// A page carried from the panel
     /// would be a second, weaker name for a sheet the engine has already
     /// found, and one that goes stale if pages are reordered between the press
     /// and the queue draining.
     ///
-    /// ★★ **No `keep_author`**, unlike [`Self::SetNote`], and the asymmetry is
+    /// **No `keep_author`**, unlike [`Self::SetNote`], and the asymmetry is
     /// the whole point of the pair. `SetNote` may be editing *somebody else's*
     /// comment, so it must be able to say *"write no `/T` at all"*. A reply is
     /// a **new annotation this operator is authoring**, so its byline is
@@ -423,19 +424,19 @@ pub enum AnnotAction {
         parent: pdfcer_core::object::ObjId,
         /// The words, exactly as the operator typed them — **never blank**.
         ///
-        /// # ★★★ The guard is THIS SHELL's, not the engine's, and the
-        /// difference was measured
+        /// # The guard is THIS SHELL's, not the engine's, and the difference
+        /// was measured
         ///
         /// `add_reply`'s own doc comment lists *"[`EditError::MarkupNoteEmpty`]
         /// and the note's own validation"* among its errors. **That variant
         /// does not exist.** Measured 2026-09-06 against the pinned engine at
         /// `d2ea5de`: `MarkupNoteEmpty` occurs exactly once in the whole crate
         /// and the occurrence is that doc line; `MarkupNote::validate`
-        /// (`edit.rs:4731`) checks only the `/M` date's §7.9.4 shape and
+        /// checks only the `/M` date's §7.9.4 shape and
         /// returns `Ok(())` for an empty `/Contents`. So an empty reply is
         /// **authored**, not refused.
         ///
-        /// ⇒ Which makes the blank case the shell's to decide, and it is
+        /// Which makes the blank case the shell's to decide, and it is
         /// decided against. A `/Text` sticky with no `/Contents` is an
         /// ordinary and useful thing — it is what an operator has just placed
         /// and is about to type into. A **reply** with none is an annotation
@@ -444,23 +445,23 @@ pub enum AnnotAction {
         /// control is not drawn until the box holds something —
         /// `panels::comments::editor::reply_is_postable`, R83.
         ///
-        /// ★ Recorded here rather than only in the guard because a future
+        /// Recorded here rather than only in the guard because a future
         /// reader who checks the engine's error list will find the variant
         /// named there and conclude the shell-side guard is redundant. It is
         /// not: it is the only thing standing between a stray press and a
         /// wordless comment in the file.
         text: String,
     },
-    /// ★★★ **Open or close a comment's pop-up window IN THE FILE** — `/Open`
-    /// on the annotation and on its `/Popup` companion, as one undoable
-    /// command. `EditSession::set_annotation_open`, `pdfcer-core`
-    /// `Pass 253.3` (§12.5.6.4 Table 172, §12.5.6.14 Table 183).
+    /// **Open or close a comment's pop-up window IN THE FILE** — `/Open` on
+    /// the annotation and on its `/Popup` companion, as one undoable command.
+    /// `EditSession::set_annotation_open` (§12.5.6.4 Table 172, §12.5.6.14
+    /// Table 183).
     ///
     /// Raised by the canvas pop-up's *Open by default* control, and by nothing
     /// else. **It is emphatically not raised by opening or closing a pop-up on
     /// screen** — see below, because that distinction is the entire design.
     ///
-    /// # ★★★ Why a reading gesture must not reach this variant
+    /// # Why a reading gesture must not reach this variant
     ///
     /// Clicking a sticky note to read it, and pressing the window's ✕ when
     /// done, are how an operator *reads a marked-up drawing*. They happen
@@ -471,7 +472,7 @@ pub enum AnnotAction {
     /// changed, and a document that reports itself modified after a session in
     /// which they altered nothing.
     ///
-    /// ⇒ So `crate::canvas::notepopup::open` keeps on owning what is *showing*
+    /// So `crate::canvas::notepopup::open` keeps on owning what is *showing*
     /// — per-document interface state, no undo, no dirty flag — and this
     /// variant exists for the separate, deliberate act of saying **"and record
     /// that in the file, for whoever opens it next."** One press, one undo
@@ -483,7 +484,7 @@ pub enum AnnotAction {
     /// touches no document. The rule both obey is that **the undo log records
     /// changes to the document, and only what the operator meant as one.**
     ///
-    /// ★ **No page**, for this module header's reason: `set_annotation_open`
+    /// **No page**, for this module header's reason: `set_annotation_open`
     /// finds its operand by stable object id.
     SetOpen {
         /// The annotation whose window state is being written — the note, not
@@ -501,7 +502,7 @@ pub enum AnnotAction {
     // > *"I also can't edit or delete nodes of a markup shape once it is
     // > drawn."*
     //
-    // ★★★ **Three variants and not one with a `VertexEdit` inside it**, and the
+    // **Three variants and not one with a `VertexEdit` inside it**, and the
     // reason is `canvas::dimdrag::VertexIntent`'s: the three reach **three
     // different engine wrappers**, and the one thing that must never happen on
     // this canvas is a gesture aimed at the wrong verb. A single variant
@@ -510,7 +511,7 @@ pub enum AnnotAction {
     // future `VertexEdit` variant would arrive as a silent `..` match rather
     // than as a compile error.
     //
-    // ★ All three take **no page**, for [`Self::Move`]'s reason: the engine
+    // All three take **no page**, for [`Self::Move`]'s reason: the engine
     // finds its operand by stable object id, and a page index would be a
     // second, weaker name for a thing already named.
     /// **Move one node of a markup shape** by a page-space delta, as one
@@ -519,7 +520,7 @@ pub enum AnnotAction {
     /// Raised by `crate::canvas::annotnodes` on the release of a node drag, and
     /// by nothing else.
     ///
-    /// ★★ A **delta**, not a destination, and it is the same choice
+    /// A **delta**, not a destination, and it is the same choice
     /// `annotdrag::Move` made for the same reason one level up: the engine's
     /// verb takes `(index, dx, dy)`, and a shell that sent an absolute point
     /// would have to subtract the old one — which means reading the geometry a
@@ -545,7 +546,7 @@ pub enum AnnotAction {
     /// and says to rotate the polygon's start instead, which is what every
     /// other tool does as well.
     ///
-    /// ★ `at` is **already snapped**. `annotnodes` resolves the destination
+    /// `at` is **already snapped**. `annotnodes` resolves the destination
     /// through the same `measure::snap_point` the preview drew a marker at, so
     /// the point committed and the point shown are one value rather than two
     /// derivations of one intention.
@@ -559,7 +560,7 @@ pub enum AnnotAction {
     },
     /// **Take a node away.** `EditSession::remove_annotation_vertex`.
     ///
-    /// ★ No destination, because a removal has none. The drop point of the
+    /// No destination, because a removal has none. The drop point of the
     /// gesture that raised this is ignored on purpose, and `annotnodes` draws
     /// no snap marker for it — a marker would point at a node that is about to
     /// stop existing.
@@ -575,13 +576,13 @@ pub enum AnnotAction {
         index: usize,
     },
     // =======================================================================
-    // The POINTS of a freehand mark — O158, `pdfcer-core` `Pass 278.0`
+    // The POINTS of a freehand mark — O158
     // =======================================================================
     //
     // > *"the draw a line that follows the pointer tool — I can't edit the
     // > nodes that make it"*
     //
-    // ★★★ **Three more variants and not three more arms on the three above**,
+    // **Three more variants and not three more arms on the three above**,
     // for the same reason the three above are not one: an `/Ink` reaches a
     // **different engine planner** (`reshape_ink`, not `reshape_annotation`)
     // with a **two-part address** — `/InkList` is a list of strokes, so a point
@@ -592,13 +593,13 @@ pub enum AnnotAction {
     // `None`' — a sentence about `/Ink` appearing in code that has nothing to
     // do with it."*
     //
-    // ★ The shell's own flat anchor index is NOT carried here. The conversion
+    // The shell's own flat anchor index is NOT carried here. The conversion
     // from it to `(stroke, point)` happens once, in
     // `canvas::annotnodes::ink::StrokeTable`, on the frame the gesture is
     // planned, and the action carries the engine's address so the apply arm
     // has nothing to convert and nothing to get off by one.
     //
-    // ★ All three take **no page**, for [`Self::Move`]'s reason: the engine
+    // All three take **no page**, for [`Self::Move`]'s reason: the engine
     // finds its operand by stable object id.
     /// **Move one point of one stroke of a freehand mark** by a page-space
     /// delta, as one undoable command. `EditSession::move_ink_point`, reached
@@ -607,7 +608,7 @@ pub enum AnnotAction {
     /// Raised by `crate::canvas::annotnodes` on the release of a node drag on
     /// an `/Ink`, and by nothing else.
     ///
-    /// ★ A **delta**, not a destination — [`Self::MoveNode`]'s argument, and
+    /// A **delta**, not a destination — [`Self::MoveNode`]'s argument, and
     /// the engine's `InkEdit::MovePoint` takes `(dx, dy)` for the same reason.
     MoveInkPoint {
         /// The annotation, by stable object id.
@@ -624,7 +625,7 @@ pub enum AnnotAction {
     /// **Add a point to one stroke immediately after `after`**, at `at`.
     /// `EditSession::insert_ink_point`.
     ///
-    /// ★★ `after == last point of the stroke` **extends that stroke** — the
+    /// `after == last point of the stroke` **extends that stroke** — the
     /// engine's *"keep drawing where I stopped"* gesture — and never crosses
     /// into the next stroke. The canvas's flat segment list holds no segment
     /// between two strokes, so a right-click cannot even name one; a drag on a
@@ -659,7 +660,7 @@ pub enum AnnotAction {
     },
     /// **A node edit did not happen, and the operator is owed the sentence.**
     ///
-    /// ★★★ Raised on the release frame of a gesture whose preflight refused,
+    /// Raised on the release frame of a gesture whose preflight refused,
     /// and by `annotnodes::explain_unreshapable` when the Points tool is armed
     /// over a shape that shows no anchors. Carries no id and no index: the
     /// operator is looking at the shape, and what they need is the reason.
@@ -675,7 +676,7 @@ pub enum AnnotAction {
     /// triangle with nothing anywhere saying why. **That silence is precisely
     /// the shape of the report this whole feature answers.**
     ///
-    /// ★ Handed inward as an action rather than recorded at the gesture,
+    /// Handed inward as an action rather than recorded at the gesture,
     /// because the decline store is `pub(super)` inside `crate::app` and the
     /// canvas is outside that boundary. `DimensionAction::DeclineVertexEdit`
     /// carries the same argument for the ce-dimension twin.
@@ -685,23 +686,22 @@ pub enum AnnotAction {
         /// out of the string catalog.
         why: crate::text::markup::NodeEditRefusal,
     },
-    /// ★★★ **Restyle a text-BEARING annotation** — a sticky note's icon and
-    /// colour, a stamp's colour. `EditSession::set_text_annot_style`
-    /// (`pdfcer-core` `edit.rs:27124`), raised by
+    /// **Restyle a text-BEARING annotation** — a sticky note's icon and
+    /// colour, a stamp's colour. `EditSession::set_text_annot_style`, raised by
     /// `crate::panels::properties::markup::textannot` and by nothing else.
     ///
-    /// # ★★★ Why this is a SECOND style verb and not a field on
+    /// # Why this is a SECOND style verb and not a field on
     /// `Action::SetMarkupStyle`
     ///
     /// Because they are two verbs over two spec families, and the engine says
-    /// so in the type's own doc (`edit.rs:15969`): `MarkupStyle` reaches its
+    /// so in the type's own doc: `MarkupStyle` reaches its
     /// annotation through `annot_author::spec_from_dict`, *"whose arms are the
     /// geometric family and the four text markups. **There is no `/Text`
     /// arm**"* — and that function's own `UnsupportedSubtype` names `Text`
     /// explicitly. `TextAnnotStyle` reaches it through
     /// `annot_author::text_spec_from_dict` instead.
     ///
-    /// ⇒ So the two are not a split anyone chose for tidiness, and merging
+    /// So the two are not a split anyone chose for tidiness, and merging
     /// them into one action would put the routing decision in an apply arm
     /// where a wrong turn is a runtime refusal. Keeping them apart makes the
     /// panel's guard a `match` the compiler checks —
@@ -709,7 +709,7 @@ pub enum AnnotAction {
     /// mechanism by which a `/Stamp` cannot be sent to `set_markup_style`
     /// again.
     ///
-    /// # ★ Here rather than beside `Action::SetMarkupStyle`, and that is this
+    /// # Here rather than beside `Action::SetMarkupStyle`, and that is this
     /// # enum's own rule
     ///
     /// This module's header: *"none of them takes a page to locate one"*.
@@ -719,7 +719,7 @@ pub enum AnnotAction {
     /// undo label rather than to find the mark — an asymmetry documented
     /// there and not copied here.
     ///
-    /// # ⚠ Two constraints the caller cannot express, both by design
+    /// # Two constraints the caller cannot express, both by design
     ///
     /// * **`icon` is `/Text` only.** Any other subtype is refused by name with
     ///   `EditError::StylePropertyNotApplicable` rather than silently ignored

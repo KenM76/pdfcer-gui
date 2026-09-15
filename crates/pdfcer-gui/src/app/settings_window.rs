@@ -100,18 +100,17 @@ impl PdfcerApp {
     /// # 3. ★ Every cached raster is invalidated
     ///
     /// This is the step whose absence would be a defect, and a confusing one.
-    /// Five of the thirteen settings change how a page **renders** —
-    /// `cmyk_intent`, `mask_resample`, `image_minify`, `cmyk_jpeg_polarity`,
-    /// `missing_as` — and the canvas texture and the thumbnail rail were both
+    /// Several settings change how a page **renders** — `cmyk_intent`,
+    /// `mask_resample`, `image_minify`, `cmyk_jpeg_polarity` and `missing_as`
+    /// among them — and the canvas texture and the thumbnail rail were both
     /// produced under the old values. Without an invalidation the operator
     /// changes how black is drawn, presses Save, and **nothing on screen
     /// moves** until something else happens to dirty the cache.
     ///
-    /// That reads as the setting not working. It is the exact failure mode the
-    /// old shell's dispatcher guarded against with the same call, and its note
-    /// on the point is worth keeping: use the established funnel rather than
-    /// reaching into the two caches by hand, because a third cache added later
-    /// joins the funnel and does not join a pair of hand-written clears.
+    /// That reads as the setting not working. The rule that prevents it: go
+    /// through the established funnel rather than reaching into the two caches
+    /// by hand, because a third cache added later joins the funnel and does not
+    /// join a pair of hand-written clears.
     ///
     /// # 4. A failure is reported in the status bar, never in a dialog
     ///
@@ -143,9 +142,9 @@ impl PdfcerApp {
         // consults. Adopting the preference without rewriting the binding would
         // give the operator a radio button that saves correctly, reloads
         // correctly, reads correctly in the pane — and changes nothing when they
-        // press the key. That is precisely the silently-inert control this
-        // project has shipped before, and the reason `wheel_paging` grew its own
-        // live-apply branch three screens away in `frame.rs`.
+        // press the key. That is precisely the silently-inert control this call
+        // exists to prevent, and the same reason `wheel_paging` carries its own
+        // live-apply branch in `frame.rs`.
         //
         // ★ Unconditional rather than guarded on a change. `apply_paste_chords`
         // clears both chords and rewrites both, so its result depends only on
@@ -164,8 +163,8 @@ impl PdfcerApp {
         // whether the button is drawn and which program it starts. Adopting the
         // preference without re-resolving would give the operator a text field
         // that saves correctly, reloads correctly, reads back correctly — and
-        // changes nothing until pdfcer is restarted. That is the silently-inert
-        // control this project has shipped before.
+        // changes nothing until pdfcer is restarted: the same silently-inert
+        // control again.
         //
         // ★ It matters more here than it does for the paste chords, because
         // this setting's WHOLE PURPOSE is to be used by somebody who is looking
@@ -178,18 +177,18 @@ impl PdfcerApp {
         self.refresh_acrobat();
 
         // ★★★ AND THE FIND STATE FOLLOWS THE BLANK-TRIMMING PREFERENCE —
-        // `OPERATOR_REQUESTS.md` **O180**, 2026-09-12. The third instance of
-        // the paragraph above, and it is written out a third time rather than
-        // summarised because the failure it prevents is the same one twice
-        // over and the shape keeps recurring.
+        // `OPERATOR_REQUESTS.md` **O180**. The third instance of the paragraph
+        // above, and it is written out a third time rather than summarised
+        // because the failure it prevents is the same one each time and the
+        // shape keeps recurring.
         //
         // `Prefs::find_trim_query` is the FILE. What a search actually
         // consults is `FindState::trim_query`, seeded once at construction
         // from the file. Adopting the preference without writing it across
         // would give the operator a tick that saves correctly, reloads
         // correctly, reads back correctly in this window — and changes
-        // nothing about the next search until pdfcer is restarted. That is
-        // this project's most-repeated defect shape, and it is the precise
+        // nothing about the next search until pdfcer is restarted. That is the
+        // shape this shell guards against most often, and it is the precise
         // reason `apply_paste_chords` and `refresh_acrobat` are called here.
         //
         // ★ `set_trim_query` clears any standing result set, and only when
@@ -272,7 +271,7 @@ impl PdfcerApp {
         // Separate from the engine's store and reported separately, because
         // they can fail separately — a settings write can succeed while a
         // preferences write fails, and telling the operator "settings were not
-        // saved" when twelve of the fourteen were would be worse than useless.
+        // saved" when nearly all of them were would be worse than useless.
         //
         // The failure sentence is deliberately the SAME one, though: from the
         // operator's side both are "the choices I made in that window", they
@@ -319,16 +318,16 @@ impl PdfcerApp {
     /// Clear without updating, and every cache immediately refills under the
     /// old configuration, which reads the same way and is harder to find.
     ///
-    /// # Called from three places, and the third is the one that is easy to forget
+    /// # Called from a settings Save, and from the one place a document opens
     ///
-    /// A settings Save, an open, and a create. The first is obvious; the other
-    /// two exist because `OpenDoc::assemble` starts every document on the
-    /// *shipped defaults* — it cannot reach `PdfcerApp` — so a document opened
-    /// by an operator who has configured anything would otherwise render under
-    /// pdfcer's answers rather than theirs.
+    /// The first is obvious. The second is the one that is easy to forget:
+    /// `OpenDoc::assemble` starts every document on the *shipped defaults* — it
+    /// cannot reach `PdfcerApp` — so a document opened by an operator who has
+    /// configured anything would otherwise render under pdfcer's answers rather
+    /// than theirs.
     ///
     /// `opening_a_document_adopts_the_operators_settings` is the test that
-    /// stops a fourth open path being added without this call.
+    /// stops another open path being added without this call.
     ///
     /// # Why the caches are cleared wholesale
     ///
@@ -340,8 +339,7 @@ impl PdfcerApp {
     pub(crate) fn adopt_settings(&mut self) {
         let settings = self.settings.clone();
         let prefs = self.prefs.clone();
-        // ★ **Every open document, not only the one on screen** — 2026-08-19,
-        // with the document tabs.
+        // ★ **Every open document, not only the one on screen.**
         //
         // The snapshot-plus-caches argument above is a property of an
         // `OpenDoc`, not of the active one: a parked document keeps its page
@@ -361,9 +359,9 @@ impl PdfcerApp {
             };
             doc.settings = settings.clone();
             // The shell's own preferences ride along, because `render_quality`
-            // is baked into a cached texture exactly as the engine's five
-            // rendering settings are. Two stores, one snapshot point, one
-            // invalidation — see `OpenDoc::prefs`.
+            // is baked into a cached texture exactly as the engine's rendering
+            // settings are. Two stores, one snapshot point, one invalidation —
+            // see `OpenDoc::prefs`.
             doc.prefs = prefs.clone();
             // Rasters: the current page and every strip entry.
             doc.page_texture = None;

@@ -22,9 +22,10 @@ every fixture this repository holds:
      because its baseline does not run that way.
 
 A check that edited left-aligned upright text would pass against the broken
-build — which is the whole point of `HANDOFF.md` §2's grid lesson — so the
-fixture has to contain the two shapes the defect is about, and nothing else
-in this repository does.
+build. **A fixture that cannot express the defect makes every check written
+against it vacuous, however carefully the check is argued**, so this fixture
+has to contain the two shapes the defect is about — and nothing else in this
+repository does.
 
 ===========================================================================
 WHAT IT PRODUCES, AND WHY EACH DECISION IS THE WAY IT IS
@@ -84,8 +85,10 @@ shows up as a diff.
 **``.gitattributes`` already covers this.** ``core.autocrlf`` is true
 globally on this machine and a PDF's cross-reference table stores absolute
 byte offsets, so a normalized ``\\r\\n`` would corrupt the file at ``git add``
-time. ``HANDOFF.md`` §10 records why that file predates the first commit; the
-``*.pdf binary`` rule in it covers this fixture with no change.
+time — silently, because the corruption is in offsets rather than in content.
+The ``*.pdf binary`` rule in ``.gitattributes`` covers this fixture with no
+change needed here; that file's own header explains why its rule ORDER is
+load-bearing.
 """
 
 import os
@@ -193,25 +196,23 @@ def build_content() -> bytes:
 
     # --- D. TWO RUNS ON ONE BASELINE, ONE BT/ET ---------------------------
     #
-    # ★★ Added 2026-08-20, and it is the only block in this fixture that
-    # reflow still moves.
+    # ★★ The only block in this fixture that reflow still moves, and it is
+    # here to keep the falsifying assertions alive.
     #
-    # The engine's `Pass 121.1` narrowed the reflow walk: a following ``Tm``
-    # continues the edited line **only if it differs in ``e`` alone** — same
-    # orientation, same scale, same baseline. Before that it walked forward
-    # shifting every absolute ``Tm`` until a ``Td``/``TD``/``T*`` boundary,
-    # and a CAD stream positions everything with ``Tm`` and never emits
-    # ``Td``, so one four-character edit on the operator's real drawing moved
-    # **1,676 labels** and changed 34,059 pixels across the whole sheet.
+    # The engine's reflow walk is narrow: a following ``Tm`` continues the
+    # edited line **only if it differs in ``e`` alone** — same orientation,
+    # same scale, same baseline. ⚠ A walk that shifted every absolute ``Tm``
+    # until a ``Td``/``TD``/``T*`` boundary instead is catastrophic on CAD
+    # output, which positions everything with ``Tm`` and never emits ``Td``:
+    # one four-character edit on the operator's real drawing moved **1,676
+    # labels** and changed 34,059 pixels across the whole sheet.
     #
-    # ★ That fix made blocks A, B and C stop being falsifiable. Every
-    # follower in them sits on a DIFFERENT baseline (or a different
-    # orientation), so reflow no longer reaches any of them — which is
-    # exactly right, and which left this fixture with no case where the
-    # engine's default moves anything. A fixture that cannot exhibit the
-    # hazard cannot prove a rule that prevents it: the two falsifying
-    # assertions in ``proof.rs`` went quiet, and a quiet falsifier is a test
-    # that has stopped measuring.
+    # ★ Under that narrowing every follower in blocks A, B and C sits on a
+    # DIFFERENT baseline or a different orientation, so reflow reaches none
+    # of them — correct, and it leaves those blocks unable to exhibit the
+    # hazard at all. **A fixture that cannot exhibit the hazard cannot prove
+    # a rule that prevents it**: the two falsifying assertions in ``proof.rs``
+    # go quiet, and a quiet falsifier is a test that has stopped measuring.
     #
     # So: two runs at the SAME ``f``, differing in ``e`` alone. That is a
     # single visual line drawn as two show operators — one table cell beside

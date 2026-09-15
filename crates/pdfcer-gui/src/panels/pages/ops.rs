@@ -1,16 +1,15 @@
 //! # `panels::pages::ops` — what a page verb acts on, and what a move means
 //!
 //! The **rules** behind the six page verbs, with no `egui`, no document and no
-//! engine call anywhere in the file. Two questions, both of which have exactly
-//! one right answer and both of which were previously unanswered because
-//! nothing asked them:
+//! engine call anywhere in the file. Two questions, each with exactly one
+//! right answer:
 //!
 //! 1. **What is the operand?** — [`operands`]. The Pages panel's multi-select
 //!    when there is one, the current page when there is not.
 //! 2. **What does "move up" mean for a set?** — [`move_order`]. A permutation
 //!    of `0..page_count`, or a refusal, and the refusal is the interesting half.
 //!
-//! ## ★ Why this is a module and not two `if`s in a dispatch arm
+//! ## Why this is a module and not two `if`s in a dispatch arm
 //!
 //! `crate::app::dispatch`'s header states the standing rule — *"the arms route;
 //! they do not compute"* — and both of these are computations that can be wrong
@@ -26,7 +25,7 @@
 //! widget code is not"* — applied to the one part of a page verb that carries a
 //! rule.
 //!
-//! ## ★ The operand rule, and why it is not "the selection"
+//! ## The operand rule, and why it is not "the selection"
 //!
 //! [`crate::panels::PanelsState::selected_pages`]' own documentation already
 //! settled this before anything read it:
@@ -48,7 +47,7 @@
 //! the object verbs, and it is made here for the same reason: two statements of
 //! a destructive rule is one too many.
 //!
-//! ## ★ The move rule, in one table
+//! ## The move rule, in one table
 //!
 //! `pages` is the operand list, `n` the page count, and the result is what
 //! `new_order[i] = ` for each new position `i`.
@@ -67,7 +66,7 @@
 //! reorder arrows does, and the alternative — gathering the set together at the
 //! topmost member — would silently reorder pages the operator did not name.
 //!
-//! ## ★ Why a blocked move is a refusal rather than a no-op
+//! ## Why a blocked move is a refusal rather than a no-op
 //!
 //! `EditSession::reorder_pages` would *accept* the identity permutation and
 //! return `Ok(())` having recorded nothing, so handing it one would be
@@ -81,7 +80,7 @@
 //! operator can fix by picking a different one, while *there is only one page*
 //! is about the document and cannot be fixed at all.
 //!
-//! ## ★ What the caller does with a refusal today, and what it should do
+//! ## What the caller does with a refusal today, and what it should do
 //!
 //! `crate::app::dispatch` **traces** it, with the variant's name as the reason
 //! token — `command-declined id=pages.move_up reason=at-the-edge` — and does
@@ -280,7 +279,7 @@ pub fn move_order(
 /// not a page index — see below, because it is the one thing about this
 /// function that is easy to get wrong.
 ///
-/// # ★ Gap indices, and why they are not page indices
+/// # Gap indices, and why they are not page indices
 ///
 /// There are `page_count + 1` places a block can land in a document of
 /// `page_count` pages, and only `page_count` pages. Numbering the landing
@@ -302,7 +301,7 @@ pub fn move_order(
 /// those words, and a drag has to mean the same thing or the two surfaces
 /// would disagree about where "here" is.
 ///
-/// # ★ The gap is measured against the document BEFORE the lift
+/// # The gap is measured against the document BEFORE the lift
 ///
 /// This is the subtle half and it is what [`drag_is_a_no_op`] exists for.
 /// The operator points at a boundary in the grid they can see — a grid that
@@ -441,7 +440,7 @@ mod tests {
     /// A contiguous block moves forward, and the gap is read against the
     /// document as it was before the lift.
     ///
-    /// ★ The case that catches an off-by-one: dragging pages 0–1 to gap 4 in a
+    /// The case that catches an off-by-one: dragging pages 0–1 to gap 4 in a
     /// five-page document. Naively splicing at 4 into the three remaining
     /// pages would put them after page 4, not before it. The lift-count
     /// correction is what makes the answer `[2, 3, 0, 1, 4]`.
@@ -469,7 +468,7 @@ mod tests {
         assert_eq!(landing(&[0], 4, 99), vec![1, 2, 3, 0]);
     }
 
-    /// ★ **A scattered selection gathered at its own first page is a real
+    /// **A scattered selection gathered at its own first page is a real
     /// edit**, and refusing it would cost the most useful thing a drag does.
     ///
     /// Pages 0, 4 and 8 dropped at gap 0 become adjacent at the top. A
@@ -563,7 +562,7 @@ mod tests {
         items.iter().copied().collect()
     }
 
-    /// **★ With nothing picked, a verb acts on the current page.**
+    /// **With nothing picked, a verb acts on the current page.**
     ///
     /// The rule `PanelsState::selected_pages` states in words — *"Empty is a
     /// defined answer, not a missing one"* — as a mechanism. A build that
@@ -582,7 +581,7 @@ mod tests {
         assert_eq!(operands(&set(&[3, 1]), 0, 4), vec![1, 3]);
     }
 
-    /// **★ An operand past the end of the document is dropped, not passed on.**
+    /// **An operand past the end of the document is dropped, not passed on.**
     ///
     /// `EditSession::delete_pages` resolves **every** index before planning
     /// anything and returns `PageOutOfRange` for the whole batch if one is bad,
@@ -625,13 +624,14 @@ mod tests {
         );
     }
 
-    /// **★ A contiguous run moves as a run, keeping its internal order.**
+    /// **A contiguous run moves as a run, keeping its internal order.**
     ///
     /// The property a naive "swap each with its neighbour" loop gets wrong: run
     /// it ascending without the ceiling and pages 1 and 2 swap with each other
     /// twice and end up back where they started. This asserts the *magnitude*
-    /// as well as the direction — the run really is one place earlier — which
-    /// is `HANDOFF.md` §2's grid lesson applied to an index.
+    /// as well as the direction — the run really is one place earlier —
+    /// because a test that only checks the direction is satisfied by a loop
+    /// that moves the run twice as far.
     #[test]
     fn a_contiguous_run_moves_as_a_run() {
         assert_eq!(
@@ -651,7 +651,7 @@ mod tests {
         );
     }
 
-    /// **★ A non-contiguous pick moves as separate items, each by one.**
+    /// **A non-contiguous pick moves as separate items, each by one.**
     ///
     /// The alternative — gathering the set at its topmost member — would
     /// reorder pages the operator never named, which is the same class of
@@ -670,7 +670,7 @@ mod tests {
         );
     }
 
-    /// **★ The first page cannot move up, and it says so rather than
+    /// **The first page cannot move up, and it says so rather than
     /// producing an identity the engine would silently accept.**
     ///
     /// `reorder_pages` returns `Ok(())` for the identity, having recorded
@@ -698,7 +698,7 @@ mod tests {
         );
     }
 
-    /// **★ A partly-blocked run still moves the part that can move.**
+    /// **A partly-blocked run still moves the part that can move.**
     ///
     /// Pages 1 and 3 picked, moved up: page 1 is pinned, page 3 is not. The
     /// alternative — refusing the whole gesture because one member is at the
@@ -731,7 +731,7 @@ mod tests {
         );
     }
 
-    /// **★★ Every order this module produces is a permutation of
+    /// **Every order this module produces is a permutation of
     /// `0..page_count`.**
     ///
     /// The one property `EditSession::reorder_pages` checks and refuses over,
@@ -759,7 +759,7 @@ mod tests {
 
                 let landed = inverse(&order);
 
-                // ★ **A picked page moves by exactly one place, or not at
+                // **A picked page moves by exactly one place, or not at
                 // all**, and always toward the edge it was sent to. This is
                 // what makes the verb "move up" rather than "sort", and a
                 // rule that produced a valid permutation by jumping a page
@@ -794,7 +794,7 @@ mod tests {
                      refused rather than returning a permutation"
                 );
 
-                // ★★ **Nothing else is reordered.** The strongest available
+                // **Nothing else is reordered.** The strongest available
                 // statement of "this verb moved what it was asked to and left
                 // the rest alone": the picked pages keep their relative order
                 // among themselves, and so do the unpicked ones. A rule that

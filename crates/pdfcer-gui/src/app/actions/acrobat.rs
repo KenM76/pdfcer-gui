@@ -7,7 +7,7 @@
 //! | [`PdfcerApp::apply_open_in_acrobat`] | the operator presses the control | asks the right question, and **nothing else** |
 //! | [`PdfcerApp::resume_after_open_in_acrobat`] | the operator answered *proceed* | saves if needed, launches, then closes |
 //!
-//! ## ★★★ The ordering in the second half, which is the whole of the risk
+//! ## The ordering in the second half, which is the whole of the risk
 //!
 //! **Save → launch → close.** Not save → close → launch, and the difference is
 //! everything.
@@ -23,14 +23,14 @@
 //! open, saved, with a sentence on the bar saying Acrobat would not start and
 //! where the path is set. See [`crate::text::acrobat::launch_failed`].
 //!
-//! ★ The cost of that order is a window in which both programs have the file:
+//! The cost of that order is a window in which both programs have the file:
 //! between `spawn` returning and `close_document` running, which is one
 //! function call and no frame. Acrobat cannot have opened, read and written
 //! the file in that interval — and even if it somehow had, pdfcer's close
 //! writes nothing. The alternative's failure mode is losing the operator's
 //! document off their screen; this one's is theoretical.
 //!
-//! ## ★★ The save is in-place and its failure stops everything
+//! ## The save is in-place and its failure stops everything
 //!
 //! `crate::app::save::save_in_place` is the same verb `file.save` uses, so the
 //! bytes written here are the bytes that command writes — and it materialises
@@ -57,8 +57,8 @@ impl PdfcerApp {
     /// # Why every refusal here is silent except the one the operator can act
     /// on
     ///
-    /// Two of the three ways this can decline to raise a window are states the
-    /// ribbon already prevents: no document open (the command carries
+    /// Two of the states this declines in are ones the ribbon already
+    /// prevents: no document open (the command carries
     /// `enabled_when("doc.open")`) and no Acrobat (the item carries
     /// `visible_when("acrobat.available")`, so the control is not drawn). They
     /// are handled anyway, because a customized keymap can reach any command
@@ -67,10 +67,10 @@ impl PdfcerApp {
     /// worded, because there is no surface the operator could have pressed and
     /// therefore nothing to explain.
     ///
-    /// The third — a document that has never been saved — **is** worded, in its
-    /// own window, because the operator did press a control that was there and
-    /// enabled, and a control that does nothing on press is the defect this
-    /// project keeps finding.
+    /// A document that has never been saved **is** worded, in its own window,
+    /// because the operator did press a control that was there and enabled,
+    /// and a control that does nothing on press is the defect this project
+    /// keeps finding.
     pub(super) fn apply_open_in_acrobat(&mut self) {
         let Some(viewer) = self.acrobat.clone() else {
             crate::diag::trace(|| {
@@ -87,12 +87,12 @@ impl PdfcerApp {
             return;
         };
 
-        // ★★★ `save::has_a_file` and `save::has_unsaved_edits` — the two
+        // `save::has_a_file` and `save::has_unsaved_edits` — the two
         // predicates this crate already has, asked here rather than answered
-        // again. O65's whole finding was that *"does this document have
-        // unsaved edits?"* had grown three different answers in three
-        // surfaces; a fourth written here would be the same defect with a new
-        // name on it.
+        // again. `OPERATOR_REQUESTS.md` O65 is the rule: *"does this document
+        // have unsaved edits?"* has exactly one answer in this crate, and a
+        // second written here would be one more thing to keep in step with the
+        // tab strip's unsaved marker.
         let prompt = acrobat::prompt_for(
             crate::app::save::has_a_file(doc),
             crate::app::save::has_unsaved_edits(doc),
@@ -125,7 +125,7 @@ impl PdfcerApp {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ Traced, because a cancel and a question nobody answered
+                // Traced, because a cancel and a question nobody answered
                 // leave the screen in exactly the same state — the document
                 // where it was — and a driven check cannot tell them apart by
                 // looking.
@@ -148,10 +148,10 @@ impl PdfcerApp {
         };
 
         // 1 — SAVE, if there is anything to save. A failure stops everything;
-        // see this module's ★★.
+        // see this module's header.
         let epoch = doc.edit_epoch;
         if crate::app::save::has_unsaved_edits(doc) && !crate::app::save::save_in_place(doc) {
-            // ★ `save_in_place` has already recorded its own failure sentence
+            // `save_in_place` has already recorded its own failure sentence
             // on the DECLINE row. This one goes on the disclosure row and says
             // what did **not** follow from it — which is the part the operator
             // is waiting to find out, and which the save verb has no way to
@@ -167,13 +167,13 @@ impl PdfcerApp {
             });
             return;
         }
-        // ★ Re-read after the save. `save_in_place` takes `&self` and the
+        // Re-read after the save. `save_in_place` takes `&self` and the
         // engine's write verb changes nothing about the session, so the path
         // cannot have moved — but reading it once, here, is what makes the
         // launch and the save provably about the same file.
         let path = doc.path.clone();
 
-        // 2 — LAUNCH, before the close. See this module's ★★★.
+        // 2 — LAUNCH, before the close. See this module's header.
         if let Err(error) = acrobat::launch(&acrobat::windows::Windows, &viewer, &path) {
             crate::app::actions::disclosure::record_note(
                 epoch,
@@ -193,7 +193,7 @@ impl PdfcerApp {
             )
         });
 
-        // ★ The receipt is stamped BEFORE the close, with the epoch that is
+        // The receipt is stamped BEFORE the close, with the epoch that is
         // still current, because after the close there is no document and no
         // epoch to stamp it with. It is the one sentence in this sequence that
         // reports a success, and it is worth having: the document disappearing

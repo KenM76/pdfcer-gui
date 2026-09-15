@@ -11,7 +11,7 @@
 //! `pdfcer-gui.exe` redistributes third-party work that `cargo-about` cannot
 //! see — font faces and data tables the engine embeds with `include_bytes!`,
 //! and, when OCR lands, a set of **CC-BY-SA-4.0** neural-network weights the
-//! operator decided on 2026-08-14 to ship. Attribution-style licences require
+//! operator has decided to ship. Attribution-style licences require
 //! the notice to reach the **recipient**, and the recipient of this program is
 //! someone holding a binary, not someone reading a repository. A
 //! `PROVENANCE.md` in the source tree discharges nothing for them.
@@ -29,38 +29,30 @@
 //! open with nothing loaded — an operator who has just launched pdfcer and
 //! wants to know what version they are running has no document, and a control
 //! that did nothing in that state would be the placeholder this project
-//! forbids. So `show` grew a two-branch shape: document-scoped dialogs are
-//! still closed when the document closes, and this one is drawn either way.
-//! That distinction is now a property of the module rather than of this file;
-//! see [`super::DialogsState::show`].
+//! forbids. So `show` has a two-branch shape: document-scoped dialogs are
+//! closed when the document closes, and this one is drawn either way. That
+//! distinction is a property of the module rather than of this file; see
+//! [`super::DialogsState::show`].
 //!
-//! ## ⚠ What the 2026-09-03 outside review got RIGHT and what it got WRONG
+//! ## ★ The title bar and this window answer different questions
 //!
-//! Both halves are recorded here because they arrived in one sentence, and
-//! adopting the whole sentence would have undone an operator decision.
+//! The window title carries the local build time **to the minute**, from
+//! `PDFCER_BUILD_TIME`. This window carries the **release version**, from the
+//! git tag by way of `build.rs`. They are not two renderings of one value whose
+//! precision has drifted, and **harmonising them breaks whichever one gives
+//! way**.
 //!
-//! **Right, and now fixed (row A11):** the headline read `Version 0.1.0` in the
-//! build published as **v0.5.0**. It was drawing `CARGO_PKG_VERSION`, which is
-//! pinned at `0.1.0` by O109/O110 and is not a release version at all. It now
-//! draws the **git tag**, through `build.rs` — see [`version_label`].
+//! The title answers *is this the build I just installed*. It shows the minute
+//! because the operator asked for the minute — O101: *"also in the next release
+//! add the local compilation time to the top bar at the end of the date you
+//! added."* A date alone cannot tell two builds apart on a day with several
+//! publishes, and the cost of that is bug reports that resolve to "you were
+//! running an old build". See `text::doctabs::build_day` for the rule and the
+//! zone subtlety.
 //!
-//! **Wrong, and deliberately NOT adopted:** the same finding went on to say the
-//! window title *"shows the minute, one or the other"* — i.e. that About and the
-//! title bar disagree about precision and one should be harmonised to the other.
-//!
-//! ★★ The title shows the minute **because the operator asked for the minute**.
-//! O101, 2026-09-02: *"also in the next release add the local compilation time
-//! to the top bar at the end of the date you added."* He was closing a loop his
-//! own bug reports opened — **two backlog rows had already been closed by "you
-//! were running an old build"** (O85, O87) — and on a day with several publishes
-//! a date alone cannot tell two builds apart. See `text::doctabs::build_day`
-//! for the rule and the zone subtlety.
-//!
-//! ⇒ These are not two renderings of one value that drifted. The title answers
-//! *is this the build I just installed*, to the minute, from `PDFCER_BUILD_TIME`.
-//! This window answers *what is this program*, which is a release version, from
-//! a tag. **Do not "harmonise" them.** Anything that makes the title coarser is
-//! a regression against a recorded instruction.
+//! This window answers *what is this program*, which is a release version, and
+//! not a compile timestamp. See [`version_label`] for why the version comes
+//! from the tag and never from `CARGO_PKG_VERSION`.
 //!
 //! ## Why it pushes no `Action`
 //!
@@ -120,19 +112,16 @@ impl AboutDialog {
 
     /// Draw one frame of the dialog. Returns `false` when it should close.
     pub(super) fn show(&mut self, ctx: &egui::Context) -> bool {
-        // ★ ITS OWN OS WINDOW as of 2026-08-21 — the operator's report about
-        // the print dialog applied to every dialog in this directory, and this
-        // one is the case that makes it obvious: About carries the third-party
+        // ★ Its own OS window, like every dialog in this directory. This is the
+        // case that makes the reason obvious: About carries the third-party
         // ATTRIBUTIONS, the one surface in this program with a legal obligation
-        // behind it, and it could not be moved off the document to be read
-        // beside anything.
+        // behind it, and it has to be movable off the document so it can be read
+        // beside something else.
         //
-        // The screen anchor that stood here is retired rather than moved: an OS
-        // window is anchored to the DESKTOP, which satisfies the standing
-        // objection to surfaces that move on zoom more completely than
-        // `CENTER_CENTER` did — and `CENTER_CENTER` on every frame was G6's
-        // defect, dragging the window back to the middle the moment it was
-        // moved.
+        // An OS window is anchored to the DESKTOP, so it needs no screen anchor
+        // of its own — and must not grow one. Re-applying a centring anchor on
+        // every frame drags the window back to the middle the moment the
+        // operator moves it.
         let (frame, ()) = crate::dialogs::host::Host::new(
             "about", // ui-text-exempt: a viewport key, never displayed.
             t::title(),
@@ -157,9 +146,9 @@ impl AboutDialog {
 
         ui.label(egui::RichText::new(t::product()).heading());
         // ★ The RELEASE version, from the git tag by way of `build.rs` — not
-        // the crate manifest. See [`version_label`] for the whole argument;
-        // the short form is that `CARGO_PKG_VERSION` is `0.1.0` on purpose and
-        // this line read `Version 0.1.0` in the build shipped as v0.5.0.
+        // the crate manifest. See [`version_label`] for the whole argument; the
+        // short form is that `CARGO_PKG_VERSION` is pinned at `0.1.0` on
+        // purpose and is not a release version at all.
         ui.label(version_label(
             env!("PDFCER_RELEASE_VERSION"),
             env!("PDFCER_RELEASE_DISTANCE"),
@@ -226,23 +215,18 @@ impl AboutDialog {
 /// line that is true about them. Every word it returns comes out of
 /// [`crate::text::about`]; the only thing decided here is *which*.
 ///
-/// # ★★★ The defect this replaced, because it is instructive
+/// # ★★★ Never `CARGO_PKG_VERSION`
 ///
-/// This line used to be `t::version_line(env!("CARGO_PKG_VERSION"))`, and its
-/// old comment said the crate manifest was the right source *"so the two
-/// cannot drift"*. The reasoning was sound and the premise was false: there
-/// were never two numbers to keep together. `Cargo.toml` is pinned at `0.1.0`
-/// by a recorded decision — the crate is versioned by the pdfcer workspace it
-/// folds **into**, and O109 and O110 both state that bumping it *"would have
-/// contradicted a recorded decision to make two numbers agree that are not the
-/// same number"* — while the thing an operator calls a release is a **git
-/// tag**, `v0.1.0` through `v0.5.0`. So the headline reported the manifest
-/// faithfully and told the reader something untrue, through five releases, in
-/// the one window whose job is to say what they are running (review row A11).
+/// `Cargo.toml` is pinned at `0.1.0` by a recorded decision (O109, O110): this
+/// crate is versioned by the pdfcer workspace it folds **into**, so its manifest
+/// version is not a release version and never becomes one. What an operator
+/// calls a release is a **git tag**. Drawing the manifest here reports a number
+/// faithfully and tells the reader something untrue, in the one window whose job
+/// is to say what they are running.
 ///
-/// ⚠ The decision in O110 is about `Cargo.toml`. It was never a decision about
-/// what About displays, and this function is the place that distinction now
-/// lives. **Do not resolve the difference by bumping the manifest.**
+/// ⚠ The two numbers are not a drift to be closed. **Do not resolve the
+/// difference by bumping the manifest** — that makes two numbers agree that are
+/// not the same number, and contradicts the pin.
 ///
 /// # The three cases
 ///
@@ -326,11 +310,11 @@ fn build_block(ui: &mut egui::Ui, theme: &Theme) {
             env!("PDFCER_ENGINE_VERSION"),
             env!("PDFCER_ENGINE_REV"),
             env!("PDFCER_ICCCE_VERSION"),
-            // ★ Added with the release version itself, and additive on
-            // purpose: `tools/ui-verify`'s about check reads named keys off
-            // this line and asserts on a fixed list of them, so a new key is
-            // available to a future driven check without disturbing the one
-            // that exists. Traced EMPTY rather than omitted when there is no
+            // ★ This line grows by ADDING keys, never by reordering or
+            // renaming: `tools/ui-verify`'s about check reads named keys off it
+            // and asserts on a fixed list of them, so a new key is available to
+            // a future driven check without disturbing the one that exists.
+            // Traced EMPTY rather than omitted when there is no
             // release version, for the same reason the stamp is — an absent
             // key and an unset value would be indistinguishable.
             env!("PDFCER_RELEASE_VERSION"),
@@ -341,11 +325,9 @@ fn build_block(ui: &mut egui::Ui, theme: &Theme) {
     //
     // `RichText::strong()` has no colour role of its own — it resolves to
     // `widgets.active.fg_stroke`, the foreground of the accent-FILLED widget
-    // state — so on an ordinary panel it is pale text on a pale background.
-    // This exact line shipped without the colour and the driven capture showed
-    // "Build" as barely-there grey while every label under it was legible.
-    // `tools/gates/check-strong-text.sh` catches it; the screenshot found it
-    // first, which is the order this project expects.
+    // state — so on an ordinary panel it is pale text on a pale background, and
+    // a heading rendered that way is barely visible beside the legible labels
+    // under it. `tools/gates/check-strong-text.sh` refuses the unpaired form.
     ui.label(
         egui::RichText::new(t::build_heading())
             .strong()
@@ -448,10 +430,9 @@ mod tests {
     /// because the failure this guards against is a *drawing* failure: a
     /// `ScrollArea` whose `max_height` goes negative, an `available_height`
     /// read before there is any, a panic inside a closure the compiler is
-    /// perfectly happy with. `HANDOFF.md` §2's founding rule is that a
-    /// passing test is not evidence a surface works — this is the weaker
-    /// claim that it at least composes, and the real check is `ui-verify`
-    /// driving the window.
+    /// perfectly happy with. A passing test is not evidence that a surface
+    /// works; this is the weaker claim that it at least composes, and the real
+    /// check is `ui-verify` driving the window.
     ///
     /// The window rect is deliberately small. A dialog that only survives on
     /// a large screen is a dialog that crashes on a laptop.
@@ -487,8 +468,7 @@ mod tests {
     /// degenerate size is asserted here instead of waited for.
     ///
     /// What it does NOT prove is that the words are legible or in the right
-    /// order. Only `ui-verify` driving the real window can say that; see
-    /// `HANDOFF.md` §2.
+    /// order. Only `ui-verify` driving the real window can say that.
     #[test]
     fn a_window_too_small_for_its_own_header_still_draws() {
         let mut dialog = AboutDialog::open();
@@ -507,7 +487,7 @@ mod tests {
     }
 
     // =======================================================================
-    // The version headline (review row A11)
+    // The version headline
     // =======================================================================
 
     /// A clean tree sitting exactly on the tag names the release, bare.
@@ -520,10 +500,9 @@ mod tests {
 
     /// A build past the tag says so, and does not pass for the release.
     ///
-    /// ★ The narrower half of A11. `Version 0.1.0` in a v0.5.0 release was the
-    /// loud version of this; `Version 0.5.0` on a build twenty-three commits
-    /// later is the quiet one, and it would tell an operator comparing their
-    /// build against the released one that they match.
+    /// ★ The quiet half of the wrong-version failure. A bare `Version 0.5.0` on
+    /// a build twenty-three commits past the tag tells an operator comparing
+    /// their build against the released one that the two match.
     #[test]
     fn a_build_past_the_tag_does_not_pass_for_the_release() {
         let label = version_label("0.5.0", "23", false);
@@ -552,12 +531,11 @@ mod tests {
 
     /// ★★★ **With no version available, nothing numeric is drawn.**
     ///
-    /// This is the assertion that stops the fix regressing into the defect it
-    /// replaced. A tarball with no `.git`, a machine with no `git`, a clone
-    /// with no tags: `build.rs` emits empty strings, and the *only* number
-    /// anywhere in reach at that point is `CARGO_PKG_VERSION` — the number
-    /// that was wrong in the first place. Reaching for it would look like a
-    /// tidy fallback and would reinstate `Version 0.1.0` exactly.
+    /// A tarball with no `.git`, a machine with no `git`, a clone with no tags:
+    /// `build.rs` emits empty strings, and the *only* number anywhere in reach
+    /// at that point is `CARGO_PKG_VERSION`, which is pinned and is not a
+    /// release version. Reaching for it looks like a tidy fallback and puts a
+    /// false release number back in the headline.
     ///
     /// So the property asserted is not "it does not say 0.1.0", which a
     /// different wrong number would satisfy. It is that the sentence contains
@@ -630,8 +608,8 @@ mod tests {
     /// different questions. That one asks whether the catalog is well formed;
     /// this one asks whether this dialog has anything to say — and a dialog
     /// registered on the ribbon that renders a heading and nothing under it
-    /// is the placeholder `HANDOFF.md` §6 forbids, arriving through data
-    /// rather than through code.
+    /// is a placeholder — the thing this project forbids — arriving through
+    /// data rather than through code.
     #[test]
     fn the_dialog_has_something_to_attribute() {
         assert!(

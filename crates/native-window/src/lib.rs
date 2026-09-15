@@ -9,19 +9,20 @@
 //! abstraction has a **hole in it that costs the operator something**, and
 //! where the toolkit exposes no way to say what needs saying.
 //!
-//! Today there is exactly one: **a dialog must be OWNED by the window it
-//! belongs to.**
+//! There are three, and the rest of this header is about the first: **a dialog
+//! must be OWNED by the window it belongs to.** [`cursor_position`] and
+//! [`clipboard`] carry their own arguments where they are declared.
 //!
 //! ## ★★★ Why ownership, and why it is not cosmetic
 //!
-//! `ui-conventions/dialogs.md` G3 states the rule and this project has now
-//! paid for its absence twice:
+//! `ui-conventions/dialogs.md` G3 states the rule, and its absence costs two
+//! different things:
 //!
 //! 1. **The dialog can fall behind the application window**, which is the
 //!    classic Windows bug — a program that appears to have frozen because the
 //!    thing waiting for an answer is behind the thing it is blocking.
 //! 2. **The dialog loses the keyboard a third of a second after it opens.**
-//!    Measured 2026-08-21, with both windows reporting their own focus:
+//!    Measured, with both windows reporting their own focus:
 //!
 //!    ```text
 //!    dialog-focus  focused=Some(true)     the note window is given the keyboard
@@ -34,9 +35,9 @@
 //!    The operator's version: *drag out a note box, type without clicking the
 //!    field first, and the words go nowhere.*
 //!
-//! ★ **Asking again does not work, and that was tried.** Half a second of
+//! ★ **Asking again does not work.** Half a second of
 //! `ViewportCommand::Focus`, one per pass, straight through the moment of the
-//! loss — the root still takes the foreground back. Windows refuses the
+//! loss, and the root still takes the foreground back. Windows refuses the
 //! foreground to a process that does not already hold it, silently, which is
 //! the same rule `tools/ui-verify` documents at length about
 //! `SetForegroundWindow`.
@@ -48,8 +49,8 @@
 //!
 //! ## ★ Why `eframe` cannot express it, and why this is not a workaround
 //!
-//! `ViewportBuilder` has thirty-odd options in `egui 0.35` and none of them is
-//! an owner; `egui-winit` never passes down the parent relationship egui itself
+//! Not one of `ViewportBuilder`'s options in `egui 0.35` is an owner, and
+//! `egui-winit` never passes down the parent relationship egui itself
 //! tracks in `viewport_parents`. There is also no way to get the child window's
 //! handle back out — `eframe::Frame` hands out the ROOT window's, once.
 //!
@@ -80,8 +81,8 @@ mod win32;
 /// **A picture other programs can paste** — `OPERATOR_REQUESTS.md` O71.
 ///
 /// Its own file rather than a third function in [`win32`], because it is the
-/// first thing in this crate that is not about a *window*: eight imported
-/// symbols, two clipboard formats and a `BITMAPINFOHEADER`, with an argument
+/// first thing in this crate that is not about a *window*: imported symbols of
+/// its own, two clipboard formats and a `BITMAPINFOHEADER`, with an argument
 /// about why the two payloads must be written in one transaction. Everything
 /// the crate header says about hand-written declarations applies to it.
 #[cfg(windows)]
@@ -118,8 +119,8 @@ pub fn cursor_position() -> Option<(i32, i32)> {
 
 /// **Make the window titled `title` owned by `owner`.** No-op off Windows.
 ///
-/// See the module header. `owner` is a raw window handle as
-/// [`crate::app::window_handle`] produces it.
+/// See the module header. `owner` is a raw window handle, as an application
+/// obtains it from `raw_window_handle`.
 #[cfg(not(windows))]
 pub fn own_window(_owner: isize, _title: &str) -> bool {
     // Every other platform: dialogs are already handled correctly by their

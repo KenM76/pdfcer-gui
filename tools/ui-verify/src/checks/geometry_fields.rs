@@ -3,16 +3,16 @@
 //!
 //! # What this is for
 //!
-//! `FEATURES.md`'s Phase 1 remainder listed *"Editable geometry — X/Y/W/H in
-//! the Properties panel, typed rather than dragged"* for the life of this
-//! project. It landed on 2026-08-19, the same day as the grips and out of the
-//! same machinery, and this check is what stops it from being the grips' story
-//! all over again: **drawn, cursored, and committing nothing.**
+//! `FEATURES.md` names this capability *"Editable geometry — X/Y/W/H in the
+//! Properties panel, typed rather than dragged"*. It is built out of the same
+//! machinery as the eight grips, and this check exists to stop it ending the
+//! same way that machinery can end: **drawn, cursored, and committing
+//! nothing.**
 //!
 //! # ★ Why this is not covered by `resize_scales_a_shape`
 //!
 //! Because the two routes share only their *last* link. The grip check proves
-//! that `resizing::action`'s output reaches `move_nodes`; this one proves that a
+//! that `resizing::action`'s output reaches the engine; this one proves that a
 //! **panel** can reach `resizing::action` at all, and the four links in between
 //! are entirely different code:
 //!
@@ -44,25 +44,26 @@
 //! Scrubbing is one drag, and it is **arithmetically checkable**: the field
 //! moves by `pixels × SPEED`, and `SPEED` is a named constant in the panel
 //! precisely so this check can assert the number rather than assert that
-//! something changed. `CONTINUE.md` §7's rule is the reason to prefer it — a
-//! harness assertion is a claim about the program *and* about the harness, so
-//! the route with fewer harness-owned failure modes is the honest one.
+//! something changed. ★★ **A harness assertion is a claim about the program
+//! *and* about the harness**, so between two routes to the same state the
+//! honest one is whichever owns fewer failure modes of its own.
 //!
 //! # The oracle
 //!
-//! `move-nodes`, the same line the grip check ends on, **plus** a `resize-scale`
-//! whose `sx` exceeds 1. The second is what distinguishes this from a check that
-//! could pass on a build where Apply raised a *move* and no scale at all — which
-//! is exactly what a `plan()` with its width comparison inverted would do, and
-//! it would look like a working button.
+//! `transform-objects-applied`, the same line the grip check ends on, **plus**
+//! a `resize-scale` whose `sx` exceeds 1. The second is what distinguishes this
+//! from a check that could pass on a build where Apply raised a *move* and no
+//! scale at all — which is exactly what a `plan()` with its width comparison
+//! inverted would do, and it would look like a working button.
 //!
-//! ★★ `resize-scale` was **added for this check, after its first run failed
-//! wrongly.** The oracle was `resize-commit`, which the gesture route writes and
-//! the typed route does not, so the check reported *"Apply committed nothing"*
-//! over a trace that showed the object's bounds going from 317.87 to 358.00 on
-//! the very next frame. The feature worked and the instrument was lying. The
-//! fix was not to widen the check — it was to move the *fact both routes share*
-//! into the one function both routes call, which is `resizing::action`.
+//! ★★ Deliberately **not** `resize-commit`, which is the *gesture's* line and
+//! carries the grip that was dragged: the typed route never writes it, so a
+//! check asserting on it reports "Apply committed nothing" against a build
+//! where Apply works perfectly. ★★★ The rule that follows is worth more than
+//! the check: **when two routes must agree, the trace line they are judged by
+//! belongs in the one function both of them call** — here `resizing::action` —
+//! and not in either route's own code, or the instrument measures the route
+//! instead of the claim.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
 use crate::checks::{Check, CheckContext};
@@ -92,21 +93,19 @@ const SCROLL_ATTEMPTS: usize = 6;
 /// so it is the line BOTH routes emit.
 ///
 /// ★ Deliberately not `resize-commit`, which is the *gesture's* line and
-/// carries the grip that was dragged. The first driven run of this check
-/// asserted on that one, failed with "Apply committed nothing", and was wrong:
-/// the trace in the same file showed the object's bounds going from 317.87 to
-/// 358.00 on the frame after the press. The feature worked; the oracle named a
-/// line only the other route writes.
+/// carries the grip that was dragged — the typed route never writes it, so an
+/// oracle naming it reports a working Apply as inert. See the module header.
 const COMMIT_EVENT: &str = "resize-scale";
 /// `resize-declined reason=…`.
 const DECLINED_EVENT: &str = "resize-declined";
 /// The label `vector_edit` traces when the edit reached the engine.
 ///
-/// ★★ `move-nodes` until 2026-08-20. The typed route shares `resizing::action`
-/// with the grips, so it moved to `transform_objects` with them — which is the
-/// whole reason the two routes share that function, and is what this check's
-/// own header claims. See `resize.rs`'s note on the same constant for why a
-/// check that pins a MECHANISM goes red on the day the mechanism improves.
+/// ★★ The typed route shares `resizing::action` with the grips, so whatever
+/// verb that function reaches is the verb this check must name — which is the
+/// whole reason the two routes share it. ⚠ Naming a MECHANISM rather than an
+/// outcome is what makes this constant a liability: the check goes red on the
+/// day the mechanism improves, with nothing wrong in the application. See
+/// `resize.rs`'s note on the same constant.
 const APPLIED: &str = "transform-objects-applied";
 
 /// How far to scrub the Width field, in screen pixels.
@@ -229,8 +228,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // operator's saved dock layout — a property of the profile the harness
     // launched with, not of the feature. Failing here would report "editable
     // geometry is broken" for a run whose only fault was a dock arrangement,
-    // and `CONTINUE.md` §7's rule is that a harness must not blame the program
-    // for a condition the harness set up.
+    // ★★ A harness must not blame the program for a condition the harness
+    // itself set up.
     let trace = session.trace()?;
     let Some(_section) = driving::declared(&trace, ui_rect, SECTION_REGION) else {
         return Err(Error::new(format!(
@@ -271,22 +270,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `horizontal`, and a panel narrow enough to wrap moves everything below.
     // Reading the rect before the scrub would be the read-then-act interval
     // `driving::stable_rect`'s doc comment describes, in its cheapest form.
-    // ★★★ SCROLL TO IT FIRST — added 2026-08-26, and it is the fix for a
-    // failure this check reported as a dead button.
+    // ★★★ SCROLL TO IT FIRST. The Properties panel is a `ScrollArea`, and in
+    // an ordinary dock layout its slot is shorter than its content, so Apply —
+    // which sits directly under the four fields — can be a dozen points below
+    // the panel's viewport while still having a declared rect.
     //
-    // The Properties panel is a `ScrollArea`, and in an ordinary dock layout its
-    // slot is shorter than its content. Apply sits directly under the fields and
-    // was **14 points below the panel's viewport**:
+    // ★★ **A rect outside its own scroll viewport is a coordinate that clicks
+    // the canvas.** Pressing it hits nothing, the trace shows no commit and no
+    // decline, and the check reports a dead button over an application in which
+    // the button was never broken because it was never pressed. That failure
+    // reads as a defect and gets filed as one.
     //
-    //     properties.geometry        [[786.0 591.7] - [1100.0 762.0]]
-    //     properties.geometry.apply  [[786.0 776.7] - [ 835.0 804.7]]
-    //
-    // The check read the declared rect, clicked its centre, hit empty canvas,
-    // and reported *"APPLY COMMITTED NOTHING AND DECLINED NOTHING"* — which
-    // reads as a defect in the application and was filed as one. The button was
-    // never broken; it was never pressed.
-    //
-    // Two changes closed it. The application now publishes these regions with
+    // Two things keep it shut. The application publishes these regions with
     // `ui_rect_visible`, so a control nobody can see is not offered as a target
     // at all — an absent region is a far better answer than a present one that
     // cannot be clicked. And this loop does what the operator would do: scrolls

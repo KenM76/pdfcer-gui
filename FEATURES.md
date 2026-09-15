@@ -1,45 +1,62 @@
 # pdfcer-gui — what is built, and what is next
 
-**Updated:** 2026-09-15, 04:55 EDT (**thirty-fifth revision** — re-measured against the build about to ship, engine **`pdfcer-core` v0.53.0**, a **git dependency on the local engine repository**, pinned at **`b2f54228`**, which is the tip of its `main` — level in documentation and level in every line of code, both read out of the lock and out of the engine's log for this header rather than carried from the paragraph below. ★★★ **AND THIS ONE HAS SOMETHING IN IT YOU CAN SEE, which the last one did not: you can drag ONE LINE of text on its own.** Pick a line inside a block of text, drag it, and only that line moves. The lines under it stay where they are. Until this build the whole text object moved together, so nudging one line of a title block dragged the three lines below it along with it. ★★ **And the route to it no longer has to be guessed:** right-click on a line and the menu names that line rather than the block it sits in. ⚠ **Where it still cannot, it now tells you WHICH of two reasons applies**, because the two need different things from you: either the line carries no position of its own and inherits one from the line above it, or moving it would drag the next line with it. One sentence for each. The old behaviour was one vague refusal covering both, which is the same as no answer.)
+This is the per-surface capability register for the pdfcer-gui shell: what an
+operator can reach in a real build, and what is planned, in order. It is
+authoritative for status.
 
-This is the per-surface capability register for the new shell — what an
-operator can reach in a real build, and what is planned next — and it is the
-acceptance contract every claim about this project is measured against.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`b2f54228`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-Scope is the shell only. `pdfcer-core` and `pdfcer` capabilities live in
-`D:\Dev\pdfcer\docs\FEATURES.md`, whose **`gui` column is this project's
-acceptance criteria**: nothing there may regress at fold-in.
+**What is new in this build.** One line of text can be dragged on its own: pick
+a line inside a block of text, drag it, and the lines under it stay where they
+are. Right-click names the line rather than the block it sits in. Where a line
+cannot be moved the refusal says which of two reasons applies — the line carries
+no position of its own and inherits one from the line above, or moving it would
+drag the next line with it — because the two need different things from the
+operator. Deleting one line inside a block is not wired: the engine carries the
+three verbs, this shell calls none of them.
 
-Two lists. The first is what works **today, in the running binary**. The
-second is what does not, **in the order it is planned**.
+**Scope.** This shell only. `pdfcer-core` and `pdfcer` capabilities live in
+`D:\Dev\pdfcer\docs\FEATURES.md`, whose `gui` column is this project's
+acceptance criteria (R6) and may not regress at fold-in.
 
-**A row is ticked only when an operator can reach it in a real build.** Not
-when the code exists, not when a test passes. A panel can ship with a body, a
-rail entry, a diagnostic step, no control anyone can click, and a green suite
-for the whole of its life; that is what this bar exists to prevent.
+**Legend.** ✅ reachable · 🔨 in progress · ◑ partly reachable · ⬜ planned ·
+⛔ blocked, with the blocker named · ❌ not planned. A row is ticked only when
+an operator can reach it in a real build — not when the code exists, not when a
+test passes. A panel can ship with a body, a rail entry, a diagnostic step, no
+control anyone can click, and a green suite for the whole of its life; that is
+what this bar exists to prevent. A row with no symbol is a standing caveat
+rather than a status.
 
-**Legend:** ✅ reachable · 🔨 in progress · ◑ partly reachable · ⬜ planned ·
-⛔ blocked, with the blocker named · ❌ not planned · ⚠ a caveat or a known
-gap attached to the row it follows.
+## The reference-app rule
+
+Three applications decide how an interaction behaves here. **Acrobat** is what
+pdfcer replaces. **Inkscape** is the vector editor whose dock and tool model
+this shell benchmarks. **SolidWorks** is where the operator's drawings and his
+muscle memory come from. Do **not** ask the operator how an interaction should
+behave: look at what those three do, pick, and record which one was followed and
+why. His instruction is *"make your best educated guesses to match what
+inkscape, acrobat, and SolidWorks do."* Worked examples are marked where they
+occur. Where the product class does **not** converge, the choice is a decision
+rather than a derivation, and it is written down as one.
 
 ---
 
 ## Where it stands
 
-Every figure here moves, so each row carries the command that produces it
-rather than the number it produced last.
+Every figure here moves, so each row carries the command that produces it rather
+than the number it produced last.
 
 | | |
 |---|---|
-| **Stages complete** | S0 skeleton · S1 `ui-verify` · S2 ribbon · S3 panels and dock · S4 selection · S5 salvage (print, forms, icons, settings) · Phase 3 navigation, Find, thumbnails, rulers, grid, guides · Phase 4 page-display modes · Phase 5 text editing · Phase 1 transform, complete but for the cross-process clipboard |
-| **Tests** | `cargo test --workspace`, summing every `test result` line; cross-count the total with `cargo test --workspace -- --list` filtered to its test lines |
-| **Driven checks** | `cargo run --release -q -p ui-verify -- --list` — the binary's own roster, never a grep over its source. A full sweep takes about 95 minutes and aborts if any `.rs` or `.toml` is edited while it runs; Markdown edits are safe |
-| **Gates** | `bash tools/gates/run-all.sh`, or `--no-cargo` for the fast subset. Exit `0` pass, `1` fail, `3` a gate was skipped, and a skip is not a pass. Every grep-over-source gate carries `--self-test`, which plants a violation and asserts the gate catches it |
-| **Source** | `wc -l` over `git ls-files '*.rs'`, split by crate. The harness is a large and deliberate share of it: a phase is not done until a check drives the real binary, so every capability carries harness code the way it carries tests |
-| **Commands** | the shipping binary's own start-up trace line, `pdfcer-diag shell commands=… planned=… directed=…`, on an off-screen smoke launch |
-| **Engine** | the pin in this file's header, and the single `pdfcer?branch=main#<sha>` revision in `Cargo.lock`; `tools/gates/check-pin-citation.sh` asserts they agree and fails if the header phrase goes missing. Every sentence of the form *the engine cannot do X* is a claim about that pin |
-| **Panels** | `Panel::ALL` in `crates/pdfcer-gui/src/panels/mod.rs` |
-| **Ribbon surface built** | `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` — captioned groups; the tabs themselves are in the same manifest |
+| **Stages complete** | S0 skeleton · S1 `ui-verify` · S2 ribbon · S3 panels and dock · S4 selection · S5 salvage (print, forms, icons, settings) · Phase 3 (navigation, Find, thumbnails, rulers, grid, guides) · Phase 4 (page display modes) · Phase 5 (text editing) · Phase 1 but for the object clipboard · restyling existing text · Phase 6 (markup substrate, eight kinds including the revision cloud) · Phase 7 (measure) · the mode gate · several documents at once |
+| **Tests** | `cargo test --workspace`, summing every `test result:` line, cross-counted by `cargo test --workspace -- --list` filtered to its `: test` lines. Two methods, because a summed figure nobody cross-checks is how count drift gets in |
+| **Driven checks** | `cargo run --release -q -p ui-verify -- --list` — the binary's own roster, against a harness rebuilt first, because the count sits behind a staleness guard and answers 0 from a stale binary. The roster directory's file count answers a different question and must not be reconciled with it |
+| **Gates** | `bash tools/gates/run-all.sh` — exit 0 pass, 1 fail, 3 skipped. A skip is not a pass. Every grep-over-source gate carries a `--self-test` that plants a violation |
+| **Source** | `git ls-files '*.rs'` through `xargs` with a newline delimiter, then `cat`, then `wc -l`. The `cat` matters: without it `xargs` splits into two `wc` invocations and emits two `total` lines. A `find crates -name '*.rs'` count answers a different question |
+| **Commands** | read from the build's own trace line `pdfcer-diag shell commands=… planned=… directed=…` on an off-screen smoke launch under `PDFCER_DIAG_VIEWPORT` |
+| **Engine** | `pdfcer-core` v0.53.0, pinned as above |
+| **Panels** | 13 — `Panel::ALL` is `[Self; 13]` at `crates/pdfcer-gui/src/panels/mod.rs:354`, pinned by `tests::the_panel_catalog_is_complete` |
+| **Ribbon surface** | 40 captioned groups — `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` |
 
 ---
 
@@ -47,280 +64,188 @@ rather than the number it produced last.
 
 ### Shell and chrome
 
-- ✅ **A dialog is a real OS window** — Print opens as its own movable,
-  resizable top-level viewport rather than a modal trapped inside the frame
-- ✅ **And so are the other thirteen** — About, Render diagnostics, Export to
-  DXF, Insert image, Insert pages, New document, Recognise text, Apply
-  redactions, Set scale, Keyboard shortcuts, Settings, the note editor and the
-  unsaved-changes prompt
-- ✅ **Sign a document** — `pdfcer_core::sign` through File ▸ Security, and the
-  signature is read back out of the saved **file** rather than out of the session
-- ⬜ **Put a password on a drawing, and choose what it says it allows** —
-  File ▸ Security, immediately after Export. `Encrypt…` sets the open password
-  and the permission flags. **Built and undriven**
-- ✅ **Ribbon, seven tabs** — File · View · Pages · Edit · Markup · Measure ·
-  Tools, plus the contextual **Format** tab that appears on selection
-- ✅ **The ribbon is data, not code** — a serializable manifest, which is what
-  makes it customizable *and* reusable by another application
-- ✅ **Mode selector** — Read / Review / Edit, right-aligned on the tab row,
-  driving both the tab set and the panel layout
-- ✅ **Quick access toolbar** — Open, Save a copy, Undo, Redo, icon-only
-- ✅ **Open, Recent, Close** — a second document can be opened, and `Ctrl+O`
-  resolves through the manifest keymap like every other chord
-- ✅ **Keyboard chords derive from the manifest keymap** — `keyboard.rs` spells
-  the key, looks it up and returns a command id through the same dispatcher a
-  ribbon click reaches, so a customization layer rebinds it with no code change
-- ✅ **`Ctrl+1/2/3` switch mode**, `Ctrl+0` is actual size — one owner per
-  chord, with a test that fails naming any chord claimed twice
-- ✅ **Every ribbon control that can be ON renders pressed** — including the
-  hand tool and marquee zoom, whose armed flag lives in `egui::Memory`, which
-  is why `conditions()` takes the `Context`
-- ✅ **Group captions, enforced by construction** — one closure draws every
-  group, so a caption cannot be omitted
-- ✅ **Band overflow** — reserved-space "⏷ N more", hit-testable at a width
-  narrow enough to hide groups
-- ✅ **Tab-strip overflow** — the active tab is pinned; below about 47 pt the
-  strip collapses to the affordance rather than hiding the tab you are on
-- ✅ **Status bar** — render-notes disclosure (closed by default), Actual size /
-  Fit width / Fit height / Fit page, zoom −/%/+, page ⏴ n/N ⏵, and the
-  **Flip pages** wheel toggle beside them on single-page displays
-- ✅ **A PDF that contradicts itself opens, and says what pdfcer decided** — a
-  file may name one key twice in a dictionary with two different values, and
-  the resolution is reported on the status bar rather than taken silently
-- ✅ **Find** — `Ctrl+F` and a status-bar toggle open a floating box at the
-  page's top right: query, `3 of 47`, Enter / Shift+Enter to step, hits
-  highlighted with the current one distinguished, and Match case · Whole word ·
-  Wildcards behind an Options disclosure
-- ✅ **Editable page box** — type `37`, press Enter. Commits on Enter or focus
-  loss, clamps out of range and says so, rejects non-numeric without discarding
-  what you typed
-- ✅ **Three themes**, installed by `Theme::apply`, with a rendered-pair
-  contrast gate over all five widget states
-- ✅ **Closing a document asks about unsaved edits** — `Action::CloseDocument`
-  routes through the prompt `file.close`'s tooltip promises
-- ✅ **Every setting the engine carries has a control, and a gate says so** —
-  `pdfcer-core` gains settings on its own schedule, so the coverage is asserted
-  rather than remembered
-
-### Panels and dock
-
-- ✅ **Dock** — multiple columns per side, vertical stacks, tabbed groups,
-  draggable splitters
-- ✅ **Tab overflow** — reserved-space menu, and no per-group pane cap: nine
-  panels in one stack, tested
-- ✅ **Layout persistence** — `<settings dir>/layout.ron`, debounced 750 ms
-  with a 5 s ceiling, per-item fail-soft loading
-- ✅ **Named workspaces**, and **a mode is a workspace** — leaving Edit and
-  returning restores your arrangement, not a default
-- ✅ **Scoped reset** — right dock alone, left alone, or all
-- ✅ **Bookmarks land on the detail, not merely the page** — `Destination::Page`
-  carries a `page_index` **and** a `view`, and the panel honours both
-- ✅ **A clickable table of contents works** — a `/Link` in Read or Review
-  navigates page, zoom and scroll through the same `destination` actions a
-  bookmark uses
-- ✅ **A bookmark can be written** — `EditSession::add_outline_item`
-- ✅ **…and renamed and removed** — clicking a row opens a Selected bookmark
-  block above the list, with its name and a Remove
-- ✅ **Tool status** — a one-line strip in the right dock's chrome naming what
-  is armed at frame one; it cannot be closed and is drawn in every mode. Its
-  live controls are in Properties, and it carries no tool list
-- ✅ **Dimension groups** — a dock panel with six foldable sections, scrollable,
-  so no part of it can push its own title bar off the desktop
-- ✅ **Attachments** — `attach_file`, `detach_file`, `list_attachments` and
-  `extract_attachment`, each with a control
-- ✅ **Layers** — full `/RBGroups` radio semantics, locked-member handling, and
-  Reset to the document's own default
-- ⬜ **Signatures — three facts, reported separately, and "not checked" says
-  so.** **Built and undriven**: `trust_store` has never been run
-- ⬜ **…and the anchors are the operator's own Acrobat trust list, opt-in and
-  off by default** — Settings ▸ Digital signatures. **Built and undriven**
-- ✅ **Fonts** — inventory, embed status, byte cost, font-folder resolution, and
-  the two verbs it reports on: Tools ▸ Embed fonts and Tools ▸ Remove embedded
-  fonts
-- ✅ **Objects** — every object on the page, front-most first; 129,758 of them
-  on the benchmark drawing
-- ✅ **Properties** — facts for a selection, plus the editable sections named
-  under Canvas below
-- ✅ **Pages** — thumbnail grid, click to navigate, multi-select (click /
-  Ctrl+click / Shift+extend), context menu of the six page verbs. Selection is
-  marked by a *shape* change plus a written count, never colour alone
-- ✅ **The page-previews tick is the operator's alone** — a page costing more
-  than the limit no longer switches previews off behind your back, and the
-  limit itself is a box you can type in
-- ✅ **Drag a page to where it goes, and see where that is before you let go** —
-  a caret between tiles, rather than two arrows that move one place at a time
-- ✅ **Comments** — every annotation, page order then `/Annots` order.
-  `/Widget` is excluded because Forms owns it, `/Popup` because it is an
-  implementation detail of another annotation
-- ✅ **…and the Comments panel writes** — Add note / Edit note / Remove note on
-  every row, plus delete, filter by author, by kind and by has-words, sort, and
-  a **Go to** that navigates and opens the comment's pop-up on the same frame
-- ✅ **A stamp's text size is the operator's to choose** — a Size chooser beside
-  the gallery: *Fit the box I drew*, then 8 to 72 pt, with the box grown to
-  hold what was asked for
-- ✅ **Markup can be authored see-through** — an Opacity control on
-  Markup ▸ Style, applied to every kind including the sticky note, the text box
-  and the stamp
-- ✅ **Forms can be authored, not only filled** — five commands on Edit ▸ Forms,
-  one per kind the engine has a verb for: text field, check box, radio button,
-  drop-down, push button
-- ✅ **Clicking a field on the page opens its properties** — in Edit a click
-  selects the field; in Read and Review it fills it
-- ✅ **Forms — fill, in all three modes including Read**, reading the session so
-  unsaved edits show. Filling changes no page content, which is why Read keeps it
-
-### Canvas
-
-- ✅ **The font offer tests the character you could not type, not the words
-  already on the page** — `preview_font_resources_for`'s candidate,
-  `FontPreflight::standard_14` and `FontAcceptance` decide the list from the
-  keystroke that was refused
-- ✅ **A key the run's font cannot carry is refused as you type it, by the name
-  of the character** — `run_repertoire`, so a subset font declines at the
-  keystroke rather than at the save
-- ⚠ A test that re-implements the chooser and asserts on its copy proves
-  nothing; both font-chooser tests call `choices` itself
-- ✅ **A field too small for its text says the text will overflow** —
-  `FillOutcome::applied_autosize_bound` names which constraint bound the size
-- ⚠ `AutoFitBound` is `#[non_exhaustive]`: a new upstream variant is a compile
-  error here only where the match is exhaustive, so the wildcard arm carries the
-  honest sentence
-- ⚠ An absence claim is a claim about every route. Grep for the sentence that
-  denies a capability before believing it, and again after wiring the verb
-- ✅ **A click on blank paper starts new text** — `NoRun` becomes an origin
-  instead of refusing; only an encrypted document still declines, because that
-  says *this cannot be done here* rather than *there is nothing here*
-- ✅ **A text file becomes pages** — `file.import_text`
-- ⚠ R2 (no source file over 1,500 lines) is a build gate, not advice:
-  `check-file-size.sh` fails the commit
-- ✅ **The line-weights mode reports when it has nothing to do** —
-  `Diagnostics::strokes_hairlined` distinguishes *thinned nothing* from
-  *did not run*
-- ⚠ A driven check reporting SKIP is not green and not red; it measures nothing,
-  so a SKIP is treated as a failure to run
-- ✅ **Rotation composes, the angle is typed, and the engine owns both** — the
-  grip and the typed angle raise the same verb
-- ⚠ `Annotation::appearance_rotation_degrees` returns a **signed** `atan2`: a
-  quarter turn clockwise reads `-89.15`, not `270.85`. Normalise before display
-- ✅ **A sticky note keeps an icon name pdfcer does not model** — §12.5.6.4's
-  seven names are a standard set, not a closed one, so a producer's own name is
-  carried through rather than replaced
-- ✅ **A selected mark's outline is drawn at its own angle** — the dashed
-  outline, the eight scale grips and the rotate handle all turn with the artwork
-- ◑ **A typed angle in the Properties panel** — degrees anticlockwise under
-  Width and Height, seeded from the appearance `/Matrix` so it survives a
-  save-and-reopen. Read driven, write undriven
-- ⬜ **Rotating a mark twice makes it bigger** — an engine defect, reproduced in
-  pixels; filed
-- ✅ **Annotations and ce dimensions rotate** — a ninth grip, a circle on a stem
-  above the selection box, Shift snapping to 15°. A ce dimension gets the circle
-  and nothing else, because its size is the measurement
-- ✅ **Clicking an object inside a form XObject selects that object** — the hit
-  test descends into the block rather than returning the block
-- ✅ **"Select the form"** — the deliberate second act, because the hit test now
-  excludes forms outright and a form is still a legitimate thing to select
-- ✅ **The status bar, the Objects panel and Properties all read the selection**
-  rather than the edit-operand list, so none of them goes silent on the
-  selection it was written for
-- ✅ **The measure tools see inside a form too** — the same leaf id type
-- ✅ **Render** — off-thread, generation-counted, cancellable between
-  content-stream operators
-- ✅ **Zoom ladder** with a per-page raster ceiling that accounts for
-  `pixels_per_point`
-- ✅ **Three fit modes — page, width and height — and each places the view as
-  well as setting the scale.** Fit page centres the sheet; Fit width and Fit
-  height centre the axis they fit and keep your position on the other
-- ✅ **The mouse wheel turns pages, if you ask it to** — a toggle beside the
-  page buttons, in single-page and facing displays only, because a continuous
-  display scrolls the document by definition
-- ✅ **Cursor-anchored `Ctrl`+wheel zoom** — under 0.01 px drift
-- ✅ **Middle-drag pan**, wheel scroll, **hand tool and space-to-pan**
-- ✅ **Four page-display modes** — Single · Continuous · Facing ·
-  Facing-continuous, as a radio whose active position renders pressed. Single
-  page is provably unchanged: one row, no gap, so its scroll range, centring
-  margin and pan clamp are the same arithmetic asserted as an equality
-- ✅ **An undrawn page says so** — its real boundary, a fill that is visibly not
-  paper, and a sentence centred in the part of the page **on screen**
-- ✅ **Selection as identity, not position** — page + object + subpath + node,
-  four integers and no coordinate
-- ✅ **Selection survives navigation** — zoom, pan, fit, view rotation,
-  page-display mode and tab change, all asserted byte-identical
-- ✅ **Multi-select**, marquee, and a level ladder with Escape ascending one rung
-- ✅ **A right-to-left box takes what it touches**; a left-to-right box takes
-  only what it encloses
-- ✅ **…and that also reaches an object dropped off the sheet**
-- ✅ **Delete** — click then Delete, verified end to end against the real binary
-- ✅ **`Ctrl` takes things out of a selection**; Shift adds to it
-- ✅ **Redaction works on real drawings** — a mark whose content lives inside a
-  form no longer refuses the whole apply
-- ✅ **The tab order list is reordered by dragging**, with an insertion marker
-- ✅ **Clicking a form row lights that field on the page**
-- ✅ **Fillable fields wear a wash**, and the display buttons are two rows
-- ✅ **The title bar says when this binary was built**
-- ✅ **Context menus** — canvas object, canvas empty, Objects row, Pages row,
-  dock tab. A menu with nothing to offer never opens
-- ✅ **Read mode does not edit the document** — capability is derived from the
-  **mode's tab list in the manifest**, not from the string `"read"`, so the
-  canvas and the ribbon read one sentence
-- ✅ **Find** — case, whole word with a configurable word rule (ISO 32000-1
-  declines to define "word"), and **wildcards off by default**, because
-  `find_text` enables them and a literal `?` would otherwise not be findable
-- ✅ **Find never searches on a keystroke** — the engine re-extracts the
-  document's text every call, so a search runs on Enter, the step buttons, or an
-  option change after a search has already run
-- ✅ **The Find bar has a Zoom tick-box** — unticked, a hit jumps to the page
-  and leaves the zoom alone
-- ✅ **Stale hits are cleared and said** — an edit clears the highlights, keeps
-  the query, and the readout reads *Document changed*, because a quad recorded
-  before a delete can cover different glyphs afterwards
-- ✅ **Move** — drag a selection, live ghost preview with no re-raster, and a
-  multi-select that moves as **one** command
-- ✅ **Subpath and node moves** — the Part rung raises `move_subpath`, the Node
-  rung `move_node`; a text run declines rather than borrowing the Object rung's
-  verb
-- ✅ **Delete removes one line, one label or one corner point** — `delete_objects`,
-  `delete_objects_in_form`, `delete_subpath`, `delete_text_run` and
-  `delete_node`, each addressed in its own index space
-- ✅ **Several anchors move together** — a multi-node selection moves as one
-  command, not one node at a time
-- ✅ **The anchors are visible** at every rung; entering the Part rung is what
-  draws them, because `draw_anchors` draws from that rung up
-- ✅ **Bézier handles drag** — `EditSession::move_handle`, with the `v`/`y`
-  re-spelling path and the disclosure contract behind it
-- ✅ **Escape cancels a drag in flight** without committing, and never both
-  cancels and ascends a rung
-- ✅ **Eight handles — and they commit**, through `move_nodes` with the grip's
-  opposite corner as the pivot. Cursors correct, and the drag is consumed so it
-  cannot fall through to a marquee
-- ✅ **Dock-tab context menu** — `egui-shell` hands the tab's `Response` to the
-  application; the built-in Close survives for consumers that do not opt in
+- ✅ **Ribbon, seven tabs** — File · View · Pages · Edit · Markup · Measure · Tools, plus the contextual **Format** tab that appears on selection
+- ✅ **The ribbon is data, not code** — a serializable manifest, which is what makes it customizable and reusable by another application
+- ✅ **Mode selector** — Read / Review / Edit, right-aligned on the tab row, driving both the tab set and the panel layout
+- ✅ **Quick access toolbar** — Open, Save a copy, Undo, Redo, drawn icon-only
+- ✅ **Open, Recent, Close**, and Open and New do **not** replace the open document. Recent files live in `recent.txt` beside `layout.ron`, capped at 10, move-to-front, missing entries dropped at display time only and throttled so a dead network path cannot block the UI thread. Opening a file that is already open activates its tab rather than opening it twice
+- ✅ **Keyboard chords derive from the manifest keymap** — `keyboard.rs` spells the key, looks it up and returns a command id; it does not know what `Ctrl+0` means. One owner per chord, with a test that fails naming any chord claimed twice. `Ctrl+1/2/3` switch mode, `Ctrl+0` is actual size
+- ✅ **A chord is gated on the active mode** — a chord may reach a command the active mode **shows**, or a command that lives on **no ordinary tab at all**. That second clause is why undo, redo, Find, Read mode, full screen and the three mode commands keep working in Read without an exception list; a contextual tab counts as no tab. `read_mode_refuses_exactly_these_bound_chords` pins the whole consequence as an exact set, so moving a command between tabs fails loudly
+- ✅ **Read mode does not edit the document.** Capability is derived from the **mode's tab list in the manifest**, not from the string `"read"`, so a mode showing the Edit tab can always edit and one hiding it never can — a visible control that is silently inert is unrepresentable rather than merely avoided. Read grants pan, zoom, hand, marquee-**zoom**, Find, text selection and copying, and form filling; it refuses object selection, move, resize grips, marquee-select, Delete and markup placement. Review refuses content and keeps markup and ce dimensions. Entering a mode retires a tool it forbids, clears a content selection and cancels a gesture in flight — a selection is not work, and the undo stack is untouched
+- ✅ **Read may produce a new document; it may not modify this one** — the general rule under which form filling and OCR are exceptions rather than inconsistencies, and the rule that becomes load-bearing the day an in-place `Save` lands. Today the only save command is `file.save_copy`, an incremental save, so pdfcer never overwrites the original unless the operator picks it
+- ✅ **Copying is not authoring**, so the text-copy verbs live on File ▸ Export: `file.copy_page_text` and `file.copy_document_text`, with the chord following the command in the manifest keymap, which is the only place a chord is bound to a meaning. `both_text_copy_commands_are_offered_by_every_mode` asserts it
+- ✅ **Every ribbon control that can be ON renders pressed**, including the hand tool and marquee zoom, whose armed flag lives in `egui::Memory`
+- ✅ **Every ribbon control is a glyph or a recorded refusal**, each refusal argued at its own registration, so a band cannot draw pictures and bare words side by side
+- ✅ **Icons** — 72 glyphs, rasterized at physical pixel size, tinted from the theme, every key named by a command asserted to resolve against the live registry. An unknown key draws a **visible slashed mark**, never a blank, and the label fallback is decided upstream of the painter
+- ✅ **Group captions, enforced by construction** — one closure draws every group, so a caption cannot be omitted
+- ✅ **Band overflow** — reserved-space `⏷ N more`, proven hit-testable at a width narrow enough to hide groups. Sections re-wrap onto a third row before anything is hidden, and the band then **scrolls sideways** rather than hiding commands in a menu
+- ✅ **A tab with nothing left to show is not shown either**
+- ✅ **Three item sizes in a band, and an item can be hidden by condition** with its space reclaimed — `visible_when`, evaluated against the same `ConditionSet` the enablement rules use, and read by **both** resolvers: the ribbon's and `menu::plan::resolve`, so a menu row meant to vanish vanishes rather than greying, which would be R9 inverted
+- ✅ **Two-row ribbon bands**, with the group padding the mockup specifies drawn: 6 pt each side. `Group::prefer_rows` is a layout hint in data rather than a special case in the ribbon code
+- ✅ **Tab-strip overflow** — the active tab is pinned; the strip collapses to the affordance below about 47 pt rather than hiding the tab you are looking at
+- ✅ **Status bar** — render-notes disclosure (closed by default), Actual size / Fit width / Fit height / Fit page, zoom −/%/+, page ⏴ n/N ⏵, the wheel-turns-pages toggle and the Select filter
+- ✅ **A dialog is a real OS window**, all fourteen of them, and each is **owned** by the window it belongs to, so it stays above its parent and minimises with it
+- ✅ **Three themes** with a rendered-pair contrast gate over all five widget states
+- ✅ **Settings dialog**, and **every setting the engine carries has a control**, in seven groups, with a gate that reads `pdfcer_core::settings` and fails when a new one arrives with no surface
+- ✅ **UI scale and base font size**, through `Context::set_zoom_factor`, and the two opening-view preferences: initial fit and initial page-display mode
+- ✅ **`userdata/preferences.txt`** — the shell's own store, beside `settings.txt` under the same roof so the update instructions cover it unchanged. Separate from `pdfcer_core::settings` because every entry in that file cites a clause the standard leaves silent, and *how sharply a page is drawn* cites nothing
+- ✅ **Font folders** — Settings ▸ Fonts holds the folders pdfcer may take a font from, in search order, duplicates refused, capped at sixteen with the cap explained on hover; Tools ▸ Font folders opens it and **lands on that setting**, expanded and scrolled to. Empty by default, and the emptiness is honest: guessing `C:\Windows\Fonts` would embed whatever a machine happens to hold into somebody's document, which is a licensing decision and not pdfcer's to make silently
+- ✅ **…and the machine's installed fonts, behind a checkbox**, off by default, listing the two folders it resolves to — the machine's, and the per-user one under `AppData\Local\Microsoft\Windows\Fonts`, where a double-click installs a font and where most operators do not know to look. A visible, persistent, off-by-default switch is the operator deciding once, which is what the licensing objection asked for
+- ✅ **Closing a document asks about unsaved edits**, and Open and New do not, because with nothing being destroyed a prompt in front of them would state something untrue, and a confirmation that says something untrue is how an operator learns to dismiss confirmations unread
+- ✅ **The title bar says when this binary was built.** The zone is shown only when it is **not** local: a packaged build is stamped in local time so its offset is noise, a dev build is UTC and keeps the label
+- ✅ **An icon in the executable** — Explorer, the Start menu, the pinned taskbar entry and *Open with* all read it **without running the program**, so it lives in the PE image's `.rsrc` section
+- ✅ **A PDF that contradicts itself opens, and says what pdfcer decided** — the status-bar half is driven and falsified
+- ✅ **Find** — `Ctrl+F` or the status-bar toggle opens a floating box at the page's top right: query, `3 of 47`, Enter and Shift+Enter to step, hits highlighted. Case, whole-word with a configurable word rule (ISO 32000-1 declines to define *word*), and **wildcards off by default**, because `find_text` enables them and that is why typing `?` into the old shell's Find bar matched every character. Exactly one `TextSearchOptions` is constructed in the whole crate
+- ✅ **Find never searches on a keystroke** — the engine re-extracts the document's text every call, so a search runs on Enter, on the step buttons, or on an option change after a search has run. Measure it with `PDFCER_DIAG` on the benchmark sheet
+- ✅ **A Zoom tick-box in the Find bar** — unticked, a jump to a hit on another page preserves the current zoom and scrolls the hit into view; ticked, which is the default because it is what he had, the fit re-applies. The box governs the **navigation**, not the search: the search has no zoom code in it at all
+- ✅ **A search that finds nothing says whether it could have** — a zero-result search on a page with no extractable text and one on a page full of text are different answers
+- ✅ **Stale hits are cleared and said** — an edit clears the highlights, keeps the query, and the readout reads *Document changed*, because a quad recorded before a delete can cover different glyphs afterwards
+- ✅ **Editable page box** — type `37`, press Enter. Commits on Enter or focus loss, clamps out of range and says so, rejects non-numeric without discarding what you typed
+- ✅ **Full screen turns off again** — `toggle_fullscreen` tracks its own intent rather than reading `ViewportInfo::fullscreen`, which a `ViewportCommand` answers a frame late. **Read mode and the Read *mode* are orthogonal and compose**: `mode.read` is a capability set, `view.read_mode` a chrome stance
+- ✅ **The keyboard reference is derived from the keymap that dispatches**, as a fold over the same `Keymap` a keystroke is resolved against, so a binding that exists is listed by construction. A chord naming an unregistered command is dropped and the count of drops is disclosed, because a stripped build genuinely has fewer shortcuts. Two chords on one command are one row naming both
+- ✅ **Command reachability is checked** — `shell::commands::reach`: every registered command must reach a dispatch arm or carry an **argued** entry in `SCAFFOLDED`. A reason under 40 characters, or one that merely restates the id, is refused, as is an entry whose command has since been wired. `UNREACHED_ARMS` is empty, its length pinned at 0, so a dispatch arm for a command that does not exist cannot be added quietly
+- ✅ **Sign a document** — File ▸ Security ▸ Sign…, a `.pfx` or `.p12` and its passphrase, driven, and the signature is read back out of the saved **file**. `tools/gates/check-forwarded-features.sh` reads the engine's own default feature list and fails when a capability is missing from this build, because the engine's `signing` feature is default-on and this crate takes `pdfcer-core` with `default-features = false`: forgetting to forward does not fail to compile
+- ⬜ **Encrypt and Permissions — built, undriven.** File ▸ Security, after Export, both controls Large, on the File tab, which is present in all three modes. `Encrypt…` sets a password, changes the passwords keeping what the document allowed, or removes the protection — one subject, one control. `Permissions…` offers the **eight bits** `pdfcer-core` models, in Table 22 order, each rendered from the document's own three-valued answer. Seven are tick-boxes and the eighth is a sentence: the engine sets the accessibility bit on every file it writes, so a box you could clear would come back ticked. The window reports the cipher, which password opened the file and all eight bits under *This document, as it is now* before it offers anything editable
 
 ### Several documents at once
 
 | | |
 |---|---|
-| **Several documents open** | ✅ a **document tab strip** under the ribbon — labels, an unsaved `*` marker, a close cross, middle-click to close, `Ctrl+Tab` and `Ctrl+Shift+Tab` to cycle, `Ctrl+W` to close, an overflow menu past the width. Opening a file that is already open activates its tab instead of opening it twice |
-| **Drag a page between documents** | ✅ press a thumbnail, rest on the other document's **tab** until it springs open, drop at a caret between two sheets. The drag survives the document switch because it lives in `egui::Memory` rather than on the panel that started it |
-| **Drop onto the page view** | ✅ the same gesture released on the canvas, with a horizontal caret in the gap between two sheets, in every display mode including single page |
-| **It is a copy, and it says so** | ✅ the status row names the operation before the button is released. A cross-document move would be two commands on two undo stacks with no single `Ctrl+Z` able to reverse it |
-| **Open and New do not replace the open document** | ✅ and by **removing** a guard rather than adding one: with nothing being destroyed, an unsaved-edits prompt in front of them would state something untrue, and a confirmation that says something untrue is how an operator learns to dismiss confirmations unread |
-| **Live window title** | ✅ the active document, the count of open documents and the application name, so Alt-Tab and the taskbar say what you left open |
-| **Shift makes it a move** | ✅ Windows' own drag modifier — Ctrl copies, Shift moves — sampled at the **release** as Explorer does, so the caption follows the key under your hand. The source's pages go only if the target's insert actually happened, and if the removal is the half that fails it says so, with the remedy |
-| **Tabs rearrange by dragging** | ✅ a caret marks the boundary, resolved by neighbours' centres. **The document on screen does not change** — the active document follows its own tab through the permutation |
-| **Right-click on a tab** | ✅ Close, and Close others. Close is `file.close` itself with the tab as its operand rather than a second command, which two gates refused and were right to |
-| ⚠ | The drag caption must not be a wrapping label above the drop target: its height depends on its own wording, so it moved the aimed-at row mid-gesture. It lives on the status bar, which has a fixed height by construction. And `Response::hovered()` is false on every widget but the dragged one, so a spring-loaded tab has to be resolved geometrically |
+| ✅ | **A document tab strip under the ribbon** — labels, an unsaved `*` marker, a close cross, middle-click to close, `Ctrl+Tab` and `Ctrl+Shift+Tab` to cycle, `Ctrl+W` to close, and an overflow menu past the width |
+| ✅ | **Drag a page between documents** — press a thumbnail, rest on the other document's **tab** until it springs open, drop at a caret between two sheets. The drag survives the document switch because it lives in `egui::Memory` rather than on the panel that started it |
+| ✅ | **Drop onto the page view** — the same gesture released on the canvas, with a horizontal caret in the gap between two sheets, in every display mode including single page |
+| ✅ | **It is a copy, and it says so** before the button is released. A cross-document move would be two commands on two undo stacks with no single `Ctrl+Z` able to reverse it |
+| ✅ | **Shift makes it a move** — Windows' own drag modifier, Ctrl copies and Shift moves, sampled at the **release** as Explorer does, so the caption follows the key under your hand. The source's pages go only if the target's insert actually happened, and if the removal is the half that fails it says so, with the remedy |
+| ✅ | **Tabs rearrange by dragging** — a caret marks the boundary, resolved by neighbours' centres. **The document on screen does not change**: the active document follows its own tab through the permutation |
+| ✅ | **Right-click on a tab** — Close, and Close others. Close is `file.close` itself with the tab as its operand rather than a second command, which two gates refused and were right to |
+| ✅ | **Live window title** — the active document, the count of open documents and the application name, so Alt-Tab and the taskbar say what you left open |
+| | A drag caption must not be a wrapping label above the drop target: its height depends on its own wording, so it moves the aimed-at row mid-gesture. It lives on the status bar, which has a fixed height by construction. And `Response::hovered()` is false on every widget but the dragged one, so a spring-loaded tab has to be resolved geometrically |
+
+### Panels and dock
+
+- ✅ **Dock** — multiple columns per side, vertical stacks, tabbed groups, draggable splitters
+- ✅ **Tab overflow** — reserved-space menu; nine panels in one stack, tested
+- ✅ **Layout persistence** — `<settings dir>/layout.ron`, debounced 750 ms with a 5 s ceiling, per-item fail-soft loading
+- ✅ **Named workspaces, and a mode is a workspace** — leaving Edit and returning restores your arrangement, not a default. The **mode id** rides in the layout file beside the arrangement it belongs to, so the application opens in the mode you left it in and the restored layout and the restored mode agree; a stored id the manifest no longer declares falls back to the first mode rather than adopting nothing
+- ✅ **A new panel reaches an operator who upgrades** — a layout records which panels existed when it was written, so a genuinely new one appears while one closed on purpose stays closed
+- ✅ **Scoped reset** — right dock alone, left alone, or all
+- ✅ **Panel toggles** — pressing an open panel's control closes it, through `Panel::from_command_id`, the single id-to-panel binding. A panel behind a sibling tab is not on screen, so its control **raises** it; `DockState::is_on_screen` is the predicate for that distinction, and closing goes through `DockLayout::close`, the path the dock's own tab Close takes. `file.properties` and `markup.comments` are deliberately not toggles: the rule is about the control — *is this panel open?* toggles, *tell me about this thing* shows
+- ✅ **Dock-tab context menu** — `egui-shell` hands the tab's `Response` to the application; the built-in Close survives for consumers that do not opt in
+- ✅ **Bookmarks** — navigation that lands on the detail, not merely the page: `Destination::Page` carries a page index **and** a view, and both are honoured
+- ✅ **…and a bookmark can be written, renamed and removed** — click a row and a Selected bookmark block appears above the list
+- ✅ **A clickable table of contents** — a `/Link` in Read navigates
+- ✅ **Tool** — the panel that says what tool is active and what its options are
+- ✅ **Dimension groups** — create, rename, delete, recalibrate, restyle, and the **Draw into** picker, which is the control the feature had been missing. A group's unit is settable through `set_group_scale`, which takes a whole `NumberFormat`
+- ✅ **Attachments** — a PDF can carry whole files inside itself; `attach_file`, `detach_file`, `list_attachments_with_notes`, `extract_attachment` and `sanitize_attachment_name` are all reachable
+- ✅ **Layers** — full `/RBGroups` radio semantics, locked-member handling, Reset to the document's own default
+- ✅ **Fonts** — inventory, embed status, byte cost, font-folder resolution, and the two verbs it reports on: Tools ▸ Embed fonts and Tools ▸ Remove embedded fonts
+- ✅ **Objects** — every object on the page, front-most first, on a benchmark CAD sheet of 129,758 of them
+- ✅ **Properties** — read-only facts for a selection, plus the editable sections listed under Canvas
+- ✅ **Pages** — thumbnail grid, click to navigate, multi-select by click, Ctrl+click and Shift+extend, a context menu of the six page verbs, and **drag a page to where it goes** with an insertion caret showing where that is before you let go
+- ✅ **The page-previews tick is the operator's alone**, and the limit that used to override it is a box he can type in
+- ✅ **The page cache holds what you turned away from** — the raster set is not narrowed to the visible pages every settle, so turning back one page does not re-render it
+- ✅ **Comments** — every annotation in the document, page order then `/Annots` order, reusing `pdfcer list-annotations`' ordering by name; `/Widget` excluded. It **writes**: add, edit and remove a note on every annotation kind
+- ✅ **Forms** — fill, in all three modes including Read, reading the session so unsaved edits show
+- ⬜ **Signatures — built, undriven.** Every signature gets **`Intact:`**, **`Covers:`** and **`Signer:`** as three labelled lines, always all three, in that order — the order of increasing uncertainty, since integrity is arithmetic, coverage is arithmetic and trust is a judgement about the world. There is no badge and no tick: `pdfcer-core` returns three facts that never collapse into one bool, and nothing in `panels/signatures.rs` combines two of them into a third. `NotChecked` renders as itself
+- ⬜ **…and the trust anchors are the operator's own Acrobat list, opt-in and off by default — built, undriven.** Settings ▸ Digital signatures: a permission and a location, with Browse…, a live resolved-state line and an Inspect. The permission is the engine's `Settings::acrobat_trust_store`, so the same choice governs `pdfcer verify-signatures`; the location is a shell preference because `pdfcer-core` deliberately models none. Importing is a **live read** and pdfcer copies nothing — a copy has no way to say how old it is that anybody will read, and a live read has one that costs nothing. R9 both ways: *Show what is in it* is absent when no store was found, while the path field is always drawn, because it is the remedy
+
+### Canvas
+
+- ✅ **Render** — off-thread, generation-counted, cancellable between content-stream operators
+- ✅ **Zoom ladder** with a per-page raster ceiling that accounts for `pixels_per_point`
+- ✅ **Three fit modes — page, width and height — and each places the view as well as setting the scale.** Fit page centres the sheet; Fit width and Fit height centre the axis they fit and keep the operator's position on the other, clamped to the page so *kept* cannot mean *still looking at pasteboard*. Fit height is the Acrobat-parity mode and the useful one for a landscape sheet in a tall window. A fit survives a window resize, and a pan gets you out of it
+- ✅ **The mouse wheel turns pages, if you ask it to** — a toggle beside the page buttons, in single-page and facing displays only, since a continuous display scrolls the whole document by definition. Off by default, persisted, and it takes effect on the next notch rather than waiting for a Settings apply
+- ✅ **Cursor-anchored `Ctrl`+wheel zoom** — under 0.01 px drift. The rule is decided once, in `canvas::zoom::anchor_point`, and all five paths route through it: the wheel, the three commands and the framing verbs
+- ✅ **Middle-drag pan**, wheel scroll, **hand tool and space-to-pan** — Space is read by the canvas itself, so it needs no keymap entry and cannot be unbound by accident
+- ✅ **Zoom to selection**, gated on `selection.bounds` rather than `selection.any`: an identity can outlive the box it described, and framing nothing is a jump to the origin that looks like a bug. Reached by right-click, which is where SolidWorks and Acrobat both put it
+- ✅ **Marquee zoom to region** — one rubber band shared with marquee-select, branched only at release; a zoom marquee never touches the selection and decomposes nothing
+- ✅ **Four page-display modes** — Single, Continuous, Facing and Facing-continuous, as a radio whose active position renders pressed, with per-document persistence in `page-display.txt`. **Single page is provably unchanged**: its strip is one row with no gap, so the scroll range, centring margin, pan clamp and zoom anchor are the same arithmetic, asserted as an equality against the pre-Phase-4 expression. Read defaults to continuous. Fit and the raster ceiling are per-**row**, so a spread fits as a spread; a continuous fit is taken over the document's tightest row, per axis
+- ✅ **Only visible pages rasterize**, one at a time, nearest the viewport centre first, bounded by a texel budget
+- ✅ **An undrawn page says so** — its real boundary, a fill that is visibly not paper, and a sentence naming the page and its state, centred in the part of the page **on screen**
+- ✅ **Rulers** in points, or in the document's own unit at its own scale when its dimension sidecar carries one, through the same `pdfcer-core` `format_measurement` a ce dimension label uses
+- ✅ **Grid** — per page, in page space, clipped to the sheet, so it scrolls with the drawing and the row gaps between sheets carry none. Every numbered ruler tick has a grid line under it, because both come from one derivation
+- ✅ **Guides** — belong to a **page**, dragged out of a ruler, moved on the canvas, deleted by dragging off it or by a double-click. A guide's catch band is registered after every page widget, so grabbing one cannot steal a press from the page
+- ✅ **Thumbnail grid** — one tile per frame, on-screen only, current page first, 64-texture cap, and a hard stop past 400 ms naming the page and its cost
+- ✅ **Selection as identity, not position** — page, object, subpath, node: four integers and no coordinate. It survives zoom, pan, fit, view rotation, page-display mode and tab change, all asserted byte-identical
+- ✅ **The tool is the rung** — `V` Select, `A` Points, `T` Text, `H` Hand. Bare letters, which is the layout Illustrator, Photoshop, InDesign, Figma, Affinity and Inkscape converged on, and this shell binds no bare letter to anything else; `canvas::keys` gates every keystroke on `text_edit_focused()`. `A` clicks a shape and **every point appears at once**; `T` clicks text to edit it and empty paper to start some
+- ✅ **A press on an object selects it, and the same drag moves it.** Selection happens at press time, so the grip test on the next statement finds `Grip::Move`; it lives in `canvas::presspick` rather than `canvas::pressing`, whose contract is that nothing there changes anything
+- ✅ **Multi-select**, marquee, level ladder with Escape ascending one rung, and `Alt`+click walking the stack one candidate deeper per click through `hit_test_all`, wrapping, reset by 4 pt of travel — a gesture about *this* point rather than a mode. The count on the status line is what makes it discoverable
+- ✅ **A right-to-left box takes what it touches** — AutoCAD's direction-sensitive band, which SolidWorks drawings use too: left to right is a window and encloses, right to left is a crossing window and touches. No modifier, and it is the conventional interaction rather than an invention. A crossing band drops page-sized form wrappers through `canvas::marquee::without_page_wrappers`, using the click ladder's existing `container_is_worth_selecting` rule, and **only a hit that contains another hit is tested**, so a drawing border covering the sheet stays selectable. ⬜ The enclosing direction is not driven and cannot be on his own sheet: every corner a surrounding band could start from is on ink
+- ✅ **…and that reaches an object dropped off the sheet** — a band started on the sheet and dragged into the grey touches an object lying entirely off the edge, where an enclosing band over the same rectangle surrounds nothing
+- ✅ **Objects off the page are reachable and drawn**, and whether any of it is shown is a **per-mode, remembered switch** — View ▸ Display ▸ Off-page content
+- ✅ **`Ctrl` takes things out of a selection** — Shift+click and Ctrl+click both toggle, because Shift is the vector-editor convention and Ctrl is the Windows and SolidWorks one. A band can **subtract**: no modifier replaces, Shift adds, Ctrl removes. **An empty subtracting band is a no-op, never a clear**, and that asymmetry is the safety of the gesture
+- ✅ **Clicking an object inside a form XObject selects that object.** A form's `/BBox` is a §8.10.1 clipping extent — where painting is allowed, not where ink is — so a form declaring the whole `MediaBox` used to win every click at every point. The pick is `hit_test_point_deep` and the **marquee has the same reach**, so two gestures that both mean *select this* cannot disagree. There is deliberately **no fallback** to the shallow hit test when the deep one finds nothing: the commonest empty answer is a click on blank paper inside a page-sized form, and a fallback would answer it with the form. A page therefore has two object lists — its own content stream's and the objects painted from inside its forms — and a leaf's token range indexes *the form's* buffer, so `TargetId` is a two-variant enum and `page_object_index()`, which answers `None` for a leaf, is the only supported way to obtain an edit operand
+- ✅ **Select the form** — on the contextual Format tab and in the canvas right-click menu, greyed when the selection is not inside a form. It resolves the leaf to its **outermost** enclosing form, the one whose index an edit verb can take
+- ✅ **The status bar reads the selection**, not the edit-operand list, and says `Selected: Path · 12.4 × 8.0 pt · inside a form`, or *inside 3 nested forms* when it is deeper. It says **nothing** when nothing is selected, and appends `1 of 5 here` when the click had a stack under it; the depth is self-invalidating, recording which object it was measured for, so a selection arriving by any route that is not a click reports nothing rather than a confident claim. There is no *the page is selected* state, so nothing draws an outline round the sheet edge
+- ✅ **Delete on a form-interior object deletes it** — `move_objects_in_form`, `move_subpath_in_form` and `delete_objects_in_form` are wired. ⬜ A node grip on a leaf the provider cannot call a path has no geometry verb, and says so by naming what pdfcer can reach: *pdfcer can only drag the corners of a shape. Press Escape to step back out to the whole object, then drag it*
+- ✅ **The measure tools see inside a form too**, and the hover highlight goes deep with the pick — a highlight is a promise about what the next click will take, so a shallow highlight over a deep pick marks one line and highlights another
+- ✅ **Move** — drag a selection; live ghost preview with no re-raster; a multi-select moves as **one** command. **Subpath and node moves** route to `move_subpath` and `move_node`; a text run declines rather than borrowing the Object rung's verb
+- ✅ **The move drag forks rather than switching**, and it is a decision about the *file* rather than about the API: `move_objects` rewrites coordinates in place and adds nothing, while a transform adds a `q`, a `cm` and a `Q` **per object per gesture**, so routing every move through the transform would grow the content stream on every drag
+- ✅ **Several anchors move together** — `MoveSubject::Nodes` sits beside `Node` rather than growing a `Vec`, because `EditSession` has both verbs; one stale anchor refuses the **whole** drag rather than moving the three that still resolve
+- ✅ **The anchors are visible** — squares for on-curve points, hollow circles for control points, tethers between, the idiom Illustrator, Inkscape, Figma and the old shell share. **Scoped to the entered subpath**: drawing the object's and capping the count suppressed the answer on exactly the documents the feature exists for
+- ✅ **Bézier handles drag**, through `EditSession::move_handle`. The priority rule is one sentence — *the most specific thing under the pointer wins, and specificity is depth down the selection ladder* — so the eight scale grips are the Object rung's alone, painted and hit-tested by one predicate. The disclosure is forwarded even though it is invisible: a `v` or `y` re-spelled as `c` draws identically, and what changes is that the original bytes are gone and dragging back does not restore them. Deliberately absent: turning a line into a curve, which the engine refuses by name so no handle is drawn there, and smooth or symmetric constraints, which are a modelling convention PDF has no notion of and would make one gesture two undo entries
+- ✅ **Eight resize handles, and they commit**, through `EditSession::transform_objects` with the grip's opposite corner as the pivot — one `q <cm> … Q` wrapped round each object's operator run, built as `Matrix::scale(sx, sy).about(anchor)` in **page** space so the engine conjugates by each object's own CTM and a selection spanning two local spaces still lands where the operator pointed. One call, one command, one undo entry, however many objects are in it. Cursors correct, the drag consumed so it cannot fall through to a marquee, `Grip::pivot` its own method with a test relating it to `Grip::anchor`, and `hovered_grip` read from `press_origin` rather than the current pointer. **Three refusals, each a sentence rather than a silence**: nothing selected, no object model, a degenerate box — there is no fourth because the verb never looks at an operand, so there is no kind to be wrong. **Text runs, images and annotations all scale**; a ce dimension, a locked annotation and a sticky note are offered no grips at all rather than grips that decline. **Line weights do not scale by default** — on a CAD drawing a line weight is a drafting standard, not a length in the space being scaled — and O51's Tool-row switch scales them on request, alongside `/RD` insets and proceed-anyway distortion
+- ⬜ **A small object gets four grips, not eight** — the mid-edge grips are withheld below `MIN_MID_GRIP_EXTENT_PX` (24 pt) so they cannot pile on top of their corner neighbours, and the test reads the **pushed** anchor box, which the push below only ever raises to 20. Any object small enough to be pushed is therefore below the threshold by construction, and the operator is given no reason for the difference (D56)
+- ⬜ **The line-weight disclosure is written and never spoken** — `line_weight_disclosure()` returns the sentence and has no production call site, so the one inference a resize makes that the operator cannot see is reported nowhere (D55). Resize *refusals* reach the status line but are stamped epoch 0, so they too are invisible after the document's first edit (D41)
+- ✅ **A grip on the page's own edge can be grabbed** — select the sheet border, a full-bleed image or a title block and drag its south-east corner, where egui's *floating* scroll bar otherwise puts an invisible 10 pt drag target over the page's own edge at a fit zoom and takes the press first. Solid bars instead — `ScrollStyle::solid()` with `ScrollBarVisibility::AlwaysVisible`, and both halves are load-bearing. Solid bars take their strip **outside** `inner_rect` (`bar_inner_margin + bar_width` = 14 pt), so the page cannot be under one at any zoom, where a reserved margin under floating bars would fix only the fit case and leave a pan able to put the page edge back under the band. Always-visible rather than when-needed because the content exceeds the viewport on every frame below the deep tier anyway, and saying so outright makes the space the bars take a **constant** of the layout rather than a value that appears one frame after the content — a viewport that changes size because of what was drawn in it is a fit zoom that recomputes, which moves the page under a click the operator has already aimed
+- ⬜ **An object 0.85 pt across can be moved** — the grip anchor box is pushed outward by `max(0, (20 screen pt − extent) / 2)` per side, so the four corner grips sit **outside** a box the 6 pt outline floor has already squashed, instead of covering the whole of it. The body region is deliberately not grown with them, so a tiny cell does not steal its neighbours' presses. Built, undriven
+- ✅ **Escape cancels a drag in flight** without committing, and never both cancels and ascends a rung
+- ✅ **Shift constrains every drag on the canvas, and says so**; a perimeter corner snaps back onto the geometry it came off, through the same snap the placing tool uses
+- ✅ **Rotate** — a ninth grip, a circle on a stem above the selection box, which is PowerPoint's, Illustrator's, Figma's, Inkscape's and Visio's arrangement; a **circle** rather than a ninth square because every square on this canvas resizes. Shift snaps to 15°. A ce dimension gets the circle and nothing else, because scaling one is *declined* rather than unbuilt: either the displayed value stays fixed while the geometry grows, so the ce dimension lies about the drawing, or both change, so nothing was measured and the operator has drawn a number rather than taken one. A form field gets no circle. One function answers — `pressing::grabbable` returns a `GripSet` — and that one value feeds the hit test, the painter and the drag. No confirmation and no distortion warning, because a rotation is an isometry and pdfcer composes the angle into the `/Matrix` a producer already wrote. A `Linear` ce dimension's axis lock relaxes to *aligned* and says so, with *the measurement has not changed* in the same breath
+- ✅ **Rotation composes, and the angle is typed** — `/Rect` is derived from the artwork through one of three named rules, and *N* turns totalling θ draw the same picture as one turn of θ, asserted at 1, 4 and 24 turns. `set_annotation_rotation` is absolute, which is the shape a typed field needs; `the_typed_angle_turns_a_mark` turns the mark a quarter turn **before** it types, because from 0° an absolute setter and a delta setter are the same edit, and it asserts the delta verb's line is **absent**. `RectDerivation::PreviousRect` cannot compose — an annotation with neither an appearance nor rotatable geometry has nowhere to record an orientation — so `text::rotating::rect_still_grows` fires on that rule and only that rule
+- ✅ **A selected mark's outline is drawn at its own angle**, computed by running ISO 32000-1 §12.5.5's placement algorithm forwards on `pdfcer_render::annot::appearance_placement`, so the box lands where the renderer paints the ink, including on a stamp Acrobat or a CAD exporter made. The outline and all nine handles re-resolve on every edit, keyed on `(page, epoch)`. `Annotation::appearance_rotation_degrees` returns a **signed** `atan2`, so a reader that wants a compass bearing normalises it
+- 🔨 **A typed Angle in the Properties panel — read driven, write undriven.** Under Width and Height, degrees anticlockwise, seeded from the appearance `/Matrix` so it survives a save-and-reopen and agrees with the rotate handle. Typing into it and pressing Apply is not driven, and neither are the Left, Bottom, Width and Height fields beside it. **R9 in its intended form**: an appearance whose `/Matrix` is a shear or a mirror gets no Angle field at all, not a greyed one — no single angle describes a shear, and a field reading `0` would invite the operator to compose a rotation onto a matrix that was never one. The field is absolute and the only verb is a delta, so `GeometryDraft::angle_delta` converts, normalising into `(-180, 180]`
+- ⬜ **Rotating a mark twice makes it bigger — an engine defect** (`request_rotate_annotation_grows_the_artwork_when_applied_twice.md`). A 140 × 60 pt `/Square` turned 15° four times is drawn 1.93× wider and 1.42× taller than the same square turned 60° once: `rotate_annotation` sets `/Rect` to the upright bound of the **previous** `/Rect` turned while composing only θ into the appearance `/Matrix`, and §12.5.5 step (c) then scales the artwork up to fill the oversized rectangle. No workaround exists here — turning back grows it too, and `resize_annotation` regenerates pdfcer-authored artwork and refuses foreign artwork by name. `crates/pdfcer-gui/tests/annotation_rotation_grows.rs` asserts the defect and goes red the day it is fixed, carrying the instructions for turning it round
+- ✅ **Delete removes one line, one label or one corner point.** `canvas::modelneed` owns the question *does this need the page decomposition?* — its gesture half is an exhaustive match, its keyboard half the term a list of gestures cannot hold, because Delete is a keystroke and not a gesture outcome. The decision is one pure function, `canvas::deleting::subject`, and **both** the Delete key and `format.delete` ask it. All three cases bite a CAD drawing: one text object can hold every ce dimension label on a sheet, and one exported view can be a single path object with 1,194 subpaths. `delete_node` owes a sentence and gets one when removing the point discarded a curve — *the shape now goes straight from the point before to the point after* — through the funnel that already records every verb's disclosures. Before a label delete, `text_run_delete_would_move_next` is asked, because §9.4.2 lets a label with no position of its own start where the one before it ends, and the remedy — *delete the later label first* — is only reachable by asking first. Three refusals speak and eight stay silent, deliberately. ⬜ The Part and Node rungs **inside a form XObject** still cannot delete: the engine's six `*_in_form` verbs are five moves and one whole-object delete
+- ✅ **A click on blank paper starts new text.** One text tool: click **in** text to edit it, click on **paper** to start some. `hit_test` is bounded to one line-height, so a click far from any run is an origin rather than a miss that captures the page. `place::click`'s `Refusal::NoRun` arm converts the refusal into an `Anchor::Origin` at the click point, and the assertion is **where**, not whether — the arm calls `viewer::canvas_to_pdf_space` a second time, independently of `resolve_run`'s call, so the two disagreeing is a real failure mode with a real address. Only `NoRun` falls through; an encrypted document is still reported, because that says *this cannot be done here* rather than *there is nothing here*
+- ✅ **Text inside a drawing block is editable** — on a CAD sheet that is 99 % of the text there is: a label, a title-block field or a **pdf dimension** callout. Shared content is disclosed in the engine's own words, because a drawing program may place one copy of a title block and paint it on six sheets
+- ✅ **Text on a line shared with other runs**, and the navigation keys walk the **page**, not the fragment
+- ✅ **New text gets a font, a size and a colour**, and **can be multi-line** — arm Edit ▸ Add text and drag a rectangle instead of clicking: Enter starts a new line and text wraps to the box
+- ✅ **There is a selection inside a text draft** — Shift+arrows, Shift+Home and Shift+End, and `Ctrl+A` select; typing replaces the selection
+- ✅ **A refused text edit says why, in his words** — driven on his own file at his own typo, where text added in the session was editable and text that arrived with the document was not
+- ✅ **One line of a block moves on its own** — drag it and the lines under it stay put; right-click names the line rather than the block. Two refusals, each naming its own cause: the line inherits its position from the line above, or moving it would drag the next line with it
+- ✅ **Vertical text behaves like vertical text** — the direction is **measured**, not guessed: a chain of three consecutive glyphs each exactly one advance from the last along a common non-horizontal direction is not available to horizontal text, because within a line every step is horizontal and the jumps between lines are never consecutive. A page with no rotated text never reaches any of it — the direction census comes back empty and every branch is keyed on that. 180° is covered as well as 90° and 270°, and reaches the defect through a different clause. The I-beam turns by generating its own rotated artwork. Filed with the engine, where one fix would serve every caller; the shell-side recovery deletes when it lands
+- ✅ **The I-beam is legible on white**, two-tone, and so is the crosshair pdfcer draws itself, because `CursorIcon::Crosshair` resolves to Windows' monochrome `IDC_CROSS`, whose colour belongs to the operator's pointer scheme and is therefore invisible on a white sheet
+- ✅ **The font list is not a guess** — both face choosers list exactly the faces `EditSession::set_font` has already said it would accept **for this run**, through `preview_font_resources`
+- ✅ **The measure tools say what they are about to pick, before the first click** — the entity under the pointer and the node it will snap to
+- ✅ **Restyling a placed markup** — colour, line width and opacity through `EditSession::set_markup_style` on a selected annotation, in the Properties panel, which is already the surface that appears on selection and already reads the annotation; the Format tab's Markup band carries the five reached for mid-gesture, with fill and arrowheads written **once**, on the tab, because the panel declines both. `MarkupStyle`'s fields are all `Option`, so only what the operator touched is sent: `StyleEdit::Clear` and *unchanged* are different edits and a struct of plain values cannot tell them apart. The current colour and width are read back through `annot_author::spec_from_dict` — the author's view — and the opacity off the dict, because `annot::Annotation` carries `constant_alpha` and neither `/C` nor `/BS /W`. **CMYK stroke colours read back as no swatch** rather than as a converted approximation, because showing a converted colour in a picker invites the operator to press Set and silently rewrite an ink they never touched
+- ✅ **A placed markup can be moved**, and a move has two halves only one of which shows up in a render: `/Rect` moves the painted result, while `/L`, `/Vertices`, `/InkList` and `/QuadPoints` hold absolute page coordinates and are what any *other* tool rebuilds an appearance from. The shell sends a delta, never a rectangle, so it cannot send half
+- ✅ **A sticky note keeps an icon name pdfcer does not model** — §12.5.6.4's seven names are a standard set, not a closed one, so a producer's own `/Sparkle` is conforming and `StickyIcon::Other` preserves it. The chooser shows the file's own name in quotes as a selectable entry, because a combo whose current value is absent from its own list is a one-way door
+- ✅ **The freehand tolerance follows the pen** — `ink::SIMPLIFY_TOLERANCE_PTS` is derived rather than constant: Ramer–Douglas–Peucker bounds how far the drawn centreline can move, so ε has to track the stroke's half-width or a wide pen loses its shape
+- ✅ **Redaction works on a real drawing.** The gate is on the **samples**, not the bounding boxes; a covered image has its pixels destroyed — decoded, overwritten, its soft mask cleared to match, re-encoded losslessly — and a wholly covered one is removed; an image it cannot decode retains **that mark alone** while every other mark applies; vector lines through a region are **cut** at the boundary. Destroyed cells come back as paper, not black. The mark-time sentence reads *those pixels will be destroyed, not hidden*. The report says what happened to each image, names a shared image copied so other pages keep theirs, and counts the geometry cut and dropped. Three residuals gate the write: a **retained** mark, which is a region where nothing was removed under a rectangle that says it was; geometry that could not be cut; and a clip whose outline had to be kept. A sheet with no image is marked in **silence**, because a caveat attached to every mark is one you learn to scroll past. The true-removal proof is unskippable four ways, because `pdfcer-core` has no verdict type — `apply_redactions` returns a *report* and `pdfcer` exits SUCCESS on a file it never verified
+- ✅ **Redact by selecting on the canvas**
+- ✅ **The line-weights display mode** — the CAD hairline stance, a control that was removed once and came back on the operator's report
+- ✅ **Fillable fields wear a wash**, defaulting **on**, in the theme's hyperlink role at low alpha rather than `selection`, which would make every field look selected
+- ✅ **Fill a field on the canvas** — click the widget and type; Enter or clicking away commits one `FormEdit::FillText`, Escape abandons the draft without also ascending a selection rung. Check boxes toggle and radio widgets select that widget's on-state. **No `CanvasTool` variant**: a widget's `/Rect` is a region the file itself marks interactive. What a fill **inferred** is in the status bar: `applied_autosize` and `unencodable_chars` are the only two facts of a fill not re-derivable from the saved document, and afterwards they look exactly like the author's decision
+- ✅ **A field too small for its text says the text will overflow**
+- ✅ **A key the run's font cannot carry is refused as you type it, by the name of the character**, and the font offer tests **the character you could not type**, not the words already there
+- ✅ **Clicking a form row lights that field on the page**, on **focus** rather than on click — a click-only trigger would put the light out the moment they started typing, which is exactly when they want to know which box they are in. ⬜ It does nothing in Edit mode, because the canvas's whole form overlay is gated on the Select tool; filed for the operator's decision rather than changed
+- ✅ **Context menus** — canvas object, canvas empty, Objects row, Pages row and dock tab; a menu with nothing to offer never opens. Right-clicking a form field gives the field's menu rather than four zoom levels
+- ✅ **The shape follows your hand** — drag a line's end point and the line bends; drag a shape and it moves; resize and it scales. The preview outlives the release, so the object does not appear to jump back, and the old position stops showing while the page catches up. When pdfcer cannot show the change it says so: *Your change is made — the picture of it is still being drawn*
+- ✅ **Deleting makes the object go away at once**
+- ✅ **One edit draft is never shared between a content object and an annotation with the same number** — content objects are numbered by **paint order** and annotations by **object id**, both small integers, so the draft key carries the kind as well as the page, the index and the epoch
+- ✅ **`Alt+Arrow` does not nudge and page at once** — egui's `consume_key` matches with `matches_logically`, which **ignores extra Shift and Alt**, so a bare-arrow consumer also fires on `Alt+Arrow`, which the keymap binds to `pages.move_up`. The nudge reads `i.modifiers` itself
+- ✅ **The shell keeps no text locator of its own** — both home-grown ones are deleted, and every restyle and every find goes through the engine's
 
 ### Verification
 
-- ✅ **`ui-verify`** — drives the real binary through the OS and asserts on the
-  diagnostic trace **and** the pixels. A trace-only assertion cannot tell a
-  drawn canvas from a blank one
-- ✅ **The registered check roster** is the binary's own:
-  `cargo run --release -q -p ui-verify -- --list`
-- ✅ **The gate roster** is the runner's own tally:
-  `bash tools/gates/run-all.sh`
-- ✅ **`PDFCER_DIAG`** — canvas layout, pointer in three coordinate spaces,
-  object counts, named UI rects
+- ✅ **`ui-verify`** — drives the real binary through the OS and asserts on both the `PDFCER_DIAG` trace and captured pixels. `cargo run --release -q -p ui-verify -- --list` is the registered roster; a full sweep is about ninety-five minutes. It aborts if any `.rs` or `.toml` is edited while it runs; Markdown edits are safe
+- ✅ **`PDFCER_DIAG`** — canvas layout, pointer in three coordinate spaces, object counts, named UI rects. A trace line must carry the number a wrong build would get wrong: presence alone is not a measurement
+- ✅ **`bash tools/gates/run-all.sh`** — the gate suite, exit 0 pass, 1 fail, 3 skipped. Gates that read documents are not formatting gates: they are the only instrument here that can catch a sentence which was true when it was written
+- ✅ **A registered check is a written intention; only a run is evidence.** A check reported green while measuring nothing is worse than silence, because silence gets investigated: an excuse offered in the voice of a measurement — *the point named an existing run, which is a fact about this fixture rather than about the feature* — reads identically to a pass. Every driven check is falsified before it is believed, by rebuilding the binary with the behaviour removed
+- ✅ **A driven check reporting SKIP is not green and not red.** It measures nothing, and a suite that counts it as a pass is reporting coverage it does not have
+- ✅ **Read a trace line from an anchor taken immediately before the gesture**, through `Trace::last_after`, never `last()` over the whole capture, which returns the first gesture's answer and reports the fossil as this one's
+- ✅ **Aim at ink, not at the middle.** `densest_ink` captures once at the opening zoom, lays an 8 × 8 lattice over the canvas and aims at the fullest cell. The ink's **bounding box** does not work and measuring is what showed it: on a CAD sheet the linework is a border and a title block round the edges, so the centre of the ink's own box is the same blank middle the geometric centre was
+- ✅ **A harness variable adds to the operator's own preference, it never replaces it** — `PDFCER_DIAG_FONT_DIR` appends to the configured font folders, so a run exercises the real preference path. A variable that replaced it would let a check pass on a build whose preference plumbing was broken end to end
+- ✅ **A check's threshold must be a statement about the build, not about the fixture** — a pixel floor of *one in five hundred of the page* fails a **correct** insert of a 64 × 16 pt picture onto a 1584 × 1224 pt CAD sheet at 0.3× zoom, because that is 19 × 5 screen pixels
+- ✅ **An absence claim is a claim about every route** — a capability is absent only when the registry, the dispatch arms, the dialogs and the file filters all agree, and the grep that proves it is recorded beside the claim
+- ✅ **R2 — no source file over 1,500 lines — is a build gate, not advice**
+- **The driven suite needs a machine a human is using, and this is the opposite of what the read path implies.** Windows grants `SetForegroundWindow` only to a process that is already foreground, received the last input, or has recent user input behind it. After hours with nobody at the desk, **every** driven check reports *the window could not be brought to the front*, with no code change and every gate green — so a window-activation SKIP is an **environment** verdict, not an application one, and because it survives a re-run it reads exactly like a defect. Schedule driven runs for when the operator hands the machine over, not for when nobody is there
+- ✅ **What an unattended session can run**, from the same rule: screen capture needs no foreground rights and only synthesised input does. So the unattended set is the unit tests, the gates, an off-screen launch under `PDFCER_DIAG_VIEWPORT` and `PDFCER_DIAG_INVOKE` asserting on the trace, and the capture checks
+- ⬜ **An author-imposed signing refusal is not driven.** A refused signing publishes no named region for its sentence, only `sign-applied written=0`, which proves *a* refusal and not *which* one. It is covered by unit tests over `worded()` and by nothing driven; a region published on the failure label would close it in about ten lines
+- **A canvas can satisfy every trace-based assertion while showing blank paper.** The raster is produced, `drawn=1` is traced, the position arithmetic is independently correct, and a *window* capture is never uniform because a window always contains a ribbon. Only a screenshot aimed at the **canvas region** can tell, which is why the deep-zoom check requires three things together: the canvas region is not near-uniform, the canvas reported `drawn ≥ 1`, and no render failed
+- **A test may not re-implement the function it is testing** — a test that restates the code under test measures the restatement
+- **`#[non_exhaustive]` on an engine enum is a promise about the future** — `AutoFitBound` gains variants upstream, so a match on it is written to keep compiling and to disclose what it did not recognise
 
 ---
 
@@ -330,386 +255,226 @@ rather than the number it produced last.
 
 | | |
 |---|---|
-| ✅ | **Chords are gated on the active mode** — a chord may reach a command the active mode **shows**, or a command that lives on **no ordinary tab at all**. The second clause is what makes an exception list unnecessary: undo and redo sit on the QAT, which every mode draws, so they keep working in Read for free, as do `edit.find`, `view.read_mode`, `view.fullscreen` and the three `mode.*` commands. A contextual tab counts as no tab. The whole consequence is pinned as an exact set, so moving a command between tabs fails loudly |
-| ✅ | **The text-copy commands live on File ▸ Export** — copying reads the page and writes to the clipboard, changing nothing, so it is not authoring and does not belong on the Edit tab: `file.copy_page_text` and `file.copy_document_text`, with the chord following the command in the manifest keymap. They are in Export because an export is content written out to somewhere that is not this document. Edit ▸ Clipboard was deleted rather than emptied — a captioned band with nothing under it is the placeholder R9 forbids |
-| ✅ | **Read selects text, and copies it** — drag sweeps a range, double-click a word, triple-click a line, Shift+click extends from the anchor, Escape clears, `Ctrl+A` takes the page, `Ctrl+C` copies. It needs no capability flag, because selecting text authors nothing. It needs the **primary button**, so the rule is one predicate: a press means text when the select tool is active and the mode cannot select content. The two meanings are mutually exclusive by construction, both branches reading the same flag |
-| ✅ | **Vertical text behaves like vertical text** — the engine publishes a glyph's advance and size as *lengths* and not a direction, which broke line segmentation, glyph boxes and the hit test on rotated strings. The direction is **measured**: three consecutive glyphs each exactly one advance from the last along a common non-horizontal direction. A page with no rotated text never reaches any of it, because the direction census comes back empty and every branch is keyed on that. 180° reaches the defect through a different clause than 90°/270°. The I-beam turns by generating its own rotated artwork. Filed with the engine; the shell-side recovery deletes when it lands |
-| ✅ | **Panel toggles** — pressing an open panel's control closes it, through `Panel::from_command_id`, the single id-to-panel binding. Three states, and the middle one is the trap: a panel behind a sibling tab is not on screen, so its control **raises** it; `DockState::is_on_screen` is the dock's predicate for that distinction. `file.properties` and `markup.comments` are deliberately **not** toggles — the rule is about the control, not the panel: *is this panel open?* toggles, *tell me about this thing* shows |
-| ✅ | **Edit-disclosure surface** — the move and delete verbs return operator-facing disclosures when the surgery changed an operator's form (an `re` rectangle expanded into explicit segments, an implicit `m` materialised). One line in the status bar's left half, in every mode, keyed on the **edit epoch**, so an undo retires it with nothing having to remember to clear it. Core's sentences pass through verbatim; the catalog contributes the mark, the lead-in and the separator. Shares one body with the form-fill disclosure: bounded width, fixed row, elide-not-wrap, hover for the rest |
-| ✅ | **Insert an image** — pick a picture and a window states what it is: format, pixel size **as displayed** (an EXIF-rotated photograph is transposed by the importer), and its natural size on paper together with whether the resolution behind that number was **declared** by the file or **assumed** by pdfcer. Place it by a rectangle in millimetres, previewed from `NewImage::placed_rect()`. Placement is numeric rather than a drag: a placed image is page content, carries no `/Rect`, and cannot be moved afterwards. Refusals are the engine's own words, because they name the operator's file. A box off the sheet is refused, not clamped; an overhang is allowed, because bleeding past the crop box is deliberate |
-| ✅ | **…and the resolution is previewed** — `NewImage::effective_dpi()` and `below_screen_resolution()` are pure, and `add_image` calls them rather than repeating the formula. Under `Contain` the placed rectangle is the *letterboxed* sub-rectangle, not the box typed into the spinner, so a local re-derivation would report a figure low by exactly the letterbox ratio |
-| ✅ | **The keyboard reference is derived from the keymap that dispatches** — every row is a fold over the same `Keymap` `app::keyboard` resolves a keystroke against, so a binding that exists is listed by construction and a wrong listing is not a thing this window can produce. A chord naming an **unregistered** command is dropped (R8) and the count of drops is disclosed, because a stripped build genuinely has fewer shortcuts. Two chords on one command are one row naming both. A string in `text::shortcuts` may describe the reference; it may not be part of it |
-| ✅ | **The measure tools say what they are about to pick, before the first click** — the **entity** under the pointer and the **node** it will snap to. The snap indicator had nothing to snap relative to until a point existed, so the one moment an operator most needs to know what they are aiming at was the one moment nothing was drawn |
-| ✅ | **The I-beam is legible on white** — two-tone, so it survives both a white sheet and a dark object under it |
-| ✅ | **Font folders** — Settings ▸ Fonts holds the folders pdfcer may take a font from when it has to embed one a document names but does not carry; Tools ▸ Font folders is a second route. Empty by default, and the emptiness is honest: guessing `C:\Windows\Fonts` would embed whatever a machine happens to hold into somebody's document, which is a licensing decision and not pdfcer's to make silently. Repeated `font_folder =` keys in `preferences.txt`, order is search order, duplicates refused, capped at sixteen with the cap explained on hover. `EmbedRequest::supplied` is a donor map the shell resolves — the engine never goes looking — so `tools.embed_fonts` depends on this list |
-| ✅ | **The fonts installed on this computer, behind a checkbox** — Settings ▸ Fonts, **off by default**, listing the two folders it resolves to: the machine's, and `…\AppData\Local\Microsoft\Windows\Fonts`, where a plain double-click installs a font on a modern Windows. It does not overrule the licensing argument, it satisfies it: the objection is to pdfcer deciding silently, and a visible, persistent, off-by-default switch is the operator deciding once. A route that exists because of one setting lands on that setting: Tools ▸ Font folders expands the group and scrolls to it, once |
-| ✅ | **pdfcer's own fourteen faces answer when nothing of yours can** — with no font folder configured, a drawing asking for Helvetica still embeds. The condition is disclosed loudly and is the same flag as a correctness guard: each row says pdfcer used its own copy and that it is a stand-in, and the shell reports the rung as `FontMatch::Bundled`, because `is_substitute` is what the engine's symbolic-font guard turns on. Four rungs, four sentences, with a test that they differ. It is the **last** resort, not the second |
-| ✅ | **Save a compacted copy** — File ▸ Save ▸ *Save a compacted copy…* rewrites the whole file, dropping everything no longer used. The window's size line is a **measurement, not an estimate**: it serialises the document before it opens, because the operator is trading three irreversible things — a revision history, possibly every signature, the original's role as canonical — for a saving, and the measured bytes are then the ones written. A second command rather than a better Save, because appending keeps the previous revision recoverable and every signature valid |
-| ✅ | **Zoom holds its place at the top of its range** — the tier hand-over fires where an `f32` offset stops addressing every pixel, which is the right question for a hard cap and the wrong one for choosing between two position models: holding a point under the cursor is a **proportional** requirement and addressing a pixel is an **absolute** one, so the error in page points is constant while the tolerance shrinks. The constant was re-derived against the measured failure rather than re-tuned, and the drift now holds at a third of tolerance at every stage |
-| ✅ | **A placed markup can be moved** — the canvas forked on *is an annotation selected?* and the only module on that branch answered for ce dimensions, so a stamp took the branch, got `None`, and the content branch was unreachable by construction. A fork whose branches can all answer *not mine* needs a third arm or an explicit decline. A move has two halves and only one shows up in a render: `/Rect` moves the painted result, while `/L`, `/Vertices`, `/InkList` and `/QuadPoints` hold absolute page coordinates and are what any *other* tool rebuilds an appearance from. The shell sends a delta, never a rectangle, so it cannot send half |
-| ✅ | **Embed the fonts a document is missing** — Tools ▸ Embed fonts carries the engine's own plan: every font that will gain a program and the file it comes from, the most the file can grow by, how many fonts will still have none afterwards and why. No settings on it, because the only configuration an embed has is which folders, and that lives in Settings. A document whose fonts are all embedded opens **no window** and says so on the status line. Resolution is `pdfcer_render::FontEnvironment::resolve_for_embedding`: the shell owns the **filesystem**, not the matching rules — every CAD exporter writes `Helvetica`, which no Windows machine has. A filename-stem hit is reported as `Alias`, never `Exact`. Bundled faces are not offered here |
-| ✅ | **Remove embedded fonts** — the window lists every embedded font that will go with what it costs in bytes, and every one left alone with the engine's reason. Nothing moves on the page: `/Widths` is untouched and no content stream is rewritten, so every letter keeps its position and only its shape becomes the viewer's. It does **not** make the file smaller — pdfcer saves by appending and leaves the earlier revision intact — so the window states the reclaimable figure **and** that Save will not deliver it, above the button and outside the scroll area |
-| ✅ | **Merge a document into this one** — Pages ▸ Merge into this document appends a whole PDF **with the things that make its pages work**: its form, its bookmarks, its named destinations. `insert_pages` orphans the widgets on the pages it takes and a field that arrives that way is drawn and unfillable; `merge_document` re-parents each widget to its field. Four disclosures, each only when it fires: pages merged, fields that arrived fillable, **fields renamed** (anything that fills this form by name will no longer match them), and **link targets renamed** (pdfcer cannot rewrite a link in a document it did not copy, so an outside reference now resolves to this document's target). `InsertPosition::End`, because a merge that opened a position dialog would be `pages.insert_from_file` under another label |
+| ✅ | **Insert an image** — pick a picture and a window states what it is: format, pixel size **as displayed** (an EXIF-rotated photograph is transposed by the importer), and its natural size on paper with whether the resolution behind that number is one the file **declared** or one pdfcer **assumed**. Placement is numeric, in millimetres, previewed from the engine's own `NewImage::placed_rect()` — a placed image is page content, carries no `/Rect` and cannot be moved afterwards, so a one-shot freehand placement whose only correction is undo is the worse offer. The resolution is previewed from `NewImage::effective_dpi()` and `below_screen_resolution()` rather than re-derived here, because under `Contain` the placed rectangle is the letterboxed sub-rectangle and a local formula would report a figure low by the letterbox ratio. Refusals are the engine's own words, since an `ImageImportError` names the operator's file. A box off the sheet is refused, not clamped; an overhang is not refused, because bleeding past the crop box is deliberate |
+| ✅ | **Drag and drop** — a PDF opens, an image inserts through the same placement window the ribbon opens, and every refusal says what to do instead |
+| ✅ | **Embed the fonts a document is missing** — Tools ▸ Embed fonts carries the engine's own plan: every font that will gain a program and the file it comes from, the most the file can grow by, how many fonts will still have no program and why. A document whose fonts are all embedded opens **no window** and says so on the status line. Resolution goes through `pdfcer_render::FontEnvironment::resolve_for_embedding` rather than matching `/BaseFont` against the names font files advertise — every CAD exporter writes `Helvetica`, which no Windows machine has. A filename-stem hit is reported to the engine as `Alias`, not `Exact`, because `is_substitute` drives the engine's symbolic-font guard and understating a match would disable that guard from the outside |
+| ✅ | **pdfcer's own fourteen faces answer when nothing of yours can** — the last resort, not the second: a real face on the machine wins every time. Each row says *none of your fonts matched, so pdfcer used its own copy. It is a stand-in, not the font the document asks for*, and the shell reports the rung as `FontMatch::Bundled` |
+| ⬜ | **Embedding pdfcer's own fonts is your choice** — a checkbox, off when the window opens, drawn only when the bundled faces would actually change the outcome, because the reason is a licence rather than a rendering preference. Built, undriven |
+| ✅ | **Remove embedded fonts** — lists every embedded font that will go with what it costs in bytes, and every one left alone with the engine's own reason. Nothing moves on the page: `/Widths` is untouched and no content stream is rewritten, so every letter keeps its position and only its shape becomes the viewer's. **It does not make the file smaller** — pdfcer saves by appending and §7.5.6 keeps the freed bytes in the earlier revision — and that sentence sits above the button, outside the scroll area, so it cannot be scrolled past |
+| ✅ | **Save a compacted copy** — File ▸ Save ▸ Save a compacted copy… rewrites the whole file, dropping everything no longer used. The window's size line is a **measurement**, not an estimate: it serialises the document before it opens, because the operator is being asked to trade a revision history, possibly every signature, and the original's role as canonical for a saving, and the measured bytes are then the ones written. A second command rather than a better Save, because appending is a promise pdfcer makes on a shipped tooltip |
+| ✅ | **Merge a document into this one** — Pages ▸ Merge into this document appends a whole PDF with its form, its bookmarks and its named destinations. `insert_pages` takes pages and **orphans** the widgets on them; `merge_document` re-parents each widget to its field. Four disclosures, each only when it fires: pages merged, fields that arrived fillable, **fields renamed** — anything that fills this form by name, a script, an FDF, a calculation, will not match them — and **link targets renamed**, since pdfcer rewrites the bookmarks it carried and cannot rewrite a link in a document it did not copy. `InsertPosition::End`, because a merge that opened a position dialog would be `pages.insert_from_file` wearing a different label |
+| ✅ | **Rewrap a paragraph** — a command, and it stays one |
+| ✅ | **Bold reaches a real face.** On a page carrying a real bold face pdfcer sets the text in it; on a drawing whose only font is `Helvetica` it sets `Helvetica-Bold`, one of the fourteen faces every viewer has. Where the real face found cannot show the text — `Times-Bold` has no `o` — the repertoire is checked before the face is chosen, because the engine will otherwise refuse synthesis on the ground that a real bold face is available while naming one that cannot show the run. **Faking bold and italic is the operator's choice** in Settings ▸ Fonts: fake it quietly, which is the default, fake it and say so, or never fake it; a real face is preferred under all three |
 | ⬜ | **Scoped reset chooser** — reset applies `All`; the scoped variants need three commands and a split-button item kind |
 
-### The tool is the rung
+### The selector — the tool is the rung
 
-The selector is predictable because the tool *is* the rung, which is what every
-editor settled on decades ago. Bare letters, because that is the layout
-Illustrator, Photoshop, InDesign, Figma, Affinity and Inkscape converged on, and
-this shell binds no bare letter to anything else; `canvas::keys` gates every
-keystroke on `text_edit_focused()`.
-
-| to reach this | the rung it takes |
-|---|---|
-| type one character | one key, one click |
-| move an end point | one key, one click |
-
-| | | |
-|---|---|---|
-| ✅ | **V — Select** | click a shape, drag to move, drag paper to marquee |
-| ✅ | **A — Points** | click a shape and every point appears at once; click one, Shift-click for more, drag to move; a point on a curve shows its Bézier handles |
-| ✅ | **T — Text** | click text to edit it, click empty space to start new text; drag still sweeps for copying |
-| ✅ | **H — Hand** | pan |
-
-`SelectionState::click_direct` is the entry point and is deliberately not a flag
-inside `click`, because the two branch differently at every decision. Entering
-the Part rung on a click that names a subpath *is* showing the anchors, because
-`draw_anchors` draws from that rung up. Two driven checks assert the **count** —
-one key, one click — because a check that armed the tool from the ribbon first
-would pass on a build that takes four steps. Files dropped on the window are
-read: a PDF opens, an image inserts through the same placement window the ribbon
-opens, and every refusal says what to do instead.
+The operator's ruling stands as the project's finding: *"The selector should be
+predictable like other programs. It seems a lot of ideas are getting invented
+instead of just using the LLM weighting that would have produced the most common
+method expected."* Typing one character took four steps and moving an end point
+took three double-clicks with nothing drawn saying a deeper rung existed. Both
+features already worked; reaching them was invented. The four tools are the fix,
+and two driven checks assert the **count** — one key, one click — because a check
+that armed the tool from the ribbon and then clicked would pass on the old build
+too. Acrobat and SolidWorks resolve text-versus-object contextually inside one
+tool and Inkscape uses a separate Text tool; **Inkscape won**.
 
 ### Selection, and what a press means
 
 | | |
 |---|---|
-| ✅ | **A press on an object selects it, and the same drag moves it.** Selection happened on the click, which in egui means on release, so a press-and-drag on anything not already selected used to marquee across it instead |
-| ✅ | **The application opens in the mode you left it in** — the mode is persisted, not taken from the manifest's first entry, so the restored per-mode layout and the restored mode agree |
-| ✅ | **The status bar says what is selected, and how deep the click reached** — the outline drawn round the page edge looked exactly like *the page is selected*, a state this program does not have |
-| ✅ | **`Alt`+click walks the stack** — `hit_test_all` returns every candidate under a point front to back; each `Alt`+click goes one deeper and wraps, and moving more than 4 pt resets the cursor, so it is a gesture about *this* point rather than a mode |
-| ✅ | **One selection, read by everything** — a row click raises `Action::SelectObject` and every surface reads the same selection; three parallel notions of *the thing I am working on* is what an unpredictable selector is made of |
-| ✅ | **Resize** — `move_nodes` takes a list of per-node deltas and a scale **is** a list of per-node deltas, `d = (p − pivot) × (s − 1)`, computed once per anchor from the grip's opposite corner |
-| 🔨 | **Object clipboard** — cut, copy and paste, scoped to what the engine can express: `annot_author::spec_from_dict` reads a markup out and `add_markup` writes one back, so markup and comments round-trip |
-| ✅ | **Restyling a placed markup** — colour, line width and opacity through `EditSession::set_markup_style` on a selected annotation, in the **Properties** panel, which is already the surface that appears on selection and already reads the annotation |
-| ✅ | **Editable geometry** — a position change is `Action::MoveSelection` and a size change is `resizing::action`, so this surface computes two factors and a delta and contributes no geometry of its own |
-| ⬜ | **Undo/redo of the command log** — the action funnel exists precisely so this is possible; the log is not yet surfaced |
+| ✅ | **One selection, read by everything** — a row click in the Objects panel raises `Action::SelectObject` and every surface reads `doc.selection`; the Properties panel does the same and takes no `PanelsState`. Three parallel notions of *the thing I am working on* is what an unpredictable selector is made of |
+| ✅ | **Editable geometry in Properties** — a position change is `Action::MoveSelection` and a size change is `resizing::action`, so the panel contributes no geometry of its own. It is the only route that can express *exactly 40.0*, the only route for a 6 mm symbol whose eight grips overlap at fit zoom, and the only one that needs no sub-pixel drag. **An Apply button, not live commits**: a scrubbed spinner going 40 to 120 would raise eighty undo entries. The draft is stamped `(page, object, edit epoch)` — without the epoch, *type W=40, undo something unrelated, press Apply* divides 40 by a width that no longer exists. Bounds come from the object's **anchors**, the same set `move_nodes` moves; a flat object scales only the axis it has, because `h_new / 0` is how a NaN reaches a content stream |
+| 🔨 | **Object clipboard** — cut, copy and paste, scoped to **markup and comments**, which is what the engine can express: `annot_author::spec_from_dict` reads a markup out and `add_markup` writes one back. A same-page paste offsets 10 pt so the copy is visible; a **cross-page** paste lands in place, because a cloud copied to sheet 12 belongs where it was on sheet 1. The spec translation is an exhaustive match, so a tenth `MarkupSpec` in the engine fails to compile here. `paste_in_place` stays absent and is argued rather than pending: it would differ from `Ctrl+V` only on the one page an operator would never want it on |
+| ⬜ | **Sticky notes, stamps, text boxes, links and attachments copy and paste** — through the engine's own `copy_selection`; all five used to answer `Ctrl+C` with *that annotation is not one pdfcer authors*. Built, undriven |
+| ⬜ | **Undo and redo history** — the action funnel exists precisely so this is possible; the command log is not yet surfaced |
+| ⬜ | **The transform preflight** — `transform_preview` is `&self` and shares one body with the verb, so `preview(..).is_ok()` *is* the predicate, and an object whose own CTM is singular means **do not offer a handle**. Today pdfcer offers one and the operator finds out by dragging. Not built because the preview **decomposes the page**, which costs seconds on a dense sheet |
 
 ### Deep zoom — the maximum is yours to set
 
 | | |
 |---|---|
-| ✅ | **Click the zoom percentage on the status bar** — a list of maximums from 800 % to a trillion, and the shipped default is the highest. A capability you have to find a preferences file to switch on is one most of its users never have |
-| ✅ | **The readout was already the natural home** — the one control on the bar that is about zoom and did nothing when clicked. A label that turns out to be a button is this surface's existing idiom, and a separate control would have cost width on a bar whose height and right-hand cluster are both fixed |
-| ✅ | **Also editable in `preferences.txt`** as `max_zoom_percent` |
-| ✅ | **`max_zoom_percent`, up to a trillion percent** — no guard, no warning and no preflight: the setting's job is to be honest and to work. Defaults to 800 % |
-| ✅ | **It is also the dial for comparing the two rendering paths** — pdfcer rasterizes the whole page while it can and switches to the visible region only when it cannot. Set the maximum low and you never leave the whole-page path; set it high and you exercise the region path. A threshold rather than a mode, because a threshold explains itself |
-| ✅ | **Panning keeps full detail** — whole-page rasterizing is what makes panning free, because the texture already exists and the view moves over it, so the region path engages only above the pixmap ceiling |
-| ✅ | **The `+` button climbs past 800 %** by doubling once the named rungs run out — eleven presses from 800 % to a million, where a fixed increment would need thousands |
-| ⚠ | Two defects were caught before they shipped and both would have been silent: a plain maximum broke the promise that the default changes nothing, because a large page at a 1.5× display tops out below 800 %; and the `+` button stalled at 800 % however high the setting went |
-| ✅ | **It renders past the raster ceiling** — above roughly 1000 % pdfcer rasterizes only the visible rectangle, whose size follows the window rather than the zoom, so the requested picture stays the same size however deep you go |
-| ✅ | **Measured on the operator's own `banana.pdf`: 2,118,335 %, page drawn, no failed renders** |
-| ✅ | **Panning stays free below the crossover**, which is every zoom that could render whole-page before. Above it a pan costs a redraw, and the raster carries half a screen of margin on every side, so movement inside that costs nothing and the redraw comes at most once per half-screen of travel |
-| ✅ | **A trillion percent, with the page drawn**, measured on the same file with no failed rasters |
-| ✅ | **Three ceilings fell, each found by asking where precision was actually lost** — the raster limit went to region rendering; the 32-bit scroll offset went to a 64-bit anchor; and the third was not a type but a derivation, the drawn rectangle being computed from the page's whole screen rect, a value around 10¹² px where an `f32`'s spacing is 131,072 px |
-| ✅ | **Not forming the large number beats widening it** — carrying a huge intermediate more precisely is worse than not computing it: the fix costs nothing, needs no second layout path, and removes the limit rather than moving it |
-| ✅ | **Panning below the crossover is untouched**, and the deep path is a hard branch rather than a re-parameterisation, because this canvas has twice been broken by a change meant to affect only deep zoom |
-
-#### Confirmed on screen
-
-| | |
-|---|---|
-| ✅ | **The page is drawn at every decade from 114 % to 999,999,995,904 %**, asserted from **pixels**: `the_page_still_renders_at_every_decade_of_zoom` photographs the window at each tier and requires three things together — the canvas region is not near-uniform, the canvas reported `drawn ≥ 1`, and no render failed |
-| ✅ | **Measured on `banana.pdf`**: at 504,845 % one mitochondrion with the cell wall behind it; at 3,730,330 % cristae; at 41,120,084 % the mtDNA nucleoid, mitoribosomes and ATP synthase heads — 10 nm features. At the ceiling the viewport spans 6 × 10⁻⁸ pt and the field is a flat fill, which is correct |
-| ⚠ | From about 10⁷ % the requested region stopped shrinking and floored at fifty thousand times the viewport, its raster painted far off-screen: `render::strategy::region_for` snapped the region origin by dividing an **absolute page coordinate** by a **relative extent** |
-| ⚠ | **A canvas can satisfy every trace-based assertion while showing blank paper.** The raster was produced, `drawn=1` was traced, the position arithmetic was independently correct, and a *window* capture is never uniform because a window always contains a ribbon. Only a screenshot aimed at the canvas itself can tell |
-| ✅ | **The `−` button is the inverse of `+`** — it halves above the named rungs instead of returning to 800 % from anywhere above. Pinned as a round trip rather than against fixed numbers, because the property is reversibility |
-| ✅ | **A zoom no longer discards where you panned to** — the anchor solve was clamped to `display − viewport`, which is zero or negative when the page is no larger than the window; the clamp moved to the one place that knows the pasteboard-extended range |
-| ✅ | **The tier hand-over holds the view** — three faults met there: the `f64` anchor was seeded from the previous frame's scroll offset, nothing called `DeepAnchor::zoomed_about`, and the scroll area kept its old offset for one frame |
-| ✅ | **The readout survives its own range** — it returned a `u32`, and `as u32` saturates, so past 42,949,672 % the bar showed `u32::MAX` presented as a measurement. It reads 999,999,995,904 % at the top, which is honest rather than rounded: the zoom is an `f32` and that is the nearest value it holds |
-| ⚠ | The recurring shape of all of these is one pattern: a limit lifted in one place while a narrower type downstream keeps enforcing the old one, silently |
-| ⬜ | **What is out of reach, stated rather than implied** — anything inside an atom. A carbon nucleus 200 px across needs 7 × 10¹⁴ %, about 700× past the ceiling; a proton needs 4 × 10¹⁵ %. At maximum zoom one screen point is 35 femtometres |
-| ✅ | **An atom at 1:1, magnified until it is legible** — a benzene molecule at true scale (aromatic C–C 0.140 nm, carbon van der Waals radius 0.170 nm) on screen with bonds, hydrogens and van der Waals spheres at 36,919,476,224 %, driven through the release binary and photographed |
-| ⚠ | The same molecule was blank at page (540, 560) while rendering near the origin, because the renderer's path coordinates were `f32`, whose step there is 21.5 nm against an atom's 0.34 nm. The engine's coordinates are wider now; a limit measured at the origin is not a limit |
+| ✅ | **Click the zoom percentage on the status bar** — a list of maximums from 800 % to a trillion, and the shipped default is the highest, on the operator's instruction. A capability you have to find a preferences file to switch on is one most of its users never have |
+| ✅ | **Also editable in `preferences.txt`** as `max_zoom_percent`. It defaults to 800 %, which is what earlier versions allowed, so a fresh install is unchanged. There is no guard, no warning and no preflight: *it is up to the user to determine how much of a performance hit they want to take* |
+| ✅ | **It is the dial for comparing the two rendering paths.** pdfcer rasterizes the whole page while it can and switches to the visible region only when it cannot. A threshold rather than a mode, because a threshold explains itself |
+| ✅ | **Panning keeps full detail** — whole-page rasterizing is what makes panning free, so the region path engages only above the pixmap ceiling where the whole-page path cannot work at all. Above the crossover a pan costs a redraw, and the raster carries half a screen of margin on every side |
+| ✅ | **The `+` button climbs past 800 %** by doubling once the named rungs run out, and `−` is its exact inverse, halving rather than returning to 800 % from anywhere above — pinned as a round trip rather than against fixed numbers, because the property is reversibility |
+| ✅ | **The page is drawn at every decade to the ceiling**, asserted from pixels by `the_page_still_renders_at_every_decade_of_zoom`, which photographs the window at each tier. At the ceiling the viewport spans 6 × 10⁻⁸ pt and the field is a flat fill, which is correct: it is smaller than an atom and there is nothing left to draw |
+| ✅ | **An atom at 1:1, magnified until it is legible** — a benzene molecule at true scale (aromatic C–C 0.140 nm, carbon van der Waals radius 0.170 nm) drawn through the release binary with bonds, hydrogens and van der Waals spheres, and photographed. A limit measured at the origin is not a limit: the same molecule was blank far out on the sheet while rendering near the origin, because path coordinates were `f32`, whose step there is 21.5 nm against an atom's 0.34 nm |
+| ✅ | **Above the crossover the region rectangle is converted to PDF user space before it is handed to `render_page_region`.** Canvas space is y-down with `/Rotate` resolved; user space is y-up from the un-rotated CropBox origin. On an upright page the two are the same rectangle, which is why every upright fixture passed; `PageFrame` carries the full four-quadrant `canvas_to_user` and `user_to_canvas` table and the region converts before it calls |
+| ✅ | **The region path is `f64` throughout** — `render::strategy::region_for` snaps the region origin by dividing an absolute page coordinate by a relative extent, a quotient past `f32`'s last exact integer, so `.floor()` was being applied to a number that had lost its integer part |
+| ✅ | **A zoom no longer discards where you panned to** — the clamp lives in the one place that knows the pasteboard-extended range, rather than clamping to `display − viewport`, which is zero or negative when the page is no larger than the window |
+| ✅ | **The tier hand-over holds the view** — the `f64` anchor is seeded from the current frame, `DeepAnchor::zoomed_about` is called, and the scroll area does not keep its old offset for a frame |
+| ✅ | **The readout survives its own range** — it returns the zoom as it is held rather than saturating a `u32`, and reads 999,999,995,904 % at the top, which is honest rather than rounded: the zoom is an `f32` and that is the nearest value it holds |
+| ⬜ | **What is out of reach, stated rather than implied**: anything inside an atom. A carbon nucleus 200 px across needs 7 × 10¹⁴ %, about 700× past the ceiling; a proton needs 4 × 10¹⁵ %. At maximum zoom one screen point is 35 femtometres |
+| | **The recurring shape of all of these** — a limit lifted in one place while a narrower type downstream keeps enforcing the old one, silently. The raster ceiling, the scroll offset, the region snap and the percentage readout were four instances. A constant that changes what it gates has to be **re-derived, not re-tuned**: the tier hand-over was `2^24`, the point at which an `f32` offset stops addressing every pixel, which is the right question for a hard cap and the wrong one for choosing between two position models — holding a point under the cursor is proportional and addressing a pixel is absolute |
 
 ### Free navigation — the pasteboard
 
 | | |
 |---|---|
-| ✅ | **Any corner of the page can be brought to any point of the screen** — one whole viewport of empty space on every side, expressed as a **fraction of the viewport** rather than a number of points, so it keeps satisfying the requirement at every zoom and page size |
-| ✅ | **It replaces a clamp to the page**, which is the one place that decision lives: `canvas::geometry` clamps to the pasteboard-extended range, not to the sheet |
-| ✅ | **It also fixed the rotate handle at the top of a sheet** — the handle sits 20 pt above the selection box, so an object flush with the top of the view had its handle drawn outside the canvas, clipped away, with a press landing on the ribbon |
-| ⚠ | The cause of three misdiagnoses was one missing coordinate conversion: the rect deciding which pages are laid out at all was built from a scroll offset in the content's space and intersected with the strip's. Before a pasteboard those were the same rectangle |
-| ⚠ | Every failing trace carried `canvas-unavailable reason=nothing-visible`, which states the cause exactly, and it was never grepped for because each search was for a *symptom*. Search the trace for the stated reason before reasoning about the arithmetic |
-| ✅ | **A driven guard came out of it** — `scrolling_far_keeps_the_canvas_its_pointer_input` wheels the view to 1,600 pt and asserts the canvas still receives the pointer |
-| ✅ | **Objects off the page are reachable, and they are drawn** — the space around the pages senses hover and accepts presses, and off-page content is laid out rather than clipped away |
-| ✅ | **…and whether any of it is shown is a per-mode, remembered switch** — `View ▸ Display ▸ Off-page content`, written the instant it is given and surviving a restart, with an independent answer for Read, Review and Edit |
-| ⚠ | Four existing off-page checks had to be told to open in Edit, because their subject is off the sheet and Read now hides it. Adding a default silently re-points every instrument that relied on the old one |
+| ✅ | **Any corner of the page can be brought to any point of the screen**, which is also what fixed the rotate handle on an object flush with the top of the view: the handle sits 20 pt above the selection box and was drawn outside the canvas |
+| | **A check that drives off-page content has to open in Edit** — Read hides off-page content by default, so a mode-less run reports a defect that is a correctly implemented setting |
 
-### Phase 3 — viewer conventions
+### Viewer conventions
 
 | | |
 |---|---|
-| ✅ | **Hand tool**, space-to-pan — Space is read by the canvas itself, so it needs no keymap entry and cannot be unbound by accident |
-| ✅ | **Cursor-anchored discrete zoom** — the rule is decided once, in `canvas::zoom::anchor_point`, and all five paths route through it: wheel, the three commands, and the framing verbs |
-| ✅ | **Zoom to selection** — gated on `selection.bounds`, which is *not* `selection.any`: an identity can outlive the box it described, and framing nothing is a jump to the origin that looks like a bug |
-| ✅ | **Marquee zoom to region** — one rubber band shared with marquee-select, branched only at release; a zoom marquee never touches the selection and decomposes nothing |
-| ✅ | **Recent files** — `recent.txt` beside `layout.ron`, capped at 10, move-to-front; missing entries dropped at display time only, throttled so a dead network path cannot block the UI thread |
-| ✅ | **Rulers** — in **points**, or in the document's own unit at its own scale when its dimension sidecar carries one, through the same `pdfcer-core` `format_measurement` a dimension label uses, so a ruler and a dimension across one span agree to the digit. The gutters take a constant bite out of the viewport, so switching them on costs exactly one re-fit |
-| ✅ | **Grid** — per page, in page space, clipped to the sheet, so it scrolls with the drawing and the row gaps between sheets carry none. Every numbered ruler tick has a grid line under it, because both come from one 1-2-5 ladder, and the pitch is bounded on the **drawn** step rather than the labelled one |
-| ✅ | **Guides** — belong to a **page**, dragged out of a ruler, moved on the canvas, deleted by dragging off it or by a double-click. A guide's catch band is registered after every page widget, so grabbing one cannot also rubber-band a selection. Persisted per document in `guides.txt` |
-| ✅ | **A new panel reaches an operator who upgrades** — a layout records which panels existed when it was written, so a genuinely new one appears while one closed on purpose stays closed |
-| ✅ | **Thumbnail grid** — one tile per frame, on-screen only, current page first, 64-texture cap, and a hard stop past 400 ms naming the page and its cost |
-| ✅ | **Worded decline** — `ZoomOutcome::NoBounds` and `NoCanvas` reach the operator instead of the floor, through `app/status/decline.rs` and the status bar's left half. Same surface as the edit disclosure, different store: a decline changes no document, so the edit-epoch key does not apply |
-| ✅ | **…and how zoom-to-selection is reached was decided rather than left open** — SolidWorks and Acrobat both reach it by right-click and only Inkscape binds a key, so `view.zoom_selection` joined the `canvas.object` context menu |
-
-### Phase 4 — page display modes
-
-| | |
-|---|---|
-| ✅ | **Continuous scroll**, and Read defaults to it. Single page stays the default everywhere else and is unchanged — the strip lays out one row for it, so its size, scroll range and centring margin are the same arithmetic, asserted as an equality rather than as an intention |
-| ✅ | **Facing** and **facing-continuous**, cover page alone. Fit and the raster ceiling are per-**row**: a spread fits as a spread, and the ceiling is a minimum over the row's pages because a spread is two pixmaps |
-| ✅ | **A continuous fit does not depend on where you scrolled to** — under a continuous mode the fit is taken over the document's tightest row, per axis; under Single and Facing it is the current row, which the operator chose. `page_index` is derived from the scroll in a continuous mode, so fitting the current row would make the zoom depend on the scroll and the scroll on the zoom |
-| ✅ | **Per-document persistence of the choice** in `page-display.txt`, so a sheet set does not inherit a report's setting |
-| ✅ | **Only visible pages rasterize**, one at a time, nearest the viewport centre first, bounded by a texel budget |
-| ✅ | **An undrawn page says so** — its real boundary, a fill that is visibly not paper, and a sentence naming the page and its state, centred in the part of the page on screen |
-
-### Phase 5 — text editing
-
-| | |
-|---|---|
-| ✅ | **The tool itself** — `CanvasTool::TextEdit(TextEditKind)`: click to place a caret, type, Enter or a click elsewhere commits, Escape abandons, a mode change disarms *and* abandons. Gated on `edit_content`, so Read cannot reach it. It takes a click and no drag, the shape `press_kind` already uses for measure and vertex markup |
-| ✅ | **Alignment and rotation fixes** — one pure `choose(text_matrix, ctm, alignment)` at the single commit site: rotation is rung 1 and outranks alignment, non-left alignment is rung 2, both selecting `FollowerDisposition::Pin`, which the engine carries for a justified or right-aligned tail that must not move |
-| ✅ | **Text inside a drawing block is editable** — click a label, a title-block field or a *pdf dimension* callout, get a caret, retype it. On a CAD sheet that text is nearly all the text there is, and it lives in a **form XObject** |
-| ✅ | **Shared content is disclosed, in the engine's own words** — a drawing program may place one copy of a title block and paint it on six sheets, and no clause in either edition of the spec binds a form to a page, so editing text inside a shared one changes every sheet it appears on |
-| ✅ | **Reflow shifts the rest of the line by the advance delta** — the engine's walk stops at the `Td`/`TD`/`T*` boundary rather than running forward through every absolute `Tm`, which on a CAD stream is the difference between one label and every label on the sheet |
-| ⛔ | **Live re-layout while typing** — blocked on the engine. Measured per keystroke: 0.49 ms on a 3-line fixture, 102.77 ms on a SolidWorks sheet, 356 ms on an A3 benchmark. `plan_edit` already computes `advance_delta` before any write but is `pub(crate)`, so every public route performs a full incremental save. Request: a `measure_edit` that returns the delta without writing |
-| ✅ | **Re-wrapping a paragraph is a command** — Edit ▸ Reflow paragraph, and a right-click inside the text you are editing |
-| ✅ | **Text on a line shared with other runs** — on a real drawing almost every line is several runs, so an edit must address the run and leave its neighbours' positions alone |
-| ✅ | **New text gets a font, a size and a colour** — `AddTextRequest` carries `face`, `size` and `color`, and the apply arm overrides none of them. A **tool option**, not a Format property, on the split `canvas::markup::pen` already makes: Format describes the placed thing, a tool option describes what the next thing will be |
-| ✅ | **New text can be multi-line** — arm Edit ▸ Add text and **drag a rectangle** instead of clicking: Enter starts a new line, text wraps at the right edge, `Ctrl+Enter` commits. A plain click still places one line at a point and Enter there still commits |
-| ✅ | **The navigation keys walk the page, not the fragment** — ↓/↑ move to the line below or above, including into the next block of text; End/Home reach the end and start of the visual line |
-| ✅ | **There is a selection inside a text draft** — Shift+arrows, Shift+Home/End and `Ctrl+A` select; typing replaces the selection, Backspace and Delete remove it and nothing else, and **any movement without Shift drops it** |
-| ✅ | **A dialog is owned by the window it belongs to** — `egui-winit` does not pass down the parent relationship egui tracks in `viewport_parents` and does not hand back the child's handle, so ownership is set from the platform side once the child exists |
-
-### Phase 1 — the transform verb, and what it retired
-
-| | |
-|---|---|
-| ✅ | **Move, resize and rotate any object** — the whole shell side had been built and waiting since S4: selection, eight grips, the drag machinery. What it needed was the engine verb |
-| ✅ | **A grip on the page's own edge can be grabbed** — select the sheet border, a full-bleed image or a title block and drag its south-east corner. The press was understood as a resize and never delivered, because egui gives a widget covering the whole canvas the drag before the grip under the pointer sees it |
-| ✅ | **The move drag forks rather than switching**, and it is a decision about the *file* rather than about the API. `move_objects` rewrites coordinates in place and adds nothing; a transform adds a `q`, a `cm` and a `Q` **per object per gesture**, so routing every move through the transform would grow the content stream on every drag |
-| ✅ | **A rotate handle** — a circle above the selection box on a short stem, which is PowerPoint's, Illustrator's, Figma's, Inkscape's, Visio's and Konva's arrangement. A **circle** rather than a ninth square, because every square on this canvas resizes |
-| ⬜ | **The transform preflight** — `transform_preview` is `&self` and shares one body with the verb, so `preview(..).is_ok()` *is* the predicate, and an object whose own CTM is singular means **do not offer a handle**. Today pdfcer offers one and the operator finds out by dragging. Not built because the preview **decomposes the page**, which costs seconds on a dense sheet |
-
-### Defects found by driving
-
-| | |
-|---|---|
-| ✅ | **Full screen turns off again** — `toggle_fullscreen` read `ViewportInfo::fullscreen` to decide what to ask for next, and a `ViewportCommand` is **queued and answered by the backend**, so a second press before it caught up asked for full screen again and the window filled the display with no route back |
-| ✅ | **Two driven checks were accusing the build of the fixture's properties** — an insert-image check's pixel floor was *one in five hundred of the page*, which is a statement about the fixture: on a 1584 × 1224 pt CAD sheet at 0.3× a 64 × 16 pt picture is 19 × 5 screen pixels, so a **correct** insert failed it |
-| ✅ | **The baked-gap gate had a hole the width of a closing brace** — its pattern enumerated the character before a suspicious run of spaces as a fixed set that omitted `}`, which in Rust is one of the likeliest characters to end a clause. Four already-shipped defects had gone through it; widening the set to any non-space except an opening bracket closed it |
+| ✅ | **The conventions RAG and its gate** — `D:/dev/rag/ui-conventions/` is five gesture classes, each a numbered list carrying where the rule comes from and the failure mode when it is absent; `tools/gates/check-conventions.sh` makes every registered surface answer every row **in its own source**. It cannot check behaviour and does not pretend to — it checks that the question was asked, which is the whole of the problem |
+| ✅ | **Worded declines** — `ZoomOutcome::NoBounds` and `NoCanvas` reach the operator through `app/status/decline.rs` instead of the floor |
+| ✅ | **Edit-disclosure surface** — the move and delete verbs return operator-facing disclosures when the surgery changed an operator's *form*: an `re` rectangle expanded into explicit segments, an implicit `m` materialised. One line in the status bar's left half, in every mode, keyed on the **edit epoch**, so an undo retires it with nothing having to remember to clear it. The engine's sentences pass through verbatim; the catalog contributes only the mark, the lead-in and the separator |
+| ⬜ | Still open from the sweep: no right-click to add or remove a perimeter point though both engine verbs exist, a zero-travel release still raises an action in three of four drag paths, an unfilled `/Square` still claims its interior, and caret indices are characters rather than grapheme clusters |
 
 ### The selection filter — what a click can land on
 
-A filter menu on the status bar naming every class a click may land on, to
-replace declaring an intention in the ribbon before pointing at anything.
+Requested as *"a filter menu that pops up with all the options of what to enable
+selecting of — text, points, lines, etc … This is to replace the wonky content
+edit text and edit objects menu at the top."* The diagnosis of *wonky* is about
+gesture design rather than two buttons: Edit ▸ Content asks the operator to
+declare an intention before pointing at anything.
 
 | | |
 |---|---|
-| 🔨 | **A `Select` button on the status bar, and eleven classes behind it** — Text, Lines, Pictures, Blocks, Parts, Points, Markup, Dimensions, Form fields, Links and Characters, each with a glyph and a checkbox, plus All and None. A class switched off is not selectable in Read, not in Review, not in Edit. **Not yet driven**, and a green suite is not a report of working software (R1). The popup publishes an indexed diagnostic rect per row so a harness can choose from it rather than only prove it opens |
-| ✅ | **The diagnosis is about gesture design rather than about two buttons** — Edit ▸ Content asks the operator to declare an intention before pointing at anything, and the hit test then obeys the declaration rather than the drawing, so the same click on the same pixel means different things depending on a control that is not on screen while you aim. A filter on the status bar is always visible, one click from anywhere, and says what it is doing while you do it |
-| ✅ | **It is subtractive, always, and that is what makes it safe** — it can only take candidates away, never make something pickable that was not, so `PickFilter::default()` is *defined* as everything the shell can pick today and **R6 holds by construction** rather than by testing every path twice. The tempting alternative, *Points on means a click lands straight on the nearest anchor*, was refused on measurement: one CAD export in the fixture set holds **6,681 anchors in a single path object** |
-| ✅ | **It sits above the mode, which is not the same as replacing it** — the composition is `capability_allows(class, mode) && filter.allows(class)`, **both**. Switching a class on cannot grant Read the ability to edit content, and nothing in the filter can reach a capability; collapsing the two questions is how a filter turns into a hole in the mode system |
-| ✅ | **The class list is derived, not invented** — every one of the eleven is something the hit test can already distinguish, routed through `panels::objects::summary::object_kind` rather than re-deriving it, because a second kind classifier is the divergence that module exists to prevent. A row nothing consults is a lie told once per session; a distinguishable class with no row is a thing the operator cannot reach |
-| ✅ | **A form XObject is called a *Block*** — an entire nested drawing the page treats as one opaque object, usually a title block or a border, and the usual answer to *why is the selection box so big?* *Groups* would collide with optional content groups, which this shell has a panel for; *Form XObject* is correct and undecodable by anyone who has not read the specification |
-| ✅ | **Switching everything off is legal, and the bar says so while it lasts** — *"Nothing on the page can be selected"*, on the left with the narration, ahead of the decline note because it outranks it: a decline explains why one gesture did nothing, this explains why every gesture will. Off-canvas, per the disclosure rule |
-| ✅ | **It survives a restart**, in one readable line beside `settings.txt`, written immediately rather than debounced because a filter can only change on a discrete click. Three on-disk states are kept distinct and the third is the one that matters: no file means *never configured*, a file with names means *these classes*, and an **empty** file means *everything is switched off* |
-| ⬜ | **The View twin** — a second popup beside it governing what is drawn with a bounding box or node markers while unselected. Not started |
-| ⬜ | **Select other on right-click** — walking the stack of objects under the cursor. `hit_test_all` already returns the full depth-ordered list and every pick funnels through it, `hit_test` being defined as its head; what is missing is the command and the menu, not the query. Until they exist, **an object completely covered by another is unreachable by any click** |
-| ⬜ | **Deleting Edit ▸ Content** — the third button is already gone; what remains is *Edit text* and *Add text*. Whether those two are deleted or kept as a redundant path once the filter lands is the operator's call |
-| ✅ | **Redact by selecting on the canvas** — before it there were exactly two marking routes, the search box (which reaches text pdfcer can read as text) and *mark whole page*. On a CAD drawing almost everything worth redacting is between them: a title-block value drawn as vector strokes, a scanned stamp, a logo, a signature image, a run in an unmappable font |
-| ⬜ | **Push buttons can be placed and can never do anything**, and that is a pdfcer-wide policy rather than a shell gap: the engine authors no action of any kind on a button it creates — no submit, no reset, no navigate, no script — because `/A` reaches launch actions, network submits and JavaScript, which pdfcer recognises and preserves and never writes. Disclosed on every creation; filed to the engine as a policy question in its narrowest useful form, **Reset only** |
-| ◐ | **Turn a form field's box** — Turn left and Turn right in the field's Properties. It turns what is drawn **inside** the box; the box itself stays put. The direction is the whole risk: a widget's `/MK /R` is **counterclockwise** while a page's `/Rotate` is **clockwise**, and the standard's two sentences are otherwise word for word identical, so a shell that misses it ships two buttons that both write a legal angle and both turn the wrong way |
-| ◐ | **Say something other than the measurement** — a text box on a ce dimension's properties. It does **not** change what was measured: the measurement stays underneath, so clearing the box restores exactly the number that was there rather than re-measuring, and the receipt names the number both going on and coming off. There is no Clear button — emptying the box **is** the restore. Built; the driven check is still owed |
-| ✅ | **Deleting makes the object go away at once** — it used to sit on screen for a second or two while the page redrew with no gesture in flight to explain the wait, so a delete looked like it had done nothing and the natural response was to press Delete again, which deletes something else |
-| ✅ | **And when it cannot show you, it tells you** — *"Your change is made — the picture of it is still being drawn."* There is no shape to slide when you change a colour, press Bold, delete text, mark a redaction or rotate a page, and no cheap redraw either: a two-pixel region render costs 691 ms on the benchmark site plan. Silent under 0.4 s, so it never flickers on quick edits, and an unedited document never says it |
-| ✅ | **The shape follows your hand** — drag a line's end point and the line **bends**; drag a shape and the shape moves; resize and the shape scales. Every gesture used to draw a bounding box and nothing else. It uses the geometry pdfcer has already parsed, so it costs no engine call and no redraw and runs at pointer speed, and for geometry it is exact rather than approximate |
-| ✅ | **The old position stops showing** — the picture underneath still has the object where it was and cannot be redrawn in under about 0.7 s on a dense drawing, so without this you see the thing twice. It erases the object's **own outline** rather than a box over it, so a polyline blanks a line's own width and not a title-block cell; anything drawn underneath the object's own ink disappears until the redraw lands, which is the one part that is not exact |
-| ✅ | **It stops snapping back** — the preview stays on screen until the page catches up. Releasing a drag used to throw the preview away while the picture still showed the old position, so the object appeared to jump back and then forward, which reads as the program refusing the edit and changing its mind. Holding it is honest rather than optimistic: the edit **has** happened and only the picture is behind. A refused edit holds nothing, and a preview nothing ever arrives to replace is dropped after four seconds |
-| ✅ | **All three driven and falsified** — `dragging_a_node_bends_the_line` asserts the preview is built, that it reaches the painter, and that it outlives the release, and it was then run against the **previous** release, which has none of this, and failed on the first assertion. A check that cannot tell two builds apart makes a green result mean nothing |
-| ✅ | **The Bold tooltip stopped telling you the opposite of what Bold does** — hover Bold on a `Helvetica` title block and it used to say pdfcer would thicken the letters; press it and you got real `Helvetica-Bold`. The hover was asking a different question and answering it accurately, which is the failure shape: two instruments, one page, opposite answers, and the tooltip is the one read first |
-| ✅ | **Bold stops thickening the letters on a title block** — press Bold on a drawing whose only font is `Helvetica` and pdfcer sets the text in `Helvetica-Bold`, one of the fourteen faces every reader must carry, so no font file is embedded, the file does not grow, and what comes off the plotter is a real weight rather than a stroke drawn round the plain letter |
-| ✅ | **Bold uses a real bold font again** — on a page that carries a real bold face, pdfcer sets the text in it rather than thickening the plain face. It had stopped without anything failing: an engine pass turned a refusal this shell was **built on** into a success, so the retry that reaches the real face stopped firing and Bold began faking a weight into the saved file |
-| ✅ | **And a rung that was never there** — where the real face found cannot show the text (`Times-Bold` has no `o`, so it cannot set *hello world* on a page where `Calibri-Bold` can), the old behaviour gave up and named a face that had just failed. The rung is now the engine's, last of four, reached only after a real face on the page and the standard-14 sibling have both been tried |
-| ✅ | **Faking bold and italic is your choice** — Settings ▸ Fonts: fake it quietly (the default), fake it and say so plainly, or never fake it. A real face is preferred under all three, and the window says so under the group, because *never fake it* reads like *never change my font* and is not |
-| ⚠ | **The two form-field rows above are unverified by driving**, and the reason is the machine: every input-driving check reported *"the window could not be brought to the front"* — Windows refusing `SetForegroundWindow` to a background process — including checks that had passed an hour earlier unchanged. That is a way of running the suite wrongly (a busy foreground), not a defect in what shipped. Two checks are written and registered and waiting |
+| 🔨 | **A `Select` button on the status bar, and eleven classes behind it** — Text, Lines, Pictures, Blocks, Parts, Points, Markup, Dimensions, Form fields, Links and Characters, each with a glyph and a checkbox, plus All and None. **Not yet driven**; the popup publishes an indexed diagnostic rect per row precisely so a harness can choose from it rather than only prove it opens |
+| ✅ | **It is subtractive, always**, and that is what makes it safe: it can only take candidates away, never make something pickable that was not. `PickFilter::default()` is *defined* as everything the shell can pick |
+| ✅ | **It sits above the mode, which is not the same as replacing it** — the composition is `capability_allows(class, mode) && filter.allows(class)`, both. Switching a class on cannot grant Read the ability to edit content |
+| ✅ | **The class list is derived, not invented** — every one of the eleven is something the hit test can already distinguish, routed through `panels::objects::summary::object_kind` |
+| ✅ | **A form XObject is called a *Block***, the most load-bearing word in the popup: it is an entire nested drawing the page treats as one opaque object, usually a title block or a border |
+| ✅ | **Switching everything off is legal, and the bar says so while it lasts** — *Nothing on the page can be selected*, ahead of the decline note, because it outranks it |
+| ✅ | **It survives a restart**, written immediately rather than debounced, since a filter can only change on a discrete click |
+| ⬜ | **The View twin** — a second popup governing what is drawn with a bounding box or node markers while unselected |
+| ⬜ | **Select other on right-click** — the depth walk itself is built and driven: `hit_test_all` returns the full depth-ordered list, `canvas::clicking`'s `CycleCursor` steps through it on `Alt`+click, and `canvas::depth` puts *"1 of 5 here"* on the status line so the gesture is discoverable. What is missing is the **menu** route — no right-click item names the stack — so a covered object is reachable only by an operator who knows the modifier |
+| ⬜ | **Deleting Edit ▸ Content** — `edit.objects` has no dispatch arm and never had one. Whether the two buttons are deleted or kept as a redundant path during transition is the operator's call |
 
-### Phase 1¾ — the clipboard
+### The clipboard
 
 | | |
 |---|---|
-| ✅ | **Cut, copy and paste of page content** — select a line, a shape or a piece of text and `Ctrl+C`; `Ctrl+V` lands it 10 pt down and right so the copy is visible, or in place on a different page. `Ctrl+X` is one undo entry, because only one half of a cut is an edit. Any mixture of kinds, and the clip owns its resources by value, so a copy survives closing the source document |
-| ✅ | **…and binding the chords was necessary and not sufficient** — `egui-winit`'s key handler pushes `Event::Copy`, `Cut` and `Paste` and **returns before the `Event::Key` push**, so the chord matcher saw nothing while the manifest contained the binding, unit tests asserted it, and the menu displayed the shortcut. **A keymap lookup is not a keystroke** |
-| ✅ | **…and the same defect was live in two more places** — `canvas::textsel::clipboard` asked `key_pressed(Key::C)`, the identical mistake one grep away from the paragraph explaining why it cannot work, so sweeping text on the page and pressing `Ctrl+C` had never copied it, in any mode, since the day it was written |
-| ⬜ | **Across two pdfcer windows**, and **to another program**. The first needs the clip registered under a private Windows clipboard format, a call this shell does not make yet. The second needs the selection rendered as a standalone one-page PDF, deliberately *not* the same bytes: a one-page PDF cannot carry which byte range was which object, so re-deriving that on the way back in would make a paste between two pdfcer windows worse than a paste into Illustrator. Two formats, two jobs |
-| ✅ | **Form fields, both senses** — `Ctrl+V` pastes a copied field as a **new, independent** field with a free name; `Ctrl+Shift+V` pastes it as **another box for the same field**, so typing in either fills both. Before this there was no path at all: `canvas::clipboard::copy` reads the object selection, a selected field lives on `doc.selected_field`, and `/Widget` is deliberately excluded from the annotation clipboard |
-| ✅ | **Cut, copy and paste for everything else** — **cut is greyed with a reason and the chord is refused too**, because a chord is dispatched through the keymap **without** consulting command enablement, so greying the button alone would delete a redaction mark on `Ctrl+X` while putting nothing on the clipboard. It refuses **before** the copy, asserted separately: refusing after would leave the mark on the page and a copy of it on the clipboard |
-| ⬜ | **Dimensions** — annotations rather than page content, so these verbs cannot address them at all, and a pasted dimension needs a sidecar record and a group. Filed |
+| ✅ | **Cut, copy and paste of page content**, with `Ctrl+X`, `Ctrl+C` and `Ctrl+V` bound in the keymap and gated by `check-clipboard-chords.sh` |
+| ✅ | **Form fields, both senses** — `Ctrl+V` pastes a copied field as a **new, independent** field with a free name; `Ctrl+Shift+V` pastes it as **another box for the same field** |
+| ✅ | **Cut is greyed with a reason where it cannot run, and the chord is refused too** — a chord is dispatched by the same rule as the control |
+| ⬜ | **A drawing pastes into Word as lines, not as a picture** — `edit.copy_as_vector`, four formats in one clipboard transaction in preference order: SVG, EMF, PNG, DIBV5. Built, undriven; `crates/native-clipboard` exists, so the two blockers this row used to carry are both gone |
+| ⬜ | **Across two pdfcer windows, and to another program.** The first needs the clip registered under a private Windows clipboard format, a call this shell does not make. The second needs the selection rendered as a standalone one-page PDF, and deliberately **not** the same bytes: a one-page PDF cannot carry which byte range was which object, so re-deriving that on the way back in would make a pdfcer-to-pdfcer paste worse than a pdfcer-to-Illustrator one. Two formats, two jobs |
+| ⬜ | **Dimensions** — annotations rather than page content, so these verbs cannot address them at all, and a pasted ce dimension needs a sidecar record and a group |
 
-### Phase 1½ — the conventions sweep
-
-`D:/dev/rag/ui-conventions/` is five gesture classes, each a numbered list
-carrying where the rule comes from and the failure mode when it is absent;
-`tools/gates/check-conventions.sh` makes every registered surface answer every
-row **in its own source**. It cannot check behaviour and does not pretend to —
-it checks that the question was asked, which is the whole of the problem.
+### Page display and rendering
 
 | | |
 |---|---|
-| ✅ | **Shift constrains every drag on the canvas, and says so** — a **resize** keeps the shape's proportions, applying the factor the pointer travelled furthest to produce, which for a mid-edge grip falls out as proportional-resize-from-an-edge with **no special case**, because the idle axis sits at exactly 1.0 and can never win. A move, a ce-dimension label, a perimeter corner and a Bézier handle each constrain in their own terms |
-| ✅ | **A perimeter corner snaps back onto the geometry it came off** — the tool that **placed** the vertex snapped and the drag that moved it did not, so a corner could be put onto a line and never put back. It now uses the same `snap_candidates` query, the same tolerance and the same *Snap to content* switch a measure pick uses, through one function, because a drag that snapped by its own rules would honour a different switch from the tool beside it. Alt suspends it |
-| ⬜ | Still open from the sweep: no right-click to add or remove a perimeter point (both engine verbs exist), a zero-travel release still raises an action in three of four drag paths, an unfilled `/Square` still claims its interior, and caret indices are characters rather than grapheme clusters |
+| ✅ | **A page's colours do not change with the zoom** |
+| ✅ | **Overprint in print-ready files is a setting you can reach**, and grey over a spot colour is a second axis with its own control |
+| ✅ | **Render diagnostics is a report** — the status bar keeps its one-line disclosure and the dialog gets the room, both reading the same derivation so the editorial rules are stated once. It names **what colour the page was blended in and who decided**: *Blended in CMYK ink* or *Blended in screen colour (RGB)*, and under it the origin — the page's own `/Group`, the screen's colour standing because the page declared nothing, or the file's print output intent |
+| ✅ | **A blank drawing at deep zoom says what to do**, and the engine no longer prints its own crash text on it |
+| ✅ | **The status bar says when a comment is on the page and pdfcer drew nothing for it** — an annotation that arrives without a baked appearance stream renders as nothing at all, and clean paper is what an unannotated drawing looks like, so there is no symptom to notice |
+| ✅ | **…and when a page brought no resources of its own** — no `/Resources` on itself or any ancestor, which used to cost the operator the whole document on every verb that walks the page tree |
+| ✅ | **Document properties does not claim your signatures are broken** — the Stamps section printed *"names no page in this document"* against **every** stamp whenever the file's page tree could not be read, which was false rather than merely unhelpful |
+| ✅ | **The line-weights mode reports when it has nothing to do** — when the mode is on and the engine thinned 0 strokes the status bar says *nothing in view was thick enough to thin*, because *nothing here needed changing* and *the button is broken again* are the same screenshot. **In view** is load-bearing: the count is a property of the rasterised region, not the document, so a blank corner truthfully reports zero. A missing texture is not a zero — before the first raster, and on an undecodable page, the general sentence is the fallback because it is true whatever the count turns out to be |
+| ⛔ | **Deep zoom via `render_page_region` at full quality** — the API shipped, but per-viewport regions cost about 700 ms each on a dense sheet. Blocked on the reusable parsed handle, filed in `request_reusable_parsed_handle.md`. Without it this trades smooth pan for zoom range |
+| ⬜ | **`MAX_ZOOM` from measured performance** — not from `f32`, whose sub-pixel accuracy holds to about 5,000×, and not from the pixmap guard |
+| ❌ | **Tiled rendering** — cancelled. A 1 × 1 *point* region costs 691 ms; a 3 × 3 ring is a 9× regression. See `BENCHMARK.md` |
 
-### Phase 6 — markup completeness
-
-| | |
-|---|---|
-| ✅ | **Markup tool substrate, and four kinds placing** — Rectangle, Ellipse, Arrow, Highlight. One `CanvasTool::Markup(MarkupKind)` carrying a kind rather than one variant per shape, so a tool that is two kinds at once is unrepresentable and the four ribbon controls behave as a radio with nothing enforcing it. Rubber-band preview, `Action::CommitMarkup`, an apply arm calling `EditSession::add_markup`. **A click with no drag places nothing** |
-| ✅ | **Drag origins are the button-down point** — `Response::drag_started()` fires only once egui has *decided* an interaction is a drag, by which time `interact_pointer_pos()` reports where the pointer has travelled to: measured at **94 PDF points** of error on A1 at 0.21× zoom. The fix went into `PointerFrame::press_origin`, not into markup, because the marquee and the move drag had it too |
-| ✅ | **Polyline, polygon, ink** — ink is drag-shaped and reuses the existing path; polyline and polygon are click-shaped and get a live click and no drag from `press_kind`, in an early return beside the measure tools'. Ending follows the circular measure tool exactly: a double-click and a registered `markup.finish`, through one commit path |
-| ✅ | **A shape you drew can have its nodes moved and deleted** — select a polyline or a polygon and every node gets a small square: **drag** to move it, and with the Points tool armed (`A`), **Ctrl-drag** to add a node after the one you grabbed and **Ctrl+Shift-drag** to delete it. The gesture is identical to the one content geometry uses |
-| ✅ | **…and the ending disagreement is a worked example of the reference-app rule** — Inkscape and SolidWorks both close a shape by clicking the first vertex; **Acrobat does not, and won on applicability rather than head-count**, because `/Polygon` closes back to its first vertex by §12.5.6.13, so a click-the-first-vertex rule would author a duplicate vertex and a zero-length closing segment. SolidWorks' Escape-to-end was refused outright: here Escape means *abandon* |
-| ✅ | **Underline, strikeout, squiggly** — select text, then press the control: the selection is the operand, so there is no `CanvasTool` variant, no new gesture and no second text-range resolver. The **wash is the preview** |
-| ✅ | **…and Edit reaches them too** — with the text tool armed, Edit sweeps text, `selection.text` becomes true and the three controls enable. `text_tool_selects_and_marks_in_edit` drives dead control → arm tool → sweep → the same control now invoking, and then **retires the tool and proves the sweep stops working**, which is the phase that falsifies it |
-| ✅ | **Revision clouds** — `MarkupSpec::Cloud` carries vertices, border, interior, width and intensity. `MarkupKind::Cloud` joins `is_vertex` and nowhere else in that impl, so the polygon gesture carries it |
-| ✅ | **Note text** — the engine writes `/Contents`, `/T` and `/M`, this shell calls `EditSession::set_markup_note` from `app/actions/annots.rs` and edits it in the Comments panel's note editor |
-| ✅ | **Style: width and fill** — width in the Properties panel's restyle section, fill on the Format tab's Markup band and in the panel |
-| ✅ | **Style: opacity** — `EditSession::set_markup_style` takes `MarkupStyle { opacity: Some(StyleEdit::Set(a)) }` and writes `/CA`, with `StyleEdit::Clear` removing it. What is genuinely absent is narrower: `MarkupSpec` carries **no alpha**, so a mark is authored opaque and then restyled |
-| ✅ | **Line style (dashed)** — `MarkupStyle` carries a dash, so a dashed border can be preserved, authored **and** removed; `app/actions/apply.rs:636` passes `dash: pen.dash_option()` |
-| ✅ | **A width asked for on a text markup is refused, not silently dropped** — the engine returns `EditError::StylePropertyNotApplicable`, which says *the call asked for something that cannot apply here*, as against a dropped property, which says *the file lost something* |
-| ✅ | **Line endings can be cleared** — `endings` is a `StyleEdit`, so removing `/LE` **removes** it rather than writing an explicit pair of `None`s. Same picture, different bytes, and *is this byte-identical to what my client sent me* is a question that gets asked about a signed drawing |
-| ✅ | **A text box's painted words are rewritten, not left behind** — the note verb re-bakes the `/AP` `/N` stream and reports through `appearance_rebaked` whether it did; `app/actions/annots.rs` consumes it and `text/textannot.rs:403` carries the surviving narrow disclosure |
-| ⚠ | Driven verification is still owed on the four rows above. Wired and unit-tested is not driven (R1) |
-
-### Phase 7 — measure completeness
-
-`measure_tool.rs` came across whole as `canvas/measure/{pick,scale,state}.rs`
-with the snap primitives as `canvas/snap.rs`; `CanvasTool` grew a
-`Measure(MeasureKind)` variant on the same one-variant-carrying-a-kind
-argument markup settled.
+### Text editing
 
 | | |
 |---|---|
-| ✅ | **Linear ce dimension** — click A, click B, click where it sits. The third click **is** the commit: a separate accept/reject box was retired by operator instruction, and application-initiated floating windows default to Never |
+| ✅ | **The tool itself** — `CanvasTool::TextEdit(TextEditKind)`: click to place a caret, type, Enter or a click elsewhere commits, Escape abandons, a mode change disarms **and** abandons |
+| ✅ | **Alignment and rotation** — one pure `choose(text_matrix, ctm, alignment)` at the single commit site; rotation is rung 1 and outranks alignment |
+| ✅ | **Restyling existing text** — face, size, bold, italic and colour, from the Format tab's Font group and the Properties panel's *This text* section, with three surfaces saying how to reach it: press **T** to arm the text tool, then sweep |
+| ⬜ | **The colour of text you clicked on** — a colour control on a **selected** text object rather than only a swept range; both current controls grey on a click. Multi-object recolour carries a real indeterminate state |
+| ⛔ | **Live re-layout while typing** — blocked on the engine. Measured per keystroke: 0.49 ms on a 3-line fixture, 102.77 ms on a SolidWorks sheet, 356 ms on an A3 benchmark. The arithmetic is not the cost |
+| ⬜ | **Deleting one line inside a block** — the engine carries the three verbs; this shell calls none of them yet |
+| ⬜ | **Text comes out; nothing goes back in** — `file.export_text` is on File ▸ Export, and the absence of an import is proved on all five routes: no command in the registry, no dispatch arm, no dialog, no `.txt` filter on any picker |
+
+### Markup completeness
+
+| | |
+|---|---|
+| ✅ | **Markup tool substrate, and eight kinds placing** — Rectangle, Ellipse, Arrow, Highlight, Polyline, Polygon, Ink and the revision Cloud. One `CanvasTool::Markup(MarkupKind)` carrying a kind rather than one variant per shape, so a tool that is two kinds at once is unrepresentable. Ink is drag-shaped; polyline and polygon are click-shaped |
+| ✅ | **…and the ending disagreement is a worked example of the reference-app rule** — Inkscape and SolidWorks both close a shape by clicking the first vertex; Acrobat does not, and **Acrobat won on applicability**, because this is a PDF markup and its operators come from Acrobat |
+| ✅ | **Drag origins are the button-down point** — `Response::drag_started()` fires only once egui has decided an interaction is a drag, by which time `interact_pointer_pos()` reports where the pointer has travelled to |
+| ✅ | **Underline, strikeout and squiggly** — select text, then press the control: the selection is the operand, so there is no `CanvasTool` variant. Edit reaches them too, since the Text tool sweeps text there |
+| ✅ | **A shape you drew can have its nodes moved and deleted** |
+| ✅ | **Note text, colour, line width, fill and opacity all ship**, on the Format tab's Markup band (`app/markupband.rs`, five custom controls on `fontband`'s architecture: line colour, fill with *No fill*, line width, opacity and arrowheads) and in the Properties panel, for every kind including the sticky note, the text box and the stamp |
+| ✅ | **Text box, sticky note and stamp** — all three place, and **a stamp's text size is the operator's to choose**, the box growing to hold it |
+| ✅ | **The comments you write are signed and dated** — `/T` and `/M` are written on every annotation pdfcer authors |
+| ✅ | **Markup can be authored see-through** — an Opacity control on Markup ▸ Style, applied to every kind including the sticky note and the text box |
+| ⬜ | **A markup shape has a right-click menu** — `canvas.markup`, the sixth canvas context. Built, undriven |
+| ⬜ | **A markup can be positioned by typing, duplicated, nudged and re-stacked** — typed X, Y, W and H for a selected annotation, on the convention Properties already uses for content; `Ctrl+D` duplicates, the arrow keys nudge, and four commands set z-order. Built, undriven |
+| ⬜ | **The default colours are Adobe's, measured from its registry rather than remembered** — `ACROBAT_DEFAULTS.md` holds the float triples, the hex, an adopted-or-declined verdict per row, and the command to re-run the read. Built, undriven |
+| ⬜ | **A sticky note can be read on the page** — a pop-up with the author, the date and the words, and a hover tooltip before you click. It works in Read structurally, because the pop-up runs its own hit test rather than borrowing the selection. Built, undriven |
+| ⬜ | **The Comments panel can be used, not just read** — delete, filter by author, kind and has-words, sort, and a Go to that navigates and opens the comment's pop-up on the same frame. Built, undriven |
+| ⬜ | **A text box's painted words going stale is disclosed** — narrowed to what the engine still leaves behind now that the note verb re-bakes `/AP` `/N`. Built, undriven |
+| ⬜ | **Redaction stops costing the undo stack** — applying **arms the next save** instead of rewriting at the click, so the base, the overlay and the whole undo stack survive, and a Cancel disarms it. Built, undriven |
+| ⬜ | Style width and fill are **built and undriven** |
+| ⬜ | **Canvas drag-to-mark for redaction** — panel marking (whole page, literal text, pattern) covers all three routes the tooltip promises, none of which is a drag. The gesture would need a `CanvasTool` variant, a capability entry, an Escape rung, an overlay preview and an `Action` carrying page-space quads: the tool-substrate warning applied to the one irreversible verb in the program |
+
+### Measure completeness
+
+| | |
+|---|---|
+| ✅ | **Linear ce dimension** — click A, click B, click where it sits. The third click **is** the commit |
 | ✅ | **Two-line ce dimension** — pick two lines already on the drawing; `pick_line_in_page` resolves each click against the page's own geometry, so the shell and `pdfcer dimension-add` resolve the same click to the same line |
-| ✅ | **Escape is two rungs, not one** — a measure pick is a sequence of *clicks*, so there is no drag to cancel, yet a dimension with point A taken and B not is unmistakably in flight. One Escape corrects a mis-aimed pick; a second puts the tool down |
-| ✅ | **Radius and diameter, as a point tool** — it used to hit-test for a path **object** and feed every anchor of every subpath of that object to the fit, so picking near a hole in a dense drawing fitted a circle to the whole polyline. It now fits to the points the operator picked |
-| ✅ | **The measure preview draws in the right place** — `measure::preview` converted PDF user space through `viewer::pdf_space_to_canvas` and handed the result straight to `ui.painter()`, which lands in **canvas** space (page top-left origin, no zoom) while the painter speaks **screen**, so the snap indicator and the linear preview were offset by wherever the view had scrolled |
-| ✅ | **Set scale** — `measure.set_scale` opens the dialog, *Measure it on the drawing* **hides** the window and arms `MeasureKind::Scale`, the pick completes, and the **same** window comes back with the measured length in it. It used to close and rebuild, which discarded every field already filled in |
-| ✅ | **Snapping** — a pick lands on the geometry rather than near it, which on a CAD sheet is the difference between a dimension that measures a line and one that measures *close to* a line, worse than none because it is wrong by an amount nobody can see. `snap_candidates` is the **engine's** query, not a second one here |
-| ✅ | **A derived candidate is confirmed, never assumed** — an inferred centerline takes two clicks: the first promotes, the second commits. The call site passed a constant `is_derived: false` until the query existed, which silently turned an inference into a commitment |
-| ✅ | **The snap indicator has its own colour** — the marker used to draw in the selection colour, so the cue distinguishing *pdfcer proposing a point* from *a committed thing being selected* was not there |
-| ✅ | **Dimension groups are manageable** — `measure.manage_groups` on Measure ▸ Scale, with the window's controls rather than a sentence where three controls should have been |
-| ✅ | **A placed ce dimension is editable** — select one and Properties shows its group, what it measured, a radius/diameter switch for a circular one, and all eleven properties of the style cascade's bottom tier: unit, precision, decimal marker, drafting standard, text height, line width, arrow length, arrow form, colour, tolerance and suffix |
-| ✅ | **Renamed, deleted and re-grouped** — delete **asks the orphan question** rather than refusing or guessing, because `pdfcer-core` refuses a populated group with the member count in the refusal |
-| ✅ | **A group's unit is settable, and was never missing** — `set_group_scale` takes a whole `NumberFormat` and `NumberFormat.unit` is public, so the unit was reachable and merely undiscoverable. The window's unit combo goes through that path, carrying the group's own scale through unchanged |
-| ⬜ | **Area** and **Angular** — the two a takeoff needs. `DimensionKind::Angular` exists in the engine and the two-line tool already authors one when the picked lines are angled, so what is missing is a *direct* Angular tool (pick an apex and two directions). `MeasureKind` has no variant for it: shell-only work |
+| ✅ | **Radius and diameter**, built as a **point** tool: pick points on the arc rather than asking for a circle |
+| ✅ | **Escape is two rungs, not one** — a measure pick is a sequence of clicks, so there is no drag to cancel, yet a ce dimension with point A taken and B not is unmistakably in flight. One Escape corrects the pick, a second abandons the tool |
+| ✅ | **Snapping** — the query is wired, so a pick lands on the geometry rather than near it. On a CAD sheet that is the difference between measuring a line and measuring *close to* a line. A derived candidate is confirmed, never assumed: an inferred centreline takes two clicks, the first promoting and the second committing. The snap indicator has its own colour |
+| ✅ | **The measure preview draws in the right place** |
+| ✅ | **Set scale** — `measure.set_scale` opens the dialog, *Measure it on the drawing* hides the window and arms `MeasureKind::Scale`, the pick completes and the answer returns to the field. Driven end to end |
+| ✅ | **A placed ce dimension is editable** — its group, what it measured, a radius-or-diameter switch for a circular one, and its style |
+| 🔨 | **Say something other than the measurement** — a text box on a ce dimension's properties, built, with the driven check owed. It does **not** change what was measured: the measurement stays underneath, so clearing the box restores exactly the number that was there rather than re-measuring, and the receipt names the number both going on and coming off. On a drawing, text that replaces a measured value and text that changed it are a note and a lie respectively. No Clear button — emptying the box **is** the restore |
+| ⬜ | **Area and Angular** — the two a takeoff needs. `DimensionKind::Angular` exists in the engine and the two-line tool already authors one when the picked lines are angled, so what is missing is a *direct* Angular tool: `MeasureKind` has no variant for it. Shell-only work |
 | ⬜ | Count tool and a takeoff schedule |
 
+### Forms
+
 | | |
 |---|---|
-| ✅ | **Three item sizes in the ribbon band, learned from Word by driving it** — `tools/word-ribbon-study.ps1` photographed Word at twelve widths and `tools/our-ribbon-study.ps1` photographed this shell at the same ones. At 884 client points Word put ten groups on the band and this shell put three; Word's density comes from mixing Large, Medium and Small items rather than from drawing everything one size |
-| ✅ | **An item can be hidden by condition, and its space is reclaimed** — `visible_when` on a ribbon or menu item, evaluated against the same `ConditionSet` that decides enablement and applied **before** measurement, so the group re-flows and a group with nothing left is not drawn at all, separator included. This is visibility, not enablement, and R9 draws the line |
-| ✅ | **A search that finds nothing says whether it could have** — a zero-result search has two causes that look identical: the word is not in the document, or the document's text was never recoverable as letters, so no word could ever have matched. The second does not look broken, because the text renders perfectly |
-| ✅ | **Sections re-wrap onto a third row as you narrow the window, before anything is hidden** — the band's answer to running out of width is a four-rung ladder: natural layout, re-wrap onto up to three rows, collapse whole groups to a captioned button, scroll the band. Each rung hides strictly more than the one before |
-| ✅ | **The ribbon scrolls sideways instead of hiding commands in a menu** — a `›` at the band's right edge shifts the band and a `‹` appears once it has. The overflow dropdown is **gone**, not supplemented, because two affordances for one job is a defect; the trade is stated rather than glossed, since a menu *names* what it hid and a scroll does not |
-| ✅ | **…and a tab with nothing left to show is not shown either** — hiding every item on a tab used to leave an operator a tab they could click with an empty band beneath it. That symmetry is what makes a **generous** tab list usable, so a mode can name a tab it does not always need |
-| ✅ | **Overprint in print-ready files is a setting you can reach** — `page_blend_space_source` arrived in the engine with no control, so it was changeable only by hand-editing `settings.txt`, which is not a user interface; this shell's own coverage gate caught it. Filed under **Colour**, by the symptom that sends somebody looking |
-| ✅ | **Grey over a spot colour has its own setting** — a grey fill that overprints a spot colour either knocks the spot out or lets it show through, and the standard genuinely does not say which. The coverage gate caught the new axis within one dependency update, which is the mechanism doing what it was built for |
-| ✅ | **A fit survives a window resize, and a pan gets you out of it** — press Fit page, Fit width or Fit height and then resize the window or drag a dock panel: the page re-fits **and** stays centred, where it used to re-scale correctly and stay anchored wherever it happened to sit. A pan leaves the fit, so the position you chose by hand is not overruled by the next resize |
-| ✅ | **Inkscape-style scale switches** — three checkboxes on the Tool row, live whenever the Select tool is armed: **Scale line weight**, **Keep the inner margins the same size** and **Allow the artwork to distort**. All three ship off, which is the default Acrobat, Illustrator and Inkscape all use |
-| ✅ | **Edit ▸ Content is two verbs, not three** — *Edit text* and *Add text*. The third, `edit.objects`, is **deleted** rather than wired: it was a route whose tooltip described the Points tool while it armed the Select tool. The rule it leaves behind is that a route's target is derived from what the operator will SEE HAPPEN, never from what the source command is called — and no route table can catch that, only reading the two side by side |
-| ✅ | **Right-click a form field and you get the field's menu** — a right-click on a text box used to offer four zoom levels, because the canvas had exactly two questions (*is an object under the pointer* and *is anything*) and a form field is neither: it is not in the object selection at all, by design |
-| ✅ | **The first driven context menu in this project's history** — canvas menus existed since Phase 1 and not one check had ever opened one: everything asserted about them asked whether the manifest *would* offer something, which is a different question from whether a right-click on a pixel opens anything. The harness had no `right_click_at` to call |
-| ✅ | **The comments you write are signed and dated** — `/T` and `/M` were never written, so the author column in Acrobat's comment list and in this shell's own Comments panel was blank on everything pdfcer made. A comment nobody signed is a comment nobody can answer. Settings ▸ Comments carries the name |
-| ✅ | **A page's colours no longer change with the zoom** — a page that declares a subtractive blending space is composited in a four-colorant buffer at 20 B/px, and past a ceiling the engine refuses it, composites in sRGB and says so, which moved the patches. The ceiling is now disclosed rather than met silently |
-| ✅ | **The chrome survives a narrow window and a large UI scale** — at `ui_scale = 1.80` the zoom control, the fit buttons, Find and the selection filter were off the left edge at negative coordinates, with the left-hand notes drawn underneath the fit group, and the bar was two points shorter than its own controls at every scale |
-| ✅ | **The Properties panel scrolls, and its Apply button can be reached** — the panel drew its sections straight into the dock tile with no scroll area around them, so with an object selected the Apply button was below the bottom of the tile and had never been pressed by anybody |
-| ✅ | **Two-row ribbon bands** — `render_group` emitted a single `ui.horizontal`, so controls never wrapped however wide the group's content was; `GROUP_ROWS = 2` wraps them |
-| ✅ | **…and the group padding is drawn** — controls sat flush against their group box and the separators, measured at an inset of 0.0. It cost **zero** width budget, because `plan::GROUP_PADDING` had been budgeting 6 pt a side that the renderer never drew |
-| ⬜ | **…and the remaining overflow is not a layout problem** — Style and Comments still overflow at 1,100 px and no row count can fix them, because they are one-item groups and have nothing to wrap. That is the Markup-tab taxonomy question, and it is the operator's, not a defect |
+| ✅ | **Forms can be authored, not only filled** — five commands on Edit ▸ Forms, one per kind `pdfcer-core` has a verb for |
+| ✅ | **A placed form field's properties are editable** — Required, Read only and a tooltip for every type, plus multiple lines, hide as typed, equal cells and a maximum length on a text field, rather than a pane that answers a click by offering to delete the field |
+| ✅ | **A field's box can be moved and resized** — X, Y, Width, Height and a caption with an Apply, plus all four of `WidgetEdit`'s box properties: position, size, border style and width, where it is visible, and the caption. **Moving is free and resizing is not, and the pane says which you are about to do**, because §12.5.5 derives the appearance matrix from the appearance box's corners |
+| 🔨 | **Turn a form field's box** — Turn left and Turn right in the field's Properties, driven one way. It turns what is drawn **inside** the box; the box itself stays put. A widget's `/MK /R` is **counterclockwise** while a page's `/Rotate` is **clockwise**, and the standard's two sentences are word for word identical apart from that one word, so a shell that missed it would ship two buttons that both write a legal angle and both turn the box the wrong way with nothing failing. The controls say *left* and *right* and the negation happens in one line at the panel. `turning_a_field_right_turns_it_right` asserts **270** after one right turn |
+| ✅ | **Field list in tab order, reordered by dragging** — a per-page, widget-level view beside the fill list, which stays in `/AcroForm /Fields` order because that matches the printed form. The insertion caret is the page rail's: same gap model, same theme colour, same full-strength and dimmed pair for *releasing here changes nothing*, horizontal because a list flows down. A row is not an array entry: the list holds widgets a field claims, while `/Annots` also holds unclaimed widgets, anonymous ones and every `/Link`, stamp and markup, so each row carries its **slot** in the array and widgets move among widget slots while every other entry keeps its index — `/Annots` order is paint order, so carrying a widget past a `/Link` would change what is drawn over what. Ids, not indices; the release permutes through `EditSession::reorder_annotations`. ⬜ `/Tabs` is read and never written: `/A` is PDF-2.0-only, PDF/UA-1 §7.18.3 requires `/S`, nothing requires a writer to state a tab order, and Acrobat's own manual tab order writes none |
+| ✅ | **Reset and Flatten are reachable through the Forms panel**, calling `reset_form` and `flatten_fields`, and `edit.form_flatten` on Edit ▸ Forms is registered and dispatched too. **Record the surface, not the command id**: a register keyed on the id reports Flatten as unreachable and Reset as absent when an operator can do both |
+| ✅ | **Form data exports as FDF, XFDF or CSV, and imports back** — one save picker and one open picker, the **extension deciding** the format on the way out and the parser on the way in, which is how every application on this desktop does it and is one modal window rather than two |
+| ⬜ | **Selecting an object says which layer it is on** — in the Layers panel as a plate on the matching row, and on the status line, both reading the same name from the same function. Three-valued on purpose: on this layer, on none, or on several. Built, undriven |
+| ⬜ | **Push buttons can be placed and can never do anything** — a pdfcer-wide policy rather than a shell gap: the engine authors no action of any kind on a button it creates, because `/A` reaches launch actions, network submits and JavaScript, which pdfcer recognises and preserves and never writes. Disclosed on every creation. Filed back to the engine as a policy question with the narrowest useful version, **Reset only**, which touches nothing but this document's own fields. Submit is argued **against**: its purpose is to send data somewhere and no shell can audit a URL an operator typed |
+| | **The Properties pane is taller than its dock slot.** A selected form field draws about 450 pt of content into a slot that is about 180 pt on an 1,100 × 800 window, because Properties shares the right column with Tool and Objects. It scrolls, and *I clicked the field and there is nothing there* is what three scroll-lengths look like from a chair. The remedy is a layout decision and it is the operator's: collapsible groups, which cost every collapsed control its published rect so driven checks would have to open them; a taller default slot at the cost of Objects; or the dialog route field placement already uses |
 
 ### OCR
 
-The engine recognises text end to end — `ocr::layer` writes the invisible
-sandwich at render mode 3 — and the licensing question is answered: the model
-ships in this repository with credit. What remains when OCR lands is one line
-in `PAYLOAD_ASSET_DIRS`, one section copied from the engine's `about.hbs` and
-one `Attribution` entry, and **the gate refuses the first without the other
-two**, which is what makes *with proper credit* enforced rather than
-remembered.
+The licensing question is answered: the model ships in the MIT repository with
+credit. What remains when OCR lands is one line in `PAYLOAD_ASSET_DIRS`, one
+section copied from the engine's `about.hbs`, and one `Attribution` entry — and
+the gate refuses the first without the other two, which is what makes *with
+proper credit* enforced rather than remembered.
 
 | | |
 |---|---|
-| ✅ | **Find offers OCR when there is no text to find** — the trigger is `readout == Empty` **and** `!page_has_extractable_text()`, the second behind a short-circuit so it is never evaluated unless a search already came back empty. The falsifying test is the one that matters: `an_ordinary_empty_result_on_a_text_page_offers_nothing` |
-| ✅ | **OCR is an edit to the document you have open** — `add_ocr_layer` used to take an immutable `&Document` and return a whole new PDF, so recognition was the one capability that could not be undone, saved over, or applied to the file in front of you |
-| ✅ | **Recognise more than one page** — All pages, this page, or a typed range. **All pages is first and is the default**, which is what every surveyed recogniser does |
-| ✅ | **A page that already has text is skipped by default, and that is a hazard guard rather than a preference** — a second pass over a recognised page took it from **427 character codes to 854**. `add_ocr_layer` *adds* a layer rather than replacing one, and the layer is invisible, so nothing on screen changes and nothing warns |
-| ✅ | **OCR in Read mode** — `file.ocr` is reachable in Read and the driven check asserts that specifically. Recognition is an edit, so what governs it in Read is whatever governs every other edit |
-| ✅ | **…and it lives on File ▸ Recognise, not Tools ▸ Recognise** — Tools is not in Read's tab list, so a command refused where the operator needs it means the **tab** is wrong |
-| ✅ | **More scanning resolution makes OCR worse, and 300 DPI is the worst of five** — on the benchmark CAD sheet against its own vector text as ground truth: 72 → 56.5 %, 100 → 56.7 %, 150 → 54.5 %, 200 → 53.9 %, 300 → 35.1 %. `ocrs` resizes every image to its model's input size, so extra pixels are thrown away after costing time |
-| ✅ | **A run says how far it has got, and Stop and Cancel mean different things** — pages done and characters found while it runs; **Stop** keeps what has been recognised so far, **Cancel** throws it away |
-| ⚠ | **Recognition quality on real scans is still unproven, and the gap is narrower than it was** — a genuinely scanned document exists on this machine, an 883-page image-only parts manual at `/Rotate 270` throughout, on which the recogniser returns about 440 words a page at 2.6 s a page. What is still missing is a ground truth to score those words against |
-| ✅ | **What the operator is told about confidence** — `ocrs` scores nothing, so the dialog recognises and **discloses**. The force behind the disclosure is `Ctrl+Z`, named in the outcome sentence for that reason, because the layer is already in the document by the time it is read |
-| ✅ | **An attribution surface for shipped assets** — `PROVENANCE.md` per asset directory, `about.toml` and `about.hbs` generating `THIRD_PARTY_LICENSES.md` into the package, a **File ▸ About** dialog, and a `check-shipped-assets` gate with a seven-check self-test |
-| ⚠ | **…and building it found three third-party works already being redistributed with no notice at all** — a pre-existing gap rather than one OCR introduced: the 14 Foxit CFF faces (BSD-3-Clause), the Adobe Core-14 AFM metrics (APAFML) and the Adobe Glyph List (BSD-3-Clause), all compiled into the binary. They appear in the notice now |
+| ✅ | **OCR is an edit to the document you have open** — not a forced save-a-copy |
+| ✅ | **Find offers OCR when there is no text to find** — the trigger is `readout == Empty` **and** `!page_has_extractable_text()`, the second behind a short-circuit so it is never evaluated unless the first holds |
+| ✅ | **Recognise all pages, this page, or a typed range**, parsed by the print dialog's own parser — called, not copied |
+| ✅ | **A page that already has text is skipped by default** — a hazard guard rather than a preference, because a second pass over a recognised page degrades it |
+| ✅ | **OCR in Read mode**, and it lives on File ▸ Recognise rather than Tools ▸ Recognise, because Tools is not in Read's tab list and building to the specification would have made the command unreachable in the mode that needs it |
+| ✅ | **A run says how far it has got, and Stop and Cancel mean different things** |
+| ✅ | **More scanning resolution makes OCR worse, and 300 DPI is the worst of five measured** — the conventional answer is wrong here, and the setting follows the measurement |
+| ✅ | **What the operator is told about confidence** — `ocrs` scores nothing, so the dialog recognises and **discloses** rather than inventing a number |
+| ⬜ | **Recognition accuracy on real scans is unmeasured**, and the reason is that there is no ground truth: an 883-page image-only parts manual returns about 440 words a page at 2.6 s a page and the text extracts and is selectable, which says the pipeline works on real scanned material — not that the words came back right. The two scored accuracy measurements are of vector text rasterized on purpose rather than of a scan. That file is not committed, so driven checks fall back to a synthetic fixture unless `$PDFCER_VERIFY_SCAN` names one |
+| ✅ | **An attribution surface for shipped assets** — `PROVENANCE.md` per asset directory, `about.toml` and `about.hbs` generating the third-party notice, and an About dialog that shows it. It covers three works this shell had been redistributing with no notice at all: the 14 Foxit CFF faces (BSD-3-Clause), the Adobe Core-14 AFM metrics (APAFML) and the Adobe Glyph List (BSD-3-Clause), all compiled into the binary |
 
-**Read may produce a new document; it may not modify this one.** That is the
-general form of the rule OCR's placement was argued from, and it is the better
-one: it covers OCR and settles in advance every future capability of the same
-shape — flatten, redact-apply, PDF/A convert, page export. It sits alongside
-the two exceptions Read carries, **form filling** and **OCR**, and explains why
-both are exceptions rather than inconsistencies: neither changes the document
-the operator was given. It becomes load-bearing the day an in-place `Save`
-lands. There is one save command today, `file.save_copy`, and the label is
-load-bearing: pdfcer never overwrites the original unless the operator picks
-it, because a button labelled `Save` promises in-place saving, which cannot
-ship before autosave and crash recovery exist.
-
-### Commands that were registered and inert
+### Pages and printing
 
 | | |
 |---|---|
-| ✅ | **Save a copy** — `file.save_copy` was registered, on the quick access toolbar, bound to `Ctrl+S` and printed the chord in its own tooltip, with **no dispatch arm**: nothing this shell built could be written to disk. It writes an incremental save |
-| ✅ | **New PDF** — `file.new`, `Ctrl+N`. The engine has no document-creation verb and `document.rs` carries a named permanent invariant forbidding one, so a **443-byte blank A4 template** ships as an asset and New opens it |
-| ✅ | **v0.1.0 released** — `github.com/KenM76/pdfcer-gui`, public and MIT, with a portable Windows x64 zip that needs no install. Engine dependencies moved from relative paths to a pinned git revision, verified byte-identical to the source every binary in the session was built from |
-| ⚠ | **An audit after that release found the save defect was not isolated** — the commands with no dispatch arm and no guard arm included `edit.undo` and `edit.redo`, on the QAT and bound to three chords, and every page operation, six of which the Pages thumbnail context menu offered |
-| ✅ | **Undo and redo** — the same shape as `file.save_copy`, and worse once saving worked, because every authoring feature became reachable by an operator with no way to take any of it back. Both go through `vector_edit` |
-| ✅ | **…and the check does not rest on counts, because a plant proved counts are not enough** — a build that mutated the session but never bumped the epoch had every annotation count already correct and left the canvas showing the undone state. It was caught by two oracles from other subsystems: `objects n=` is emitted once per page and epoch, so a new line means the epoch moved |
-| ⬜ | **Undo tooltips do not name the operation** — `undo_kind()` returns the `CommandKind` and the catalog could phrase it, but `Command::tooltip` is a `String` fixed at registration and `CommandRegistry` exposes no `get_mut`; it lives in `egui-shell`. Rebuilding all the commands every frame for one string would also change an icon-only control's accessible name under the pointer |
 | ✅ | **Page operations — rotate, delete, move up and down, extract** — the Pages context menu has no inert row left. `resync()` is a single choke point hung off `vector_edit`'s success path rather than off the four arms, so undo gets the page refresh for free |
-| ⚠ | **No Pages command is registered and inert.** `pages.merge_into` has a live dispatch arm (`app/dispatch.rs:275`) and ships as Pages ▸ Merge into this document; `pages.split` is **not registered at all** — it sits in the PLANNED register, because R9 makes an unbuilt capability render nothing. `pages.insert_from_file` ships |
-| ✅ | **Command reachability is checked** — `shell::commands::reach`: every registered command must reach a dispatch arm or carry an **argued** entry in `SCAFFOLDED`. A reason under 40 characters, or one that merely restates the id, is refused, as is an entry whose command has since been wired |
-| ✅ | **…and the dispatch arms for commands that do not exist are gone** — `view.zoom_in`, `view.zoom_out`, `view.next_page` and `view.prev_page`, each deleted only after **both** of its live routes was verified individually, the keyboard layer and a status-bar control. `UNREACHED_ARMS` is empty and kept, its length pinned at 0, so a fifth cannot be added quietly |
-| ✅ | **Read mode and Full screen** — `Ctrl+H` and `F11` had a control, a glyph, a group and a keymap entry each, and no behaviour. **Read mode is not a duplicate of the Read *mode***: they are orthogonal and compose, `mode.read` being a capability set and `view.read_mode` a chrome stance |
-| ✅ | **Render diagnostics is a report** — the status bar keeps its one-line disclosure and the dialog gets the room; both read the **same** derivation, so the editorial rules are stated once |
-| ✅ | **…and it says what colour the page was blended in, and who decided** — *Blended in CMYK ink* or *Blended in screen colour (RGB)*, and under it the origin: the page's own `/Group` said so, the screen's colour stands because the page declared nothing, or the file's print output intent decided it |
-| ✅ | **A blank drawing at deep zoom says what to do, and the engine stopped printing its own crash text on it** — running out of raster room used to kill the drawing worker outright, then refused politely while painting a slice-index panic message onto the canvas |
-| ✅ | **The status bar says when a comment is on the page and pdfcer drew nothing for it** — an annotation that arrives without a baked appearance stream renders as nothing at all, and there is no symptom to notice, because clean paper is what an unannotated drawing looks like |
-| ✅ | **…and when a page brought no resources of its own** — a page with no `/Resources` on itself or any ancestor used to cost the operator the whole document, on every verb that walks the page tree |
-| ✅ | **Document properties stopped saying your signatures were broken** — the Stamps section printed *"names no page in this document"* against **every** stamp whenever the file's page tree could not be read. The sentence was not merely unhelpful, it was false |
-| 🔨 | **`view.show_points`** — an object's anchors drawn without descending into it, registered, on View ▸ Display and wired as a `ViewChrome` toggle. Its recorded blocker had gone stale before it was wired: `canvas::overlay::draw_anchors` and the objects provider's `object_node_points_of` and `subpath_node_points_of` already enumerated a part's anchors, so what it needed was wiring rather than a mechanism. A driven check is still owed |
-| ⚠ | **View's seven groups overflow at the shipped 1,100 px default** — found by driving. Only `page_display`, `render` and `navigate` fit; `zoom`, `display`, `panels` and `window` fold into the band's overflow, so Read mode and Full screen are reachable at that size only through the overflow or their chords |
-
-### Phase 6/S6 — rendering
-
-| | |
-|---|---|
-| ⛔ | **Deep zoom via `render_page_region`** — the API shipped, but per-viewport regions cost about 700 ms each on a dense sheet. **Blocked on a reusable parsed handle**, filed with the engine. Without it this trades smooth pan for zoom range |
-| ⬜ | **`MAX_ZOOM` from measured performance** — not from `f32` (sub-pixel accuracy holds to about 5,000×) and not from the pixmap guard |
-| ❌ | **Tiled rendering — cancelled.** A one-point-square region costs 691 ms, so a 3 × 3 ring is a 9× regression |
+| ✅ | **New PDF** — `file.new`, `Ctrl+N`, at a chosen page size. Nothing in `pdfcer-core` writes a `/MediaBox`, so a blank template ships as an asset per size and `document.rs` carries a named permanent invariant against a separate builder model: creation goes through the same session every other edit does |
+| ✅ | **Print dialog** with live preview, reaching a real printer, with paper size, tray and the driver's own Properties…, all three reached from beside the printer drop-down as every other program on this desktop does it. `/Rotate` is honoured, so a rotated page is not planned portrait and rendered landscape |
+| ⬜ | **The print preview pops out into its own window** — a second OS viewport, resizable, with its own taskbar entry, and the preview column inside the dialog collapses to nothing while it is out, so the room is given away to the options column. Built, undriven |
+| ⬜ | **An open drawing's sheets can be put on a different size of paper — built, undriven.** `pages.resize` on Pages ▸ Transform, beside Rotate: pick sheets in the Pages panel or none at all — picked sheets else the current one, the operand rule every `pages.*` command uses — choose A0 to A6, Letter, Legal, Tabloid, Executive, ANSI A to E or a custom size in millimetres, and every picked sheet changes as **one undo entry**. **The real product of the window is a measurement, not a size list**: changing a `/MediaBox` changes the **paper** and does not move, scale or reflow one byte of what is drawn, so an A1 drawing put on A4 is **cropped, not shrunk**, where every other page-size control the operator has met reflows or scales. So the window states the rule, draws the old sheet, the new sheet and the drawing's own extent to scale, and says in points how far the drawing would run past the paper being chosen, recomputed as the size changes and before anything is committed. That overhang is a thing the engine says it cannot report — `MediaBoxChange::lost_area` knows the sheet shrank and not whether any content was in the region it lost — but `PageObjects::page_bbox` is exactly that facility and this shell already holds one per page. Its boundary is stated on screen: comments, form fields and ce dimensions keep their positions and are **not** counted in that measurement. It opens on what the sheets already are, not on A4, and the new sheet keeps the corner the old ones had. `/CropBox`, `/BleedBox`, `/TrimBox` and `/ArtBox` are left byte-identical; only `/MediaBox` is rewritten. **No scale-to-fit, deliberately** — the engine has no such verb, and composing one would be six verbs across N pages whose most likely failure, a ce dimension group left at the old calibration, prints a wrong measurement and looks perfectly correct. The driven check `resizing_a_sheet_changes_the_paper_in_the_saved_file` is written and not registered |
+| ⬜ | **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed.** `MediaBoxChange` has a field for `/CropBox` and none for the other three — measured, a `/BleedBox [10 10 1000 1000]` survives a resize to 595 × 842 with no disclosure. So a press or CAD export gets one overhang reported and three not. It is an engine gap and it is not in `ENGINE_BACKLOG.md` |
+| ⬜ | **Pages export as PNG, JPEG, SVG or EMF — built and undriven.** `ImageFormat::ALL` is `[Png, Jpeg, Svg, Emf]`, each with its own writer, and `file.export_image` is registered, dispatched and on the ribbon. File ▸ Export ▸ Export image… asks the five questions a picture of a page actually has: which format, with a line under each radio saying what the receiving program will be able to do with the file; which pages, by the print dialog's own range parser; what resolution, with the pixel size of the largest page shown live and a refusal in words if it would pass `MAX_PIXMAP_EDGE`; whether transparency is kept; and where it goes. PNG carries straight alpha and real physical resolution; JPEG has a worded refusal for a transparent page rather than a silent flattening |
+| | **`pages.split` and `pages.merge_into` differ.** `pages.merge_into` has a live dispatch arm and ships as Pages ▸ Merge into this document; `pages.split` is **not registered at all** — it sits in the PLANNED register, because R9 makes an unbuilt capability render nothing. It is blocked on a **decision**, not on the engine: `pageops::split` and `plan_split` exist, and what is missing is a boundary chooser, an output directory and a name template, with no honest default — splitting a 36-sheet set into 36 files because nobody was asked is not a lesser version of the feature |
+| ⬜ | Imposition in the print dialog · insert blank page · push-button field creation |
+| ⬜ | Script-driven-field census · unencrypted-wrapper warning |
 
 ### Standing backlog — shell-only work
 
@@ -717,165 +482,31 @@ Exists in `pdfcer-core` or `pdfcer`; needs a surface, not an engine.
 
 | | |
 |---|---|
-| ⬜ | **Pages export as PNG, JPEG, SVG or EMF** — `ImageFormat::ALL` is `[Png, Jpeg, Svg, Emf]`, each with its own writer. Built and undriven |
-| ✅ | **The Attachments panel** — `attach_file`, `detach_file`, `list_attachments_with_notes`, `extract_attachment` and `sanitize_attachment_name` had all shipped in the engine, with fixtures and a hazard analysis, and this shell had no way to reach any of them |
-| ✅ | **A text tool for Edit** — `CanvasTool::Text`, armed by `view.tool_text` beside the hand tool in View ▸ Navigate. The reference applications disagreed and the disagreement is the interesting part: Acrobat and SolidWorks resolve text-versus-object contextually inside one tool, Inkscape uses a separate Text tool, and Inkscape won |
-| 🔨 | **Annotations are selectable** — one answer to four separate reports: editing a placed stamp, reaching dimension-group editing by clicking, and two about basic things not being enabled |
-| ✅ | **A placed form field's properties are editable** — Required, Read only and a tooltip for every type, plus multiple lines, hide as typed, equal cells and a maximum length on a text field. The pane used to answer a click by offering to delete the field |
-| ✅ | **Flatten works from the ribbon** — `edit.form_flatten` sat on Edit ▸ Forms with an icon and an enable predicate and no dispatch arm, while the Forms panel's own Flatten button called `flatten_fields` perfectly well |
-| ✅ | **The Format tab's Font group, and three surfaces that say how to reach it** — sweep text and the contextual Format tab carries a Font band: face, size, Bold, Italic, colour, the same five controls as the Properties panel |
-| ✅ | **Restyling existing text** — sweep text on the page (press **T** to arm the text tool, then drag) and Properties grows a *This text* section: font, size, Bold, Italic, colour |
-| ⛔ | **The rest of the Format contextual tab** — twenty-four property editors across six selection types are specified; the tab can carry the ones whose engine verbs exist, and the remainder wait on them |
-| ✅ | **New at a chosen page size** — an engine gap wearing a shell gap's clothes: nothing in `pdfcer-core` wrote a `/MediaBox`, so the only implementation available to a shell was one checked-in template asset per size |
-| ⬜ | **An open drawing's sheets can be put on a different size of paper** — `pages.resize` on Pages ▸ Transform, beside Rotate. Pick sheets in the Pages panel or none at all, the same operand rule every other `pages.*` command uses. Built and undriven |
-| ✅ | **A crosshair pdfcer draws itself** — `CursorIcon::Crosshair` resolves to Windows' monochrome `IDC_CROSS`, whose colour belongs to the operator's pointer scheme, so on a white sheet it is invisible. This one is drawn by the canvas |
-| ✅ | **An icon in the executable** — Explorer, the Start menu, the pinned taskbar entry and the *Open with* dialog all read it **without running the program**, so it has to live in the PE image's `.rsrc` section |
-| ⬜ | Imposition in the print dialog · insert blank page · push-button field creation |
-| ⬜ | Script-driven-field census · unencrypted-wrapper warning |
-
-### Built, and not yet driven
-
-Every row here was verified at source — a registered command id, a reachable
-control, or a dispatch arm that does the thing — and none has been exercised in
-a running binary. Under this file's bar that is not a tick, however green the
-suite is. These are the runs the next session with the machine to itself owes,
-in slices of six to eight.
-
-| | |
-|---|---|
-| ⬜ | **The Format tab has a Markup band** — five custom controls in `app/markupband.rs`, on `fontband`'s architecture: line colour, fill (with *No fill*), line width, opacity and arrowheads |
-| ⬜ | **Fill (`/IC`) and arrowheads (`/LE`) have a surface** |
-| ⬜ | **A markup shape has a right-click menu** — `canvas.markup`, the sixth canvas context |
-| ⬜ | **A markup can be positioned by typing, duplicated, nudged and re-stacked** — typed X, Y, W and H for a selected annotation on the convention Properties already uses for content; `Ctrl+D` duplicates; arrow keys nudge; four z-order commands |
-| ⬜ | **The default colours are Adobe's, measured from its registry rather than remembered** — `ACROBAT_DEFAULTS.md` holds the float triples, the hex, an adopted-or-declined verdict per row, and the command to re-run the read |
-| ⬜ | **A text box's painted words going stale is disclosed** — narrowed to what the engine still leaves behind now that the note verb re-bakes `/AP` `/N` |
-| ⬜ | **Open in the mode you were last in** — dead since the day it shipped and reported *working* by the start-up trace the whole time: `PdfcerApp::new` built `RibbonState` **before** calling `modes::start` and seeded it with the manifest's first mode |
-| ⬜ | **A sticky note, text box or stamp's style controls commit** — the colour swatch and the opacity row appeared, live, and every press was refused, because `spec_from_dict` matches ten subtypes and `/Text`, `/FreeText` and `/Stamp` were not among them |
-| ⬜ | **`visible_when` is read by the menu resolver** — `menu::plan::resolve` never called `Item::visible_condition()`; only the ribbon did, so **every menu row meant to vanish was greyed instead, R9 inverted** |
-| ⬜ | **One edit draft is no longer shared between a content object and an annotation with the same number** — the geometry panel keyed its draft on page, index and epoch, and content objects are numbered by **paint order** while annotations are numbered by **object id**, both small integers |
-| ⬜ | **`Alt+Arrow` no longer nudges and pages at once** — egui's `consume_key` matches with `matches_logically`, which **ignores extra Shift and Alt**, so a bare-arrow consumer also fires on `Alt+Arrow`, which the keymap binds to `pages.move_up`. The nudge reads `i.modifiers` itself |
-| ⬜ | **A sticky note can be read on the page** — a pop-up with the author, the date and the words, and a hover tooltip before you click. It works in Read, structurally: the pop-up runs its own hit test rather than borrowing the selection |
-| ⬜ | **The Comments panel can be used, not just read** — delete, filter by author, kind and has-words, sort, and a Go to that navigates and opens the comment's pop-up on the same frame |
-| ⬜ | **Sticky notes, stamps, text boxes, links and attachments copy and paste** — the clipboard is the engine's own `copy_selection`; all five used to answer `Ctrl+C` with *that annotation is not one pdfcer authors* |
-| ⬜ | **Redaction stopped costing the undo stack** — applying **arms the next save** instead of rewriting at the click, so the base, the overlay and the whole undo stack survive, and a Cancel disarms it |
-| ⬜ | **pdfcer can say whether a signature's bytes were altered, and whether you trust who signed it** — the operator's own Acrobat trust list, imported from Settings ▸ Digital signatures, with a live resolved-state line and an Inspect |
-| ⬜ | **A drawing can be given a password, and told what it allows** — File ▸ Security, both controls Large, on the File tab, which is present in all three modes |
-| ⬜ | **The colour of text you clicked on** — a colour control on a **selected** text object rather than only a swept range; both previous controls greyed on a click. Multi-object recolour carries a real indeterminate state |
-| ⬜ | **Selecting an object says which layer it is on** — in the Layers panel as a plate on the matching row, and on the status line, both reading the same name from the same function. Three-valued on purpose: on this layer, on none, or on several |
-| ⬜ | **The print preview pops out into its own window** — a second OS viewport, resizable, with its own taskbar entry, and the preview column inside the dialog collapses to nothing while it is out, so the room is given away to the options column |
-| ⬜ | **Embedding pdfcer's own fonts is your choice** — a checkbox, off when the window opens, drawn only when the bundled faces would actually change the outcome. The reason is a licence, not a rendering preference |
-| ⬜ | **An object 0.85 pt across can be moved** — the grip anchor box is pushed outward by `max(0, (20 pt − extent) / 2)` per side, so the objects with least body to spare stop being floored to a size at which they had none |
-| ⬜ | **Text comes out; nothing goes back in** — `file.export_text` on File ▸ Export, and the absence of an import was proved on all five routes: no command in the registry, no dispatch arm, no dialog, no `.txt` filter on any picker |
-| ⬜ | **A drawing can be pasted into Word as lines, not as a picture** — `edit.copy_as_vector`, four formats in one clipboard transaction in preference order: SVG, EMF, PNG, DIBV5 |
-| ⬜ | **Pages come out as PNG, JPEG, SVG or EMF** — PNG carries straight alpha and real physical resolution; JPEG has a worded refusal for a transparent page rather than a silent flattening |
-
-### Where the engine's `gui` column and this shell disagree
-
-`D:\Dev\pdfcer\docs\FEATURES.md`'s `gui` column is this project's acceptance
-criteria (R6), so a disagreement is worth finding in both directions. Every row
-below was decided by reading this shell's source — a registered command id, a
-dispatch arm, a call site — not by reading either document. **No `[x] gui` row
-has been found to be a false tick**: every backticked command id the engine
-names was diffed against the live registry, and the one that is absent,
-`pages.split`, already has an empty box.
-
-| engine row | who is right, and how it was determined |
-|---|---|
-| undo-preserving deferred redaction | This shell has it. All four verbs are consumed in non-test source, and `edit.redact_apply` is registered and dispatched |
-| verify a signature's integrity and coverage | Neither document was right. `verify_all` **is** called from `trust/mod.rs` and the panel prints *Intact:* |
-| encrypt, set permissions, remove encryption | This shell has it. `file.encrypt` and `file.permissions` are registered, dispatched and on File ▸ Security; all three verbs are called from `protect/mod.rs` |
-| import an Acrobat trust store | This shell has it. `trust/mod.rs` calls `trust_store::load_from_path`; the control is in Settings ▸ Digital signatures |
-| evaluate trust against those anchors | This shell has it. `verify_all_with_trust`, reported per signature |
-| the persistent use-the-Acrobat-trust-store setting | This shell has it. Settings ▸ Digital signatures, off by default |
-| deterministic RFC 5280 path validation | This shell has it, with the caveat its own row states |
-| export to PNG and JPEG | Neither document was right. `file.export_image` is registered, dispatched and on the ribbon |
-| export to SVG | Neither. Same window, same row of radios |
-| export to EMF | Neither. This project's backlog held it open on the ground that it had not been driven, which is a different bar from the one that file uses everywhere else |
-| copy page content to the clipboard as vector | Neither, and the most stale row in either document: the two recorded blockers, a workspace crate that would have to be created and `forbid(unsafe_code)`, are both gone — `crates/native-clipboard` exists |
-
-Two engine rows have the right checkbox and the wrong prose, reported to the
-engine rather than corrected here, because `D:\Dev\pdfcer` is read-only from
-this tree:
-
-- the split row says `pages.split` is drawn on the Pages tab and falls through
-  to `command-unimplemented`. It is not drawn anywhere and there is no such
-  fall-through: it sits in the PLANNED register and R9 makes an unbuilt
-  capability render nothing. The verdict is right, the mechanism is not;
-- the maintenance note calls Flatten the worked example of a scaffolded, inert
-  ribbon command. `edit.form_flatten` is registered, has a live dispatch arm
-  and is on the ribbon.
-
-A capability list is written by the session that built the thing, and the
-sentence about what is *missing* is the half nobody re-reads. Ticks get
-flipped; the prose beside them does not.
+| 🔨 | **Annotations are selectable** — click one in Review or Edit and it outlines, click away and it clears, `Delete` or Format ▸ Delete removes it through the same `vector_edit` funnel as every other edit, so it undoes and invalidates caches the one way that happens everywhere. One answer to four separate operator reports |
+| ⛔ | **The Format contextual tab's full property set.** `RIBBON_IA.md` §5.8 specifies twenty-four property editors across six selection types; the tab carries `Delete` plus the Markup band. The engine's annotation surface is `add_markup`, `add_text_annotation`, `delete_annotation`, `set_markup_style`, `set_markup_note`, `set_annotation_rotation` and two deletion predicates, so the editors that have no verb cannot be built. **Delete-and-re-add is not a workaround and is deliberately not built**: it loses the annotation's object identity and with it its `/NM`, its z-order in `/Annots`, and any reply thread hung off it as an `/IRT` target. The ce dimension row is the exception — `set_group_style`, `set_dimension_style`, `set_group_scale` and `set_group_standard` all exist, so ce dimensions have a style model and nothing else does |
+| 🔨 | **`view.show_points`** — `canvas::overlay::draw_anchors` exists and `provider.object_node_points` and `subpath_node_points` enumerate a part's anchors, so what is needed is a `show_points` field on `ViewState`, a fourth `ViewChrome` variant and one read at the paint site, plus one real design question: anchors draw today only for the **entered** part while the tooltip promises every part of the object |
+| ⬜ | **Undo tooltips do not name the operation** — `undo_kind()` returns the `CommandKind` and the catalog could phrase it, but `Command::tooltip` is a `String` fixed at registration and `CommandRegistry` exposes no `get_mut`; it lives in `egui-shell`. Rebuilding every command each frame for one string also changes an icon-only control's accessible name under the pointer. The one-line fix is recorded for whoever next opens the registry |
+| ⬜ | **Highlight an undrawn field** — the wash covers fillable fields that draw; a field with no appearance is still discoverable only by the cursor, which is honest but weaker |
+| | **View's seven groups overflow at the shipped 1,100 px default** — only `page_display`, `render` and `navigate` fit; `zoom`, `display`, `panels` and `window` fold into the overflow menu, so Read mode and Full screen are reachable at that size only through the menu or their chords. Two rows reduced this and cannot fix it: it is an IA question — does the View tab want splitting, or Window promoting? |
+| ⬜ | **Style and Comments overflow at 1,100 px and no row count can fix them** — they are one-item groups, so they have nothing to wrap. That is the Markup-tab taxonomy question and it is the operator's, not a defect |
 
 ### Dragging a tab off the strip into a new window
 
-The one open scope question, and it is open because the two applications an
-operator would compare it to **disagree about what it means**.
-
-| | what dragging a tab off does |
-|---|---|
-| Chrome, Firefox, VS Code | the document **moves** to a new window, fully functional |
-| Acrobat's `Window ▸ New Window`, Bluebeam's split | a **second view** opens and the document stays where it was |
-
-Where the product class converges, the convergence is the specification. Here
-it does not, so this is a decision rather than a derivation, and the two cost
-very different things. A **second view** (canvas, page list and status bar,
-with the document staying in the strip) is roughly a day, and it delivers the
-original two-page-lists request from another direction. A **full move** needs
-every window to own its ribbon state, dock arrangement, mode and panel state —
-a `Workspace` extraction — because a document that has left the strip must
-still be editable, and all of that is application-scoped today. Building the
-wrong one is worse than building neither: a window the document cannot be
-edited in is a trap, and a second view that pretends to be a move is a lie
-about where the operator's work is.
-
-### Not salvaged yet
-
-Present in the old shell, not yet carried across; none is a rewrite.
-
-| | |
-|---|---|
-| ✅ | **Print dialog** with live preview — split into five files at the three questions it answers. Fixed on the way: stale device capabilities after a printer change, `/Rotate` ignored so a rotated page was planned portrait and rendered landscape, and a texture-name collision |
-| ✅ | **Printing reaches a printer** — the dialog used to open, say *This build cannot reach a print device*, and draw no printer selector, no preview, no page controls and no commit button, on a machine with twelve printers installed |
-| ✅ | **Paper size, tray and the driver's own Properties…** — all three were one engine surface, reached from beside the printer drop-down as every other program on this desktop does it |
-| 🔨 | **Measure tools** — salvaged whole as `canvas/measure/{pick,scale,state}.rs` plus `canvas/snap.rs`, with every test carried and no engine API moved. Linear, two-line and radius/diameter place dimensions and the snap query is wired |
-| ✅ | **Redaction — mark, review, apply, with the true-removal proof salvaged** — mandatory rather than convenient: core has **no verdict type**, `apply_redactions` returns a *report*, and `pdfcer` exits SUCCESS on a file it never verified, so the proof came across from the old shell with the code and is unskippable four ways |
-| ✅ | **Markup ▸ Style** — the manifest had declared `Item::custom("colour_swatch")` since S2 and **no renderer ever matched that kind**, so the shell reserved the item's space, the application declined to draw it, and the band was a caption over nothing |
-| ⬜ | **Canvas drag-to-mark for redaction** — panel marking (whole page, literal text, pattern) covers all three routes the tooltip promises, none of which is a drag. The gesture needs a `CanvasTool` variant, a capability entry, an Escape rung, an overlay preview and an `Action` carrying page-space quads |
-| 🔨 | **Forms** — fill works in all three modes, and Reset and Flatten are reachable **through the panel** as buttons in its own collapsed sections, calling `reset_form` and `flatten_fields` |
-| ✅ | **Fill a field on the canvas** — click the widget on the page and type; Enter or clicking away commits **one** `FormEdit::FillText`, Escape abandons the draft without also ascending a selection rung. Check boxes toggle, radio widgets select that widget's on-state. **No `CanvasTool` variant**: a widget's `/Rect` is a region the file itself marks interactive |
-| ✅ | **What a fill inferred is in the status bar** — `applied_autosize` and `unencodable_chars` are the only two facts of a fill not re-derivable from the saved document; afterwards they look exactly like the author's decision |
-| ⬜ | **Highlight fillable fields** — a View ▸ Display toggle tinting widget rects, Acrobat-style. Today the cursor is the whole discovery mechanism, which is honest but weaker, and it is the only thing that would make an **undrawn** field discoverable |
-| ✅ | **The shell's home-grown text locator is deleted** — `Reading::find`, a longest-contiguous-glyph-stretch walk built on a mechanism this project invented and never measured |
-| ✅ | **…and so is the second one** — a pinned restyle used to need a `find` string naming a contiguous sub-range inside the operator, so this shell sliced each run's text into per-operator pieces to build them, which was a second locator living beside the engine's |
-| ✅ | **The font list stopped being a guess** — both face choosers now list exactly the faces `EditSession::set_font` has already said it would accept **for this run**, through `preview_font_resources` |
-| ✅ | **Bold reaches the covering face on a page that has one** — a driven Bold press found the engine refusing synthesis because *a real bold face is available* while naming one that remaps `o` to a bullet and cannot show the run |
-| ✅ | **A box's border and where it is shown** — the *This box* section carries all four of `WidgetEdit`'s properties: position, size, border style and width, where it is visible, and the caption |
-| ✅ | **A form field's box can be moved and resized** — X, Y, Width, Height and a caption with an Apply. **Moving is free and resizing is not, and the pane says which you are about to do**, because §12.5.5 derives the appearance matrix from the appearance box's corners |
-| ⚠ | **The Properties pane is taller than its dock slot**, and that is the operator-visible cost of the two rows above: a selected form field draws about 450 pt of content into a slot that is about 180 pt on an 1,100 × 800 window |
-| ✅ | **Form data imports, so the round trip closes** — File ▸ Export ▸ Import form data reads an FDF, XFDF or CSV and sets this document's field values from it, with the **extension deciding the parser** exactly as it decides the format on the way out |
-| ✅ | **Form data exports as FDF, XFDF or CSV** — one save picker, and the extension decides the format, which is how every application on this desktop does it and is one modal window rather than two |
-| ✅ | **Field list in tab order, and it reorders by dragging** — a per-page, widget-level view beside the fill list, which stays in `/AcroForm /Fields` order because that matches the printed form. Drag a row, an insertion caret shows where it lands, and release permutes the page's `/Annots` through `EditSession::reorder_annotations` |
-| ✅ | **Reordering tab navigation** — read ⛔ for nineteen days on the ground that no verb could do it; `EditSession::reorder_annotations(page, &[ObjId])` shipped and it was wired the same morning |
-| ✅ | **Settings dialog** — `file.settings` was registered, drawn on File ▸ pdfcer and inert, and nine of its thirteen settings had never been read by anything. All thirteen spec-ambiguity choices are reachable, in seven groups |
-| ✅ | **The page cache was a frame buffer with extra steps** — `StripRasters::retain` took the **visible** page set and dropped everything outside it, every settle, so turning back one page re-rendered it |
-| ✅ | **The seven `view.*` settings — two built, five deleted.** All seven were registered, drawn on the View tab and inert; checked against the engine, **render strategy** has no tiled-progressive path in this shell and **thin lines** and **antialiasing** had no `RenderOptions` field at all |
-| ✅ | **Line weights off — the CAD hairline display mode** — the one control in this file that was deleted and came back, on the operator's report that it had been removed and had never worked before that |
-| ✅ | **Text box, sticky note and stamp** — all three were registered, drawn on the Markup tab and had no dispatch arm for the whole life of the project; the recorded reason was accurate rather than an excuse, being a different gesture (place, then type) from the geometric kinds |
-| ✅ | **Revision clouds** — this row is kept because of what it got wrong: it read that the cloud primitives appear nowhere in `pdfcer-core`, which was true when it was written and had stopped being true without anything failing. **A blocker naming a repository this project does not build has to be re-read, not remembered** |
-| ✅ | **Set the scale by measuring something on the drawing** — the model had been there since the measure salvage and the dialog's own header had already named the gap |
-| ✅ | **UI scale** — a capability switched off rather than never built: `egui` has offered `Context::set_zoom_factor` throughout and **no line in this crate ever called it** |
-| ✅ | **The freehand tolerance follows the pen again** — `ink::SIMPLIFY_TOLERANCE_PTS` was a `const` equal to a quarter of the pen width, and the derivation is not decorative: Ramer–Douglas–Peucker bounds how far the drawn centreline can move, so ε has to track the stroke's half-width or a wide pen loses its shape |
-| ✅ | **The opening view — two more preferences.** `ViewState::default` held fit-page and all three View ▸ Display overlays off as compiled-in constants: the toggles existed, the default was not settable |
-| ✅ | **…and the copy contract now covers the newest group** — `every_setting_states_its_silence_and_its_radius` listed exactly the `pdfcer_core::settings` entries, so a test reading as though it covered the window was checking a subset of it |
-| ✅ | **`userdata/preferences.txt`** — the shell's own store, beside `settings.txt` under the same roof so the update instructions cover it unchanged. Separate from `pdfcer_core::settings` because every entry in that file cites a clause the standard leaves silent, and *how sharply a page is drawn* cites nothing |
-| ✅ | **Icons** — 72 glyphs, rasterized at physical pixel size, tinted from the theme, with every key named by a command asserted to resolve against the live registry. An unknown key draws a **visible slashed mark**, never a blank, and the label fallback is decided upstream of the painter |
-| ✅ | **Every ribbon control is a glyph or a recorded refusal** — it was 47 named and 41 bare with no rule behind which was which, so a band drew pictures and words side by side and the ribbon read as half-finished because it was. Each refusal is argued at its own registration |
-| ⬜ | **Text editing** — the whole tool |
-| ✅ | **A refused text edit says why, in the operator's terms** — driven on his own file at his own typo, where text added in this session was editable and text that arrived with the document was not |
-| ✅ | **A click on a page that has any text can start new text** — `hit_test` is bounded to one line-height, so a click far from any run is an origin rather than a miss that captures the page |
+The one open scope question, and it is open because the applications an operator
+would compare it to **disagree about what it means**: Chrome, Firefox and VS Code
+**move** the document to a new, fully functional window, while Acrobat's
+`Window ▸ New Window` and Bluebeam's split open a **second view** and leave the
+document where it was. Where the product class converges, the convergence is the
+specification; here it does not, so this is a decision rather than a derivation,
+and the two cost very different things. A **second view** — canvas, page list and
+status bar, with the document staying in the strip — is roughly a day, and it
+delivers the original two-page-lists request from another direction. A **full
+move** needs every window to own its ribbon state, dock arrangement, mode and
+panel state, which is a `Workspace` extraction, because a document that has left
+the strip must still be editable and all of that is application-scoped today.
+Building the wrong one is worse than building neither: a window the document
+cannot be edited in is a trap, and a second view that pretends to be a move is a
+lie about where the operator's work is.
 
 ---
 
@@ -884,7 +515,7 @@ Present in the old shell, not yet carried across; none is a rewrite.
 | | |
 |---|---|
 | ❌ | **A Home tab** — would mirror commands across tabs, and a command in two places is a command with two enable predicates that drift |
-| ❌ | **Automatic reflow on edit** — reflow invents line breaks the file never stated. It is a **command**, and will not become automatic |
+| ❌ | **Automatic reflow on edit** — R75: reflow invents line breaks the file never stated. It is a **command**, and will not become automatic |
 | ❌ | **Tiled rendering** — measured as a 9× regression |
 | ❌ | **JavaScript execution** — standing refusal |
-| ❌ | **Provisional styling on the canvas** — disclosure lives off-canvas, and a second rendering path for the same content drifts from the first |
+| ❌ | **Provisional styling on the canvas** — Rule 4. Disclosure lives off-canvas, and a second rendering path for the same content drifts from the first |

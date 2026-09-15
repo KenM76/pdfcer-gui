@@ -3,37 +3,24 @@
 //! One preference, and it is the only one in this store that is an
 //! **accessibility** control rather than a taste or a speed trade.
 //!
-//! ## ★ Why this existed nowhere, which is the interesting part
+//! ## Why the shell has to provide this itself
 //!
-//! `NO_SURFACE.md` §4 recorded it as a single line against the icon size:
-//!
-//! > `Icon size` · 16.0 pt · `icons/mod.rs:171` · none — **no UI-scale or
-//! > base-font-size control anywhere**
-//!
-//! That is not a hard-coded constant like the others in that table. It is a
-//! whole capability that nothing in the shell had: `egui` has offered
-//! `Context::set_zoom_factor` throughout, and **no line in this crate ever
-//! called it**. Every control, every label, every icon and every panel in this
-//! shell has been drawn at exactly one size, on every machine, for the whole
-//! life of the project.
-//!
-//! The reason it went unnoticed is worth recording, because it is a general
-//! trap: `egui` has a *built-in* `Ctrl` + `+`/`-`/`0` handler for precisely
-//! this, so on a stock `eframe` application the capability appears to exist
-//! without anyone building it. This shell **switches that handler off** —
-//! deliberately, in [`crate::app::configure_context`], because in a document
+//! `egui` ships a *built-in* `Ctrl` + `+`/`-`/`0` handler that drives
+//! `Context::set_zoom_factor`, so on a stock `eframe` application UI scaling
+//! appears to exist without anyone building it. This shell **switches that
+//! handler off**, in [`crate::app::configure_context`], because in a document
 //! viewer those chords mean *page* zoom, as they do in every browser, in
-//! Acrobat and in every other PDF reader. So the one path that would have
-//! surfaced it was closed for a good reason, and closing it removed a feature
-//! nobody had noticed was being provided.
+//! Acrobat and in every other PDF reader. Nothing else in this crate calls
+//! `set_zoom_factor`, so without this preference every control, label, icon and
+//! panel would be drawn at exactly one size on every machine.
 //!
-//! **A framework default you switch off may have been carrying a capability you
-//! never decided to have.** That is the reusable half.
+//! **A framework default you switch off may be carrying a capability you never
+//! decided to have.** Check what goes with the handler before removing one.
 //!
 //! ## Where the reference applications put it, and where the chords went
 //!
-//! Standing instruction 4 — *match Inkscape, Acrobat and SolidWorks, but first
-//! ask which of them actually has the surface.*
+//! The standing tie-breaker is to match Inkscape, Acrobat and SolidWorks — but
+//! first to ask which of them actually has the surface:
 //!
 //! | application | UI scale control | chord |
 //! |---|---|---|
@@ -41,19 +28,19 @@
 //! | **SolidWorks** | not a scale control; it follows the Windows display setting | none |
 //! | **Acrobat** | no UI-scale control at all | — |
 //!
-//! So: **a settings control and no chord**, unanimously among the two that
-//! have the surface. That is also the only answer available here, because
-//! `Ctrl` + `+`/`-`/`0` are taken by page zoom and `Ctrl+1`/`2`/`3` are the
-//! mode selector — an invented third family would be a chord nobody's muscle
-//! memory has and would collide with the two that do.
+//! So: **a settings control and no chord**. None of the three binds a chord to
+//! it, and no chord is available here anyway — `Ctrl` + `+`/`-`/`0` are taken
+//! by page zoom and `Ctrl+1`/`2`/`3` are the mode selector, so an invented
+//! third family would be a chord nobody's muscle memory has that collides with
+//! the two that do.
 //!
-//! ## ★ It lives in the *Appearance* group, beside the theme
+//! ## It lives in the *Appearance* group, beside the theme
 //!
-//! Not in *Drawing the page*, which holds this store's other four preferences.
-//! The window's groups are a **navigation model** — an operator arrives with a
-//! symptom and the heading is how the symptom finds its setting — and the
-//! symptom here is *"the program's text is too small to read"*, which is a
-//! question about the window, not about the page.
+//! Not in *Drawing the page*, where most of this store's preferences are
+//! presented. The window's groups are a **navigation model** — an operator
+//! arrives with a symptom and the heading is how the symptom finds its
+//! setting — and the symptom here is *"the program's text is too small to
+//! read"*, which is a question about the window, not about the page.
 //!
 //! Theme and UI scale are the two settings that change **the program's own
 //! appearance and nothing about the document**, and they belong together for
@@ -83,9 +70,9 @@ pub const MAX_UI_SCALE: f32 = 2.0;
 ///
 /// **Exactly 1.0**, which means *whatever the operating system says* — see
 /// [`crate::app::prefs::Prefs::ui_scale`] on why this multiplies rather than
-/// replaces. The standing rule for a capability becoming choosable: a build
-/// that omits nothing must behave as the build before the choice existed, and
-/// before this preference the shell simply never touched `zoom_factor`.
+/// replaces. The standing rule for a capability becoming choosable is that the
+/// shipped default must reproduce the behaviour of a build that never offered
+/// the choice — here, leaving `zoom_factor` alone.
 pub const DEFAULT_UI_SCALE: f32 = 1.0;
 
 /// The step the control moves in.
@@ -121,11 +108,10 @@ mod tests {
 
     /// The shipped scale is the identity, and it is reachable on its control.
     ///
-    /// Both halves matter. Identity is the "a build that omits nothing behaves
-    /// as it did before" rule; reachability is the third instance in this
-    /// project of a default that must sit inside its own widget's range, or
-    /// the first operator to open the window has their value rewritten without
-    /// touching anything.
+    /// Both halves matter. Identity is the "the shipped default reproduces a
+    /// build without the choice" rule; reachability is the recurring one that a
+    /// default must sit inside its own widget's range, or the first operator to
+    /// open the window has their value rewritten without touching anything.
     #[test]
     fn the_shipped_scale_is_the_identity_and_is_reachable() {
         assert!((DEFAULT_UI_SCALE - 1.0).abs() < f32::EPSILON);
@@ -136,7 +122,7 @@ mod tests {
         );
     }
 
-    /// ★ Normalising is idempotent.
+    /// Normalising is idempotent.
     ///
     /// The property that makes the load path safe to run on its own output —
     /// which it is, every time pdfcer saves and reloads. A rounding that moved
@@ -164,7 +150,7 @@ mod tests {
         assert!((normalise_ui_scale(99.0) - MAX_UI_SCALE).abs() < 1e-6);
     }
 
-    /// ★ Every value the control can produce survives normalising unchanged.
+    /// Every value the control can produce survives normalising unchanged.
     ///
     /// The weld between the widget's step and the file's grammar. If the
     /// slider could land on a value the loader would round away, the operator

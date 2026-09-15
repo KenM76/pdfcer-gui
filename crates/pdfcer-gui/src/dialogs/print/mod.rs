@@ -10,8 +10,8 @@
 //! > device somebody else may share, and cannot be taken back. That single
 //! > fact decides most of what is in this file: why the dialog is its own
 //! > stationary surface rather than a dock pane, why the preview shows the
-//! > printable RECTANGLE and not just the sheet, why Enter does not commit,
-//! > and why no keyboard chord spools.
+//! > printable RECTANGLE and not just the sheet, and why no keyboard chord
+//! > spools. (Enter **does** commit, from the affirmative button — see below.)
 //!
 //! ## ★ The dialog IS the confirmation. There is no second gate.
 //!
@@ -24,12 +24,19 @@
 //! > in the BUTTON'S OWN LABEL, so the uncertainty is stated in the
 //! > disclosure rather than implied by a confirm step existing (rule 4).
 //!
-//! Two guards follow from it, and both are inherited rather than re-derived:
+//! Two things follow from it, and the first is not what a reader expects:
 //!
-//! - **Enter does not print.** An operator reading a dialog and pressing
-//!   Enter out of habit must not commit the one action in this application
-//!   with no undo. There is a text field here, which makes the habit likelier,
-//!   not less. Nothing in this module reads `Key::Enter`.
+//! - **Enter presses Print**, through [`crate::dialogs::host::Host::footer`],
+//!   which treats the affirmative button as the Enter target unless a text
+//!   field has focus. That is `ui-conventions/dialogs.md` G4 and it is
+//!   deliberate — a print dialog that ignored Enter would be the only one on
+//!   the machine that did. What carries the weight instead of a second gate is
+//!   **disclosure on the button itself**: the affirmative control is painted in
+//!   the theme `accent` (never the translucent selection fill — see
+//!   `Host::buttons`) so it cannot read as disabled, and when the job clips it
+//!   says so *in its own label*. An operator pressing Enter out of habit has
+//!   already been shown, in the control that key will press, what the job will
+//!   do.
 //! - **No keyboard chord commits.** A chord may *open* this dialog; nothing
 //!   spools a job. Reversible actions get chords; the irreversible one does
 //!   not.
@@ -53,14 +60,16 @@
 //! is in a module with unit tests around it, and what is left in this file is
 //! wiring that can be reviewed by reading.
 //!
-//! ## ★ What this build can and cannot do
+//! ## Reaching a device
 //!
-//! `pdfcer-print` is **not** a dependency of this crate. Every device call
-//! therefore refuses, the dialog says so in one sentence, and **the commit
-//! button is not drawn at all** — absent rather than greyed, because no
-//! setting in this dialog would make this build reach a spooler.
-//! [`spooler`]'s header carries the one manifest line that changes that, and
-//! the one file it changes.
+//! `pdfcer-print` is a dependency of this crate and [`spooler`] is the only
+//! module that names it. Printers are enumerated, the device's own properties
+//! sheet opens over this window, and the commit button spools a real job
+//! through `StartDoc`. When there is no device to reach, the dialog says which
+//! of the two things happened — the spooler could not be reached at all, or it
+//! answered and this machine has no printers installed — and returns before the
+//! footer is drawn, so there is no commit button rather than a greyed one (R9).
+//! `text::print`'s header owns the distinction between those two sentences.
 //!
 //! ## What is deliberately absent: imposition
 //!

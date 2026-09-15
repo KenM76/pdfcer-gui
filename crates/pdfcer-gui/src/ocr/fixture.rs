@@ -17,14 +17,12 @@
 //!
 //! ### Why it exists anyway
 //!
-//! Because the alternative was verifying nothing. `HANDOFF.md` and
-//! `FEATURES.md` both record the engine's own warning — *"its only test
-//! documents are vector PDFs that already contain text"* — and that is still
-//! exactly true of this repository: `D:\Dev\temp\pdfcer\` holds thirty PDFs and
-//! `fixtures/` held one, and **every single one has extractable text on it.**
-//! Measured, not assumed: a scan of both directories for text-showing operators
-//! (`Tj`, `TJ`, `'`, `"`) inside every inflatable stream found them in all
-//! thirty-one.
+//! Because the alternative is verifying nothing. Every real document this
+//! project can reach is a vector PDF that already contains text:
+//! `D:\Dev\temp\pdfcer\` holds thirty PDFs and `fixtures/` held one, and **every
+//! single one has extractable text on it.** Measured, not assumed: a scan of
+//! both directories for text-showing operators (`Tj`, `TJ`, `'`, `"`) inside
+//! every inflatable stream finds them in all thirty-one.
 //!
 //! So before this file, **no part of the OCR chain could be exercised at all**
 //! — not the detection of an image-only page, not the Find offer, not the
@@ -53,12 +51,10 @@
 //! are precisely the conditions that make OCR hard, and a fixture without them
 //! **flatters the recogniser**.
 //!
-//! `HANDOFF.md` §10 carries the lesson in almost these words, from a different
-//! feature: the ink-simplification fixture disturbed its samples *along* the arc
-//! they lay on, so it "only re-spaced samples along a path whose shape never
-//! changed", reported suspiciously good numbers, and was measuring something
-//! other than what it claimed. *"A measurement that moves in the right
-//! direction is not evidence that it measures the right thing."*
+//! **A measurement that moves in the right direction is not evidence that it
+//! measures the right thing.** A fixture that disturbs its samples only along
+//! the shape it is supposed to be testing reports suspiciously good numbers and
+//! is measuring something other than what it claims.
 //!
 //! This fixture is in that category by construction and says so rather than
 //! being caught at it later. **Quality on real scanned material remains
@@ -166,8 +162,8 @@ const FIXTURE_DPI: f32 = 200.0;
 /// ### Why the FIXTURE changed and not the threshold
 ///
 /// Raising `text_threshold` would have been one line, and would have been
-/// **tuning the tool until the test passed** -- `HANDOFF.md` §10's warning
-/// about a fixture that flatters what it measures, run in reverse. The
+/// **tuning the tool until the test passed** -- the flattering-fixture failure
+/// run in reverse. The
 /// threshold is upstream's, chosen empirically against upstream's training
 /// distribution, and this project has no evidence on which to overrule it.
 ///
@@ -375,10 +371,10 @@ fn image_only_pdf(grey: &[u8], width: u32, height: u32) -> Vec<u8> {
 /// # ★★★ Why a multi-page image-only fixture has to exist
 ///
 /// The one-page fixture is the right subject for *"did the recogniser read this
-/// page"*. It is the wrong subject for everything the operator asked for on
-/// 2026-09-01 — *"pages done, words/characters detected … a cancel and stop
-/// button"* — because **every one of those is a statement about a run in
-/// progress**, and a one-page run has no observable middle. It is started and
+/// page"*. It is the wrong subject for pages-done, words-and-characters
+/// detected, and a Stop control, because **every one of those is a statement
+/// about a run in progress**, and a one-page run has no observable middle. It
+/// is started and
 /// then it is finished; a Stop pressed during it can only ever race the single
 /// page, and a progress line that draws once carries no evidence that it
 /// advances.
@@ -715,8 +711,8 @@ mod tests {
     /// It is `#[ignore]`d because it is minutes of work and reads two files
     /// outside the repository, and it is kept because the constant it produced
     /// is otherwise a number with a table beside it that nobody can re-derive.
-    /// `HANDOFF.md` §10's standing complaint is prose that drifts from the
-    /// measurement it quotes; this is the measurement, runnable.
+    /// Prose drifts from the measurement it quotes; this is the measurement,
+    /// runnable.
     ///
     /// **Run it in release.** In a debug build `rten` is roughly fifty times
     /// slower and a single A1 page takes minutes.

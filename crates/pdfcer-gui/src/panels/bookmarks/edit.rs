@@ -3,17 +3,14 @@
 //!
 //! ## What this closes
 //!
-//! The two verbs this panel shipped **without**. Until `pdfcer-core`
-//! `Pass 156.0` a bookmark could be **created and never changed** — the
-//! engine's own words — and the covering note is blunt about which half of that
-//! hurt:
+//! Without these two controls a bookmark can be **created and never changed**,
+//! and renaming is the commonest bookmark edit there is — a heading typed with
+//! a typo would otherwise have to be deleted and re-authored, losing its
+//! destination and everything filed under it. `EditSession::set_outline_title`
+//! and `EditSession::delete_outline_item` are the engine verbs these controls
+//! drive.
 //!
-//! > *"Renaming is the commonest bookmark edit there is."*
-//!
-//! `EditSession::set_outline_title` and `EditSession::delete_outline_item`
-//! shipped together on 2026-08-28 and these are the controls that answer them.
-//!
-//! ## ★ The gesture is already there: the selected row
+//! ## The gesture is already there: the selected row
 //!
 //! No new selection mechanic is invented. Clicking a bookmark row **already**
 //! meant two things — *"take me there"* and *"this is the parent for the next
@@ -30,10 +27,10 @@
 //! (`bookmark_edit_selected`) rather than relying on a highlight in a list that
 //! may be scrolled out of view.
 //!
-//! ## ★★ Delete is UNDOABLE, not confirmed — and that is the choice made here
+//! ## Delete is UNDOABLE, not confirmed — and that is the choice made here
 //!
-//! `HANDOFF.md`'s rule is *"confirmed or clearly undoable"*. This surface takes
-//! the second, for three reasons, in order of weight:
+//! A destructive verb must be **confirmed or clearly undoable**. This surface
+//! takes the second, for three reasons, in order of weight:
 //!
 //! 1. **One press is one `EditSession` command.** The engine plans every relink
 //!    — the previous sibling's `/Next`, the next one's `/Prev`, the parent's
@@ -77,28 +74,19 @@
 //! "Worded decline" row and belongs to `super::super::super::app::actions::apply`'s
 //! `Err` arm, not to this file.
 //!
-//! ## ★ What was deliberately absent, and where it went
+//! ## Reorder and re-parent are NOT in this block
 //!
-//! This section read: *"**Reorder and re-parent.** The engine's note lists them
-//! as not shipped … so there is no drag handle, no Move up, no Promote. R9: a
-//! capability that does not exist renders **nothing**."* It was correct for one
-//! day. `pdfcer-core` `Pass 161.0` shipped `move_outline_item` and
-//! `set_outline_open`, and [`super::reorder`] is the surface for both.
+//! They exist — `move_outline_item` and `set_outline_open` — and
+//! [`super::reorder`] is the surface for both. The move is a **drag on the
+//! row**, which is the conventional gesture every outline panel uses and which
+//! answers the operator's standing tie-breaker: *"make it work the way other
+//! programs do."* A pair of *Move up* / *Promote* buttons is the easy thing to
+//! add here and would be a second, worse idiom beside the one
+//! [`crate::panels::pages`] already established for reordering.
 //!
-//! It is recorded rather than deleted because it is the rule working: nothing
-//! was greyed, nothing was drawn as a promise, and the day the engine could
-//! honour the gesture the panel grew it.
-//!
-//! ⇒ **And it did not grow it here.** The move is a *drag on the row*, not a
-//! button in this block, which is the conventional gesture every outline panel
-//! uses and the operator's standing tie-breaker — *"make it work the way other
-//! programs do."* A pair of *Move up* / *Promote* buttons would have been the
-//! easy thing to add to this block and would have been a second, worse idiom
-//! beside the one [`crate::panels::pages`] already established for reordering.
-//!
-//! **Still absent:** a verb that deletes the whole outline.
-//! `EditError::OutlineRootIsNotAnItem` refuses the root by name, because that
-//! is *"a different act that gets its own verb when it is wanted"*.
+//! **Absent:** a verb that deletes the whole outline.
+//! `EditError::OutlineRootIsNotAnItem` refuses the root by name; emptying an
+//! outline is a different act and gets its own verb when it is wanted.
 
 use egui::Ui;
 use pdfcer_core::outline::OutlineItem;
@@ -125,8 +113,8 @@ pub const REGION_DELETE: &str = "bookmarks.delete"; // ui-text-exempt: trace reg
 /// one frame after an undo.
 ///
 /// Nothing is mutated except `ui_state`'s own draft. Both verbs leave through
-/// `actions`, which is the invariant `app::actions`' `OVERVIEW.md` calls *"the
-/// single best structural decision in the old GUI"*.
+/// `actions`: no code path runs from a widget to a document, which is what
+/// keeps one gesture equal to one undo entry. See `app::actions`' `OVERVIEW.md`.
 pub fn show(
     ui: &mut Ui,
     selected: &OutlineItem,
@@ -145,17 +133,17 @@ pub fn show(
 
 /// The name field and its Rename button.
 ///
-/// # ★ The draft carries its own `ObjId`, and that is not tidiness
+/// # The draft carries its own `ObjId`, and that is not tidiness
 ///
 /// A half-typed name must not follow the operator to a different bookmark.
 /// Holding the id **with** the text makes a stale pair detectable, so clicking
 /// another row re-seeds the field from the bookmark actually on screen rather
 /// than offering to rename *it* to a name meant for the last one.
 ///
-/// The same hazard `dialogs::scale` names for its captured group — *"a group
-/// picker that moved underneath an open dialog would let them type a number for
-/// one group and commit it to another"* — one control smaller, and here it is
-/// worse than there because the row list is one click away rather than behind a
+/// It is the same hazard `dialogs::scale` names for its captured group — a
+/// picker that moves underneath an open dialog lets the operator type a number
+/// for one group and commit it to another — one control smaller, and worse here
+/// than there because the row list is one click away rather than behind a
 /// window.
 ///
 /// # Why the button is ABSENT rather than greyed when there is nothing to do
@@ -229,7 +217,7 @@ fn rename_row(
 
 /// The Remove button, and the blast radius stated before it is pressed.
 ///
-/// # ★★ The subtree count is the disclosure, and it is said twice on purpose
+/// # The subtree count is the disclosure, and it is said twice on purpose
 ///
 /// **Before the press**, from the tree this panel already drew: *"Removing this
 /// also removes the 11 bookmarks filed under it."* The operator cannot get that
@@ -241,7 +229,7 @@ fn rename_row(
 /// returns, in the status line where every other verb's disclosure goes. See
 /// `crate::app::actions::bookmarks::delete`.
 ///
-/// ★ **The two numbers are allowed to differ, and that is why both are said.**
+/// **The two numbers are allowed to differ, and that is why both are said.**
 /// `read_outline` gives up part-way on a cycle, on excessive depth, or on
 /// exhausting its item budget — this panel draws a truncation notice above the
 /// list when it does — so the number here counts *what pdfcer could read* and
@@ -291,7 +279,7 @@ fn delete_row(
         actions.push(Action::Bookmark(BookmarkAction::Delete {
             item: selected.id,
         }));
-        // ★ The selection is dropped HERE rather than being left to next
+        // The selection is dropped HERE rather than being left to next
         // frame's fallback, which would also work and would work one frame
         // late. For that frame this block would draw against a bookmark the
         // document no longer has — a name, a subtree count and a live Remove

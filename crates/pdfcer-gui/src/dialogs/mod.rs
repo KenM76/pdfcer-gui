@@ -10,15 +10,10 @@
 //! configuration that persisted across documents would let a range typed for
 //! one file silently apply to another.
 //!
-//! `SALVAGE.md`'s redistribution table names the tenants of this directory:
-//! *"Dialogs — properties, print, export, reset, settings host — ~1,500 lines
-//! — `dialogs/`."* [`print`] is the first of them.
-//!
 //! ## ★ Every dialog here is screen-anchored, never page-anchored
 //!
-//! A decision inherited from the old shell, where it was made in response to a
-//! specific operator objection: **controls whose position is derived from the
-//! page move on every zoom and scroll.** A surface an operator is reading and
+//! Made in response to a specific operator objection: **controls whose position
+//! is derived from the page move on every zoom and scroll.** A surface an operator is reading and
 //! typing into must stay where they put their eyes. Each dialog therefore
 //! anchors to the viewport rather than being positioned relative to the
 //! canvas, and none of them is drawn inside the canvas's coordinate space.
@@ -106,23 +101,22 @@ pub mod export_image;
 /// projection differs, and that stays in each window beside the fields it
 /// reads.
 mod export_remembered;
-/// ★★★ The Export-text window. Its header used to carry *"the half of the
-/// operator's ask that does not exist: no route from a text file back into a
-/// PDF"* — corrected 2026-09-07, when it started existing. It now carries the
-/// record of that absence instead, which is the more useful thing: it is what
-/// the engine request was argued from.
+/// ★★★ The Export-text window. Its header carries the record of what the
+/// return journey — a text file back into a PDF — demanded of the engine,
+/// which is what that engine request was argued from. [`import_text`] is the
+/// other half.
 pub mod export_text;
 pub mod formfield;
-/// ★★ **A dialog is an OS window** — the operator's report of 2026-08-20, and
+/// ★★ **A dialog is an OS window** — the operator's report, and
 /// `ui-conventions/dialogs.md` G1. One host, so the path of least resistance
 /// and the right answer are the same call; its header carries what an OS
 /// window actually buys, how it degrades on the web target, and the two rows
 /// (G3 ownership, G5 focus trapping) that eframe 0.35 cannot express.
 pub mod host;
-/// ★ **A text file becomes pages** — the return journey, wired 2026-09-07 on
-/// `pdfcer-core` `Pass 252.0`. Its header records why it could not exist before
-/// then (the crate could not create a page, only copy one) and why it is a
-/// CHOOSER where its export sibling is a warning.
+/// ★ **A text file becomes pages** — the return journey. Its header records
+/// what it needs from `pdfcer-core` that reading a PDF does not (the ability to
+/// CREATE a page, not only to copy one) and why it is a CHOOSER where its
+/// export sibling is a warning.
 pub mod import_text;
 pub mod insert_image;
 pub mod insert_pages;
@@ -133,8 +127,7 @@ pub mod ocr;
 /// The box that lets an encrypted document be opened. Its header records the
 /// defect it closes: the shell detected `NeedsPassword` perfectly and had no way
 /// to supply one, for as long as it has been able to detect it.
-/// **How each dialog is built** — every `open_*` constructor, split out of this
-/// file on 2026-09-05 when it reached R2's 1,500-line ceiling. The seam is
+/// **How each dialog is built** — every `open_*` constructor. The seam is
 /// argued in that module's own header: an opener decides *whether* a dialog may
 /// exist and gathers what it needs, while this file owns *what dialogs exist*
 /// and *how their answers reach the app*. Two different callers, two different
@@ -210,9 +203,9 @@ pub mod unembed;
 /// and must not become the fix, and why the first button says *Save a copy…*
 /// rather than *Save*.
 pub mod unsaved;
-/// ★ Raising and draining the unsaved question — split out of this file on
-/// 2026-09-02 under R2. Its header carries the three-answer shape that makes it
-/// a real seam, and the defect the middle answer cost.
+/// ★ Raising and draining the unsaved question. Its header carries the
+/// three-answer shape that makes it a real seam, and what the middle answer
+/// costs.
 mod unsaved_host;
 
 /// ★ The Set-scale dialog — what a dimension's number *means*.
@@ -257,12 +250,12 @@ use crate::app::state::{OpenDoc, Status};
 /// not collected yet. A dialog is retired only when **both** say no: it is off
 /// screen *and* it has nothing left to hand over.
 ///
-/// # ★★★ WHY THIS IS NOT `!open`, AND THE DAY THAT COST
+/// # ★★★ WHY THIS IS NOT `!open`
 ///
-/// It was `!open`, expressed at each call site as
-/// `if …map(|d| d.show(ctx)) == Some(false) { self.slot = None; }`, and for
-/// eleven of the thirteen dialogs that is exactly right: they act through
-/// `actions` while they draw, so a closed one has nothing left in it.
+/// `!open`, expressed at each call site as
+/// `if …map(|d| d.show(ctx)) == Some(false) { self.slot = None; }`, is exactly
+/// right for eleven of the thirteen dialogs: they act through `actions` while
+/// they draw, so a closed one has nothing left in it.
 ///
 /// The two **confirmation** windows are different in kind, and the difference
 /// is the whole defect. `unsaved` and `signature` deliberately do NOT act. They
@@ -275,19 +268,18 @@ use crate::app::state::{OpenDoc, Status};
 ///
 /// So for those two, `show` returning `false` and the dialog being *finished*
 /// are different facts. Pressing the button sets the answer, which is what
-/// makes `show` answer `false` — and the old branch then destroyed the dialog,
-/// **and the answer inside it**, before the drain three call frames later could
-/// look. `take_signature_answer` found an empty slot and returned `None`.
+/// makes `show` answer `false` — so a `!open` branch destroys the dialog **and
+/// the answer inside it** before the drain three call frames later can look,
+/// and `take_signature_answer` finds an empty slot and returns `None`.
 ///
-/// ⇒ The observable result, found by driving on 2026-08-29
-/// (`an_invalidating_save_is_warned_about`): the signature warning opened, held
-/// the save, drew its proceed button, took the click, **closed** — and traced
-/// no `signature-confirmed` and wrote no file. A signed document could not be
-/// saved at all by any route the guard covers. The feature had shipped the day
-/// before, correctly stopping the save and never letting it through, which is
-/// worse than the silence it replaced.
+/// ⇒ The observable result, and what `an_invalidating_save_is_warned_about`
+/// drives the binary to check: the signature warning opens, holds the save,
+/// draws its proceed button, takes the click, **closes** — and traces no
+/// `signature-confirmed` and writes no file. A signed document cannot be saved
+/// at all by any route the guard covers, which is worse than having no guard:
+/// it stops the save and never lets it through.
 ///
-/// ★ Neither half was wrong on its own, which is why no unit test saw it. The
+/// ★ Neither half is wrong on its own, which is why no unit test can see it. The
 /// dialog returns its answer when asked; the drain performs whatever it is
 /// given; the defect lives entirely in the **lifetime between them**, and a
 /// lifetime is not a value any assertion over either half can name. That is the
@@ -322,12 +314,12 @@ const fn retire(open: bool, answered: bool) -> bool {
 /// on *these* pages. An **application-scoped** dialog is about pdfcer itself
 /// and is meaningful with nothing loaded.
 ///
-/// Until 2026-08-14 every dialog here was document-scoped and
-/// [`DialogsState::show`] could take the shortcut of dropping all of them the
-/// moment the document went away. [`about::AboutDialog`] broke that: an
-/// operator who has just launched pdfcer and wants to know what version they
-/// are running, or under what terms, has no document — and a control that did
-/// nothing in that state would be the placeholder `HANDOFF.md` §6 forbids.
+/// A shell whose dialogs were all document-scoped could take the shortcut of
+/// dropping every one of them the moment the document went away.
+/// [`about::AboutDialog`] is why [`DialogsState::show`] cannot: an operator who
+/// has just launched pdfcer and wants to know what version they are running, or
+/// under what terms, has no document — and a control that did nothing in that
+/// state is a placeholder, which this project does not ship.
 ///
 /// So the two groups are drawn separately rather than the rule being softened
 /// for everything. Print still closes with its document; About does not, and
@@ -365,9 +357,8 @@ pub struct DialogsState {
     /// document, which is an undoable edit — see
     /// `crate::app::actions::Action::SetGroupScale`.
     ///
-    /// ★ *"and redaction produce new files"* stood here until 2026-09-04:
-    /// `dialogs::redact` now edits through the funnel too, on its default
-    /// destination of three.
+    /// ★ It is not the only one any more: `dialogs::redact` edits through the
+    /// funnel too, on its default destination of three.
     ///
     /// That is why [`Self::show`] takes an action queue at all: this module's
     /// header says a dialog that edits the document *"must use the funnel"*,
@@ -714,36 +705,32 @@ pub struct Frame<'a> {
 
     /// The preferences file, mutable.
     ///
-    /// ★ Added 2026-09-10 for **O166**, for the Print window, which persists
-    /// the operator's last-used print settings the moment they press Print.
+    /// ★ Here for **O166**: the Print window persists the operator's last-used
+    /// print settings the moment they press Print.
     ///
-    /// **Five dialogs write to it** as of 2026-09-13: Print (O166), the
-    /// default-app offer (O173, which clears `ask_default_app` when the window
-    /// settles), and the three export windows (O196 — *"the export windows
-    /// forget everything"*). Everything else here reads the application's state
-    /// and answers through [`Self::actions`].
+    /// **Five dialogs write to it**: Print (O166), the default-app offer (O173,
+    /// which clears `ask_default_app` when the window settles), and the three
+    /// export windows (O196 — *"the export windows forget everything"*).
+    /// Everything else here reads the application's state and answers through
+    /// [`Self::actions`].
     ///
-    /// ⚠ **This doc said "exactly one dialog writes to it" until 2026-09-13,
-    /// and that sentence was true for twelve hours.** It was written at 02:50
-    /// on 2026-09-10; the default-app dialog landed at 14:42 the same day and
-    /// wrote `ask_default_app` through this very field. Nothing noticed for
-    /// three days, and nothing could: a prose claim about **how many callers a
-    /// mutable reference has** is invisible to the compiler, to clippy and to
-    /// every test in the crate, so it decays silently from the moment the next
-    /// caller appears.
+    /// ⚠ **That count is an observation, not a rule, and it decays silently.**
+    /// A prose claim about **how many callers a mutable reference has** is
+    /// invisible to the compiler, to clippy and to every test in the crate, so
+    /// it stops being true the moment the next caller appears and nothing goes
+    /// red. Grep before relying on it.
     ///
-    /// ⇒ The count is therefore stated as a dated fact rather than as a rule,
-    /// and the rule that survives is the one that is actually enforceable: a
+    /// ⇒ The rule that IS enforceable, and the one to hold a new writer to: a
     /// dialog writes a preference **at the moment the operator commits** —
     /// presses Print, presses Export, answers the offer — never when its window
-    /// closes. That one can be checked by reading a call site.
+    /// closes. That can be checked by reading a call site.
     pub prefs: &'a mut crate::app::prefs::Prefs,
 
-    /// ★★ **The redaction panel's chosen mark appearance**, added 2026-09-11
-    /// for the off-the-sheet census window.
+    /// ★★ **The redaction panel's chosen mark appearance**, for the
+    /// off-the-sheet census window among others.
     ///
     /// Passed in rather than defaulted, and this is the same ruling
-    /// `app::dispatch` makes for `edit.redact_selection`: there are now **four**
+    /// `app::dispatch` makes for `edit.redact_selection`: there are **four**
     /// routes that author a `/Redact` mark — a search, a whole page, the canvas
     /// selection, and everything outside the sheet — and an operator who set the
     /// fill to grey in the panel must not get a black mark from any of them.
@@ -923,9 +910,9 @@ impl DialogsState {
         let doc: &OpenDoc = doc;
         // ★ The Print window is why this function takes `&mut Prefs` at all —
         // O166, the operator's last-used print settings, persisted the moment
-        // he presses Print; see `print::PrintDialog::remember`. It is no longer
-        // the only writer, and the count and the reason the count went stale
-        // unnoticed are on `Frame::prefs`.
+        // they press Print; see `print::PrintDialog::remember`. It is not the
+        // only writer; `Frame::prefs` lists them and says why that list cannot
+        // be trusted to stay current.
         if self.print.as_mut().map(|d| d.show(ctx, doc, window, prefs)) == Some(false) {
             self.print = None;
         }
@@ -935,8 +922,8 @@ impl DialogsState {
         if self.diagnostics.as_mut().map(|d| d.show(ctx, doc)) == Some(false) {
             self.diagnostics = None;
         }
-        // ★ `actions` since 2026-09-04: the apply dialog's default destination
-        // now edits the OPEN document, so it pushes through the funnel — §5.
+        // ★ `actions`: the apply dialog's default destination edits the OPEN
+        // document, so it pushes through the funnel — §5.
         if self.redact.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
             self.redact = None;
         }
@@ -1015,30 +1002,27 @@ impl DialogsState {
         {
             self.offpage = None;
         }
-        // ★ The Manage-dimension-groups WINDOW used to be drawn here, and the
-        // comment that stood in its place said the order was load-bearing —
-        // its *Set scale…* button parked a request drained on the next line.
+        // ★ Managing dimension groups is a DOCK PANEL and not a window
+        // (`crate::panels::Panel::DimensionGroups`), because a window taller
+        // than the screen can push its own title bar off the desktop, leaving
+        // the operator no way to close it.
         //
-        // It is a dock panel as of 2026-08-19 (`crate::panels::Panel::DimensionGroups`),
-        // because a window taller than the screen can push its own title bar
-        // off the desktop and the operator could not close it. **The hand-over
-        // survived the move and moved with it**: a panel body cannot reach
-        // `DialogsState` at all, so it still parks a `GroupId` — now on
-        // `crate::panels::PanelsState` — and `crate::app::PdfcerApp::docks`
-        // drains it into [`Self::open_scale`] the moment the dock releases its
-        // borrows. Same one-shot, same guards, one layer out.
+        // The hand-over into this dialog survives that placement: a panel body
+        // cannot reach `DialogsState` at all, so the panel's *Set scale…*
+        // button parks a `GroupId` on `crate::panels::PanelsState` and
+        // `crate::app::PdfcerApp::docks` drains it into [`Self::open_scale`]
+        // the moment the dock releases its borrows. One-shot, same guards, one
+        // layer out.
         // ★ Takes the action queue, unlike its four neighbours. See the field.
         //
-        // ★★ **And it takes `doc` as of 2026-09-13.** This comment used to end
-        // *"it does not take `doc`: the scale it sets belongs to a group, which
-        // is document-scoped but not page-scoped, and the entry fields need
-        // nothing from the open document at all"* — and both halves of the
-        // operator's report that day were counter-examples to that last clause.
-        // The window could not show the scale already set (O192) or name the
-        // group it was aimed at (O193) for one reason: it could not see the
-        // document. The premise was that a group is a thing you *write*; a
-        // group is also a thing you *read*, and a window that only writes is a
-        // window that overwrites.
+        // ★★ **And it takes `doc`.** The tempting reading is that the scale it
+        // sets belongs to a group, which is document-scoped but not
+        // page-scoped, so the entry fields need nothing from the open document
+        // — and the operator reported both counter-examples to that: without
+        // the document the window can neither show the scale already set (O192)
+        // nor name the group it is aimed at (O193). A group is a thing you
+        // *read* as well as a thing you *write*, and a window that only writes
+        // is a window that overwrites.
         if self.scale.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
             self.scale = None;
         }
@@ -1144,10 +1128,10 @@ impl DialogsState {
         // question should be the one on top.
         //
         // ★★★ [`retire`] rather than `== Some(false)`, for its neighbour's
-        // reason and with the receipt: on 2026-08-29
-        // `an_invalidating_save_is_warned_about` clicked *Save anyway*, the
-        // window closed, and `signature-confirmed` never appeared — because
-        // this line had already destroyed the dialog the answer was sitting in.
+        // reason: `== Some(false)` destroys the dialog the answer is sitting
+        // in, so *Save anyway* closes the window and `signature-confirmed`
+        // never appears. `an_invalidating_save_is_warned_about` is the check
+        // that drives it.
         if self
             .signature
             .as_mut()
@@ -1442,7 +1426,7 @@ impl DialogsState {
     }
 }
 
-// The dialog owner's assertions. Split out on 2026-09-04 under R2; see its
-// header for why the tests were the seam and the code was not.
+// The dialog owner's assertions; see that module's header for why the tests
+// are the seam and the code is not.
 #[cfg(test)]
 mod tests;

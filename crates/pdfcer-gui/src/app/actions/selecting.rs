@@ -1,36 +1,19 @@
-//! `app::actions::selecting` — the two actions that change WHAT IS SELECTED and
+//! `app::actions::selecting` — the actions that change what is selected and
 //! nothing else
 //!
-//! Carved out of [`super::action::Action`] and [`super::apply`] on 2026-09-07
-//! under R2.
-//!
-//! ## ★★★ The seam, and it is a statement rather than a size cut
+//! ## The boundary this module is named for
 //!
 //! Every other variant of `Action` asks the document to change: a move, a
-//! restyle, a page insert, a save. **These two change nothing in the file at
-//! all.** They set `doc.selection`, which is shell state — no `vector_edit`, no
-//! undo entry, no `edit_epoch` bump, nothing a save would write.
+//! restyle, a page insert, a save. **The variants here change nothing in the
+//! file at all.** They set `doc.selection`, which is shell state — no
+//! `vector_edit`, no undo entry, no `edit_epoch` bump, nothing a save would
+//! write.
 //!
-//! That is a real boundary and it was already implicit: `SelectObject`'s own
-//! doc comment argues at length that a *panel* raises an action rather than
-//! writing the selection directly, because a panel body is handed `&OpenDoc`
-//! and not `&mut`. The argument is about the same property this module is named
-//! for, and it now has somewhere to live that is not a file about applying
-//! edits.
-//!
-//! ## ★★ Why now, and the honest version of it
-//!
-//! `file.import_text` was wired the same day and took `action.rs`, `apply.rs`
-//! and `dispatch.rs` **all past R2's 1,500-line ceiling in one commit**. All
-//! three were already within twenty lines of it and `RESUME.md` had said so by
-//! name — *"one added line in either fails the build. Split before adding, not
-//! after."*
-//!
-//! ⇒ So this split is late rather than clever. What makes it a seam rather than
-//! a cut is the paragraph above; what makes it *this* seam rather than another
-//! is that these were the only two arms in `apply.rs`'s match that never touch
-//! the document, which is the shortest true sentence about any group in that
-//! file.
+//! The boundary is what the narrow signature of [`apply_action`] enforces:
+//! taking `&mut OpenDoc` and nothing else means an arm added here cannot reach
+//! anything it would have to reach in order to edit. Keep it that way — an arm
+//! that needs `PdfcerApp` belongs in a sibling module, because needing it is
+//! the evidence that the arm is not purely a selection.
 
 use crate::app::state::OpenDoc;
 use pdfcer_core::vector::{FormMarquee, MarqueeMode};
@@ -46,7 +29,7 @@ pub enum SelectionAction {
     /// [`apply_action`], where the marquee's `Enclosed` mode and the
     /// deliberately unbounded rectangle are.
     SelectAllOnPage,
-    /// ★★★ **Select exactly this object** — raised by the Objects panel when a
+    /// **Select exactly this object** — raised by the Objects panel when a
     /// row is clicked.
     ///
     /// # Why a panel raises an action instead of writing the selection
@@ -57,24 +40,22 @@ pub enum SelectionAction {
     /// is describing. Every other panel that changes something raises an action
     /// for the same reason, and this is not the place to make an exception.
     ///
-    /// # What it replaced
+    /// # One selection, written from both ends
     ///
-    /// `PanelsState::focus` — a second notion of *"the thing I am working on"*,
-    /// written only by the Objects panel and read only by the Properties panel,
-    /// which the canvas neither wrote nor read. The audit of 2026-08-26 found
-    /// three such notions in parallel (the armed tool, the panel focus, the
-    /// canvas selection) with no bridge between them, and named it the cause of
-    /// the operator's *"when I have an object selected like text the Tool tab
-    /// doesn't switch to giving me the editable stuff for that object."*
-    ///
-    /// Now there is one, written from both ends.
+    /// `doc.selection` is the only notion of *"the thing I am working on"*, and
+    /// a panel must not grow a private second one. A panel-local focus field
+    /// that the canvas neither writes nor reads is how the operator gets
+    /// *"when I have an object selected like text the Tool tab doesn't switch
+    /// to giving me the editable stuff for that object"* — the panel and the
+    /// canvas each believing something different is selected, with no bridge
+    /// between them. Raising this action is the bridge.
     SelectObject {
         /// The page the object is on, in the session's page space.
         page: usize,
         /// Which object, as a paint-order target — or `None` to select
         /// nothing.
         ///
-        /// ★ `None` rather than a second variant, because a row click is one
+        /// `None` rather than a second variant, because a row click is one
         /// act with one outcome: *this row is now the selection*. Clicking the
         /// already-selected row makes that selection empty, which is what
         /// clicking a selected item does in every list in every application,
@@ -86,22 +67,17 @@ pub enum SelectionAction {
 
 /// **Route one selection action.**
 ///
-/// ★ It takes `&mut OpenDoc` and nothing else — no `PdfcerApp`, no
+/// It takes `&mut OpenDoc` and nothing else — no `PdfcerApp`, no
 /// `&mut Vec<Action>`, no preferences. That narrow signature is the module's
 /// header made mechanical: an action that could reach anything else would be
-/// one that could change something, and neither of these can.
+/// one that could change something, and none of these can.
 pub(super) fn apply_action(doc: &mut OpenDoc, action: SelectionAction) {
     match action {
-        // ★★ A row click in the Objects panel, arriving as an action for
-        // the reason `SelectionAction::SelectObject`'s own docs give: a panel body
-        // holds `&OpenDoc`, not `&mut`, so a panel that changes something
-        // asks rather than writes.
-        //
-        // Here rather than before the document guard, because it needs the
-        // document and has no reason to run without one — the pre-guard
+        // Routed after the document guard, because a selection names parts of
+        // an open document and has no meaning without one — the pre-guard
         // match is for the actions that *make* a document open.
         //
-        // ★ No `vector_edit`, no epoch bump, no cache invalidation: **a
+        // No `vector_edit`, no epoch bump, no cache invalidation: **a
         // selection is not an edit.** It names parts of a document and
         // changes nothing a save would write. `canvas`'s header makes that
         // argument for the canvas selection; this is the same argument
@@ -114,17 +90,15 @@ pub(super) fn apply_action(doc: &mut OpenDoc, action: SelectionAction) {
         },
         SelectionAction::SelectAllOnPage => {
             let page = doc.view.page_index;
-            // ★★★ A LARGE FINITE RECT, not `Rect::EVERYTHING`.
+            // A large finite rect, never `Rect::EVERYTHING`.
             //
-            // The first version used `EVERYTHING` and selected **nothing**,
-            // measured on the operator's own drawing: `select-all page=0
-            // n=0`. The provider maps the query rectfrom canvas space into
-            // PDF space before asking the engine, and an infinite rect put
+            // The provider maps the query rect from canvas space into PDF
+            // space before asking the engine, and an infinite rect put
             // through an affine transform yields NaN — after which every
-            // containment test is false and the answer is silently empty.
-            //
-            // ⇒ Infinity is not a safe "everything" when a coordinate
+            // containment test is false and Select All silently answers
+            // empty. Infinity is not a safe "everything" when a coordinate
             // system change stands between the caller and the comparison.
+            //
             // A million points is about 350 metres of paper; no page
             // approaches it, and every arithmetic step stays finite.
             const EVERYWHERE: f32 = 1.0e6;
@@ -134,17 +108,14 @@ pub(super) fn apply_action(doc: &mut OpenDoc, action: SelectionAction) {
             );
             let hits = doc
                 .page_objects()
-                // ★ `Enclosed` stated rather than implicit, as of 2026-09-02
-                // when the mode became a parameter (O88): under
-                // `Rect::EVERYTHING` the two modes agree, and a reader must
-                // not have to work that out before believing Select All is
-                // unaffected by a change to what a rubber band means.
-                // ★ `Include` as of 2026-09-11 — which is what Select All has
-                // always answered, now said out loud. Select All is a census:
-                // a form on the page is one of the things on the page, it is
-                // an edit operand, and leaving it out would make *"select
-                // everything, then delete"* quietly leave the title block
-                // behind.
+                // Both modes stated rather than left to a default, so that a
+                // change to what a rubber band means cannot silently change
+                // what Select All answers.
+                //
+                // `Include`, because Select All is a census: a form on the
+                // page is one of the things on the page and is an edit
+                // operand, so leaving it out would make *"select everything,
+                // then delete"* quietly leave the title block behind.
                 .map(|p| p.hit_test_rect(page, all, MarqueeMode::Enclosed, FormMarquee::Include))
                 .unwrap_or_default();
             crate::diag::trace(|| {

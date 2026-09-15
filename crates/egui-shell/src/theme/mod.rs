@@ -1,31 +1,19 @@
 //! What the application looks like — the single place that decides.
 //!
-//! # Why this module exists
+//! # Why the look is data
 //!
-//! *Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\theme.rs` (601
-//! lines, 2026-08-12). The reasoning below is the original's and is the
-//! most valuable thing being transferred; what changed is recorded under
-//! "What changed in the salvage" at the end of this header.*
-//!
-//! Until the source module existed, nothing set a style at all. The whole
-//! application ran on `egui`'s stock appearance, and every colour it drew
-//! beyond that was a `Color32::from_rgb(…)` literal at its use site — 26
-//! of them, four named, the rest inline in a 27,000-line file. There was
-//! no answer to "what colour is this application's accent?" other than
-//! reading the source.
-//!
-//! That is not a cosmetic problem, it is a *change-cost* problem. A
-//! restyle under those conditions is a sweep through every call site
-//! where the failure mode is not a crash but INCONSISTENCY — the sites
-//! you miss leave two-thirds of a theme, which looks worse than none and
-//! cannot be caught by a test that only knows about compilation.
+//! An application whose colours are `Color32::from_rgb(…)` literals at
+//! their use sites has no answer to "what is the accent?" other than
+//! reading the source. That is not a cosmetic problem, it is a
+//! *change-cost* problem: a restyle becomes a sweep through every call
+//! site, and the failure mode is not a crash but INCONSISTENCY — the
+//! sites you miss leave two-thirds of a theme, which looks worse than
+//! none and no compile-time check can see.
 //!
 //! So the look is data, in one place, and a CI gate
 //! (`check-theme-colors.sh`) forbids raw colours outside it. That is the
-//! same shape as a gated string catalogue (every operator-visible string
-//! in one module) and a gated icon set (every glyph, checked by parse and
-//! raster tests). Both of those already make their kind of change safe;
-//! this is the third.
+//! same shape as a gated string catalogue and a gated icon set: a class of
+//! change made safe by making the scattered form impossible.
 //!
 //! # ★ CHROME IS THEMED. CONTENT COLOUR IS NOT. THEY ARE NOT THE SAME KIND.
 //!
@@ -33,52 +21,45 @@
 //! the reason the gate has an escape hatch rather than being absolute.
 //!
 //! Some colours in an application are written **into the document the
-//! operator is editing**. In the application this module was salvaged
-//! from, two were: the colour of an annotation the operator authors,
-//! which reaches the annotation's `/C` entry and its appearance stream,
-//! and the same colour as offered by the properties panel.
+//! operator is editing** — the colour of markup the operator authors, and
+//! the same colour as offered by a properties surface.
 //!
 //! Those are the *operator's* choice about *document content*. They are
 //! not chrome, they are not the application's, and a theme must never
 //! touch them: restyling the application would silently change the colour
 //! of markup a user is about to commit to a file, and the change would
 //! only be visible after saving. A dark theme that quietly authored
-//! pale-grey annotations onto a white page would be a data defect wearing
-//! a cosmetic disguise.
+//! pale-grey markup onto a white page would be a data defect wearing a
+//! cosmetic disguise.
 //!
 //! Everything else — panel backgrounds, selection highlights, snap
-//! guides, node marks, measurement previews, the canvas backdrop — is
+//! guides, node marks, measurement previews, the content backdrop — is
 //! chrome, belongs here, and changes with the theme.
 //!
 //! The rule for anyone adding a colour: **if it can end up in a saved
 //! file, it is not a theme colour.** Mark such a site with the literal
 //! comment `// DOCUMENT COLOUR:` and the gate will allow it, because the
 //! gate's job is to catch the colour someone forgot to name, not to
-//! forbid the two that must stay where they are.
+//! forbid the few that must stay where they are.
 //!
 //! # Overlay colours are semantics, not decoration
 //!
 //! An application's overlay palette is not free choice. Its entries carry
-//! meaning the operator is expected to learn. In the salvage source:
-//!
-//! - the node mark and the subpath outline were different colours because
-//!   they answered different questions ("a point is here" vs "this run is
-//!   one subpath");
-//! - the measurement preview and the committed dimension differed because
-//!   one is a proposal and one is document state — the application's own
-//!   inferences must be visibly distinct from what the operator
-//!   committed;
-//! - form-field chrome had a hue of its own, distinct from the
-//!   object-selection accent, because it means "a control lives here"
-//!   rather than "this is selected".
+//! meaning the operator is expected to learn: a node mark and a subpath
+//! outline differ because they answer different questions ("a point is
+//! here" vs "this run is one subpath"); a measurement preview and a
+//! committed dimension differ because one is a proposal and one is
+//! document state, and the application's own inferences must be visibly
+//! distinct from what the operator committed; form-field chrome has a hue
+//! of its own because it means "a control lives here" rather than "this is
+//! selected".
 //!
 //! A theme may re-tune those hues. It may **not** collapse two of them
-//! into one, and the original enforced that for every preset: any theme
-//! in which two semantically distinct roles resolve to the same colour
-//! failed the build. Colour was never the only cue for any of these —
-//! each also carried a shape, a dash pattern or a label — but a theme
-//! that merges two roles removes a cue that was doing work, and it would
-//! do so silently.
+//! into one: any theme in which two semantically distinct roles resolve to
+//! the same colour fails the build. Colour is never the only cue — each
+//! role also carries a shape, a dash pattern or a label — but a theme that
+//! merges two roles removes a cue that was doing work, and does so
+//! silently.
 //!
 //! **Those role names are the application's vocabulary, not the shell's**,
 //! so they do not live in [`Palette`]. They live in [`Overlays`], which
@@ -110,43 +91,23 @@
 //!
 //! # The rendered-pair contrast gate
 //!
-//! [`contrast`] is new, and it is the reason this module was worth
-//! salvaging rather than re-deriving. See `DEFECTS.md` D2 and the [`tests`]
-//! module (split out of this file under rule R2, which caps a `.rs` file at
-//! 1500 lines): the original had two contrast tests, both
-//! of which compared *palette entries chosen by a human as a pair*, and
-//! the shipped defect was in the *assignment* — which palette entry ended
-//! up as a foreground and which as a background on the actual
-//! `egui::Style`. The gate closes that by reading the style back.
+//! A contrast test that compares *palette entries a human chose as a pair*
+//! checks the wrong thing. The defect class it misses — `DEFECTS.md` D2 —
+//! lives in the **assignment**: which palette entry ends up as a
+//! foreground and which as a background on the actual `egui::Style`.
+//! [`contrast`] closes that by reading the style back, and
+//! [`Theme::check_contrast`] is the entry point.
 //!
-//! ★★ **It enumerated ten pairs until 2026-09-04 and was green through
-//! three separately shipped contrast defects** (`REVIEW_TRIAGE.md` A15e),
-//! because none of the three was one of the ten. It now enumerates
-//! twenty-seven: the original widget matrix plus every foreground `egui`
-//! resolves through a `Visuals` *accessor* — body text, weak text, strong
-//! text, hyperlink, warn, error — on the grounds each is really drawn on,
-//! plus the two roles `visuals.selection` serves. [`contrast`]'s own
-//! header states which of the three defects the widening reaches and
-//! which two it deliberately still cannot, with the gates that do cover
-//! those. Knowing what a gate cannot see is part of the gate.
+//! It enumerates twenty-seven pairs: the widget matrix, plus every
+//! foreground `egui` resolves through a `Visuals` *accessor* — body text,
+//! weak text, strong text, hyperlink, warn, error — because each is really
+//! drawn on something, plus the two roles `visuals.selection` serves.
+//! [`contrast`]'s own header states which contrast defects the enumeration
+//! reaches and which two it deliberately cannot, naming the gates that do
+//! cover those. Knowing what a gate cannot see is part of the gate.
 //!
-//! # What changed in the salvage
-//!
-//! 1. **`eframe::egui` → `egui`.** The shell does not depend on `eframe`.
-//! 2. **`DEFECTS.md` D2 is fixed** — see `Theme::write_style`.
-//! 3. **A new [`Palette::on_accent`] role**, because the D2 defect's root
-//!    cause was reaching for a *plate* colour to use as a *text* colour.
-//! 4. **Application-specific overlay roles moved out** of [`Palette`]
-//!    into [`Overlays`]. `node_mark`, `subpath_outline`,
-//!    `dimension_selected`, `preview`, `guide` and `field_chrome` were
-//!    a vector-PDF-editor's vocabulary and cannot be made domain-neutral
-//!    without renaming them into meaninglessness.
-//! 5. **A cross-crate test was dropped.** The original asserted that the
-//!    engine crate's default settings token resolved to this module's
-//!    default preset. That seam does not exist here — the shell has no
-//!    engine — and the equivalent test belongs in the application. See
-//!    [`Preset::from_key`]'s doc comment, which states the obligation.
-//! 6. **`egui::Id::new("pdfcer-theme")` → `"egui-shell-theme"`.**
+//! The tests live in the [`tests`] module rather than here, under rule R2
+//! (a `.rs` file is capped at 1500 lines).
 
 pub mod contrast;
 pub mod overlays;
@@ -188,23 +149,19 @@ pub struct Palette {
     ///
     /// # Why this is a role of its own, and not `label_backdrop`
     ///
-    /// This field did not exist in the salvage source, and its absence is
-    /// the root cause of `DEFECTS.md` D2. The original needed a light
-    /// foreground for the accent-filled active state and reached for
-    /// [`Self::label_backdrop`] — a *near-opaque plate colour meant to sit
-    /// over content* — because it happened to be light.
-    ///
-    /// That is a category error with a delayed cost. Two roles that must
-    /// vary independently were welded together, so the moment the accent
-    /// fill went missing (which is what D2 actually was) the foreground
-    /// had no background to justify it, and near-white text landed on
-    /// light grey. Naming the role makes the pairing explicit and makes
-    /// the contrast gate in [`contrast`] able to check it.
+    /// Without it, a theme needing a light foreground for the accent-filled
+    /// active state reaches for [`Self::label_backdrop`] — a *near-opaque
+    /// plate colour meant to sit over content* — because it happens to be
+    /// light. That is the category error behind `DEFECTS.md` D2, and its
+    /// cost is delayed: two roles that must vary independently are welded
+    /// together, so the moment the accent fill is missing the foreground
+    /// has no background to justify it and near-white text lands on light
+    /// grey. Naming the role makes the pairing explicit and makes the
+    /// contrast gate in [`contrast`] able to check it.
     ///
     /// It is also what lets the dark preset do the right thing: its
-    /// accent is a *light* blue, so its `on_accent` is near-black, which
-    /// is the opposite of what a shared "light plate" colour could ever
-    /// have expressed.
+    /// accent is a *light* blue, so its `on_accent` is near-black — which
+    /// a shared "light plate" colour could never express.
     pub on_accent: Color32,
     /// A separator or control border.
     pub outline: Color32,
@@ -232,19 +189,18 @@ pub struct Palette {
     ///
     /// # ★★★ WHAT THIS IS NOT: it is not [`Self::selection_fill`]
     ///
-    /// Read that sentence twice, because merging these two fields back
-    /// together would undo defect **T2**'s entire fix and would do it
-    /// silently.
+    /// Read that sentence twice. Merging the two fields back together is a
+    /// silent regression, not a compile error.
     ///
-    /// [`Self::selection_fill`] is the **27 %-alpha CANVAS wash** — the tint
+    /// [`Self::selection_fill`] is the **27 %-alpha CONTENT wash** — the tint
     /// laid over a selected object *on the document*, where seeing the object
     /// through the tint is the whole point. It is translucent on purpose, and
     /// a translucent fill is not a dimmer plate: it is a different colour over
-    /// every background it meets. Pointing `egui`'s widget channel at it is
-    /// what painted nineteen chrome controls with canvas ink on a wash
-    /// (luminance gap 72.5 in Dark, floor 90), and pointing a dialog's
-    /// affirmative button at it is what made the default action render *paler
-    /// than the Cancel beside it*.
+    /// every background it meets. Pointing `egui`'s widget channel at it
+    /// paints every chrome control with content ink on a wash — measured
+    /// luminance gap 72.5 in Dark against a floor of 90 — and pointing a
+    /// dialog's affirmative button at it makes the default action render
+    /// *paler than the Cancel beside it*.
     ///
     /// So: **this role is chrome and opaque; `selection_fill` is content and
     /// translucent.** They will often look like relatives — both are the
@@ -262,11 +218,11 @@ pub struct Palette {
     /// `text_edit_bg_color()` — [`Self::panel`] in this theme. `TextEdit` has
     /// no `.frame_stroke()`, so there is no per-widget override to escape with.
     ///
-    /// With `bg_fill = accent`, the ink had to be [`Self::on_accent`] (a
-    /// near-white plate colour under the light presets) and the focus ring
-    /// therefore became near-white on a near-white panel: gaps of
-    /// **17.9 / 5.0 / 29.1** across Quiet / Airy / Dark. A focused field
-    /// looked unfocused. That is `DEFECTS.md` D2's shape for the fourth time.
+    /// With `bg_fill = accent` the ink must be [`Self::on_accent`] — a
+    /// near-white plate colour under the light presets — and the focus ring
+    /// then becomes near-white on a near-white panel: gaps of
+    /// **17.9 / 5.0 / 29.1** across Quiet / Airy / Dark, i.e. a focused field
+    /// that looks unfocused. That is `DEFECTS.md` D2's shape again.
     ///
     /// Making the *plate* the diluted value instead of the *ink* dissolves the
     /// conflict, because the ink is then [`Self::accent`] — which is already
@@ -306,11 +262,11 @@ pub struct Metrics {
     // ★★★ THE RIBBON BAND'S OWN RHYTHM — `mockups/pdfcer-shell.html`
     //
     // Five numbers that exist because the band is the one surface in this
-    // application whose vertical proportions were **specified as a
+    // application whose vertical proportions are **specified as a
     // picture** rather than derived from `control_height`. The operator's
-    // instruction on 2026-09-04 was *"I want everything to look exactly
-    // like that including sizing"*, and the mockup's stylesheet is the
-    // readable form of "that":
+    // instruction is *"I want everything to look exactly like that
+    // including sizing"*, and the mockup's stylesheet is the readable form
+    // of "that":
     //
     // ```css
     // .app  { grid-template-rows: 30px 34px 96px 26px … }   /* the band */
@@ -354,14 +310,12 @@ pub struct Metrics {
     /// which is what makes the captions in a band share one baseline
     /// whether the group above used one row or three.
     ///
-    /// ★ It is **not** `GROUP_ROWS × (control_height + gutter)`, which is
-    /// what it used to be and is why the shipped band read as cramped
-    /// against the mock: that expression is "exactly as tall as two rows",
-    /// so a two-row group filled it edge to edge and the caption sat
-    /// immediately under the last control. The mockup's area is a
-    /// *budget* the rows are laid into, and the slack under a short group
-    /// is the thing the operator described as "the group caption sitting
-    /// lower".
+    /// ★ It is deliberately **not** `GROUP_ROWS × (control_height +
+    /// gutter)`. That expression is "exactly as tall as two rows", so a
+    /// two-row group fills it edge to edge and the caption sits
+    /// immediately under the last control — which reads as cramped. The
+    /// area is a *budget* the rows are laid into, and the slack under a
+    /// short group is what puts the caption low.
     ///
     /// # Invariant
     ///
@@ -390,9 +344,9 @@ pub struct Metrics {
     /// drift apart, which is a distinction no reader of the band could
     /// name.
     ///
-    /// ★ This is a **raise**, not a reduction. The captions were drawn
-    /// with `RichText::small()`, i.e. `egui`'s `TextStyle::Small`, which
-    /// is 9 pt — the mockup asks for 11.
+    /// ★ It is larger than `egui`'s `TextStyle::Small` (9 pt), which is
+    /// what `RichText::small()` would give: the mockup asks for 11, so the
+    /// band must state the size rather than take the stock small.
     pub ribbon_caption_pts: f32,
     /// **The icon size on a `Large` control** — `svg.g.big { width: 24px }`.
     ///
@@ -400,8 +354,7 @@ pub struct Metrics {
     /// entire visual argument for a Large control: it is not a taller
     /// button with the same picture in it, it is a **bigger picture**. A
     /// Large control drawn with a 16 pt glyph reads as an ordinary control
-    /// with an unusual amount of air around it, which is exactly how the
-    /// shipped band looked beside the mock.
+    /// with an unusual amount of air around it.
     pub ribbon_icon_large_pts: f32,
     /// **The height of a `Large` control** — `.rb.big { height: 56px }`.
     ///
@@ -515,16 +468,13 @@ impl Theme {
                 content_backdrop: Color32::from_rgb(0x6E, 0x70, 0x74),
                 text: Color32::from_rgb(0x1C, 0x1C, 0x1E),
                 text_muted: Color32::from_rgb(0x5E, 0x60, 0x66),
-                // Deliberately NOT (30, 110, 220). In the salvage source
-                // that was an overlay role's value — "a point is here" —
-                // and the first run of the overlay-distinctness test
-                // caught the collision: an accent chosen for chrome
-                // happened to land exactly on an overlay role that means
-                // something else. Deeper, so selection and the overlay
-                // stay tellable apart on the same surface. The overlay
-                // roles now live in `Overlays`, but the constraint is
-                // unchanged and `Overlays::assert_distinct` is how an
-                // application re-checks it.
+                // Deliberately NOT (30, 110, 220): that value is an
+                // application overlay role ("a point is here"), and a
+                // chrome accent equal to an overlay role makes selection
+                // and the overlay indistinguishable on the same surface.
+                // Deeper, so the two stay tellable apart.
+                // `Overlays::assert_distinct` is how an application
+                // re-checks the constraint against its own role set.
                 accent: Color32::from_rgb(0x17, 0x5C, 0xC4),
                 on_accent: Color32::from_rgb(0xFA, 0xFA, 0xFA),
                 outline: Color32::from_rgb(0xC4, 0xC6, 0xCA),
@@ -652,51 +602,38 @@ impl Theme {
                 accent: Color32::from_rgb(0x4C, 0x9A, 0xFF),
                 on_accent: Color32::from_rgb(0x10, 0x14, 0x1A),
                 outline: Color32::from_rgb(0x44, 0x48, 0x4F),
-                // ★★ RAISED FROM `#FF6B6B` ON 2026-09-04, BY THE PAIR-GATE
-                // WIDENING (`REVIEW_TRIAGE.md` A15e). It is the one shipped
-                // value that widening actually caught.
-                //
-                // `Theme::write_style` hands this role to
+                // ★★ LIGHTER THAN THE OBVIOUS SALMON, AND THE ARITHMETIC IS
+                // THE REASON. `Theme::write_style` hands this role to
                 // `visuals.error_fg_color`, which every dialog reads for the
                 // line that says the operator must act — and a dialog is
-                // painted on `window_fill`, i.e. on `panel`. The old value
-                // measured:
-                //
-                //   luma(#FF6B6B) = 0.2126·255 + 0.7152·107 + 0.0722·107
-                //                 = 138.46
-                //   luma(panel)   =  48.72   ⇒ gap 89.74, floor 90.
-                //
-                // ★ It is a MARGINAL miss and the arithmetic says why: the
-                // crude Rec. 709 measure weights red at 0.2126, so a
-                // saturated red scores far below how it reads. Under WCAG the
-                // same pair is 4.71:1 — a comfortable AA pass. The colour was
-                // not invisible; the gate was right at the edge of its own
-                // resolution.
-                //
-                // ★★ It was still fixed at the ROLE rather than exempted, and
-                // the reason is not the 0.26 itself: it is that 0.26 of
-                // headroom is not headroom. `panel` and `accent` are both
-                // live values in this preset — `selected_plate` is derived
-                // from `accent`, and Dark's focus ring already clears the
-                // floor by six — so the next chrome edit would have spent it
-                // silently, and the pair would have crossed the line inside a
-                // change about something else. An exemption would also have
-                // been the wrong shape: exemptions are for pairs no theme
-                // value can satisfy (see `contrast::EXEMPTIONS`), and this one
-                // is satisfied by twelve levels of green and blue.
+                // painted on `window_fill`, i.e. on `panel`.
                 //
                 //   luma(#FF7B7B) = 0.2126·255 + 0.7152·123 + 0.0722·123
                 //                 = 151.06
-                //   ⇒ on `panel` (48.72)   gap 102.34
+                //   ⇒ on `panel`   (48.72) gap 102.34
                 //   ⇒ on `surface` (37.86) gap 113.20
                 //
-                // The hue is unchanged (still a pure-red-channel salmon); only
-                // its lightness moved, by 16 levels on two channels, which is
+                // A 0x6B salmon measures 138.46 and clears `panel` by only
+                // 89.74 — under the floor of 90. That miss is marginal, and
+                // the crude Rec. 709 luma is why: it weights red at 0.2126, so
+                // a saturated red scores far below how it reads (the same pair
+                // is 4.71:1 under WCAG, a comfortable AA pass).
+                //
+                // ★★ Fix the ROLE rather than exempt the pair, on two grounds.
+                // A quarter-level of headroom is not headroom: `panel` and
+                // `accent` are both live values here — `selected_plate` is
+                // derived from `accent`, and this preset's focus ring already
+                // clears the floor by only six — so the next chrome edit
+                // spends it silently and the pair crosses the line inside a
+                // change about something else. And exemptions are for pairs no
+                // theme value can satisfy (see `contrast::EXEMPTIONS`), which
+                // this is not: twelve levels of green and blue satisfy it,
                 // below the threshold at which the colour stops reading as the
-                // same warning red. The light presets keep `#C02A2A` from
-                // `..quiet.palette`: their grounds are light, so the DARK red
-                // is the one that separates, and this preset's problem is the
-                // mirror of theirs.
+                // same warning red.
+                //
+                // The light presets keep `#C02A2A` from `..quiet.palette`:
+                // their grounds are light, so the DARK red is the one that
+                // separates. This preset's problem is the mirror of theirs.
                 danger: Color32::from_rgb(0xFF, 0x7B, 0x7B),
                 notice: Color32::from_rgb(0xE0, 0xA0, 0x40),
                 // ★★★ THE ONE PRESET WHERE THE LIGHT PRESETS' DERIVATION
@@ -739,14 +676,12 @@ impl Theme {
 
     /// Push this theme into `egui`'s own style.
     ///
-    /// # This is the hook that did not exist
+    /// # Call this once per frame, or the palette governs nothing
     ///
-    /// Before the salvage source existed, the only `style_mut` call in the
-    /// entire application was a local text-wrap fix inside the ribbon.
-    /// Nothing set a background, a text colour, a rounding or a spacing —
-    /// so the appearance was `egui`'s defaults plus whatever each call
-    /// site drew on top. Calling this once per frame is what makes the
-    /// palette actually govern the widgets rather than only the overlays.
+    /// Without it the appearance is `egui`'s defaults plus whatever each
+    /// call site draws on top: the palette reaches the overlays and never
+    /// the widgets, which is the two-thirds-of-a-theme failure this module
+    /// exists to prevent.
     ///
     /// Applied every frame rather than once at startup so a theme change
     /// takes effect immediately, with no restart and no cache to
@@ -806,28 +741,27 @@ impl Theme {
     ///
     /// # ★★★ Why this exists as a function rather than two field reads
     ///
-    /// Because the two fields have been separated twice, and both times the
-    /// result was a surface that shipped looking broken while every gate stayed
-    /// green.
+    /// Because a fill and a foreground fetched separately are correct
+    /// separately and wrong together, and the result is a surface that looks
+    /// broken while every gate stays green. Two shapes of that, both real:
     ///
-    /// 1. **DEFECTS.md D2** — the active ribbon tab took `egui`'s *selection*
-    ///    visuals and a plate colour meant for content, and rendered near-white
-    ///    on light grey. [`Palette::on_accent`]'s own doc comment records the
-    ///    root cause: two roles that must vary independently had been welded
+    /// 1. **`DEFECTS.md` D2** — an active ribbon tab taking `egui`'s
+    ///    *selection* visuals and a plate colour meant for content renders
+    ///    near-white on light grey. [`Palette::on_accent`]'s own doc comment
+    ///    states the root cause: two roles that must vary independently welded
     ///    together.
-    /// 2. **The operator's print-dialog report, 2026-09-03** — the affirmative
-    ///    button in *every* dialog was filled with
-    ///    [`Palette::selection_fill`], a **27 %-opacity** wash whose real job is
-    ///    tinting selected objects on a canvas. Over a light panel it
-    ///    composites *paler than an ordinary button's opaque fill*, so the
-    ///    default action looked **disabled**. He pressed it a dozen times and
-    ///    found a dozen queued print jobs.
+    /// 2. **An affirmative button filled with [`Palette::selection_fill`]** —
+    ///    a **27 %-opacity** wash whose real job is tinting selected objects in
+    ///    the content area. Over a light panel it composites *paler than an
+    ///    ordinary button's opaque fill*, so the default action reads as
+    ///    **disabled** and the operator presses it repeatedly, queueing the
+    ///    action once per press.
     ///
-    /// Both were correctly sourced from the theme. Neither used a literal, so
-    /// `tools/gates/check-theme-colors.sh` — which forbids raw `Color32`
-    /// outside this module — had nothing to say about either. **The rule that
-    /// gate enforces is "no invented colours"; it cannot enforce "the right
-    /// role".** A named pair is the mechanism that can: there is now one
+    /// Both values are correctly sourced from the theme, and neither is a
+    /// literal, so `tools/gates/check-theme-colors.sh` — which forbids raw
+    /// `Color32` outside this module — has nothing to say about either. **The
+    /// rule that gate enforces is "no invented colours"; it cannot enforce
+    /// "the right role".** A named pair is the mechanism that can: there is one
     /// spelling of *"paint something as the emphasised action"*, and a preset
     /// that changes its accent moves every such surface together.
     ///
@@ -837,15 +771,12 @@ impl Theme {
     /// and under a preset whose accent is dark it would be black on black.
     /// [`Palette::on_accent`] is the theme's own answer and inverts per preset.
     ///
-    /// ★ Deliberately NOT `selection.bg_fill`, and the reason has changed
-    /// shape twice without changing conclusion. It was wrong when that channel
-    /// carried [`Palette::selection_fill`] — a 27 % wash, incident 2 above —
-    /// and it is still wrong now that it carries [`Palette::selected_plate`],
-    /// because a plate is a *diluted* accent chosen to be readable under
-    /// `accent` INK. An emphasised action wants the accent at full strength
-    /// with [`Palette::on_accent`] on it. Asking for `selection.bg_fill` gets
-    /// you whichever of those two stories the widget channel is telling this
-    /// month, which is the entire argument for naming the pair.
+    /// ★ Deliberately NOT `selection.bg_fill`. That channel carries
+    /// [`Palette::selected_plate`], a *diluted* accent chosen to be readable
+    /// under `accent` INK. An emphasised action wants the accent at full
+    /// strength with [`Palette::on_accent`] on it. Reading the channel gets you
+    /// whichever pair it happens to serve, which is the entire argument for
+    /// naming this one.
     #[must_use]
     pub fn accent_pair(ctx: &egui::Context) -> (egui::Color32, egui::Color32) {
         let theme = Self::of(ctx);
@@ -862,10 +793,10 @@ impl Theme {
     ///
     /// Because **a correctly-sourced colour used for the wrong role passes
     /// every gate this project has.** `tools/gates/check-theme-colors.sh`
-    /// forbids invented values; it cannot forbid a wrong role, and that gap has
-    /// now shipped a visible defect three times (see [`Self::accent_pair`]'s
-    /// doc comment for all three, including the print dialog's affirmative
-    /// button rendering *paler than the Cancel beside it*).
+    /// forbids invented values; it cannot forbid a wrong role, and that gap is
+    /// what makes a wrong-role defect visible to the operator and invisible to
+    /// CI (see [`Self::accent_pair`]'s doc comment for the two shapes it
+    /// takes).
     ///
     /// A caller that needs "a swatch that reads as no particular colour" has to
     /// choose two roles, and the two roles that *look* right on the day are not
@@ -946,8 +877,8 @@ impl Theme {
     /// exists for the same reason [`Theme::accent_pair`] does: the two values
     /// are only correct *together*, and a call site that paints its own
     /// selected surface should state both in one breath rather than fetch a
-    /// fill here and a foreground there. That is precisely how D2 happened,
-    /// three times.
+    /// fill here and a foreground there — which is the shape of `DEFECTS.md`
+    /// D2.
     #[must_use]
     pub fn selected_widget_pair(ctx: &egui::Context) -> (egui::Color32, egui::Color32) {
         let theme = Self::of(ctx);
@@ -962,22 +893,21 @@ impl Theme {
     ///
     /// # ★★★ Why this is a named function and not `visuals().selection.stroke`
     ///
-    /// Because that is where it used to be read from, and it was the wrong
-    /// address. `egui::Visuals::selection` is `egui`'s styling channel for
-    /// **selected widgets** — see [`Theme::write_style`], which quotes the
-    /// four lines of `egui-0.35.0/src/widget_style.rs` that substitute it into
-    /// every `Button::selected(true)`. For as long as the theme pointed that
-    /// channel at the canvas, the canvas won and every selected chrome control
-    /// in the application was painted with canvas ink: accent text on a 27 %
-    /// wash, luminance gap 72.5 in the Dark preset against a floor of 90.
+    /// Because `egui::Visuals::selection` is `egui`'s styling channel for
+    /// **selected widgets** — see [`Theme::write_style`], which quotes the four
+    /// lines of `egui-0.35.0/src/widget_style.rs` that substitute it into every
+    /// `Button::selected(true)`. A theme that points that channel at the
+    /// content area paints every selected chrome control with content ink:
+    /// accent text on a 27 % wash, luminance gap 72.5 in the Dark preset
+    /// against a floor of 90. The channel serves chrome, and only one of the
+    /// two claimants can have it.
     ///
-    /// The standing lesson this project keeps re-learning, in its own words:
-    /// *a correctly-sourced value used for the wrong role passes every gate —
-    /// expose the PAIR behind a purpose-named function.* [`Theme::accent_pair`]
-    /// is that mechanism for chrome; this and [`Theme::canvas_selection_fill`]
-    /// are it for content. A call site that asks for
-    /// `canvas_selection_ink` cannot accidentally be asking for the chrome
-    /// role, because the two questions now have different spellings.
+    /// The standing rule: a correctly-sourced value used for the wrong role
+    /// passes every gate, so expose the PAIR behind a purpose-named function.
+    /// [`Theme::accent_pair`] is that mechanism for chrome; this and
+    /// [`Theme::canvas_selection_fill`] are it for content. A call site asking
+    /// for `canvas_selection_ink` cannot accidentally be asking for the chrome
+    /// role, because the two questions have different spellings.
     ///
     /// ★ "Canvas" here means the application's content area — the region
     /// [`Palette::content_backdrop`] sits behind. The shell has no opinion
@@ -1007,9 +937,9 @@ impl Theme {
     /// purpose**: seeing the object through the tint is the entire point of a
     /// selection wash over a drawing. That is also precisely why it is unfit
     /// for chrome — a translucent fill is not a dimmer accent, it is a
-    /// different colour over every background it meets, which is how a
-    /// dialog's default button once rendered paler than the Cancel beside it
-    /// (see [`Theme::accent_pair`], incident 2).
+    /// different colour over every background it meets — which is how a
+    /// dialog's default button renders paler than the Cancel beside it (see
+    /// [`Theme::accent_pair`], shape 2).
     ///
     /// # What this is NOT for
     ///
@@ -1051,14 +981,13 @@ impl Theme {
     /// something outside has a colour, the theme has to put text on it, and
     /// **there is no role to look up** — the answer has to be measured.
     ///
-    /// `DEFECTS.md` **D2** is what happens when it is not measured. D2 was a
-    /// foreground assigned for one fill and rendered on another, and it shipped
-    /// with two adjacent theme tests green, because
-    /// `tools/gates/check-theme-colors.sh` forbids *invented* colours and has
-    /// nothing to say about a *correctly-sourced colour used for the wrong
-    /// role*. A caller that painted a foreign fill and left the ink to the
-    /// theme would be re-creating D2 exactly, one preset change away from
-    /// invisible text — and this time on a colour no preset author controls.
+    /// `DEFECTS.md` **D2** is what happens when it is not measured: a
+    /// foreground assigned for one fill and rendered on another, invisible to
+    /// `tools/gates/check-theme-colors.sh`, which forbids *invented* colours
+    /// and has nothing to say about a *correctly-sourced colour used for the
+    /// wrong role*. A caller that paints a foreign fill and leaves the ink to
+    /// the theme re-creates D2 exactly, one preset change away from invisible
+    /// text — and on a colour no preset author controls.
     ///
     /// ⇒ **Fill and ink leave here together or neither leaves.** There is
     /// deliberately no `foreign_fill()` that returns only the plate.
@@ -1082,9 +1011,10 @@ impl Theme {
     ///
     /// # What this does NOT decide
     ///
-    /// The **frame**. A caller drawing a focus ring keeps the theme's ring:
-    /// a ring is the *cursor*, not content, and pdfcer's rule 4 admits a
-    /// pre-commit affordance while forbidding content to be restyled.
+    /// The **frame**. A caller drawing a focus ring keeps the theme's ring: a
+    /// ring is the *cursor*, not content, and the chrome/content rule in this
+    /// module's header forbids restyling content, not showing where the
+    /// operator is.
     #[must_use]
     pub fn foreign_fill_pair(
         ctx: &egui::Context,
@@ -1142,59 +1072,30 @@ impl Theme {
 
     /// The style write itself, shared by both of `egui`'s per-theme styles.
     ///
-    /// # ★ `DEFECTS.md` D2 is fixed here, and this is what was wrong
+    /// # ★ Three invariants this function must keep — `DEFECTS.md` D2
     ///
-    /// The salvage source looped over all five widget states setting
-    /// `corner_radius`, `bg_stroke` and `fg_stroke`, then wrote:
-    ///
-    /// ```text
-    /// v.widgets.inactive.weak_bg_fill = p.panel;
-    /// v.widgets.hovered.weak_bg_fill  = p.surface;
-    /// v.widgets.active.weak_bg_fill   = p.accent;
-    /// v.widgets.active.fg_stroke = Stroke::new(1.0, p.label_backdrop);
-    /// ```
-    ///
-    /// `label_backdrop` is `rgba(250,250,250,220)`. Pairing a near-white
-    /// foreground with an accent fill is correct. But **only
-    /// `weak_bg_fill` was assigned the accent — `widgets.active.bg_fill`
-    /// was never set at all.** Widgets that paint their background with
-    /// `bg_fill` rather than `weak_bg_fill` — `egui_tiles` tab buttons,
-    /// `CollapsingHeader` headers — therefore got a near-white foreground
-    /// on `egui`'s default light background. Every collapsible section
-    /// heading in the settings dialog and both dock tab labels were
-    /// unreadable at 1×.
-    ///
-    /// The fix has three parts, and only the first is the defect:
-    ///
-    /// 1. **`bg_fill` is assigned for every state**, not just
-    ///    `weak_bg_fill`. `DEFECTS.md` offers this or "stop overriding
-    ///    `active.fg_stroke`" as alternatives; assigning both fills is
-    ///    strictly better, because it also stops `egui`'s stock greys
-    ///    leaking through under the dark preset.
-    /// 2. **Every one of the ten fills is assigned**, from the palette. A
-    ///    field this function does not write keeps `Style::default()`'s
-    ///    value, which is a *light-theme* grey — so under the dark preset
-    ///    each unassigned fill was an invisible-text site waiting for the
-    ///    right widget to be used. The contrast gate would now refuse the
-    ///    theme, but only because there is nothing left unassigned for it
-    ///    to miss.
-    /// 3. **The foreground on the accent is [`Palette::on_accent`]**, not
-    ///    `label_backdrop`. See that field's doc comment: reaching for a
-    ///    content-facing plate colour to serve as chrome text is the
-    ///    category error that made the pairing invisible in the first
-    ///    place.
+    /// 1. **Both fills are assigned for every widget state.** `bg_fill` and
+    ///    `weak_bg_fill` are two different backgrounds that different
+    ///    widgets choose between: `egui_tiles` tab buttons and
+    ///    `CollapsingHeader` headers paint with `bg_fill`, ordinary buttons
+    ///    with `weak_bg_fill`. Assigning the accent to only one of them
+    ///    leaves a near-white `active.fg_stroke` sitting on `egui`'s stock
+    ///    light background — unreadable dock tab labels and section
+    ///    headings, at 1×, with nothing in the palette wrong.
+    /// 2. **All ten fills come from the palette.** A field this function
+    ///    does not write keeps `Style::default()`'s value, which is a
+    ///    *light-theme* grey — so under the dark preset every unassigned
+    ///    fill is an invisible-text site waiting for the right widget. The
+    ///    contrast gate can only refuse a theme whose fills it can read;
+    ///    what is never assigned is what it cannot see.
+    /// 3. **The foreground on the accent is [`Palette::on_accent`]**, never
+    ///    [`Palette::label_backdrop`]. See that field's doc comment:
+    ///    reaching for a content-facing plate colour to serve as chrome
+    ///    text is the category error behind D2.
     ///
     /// The regression test is
-    /// `every_rendered_pair_is_readable_in_every_preset`, and its
-    /// doc comment explains why the two tests that already existed could
-    /// not have caught this.
-    ///
-    /// ★ It was called `..._widget_pair_...` until 2026-09-04, when
-    /// `REVIEW_TRIAGE.md` A15e widened [`contrast::pairs`] from ten pairs
-    /// to twenty-seven. The word was dropped because it had stopped being
-    /// true, and the citation was updated here at the same time — a
-    /// renamed test cited by an old name is the drift
-    /// `every_declared_share_is_still_a_share` exists to shame.
+    /// `every_rendered_pair_is_readable_in_every_preset`; its doc comment
+    /// explains why a test that reads the palette cannot catch this class.
     fn write_style(style: &mut egui::Style, p: &Palette, m: &Metrics, preset: Preset) {
         let v = &mut style.visuals;
 
@@ -1206,19 +1107,10 @@ impl Theme {
         v.faint_bg_color = p.panel;
         v.window_stroke = egui::Stroke::new(1.0, p.outline);
         // ★★★ `visuals.selection` IS EGUI'S WIDGET CHANNEL. IT IS NOT THE
-        // CANVAS'S. — defect T2, `REVIEW_TRIAGE.md` §2b, fixed 2026-09-04.
+        // CONTENT AREA'S. Never point it at [`Palette::selection_fill`].
         //
-        // These two lines used to read:
-        //
-        // ```text
-        // v.selection.bg_fill = p.selection_fill;                  // a 27 % wash
-        // v.selection.stroke  = Stroke::new(1.0, p.accent);        // canvas ink
-        // ```
-        //
-        // which handed `egui`'s **selected-widget** styling channel to the
-        // *content area*. That is not a stylistic preference; it is a
-        // documented `egui` contract, and the consequence is mechanical.
-        // `egui-0.35.0/src/widget_style.rs:151-154`, verbatim:
+        // This is a documented `egui` contract, and the consequence is
+        // mechanical. `egui-0.35.0/src/widget_style.rs:151-154`, verbatim:
         //
         // ```text
         // if classes.has(SELECTED_CLASS) {
@@ -1230,60 +1122,40 @@ impl Theme {
         // ```
         //
         // So **every** bare `ui.selectable_label(true, …)` and every
-        // `Button::selected(true)` in the application — nineteen of them at
-        // the time of writing, across the ribbon, the menus and eight panels —
-        // painted `accent`-coloured text on a 27 %-alpha wash. Measured
-        // luminance gap in the Dark preset: **72.5**, against this module's
-        // own readable floor of 90 ([`contrast::READABLE_LUMA_GAP`]). Not one
-        // of those call sites is wrong. They ask `egui` for "selected"; the
-        // theme was answering with the wrong pair.
+        // `Button::selected(true)` in the application is painted from this
+        // pair, whether or not the call site mentions a colour. Point it at
+        // the 27 %-alpha content wash and all of them draw `accent` text on
+        // that wash: luminance gap **72.5** in the Dark preset, against this
+        // module's readable floor of 90 ([`contrast::READABLE_LUMA_GAP`]). Not
+        // one call site would be wrong; they ask `egui` for "selected" and the
+        // theme answers with the wrong pair.
         //
-        // ★★ Why this was invisible to every gate we owned ON THE DAY, and
-        // read the tense: this paragraph describes a state of the world that
-        // has since been changed on purpose, and it must not be cited as a
-        // present fact. `check-theme-colors` forbids **invented** colours, and
-        // both values were correctly sourced from the palette. `contrast::pairs`
-        // enumerated the five widget states × two fills, reading `fg_stroke`
-        // against `bg_fill` — and the selected pair was in none of them,
-        // because `egui` substitutes it *after* the style is read. The colours
-        // were named, the gate was green, and the surface was unreadable. That
-        // is the third time this exact shape has shipped (`DEFECTS.md` D2), and
-        // it is why `tools/gates/check-selection-channel.sh` exists.
-        //
-        // ⇒ **AMENDED 2026-09-04 by `REVIEW_TRIAGE.md` A15e: the gate can see
-        // it now.** `contrast::pairs` reproduces the substitution above and
-        // enumerates both roles this channel serves —
-        // `contrast::Origin::SelectedWidget` over each ground, and
-        // `Origin::FocusRing` — so re-pointing this channel at a wash fails
-        // `every_rendered_pair_is_readable_in_every_preset` rather than
-        // shipping. `check-selection-channel.sh` remains the gate over CALL
-        // SITES reading `visuals.selection` directly, which is a different
-        // question and still not one a `Style` can answer.
-        //
-        // ★★★ The reason this correction is written in rather than the old
-        // sentence being deleted: the old sentence was TRUE and became FALSE,
-        // and a paragraph that says "the gate cannot see X" is exactly the kind
-        // of premise a future reader cites to justify not adding a check. That
-        // is `REVIEW_TRIAGE.md` T1's whole lesson, one file over.
+        // Two gates cover the two halves of that. [`contrast::pairs`]
+        // reproduces the substitution above and enumerates both roles this
+        // channel serves — `contrast::Origin::SelectedWidget` over each ground
+        // and `Origin::FocusRing` — so re-pointing the channel at a wash fails
+        // `every_rendered_pair_is_readable_in_every_preset`.
+        // `tools/gates/check-selection-channel.sh` covers CALL SITES reading
+        // `visuals.selection` directly, which is a different question and not
+        // one a `Style` can answer. `check-theme-colors` covers neither: both
+        // values are correctly sourced from the palette, and it forbids only
+        // *invented* colours.
         //
         // ★ The pair below is `egui`'s own design for the channel — its stock
         // light theme pairs a pale blue `bg_fill` with a dark blue `stroke`,
         // i.e. *a plate and the ink that reads on it*, never a translucent
-        // tint. This theme now says the same thing in its own palette's words:
-        // [`Palette::selected_plate`] and [`Palette::accent`].
+        // tint — said in this palette's words: [`Palette::selected_plate`] and
+        // [`Palette::accent`].
         //
-        // ★★★ AND THE CANVAS DID NOT LOSE ANYTHING. The ~33 content-area
-        // readers that used to reach through this channel now call
+        // ★★ The content area is served instead by
         // [`Theme::canvas_selection_ink`] and [`Theme::canvas_selection_fill`],
-        // which return `accent` and `selection_fill` — *the identical values
-        // this channel used to carry*. The canvas renders pixel-for-pixel as
-        // before; what changed is that its colours now arrive by a name that
-        // says what they are for, so re-tuning chrome cannot silently re-tune
-        // the page overlay again.
+        // which return `accent` and `selection_fill`. Same values, a name that
+        // says what they are for — so re-tuning chrome cannot silently re-tune
+        // the content overlay.
         //
         // ═══════════════════════════════════════════════════════════════════
-        // ★★★ AND THE SECOND ROLE THIS CHANNEL SERVES: THE FOCUSED-TEXTEDIT
-        // RING. THIS IS THE PART THAT MAKES THE PLATE A PLATE.
+        // ★★★ THE SECOND ROLE THIS CHANNEL SERVES: THE FOCUSED-TEXTEDIT RING.
+        // THIS IS THE PART THAT MAKES THE PLATE A PLATE.
         // ═══════════════════════════════════════════════════════════════════
         //
         // `egui` reuses `selection.stroke` as the frame stroke of a **focused,
@@ -1303,26 +1175,25 @@ impl Theme {
         // `TextEdit` exposes no `.frame_stroke()`, so there is NO per-widget
         // override: whatever is in this channel is the ring, everywhere.
         //
-        // ⚠ THE FIRST ATTEMPT AT T2 PUT `on_accent` HERE AND BROKE THAT RING.
-        // `on_accent` is a near-white plate colour under the light presets, so
-        // the ring became near-white on a near-white panel — gaps of
-        // **17.9 / 5.0 / 29.1** (Quiet / Airy / Dark); Airy is white on white
-        // to within five levels of luminance, and a focused field looked
-        // unfocused. `DEFECTS.md` D2's shape for the FOURTH time, and this one
-        // was introduced by the fix for the third.
+        // ⚠ THE INK MUST NOT BE `on_accent`. It is a near-white plate colour
+        // under the light presets, so the ring becomes near-white on a
+        // near-white panel — gaps of **17.9 / 5.0 / 29.1** (Quiet / Airy /
+        // Dark), Airy white on white to within five levels of luminance, and a
+        // focused field that looks unfocused. That is `DEFECTS.md` D2's shape
+        // again.
         //
-        // ★★ THE ANALYSIS THAT SAID THE TWO ROLES WERE IRRECONCILABLE WAS
-        // ARITHMETICALLY RIGHT AND STRUCTURALLY WRONG. It ran:
+        // ★★ THE TWO ROLES LOOK IRRECONCILABLE AND ARE NOT. The argument that
+        // says they are runs:
         //
         //   · an ink readable on `accent`  (luma 84.8) needs luma ≥ 174.8
         //   · a ring readable on `panel`   (luma 232.1) needs luma ≤ 142.1
         //   · ⇒ empty intersection, in both light presets.
         //
-        // Every step holds — but only under the assumption that
-        // `selection.bg_fill` IS `accent`. It does not have to be. Dilute the
-        // PLATE instead of the INK and the same two constraints are satisfied
-        // by one colour, because the ink is then `accent` itself, which is far
-        // from the panel by construction (that is what an accent is for):
+        // Every step holds — under the assumption that `selection.bg_fill` IS
+        // `accent`. It does not have to be. Dilute the PLATE instead of the
+        // INK and one colour satisfies both constraints, because the ink is
+        // then `accent` itself, which is far from the panel by construction
+        // (that is what an accent is for):
         //
         //   preset │ selected pair            │ focus ring
         //          │ accent on selected_plate │ accent on panel
@@ -1340,25 +1211,25 @@ impl Theme {
         // ★ Three consequences worth stating, since nothing at a call site
         // will announce them:
         //
-        //  1. A SELECTED control no longer looks identical to a PRESSED one.
+        //  1. A SELECTED control does not look identical to a PRESSED one.
         //     `widgets.active` keeps the full `accent` + `on_accent` pair
-        //     twenty lines down, so "you are pressing this" is now louder than
+        //     twenty lines down, so "you are pressing this" is louder than
         //     "this one is on". That is the correct hierarchy — the first is
         //     momentary, the second is a persistent state — and it is what
         //     `egui`'s stock themes do.
-        //  2. Selected TEXT inside a `TextEdit` improved rather than
-        //     regressed. `text_selection/visuals.rs:39-40` takes its highlight
-        //     from `bg_fill` and its text from `stroke.color`, i.e. the same
-        //     pair, so it clears the floor by the same 103 / 119 / 123.
-        //  3. A `ProgressBar` improved most of all. It fills with `bg_fill`
-        //     but labels with `override_text_color` when set — which this
-        //     theme sets to `text` — so its label used to be `text` on
-        //     `accent`: a gap of 56.7 in Quiet. On the plate it is 159.8.
+        //  2. Selected TEXT inside a `TextEdit` rides on the same pair.
+        //     `text_selection/visuals.rs:39-40` takes its highlight from
+        //     `bg_fill` and its text from `stroke.color`, so it clears the
+        //     floor by the same 103 / 119 / 123.
+        //  3. A `ProgressBar` benefits most. It fills with `bg_fill` but
+        //     labels with `override_text_color` when set — which this theme
+        //     sets to `text` — so with `accent` as the fill its label would be
+        //     `text` on `accent`, a gap of 56.7 in Quiet. On the plate it is
+        //     159.8.
         //
         // ★ The blinking caret (`visuals.text_cursor`, a separate 2 pt stroke
-        // this function does not touch) is unchanged and remains the other
-        // focus cue; the ring is now a real second one rather than a decoration
-        // that happened to be invisible.
+        // this function does not touch) is the other focus cue. The ring is a
+        // real second one, not a decoration that happens to be invisible.
         v.selection.bg_fill = p.selected_plate;
         v.selection.stroke = egui::Stroke::new(1.0, p.accent);
         v.hyperlink_color = p.accent;

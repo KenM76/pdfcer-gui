@@ -1,24 +1,19 @@
-//! # `app::actions::textannot` — authoring the annotations that carry WORDS
+//! # `app::actions::textannot` — authoring the annotations that carry words
 //!
-//! The sticky note, the text box and the stamp: the three markup kinds whose
-//! gesture ends in a dialog the operator types into, rather than on a mouse
-//! release. Split out of [`super::apply`] under **R2** on 2026-08-28, when
-//! author-time opacity took that file past 1,500 lines for the sixth time.
+//! The sticky note, the text box and the stamp: the markup kinds whose gesture
+//! ends in a dialog the operator types into, rather than on a mouse release.
 //!
-//! ## ★★ Why THIS arm, when four markup arms sit beside it
+//! ## Why this arm has a file when the other markup arms share one
 //!
-//! Because it is the only one of the four that **composes** rather than routes.
-//! `CommitMarkup` and `CommitTextMarkup` each build a spec and call the engine
-//! — six lines apiece, and their own headers say the arm *"routes; it does not
-//! compute"*. This one resolves an author from preferences, reads a clock,
-//! builds a `MarkupNote`, builds a `MarkupOptions`, decides whether the text is
-//! empty, and traces two separate facts about what it wrote. That is a subject,
-//! not a routing table entry, and a subject is what R2 asks a file to be about.
+//! Because it **composes** rather than routes. `CommitMarkup` and
+//! `CommitTextMarkup` each build a spec and call the engine, and their own
+//! headers say the arm *"routes; it does not compute"*. This one resolves an
+//! author from preferences, reads a clock, builds a `MarkupNote`, builds a
+//! `MarkupOptions`, decides whether the text is empty, pre-turns the mark for a
+//! rotated page, and traces two separate facts about what it wrote. That is a
+//! subject, and a subject is what a file is asked to be about.
 //!
-//! ⇒ Moving one of the six-line arms instead would have made the count work and
-//! left the thing that grows in the file that keeps overflowing.
-//!
-//! ## What is deliberately NOT here
+//! ## What is deliberately not here
 //!
 //! **Editing** a note on an annotation that already exists —
 //! `super::annots::set_note` and `clear_note`. Authoring and editing are
@@ -38,31 +33,16 @@ use crate::canvas::textannot::TextAnnotKind;
 use crate::text::panels::textannotstyle as ts;
 use pdfcer_core::annot_author::StampLabelFit;
 
-/// **Author a text-bearing annotation** — a sticky note, a text box or a stamp
-/// — signed, dated, and at the pen's opacity.
+/// **What the operator placed** — the values that come off the action,
+/// grouped so [`commit`] takes a handful of arguments rather than a row of
+/// them.
 ///
-/// `ink` and `opacity` are read from the live pen by the caller rather than
-/// carried on the action, and that is the OPPOSITE of `CommitMarkup`'s rule.
-/// The difference is real: this is raised by a **dialog the operator has been
-/// sitting in**, and applied on the frame they press Accept, so there is no
-/// window across which the value could go stale. `CommitMarkup` is raised by a
-/// gesture that finished frames before the queue drains.
-/// **What the operator placed** — the six values that come off the action,
-/// grouped so the function that consumes them takes four arguments rather than
-/// ten.
-///
-/// ★ A struct rather than a longer parameter list, and not only to satisfy a
-/// lint: `page`, `kind`, `rect`, `stamp`, `stamp_size` and `icon` are **one
-/// thing the operator did**, while `prefs` and the pen are settings that happen
-/// to be in scope. A signature that mixed all eight in a row would let a caller
-/// transpose two of them silently, which on `(usize, …)` positions is the class
-/// of mistake that compiles.
-///
-/// ⚠ The doc above said **four values** and **six arguments** until
-/// 2026-09-06, then five and seven; it now describes **six** and **eight**.
-/// Corrected each time rather than left, because the sentence's whole point is
-/// the count — a prose count that has drifted from the struct is worse than no
-/// count, since it reads as a measurement.
+/// A struct rather than a longer parameter list, and not only to satisfy a
+/// lint: every field here is part of **one thing the operator did**, while
+/// `prefs` and the pen are settings that happen to be in scope. A signature
+/// that mixed them all in a row would let a caller transpose two silently,
+/// which on adjacent `usize` and `f64` positions is the class of mistake that
+/// compiles.
 pub(super) struct Placement {
     /// The page it goes on.
     pub page: usize,
@@ -72,8 +52,7 @@ pub(super) struct Placement {
     pub rect: pdfcer_core::page_tree::Rect,
     /// Which stamp face, for the stamp kind.
     pub stamp: pdfcer_core::annot_author::StampName,
-    /// ☑ **How big the stamp's label is drawn** (engine `Pass 287.0`), for
-    /// the stamp kind.
+    /// **How big the stamp's label is drawn**, for the stamp kind.
     ///
     /// `stamp`'s and `icon`'s third sibling, and it arrived by the same route
     /// they did: dialog → `Action::CommitTextAnnot` → here →
@@ -82,7 +61,7 @@ pub(super) struct Placement {
     /// always has a selection — here the selection that means *"let the box
     /// decide"*, which is a value, not an absence.
     pub stamp_size: crate::canvas::textannot::StampSize,
-    /// ★ Which icon (`/Name`, §12.5.6.4 Table 172), for the sticky kind.
+    /// Which icon (`/Name`, §12.5.6.4 Table 172), for the sticky kind.
     ///
     /// The exact counterpart of `stamp` one field up, and it arrived by
     /// following that field's route: dialog → `Action::CommitTextAnnot` → here
@@ -92,10 +71,10 @@ pub(super) struct Placement {
     pub icon: pdfcer_core::annot_author::StickyIcon,
 }
 
-/// **What the placing act tells the operator afterwards** — the surviving half
-/// of R8b rule 4, read off `TextAnnotOutcome` (`pdfcer-core` `Pass 291.0`).
+/// **What the placing act tells the operator afterwards** — the owed half of
+/// R8b rule 4, read off `pdfcer_core::edit::TextAnnotOutcome`.
 ///
-/// # ★★★ What is said, what is deliberately NOT, and why the silences are the argued half
+/// # What is said, what is deliberately not, and why the silences are argued
 ///
 /// Rule 4 has two clauses that pull in opposite directions and only one of
 /// them is about drawing. The forbidden half — no badge, no tint, no dashed
@@ -105,7 +84,7 @@ pub(super) struct Placement {
 /// owed half is *"an inference the operator cannot see still gets a sentence,
 /// off-canvas"*, and that is what this decides, outcome by outcome.
 ///
-/// # The three fields, and what each one is worth saying
+/// # The disclosures the outcome carries, and what each is worth saying
 ///
 /// | field | said? | why |
 /// |---|---|---|
@@ -115,7 +94,7 @@ pub(super) struct Placement {
 /// | `stamp_label_fit` = `AsRequested` | **no** | nothing was decided for anyone |
 /// | `applied_autosize` | **no** | always `None` here; see below |
 ///
-/// ★★★ **`BoxGrown` is the interesting silence, and it is argued rather than
+/// **`BoxGrown` is the interesting silence, and it is argued rather than
 /// overlooked.** It is an inference — pdfcer chose a rectangle the operator
 /// did not drag — so the reflex is to disclose it. Two things say not to. The
 /// stamp is *visibly* wider than the box that was dragged, which is the test
@@ -124,11 +103,11 @@ pub(super) struct Placement {
 /// them. And `text::textannot::stamp_size_bound` already tells them, in the
 /// dialog, **before** they commit — so a sentence afterwards would be pdfcer
 /// telling the operator a thing it had just told them, which is the exact
-/// failure mode that teaches somebody to stop reading the status line. The
-/// nagging in the old GUI is on the record as having cost real visibility
-/// bugs; this is where that lesson is spent.
+/// failure mode that teaches somebody to stop reading the status line: a shell
+/// that repeats itself is a shell whose sentences stop being read, and those
+/// sentences are the only channel a rule 4 disclosure has.
 ///
-/// ★★ **The restyle route rules the opposite way on the same variant, and both
+/// **The restyle route rules the opposite way on the same variant, and both
 /// are right.** [`crate::app::actions::annots::set_text_annot_style`] does
 /// disclose `BoxGrown`, because there the rectangle is **existing content
 /// pdfcer changed** rather than a request in progress — a stamp that has sat
@@ -139,30 +118,31 @@ pub(super) struct Placement {
 /// routes — but *"did they author it, in the act they just performed?"* That
 /// module's own comment carries the long form.
 ///
-/// ⚠ **`LabelShrunk` and `LabelClipped` are unreachable from this route
-/// today**, because the placing dialog offers no fit policy and every
-/// `StampSize` variant carries the engine's default `GrowToText`. They are
+/// ⚠ **`LabelShrunk` and `LabelClipped` are unreachable from this route**,
+/// because the placing dialog offers no fit policy and every `StampSize`
+/// variant carries the engine's default `GrowToText`. They are
 /// handled anyway, and that is deliberate: the day a fit control appears on
 /// this dialog — or the day the engine changes which policy `StampStyle`
 /// defaults to — the disclosure must already be here, or the feature ships
 /// silent. A branch that is currently dead is cheaper than a rule 4 breach
 /// that is currently invisible.
 ///
-/// ★ `StampLabelFit` is `#[non_exhaustive]`. A fourth outcome this build has
-/// no words for still answers `is_inference()` and lands on the `_` arm, which
+/// `StampLabelFit` is `#[non_exhaustive]`. A variant this build has no words
+/// for still answers `is_inference()` and lands on the `_` arm, which
 /// says something true and vague rather than nothing at all. Silence there
 /// would be the worst of the three options: an inference that happened,
 /// reported as though it had not.
 ///
-/// ★★ `applied_autosize` is not read, and the engine says why in as many
-/// words: it is the **variable-text** auto-size, `None` whenever `/DA` names
-/// an explicit size, and a stamp's fitted size is always written as an
-/// explicit size. It is `None` on every stamp, always — which is the measured
-/// fact that produced `Pass 291.0` in the first place. A `/FreeText` this
-/// shell authors never asks for `0 Tf`, so it is `None` there too. Reading it
-/// would be a field that can only ever say nothing.
-/// ★★★ **Takes the two facts rather than the `TextAnnotOutcome` that carries
-/// them, and that is about being testable at all.**
+/// `applied_autosize` is not read, and the engine's own doc on the field says
+/// why: it is the **variable-text** auto-size, `None` whenever `/DA` names an
+/// explicit size, and a stamp's fitted size is always written as an explicit
+/// size. It is therefore `None` on every stamp. A `/FreeText` this shell
+/// authors never asks for `0 Tf`, so it is `None` there too. Reading it would
+/// be a field that can only ever say nothing.
+///
+/// # Why it takes two facts rather than the outcome that carries them
+///
+/// So that the rules below can be asserted at all.
 ///
 /// `TextAnnotOutcome` is `#[non_exhaustive]`, so no code outside `pdfcer-core`
 /// can build one — which would make every assertion below reachable only by
@@ -173,7 +153,7 @@ pub(super) struct Placement {
 /// the field lets each silence be asserted directly, including the ones that
 /// are unreachable from today's placing dialog.
 ///
-/// ★ The caller therefore does the unwrapping, in one place, in sight of the
+/// The caller therefore does the unwrapping, in one place, in sight of the
 /// engine call. That is the seam this project already uses for the same reason
 /// elsewhere: the impure read stays where the session is, the decision stays
 /// pure.
@@ -182,7 +162,7 @@ fn disclosures(unencodable_chars: usize, fit: Option<&StampLabelFit>) -> Vec<Str
     if let Some(line) = crate::text::textannot::placed_unencodable(unencodable_chars) {
         said.push(line);
     }
-    // ★★ `is_inference()` first, which is the ENGINE's question rather than a
+    // `is_inference()` first, which is the engine's question rather than a
     // re-derivation of it, and then the match narrows to the two outcomes a
     // screenshot cannot show. Written as a guard plus a match rather than as
     // one match with three silent arms, so that a new variant added upstream
@@ -223,82 +203,55 @@ pub(super) fn commit(
         stamp_size,
         ref icon,
     } = *placed;
-    // ★ The pen's ink, so a callout matches the comments beside it
-    // and one Style group governs the whole markup family.
+    // **The note the operator just typed, signed and dated.** `/Contents`,
+    // `/T` and `/M`, which the engine writes as a group or not at all.
     //
-    // Read here rather than carried on the action, which is the
-    // OPPOSITE of `CommitMarkup`'s rule two arms up — and the
-    // difference is real. That action is raised by a gesture that
-    // completed frames before the queue drains, so the live pen may
-    // have moved under it. This one is raised by a DIALOG the
-    // operator has been sitting in, and is applied on the same
-    // frame they pressed Accept. There is no window for the value
-    // to go stale across.
-
-    // ★★★ **The note the operator just typed, signed and dated.**
+    // # Why the text is passed twice, which looks like a mistake
     //
-    // `add_text_annotation_with` rather than the bare verb, and the
-    // difference is three keys: `/Contents`, `/T` and `/M`.
-    //
-    // # Why the text is passed TWICE, which looks like a mistake
-    //
-    // The spec already carries it — a sticky's `/Contents` is what
-    // its popup shows, a `/FreeText`'s is what is painted — and
-    // `MarkupOptions::note` writes `/Contents` again over the top.
-    // Identical bytes, so the file is unchanged by the duplication.
-    //
-    // ★★★ **…and "identical" is now enforced by the engine, on pain
-    // of the whole gesture being refused.** As of `pdfcer-core`
-    // `95a936e`, passing a `TextAnnotSpec::FreeText { text }` and a
+    // The spec already carries it — a sticky's `/Contents` is what its popup
+    // shows, a `/FreeText`'s is what is painted — and `MarkupOptions::note`
+    // writes `/Contents` again over the top. The two must be **byte
+    // identical**: a `TextAnnotSpec::FreeText { text }` and a
     // `MarkupOptions::note` whose words differ is
-    // `EditError::FreeTextNoteConflictsWithText` — refused before
-    // anything is written, because for that one subtype the two
-    // arguments are the same PDF key and there is no defensible way
-    // to pick a winner. This shell reported the trap; this is the
-    // side of it that has to stay clear of the muzzle.
+    // `EditError::FreeTextNoteConflictsWithText`, refused before anything is
+    // written, because for that one subtype the two arguments are the same PDF
+    // key and there is no defensible way to pick a winner.
     //
     // ⇒ Both strings therefore come from
-    // `crate::canvas::textannot::painted_text`, ONE function, rather
-    // than from one variable normalised in one of its two readers.
-    // Before 2026-09-06 they did not: `spec` trimmed and
-    // `MarkupNote::new` did not, so a text box typed with a trailing
-    // space — a stray space bar, invisible in the box — would have
-    // been refused outright, authoring nothing and showing the
-    // operator only the generic decline sentence. The engine turned a
-    // latent mess into a loud refusal, and the refusal found this.
+    // `crate::canvas::textannot::painted_text`, **one** function, rather than
+    // from one variable normalised in one of its two readers. Normalising in
+    // only one reader is invisible at the call site and loud at the engine: a
+    // text box typed with a trailing space — a stray space bar, invisible in
+    // the box — authors nothing and shows the operator the generic decline.
     //
-    // ⇒ The note is passed anyway because **`/T` and `/M` are only
-    // reachable through it.** The engine writes the three as a
-    // group or not at all, so a shell that wanted an author had to
-    // supply the text with it. Splitting them would be a change to
-    // `pdfcer-core`, and asking for one to avoid re-passing a string
-    // this frame already holds is not a case worth making.
+    // ⇒ The note is passed at all because **`/T` and `/M` are only reachable
+    // through it**, so a shell that wants an author must supply the text with
+    // it. Splitting them would be a change to `pdfcer-core`, and asking for
+    // one to avoid re-passing a string this frame already holds is not a case
+    // worth making.
     //
-    // # ★★ The author is a PREFERENCE and may be empty
+    // # The author is a preference and may be empty
     //
-    // Empty writes no `/T`, which is legal and is exactly what
-    // every annotation this shell authored before today did. It is
-    // not a defect to leave it unset — an anonymous comment is a
-    // real choice — so there is no nag and no default guessed from
-    // the OS user account.
+    // Empty writes no `/T`, which is legal. It is not a defect to leave it
+    // unset — an anonymous comment is a real choice — so there is no nag and
+    // no default guessed from the OS user account.
     //
-    // # ★ The date is UTC and may be absent
+    // # The date is UTC and may be absent
     //
-    // `app::clock` carries the whole argument, including why a
-    // local time labelled `Z` was the one option ruled out. `None`
-    // means the system clock is before 1970, and omitting `/M`
-    // beats writing a comment dated 1969.
-    // ★ Builders, not a struct literal: `MarkupNote` is
-    // `#[non_exhaustive]`, which is what keeps a future field a
-    // non-breaking addition for us. `by` and `at` take the value,
-    // so both are applied conditionally rather than passed as
-    // `Option`.
+    // `app::clock` carries the whole argument, including why a local time
+    // labelled `Z` was the one option ruled out. `None` means the system clock
+    // is before 1970, and omitting `/M` beats writing a comment dated 1969.
     //
-    // ★ **Shadowed, not a second name.** `text` the parameter is gone from
-    // this scope after this line, so a later reader cannot reach the raw
-    // string even by accident — the two callers below have nothing else to
-    // pass. A `let words = …` beside a live `text` would have left the
-    // mistake representable, and it is a mistake that compiles.
+    // Builders, not a struct literal: `MarkupNote` is `#[non_exhaustive]`,
+    // which is what keeps a future field a non-breaking addition here. `by`
+    // and `at` take the value, so both are applied conditionally rather than
+    // passed as `Option`.
+    //
+    // **Shadowed, not a second name.** `text` the parameter is gone from this
+    // scope after this line, so a later reader cannot reach the raw string
+    // even by accident — the two callers below have nothing else to pass. A
+    // `let words = …` beside a live `text` would leave the mistake
+    // representable, and it is a mistake that compiles.
     let text = crate::canvas::textannot::painted_text(text);
     let mut note = pdfcer_core::edit::MarkupNote::new(text);
     let author = prefs.author_name.trim();
@@ -310,36 +263,34 @@ pub(super) fn commit(
     }
     let options = MarkupOptions {
         note: Some(note),
-        // ★ No dash on a note, a text box or a stamp, and that is a decision
+        // No dash on a note, a text box or a stamp, and that is a decision
         // rather than a default taken by omission. `MarkupOptions::dash`
-        // arrived 2026-09-06 and applies to any mark; these three are the ones
-        // whose border is a *container* for words rather than a drawn line, and
-        // a dashed box around a comment reads as provisional — which R8b
-        // forbids content from doing. The dashed control belongs to the shapes.
+        // applies to any mark; these three are the ones whose border is a
+        // *container* for words rather than a drawn line, and a dashed box
+        // around a comment reads as provisional — which R8b forbids content
+        // from doing. The dashed control belongs to the shapes.
         dash: None,
-        // ★ The pen's opacity reaches the sticky note, the text box
-        // and the stamp as well, and it has to: a stamp is the
-        // markup most likely to be placed over drawing content, and
-        // an operator who set the group's opacity and found it
-        // applied to four kinds out of seven would be right to call
-        // that broken. One control, one meaning, every kind.
+        // The pen's opacity reaches the sticky note, the text box and the
+        // stamp as well, and it has to: a stamp is the markup most likely to
+        // be placed over drawing content, and an operator who set the Style
+        // group's opacity and found it honoured by some markup kinds and not
+        // others would be right to call that broken. One control, one meaning,
+        // every kind.
         opacity,
     };
     if let Some(spec) =
         crate::canvas::textannot::spec(kind, rect, text, stamp, icon, stamp_size, ink)
     {
-        // ★★ The note's three keys, on the diagnostic channel and
-        // NOT on the status line. An operator who typed a comment
-        // does not need to be told their own name was written; a
-        // driven check needs to know it, because `/T` and `/M` are
-        // invisible on the page by construction — a sticky's words
-        // live in a popup and its author lives nowhere at all
-        // until a reviewer UI draws a column.
+        // The note's three keys, on the diagnostic channel and not on the
+        // status line. An operator who typed a comment does not need to be
+        // told their own name was written; a driven check does, because `/T`
+        // and `/M` are invisible on the page by construction — a sticky's
+        // words live in a popup and its author lives nowhere at all until a
+        // reviewer UI draws a column.
         //
-        // ⇒ Without this line the feature has NO oracle short of
-        // parsing the saved file. It is the same argument
-        // `markup_move`'s `keys=` makes for the half of a move a
-        // screenshot cannot see.
+        // ⇒ Without this line the feature has no oracle short of parsing the
+        // saved file. It is the same argument `markup_move`'s `keys=` makes
+        // for the half of a move a screenshot cannot see.
         let signed = !prefs.author_name.trim().is_empty();
         let dated = crate::app::clock::pdf_date_utc().is_some();
         crate::diag::trace(|| {
@@ -349,10 +300,10 @@ pub(super) fn commit(
                 text.chars().count()
             )
         });
-        // ★★★ A ROTATED PAGE — 2026-09-09. The operator, on his 25-sheet
-        // Ghostscript drawing whose every page carries `/Rotate 90`: *"when I
-        // try to put a stamp on the drawing … the text comes out vertical, and
-        // there is no control to set the angle or horizontal."*
+        // **A rotated page.** The operator, on a 25-sheet Ghostscript drawing
+        // whose every page carries `/Rotate 90`: *"when I try to put a stamp
+        // on the drawing … the text comes out vertical, and there is no
+        // control to set the angle or horizontal."*
         //
         // `/Rotate` is a DISPLAY rotation (Table 30): the page's content is
         // authored in unrotated user space and the reader turns the whole
@@ -373,7 +324,7 @@ pub(super) fn commit(
         // does, and rotating its appearance would be the one way to make it
         // come out sideways.
         //
-        // ★ The pivot is the rect's centre, so the mark stays where the
+        // The pivot is the rect's centre, so the mark stays where the
         // operator dragged it; the engine derives the new upright `/Rect`.
         let rotate = doc.pages.get(page).map(|p| p.rotate).unwrap_or(0);
         let upright_turn = (rotate != 0 && kind != crate::canvas::textannot::TextAnnotKind::Sticky)
@@ -383,29 +334,25 @@ pub(super) fn commit(
             format!("text-annot-page-rotate page={page} rotate={rotate} turn={upright_turn:?}")
         });
         vector_edit(doc, "add-text-annot", page, 1, |session| {
-            // ★★★ **`_reporting`, not `_with`, and the difference is three
-            // disclosures this route dropped on the floor until 2026-09-10.**
+            // **`_reporting`, not `_with`**, because only this one hands
+            // back the disclosures rule 4 owes the operator.
             //
-            // The three entry points do identical work, take identical
-            // guards and leave one identical undo entry; they differ only in
-            // what they hand back. `add_text_annotation_with` returns the new
-            // object's id, which is the shape forty call sites in the engine
-            // use, and it is the shape this shell reached for because it was
-            // the one named in the example. `add_text_annotation_reporting`
-            // returns a `TextAnnotOutcome`, and the engine's own doc says
-            // what only this route can tell you.
+            // The entry points do identical work, take identical guards and
+            // leave one identical undo entry; they differ only in what they
+            // return. `add_text_annotation_with` returns the new object's id
+            // and discards the rest; `add_text_annotation_reporting` returns
+            // the `TextAnnotOutcome` that carries what the appearance
+            // generator decided.
             //
-            // ⚠ It is the same class of mistake as taking
+            // ⚠ Choosing the wrong one is the same class of mistake as taking
             // `..Default::default()` on a struct that grew a field: nothing
             // fails, nothing warns, and a capability is declined on the
-            // operator's behalf without a word appearing anywhere. There is
-            // no compiler between `_with` and `_reporting` — both compile,
-            // both author the same annotation, and only one of them can say
-            // what it did.
+            // operator's behalf without a word appearing anywhere. There is no
+            // compiler between the two — both compile, both author the same
+            // annotation, and only one of them can say what it did.
             //
-            // ★ Costs nothing. `_with` is literally
-            // `_reporting(...).map(|o| o.annot_id)`, so this is the same call
-            // with the discard removed.
+            // It costs nothing: `_with` is the same inner call with the
+            // outcome thrown away.
             let out = session.add_text_annotation_reporting(page, &spec, &options)?;
             let id = out.annot_id;
             if let Some(deg) = upright_turn {
@@ -434,10 +381,10 @@ pub(super) fn commit(
 
 #[cfg(test)]
 mod tests {
-    //! The two stamp reports of 2026-09-09, each as a test that was RED on the
-    //! code it corrects: *"the text comes out vertical"* on a `/Rotate 90`
-    //! page, and *"still can't adjust the size of a stamp on the canvas, or by
-    //! entering a different size in the properties box"*. Both routes end in
+    //! The two stamp properties the operator asked for by name: *"the text
+    //! comes out vertical"* on a `/Rotate 90` page, and *"still can't adjust
+    //! the size of a stamp on the canvas, or by entering a different size in
+    //! the properties box"*. Both routes end in
     //! [`super::super::annots::resize`] / [`super::commit`], so both are unit
     //! tests over those functions with a real document — no window, no
     //! pointer; the driven check is owed separately.
@@ -499,10 +446,12 @@ mod tests {
         });
     }
 
-    /// ★★★ **A stamp on a `/Rotate 90` page is authored turned by 90°, so the
-    /// reader's clockwise display turn brings it upright.** RED before the
-    /// fix: the appearance had no rotation and read sideways on every sheet
-    /// of the operator's drawing set.
+    /// **A stamp on a `/Rotate 90` page is authored turned by 90°, so the
+    /// reader's clockwise display turn brings it upright.**
+    ///
+    /// An appearance authored with no rotation reads sideways on every sheet
+    /// of a drawing set exported portrait and displayed landscape, which is
+    /// invisible to any test that only asserts the annotation exists.
     #[test]
     fn a_stamp_on_a_rotated_page_is_authored_upright() {
         let mut doc = open_local_fixture("rotated-90.pdf");
@@ -532,11 +481,14 @@ mod tests {
         assert!(doc.session.can_undo(), "author + turn is one undo step");
     }
 
-    /// ★★★ **A stamp resizes — proportionally and not — with the default
+    /// **A stamp resizes — proportionally and not — with the default
     /// modifiers, from the same `resize` the canvas grips and the Properties
-    /// width/height fields both raise.** RED before the fix: the engine
-    /// refused the carried appearance as "foreign" because neither Tool-panel
-    /// switch was set, and the sentence said pdfcer had not drawn it.
+    /// width/height fields both raise.**
+    ///
+    /// The default modifiers are the case that matters: a resize that only
+    /// works once a Tool-panel switch is set is a resize the operator will
+    /// report as broken, and the engine's refusal of a carried appearance
+    /// names it "foreign" rather than saying which switch is missing.
     #[test]
     fn a_stamp_resizes_with_the_default_modifiers() {
         let mut doc = open_local_fixture("four-pages.pdf");
@@ -590,28 +542,24 @@ mod tests {
         );
     }
 
-    /// ★★★ **The operator's own sentence, asked twice, and the half that
-    /// was still open on 2026-09-10:** *"still can't adjust the size of a stamp
-    /// on the canvas, or by entering a different size in the properties box."*
+    /// **A label size typed into the Properties box is the size the file
+    /// states, and reads back as the size the spinner reseeds from.** The
+    /// second half of the operator's sentence: *"still can't adjust the size
+    /// of a stamp on the canvas, or by entering a different size in the
+    /// properties box."* (The first half — the canvas grips — is the test
+    /// above this one.)
     ///
-    /// The first half of that sentence — the canvas grips — was answered on
-    /// 2026-09-09 by [`super::super::annots::resize`], and the test below this
-    /// one asserts it. **The second half was not**, and the reason was a real
-    /// gap rather than an oversight: until `pdfcer-core` `Pass 292.0` a stamp
-    /// already on the page had a label size that could be neither read nor
-    /// written. There was no verb to call.
-    ///
-    /// ★★ This test drives BOTH new verbs against a real document and asserts
+    /// This drives **both** engine verbs against a real document and asserts
     /// they agree with each other, which is the property a panel depends on
     /// and neither verb can guarantee alone. `set_text_annot_style` writing
     /// `/DA` is worth nothing if `stamp_label_parameters` reads a different
-    /// number back — the properties spinner would then be seeded with a value
-    /// the operator did not type, on the very next frame, and would look like
+    /// number back — the properties spinner would then be seeded on the very
+    /// next frame with a value the operator did not type, and would look like
     /// the edit had failed.
     ///
-    /// ⚠ Deliberately NOT a test of the widget. It asserts the round trip the
+    /// ⚠ Deliberately not a test of the widget. It asserts the round trip the
     /// widget sits on top of; whether a `DragValue` commits on `drag_stopped`
-    /// is a driven-check question and this project's founding rule says a
+    /// is a driven-check question, and this project's founding rule says a
     /// passing unit test is not a report of working software. That check is
     /// owed and is recorded as owed.
     #[test]
@@ -627,11 +575,10 @@ mod tests {
             },
         );
 
-        // ★★ The size the stamp starts at is DERIVED, not stated — the
-        // gallery's default is `FitTheBox` — so this is the shape of stamp
-        // every build before `Pass 287.0` produced and the majority of the
-        // stamps on the operator's drawings. Starting from a stated size would
-        // have tested the easy case.
+        // The size the stamp starts at is **derived, not stated** — the
+        // gallery's default is `FitTheBox` — which is the shape of the stamps
+        // already sitting on the operator's drawings. Starting from a stated
+        // size would test the easy case.
         let before = doc
             .session
             .stamp_label_parameters(id)
@@ -643,7 +590,7 @@ mod tests {
             "a size read off a baked appearance is still a size: {before:?}"
         );
 
-        // ★★ Through the SHELL's function, not the engine's, so the undo
+        // Through the **shell's** function, not the engine's, so the undo
         // entry, the epoch bump and the texture drop are exercised with it.
         // `doc.session` is an `Arc` and cannot be borrowed mutably here at
         // all, which is the type system enforcing the same thing: every write
@@ -677,7 +624,8 @@ mod tests {
         );
     }
 
-    /// ★★★ **What the placing act says, and — the harder half — what it deliberately does not.**
+    /// **What the placing act says, and — the harder half — what it does
+    /// not.**
     ///
     /// Every one of these is a **silence** or a **sentence**, and the silences
     /// are the ones worth asserting: a sentence that goes missing is noticed
@@ -701,7 +649,7 @@ mod tests {
             );
         }
 
-        /// ★★★ **The argued silence, and it is asserted rather than left to the comment above it.**
+        /// **The argued silence, asserted rather than left to a comment.**
         ///
         /// `BoxGrown` answers `is_inference() == true`, so the reflex reading of
         /// R8b rule 4 says disclose it. The header argues the opposite on two
@@ -730,7 +678,7 @@ mod tests {
             );
         }
 
-        /// The two a screenshot cannot show DO get a sentence.
+        /// The two a screenshot cannot show do get a sentence.
         #[test]
         fn a_shrunk_or_clipped_label_is_always_disclosed() {
             let shrunk = disclosures(
@@ -762,10 +710,10 @@ mod tests {
             );
         }
 
-        /// ★★ **The gap this pass found**, and the reason it existed: the placing
-        /// path called the entry point that returns an id and drops the outcome, so
-        /// an annotation was substituted in silence while a form field with the same
-        /// character had said so for months.
+        /// **A substituted character is named on the placing route too.**
+        /// Calling the entry point that returns an id and drops the outcome
+        /// is how this goes silent, and it goes silent in exactly the way a
+        /// form field carrying the same character does not.
         #[test]
         fn an_unencodable_character_is_named_even_though_the_question_mark_is_visible() {
             let said = disclosures(2, None);
@@ -785,7 +733,7 @@ mod tests {
             );
         }
 
-        /// ★ Two facts, two sentences — not one summary.
+        /// Two facts, two sentences — not one summary.
         #[test]
         fn the_two_kinds_of_disclosure_are_independent() {
             let said = disclosures(

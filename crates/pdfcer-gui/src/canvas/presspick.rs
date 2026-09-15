@@ -12,17 +12,17 @@
 //! selection**. Putting it there would have made a stated contract false, which
 //! is worse than having two small files.
 //!
-//! R2 forced the question on 2026-08-27 (`interact.rs` reached 1,570 lines) and
-//! the seam was already drawn: look, then decide, then act. This is the "act"
+//! The canvas's seam is: look, then decide, then act. This is the one "act"
 //! that has to happen before the "decide".
 //!
 //! ## What it is for
 //!
-//! Read [`at_press`]. The short version: selection used to happen on the
-//! **click**, which in egui means on release, so a press-and-drag on an
-//! unselected object could not move it — the operator got a marquee across the
-//! thing they were dragging. Every graphics editor selects on press, and the
-//! operator said so in those words.
+//! Every graphics editor selects on **press**. egui's `clicked()` fires on
+//! *release*, so a selection made there arrives too late for the gesture the
+//! same press starts: `pressing::look` would find an empty selection, no grip
+//! under the origin, and start a marquee across the object the operator was
+//! trying to drag. Running this first is what makes press-and-drag on an
+//! unselected object move it in one gesture. Read [`at_press`].
 
 use crate::app::modes::Capabilities;
 use crate::app::state::OpenDoc;
@@ -55,33 +55,23 @@ pub(super) fn at_press(
     // ★★★ **1b. A press on an unselected object selects it — before the
     // gesture machine is asked what the press means.**
     //
-    // The operator, 2026-08-26: *"if I add an image I Expect to click on it to
-    // resize but dragging doesn't resize […] Editing should work like 99% of
-    // the graphics programs out there."*
+    // The operator: *"if I add an image I Expect to click on it to resize but
+    // dragging doesn't resize […] Editing should work like 99% of the graphics
+    // programs out there."*
     //
-    // # What was actually wrong
+    // # Why it belongs HERE rather than in the gesture machine
     //
-    // Selection happened on the **click**, which in egui means on *release*.
-    // So a press-and-drag on an object that was not already selected never
-    // selected anything: `pressing::look` saw an empty selection, found no grip
-    // under the origin, and `press_kind` fell to
-    // `(None, None) => Marquee(Select)` — the operator got a rubber band across
-    // the thing they were trying to drag, and on release it selected. Two
-    // gestures to do what every other editor does in one.
-    //
-    // # Why it is fixed HERE rather than in the gesture machine
-    //
-    // Because the gesture machine's answer was never wrong. *"No grip under the
-    // origin, so marquee"* is correct — the fault was that the selection had not
-    // caught up with the pointer yet. Selecting at press time makes
-    // `pressing::look` (called on the very next statement, in this same frame)
-    // find `Grip::Move` and produce `DragKind::Move` through the path that
-    // already existed and is already tested.
+    // The gesture machine's rule — *"no grip under the origin, so marquee"* —
+    // is right. What it needs is a selection that has already caught up with
+    // the pointer. Selecting at press time makes `pressing::look` (called on
+    // the very next statement, in this same frame) find `Grip::Move` and
+    // produce `DragKind::Move` through the path that already exists and is
+    // already tested.
     //
     // That is why this is nine statements rather than a new `DragKind`, a new
-    // gesture phase, and an audit of every arm that reads one.
-    // `INTERACTION_GAP.md` priced this item as the most invasive of the
-    // unblocked set on the assumption it had to be done in the machine.
+    // gesture phase, and an audit of every arm that reads one. Anything that
+    // re-answers "what does this press mean" inside the machine is the more
+    // invasive shape and buys nothing.
     //
     // # The four things it must not disturb, and how each is held off
     //
@@ -126,7 +116,7 @@ pub(super) fn at_press(
 
 /// Whether a press this frame may select what is under it.
 ///
-/// **Five** conditions since 2026-08-31, each with its own reason in
+/// **Five** conditions, each with its own reason in
 /// [`interact`]'s step 1b: the press **landed on this canvas**, the primary
 /// button went down **this frame**, the plain Select tool is armed, the mode
 /// may edit content, and no region zoom is waiting to be spent.
@@ -135,7 +125,7 @@ pub(super) fn at_press(
 /// predicate reads in one place — a reader asking *"when does a press select?"*
 /// gets one answer rather than a function plus a condition beside it.
 ///
-/// # ★★★ The fifth condition, and why it was missing for so long
+/// # ★★★ The first condition: the press must have landed on this canvas
 ///
 /// `OPERATOR_REQUESTS.md` row **O75**:
 ///
@@ -143,27 +133,22 @@ pub(super) fn at_press(
 /// > through the side panel when I am trying to edit fields in the Properties
 /// > section."*
 ///
-/// He is describing this function. Until today it asked the **`Context`** —
-/// i.e. the whole window — *"did the primary button go down this frame?"*, and
-/// then took `press_origin()` from the same place and mapped it straight
-/// through the page's affine transform. [`crate::viewer::screen_to_page`] is
+/// Asking the **`Context`** — i.e. the whole window — *"did the primary button
+/// go down this frame?"* and then mapping `press_origin()` through the page's
+/// affine transform is what produces that. [`crate::viewer::screen_to_page`] is
 /// unbounded and unclamped, so **any** screen point converts to a valid page
 /// coordinate: a press on a `TextEdit` in the right dock resolves to real page
 /// content and replaces the selection the operator was editing the properties
 /// of.
 ///
-/// It hid at fit zoom, because there the dock maps off the sheet and the hit
+/// It hides at fit zoom, because there the dock maps off the sheet and the hit
 /// test misses. Zoom past fit on a CAD sheet — which is every working session
 /// on an A1 drawing — and the whole window maps inside the page.
 ///
 /// ★★ **This is `DEFECTS.md` D1's class, arrived at through the pointer
 /// instead of the keyboard**: a guard asking exactly the right question of
-/// exactly the wrong object. D1 was `egui_wants_keyboard_input()` (= *any*
-/// widget focused) where `text_edit_focused()` was meant, and it killed the
-/// Delete key. This is the same substitution, and the whole rest of this
-/// canvas already gets it right — every other signal in
-/// [`interact`]'s `PointerFrame` comes from the page's own
-/// [`egui::Response`]. Step 1b was the one that reached past it.
+/// exactly the wrong object. Every signal in [`interact`]'s `PointerFrame` must
+/// come from the page's own [`egui::Response`], never from the `Context`.
 ///
 /// # Why [`egui::Response::is_pointer_button_down_on`] and nothing else
 ///
@@ -234,74 +219,52 @@ fn press_selects(
 /// here would disagree with the gesture machine at the margins, and every
 /// disagreement is a press that selects when it should have transformed.
 ///
-/// # ★★ Why the grips, and not just the box — found by driving, within the hour
+/// # ★★ Why the grips, and not just the box
 ///
-/// The first version tested `grip_box.contains(point)` alone, and
-/// `rotate_handle_turns_a_selection` failed on the next driven run. **The
-/// rotate handle sits OUTSIDE the box** — `handles::rotate_rect` puts it above
-/// the top edge — so a press on it is not "covered" by the body, and with any
-/// object underneath this function selected that object and the rotate became a
-/// select-and-move.
+/// **The rotate handle sits OUTSIDE the box** — `handles::rotate_rect` puts it
+/// above the top edge — so a press on it is not "covered" by the body. Testing
+/// `grip_box.contains(point)` alone leaves any object underneath the handle to
+/// be selected by the body below, and the rotate becomes a select-and-move.
 ///
-/// A working gesture aimed at the wrong verb, which is the failure mode this
-/// canvas has now produced **five** separate times. It is worth naming every
-/// time because it never *looks* broken from a chair — something moves.
+/// The eight resize grips are inside the box and are never at risk from that,
+/// but they go through the same call anyway rather than through an argument
+/// that they are safe: an argument is a thing that stops being true.
 ///
-/// # ★★★ THE FIFTH INSTANCE WAS IN THIS FUNCTION, AGAIN — 2026-08-28
+/// A working gesture aimed at the wrong verb is this canvas's recurring failure
+/// mode, and it is worth naming because it never *looks* broken from a chair —
+/// something moves.
 ///
-/// The paragraph above records the fourth: `covers` asked the wrong *question*
-/// (the box, not the grips). This one is subtler and had the identical symptom:
-/// it asked the right question of **the wrong box**.
+/// # ★★★ The box must come from `pressing::grabbable`, not `overlay::grip_box`
 ///
 /// `overlay::grip_box` derives its answer from the selection's cached
 /// **content** outlines, which `select_annot` clears — an annotation is not
-/// content and has nothing decomposed to cache. So the moment a markup or a ce
-/// dimension gained a rotate handle (`Pass 155.0` / `Pass 159.0`), this
-/// function answered `None` for every press on one, `covers` was **false**, and
-/// the press fell into the select-on-press body below — which picks the topmost
-/// *content* object at that point and **replaces the annotation selection with
-/// it**, twenty points above the shape the operator was aiming at.
+/// content and has nothing decomposed to cache. Ask it about a markup or a ce
+/// dimension and it answers `None`, `covers` is **false**, and the press falls
+/// into the select-on-press body below — which picks the topmost *content*
+/// object at that point and **replaces the annotation selection with it**,
+/// twenty points away from the shape the operator was aiming at. Then
+/// `pressing::look`, on the very next statement, finds a content selection and
+/// the release rotates a page object: a perfect gesture, on something the
+/// operator never selected.
 ///
-/// ⇒ Then `pressing::look`, on the very next statement, would find a content
-/// selection and the release would rotate a page object. A perfect gesture, on
-/// something the operator never selected.
+/// `pressing::grabbable` is the one function that knows all four kinds of
+/// grabbable box — page content, a markup, a ce dimension and a form field's
+/// widget — which is why it is the one called here.
 ///
-/// The fix is `pressing::grabbable`, which is the one function that knows about
-/// all four kinds of grabbable box — page content, a markup, a ce dimension and
-/// a form field's widget. That is what this doc comment always *claimed* was
-/// being asked; it stopped being true when the second kind arrived, and nothing
-/// said so.
+/// ★ **The rule is about phrasing, not about this call.** "The same two
+/// functions `pressing::look` asks" is a claim about a call site somewhere
+/// else, held together by nothing. A guard that must agree with another module
+/// has to **call that module**, not resemble it.
 ///
-/// ★ **The lesson is in the phrasing, not the diff.** *"The same two functions
-/// `pressing::look` asks"* was a claim about a call site somewhere else, held
-/// together by nothing. A guard that must agree with another module has to
-/// **call that module**, not resemble it.
+/// # ★★★ The companion rule: order against the fork
 ///
-/// # ★★★ THE SIXTH INSTANCE WAS NOT HERE, AND IT WIDENS THE RULE — 2026-08-29
-///
-/// Recorded here because this is where the rule above lives and where the next
-/// person will look for it. On the first ever driven run of
-/// `rotating_a_markup_turns_it` the rotate handle was painted, was pressed at
-/// the rect the application itself declared, and **committed nothing with
-/// nothing said anywhere** — the same symptom as the fifth, produced by a line
-/// in a different file.
-///
-/// The cause was a guard in `canvas::rotating::drag` that neither called
-/// `grip_box` nor resembled it: `selection.object_indices_on(page).is_empty()`,
-/// standing *in front of* the annotation branch. It counts page **content**,
-/// which `select_annot` clears, so it returned before the routing decision was
-/// ever reached, on every markup and every ce dimension.
-///
-/// ⇒ So the rule above is necessary and was not sufficient. Its companion:
-/// **a guard written in one destination's vocabulary must stand AFTER the
+/// **A guard written in one destination's vocabulary must stand AFTER the
 /// branch that picks the destination, never before it.** Three destinations
-/// share the rotate gesture and four share a press; a content-shaped test in
-/// front of the fork answers about a subject the gesture may already have
-/// routed away from. `canvas::rotating`'s header carries the full account.
-///
-/// The eight resize grips are inside the box and were never at risk. They are
-/// covered by the same call anyway, rather than by an argument that they are
-/// safe: an argument is a thing that stops being true.
+/// share the rotate gesture and four share a press; a content-shaped test such
+/// as `selection.object_indices_on(page).is_empty()` placed in front of the
+/// fork answers about a subject the gesture may already have routed away from,
+/// and returns before the routing decision is reached at all.
+/// `canvas::rotating`'s header carries the same rule for its own fork.
 ///
 /// # ★ `GripSet::all()` here, where `pressing::look` narrows it
 ///
@@ -333,24 +296,20 @@ fn covers(
     let Some(grip) = grip else {
         return false;
     };
-    // ★★★ **ONLY `Grip::Move` is second-guessed** — and getting this wrong
-    // shipped for one afternoon on 2026-08-31, caught by the driven suite.
+    // ★★★ **ONLY `Grip::Move` is second-guessed.**
     //
     // The O72 downgrade below asks whether the press really landed on the
     // selected object. A press on a RESIZE GRIP or the ROTATE HANDLE does not:
     // those sit on the box's edges and corners, outside the object's own
-    // geometry, so `body_under` answers false for every one of them. The first
-    // version asked `grip_at(..).is_some()` and therefore refused to cover a
-    // press on a grip — `at_press` then RE-SELECTED whatever was under it, and
-    // the resize became a select-and-move.
+    // geometry, so `body_under` answers false for every one of them. Applying
+    // the downgrade to every grip therefore refuses to cover a press on a grip,
+    // `at_press` re-selects whatever is under it, and the resize becomes a
+    // select-and-move — two `selection-set … via=press` lines on the trace
+    // where there should be one.
     //
-    // `resize_scales_a_shape` and `shift_constrains_a_resize` both failed with
-    // *"the grip drag committed nothing and declined nothing"*, and the trace
-    // showed two `selection-set … via=press` lines where there should have
-    // been one. Exactly the failure this file's header warns about — *"every
-    // disagreement is a press that selects when it should have transformed"* —
-    // arrived at by making the two functions agree on the PREDICATE and not on
-    // which grip it applies to.
+    // That is the disagreement `covers`' own header warns about, reached by
+    // making this function and `pressing::look` agree on the PREDICATE and not
+    // on which grip it applies to.
     //
     // ★ The eight grips and the handle are DRAWN. The operator can see them,
     // and a press on one is unambiguous. `Grip::Move` is the only member with
@@ -361,15 +320,15 @@ fn covers(
         return true;
     }
     // ★★★ **…and for page CONTENT, inside the box is not the same as on the
-    // object** — `OPERATOR_REQUESTS.md` O72, 2026-08-31.
+    // object** — `OPERATOR_REQUESTS.md` O72.
     //
     // For a ce dimension, a markup annotation and a form field the box IS the
     // `/Rect`, so `in_box` is the whole answer and nothing more is asked. For
     // page content the box is `selection.outline_union()` — a rectangle around
-    // scattered geometry, mostly empty paper. Without this second question,
-    // selecting a title-block border (a hollow rectangle spanning a CAD sheet)
-    // made every subsequent press on the drawing "already covered", so nothing
-    // could be selected and no marquee could be started.
+    // scattered geometry, mostly empty paper. Without this second question a
+    // selected title-block border (a hollow rectangle spanning a CAD sheet)
+    // makes every subsequent press on the drawing "already covered", so nothing
+    // can be selected and no marquee can be started.
     //
     // ★★ It calls `pressing::body_under` rather than asking its own version.
     // This function's header is explicit that a second opinion computed

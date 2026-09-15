@@ -189,10 +189,13 @@ pub(super) fn position(
     //
     // `OPERATOR_REQUESTS.md` O24. Below this the scroll offset says where the
     // view is, and it is an `f32` over a content space of `page × zoom` where
-    // one unit is one screen pixel — so past about 2^24 content points it can
-    // only address every second pixel, then every sixteenth, and the view
-    // judders and sticks. Measured: at a trillion percent it moves in
-    // 2,048-pixel jumps.
+    // one unit is one screen pixel — so past 2^24 content points it can only
+    // address every second pixel, then every sixteenth, and the view judders
+    // and sticks. The step is a property of the CONTENT EXTENT rather than of
+    // the zoom: measured at an extent of 2.05e10 it was 2,048 px, and the
+    // hand-over is set far below that, at
+    // `viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT`, because holding the point
+    // under the cursor gives out long before addressing a pixel does.
     //
     // Above it the position becomes `DeepAnchor` — a page point in `f64` and
     // the screen pixel it sits under — which does not decay with zoom, and

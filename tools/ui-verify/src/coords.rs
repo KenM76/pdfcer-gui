@@ -6,7 +6,7 @@
 //! > **Scripts are written in document coordinates. Never in absolute screen
 //! > coordinates.**
 //!
-//! `PROJECT_PLAN.md` §4.2 lists this as one of three prerequisites that
+//! `PROJECT_PLAN.md` §4.3 lists this as one of three prerequisites that
 //! "belong in S1, not later", ahead of the panel-flexibility work that would
 //! otherwise invalidate it.
 //!
@@ -816,8 +816,8 @@ impl WindowFrame {
     /// outside it comes back with zero area, and the caller must treat that as
     /// a finding rather than as a measurement: the application declared a
     /// region that is not on screen, which is the clipped-out-of-its-pane
-    /// defect `PROJECT_PLAN.md` §4.2 prerequisite 2 cites two recorded cases
-    /// of. It is emphatically not "contrast 1.0".
+    /// defect `PROJECT_PLAN.md` §4.3 prerequisite 2 exists for. It is
+    /// emphatically not "contrast 1.0".
     #[must_use]
     pub fn logical_to_capture_pixels(&self, r: LRect) -> PixRect {
         let (cw, ch) = self.client_size;

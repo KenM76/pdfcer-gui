@@ -1,15 +1,14 @@
 //! # `build.rs` — put the application icon inside the executable, and stamp it
 //! with what it is
 //!
-//! Three jobs, in the order they were asked for: the icon, the build
-//! provenance ([`provenance`]), and — since 2026-09-04 — the **release
-//! version** ([`release`]).
+//! Three jobs: the application icon, the build provenance ([`provenance`]),
+//! and the release version ([`release`]).
 //!
-//! The first job. The operator asked, on 2026-08-18, for *"a pdf icon to the exe so
-//! it shows as the icon when I associate it with pdfs"*, and an icon Explorer
-//! can show is an icon in the executable's `.rsrc` section. Nothing loaded at
-//! run time can satisfy that: the shell reads the icon **without running the
-//! program**.
+//! The first job exists because the operator associates `.pdf` with this
+//! executable and wants Explorer to show a PDF icon for those files. An icon
+//! Explorer can show is an icon in the executable's `.rsrc` section — nothing
+//! loaded at run time can satisfy that, because the shell reads the icon
+//! **without running the program**.
 //!
 //! `assets/pdfcer-gui.rc` is the resource script and carries the reasoning for
 //! what is in it — the icon's ID, and why the `VERSIONINFO` block is worth
@@ -63,9 +62,8 @@ fn main() {
     println!("cargo:rerun-if-changed=assets/pdfcer-gui.rc");
     println!("cargo:rerun-if-changed=assets/pdfcer-gui.ico");
 
-    // The second job, added 2026-08-18 at the operator's request: stamp the
-    // executable with when it was built and what engine is inside it. See
-    // [`provenance`].
+    // The second job: stamp the executable with when it was built and what
+    // engine is inside it. See [`provenance`].
     provenance();
 
     #[cfg(windows)]
@@ -133,6 +131,17 @@ fn provenance() {
     println!("cargo:rustc-env=PDFCER_BUILD_TIME={stamp}");
 
     // This crate's own revision, so a build can be tied to a commit.
+    //
+    // ⚠ **A commit does not invalidate this script, so `-dirty` can outlive
+    // the dirt.** None of the inputs declared above changes when `git commit`
+    // runs: a commit rewrites `.git/refs/heads/<branch>` and `.git/logs/HEAD`,
+    // and neither is declared, while the declared `.git/HEAD` holds the
+    // literal text `ref: refs/heads/main` and is not touched at all. The
+    // consequence bites the release procedure specifically — the rebuild
+    // between the release commit and packaging is a no-op, so the packaged
+    // binary carries the pre-commit revision with `-dirty` still on it.
+    // `touch crates/pdfcer-gui/build.rs` before that rebuild forces a fresh
+    // stamp.
     let rev = git(&["rev-parse", "--short", "HEAD"], ".").unwrap_or_default();
     let dirty = git(&["status", "--porcelain"], ".")
         .map(|s| !s.trim().is_empty())
@@ -143,23 +152,25 @@ fn provenance() {
         if dirty { "-dirty" } else { "" }
     );
 
-    // The third job, added 2026-09-04. See [`release`]: this is the number the
-    // About window puts under the product name, and until this call existed
-    // there was nothing anywhere in the tree that carried it.
+    // The third job. See [`release`]: this is the number the About window puts
+    // under the product name.
     release(dirty);
 
     let lock = std::fs::read_to_string("../../Cargo.lock").unwrap_or_default();
 
     // The engine: version, revision, and the revision's commit time.
     //
-    // ★★ Looked up under BOTH names, newest first. `Cargo.lock` records the
-    // package's REAL name, and under the temporary rename shim
-    // (`Cargo.toml`'s `package = ...` keys) that is still the engine's
-    // pre-rename one — so a single literal here found nothing, the About window
-    // reported no engine version, and its own test caught it.
+    // ★★ Looked up under BOTH names, current one first. `Cargo.lock` records
+    // the package's REAL name, which is the engine's PRE-rename one wherever a
+    // `package = ...` rename shim stands between this workspace and the engine
+    // — and a single literal here then matches nothing, leaving the About
+    // window reporting no engine version at all.
     //
-    // ⇒ Falls away with the shim; `tools/gates/check-engine-rename-shim.sh`
-    // fires when that day comes and names this among the places to clean up.
+    // ⇒ This lockfile names `pdfcer-core` directly, so the fallback no longer
+    // fires; it is kept against a checkout whose lock predates the rename.
+    // `tools/gates/check-old-name-absent.sh` governs where the old stem is
+    // still allowed to appear, and the two exemption markers below are how this
+    // pair of literals declares itself to it.
     let (version, rev, repo) = {
         let new = locked_git_package(&lock, "pdfcer-core");
         if new.0.is_empty() {
@@ -182,14 +193,21 @@ fn provenance() {
     };
     println!("cargo:rustc-env=PDFCER_ENGINE_TIME={engine_time}");
 
-    // ★ iccce, which as of 2026-08-18 is NOT linked into this build.
+    // ★ iccce, looked up under that exact package name.
     //
-    // Reported as absent rather than omitted. `RIBBON_IA.md`'s no-placeholders
-    // rule governs *controls* — an unavailable capability offers no button —
-    // and this is a provenance report, not a control. An operator asking what
-    // is inside their build is owed "no colour management in this one", which
-    // is a different and more useful answer than silence. It fills in by itself
-    // the day the dependency is added.
+    // Reported as absent rather than omitted when the lookup finds nothing.
+    // `RIBBON_IA.md`'s no-placeholders rule governs *controls* — an unavailable
+    // capability offers no button — and this is a provenance report, not a
+    // control. An operator asking what is inside their build is owed "no colour
+    // management in this one", which is a different and more useful answer than
+    // silence.
+    //
+    // ⚠ **The argument is a PACKAGE name, not a project name**, and the two
+    // differ here. The colour-management crates reach this binary through
+    // `pdfcer-render` and are locked as `iccce-cmm`, `iccce-color` and
+    // `iccce-profile`; none of them is spelled `iccce`. So an empty result from
+    // this lookup means "no package by this name in the lockfile", which is a
+    // narrower claim than the sentence About draws from it.
     let (icc_version, icc_rev, icc_repo) = locked_git_package(&lock, "iccce");
     println!("cargo:rustc-env=PDFCER_ICCCE_VERSION={icc_version}");
     println!(
@@ -213,8 +231,8 @@ fn provenance() {
 /// Sets three `cargo:rustc-env` variables, and nothing else. Each is one
 /// *fact*; none of them is a sentence. The words that go around them live in
 /// `crate::text::about`, because every operator-visible string in this program
-/// does (rule R1, enforced by `tools/gates/check-ui-strings.sh`), and the
-/// decision about which sentence to draw lives in `crate::dialogs::about`,
+/// does — `tools/gates/check-ui-strings.sh` enforces it — and the decision
+/// about which sentence to draw lives in `crate::dialogs::about`,
 /// where it can be unit-tested. A build script cannot be tested by
 /// `cargo test`, so it is deliberately given nothing worth testing.
 ///
@@ -232,17 +250,16 @@ fn provenance() {
 /// `Cargo.toml` says `version = "0.1.0"` and carries a comment explaining that
 /// the crate is versioned by the pdfcer workspace it folds **into**, not by
 /// this staging workspace — at fold-in the line is deleted and
-/// `version.workspace = true` takes its place. **O109 and O110 both record the
-/// decision not to bump it**, in as many words: *"bumping it would have
-/// contradicted a recorded decision to make two numbers agree that are not the
-/// same number."*
+/// `version.workspace = true` takes its place. **O109 and O110 pin it there**,
+/// and that pin is not a drift to be closed: bumping the manifest would make
+/// two numbers agree that are not the same number.
 ///
 /// So `env!("CARGO_PKG_VERSION")` is not a stale source here, it is the
-/// **wrong** source — it answers a different question, and it answered it into
-/// the About window's headline as `Version 0.1.0` in what shipped as v0.5.0
-/// (review row A11). What a release of this program actually *is*, is a tag
-/// and a GitHub release built from it: `v0.1.0` … `v0.5.0`, all six pushed to
-/// `KenM76/pdfcer-gui` during O110. Reading the tag is reading the release.
+/// **wrong** source — it answers a different question, and drawing it puts
+/// `Version 0.1.0` in the About headline of a build that shipped as v0.5.0.
+/// What a release of this program actually *is*, is a tag and a GitHub release
+/// built from it: `v0.1.0` … `v0.5.0`, all six pushed to `KenM76/pdfcer-gui`
+/// during O110. Reading the tag is reading the release.
 ///
 /// ⚠ **Do not "fix" this by writing the number here.** A literal in this file
 /// would be a second place to bump, and the first one to be forgotten — the
@@ -280,8 +297,9 @@ fn provenance() {
 /// ⚠ **What must NOT happen in any of those cases is a number.** The version
 /// is either derived or it is absent; there is no default, no `0.0.0`, and no
 /// falling back to the crate manifest. A stale or invented version in an About
-/// box is worse than no version, because the operator cannot tell it is wrong
-/// — which is precisely how `Version 0.1.0` survived five releases.
+/// box is worse than no version, because the operator cannot tell it is wrong,
+/// and so never reports it — a wrong number in that window is self-concealing
+/// in a way an absent one is not.
 /// `crate::dialogs::about::version_label` is where that promise is kept, and
 /// `the_unavailable_case_invents_no_number` is the test that keeps it.
 ///
@@ -327,26 +345,25 @@ fn release(modified: bool) {
 
     println!("cargo:rustc-env=PDFCER_RELEASE_VERSION={version}");
     println!("cargo:rustc-env=PDFCER_RELEASE_DISTANCE={distance}");
-    // ★★★ **`"0"`, not `""` — changed 2026-09-05, in the middle of cutting a
-    // release.**
+    // ★★★ **`"0"`, not `""` — a flag with two named values and no empty
+    // case.**
     //
-    // This emitted an EMPTY string for the clean case, and the consumer in
-    // `dialogs::about` compares it with `== "1"`. `env!` expands at compile
-    // time to a literal, so on a clean tree clippy saw `"" == "1"` and fired
-    // `comparison_to_empty` — **and `cargo clippy` is one of this project's
-    // thirty gates.**
+    // An empty string for the clean case would reach a consumer in
+    // `dialogs::about` that compares it with `== "1"`. `env!` expands at
+    // compile time to a literal, so on a clean tree clippy sees `"" == "1"`,
+    // fires `comparison_to_empty`, and `cargo clippy` is one of this project's
+    // gates.
     //
-    // ⇒ So the gate's verdict depended on **whether the working tree happened
-    // to be dirty when `build.rs` last ran.** It passed all day on a tree with
-    // uncommitted work in it, and went red the moment the tree was clean, which
-    // is precisely when a release is cut. A gate whose result is a function of
-    // git state rather than of source is not measuring the source.
+    // ⇒ That would make the gate's verdict depend on **whether the working
+    // tree happened to be dirty when `build.rs` last ran**: green on a tree
+    // with uncommitted work in it, red the moment the tree is clean, which is
+    // precisely when a release is cut. A gate whose result is a function of git
+    // state rather than of source is not measuring the source.
     //
-    // ★ The repair is at the emitter rather than at the comparison, for this
-    // project's standing reason: making the consumer dodge the lint would have
-    // left the field's vocabulary — *"empty means false"* — intact, and the
-    // next reader would meet the same trap. A flag with two named values has no
-    // empty case to compare against.
+    // ★ It is fixed at the emitter rather than at the comparison, for this
+    // project's standing reason: making the consumer dodge the lint would leave
+    // the field's vocabulary — *"empty means false"* — intact, and the next
+    // reader would meet the same trap.
     println!(
         "cargo:rustc-env=PDFCER_RELEASE_MODIFIED={}",
         if modified { "1" } else { "0" }
@@ -480,8 +497,9 @@ fn git(args: &[&str], dir: &str) -> Option<String> {
 /// source = "git+file:///D:/Dev/pdfcer?branch=main#6af5655c…"
 /// ```
 ///
-/// Returns empty strings for anything absent, which is how a package that is
-/// **not in this build** — `iccce`, today — reports itself.
+/// Returns empty strings for anything absent, which is how a name that is **not
+/// a package in the lockfile** reports itself. See the `iccce` lookup in
+/// [`provenance`] for what that does and does not prove about the build.
 fn locked_git_package(lock: &str, name: &str) -> (String, String, String) {
     let mut version = String::new();
     let mut rev = String::new();
@@ -529,8 +547,8 @@ fn locked_git_package(lock: &str, name: &str) -> (String, String, String) {
 /// invert the proleptic Gregorian calendar and is correct for any date this
 /// program will ever be built on. It is here rather than as a dependency
 /// because the workspace may add none that pdfcer's lockfile does not already
-/// carry, and because forty lines that are provably right beat a supply-chain
-/// entry for a string in an About box.
+/// carry, and because a short calculation that is provably right beats a
+/// supply-chain entry for a string in an About box.
 fn utc_now() -> String {
     let secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

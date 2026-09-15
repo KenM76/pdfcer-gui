@@ -50,7 +50,7 @@
 //!
 //! # ★★ THE MEASUREMENT, and the decision it forced
 //!
-//! Run 2026-08-15, `--release`, median of 5, this machine:
+//! `--release`, median of 5, this machine:
 //!
 //! | document | extract (prov.) | recognize + align | plan + save | total |
 //! |---|---:|---:|---:|---:|
@@ -61,8 +61,8 @@
 //!
 //! (A dash is a refusal rather than a cost: those pages' page-1 runs are not
 //! editable through this API — an embedded subset without the new code — and
-//! timing a refusal and reporting it as a re-measure would be exactly the
-//! flattering-fixture failure `HANDOFF.md` §10 records.)
+//! timing a refusal and reporting it as a re-measure would be a measurement of
+//! something other than what it claims.)
 //!
 //! **So the answer is: it does not fit, on the documents this operator actually
 //! opens.** 102.77 ms per keystroke on a SolidWorks sheet is **six frames**, and
@@ -172,9 +172,9 @@ fn timed(n: usize, mut f: impl FnMut()) -> f64 {
 
 /// The documents to measure against, when they are present.
 ///
-/// The two named in `HANDOFF.md` §2's table are the ones that matter — they are
-/// the operator's real material — and they live outside the repository, so a
-/// missing one **skips that row** and says so rather than failing. A
+/// The two outside the repository are the ones that matter — they are the
+/// operator's real material — so a missing one **skips that row** and says so
+/// rather than failing. A
 /// measurement that cannot run is not a measurement that passed;
 /// `run-all.sh`'s three-state model is the same rule one level up.
 fn corpus() -> Vec<(&'static str, PathBuf)> {
@@ -250,8 +250,8 @@ fn measure(label: &str, path: &Path) {
         let req = EditRequest::find_replace(0, f, &format!("{f}x"));
         // One trial first: a document whose page-1 text is not editable (a
         // subset font missing the new code) is a refusal, not a cost, and
-        // reporting a refusal's timing as a re-measure cost would be exactly
-        // the flattering-fixture failure `HANDOFF.md` §10 records.
+        // reporting a refusal's timing as a re-measure cost would be a
+        // measurement of something other than what it claims.
         if pdfcer_core::text_edit::edit_text(&doc, &req, &EditOptions::default()).is_err() {
             return f64::NAN;
         }
@@ -271,9 +271,9 @@ fn measure(label: &str, path: &Path) {
 ///
 /// A timing assertion in a suite that runs on whatever machine happens to be
 /// free is a flake, and a flake gets `#[ignore]`d and then deleted. What is
-/// asserted is only that the harness *ran* — `HANDOFF.md` §10's rule that a
-/// layout test must assert a measurement happened rather than only its value,
-/// applied to a timing one.
+/// asserted is only that the harness *ran* — the rule that a layout test must
+/// assert a measurement happened rather than only its value, applied to a
+/// timing one.
 #[test]
 #[ignore = "a measurement, not an assertion — run it and read the numbers"]
 fn what_a_per_keystroke_re_measure_would_cost() {

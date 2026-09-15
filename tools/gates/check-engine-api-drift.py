@@ -2,91 +2,23 @@
 """check-engine-api-drift.py — EVERY PUBLIC ITEM THE ENGINE GAINS OWES AN ACT.
 
 ===========================================================================
-★★★ WHY THIS GATE EXISTS, and the day two gates watched and both were blind
+THE PROPERTY ASSERTED
 ===========================================================================
 
-On 2026-09-04 `pdfcer-core` shipped `pdfcer_core::text_edit::RefusalKind` — a
-coarse, stable, exhaustively-matchable discriminant over `EditError` — **in
-direct answer to a request this project filed**. It arrived inside the engine
-revision this workspace then pinned, so it was callable from here the moment
-`cargo update` ran.
+    For every public item the engine has gained since the snapshot — struct,
+    enum, trait, variant, field, method, free function, const, in every
+    engine crate this shell depends on, at the revision `Cargo.lock` pins —
+    this repository either NAMES it in its own Rust sources, or SAYS
+    something about it in a root-level markdown register, or carries an
+    `exempt` line for it in the snapshot with a written reason.
 
-It sat unconsumed for a day.
+    — with ONE change of grain: when the item's MODULE is itself new, the
+    unit of the finding is the shallowest new module, and one sentence naming
+    that module discharges everything inside it. See "THE GRAIN OF A FINDING"
+    below; it is the difference between one actionable line and a hundred.
 
-A function in this repository, `crate::text::status::edit_declined_by_engine`,
-said **in its own doc comment** that it was "written to be deleted" the day
-`EditError` gained a coarse kind. That day arrived. Nothing noticed. Not one
-of the two gates aimed at exactly this question made a sound:
-
-  * `tools/gates/check-verb-coverage.sh` reads `impl EditSession`'s `pub fn`s.
-    `RefusalKind` is an **enum**, in a different module. Invisible.
-  * `tools/gates/check-engine-backlog.sh` reads the engine's `docs/FEATURES.md`
-    prose table. A discriminant type is not a *feature*; no row was written.
-    Invisible.
-
-⇒ ★★★ **BOTH GATES WERE KEYED ON `EditSession`'S VERBS.** A new public *type*,
-  a new *variant*, a new *field* on an existing type, a new *free function* —
-  the entire rest of the engine's API — could land, be pinned, and be shipped
-  around without a single instrument on this side of the boundary saying a
-  word. Two gates, one key, one blind spot.
-
-This is the SIXTH recording of the same shape in this project:
-
-  * `EDITABLE_SURFACES.md` §"The sweep found…" — three of the first four gaps
-    were capabilities the engine shipped BECAUSE this shell asked, and then
-    never consumed. *"A reply arriving is not a capability landing."*
-  * `check-string-gaps.sh` — a catalogued string that reaches no rectangle.
-  * `check-verb-coverage.sh` — a verb the engine implements that nothing names.
-  * `check-engine-backlog.sh` — a capability the engine announced in prose.
-  * O119's own row — *"it is the fourth time: this landed with no note and no
-    announcement, and the only thing that made a noise was that gate."*
-  * This.
-
-★★ Each previous fix widened the key by one notch and left the next notch
-uncovered. This one does not pick a notch: it enumerates **every `pub` item in
-every source file of every engine crate this shell depends on**, and diffs.
-
----------------------------------------------------------------------------
-★★★ AND ON ITS FIRST REAL RUN IT CAUGHT ITS OWN SIBLING BEING FOOLED
----------------------------------------------------------------------------
-
-The engine shipped digital SIGNING the same day this file was written — a
-capability this shell asked for by name — as `EditSession::sign` plus a
-101-item `pdfcer_core::sign` module.
-
-`check-verb-coverage.sh` scored `sign` as **consumed**. It greps
-`crates/pdfcer-gui/src` for `\bsign\b`, and the word occurs 42 times in this
-shell — the first two of them in `app/actions/bookmarks.rs`, in a documentation
-table about the **arithmetic sign of `/Count`**:
-
-    //! ## `/Count` is two different quantities, and the sign carries open/closed
-    //! | sign | **cannot** be negative | **positive = open, negative = closed** |
-
-⇒ A capability the operator asked for, shipped that morning, was reported as
-  already wired **because a doc comment discusses positive and negative
-  numbers.** That gate's own header says a hit is weak and a miss is strong;
-  here is the weak hit costing a whole subsystem.
-
-★★ It is why this gate tests a MODULE by its full qualified path and a VARIANT
-by its `Owner::Variant` spelling, rather than by a bare identifier. A
-three-letter engine name is not a search term.
-
-===========================================================================
-WHAT IT ASSERTS
-===========================================================================
-
-    For every public item the engine has gained since the snapshot, this
-    repository must either NAME it in its own Rust sources, or SAY something
-    about it in a root-level markdown register, or carry an `exempt` line for
-    it in the snapshot with a written reason.
-
-    — with ONE change of grain: when the item's MODULE is itself new, the unit
-    of the finding is the shallowest new module, and one sentence naming that
-    module discharges everything inside it. See "THE GRAIN OF A FINDING" below;
-    it is the difference between one actionable line and ninety-eight.
-
-That is the whole rule, and — exactly like its two blind siblings — it is
-deliberately weak in one direction and strong in the other:
+That is the whole rule, and — exactly like the sibling gates it was built to
+cover for — it is deliberately weak in one direction and strong in the other:
 
   * **Weak**: it does not judge the reason. A register sentence saying "not
     built, no plans" passes. A gate cannot read English and must not pretend
@@ -94,12 +26,58 @@ deliberately weak in one direction and strong in the other:
   * **Strong**: an item that appears in the engine and about which this
     repository is completely SILENT fails the build, on the first `cargo
     update` that pins it. Somebody has to look at it and write a sentence —
-    which is the entire mechanism, and is exactly what did not happen when
-    `RefusalKind` landed.
+    which is the entire mechanism.
 
 ★★ The failure is therefore not "you have a gap". It is **"the engine grew
 something and nobody here has said anything about it"**, which is a different
 and much more actionable statement.
+
+===========================================================================
+★★★ WHY A HUMAN CANNOT HOLD IT
+===========================================================================
+
+The other two instruments aimed at this boundary are both keyed on
+`EditSession`'s verbs. `check-verb-coverage.sh` reads `impl EditSession`'s
+`pub fn`s; `check-engine-backlog.sh` reads the engine's `docs/FEATURES.md`
+prose table. A new public TYPE, a new VARIANT, a new FIELD on an existing
+type, a new FREE FUNCTION — the entire rest of the engine's API — is
+invisible to both, and invisible for a reason neither can fix: an enum in
+another module is not a verb, and a discriminant type is not a *feature*
+anybody writes a table row about. Two gates, one key between them, one blind
+spot the width of the API.
+
+★★★ **AND NOTHING IN THIS TREE CHANGES ON THE DAY IT HAPPENS.** The engine
+ships a capability — often one this shell asked for by name — and it becomes
+callable here the moment `cargo update` runs. The only evidence is a commit
+in a repository this one does not write to, arriving as a hash in a lock
+file. Noticing therefore depends on somebody re-reading, unprompted, prose
+that reads as current, including a doc comment stating that a workaround was
+"written to be deleted" on exactly the day its replacement lands. That is not
+something a person can be asked to do reliably.
+
+★★ It is also not something a WIDER KEY fixes. This project has recorded the
+same shape repeatedly — a catalogued string reaching no rectangle, a verb the
+engine implements that nothing names, a capability announced only in prose,
+a reply arriving without the capability ever being wired — and each remedy
+widened the key by one notch and left the next notch uncovered. So this gate
+does not pick a notch: it enumerates **every `pub` item in every source file
+of every engine crate this shell depends on**, and diffs.
+
+★★ A grep for a short name is not a substitute either, and the failure is
+not hypothetical: a sibling gate scored the engine's whole digital-signing
+subsystem as CONSUMED because the bare word `sign` occurs in this shell — in
+a documentation table about the arithmetic sign of `/Count`:
+
+    //! ## `/Count` is two different quantities, and the sign carries open/closed
+    //! | sign | **cannot** be negative | **positive = open, negative = closed** |
+
+⇒ A capability the operator asked for, shipped that morning, read as already
+  wired **because a doc comment discusses positive and negative numbers.**
+  That gate's own header says a hit is weak and a miss is strong; there is
+  the weak hit costing a whole subsystem. It is why this gate tests a MODULE
+  by its full qualified path and a VARIANT by its `Owner::Variant` spelling,
+  never by a bare identifier. A three-letter engine name is not a search
+  term.
 
 ===========================================================================
 ★★★ WHICH REVISION IT MEASURES, AND WHY THE ANSWER IS "THE LOCK"
@@ -154,34 +132,35 @@ again on the very next run. There is no command that makes a finding disappear.
 The only routes out are: consume it, write about it, or exempt it with a
 reason.
 
+`--bootstrap REV` is the one mode that absorbs items wholesale, and it is
+honest only against a PAST revision, where "everything that existed then" is
+exactly what the snapshot claims. Pointed at the locked revision it would
+write today's engine down as already looked at, so it refuses that by name.
+
 ===========================================================================
 ★★★ THE HAND-WRITTEN-LIST TRAP: WHAT IS DERIVED, AND WHY EACH ONE
 ===========================================================================
 
-`RESUME.md` records, three times over, this project's most expensive recurring
-defect: *"a hand-written list inside a completeness test is the gap."* A
-completeness check that carries a typed list of things to check is blind to
-exactly the new thing it was built to find. Every list this gate needs is
-therefore derived:
+This project's most expensive recurring defect is recorded as one sentence:
+*"a hand-written list inside a completeness test is the gap."* A completeness
+check carrying a typed list of things to check is blind to exactly the new
+thing it was built to find. Every list this gate needs is therefore derived:
 
   * **Which engine crates.** Read out of `crates/pdfcer-gui/Cargo.toml` — every
     dependency taking a `git = "file:///…"` URL. Not typed. The day this shell
-    adds `pdfcer-fetch` as a fourth engine crate, this gate covers it without
-    anybody remembering that this file exists. **Zero crates is a FAILURE**,
-    never an empty clean scan.
+    adds a fourth engine crate, this gate covers it without anybody remembering
+    that this file exists. **Zero crates is a FAILURE**, never an empty clean
+    scan.
   * **Which source files.** Every `*.rs` under each crate's `src/`, walked from
     the git tree object. Not a module-resolution walk from `lib.rs` — see the
     deliberate over-reporting note below.
   * **Where the engine is.** `tools/engine_path.locate()`, which reads the git
-    URL out of the manifest Cargo itself builds from. **Never a literal.** On
-    2026-09-03 a hard-coded `D:/Dev/pdfce` survived this project's rename,  # old-name-exempt-file:
-    this gate's prose is ABOUT the rename and quotes the pre-rename path it was
-    written to catch; a sibling gate's docstring cannot describe a miss without
-    spelling it, which is the case the file-level exemption exists for.
-    pointed at a directory that did not exist, and made
-    `check-verb-coverage.sh` print `PASS: all 0 uncalled verb(s)` having
-    examined nothing at all. That is the defect `engine_path.py` was written
-    for, and this gate uses it rather than repeating it.
+    URL out of the manifest Cargo itself builds from. **Never a literal.** A
+    hard-coded engine path is how a sibling gate came to point at a directory
+    that did not exist and print `PASS: all 0 uncalled verb(s)` having examined
+    nothing at all — the whole defect surviving a rename, because a literal
+    cannot notice that it has stopped resolving. That is what `engine_path.py`
+    exists for, and this gate uses it rather than repeating the mistake.
   * **Which registers count as "somebody wrote about it".** Every `*.md` at the
     repository root. Not a typed list of three filenames — a new register file
     is exactly the kind of thing a typed list goes blind to.
@@ -190,9 +169,9 @@ therefore derived:
 ★★★ WHAT IT ACTUALLY READS — the proxy question, asked of this gate
 ===========================================================================
 
-*"A proxy condition survives one correction."* `RESUME.md` records the shim
-tripwire that proudly caught itself testing `-d D:/Dev/pdfcer`, was fixed to
-test the crate on disk, and was **still** a proxy. So, plainly:
+*"A proxy condition survives one correction."* A tripwire in this project once
+caught itself testing that a directory existed, was corrected to test the
+crate on disk, and was **still** a proxy. So, plainly:
 
   * It reads **the bytes of the engine's `.rs` files at a git revision**, via
     `git archive`. Not the working tree (which the engine session edits
@@ -217,49 +196,48 @@ The scan walks every `.rs` file under `src/`, rather than following `pub mod`
 declarations from `lib.rs`. That means a `pub` item inside a *private* module
 — not reachable API — is recorded, and can be reported.
 
-That is a decision, not an oversight, and it was measured. `RefusalKind` lives
-in `crates/pdfcer-core/src/text_edit/refusal_kind.rs`. Had that module been
-declared `mod refusal_kind;` with a `pub use refusal_kind::RefusalKind;` beside
-it — a spelling used all over this engine — a module-visibility walk would have
-skipped the file and **missed the exact item this gate was built for.** The
-first draft of this scanner did precisely that, on a different module, and the
-symptom was silence.
+That is a decision, not an oversight, and it was measured against the engine's
+real spelling habits. A module declared `mod refusal_kind;` with a
+`pub use refusal_kind::RefusalKind;` beside it — a spelling used all over this
+engine — is invisible to a module-visibility walk, and the items it re-exports
+are exactly the kind this gate was built to catch. The first draft of this
+scanner did the visibility walk, and its symptom was silence.
 
 ⇒ A handful of extra items from private modules is noise, and noise is
 exemptible in one line. A missed item is invisible, and invisible is the
 failure mode this whole file exists to remove. **Err toward reporting.**
 
 ===========================================================================
-★★★ THE GRAIN OF A FINDING — measured on the first real run, and it changed
-    the design twice
+★★★ THE GRAIN OF A FINDING — and it changed the design twice
 ===========================================================================
 
-**1. A whole new module is ONE finding.** The engine's digital-signing
-subsystem — `pdfcer_core::sign`, with `apply`, `cms_build` and `pkcs12` under
-it — landed in a single pin move carrying **101 public items**. Reported one by
-one that is 101 lines about one event, and discharging it would mean typing 101
-backticked symbol names into a register, which nobody will do and nobody
-should. The thing a person must look at is the subsystem, once. So a module the
-snapshot has never seen is reported as a module, with its item count and a
-sample, and one register sentence naming its full path accounts for all of it.
+**1. A whole new module is ONE finding.** A subsystem arrives in a single pin
+move carrying its whole public surface at once — the engine's digital-signing
+work landed as `pdfcer_core::sign` with `apply`, `cms_build` and `pkcs12`
+under it. Reported item by item that is a screen of lines about one event, and
+discharging it would mean typing that many backticked symbol names into a
+register, which nobody will do and nobody should. The thing a person must look
+at is the subsystem, once. So a module the snapshot has never seen is reported
+as a module, with its item count and a sample, and one register sentence
+naming its full path accounts for all of it.
 
 ★★ **And the rule stops at exactly that line.** It applies only to a module the
 snapshot has NEVER SEEN. A new item in an EXISTING module is still reported as
-an item — because that is the `RefusalKind` case, and `pdfcer_core::text_edit`
-is named in half this project's documents. A module-level discharge that
-reached old modules would have swallowed the very item this gate exists for.
-*A new subsystem is one act of attention; a new item in a familiar one is
-another.* The self-test asserts both directions, because either alone is
-useless.
+an item — because a new discriminant on a familiar type is the case this gate
+was built for, and its module is named in half this project's documents. A
+module-level discharge that reached old modules would swallow the very finding
+that justifies the gate. *A new subsystem is one act of attention; a new item
+in a familiar one is another.* The self-test asserts both directions, because
+either alone is useless.
 
 **2. A module path is NOT tested as a substring, and the first cut was.**
 `pdfcer_core::sign` is a prefix of `pdfcer_core::signature` and
 `pdfcer_core::signature_verify`, both of which this shell has consumed and
 written about at length. A plain substring test found the prefix inside the
-longer names and **printed the entire 101-item signing subsystem in the
-accounted list, in green, as something somebody had looked at.** Nobody had.
-The path must be followed by a character that cannot continue a Rust
-identifier. One lookahead; without it this gate's largest finding was invisible.
+longer names and **printed the entire signing subsystem in the accounted list,
+in green, as something somebody had looked at.** Nobody had. The path must be
+followed by a character that cannot continue a Rust identifier. One lookahead;
+without it this gate's largest finding was invisible.
 
 **3. A VARIANT must be spelled `Owner::Variant`.** Also measured on the first
 run: `pdfcer_core::edit::EncryptError::RedactionPending` arrived, `EncryptError`
@@ -272,7 +250,7 @@ because a method is called `x.method()` and a field read `x.field`; demanding
 follows the call syntax, not a taste.**
 
 ===========================================================================
-★★ WHAT THIS GATE STILL CANNOT SEE — stated, because an unstated limit reads
+★★ WHAT IT PROVABLY CANNOT SEE — stated, because an unstated limit reads
    as coverage
 ===========================================================================
 
@@ -280,14 +258,20 @@ follows the call syntax, not a taste.**
     operator route". A call site behind a condition nothing sets is a hit here
     and dead in the running program. `tools/ui-verify` is the only instrument
     for that question and this one cannot answer it. Only the MISS is strong.
+  * **WHETHER WHAT WAS WRITTEN IS TRUE.** One register sentence naming a new
+    module discharges every item inside it, however wrong the sentence is, and
+    an `exempt` reason is checked for length and nothing else.
   * **A CHANGED SIGNATURE is invisible.** The key is a name and a kind, so a
     `pub fn` that keeps its name and gains a parameter, changes its return
     type, or reverses the meaning of a bool reads as unchanged. The compiler
     catches that for anything this shell CALLS; nothing catches it for anything
     it does not.
   * **A CHANGED DOC-COMMENT or default is invisible**, and this project has
-    been bitten by one before: the engine moved a default and a label here had
-    it written down rather than asking (`RESUME.md`, 2026-08).
+    been bitten by one: the engine moved a default and a label on this side had
+    the old value written down rather than asking for it.
+  * **A REMOVED item fails nothing.** Deletions are folded in by `--update` and
+    reported only as a "probably MOVED" hint beside an addition; the gate is
+    one-directional by construction.
   * **`#[cfg]`-GATED items are counted once**, whatever features are enabled.
     An item behind a feature this shell does not take is reported as available.
   * **RE-EXPORTS are not followed.** The key is the DEFINITION site, so a
@@ -302,39 +286,62 @@ follows the call syntax, not a taste.**
     it is an operator decision.
 
 ===========================================================================
-FAILURE MODES, EXACTLY
+THE EXIT CONTRACT, AND HOW TO FALSIFY IT
 ===========================================================================
+
+`run-all.sh` classifies purely by exit code — 0 PASS, 2 SKIPPED, anything
+else FAILED — and the whole run exits 3 if anything skipped.
 
 FAIL (exit 1) when:
   1. the engine's locked revision carries a public item that is not in the
      snapshot, is named nowhere in this repository, and has no `exempt` line;
-  2. an `exempt` line carries no reason, or a reason under 20 characters — an
-     exemption without an argument is a re-baseline wearing a disguise;
-  3. **the scan collapses**: the live enumeration returns fewer than half the
-     items the snapshot holds, or zero items for a crate. A resolvable engine
-     that yields nothing means the scanner went blind, and an empty scan MUST
-     NOT read as a clean one. This is a FAIL and never a SKIP.
-  4. no engine crate could be derived from the manifest — see (3)'s argument.
-  5. `--self-test` did not detect its own plants.
+  2. an `exempt` line carries no reason, or a reason shorter than
+     `MIN_REASON` characters — an exemption without an argument is a
+     re-baseline wearing a disguise;
+  3. **the scan collapses**: the live enumeration returns fewer than
+     `COLLAPSE_RATIO` of the items the snapshot holds, or zero items for a
+     crate. A resolvable engine that yields nothing means the scanner went
+     blind, and an empty scan MUST NOT read as a clean one. This is a FAIL
+     and never a SKIP;
+  4. no engine crate could be derived from the manifest — see (3)'s argument;
+  5. `--bootstrap` was pointed at the locked revision;
+  6. `--self-test` did not detect its own plants.
 
 SKIP (exit 2) when — and ONLY when:
   a. the engine checkout named by the manifest is not a directory on disk
      (a clean checkout on a machine that has no engine);
-  b. `git` is not on PATH, or `git archive` refuses the locked revision (the
-     object is genuinely absent from that clone);
-  c. `Cargo.lock` pins no `git+file://` revision;
-  d. the snapshot file is missing.
-  A SKIP makes `run-all.sh` exit 3 — INCOMPLETE, not green.
+  b. `Cargo.lock` pins no `git+file://` revision;
+  c. the snapshot file is missing;
+  d. `git archive` cannot produce the engine tree at the wanted revision —
+     the object is genuinely absent from that clone, which is a real state on
+     a fresh machine and says nothing about the API.
 
 ★★ **THE SKIP SET IS ITSELF A HAZARD.** A skip is not red, so a gate can stop
-running and nobody notices. The five conditions above are the *complete* list;
-every one of them prints the word SKIP and the actual fact. If this gate ever
-appears in `run-all.sh`'s SKIPPED block on a machine that has the engine, that
-is a defect in this file, not an expected state.
+running and nobody notices. Those four are the *complete* list; every one of
+them prints the word SKIP and the actual fact. If this gate ever appears in
+`run-all.sh`'s SKIPPED block on a machine that has the engine, that is a
+defect in this file, not an expected state.
 
 PASS (exit 0) when every new item is accounted for. The summary line always
 states how many items were measured and at which revision, so "it passed"
 is never separable from "it measured something".
+
+★ TO FALSIFY IT BY HAND, without touching a tracked file: copy the snapshot,
+point `PDFCER_ENGINE_API_SNAPSHOT` at the copy, and
+
+  * delete one line from it — that item must be named and the exit must be 1,
+    unless this repository happens to name it, in which case delete a line for
+    something the engine alone knows about;
+  * replace an `exempt` reason with three characters — it must fail on the
+    reason, not on the item;
+  * truncate the copy to a tenth of its length — it must report a COLLAPSE
+    rather than a large clean `added` set;
+  * move the copy away entirely — it must SKIP with exit 2, not pass.
+
+`--self-test` does all of that on planted data in memory and a fixture on
+disk, leaves the working tree untouched, and is run by
+`check-engine-api-drift.sh` BEFORE every unattended measurement, so a gate
+that has gone blind cannot report a verdict on the engine.
 
 ===========================================================================
 USAGE
@@ -343,6 +350,7 @@ USAGE
     tools/gates/check-engine-api-drift.sh --self-test  prove it can fail
     tools/gates/check-engine-api-drift.sh --update     fold accounted items in
     tools/gates/check-engine-api-drift.sh --list       print the live API
+    tools/gates/check-engine-api-drift.py --bootstrap REV   create a snapshot
 """
 
 from __future__ import annotations
@@ -380,10 +388,10 @@ import engine_path  # noqa: E402
 # also the thing MOST likely to carry one, since it is the longest piece of
 # argued prose in the whole data file.
 #
-# Found 2026-09-09 by writing an exemption with a `⚠` in it. The offending
-# character was removed from the snapshot as well (it is a generated file and
-# ASCII costs nothing there), but removing it is not the fix: the next reason,
-# in the next session, will have one. `errors="replace"` rather than `"strict"`
+# Found by writing an exemption with a `⚠` in it. Stripping that one
+# character from the snapshot is not the fix -- it is a generated file and
+# ASCII costs nothing there, but the next reason somebody argues will carry a
+# star of its own. `errors="replace"` rather than `"strict"`
 # so that an un-encodable character degrades to `?` and the FINDING still
 # reaches the reader, which is the entire point of a gate's output.
 for _stream in (sys.stdout, sys.stderr):
@@ -651,9 +659,10 @@ def locked_revision() -> str | None:
 def api_at(repo: pathlib.Path, rev: str, crates: list[str]) -> dict[str, set[str]]:
     """`{crate: {"<kind> <path>", …}}` for the engine as of `rev`.
 
-    One `git archive` for the whole set — 200-odd files through a single pipe
-    rather than 200 `git show` spawns, which is the difference between this
-    gate costing a second and costing a minute. It must run on every commit.
+    One `git archive` for every crate at once — the whole engine `src/` tree
+    through a single pipe, rather than one `git show` spawn per file, which is
+    the difference between this gate costing a second and costing a minute. It
+    must run on every commit.
 
     Raises `LookupError` when git will not produce the tree, which the caller
     turns into a SKIP: a revision genuinely absent from the clone is a real
@@ -886,16 +895,15 @@ def new_module_root(key: str, seen_modules: set[str]) -> str | None:
     ★★★ WHY THE FINDING IS SOMETIMES A MODULE AND NOT AN ITEM.
     =========================================================
 
-    Measured on this gate's first real run, and it changed the design.
-
-    The engine's signing subsystem — `pdfcer_core::sign`, with `apply`,
-    `cms_build` and `pkcs12` under it — landed in one pin move carrying **98
-    public items**. Reported one by one, that is 98 lines about one event, and
-    a reader would have to reconstruct "a whole new subsystem arrived" from a
-    list of `SignReport::byte_range`-shaped fragments. Worse, discharging it
-    would mean writing 98 backticked symbol names into a register, which
-    nobody will do and which nobody should: the thing a person needs to look at
-    is **the subsystem**, once.
+    A subsystem arrives all at once. The engine's signing work —
+    `pdfcer_core::sign`, with `apply`, `cms_build` and `pkcs12` under it —
+    landed in one pin move carrying its whole public surface. Reported item by
+    item that is a screen of lines about ONE event, and a reader would have to
+    reconstruct "a whole new subsystem arrived" from a list of
+    `SignReport::byte_range`-shaped fragments. Worse, discharging it would mean
+    writing that many backticked symbol names into a register, which nobody
+    will do and which nobody should: the thing a person needs to look at is
+    **the subsystem**, once.
 
     So when an item's module is itself new, the unit of the finding is the
     shallowest new module, and one register sentence naming that module
@@ -903,12 +911,12 @@ def new_module_root(key: str, seen_modules: set[str]) -> str | None:
 
     ⇒ ★★ AND THE RULE STOPS THERE, DELIBERATELY. It applies ONLY to a module
       the snapshot has never seen. An item arriving in an EXISTING module is
-      still reported as an item, because that is the `RefusalKind` case: a
-      module-level discharge for `pdfcer_core::text_edit` — which has existed
-      for months and is named in half this project's documents — would have
-      swallowed the very item this gate was built to catch. The distinction is
-      the whole reason the rule is safe: **a new subsystem is one act of
-      attention; a new item in a familiar one is another.**
+      still reported as an item, because that is the case this gate was built
+      for: a new discriminant lands in a module that is already named in half
+      this project's documents, so a module-level discharge reaching old
+      modules would swallow it. The distinction is the whole reason the rule
+      is safe: **a new subsystem is one act of attention; a new item in a
+      familiar one is another.**
     """
     segs = module_of(key).split("::")
     for i in range(1, len(segs) + 1):
@@ -1018,9 +1026,9 @@ def make_accountant(rust: str, md: str):
 
         *** AND IT IS NOT A SUBSTRING TEST, because the first cut was and it
         silently discharged the largest finding this gate has ever produced.
-        `pdfcer_core::sign` -- the whole digital-signing subsystem, 101 public
-        items arriving in one pin move -- was reported as accounted for,
-        because `pdfcer_core::sign` is a PREFIX of `pdfcer_core::signature` and
+        `pdfcer_core::sign` -- the whole digital-signing subsystem, arriving in
+        one pin move -- was reported as accounted for, because
+        `pdfcer_core::sign` is a PREFIX of `pdfcer_core::signature` and
         `pdfcer_core::signature_verify`, which this shell has consumed and
         written about at length. A plain `in` found the prefix inside the
         longer name and called the subsystem discussed.
@@ -1233,9 +1241,10 @@ def report(live: set[str], seen: set[str], exempt: dict[str, str],
 #
 #   * it CATCHES a planted item that nothing accounts for, and it catches an
 #     exemption whose reason is too thin to be an argument;
-#   * it PASSES the four shapes that are CORRECT -- an item already in the
-#     snapshot, an item named in this repository's Rust, an item written about
-#     in a register, and a properly-reasoned exemption -- because a gate that
+#   * it PASSES every shape that is CORRECT -- an item already in the
+#     snapshot, an item named in this repository's Rust, a new module whose
+#     full path a register writes about, a variant spelled `Owner::Variant` in
+#     the corpus, and a properly-reasoned exemption -- because a gate that
 #     reports the correct shape trains people to ignore it, which is worse than
 #     not having the gate.
 #
@@ -1348,11 +1357,11 @@ def self_test() -> int:
         # * NEW MODULE whose path is a PREFIX of two modules this repository
         # HAS written about (`pdfcer_core::signature`, `..::signature_verify`).
         # It must still be REPORTED: that prefix collision silently discharged
-        # a 101-item subsystem on this gate's first run with the module rule.
+        # a whole unread subsystem the first time the module rule ran.
         "pdfcer-core fn pdfcer_core::sign::sign_document",
         # * NEW MODULE whose path IS written down. It must NOT be reported, or
-        # the module rule is pure noise and a 101-item subsystem could only be
-        # discharged by typing 101 backticked symbols.
+        # the module rule is pure noise and a subsystem could be discharged
+        # only by typing out every symbol in it.
         "pdfcer-core fn pdfcer_core::export::to_svg",
         "pdfcer-core fn pdfcer_core::hidden::internal_helper",         # NEW, exempt
         "pdfcer-core enum pdfcer_core::moved::RefusalKind",            # NEW, a move

@@ -20,7 +20,7 @@
 //! would be a place for the two surfaces to start disagreeing about the
 //! same command.
 //!
-//! # ★ Ceiling 1: `egui` 0.35 has no menu-item role
+//! # Ceiling 1: `egui` 0.35 has no menu-item role
 //!
 //! [`egui::WidgetType`] in 0.35 offers `Label · Link · TextEdit · Button ·
 //! Checkbox · RadioButton · RadioGroup · SelectableLabel · ComboBox ·
@@ -54,7 +54,7 @@
 //! `Tab` role. When `egui` grows the vocabulary, these two modules are the
 //! only places to change.
 //!
-//! # ★ Ceiling 2: the chord cannot be published *as* a chord
+//! # Ceiling 2: the chord cannot be published *as* a chord
 //!
 //! This one is sharper, and it is why the chord is folded into the name
 //! rather than attached beside it.
@@ -156,7 +156,7 @@ mod tests {
         }
     }
 
-    /// **★ A row announces its chord, because the chord is on screen.**
+    /// **A row announces its chord, because the chord is on screen.**
     ///
     /// The whole point of ceiling 2. Without this a screen-reader user is
     /// the one person the shortcut column cannot teach — while the menu
@@ -229,7 +229,7 @@ mod tests {
         }
     }
 
-    /// **★ Ceiling 1, asserted so it cannot be quietly forgotten.**
+    /// **Ceiling 1, asserted so it cannot be quietly forgotten.**
     ///
     /// If a future `egui` adds `WidgetType::MenuItem`, this is what fails
     /// and points at the module header that has to be rewritten. Until
@@ -246,7 +246,7 @@ mod tests {
         assert!(info.enabled);
     }
 
-    /// **★ Ceiling 2, asserted the same way.**
+    /// **Ceiling 2, asserted the same way.**
     ///
     /// `WidgetInfo` carries no route to `accesskit`'s
     /// `set_keyboard_shortcut`, and its one prose-shaped field —

@@ -17,10 +17,9 @@
 //! an operator save a customized ribbon lets a different application ship
 //! a completely different one.
 //!
-//! It also retires a deferral. The salvage source's ribbon deferred
-//! customization on the grounds that *"a customisable ribbon that also
-//! forgets itself would be worse than none."* That objection was about
-//! persistence, and persistence is the first thing this design builds.
+//! Customization and persistence are one mechanism here, deliberately: a
+//! ribbon an operator can rearrange but that forgets the arrangement is
+//! worse than one they cannot rearrange at all.
 //!
 //! # The type shape, and why one type is both document and patch
 //!
@@ -67,11 +66,10 @@
 //!   layout, and it does not fail.
 //! - **[`Shell::validate`] is strict.** It runs on the *merged* result,
 //!   and what it rejects are contradictions no fail-soft rule can repair —
-//!   two tabs with one id, a command on two tabs. `SHELL_FRAMEWORK.md`
-//!   §5 makes the point that this is strictly more than the salvage
-//!   source's compile-time ownership test could do: that test could only
-//!   check the ribbon the developers wrote, and this one checks the ribbon
-//!   the operator ends up with.
+//!   two tabs with one id, a command on two tabs. Checking the merged whole
+//!   rather than the compiled-in manifest is what makes the rule bind on
+//!   the ribbon the **operator** ends up with, not only on the one the
+//!   developers wrote.
 //!
 //! # Commands are referenced, never defined
 //!
@@ -116,16 +114,16 @@ mod item;
 mod merge;
 /// The left rail — the vertical strip down a dock side's outer edge.
 ///
-/// A region introduced as **manifest data**, for the reason
-/// [`Trailing`] was: `SHELL_FRAMEWORK.md` makes the shell one serializable
-/// document, and *"a rail that only `pdfcer-gui` knows about breaks it
-/// quietly."*
+/// A region carried as **manifest data**, for the reason [`Trailing`] is:
+/// `SHELL_FRAMEWORK.md` makes the shell one serializable document, and a
+/// region only the application knows about breaks that quietly — it cannot
+/// be overlaid, filtered or validated with the rest.
 pub mod rail;
 mod validate;
 
-// ★ Re-exported so the R2 split of 2026-09-06 moved no call site: every
-// `egui_shell::manifest::Item` in this workspace and in `pdfcer-gui` still
-// resolves. See `item.rs`'s header for the seam.
+// `Item` lives in its own module but is re-exported here: this module is the
+// manifest's public face, and `egui_shell::manifest::Item` is the path every
+// caller uses. See `item.rs`'s header for what the split buys.
 pub use item::{Item, ItemSize};
 pub use merge::{Layer, MergeInput, MergeReport, Merged, Skip, SkipReason, merge};
 pub use rail::{Rail, RailFold, RailGroup};
@@ -205,11 +203,10 @@ pub struct Shell {
     /// The **left rail** — the vertical strip down a dock side's outer edge:
     /// panel tabs, the navigate selectors, the selection tools. See [`Rail`].
     ///
-    /// ★ Data, not a callback, for the reason `SHELL_FRAMEWORK.md` gives in
-    /// one line: *"a rail that only `pdfcer-gui` knows about breaks it
-    /// quietly."* An operator overlay can reorder it, `merge` can filter it
-    /// and `validate` walks it, exactly as for every other region on this
-    /// struct.
+    /// Data, not a callback: a region only the application knows how to draw
+    /// cannot be overlaid, filtered or validated. Because the rail is on this
+    /// struct, an operator overlay reorders it, `merge` filters it and
+    /// `validate` walks it, exactly as for every other region here.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rail: Option<Rail>,
     /// Key chord → command id.
@@ -401,7 +398,7 @@ impl Shell {
 
 /// The RON dialect this manifest is read and written in.
 ///
-/// # ★ Why `IMPLICIT_SOME`, and why it is not a cosmetic preference
+/// # Why `IMPLICIT_SOME`, and why it is not a cosmetic preference
 ///
 /// Nearly every field of [`Shell`], [`Tab`], [`Group`] and [`Mode`] is an
 /// `Option`, because the `Option` is what distinguishes *"set this to
@@ -455,11 +452,9 @@ const TIDY_MAX: usize = 100;
 /// # Why a manifest needs this at all
 ///
 /// RON 0.8's pretty printer breaks **every** struct and struct variant across
-/// lines, with no option to keep a short one inline — it has
-/// `compact_arrays` and nothing for structs. That was invisible while
-/// [`Item::Command`] was a tuple variant printed as `Command("file.open")`.
-/// The moment it gained [`ItemSize`] and became a struct variant, every one of
-/// pdfcer's hundred-odd ribbon items became
+/// lines, with no option to keep a short one inline — it has `compact_arrays`
+/// and nothing for structs. [`Item::Command`] is a struct variant, so without
+/// this pass each of a ribbon's command items prints as
 ///
 /// ```ron
 /// Command(
@@ -467,11 +462,11 @@ const TIDY_MAX: usize = 100;
 /// ),
 /// ```
 ///
-/// — three lines and a two-thirds-empty column where there had been one line,
-/// and the file grew by half.
+/// — three lines and a two-thirds-empty column for what is one field, in the
+/// construct a manifest is mostly made of.
 ///
-/// ★★★ That is not a cosmetic complaint. This file's **entire purpose** is to
-/// be read and edited by an operator: it is the customization surface
+/// That is not a cosmetic complaint. This file's **entire purpose** is to be
+/// read and edited by an operator: it is the customization surface
 /// `SHELL_FRAMEWORK.md` §1 is about. A format that triples the length of its
 /// most common construct has made itself worse at the one job it has.
 ///
@@ -482,7 +477,7 @@ const TIDY_MAX: usize = 100;
 /// [`TIDY_MAX`]. Anything nested, anything long, and anything it does not
 /// recognise is left exactly as RON printed it.
 ///
-/// ★ It is **safe by construction and by test**: the transform only ever
+/// It is **safe by construction and by test**: the transform only ever
 /// removes newlines and indentation between tokens RON itself emitted, which
 /// RON's own parser is insensitive to — and
 /// [`tests::a_manifest_round_trips_through_ron`] parses the tidied output
@@ -543,10 +538,11 @@ pub(crate) fn tidy(pretty: &str) -> String {
 /// > **A mode changes what is *visible*. It never makes a visible control
 /// > silently inert.**
 ///
-/// That is the difference between a mode and the master toggle it
-/// replaced: the toggle left the editing tools on screen and made
-/// gestures quietly do nothing. A mode *removes* the tools it disables, so
-/// there is no click that mysteriously fails.
+/// That is what separates a mode from a master enable/disable toggle. A
+/// toggle leaves the tools on screen and makes gestures quietly do nothing;
+/// a mode *removes* the tools it disables, so there is no click that
+/// mysteriously fails and no control whose appearance lies about what it
+/// will do.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Mode {
@@ -600,9 +596,8 @@ impl Mode {
 /// `RIBBON_IA.md` §4 keeps an idiom worth preserving: every tab carries a
 /// one-line **question** it exists to answer — *"What is on my screen, and
 /// how is the page laid out?"* That is what [`Self::question`] is, and it
-/// is not decoration: a tab whose question cannot be written in one line
-/// is a tab carrying two unrelated jobs, which is the defect that split
-/// six tabs into seven in that document.
+/// is not decoration: a tab whose question cannot be written in one line is
+/// a tab carrying two unrelated jobs, and the fix is to split it.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Tab {
@@ -704,11 +699,9 @@ impl Tab {
 
 /// A captioned band of items within a tab.
 ///
-/// The caption is required in a complete manifest, and that is a rule
-/// carried across from the salvage source, which enforced it with a
-/// single closure through which every group had to be rendered. An
-/// uncaptioned group is a row of controls whose relationship the operator
-/// has to infer.
+/// The caption is required in a complete manifest. An uncaptioned group is
+/// a row of controls whose relationship the operator has to infer, and the
+/// caption is the only place that relationship is ever written down.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Group {
@@ -733,7 +726,7 @@ pub struct Group {
     /// same priority collapse left to right, which is the order a reader would
     /// predict.
     ///
-    /// # ★★ Why a manifest field and not a heuristic
+    /// # Why a manifest field and not a heuristic
     ///
     /// Because the right answer is editorial and cannot be measured. Word
     /// keeps **Clipboard** expanded at every width down to 460 pt while Font,
@@ -743,10 +736,11 @@ pub struct Group {
     /// rule gets that exactly backwards, and no amount of tuning fixes a rule
     /// that is measuring the wrong property.
     ///
-    /// ★ It is also the field that keeps `egui-shell` domain-free (R7). The
-    /// shell cannot know which group matters on a PDF editor's Markup tab; the
-    /// application says so in its manifest, in the same place it says
-    /// everything else about its ribbon, and the shell just reads a number.
+    /// It is also the field that keeps this crate domain-free (R7). The shell
+    /// cannot know which of an application's groups carries the verb its
+    /// operators came for; the application says so in its manifest, in the
+    /// same place it says everything else about its ribbon, and the shell just
+    /// reads a number.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collapse: Option<u32>,
     /// **Lay this group out on several rows even when one row would fit.**
@@ -755,7 +749,7 @@ pub struct Group {
     /// until the band runs out of width"*, which is what every group did before
     /// this field existed and what most groups should keep doing.
     ///
-    /// # ★★★ Why a group would ask for rows it does not need
+    /// # Why a group would ask for rows it does not need
     ///
     /// Because wrapping under pressure and wrapping by design are different
     /// things, and the planner only ever did the first. `wrap_group` searches
@@ -765,10 +759,11 @@ pub struct Group {
     /// That is right for a Font group and wrong for a **radio**. Four square
     /// icon buttons in a row is a strip; the same four as a 2 x 2 block is half
     /// the width, reads as one control, and is what Acrobat, Word and every
-    /// other ribbon does with a four-position choice. Operator, 2026-09-02:
-    /// *"our display buttons should be on two rows to save space."*
+    /// other ribbon does with a four-position choice. The operator asked for
+    /// it in those terms: *"our display buttons should be on two rows to save
+    /// space."*
     ///
-    /// # ★★ It is a HINT, not a height
+    /// # It is a HINT, not a height
     ///
     /// The value is a ceiling the planner is asked to prefer, and the band's own
     /// row limit still wins: a group asking for four rows in a two-row band gets
@@ -776,13 +771,13 @@ pub struct Group {
     /// **narrowest** packing it can find, so a group of two items asking for two
     /// rows gets whichever of 1 x 2 and 2 x 1 is narrower.
     ///
-    /// ★ And it does not stop the group re-wrapping further under pressure. A
+    /// And it does not stop the group re-wrapping further under pressure. A
     /// group that prefers two rows still goes to three on the collapse ladder,
     /// exactly as a group that reached two under pressure would.
     ///
-    /// ★ R7: the shell reads a number. It has no idea which of an application's
-    /// groups is a radio, and the manifest is where the application already says
-    /// everything else about its ribbon.
+    /// R7: the shell reads a number. It has no idea which of an application's
+    /// groups is a radio, and the manifest is where the application already
+    /// says everything else about its ribbon.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefer_rows: Option<u32>,
 }
@@ -854,11 +849,10 @@ impl Group {
 
 /// The quick-access toolbar: command ids, in order.
 ///
-/// `SHELL_FRAMEWORK.md` §5 amends the salvage source's one-command-one-tab
-/// rule specifically to allow this: *"a command may appear on exactly one
-/// **tab**; the QAT and status bar may mirror it."* A QAT that could not
-/// mirror would be a second place to hunt for a command rather than a
-/// shortcut to a known one.
+/// `SHELL_FRAMEWORK.md` §5 states the one-command-one-tab rule so that this
+/// is allowed: a command may appear on exactly one **tab**, and the QAT and
+/// status bar may mirror it. A QAT that could not mirror would be a second
+/// place to hunt for a command rather than a shortcut to a known one.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Qat(pub Vec<String>);
@@ -885,15 +879,13 @@ impl<S: Into<String>> FromIterator<S> for Qat {
 ///                                                                 ↑ here
 /// ```
 ///
-/// # ★★★ Why this exists at all, and why it is a manifest field rather than
-/// a callback
+/// # Why this is a manifest field rather than a callback
 ///
 /// It is the extension point for a control an application wants **beside the
-/// mode selector** — the one region of the tab-strip row that has, until now,
-/// had no way to hold anything. The immediate consumer is a button whose
-/// *existence* is a property of the machine the program is running on rather
-/// than of the program, and `SHELL_FRAMEWORK.md` §2's diagnostic applies with
-/// full force: this crate must not learn what that button opens, and the
+/// mode selector**. The motivating case is a control whose *existence* is a
+/// property of the machine the program is running on rather than of the
+/// program itself, and `SHELL_FRAMEWORK.md` §2's diagnostic applies with full
+/// force: this crate must not learn what such a control opens, and the
 /// abstraction would be wrong if it had to.
 ///
 /// The obvious cheaper spelling is a closure — *"hand the application a
@@ -1092,19 +1084,15 @@ mod tests {
         // The shapes the module header advertises must actually appear, or the
         // documented example is fiction.
         //
-        // ★ `Command(id: "…")` since `ItemSize` landed. The spelling changed
-        // once, deliberately, rather than growing a second variant so that the
-        // old spelling could survive beside a new one: two ways to write one
-        // item is two shapes for `merge` to reconcile and two for an operator
-        // editing the file by hand to choose between. `built_in.ron` is
-        // regenerated from the Rust manifest by a test, so the churn cost
-        // nothing.
+        // A command item has exactly one spelling, `Command(id: "…")`. Two
+        // accepted spellings would be two shapes for `merge` to reconcile and
+        // two for an operator editing the file by hand to choose between.
         assert!(compact.contains("Command(id:\"file.open\")"), "{compact}");
         assert!(pretty.contains("Separator"), "{pretty}");
         assert!(pretty.contains("\"Ctrl+E\""), "{pretty}");
-        // ★★ And the default size is NOT written. The manifest file is meant
-        // to be read and edited by an operator; `size: Medium` on every one of
-        // a hundred lines is noise that hides the two lines where it is not.
+        // And the default size is NOT written. The manifest file is meant to
+        // be read and edited by an operator; `size: Medium` on every line is
+        // noise that hides the lines where the size is not the default.
         assert!(
             !compact.contains("size:"),
             "the default size must not be serialised: {compact}"

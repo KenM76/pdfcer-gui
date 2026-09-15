@@ -7,7 +7,7 @@
 //! scroll solve, and the projection from PDF geometry into the space the
 //! canvas paints in.
 //!
-//! ## ★ Why it takes two frames, and why that is not avoidable
+//! ## Why it takes two frames, and why that is not avoidable
 //!
 //! The request is made during the **apply phase**, which runs *after* the
 //! canvas has drawn ([`crate::app`]'s frame order, step 3). The page change
@@ -21,7 +21,7 @@
 //! than a canvas point, because a fraction is independent of the zoom and
 //! survives the operator zooming in between the two frames.
 //!
-//! ## ★ Why it cannot simply ride the zoom anchor's handshake
+//! ## Why it cannot simply ride the zoom anchor's handshake
 //!
 //! Because that handshake is gated on the page's **drawn size changing** —
 //! `zoom::anchor_step` compares `display_now` against the size recorded when
@@ -41,8 +41,8 @@
 //!
 //! ## Why this is a module rather than a section of [`super`]
 //!
-//! Rule R2's 1,500-line ceiling forced the split, and the seam it forced is a
-//! real one: [`super`] answers *what is a search, and what does its answer
+//! Rule R2's 1,500-line ceiling requires the split, and the seam it forces is
+//! a real one: [`super`] answers *what is a search, and what does its answer
 //! mean* — the query, the options, the wildcard trap, staleness, the readout
 //! — while this file answers *how does one hit get in front of the operator*.
 //! The two change for different reasons and are read at different times, and
@@ -112,23 +112,24 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
     let _held = hold_the_zoom_if_asked(state, doc, page);
     doc.view.go_to_page(page, doc.pages.len());
 
-    // ★★★ THE OPTION GOVERNS THE POSITION TOO - O179, 2026-09-12.
+    // THE OPTION GOVERNS THE POSITION TOO - `OPERATOR_REQUESTS.md` O179.
     //
-    // Until this line the flag was read in exactly one place,
-    // `hold_the_zoom_if_asked`, which drops a standing fit so `apply_fit`
-    // stops re-scaling. That is the ZOOM half. The CENTRING is a wholly
-    // separate mechanism - `doc.find_reveal`, spent by
-    // `canvas::offset`'s reveal branch - and it was armed unconditionally,
-    // so with the option OFF the page still slid under the operator on
-    // every hit. His words: *“instead of … leaving the page in its current
-    // position on the canvas it still zooms and repositions the page”*.
+    // The *Zoom* control has two halves and this is the second of them.
+    // `hold_the_zoom_if_asked` is the ZOOM half: it drops a standing fit so
+    // `apply_fit` stops re-scaling. The CENTRING is a wholly separate
+    // mechanism - `doc.find_reveal`, spent by `canvas::offset`'s reveal
+    // branch - so arming it unconditionally slides the page under the
+    // operator on every hit even with the option OFF. His words:
+    // *“instead of … leaving the page in its current position on the canvas
+    // it still zooms and repositions the page”*.
     //
-    // ★★ It also closed a real zoom hole, which is why he saw zooming with
-    // the option off even though nothing here calls `set_zoom`. Under a
-    // continuous display mode `view.page_index` is DERIVED from the scroll
+    // Declining here also closes a zoom hole the zoom half cannot reach,
+    // which is why the option OFF can still be seen zooming even though
+    // nothing in this module calls `set_zoom`. Under a continuous display
+    // mode `view.page_index` is DERIVED from the scroll
     // (`canvas::strip::track_current_page`), so the reveal's own centring
-    // scroll could carry `page_index` onto a differently-sized sheet on the
-    // next frame - at which point `apply_fit` re-scaled to that sheet.
+    // scroll can carry `page_index` onto a differently-sized sheet on the
+    // next frame - at which point `apply_fit` re-scales to that sheet.
     // `hold_the_zoom_if_asked` cannot see that coming: its third guard
     // returns early when the target IS the current page. Not arming the
     // scroll removes the cause rather than adding a fourth guard.
@@ -187,7 +188,7 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
     });
 }
 
-/// ★★★ **Hold the zoom still across a find jump, when the operator has asked
+/// **Hold the zoom still across a find jump, when the operator has asked
 /// for that** — the *Zoom* control, `OPERATOR_REQUESTS.md` **O163**.
 ///
 /// # What actually changes the zoom, because it is not this module
@@ -200,15 +201,15 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
 /// the ratio of the two sheets.
 ///
 /// That is not a hypothetical. This repository's own `fixtures/four-pages.pdf`
-/// carries three page sizes — **measured 2026-09-09**: page 1 is 2384×1684 pt,
-/// pages 2 and 3 are 612×792, page 4 is 306×396. Under the shipped default of
+/// carries three page sizes: page 1 is 2384×1684 pt, pages 2 and 3 are
+/// 612×792, page 4 is 306×396. Under the shipped default of
 /// [`FitMode::Page`] a jump from page 1 to page 2 moves the zoom by 3.9×, and
 /// from page 1 to page 4 by 7.8×. A drawing set with a letter-size cover sheet
 /// in front of A1 sheets is the same document. The operator's report was of a
 /// search that "changed the zoom"; the cause is a fit doing precisely what a
 /// fit is for, on a page he did not choose to go to.
 ///
-/// ★ The **engine's** `pageops/four-pages.pdf`, which most of the tests in
+/// The **engine's** `pageops/four-pages.pdf`, which most of the tests in
 /// this module open through `open_fixture`, is four *identical* 612×792 pages
 /// and cannot show the effect at all. The tests for this function therefore
 /// open the local file through `open_local_fixture` instead — a distinction
@@ -220,7 +221,7 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
 /// as it is and stops `apply_fit` from touching it again. The operator keeps
 /// the size they were reading at, on the new page.
 ///
-/// ★ **This deliberately changes a visible setting**, and that is disclosure
+/// **This deliberately changes a visible setting**, and that is disclosure
 /// rather than a side effect: the status bar's zoom readout stops saying *Fit
 /// page* and starts showing the percentage. A build that held the zoom while
 /// still *claiming* to be in Fit page would be lying about its own state in
@@ -229,9 +230,8 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
 ///
 /// # Three guards, and each one is a case where doing nothing is correct
 ///
-/// - **The control is on** — the default, and the behaviour every build before
-///   2026-09-09 had. Nothing happens, so an operator who never opens the
-///   options menu is unaffected.
+/// - **The control is on** — the shipped default. Nothing happens, so an
+///   operator who never opens the options menu is unaffected.
 /// - **The page is not changing.** Stepping between two hits on the same sheet
 ///   cannot re-fit, because `apply_fit` would compute the identical scale from
 ///   the identical extent. Dropping the fit anyway would take the operator out
@@ -245,7 +245,7 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
 /// Called from [`reveal_current`] **before** `go_to_page`, because the second
 /// guard is a question about the page the operator is leaving.
 ///
-/// # ★ Why it returns a `bool` nobody in the shipped path reads
+/// # Why it returns a `bool` nobody in the shipped path reads
 ///
 /// Because the third guard is otherwise **unobservable to a test**, and an
 /// unobservable guard is one that can be deleted with every check still green.
@@ -253,8 +253,8 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
 /// test cannot capture. Under that guard's own conditions the acting branch
 /// would assign `FitMode::None` over `FitMode::None` and leave `zoom` alone, so
 /// *every* piece of document state a test could assert on is identical either
-/// way. That was measured, not assumed: with the guard removed, all ten tests
-/// in this module still passed.
+/// way. Measured, not assumed: with the guard removed, all ten tests in this
+/// module still pass.
 ///
 /// So the function reports what it did, the tests read the report, and
 /// [`reveal_current`] discards it. That is the cheapest way to make a real
@@ -264,10 +264,11 @@ fn hold_the_zoom_if_asked(state: &FindState, doc: &mut OpenDoc, target: usize) -
         return false;
     }
     let held = doc.view.zoom;
-    // ★ A stable token, not `{:?}`. A `Debug` rendering is a spelling the
+    // A stable token, not `{:?}`. A `Debug` rendering is a spelling the
     // compiler is free to change when a variant is renamed, and this line is
-    // read by a machine — see `HANDOFF.md` on the driven check that reported
-    // the opposite of the truth while quoting the truth, from a `{:?}` tuple.
+    // read by a machine: a check that matches on a rendering the compiler owns
+    // goes on passing while the string it quotes has stopped meaning what the
+    // check was written to assert.
     let dropped = match doc.view.fit {
         // ui-text-exempt: diagnostic trace field values, never displayed
         FitMode::None => "none",
@@ -286,11 +287,14 @@ fn hold_the_zoom_if_asked(state: &FindState, doc: &mut OpenDoc, target: usize) -
     true
 }
 
-/// ★ **The scroll offset that puts a pending reveal in the middle of the
+/// **The scroll offset that puts a pending reveal in the middle of the
 /// viewport**, or `None` to leave the scroll area alone.
 ///
-/// Called once per frame from `crate::canvas::show`, before the scroll area
-/// lays out.
+/// Called from [`crate::canvas::offset`]'s scroll-priority chain, once per
+/// frame while a reveal is pending: below the fit and the zoom anchor, which
+/// are explicit instructions about the view, and above the plain page-change
+/// scroll, which would otherwise satisfy the page change without centring the
+/// hit.
 ///
 /// # It reuses the anchoring solve rather than writing a second one
 ///
@@ -366,12 +370,12 @@ pub fn take_reveal_offset(
 /// [`crate::viewer::pdf_space_to_canvas`]'s own decline for a degenerate
 /// page. The hit is still counted and still navigable — see [`Hit::canvas`].
 ///
-/// ★ `pub(crate)` rather than `pub(super)` since canvas text selection landed.
-/// It projects its line boxes through **this** function rather than mapping two
-/// corners of its own, and that is a correctness requirement rather than
-/// tidiness: a selected word and the same word *found* are two washes over the
-/// same glyphs, and on a `/Rotate 90` sheet a two-corner projection puts one of
-/// them somewhere else. One projection, two surfaces — the same discipline
+/// `pub(crate)` rather than `pub(super)` so that canvas text selection can
+/// project its line boxes through **this** function rather than mapping two
+/// corners of its own. That is a correctness requirement rather than
+/// tidiness: a selected word and the same word *found* are two washes over
+/// the same glyphs, and on a `/Rotate 90` sheet a two-corner projection puts
+/// one of them somewhere else. One projection, two surfaces — the same discipline
 /// `canvas::mapping` applies to the screen⟷canvas hop.
 pub(crate) fn quad_to_canvas(
     quad: &pdfcer_core::annot_author::Quad,
@@ -403,7 +407,7 @@ mod tests {
     // Projecting a quad
     // =======================================================================
 
-    /// ★ **A hit's quad projects into canvas space, once, at search time.**
+    /// **A hit's quad projects into canvas space, once, at search time.**
     ///
     /// Driven against a real page so the bridge under test is the one the
     /// canvas paints through — `viewer::pdf_space_to_canvas`, which inverts
@@ -444,7 +448,7 @@ mod tests {
     // The two-frame handshake
     // =======================================================================
 
-    /// ★ **A reveal waits for its page and is then spent once.**
+    /// **A reveal waits for its page and is then spent once.**
     ///
     /// The two-frame handshake. Spending it before the page change lands
     /// would scroll the outgoing page to a fraction that means nothing on it.
@@ -475,7 +479,7 @@ mod tests {
         assert!(take_reveal_offset(&mut doc, display, viewport).is_none());
     }
 
-    /// ★ **A reveal whose page never arrives is abandoned.**
+    /// **A reveal whose page never arrives is abandoned.**
     ///
     /// Otherwise it would sit on the document until the page index coincided
     /// by accident and then scroll the view somewhere the operator did not
@@ -509,7 +513,7 @@ mod tests {
     /// Land on `page` **the way the canvas does**: change the page, then apply
     /// whatever fit is still switched on against *that page's* extent.
     ///
-    /// ★ This reproduces the part of the frame the defect lives in rather than
+    /// This reproduces the part of the frame the defect lives in rather than
     /// asserting around it. Checking only that `fit` became `FitMode::None`
     /// would prove this module agrees with itself; running the fit afterwards
     /// proves the number the operator reads actually held still, which is what
@@ -527,9 +531,9 @@ mod tests {
     /// The local four-page fixture, already settled on page 1 under `fit`,
     /// with a find state whose *Zoom* control is at `zoom_on_jump`.
     ///
-    /// `open_local_fixture`, **not** `open_fixture` — see the ★ on
-    /// [`hold_the_zoom_if_asked`] for why the engine fixture of the same name
-    /// cannot show this effect.
+    /// `open_local_fixture`, **not** `open_fixture`: the engine fixture of the
+    /// same name is four identical pages and cannot show this effect at all.
+    /// See [`hold_the_zoom_if_asked`].
     fn settled(fit: FitMode, zoom_on_jump: bool) -> (FindState, OpenDoc) {
         let mut doc = crate::app::state::open_local_fixture("four-pages.pdf");
         doc.view.set_fit(fit);
@@ -539,7 +543,7 @@ mod tests {
         (state, doc)
     }
 
-    /// ★★ **The control OFF holds the zoom across a jump between differently
+    /// **The control OFF holds the zoom across a jump between differently
     /// sized sheets** — the whole of O163, asserted as the operator sees it.
     ///
     /// Page 1 of the fixture is 2384×1684 pt and page 4 is 306×396, so under
@@ -565,9 +569,8 @@ mod tests {
         );
     }
 
-    /// ★★ **The control ON is the behaviour every build before 2026-09-09
-    /// had** — its shipped default, and the arm that proves the test above is
-    /// measuring something.
+    /// **The control ON lets the fit re-scale** — the shipped default, and the
+    /// arm that proves the test above is measuring something.
     ///
     /// Without this, `the_control_off_holds_the_zoom_across_a_jump` would pass
     /// on a build where the fixture happened not to re-fit at all.
@@ -592,7 +595,7 @@ mod tests {
         );
     }
 
-    /// ★ **Stepping between two hits on the same sheet does not drop the
+    /// **Stepping between two hits on the same sheet does not drop the
     /// fit** — the second guard.
     ///
     /// `apply_fit` would compute the identical scale from the identical
@@ -611,7 +614,7 @@ mod tests {
         assert_eq!(doc.view.zoom, before);
     }
 
-    /// ★ **With no fit active there is nothing to hold, and nothing is
+    /// **With no fit active there is nothing to hold, and nothing is
     /// touched** — the third guard.
     ///
     /// Asserted rather than assumed because the acting branch would otherwise
@@ -622,7 +625,7 @@ mod tests {
     fn no_fit_active_means_no_intervention() {
         let (state, mut doc) = settled(FitMode::None, false);
         let before = doc.view.zoom;
-        // ★★ The whole of this test. Every other assertion below is true
+        // The whole of this test. Every other assertion below is true
         // whether the guard is present or not — measured — so without this
         // line the guard could be deleted with the suite still green.
         assert!(
@@ -638,7 +641,7 @@ mod tests {
         );
     }
 
-    /// ★ **Fit width is held too, not only Fit page.**
+    /// **Fit width is held too, not only Fit page.**
     ///
     /// The guard tests `fit == FitMode::None`, so every other mode is meant to
     /// be covered by the one branch. This is the check that it was not written
@@ -653,8 +656,8 @@ mod tests {
         assert_eq!(doc.view.fit, FitMode::None);
     }
 
-    /// ★ **The shipped default is ON**, so an operator who never opens the
-    /// options menu sees exactly what every build before 2026-09-09 did.
+    /// **The shipped default is ON**, so an operator who never opens the
+    /// options menu keeps the fit-following behaviour.
     ///
     /// [`FindState`] carries a hand-written `Default` for precisely this;
     /// `#[derive(Default)]` would give `false` and quietly change the

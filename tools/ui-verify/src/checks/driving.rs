@@ -1018,17 +1018,18 @@ pub fn delta(a: Rgb, b: Rgb) -> u16 {
 /// one measurement that can drift apart. In summary, and only as a pointer
 /// into that argument:
 ///
-/// * `egui`'s stock light palette — which is what the built binary actually
-///   paints with, because nothing in `crates/pdfcer-gui` calls
-///   `egui_shell::theme::Theme::apply` — separates unpressed `#E5E5E5` from
-///   pressed `#90D1FF` by **85**;
-/// * `egui-shell`'s `quiet` preset, if it were installed, would separate them
-///   by **39**;
+/// * `egui-shell`'s `quiet` preset is what the built binary paints with:
+///   `app::frame` calls `theme.apply(&ctx)` every frame, from the operator's
+///   own settings. It separates unpressed from pressed by **209** now that
+///   `visuals.selection` carries the accent, and by **39** before that;
+/// * `egui`'s stock light palette — which the binary does *not* install —
+///   separates unpressed `#E5E5E5` from pressed `#90D1FF` by **85**;
 /// * two identically filled controls in a lossless BGRA capture differ by
 ///   **0**, not by a small number.
 ///
-/// Twelve sits above zero and a factor of three below the smaller of the two
-/// real differences, so the verdict is the same whichever palette is in force.
+/// Twelve sits above zero and a factor of three below **39**, the smallest of
+/// the three real differences, so the verdict is the same whichever palette is
+/// in force.
 ///
 /// A channel difference rather than a contrast ratio, because both pairs are
 /// near-equal in luminance (about 1.5:1 and 1.3:1) and would therefore be

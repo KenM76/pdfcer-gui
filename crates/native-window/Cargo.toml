@@ -1,5 +1,6 @@
-# `native-window` — the two or three things a window manager will only tell
-# the operating system.
+# `native-window` — the few things a window manager will only tell the
+# operating system: window ownership, the cursor position, and placing an
+# image on the clipboard.
 #
 # WHY THIS IS ITS OWN CRATE, AND IT IS NOT ORGANISATION FOR ITS OWN SAKE
 #
@@ -8,11 +9,14 @@
 # memory, and a reviewer can establish that by reading one line. `forbid`
 # cannot be relaxed by an inner `allow`, deliberately.
 #
-# Window OWNERSHIP needs four `user32` calls (see the crate docs for why
-# nothing in `eframe 0.35` can express it). Rather than downgrade two crates'
-# invariant to `deny` and sprinkle exceptions, the unsafe is QUARANTINED here:
-# one file, four declarations, one public function, no state, no allocation
-# it does not free by scope.
+# Each of those three jobs needs `user32`, `kernel32` or `gdi32` (see the
+# crate docs for why nothing in `eframe 0.35` can express window ownership).
+# Rather than downgrade two crates’ invariant to `deny` and sprinkle
+# exceptions, the unsafe is QUARANTINED here: every declaration sits in an
+# `unsafe extern "system"` block, each public function is a thin wrapper over
+# one sequence of them, and the crate holds no state and no allocation it
+# does not free by scope. Do not write down how many calls that is — the
+# count has been stale in three comments at once and no gate checks it.
 #
 # It names no PDF concept and depends on nothing, so it is also R7-clean:
 # `egui-shell` could take a dependency on it without learning what a document

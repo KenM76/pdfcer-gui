@@ -3,17 +3,14 @@
 //! One verb, `Action::CommitAddText`, and the one decision it has to make that
 //! nothing upstream can: **how wide is the text the operator just typed?**
 //!
-//! ## Why it is its own file, on the day it grew
+//! ## Why it is its own file
 //!
-//! **R2.** [`super::apply`] stood at 1,494 lines of its 1,500-line ceiling when
-//! `OPERATOR_REQUESTS.md` **O127** arrived, and the arm this file holds was the
-//! one that had to grow. The seam is a real one rather than a size-driven cut,
-//! and it is the same seam [`super::funnel`] was cut along: `apply` is a
+//! The same seam [`super::funnel`] is cut along: [`super::apply`] is a
 //! **router** — it answers *"which module handles this action?"* — and this
-//! answers *"what does placing text mean?"*. The arm below now decides
-//! something; a router arm should not.
+//! answers *"what does placing text mean?"*. The arm below decides something;
+//! a router arm should not.
 //!
-//! ## ★★★ A PDF HAS NO PARAGRAPH, and that is the whole subject
+//! ## A PDF HAS NO PARAGRAPH, and that is the whole subject
 //!
 //! Every visible line of text in a PDF is its own show operator at its own
 //! absolute position. There is no object that means *"this text, flowing"*. So
@@ -30,12 +27,12 @@
 //! why dragging a rectangle was the multi-line gesture in the first place: a
 //! drag says how wide.
 //!
-//! ## ★★ What changed on 2026-09-04, and the argument it had to answer
+//! ## Where the width of a CLICKED multi-line draft comes from
 //!
 //! The operator: *"can the enter key create new lines when we are editing or
-//! creating text?"* Enter now inserts a line break at a **clicked** caret too —
-//! and a click has no extent, so this arm meets a multi-line draft with no
-//! width for the first time.
+//! creating text?"* Enter inserts a line break at a **clicked** caret too — and
+//! a click has no extent, so this arm meets a multi-line draft carrying no
+//! width of its own.
 //!
 //! The shell's own standing rule, from `canvas::textedit::place`'s header, is
 //! that a width may not be **invented**: *"a click would have to invent a
@@ -52,12 +49,12 @@
 //! Every number is a fact about their document. Nothing here chooses a margin,
 //! a column width or a default; the sheet does.
 //!
-//! ★ And the promotion is **conditional**. A single-line point add is still a
-//! point add, byte for byte, taking the exact path it took before — which is
-//! what keeps the common case unchanged and makes this addition impossible to
-//! regress into. See [`request`]'s three-way match.
+//! The promotion is **conditional**. A single-line point add is still a point
+//! add, byte for byte, taking the path it would take if this rule did not
+//! exist — which is what keeps the common case unchanged and makes the rule
+//! impossible to regress into. See [`request`]'s three-way match.
 //!
-//! ## ★ Rule 4: the promotion is DISCLOSED
+//! ## The promotion is DISCLOSED
 //!
 //! A rectangle that is not drawn is a rectangle the operator cannot see, and
 //! where a long line breaks depends on it. `crate::text::textedit::point_text_became_a_block`
@@ -68,7 +65,7 @@
 //! own disclosures travel in — rather than getting a channel of its own,
 //! because an edit *did* happen and this is the part of it they cannot see.
 //! That is precisely what `⚑ About your last edit:` is for, and it is the
-//! distinction O127's other two defects were both on the wrong side of.
+//! distinction O127's other two defects are both on the wrong side of.
 
 use super::apply::vector_edit;
 use crate::app::state::OpenDoc;
@@ -97,7 +94,7 @@ pub(super) struct Placed {
 /// **Author the text**, wrapped or not, and disclose it if this arm chose the
 /// rectangle.
 ///
-/// # ★ The whole body is two calls and a funnel, deliberately
+/// # The whole body is two calls and a funnel, deliberately
 ///
 /// Every decision is in [`request`], which is pure and therefore provable
 /// without a document, a session or a window. This function owns only the
@@ -105,7 +102,7 @@ pub(super) struct Placed {
 /// and the disclosure it appends. That is the split every geometry rule in this
 /// crate is written to, and it is what lets the interesting half be tested.
 pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
-    // ★ The page's own rectangle, and `None` when there is no such page — which
+    // The page's own rectangle, and `None` when there is no such page — which
     // the engine will then refuse by index, in its own words. Guessing a
     // cropbox here would turn a refusal ABOUT a missing page into a refusal
     // about a rectangle this shell invented, which is `textstyle::reflow`'s
@@ -114,7 +111,7 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
     let page = placed.page;
     let (req, promoted) = request(&placed, crop);
     let lines = req.text.split('\n').count();
-    // ★★★ The epoch is read BEFORE the verb, because it is how this arm learns
+    // The epoch is read BEFORE the verb, because it is how this arm learns
     // whether the verb SUCCEEDED.
     //
     // `vector_edit` returns `()`. It bumps `doc.edit_epoch` on `Ok` and does
@@ -138,32 +135,31 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
     }
 }
 
-/// ★★★ **The text arrives SELECTED** — `OPERATOR_REQUESTS.md` **O198**, and
-/// the half of it that is about text the operator typed himself.
+/// **The text arrives SELECTED** — `OPERATOR_REQUESTS.md` **O198**, and the
+/// half of it that is about text the operator typed himself.
 ///
-/// The operator, 2026-09-14: *"the font selector and editing tools like bold
+/// The operator: *"the font selector and editing tools like bold
 /// and italic ... that entire area is always greyed out in the menu, and the
 /// properties area is uneditable too. **This is true even when I add a new line
 /// of text.**"*
 ///
 /// That last sentence is the one that rules out every "CAD text is hard"
-/// explanation, and its cause is here rather than anywhere near a font.
-/// `CommitAddText` authored an object and selected **nothing**. With nothing
-/// selected, `selection.formattable` is unpublished, so the contextual Format
-/// tab does not appear at all; the operator had just typed a line of text and
-/// the ribbon had no Font group on it to be greyed.
+/// explanation, and the cause is here rather than anywhere near a font. An arm
+/// that authors an object and selects **nothing** leaves
+/// `selection.formattable` unpublished, so the contextual Format tab does not
+/// appear at all — the operator has just typed a line of text and the ribbon
+/// has no Font group on it to be greyed.
 ///
-/// # ★★ The same convention `InsertImage` follows, for the same reason
+/// # The same convention `InsertImage` follows, for the same reason
 ///
-/// `super::apply`'s image arm carries the long-form argument, written when the
-/// operator reported *"if I add an image I expect to click on it to resize but
-/// dragging doesn't resize"* — which was never about resizing: the image
-/// arrived unselected, so his first press landed on unselected paper and
-/// `gesture::meaning` read it as a marquee. Every one of the eight applications
-/// surveyed for `HOW_IT_SHOULD_WORK.md` leaves a newly placed object selected.
-/// Text is not an exception to that; it was simply written before the rule was.
+/// `super::apply`'s image arm carries the long-form argument. The operator:
+/// *"if I add an image I expect to click on it to resize but dragging doesn't
+/// resize"* — which was never about resizing: the image arrived unselected, so
+/// the first press landed on unselected paper and `gesture::meaning` read it as
+/// a marquee. Every one of the eight applications surveyed leaves a newly
+/// placed object selected; text is not an exception to that.
 ///
-/// # ★★ Why the LAST object, and why the model is rebuilt rather than counted
+/// # Why the LAST object, and why the model is rebuilt rather than counted
 ///
 /// `add_text` appends one `BT` ... `ET` to the page's content, so the authored
 /// object is last in paint order and therefore the decomposition's final index.
@@ -171,7 +167,7 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
 /// see the hand-off in `D:/Dev/FeatureRequests/pdfce_FeatureRequests/` if that
 /// ever changes.
 ///
-/// ★★ The count is taken from the model rebuilt AFTER the edit, never from a
+/// The count is taken from the model rebuilt AFTER the edit, never from a
 /// count kept before it: the edit invalidated the cache, `page_objects()`
 /// rebuilds against the new epoch, and a remembered count would be a count of
 /// the page as it was. The `Ref` is dropped in the same statement that reads
@@ -179,7 +175,7 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
 /// the borrow across it does not compile — the borrow checker enforcing the
 /// short-borrow discipline `app::cache`'s docs ask for.
 ///
-/// # ★★ The two ways this declines, and why each is silence rather than a guess
+/// # The two ways this declines, and why each is silence rather than a guess
 ///
 /// - **The page will not decompose.** `page_objects()` answers `None` and the
 ///   selection is left alone. The text is on the page; what is missing is the
@@ -234,13 +230,13 @@ fn select_what_was_authored(doc: &mut OpenDoc, page: usize) {
 /// | clicked point, one line | `None` | no | **point** — unchanged, and this is the common case |
 /// | clicked point, several lines | `None` | yes | boxed, at the **sheet's** rectangle, and disclosed |
 ///
-/// ★★ The second row is the one to protect. It is what an operator does dozens
-/// of times an hour — click, type a label, click away — and it takes exactly
-/// the path it took before this function existed. A build that boxed every add
-/// would wrap a one-line label at whatever width it invented, and the width
-/// would have to be invented, because a click has no extent.
+/// The second row is the one to protect. It is what an operator does dozens of
+/// times an hour — click, type a label, click away — and it must stay a point
+/// add. A build that boxed every add would wrap a one-line label at whatever
+/// width it invented, and the width would have to be invented, because a click
+/// has no extent.
 ///
-/// # ★★★ `with_box` takes ORIGIN AND EXTENT, not two corners
+/// # `with_box` takes ORIGIN AND EXTENT, not two corners
 ///
 /// A signature worth reading rather than assuming: `(x, y, w, h)` and
 /// `(llx, lly, urx, ury)` are four `f64`s either way and transposing them
@@ -248,7 +244,7 @@ fn select_what_was_authored(doc: &mut OpenDoc, page: usize) {
 /// subtraction happens here, once, at the boundary — [`tests::a_dragged_box_reaches_the_engine_as_origin_and_extent`]
 /// is the assertion that keeps it honest.
 ///
-/// # ★ Why a degenerate sheet falls back to a point rather than to a zero box
+/// # Why a degenerate sheet falls back to a point rather than to a zero box
 ///
 /// If the click is at or past the crop box's right or bottom edge there is no
 /// rectangle to lay text into, and a zero-width box is a request the engine
@@ -261,10 +257,11 @@ pub(super) fn request(
     placed: &Placed,
     crop: Option<pdfcer_core::page_tree::Rect>,
 ) -> (pdfcer_core::text_edit::AddTextRequest, bool) {
-    // ★★ The three fields the engine has carried since `AddTextRequest` shipped
-    // and this arm did not always set. The pen is `canvas::textedit::pen`,
-    // edited from the Tool panel and sampled at the commit, so this computes
-    // nothing — it routes three values it was handed.
+    // The three fields `AddTextRequest` carries beyond the text itself. The pen
+    // is `canvas::textedit::pen`, edited from the Tool panel and sampled at the
+    // commit, so this computes nothing — it routes three values it was handed.
+    // Dropping any one of them authors text in the engine's default face, size
+    // or colour, which is a plausible-looking wrong answer.
     let req = pdfcer_core::text_edit::AddTextRequest::new(
         placed.page,
         placed.origin,
@@ -292,7 +289,7 @@ pub(super) fn request(
         // See the header note on a degenerate sheet.
         return (req, false);
     }
-    // ★ `y - height` is the crop box's bottom, spelled as a subtraction from
+    // `y - height` is the crop box's bottom, spelled as a subtraction from
     // the click so that the box's TOP is exactly the click: `with_box` anchors
     // the first line from `y + h`, so the operator's first line begins where
     // they pressed, which is the one property they can check by looking.
@@ -322,13 +319,12 @@ mod tests {
         }
     }
 
-    /// ★★★ **A one-line click is still a POINT add**, and this is the
-    /// regression guard for the whole change.
+    /// **A one-line click is still a POINT add**, and this is the regression
+    /// guard for the whole rule.
     ///
     /// The commonest gesture in the program — click, type a label, click away —
-    /// must take exactly the path it took before Enter learned to make a line
-    /// break. A build that boxed every add would wrap a short label at a width
-    /// nobody chose, and would do it silently.
+    /// must reach the engine as a point add. A build that boxed every add would
+    /// wrap a short label at a width nobody chose, and would do it silently.
     #[test]
     fn a_single_line_click_is_not_promoted() {
         let (req, promoted) = request(&placed("SHEET 1 OF 4", None), Some(crop()));
@@ -339,13 +335,13 @@ mod tests {
         assert!(!promoted, "and it has nothing to disclose");
     }
 
-    /// ★★★ **A multi-line click IS promoted, and the box runs to the sheet's
-    /// own edges.**
+    /// **A multi-line click IS promoted, and the box runs to the sheet's own
+    /// edges.**
     ///
-    /// The fix for O127's defect 2 at the point where it meets the engine:
-    /// `\n` in a point add is a **named refusal** — `\n` has no code in any
-    /// standard encoding — so without this the operator's second line would
-    /// lose the whole add, with an error about a character they cannot see.
+    /// O127's defect 2 at the point where it meets the engine: `\n` in a point
+    /// add is a **named refusal** — `\n` has no code in any standard encoding —
+    /// so without this the operator's second line loses the whole add, with an
+    /// error about a character they cannot see.
     ///
     /// Every number in the assertion is the operator's or the page's. That is
     /// the property being pinned: no margin, no default, nothing chosen here.
@@ -373,7 +369,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The newline survives to the engine.**
+    /// **The newline survives to the engine.**
     ///
     /// The fact the whole feature rests on: `with_box` splits on `\n` and wraps
     /// each paragraph independently. A build that joined the lines with a space
@@ -389,7 +385,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A dragged box reaches the engine as origin AND EXTENT.**
+    /// **A dragged box reaches the engine as origin AND EXTENT.**
     ///
     /// The transposition that compiles. The action carries corners, because
     /// that is what a dragged rectangle is; `with_box` takes `(x, y, w, h)`.
@@ -442,12 +438,11 @@ mod tests {
         assert!(!promoted);
     }
 
-    /// ★ **The pen reaches the engine in every one of the three cases.**
+    /// **The pen reaches the engine in every one of the three cases.**
     ///
-    /// The failure this arm's own history names: *"two branches each building a
-    /// request would be two places for a font to be forgotten."* There are now
-    /// three exits, so the property is asserted across all of them rather than
-    /// argued for in a comment.
+    /// Two branches each building a request would be two places for a font to
+    /// be forgotten. There are three exits, so the property is asserted across
+    /// all of them rather than argued for in a comment.
     #[test]
     fn every_route_carries_the_pen() {
         let pen = TextPen::default();

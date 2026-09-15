@@ -1,8 +1,8 @@
 //! # `app::rail` — drawing the left rail
 //!
 //! `OPERATOR_REQUESTS.md` **O123** part 7 and **O126**'s addendum. The
-//! permanent vertical strip down the left dock's outer edge: the five panel
-//! tabs, the navigate selectors, the selection controls, rotate.
+//! permanent vertical strip down the left dock's outer edge: the panel tabs,
+//! the navigate selectors, the selection controls, rotate.
 //!
 //! Three files, three jobs, and the split is the R7 line:
 //!
@@ -16,18 +16,14 @@
 //! rather than tidy: the shell may not learn that `pages` is a page thumbnail
 //! list, so the shell plans ids and this file paints them.
 //!
-//! ## ★★★ Why every row publishes through `ui_rect_visible`
+//! ## Why every row publishes through `ui_rect_visible`
 //!
 //! `crate::diag::ui_rect` says *"this region was laid out at these
-//! coordinates"*. That is **not** the claim a rail needs to make, and the
-//! distance between the two claims is this exact feature's own defect: on
-//! 2026-08-10 Bookmarks, Layers and Signatures shipped **unreachable**, each
-//! with a rail entry, each publishing a perfectly healthy rectangle, every
-//! gate green. `SHELL_LAYOUT_PROPOSAL.md` §5 made converting the dock's rect
-//! channel from layout to visibility a **precondition** for scheduling this
-//! work, precisely because no driven check could otherwise tell a working rail
-//! from that defect. The channel was converted on 2026-09-04; this file is the
-//! first consumer that exists because of it.
+//! coordinates"*. That is **not** the claim a rail needs to make. A panel entry
+//! can be unreachable and still publish a perfectly healthy rectangle with
+//! every gate green — which is how three of them shipped unreachable. A rect
+//! channel that reports layout cannot tell a working rail from that state, so
+//! this file reports **visibility** instead, and only ever that.
 //!
 //! ⇒ So there are **two** regions per press target, deliberately:
 //! `dock.left.toolrail` from the shell says *the strip is on screen*, and
@@ -99,7 +95,7 @@ pub fn show(
         return tokens;
     }
 
-    // ★ The budget is the strip's own available height, read before anything
+    // The budget is the strip's own available height, read before anything
     // is drawn into it. Reading it *after* a row would make the ladder a
     // function of what the ladder had already decided, which is the shape of
     // every layout feedback loop in this project's RAG.
@@ -146,7 +142,7 @@ pub fn show(
                         pinned,
                     } => {
                         let Some(command) = registry.get(id) else {
-                            // ★ Nothing is drawn for an unregistered id, and
+                            // Nothing is drawn for an unregistered id, and
                             // nothing needs to be: `Shell::validate` walks the
                             // rail and refuses the whole manifest at start-up,
                             // so reaching here means the manifest was bypassed.
@@ -178,7 +174,7 @@ pub fn show(
 
 /// One control: a picture, optionally with its word under it.
 ///
-/// ★ Hand-drawn rather than an `egui::Button`, and the reason is the width.
+/// Hand-drawn rather than an `egui::Button`, and the reason is the width.
 /// A button sizes itself from its content; this row must be exactly the strip
 /// wide at every rung, whatever the label says. Allocating the rectangle first
 /// and painting into it is the only arrangement in which the label physically
@@ -211,12 +207,12 @@ fn entry(
         response.on_disabled_hover_text(command.tooltip.clone().unwrap_or_default())
     };
 
-    // ★★ The selected pair comes from the THEME, never from
+    // The selected pair comes from the THEME, never from
     // `ui.visuals().selection` — `tools/gates/check-selection-channel.sh`
     // forbids the raw read, and its reason applies exactly here: this row is
     // hand-drawn, so it is one of the sites that would go on painting whatever
-    // that channel happened to hold after somebody re-pointed it. It has been
-    // re-pointed twice already. `Theme::selected_widget_pair` returns
+    // that channel happens to hold if anything re-points it.
+    // `Theme::selected_widget_pair` returns
     // `(selected_plate, accent)` and a shell test pins that it is bit-for-bit
     // what `egui` would have painted.
     let (plate, accent) = egui_shell::theme::Theme::selected_widget_pair(ui.ctx());
@@ -282,12 +278,12 @@ fn entry(
         );
     }
 
-    // ★★ `ui_rect_visible`, never `ui_rect`. See the module header: a rail
-    // entry that is laid out but unreachable is precisely the 2026-08-10
-    // defect, and this feature is the one that shipped it.
+    // `ui_rect_visible`, never `ui_rect`. See the module header: a rail entry
+    // that is laid out but unreachable is the defect this channel exists to
+    // make visible, and permanent chrome is where it hides longest.
     crate::diag::ui_rect_visible(&region(group, &command.id), rect, ui.clip_rect());
 
-    // ★ The hover sentence is composed in `crate::text::rail`, not here. R1
+    // The hover sentence is composed in `crate::text::rail`, not here. R1
     // (`tools/gates/check-ui-strings.sh`): every operator-visible string lives
     // in the catalog, and a `format!` that joins a label to a sentence with an
     // em dash IS an operator-visible string — the em dash and the blank line
@@ -309,7 +305,7 @@ fn entry(
 
 /// The overflow chevron, and the menu of everything the strip folded away.
 ///
-/// ★★ It is drawn only when it holds something — a chevron over an empty
+/// It is drawn only when it holds something — a chevron over an empty
 /// overflow is the dead control R9 forbids — and it is **never itself
 /// folded**: [`egui_shell::dock::rail::build`] appends it after the ladder has
 /// run. That is Inkscape failure mode #8 (past about six tabs the overflow

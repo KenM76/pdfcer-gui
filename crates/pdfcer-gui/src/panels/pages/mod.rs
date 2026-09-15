@@ -1,13 +1,11 @@
 //! # `panels::pages` — the document's pages, as pictures
 //!
-//! The thumbnail grid. `FEATURES.md`'s Phase 3 row — *"**Thumbnail grid** —
-//! the Pages panel is not registered yet"* — and the last of the surfaces
+//! The thumbnail grid — `FEATURES.md`'s Phase 3 row, and one of the surfaces
 //! `MODES_AND_PANELS.md` Part 1's table gives **all three** modes.
 //!
 //! | | |
 //! |---|---|
 //! | Ribbon command | `view.panel_pages` |
-//! | Salvaged from | the old shell's `main.rs::thumbnail_rail` (~250 lines) and `raster::ThumbnailCache` |
 //! | Acts on the document | [`Action::GoToPage`], and **nothing else** |
 //! | Owns | [`select::PageSelection`] — the operand list the ribbon's Pages tab already promises |
 //!
@@ -44,45 +42,27 @@
 //! thing a real PDF contains, so drawing one would assert something false
 //! about the document rather than merely look unfinished.
 //!
-//! ## ★ Two surfaces this panel was built for and could not reach — **both
-//! closed**
+//! ## ★ Two ways this panel can go silently missing, and what holds each shut
 //!
-//! Both were `shell/`'s rather than this module's, which is why they were
-//! named here rather than left to be rediscovered, in the shape
-//! `crate::shell::manifest::PLANNED` and `crate::app::modes::ABSENT_PANELS`
-//! use for the same purpose. They are kept rather than deleted because each
-//! closed a live hazard, and the next person to consider reopening one should
-//! have to read what it cost.
+//! Neither failure is this module's to make: both live in `shell/`, and both
+//! are **invisible rather than broken**, which is the expensive kind.
 //!
-//! ### 1. — closed
+//! 1. **An unregistered command hides the whole panel.**
+//!    `crate::app::mod`'s panel registry registers a panel **only if its
+//!    command is registered**, which is `SHELL_FRAMEWORK.md` §5b's capability
+//!    rule — so a `view.panel_pages` left out of the manifest filters this
+//!    panel out of every default arrangement with no error anywhere.
+//!    `every_panel_is_reachable_from_the_ribbon` is what makes that visible.
+//! 2. **An undefined menu context detaches every right-click.** [`PAGES_ROW`]
+//!    is attached to every tile below, on every frame, through the same
+//!    [`MenuHost`] the canvas and the Objects panel use — and
+//!    `egui_shell::menu::Menu::attach` treats an unknown context as *"this
+//!    surface has no menu yet"*, so an id `crate::shell::menus::built_in`
+//!    does not define opens nothing at all, silently.
 //!
-//! `view.panel_pages` had no registration. `crate::shell::manifest::PLANNED`
-//! carried it, with a reason written for the *old* shell's furniture: *"page
-//! thumbnails are the sidebar rail's first pane and have no independent
-//! toggle. `view.sidebar` shows the rail."* There is no sidebar rail in this
-//! build — there is a dock, and `crate::app::mod`'s panel registry registers a
-//! panel **only if its command is registered**, so this panel was filtered out
-//! of every default arrangement by `SHELL_FRAMEWORK.md` §5b's capability rule
-//! and an operator never saw it. It was invisible rather than broken, which is
-//! the honest failure and also the silent one.
-//!
-//! The entry was **stale rather than early** and is gone; the command is
-//! registered and drawn, and `every_panel_is_reachable_from_the_ribbon` is the
-//! test that made the staleness visible.
-//!
-//! ### 2. — closed
-//!
-//! `pages.row` had no definition when this panel was written: [`PAGES_ROW`] is
-//! attached to every tile below, on every frame, through the same
-//! [`MenuHost`] the canvas and the Objects panel use, but
-//! `crate::shell::menus::built_in` defined four contexts and this was not one
-//! of them — and `egui_shell::menu::Menu::attach` treats an unknown context as
-//! *"this surface has no menu yet"*, so the right-click opened nothing at all.
-//!
-//! It is defined now, with the six verbs listed below, and **no edit was
-//! needed here**: the attach site was already correct and the menu simply
-//! started existing. That is the whole payoff of routing a right-click through
-//! a context id rather than through a list of items at the call site.
+//! That second seam is also the payoff of routing a right-click through a
+//! context id rather than through a list of items at the call site: the attach
+//! site needs no edit when the menu's contents change.
 //!
 //! ## What a click does, and what it does not
 //!
@@ -103,13 +83,10 @@
 //! [`crate::panels::PanelsState::selected_pages`] is how a dispatch arm reads
 //! it.
 //!
-//! **Those arms exist now.** This paragraph used to end *"None of those arms
-//! exists yet"* — for the whole of v0.1.0, during which every one of the six
-//! verbs this panel's own context menu offers traced `command-unimplemented`
-//! and did nothing. **All six now work** — rotate left and right, delete,
-//! extract, move up and move down — through five dispatch arms, since the two
-//! rotations share one and so do the two moves. The reading path is exactly the
-//! one recorded here: through that accessor and through [`ops::operands`],
+//! All six of the verbs this panel's own context menu offers work — rotate
+//! left and right, delete, extract, move up and move down — through five
+//! dispatch arms, since the two rotations share one and so do the two moves.
+//! The reading path is through that accessor and through [`ops::operands`],
 //! which is the single place the *"with nothing picked, act on the current
 //! page"* rule is written down.
 //!
@@ -159,12 +136,11 @@ use thumbnails::TileState;
 /// agree — because a menu attached to a context nobody defines opens nothing at
 /// all, silently.
 ///
-/// **The six verbs it offers all work now**, and none of them did for the whole
-/// of v0.1.0: `crate::app::dispatch` had no `pages.*` arm at all, so every row
-/// of this menu traced `command-unimplemented`. The three page commands that
-/// still have no arm — `pages.split`, `pages.merge_into`,
-/// `pages.insert_from_file` — are deliberately **not** on this menu, and the
-/// dispatcher records what each of them is waiting for.
+/// The six verbs it offers all reach a dispatch arm. `pages.split` does not,
+/// and is deliberately **not** on this menu: the dispatcher records what it is
+/// waiting for. `pages.merge_into` and `pages.insert_from_file` are wired but
+/// are document-level verbs rather than verbs about the sheets pointed at, so
+/// they stay on the ribbon's Pages tab.
 pub const PAGES_ROW: &str = "pages.row"; // ui-text-exempt: a menu context id, never displayed
 
 /// The narrowest a tile may be drawn before the grid drops to one column.
@@ -185,12 +161,11 @@ const CURRENT_RING_PTS: f32 = 2.0;
 /// How much coloured mat a selected tile gets on each side.
 ///
 /// A *shape* difference as well as a colour one — the tile visibly gains a
-/// border where an unselected one has none. The old shell's rail put the same
-/// reasoning behind its checkbox: *"a glyph AND a fill, never colour alone: a
-/// colour-only state is invisible to a substantial fraction of operators."*
-/// A mat is the version of that rule which needs no glyph, and therefore
-/// cannot land on a font that has no glyph to draw — the failure that turned
-/// the old rail's reorder arrows into empty boxes.
+/// border where an unselected one has none. The standing rule is **a shape AND
+/// a fill, never colour alone**, because a colour-only state is invisible to a
+/// substantial fraction of operators. A mat is the version of that rule which
+/// needs no glyph, and therefore cannot land on a font that has no glyph to
+/// draw and render as an empty box.
 ///
 /// The header's *"N pages selected"* line is the third, wholly textual,
 /// statement of the same fact.
@@ -242,15 +217,13 @@ pub fn body(
         ui.label(t::pages_selected(pages.selection.len()));
     }
     // ★★★ **THE DRAG CAPTION IS NOT DRAWN HERE, AND THAT IS A MEASURED
-    // DEFECT RATHER THAN A PREFERENCE.**
+    // CONSTRAINT RATHER THAN A PREFERENCE.**
     //
-    // It was, for one day. A label above the grid saying where the drop would
-    // land is the obvious place to put it — this panel's own `drag_landing`
-    // sentence lived here from the day the reorder drag shipped, and the words
-    // belong beside the caret they describe.
+    // A label above the grid saying where the drop would land is the obvious
+    // place to put it: the words belong beside the caret they describe.
     //
     // It **moves the grid under the pointer while the drag is in flight.**
-    // Driven, 2026-08-20, `pages_drag_shows_where_it_lands`, from the trace:
+    // Measured by `pages_drag_shows_where_it_lands`, from the trace:
     //
     // ```text
     // before the drag   panel-pages-tile.1 rect=[[132 251.1] - [260 333.9]]
@@ -266,25 +239,20 @@ pub fn body(
     // them, by a distance that is a function of the sentence describing what
     // they are aiming at.
     //
-    // That is R128's feedback loop in a third place (`bottom_panel_height_...`
-    // in the egui RAG is the first; the dimension-groups window was the
-    // second), and the rule it yields is more general than R128's own wording:
-    // **a surface may not change size in response to a gesture that is aimed
-    // at it.**
+    // That is R128's feedback loop, and the rule it yields is more general than
+    // R128's own wording: **a surface may not change size in response to a
+    // gesture that is aimed at it.**
     //
     // The status bar carries the sentence instead. It has a fixed height by
     // construction (`app::status`'s `exact_size` plus its own `set_min_height`,
     // both for R128), it is on screen in every mode including Read, and it is
-    // where rule 4 puts off-canvas disclosure anyway. Nothing was lost by the
-    // move except the defect.
+    // where rule 4 puts off-canvas disclosure anyway.
 
-    // The previews row and its disclosure, in `previews.rs`.
-    //
-    // ★ Lifted out on 2026-09-08 rather than left inline, and the reason is
-    // R2 rather than length alone: it is a **self-contained subject** — one
-    // instruction from the operator, one number, one sentence explaining a
-    // skipped tile — and everything it touches lives on `ThumbnailCache`.
-    // Nothing above or below it in this function reads what it writes.
+    // The previews row and its disclosure, in `previews.rs` — a
+    // self-contained subject (one instruction from the operator, one number,
+    // one sentence explaining a skipped tile) whose whole state lives on
+    // `ThumbnailCache`. Nothing above or below it in this function reads what
+    // it writes.
     previews::row(ui, pages, actions);
     ui.separator();
 
@@ -481,8 +449,8 @@ pub fn body(
             u8::from(pages.cache.previews_on()),
             // ★ `0` for *no limit*, which is the operator's own notation and
             // the one the preferences file uses — so a harness reading this
-            // field and a reader opening the file meet the same number. O187,
-            // 2026-09-12.
+            // field and a reader opening the file meet the same number
+            // (`OPERATOR_REQUESTS.md` O187).
             thumbnails::millis_from_budget(pages.cache.budget()),
         )
     });
@@ -601,7 +569,8 @@ const CARET_DIMMED: f32 = 0.35;
 /// current-page ring and the guide preview take, so a preset that changes the
 /// accent changes all three together. **Not `visuals().selection.stroke`**:
 /// that is `egui`'s selected-*widget* channel, and a thumbnail rail is showing
-/// document content, not widgets (`REVIEW_TRIAGE.md` T2).
+/// document content, not widgets — and this theme points the widget channel at
+/// the accent plate, which would flood a tile.
 ///
 /// `gamma_multiply` rather than a second, paler constant, for the same reason:
 /// one colour with a stated relationship beats two colours that have to be
@@ -851,10 +820,9 @@ fn tile(
     drop: &mut Option<DropTarget>,
 ) {
     let id = ui.id().with(("pages-tile", page_index));
-    // ★ `click_and_drag`, not `click`. The tile was click-only for the whole
-    // life of this panel, which is why reordering was two ribbon buttons that
-    // move one place at a time — the gesture every operator tries first was
-    // not sensed at all.
+    // ★ `click_and_drag`, not `click`. A click-only tile senses nothing of the
+    // gesture every operator tries first, and reordering is then two ribbon
+    // buttons that move one place at a time.
     let response = ui.interact(rect, id, egui::Sense::click_and_drag());
     let visuals = ui.visuals().clone();
     let painter = ui.painter();
@@ -864,12 +832,11 @@ fn tile(
         painter.rect_filled(
             rect.expand(SELECTION_MAT_PTS),
             2.0,
-            // ★ The content-area selection wash by its role name. It was
-            // `visuals.selection.bg_fill` until 2026-09-04 — `egui`'s
-            // selected-WIDGET fill, which this theme had pointed at the canvas
-            // tint (`REVIEW_TRIAGE.md` T2). Identical colour, named address;
-            // the widget channel is now the accent plate and painting a
-            // thumbnail mat with it would flood the tile.
+            // ★ The content-area selection wash by its role name, never
+            // `visuals.selection.bg_fill`. That is `egui`'s selected-WIDGET
+            // fill, this theme points it at the accent plate, and painting a
+            // thumbnail mat with it would flood the tile. A thumbnail is
+            // document content, so it takes the content channel.
             egui_shell::theme::Theme::canvas_selection_fill(ui.ctx()),
         );
     }
@@ -915,13 +882,10 @@ fn tile(
     }
 
     // ★ Every visible tile publishes its rectangle, so a driven check can aim
-    // at a page rather than at a guess.
-    //
-    // Added 2026-08-18 with the drag-to-reorder gesture, and it closes a gap
-    // this panel had for its whole life: `panel-pages` and `panel-pages-grid`
-    // named the container and `panel-pages-current-tile` named exactly one
-    // tile, so **no check anywhere read this panel**. A drag needs two tiles —
-    // one to lift and one to land beside — and neither could be addressed.
+    // at a page rather than at a guess. Without it only the container regions
+    // (`panel-pages`, `panel-pages-grid`) and the one current tile are
+    // addressable, and a drag needs two arbitrary tiles — one to lift and one
+    // to land beside.
     //
     // `ui_rect_visible` rather than `ui_rect`: this is inside a `ScrollArea`,
     // and a tile scrolled out of view must not keep publishing a rectangle a
@@ -992,9 +956,8 @@ fn tile(
     // one replaces.
     if response.drag_started_by(egui::PointerButton::Primary) {
         pages.selection.right_click(page_index);
-        // ★★ The operand set is CAPTURED HERE, not resolved at release —
-        // reversing what this panel's own reorder drag used to do, and
-        // `crate::pagedrag`'s header carries the argument.
+        // ★★ The operand set is CAPTURED HERE, not resolved at release;
+        // `crate::pagedrag`'s header carries the argument in full.
         //
         // The one-line form: a drag that crosses into another document
         // springs a tab open on the way, and activating a tab clears this
@@ -1017,11 +980,11 @@ fn tile(
     // a caret feel like it snaps to a gap rather than to a tile.
     // ★★ **TWO drags reach this block, and they resolve the same geometry.**
     //
-    // A page drag from a thumbnail (possibly in another document), and — added
-    // 2026-08-31 for `OPERATOR_REQUESTS.md` O67 — **a FILE dragged in from
-    // Explorer**. They differ in where the pointer comes from and in whether a
-    // gap can be a no-op; they do not differ in what a gap *is*, so they share
-    // this code rather than growing a second copy of the nearer-edge rule.
+    // A page drag from a thumbnail (possibly in another document), and **a FILE
+    // dragged in from Explorer** (`OPERATOR_REQUESTS.md` O67). They differ in
+    // where the pointer comes from and in whether a gap can be a no-op; they do
+    // not differ in what a gap *is*, so they share this code rather than
+    // growing a second copy of the nearer-edge rule.
     //
     // ★ The file drag's pointer comes from `crate::app::filedrag` because the
     // toolkit does not have one: `winit` discards the OLE drop point and no
@@ -1322,12 +1285,9 @@ mod tests {
     /// places that must agree… a typo in either produces silence rather than
     /// an error."* This pins the spelling on both sides.
     ///
-    /// It used to assert the opposite — that the context was **not** yet
-    /// defined — so that the day it was, this test would fail and be updated
-    /// in the same commit that made the right-click work. That day is this
-    /// commit, and the assertion is inverted rather than deleted: the pairing
-    /// it guards is the same pairing either way, and a menu attached to a
-    /// context nobody defines opens nothing at all, silently.
+    /// Both halves matter: the spellings must agree, and something must
+    /// actually define the context — a menu attached to a context nobody
+    /// defines opens nothing at all, silently.
     #[test]
     fn the_page_tile_menu_context_is_named_and_defined() {
         assert_eq!(PAGES_ROW, "pages.row");
@@ -1378,16 +1338,16 @@ mod tests {
         // verb that acts on the whole file rather than on the sheets pointed
         // at. It stays on the ribbon's Pages tab.
         //
-        // ★★★ `pages.split` was the second id here until 2026-08-31 and is
-        // now UNREGISTERED — `OPERATOR_REQUESTS.md` O68. It was drawn, enabled
-        // and had no dispatch arm; R9 says a capability that is not built
-        // renders nothing, and its blocker (no boundary chooser, no
-        // destination directory, no name template) is real and unchanged. It
-        // comes back with `tools.split_files` when the chooser exists.
+        // ★★★ `pages.split` is deliberately absent from this list and is
+        // UNREGISTERED — `OPERATOR_REQUESTS.md` O68. R9: a capability that is
+        // not built renders nothing rather than a drawn, enabled control with
+        // no dispatch arm. What it needs first is a boundary chooser, a
+        // destination directory and a name template, and it returns with
+        // `tools.split_files` when those exist.
         //
         // ★ A single assertion rather than a one-element loop — clippy
-        // refuses the loop and is right to. It becomes a loop again with two
-        // members and a reason when `pages.split` comes back.
+        // refuses the loop and is right to. It becomes a loop again when a
+        // second id joins it.
         let id = "pages.merge_into";
         assert!(
             registry.get(id).is_some(),

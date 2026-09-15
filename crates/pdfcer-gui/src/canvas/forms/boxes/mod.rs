@@ -8,24 +8,21 @@
 //! than something a running window has to be trusted to demonstrate.
 //!
 //! That split is the seam `canvas/mod.rs` and `canvas/keys.rs` already draw
-//! between themselves — *"that module is drivable by a headless
-//! `egui::Context`, this one needs a window"* — applied one level down, and it
-//! was forced by R2's 1,500-line ceiling exactly as the `keys` split was. It
-//! turns out to be a real seam and not merely a cut: [`super`] contains no
-//! decision at all, only the wiring that spends the decisions below.
+//! between themselves — one side is drivable by a headless `egui::Context`,
+//! the other needs a window — applied one level down. It is a subject and not
+//! a line count: [`super`] contains no decision at all, only the wiring that
+//! spends the decisions below.
 //!
-//! ## ★ One correction this file made after being driven
+//! ## ★ "Redraw appearances" is only half the remedy for an undrawn field
 //!
-//! [`super`]'s §5.1 says an undrawn field's remedy is "Redraw appearances".
-//! That is **half true**, and the half was found by pressing the button on
-//! `demo-form.pdf` rather than by any test:
-//! `EditSession::regenerate_appearances` skips a text field whose `/V` is
-//! absent, so it does nothing for an *empty* undrawn field. The remedy that
-//! always works is a fill — `fill_text_field` writes the value and regenerates
-//! every widget's `/AP`, so filling once in the panel makes the field clickable
-//! on the page from then on. See
-//! [`crate::text::forms::forms_canvas_undrawn_note`], which carries the
-//! measurement.
+//! [`super`]'s §5 reason 1 offers `RegenerateAppearances` to an operator whose
+//! field draws nothing. `EditSession::regenerate_appearances` writes an `/AP`
+//! for a text field only when that field holds a `/V`, so it does nothing at
+//! all for an **empty** undrawn one. The remedy that always works is a fill:
+//! `fill_text_field` writes the value and regenerates every widget's `/AP`, so
+//! filling once in the panel makes the field clickable on the page from then
+//! on. [`crate::text::forms::forms_canvas_undrawn_note`] is where the panel
+//! says that to the operator.
 //!
 //! Read [`super`]'s header first. It carries the whole argument — why this is
 //! not a [`CanvasTool`] variant, why the panel is not replaced, what the
@@ -122,9 +119,9 @@ pub enum BoxKind {
         /// claim that could later be falsified: a centred field's editor is
         /// centred, the committed `/AP` is centred, and the operator's text
         /// does not jump from one end of the box to the other at the moment
-        /// they tab away. That jump was the actual defect — the editor read
-        /// `/Q` nowhere, so **every** field was typed into left-aligned and a
-        /// centred or right-aligned form re-laid itself out on commit.
+        /// they tab away. An editor that read `/Q` nowhere would type every
+        /// field left-aligned, and a centred or right-aligned form would
+        /// re-lay itself out the moment the value committed.
         ///
         /// ⇒ The rule the two paragraphs together state, for whoever extends
         /// this: an appearance property may be honoured here when honouring it
@@ -132,39 +129,15 @@ pub enum BoxKind {
         /// passes that test. `/DA`'s font and size do not, which is why
         /// [`editor_font_size`] still derives its number from the box.
         ///
-        /// ## ★ What is still NOT honoured, and why it is a boundary rather
-        /// than a choice
+        /// ## ★ The background colour is honoured too, and by the same test
         ///
-        /// The widget's **background colour** (`/MK` `/BG`, Table 189) was
-        /// recorded here as unreachable, and ⚠ **it is reachable now —
-        /// corrected 2026-09-07.**
-        ///
-        /// > *"it is not reachable: `pdfcer_core::forms::Widget` models `/MK`
-        /// > `/CA` and deliberately nothing else … So the editor draws in the
-        /// > theme's own text-edit colours because that is the only colour it
-        /// > can name, not because the question was settled. Reported, not
-        /// > guessed at."*
-        ///
-        /// It was reported, and the engine answered: `Widget::background`
-        /// (2026-09-04) and `Widget::border_color` (2026-09-07, `fad0d2d`,
-        /// which also fixed a read/write key mismatch between the two — so the
-        /// first cut was wrong on that side as well).
-        ///
-        /// ★★★ **And the editor now draws the FIELD's colours — 2026-09-11,
-        /// the same day the paragraph above was written.** [`editor_fill`]
-        /// below resolves `/MK` `/BG` to an sRGB triple, [`WidgetBox`] carries
-        /// it, and `canvas::forms` pairs it through `Theme::foreign_fill_pair`
-        /// so the ink stays legible on it. A shaded field no longer turns grey
-        /// when the operator clicks into it.
-        ///
-        /// ★ The three sentences above are kept, not deleted, because each was
-        /// true when written and the sequence is the argument: *cannot ask* →
-        /// *can ask, not yet answered* → *answered*. A claim whose history is
-        /// erased cannot be audited. What must never be left standing is the
-        /// **last** one in the present tense, which is exactly what happened
-        /// here for the few hours between the fix landing and this correction —
-        /// see the standing rule that a limitation sentence has an hours-long
-        /// shelf life.
+        /// `/MK` `/BG` (Table 189) is a fill and not a placement, so honouring
+        /// it makes no claim about where a glyph lands and it passes the rule
+        /// above exactly as `/Q` does. [`editor_fill`] resolves it to an sRGB
+        /// triple, [`WidgetBox`] carries it, and `canvas::forms` pairs it
+        /// through `Theme::foreign_fill_pair` so the ink stays legible on it —
+        /// which is why a shaded field does not turn grey when the operator
+        /// clicks into it.
         align: Quadding,
     },
     /// A `/Btn` check box. A click toggles between `on_state` and `Off`.
@@ -202,12 +175,11 @@ pub enum NotOnCanvas {
     RotatedPage,
     /// **No page's `/Annots` lists this widget with a usable rectangle.**
     ///
-    /// One variant for what used to be two — "no `/Rect`" and "no `/P`" — and
-    /// the merge is the point rather than a tidy-up. See [`place`]'s ★ section:
-    /// the question *"which page is this widget on?"* is now answered by
-    /// walking each page's `/Annots`, so there is no `/P` to be absent, and a
-    /// widget that no page lists is a widget with no place whatever its own
-    /// dictionary says.
+    /// One variant rather than a separate "no `/Rect`" and "no `/P`", and the
+    /// merge is the point. See [`place`]'s ★ section: the question *"which
+    /// page is this widget on?"* is answered by walking each page's `/Annots`,
+    /// so there is no `/P` to be absent, and a widget that no page lists is a
+    /// widget with no place whatever its own dictionary says.
     NotPlaced,
     /// This field kind has no canvas gesture.
     NotOffered,
@@ -345,59 +317,26 @@ pub fn offered_in(tool: CanvasTool) -> bool {
     matches!(tool, CanvasTool::Select)
 }
 
-/// What a click on `widget` would mean, or why nothing.
-///
-/// Pure, and deliberately takes the page's `/Rotate` as a number rather than a
-/// `&Page`: the rotation is the only thing about the page this decision
-/// depends on, and passing the page would make the rule untestable without
-/// building one.
-///
-/// # The order of the questions is the rule
-///
-/// Appearance first, because a field nothing draws cannot be pointed at
-/// whatever else is true of it. Then the panel's own
-/// [`block_reason`](crate::panels::forms::rows::block_reason), **asked rather
-/// than re-derived** — a read-only field must be refused here for the same
-/// reason and in the same words it is refused there, and two statements of one
-/// rule is how the two surfaces come to disagree about which fields are
-/// fillable.
-///
-/// Rotation is asked **last, and only for text**, which is the whole of the
-/// rotated-page decision: the box is placed correctly at every rotation, and
-/// it is only the editor that cannot be.
-///
-/// # ★ It asks nothing about geometry, and that is the change `widget_rects`
-/// forced
-///
-/// This used to reject `Widget::rect` being absent or degenerate. It does not
-/// any more, because the geometry a click is tested against no longer comes
-/// from `Widget::rect` at all — see [`place`]. Asking here as well would be a
-/// second source of truth for where a widget is, and the one that is *not* the
-/// one being hit-tested.
 /// The widget's own background colour as sRGB components, or `None` for
 /// "leave the theme's box alone".
 ///
 /// # ★★★ What this is for, and why it is not a facsimile
 ///
 /// The in-canvas field editor lays a live `egui` text box over the raster for
-/// the duration of a keystroke. Until this existed that box was
-/// `extreme_bg_color` — near-white under the light presets — so a pale-yellow
-/// or shaded form field **turned grey the moment the operator touched it** and
-/// turned back a gesture later. That is a visible change to content nobody
-/// asked for, which is the thing pdfcer's rule 4 forbids.
+/// the duration of a keystroke. With no fill that box is `extreme_bg_color` —
+/// near-white under the light presets — so a pale-yellow or shaded form field
+/// **turns grey the moment the operator touches it** and turns back a gesture
+/// later: a visible change to content nobody asked for, which is the thing
+/// pdfcer's rule 4 forbids.
 ///
-/// It is not a fidelity claim, and the module header's §3 is the reason it is
-/// allowed to be neither. §3 refuses to make this box a facsimile because a
+/// It is not a fidelity claim, and the module header's §3 is the reason it
+/// does not have to be one. §3 refuses to make this box a facsimile because a
 /// substituted font cannot promise the document font's glyph advances — an
-/// **arithmetic** argument. The test a property must pass to be honoured here
-/// is therefore *does honouring it make a claim about where a particular glyph
-/// will land*. A fill does not, exactly as `/Q` did not. ★ That reading was
-/// contested: §3 was cited for eleven days as though it settled every
-/// appearance property, and `ENGINE_BACKLOG.md` carried opposite verdicts on
-/// this row until 2026-09-11. The engine's own `Widget::background` doc names
-/// this editor as the intended consumer, in these words: *"an on-page field
-/// EDITOR that lays a live text box over the raster … so a pale-yellow field
-/// does not flash white while the operator types."*
+/// **arithmetic** argument, and one that reaches exactly as far as the
+/// arithmetic does. The test a property must pass to be honoured here is
+/// therefore *does honouring it make a claim about where a particular glyph
+/// will land*. A fill does not, exactly as `/Q` does not — and the engine's
+/// own `Widget::background` doc names this editor as the intended consumer.
 ///
 /// # The three-state `/BG`, which is why this takes the widget and not a colour
 ///
@@ -436,6 +375,33 @@ pub fn editor_fill(widget: &Widget) -> Option<[f32; 3]> {
     }
 }
 
+/// What a click on `widget` would mean, or why nothing.
+///
+/// Pure, and deliberately takes the page's `/Rotate` as a number rather than a
+/// `&Page`: the rotation is the only thing about the page this decision
+/// depends on, and passing the page would make the rule untestable without
+/// building one.
+///
+/// # The order of the questions is the rule
+///
+/// Appearance first, because a field nothing draws cannot be pointed at
+/// whatever else is true of it. Then the panel's own
+/// [`block_reason`](crate::panels::forms::rows::block_reason), **asked rather
+/// than re-derived** — a read-only field must be refused here for the same
+/// reason and in the same words it is refused there, and two statements of one
+/// rule is how the two surfaces come to disagree about which fields are
+/// fillable.
+///
+/// Rotation is asked **last, and only for text**, which is the whole of the
+/// rotated-page decision: the box is placed correctly at every rotation, and
+/// it is only the editor that cannot be.
+///
+/// # ★ It asks nothing about geometry
+///
+/// The geometry a click is tested against does not come from `Widget::rect`
+/// — [`place`] takes it from each page's `/Annots` instead. Asking about it
+/// here as well would be a second source of truth for where a widget is, and
+/// the one that is *not* the one being hit-tested.
 pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, NotOnCanvas> {
     if !widget.has_normal_appearance {
         return Err(NotOnCanvas::NoAppearance);
@@ -511,11 +477,9 @@ pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, 
 ///
 /// # ★ Which page a widget is on is answered by `/Annots`, never by `/P`
 ///
-/// This is the correction that matters most in this file, and it is a
-/// correction: the first version of this walk read `pdfcer_core::forms::Widget::page`
-/// — the widget's `/P` entry — and looked the page object up by id. It is the
-/// obvious implementation and it is **silently wrong on a large class of real
-/// files**.
+/// The obvious implementation reads `pdfcer_core::forms::Widget::page` — the
+/// widget's `/P` entry — and looks the page object up by id. It is
+/// **silently wrong on a large class of real files**.
 ///
 /// `/P` is *Optional* (§12.5.2 Table 164). A widget that omits it is perfectly
 /// conformant and is common in the wild, and `pdfcer-core` additionally reads
@@ -525,13 +489,11 @@ pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, 
 /// a form on which clicking a field simply does not work, with the panel
 /// cheerfully reporting every field as fillable.
 ///
-/// **No test written against the fixture corpus can catch this.** All ten form
+/// **No test written against the fixture corpus can catch this.** The form
 /// fixtures in `D:\Dev\pdfcer\fixtures\synthetic\forms\` write `/P` on every
-/// widget, so the failing case is unreachable from them; the engine team hit
-/// exactly this when a deliberate sabotage of their own implementation passed,
-/// and had to build an in-memory form that omits the key. That is `HANDOFF.md`
-/// §2's lesson in a new place — *a test that cannot reach the case is satisfied
-/// by any implementation* — and it is why
+/// widget, so the failing case is unreachable from them, and *a test that
+/// cannot reach the case is satisfied by any implementation* — sabotage the
+/// implementation and the suite stays green. That is why
 /// [`tests::a_widget_with_no_p_entry_is_still_placed`] builds its input by hand
 /// rather than opening a fixture.
 ///
@@ -607,23 +569,21 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
                     rect: canvas,
                 },
             ));
-            // ★★★ `classify` moved BELOW the rectangle when selection arrived,
-            // and `reachable` DID NOT MOVE WITH IT. The distinction is the one
-            // this whole change turns on and it is easy to get wrong — I got it
-            // wrong first, and `an_undrawn_widget_is_still_selectable` is what
-            // said so.
+            // ★★★ `reachable` is answered by `classify` and NOT by the
+            // rectangle pushed above, and the two are easy to conflate.
             //
             // `reachable` means *"some widget of this field can be FILLED on
             // the page"*, and it is what suppresses the panel's
-            // `routing.undrawn` disclosure — the sentence that tells an operator
-            // a field exists but has to be filled in the side panel. Setting it
-            // beside the rectangle made every drawn-nothing field look
-            // reachable, silently deleting that disclosure for the exact
+            // `routing.undrawn` disclosure — the sentence that tells an
+            // operator a field exists but has to be filled in the side panel.
+            // Setting it beside the rectangle makes every drawn-nothing field
+            // look reachable, silently deleting that disclosure for the exact
             // documents it was written for.
             //
             // So: a rectangle makes a widget SELECTABLE; a successful
             // `classify` makes it FILLABLE; and only the second answers
-            // `reachable`.
+            // `reachable`. `an_undrawn_widget_is_still_selectable` holds the
+            // first half of that.
             let kind = match classify(field, widget, page.rotate) {
                 Ok(kind) => kind,
                 Err(reason) => {

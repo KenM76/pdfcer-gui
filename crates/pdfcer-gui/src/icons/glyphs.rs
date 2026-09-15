@@ -10,15 +10,11 @@
 //!
 //! ## Why this module exists at all: `egui`'s `has_glyph` lies
 //!
-//! This is defect **D12**, and the entry as originally filed had the cause
-//! backwards. It recorded that `⚠` (U+26A0) "has no glyph in this build's
-//! font stack", on the evidence that
-//! `app::status::tests::every_glyph_the_status_bar_draws_has_a_glyph`
-//! failed on it. The test really did fail. The conclusion did not follow.
-//!
-//! **`⚠` is in the font stack, is reachable from the proportional family,
-//! and renders correctly today.** What is broken is the predicate the gate
-//! asked. `epaint 0.35`'s [`epaint::Fonts::has_glyph`] is:
+//! `DEFECTS.md` D12. A gate that asks [`epaint::Fonts::has_glyph`] whether a
+//! catalog character is drawable gets **false** for characters that draw
+//! perfectly — `⚠` U+26A0 among them — so a failure of such a gate is evidence
+//! about the predicate, not about the font stack. `epaint 0.35`'s
+//! `has_glyph` is:
 //!
 //! ```ignore
 //! // epaint-0.35.0/src/text/font.rs:720
@@ -62,12 +58,11 @@
 //! which NotoEmoji-Regular is the supplier — `⚠ ℹ ‼ ❗` — **although all
 //! four draw perfectly.**
 //!
-//! That single mechanism reproduces D12's two measured lists exactly, with
-//! no exceptions across the 31 characters it sampled: every character D12
-//! recorded as "present" is supplied by `Ubuntu-Light` or `emoji-icon-font`;
-//! every character it recorded as "absent" is either genuinely absent **or**
-//! supplied by `NotoEmoji-Regular`. A 31-for-31 correlation is not a
-//! coincidence, it is the mechanism.
+//! That one mechanism accounts for every measured answer, with no exceptions
+//! across the 31 characters sampled: every character `has_glyph` calls
+//! "present" is supplied by `Ubuntu-Light` or `emoji-icon-font`; every one it
+//! calls "absent" is either genuinely absent **or** supplied by
+//! `NotoEmoji-Regular`.
 //!
 //! It also explains the otherwise absurd reading that
 //! `has_glyph(Monospace, 'A')` is **false**: the monospace chain is
@@ -496,7 +491,7 @@ pub fn string_literals(src: &str) -> Result<Vec<Literal>, ScanError> {
                     }
                 }
             }
-            // ★ Count the newlines over the CONSUMED SPAN rather than as they
+            // Count the newlines over the CONSUMED SPAN rather than as they
             // are pushed. A `\` line continuation — which this catalog uses
             // heavily to wrap long sentences — is swallowed inside `escape`
             // and never reaches the match above, so incremental counting
@@ -630,7 +625,7 @@ mod tests {
         });
     }
 
-    /// ★ **The probe disagrees with `egui`, and the disagreement is the point.**
+    /// **The probe disagrees with `egui`, and the disagreement is the point.**
     ///
     /// This is D12's finding as an executable statement. `⚠` is asserted
     /// **drawable** — which is the claim the defect entry denied — and
@@ -686,7 +681,7 @@ mod tests {
         });
     }
 
-    /// The characters D12 listed as present really are.
+    /// The characters measured as present really do draw.
     #[test]
     fn the_measured_present_marks_all_draw() {
         in_a_frame(|ctx| {
@@ -741,7 +736,7 @@ fn f() -> &'static str { "kept —" }
         );
     }
 
-    /// ★ **`DEFECTS.md` D13's bug, proven absent here.**
+    /// **`DEFECTS.md` D13's bug, proven absent here.**
     ///
     /// `check-ui-strings.sh` truncates the file at the first `#[cfg(test)]`,
     /// so anything below a mid-file test module is unscanned while the gate
@@ -835,7 +830,7 @@ pub fn after() -> &'static str { "after —" }
         assert_eq!(got[0].line, 2, "{got:?}");
     }
 
-    /// ★ A `\` line continuation must still advance the line counter.
+    /// A `\` line continuation must still advance the line counter.
     ///
     /// Found by this gate's first real run: the counter was incremented as
     /// characters were *pushed*, and a continuation's newline is swallowed
@@ -923,7 +918,7 @@ pub fn after() -> &'static str { "after —" }
         out
     }
 
-    /// ★★ **THE WIDENED GLYPH GATE — every string in `crate::text` renders.**
+    /// **THE WIDENED GLYPH GATE — every string in `crate::text` renders.**
     ///
     /// `DEFECTS.md` D12 names this as the fix, and names it as the *only*
     /// fix: *"The fix that would prevent a fifth sighting is not a
@@ -1015,13 +1010,13 @@ pub fn after() -> &'static str { "after —" }
             }
         }
 
-        // ★ Assert the measurement HAPPENED, not only its value (HANDOFF.md
-        // §10). Without these three, a scanner that silently returned nothing
-        // would produce a green gate that read every file and checked none.
-        // Measured 2026-08-14: 45,323 literal characters across the 15 files.
-        // The floor is set well below that so ordinary catalog edits do not
-        // trip it, and well above zero so a scanner that returned nothing —
-        // the failure this guard exists for — cannot read as clean.
+        // Assert the measurement HAPPENED, not only its value. Without these
+        // three, a scanner that silently returned nothing would produce a green
+        // gate that read every file and checked none — the same fail-open class
+        // as D13 above. Measured at 45,323 literal characters across the 15
+        // files; the floor is set well below that so ordinary catalog edits do
+        // not trip it, and well above zero so a scanner that returned nothing
+        // cannot read as clean.
         assert!(
             scanned_chars > 30_000,
             "only {scanned_chars} characters were scanned across {} files; \
@@ -1087,7 +1082,7 @@ pub fn after() -> &'static str { "after —" }
         });
     }
 
-    /// ★ **The gate has been observed failing.**
+    /// **The gate has been observed failing.**
     ///
     /// This project requires it: a gate that has only ever passed is not
     /// evidence of anything (`check-ui-strings.sh` PORT CHANGE 3, and the

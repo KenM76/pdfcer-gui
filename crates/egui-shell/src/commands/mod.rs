@@ -2,7 +2,7 @@
 //!
 //! # Why this module exists
 //!
-//! `SHELL_FRAMEWORK.md` §4 states the rule this module enforces:
+//! `SHELL_FRAMEWORK.md` §5 states the rule this module enforces:
 //!
 //! > **Commands are referenced by string id, never defined [in the
 //! > manifest].** The application registers `measure.linear` with its
@@ -19,12 +19,12 @@
 //! | **What it is** — id, label, tooltip, icon, when it is enabled, what runs | this registry | the application, in code | no |
 //! | **Where it appears** — which tab, which group, which key, whether on the QAT | [`crate::manifest`] | a data file | yes |
 //!
-//! `SHELL_FRAMEWORK.md` §5 turns that split into the customization
+//! `SHELL_FRAMEWORK.md` §9 turns that split into the customization
 //! contract: an operator may reorder, rename, hide, move between groups,
 //! create tabs, and rebind keys. An operator may **not** invent a command,
 //! change what a command does, or bypass a command's enable predicate —
-//! *"predicates are safety, not decoration."* Every one of those
-//! prohibitions is a consequence of this half of the split being code.
+//! predicates are safety, not decoration. Every one of those prohibitions
+//! is a consequence of this half of the split being code.
 //!
 //! # The handler is not here
 //!
@@ -33,7 +33,7 @@
 //! dispatches on — an `Action` enum variant, a function pointer, an index.
 //!
 //! This is one indirection between a button and its handler, and
-//! `SHELL_FRAMEWORK.md` §6 accepts it explicitly as the cost of the
+//! `SHELL_FRAMEWORK.md` §5 accepts it explicitly as the cost of the
 //! design. It buys three things:
 //!
 //! 1. **The shell stays domain-free.** A registry holding
@@ -53,7 +53,7 @@
 //! [`ConditionSet`] the application publishes each frame — `"doc.open"`,
 //! `"selection.any"`, `"undo.available"`. The manifest already speaks that
 //! language (`visible_when: "selection.any"` in the §4 sketch), and it has
-//! three properties a closure does not:
+//! properties a closure does not:
 //!
 //! - it is **serializable**, so a future layer can express a condition;
 //! - it is **testable headlessly** — assert the command set with
@@ -208,11 +208,11 @@ impl std::fmt::Debug for Enable {
 
 /// One verb the application can perform.
 ///
-/// Built with [`Command::new`] and the `with_*` methods, because five
-/// fields of which three are optional is exactly the shape that makes a
+/// Built with [`Command::new`] and the `with_*` methods: a handful of
+/// fields, most of them optional, is exactly the shape that makes a
 /// positional constructor unreadable at the call site — and this
 /// constructor is called once per command, which for a real application
-/// is a hundred times in one file.
+/// fills a file.
 #[derive(Debug, Clone)]
 pub struct Command {
     /// The stable id a manifest refers to, e.g. `"view.fit_page"`.
@@ -232,11 +232,11 @@ pub struct Command {
     /// A key naming the icon to draw, resolved by the application.
     ///
     /// A `String` key rather than a texture, an SVG or an
-    /// `egui::ImageSource` because icon *rendering* is the application's
-    /// (an icon set is a licensing and rasterization decision, and the
-    /// salvage source rasterizes SVG path data at physical pixel size
-    /// rather than shipping pre-baked PNGs). The shell only needs to know
-    /// that a control has an icon and which one.
+    /// `egui::ImageSource` because icon *rendering* is the application's: an
+    /// icon set is a licensing decision, and an application may want to
+    /// rasterize vector path data at the physical pixel size in force rather
+    /// than ship pre-baked bitmaps. The shell only needs to know that a
+    /// control has an icon and which one.
     pub icon: Option<String>,
     /// When this command is available.
     pub enable: Enable,
@@ -490,8 +490,8 @@ mod tests {
     /// validation, and the failure names that id.**
     ///
     /// This is the invariant the whole registry exists to make
-    /// enforceable, and it is what turns `SHELL_FRAMEWORK.md` §5's
-    /// "invent a command ❌" from a policy into a check.
+    /// enforceable, and it is what turns `SHELL_FRAMEWORK.md` §9's refusal
+    /// of "invent a command" from a policy into a check.
     ///
     /// **Naming the id is the point, not a nicety.** The manifest is a
     /// file an operator edits. "Your shell.ron is invalid" tells them to

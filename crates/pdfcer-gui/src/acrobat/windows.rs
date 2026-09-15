@@ -10,7 +10,7 @@
 //! See [`super`]'s §3 for the seam and §6 for why the registry is read by
 //! `reg.exe` rather than by a crate.
 //!
-//! ## ★★★ `CREATE_NO_WINDOW`, and the flash it prevents
+//! ## `CREATE_NO_WINDOW`, and the flash it prevents
 //!
 //! `reg.exe` is a console program. A GUI process on Windows that spawns one
 //! **gets a console window created for it**, on top of everything, for as long
@@ -22,7 +22,7 @@
 //! It is the kind of defect that never appears in a test, never appears in a
 //! trace, and is reported as *"something flashes when I open a file"*.
 //!
-//! ## ★★ Why every read is `reg query … /ve` and never `/s`
+//! ## Why every read is `reg query … /ve` and never `/s`
 //!
 //! `/ve` asks for one key's **default value** and nothing else. A recursive
 //! or wildcard query would return a tree whose size is not under pdfcer's
@@ -44,7 +44,7 @@
 //! the *value itself* routinely contains spaces, so any split that counted
 //! them would truncate `C:\Program Files\…` at the first one.
 //!
-//! ⚠ It is fragile in one specific way and that is worth stating rather than
+//! It is fragile in one specific way and that is worth stating rather than
 //! discovering: a value whose **content** contains the literal text `REG_SZ`
 //! would be split in the wrong place. That cannot occur for these keys — they
 //! hold file paths written by Adobe's installer — and the alternative
@@ -89,7 +89,7 @@ const APP_PATHS_ROOTS: [&str; 3] = [
 
 /// Where the operator's own choice of `.pdf` handler is recorded.
 ///
-/// ★ Consulted **before** `HKLM\SOFTWARE\Classes\.pdf`, and the order is the
+/// Consulted **before** `HKLM\SOFTWARE\Classes\.pdf`, and the order is the
 /// whole reason both are read. On this machine the machine-wide class
 /// registration says `OpenPDFStudio.pdf` while `UserChoice` says
 /// `Acrobat.Document.DC` — the operator picked Acrobat and Windows recorded it
@@ -106,7 +106,7 @@ const CLASSES_PDF: &str = r"HKLM\SOFTWARE\Classes\.pdf";
 // ui-text-exempt: a registry key path, never displayed.
 const CLASSES: &str = r"HKLM\SOFTWARE\Classes";
 
-/// `CREATE_NO_WINDOW` — see this module's ★★★ header note.
+/// `CREATE_NO_WINDOW` — see this module's header note on the console flash.
 ///
 /// Spelled as a literal rather than taken from a crate because pdfcer-gui
 /// depends on no Windows crate and is not permitted to gain one. The value is
@@ -145,13 +145,13 @@ impl Registrations for Windows {
 
 impl Launcher for Windows {
     fn launch(&self, viewer: &Viewer, file: &Path) -> std::io::Result<()> {
-        // ★ No `CREATE_NO_WINDOW` here, and that is not an oversight: Acrobat
+        // No `CREATE_NO_WINDOW` here, and that is not an oversight: Acrobat
         // is a GUI program and the flag would be meaningless. It is also not
         // harmless to apply blindly — the flag suppresses a console the child
         // asks for, and a program that wanted one and did not get one behaves
         // differently.
         //
-        // ★★ `spawn`, never `output` or `status`. Both of those WAIT for the
+        // `spawn`, never `output` or `status`. Both of those WAIT for the
         // child, and waiting for Acrobat means pdfcer's event loop stops
         // repainting until the operator closes it — the program appearing to
         // hang the instant it succeeds.
@@ -222,7 +222,7 @@ pub fn value_from_reg_output(text: &str) -> Option<String> {
 mod tests {
     use super::*;
 
-    /// **★ The real output of the real command on the real machine, parsed.**
+    /// **The real output of the real command on the real machine, parsed.**
     ///
     /// Captured verbatim on 2026-09-04 from
     /// `reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Acrobat.exe" /ve`.
@@ -231,7 +231,7 @@ mod tests {
     /// looks like is a parser tested against its own assumptions.
     #[test]
     fn the_real_reg_query_output_yields_the_real_path() {
-        // ★ Assembled line by line rather than as one continued literal, and
+        // Assembled line by line rather than as one continued literal, and
         // the reason is mechanical: `check-string-gaps.sh`'s block-form
         // exemption arms exactly ONE following code line, and the padding
         // `reg.exe` prints is on the third of them. One line, one exemption.
@@ -254,17 +254,15 @@ mod tests {
         );
     }
 
-    /// **★★ The separator is whitespace of unspecified width**, which is what
+    /// **The separator is whitespace of unspecified width**, which is what
     /// this module's header claims and what the parser must actually honour.
     ///
-    /// Added after a falsification: splitting on the type token followed by
-    /// *exactly four spaces* passed every other test in this file, because
-    /// four is what `reg.exe` printed on the machine the fixture came from. It
-    /// is not a documented promise. A build of Windows, a locale, or a longer
-    /// type name that padded differently would have produced a parser that
-    /// silently found no value — and "no value" is indistinguishable from "no
-    /// Acrobat installed", so the button would simply never appear and nothing
-    /// would say why.
+    /// The four spaces `reg.exe` prints on the machine the fixture came from
+    /// are not a documented promise, so nothing may split on a fixed width. A
+    /// build of Windows, a locale, or a longer type name that padded
+    /// differently would yield a parser that silently found no value — and "no
+    /// value" is indistinguishable from "no Acrobat installed", so the button
+    /// would simply never appear and nothing would say why.
     #[test]
     fn the_separator_is_whitespace_of_any_width() {
         // string-gap-exempt: the runs of spaces ARE the subject of the test —
@@ -307,7 +305,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **What this machine actually answers** — run by hand, never in the
+    /// **What this machine actually answers** — run by hand, never in the
     /// suite.
     ///
     /// `#[ignore]`, and the reason is the one [`super::tests`]' header gives:
@@ -346,7 +344,7 @@ mod tests {
     /// `REG_EXPAND_SZ` is read too — some installers write the path with an
     /// environment variable in it.
     ///
-    /// ★ pdfcer does **not** expand the variable, and does not need to:
+    /// pdfcer does **not** expand the variable, and does not need to:
     /// [`super::super::Registrations::exists`] will answer `false` for a path
     /// with a literal `%ProgramFiles%` in it, so such a registration is
     /// declined rather than launched. Saying so here is the honest thing —

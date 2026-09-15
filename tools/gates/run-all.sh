@@ -136,17 +136,17 @@ run "check-completeness-tests --self-test" python "$HERE/check-completeness-test
 run "check-unit-conversion --self-test" bash "$HERE/check-unit-conversion.sh" --self-test
 run "check-test-temp-paths --self-test" python "$HERE/check-test-temp-paths.py" --self-test
 run "check-patch-residue --self-test" python "$HERE/check-patch-residue.py" --self-test
-# ★ Added 2026-09-14, the day this gate was found reporting OK over an
-# evidence set of size zero. Its `archived` case is the regression guard: it
-# returns 1 only if the consumption notes in `archive/` are read, so narrowing
-# the evidence set back to `open/` turns this suite red instead of turning
-# that gate silently blind.
+# ★★ A gate can report OK over an evidence set of size ZERO and look exactly
+# like a gate that passed. Its `archived` case is the guard: it returns 1 only
+# if the consumption notes in `archive/` are read, so narrowing the evidence
+# set back to `open/` turns this suite red instead of turning that gate
+# silently blind.
 run "check-stale-blockers --self-test" bash "$HERE/check-stale-blockers.sh" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
 run "check-theme-colors" bash "$HERE/check-theme-colors.sh"
-# ★★ `check-unit-conversion`, added 2026-09-13 — O194 step 2.
+# ★★ `check-unit-conversion` — O194 step 2.
 #
 # One length-conversion table, one rounding rule. Thirteen private copies
 # of the same two constants had accumulated, and the one that reached the
@@ -155,11 +155,11 @@ run "check-theme-colors" bash "$HERE/check-theme-colors.sh"
 # the sites used `.round()` and the other half `{:.0}`, which is half to
 # EVEN. Nobody chose half-to-even; it is simply what you type.
 run "check-unit-conversion" bash "$HERE/check-unit-conversion.sh"
-# ★ DEFECTS.md D11, mechanised. The rule was written on 2026-08-14 and broken
-# again on 2026-08-17 by someone who had read it; a rule that lives only in a
-# document is enforced as often as somebody remembers to read it.
+# ★ DEFECTS.md D11, mechanised. **A rule that lives only in a document is
+# enforced as often as somebody remembers to read it** — this one was broken
+# again within days by a reader who had read it.
 run "check-strong-text" bash "$HERE/check-strong-text.sh"
-# ★★★ `check-plate-colour`, added 2026-09-03 — DEFECTS.md D2 for the third
+# ★★★ `check-plate-colour` — DEFECTS.md D2 for the third
 # time, and the first two fixes did not generalise.
 #
 # `Palette::on_accent` means "drawn ON the accent". On anything else it is a
@@ -175,12 +175,12 @@ run "check-strong-text" bash "$HERE/check-strong-text.sh"
 # which is the question that kept going wrong.
 #
 # ★ Its non-vacuity evidence is real sites rather than a planted one: run
-# against the tree with the two 2026-09-03 fixes reverted, it names exactly the
-# three defective drawing sites and passes the four correct ones.
+# against a tree with the two known fixes reverted, it names exactly the three
+# defective drawing sites and passes the four correct ones.
 run "check-plate-colour --self-test" bash "$HERE/check-plate-colour.sh" --self-test
 run "check-plate-colour" bash "$HERE/check-plate-colour.sh"
-# ★★★ `check-selection-channel`, added 2026-09-04 — `REVIEW_TRIAGE.md` §2b
-# defect T2, and it is `check-plate-colour`'s twin one channel over.
+# ★★★ `check-selection-channel` — `check-plate-colour`'s twin, one
+# channel over.
 #
 # `egui::Visuals::selection` is egui's styling channel for a selected WIDGET:
 # `Style::button_style` takes both fills AND the text colour from it for every
@@ -209,37 +209,34 @@ run "check-file-size"    bash "$HERE/check-file-size.sh"
 run "check-shell-purity" bash "$HERE/check-shell-purity.sh"
 run "check-shipped-assets" bash "$HERE/check-shipped-assets.sh"
 run "check-string-gaps"  bash "$HERE/check-string-gaps.sh"
-# ★★★ The gate of 2026-09-02, and it is the first one aimed at PROSE being
-# false rather than at code being wrong. `reorder_annotations` shipped hours
-# after the request for it, and four separate places went on asserting the gap:
-# an on-screen explainer, a module header that FORBADE the feature, a passing
-# test that would have failed it, and a nineteen-day-old FEATURES row. All four
-# were correct when written, which is why nothing looked wrong and no other gate
-# could see them. This catches the one mechanical part — a row that says BLOCKED
-# and names a request the channel shows we have CONSUMED.
+# ★★★ The first gate here aimed at PROSE being false rather than at code being
+# wrong. When a capability arrives, every place that describes its ABSENCE
+# becomes a lie at once: an on-screen explainer, a module header that FORBIDS
+# the feature, a passing test that would fail it, a FEATURES row. **All of them
+# were correct when written, which is why nothing looks wrong and no other gate
+# can see them.** This catches the one mechanical part — a row that says
+# BLOCKED and names a request the channel shows we have CONSUMED.
 run "check-stale-blockers" bash "$HERE/check-stale-blockers.sh"
-# ★ The two gates of 2026-08-20, both born of an operator report rather than of
-# a design. `check-typing-guard` keeps "is the operator typing?" a single
+# ★ Two gates born of an operator report rather than of a design.
+# `check-typing-guard` keeps "is the operator typing?" a single
 # predicate, after the space bar was stolen by the pan tool for a fortnight;
 # `check-conventions` makes every interactive surface answer, row by row, the
 # conventions its gesture class carries - because every convention he had to
 # report was one nobody had ASKED about, not one somebody decided against.
 run "check-typing-guard" bash "$HERE/check-typing-guard.sh"
 run "check-conventions"  bash "$HERE/check-conventions.sh"
-# ★ The gate of 2026-08-21, born the same way and from the same failure mode as
-# `check-typing-guard`: a finding was recorded in one module and never applied to
-# its siblings. Ctrl+C/X/V never arrive as key events - egui-winit intercepts
-# them - so `key_pressed(Key::C)` is permanently false in a real window. That was
-# written up in capitals in `app::keyboard` on 2026-08-20, and the identical
-# mistake sat one grep away in `canvas::textsel::clipboard` for a further day,
-# certified green by tests injecting the key event winit never sends.
+# ★ Born the same way and from the same failure mode as `check-typing-guard`:
+# **a finding recorded in one module and never applied to its siblings.**
+# Ctrl+C/X/V never arrive as key events - egui-winit intercepts them - so
+# `key_pressed(Key::C)` is permanently false in a real window. A test that
+# injects the key event winit never sends certifies the mistake green, so the
+# grep is the only instrument that reaches every site at once.
 run "check-clipboard-chords" bash "$HERE/check-clipboard-chords.sh"
 
 # `check-suite-name-absent` keeps a LICENSED print-conformance suite's name out
 # of this repository entirely -- contents and file names -- per the operator's
-# ruling of 2026-08-25. Carried across from `D:/Dev/pdfcer/tools/`, where it was
-# written, rather than re-derived: it already carries the fixes for two defects
-# that a careful reader makes anyway.
+# ruling. Shared with `D:/Dev/pdfcer/tools/` rather than re-derived, because it
+# already carries the fixes for two defects a careful reader makes anyway.
 #
 # ★ It looks odd on purpose. Its needles are base64-encoded, because a gate for
 # "this word must never appear" that greps for the word in plain text becomes
@@ -263,14 +260,14 @@ run "check-suite-name-absent" python "$ROOT/tools/check-suite-name-absent.py"
 # and two that were correct only by STATEMENT ORDER - the module's line happened
 # to be traced after the funnel's, so `.last()` returned the right one by luck.
 #
-# ★★ Mechanism 3, added 2026-09-11: a trace name that reads like a debugging
-# leftover -- any capital letter, or a tmp/temp/dbg/debug/xxx/todo/fixme/hack
-# prefix -- is a violation in its own right.
+# ★★ Mechanism 3: a trace name that reads like a debugging leftover -- any
+# capital letter, or a tmp/temp/dbg/debug/xxx/todo/fixme/hack prefix -- is a
+# violation in its own right.
 #
-# It was bought by `TMPASK`, which an ordinary ninety-second off-screen smoke
-# launch found in a RELEASE binary after this runner had gone green and 4,190
-# unit tests had passed. It had survived this project's own rename and eight
-# appearances per dialog in captured traces that several sessions had read.
+# ⚠ Such a name survives everything that is not a grep for it. A `TMPASK` in a
+# RELEASE binary passed this runner, 4,190 unit tests, a project-wide rename,
+# and eight appearances per dialog in captured traces several sessions had
+# read; an ordinary ninety-second smoke launch is what found it.
 #
 # The instructive half is why THIS gate had never seen it: `FIRST_TOKEN` is
 # anchored `[a-z]`, because every deliberate trace name in the crate is
@@ -285,7 +282,7 @@ run "check-suite-name-absent" python "$ROOT/tools/check-suite-name-absent.py"
 # stream, `BT /F1 12 Tf` -- that pins the anchor: the first cut of mechanism 3
 # scanned whole files and reported 31 hits of which one was real.
 run "check-trace-names" python "$HERE/check-trace-names.py"
-# ★★★ `check-orphan-docs`, added 2026-09-12 — and it is the only gate here
+# ★★★ `check-orphan-docs` — and it is the only gate here
 # aimed at documentation being attached to the WRONG ITEM rather than at its
 # being absent or false.
 #
@@ -316,12 +313,12 @@ run "check-trace-names" python "$HERE/check-trace-names.py"
 # had silently stopped being true, and that is the lesson taken literally.
 run "check-orphan-docs" python "$HERE/check-orphan-docs.py"
 
-# check-region-names, added 2026-09-13 - the class no compiler can see.
+# check-region-names - the class no compiler can see.
 #
 # A trace region name is a `pub const`, and `pub` suppresses `dead_code`. So a
 # name declared, documented and published by NOTHING compiles clean, passes
-# clippy at `-D warnings`, and passes every other gate here. On 2026-09-13 the
-# Export-image window had three of them, shipped across four releases.
+# clippy at `-D warnings`, and passes every other gate here — the Export-image
+# window carried three such names across four releases.
 #
 # The symptom is worse than a missing rectangle: a driven check that presses
 # `export-image.pages.typed`, finds nothing and reports "the control is
@@ -335,7 +332,7 @@ run "check-orphan-docs" python "$HERE/check-orphan-docs.py"
 # discharge `export_image.rs`'s dead twin of the same name.
 run "check-region-names" python "$HERE/check-region-names.py"
 
-# ★★★ `check-memory-index`, added 2026-09-13, and it is the gate above's twin
+# ★★★ `check-memory-index`, and it is the gate above's twin
 # pointed at a folder nobody thought of as source.
 #
 # `check-orphan-docs` finds a document nothing links to. This finds a MEMORY
@@ -368,7 +365,7 @@ run "check-region-names" python "$HERE/check-region-names.py"
 run "check-memory-index" bash "$HERE/check-memory-index.sh"
 
 
-# ★★★ `check-doc-markup`, added 2026-09-12 — and it is the only gate
+# ★★★ `check-doc-markup` — and it is the only gate
 # here that asks whether a sentence is VISIBLE rather than whether it is true.
 #
 # GitHub-flavoured Markdown pads a table row that has FEWER cells than its
@@ -386,20 +383,20 @@ run "check-memory-index" bash "$HERE/check-memory-index.sh"
 # ★ Four of the five were broken by **a document quoting a command or a
 # literal that contains a pipe**: a shell pipeline, the PDF flag pair `Print`
 # and `NoZoom`, a Rust closure parameter, another table row. That is the same
-# cause as the `Source` row broken on 2026-09-06 by the `xargs` invocation it
+# cause as a `Source` row broken by the `xargs` invocation it
 # quoted, and it is why the message says *escape the pipe* rather than
 # *reword it* — the quotation is usually the point.
 #
 # Its second mechanism is a `**` that can neither open nor close because it
 # has whitespace on the wrong side — what a hand-wrapped bold heading leaves
-# behind. One was written into `HANDOFF.md` the same day and caught by eye.
+# behind, and what no renderer will ever complain about.
 #
 # ⇒ Deliberately silent on a row with FEWER cells than its header: that
 # renders correctly, and a gate that reports correct files is a gate that gets
 # carved out until it means nothing. The asymmetry IS the finding.
 run "check-doc-markup" python "$HERE/check-doc-markup.py"
 
-# ★★★ `check-patch-residue`, added 2026-09-14 - the gate that audits the
+# ★★★ `check-patch-residue` - the gate that audits the
 # TOOL that writes this repository, rather than anything the repository says.
 #
 # Nearly every source edit here is applied by a short Python script. Two of
@@ -420,7 +417,7 @@ run "check-doc-markup" python "$HERE/check-doc-markup.py"
 # walked in which it cannot be right.
 run "check-patch-residue" python "$HERE/check-patch-residue.py"
 
-# ★★★ `check-gate-input-scope`, added 2026-09-13 — the gate that audits the
+# ★★★ `check-gate-input-scope` — the gate that audits the
 # other gates' INPUT SETS, because the same defect has now been written four
 # times by people who had read the warning.
 #
@@ -460,7 +457,7 @@ run "check-patch-residue" python "$HERE/check-patch-residue.py"
 # carrying the defect it audits is worthless.
 run "check-gate-input-scope" python "$HERE/check-gate-input-scope.py"
 
-# ★★★ `check-test-temp-paths`, added 2026-09-13 — and it is here, beside
+# ★★★ `check-test-temp-paths` — and it is here, beside
 # `check-gate-input-scope`, because it is the same species: a defect whose
 # correct generalisation was already written into this tree, in a comment,
 # beside a fix that handled half of it.
@@ -468,10 +465,10 @@ run "check-gate-input-scope" python "$HERE/check-gate-input-scope.py"
 # `protect::tests` and `dialogs::protect::tests` each carried a confident note
 # saying a per-caller tag solved the parallelism hazard. It does — for THREADS.
 # Two `cargo test` PROCESSES have the same callers as each other, so they ask
-# for the same filenames under `%TEMP%`, and eleven sites in this tree did that.
-# On 2026-09-13 two overlapping workspace runs turned
+# for the same filenames under `%TEMP%`, and eleven sites in this tree did
+# that. Two overlapping workspace runs are enough to turn
 # `protect::…::changing_the_password_keeps_what_the_document_allowed` red while
-# it passed alone.
+# it passes alone.
 #
 # ★ The reason it needs a gate rather than a fix: the symptom is an unrelated
 # assertion failing several lines downstream, in whichever process lost the
@@ -487,23 +484,23 @@ run "check-test-temp-paths" python "$HERE/check-test-temp-paths.py"
 # `check-verb-coverage` fails when `pdfcer-core` has a verb this shell names
 # nowhere AND `EDITABLE_SURFACES.md` says nothing about it either.
 #
-# The two days that bought it: `EditSession::set_button_action` shipped
-# 2026-08-30, in answer to this shell's own request, with a reply that said in
-# as many words *"please check your own copy."* It was consumed 2026-09-01, and
-# only because `tools/verb-coverage.py` was run for an unrelated reason. In
-# between, the Button tool stayed greyed and its dialog told the operator that
-# pdfcer "cannot give a button something to do yet" -- false, on a capability
-# two open operator rows were waiting for.
+# ⚠ The hazard it closes: the engine can answer a request from this shell, with
+# a reply saying in as many words *"please check your own copy"*, and nothing on
+# this side reads it. `EditSession::set_button_action` sat unconsumed while the
+# Button tool stayed greyed and its dialog told the operator that pdfcer
+# "cannot give a button something to do yet" -- false, on a capability two open
+# operator rows were waiting for, and found only because `tools/verb-
+# coverage.py` was run for an unrelated reason.
 #
-# The instrument existed. Nobody ran it. That is the whole lesson, and it is
-# the same one `check-string-gaps` learned: a convention held by memory fails,
-# and the replacement is never a note.
+# **The instrument existing is not the same as the instrument being run**, and
+# it is the same lesson `check-string-gaps` carries: a convention held by
+# memory fails, and the replacement is never a note.
 #
 # It found five more the moment it worked -- three attachment-clipboard verbs
 # and two cut verbs -- none of which had a sentence anywhere.
 run "check-verb-coverage" bash "$HERE/check-verb-coverage.sh"
 
-# ★★★ `check-completeness-tests`, added 2026-09-13, and it is the SIXTH time
+# ★★★ `check-completeness-tests`, and it is the SIXTH time
 # this defect was found and the first time an instrument was built for it.
 #
 # A test named `every_unit_is_named_distinctly` promises, in its name, to go red
@@ -539,7 +536,7 @@ run "check-verb-coverage" bash "$HERE/check-verb-coverage.sh"
 # carve-out whose premise had quietly stopped being true.
 run "check-completeness-tests" python "$HERE/check-completeness-tests.py"
 
-# ★★★ `check-forwarded-features`, added 2026-09-06 — and it is `check-verb-
+# ★★★ `check-forwarded-features` — and it is `check-verb-
 # coverage`'s twin one layer down.
 #
 # That one asks *"is there an engine VERB nothing here calls?"*. This one asks
@@ -557,39 +554,36 @@ run "check-completeness-tests" python "$HERE/check-completeness-tests.py"
 # repeated it. ⇒ A warning does not protect a code path written after it.
 run "check-forwarded-features" bash "$HERE/check-forwarded-features.sh"
 
-# `check-old-name-absent` is what the 2026-09-03 rename left behind, and it
-# exists because a rename is exactly the operation whose completeness cannot be
+# `check-old-name-absent` guards the project rename, and it exists because a
+# rename is exactly the operation whose completeness cannot be
 # checked by the obvious means: `pdfcer` CONTAINS the old stem, so a naive grep
 # matches every correct occurrence as well as every stale one and returns
 # thousands of hits on a clean tree. The gate uses the only honest pattern --
 # the stem not followed by `r` -- and carries a written reason for each of the
-# references that legitimately survive. * It reported `clean` on its own first
-# run while its scan was failing; it now checks the scan's exit status, which is
-# the mechanism rather than the intention.
+# references that legitimately survive. * It checks its own scan's EXIT STATUS,
+# because a scan that fails to run reports `clean` exactly like a scan that
+# found nothing -- the mechanism, not the intention.
 #
-# ** ITS SIBLING, `check-engine-rename-shim`, WAS DELETED ON 2026-09-03 -- by
-# its own instruction, and that is the point of it. The `package = "pdfce-*"`  # old-name-exempt: naming the retired shim key is the explanation
-# bridge in the GUI manifest was a temporary shim to an engine that had not
-# renamed yet, and the gate's job was to fail the build the moment the shim
-# outlived its cause. The engine's `Pass 247.1` landed mid-session (`4db298d`,
-# engine v0.28.0), the gate fired, the shim came out, and the gate went with it.
-# A temporary shim needs a tripwire that names its own deletion; a comment is
-# not one, and this one worked exactly as written.
+# ** A TEMPORARY SHIM NEEDS A TRIPWIRE THAT NAMES ITS OWN DELETION -- and
+# a comment is not one. The `package = "pdfce-*"`  # old-name-exempt: naming the retired shim key is the explanation
+# bridge in the GUI manifest was a shim to an engine that had not renamed yet;
+# its gate's whole job was to fail the build the moment the shim outlived its
+# cause, and to be deleted along with the shim when it did. That is what a
+# tripwire is for, and why none of this survives as a running gate.
 run "check-old-name-absent" bash "$HERE/check-old-name-absent.sh"
 
-# ★★★ `check-engine-backlog`, added 2026-09-04 — `check-verb-coverage`'s twin
+# ★★★ `check-engine-backlog` — `check-verb-coverage`'s twin
 # for the channel that had no gate at all.
 #
 # `check-verb-coverage` reads the engine's API and fails when this shell names
 # none of a verb. It caught `set_encryption` and `set_permissions` within hours
 # of their arrival, unannounced.
 #
-# ★★ A capability announced in PROSE had no such gate, and the hole swallowed an
-# operator request whole. On 2026-09-03 he asked the ENGINE for PNG/JPEG/SVG
-# export and clipboard copy-out; the engine shipped all of it that day and sent
-# a note saying exactly what to wire. **This shell built none of it and filed no
-# row, for a day**, and it was found only because a session read the request
-# folder looking for something else.
+# ★★ A capability announced in PROSE has no such gate, and the hole is wide
+# enough to swallow an operator request whole: he can ask the ENGINE directly
+# for a feature, the engine can ship it the same day with a note saying exactly
+# what to wire, and **this shell can build none of it and file no row** — found
+# only because a session read the request folder looking for something else.
 #
 # The engine's own `docs/FEATURES.md` states the gap in a machine-readable
 # place — every row reading `[x] core` / `[ ] gui` — and until this gate nothing
@@ -602,7 +596,7 @@ run "check-old-name-absent" bash "$HERE/check-old-name-absent.sh"
 run "check-engine-backlog --self-test" bash "$HERE/check-engine-backlog.sh" --self-test
 run "check-engine-backlog" bash "$HERE/check-engine-backlog.sh"
 
-# ★★★ `walk-engine-backlog --check`, registered 2026-09-11 — and the delay is
+# ★★★ `walk-engine-backlog --check` — and the delay is
 # the finding.
 #
 # The gate above asks whether `ENGINE_BACKLOG.md` ACCOUNTS for every capability
@@ -634,15 +628,16 @@ run "check-engine-backlog" bash "$HERE/check-engine-backlog.sh"
 # would teach people to re-baseline it.
 run "walk-engine-backlog" python "$ROOT/tools/walk-engine-backlog.py" --check
 
-# ★★★ `check-engine-api-drift`, added 2026-09-05 — and it exists because the
+# ★★★ `check-engine-api-drift` — and it exists because the
 # two gates immediately above are BLIND TO THE SAME THING.
 #
-# On 2026-09-04 `pdfcer-core` shipped `pdfcer_core::text_edit::RefusalKind`, a
-# coarse discriminant over `EditError`, in direct answer to a request this
-# project filed. It was pinned here and sat unconsumed for a day — beside
+# `pdfcer_core::text_edit::RefusalKind`, a coarse discriminant over
+# `EditError`, arrived in direct answer to a request this project filed — and
+# sat pinned and unconsumed beside
 # `crate::text::status::edit_declined_by_engine`, whose own doc comment said it
-# was "written to be deleted" the day `EditError` gained a coarse kind. That day
-# arrived and nothing noticed.
+# was "written to be deleted" the day `EditError` gained a coarse kind. ⚠ **A
+# comment naming the condition of its own deletion does not observe that
+# condition.**
 #
 # ★★ Neither gate above could have noticed. `check-verb-coverage` reads
 # `impl EditSession`'s `pub fn`s; `check-engine-backlog` reads the engine's
@@ -671,7 +666,7 @@ run "walk-engine-backlog" python "$ROOT/tools/walk-engine-backlog.py" --check
 # which is the defect the "off by one, then by two" paragraph at the top of
 # this file records.
 run "check-engine-api-drift" bash "$HERE/check-engine-api-drift.sh"
-# ★★★ `check-ui-toolkit-drift`, added 2026-09-08, and it is the sibling of
+# ★★★ `check-ui-toolkit-drift`, and it is the sibling of
 # the line above. `check-engine-api-drift` watches `pdfcer-core`, a PATH
 # dependency that moves hourly and cannot move unnoticed. This one watches
 # `egui`, a VERSIONED dependency that can ONLY move unnoticed — a caret
@@ -682,7 +677,7 @@ run "check-engine-api-drift" bash "$HERE/check-engine-api-drift.sh"
 # behind is fine, being behind without knowing is what fails here.
 run "check-ui-toolkit-drift" bash "$HERE/check-ui-toolkit-drift.sh"
 
-# ★★★ `check-unreachable-refusals`, added 2026-09-14, and it is the FOURTH
+# ★★★ `check-unreachable-refusals`, and it is the FOURTH
 # member of the drift family -- watching the one kind of drift the other
 # three structurally cannot see: a symbol that still EXISTS on the engine
 # side, with an unchanged signature, that has quietly stopped being produced.
@@ -716,7 +711,7 @@ run "check-ui-toolkit-drift" bash "$HERE/check-ui-toolkit-drift.sh"
 # Its --self-test runs inside the wrapper, for the reason stated there.
 run "check-unreachable-refusals" bash "$HERE/check-unreachable-refusals.sh"
 
-# ★★★ `check-pin-citation`, added 2026-09-11, and it is the THIRD member of
+# ★★★ `check-pin-citation`, and it is the THIRD member of
 # the drift family above -- but it watches a different kind of drift, and the
 # difference is the reason it exists.
 #
@@ -753,8 +748,8 @@ run "check-pin-citation" bash "$HERE/check-pin-citation.sh"
 run "check-pin-citation --self-test" bash "$HERE/check-pin-citation.sh" --self-test
 
 # `check-third-party-licences` regenerates THIRD_PARTY_LICENSES.md and fails if
-# the committed one differs. It is the SECOND gate written on 2026-09-01 for the
-# same underlying shape as `check-verb-coverage`: an ADDITION on the other side
+# the committed one differs. It is a second gate for the same underlying shape
+# as `check-verb-coverage`: an ADDITION on the other side
 # of a boundary is silent, because a removed dependency breaks the build and an
 # added one does not.
 #
@@ -767,7 +762,7 @@ run "check-pin-citation --self-test" bash "$HERE/check-pin-citation.sh" --self-t
 # -- which is why it is last in this section rather than first.
 run "check-third-party-licences" bash "$HERE/check-third-party-licences.sh"
 
-# ★★★ `package-portable --self-test`, registered 2026-09-11 — and, exactly like
+# ★★★ `package-portable --self-test` — and, exactly like
 # `walk-engine-backlog` eight hours earlier, the delay IS the finding.
 #
 # `tools/package-portable.py` has carried a `--self-test` since it was written.

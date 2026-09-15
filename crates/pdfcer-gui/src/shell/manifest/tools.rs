@@ -2,25 +2,20 @@
 //!
 //! `RIBBON_IA.md` §5.7. Three groups: Batch, Fonts, Diagnostics.
 //!
-//! # What this tab became
+//! # The rule that decides membership
 //!
-//! In the salvage source it was three groups of one control each — a batch
-//! *panel* toggle, font folders, and redaction — and on a 1936 px window
-//! that left well over a thousand pixels of empty band. The reorganisation
-//! does two things:
+//! A control belongs on Tools when it either operates on files **other than
+//! the open one**, or is configured once and rarely touched. That is what
+//! keeps the tab from becoming the place leftovers go.
 //!
-//! 1. **Redact leaves**, to Edit ▸ Protect, where a user editing a
-//!    document will actually look for it.
-//! 2. **The batch panel's contents surface as commands.** `Merge files…`
-//!    and `Split files…` were reachable only by opening a pane and then
-//!    choosing within it; the pane stays, and the ribbon becomes the path
-//!    that can be found without knowing it is there. The pane's third
-//!    job — inserting pages from another file — is not here, because
-//!    that one changes *this* document and belongs on Pages.
+//! Two consequences worth stating, because both look like omissions:
 //!
-//! The result is a tab defined by a rule rather than by leftovers: things
-//! that either operate on files **other than the open one**, or are
-//! configured once and rarely touched.
+//! 1. **Redact is not here**; it is Edit ▸ Protect, where someone editing a
+//!    document looks for it.
+//! 2. **The batch pane's jobs are also ribbon commands.** The pane stays —
+//!    the ribbon is the path that can be found without knowing the pane is
+//!    there. Its third job, inserting pages from another file, is on Pages
+//!    instead, because that one changes *this* document.
 //!
 //! # The Pages/Tools line, restated because it is the one that gets blurred
 //!
@@ -39,17 +34,15 @@
 //!
 //! # Render diagnostics belongs here rather than in the status bar
 //!
-//! It is currently a run of text in the status bar. That surface is for
-//! the controls a user touches constantly, and a diagnostic readout is
-//! neither a control nor constant — it is a thing you go and look at when
-//! something is wrong. Moving it here also gives it room to be more than
-//! one line.
+//! The status bar is for the controls a user touches constantly, and a
+//! diagnostic readout is neither a control nor constant — it is a thing you go
+//! and look at when something is wrong. A tab also gives it room to be more
+//! than one line.
 //!
-//! # ★★ Recognise shipped 2026-08-14, and it is NOT on this tab
+//! # Recognise is NOT on this tab
 //!
-//! `RIBBON_IA.md` §5.7 specifies **Tools ▸ Recognise ▸ OCR…**, and this file
-//! carried it for about an hour before the placement was found to be
-//! unbuildable. The command is `file.ocr`, on **File ▸ Recognise**, and the
+//! `RIBBON_IA.md` §5.7 specifies **Tools ▸ Recognise ▸ OCR…**. That placement
+//! is unbuildable; the command is `file.ocr`, on **File ▸ Recognise**, and the
 //! reason is the operator's:
 //!
 //! > *"if in read mode ocr should still be available, but it will prompt to
@@ -58,18 +51,15 @@
 //! **Read's tab list is `["file", "view"]`.** A command on the Tools tab is
 //! therefore not merely inconvenient in Read, it is *unreachable* — no tab, no
 //! band, no control, and `modes::capability::offers_command` would refuse a
-//! chord for it too. Shipping OCR here would have satisfied the specification
-//! and broken the instruction.
+//! chord for it too. Shipping OCR here would satisfy the specification and
+//! break the instruction.
 //!
-//! ### This is the THIRD time, and the fix is the same one both previous times
+//! ### The rule this is an instance of
 //!
-//! `HANDOFF.md` states the pattern outright: *"a chord refused in a mode where
-//! the operator plainly needs it is evidence that the command's tab is wrong,
-//! not that the gate needs an exception. That is twice this has happened and
-//! twice the fix has been a tab move."* It was `edit.form_fill` →
-//! `view.panel_forms`, then `edit.copy_page_text` → `file.copy_page_text`.
-//! This is the third, and it needed no new machinery because the pattern was
-//! already written down.
+//! **A chord refused in a mode where the operator plainly needs it is evidence
+//! that the command's tab is wrong, not that the gate needs an exception.** The
+//! remedy is a tab move, not a capability exemption, and it needs no new
+//! machinery.
 //!
 //! ### Why FILE, and not View
 //!
@@ -82,7 +72,7 @@
 //! operator's own general rule for Read: *Read may produce a new document; it
 //! may not modify this one.*
 //!
-//! ### ★ What is left for the operator to rule on
+//! ### What is left for the operator to rule on
 //!
 //! This departs from a written specification, so it is flagged rather than
 //! quietly done. If §5.7's Tools placement is preferred, the instruction it
@@ -113,17 +103,18 @@ pub(super) fn tab() -> Tab {
             group(
                 "batch",
                 ribbon::group_tools_batch(),
-                // ★★★ **`tools.split_files` LEFT this band on 2026-08-31** —
-                // O68. Merge is wired and stays; Split is unregistered until
-                // the boundary chooser exists (R9), so the band is one item.
+                // One item, and that is correct rather than unfinished.
+                // `tools.split_files` is unregistered until the boundary
+                // chooser exists (R9, O68); merge is wired and stays.
                 //
-                // ★ The band is NOT deleted, unlike Edit ▸ Clipboard and
-                // View ▸ Render before it, because it is not empty: it has a
-                // live member. An empty captioned band is a caption offering
-                // nothing; a band of one is a band of one.
-                // ★ Large, 2026-09-04 — the mockup's `Merge files…` big, and
-                // a one-item group, so this is the free case the `large`
-                // helper always allowed.
+                // The band is NOT deleted for being short. The rule that
+                // deletes a band is emptiness — an empty captioned band is a
+                // caption offering nothing — and a band of one is a band of
+                // one.
+                //
+                // Large, per the mockup's big `Merge files…`, and free here
+                // because a one-item group is the case the `large` helper
+                // always allowed.
                 [large("tools.merge_files")],
             ),
             // ---------------------------------------------------------------
@@ -135,17 +126,17 @@ pub(super) fn tab() -> Tab {
             // same subject from the operator's side: what happens when a
             // document needs a typeface.
             //
-            // Note that the Fonts *panel* is not here — it moved to File ▸
-            // Document, because it describes what is inside the file.
-            // These are the two verbs; that is the inventory.
+            // The Fonts *panel* is not here — it is on File ▸ Document,
+            // because it describes what is inside the file. These are the
+            // two verbs; that is the inventory.
             // ---------------------------------------------------------------
             group(
                 "fonts",
                 ribbon::group_tools_fonts(),
                 [
-                    // ★ Large — the mockup's `Font folders…` big, with the
-                    // two embed verbs in a column beside it. First in the
-                    // group already.
+                    // Large — the mockup's `Font folders…` big, with the two
+                    // embed verbs in a column beside it, and first in the
+                    // group as the `large` helper requires.
                     large("tools.font_folders"),
                     command("tools.embed_fonts"),
                     command("tools.unembed_fonts"),

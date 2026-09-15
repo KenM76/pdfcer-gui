@@ -24,10 +24,9 @@
 //! | `menu.custom.<context>.<kind>` | one application-drawn row |
 //! | `menu.icon.<context>.<command id>` | the icon slot of a row **whose glyph was actually painted** |
 //!
-//! ## ★★★ Why the icon slot is published, and what its ABSENCE means
+//! ## Why the icon slot is published, and what its ABSENCE means
 //!
-//! Added 2026-09-04 with the menu icon column, and it is the one name here
-//! whose *absence* is the assertion.
+//! This is the one name here whose *absence* is the assertion.
 //!
 //! A row's own rectangle proves the row was drawn. It proves nothing about
 //! the glyph, because a row is justified to the body width and measures
@@ -36,11 +35,9 @@
 //! an icon-only button is square and a text button is a word wide — has no
 //! menu equivalent, and a harness looking only at
 //! `menu.item.<context>.<id>` cannot tell an application that wired an
-//! icon painter from one that did not. That was exactly the state this
-//! build was in until 2026-09-04, undetectably, for the whole life of the
-//! menu engine.
+//! icon painter from one that did not.
 //!
-//! This name closes that. It is published **only from the branch that
+//! This name closes that gap. It is published **only from the branch that
 //! calls the application's painter** — not when the slot is blank, not
 //! when there is no slot, and not when no painter was supplied. So:
 //!
@@ -56,7 +53,7 @@
 //! `tools/ui-verify`'s `qat_controls_are_icon_only` header draws, reached
 //! independently on the other surface.
 //!
-//! ## ★ Why the body is `menu.body.<context>` and not `menu.<context>`
+//! ## Why the body is `menu.body.<context>` and not `menu.<context>`
 //!
 //! Because the shorter spelling makes the two namespaces overlap. A
 //! context id is an arbitrary application string; if one were ever called
@@ -124,8 +121,8 @@ pub fn icon(context_id: &str, command_id: &str) -> String {
 mod tests {
     use super::*;
 
-    /// **★ The published names are a stability contract, and this test is
-    /// the tripwire on it.**
+    /// **The published names are a stability contract, and this test is the
+    /// tripwire on it.**
     ///
     /// These strings are consumed by a harness in another tool, possibly
     /// in another repository, by literal comparison. A rename is a
@@ -149,7 +146,7 @@ mod tests {
         );
     }
 
-    /// **★ The body namespace and the row namespace cannot collide.**
+    /// **The body namespace and the row namespace cannot collide.**
     ///
     /// The reason the body is `menu.body.` rather than bare `menu.`: a
     /// context id is an arbitrary application string, and one called

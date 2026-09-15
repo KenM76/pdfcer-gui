@@ -3,13 +3,6 @@
 //!
 //! # Why this is its own file
 //!
-//! Split out of [`super`] on 2026-09-05 under **R2** (no `.rs` file over 1,500
-//! lines), when registering
-//! [`layers_membership::SelectingAnObjectNamesItsLayer`] took `checks/mod.rs`
-//! to 1,540. It could have been kept under the limit by writing less about the
-//! new check, and that is the wrong trade — the limit exists to force a seam,
-//! not to ration explanation.
-//!
 //! ## The seam, and the argument for it
 //!
 //! `checks/mod.rs` now holds **the harness's vocabulary**: the [`Check`] trait
@@ -23,16 +16,16 @@
 //! | | `mod.rs` | `roster.rs` |
 //! |---|---|---|
 //! | changes when | the harness gains a capability every check can use | **any** check is added, removed or re-ordered |
-//! | how often | rarely | ★ every single landing that ships a driven check |
+//! | how often | rarely | every single landing that ships a driven check |
 //! | reviewed for | is the contract still right? | is this check in the right place, and does its note say why? |
 //!
-//! ★★ The second row is the whole argument. This list grows with every feature
-//! this project ships, and it was the *only* thing in `mod.rs` that did. A file
-//! whose growth is unbounded by construction, sharing a file with a trait that
-//! has changed three times in six months, guarantees the limit is hit again —
-//! and hit by whoever is unlucky rather than by whoever is responsible.
+//! The second row is the whole argument. This list grows with every feature
+//! the project ships; the trait beside it barely moves. Keeping an unboundedly
+//! growing list in the same file as a stable contract makes every landing touch
+//! the contract's file, and makes the file's size somebody's problem at random
+//! rather than the problem of whoever owns the growth.
 //!
-//! ## ★ The `pub mod` declarations stayed behind, deliberately
+//! ## The `pub mod` declarations stayed behind, deliberately
 //!
 //! They look like roster material and they are not: a `mod` declaration
 //! *defines the module path*, so moving `pub mod layers_search;` here would
@@ -80,31 +73,27 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // after the captions check because both launch, and a reader
         // comparing two ribbon verdicts wants them adjacent.
         Box::new(qat_icons::QatControlsAreIconOnly),
-        // ★ Immediately after the QAT's icon check, because it is the SAME
+        // Immediately after the QAT's icon check, because it is the SAME
         // defect on a second surface — an icon painter that exists and is
         // never handed to a call site — and a run where both fail says
         // "the icon set is broken" while a run where only this one fails
         // says "one wiring line is missing". Ordering them adjacently is
         // what makes that difference legible in the summary.
         Box::new(menu_icons::MenuRowsDrawTheirIcons),
-        // ★★★ O126's THREE drivable features. This comment used to say there
-        // were two, and that the third — selecting an object highlighting its
-        // layer — could not be driven because `pdfcer-core` could not report a
-        // content object's optional-content group. **That was true when it was
-        // written and false within a day.** `Pass 250.0` answered this
-        // project's own filed request (`oc: Option<ObjId>` on `PathObject`,
-        // `TextObject` and `ImageObject`), and the check is
-        // `layers_membership::SelectingAnObjectNamesItsLayer`, registered
-        // below among the driving checks.
+        // O126's three drivable features. The third of them — selecting an
+        // object names its layer — is
+        // `layers_membership::SelectingAnObjectNamesItsLayer`, registered below
+        // among the driving checks; it rests on the engine reporting a content
+        // object's optional-content group (`oc: Option<ObjId>` on `PathObject`,
+        // `TextObject` and `ImageObject`).
         //
-        // ⇒ The seventh recurrence of this project's most expensive pattern: a
-        // sentence about what the engine cannot do is a **dated citation with a
-        // shelf life measured in hours**, and a citation living in a comment
-        // cannot go red when it expires. Where the claim can be an assertion,
-        // make it one — which is what the check now is.
+        // The rule that entry exists to enforce: **a sentence about what the
+        // engine cannot do has a shelf life measured in hours**, and a claim
+        // living in a comment cannot go red when it expires. Where such a claim
+        // can be made an assertion instead, make it one.
         Box::new(panel_float::PanelsFloatCloseAndDock),
         Box::new(layers_search::LayersSearchNarrowsTheList),
-        // ★ The first *driving* check, and it goes first among them on
+        // The first *driving* check, and it goes first among them on
         // purpose: it is the cheapest — two clicks on one always-enabled
         // control, no canvas gesture, no keystroke, no capture — and it is the
         // one whose failure most changes what a later failure means. Every
@@ -113,7 +102,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // ribbon-click channel is broken it says so here, in seconds, instead
         // of at the end of a canvas drag.
         Box::new(new_document::NewDocumentMakesAPage),
-        // ★ Immediately after its sibling, and it drives the OTHER New.
+        // Immediately after its sibling, and it drives the OTHER New.
         //
         // `new_document` asserts that `file.new` makes a page at all;
         // this one asserts that `file.new_from_template` makes a page of the
@@ -126,10 +115,10 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // `enabled_when` because an operator with nothing open is the one it
         // exists for.
         Box::new(new_document_size::NewDocumentSizesThePage),
-        // ★ Immediately after its sibling, and the pairing is the point: that
-        // one asserts a NEW document gets the size asked for, this one asserts an
-        // OPEN one can be changed. The chooser they drive is the same widget, and
-        // it was reachable only from the first of the two until 2026-09-06.
+        // Immediately after its sibling, and the pairing is the point: that
+        // one asserts a NEW document gets the size asked for, this one asserts
+        // an OPEN one can be changed. The chooser they drive is the same
+        // widget, reached from two different commands.
         Box::new(page_size::ResizingASheetChangesThePaperInTheSavedFile),
         // Clicks and captures, so it takes the desktop — but only with the
         // mouse, and only for a few seconds. Placed after the three ribbon
@@ -138,12 +127,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // the two typing checks because a run that fails here should fail
         // before paying for a keystroke that may never arrive.
         Box::new(markup_move::DraggingAMarkupMovesIt),
-        // ★★★ Its sibling, and the pairing is the point: `markup_move` proves
+        // Its sibling, and the pairing is the point: `markup_move` proves
         // the MOVE ghost reaches the frame and this proves the RESIZE one does.
         // They were one arm apart in `canvas::overlay` and only the first was
         // ever driven, which is how O154 shipped.
         Box::new(markup_resize_preview::DraggingACommentsCornerShowsWhereItIsGoing),
-        // ★ Immediately after the move, because the two share their first two
+        // Immediately after the move, because the two share their first two
         // steps — arm the rectangle tool through `PDFCER_DIAG_INVOKE`, draw a
         // shape with one drag — and a reader who sees both fail at that step
         // should read it as one defect in authoring rather than two.
@@ -154,13 +143,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // downstream of the other's. A rectangle whose colour is wrong is worth
         // knowing about only once there is a rectangle at all.
         Box::new(markup_palette::ANewMarkupIsDrawnInAcrobatsRed),
-        // ★ Third of the three that begin the same way, and the most expensive:
+        // Third of the three that begin the same way, and the most expensive:
         // it draws the shape, selects it, raises a contextual tab, drags a
         // spinner and photographs the page twice. Last of the group so that a
         // reader who sees all three fail at the drawing step reads it as one
         // defect in authoring rather than three.
         Box::new(markup_band::TheFormatTabRestylesASelectedMark),
-        // ★★★ Immediately after the move, and deliberately: the two share
+        // Immediately after the move, and deliberately: the two share
         // steps 1-3 verbatim in shape — draw a rectangle, put the pen down,
         // click it — so a failure in EITHER of those here should be read
         // against `dragging_a_markup_moves_it`'s result first. If both fail at
@@ -171,22 +160,22 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(annot_angle_typed::TheTypedAngleTurnsAMark),
         Box::new(foreign_icon_name::AForeignIconNameReachesThePanel),
         Box::new(widget_move::DraggingAFormFieldMovesIt),
-        // `OPERATOR_REQUESTS.md` O76, 2026-08-31. Beside the move check
+        // `OPERATOR_REQUESTS.md` O76. Beside the move check
         // because they are the same gesture family on the same operand and
         // differ in one field of one trace line — which is exactly the
         // distinction a reader comparing them needs to see.
         Box::new(checkbox_resize::AResizedCheckBoxIsRedrawn),
-        // ★ Beside the other form checks. It reuses `widget_move`'s first two
+        // Beside the other form checks. It reuses `widget_move`'s first two
         // steps verbatim in shape, so a failure in EITHER of them here should
         // be read against that check's result first.
         Box::new(field_menu::RightClickingAFormFieldOpensItsMenu),
         Box::new(markup_rectangle::MarkupRectangleArmsFromTheRibbon),
-        // ★ Form-field placement and selection. After the markup checks and
+        // Form-field placement and selection. After the markup checks and
         // not before, because it borrows their gesture machinery — a band drag
         // and a canvas click — so a failure in either would be reported there
         // first, where the cause is, rather than here where the symptom is.
         Box::new(form_field::FormFieldPlaceAndSelect),
-        // ★★ Directly after it, and the order is a **dependency** rather than a
+        // Directly after it, and the order is a **dependency** rather than a
         // preference. The refusals half ends by clicking a widget the canvas
         // census names and reading the Properties pane — which is
         // `form_field`'s phases C and D exactly. A run in which canvas
@@ -199,11 +188,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // unambiguously about the Forms panel's own wiring.
         Box::new(form_groups::FieldGroupDeleteRemovesTheSubtree),
         Box::new(form_groups::StructuralRefusalsAreSentencesNotControls),
-        // ★ The blend-space disclosure. After the zoom checks, because it
+        // The blend-space disclosure. After the zoom checks, because it
         // climbs with Ctrl+wheel and a wheel that does not reach the canvas is
         // `zoom_gallery`'s failure to report, not this one's.
         Box::new(blend_space::BlendSpaceFallbackIsDisclosed),
-        // ★ Beside `blend_space`, because they are the same shape of check on
+        // Beside `blend_space`, because they are the same shape of check on
         // the same two surfaces: both climb the zoom with Ctrl+wheel, both read
         // pixels out of the canvas, and both end at a status-bar disclosure. A
         // run in which the wheel does not reach the canvas should report that
@@ -211,10 +200,10 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // `blend_space` SKIP for want of a climb knows to expect this one to as
         // well.
         //
-        // ★★ It goes SECOND of the two because it also presses a ribbon item,
+        // It goes SECOND of the two because it also presses a ribbon item,
         // so it has one more candidate cause than its neighbour.
         Box::new(line_weights::LineWeightsOffThinsTheDrawingAndSaysSo),
-        // ★ Immediately after `pan_refresh`, because they are the two halves of
+        // Immediately after `pan_refresh`, because they are the two halves of
         // one gesture: that one asserts the new area RENDERS, this one asserts
         // the page is not blank WHILE it renders. A failure of the first should
         // be read first — if nothing renders at all, what is on screen during
@@ -233,29 +222,28 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // would fail for the same reason with three more candidate causes in
         // front of it.
         Box::new(markup_shapes::MarkupFreehandAndVertexKinds),
-        // ★ Directly after the markup checks, and for the same dependency
+        // Directly after the markup checks, and for the same dependency
         // reason: this one is about the pen those gestures author WITH, so a
         // run in which the ribbon-click channel is broken should report that as
         // `markup_rectangle`'s failure first.
         Box::new(markup_style::MarkupStyleGroupIsDrawn),
         Box::new(measure_perimeter::MeasurePerimeterTracesAndCloses),
-        // ★★★ Immediately after it, and the ordering is a dependency rather
+        // Immediately after it, and the ordering is a dependency rather
         // than a preference: this check DRAWS a perimeter before it reshapes
         // one, so if the tracing gesture is broken the run should say so under
         // the name of the check whose subject that is. Its own early steps
         // decline with "run that one first" for the same reason.
         //
-        // ⬜ REGISTERED AND NEVER RUN — written 2026-09-05 while another track
-        // held the pointer. See its module header.
+        // REGISTERED AND NEVER RUN against the binary. See its module header.
         Box::new(dimension_corner_count::ACornerCanBeAddedAndTakenAway),
-        // ★★★ Beside it, and after it, because they are the two halves of one
+        // Beside it, and after it, because they are the two halves of one
         // report and this is the half that needed an engine Pass. It is placed
         // second on purpose: if both fail, the ce-dimension one failing too
         // says the fault is in the shared gesture grammar
         // (`dimdrag::intent`, the Points tool, the modifier path) rather than
         // in the markup side, and that is a different first place to look.
         Box::new(markup_node_edit::AMarkupShapesNodesCanBeEdited),
-        // ★ Early, and deliberately: it is the cheapest possible statement of
+        // Early, and deliberately: it is the cheapest possible statement of
         // "can this program open the file at all", and a failure here changes
         // what every later failure on an encrypted document would mean.
         Box::new(password_prompt::AnEncryptedDocumentCanBeOpenedWithItsPassword),
@@ -277,13 +265,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // consequence.
         Box::new(scale_reads_the_group::SetScaleReadsTheGroupItIsAboutToOverwrite),
         Box::new(measure_hover::MeasureHoverShowsWhatItWillTake),
-        // ★ The Manage-groups window, wired 2026-08-18 after being registered,
-        // drawn and inert for the whole life of this build. Beside the two
+        // The Manage-groups window. Beside the two
         // measure checks because it is the third link in the same chain: a
         // tool places a dimension, a window calibrates its group, and this one
         // is where the group comes from.
         Box::new(dimension_groups::DimensionGroupsPanelMakesAGroup),
-        // ★ Directly after the markup checks, and the order is a **dependency**
+        // Directly after the markup checks, and the order is a **dependency**
         // rather than a preference: this one begins by arming Rectangle and
         // dragging, which is `markup_rectangle`'s and `markup_shapes`' whole
         // subject. A run in which the four-link arm chain is broken should
@@ -300,7 +287,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // never arrive.
         Box::new(save_in_place::SaveWritesOverTheFileYouOpened),
         Box::new(save_copy::SaveCopyRoundTrip),
-        // ★ Directly after it, and the order is a **dependency** rather than a
+        // Directly after it, and the order is a **dependency** rather than a
         // preference: this check ends by saving a copy and re-opening it, so a
         // run in which `file.save_copy` itself is broken should report that as
         // `save_copy_round_trip`'s failure and this one's second. A reader who
@@ -313,11 +300,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // wrote about itself.
         Box::new(page_cache::PagesStayDrawnWhenYouScrollBack),
         Box::new(page_ops::PageOpsRoundTrip),
-        // ★ The FIRST check anywhere that drives the Pages PANEL rather than
+        // The FIRST check anywhere that drives the Pages PANEL rather than
         // the Pages tab. `page_ops` above drives the ribbon and records why it
         // does not touch the panel — the tile's context menu is an egui popup
-        // that declares no regions. The tiles themselves declare regions as of
-        // 2026-08-18, which is what made this possible.
+        // that declares no regions. The tiles themselves do declare regions,
+        // which is what makes this check possible.
         Box::new(pages_drag::PagesDragShowsWhereItLands),
         Box::new(tab_order_drag::TabOrderDragMovesAFieldAndShowsWhere),
         Box::new(forms_spotlight::ClickingAFormRowLightsTheFieldOnThePage),
@@ -326,23 +313,22 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(field_shading::FillableFieldsAreShadedOnThePage),
         Box::new(preset_group_reachable::TheStandardsPresetsGroupIsReachable),
         Box::new(redact_image_warning::MarkingOverAnImageSaysSoBeforeApply),
-        // The DXF export, wired 2026-08-19 after being the FIRST entry in
-        // `reach`'s scaffold list. Beside the page checks because it is the
+        // The DXF export. Beside the page checks because it is the
         // other verb that writes a file the operator hands to somebody else.
         Box::new(embed_fonts::EmbeddingFontsPutsAProgramInTheDocument),
         Box::new(embed_bundled::EmbeddingWorksWithNoFontFolderAtAll),
         Box::new(compact_save::ACompactedCopyIsActuallySmaller),
-        // ★★★ The page-tree guard, wired 2026-09-05 from the operator's own
-        // report. Placed immediately after `compact_save` because the two are
+        // The page-tree guard, from the operator's own report. Placed immediately
+        // after `compact_save` because the two are
         // the same subject from opposite ends: that one asserts a save
         // PRODUCES the file it promised, this one asserts a save REFUSES to
         // produce a file it knows is damaged. A reader comparing the two
         // verdicts is reading both halves of "what may leave this program".
         //
-        // ⚠ It pins its own fixture and ignores `--pdf`, so it needs nothing
+        // It pins its own fixture and ignores `--pdf`, so it needs nothing
         // from the sweep's aim table — and it is UNDRIVEN. Its header says so.
         Box::new(pagetree_guard::ASaveThatWouldProduceBlankPagesIsRefused),
-        // ★★★ The signature warning, wired 2026-08-28. Beside the save checks
+        // The signature warning. Beside the save checks
         // because it is the fourth thing this shell can do to a file somebody
         // else will open — and the only one whose subject is what the file
         // CLAIMS about itself rather than what it contains.
@@ -361,7 +347,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(export_image_emf::ExportImageWritesAMetafile),
         Box::new(copy_as_vector::CopyAsVectorPlacesTheMeasuredOrder),
         Box::new(export_text::ExportTextWritesTheDocumentsWords),
-        // Insert an image, wired 2026-08-19. Its last assertion is the one
+        // Insert an image. Its last assertion is the one
         // that matters: the promised resolution and the reported one are the
         // same number, which is the shell's half of a single-derivation
         // guarantee `pdfcer-core` holds up on its side with a test.
@@ -372,19 +358,19 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(save_after_edit::CtrlSAfterAnEditSavesAndTheProgramIsStillRunning),
         Box::new(button_action::APlacedButtonCanBeGivenSomethingToDo),
         Box::new(insert_image::InsertImagePlacesAPicture),
-        // `OPERATOR_REQUESTS.md` O66, 2026-08-31. Immediately after its
+        // `OPERATOR_REQUESTS.md` O66. Immediately after its
         // sibling, because it depends on everything that one establishes — the
         // picker seam, the window opening, the fixture PNG — and adds exactly
         // one thing: that the window gets out of the way when asked and comes
         // back afterwards. Its real subject is the JOIN; every part of the
         // placement arm is unit-tested and each part passes alone.
         Box::new(insert_image_place::TheInsertWindowStepsAside),
-        // `OPERATOR_REQUESTS.md` O67, 2026-08-31. Beside the insert checks
+        // `OPERATOR_REQUESTS.md` O67. Beside the insert checks
         // because it is the third route to the same verb — the picker, the
         // dialog, and now a file dropped on the grid — and the one that has to
         // prove a POSITION was used rather than a default.
         Box::new(drop_onto_thumbnails::ADrawingDroppedOnTheThumbnails),
-        // `OPERATOR_REQUESTS.md` O70, 2026-08-31. It reads the same
+        // `OPERATOR_REQUESTS.md` O70. It reads the same
         // `canvas-selection` line the font-group check does and asks the one
         // question that line was extended for: WHICH index space did the click
         // land in? Both answers are `sel=1 level=Object`.
@@ -400,26 +386,26 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),
         // The chain's last rung, and the one that leaves the geometry: text.
         Box::new(double_click_text::DoubleClickingATextBoxEditsTheText),
-        // `OPERATOR_REQUESTS.md` O71, 2026-08-31. Beside the Smart-Selector
+        // `OPERATOR_REQUESTS.md` O71. Beside the Smart-Selector
         // check because both are about what a plain click MEANS — that one in
         // Edit, this one in Read, which is the stance where the answer had
         // always been "text, or nothing".
         Box::new(read_image_copy::ReadModeCopiesAPicture),
-        // The Properties panel's document half, wired 2026-08-19 after a
+        // The Properties panel's document half, wired after a
         // recorded blocker — "`pdfcer-core` exposes no /Info accessor" — turned
         // out to have cleared without the prose moving. Beside the page checks
         // because it is the other surface that edits the DOCUMENT rather than
         // a page's content.
         Box::new(properties_metadata::PropertiesMetadataRoundTrips),
-        // The load-anomaly disclosure, both halves, wired 2026-09-09.
+        // The load-anomaly disclosure, both halves.
         //
-        // ★ The status-bar one is placed HERE, among the checks that drive a
+        // The status-bar one is placed HERE, among the checks that drive a
         // real document, rather than up among the chrome checks that run
         // without a fixture — it pins its own two documents and ignores
         // `--pdf`, but it is still entirely about what a document does to
         // the window.
         //
-        // ★★ It sends no input at all and puts its window off the desktop, so
+        // It sends no input at all and puts its window off the desktop, so
         // it is one of the few checks that can run while the operator is at
         // the machine. Do not fuse it with the panel check below on the
         // grounds that they share a subject: the panel one SKIPs under
@@ -428,11 +414,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // The long form of the same disclosure, beside the other check that
         // opens the Document properties panel — they share its opener.
         Box::new(load_anomalies::LoadAnomaliesAreListedInDocumentProperties),
-        // ★★★ The OTHER loader disclosure that lives in the same panel, wired
-        // 2026-09-13, and placed directly under its neighbour because the two
-        // are constantly mistaken for each other.
+        // The OTHER loader disclosure that lives in the same panel, placed
+        // directly under its neighbour because the two are constantly mistaken
+        // for each other.
         //
-        // ⚠ `Document::recovery()` and `Document::load_anomalies()` are
+        // `Document::recovery()` and `Document::load_anomalies()` are
         // DISJOINT questions. One is about the cross-reference machinery — the
         // index was unusable and pdfcer rebuilt it by scanning — and the other
         // is about the objects, where a key was defined twice and pdfcer had to
@@ -442,36 +428,36 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // xref at all so they raise no anomaly. A check reading the wrong one
         // would be green about a surface it never touched.
         //
-        // ★★ Its control launch is a RECOVERED file rather than a sound one,
+        // Its control launch is a RECOVERED file rather than a sound one,
         // which is the whole reason a second fixture exists. On a sound file the
         // entire neighbourhood draws nothing, so the absence would be satisfied
         // by a closed panel, by a document that was never recovered, and by the
         // thing under test — three states, one green tick.
         Box::new(recovery_losses::RecoveryLossesAreListedInDocumentProperties),
-        // ★★★ O169's read half, wired 2026-09-10, and placed here because it
-        // shares the Document properties opener with the two above it. Read in
-        // order the three say: the panel opens, it discloses what the loader
-        // had to decide, and it discloses what KIND of document this is.
+        // O169's read half, placed here because it shares the Document
+        // properties opener with the two above it. Read in order the three say:
+        // the panel opens, it discloses what the loader had to decide, and it
+        // discloses what KIND of document this is.
         //
-        // ⚠ Like its neighbours it pins its own two fixtures and ignores
+        // Like its neighbours it pins its own two fixtures and ignores
         // `--pdf`. The control launch is not optional: without it the check is
         // satisfied by a build that pins a *Stamp collection* heading to every
         // document in the shop.
         Box::new(stamp_collection::AStampCollectionDisclosesItself),
-        // ★★★ O169's AUTHOR half, wired 2026-09-10, and it must stay directly
-        // under the read half rather than migrating to the export checks.
+        // O169's AUTHOR half, and it must stay directly under the read half
+        // rather than migrating to the export checks.
         //
         // Its final assertion is the read half's surface: it writes a
         // collection, reopens it, and requires Document properties to disclose
         // it. That is only evidence because the reader above was calibrated
         // against `fixtures/stamp-collection.pdf`, which a Python script built
-        // from the spec with no pdfcer involved. ⚠ Delete or disable the check
+        // from the spec with no pdfcer involved. Delete or disable the check
         // above and this one keeps passing while proving nothing.
         //
         // Read in order the two say: pdfcer can read somebody else's stamp
         // collection, and the ones pdfcer writes are the same kind of thing.
         Box::new(stamp_collection::StampCollectionReachesTheEngine),
-        // ★★★ The way OUT of the same disclosure, wired 2026-09-10.
+        // The way OUT of the same disclosure.
         //
         // Placed immediately after the check that proves the block is drawn,
         // because it depends on that block being drawn and its failure message
@@ -483,7 +469,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // action to two guards to a pending intent to the loader — and every
         // step of it has a unit test that cannot see the next one.
         Box::new(load_anomalies::RereadingUnderTheOtherValueIsOffered),
-        // ★ Two ribbon clicks and one trace line — cheap, no capture, no
+        // Two ribbon clicks and one trace line — cheap, no capture, no
         // canvas gesture, no keystroke — so its position is chosen for what a
         // reader wants adjacent rather than for cost.
         //
@@ -492,19 +478,19 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // must NOT move up among the chrome checks, which run without a
         // fixture.
         //
-        // ★ It never presses the commit button, and no future edit may make it
+        // It never presses the commit button, and no future edit may make it
         // do so. That button is the one control in the application that
         // consumes paper and cannot be undone; a harness that can start a
         // print job will eventually start one by accident. The module header
         // states what that costs and why the cost is worth paying.
         Box::new(print_dialog::PrintDialogReachesTheSpooler),
-        // ★ Immediately after the spooler check, because the two are the two
+        // Immediately after the spooler check, because the two are the two
         // halves of "does Print work": one asks whether the job reaches the
         // device, the other whether the window the operator drives it from is
         // usable. The gap between those halves is where four defects shipped —
         // see `print_layout`'s header.
         Box::new(print_layout::PrintDialogBodyDoesNotDeadlockItsScrollbars),
-        // ★ Immediately after it, and the ORDER is load-bearing rather than
+        // Immediately after it, and the ORDER is load-bearing rather than
         // tidy. This check's every skip message defers to `print_dialog` for
         // the diagnosis — "the dialog never opened", "the spooler refused",
         // "the ribbon control is missing" are all its subject, not this one's.
@@ -512,23 +498,23 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // specific cause before the vaguer one, instead of reading a paper
         // check skip and having to go looking for why.
         //
-        // ★ It never presses Properties…, and no future edit may make it do
+        // It never presses Properties…, and no future edit may make it do
         // so. That button opens a VENDOR DRIVER's own modal dialog: a nested
         // Win32 message loop whose layout pdfcer does not know, cannot publish
         // rects for, and cannot reliably dismiss — and one left standing
         // blocks the application's event loop, so a failed dismissal does not
         // fail this check, it hangs every check after it.
         //
-        // ★ And it never presses commit, for the reason stated above.
+        // And it never presses commit, for the reason stated above.
         Box::new(print_paper::PrintPaperChangesThePlan),
-        // ★ IMMEDIATELY after `print_paper`, because it drives the same
+        // IMMEDIATELY after `print_paper`, because it drives the same
         // control and every skip it can produce about that control — "the
         // dialog published no `print.paper` region", "the device enumerated
         // no forms" — is answered more specifically by the check above it.
         // A reader of a failing run should meet the general cause first and
         // the special one second.
         //
-        // ★★ The two are NOT redundant and the difference is worth stating,
+        // The two are NOT redundant and the difference is worth stating,
         // because they look alike from the roster. `print_paper` clicks a
         // numbered driver form and asserts the plan followed it — that the
         // combo is wired to the job at all. This one clicks the **auto**
@@ -538,17 +524,17 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // to the first form in the list; that build is exactly the defect
         // this one exists for.
         //
-        // ⚠ It is deliberately fixture-sensitive in one direction only: it
+        // It is deliberately fixture-sensitive in one direction only: it
         // asserts an INVARIANT (`matched` implies the page fits) rather than
         // a sheet name, so it holds against any driver on any machine — but
         // a document with no measurable pages makes it SKIP, saying so.
         //
-        // ★ It never presses commit, and it never presses Properties… — the
+        // It never presses commit, and it never presses Properties… — the
         // rule every print check states in its own words, because the day
         // somebody adds another by copying one of these files, the copied
         // file is the only one they will read.
         Box::new(print_auto_paper::MatchThePagesPicksTheSheetFromTheDocument),
-        // ★ After the print checks above it, for the reason the two above
+        // After the print checks above it, for the reason the two above
         // give — stated as a POSITION rather than an ordinal, because this
         // comment once read "last of the four", a fifth was added saying "and
         // last", and a sixth falsified both. A relative position stays true
@@ -557,22 +543,22 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // spooler refused", "the ribbon control is missing" are its subject.
         // A reader of a failing run should meet the specific cause first.
         //
-        // ★ It never presses commit either. Four print checks now state that
+        // It never presses commit either. Four print checks now state that
         // rule; it is restated rather than referenced because the day somebody
         // adds a fifth by copying one of them, the copied file is what they
         // will read.
         Box::new(print_clip_claim::PrintClipClaimFollowsThePreview),
-        // ★ After the print checks above it, for the reason they give.
-        // ⚠ **NEVER RUN** — registered 2026-09-05 with the operator at
+        // After the print checks above it, for the reason they give.
+        // **NEVER RUN** — registered with the operator at
         // his machine; its own header says so first and says what a first run
         // will probably teach it. It never presses commit, like the four above.
         Box::new(preview_popout::ThePrintPreviewPopsIntoItsOwnWindow),
-        // ★★★ After the print checks above it, for the reason they give: every
+        // After the print checks above it, for the reason they give: every
         // skip it can produce — "the dialog never opened", "the ribbon control
         // is missing" — is `print_dialog`'s subject, not this one's, and a
         // reader of a failing run should meet the specific cause first.
         //
-        // ★★★ **It WRITES `userdata/preferences.txt`, and it deletes it again
+        // **It WRITES `userdata/preferences.txt`, and it deletes it again
         // on every path out.** It is the only check in the print family that
         // writes an input to the program rather than only reading what the
         // program wrote, so its position carries a second obligation the
@@ -590,18 +576,18 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // they are already confused, and "it only matters when something else
         // has gone wrong" describes every ordering rule in this file.
         //
-        // ★ It never presses commit. Every print check now states that rule
+        // It never presses commit. Every print check now states that rule
         // in its own words rather than referencing a neighbour, because the
         // day somebody adds a seventh by copying one of them, the copied file
         // is the only one they will read. The button it must never press is
         // the one control in the application that consumes paper and cannot be
         // undone.
         //
-        // ★ It never presses Properties… either — that opens a vendor
+        // It never presses Properties… either — that opens a vendor
         // driver's own Win32 modal, and one left standing does not fail this
         // check, it hangs every check after it.
         //
-        // ⚠ It is TWO launches, not one: a control process to measure what the
+        // It is TWO launches, not one: a control process to measure what the
         // shipped defaults actually are, then a second against a seeded file.
         // It is therefore among the most expensive checks in the suite, which
         // is the other reason it is not higher.
@@ -616,7 +602,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // of the pair that still runs under --no-input.
         Box::new(export_remembered::TheExportWindowsOpenOnTheSettingsYouLastUsed),
         Box::new(print_remembered::ThePrintWindowOpensOnTheSettingsYouLastUsed),
-        // ★ Beside its twin because they are two halves of one subject: that
+        // Beside its twin because they are two halves of one subject: that
         // one proves the settings SURVIVE a close, this one proves that WHICH
         // close you took decides whether they should have. Run together they
         // are the whole of O166 and O185; run apart, either reads as complete
@@ -628,7 +614,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // because the two routes out of the window must be compared against
         // each other, and an assertion both outcomes satisfy measures neither.
         Box::new(print_dismissal::ThePrintWindowForgetsWhatCancelUndid),
-        // ★ Beside it because it is the same shape — two ribbon clicks into a
+        // Beside it because it is the same shape — two ribbon clicks into a
         // dialog — and because both are checks whose subject is a control that
         // was drawn and did nothing.
         //
@@ -637,7 +623,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // it the cheapest driving check in the suite, so a run whose ribbon
         // channel is broken says so here without paying for a render.
         Box::new(settings_theme::SettingsThemeTakesEffect),
-        // ★★★ Its sibling, from the same file, and it goes IMMEDIATELY after
+        // Its sibling, from the same file, and it goes IMMEDIATELY after
         // for the reason `print_layout` goes after `print_dialog`: every skip
         // message it can produce defers to the check above it for the
         // diagnosis. "The three presets painted the same surround" is
@@ -650,11 +636,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // channel is broken says so above, in seconds, without paying for a
         // render.
         //
-        // ★ It closes both halves of `REVIEW_TRIAGE.md` PartC at once: the Airy
-        // preset, which nothing in this repository had ever clicked, and the
-        // PAGE, which nothing had ever sampled under a theme.
+        // It is the only check that clicks the Airy preset, and the only one
+        // that samples the PAGE raster rather than the window body. Both
+        // halves matter: Airy is the preset likeliest to fail a contrast
+        // assertion, and a theme that tints the paper is a defect no
+        // window-body sample can see.
         Box::new(theme_page::EveryThemePresetKeepsThePageWhite),
-        // ★ Directly after it, and for the same dependency reason it sits
+        // Directly after it, and for the same dependency reason it sits
         // after the markup checks: this one also begins by arming Rectangle and
         // dragging, so a run in which the four-link arm chain is broken should
         // report that as `markup_rectangle`'s failure and this one's last.
@@ -665,7 +653,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // that cannot take it back, and a run is likelier to be read from the
         // top than from the bottom.
         Box::new(undo_redo::UndoRedoRoundTrip),
-        // ★ Third of the two-process checks, and placed here for the same
+        // Third of the two-process checks, and placed here for the same
         // dependency reason the two above it are: it ends by writing a file and
         // re-opening it, so a run in which writing itself is broken should
         // report that as `save_copy_round_trip`'s failure and this one's
@@ -680,7 +668,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // aimed at a document that lacks the strings it scans for.
         Box::new(object_clipboard::CopyAndPastePageContent),
         Box::new(clipboard_annotation::CopyingAStickyNoteCarriesTheWholeComment),
-        // ★★★ Its complement, added 2026-09-05 with the fix for the driven
+        // Its complement, added with the fix for the driven
         // sweep's finding A1. The check above owns the GRANT — a comment
         // copied in Review pastes in Review. This one owns the REFUSAL: a
         // clip of page CONTENT must still be refused there, and the refusal
@@ -703,10 +691,10 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // O186 clause four, on the dense drawing. LAST of the three, and
         // SKIPPED on any machine without it: the region tier never refuses
         // on sparse line work, so the wall this asserts about cannot be
-        // reached with a repository fixture. Measured 2026-09-12.
+        // reached with a repository fixture, and measured.
         Box::new(raster_wall::TheRasterWallStopsTheZoomInsteadOfPaintingAnError),
         Box::new(deep_pan::PanningAtDeepZoomStaysWhereItWasPut),
-        // ★★★ O186 stage one, LAST of the deep-tier cluster and deliberately
+        // O186 stage one, LAST of the deep-tier cluster and deliberately
         // so. Everything above it proves the deep tier draws, rasterizes and
         // pans; this one proves the view cannot be carried off the sheet
         // altogether. A failure in any of the four above should be read first:
@@ -719,15 +707,15 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(off_sheet::AViewCarriedOffTheSheetComesBack),
         Box::new(scale_sweep::MouseWorkSurvivesEveryRenderTier),
         Box::new(zoom_keeps_place::ZoomingDoesNotThrowAwayWhereTheOperatorPanned),
-        // ★ Its inverse. The climb above never rolls the wheel the other way, so
+        // Its inverse. The climb above never rolls the wheel the other way, so
         // the DOWNWARD hand-over between the f32 scroll offset and the f64
         // anchor had never been driven. O26e.
         Box::new(zoom_out_keeps_place::ZoomingBackOutKeepsTheView),
-        // ★ O28 and O29: a fit sets the scale AND places the view, and there
+        // O28 and O29: a fit sets the scale AND places the view, and there
         // is a third mode. Pans into the pasteboard first, because the state
         // the request is about did not exist before O23.
         Box::new(fit_places_the_view::AFitCommandPutsThePageOnScreen),
-        // ★ Immediately after it: same subject, opposite outcome, and a failure
+        // Immediately after it: same subject, opposite outcome, and a failure
         // in the sibling should be read first because this one builds on it.
         Box::new(fit_left_by_a_pan::APanLeavesTheFit),
         // O177, both halves. Third in the fit group and after both of the
@@ -737,7 +725,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(
             page_display_recentres::SwitchingThePageDisplayRecentresAndAFacingFitFitsTheSpread,
         ),
-        // ★ O30: the wheel as a page turn, from the status-bar toggle. Asserts
+        // O30: the wheel as a page turn, from the status-bar toggle. Asserts
         // the DEFAULT is silent first, so a build that flipped unconditionally
         // could not pass — and that the control is absent where the choice
         // does not exist.
@@ -745,7 +733,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(zoom_gallery::ThePageStillRendersAtEveryDecadeOfZoom),
         Box::new(pan_refresh::PanningPastTheOverscanRendersTheNewArea),
         Box::new(resize::ResizeScalesAShape),
-        // ★ Directly after `resize`, because it is that check plus one switch:
+        // Directly after `resize`, because it is that check plus one switch:
         // a failure in `resize_scales_a_shape` should be read first, since
         // every link it covers is in front of this one.
         Box::new(scale_switch::TheLineWeightSwitchReachesTheResize),
@@ -753,25 +741,25 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(shift_constrains::ShiftConstrainsAResize),
         Box::new(geometry_fields::GeometryFieldsResizeAShape),
         Box::new(restyle_text::RestylingSelectedTextReachesTheDocument),
-        // ★ Directly after `restyle_text`, because it is that check plus a
+        // Directly after `restyle_text`, because it is that check plus a
         // popup: every link it covers — the sweep, the section, the read-back
         // stamp — is in front of this one, so a failure there should be read
         // first.
         Box::new(std14_face::TheFaceChooserOffersAFaceTheDocumentDoesNotContain),
         Box::new(refused_character_face::ARefusedCharacterOffersAFaceThatCanTypeIt),
         Box::new(font_group::TheFormatTabOffersFontControlsForSweptText),
-        // ★★ Immediately after its twin, and the adjacency is the point: the two
+        // Immediately after its twin, and the adjacency is the point: the two
         // assert the same two surfaces, one on a pinned fixture and one on
         // whatever `--pdf` names. A reader comparing their two lines in a sweep
         // report gets the diagnosis for free. SKIPs without `--pdf` and
         // `--doc-point`, deliberately — it has no fixture to fall back on.
         Box::new(font_group_real::TheFontControlsAreLiveOnTheDrawingYouOpen),
-        // ★ After `font_group`: same state, and that one asserts the sentence
+        // After `font_group`: same state, and that one asserts the sentence
         // while this asserts the control. Read a sentence failure first.
         Box::new(colour_clicked_text::ClickingTextOffersItsColour),
         Box::new(multi_node::MultiNodeMoveMovesEveryPickedAnchor),
         Box::new(shape_preview::DraggingANodeBendsTheLine),
-        // ★★ Immediately after `shape_preview`, and the order is the diagnosis
+        // Immediately after `shape_preview`, and the order is the diagnosis
         // order: that one asks whether a preview is built and painted AT ALL,
         // this one asks how WIDE it was painted. A build where nothing is
         // drawn fails both, and reading the width failure first would send a
@@ -781,19 +769,20 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(bezier_handle::BezierHandleDragChangesACurve),
         // The three deeper-rung deletes. The first two share `bezier_handle`'s
         // fixture; the third needs a text object holding SEVERAL runs and SKIPs
-        // without one, because the whole point of `Pass 32.0` is that the other
-        // runs survive.
+        // without one, because the property it asserts is that deleting one
+        // label leaves the other runs of the same object intact — which a
+        // single-run object cannot witness.
         Box::new(deeper_rung_delete::DeletingALineLeavesTheRestOfTheShapeAlone),
         Box::new(deeper_rung_delete::DeletingAPointLeavesTheRestOfTheLineAlone),
         Box::new(deeper_rung_delete::DeletingALabelLeavesTheOtherLabelsAlone),
-        // ★★ Immediately after the label delete, and deliberately: it stands on
+        // Immediately after the label delete, and deliberately: it stands on
         // the SAME rung of the SAME fixture, reached by the same chord and the same
         // click, and differs only in the gesture that follows. So a failure here
         // with the three above green is a statement about the MOVE path alone,
         // while a failure of all four is a statement about the Part rung on text —
         // which is the first fork a reader needs and is free if the order holds it.
         Box::new(move_line_of_text::DraggingOneLineOfTextMovesItOrSaysWhy),
-        // ★★★ And immediately after the refusal, because the two are the two
+        // And immediately after the refusal, because the two are the two
         // halves of O188 and they are ordered the way the operator met them.
         // `move_line_of_text` asserts that the gesture he TRIED is refused out
         // loud; this one asserts that a route he could have found BEFORE trying
@@ -801,7 +790,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // works and remains undiscoverable — which is the whole of O188(A), and
         // is invisible to every other check in this file.
         //
-        // ★ It stands on the same rung of the same fixture as its neighbour and
+        // It stands on the same rung of the same fixture as its neighbour and
         // reaches it a different way, so a failure of BOTH is a statement about
         // the Part rung on text rather than about either route.
         Box::new(run_menu_route::TheRightClickOffersTheLineYouClicked),
@@ -814,35 +803,35 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(first_frame::TheFirstFrameNamesTheArmedTool),
         Box::new(master_detail::TheInspectorIsOneMasterDetailColumn),
         // The left rail — `OPERATOR_REQUESTS.md` O123 part 7 and O126.
-        // ⚠ Written on 2026-09-04 and NOT executed: the operator was at his
+        // Written and NOT executed: the operator was at his
         // keyboard and a watchdog kills GUI processes on sight. Registered
         // anyway, because a check that is not in the list is a check nobody
         // will ever run.
         Box::new(left_rail::TheLeftRailIsReachableAndConstantWidth),
         Box::new(properties_tool::TheArmedToolsSettingsAreInProperties),
-        // ⚠ O119 — registered without having been run: an unregistered check
+        // O119 — registered without having been run: an unregistered check
         // is one nobody will ever run.
         Box::new(protect::ProtectShowsTheDocumentAndRefusesASignedOne),
-        // ★★★ Signing — the operator's report of 2026-09-03, wired 2026-09-06.
+        // Signing — from the operator's report.
         // Beside `protect` and `redaction` because the three share a subject
         // (what pdfcer writes into a file that is about the file rather than
         // about a page) and because this check reads the other two's fixtures.
         //
-        // ⚠ It is the longest check in the suite — four processes, roughly
+        // It is the longest check in the suite — four processes, roughly
         // twenty clicks — and it is that long because its verdict cannot be
         // taken in the process that produced it. See its header.
         Box::new(signing::ADocumentCanBeSignedAndTheSignatureIsInTheFile),
         Box::new(redaction::RedactionRemovesAndProvesIt),
-        // ★ Beside the text-editing checks and owning its own fixture, like
+        // Beside the text-editing checks and owning its own fixture, like
         // `text_edit` and `redaction` above: its verdict is a LINE COUNT that
         // only `fixtures/paragraph.pdf` produces, so it takes no `--pdf`.
         Box::new(reflow::ReflowingAParagraphRewrapsIt),
-        // ★★★ O127 defect 2 — and ⚠ registered WITHOUT having been run, on the
+        // O127 defect 2 — and registered WITHOUT having been run, on the
         // precedent `left_rail`, `properties_tool` and `protect` above set: a
         // check that exists and is not registered is a check nobody will ever
         // run. Whoever runs the suite next is the first thing that executes it.
         Box::new(enter_newline::EnterMakesASecondLineAndControlEnterCommits),
-        // ★★★ O140, and it sits here rather than beside `text_edit_real`
+        // O140, and it sits here rather than beside `text_edit_real`
         // deliberately: it is the same family and the OPPOSITE question. That
         // check asks whether the shell can place a caret and reach the engine
         // on a real drawing; this one starts from a commit the engine is
@@ -852,14 +841,14 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // reader debugging "text editing does not work" wants: can it commit,
         // can it break a line, can it explain itself.
         Box::new(typo_refusal::HisTypoCanBeCorrectedOnHisOwnFile),
-        // ★ Directly after `redaction`, and before the two selection checks,
+        // Directly after `redaction`, and before the two selection checks,
         // because it is the second most expensive check in the suite — it
         // launches the binary twice, for the same reason `save_copy` does — and
         // because its subject is the one this project exists for. A run in which
         // `save_copy` failed should be read first: every link from Ctrl+S
         // onwards is that check's, and this one has the whole text-edit path
         // stacked in front of them.
-        // ★ The multi-document pair, 2026-08-20. Both SKIP without
+        // The multi-document pair. Both SKIP without
         // `--second-pdf`, and the SKIP reason says why the same file cannot be
         // passed twice.
         Box::new(document_tabs::TwoDocumentsGetTwoTabs),
@@ -871,7 +860,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // a run: it launches with NO document, it opens one window, and it
         // asserts on a trace rather than on pixels. It is also cheap.
         Box::new(shortcuts::ShortcutsReferenceIsLive),
-        // ★ Immediately after the two checks whose SKIPs found the defect it
+        // Immediately after the two checks whose SKIPs found the defect it
         // exists for. Both of those now maximise the window and are green;
         // this one deliberately does NOT, so the narrow band they used to
         // trip over is still driven by something every run.
@@ -880,7 +869,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(dialog_windows::DialogsOpenInTheirOwnWindow),
         Box::new(draft_selection::ShiftArrowsSelectText),
         Box::new(bookmark_add::BookmarkCanBeWritten),
-        // ★ Immediately after its sibling, because they are one assertion in
+        // Immediately after its sibling, because they are one assertion in
         // two halves: that authoring is REACHABLE in Review, and that it is
         // ABSENT in Read. Either alone is satisfied by a build that is simply
         // wrong the other way — a panel that never draws the row passes the
@@ -891,18 +880,18 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(bookmark_move::ABookmarkCanBeDraggedAndABranchCollapsed),
         Box::new(attachments::AFileCanBeAttachedAndTakenBackOut),
         Box::new(comment_note::ANoteCanBeWrittenOntoAShape),
-        // ★★★ Its opposite number, added 2026-09-05: `comment_note` proves a
+        // Its opposite number: `comment_note` proves a
         // comment can be WRITTEN, and this one proves one can be READ — in
         // **Read mode**, where until that date there was no route to a note's
         // words at all. The operator's report is the check's own defect string.
-        // ⬜ NOT RUN; the module says so in its header.
+        // NOT RUN; the module says so in its header.
         Box::new(comment_popup::ACommentCanBeReadOnThePageInReadMode),
-        // ★★ O173, 2026-09-10. It launches TWICE and deletes a file the
+        // O173. It launches TWICE and deletes a file the
         // sandbox wrote, which no other check does — both are explained at
         // length in its header, and neither is optional: the seed exists so
         // this offer does not open in front of the other two hundred checks,
         // and the second launch is the only place "ask once" can be observed.
-        // ✅ DRIVEN 2026-09-10: PASS. The offer opened, its action, decline and
+        // DRIVEN: PASS. The offer opened, its action, decline and
         // checkbox were all declared, the answer reached the profile's
         // preferences file, and the second launch did not ask again.
         Box::new(default_app_offer::TheDefaultAppOfferIsAskedOnce),
@@ -914,38 +903,38 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(add_text::AddTextTakesRealKeystrokes),
         Box::new(chords::EveryDeclaredChordDispatches),
         Box::new(stamp_size::StampSizeReachesTheEngine),
-        // ★★ Adjacent to `stamp_size` deliberately: the two are the AUTHORING
+        // Adjacent to `stamp_size` deliberately: the two are the AUTHORING
         // and RESTYLE halves of one operator report, and reading either without
         // the other leaves the impression that a sentence he wrote twice is
         // covered when half of it is. This one places its own stamp first, so it
         // depends on no fixture carrying one.
-        // ✅ DRIVEN 2026-09-10: PASS, and falsified the same day. The label-size
+        // DRIVEN: PASS, and falsified afterwards. The label-size
         // row is drawn for a placed stamp, seeded from the file at 28 pt, and
         // reads back 30 pt after the edit — typed, written and read back.
         Box::new(stamp_size_properties::StampSizeInThePropertiesBox),
-        // ★★ O171, 2026-09-10. Immediately after `stamp_size` because it
+        // O171. Immediately after `stamp_size` because it
         // repeats that check's route and then does the thing no other check
         // does: opens the same dialog a SECOND time. The operator's report was
         // that the first opening was fine and the second had its Add and
         // Cancel below its own bottom edge, so a suite of checks that each
         // open it once is structurally blind to it.
-        // ✅ DRIVEN 2026-09-10: PASS — both stamp dialogs have Add and Cancel on
+        // DRIVEN: PASS — both stamp dialogs have Add and Cancel on
         // the screen, so O171's report is closed by measurement rather than by
         // reading the layout code.
         //
-        // ★ Its FIRST driven run failed, and the defect was in the check: it
+        // Its FIRST driven run failed, and the defect was in the check: it
         // clicked Markup > Stamp before each placement, and that ribbon item is
         // a toggle, so the second click put the armed tool DOWN. `arm_stamp`
         // now reads the tool's state before acting. A driven failure is a claim
         // about the check too.
         Box::new(stamp_dialog_reopen::TheSecondStampDialogStillHasItsButtons),
-        // ★★★ O172, 2026-09-10 — *"add our own custom stamps and use them"*.
+        // O172 — *"add our own custom stamps and use them"*.
         // Beside the two checks above because it repeats their route as far as
         // the dialog and then does the thing neither does: reads the gallery's
         // CUSTOM half, presses one of the operator's own stamps, and follows
         // the artwork all the way onto the page.
         //
-        // ★ It plants `fixtures/stamp-collection.pdf` into a scratch
+        // It plants `fixtures/stamp-collection.pdf` into a scratch
         // `%APPDATA%` tree and redirects the child process's APPDATA at it.
         // The obvious alternative — read his real Acrobat folder, SKIP when
         // empty — is worthless on any other machine and goes vacuous on his
@@ -962,7 +951,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // under it, and every candidate costs four clicks.
         Box::new(read_mode::ReadModeRefusesCanvasEdits),
         Box::new(text_selection::TextSelectionSweepsAndCopies),
-        // ★ Directly after the sweep it depends on. This one asserts EXACT
+        // Directly after the sweep it depends on. This one asserts EXACT
         // character and box counts on its own committed fixture, where the
         // check above asserts liveness on whatever `--pdf` names — so a run in
         // which the sweep gesture is broken at all should report THAT here
@@ -987,55 +976,55 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // It is the longest driving check in the suite: five ribbon clicks
         // across three tabs, two drags, and one annotation authored into the
         // open document (never onto disk; nothing here saves).
-        // ★ Last of the driving checks, and the slowest: it runs a real
+        // Last of the driving checks, and the slowest: it runs a real
         // recognition, which is a second in a release build. Placed after the
         // cheap ones so a run that is going to fail on something structural
         // fails before spending it.
-        // ★★ O58's discharge, 2026-08-29. It runs AFTER the selection checks
+        // O58's discharge. It runs AFTER the selection checks
         // deliberately: its first three phases are `field_menu`'s (place,
         // clear, select), so if those are broken this check should not be the
         // first thing to say so — it would name the clipboard for a selection
         // defect. Its own SKIP messages distinguish the two.
-        // ★ O59's first item, before the clipboard pair: it is the one whose
+        // O59's first item, before the clipboard pair: it is the one whose
         // failure is DESTRUCTIVE. The other two prove a capability works; this
         // proves one cannot happen.
         Box::new(cut_gate::CuttingARedactionMarkIsRefusedBeforeAnythingIsRemoved),
-        // ★ O60 — redacting what is selected, the third marking route.
+        // O60 — redacting what is selected, the third marking route.
         Box::new(redact_selection::ASelectedObjectCanBeMarkedForRedaction),
-        // ★ O61 — the document-safety disclosure.
+        // O61 — the document-safety disclosure.
         Box::new(reach_out::ADocumentThatPhonesHomeSaysSo),
-        // ★ O62 — the rotation direction, which is one sign and invisible.
+        // O62 — the rotation direction, which is one sign and invisible.
         Box::new(widget_rotate::TurningAFieldRightTurnsItRight),
-        // ★ O59 item 2 — the page clipboard.
+        // O59 item 2 — the page clipboard.
         Box::new(page_clipboard::PagesCanBeCopiedAndPasted),
-        // ★ O59 item 3 — the bookmark clipboard, and the one operation in
+        // O59 item 3 — the bookmark clipboard, and the one operation in
         // this program Acrobat cannot do between two files at all.
         Box::new(bookmark_clipboard::ABookmarkSubtreeCanBeCopiedAndPasted),
         Box::new(field_clipboard::AFormFieldCanBeCopiedAndPastedBothWays),
-        // ★★ Immediately after its sibling, and it is the MIRROR of it: same
+        // Immediately after its sibling, and it is the MIRROR of it: same
         // gestures, opposite expectations, one environment variable apart. A
         // build that ignored the paste-order setting passes the first and fails
         // this one on its first assertion.
         Box::new(field_clipboard::TheAcrobatPasteOrderSwapsWhichChordDoesWhich),
         Box::new(form_selection::AClickInsideAFormSelectsWhatIsDrawnThere),
-        // ★★ Immediately after it, and the adjacency is the point: both are
+        // Immediately after it, and the adjacency is the point: both are
         // "what does a click on the canvas mean?", read through two different
         // off-canvas oracles. A run where both fail says the click is not
         // arriving; a run where only this one fails says the click arrives and
         // the layer relation is broken. Ordering them apart would make that
         // difference unreadable in the summary.
         //
-        // ⚠ **NOT RUN.** Written 2026-09-05 with the operator possibly at his
+        // **NOT RUN.** Written with the operator possibly at his
         // machine; it has never seen a running binary. See its module header.
         Box::new(layers_membership::SelectingAnObjectNamesItsLayer),
-        // ★ Immediately after it, and the order is a dependency rather than a
+        // Immediately after it, and the order is a dependency rather than a
         // preference: this check's second step is `form_selection`'s first
         // assertion — a click inside a form must select the leaf — and it
         // SKIPs rather than fails when that does not hold, so that a broken
         // deep hit test is reported once, by the check that owns it, instead of
         // twice with the second reading blaming the wrong file.
         Box::new(unshare_form::TheContextMenuGivesThisPageItsOwnCopyOfASharedForm),
-        // ★★★ Its pair, and it must stay adjacent to it. The two press the same
+        // Its pair, and it must stay adjacent to it. The two press the same
         // row through the same five steps and differ only in the document they
         // open — `shared-across-two-pages.pdf` against `page-sized-form.pdf` —
         // so they are one behaviour's two halves, not two features. Reading the
@@ -1044,7 +1033,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // state that let a check named `…_of_a_shared_form` sit on an unshared
         // fixture for a day.
         //
-        // ★ It costs a second launch and a second window, deliberately: the
+        // It costs a second launch and a second window, deliberately: the
         // condition under test is a property of the open file, so it cannot be
         // reached by any further gesture within the first check's session.
         Box::new(unshare_form::TheUnshareDeclinesWhenNothingElseDrawsTheForm),
@@ -1053,11 +1042,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // minute each. A run that fails on something cheap should fail before
         // paying for something expensive.
         Box::new(off_page_marquee::ABandDraggedIntoTheMarginReachesAnObjectOffThePage),
-        // ★ Immediately after its sibling, and deliberately: they share one
+        // Immediately after its sibling, and deliberately: they share one
         // fixture and one ribbon route, so a failure in both at once names the
         // harness and a failure in one names the feature.
         Box::new(off_page_press::ABandThatStartsInTheMarginReachesAnObjectOffThePage),
-        // ★ Third of the off-page group, and last of the three on purpose: it is
+        // Third of the off-page group, and last of the three on purpose: it is
         // the only one that takes a screenshot, and a pixel oracle is worth
         // nothing until the two trace-level siblings have said the object is
         // there to be painted.
@@ -1068,14 +1057,14 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // where the object cannot be reached, or is not painted at all, says
         // so before this one spends a minute proving it is also not zoomable.
         Box::new(off_page_zoom::AnObjectOffThePageSurvivesBeingZoomedInOn),
-        // ★ Fifth and last of the off-page group. Deliberately AFTER the four
+        // Fifth and last of the off-page group. Deliberately AFTER the four
         // that prove the object can be reached, painted and zoomed: this one
         // asserts the census FINDS it, and a census that reports nothing on a
         // fixture whose object is not actually there would be a true answer
         // reported as a defect. Its siblings running first is what makes its
         // `objects >= 1` assertion mean something.
         Box::new(off_page_census::TheOffPageCensusFindsTheObjectAndMarksIt),
-        // ★★★ Sixth and by far the most expensive of the off-page group:
+        // Sixth and by far the most expensive of the off-page group:
         // FIVE launches, five maximizes and five screenshots, against one
         // shared profile. Last of the group deliberately — every rung of it
         // rests on the object being reachable and painted, which is exactly
@@ -1085,7 +1074,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // Two launches and an Alt+F4, so it is placed with the other
         // multi-process checks rather than among the single-window ones.
         Box::new(page_display_pref::APageDisplayChoiceSurvivesACloseAndReachesANewDocument),
-        // ★★★ Immediately after its opposite number, and the pairing is the
+        // Immediately after its opposite number, and the pairing is the
         // point: both are `a preference survives a close`, and they close the
         // window in deliberately different ways. `page_display_pref` presses
         // Alt+F4 because its write is debounced and needs the exit hook; this
@@ -1118,20 +1107,20 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // having landed, and everything above has already waited for one.
         Box::new(render_diagnostics::RenderDiagnosticsOpensItsReport),
         Box::new(find_bar::FindOpensAndFinds),
-        // ★ Immediately after `find_bar`, and the order is load-bearing
+        // Immediately after `find_bar`, and the order is load-bearing
         // rather than tidy. Both of these press Ctrl+F and type into the
         // same field, so if that gesture is broken the neighbour above
         // names it in one sentence and these two report a SKIP off their
         // own control probe. A reader scanning a run should meet the
         // general failure before the two specific ones it explains.
         //
-        // ★★ They are also the two most expensive checks in the suite:
+        // They are also the two most expensive checks in the suite:
         // FOUR launches between them, because each asserts an ABSENCE and
         // an absence needs a control launch that produced the presence.
         // See the module header.
         Box::new(find_options::ATrailingBlankDoesNotChangeWhatASearchFinds),
         Box::new(find_options::ZoomOffHoldsTheViewOnAFindJump),
-        // ★ Second to last among the driving checks, and the placement is a
+        // Second to last among the driving checks, and the placement is a
         // property of what it does rather than of what it costs: it is the only
         // check that **cannot put the application back**. Read mode's exit is
         // `Ctrl+H` and this machine cannot inject keystrokes, so the session
@@ -1143,7 +1132,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         //
         // Cheap otherwise: two ribbon clicks, two captures, no canvas gesture
         // and no keystroke.
-        // ★★★ Immediately BEFORE its neighbour, and the two are the two halves
+        // Immediately BEFORE its neighbour, and the two are the two halves
         // of one subject: that one asserts read mode **hides** the chrome, this
         // one asserts it **says how to get it back**. A reader scanning a run
         // wants those two verdicts together.
@@ -1154,12 +1143,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // and can run on a machine somebody is using. If both go red, the one
         // that needed no input is the one whose diagnosis to believe.
         //
-        // ⬜ NOT RUN by the session that wrote it (2026-09-05); its own header
+        // NOT RUN against the binary by whoever wrote it; its own header
         // says so in its first section.
         Box::new(read_mode_exit::ReadModeSaysHowToGetBackOut),
         Box::new(read_mode_chrome::ReadModeHidesTheChrome),
         Box::new(settings_headings::SettingsHeadingsLegible),
-        // ★ LAST, and for a reason that is the mirror of the one above.
+        // LAST, and for a reason that is the mirror of the one above.
         //
         // This check WRITES `userdata/preferences.txt` beside the binary and
         // deliberately does not restore it — see `write_preference` on why

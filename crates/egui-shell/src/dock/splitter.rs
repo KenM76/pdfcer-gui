@@ -2,18 +2,13 @@
 //!
 //! # One unambiguous grab affordance — failure mode #1
 //!
-//! `MODES_AND_PANELS.md` Part 2's table opens with the most-reported
-//! docking complaint in the benchmarked application, and it is not about
-//! splitters directly, but its design rule governs every grab surface in
-//! this module:
-//!
-//! > **Ambiguous drag handle** — the OS title bar and the application's
-//! > own stack vertically; grabbing the wrong one silently does nothing.
-//! > *The single most common "docking is broken" report.* → **One
-//! > unambiguous grab affordance.**
-//!
-//! Three things follow, and all three are implemented here rather than
-//! left to the caller:
+//! `MODES_AND_PANELS.md`'s failure-mode table opens with the most-reported
+//! docking complaint in the benchmarked application: an OS title bar and an
+//! application's own drag handle stacked vertically, so grabbing the wrong
+//! one silently does nothing. Its rule — **one unambiguous grab
+//! affordance** — governs every grab surface in this module, and three
+//! things follow from it, all implemented here rather than left to the
+//! caller:
 //!
 //! 1. **The hit target is larger than the line.** The painted rule is
 //!    one or two points; the interactive rectangle is
@@ -24,11 +19,10 @@
 //!    `ResizeHorizontal` / `ResizeVertical` icons say *"this is draggable
 //!    and in which direction"* before the operator commits to a drag, and
 //!    they say it in the one vocabulary every desktop already shares.
-//! 3. **The line highlights while hovered or dragged.** Failure mode #2
-//!    is *weak drop feedback* — *"pre-1.2 there was effectively none;
-//!    users concluded the feature did not exist"* — and its rule is that
-//!    feedback must encode the **outcome**. A splitter's outcome is "this
-//!    boundary will move", so the boundary itself is what lights up,
+//! 3. **The line highlights while hovered or dragged.** Failure mode #2 is
+//!    weak drop feedback, and its rule is that feedback must encode the
+//!    **outcome**, not merely that a drag is valid. A splitter's outcome is
+//!    "this boundary will move", so the boundary itself is what lights up,
 //!    rather than a cursor-following ghost that says only "a drag is in
 //!    progress".
 //!
@@ -47,13 +41,10 @@
 //!
 //! # Double-click to equalise
 //!
-//! A double-click on a boundary divides the two neighbours evenly. It is
-//! carried across from the previous implementation, whose default layout
-//! notes describe *"draggable splitters and double-click-to-centre"* as
-//! shipped behaviour worth keeping. It costs one line and it is the
-//! cheapest possible answer to *"I have dragged this into a mess"* short
-//! of a full reset — which, per `RIBBON_IA.md`, must never be the only
-//! way back.
+//! A double-click on a boundary divides the two neighbours evenly. It
+//! costs one line and it is the cheapest possible answer to "I have
+//! dragged this into a mess" short of a full reset — which, per
+//! `RIBBON_IA.md`, must never be the only way back.
 
 use egui::{Color32, CursorIcon, Id, Rect, Sense, Ui, Vec2};
 
@@ -138,8 +129,9 @@ pub(crate) fn splitter(
 
     // The painted rule: thin when idle, the full thickness when the
     // operator is on it. The *width* change is the feedback, not only the
-    // colour — a colour-only cue is the recurring blind spot this
-    // project's own audit named, and it does not survive greyscale.
+    // colour: a colour-only cue disappears in greyscale and for a
+    // colour-blind operator, so a state that matters carries a second,
+    // non-colour channel.
     let (thickness, colour) = if active {
         (rect.size().min_elem(), theme.palette.accent)
     } else {
@@ -153,12 +145,11 @@ pub(crate) fn splitter(
     };
     ui.painter().rect_filled(painted, 0.0, colour);
 
-    // A splitter is a control, and an unnamed control that is reachable
-    // by keyboard is the worst accessibility outcome — see the previous
-    // implementation's honest note that `egui_tiles` shipped its tab bars
-    // *"unnamed to AccessKit"* while still being focusable. `egui` 0.35
-    // has no separator or splitter `WidgetType`, so the role cannot be
-    // supplied; the name can, and is.
+    // A splitter is a control, and a control that is reachable by keyboard
+    // but unnamed to AccessKit is the worst accessibility outcome: the
+    // focus ring lands on it and the screen reader has nothing to say.
+    // `egui` 0.35 has no separator or splitter `WidgetType`, so the role
+    // cannot be supplied; the name can, and is.
     let name = match axis {
         Axis::Horizontal => "Column divider — drag to resize",
         Axis::Vertical => "Row divider — drag to resize",
@@ -245,9 +236,8 @@ mod tests {
     /// A boundary drawn in the panel's own colour is invisible, and an
     /// invisible boundary is never discovered to be draggable — the
     /// silent half of failure mode #1. Checked for every shipped preset,
-    /// because a colour pair that holds in the light theme and collapses
-    /// in the dark one is the exact shape of the defect this project's
-    /// theme module was built to catch.
+    /// because a colour pair that holds in one theme and collapses in
+    /// another passes any check that looks at a single palette.
     #[test]
     fn the_idle_splitter_is_distinguishable_from_the_panel() {
         for preset in Preset::ALL {

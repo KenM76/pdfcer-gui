@@ -16,31 +16,27 @@
 //! > *"also add rotate pages to that area, and those should be available in
 //! > every mode including read."*
 //!
-//! ## ★★★ Why this is a manifest type and not a callback
+//! ## Why this is a manifest type and not a callback
 //!
 //! `SHELL_FRAMEWORK.md` makes the ribbon, the dock, the modes and the keymap
-//! one serializable [`super::Shell`] document, and says why in one line:
-//! *"a rail that only `pdfcer-gui` knows about breaks it quietly."* A surface
-//! whose contents live in a Rust function cannot be customized by an operator
-//! file, cannot be merged by [`super::merge`], cannot be validated by
-//! [`super::validate`], and cannot be read by a tool that does not link
-//! `egui`. Every one of those is a property the other four regions have, and a
-//! sixth region that quietly lacks them is how a "serializable shell" stops
-//! being one.
+//! one serializable [`super::Shell`] document. A region whose contents live in
+//! a Rust function instead cannot be customized by an operator file, cannot be
+//! merged by [`super::merge`], cannot be validated by [`super::validate`], and
+//! cannot be read by a tool that does not link `egui`. Every one of those is a
+//! property the other regions have, and a region that quietly lacks them is
+//! how a "serializable shell" stops being one.
 //!
-//! The worked precedent is [`super::Trailing`], added the same week for
-//! *Open in Acrobat*: a region introduced as **data on `Shell`** rather than
-//! as a builder callback, carrying [`super::Item`]s so `visible_when` can make
-//! a control *absent* rather than greyed.
+//! [`super::Trailing`] is the worked precedent: data on `Shell` rather than a
+//! builder callback, carrying [`super::Item`]s so `visible_when` can make a
+//! control *absent* rather than greyed.
 //!
-//! ## ★★ R7 — nothing here knows what a PDF is
+//! ## R7 — nothing here knows what the application's domain is
 //!
-//! `tools/gates/check-shell-purity.sh` forbids `egui-shell` naming anything
-//! from `pdfcer-*`. A [`RailGroup`] carries an id, an optional caption and a
-//! list of command ids. It does not know that `pages` is a page thumbnail
-//! list, that `view.tool_hand` pans, or that `pages.rotate_left` writes
-//! `/Rotate`. That is exactly the line the gate draws, and it is what lets the
-//! same rail type serve an application that has never heard of a document.
+//! `tools/gates/check-shell-purity.sh` forbids this crate depending on the
+//! application. A [`RailGroup`] carries an id, an optional caption and a list
+//! of command ids, and knows the meaning of none of them — not what a group's
+//! entries do, not what arming one of them changes. That is exactly the line
+//! the gate draws, and it is what lets one rail type serve any application.
 //!
 //! ## The fold policy is DECLARED, not derived
 //!
@@ -63,13 +59,14 @@ use super::Item;
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RailFold {
-    /// ★★ **The floor. This group is drawn at every rung, entire.**
+    /// **The floor. This group is drawn at every rung, entire.**
     ///
-    /// For pdfcer this is the five panel tabs, and *"all five panels one click
-    /// away"* is the only reason the rail exists rather than a horizontal tab
-    /// bar. A rail that folds them is strictly worse than the tab stack it
-    /// replaced — at that point the honest move is to switch arrangements, not
-    /// to keep shrinking.
+    /// For the group whose permanent reach is the rail's whole reason to
+    /// exist — typically the panel tabs, since *"every panel one click away"*
+    /// is what a vertical strip buys over a horizontal tab bar. A rail that
+    /// folds that group is worse than the arrangement it replaces, and at that
+    /// point the honest move is to switch arrangements rather than keep
+    /// shrinking.
     ///
     /// The default, because a group whose author did not think about folding
     /// should not silently disappear.
@@ -80,7 +77,7 @@ pub enum RailFold {
     /// For a group of specialist gestures — nothing in it reached by habit,
     /// nothing in it with a keyboard chord.
     Whole,
-    /// ★★★ The group collapses to a **single pinned row: whatever is armed**.
+    /// The group collapses to a **single pinned row: whatever is armed**.
     ///
     /// For a set of mutually exclusive modal tools. Folding such a group
     /// entirely would leave the operator holding a tool the rail cannot name,
@@ -116,9 +113,9 @@ pub struct RailGroup {
     /// The word drawn above the group at the widest rung — `navigate`,
     /// `select`.
     ///
-    /// ★ Optional, and absent for the panel tabs on purpose: a caption over
-    /// the first group in the strip would be a heading for the whole rail
-    /// rather than for that group, which is a different claim.
+    /// Optional, and left absent for the first group on purpose: a caption at
+    /// the top of the strip reads as a heading for the whole rail rather than
+    /// for that one group, which is a different claim.
     ///
     /// The caption is **the first thing dropped** as room gets scarce — see
     /// [`crate::dock::rail::Rung::Tight`]. It is presentation about a group

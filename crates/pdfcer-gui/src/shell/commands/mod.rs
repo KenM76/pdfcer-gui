@@ -1,53 +1,21 @@
 //! # shell::commands — every verb pdfcer can perform
 //!
-//! [`register`] populates an `egui_shell::CommandRegistry` with the
-//! **hundred and twenty-one** commands this build has, which fall into three
-//! groups:
+//! [`register`] populates an `egui_shell::CommandRegistry` with every command
+//! this build has. They reach the operator by three routes:
 //!
-//! | group | count | how the operator reaches it |
-//! |---|---|---|
-//! | on a tab, the QAT or the keymap | 116 | a control [`super::manifest::built_in`] names by id |
-//! | drawn by a **custom item** | 4 | `file.recent` and the three Format ▸ Font controls — see [`super::manifest::CUSTOM_BACKED`] |
-//! | drawn on the **status bar** | 1 | `edit.find` — `RIBBON_IA.md` §6 |
+//! | route | how the operator reaches it |
+//! |---|---|
+//! | on a tab, the QAT or the keymap | a control [`super::manifest::built_in`] names by id |
+//! | drawn by a **custom item** | `file.recent` and the Format ▸ Font controls — see [`super::manifest::CUSTOM_BACKED`] |
+//! | drawn on the **status bar** | `edit.find` — `RIBBON_IA.md` §6 |
 //!
-//! ★★★ **And it drifted a fifth and a sixth time, both found on 2026-08-27,
-//! and the sixth is the one worth reading.** This table said *hundred and one*
-//! / 99 / 1 / 1 while
-//! [`tests::registration_succeeds_and_registers_every_command`] asserted
-//! **115** and passed — nineteen commands out, which is not a rounding error,
-//! it is a table describing a different program. The pinned number moved
-//! nineteen times and the sentence above it moved never, because a test cannot
-//! read prose.
+//! ⇒ **Do not write a command count into this prose.** The count lives in
+//! [`ledger`]'s assertions, which move with the catalogue; a number in a
+//! sentence does not, and a test cannot read prose, so the two diverge
+//! silently and the sentence is the one a reader believes.
 //!
-//! The sixth is the same defect one level down: the *custom-item* row said 1
-//! for as long as `file.recent` was the only such command, and the Format ▸
-//! Font group added three more. That row is the one an engineer would trust
-//! when asking *"can a command live off the manifest?"*, and it would have
-//! answered "yes, once, exceptionally" about a build where the answer is "yes,
-//! four times, and there is a register listing them."
-//!
-//! ⇒ **Do not trust a count in this file without re-reading the assertion it
-//! is supposed to mirror.** That instruction has now been earned six times and
-//! the running tally is left in place — see the two paragraphs below — because
-//! the tally is the argument.
-//!
-//! (This header said *eighty-one* and *79* until 2026-08-14, while
-//! [`tests::registration_succeeds_and_registers_every_command`] asserted 88
-//! and passed. Prose drifting from a number a test pins is a defect this
-//! project has now had three times; the test is the fact, and the table has
-//! been corrected to it rather than the other way round.)
-//!
-//! ★ **And it happened a fourth time, in the four hours before `file.new` was
-//! written.** This table read *ninety-nine* and *97* while the assertion below
-//! held **100**: `file.ocr` had been registered and the two sentences above it
-//! were not moved. It is recorded rather than quietly repaired for the reason
-//! the paragraph above it was: the count is the one thing here that has drifted
-//! every single time, and the running tally is the argument for why nobody
-//! should trust a number in this file without re-reading the assertion. Both
-//! were corrected together when `file.new` took the total to 101.
-//!
-//! The last two are the interesting ones, because both are reachable by an
-//! operator and neither is a button on a tab. They are kept honest by
+//! The last two routes are the interesting ones, because both are reachable by
+//! an operator and neither is a button on a tab. They are kept honest by
 //! different mechanisms and the difference is worth knowing: a `Custom` item
 //! carries no command id, so `Shell::command_references()` cannot see
 //! `file.recent` at all and [`super::manifest::CUSTOM_BACKED`] is the
@@ -97,8 +65,11 @@
 //! and cannot capture state that makes a command's availability depend on
 //! *when* it was registered.
 //!
-//! Seven conditions are used, and the whole vocabulary is listed here
-//! because every one of them is a promise the application has to keep:
+//! Every condition name is a promise the application has to keep, and the
+//! authoritative list of them is `tests::KNOWN`, which the registration test
+//! checks every `Enable::When` against. The table below explains the ones
+//! whose *shape* is not obvious — it is not the inventory, and must not be
+//! read as one.
 //!
 //! | Condition | True when | Used by |
 //! |---|---|---|
@@ -139,49 +110,44 @@
 //!
 //! # Where the list itself lives
 //!
-//! [`catalog::all`] — its own file since 2026-08-14, when wiring
-//! `file.save_copy` took this one past the 1,500-line gate (**R2**). The seam
-//! is the one this header already draws: everything above is the **contract**
-//! (what a command is, what a token means, what conditions the application
-//! promises to publish), and everything in [`catalog`] is the **list** (which
-//! commands exist, with which glyph and which predicate, and why each of those
-//! was chosen). The icon-coverage argument moved with the registrations it
-//! justifies, because an argument belongs beside the thing it argues for.
+//! [`catalog::all`]. The seam is the one this header already draws: everything
+//! above is the **contract** (what a command is, what a token means, what
+//! conditions the application promises to publish), and everything in
+//! [`catalog`] is the **list** (which commands exist, with which glyph and
+//! which predicate, and why each of those was chosen). The icon-coverage
+//! argument lives beside the registrations it justifies.
 //!
-//! The list is still **one flat function in one file** — see [`catalog`]'s
-//! header for why splitting *that* would have been the cheaper edit and the
-//! wrong one.
+//! The list is **one flat function in one file** — see [`catalog`]'s header
+//! for why splitting *that* would be the cheaper edit and the wrong one.
 
 pub mod catalog;
 pub mod mapping;
 
-/// ★ **The sixth obligation, and the only one the five above cannot express:
-/// a registered command must be REACHABLE by some arm of `app::dispatch`.**
+/// **A registered command must be REACHABLE by some arm of `app::dispatch`.**
 ///
-/// `HANDOFF.md` §5's five obligations are all about the *registration* being
-/// consistent — a count, a group count, a `PLANNED` removal, a RON
-/// regeneration, a `KNOWN` condition name. Every one of them was satisfied by
-/// `file.save_copy` on the day it was drawn on the quick-access toolbar, bound
-/// to `Ctrl+S`, printed "(Ctrl+S)" in its own tooltip, and **did nothing**,
-/// because no dispatch arm existed. [`reach`] is the assertion that closes
-/// that: every id in this registry is routed by a literal arm, claimed by a
-/// guard arm, or listed in [`reach::SCAFFOLDED`] with a written reason.
+/// Every other obligation this catalogue carries is about the *registration*
+/// being self-consistent — a count, a group count, a `PLANNED` removal, a RON
+/// regeneration, a `KNOWN` condition name — and a command can satisfy all of
+/// them while doing nothing at all: drawn on the quick-access toolbar, bound to
+/// a chord, printing that chord in its own tooltip, with no dispatch arm behind
+/// it. [`reach`] is the assertion that closes that gap: every id in this
+/// registry is routed by a literal arm, claimed by a guard arm, or listed in
+/// [`reach::SCAFFOLDED`] with a written reason.
 ///
 /// `#[cfg(test)]` because the reader parses `app/dispatch.rs` with `syn`, a
 /// **dev**-dependency — see this crate's `Cargo.toml` for why a real parser and
-/// not a grep, and [`reach`]'s own header for the two mechanisms that lost.
+/// not a grep, and [`reach`]'s own header for what a grep cannot see.
 /// Nothing here is compiled into `pdfcer-gui.exe`.
 #[cfg(test)]
 mod reach;
 
-/// ★ Re-exported flat, so every caller still writes
-/// `shell::commands::measure_command` and nothing outside `shell/` learns that
-/// the module was split.
+/// Re-exported flat, so every caller writes `shell::commands::measure_command`
+/// and nothing outside `shell/` needs to know which file the function lives in.
 ///
-/// A `pub use` rather than moving the callers, deliberately: the split is an
-/// **R2** consequence, not a change to what the shell offers, and a file-size
-/// rule that rewrote fifteen call sites in `app/` would be a rule that makes
-/// unrelated diffs. See `mapping`'s own header for what the seam is.
+/// A `pub use` rather than moving the callers, deliberately: where a function
+/// sits inside `shell/` is not a change to what the shell offers, and moving it
+/// must not rewrite fifteen call sites in `app/`. See `mapping`'s own header
+/// for what the seam is.
 pub use mapping::{
     chrome_command, chrome_for_command, form_for_command, markup_command, markup_for_command,
     measure_command, measure_for_command, page_display_command, page_display_for_command,
@@ -224,24 +190,21 @@ pub fn register(reg: &mut CommandRegistry) {
         .expect("two shell commands claim the same id");
 }
 
-/// **The two counters and the record of every time they moved** — the command
-/// count and the icon-coverage split, each carrying a line per command ever
-/// added or removed, written at the literal it changed.
+/// **The two counters, and why each is the number it is** — the command count
+/// and the icon-coverage split, each literal carrying the reasoning that fixes
+/// it.
 ///
-/// Split out of [`tests`] under **R2** on 2026-09-10, when the O169 entry took
-/// that file past 1,500 lines. Roughly nine hundred lines of commentary against
-/// four of assertion, which is the point rather than an accident: an integer
-/// records nothing, and what a reader needs when one of them fails is whether
-/// the change that moved it was supposed to.
+/// Mostly commentary against a handful of assertions, which is the point rather
+/// than an accident: an integer records nothing, and what a reader needs when
+/// one of them fails is whether the change that moved it was supposed to.
 #[cfg(test)]
 mod ledger;
 
 /// The properties every registration in this catalogue must hold — the
 /// handler-token blocks, the condition vocabulary, the with-nothing-open
 /// enabled set, the tooltip rule and the icon-key rules, each carrying the
-/// running ledger of why its literal is the number it is. Split out under
-/// **R2** on 2026-09-06; see that module's header for the seam.
+/// reasoning that fixes its literal. See that module's header for the seam.
 ///
-/// ★ The two *counts* moved out again on 2026-09-10 — see [`ledger`].
+/// The two *counts* live in [`ledger`], not here.
 #[cfg(test)]
 mod tests;

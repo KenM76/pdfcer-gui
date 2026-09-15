@@ -6,9 +6,10 @@
 //! Two reasons, and the second is the interesting one.
 //!
 //! 1. R2 caps a source file at 1,500 lines
-//!    (`tools/gates/check-file-size.sh`), and `mod.rs` reached 1,455 with
-//!    two thirds of it being this. A gate that fires on the next feature
-//!    is a gate that gets worked around.
+//!    (`tools/gates/check-file-size.sh`), and these tests are bulkier than
+//!    the module they exercise: filed together they would leave `mod.rs`
+//!    no room for its next feature, and a gate that fires on the next
+//!    feature is a gate that gets worked around.
 //! 2. **These tests and `super::width_tests` are not the same kind of
 //!    test, and filing them together made that easy to miss.** Everything
 //!    here asserts *structure* — a caption exists, a token came back, a
@@ -35,10 +36,11 @@
 //! cargo test --workspace           → fonts    → real widths
 //! ```
 //!
-//! Three defects have now lived in that gap and were invisible to the
-//! first command. A width assertion added here is therefore NOT a width
-//! assertion — it is a width assertion under whichever font set the caller
-//! happened to bring. Put it in [`super::width_tests`] instead, which
+//! Anything that only goes wrong at non-zero text width lives in that gap
+//! and is invisible to the first command. A width assertion added here is
+//! therefore NOT a width assertion — it is a width assertion under
+//! whichever font set the caller happened to bring. Put it in
+//! [`super::width_tests`] instead, which
 //! installs a synthetic proportional face this crate builds itself and so
 //! measures the same text under both commands.
 //!
@@ -75,10 +77,11 @@ use egui::{Pos2, Rect, Vec2};
 //     cargo test -p egui-shell --lib   → no fonts → widths ≈ 0
 //     cargo test --workspace           → fonts    → real widths
 //
-// Two defects lived in that gap and were invisible to the first
-// command. A width assertion added here is therefore NOT a width
-// assertion — it is a width assertion under whichever font set the
-// caller happened to bring. Put it in `super::width_tests` instead,
+// Anything that only goes wrong at non-zero text width lives in that
+// gap and is invisible to the first command. A width assertion added
+// here is therefore NOT a width assertion — it is a width assertion
+// under whichever font set the caller happened to bring. Put it in
+// `super::width_tests` instead,
 // which installs a synthetic proportional face this crate builds
 // itself and so measures the same text under both commands.
 // -----------------------------------------------------------------
@@ -221,8 +224,8 @@ fn render_view_tab(width: f32) -> (RibbonState, Vec<(String, Rect)>, Vec<Handler
 /// 2. **A caption rect is published for every group id, inside that
 ///    group's own rect.** Catches a caption drawn somewhere other
 ///    than under its own group — which is what an inline caption
-///    looks like geometrically, and inline captions are the shape
-///    that made the grouping invisible in the 2026-08-08 capture.
+///    looks like geometrically, and an inline caption is the shape
+///    that makes the grouping invisible.
 ///
 ///    It deliberately does **not** assert a positive height. This
 ///    crate depends on `egui` with `default-features = false`, so a
@@ -935,17 +938,13 @@ fn the_mode_selector_moves_with_the_arrow_keys() {
 #[test]
 fn a_group_in_a_popup_is_captioned_too() {
     let ctx = egui::Context::default();
-    // ★★ RETARGETED 2026-08-25, not deleted. This test guarded *"a group drawn
-    // inside a popup still gets its caption"* — the defect the salvage source
-    // actually shipped, twice. Its subject used to be the `⏷ N more` dropdown;
-    // S4 replaced that with a scroll arrow, so the only popup that renders
-    // groups is now a COLLAPSED GROUP'S. The invariant is unchanged and still
-    // reachable, so the test follows it rather than retiring with the
-    // mechanism it happened to be written against.
+    // ★★ The invariant is *"a group drawn inside a popup still gets its
+    // caption"* — the defect the salvage source carries, twice. A COLLAPSED
+    // GROUP's popup is the only popup that renders groups, so it is the one
+    // place the invariant is reachable, and it is what this drives.
     //
     // A local fixture, because giving the shared one a collapse priority
-    // changes every width in this module and broke two unrelated tests when it
-    // was tried.
+    // changes every width in this module and takes unrelated tests with it.
     let shell = collapsing_shell();
     let registry = registry();
     let mut state = RibbonState::new();
@@ -968,7 +967,8 @@ fn a_group_in_a_popup_is_captioned_too() {
     let at = overflow_rect
         .expect("the collapsed group publishes its rect")
         .center();
-    // ★ Zero is a legal value here and the first draft asserted otherwise.
+    // ★ Zero is a legal value here, and an assertion that it is not would be
+    // wrong.
     // A COLLAPSED group deliberately contributes to neither counter while its
     // popup is shut — see `collapsed`'s note on why there is no `count`
     // helper — so at a width where the only group on the band is the collapsed
@@ -1148,13 +1148,13 @@ fn two_ribbons_can_coexist_with_distinct_id_salts() {
 /// ★★★ **Pressing the right arrow scrolls the band, and the LEFT arrow then
 /// appears** — the round trip, driven.
 ///
-/// Written 2026-08-25, within the hour of S4 shipping, because the left arrow
-/// had been **built and never observed**. Every other part of the scroll was
-/// measured offscreen against the running application: the right arrow appears
-/// at 1000 pt and not at 1200, the ladder compacts in the right order, the band
-/// keeps its height. The left arrow only exists once something has scrolled,
-/// nothing had scrolled, and so the one control on that surface with no
-/// evidence behind it went out in a release.
+/// The left arrow is the one control on the scroll surface a static
+/// observation cannot reach. Every other part of the scroll can be measured
+/// against the running application without touching anything: the right arrow
+/// appears at 1000 pt and not at 1200, the ladder compacts in the right order,
+/// the band keeps its height. The left arrow exists only once something has
+/// scrolled — so unless a check *scrolls*, that control is **built and never
+/// observed**.
 ///
 /// *A check that cannot fail is not evidence*, and neither is a control that
 /// has never been seen to draw. This is the falsification: press the right
@@ -1167,14 +1167,14 @@ fn two_ribbons_can_coexist_with_distinct_id_salts() {
 #[test]
 fn scrolling_right_moves_the_band_and_offers_the_way_back() {
     let ctx = egui::Context::default();
-    // ★★ A REAL FONT, pinned. Without it this test passed under
-    // `cargo test -p egui-shell` and failed under `cargo test --workspace`,
+    // ★★ A REAL FONT, pinned. Without it this test passes under
+    // `cargo test -p egui-shell` and fails under `cargo test --workspace`,
     // because feature unification with `pdfcer-gui` changes the ambient font and
-    // therefore every measured width — at which point the fixture's 180 pt was
+    // therefore every measured width — at which point the fixture's 180 pt is
     // too narrow to draw any group at all. A layout test whose verdict depends
     // on which crates happen to be in the build is not a layout test.
-    // `width_tests` has installed this font for exactly this reason since it
-    // was written; this one had to learn it.
+    // `width_tests` installs this font for exactly that reason, and so does
+    // every driven test here that pins a width.
     super::testfont::install(&ctx);
     let shell = shell();
     let registry = registry();
@@ -1240,11 +1240,11 @@ fn scrolling_right_moves_the_band_and_offers_the_way_back() {
 
     // ★ The band having MOVED is not asserted separately, and does not need to
     // be: `ribbon.scroll.left` is drawn under exactly one condition, `scrolled
-    // > 0`. Its presence IS the proof that the click advanced the band. The
-    // first draft compared the leading group's name before and after, which
-    // needed a group rect to exist and made the test depend on the fixture
-    // being wide enough to draw one — a dependency that broke it under
-    // workspace feature unification and proved nothing the line below does not.
+    // > 0`. Its presence IS the proof that the click advanced the band.
+    // Comparing the leading group's name before and after would need a group
+    // rect to exist, which makes the test depend on the fixture being wide
+    // enough to draw one — a dependency on workspace feature unification that
+    // proves nothing the line below does not.
     assert!(
         after.iter().any(|(n, _)| n == "ribbon.scroll.left"),
         "once the band has scrolled, the way back MUST be on screen. Without it the ribbon is not scrolled, it is trapped: every group left of the fold is unreachable for the rest of the session and the band looks entirely normal while it happens"

@@ -89,6 +89,15 @@ it — a comment list reads what somebody else wrote, a form field exists in ord
 to be filled, and reading a document's title is reading. **The stance Read takes
 is about authorship, not about information.**
 
+That stance is why Read grants **text** selection and refuses **object**
+selection, which looks inconsistent until the two are asked what they are for.
+Selecting text is how a reader quotes a drawing into an email. Selecting an
+object is how an author picks an operand — and in Read there is nothing to
+hand it to: the Format tab's items are gated on `mode.edit_content`, Delete and
+the grips are refused, and the right dock mounts no Properties panel. A
+selection no surface can act on is a highlight that means nothing, and
+offering it would be the placeholder R9 forbids rather than a capability.
+
 **Review** is the markup stance — comment, dimension, measure, cloud — plus the
 **Pages** tab. Reviewing a drawing set means rotating a sheet to read it,
 extracting the two pages you were asked about, and inserting a marked-up
@@ -264,8 +273,9 @@ intent in a document nobody re-reads when the panel lands.
   the ribbon renderer. A mode's tab set and its panel arrangement are two
   different things that share a name.
 - **It does not set the page display.** That is `crate::viewer`.
-- **It does not decide the start mode.** The application starts in the
-  manifest's first mode.
+- **It does not decide the start mode.** `app::modes::start` does: it adopts
+  the mode remembered from the last session, and falls back to the manifest's
+  first mode when there is none or the remembered id cannot be honoured.
 
 ### What this does *not* do
 
@@ -298,8 +308,7 @@ Inkscape source is read or downloaded**: Inkscape is GPL-2.0-or-later, this
 project is MIT, and the standing rule forbids both GPL code and GUI mimicry.
 Nothing would be liftable anyway — Inkscape is GTK retained-mode C++ and this
 shell is egui immediate-mode. Peer calibration comes from each product's own
-user documentation; direct observation of the running build is archived at
-`evidence/inkscape-dock-observed.png`.
+user documentation and from direct observation of the running build.
 
 ### What the dock is
 

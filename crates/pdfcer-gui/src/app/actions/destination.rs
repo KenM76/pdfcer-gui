@@ -9,9 +9,7 @@
 //! > but doesn't send us to the spot on the page the bookmark actually points
 //! > to."*
 //!
-//! Exactly right, and the cause was one discarded field.
-//!
-//! ## ★★★ The shell read `page_index` and threw `view` away
+//! ## Why the view is carried and not just the page
 //!
 //! `outline::Destination::Page` carries **both**:
 //!
@@ -19,26 +17,29 @@
 //! Page { page_index, view: DestView }
 //! ```
 //!
-//! and `panels::bookmarks` matched only the first — `Some(Destination::Page {
-//! page_index, .. })` — then pushed `Action::GoToPage`, whose whole job is the
-//! page number. The `..` in that pattern is where the operator's zoom went.
+//! A navigator that matches `page_index` and discards `view` reduces an entire
+//! outline to a page list. On a drawing package, where every bookmark names a
+//! **detail** on a shared sheet with `/XYZ` or `/FitR`, several bookmarks
+//! pointing at different details of one sheet then all arrive at the same
+//! place — indistinguishable from them being broken. So everything that
+//! navigates to a destination comes through [`actions_for`], and nothing
+//! pattern-matches a `Destination::Page` for its page number alone.
 //!
-//! ⇒ On a drawing package, where every bookmark names a **detail** on a shared
-//! sheet with `/XYZ` or `/FitR`, that reduces the entire outline to a page
-//! list. Several bookmarks pointing at different details of one sheet all
-//! arrive at the same place, which is indistinguishable from them being broken.
-//!
-//! ## The five views, and what each one means here
+//! ## The views this translates, and what each one means here
 //!
 //! | `DestView` | §12.3.2.2 | what this does |
 //! |---|---|---|
 //! | `Xyz { left, top, zoom }` | a corner and a magnification | put that point at the top-left; honour `zoom` when it is given |
 //! | `Fit` | fit the whole page | fit the page |
 //! | `FitH { top }` | fit the width, `top` at the top edge | fit width, then scroll so `top` is at the top |
-//! | `FitV { left }` | fit the height | fit height, then scroll so `left` is at the left |
+//! | `FitV { left }` | fit the height | fit the page, then scroll so `left` is at the left |
 //! | `FitR { rect }` | fit a rectangle | frame that rectangle — the same act the zoom marquee performs |
 //!
-//! ## The `FitH` and `FitV` rows state the intent, not the outcome — a live defect
+//! `DestView` is `#[non_exhaustive]` and holds more than these — the `/FitB`
+//! family, an unrecognised entry, no destination at all. Each of those gets
+//! the page turn and nothing more; see the fallback arm of [`actions_for`].
+//!
+//! ## The `FitH` and `FitV` rows state the intent, not the outcome — `DEFECTS.md` D47
 //!
 //! Both raise two actions, and the second overrides the first. After
 //! `Action::Fit(..)` comes `Action::GoToDestination(Point { .. })`, but a
@@ -55,7 +56,7 @@
 //! and it takes a rectangle, so giving the destination path a second
 //! scroll-to-a-point route would move every `/XYZ` arrival too.
 //!
-//! ★★ **`null` is not zero.** Table 151 lets `left`, `top` and `zoom` each be
+//! **`null` is not zero.** Table 151 lets `left`, `top` and `zoom` each be
 //! null, meaning *"leave this one as it is"* — and the standard states the
 //! `0`-means-null equivalence **only for `zoom`**, never for the coordinates.
 //! So a literal `0` left edge is a real left edge and must be honoured as one,
@@ -63,7 +64,7 @@
 //! those is how a destination at the top-left corner of a page silently becomes
 //! "no change".
 //!
-//! ## ★ What this does NOT do
+//! ## What this does NOT do
 //!
 //! It does not clamp a destination into view. A bookmark pointing off the sheet
 //! is a bookmark pointing off the sheet — the engine's own census counts
@@ -84,7 +85,7 @@ use super::Action;
 /// region of the wrong sheet. `GoToPage` is idempotent, so a destination on the
 /// current page costs nothing.
 ///
-/// ★ Returns actions rather than performing the move, because this is called
+/// Returns actions rather than performing the move, because this is called
 /// from a panel body — `panels::bookmarks` states the rule its own header
 /// carries: *"it changes no document at all"*, and framing a view is a change
 /// to `OpenDoc::view` that belongs in the apply phase with every other.
@@ -96,12 +97,12 @@ pub fn actions_for(page_index: usize, view: &DestView, out: &mut Vec<Action>) {
         // that asked for `Fit` and a shell that fits are already agreed.
         DestView::Fit => out.push(Action::Fit(crate::viewer::FitMode::Page)),
         DestView::Xyz { left, top, zoom } => {
-            // ★★ `zoom` first, because the scroll is expressed in the zoom that
+            // `zoom` first, because the scroll is expressed in the zoom that
             // will be in force when it lands. Reversing them scrolls to a point
             // and then magnifies about a different anchor, which puts the
             // destination off screen by however much the zoom changed.
             if let Some(z) = zoom.filter(|z| *z > 0.0) {
-                // ★ `/XYZ`'s zoom is a MAGNIFICATION FACTOR — 1.0 is actual
+                // `/XYZ`'s zoom is a MAGNIFICATION FACTOR — 1.0 is actual
                 // size — and `Action::ZoomTo` takes the same units as an f32.
                 // The cast is the only conversion; nothing is scaled by 100
                 // here, because a percentage would be a second unit for one
@@ -123,12 +124,11 @@ pub fn actions_for(page_index: usize, view: &DestView, out: &mut Vec<Action>) {
             }));
         }
         DestView::FitV { left } => {
-            // ★ `Width`, not a height fit. `FitMode` has no Height variant —
-            // the shell's fit vocabulary is None/Page/Width — and `/FitV` asks
-            // for the page's HEIGHT to fill the window, which `Page` is the
-            // closest honest approximation of. Using `Page` rather than
-            // inventing a mode keeps this a translation into what the shell
-            // has, instead of a new fit nobody chose.
+            // `Page`, not a height fit. `/FitV` asks for the page's HEIGHT
+            // to fill the window; this arm fits the whole page instead, which
+            // is never wrong in the sense of cropping but is wider than the
+            // destination asked for. `crate::viewer::FitMode::Height` is the
+            // faithful translation and this arm does not yet reach for it.
             out.push(Action::Fit(crate::viewer::FitMode::Page));
             out.push(Action::GoToDestination(Point {
                 page: page_index,
@@ -136,12 +136,12 @@ pub fn actions_for(page_index: usize, view: &DestView, out: &mut Vec<Action>) {
                 top: None,
             }));
         }
-        // ★★★ The one that matters most on a drawing package: a rectangle
+        // The one that matters most on a drawing package: a rectangle
         // around a detail. Framed by the same code the zoom marquee uses, so a
         // bookmark and a rubber band over the same region arrive identically —
         // which is what makes the result predictable rather than merely close.
         //
-        // ★ All four edges are `Option`, and a rectangle missing one has no
+        // All four edges are `Option`, and a rectangle missing one has no
         // area to frame. Falling back to the page is the honest answer: it
         // arrives somewhere true rather than framing a region invented from
         // three edges and a guess.
@@ -188,7 +188,7 @@ mod tests {
             .collect()
     }
 
-    /// ★★★ **Every view turns the page first.**
+    /// **Every view turns the page first.**
     ///
     /// A view is relative to a page, so one applied before the turn frames a
     /// region of the wrong sheet — and on a drawing package, where consecutive
@@ -216,7 +216,7 @@ mod tests {
         }
     }
 
-    /// ★★ **Zoom is applied before the scroll**, or the scroll lands in the
+    /// **Zoom is applied before the scroll**, or the scroll lands in the
     /// wrong magnification and the destination is off screen by the difference.
     #[test]
     fn xyz_zooms_before_it_scrolls() {
@@ -230,7 +230,7 @@ mod tests {
         assert!(z < s, "{k:?}");
     }
 
-    /// ★★★ **A zoom of `0` means "keep the current magnification"** — Table 151
+    /// **A zoom of `0` means "keep the current magnification"** — Table 151
     /// states that equivalence for `zoom` and for nothing else.
     ///
     /// The mirror of this test is the one that cannot be written here and is

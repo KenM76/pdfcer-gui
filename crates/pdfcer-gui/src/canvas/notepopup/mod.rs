@@ -4,32 +4,24 @@
 //! tooltip that appears when they hover one. **The canvas half of the review
 //! surface**, and the half that was missing.
 //!
-//! ## ★★★ The report this closes, and what measuring it found
+//! ## ★★★ The report this closes
 //!
-//! The operator, 2026-09-05:
+//! The operator:
 //!
 //! > *"check how the review functions work. unless something has changed I
 //! > could add a yellow sticky note but even in read mode I don't think I
 //! > could figure out how to read it. the review features should look and act
 //! > the same as they do in Acrobat Reader."*
 //!
-//! Three facts, each verified against this tree before a line was written:
+//! Two facts hold the answer up:
 //!
-//! 1. **Nothing in `canvas/` displayed an annotation's `/Contents`.** A note
-//!    could be placed, dragged, resized, rotated, styled, copied and deleted.
-//!    It could not be *read*.
-//! 2. **`pdfcer-core` had been writing a `/Popup` for every sticky note all
-//!    along** — `annot_author.rs:3223`, with its `/Open` at `:3224` and a
-//!    rectangle 150 pt wide beside the note at `:3217-3222`. The data was in
-//!    his files. No shell had ever drawn it.
-//! 3. **In Read mode there was no route to a comment at all.** The only one
-//!    that existed was the Comments panel, whose command is `markup.comments`
-//!    on the Markup tab, and `crate::app::modes::defaults`' `"read"` arm gives
-//!    Read the tab list `["file", "view"]`.
-//!
-//! ★★★ Point 3 is the one to feel the weight of. **Acrobat *Reader* is a
-//! read-only product and reading comments is its whole purpose.** A mode named
-//! Read that cannot read the comments has the posture exactly backwards.
+//! 1. **`pdfcer-core` writes a `/Popup` for every sticky note.**
+//!    `annot_author`'s `sticky_note` authors the companion dictionary, its
+//!    `/Open`, and a rectangle 150 pt wide beside the note — so the state is
+//!    already in an operator's files whether or not a shell draws it.
+//! 2. **Acrobat *Reader* is a read-only product and reading comments is its
+//!    whole purpose.** A mode named Read that cannot read the comments has the
+//!    posture exactly backwards.
 //!
 //! ⇒ Which decides where this lives. A pop-up on the canvas is **canvas
 //! behaviour, not a ribbon item**, so it is mode-independent *by
@@ -43,12 +35,16 @@
 //! This project's standing rule — *"use the conventional interaction, never
 //! invent one — the convergence of the product class IS the spec"*:
 //!
-//! | gesture | what happens | why that |
-//! |---|---|---|
-//! | **hover** a comment | a tooltip with the author and the words | the cheap half of the same question, in every reader in the class |
-//! | **click** a comment | its pop-up opens; clicking it again closes it | the convergent gesture. A *drag* moves the annotation and is a different gesture entirely — egui reports a click only when press and release land together — so the two cannot collide |
-//! | **× on the pop-up** | closes it | every window in the class |
-//! | a note the file marks `/Open` | **opens with the document**, no click | §12.5.6.4 Table 172 and §12.5.6.14 Table 183 both say so, and the state is in the file |
+//! - **Hover** a comment ⇒ a tooltip with the author and the words. The
+//!   cheap half of the same question, in every reader in the class.
+//! - **Click** a comment ⇒ its pop-up opens; clicking it again closes it. A
+//!   *drag* moves the annotation and is a different gesture entirely — egui
+//!   reports a click only when press and release land together — so the two
+//!   cannot collide.
+//! - **×** on the pop-up ⇒ closes it, as every window in the class does.
+//! - A note the file marks `/Open` ⇒ **opens with the document**, no click.
+//!   §12.5.6.4 Table 172 and §12.5.6.14 Table 183 both say so, and the
+//!   state is in the file.
 //!
 //! ★ **A single click rather than a double.** In a reader, one click opens the
 //! note; in an editor with the comment tool armed, one click selects and two
@@ -105,51 +101,38 @@
 //! disabled `TextEdit` would be the half-built surface the no-placeholders
 //! rule exists to forbid.
 //!
-//! ## ★★★ What it CANNOT do — REWRITTEN 2026-09-06, because one of the two
-//! ## absences stopped being an engine gap
+//! ## ★★★ What it CANNOT do, and what kind of absence each is
 //!
-//! This section was audited against `pdfcer-core` v0.38.0 on 2026-09-05 and
-//! read, in part:
+//! Neither absence here is an engine gap. `EditSession::add_reply` writes
+//! `/IRT` and `/RT /R` with its own `/Popup`, and `EditSession::add_review_state`
+//! writes `/State` and `/StateModel` (§12.5.6.4 Table 171); both are reached
+//! from the **Comments panel** (`crate::panels::comments`), which is where a
+//! reviewer's work list already lives.
 //!
-//! > **No Reply.** `/IRT` and `/RT` are read-only. … There is no constructor,
-//! > no `MarkupOptions` field and no verb. ⇒ the thread is **read** here and
-//! > cannot be **added to**. Filed as
-//! > `request_a_reply_can_be_read_and_never_written.md`.
+//! - **No Reply control on this surface.** The window already *shows* the
+//!   thread ([`thread`]); composing in it is wiring nobody has asked for.
+//! - **No Accepted / Rejected / Completed control on this surface.** The same
+//!   decision and the same place: a review status is a property of the work
+//!   list rather than of one open window.
 //!
-//! Every word of that was true when it was written and **`Pass 253.0` made it
-//! false the next day.** `EditSession::add_reply`
-//! (`pdfcer-core/src/edit.rs:26948`) writes `/IRT` and `/RT /R` and its own
-//! `/Popup`, and this shell authors replies from the **Comments panel**
-//! (`crate::panels::comments::editor`). Corrected in place and dated rather
-//! than deleted, because the correction is the record: **a limitation sentence
-//! is a dated citation with a shelf life measured in hours**, and this project
-//! has now paid for that lesson eight times.
-//!
-//! ### What is still absent here, and what kind of absence each is
-//!
-//! | absence | kind | consequence |
-//! |---|---|---|
-//! | **no Reply control ON THIS SURFACE** | a **scope** decision, not a capability one | the window already *shows* the thread ([`thread`]); composing in it is wiring nobody has asked for yet, and the Comments panel is where the affordance was built |
-//! | **no Accepted / Rejected / Completed** | an engine gap, still | `/State` and `/StateModel` (§12.5.6.4 Table 171) had **zero occurrences** in the crate at the 2026-09-05 audit. Filed as `request_review_status_is_not_modelled_at_all.md` |
-//!
-//! ★★ The distinction is worth keeping sharp, because the two expire on
-//! different events: an R9 absence is a statement about the **program** and
-//! ends when the engine moves, while a scope absence is a statement about
-//! **one surface** and ends when somebody decides that surface should compose.
+//! ★★ Both are **scope** decisions rather than capability ones, and the
+//! distinction is worth keeping sharp, because the two expire on different
+//! events: a capability absence is a statement about the **program** and ends
+//! when the engine moves, while a scope absence is a statement about **one
+//! surface** and ends when somebody decides that surface should compose.
 //! Conflating them is how a scope decision comes to be defended with a
 //! capability argument that is no longer true.
 //!
-//! For the surviving engine gap R9 governs and **nothing is drawn**: no empty
-//! status row. A control that no state of the program could enable is not an
-//! affordance, it is a promise.
+//! ⚠ Where an absence *is* a capability one, R9 governs and **nothing is
+//! drawn**: no empty status row. A control that no state of the program could
+//! enable is not an affordance, it is a promise.
 //!
-//! ## ★★★ What it CAN do that it could not on 2026-09-05: record `/Open`
+//! ## ★★★ Recording `/Open`
 //!
-//! `EditSession::set_annotation_open` (`Pass 253.3`) writes the window state
-//! **into the document**, and [`open_default`] is the control for it. The
-//! read half moved at the same time: [`model::read_open`] took
-//! `pdfcer_core::annot::Annotation::open` and the raw-dictionary workaround
-//! this module shipped with was deleted rather than left beside it.
+//! `EditSession::set_annotation_open` writes the window state **into the
+//! document**, and `controls`' `open_default` is the control for it. The read
+//! half is `model`'s `read_open`, over
+//! `pdfcer_core::annot::Annotation::open`.
 //!
 //! ⚠ **Opening and closing a bubble on screen still writes nothing**, and that
 //! is a decision rather than a leftover. [`open_default`]'s doc comment carries
@@ -160,11 +143,11 @@
 //!
 //! ## Where the pieces are
 //!
-//! | | |
-//! |---|---|
-//! | [`model`] | the pure read — what notes are here, where their windows go, what replies hang off them |
-//! | [`open`] | which pop-ups are showing, and the override rule that lets the file speak first |
-//! | this file | the drawing, the two hooks, and the trace |
+//! - [`model`] — the pure read: what notes are here, where their windows
+//!   go, what replies hang off them.
+//! - [`open`] — which pop-ups are showing, and the override rule that lets
+//!   the file speak first.
+//! - This file — the drawing, the two hooks, and the trace.
 //!
 //! ## The two hooks, and how small they are
 //!
@@ -182,33 +165,26 @@
 //! it is this frame's map and not the previous one — which is what keeps the
 //! window from lagging a pan by a frame.
 //!
-//! ## ★★★ A pop-up NEVER covers the annotation it belongs to — the invariant
-//! this module gained on its second day
+//! ## ★★★ A pop-up NEVER covers the annotation it belongs to
 //!
-//! It shipped 2026-09-05 without one, and within hours the first full driven
-//! sweep filed *"an annotation can be ROTATED and cannot be MOVED or
-//! RESIZED"* against the canvas. The canvas was fine. `Area::constrain_to`
-//! had slid a pop-up that did not fit to the right of its note **back on top
-//! of that note**, and an `egui::Area` at `Order::Middle` takes every press
-//! inside it — so the move drag and the grip drag never reached the canvas at
-//! all, while the rotate handle, which is drawn clear of the box, kept
-//! working.
+//! An `egui::Area` at `Order::Middle` takes every press inside it, so a pop-up
+//! laid over its own note swallows every gesture on that note — and the
+//! symptom reads as a canvas defect rather than as a placement one: the move
+//! drag and the grip drag never arrive, while the rotate handle, drawn clear
+//! of the box, keeps working.
 //!
-//! [`popup_origin`] now flips rather than slides, and [`clear_of_anchor`]
-//! carries the candidate order, the measurement and the one case that has no
+//! [`popup_origin`] flips rather than slides, and [`clear_of_anchor`] carries
+//! the candidate order, the measurement and the one case that has no
 //! answer. ⇒ **A window that describes a thing must not be laid over the
 //! thing**, and on an immediate-mode canvas that is not a cosmetic rule: the
 //! window is an input surface, and the thing underneath becomes unreachable.
 //!
-//! ## ⚠ Known limit, named rather than left to be found
+//! ## ★★ WHEN a pop-up opens, which is a separate question from where
 //!
-//! ★ **CLOSED 2026-09-05, the same day it was named.** A comment with no words
-//! used to open an empty pop-up on a click, because [`model::under`] answers
-//! for every annotation that *can* carry a note rather than for those that do —
-//! noise on a shape the operator only meant to select. It was recorded here and
-//! on `OPERATOR_REQUESTS.md` O133 as *"a question about WHEN a pop-up opens
-//! rather than about where it goes"*, which was the right description and is
-//! now answered: [`model::has_something_to_read`] is asked at the click site.
+//! A comment with no words must not open an empty pop-up. [`model::under`]
+//! answers for every annotation that *can* carry a note rather than for those
+//! that do, so [`model::has_something_to_read`] is asked at the click site;
+//! without it, a click meant only to select a shape produces a blank window.
 //!
 //! The rule is **not** simply "has words" — a sticky note is a note whether or
 //! not anybody has typed in it, and an operator who has just placed one needs
@@ -240,9 +216,7 @@ pub mod model;
 pub mod open;
 
 /// ★★★ **Everything in the window that CHANGES something** — the note
-/// editor's controls, *Delete comment*, and the `/Open` write-back. Split out
-/// under **R2** on 2026-09-06, when `set_annotation_open`'s control took this
-/// file to 1,639 lines.
+/// editor's controls, *Delete comment*, and the `/Open` write-back.
 ///
 /// Its header carries the seam: the rest of this module **reads** — a heading,
 /// a byline, the words, the thread, a tooltip, a placement — and that one is
@@ -276,11 +250,10 @@ use self::model::NoteView;
 /// per-annotation naming scheme that nothing would consume.
 ///
 /// ★ It is published with `ui_rect_visible` against the **canvas viewport**,
-/// not with `ui_rect`. `REVIEW_TRIAGE.md` T4 records three panels shipping
-/// **unreachable in real builds with every gate green**, because every driven
-/// assertion about them proved *layout* rather than *visibility*. A pop-up
-/// constrained off the edge of the canvas would lay out perfectly and be
-/// invisible, which is precisely that failure in a new place.
+/// not with `ui_rect`, because a rect on its own proves *layout* and not
+/// *visibility*. A pop-up constrained off the edge of the canvas lays out
+/// perfectly and is invisible, so a check asserting only the rect would pass
+/// on a window no operator could reach.
 pub const REGION_POPUP: &str = "notepopup.window"; // ui-text-exempt: trace region name, never displayed
 /// The region an open pop-up's close control publishes.
 pub const REGION_CLOSE: &str = "notepopup.close"; // ui-text-exempt: trace region name, never displayed
@@ -313,8 +286,8 @@ pub const REGION_OPEN_DEFAULT: &str = "notepopup.open_default"; // ui-text-exemp
 /// that four open pop-ups on a D-size sheet do not tile over the drawing.
 ///
 /// ★ The `/Popup`'s own `/Rect` is still honoured **for position** (see
-/// [`popup_origin`]). Its width is not, deliberately: `pdfcer-core` authors
-/// 150 pt (`annot_author.rs:3217-3222`) which at 100 % zoom is under
+/// [`popup_origin`]). Its width is not, deliberately: `pdfcer-core`'s
+/// `annot_author::sticky_note` authors 150 pt, which at 100 % zoom is under
 /// twenty-five characters, and a producer's chosen width is a statement about
 /// their reader's font rather than about ours.
 const POPUP_WIDTH: f32 = 260.0;
@@ -323,8 +296,8 @@ const POPUP_WIDTH: f32 = 260.0;
 ///
 /// A note is arbitrary operator text and can be a page of it. Without a
 /// ceiling one long comment would produce a window taller than the canvas,
-/// whose Save button is off screen — the exact defect `RESUME.md` records the
-/// Print dialog shipping four times over. The body scrolls; the title row, the
+/// whose Save button is off screen — a control that exists, is enabled, and
+/// cannot be reached. The body scrolls; the title row, the
 /// byline and the controls never do, so the two things an operator needs
 /// (whose note is this, and how do I close it) are always in view.
 const POPUP_MAX_BODY: f32 = 220.0;
@@ -501,50 +474,36 @@ const POPUP_BOX_WIDTH: f32 = POPUP_WIDTH + 16.0;
 ///    puts one (`annot_author.rs:3217-3222`) and where every reader in the
 ///    class puts one.
 ///
-/// …and then one **invariant that outranks both**, added 2026-09-05:
+/// …and then one **invariant that outranks both**:
 ///
 /// > ### ★★★ A pop-up must never be laid over the annotation it belongs to
 ///
-/// # The defect this is the fix for, because the reasoning is not obvious
+/// # Why the clamp cannot be left to place a window
 ///
-/// The first driven sweep (2026-09-05) reported *"an annotation can be ROTATED
-/// and cannot be MOVED or RESIZED"* — `dragging_a_markup_moves_it` and
-/// `the_line_weight_switch_reaches_the_resize` both FAILED with **no line
-/// containing `drag` anywhere in the trace**, while `rotating_a_markup_turns_it`
-/// PASSED. Three gestures on one shape, one working. The diagnosis those checks
-/// offered — a fork in `canvas::interact` eating the gesture — named a real
-/// mechanism and was about nothing.
+/// An `egui::Area` at `Order::Middle` takes every press inside it: egui
+/// resolves interaction on the topmost layer, so a window drawn over its own
+/// note means the canvas response never sees the press at all. The symptom is
+/// asymmetric and misleading — the move drag and the grip drag never arrive,
+/// rotation still works, because the rotate handle is drawn *above* the box's
+/// top edge and clear of the window — and it reads as a fork in
+/// `canvas::interact` eating the gesture rather than as a placement.
 ///
-/// What actually happened is in two lines of the trace:
+/// `Area::constrain_to` produces exactly that state on its own, and the
+/// measured case is ordinary: `beside` puts the origin at
+/// `anchor.max.x + POPUP_GAP` = 559.7, a 274 pt window does not fit in a
+/// viewport ending at 772, and the clamp slides it **left** to 498 — back
+/// over the anchor. The clamp is doing exactly what it was written to do, and
+/// *sliding is the wrong recovery*: the one direction a pop-up must not be
+/// pushed is onto its own subject.
 ///
-/// ```text
-/// ui-rect name=canvas.selection-outline rect=[[464.0 464.5] - [551.7 550.2]]
-/// ui-rect name=notepopup.window         rect=[[498.0 465.0] - [772.0 565.0]]
-/// ```
+/// ⇒ **Flip, do not slide.** The candidates are tried in order and the
+/// first that clears the anchor *and fits* wins:
 ///
-/// The window is **on top of the shape it describes**, and an `egui::Area` at
-/// `Order::Middle` takes every press inside it: egui resolves interaction on the
-/// topmost layer, so the canvas response never sees the press at all. The drag
-/// was not consumed by a canvas fork — it never reached the canvas. Rotation
-/// survived only because the rotate handle is drawn *above* the box's top edge,
-/// clear of the window.
-///
-/// # …and the cause was the clamp, which read as harmless
-///
-/// `beside` puts the origin at `anchor.max.x + POPUP_GAP` = 559.7. The canvas
-/// viewport ends at 772, so a 274 pt window does not fit; `Area::constrain_to`
-/// then slid it **left** to 498 — back over the anchor. The clamp was doing
-/// exactly what it was written to do, and *sliding is the wrong recovery*: the
-/// one direction a pop-up must not be pushed is onto its own subject.
-///
-/// ⇒ **Flip, do not slide.** The candidates below are tried in order and the
-/// first that clears the anchor wins:
-///
-/// | # | candidate | separation |
-/// |---|---|---|
-/// | 1 | the preferred origin (file, else right of the note) | taken as-is when the box it implies does not intersect the anchor |
-/// | 2 | **left** of the note, right-aligned to its left edge | horizontal |
-/// | 3 | **below** or **above**, whichever side of the anchor has more room, x pinned into the viewport | vertical |
+/// 1. The preferred origin — the file's, else right of the note — taken
+///    as-is when the box it implies does not intersect the anchor.
+/// 2. **Left** of the note, right-aligned to its left edge. Horizontal.
+/// 3. **Below** or **above**, whichever side of the anchor has more room, x
+///    pinned into the viewport. Vertical.
 ///
 /// ★ Candidates 1 and 2 separate on **x alone**, which makes them independent
 /// of the window's height — and the height is the one dimension this function
@@ -644,9 +603,9 @@ fn clear_of_anchor(preferred: Pos2, anchor: Rect, clip: Rect) -> Pos2 {
     // and sliding is the whole defect. `beside` puts the origin to the right of
     // the note, which clears it by construction and then, on any note within a
     // pop-up's width of the right edge, gets pushed straight back on top of it.
-    // Testing `covers_x` alone accepted exactly those placements, which is what
-    // the first two runs of `a_note_against_the_right_edge_puts_its_window_on_
-    // the_left` measured: origin x = 768 in a viewport ending at 772.
+    // Testing `covers_x` alone accepts exactly those placements — origin
+    // x = 768 in a viewport ending at 772 — which is what
+    // `a_note_against_the_right_edge_puts_its_window_on_the_left` forbids.
     let fits = |x: f32| x >= clip.min.x && x + POPUP_BOX_WIDTH <= clip.max.x;
     let usable = |x: f32| !covers_x(x) && fits(x);
     // 1 — the preferred origin, when it already clears the anchor and fits.
@@ -801,15 +760,11 @@ fn body(
 
 /// The replies hanging off this comment, read from `/IRT`.
 ///
-/// # ★★★ Read-only HERE — and as of 2026-09-06 that is a scope decision
+/// # ★★★ Read-only HERE, which is a scope decision and not a limit
 ///
-/// This paragraph read *"read-only, and that is an engine limit rather than a
-/// choice … `EditSession` has no verb that writes either"*, filed as
-/// `request_a_reply_can_be_read_and_never_written.md`. **`Pass 253.0` closed
-/// it**: `EditSession::add_reply` writes `/IRT` and `/RT /R`, and this shell
-/// authors replies — from the **Comments panel**
-/// (`crate::panels::comments::editor::reply_control`), which is where a
-/// reviewer's work list already lives.
+/// `EditSession::add_reply` writes `/IRT` and `/RT /R`, and this shell authors
+/// replies from the **Comments panel** (`crate::panels::comments::editor`'s
+/// `reply_control`), which is where a reviewer's work list already lives.
 ///
 /// ⇒ So what is absent here is a *control*, not a *capability*, and the two
 /// expire on different events. Adding composition to this window is wiring: the
@@ -1085,8 +1040,8 @@ fn store_draft(ctx: &egui::Context, path: &std::path::Path, draft: &NoteDraft) {
 mod placement_tests {
     use super::*;
 
-    /// A canvas viewport of the shape the driven sweep measured: the central
-    /// panel with a dock on the right, `[[288 174] - [772 758]]`.
+    /// A measured canvas viewport: the central panel with a dock on the
+    /// right, `[[288 174] - [772 758]]`.
     const CLIP: Rect = Rect {
         min: Pos2::new(288.0, 174.0),
         max: Pos2::new(772.0, 758.0),
@@ -1101,13 +1056,13 @@ mod placement_tests {
         Rect::from_min_size(origin, egui::vec2(POPUP_BOX_WIDTH, height))
     }
 
-    /// ★★★ **The 2026-09-05 defect, as an assertion.**
+    /// ★★★ **The overlap that swallows a drag, as an assertion.**
     ///
-    /// The exact geometry from `dragging_a_markup_moves_it`'s trace: a markup
-    /// selected at `[[464.0 464.5] - [551.7 550.2]]`, whose pop-up was drawn at
-    /// `[[498.0 465.0] - [772.0 565.0]]` — on top of it, so every press meant
-    /// for the shape went to the window instead and neither the move nor the
-    /// resize ever reached the canvas.
+    /// Measured geometry: a markup selected at
+    /// `[[464.0 464.5] - [551.7 550.2]]` whose pop-up, left to the clamp, is
+    /// drawn at `[[498.0 465.0] - [772.0 565.0]]` — on top of it, so every
+    /// press meant for the shape goes to the window instead and neither the
+    /// move nor the resize reaches the canvas.
     ///
     /// With the anchor at x 464–551.7 there is no room on the right
     /// (551.7 plus 8 plus 276 = 835.7, past the viewport's 772) and none on the
@@ -1244,21 +1199,12 @@ mod placement_tests {
     /// into one constant the separation would be short by the frame and the
     /// overlap would come back at the margin — silently, on exactly the notes
     /// nearest the edge.
-    /// ★ A `const` assertion rather than a runtime one, and the change is not
-    /// cosmetic: clippy refuses `assertions_on_constants` because a runtime
-    /// `assert!` over two constants **can never fail at runtime** — it is
-    /// decided when the crate is compiled, and a test that cannot fail is not
+    /// ★ A `const` assertion rather than a runtime one: clippy refuses
+    /// `assertions_on_constants`, because an `assert!` over two constants is
+    /// decided when the crate is compiled and a test that cannot fail is not
     /// evidence. `const _: () = assert!(..)` states the same fact where it is
-    /// actually checked: the build stops, with this message, and no test has to
-    /// run at all.
-    ///
-    /// Kept as an assertion rather than deleted because the relationship is
-    /// real and load-bearing — a pop-up's outer box is its contents plus
-    /// `Frame::popup`'s margin and stroke, and the placement arithmetic that
-    /// keeps a window clear of its own annotation is computed from the OUTER
-    /// width. Were the two ever made equal, every placement would be short by
-    /// the frame and the window would creep back over the mark it belongs to,
-    /// which is the defect this module was rewritten to close on 2026-09-05.
+    /// actually checked — the build stops, with this message, and no test
+    /// has to run at all.
     const _: () = assert!(
         POPUP_BOX_WIDTH > POPUP_WIDTH,
         "the box a pop-up occupies is its contents plus `Frame::popup`'s margin and stroke"
@@ -1269,12 +1215,12 @@ mod placement_tests {
 mod tests {
     use super::*;
 
-    /// Every region name this module publishes.
+    /// The region names the sweep below checks.
     ///
-    /// Enumerated so the sweep below cannot drift from the constants: a name
-    /// added without being added here would simply not be checked, which is
-    /// the *"hand-written list inside a completeness sweep"* failure
-    /// `RESUME.md` records shipping four defects in one gap.
+    /// ⚠ A hand-written list inside a completeness check is itself the
+    /// known weakness: a name added to the constants and not to this list is
+    /// simply not checked. [`REGION_OPEN_DEFAULT`] is published and is **not**
+    /// in this list, which is that drift in the present tense.
     const REGIONS: &[&str] = &[
         REGION_POPUP,
         REGION_CLOSE,

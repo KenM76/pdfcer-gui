@@ -1,10 +1,7 @@
 //! # `panels::objects` — everything drawn on the current page
 //!
-//! Salvaged from three places in the old shell: the panel body from
-//! `main.rs`, the decomposition from `object_provider.rs` (→
-//! [`provider`]) and the per-object description from `object_summary.rs`
-//! (→ [`summary`]). `SALVAGE.md` calls the Objects panel *"the single
-//! strongest thing pdfcer has"*.
+//! Three parts: the panel body here, the page decomposition in [`provider`],
+//! and the per-object description in [`summary`].
 //!
 //! ## What it is FOR — the operator's own words
 //!
@@ -65,28 +62,16 @@
 //! (Do not conflate this with the ce-dimension group OCGs, which are an
 //! annotation-layer visibility mechanism and have their own surface.)
 //!
-//! ## ★ The two defects this rebuild fixes
+//! ## ★ Two properties of a row, and why each is the way it is
 //!
-//! ### 1. Row text no longer clips — and since O123, it ELLIPSISES
+//! ### 1. Row text ellipsises rather than clipping
 //!
-//! `SALVAGE.md`'s row for `object_summary.rs` states the requirement:
-//! *"Row text must not clip; the old panel truncated with no horizontal
-//! scroll."*
-//!
-//! The old panel drew each row with
-//! `ui.add_sized(vec2(ui.available_width(), row_height), …)` inside a
-//! **vertical-only** `ScrollArea`. A row wider than the pane was cut off at
-//! the pane's edge with no bar on either axis and nothing to say so — and a
-//! row here can easily be wide: `#1382  Path · filled (even-odd) and
-//! stroked #1A73E8, 0.50 pt wide · 6681 node(s) · zero height` is not a
-//! contrived example.
-//!
-//! ★★★ **This shell answered that with a two-axis scroll area for a month, and
-//! on 2026-09-04 the operator replaced the answer** — `OPERATOR_REQUESTS.md`
-//! O123: *"rows that ellipsise with a tooltip instead of hard-clipping
-//! mid-character."*
-//!
-//! What ships now, and why each half is needed:
+//! A row here can easily be wider than its pane: `#1382  Path · filled
+//! (even-odd) and stroked #1A73E8, 0.50 pt wide · 6681 node(s) · zero height`
+//! is not a contrived example. Row text must not clip, and the requirement is
+//! `OPERATOR_REQUESTS.md` O123 — *"rows that ellipsise with a tooltip instead
+//! of hard-clipping mid-character."* Three pieces answer it, and each is
+//! needed:
 //!
 //! - **[`crate::panels::elide_to_width`] per row, against that row's own
 //!   room.** The pane's width less this row's indent and its expander column,
@@ -97,50 +82,38 @@
 //!   rows and the capped-rows disclosure — which never carried one before,
 //!   because they could not overflow while the pane scrolled sideways and they
 //!   can now.
-//! - **`ScrollArea::vertical`.** The horizontal axis existed to reach the part
-//!   of a row past the pane's edge. There is no such part any more, and a
-//!   scroll bar with nothing beyond its viewport is a control that cannot do
+//! - **`ScrollArea::vertical`, not `both`.** A horizontal axis would exist to
+//!   reach the part of a row past the pane's edge; there is no such part, and
+//!   a scroll bar with nothing beyond its viewport is a control that cannot do
 //!   anything — R9.
 //!
-//! ★ `SALVAGE.md`'s requirement is still met, by a different route: what it
-//! forbade was **silent** loss, and nothing here is silent. An operator seeing
-//! `#27 Text · "A1" · AAAAAA+SpaceGrotesk-Bold 1` with a `2` invisibly cut off
-//! was the defect; `…` plus a hover is not it.
+//! The rule the elision honours is that loss must not be **silent**. An
+//! operator seeing `#27 Text · "A1" · AAAAAA+SpaceGrotesk-Bold 1` with a `2`
+//! invisibly cut off is the defect; `…` plus a hover is not it. The trade is
+//! stated rather than glossed: a very long row is read in a tooltip rather
+//! than by dragging a bar across the panel.
 //!
-//! ⚠ What was given up, stated rather than glossed: an operator could
-//! previously read a very long row **in the panel**, by dragging a bar. Now
-//! they read it in a tooltip. That is the operator's own trade and it is why
-//! the same request also widened Edit's dock to 360 pt.
+//! ### 2. No dock width fixes an over-long row, so the ROW is what is short
 //!
-//! ### ★★★ 1b. …and on 2026-09-05 the ROW got shorter, because widening had
-//! not worked
+//! Widening is not the remedy, and the numbers are why. On an A1 sheet the
+//! widest full description wants **473.6 pt** and even the narrowest wants
+//! **306.3 pt**, against a 314 pt pane holding 296 pt of text room — eight of
+//! eight rows overflowing. (`objects-rows overflow=` traces the worst row's
+//! overshoot, which is the field that answers this question from outside.) A
+//! dock wide enough for 473.6 pt is about 526 pt, half of an 1,100 pt window.
+//! `EDIT_INSPECTOR_WIDTH` does not reach the operator in any case: a restored
+//! workspace (`mode-changed … remembered=true`) never reads it.
 //!
-//! **The first driven run of `the_inspector_is_one_master_detail_column`
-//! reported `8 OF 8 OBJECT ROWS DO NOT FIT`.** Not the uncommon row — every
-//! row, on the operator's own A1 sheet, at the width the request had just
-//! widened. The `objects-rows overflow=` field, added the day before for
-//! exactly this question, said why: the widest row wanted **473.6 pt** in a
-//! **314 pt** pane, and re-measured headlessly the *narrowest* row of that
-//! sheet wanted **306.3 pt** against **296 pt** of text room.
-//!
-//! ⇒ **No dock width closes that**, and the paragraph above was wrong to
-//! imply one could: a dock wide enough for 473.6 pt of text is about 526 pt,
-//! half of an 1,100 pt window. ⚠ And the run that measured 314 traced
-//! `mode-changed … remembered=true` — a **restored** workspace, which never
-//! reads `EDIT_INSPECTOR_WIDTH` at all. So widening the constant would not
-//! have reached the operator who had ever dragged the dock.
-//!
-//! What changed instead is what a row **says**. [`row_label`] now draws
+//! So what a row **says** is what is short. [`row_label`] draws
 //! `crate::text::panels::objects::object_row_headline` — index, kind, the one
 //! or two facts that tell this object from its neighbour, and a single
 //! disclosure mark — while [`row_description`] hands the **full** description
 //! to the row's hover, on every object row, elided or not. The widest headline
 //! on that sheet is **207.6 pt**, 70 % of the room.
 //!
-//! ★ That is what *master–detail* means, and it is the arrangement the same
-//! O123 asked for: the detail pane is on screen, in the same column, an inch
-//! below. A master row that restated it was spending the width twice on one
-//! fact and eliding the identity only the master carries.
+//! ★ That is what *master–detail* means: the detail pane is on screen, in the
+//! same column, an inch below. A master row that restated it would spend the
+//! width twice on one fact and elide the identity only the master carries.
 //!
 //! ★ **R128 is not engaged.** Nothing here feeds a measurement back into a
 //! size: the widths are constants, the elision reads the pane it is given, and
@@ -153,7 +126,7 @@
 //! quietly shortened. A silently truncated list is indistinguishable from a
 //! short one.
 //!
-//! ### 2. Scrollbars are visible
+//! ### 3. Scrollbars are visible
 //!
 //! egui's default `ScrollStyle` is `floating()` — 2 pt, zero allocated
 //! width, fully transparent when the pointer is elsewhere — so a working
@@ -176,18 +149,28 @@
 //! collapsed the list is exactly the object count, so the nesting costs
 //! nothing until it is used.
 //!
-//! ## What is not here yet
+//! ## Selection is shared with the canvas, in both directions
 //!
-//! **Selection.** Clicking an object row points the [`super::properties`]
-//! panel at it, and that is all it does — no canvas highlight, no
-//! multi-select, no Shift+click, no scroll-to-reveal, because there is no
-//! selection model to reveal *into*. `super::PanelsState::focus`'s own docs
-//! spell out the difference between a panel focus and a selection and state
-//! that the field is deleted rather than grown when the real one lands.
+//! Clicking an **object** row raises
+//! `SelectionAction::SelectObject`, so the row click *is* a canvas selection
+//! gesture: the object highlights on the page and the Properties panel
+//! describes it. The reverse holds too — the highlighted row is derived from
+//! `doc.selection.object_indices_on(page)` on every frame, so a canvas click
+//! highlights its row. There is one opinion about what is being worked on and
+//! this panel renders it rather than keeping a second.
 //!
-//! Part and point rows are therefore **not clickable**. A row that responded
-//! to a click by focusing its parent object instead would be a control
-//! answering a different question from the one it was asked.
+//! Clicking the already-selected row **deselects**, which is what clicking a
+//! selected item does in every list in every application.
+//!
+//! Object-scoped, deliberately: `object_indices_on` answers about page
+//! **content**, which is what this tree lists. An annotation or a ce dimension
+//! selected on the canvas leaves every row here unhighlighted, correctly.
+//!
+//! **Not yet:** multi-select, Shift+click, scroll-to-reveal.
+//!
+//! Part and point rows are **not clickable**. A row that responded to a click
+//! by selecting its parent object instead would be a control answering a
+//! different question from the one it was asked.
 //!
 //! ## ★ The row's right-click, and the one command it deliberately does not
 //! offer
@@ -203,16 +186,13 @@
 //! clickable: a menu on a part row would have to be about its parent object,
 //! which is answering a question nobody asked.
 //!
-//! **`format.delete` is not on this menu, and that is a safety decision.**
-//! The focus below is *not* the selection — `super::ObjectTreeUi::focus`'s
-//! own docs and `super::tests::the_panel_focus_has_not_quietly_become_a_selection`
-//! defend the distinction at length — so a Delete offered here would be
-//! enabled by `selection.any`, which describes the **canvas** selection, and
-//! would remove objects the operator never pointed at. That is precisely the
-//! failure that test exists to prevent, arriving through a menu instead of
-//! through a predicate. A Delete belongs here on the day the row click
-//! becomes a selection gesture and the focus field is deleted, which is the
-//! commit its own documentation names.
+//! **`format.delete` is not on this menu.** It was kept off while a row click
+//! wrote a panel-local focus rather than a selection, because a Delete gated on
+//! `selection.any` would then have removed whatever was selected on the canvas
+//! rather than the row the pointer was on. That condition no longer holds — the
+//! row click is a selection gesture — so the omission is now unexamined rather
+//! than argued. `DEFECTS.md` D48. Deletion is still reachable: the row click
+//! selects, and Delete on the canvas then acts on that selection.
 
 pub mod provider;
 pub mod summary;
@@ -362,15 +342,13 @@ pub fn body(
     // The commands invoked from a row's context menu, collected across the
     // visible rows and returned. Not applied here — a panel raises intent.
     let mut tokens: Vec<HandlerToken> = Vec::new();
-    // ★★★ **The row highlight is READ FROM THE SELECTION**, since 2026-08-26 —
-    // it used to be `tree.focus()`, a panel-local variable the canvas neither
-    // wrote nor read.
+    // ★★★ **The row highlight is READ FROM THE SELECTION**, never from a
+    // panel-local variable.
     //
-    // That is the whole of the change. This panel no longer *holds* an opinion
-    // about which object is being worked on; it renders the one opinion there
-    // is. A click on the canvas therefore highlights the matching row, which it
-    // never did before, and a click on a row selects on the canvas, which it
-    // never did either — the two are the same fact seen from two ends.
+    // This panel does not *hold* an opinion about which object is being worked
+    // on; it renders the one opinion there is. A click on the canvas therefore
+    // highlights the matching row and a click on a row selects on the canvas —
+    // the two are the same fact seen from two ends.
     //
     // ★ Object-scoped, and deliberately: `object_indices_on` answers about page
     // CONTENT, which is what this tree lists. An annotation or a ce dimension
@@ -385,20 +363,18 @@ pub fn body(
     // arithmetic in step with what is actually painted.
     let row_height = ui.spacing().interact_size.y;
 
-    // ★★★ **`ScrollArea::vertical`, not `both`, since 2026-09-04** —
-    // `OPERATOR_REQUESTS.md` O123.
-    //
-    // A horizontal bar is what this panel used to offer instead of shortening a
-    // row: the container stated its own intrinsic width via
-    // `crate::panels::content_width`, the area measured content wider than
-    // viewport, and a bar appeared. That worked, and the operator did not want
-    // it — *"rows that ellipsise with a tooltip instead of hard-clipping
+    // ★★★ **`ScrollArea::vertical`, not `both`** — `OPERATOR_REQUESTS.md`
+    // O123: *"rows that ellipsise with a tooltip instead of hard-clipping
     // mid-character."*
+    //
+    // The alternative is a horizontal bar: state an intrinsic width via
+    // `crate::panels::content_width`, let the area measure content wider than
+    // viewport, and a bar appears. It works, and it is not what is wanted.
     //
     // ⇒ With every row shortened to the pane, there is nothing left of a row to
     // scroll sideways to, and a horizontal bar with nothing beyond its viewport
     // is a control that cannot do anything. R9. So the axis goes with the
-    // mechanism it existed for.
+    // mechanism it would exist for.
     egui::ScrollArea::vertical()
         .id_salt("objects-tree-rows")
         .show_rows(ui, row_height, total_rows, |ui, range| {
@@ -449,7 +425,7 @@ pub fn body(
             // published anyway because there is no substitute — the harness
             // cannot read the text a panel renders. What makes the check built
             // on it non-circular is the PIXEL half:
-            // `the_objects_rows_fit_the_inspector` samples the pane's right
+            // `the_inspector_is_one_master_detail_column` samples the pane's right
             // edge, and a column of background there cannot be produced by an
             // arithmetic error in the same function that writes this line.
             //
@@ -459,27 +435,19 @@ pub fn body(
                 let elided = labelled.iter().filter(|r| r.shortened.is_some()).count();
                 let visible = labelled.len();
                 // ui-text-exempt: diagnostic trace, never displayed.
-                // ★★★ `overflow=` — the WORST row's overshoot, added 2026-09-04
-                // because `elided=` alone could not answer the question the
-                // driven check was really asking.
-                //
-                // That check asserted `elided == 0`, on the reasoning that
-                // O123 widened Edit's inspector to 360 pt *so the common row
-                // would fit*. It reported **8 of 9 shortened** on the
-                // operator's own A1 sheet — and a count cannot say whether
-                // that means the width regressed, the rows grew, or the rows
-                // are simply longer than any dock width a person would want.
+                // ★★★ `overflow=` — the WORST row's overshoot. `elided=` alone
+                // is a count, and a count cannot say whether shortened rows
+                // mean the width regressed, the rows grew, or the rows are
+                // simply longer than any dock width a person would want.
                 //
                 // ⇒ The overshoot says which. A row that needs 380 pt in a
                 // 354 pt pane is a width problem; one that needs 900 is what
                 // ellipsis exists for, and no width fixes it.
                 //
-                // ★★ Since 2026-09-05 this measures the **headline**, which is
-                // what the row draws — see `row_label`. Before that it measured
-                // the full description, and the number it reported (473.6 pt
-                // against a 314 pt pane) is what proved no dock width could fix
-                // the row; it is now the honest question *"how much wider would
-                // this pane have to be for the row it actually draws to fit?"*
+                // ★★ It measures the **headline**, which is what the row draws
+                // — see `row_label` — so it asks the honest question: *"how
+                // much wider would this pane have to be for the row it
+                // actually draws to fit?"*
                 let overflow = labelled
                     .iter()
                     .filter(|r| r.shortened.is_some())
@@ -507,10 +475,10 @@ pub fn body(
                 // tooltip repeating a fully visible label is noise.
                 //
                 // ★★ `description` is different in kind and is hung on **every**
-                // object row, elided or not: since 2026-09-05 the drawn text is
-                // a headline that omits the paint style, the stroke width and
-                // the font, so a row that fits perfectly is still a summary and
-                // the operator is still owed the rest. It is a superset of
+                // object row, elided or not: the drawn text is a headline that
+                // omits the paint style, the stroke width and the font, so a
+                // row that fits perfectly is still a summary and the operator
+                // is still owed the rest. It is a superset of
                 // `full` — same record, more clauses — so where it is attached
                 // it recovers the elided tail as well.
                 let overflows = shortened.is_some();
@@ -635,24 +603,18 @@ pub fn body(
     if let Some((object, part)) = toggle_part {
         tree.toggle_part(object, part);
     }
-    // ★★★ A row click SELECTS, since 2026-08-26.
+    // ★★★ A row click SELECTS.
     //
-    // It used to call `tree.set_focus(index)`, which wrote a panel-local
-    // `focus` that the canvas neither wrote nor read — the second of three
-    // parallel notions of *"the thing I am working on"* that the interaction
-    // audit named as the cause of the operator's *"when I have an object
-    // selected like text the Tool tab doesn't switch to giving me the editable
-    // stuff for that object."*
+    // It must not write a panel-local focus the canvas neither writes nor
+    // reads: a second notion of *"the thing I am working on"* is what makes
+    // the Tool tab fail to follow the object the operator picked. Both ends
+    // write the same thing — a row click sets the canvas selection, and the
+    // canvas selection is what the Properties panel describes — so neither can
+    // disagree with the other.
     //
-    // Now the two ends write the same thing: a row click sets the canvas
-    // selection, and the canvas selection is what the Properties panel
-    // describes. Neither can disagree with the other.
-    //
-    // ★ The toggle is preserved and it matters. `set_focus` cleared the focus
-    // when the already-focused row was clicked — *"a row click is its own
-    // undo"* — and with a real selection model that reading is even better than
-    // it was: clicking the selected row deselects, which is what clicking a
-    // selected item does in every list in every application.
+    // ★ The toggle matters: clicking the already-selected row deselects, which
+    // is what clicking a selected item does in every list in every
+    // application, and it makes a row click its own undo.
     if let Some(index) = focus {
         let already = doc
             .selection
@@ -745,12 +707,10 @@ const EXPANDER_SPACE: f32 = t::OBJECT_TREE_EXPANDER_WIDTH;
 /// different intents, and one gesture cannot mean both without one of them
 /// being a surprise.
 ///
-/// Drawn as ASCII rather than as chevron art. The old shell used
-/// `Icon::ChevronDown`/`ChevronRight` from its own icon set, and that set is
-/// a separate `SALVAGE.md` Class A row (`icons.rs`, 1,747 lines) that has
-/// not landed — so this is the honest interim, not a preference. It is a
-/// real, clickable, tooltipped control either way; only the glyph changes
-/// when the icon set arrives.
+/// Drawn as ASCII rather than as chevron art, which is an interim rather than
+/// a preference: `crate::icons` carries `Icon::ChevronDown` and
+/// `Icon::ChevronRight`, and this control does not yet read them. It is a
+/// real, clickable, tooltipped control either way; only the glyph changes.
 fn expander(ui: &mut egui::Ui, open: bool) -> egui::Response {
     let glyph = if open { "v" } else { ">" };
     ui.add_sized(
@@ -781,12 +741,12 @@ fn row_indent(row: ObjectTreeRow) -> f32 {
 /// the **single description path** the Properties panel also reads — so a fill
 /// colour cannot be described one way here and another way there.
 ///
-/// ★★★ It was [`crate::text::panels::objects::object_row`] — the *full*
-/// description — until 2026-09-05, and the change is O123 defect 2: at the
-/// width this panel opens at, **every** row of that form was elided. The full
-/// description is not lost; [`row_description`] returns it and [`body`] hangs
-/// it on the row's hover. See `object_row_headline`'s header for the
-/// measurement and for what moved where.
+/// ★★★ Deliberately the headline and not
+/// [`crate::text::panels::objects::object_row`], the *full* description —
+/// `OPERATOR_REQUESTS.md` O123 defect 2: at the width this panel opens at,
+/// **every** row of the full form elides. The full description is not lost;
+/// [`row_description`] returns it and [`body`] hangs it on the row's hover.
+/// See `object_row_headline`'s header for the measurement.
 fn row_label(provider: &ObjectModelProvider, row: ObjectTreeRow) -> String {
     match row {
         ObjectTreeRow::Object { index } => provider
@@ -811,8 +771,8 @@ fn row_label(provider: &ObjectModelProvider, row: ObjectTreeRow) -> String {
 /// **The full description of the object a row names**, for the hover — or
 /// `None` for a row that has no second, longer form.
 ///
-/// ★★ The counterpart to [`row_label`], added 2026-09-05 when the drawn text
-/// became the headline. Only an **object** row has one: a part row reads
+/// ★★ The counterpart to [`row_label`], which draws the headline. Only an
+/// **object** row has a longer form: a part row reads
 /// *"Subpath 3"* and a point row *"Node 12"*, and there is nothing longer to
 /// say about either — attaching a tooltip that repeated the row would be the
 /// noise [`body`] already refuses on a row that fits.
@@ -1140,28 +1100,21 @@ mod tests {
     /// ★★★ **A long row is SHORTENED to the pane, and the whole of it stays
     /// reachable** — `OPERATOR_REQUESTS.md` O123.
     ///
-    /// This test used to be `a_long_row_widens_the_container_past_the_viewport`
-    /// and asserted the opposite mechanism: that
-    /// `crate::panels::content_width` grew the container past the viewport so
-    /// `ScrollArea::both` would draw a horizontal bar. That was the shipped
-    /// answer to `SALVAGE.md:44` for a month, and the operator has replaced it
-    /// — *"rows that ellipsise with a tooltip instead of hard-clipping
-    /// mid-character."*
+    /// The requirement is **nothing is lost silently**: the drawn row fits the
+    /// pane, it ends in the ellipsis so the eye knows it was cut, and it is a
+    /// prefix of the full row the hover carries. The alternative mechanism —
+    /// `crate::panels::content_width` growing the container past the viewport
+    /// so `ScrollArea::both` draws a horizontal bar — satisfies the letter of
+    /// that and not the request: *"rows that ellipsise with a tooltip instead
+    /// of hard-clipping mid-character."*
     ///
-    /// ★ The requirement it enforced has not changed and is asserted here in
-    /// its new form: **nothing is lost silently.** The drawn row fits the pane,
-    /// it ends in the ellipsis so the eye knows it was cut, and it is a prefix
-    /// of the full row the hover carries.
-    ///
-    /// ⚠ **The pane was 370 pt here until 2026-09-05**, because the drawn row
-    /// was then the full description and this fixture's description is 51
-    /// characters. O123 defect 2 made the drawn row the *headline*, which is 32
-    /// characters for the same object — so at 370 pt it now fits, and the
-    /// assertion above the elision would have failed rather than the elision
-    /// having broken. The pane is narrowed instead of the fixture being
-    /// lengthened, because the subject of this test is the **mechanism**, not
-    /// the width: any row wider than its room must be shortened and stay
-    /// recoverable, and a narrow dock is the ordinary way that happens now.
+    /// ⚠ **The pane is narrow on purpose.** The drawn row is the headline,
+    /// which is 32 characters for this fixture's object against 51 for the
+    /// full description, so a wider pane fits it and the test would assert
+    /// nothing. The pane is narrowed rather than the fixture lengthened,
+    /// because the subject of this test is the **mechanism**, not the width:
+    /// any row wider than its room must be shortened and stay recoverable, and
+    /// a narrow dock is the ordinary way that happens.
     /// `every_object_row_of_the_a1_sheet_fits_the_measured_pane` is the test
     /// that owns the width question.
     #[test]
@@ -1283,11 +1236,10 @@ mod tests {
     /// `ObjectSummary`, so a fill colour cannot be described one way here
     /// and another way there.
     ///
-    /// ★ It asserted `row_label == t::object_row` until 2026-09-05. It now
-    /// asserts the pair, because the drawn text and the hovered text became
-    /// two different renderings of that one record — and a test naming only
-    /// one of them would pass on a build that hung the wrong string on the
-    /// hover.
+    /// ★ It asserts the **pair**, not the drawn text alone: the drawn text and
+    /// the hovered text are two different renderings of that one record, and a
+    /// test naming only one of them passes on a build that hangs the wrong
+    /// string on the hover.
     #[test]
     fn an_object_row_draws_the_headline_and_hovers_the_description() {
         let p = provider(b"0 0 1 rg 10 10 80 80 re f");
@@ -1361,8 +1313,8 @@ mod tests {
     /// document of short rows this assertion could not fail.
     #[test]
     fn every_object_row_of_the_a1_sheet_fits_the_measured_pane() {
-        /// The pane the Objects panel was measured at in the driven run of
-        /// 2026-09-05, in points. Not a default — see the doc comment.
+        /// The pane the Objects panel measures at in the driven run, in
+        /// points. Not a default — see the doc comment.
         const MEASURED_PANE: f32 = 314.0;
 
         let doc = crate::app::state::open_local_fixture("a1-titleblock.pdf");

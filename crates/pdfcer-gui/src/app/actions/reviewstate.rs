@@ -7,15 +7,16 @@
 //! chooser, and by nothing else. [`RecordStatus`] is that action's payload, and
 //! its doc carries why the verb is not an `AnnotAction`.
 //!
-//! ## ★★★ Why it is not in [`super::annots`]
+//! ## Why it is not in [`super::annots`]
 //!
 //! That module's own header draws the line it lives on: *"this file is what
 //! happens to a thing that already exists"* — the verbs whose subject is an
 //! annotation the operator can see, and which **change** it. Recording a status
-//! changes nothing about the annotation it names. The engine says so in the
-//! strongest terms available to it (`edit.rs:26804`):
+//! changes nothing about the annotation it names.
+//! [`pdfcer_core::edit::EditSession::add_review_state`] says so in the
+//! strongest terms available to it:
 //!
-//! > *"★★ THE STATUS IS NOT WRITTEN ONTO THE ANNOTATION IT DESCRIBES —
+//! > *"THE STATUS IS NOT WRITTEN ONTO THE ANNOTATION IT DESCRIBES —
 //! > §12.5.6.3 puts it on a **separate** `/Text` annotation that points at the
 //! > reviewed one through `/IRT` … That is why this verb returns a new `ObjId`
 //! > rather than mutating the target, and why nothing about the target
@@ -26,7 +27,7 @@
 //! rather than a third home, under R2 and for [`super::funnel`]'s reason: one
 //! subject, one rate of change.
 //!
-//! ## ★★ What this module is careful NOT to do
+//! ## What this module is careful NOT to do
 //!
 //! **It does not decide what the current status is.** The engine ships no
 //! resolver, deliberately — *"it says nothing whatever about ordering or
@@ -38,7 +39,7 @@
 //! disclosure about a comment and lives off-canvas, in the panel and on the
 //! status row. Nothing here touches an appearance.
 //!
-//! ## ★ Undo is one press, and the engine made sure of it
+//! ## Undo is one press, and the engine made sure of it
 //!
 //! A status is two dictionary keys on a new annotation, and the obvious
 //! implementation writes the annotation and then the keys — two commands, two
@@ -58,24 +59,25 @@ use pdfcer_core::object::ObjId;
 use crate::app::state::OpenDoc;
 use crate::text::reviewstate as t;
 
-/// ★★★ **What [`crate::app::actions::Action::RecordReviewState`] carries** —
+/// **What [`crate::app::actions::Action::RecordReviewState`] carries** —
 /// the comment to review, and the status to append.
 ///
-/// # ★★ Why it is a payload here rather than fields on the `Action`
+/// # Why it is a payload here rather than fields on the `Action`
 ///
 /// Two reasons, and the second is the load-bearing one.
 ///
 /// 1. `action.rs` is at **R2's 1,500-line ceiling**, and this is the pattern
-///    that file already uses eight times over — [`super::annot::AnnotAction`],
-///    [`super::forms::FieldAction`], `VectorAction`, `WriteAction` — a family's
-///    payload and its argument live with the module that applies it, and the
-///    router carries one line.
-/// 2. ★ The argument below is **about the engine's verb**, not about the action
+///    that file already uses for every family that has one —
+///    [`super::annot::AnnotAction`], [`super::forms::FieldAction`],
+///    `VectorAction`, `WriteAction` and the rest: a family's payload and its
+///    argument live with the module that applies it, and the router carries one
+///    line.
+/// 2. The argument below is **about the engine's verb**, not about the action
 ///    bus. Written next to the call it constrains, it can be checked against
 ///    `add_review_state` by a reader who has that function open; written in the
 ///    router it would be prose about a function three files away.
 ///
-/// # ★★★ Why this is NOT a [`super::annot::AnnotAction`]
+/// # Why this is NOT a [`super::annot::AnnotAction`]
 ///
 /// That enum's stated family property is *"the verbs whose subject is a whole
 /// annotation — move it, resize it, remove it"*, and every one of them
@@ -92,7 +94,7 @@ use crate::text::reviewstate as t;
 /// the next reader would have to discover the difference from the engine rather
 /// than from the type.
 ///
-/// # ★ It carries no page, and that is not an omission
+/// # It carries no page, and that is not an omission
 ///
 /// `add_review_state` resolves the page itself — *"`/IRT` requires both
 /// annotations on the same page, so the state is placed on the target's page"*
@@ -100,7 +102,7 @@ use crate::text::reviewstate as t;
 /// question the engine already answers, resolved at the press rather than at
 /// apply time. The rule `AnnotAction::Move` follows by carrying a delta.
 ///
-/// # ★ And no author, for the reason `AnnotAction::SetNote` gives
+/// # And no author, for the reason `AnnotAction::SetNote` gives
 ///
 /// The name is a fact about **the operator**, which only [`super::apply`]'s
 /// scope can see (`Prefs::author_name`); the panel knows only what the document
@@ -124,7 +126,7 @@ impl RecordStatus {
     /// [`RecordStatus`] on why the name travels from that scope rather than
     /// being read here.
     ///
-    /// # ★★★ The two things the operator cannot see, and both are said
+    /// # The two things the operator cannot see, and both are said
     ///
     /// A status is written onto a **new, invisible, empty-`/Contents`
     /// annotation**. Nothing about the page changes; nothing about the comment
@@ -147,7 +149,7 @@ impl RecordStatus {
     ///    is invisible until it has already happened twice, so it is stated when it
     ///    is caused, and it names the place to fix it.
     ///
-    /// # ★★ `attached_to` and `chain_depth` on the diagnostic channel
+    /// # `attached_to` and `chain_depth` on the diagnostic channel
     ///
     /// The engine exposes both precisely because the failure they guard is
     /// invisible on screen:
@@ -162,7 +164,7 @@ impl RecordStatus {
     /// file's rendering. It is the same argument `markup_move`'s `keys=` makes for
     /// the half of a move a screenshot cannot see.
     ///
-    /// # ★ The trace name takes a suffix; the funnel keeps the bare one
+    /// # The trace name takes a suffix; the funnel keeps the bare one
     ///
     /// `record-review-state-applied`, per `tools/gates/check-trace-names.py`: the
     /// funnel writes `record-review-state page=… n=… epoch=…` for the same edit,
@@ -171,7 +173,7 @@ impl RecordStatus {
     /// would find nothing and report *"the verb did nothing"* about a verb that
     /// worked.
     pub(super) fn record(self, doc: &mut OpenDoc, author: &str) {
-        // ★ Taken before the closure, because `pdf_date_utc` can fail (a clock
+        // Taken before the closure, because `pdf_date_utc` can fail (a clock
         // before the epoch) and `add_review_state` takes an `Option<&str>` for
         // exactly that: `/M` is optional on a markup annotation, and writing a
         // fabricated date would be worse than writing none.
@@ -194,7 +196,7 @@ impl RecordStatus {
                             added.chain_depth,
                         )
                     });
-                    // ★ The unsigned sentence goes SECOND, and the order is the
+                    // The unsigned sentence goes SECOND, and the order is the
                     // decision: the first line is the one an operator reads if they
                     // read only one, and between "what was recorded" and "it was
                     // recorded without a name", only the first answers the question

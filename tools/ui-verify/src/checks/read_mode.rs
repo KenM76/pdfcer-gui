@@ -11,10 +11,10 @@
 //! > *"in read mode the document shouldn't allow editing and should allow only
 //! > selecting of objects that acrobat reader would allow."*
 //!
-//! `HANDOFF.md` §9 records what the code did before the gate: *"clicking a
-//! line in Read selected it, dragging it moved it, and Delete deleted it:
-//! three edits in a mode whose entire purpose is that it does not author
-//! anything."*
+//! ⚠ The shape of the failure this guards against: **clicking a line in Read
+//! selects it, dragging it moves it, Delete deletes it** — three edits in a
+//! mode whose entire purpose is that it authors nothing. Each of the three is a
+//! separate gesture route, so the mode is only as closed as its leakiest one.
 //!
 //! The gate that closed it is four links, and every one has a passing unit
 //! test:
@@ -106,20 +106,20 @@
 //!
 //! # Mouse only
 //!
-//! Nothing here needs a key.
+//! Nothing here needs a key. Every assertion below is a press, a drag or a
+//! ribbon click, which keeps this check independent of the input-synthesis
+//! question entirely.
 //!
-//! ★ **CORRECTED 2026-08-18.** These headers used to say synthetic keyboard
-//! input does not reach the target window on this machine. It DOES — see
-//! [`crate::checks::add_text`], which types real characters into a caret
-//! draft and asserts they landed. The belief came from `Ctrl+E` producing no
-//! trace, which was the dead-keymap defect (fourteen of twenty-one declared
-//! chords were dispatched by nothing) misread as a property of the machine —
-//! and while it stood nobody drove a chord, so nothing could contradict it.
-//! The Delete
-//! key is *also* gated by `Capabilities::edit_content`
-//! (`canvas::keys::canvas_keys` takes `caps`), and asserting that from outside
-//! the process is blocked on the same environment limit; it is covered by unit
-//! test alone and named here so the gap is on the record rather than implied.
+//! ⚠ Synthetic keyboard input *does* reach the target window — see
+//! [`crate::checks::add_text`], which types real characters into a caret draft
+//! and asserts they landed. A chord that produces no trace is evidence about
+//! the **keymap**, never about the machine; reading it as an environment limit
+//! is how a whole class of assertions goes unwritten and unchallenged.
+//!
+//! ★ **The Delete key is gated by the same `Capabilities::edit_content`**
+//! (`canvas::keys::canvas_keys` receives `caps` on its `Keys` argument), and it
+//! is covered by unit test rather than driven here — named so the gap is on the
+//! record rather than implied.
 //!
 //! # Every way this reports SKIP, and why none of them is a pass
 //!
@@ -214,8 +214,8 @@ const CLEARED_FIELD: &str = "cleared_selection";
 ///
 /// # Why these fractions, in this order
 ///
-/// Ordered cheapest-first for the drawing fixtures this project actually uses
-/// (`HANDOFF.md` §2's table). A SolidWorks sheet is a border frame, a title
+/// Ordered cheapest-first for the drawing fixtures this project actually uses.
+/// A SolidWorks sheet is a border frame, a title
 /// block in the bottom-right, and drawing views across the middle, so the
 /// ladder walks the middle band first and then the title block, rather than
 /// starting at a page centre that on a two-view drawing is often paper.

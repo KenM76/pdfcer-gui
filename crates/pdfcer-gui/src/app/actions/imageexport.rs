@@ -23,7 +23,7 @@
 //! called, and what raster scale a resolution is. All of it is pure, all of it
 //! is tested, and none of it needs an `egui::Context` to prove.
 //!
-//! ## ★★★ [`Impossible`] is the point of the module
+//! ## [`Impossible`] is the point of the module
 //!
 //! The operator asked for *"full support (including transparency where
 //! supported!)"*. The parenthesis concedes that one of the four formats cannot
@@ -39,7 +39,7 @@
 //! letting it inherit the first one's. **A refusal without a name is a refusal
 //! that will one day be worded for the wrong reason.**
 //!
-//! ## ★★ Why the plan carries a RESOLVED page list
+//! ## Why the plan carries a RESOLVED page list
 //!
 //! `pages: Vec<usize>`, not a scope and a string. The window already has to
 //! parse the typed range to decide whether its Export button is usable, so
@@ -79,13 +79,13 @@ pub enum ImageFormat {
     Jpeg,
     /// The renderer's own recording, replayed as vector geometry.
     Svg,
-    /// ★★ **The same recording, written as a Windows Enhanced Metafile**
+    /// **The same recording, written as a Windows Enhanced Metafile**
     /// ([MS-EMF]) — `pdfcer_render::emf::export_emf`.
     ///
     /// # Why a fourth format, when SVG already carries vectors
     ///
     /// Because one large family of programs on this desktop cannot read the
-    /// SVG. The engine's note, 2026-09-03, is specific about which and why:
+    /// SVG. The engine's note is specific about which and why:
     /// **LibreOffice 24.x has no route to a foreign SVG clipboard entry
     /// before 25.2**, so EMF is its *only* vector import on Windows. The same
     /// is true of Office's *Paste Special ▸ Picture (Enhanced Metafile)*, of
@@ -97,7 +97,7 @@ pub enum ImageFormat {
     /// an SVG their copy of LibreOffice will not open has been handed
     /// nothing.
     ///
-    /// # ★ What it costs, which is why [`crate::text::export_image`] has a
+    /// # What it costs, which is why [`crate::text::export_image`] has a
     /// whole disclosure for it
     ///
     /// EMF has **no per-primitive alpha**. Opaque geometry goes out as real
@@ -119,7 +119,7 @@ impl ImageFormat {
     /// look for by name; SVG third because it is the one whose consequences
     /// (text becomes outlines) need reading about first.
     ///
-    /// ★ **EMF last, and that is a statement rather than an afterthought.**
+    /// **EMF last, and that is a statement rather than an afterthought.**
     /// It is the specialist answer — the one to reach for when a named
     /// program refused the SVG — and putting it above SVG would offer the
     /// narrower format to an operator who has not yet discovered they need
@@ -148,12 +148,12 @@ impl ImageFormat {
 
     /// Whether this format can carry transparency at all.
     ///
-    /// ★ The one function in the module that is a statement about the file
+    /// The one function in the module that is a statement about the file
     /// formats rather than about pdfcer. PNG has an alpha channel (ISO
     /// 15948 §6.1); SVG is a document with a background nobody has to paint;
     /// JPEG (ITU-T T.81) has neither and no version of it ever will.
     ///
-    /// # ★★ EMF is `true`, and the reason is subtler than the other three
+    /// # EMF is `true`, and the reason is subtler than the other three
     ///
     /// A metafile is a **list of drawing commands**, not a surface, so there
     /// is nothing to be transparent: where nothing was painted, nothing was
@@ -169,7 +169,7 @@ impl ImageFormat {
     /// getting it wrong in the optimistic direction ships a window that
     /// promises a clear background and a file that has a white one.
     ///
-    /// ⚠ What EMF cannot do is **per-primitive** alpha — a half-opaque
+    /// What EMF cannot do is **per-primitive** alpha — a half-opaque
     /// rectangle. That is a different property, it is not what this predicate
     /// asks, and it is disclosed by name after the export
     /// (`crate::text::export_image::emf_fidelity`) because every such
@@ -188,12 +188,12 @@ impl ImageFormat {
     /// and by the resolution hint, which means a different thing for a vector
     /// format and has to say so.
     ///
-    /// ★ EMF joins SVG here on the property that is actually being asked
+    /// EMF joins SVG here on the property that is actually being asked
     /// about: the resolution is a **recording scale** rather than a pixel
     /// count, so the hint has to say the second thing, and there is no
     /// quality control because nothing is being compressed.
     ///
-    /// ⚠ It is deliberately **not** the predicate that chooses the writer.
+    /// It is deliberately **not** the predicate that chooses the writer.
     /// `crate::app::actions::export::image` matches on the format itself, so
     /// that adding a fifth format is a compile error there rather than a
     /// silent routing into whichever branch this happens to select. Two
@@ -227,7 +227,7 @@ pub enum PageScope {
 /// cannot silently borrow this one's wording.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Impossible {
-    /// ★★★ **A transparent JPEG.** The format has no alpha channel, and the
+    /// **A transparent JPEG.** The format has no alpha channel, and the
     /// engine's note names the wrong answer explicitly: *"never flatten
     /// silently."*
     ///
@@ -254,7 +254,7 @@ pub struct ImagePlan {
     pub dpi: f32,
     /// Whether the page's own transparency survives.
     ///
-    /// ★ Kept as asked even when the format cannot honour it, rather than being
+    /// Kept as asked even when the format cannot honour it, rather than being
     /// cleared on the operator's behalf. Clearing it here is exactly the silent
     /// flatten the engine's note forbids: the plan would then describe an
     /// export nobody requested, and [`Self::impossible`] would have nothing
@@ -267,7 +267,7 @@ pub struct ImagePlan {
 }
 
 impl ImagePlan {
-    /// ★★★ **The combination this plan asks for and pdfcer will not perform**,
+    /// **The combination this plan asks for and pdfcer will not perform**,
     /// or `None`.
     ///
     /// The whole of the module header's argument lands here. It is checked in
@@ -299,7 +299,7 @@ impl ImagePlan {
     }
 }
 
-/// ★★★ **What an EMF export had to give up, in a shape a test can build.**
+/// **What an EMF export had to give up, in a shape a test can build.**
 ///
 /// # Why this exists at all, when `pdfcer_render::emf::EmfOutcome` already
 /// carries every one of these numbers
@@ -321,7 +321,7 @@ impl ImagePlan {
 /// against it. The asymmetry in the engine's derives is the whole reason for
 /// the asymmetry here.
 ///
-/// # ★★ The conversion is deliberately a dumb field copy
+/// # The conversion is deliberately a dumb field copy
 ///
 /// [`Self::from`] does nothing but move eleven numbers across. It has no
 /// branch, no arithmetic and no judgement, so the thing that could go wrong
@@ -330,7 +330,7 @@ impl ImagePlan {
 /// lines rather than by a test. Everything that requires judgement happens
 /// downstream of this struct, where a test can reach it.
 ///
-/// ⚠ A future field on `EmfOutcome` will NOT appear here and will NOT be
+/// A future field on `EmfOutcome` will NOT appear here and will NOT be
 /// disclosed. That is the standing cost of the copy, it is the reason the
 /// conversion lists the engine's field names verbatim, and it is what
 /// `emf_fidelity`'s "everything else was geometry" line would then quietly
@@ -359,7 +359,7 @@ pub struct EmfCounts {
     pub layers_rasterised: usize,
     /// Strokes whose dash pattern was pre-applied to the geometry.
     pub dashed_strokes_pre_applied: usize,
-    /// ★ Nonzero-rule fills with more than one subpath. **LibreOffice 24.x
+    /// Nonzero-rule fills with more than one subpath. **LibreOffice 24.x
     /// ignores the fill rule**, so these are the fills it may draw with holes
     /// — and LibreOffice 24.x is the single reason this format is offered, so
     /// this counter is the one most worth saying out loud.
@@ -390,7 +390,7 @@ impl From<&pdfcer_render::emf::EmfOutcome> for EmfCounts {
 impl EmfCounts {
     /// Whether the whole page went out as real geometry.
     ///
-    /// ★ **Not** `tally.is_exact()` on its own. The tally describes the
+    /// **Not** `tally.is_exact()` on its own. The tally describes the
     /// *recording*, which is shared with the SVG writer and knows nothing
     /// about EMF's missing alpha; a page that recorded perfectly and then had
     /// forty translucent rectangles turned into bitmaps has an exact tally
@@ -417,12 +417,12 @@ impl EmfCounts {
 /// the definition rather than a convention — the engine's own SVG writer
 /// computes `raster_dpi / 72.0` in the same words.
 ///
-/// ★ It is a function rather than an inline division at three call sites
+/// It is a function rather than an inline division at three call sites
 /// because the three call sites are the raster render, the SVG options and the
 /// pixel-size preview the window draws, and a preview that disagreed with the
 /// render by a stray rounding would be a preview that lies about the file.
 ///
-/// ★ The division itself has moved one level further out, to
+/// The division itself has moved one level further out, to
 /// [`crate::units::scale_from_dpi`]. The argument above is unchanged and is
 /// now a smaller version of the same one: three call sites in this module
 /// wanted one spelling, and three modules in this crate wanted one spelling.
@@ -464,7 +464,7 @@ pub fn pixel_size(width_pt: f32, height_pt: f32, dpi: f32) -> (u32, u32) {
 
 /// Which pages a scope names, or `None` when a typed range names none.
 ///
-/// ★ The typed case delegates to `crate::dialogs::print::tabs::parse_page_range`
+/// The typed case delegates to `crate::dialogs::print::tabs::parse_page_range`
 /// — **the print dialog's parser, called rather than copied**. Three surfaces
 /// already do this (`dialogs::ocr`, `dialogs::insert_pages`, the print dialog
 /// itself), and that module's own doc gives the reason: a second range parser
@@ -505,7 +505,7 @@ pub fn resolve_pages(
 
 /// **What one page's file is called**, given the name the operator chose.
 ///
-/// # ★★ The multi-file convention, and why it is not invented here
+/// # The multi-file convention, and why it is not invented here
 ///
 /// One page: the file is exactly what they typed. Several: the chosen name
 /// becomes a **stem**, and each page gets `-p<N>` before the extension, 1-based
@@ -518,7 +518,7 @@ pub fn resolve_pages(
 /// name box — is two questions for one act, and it asks the second one before
 /// the operator has thought about the first.
 ///
-/// ★ The window states the pattern **before** the save dialog opens
+/// The window states the pattern **before** the save dialog opens
 /// (`crate::text::export_image::multi_page_naming`), because a save dialog
 /// cannot say "the name you type is a stem" and an operator who did not expect
 /// it would go looking for a file that is not there.
@@ -532,19 +532,18 @@ pub fn resolve_pages(
 /// the button they pressed; letting a stray extension override it would mean a
 /// window that shows one format and writes another.
 ///
-/// # ★★★ `set_file_name` with the extension already on it, NOT `set_extension`
+/// # `set_file_name` with the extension already on it, NOT `set_extension`
 ///
 /// This looks like the long way round and it is the only correct one, and the
 /// finding is worth keeping because a neighbouring module gets it wrong in a
 /// comment.
 ///
-/// `super::export::suggested_path` builds a DXF name with
-/// `set_file_name(stem)` followed by `set_extension("dxf")`, and its comment
-/// claims *"a document called `plan.rev2.pdf` has a stem of `plan.rev2`, and
-/// appending would produce `plan.rev2.dxf` either way"*. **It does not.**
-/// `Path::set_extension` replaces everything after the LAST dot, so
-/// `plan.rev2` + `set_extension("dxf")` is `plan.dxf` — the revision is
-/// silently deleted.
+/// `Path::set_extension` is the obvious call here and it is the wrong one: it
+/// replaces everything after the LAST dot, so `plan.rev2` +
+/// `set_extension("png")` is `plan.png` — the revision silently deleted. The
+/// reasoning that makes it look safe — *"a document called `plan.rev2.pdf` has
+/// a stem of `plan.rev2`, so appending would produce `plan.rev2.png` either
+/// way"* — is true in its first clause and does not reach its conclusion.
 ///
 /// ⇒ On a CAD desktop that is not a cosmetic difference. `plan.rev2.pdf` and
 /// `plan.rev3.pdf` both export to `plan.png`, and the second one **overwrites
@@ -581,7 +580,7 @@ pub fn output_path(chosen: &Path, format: ImageFormat, page_index: usize, multi:
 /// opens in the last-used directory of some other application is a picker that
 /// makes the operator navigate back to their own project every time."*
 ///
-/// ★ Assembled the same way [`output_path`] is, and for that function's stated
+/// Assembled the same way [`output_path`] is, and for that function's stated
 /// reason: `set_extension` on a `plan.rev2` stem eats the revision.
 #[must_use]
 pub fn suggested_path(document: &Path, format: ImageFormat) -> PathBuf {
@@ -608,7 +607,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **A transparent JPEG is refused, and it is refused BY NAME.**
+    /// **A transparent JPEG is refused, and it is refused BY NAME.**
     ///
     /// The assertion this module exists for. The engine's note: *"refuse a
     /// 'transparent' JPEG by name in your UI, never flatten silently."* The
@@ -630,7 +629,7 @@ mod tests {
         );
     }
 
-    /// ★★ Every other combination of format and transparency is possible.
+    /// Every other combination of format and transparency is possible.
     ///
     /// Asserted as a sweep rather than three cases, so a fourth format cannot
     /// be added without this test having an opinion about it.
@@ -652,10 +651,10 @@ mod tests {
         assert!(plan(ImageFormat::Emf, true).impossible().is_none());
     }
 
-    /// ★ JPEG is the only format that cannot hold transparency, and that is a
+    /// JPEG is the only format that cannot hold transparency, and that is a
     /// fact about the formats rather than about pdfcer.
     ///
-    /// ★★ EMF is asserted **transparent-capable** here, which is the claim
+    /// EMF is asserted **transparent-capable** here, which is the claim
     /// most likely to be "corrected" wrongly by a future reader who knows
     /// that a metafile has no alpha channel. It has no *surface*: nothing is
     /// recorded where nothing was painted, so what the metafile is played
@@ -682,7 +681,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The two vector formats are both vector, and neither is routed by
+    /// **The two vector formats are both vector, and neither is routed by
     /// that predicate.**
     ///
     /// `is_vector` decides what the *resolution hint* says and whether a JPEG
@@ -699,7 +698,7 @@ mod tests {
         assert!(!ImageFormat::Jpeg.is_vector());
     }
 
-    /// ★ **Every format has its own extension**, which is what keeps a
+    /// **Every format has its own extension**, which is what keeps a
     /// four-way export from writing two of them to the same suggested name.
     ///
     /// A duplicate here would be invisible: the window would show four
@@ -728,7 +727,7 @@ mod tests {
         assert_eq!(out, PathBuf::from("C:/d/drawing.png"));
     }
 
-    /// ★★ **Several pages become a stem plus a 1-based page number.**
+    /// **Several pages become a stem plus a 1-based page number.**
     ///
     /// The number is what the operator sees on screen, not the index — an
     /// off-by-one here produces a set of files whose names disagree with the
@@ -747,7 +746,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The extension comes from the format, never from what was typed.**
+    /// **The extension comes from the format, never from what was typed.**
     ///
     /// The window shows a radio group; a stray extension in the save dialog
     /// must not silently override it, or the window shows one format and the
@@ -773,19 +772,18 @@ mod tests {
         );
     }
 
-    /// ★★★ **A revision in the document's name survives the export.**
+    /// **A revision in the document's name survives the export.**
     ///
-    /// `plan.rev2.pdf` is a real CAD filename shape, and this test caught a
-    /// real bug when it was first run: `Path::set_extension` replaces
-    /// everything after the LAST dot, so `plan.rev2` became `plan.png` and the
-    /// revision was gone.
+    /// `plan.rev2.pdf` is a real CAD filename shape, and it is the shape
+    /// `Path::set_extension` gets wrong: that call replaces everything after
+    /// the LAST dot, so `plan.rev2` becomes `plan.png` and the revision is
+    /// gone.
     ///
     /// ⇒ Why that matters more than tidiness: `plan.rev2.pdf` and
     /// `plan.rev3.pdf` would both suggest `plan.png`, and the second export
     /// **overwrites the first**, in a save dialog whose only warning is the
-    /// generic one about a file already existing. See [`output_path`]'s header,
-    /// which also records that the DXF export's own comment claims the opposite
-    /// behaviour and is wrong about it.
+    /// generic one about a file already existing. See [`output_path`]'s
+    /// header, which carries the same argument for the per-page namer.
     #[test]
     fn a_dotted_document_name_keeps_its_revision() {
         assert_eq!(
@@ -817,7 +815,7 @@ mod tests {
         );
     }
 
-    /// ★ **A range that names no page is `None`, not an empty export.**
+    /// **A range that names no page is `None`, not an empty export.**
     ///
     /// The window turns this into a sentence beside the box and a disabled
     /// Export button. Collapsing it to `Some(vec![])` would let the operator
@@ -831,7 +829,7 @@ mod tests {
         assert_eq!(resolve_pages(PageScope::AllPages, "", 0, 0), None);
     }
 
-    /// ★★ **The raster scale is dots-per-inch over 72**, which is PDF user
+    /// **The raster scale is dots-per-inch over 72**, which is PDF user
     /// space's definition rather than a convention.
     ///
     /// The 72 is what makes a 300 DPI export of an A4 page 2480 pixels wide

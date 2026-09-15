@@ -518,6 +518,21 @@ Selection group already follows internally.
 This tab is what makes selection *mean* something: without it, selecting an
 object gives an object-tree row and no way to act on it.
 
+**Where it appears, and what it must never do when it does.** A contextual
+tab is appended **after every fixed tab**, and appearing **never activates
+it**. Both halves are load-bearing and neither is cosmetic: a tab that
+inserted itself among the fixed ones would move the others under a pointer
+that was already travelling toward one, and a tab that activated on appearing
+would replace the band an operator is working in **because they selected
+something** — which is to say, every time they touch the page. The active
+tab therefore only ever changes when the operator changes it, or when the tab
+they were on stops being visible; in that second case the fallback is the
+leftmost **fixed** tab, which is reachable precisely because the contextual
+ones sort last.
+
+The same rule governs any contextual tab a manifest adds later — it lives in
+`egui-shell`’s ribbon, not in anything that knows what Format is.
+
 #### The Font group
 
 Order within the group is Word's: face, size, a rule, then Bold, Italic, colour.

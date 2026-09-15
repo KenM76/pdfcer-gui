@@ -154,7 +154,7 @@ pub fn raise_dock_tab(
     //
     // Published through `ui_rect_visible`, so a declared rect is a
     // REACHABLE rect rather than merely a laid-out one, and marked
-    // `RailFold::Never` for the five panel entries — unlike the dock tab
+    // `RailFold::Never` for the panel entries — unlike the dock tab
     // it cannot be folded into the overflow chevron, and unlike the dock
     // tab it is published in every mode.
     let rail = format!("rail.tabs.{panel_command_id}");

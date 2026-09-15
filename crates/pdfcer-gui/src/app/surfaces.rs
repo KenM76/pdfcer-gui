@@ -1,23 +1,19 @@
 //! # `app::surfaces` — the three regions the application draws, and nothing
 //! else
 //!
-//! Split out of [`crate::app`] on 2026-08-20, when that file crossed rule R2's
-//! 1,500-line ceiling for the fifth time. The four earlier splits produced
-//! `dispatch.rs` (*what does this verb do*), `conditions.rs` (*what is true
-//! right now*), `gating.rs` (*what is this mode allowed to do*) and `frame.rs`
-//! (*what happens, in what order, sixty times a second*).
+//! One of [`crate::app`]'s files, and its siblings answer the neighbouring
+//! questions: `dispatch.rs` (*what does this verb do*), `conditions.rs` (*what
+//! is true right now*), `gating.rs` (*what is this mode allowed to do*) and
+//! `frame.rs` (*what happens, in what order, sixty times a second*).
 //!
-//! ## The seam, which `app/mod.rs`'s own header had already drawn
-//!
-//! It read, before this split:
+//! ## The seam, which `app/mod.rs`'s own header draws
 //!
 //! > `app/mod.rs` answers *"what is the application, and how is it built?"* —
 //! > the state, its fields, its one constructor, and the two surfaces
 //! > (`ribbon_band`, `docks`) that are pure layout.
 //!
 //! Two subjects in one sentence, joined by an "and". This file is the second
-//! of them, plus the third surface (`central`) that had been living below
-//! `configure_context` for no reason anybody had written down.
+//! of them, plus the third surface (`central`).
 //!
 //! What each of the three answers:
 //!
@@ -41,7 +37,7 @@ use super::{DOCK_SLOT, PdfcerApp, REGION_STATUS_MESSAGE, actions};
 impl PdfcerApp {
     /// Draw the ribbon and translate what the operator invoked.
     ///
-    /// # ★ The one custom item, and why it is not a command
+    /// # The one custom item, and why it is not a command
     ///
     /// `Item::Custom` is `egui-shell`'s extension point for a control that is
     /// not a button — its own doc names *"a split button with a gallery"* —
@@ -67,7 +63,7 @@ impl PdfcerApp {
         // hard-coding fractions that go stale the first time a panel moves
         // (`PROJECT_PLAN.md` §4.2 prerequisite 1).
         //
-        // ★★ **`ui_rect`, and not `ui_rect_visible` — unlike the dock's sink in
+        // **`ui_rect`, and not `ui_rect_visible` — unlike the dock's sink in
         // `Self::docks`, and the asymmetry is a decision rather than an
         // omission.**
         //
@@ -105,20 +101,20 @@ impl PdfcerApp {
             .map(|c| c.handler);
         let recent = &mut self.recent;
         let mut chosen: Option<std::path::PathBuf> = None;
-        // ★ The pen, borrowed for the closure. `Pen` is `Copy`, so the
+        // The pen, borrowed for the closure. `Pen` is `Copy`, so the
         // closure takes a `&mut` to the field rather than a copy — a copy would
         // let the operator move a slider and have the change discarded when the
         // frame ended, which is the shape of bug that produces "the control
         // does nothing" reports.
         let pen = &mut self.pen;
-        // ★ The Format ▸ Font group's three custom controls, borrowed as four
+        // The Format ▸ Font group's three custom controls, borrowed as four
         // disjoint fields. `&self.status` is shared while `&mut self.panels`
         // and `&mut self.font_change` are exclusive, which the borrow checker
         // allows only because they are named separately here — a
         // `&mut self` inside the closure would not compile against the
         // `&self.commands` the ribbon is holding.
         //
-        // ★★ `panels.text_style_mut()` is the SAME draft the Properties
+        // `panels.text_style_mut()` is the SAME draft the Properties
         // panel's *This text* section uses, deliberately. It carries a
         // `(page, run, epoch)` stamp and the read behind it costs 392 ms on the
         // operator's benchmark sheet, so a second draft for the ribbon would
@@ -132,12 +128,12 @@ impl PdfcerApp {
         };
         let font_draft = self.panels.text_style_mut();
         let font_change = &mut self.font_change;
-        // ★ The Format ▸ Markup group's five controls, borrowed as a sixth
+        // The Format ▸ Markup group's five controls, borrowed as a sixth
         // disjoint field for the same borrow-checker reason the four above are
         // named separately: `&self.commands` is held by the ribbon for the
         // whole render, so a `&mut self` inside the closure would not compile.
         //
-        // ★★ It carries its OWN operand — the `AnnotTarget` the control read
+        // It carries its OWN operand — the `AnnotTarget` the control read
         // while drawing — where `font_change` carries only the style and lets
         // the dispatch arm re-derive the runs. `PdfcerApp::markup_change`'s doc
         // holds the argument: the Font group's operand is a *rule* and a rule
@@ -148,7 +144,7 @@ impl PdfcerApp {
         let markup_change = &mut self.markup_change;
         let registry = &self.commands;
         let mut custom = |ui: &mut egui::Ui, item: &egui_shell::ribbon::CustomItem<'_>| {
-            // ★ The Markup ▸ Style controls. They return `None` — no handler
+            // The Markup ▸ Style controls. They return `None` — no handler
             // token — because they invoke no command: they edit the pen the
             // next gesture will use, which is application state with no undo
             // log to order against. `None` is what tells the ribbon nothing was
@@ -157,7 +153,7 @@ impl PdfcerApp {
                 crate::canvas::markup::swatch::show(ui, pen);
                 return None;
             }
-            // ★★ The Font group's face chooser, size field and colour swatch.
+            // The Font group's face chooser, size field and colour swatch.
             //
             // These DO return a token, where the pen's swatch above does not,
             // and the difference is what the control acts on: the pen is
@@ -182,7 +178,7 @@ impl PdfcerApp {
             ) {
                 return Some(token);
             }
-            // ★★ The Markup group's two swatches, two fields and arrowhead
+            // The Markup group's two swatches, two fields and arrowhead
             // chooser. Same contract as the Font group's three and for the same
             // reason — these rewrite an annotation's appearance stream and land
             // in the engine's command log, so R8 makes each a registered
@@ -190,7 +186,7 @@ impl PdfcerApp {
             // `dispatch_command`, the choke point a chord and a context-menu
             // row also reach.
             //
-            // ★ Called for every kind and answering `None` for the ones that
+            // Called for every kind and answering `None` for the ones that
             // are not its, exactly as `fontband` above does. The two renderers
             // are asked in sequence rather than matched in one place because
             // each owns its own kind → command id mapping and each asserts that
@@ -220,21 +216,20 @@ impl PdfcerApp {
             Some(token)
         };
 
-        // ★ The icon painter, and what supplying it actually changes.
+        // The icon painter, and what supplying it actually changes.
         //
         // `egui_shell::ribbon::qat`'s `shows_label` draws a control icon-only
         // only when three things hold: the command names an icon, it has a
         // tooltip to be that icon's accessible name, and **the application
-        // supplied a painter**. The third clause exists because an earlier
-        // build registered icon keys, supplied no painter, and produced a row
-        // of blank boxes.
+        // supplied a painter**. The third clause is there because icon keys
+        // registered with no painter behind them render as a row of blank
+        // boxes.
         //
-        // So until this line the whole ribbon fell back to text buttons —
-        // which is exactly what the first packaged build did, and the trace
-        // said so plainly: `ribbon.qat.file.open` was 73 pt wide where an
-        // icon-only control is about 18. The icons had landed, the painter
-        // existed and was tested, and nothing drew a glyph, because the one
-        // line that connects them was never written.
+        // Without this line the whole ribbon falls back to text buttons, and
+        // the trace says so plainly: `ribbon.qat.file.open` measures 73 pt wide
+        // where an icon-only control is about 18. Landed icons and a tested
+        // painter are not enough on their own; this is the line that connects
+        // them.
         //
         // A plain `fn` item satisfies the `FnMut` bound, so there is no
         // closure and no captured state — which is the property worth
@@ -242,13 +237,13 @@ impl PdfcerApp {
         // stale.
         let mut icons = crate::icons::paint_ribbon_icon;
 
-        // ★★★ AUTO-HIDE (2026-09-05, his second ask), pushed from the
-        // preference once per frame. `sync_auto_hide` and not `set_auto_hide`:
-        // the second clears the reveal, which is right when the operator
+        // AUTO-HIDE, pushed from the preference once per frame.
+        // `sync_auto_hide` and not `set_auto_hide`: the second clears the
+        // reveal, which is right when the operator
         // changes the setting and wrong sixty times a second — see that
         // method's own note, which is where the whole argument lives.
         //
-        // ★ Pushed rather than read the other way because the PREFERENCE is the
+        // Pushed rather than read the other way because the PREFERENCE is the
         // source of truth: it is what `view.ribbon_auto_hide` writes and what
         // survives a restart. The shell holds only the per-frame reveal.
         self.ribbon
@@ -288,7 +283,7 @@ impl PdfcerApp {
     /// `egui_shell::dock::floatwin`'s header, and `crate::dialogs::host`,
     /// which is called from the same place for the same reason.
     ///
-    /// # ★★★ The body closure is the SAME ONE `docks` uses
+    /// # The body closure is the SAME ONE `docks` uses
     ///
     /// Not a similar one — the same expression, resolving the same
     /// `PanelId` through the same `Panel::from_command_id` and calling the
@@ -302,7 +297,7 @@ impl PdfcerApp {
     /// code paths for the same content, each duplicating open-state,
     /// position/size and focus handling"*. This has one.
     ///
-    /// # ★★ Every rect is tagged with its own viewport
+    /// # Every rect is tagged with its own viewport
     ///
     /// A child viewport's coordinates start at **its** origin, so an
     /// untagged `ui-rect` from a float window reads to a harness as a
@@ -314,7 +309,7 @@ impl PdfcerApp {
     /// inside the body, from the very id the shell used — recovered
     /// through `floatwin::viewport_id`, which is public for this.
     ///
-    /// # ★★★ The draw-order invariant, checked 2026-09-05 — and it HOLDS
+    /// # The draw-order invariant, and why it HOLDS
     ///
     /// `D:/dev/rag/egui/moving_a_surface_into_a_child_viewport_breaks_the_draw_order_invariant_containment_gave_it_free.md`
     /// records the hazard this change is the exact shape of: *"containment
@@ -325,7 +320,7 @@ impl PdfcerApp {
     /// free while both are inside one window and by nothing at all once one
     /// of them is a child viewport.
     ///
-    /// It was checked here rather than assumed, and the answer is that
+    /// It is checked here rather than assumed, and the answer is that
     /// **tear-out cannot change any reader's side of the fence**, because
     /// every parent reader is ordered before *both* halves of the dock:
     ///
@@ -343,7 +338,7 @@ impl PdfcerApp {
     /// sees last frame's write when it is floating. The one-frame lag is
     /// pre-existing, identical in both states, and not this capability's.
     ///
-    /// ⚠ **That is a fact about the current call order, not a guarantee.**
+    /// **That is a fact about the current call order, not a guarantee.**
     /// Move any reader of panel-written state to between `docks` and here
     /// and the two states diverge — the docked panel would be read this
     /// frame and the floated one next frame, which presents as a control
@@ -408,16 +403,15 @@ impl PdfcerApp {
             .show_floating(ctx, dock, |panel_id, ui| {
                 let vp = egui_shell::dock::floatwin::viewport_id(panel_id);
                 let _regions = crate::diag::ViewportScope::enter(vp);
-                // ★★★ **THE WINDOW HAS TO SAY WHERE IT IS, and until 2026-09-04
-                // it did not.**
+                // **THE WINDOW HAS TO SAY WHERE IT IS.**
                 //
-                // `panels_float_close_and_dock` drove the real binary and
-                // reported *"3 of the four panel-window properties failed: no
-                // `viewport-inner`"* — while the three STATE transitions all
-                // fired correctly (`panel-float moved=true`, `panel-dock
-                // moved=true`, `panel-close closed=true`). The panel really was
-                // tearing out, docking back and closing; what no harness could
-                // see was whether a WINDOW ever appeared.
+                // The three STATE transitions a float goes through
+                // (`panel-float moved=true`, `panel-dock moved=true`,
+                // `panel-close closed=true`) say the panel tore out, docked
+                // back and closed. Not one of them says a WINDOW ever
+                // appeared, so without this line a check like
+                // `panels_float_close_and_dock` can only report *"no
+                // `viewport-inner`"* and cannot tell which half is broken.
                 //
                 // ⇒ That is the exact hole `diag::viewport_inner`'s own doc
                 // comment describes for dialogs: *"the only way a check can
@@ -427,7 +421,7 @@ impl PdfcerApp {
                 // floated panel is the same act by the same mechanism, and it
                 // was publishing the same nothing.
                 //
-                // ★★ It is also the coordinate every `ui-rect` below is
+                // It is also the coordinate every `ui-rect` below is
                 // relative to. `ViewportScope` tags them with this viewport, but
                 // a tag is not an origin — without this line a check that
                 // resolves a region inside a floated panel aims at the
@@ -436,28 +430,27 @@ impl PdfcerApp {
                 // records that failure twice; both cost days and both presented
                 // as *"the click lands somewhere else"*.
                 //
-                // ★ Read from `ViewportInfo`, on change only, exactly as
+                // Read from `ViewportInfo`, on change only, exactly as
                 // `dialogs::host` does — one line, one mechanism, so a window
                 // and a dialog cannot come to report their geometry two
                 // different ways.
                 if let Some(inner) = ui.ctx().input(|i| i.viewport().inner_rect) {
                     crate::diag::viewport_inner(vp, inner);
                 }
-                // ★★★ **THE TWO REGIONS THAT MAKE AN EMPTY WINDOW
-                // DISTINGUISHABLE FROM A FULL ONE — added 2026-09-05.**
+                // **THE TWO REGIONS THAT MAKE AN EMPTY WINDOW
+                // DISTINGUISHABLE FROM A FULL ONE.**
                 //
-                // The 2026-09-05 driven sweep reported *"a floated panel
-                // opens an OS window and draws nothing inside it"*, and the
-                // check that said so asserted the presence of **any**
-                // `ui-rect` carrying a `viewport=` tag. Nothing published
-                // one. Neither `egui_shell::dock::floatwin` — which has no
-                // diagnostic channel and must not grow one (R7) — nor the
-                // Layers panel it floated, whose only regions are its search
-                // field and that field's clear button, and which draws
-                // NEITHER on a document with no optional content. **No
-                // fixture in `fixtures/` carries an `/OCProperties`**, so
-                // that check could not have passed against a working build
-                // either: it was a blind oracle, not a defect detector.
+                // A check asking *"does a floated panel open an OS window
+                // and draw nothing inside it?"* on the presence of **any**
+                // `ui-rect` carrying a `viewport=` tag is a blind oracle
+                // rather than a defect detector, because without these two
+                // lines nothing publishes one. Not
+                // `egui_shell::dock::floatwin` — which has no diagnostic
+                // channel and must not grow one (R7) — and not the Layers
+                // panel it floats, whose only regions are its search field
+                // and that field's clear button, and which draws NEITHER on
+                // a document with no optional content: **no fixture in
+                // `fixtures/` carries an `/OCProperties`**.
                 //
                 // ⇒ These two lines are the fix in the instrument. They are
                 // published here, from inside the body closure, because this
@@ -470,7 +463,7 @@ impl PdfcerApp {
                 // | `float.body.<panel>` | the shell gave the panel a compartment, and **where** — the float twin of `dock.body.<panel>` |
                 // | `float.content.<panel>` | how much of it the panel FILLED. A window whose body allocated nothing publishes a **zero-sized** rect here, and that is the empty-window defect stated as a number |
                 //
-                // ★★ `float.content` is published AFTER the body draws, and
+                // `float.content` is published AFTER the body draws, and
                 // it must be: `min_rect` before the draw is the empty
                 // rectangle the `Ui` was built with, so publishing it early
                 // would report every window empty. The docked path has no
@@ -479,7 +472,7 @@ impl PdfcerApp {
                 // panel's own tab; a blank OS WINDOW names nothing and reads
                 // as a crash.
                 //
-                // ★ Named and formatted only when the channel is on, for
+                // Named and formatted only when the channel is on, for
                 // `egui_shell::dock::report::Reporter::is_listening`'s
                 // reason: this runs per float per frame for ever.
                 let listening = crate::diag::enabled();
@@ -521,7 +514,7 @@ impl PdfcerApp {
             let layout = self.dock.layout().clone();
             self.modes.record_layout(&layout, &mut self.layout);
         }
-        // ★★★ `empty=` is the shell's own answer to *"is a window open with
+        // `empty=` is the shell's own answer to *"is a window open with
         // nothing in it"*, and it is here rather than left to the region
         // stream because the two are independent witnesses of the same fact:
         // `float.content.<panel>` is measured by the APPLICATION from the
@@ -559,9 +552,6 @@ impl PdfcerApp {
     /// an empty pane is indistinguishable from a panel that had nothing to
     /// say.
     ///
-    /// ★ Moved here on 2026-09-12. It sat above `floating_panels`, run
-    /// together with that item's doc comment — so it documented `floating_panels`
-    /// and this function had none. See `tools/gates/check-orphan-docs.py`.
     pub(super) fn docks(&mut self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
         // Borrows split before the closure: the body needs `status` and
         // `panels` while `show` holds `dock` mutably, and the closure
@@ -597,20 +587,18 @@ impl PdfcerApp {
             .as_ref()
             .map(|s| crate::shell::menus::MenuHost::new(s, commands, &conditions));
 
-        // ★★★ **The dock's rects are published as VISIBILITY, not layout.**
+        // **The dock's rects are published as VISIBILITY, not layout.**
         //
         // `crate::diag::ui_rect` states *"this region was laid out at these
-        // coordinates"*. Until 2026-09-04 that is what every docked panel
-        // published, and every driven check in `tools/ui-verify` that names a
-        // `dock.…` region was reading it as *"the operator can get to this"*.
-        // Those are two different claims, and the distance between them is the
-        // whole of the defect this project shipped on 2026-08-10: Bookmarks,
-        // Layers and Signatures unreachable in a real build, each with a rail
-        // entry, each publishing a perfectly healthy rectangle, every gate
-        // green. `tools/ui-verify/src/checks/preset_group_reachable.rs` spells
-        // the general form out, and `SHELL_LAYOUT_PROPOSAL.md` §5 makes closing
-        // it a precondition for the proposed panel rail — because no check
-        // could distinguish a working rail from that defect.
+        // coordinates"*, while every driven check in `tools/ui-verify` that
+        // names a `dock.…` region reads it as *"the operator can get to
+        // this"*. Those are two different claims, and the distance between
+        // them is a panel unreachable in a real build — with a rail entry, a
+        // perfectly healthy rectangle and every gate green, which is how
+        // Bookmarks, Layers and Signatures once shipped. No check can
+        // distinguish a working rail from that state on a layout channel;
+        // `tools/ui-verify/src/checks/preset_group_reachable.rs` spells the
+        // general form out.
         //
         // `crate::diag::ui_rect_visible` makes the stronger claim: it publishes
         // only when at least `VISIBLE_FRACTION` of the region survived the clip
@@ -618,7 +606,7 @@ impl PdfcerApp {
         // that clip over beside the rect (`RectReport`), so this line is the
         // one place the dock's stream is upgraded from layout to reachability.
         //
-        // ★★ Why the *whole* dock stream and not a chosen subset. The RAG entry
+        // Why the *whole* dock stream and not a chosen subset. The RAG entry
         // `a_visibility_gated_region_disappears_when_the_section_is_taller_than_its_slot`
         // records the rule that governs this choice: gate what a check will
         // CLICK or SAMPLE, do not gate what a check asks a yes/no question
@@ -633,7 +621,7 @@ impl PdfcerApp {
         // the fraction is the case we want reported: the dock itself is not on
         // screen.
         //
-        // ⚠ And the failure mode if that reasoning is wrong is **silent**:
+        // And the failure mode if that reasoning is wrong is **silent**:
         // `ui_rect_visible` is deliberately quiet when a region misses the
         // threshold, so an over-applied filter turns working checks into SKIPs,
         // and a SKIP is not red. The guard against it is not this comment — it
@@ -654,8 +642,7 @@ impl PdfcerApp {
         // A second `Vec`, and it has to be: `tokens` is already captured
         // mutably by the body closure below, so the tab-menu handler cannot
         // also borrow it.
-        // ★★ `(PanelId, HandlerToken)` PAIRS, not bare tokens, since
-        // 2026-09-04.
+        // `(PanelId, HandlerToken)` PAIRS, not bare tokens.
         //
         // Three of the four panel-layout verbs act on *the panel the
         // operator right-clicked*, and a `HandlerToken` carries no operand.
@@ -691,7 +678,7 @@ impl PdfcerApp {
             // built-in Close off that tab — deliberately, because two menus
             // on one `Response` are two writers of one popup id.
             //
-            // ★★★ **The conditions are corrected PER TAB**, which is what
+            // **The conditions are corrected PER TAB**, which is what
             // makes R9 hold on this menu: `view.panel_float` is
             // `shown_when("panel.docked")` and `view.panel_dock` is
             // `shown_when("panel.floating")`, so exactly one of the two is
@@ -717,7 +704,7 @@ impl PdfcerApp {
                 );
             }
         };
-        // ★★★ **The one-line tool status** — `OPERATOR_REQUESTS.md` O123.
+        // **The one-line tool status** — `OPERATOR_REQUESTS.md` O123.
         //
         // The strip the right dock reserves above its columns, in place of the
         // Tool panel's stack. It is a `FnMut` for the same borrow reason
@@ -725,23 +712,23 @@ impl PdfcerApp {
         // deliberately nothing mutable, so it cannot compete with the body
         // closure below for `tokens`.
         //
-        // ★ It draws through `crate::diag::ui_rect_visible`, and the dock
+        // It draws through `crate::diag::ui_rect_visible`, and the dock
         // publishes `dock.right.banner` around it. Two regions rather than one,
         // and the pair is the point: the dock's says *the strip is on screen*,
         // the application's says *something was drawn into it*. A build whose
         // handler returned early would keep the first and lose the second,
         // which is exactly the distinction three unreachable panels shipped
-        // without on 2026-08-10.
+        // without.
         let mut tool_banner = |ui: &mut egui::Ui| {
             crate::app::toolstatus::banner(ui, doc, host.as_ref());
         };
-        // ★★★ **The left rail** — `OPERATOR_REQUESTS.md` O123 part 7 and O126.
+        // **The left rail** — `OPERATOR_REQUESTS.md` O123 part 7 and O126.
         //
         // A third `Vec`, for `tab_tokens`' reason exactly: `tokens` is already
         // captured mutably by the body closure, so this handler cannot also
         // borrow it. Dispatched after `show` returns, in press order.
         //
-        // ★ The rail's CONTENT is `shell.rail` — manifest data — so this line
+        // The rail's CONTENT is `shell.rail` — manifest data — so this line
         // connects a region to a document and knows nothing about what is in
         // it. `crate::app::rail` paints a row; `egui_shell::dock::rail` decides
         // which rows exist at this height; neither of them is here.
@@ -752,9 +739,9 @@ impl PdfcerApp {
                 rail_tokens.extend(crate::app::rail::show(ui, rail, commands, &conditions));
             }
         };
-        // ★★★ **WHICH PANELS THE RAIL CAN RAISE** — his fourth ask of
-        // 2026-09-05, *"we also don't need tabs in the left side bar when the
-        // left rail is visible."*
+        // **WHICH PANELS THE RAIL CAN RAISE** — the operator: *"we also
+        // don't need tabs in the left side bar when the left rail is
+        // visible."*
         //
         // The dock suppresses a stack's tab strip only when this answers `true`
         // for EVERY panel in it; the three conditions and the reachability
@@ -765,7 +752,7 @@ impl PdfcerApp {
         // `file.fonts`, the Comments panel `markup.comments`; no `view.panel_*`
         // pattern finds either).
         //
-        // ★ Derived from `shell.rail` — the live manifest, including any
+        // Derived from `shell.rail` — the live manifest, including any
         // operator overlay — rather than from a list written here. A rail an
         // operator customized would otherwise keep suppressing tab strips over
         // panels they had just removed from it.
@@ -810,7 +797,7 @@ impl PdfcerApp {
                 },
             );
 
-        // ★ The Dimension-groups panel's *Set scale…* hand-over.
+        // The Dimension-groups panel's *Set scale…* hand-over.
         //
         // Read here, not inside the body, and that is a consequence of the seam
         // rather than a preference: a panel body is handed `&OpenDoc` and
@@ -829,7 +816,7 @@ impl PdfcerApp {
         for token in tokens {
             self.dispatch_token(ui.ctx(), token, actions);
         }
-        // ★ The tab-menu tokens are dispatched SEPARATELY, and each one parks
+        // The tab-menu tokens are dispatched SEPARATELY, and each one parks
         // its panel on the line before the dispatch. Adjacent by
         // construction: there is no statement between the write and the
         // read, which is what makes the parked operand impossible to leave
@@ -853,7 +840,7 @@ impl PdfcerApp {
             self.dialogs.open_scale(&self.status, group);
         }
 
-        // ★ Bind the mode selector to the dock, and the dock to disk.
+        // Bind the mode selector to the dock, and the dock to disk.
         //
         // Two questions, deliberately in this order.
         //
@@ -882,7 +869,7 @@ impl PdfcerApp {
                 &self.panel_registry,
             );
             self.on_mode_capabilities_changed(ui.ctx());
-            // ★★★ The new mode's answer about off-page display, applied to
+            // The new mode's answer about off-page display, applied to
             // every open document. This is the single site where a mode
             // change is observed, and `offpage::apply_mode` carries the
             // whole argument — including why a mode change may legitimately
@@ -946,7 +933,7 @@ impl PdfcerApp {
         // `format.delete` reads the selection off the open document — and the
         // arm holds `&mut self.status`. Letting the borrow end at the `if let`
         // is the whole reason this is not simply the first arm below.
-        // ★ Two disjoint field borrows, and they have to be taken through
+        // Two disjoint field borrows, and they have to be taken through
         // `self` in one expression: the canvas needs `&mut` on the open
         // document (it writes the three documented bookkeeping fields) and
         // `&` on the find state (it reads the hits to draw them). Binding
@@ -956,7 +943,7 @@ impl PdfcerApp {
         // `self.shell` and `self.ribbon`, both of which are disjoint from the
         // document but not provably so through a single `self`.
         let caps = self.capabilities();
-        // ★ Sampled by value here for the same reason `caps` and `pen` are:
+        // Sampled by value here for the same reason `caps` and `pen` are:
         // `PickFilter` is `Copy`, and taking a snapshot before the `&mut
         // self.status` borrow is what lets the canvas see one consistent
         // filter for the whole frame without a second borrow of `self`.
@@ -974,7 +961,7 @@ impl PdfcerApp {
         let find = &self.find;
         if let Status::Open(doc) = &mut self.status {
             let tokens = crate::canvas::show(ui, doc, host.as_ref(), find, sampled, actions);
-            // ★★★ **The note pop-ups, in their own floating layer, after the
+            // **The note pop-ups, in their own floating layer, after the
             // canvas has laid itself out.**
             //
             // One statement, and it is here rather than inside `canvas::show`
@@ -984,7 +971,7 @@ impl PdfcerApp {
             // `egui::Area`, drawn above the page raster in a layer of its own
             // and composited into nothing that is ever saved.
             //
-            // ★ It runs *after* `canvas::show` because it reads that call's
+            // It runs *after* `canvas::show` because it reads that call's
             // own published mapping (`canvas::zoom::last_frame`), which
             // `canvas::present` records before it hands the frame to
             // `interact`. Running it first would draw every window against the
@@ -1019,16 +1006,16 @@ impl PdfcerApp {
                 let text = crate::text::open_unsupported(path, message);
                 ui.centered_and_justified(|ui| ui.label(text))
             }
-            // ★★★ THE CANVAS SAYS THE SAME THING THE DIALOG IS ASKING, and
-            // for one afternoon it said the OPPOSITE — 2026-09-03.
+            // THE CANVAS SAYS THE SAME THING THE DIALOG IS ASKING.
             //
             // `Status::NeedsPassword` has two readers in the same frame: this
             // one, and `app::frame`'s `ask_for_password`, which opens a real
-            // password dialog. The canvas's sentence still claimed *"this build
-            // cannot yet prompt for a password"* — written when that was true,
-            // never re-read after `dialogs::password` shipped.
+            // password dialog. Two statements of one state can contradict each
+            // other — a canvas saying *"this build cannot yet prompt for a
+            // password"* behind a dialog doing exactly that — so this sentence
+            // has to be re-read whenever the dialog's answer changes.
             //
-            // ★ It is kept rather than removed, and that is deliberate. The
+            // It is kept rather than removed, and that is deliberate. The
             // dialog is a separate OS window: it can be dragged onto another
             // monitor, or hidden behind the application by a click on the main
             // window. A blank canvas behind it would leave an operator who did
@@ -1083,7 +1070,7 @@ mod dock_rect_tests {
     /// Render one frame of a **real** dock in a window of the given size and
     /// return a [`Row`] per published region.
     ///
-    /// ★ Deliberately the real [`Dock`], not a hand-built list of rectangles.
+    /// Deliberately the real [`Dock`], not a hand-built list of rectangles.
     /// The rectangles that matter here are the ones `egui` and the dock's own
     /// geometry produce together at a window size nobody laid out for, and a
     /// fixture written by hand could only contain the numbers its author
@@ -1143,7 +1130,7 @@ mod dock_rect_tests {
             .collect()
     }
 
-    /// ★★★ **A dock control laid out past the window edge must publish
+    /// **A dock control laid out past the window edge must publish
     /// nothing.**
     ///
     /// This is the test that fails on the behaviour this change replaced, and
@@ -1168,11 +1155,11 @@ mod dock_rect_tests {
     /// **Both zero-visibility regions used to publish an ordinary-looking
     /// rectangle**, and a driven check asserting "the collapse control is
     /// there" would have passed on a build where the operator could not reach
-    /// it by any means. That is the shape of the 2026-08-10 defect —
+    /// it by any means. That is the shape of the defect this guards against —
     /// Bookmarks, Layers and Signatures shipping unreachable with a rail entry
     /// and every gate green — reproduced at unit scale.
     ///
-    /// ★★ The assertions run in **both** directions on purpose. Asserting only
+    /// The assertions run in **both** directions on purpose. Asserting only
     /// the silences would be satisfied by a filter that dropped the whole dock
     /// stream, which is the over-application hazard: `ui_rect_visible` is
     /// deliberately silent, so a filter that is too aggressive turns working
@@ -1235,7 +1222,7 @@ mod dock_rect_tests {
     }
 }
 
-/// ★★★ **The float windows are drawn, and forgetting to draw them is
+/// **The float windows are drawn, and forgetting to draw them is
 /// detectable.**
 ///
 /// Floating is the one dock capability that needs **two** calls per frame:
@@ -1246,7 +1233,7 @@ mod dock_rect_tests {
 /// an application can forget it, and the symptom is a panel that is in the
 /// layout, reports as on screen, and is drawn nowhere.
 ///
-/// **That is the exact class of defect this project shipped on 2026-08-10**:
+/// **That is the exact class of defect this project has shipped before**:
 /// three panels laid out, publishing correct rectangles, unreachable, with
 /// every gate green. `crate::diag::ui_rect_visible` is the answer for a
 /// surface that has a rect; this is the answer for one whose window was
@@ -1283,7 +1270,7 @@ mod float_window_tests {
         }
     }
 
-    /// ★★★ **An application that calls both halves reports nothing
+    /// **An application that calls both halves reports nothing
     /// undrawn.**
     ///
     /// Two frames, and the second is the assertion. `Dock::show` measures
@@ -1322,13 +1309,12 @@ mod float_window_tests {
         );
     }
 
-    /// ★★★ **An application that forgets `show_floating` is caught.**
+    /// **An application that forgets `show_floating` is caught.**
     ///
     /// The falsification, written as a test rather than performed by hand:
     /// the same fixture, the same frames, and the second call simply not
     /// made. If this ever reports zero, the guard has stopped guarding and
-    /// the next tear-out consumer ships three unreachable panels the way this
-    /// project already has once.
+    /// the next tear-out consumer ships unreachable panels with nothing red.
     #[test]
     fn forgetting_the_float_windows_is_reported_rather_than_silent() {
         let ctx = egui::Context::default();
@@ -1349,7 +1335,7 @@ mod float_window_tests {
         );
     }
 
-    /// ★★ **The docked half never draws a floating panel**, which is the
+    /// **The docked half never draws a floating panel**, which is the
     /// invariant that stops one panel being drawn twice from two `Ui`s with
     /// the same widget ids.
     #[test]
@@ -1370,15 +1356,15 @@ mod float_window_tests {
         );
     }
 
-    /// ★★★ **A float window whose panel says ONE SENTENCE is not reported
+    /// **A float window whose panel says ONE SENTENCE is not reported
     /// empty — and in THIS crate a sentence has a size.**
     ///
     /// Two claims in one test, and the second is the one worth the words.
     ///
     /// 1. `FloatFrameReport::empty_bodies` distinguishes an open window with
     ///    a panel in it from an open window with nothing in it. That is the
-    ///    number the 2026-09-05 sweep's *"a floated panel opens an OS window
-    ///    and draws nothing inside it"* needed and did not have.
+    ///    number a check asking *"does a floated panel open an OS window and
+    ///    draw nothing inside it?"* needs and cannot otherwise get.
     /// 2. **`ui.label` measures a real rectangle here**, which is *not* true
     ///    one crate down. `egui-shell` pins `egui` with
     ///    `default-features = false` — its `Cargo.toml` says so, "so this
@@ -1417,7 +1403,7 @@ mod float_window_tests {
         );
     }
 
-    /// ★★★ **…and a float window whose panel draws NOTHING is named.**
+    /// **…and a float window whose panel draws NOTHING is named.**
     ///
     /// The falsification of the test above, in the crate the operator
     /// actually runs. Every other number the frame produces still reports
@@ -1448,7 +1434,7 @@ mod float_window_tests {
         );
     }
 
-    /// ★ **A layout with no floats does not pay for the second call.**
+    /// **A layout with no floats does not pay for the second call.**
     ///
     /// The common case, and the one that must stay free: an application that
     /// has never floated a panel calls `show_floating` on every frame

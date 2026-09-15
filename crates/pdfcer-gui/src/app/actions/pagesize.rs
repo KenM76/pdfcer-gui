@@ -4,9 +4,9 @@
 //! [`survey`] the sheet-size window reads to tell the operator, *before* he
 //! commits, which of two very different things he is about to get.
 //!
-//! Split out of [`super::pages`] under **R2** rather than added to it: that
-//! file was at 1,374 of its 1,500 lines, and its subject is *"a page index is a
-//! position, not an identity"* — the resync a **structural** edit owes. A media
+//! Its own file under **R2** rather than part of [`super::pages`], whose
+//! subject is *"a page index is a position, not an identity"* — the resync a
+//! **structural** edit owes. A media
 //! box change is not structural in that sense. It adds, removes and renumbers
 //! nothing, so every one of that file's five table rows is "unchanged" for this
 //! verb, and putting it there would have made the reader look for a row that is
@@ -14,7 +14,7 @@
 //!
 //! ---
 //!
-//! ## ★★★ 1. THE ONE FACT THIS MODULE EXISTS TO CARRY
+//! ## 1. THE ONE FACT THIS MODULE EXISTS TO CARRY
 //!
 //! **`/MediaBox` is the paper. Changing it does not move, scale or reflow one
 //! byte of what is drawn on the page.**
@@ -25,7 +25,7 @@
 //! Word, LibreOffice, a print dialog's Fit-to-page — reflows or scales. This
 //! one does not.
 //!
-//! ### Measured, not assumed — 2026-09-06, engine v0.41.0
+//! ### Measured, not assumed
 //!
 //! Through the engine's own `set-page-size` (which calls the same
 //! `EditSession::set_media_boxes` this module calls), on
@@ -41,7 +41,7 @@
 //! | a certified document | refused by name, `CertificationForbidsChange` |
 //! | an encrypted document with no password | refused by name at open |
 //!
-//! ★★ **R8b rule 15, and the reason this verb is safe.** A **pdf dimension** —
+//! **R8b rule 15, and the reason this verb is safe.** A **pdf dimension** —
 //! the printed measurement a CAD exporter drew — is page content: it does not
 //! move, and it can end up off the sheet. A **ce dimension** — the one pdfcer
 //! authored — is an annotation plus a `/PieceInfo` sidecar: it does not move
@@ -51,7 +51,7 @@
 //! group it missed. This verb cannot get that wrong, because it does not touch
 //! them.
 //!
-//! ## ★★ 2. Why there is no "scale to fit", and what it would have cost
+//! ## 2. Why there is no "scale to fit", and what it would have cost
 //!
 //! The engine has no scale-to-fit verb, and composing one here would not have
 //! been a small thing. `EditSession::transform_objects` can wrap a selection of
@@ -70,21 +70,21 @@
 //! the operator is told, **before he commits and in points**, exactly how far
 //! his drawing runs past the paper he has picked. See [`survey`].
 //!
-//! ## ★★★ 3. The shell measures what the engine says it cannot
+//! ## 3. The shell measures what the engine says it cannot
 //!
 //! `MediaBoxChange::lost_area` carries a named residual, in the engine's own
 //! words: it reports that the **sheet** shrank, *not* that any **content** was
 //! in the region it lost, because *"pdfcer has no page-content bounding-box
 //! facility yet"*.
 //!
-//! ★ That sentence is true of `EditSession` and **false of `pdfcer-core`**:
+//! That sentence is true of `EditSession` and **false of `pdfcer-core`**:
 //! `pdfcer_core::vector::PageObjects::page_bbox` is *"the union of every
 //! object's page bbox — the page's drawn extent in page space"*, and this shell
 //! already holds one per page in [`crate::app::cache`]. So the disclosure the
 //! engine could only make in geometry — *"the sheet lost area"* — is made here
 //! in the operator's terms: *"the drawing runs 1,636 pt past the right edge"*.
 //!
-//! ⚠ **And the boundary is stated rather than implied.** `page_bbox` is the
+//! **And the boundary is stated rather than implied.** `page_bbox` is the
 //! union of the **drawn** objects. Annotations are separate objects with their
 //! own `/Rect`, which it does not walk; they keep their coordinates too, so
 //! they can fall off exactly as content can.
@@ -97,15 +97,8 @@
 //! undo entry however many pages, refusals raised **before anything is
 //! committed** so an out-of-range index leaves the document untouched rather
 //! than half-resized. Calling the singular verb in a loop would be functionally
-//! identical and would leave the operator pressing Undo once per sheet.
-//!
-//! ★ It was written for the drawing-set case on 2026-08-18 and **called by
-//! nothing for nineteen days**, because no `pages.resize` command existed. Its
-//! own doc comment names this shell as the caller it was written for. That is
-//! the fourth instance this week of a capability arriving, being written down,
-//! and the writing-down being mistaken for the acting-on — `crate::app::blank`
-//! §3a records the same verb's arrival in as many words and did nothing with
-//! the plural half of it.
+//! identical and would leave the operator pressing Undo once per sheet. Its
+//! own doc comment names this shell as the caller it was written for.
 
 use pdfcer_core::edit::{EditError, EditSession, MediaBoxChange, MediaBoxEntry};
 use pdfcer_core::page_tree::Rect;
@@ -140,7 +133,7 @@ pub struct SheetSurvey {
     pub drawn: Option<Rect>,
     /// How many operand sheets' drawn extent could **not** be read.
     ///
-    /// ★★ Non-zero is the ordinary case for a multi-sheet pick, and it is a
+    /// Non-zero is the ordinary case for a multi-sheet pick, and it is a
     /// deliberate design point rather than a defect. The object-model cache
     /// holds **one page** — it is keyed on `(page, epoch)` — so reading every
     /// sheet of a drawing set would mean decomposing each in turn on the frame
@@ -225,7 +218,7 @@ impl SheetSurvey {
 
     /// **The rectangle to write for a sheet of `w_pt` × `h_pt`.**
     ///
-    /// # ★★ The lower-left corner is the operands' own, not the origin
+    /// # The lower-left corner is the operands' own, not the origin
     ///
     /// `PaperSize::rect_with` puts a named sheet at `(0, 0)`, and its own doc
     /// comment calls that *"a choice, not a law"*: §7.7.3.3 does not require a
@@ -239,7 +232,7 @@ impl SheetSurvey {
     /// one. On the overwhelmingly common `(0, 0)` case this is byte-identical
     /// to `rect_with`, which is what makes it safe unconditionally.
     ///
-    /// ★ When the operands do **not** share a corner, one rectangle cannot
+    /// When the operands do **not** share a corner, one rectangle cannot
     /// preserve all of them — `set_media_boxes` takes one rectangle for the
     /// whole selection, and that is the property that buys the single undo
     /// entry. The fallback is the origin, and
@@ -299,7 +292,7 @@ pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
                 bounds.max.y,
             ));
         }
-        // ★ Counted as measured even when the page draws NOTHING. An empty page
+        // Counted as measured even when the page draws NOTHING. An empty page
         // genuinely has no content to lose, and reporting it as unread would
         // make a blank sheet look like a failure to look — which is the
         // difference between `crate::text::page_size::fits` (a promise) and
@@ -344,10 +337,10 @@ pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
 ///   sized by inheritance. That changes what a *later* edit does to it, which
 ///   is exactly the kind of fact nothing else will ever tell him.
 ///
-/// ⚠ **What is NOT disclosed, because the engine does not report it.**
-/// `/BleedBox`, `/TrimBox` and `/ArtBox` are left byte-identical (measured
-/// 2026-09-06 — a `/BleedBox [10 10 1000 1000]` survived a resize to 595 × 842
-/// untouched), and `MediaBoxChange` carries **no field for them**: only
+/// **What is NOT disclosed, because the engine does not report it.**
+/// `/BleedBox`, `/TrimBox` and `/ArtBox` are left byte-identical (measured — a
+/// `/BleedBox [10 10 1000 1000]` survives a resize to 595 × 842 untouched),
+/// and `MediaBoxChange` carries **no field for them**: only
 /// `crop_box_outside`. A CAD or press export that carries a bleed box therefore
 /// gets one overhang disclosed and three not. Filed for the engine; nothing is
 /// faked here in the meantime, because a disclosure this shell computed from a
@@ -370,7 +363,7 @@ pub(super) fn set(
 ) -> Result<Vec<String>, EditError> {
     let changes = session.set_media_boxes(pages, rect)?;
 
-    // ★★★ Traced from the SESSION's own page tree, re-walked after the commit —
+    // Traced from the SESSION's own page tree, re-walked after the commit —
     // not from `rect`, and not from `change.after`.
     //
     // `crate::app::blank`'s `document_sized` makes the identical argument for
@@ -456,7 +449,7 @@ fn disclosures(changes: &[MediaBoxChange]) -> Vec<String> {
         notes.push(t::disclosure_inherited(inherited));
     }
 
-    // ★ The two Annex C.2 directions are separate sentences, because
+    // The two Annex C.2 directions are separate sentences, because
     // `PageSizeAdvisory` sets both flags at once for a long thin sheet (2 ×
     // 20,000) and a single line reading "outside the recommended range" would
     // lose which end. The engine keeps them a pair of facts rather than an enum
@@ -499,7 +492,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The overhang is the operator's own case, in his own numbers.**
+    /// **The overhang is the operator's own case, in his own numbers.**
     ///
     /// His A1 title block sits at x 1831–2207 pt (measured from
     /// `fixtures/a1-titleblock.pdf` with `extract-text --json`). A4 stops at
@@ -531,7 +524,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **"Could not measure" is not "nothing falls off".**
+    /// **"Could not measure" is not "nothing falls off".**
     ///
     /// The single most dangerous confusion available in this module, and the
     /// one the engine's own residual refuses to make. `None` must survive as
@@ -549,7 +542,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A drawing that fits reports zeros, not `None`.**
+    /// **A drawing that fits reports zeros, not `None`.**
     ///
     /// The other half of the pair above. Without this, a build that returned
     /// `None` whenever the overhang was zero would pass the test above and
@@ -564,7 +557,7 @@ mod tests {
         );
     }
 
-    /// ★★ **A set is uniform to the producer's rounding, not to the bit.**
+    /// **A set is uniform to the producer's rounding, not to the bit.**
     ///
     /// A4 in points is 595.2755905511811, and producers write 595.276, 595.28
     /// and 595.32. An exact-equality check would call a set of ten identical A4
@@ -581,7 +574,7 @@ mod tests {
         assert_eq!(survey.distinct_sizes(), 1);
     }
 
-    /// ★★ **A real mixed set is seen as mixed.**
+    /// **A real mixed set is seen as mixed.**
     ///
     /// The falsifying direction of the test above: a tolerance wide enough to
     /// absorb producer rounding must not be wide enough to call an A3 detail
@@ -598,7 +591,7 @@ mod tests {
         assert_eq!(survey.distinct_sizes(), 2);
     }
 
-    /// ★★★ **An offset sheet keeps its corner**, and a mixed-corner pick falls
+    /// **An offset sheet keeps its corner**, and a mixed-corner pick falls
     /// back to the origin.
     ///
     /// Both directions, because each is a single missing clause and each
@@ -627,7 +620,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The verb reaches the document, and the disclosure follows the
+    /// **The verb reaches the document, and the disclosure follows the
     /// DIRECTION of the change.**
     ///
     /// The only test in this module that calls [`set`] — everything above it
@@ -648,7 +641,7 @@ mod tests {
     /// unconditionally, passes neither half. A build that never calls the
     /// engine passes neither, because the assertion is on `session.pages()`.
     ///
-    /// ⚠ R1 still applies: this is not a report of working software. It cannot
+    /// R1 still applies: this is not a report of working software. It cannot
     /// see the ribbon, the window, the operand rule or the save. That is
     /// `ui-verify`'s `resizing_a_sheet_changes_the_paper_in_the_saved_file`,
     /// whose verdict is taken in a different process from a written file.
@@ -685,9 +678,9 @@ mod tests {
         );
     }
 
-    /// ★★ **A certified document is refused, by name, with nothing written.**
+    /// **A certified document is refused, by name, with nothing written.**
     ///
-    /// Measured against the engine on 2026-09-06 (`fixtures/certified-comments.pdf`
+    /// Measured against the engine (`fixtures/certified-comments.pdf`
     /// → `CertificationForbidsChange`), and asserted here as the *shape* the
     /// shell relies on: [`set`] propagates the refusal rather than swallowing
     /// it, so `vector_edit` can trace it and
@@ -720,7 +713,7 @@ mod tests {
         );
     }
 
-    /// ★ **The ordinary sheet is byte-identical to the engine's own table.**
+    /// **The ordinary sheet is byte-identical to the engine's own table.**
     ///
     /// What makes [`SheetSurvey::target_rect`]'s corner rule safe to apply
     /// unconditionally: on a page at `(0, 0)` — every CAD export in his corpus

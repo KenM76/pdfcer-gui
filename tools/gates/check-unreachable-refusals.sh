@@ -1,47 +1,70 @@
 #!/usr/bin/env bash
 #
-# check-unreachable-refusals.sh — wrapper around `check-unreachable-refusals.py`.
+# check-unreachable-refusals.sh — run `check-unreachable-refusals.py`, after
+# proving it can fail.
 #
 # ===========================================================================
-# WHAT THE GATE IS
+# THE PROPERTY ASSERTED
 # ===========================================================================
 #
-# This shell keeps refusal sentences alive after the engine stops producing
-# the error behind them, and that is usually correct: the `match` over
-# `ReflowDecline` is compiler-proved complete so the arm is mandatory,
-# `unreachable!()` would turn a future engine reinstating a guard into a crash
-# on a refusal path, and the remedy wording took two corrections to get right.
+# Every paragraph in this shell claiming that an engine symbol has no producer
+# carries a machine-readable marker naming that symbol, and the claim still
+# holds against the engine source at the revision `Cargo.lock` pins.
 #
-# ★★★ The defect is that nobody can tell the sentences are dead. It has cost
-# this project three times — twice found by a reader stumbling on it months
-# later, and once (2026-09-14, `G015`) where noticing would have depended on
-# somebody reading a commit message in a repository this one may not write to.
-#
-# So a paragraph claiming an engine symbol has no producer must carry a
-# machine-readable marker naming that symbol, and this gate re-measures the
-# claim against the engine source at the revision `Cargo.lock` pins, on every
-# commit. The long argument — including why it DIFFS rather than classifies,
-# and exactly which constructs it does not parse — is in the Python file's
-# header. Read that, not this.
+# The measurement itself, the reason it DIFFS rather than classifies, and the
+# exact Rust constructs its scanner does not parse are in the Python file's
+# header. Read that for the gate; this file is only the wrapper.
 #
 # ===========================================================================
-# ★★ WHY THE SELF-TEST RUNS HERE, IN THE SAME FILE
+# WHY A HUMAN CANNOT HOLD IT
 # ===========================================================================
 #
-# `run-all.sh`'s own rule: a gate that cannot detect its own planted violation
-# is worth nothing on the real crate, and finding that out after a green run
-# is finding it out too late. This wrapper therefore refuses to measure
-# anything if the self-test did not pass, which removes the failure mode where
-# a `--self-test` exists, is never registered, and is reachable only by a
-# session that already suspected something.
+# A refusal sentence outlives the error behind it, and keeping it is usually
+# correct: the `match` over `ReflowDecline` is compiler-proved complete so the
+# arm is mandatory, and `unreachable!()` would turn a future engine
+# reinstating the guard into a crash on a refusal path. So the dead sentence
+# stays, rightly, and becomes invisible. Nothing in this repository changes on
+# the day the engine stops producing the error — the only evidence is a commit
+# in a repository this one does not write to — so noticing depends on somebody
+# happening to re-read prose that reads as current. That is not a thing a
+# person can be asked to do reliably; it is a thing an instrument re-measures
+# on every commit.
 #
 # ===========================================================================
-# EXIT CODES
+# WHAT IT PROVABLY CANNOT SEE
+# ===========================================================================
+#
+#   - A dead refusal with no marker. The gate re-measures claims that were
+#     written down; an unmarked paragraph is outside its corpus entirely.
+#   - Whether the surviving sentence is worded right for the state it now
+#     describes. It measures whether a producer exists, not phrasing.
+#   - The engine's working tree. Its oracle is the locked revision, because
+#     that is the API this shell could actually be compiled against.
+#   - Its own absence from `run-all.sh`. A gate that is not dispatched is not
+#     skipped; it is unmentioned, and nothing here notices that.
+#
+# ===========================================================================
+# THE EXIT CONTRACT, AND HOW TO FALSIFY IT
 # ===========================================================================
 #
 #     0  PASS      every marker re-measured and unchanged
-#     1  FAIL      a marker drifted, is unrecorded, or its symbol is gone
-#     2  SKIPPED   no interpreter, no engine, no git, or no pinned revision
+#     1  FAIL      a marker drifted, is unrecorded, its symbol is gone, or the
+#                  self-test could not detect its own planted violation
+#     2  SKIPPED   no interpreter, no engine, no git, or no pinned revision.
+#                  NOT a pass — `run-all.sh` prints skips in their own block
+#                  and exits 3, so a run containing one is incomplete.
+#
+# The self-test runs here rather than as a second `run-all.sh` entry, and its
+# verdict is a precondition rather than a report: a gate that cannot detect
+# its own planted violation has no verdict on the real tree worth reading, and
+# learning that after a green run is learning it too late. Keeping the
+# ordering inside the gate removes the failure mode where a gate is registered
+# and its self-test is not.
+#
+# To falsify: write an `UNREACHABLE-FROM:` marker naming a symbol the engine
+# still produces — this must exit 1. Run it with `PATH=/nonexistent` and it
+# must print SKIPPED and exit 2. Break the Python scanner and the self-test
+# must refuse the run rather than report on it.
 #
 set -uo pipefail
 

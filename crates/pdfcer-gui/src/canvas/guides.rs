@@ -1,13 +1,8 @@
 //! # `canvas::guides` — draggable alignment lines, whose home is a page and whose life is a file
 //!
 //! The third of `RIBBON_IA.md` §5.2's *"Rulers · Grid · Guides"*, and the one
-//! `super::manifest::PLANNED` singled out with a condition attached:
-//!
-//! > `view.guides` — *"N — draggable guides, which need a per-document store
-//! > to survive a reopen."*
-//!
-//! That sentence is the specification for this module. It names the two hard
-//! parts — **draggable**, and **survives a reopen** — and this header answers
+//! with a condition on it: a guide must be **draggable**, and it must
+//! **survive a reopen**, which takes a per-document store. This header answers
 //! both, plus the two questions they imply: *what does a guide belong to*, and
 //! *where does it live on disk*.
 //!
@@ -24,11 +19,15 @@
 //!
 //! The alternatives, and why each is worse:
 //!
-//! | model | what breaks |
-//! |---|---|
-//! | **viewport-space** (a line at a window position) | scrolling moves it off whatever it was aligned to; it means nothing the moment the operator scrolls |
-//! | **document-wide, applied to every page** | tempting for a 36-sheet set of identical drawings, and wrong the first time a set is mixed A3 and A1 — a guide at *y* = 500 is inside one sheet and off the end of another, and there is nothing to say which |
-//! | **per page** *(this)* | a guide is where the operator put it, on the sheet they put it on, for as long as that sheet exists |
+//! - **Viewport-space**, a line at a window position — scrolling moves it off
+//!   whatever it was aligned to, so it means nothing the moment the operator
+//!   scrolls.
+//! - **Document-wide, applied to every page** — tempting for a 36-sheet set of
+//!   identical drawings, and wrong the first time a set mixes A3 and A1: a
+//!   guide at *y* = 500 is inside one sheet and off the end of another, and
+//!   there is nothing to say which.
+//! - **Per page** *(this)* — a guide is where the operator put it, on the sheet
+//!   they put it on, for as long as that sheet exists.
 //!
 //! The per-page answer is also Acrobat's, which matters because an operator
 //! coming from the comparison product should not have to relearn what a guide
@@ -39,11 +38,11 @@
 //!
 //! ---
 //!
-//! ## ★ 2. Where guides live on disk — a fourth file, following Phase 4's precedent
+//! ## ★ 2. Where guides live on disk — a fourth file
 //!
-//! Phase 4 landed `page-display.txt` beside `layout.ron` and `recent.txt` as a
-//! *third* store, and [`crate::viewer::remembered`]'s header carries the
-//! argument in full. Its three reasons transfer here one for one, so this is a
+//! `page-display.txt` sits beside `layout.ron` and `recent.txt` as a *third*
+//! store, and [`crate::viewer::remembered`]'s header carries the argument for
+//! it in full. Its three reasons transfer here one for one, so this is a
 //! **fourth** file, `guides.txt`, rather than a field in any of the three:
 //!
 //! 1. **The lifetimes differ.** `recent.txt` is capped at ten because it is
@@ -131,10 +130,10 @@
 //! under the pointer and wins the interaction outright. The page's own
 //! `Response` then reports no press at all, `interact`'s step 1 builds an
 //! empty [`super::gesture::PointerFrame`], and the gesture machine sees an
-//! idle frame. Nothing is suppressed, because nothing was offered — which is
-//! the same shape as the hand tool's fix (`canvas`'s header: *"the gesture
-//! simply is not offered, which is the only version of this that cannot leave
-//! a half-applied selection behind"*).
+//! idle frame. Nothing is suppressed, because nothing was offered — the same
+//! shape as the hand tool's fix in [`super::interact`], where the gesture is
+//! not offered at all rather than checked for and undone, because that is the
+//! only version that cannot leave a half-applied selection behind.
 //!
 //! The ruler-started drag has the same property for free: a gutter is outside
 //! the scroll area and outside every page widget, so a press there was never
@@ -220,8 +219,8 @@ pub const CAP: usize = 200;
 /// use is cheaper than discovering the ceiling from a frame time.
 ///
 /// The refusal is silent, which is the one place this module is knowingly
-/// short: it belongs on the edit-disclosure surface `FEATURES.md` still lists
-/// as unbuilt, alongside the other worded declines.
+/// short: it belongs on the edit-disclosure surface, alongside the other
+/// worded declines, and is not wired to it.
 pub const MAX_PER_DOCUMENT: usize = 256;
 
 /// The half-width, in logical points, of the band that catches a guide drag.
@@ -330,10 +329,10 @@ impl GuideAxis {
 /// `at` is in **canvas space** — Y-down, origin at the page's top-left,
 /// `/Rotate` applied — which is the space the ruler reads in, the space the
 /// `canvas-pointer` trace calls `page=`, and the space the selection outlines
-/// are cached in. Storing it in screen coordinates is the first of the three
-/// failures `GUI_ROADMAP.md` Phase 1 names for a selection model, and a guide
-/// is subject to the identical hazard: a screen coordinate is meaningless the
-/// moment the operator zooms.
+/// are cached in. `GUI_ROADMAP.md`'s *"Selection is identity, not position"*
+/// bars a screen point from standing for a selection, and a guide is subject
+/// to the identical hazard: a screen coordinate stops meaning anything the
+/// moment the operator zooms or scrolls.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Guide {
     /// The 0-based page it belongs to.
@@ -654,12 +653,11 @@ fn parse(text: &str) -> Vec<(String, PathBuf)> {
 /// same or the two stores would disagree about whether two spellings name one
 /// document.
 ///
-/// The difference is not cosmetic, and the first draft here got it wrong.
-/// `canonicalize` touches the filesystem, which means it **fails on a path
-/// that does not exist** — and on Windows it returns the verbatim `\\?\D:\…`
-/// form, which is what actually landed in `guides.txt` on the driven run:
-/// a line no operator opening the file would recognise as their drawing, and
-/// one that would not match the same document's entry in `page-display.txt`.
+/// The difference is not cosmetic. `canonicalize` touches the filesystem, so
+/// it **fails on a path that does not exist** — and on Windows it returns the
+/// verbatim `\\?\D:\…` form, which is a line no operator opening
+/// `guides.txt` would recognise as their drawing, and one that would not match
+/// the same document's entry in `page-display.txt`.
 fn absolute(path: &Path) -> PathBuf {
     std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf())
 }
@@ -731,9 +729,9 @@ fn store(ctx: &Context, drag: Option<Drag>) {
 /// The return value is the whole interface. `canvas::keys` cannot know
 /// whether a guide is being dragged — the drag lives in this module's own
 /// `egui::Memory` slot — and a version that re-derived it there would be the
-/// version that cancels a drag *and* ascends a selection rung, which is the
-/// defect that module's three-claimant table exists to prevent. Each claimant
-/// says whether it took the key; none of them guesses about another.
+/// version that cancels a drag *and* ascends a selection rung, which is what
+/// that module's claimant table exists to prevent. Each claimant says whether
+/// it took the key; none of them guesses about another.
 ///
 /// # Why a cancelled drag leaves nothing behind
 ///
@@ -833,9 +831,9 @@ fn release(ctx: &Context, doc: &OpenDoc, geometry: &CanvasGeometry, actions: &mu
 ///
 /// Starts a drag and does nothing else: the preview and the release belong to
 /// [`settle`], because a drag started **on the canvas** must resolve whether
-/// or not there are rulers. Putting the release here was the first draft, and
-/// it left a guide moved with the rulers hidden stuck to the pointer with no
-/// way to put it down.
+/// or not there are rulers. A release owned by this function would never run
+/// with the rulers hidden, leaving a guide moved in that state stuck to the
+/// pointer with no way to put it down.
 ///
 /// Registers nothing when the rulers are hidden, which is why the guides
 /// toggle is usable on its own but *creating* a guide needs rulers — the same
@@ -966,9 +964,9 @@ fn preview(ui: &Ui, geometry: &CanvasGeometry) {
         return;
     };
     // ★ The content-area selection ink, by its role name. Not
-    // `visuals().selection.stroke` — that is `egui`'s selected-WIDGET channel
-    // and reading it here is what defect T2 was (`REVIEW_TRIAGE.md` §2b). Same
-    // colour, named address.
+    // `visuals().selection.stroke` — that is `egui`'s selected-WIDGET channel,
+    // and a canvas that reads it is borrowing a colour that belongs to another
+    // surface. Same colour, named address.
     let base = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
     let painter = ui.painter().with_clip_rect(geometry.viewport);
     match pointer_page(ui.ctx(), geometry) {
@@ -1142,10 +1140,10 @@ mod tests {
     /// ★ **A guide is stored against a page in canvas space, so it does not
     /// move when the view does.**
     ///
-    /// The property `GUI_ROADMAP.md` Phase 1 names for the selection, applied
-    /// to a guide: the stored value is identical at every zoom, and the
-    /// *screen* line it produces tracks the page. A guide stored in screen
-    /// coordinates would pass no part of this.
+    /// The property `GUI_ROADMAP.md` names for the selection — identity, not
+    /// position — applied to a guide: the stored value is identical at every
+    /// zoom, and the *screen* line it produces tracks the page. A guide stored
+    /// in screen coordinates would pass no part of this.
     #[test]
     fn a_guide_holds_still_on_the_page_at_every_zoom() {
         let guide = Guide {
@@ -1259,8 +1257,9 @@ mod tests {
     /// ★ **A path containing spaces round-trips**, which is why the payload is
     /// written first and the path is the whole remainder of the line.
     ///
-    /// Not hypothetical: `D:\Dev\temp\pdfcer` sits under a user profile on this
-    /// machine, and every Windows operator has `C:\Users\<name>\My Documents`.
+    /// Not hypothetical: every Windows operator has
+    /// `C:\Users\<name>\My Documents`, and a drawing office names job folders
+    /// after the job.
     #[test]
     fn a_path_with_spaces_survives_the_format() {
         let pairs = parse("0:h:10 1:v:20\tC:\\Program Files\\a b\\c d.pdf\n");

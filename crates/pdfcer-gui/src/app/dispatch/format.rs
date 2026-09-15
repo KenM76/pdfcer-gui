@@ -1,8 +1,5 @@
 //! # `app::dispatch::format` — the contextual Format tab's command arms
 //!
-//! Split out of [`super`] under **R2** on 2026-08-27, when the form-XObject
-//! work took that file past 1,500 lines for the third time.
-//!
 //! ## The seam
 //!
 //! The same one `dispatch::pages` took, one tab over. [`super`]'s subject is
@@ -11,21 +8,20 @@
 //! tab or a new dispatch convention touches the parent, a new verb on the
 //! thing-you-just-clicked touches this.
 //!
-//! Format is a small tab and this is a small file, and that is expected to
-//! change: `RIBBON_IA.md` §5.8's table has twenty-four property editors in
-//! `manifest::PLANNED`, every one of which lands here.
+//! Format is a small tab and this file grows with it: every `format.*` entry
+//! in `manifest::PLANNED` lands here when it ships.
 //!
-//! ## ★ What these three arms have in common, and it is not the tab
+//! ## ★ What the selection arms have in common, and it is not the tab
 //!
-//! All three act on **the selection**, and all three now have to answer the
-//! same question first: *which of the two index spaces is this?* Since
-//! 2026-08-27 a selection can name a page object — an index into the page's own
-//! paint order, which every `EditSession` verb accepts — or a **leaf**, an
-//! object painted from inside a form XObject, whose token range indexes the
-//! form's content stream and which no paint-order verb can address.
+//! They act on **the selection**, and each has to answer the same question
+//! first: *which of the two index spaces is this?* A selection can name a page
+//! object — an index into the page's own paint order, which every
+//! `EditSession` verb accepts — or a **leaf**, an object painted from inside a
+//! form XObject, whose token range indexes the form's content stream and which
+//! no paint-order verb can address.
 //!
-//! Keeping the three together is what makes their three answers reviewable
-//! side by side:
+//! Keeping them together is what makes their answers reviewable side by
+//! side:
 //!
 //! | arm | what it does about a leaf |
 //! |---|---|
@@ -63,7 +59,7 @@ pub(crate) fn handles(id: &str) -> bool {
         "format.delete"
             | "format.properties"
             | "format.select_form"
-            // ★ The text-run re-aim, 2026-09-15 — O188(A). It sits next to
+            // ★ The text-run re-aim — O188(A). It sits next to
             // `format.select_form` because it is the same act one rung down:
             // both RE-AIM the selection at something the click could not have
             // named on its own, and neither edits anything. `select_form`
@@ -72,20 +68,20 @@ pub(crate) fn handles(id: &str) -> bool {
             //
             // ★★ It is the only arm in this file whose operand is not the
             // selection. It reads a pick parked in `egui::Memory` by the
-            // right-click that opened the menu — which is why `dispatch` grew
-            // an `egui::Context` parameter on the same day — and that is not a
-            // shortcut: no ribbon control can ask *"which line of this block
+            // right-click that opened the menu — which is why `dispatch`
+            // takes an `egui::Context` at all — and that is not a shortcut:
+            // no ribbon control can ask *"which line of this block
             // is the pointer on?"*, so the command has no ribbon home and is
             // registered `TAB_SCOPED` for exactly that reason.
             | "format.select_text_line"
-            // ★ The form-XObject unshare, 2026-08-28. It sits with
+            // ★ The form-XObject unshare. It sits with
             // `format.select_form` rather than with the Font group because it
             // asks the same first question every arm in this file has to ask —
             // *which of the two index spaces is this?* — and answers it the
             // same way: from a LEAF, which is the only operand either command
             // can be built from.
             | "format.unshare_form"
-            // The Font group, 2026-08-27. All five, including the three whose
+            // The Font group. All five, including the three whose
             // ribbon control is an `Item::Custom` — a custom control REPORTS
             // (it parks an operand and returns a token) and this file ACTS, so
             // every one of the five arrives here and none of them has a second
@@ -95,15 +91,14 @@ pub(crate) fn handles(id: &str) -> bool {
             | "format.font_colour"
             | "format.bold"
             | "format.italic"
-            // The Markup group, 2026-09-06. All six are drawn by an
+            // The Markup group. All six are drawn by an
             // `Item::Custom` — `app::markupband` REPORTS (it parks a
             // `(target, edit)` pair and returns a token) and this file ACTS, so
             // every one of them arrives here and none has a second
             // implementation inside the renderer.
             //
-            // ★ `format.line_style` joined them later the same day, when
-            // `MarkupStyle::dash` shipped. It needed no new machinery here at
-            // all — it parks a `MarkupEdit` like the other five — which is what
+            // ★ `format.line_style` needs no machinery of its own here — it
+            // parks a `MarkupEdit` like the rest of the group — which is what
             // that type's one-field-per-variant design buys.
             | "format.colour"
             | "format.fill"
@@ -137,26 +132,18 @@ pub(crate) fn dispatch(
         // dead code wearing a design pattern, which is what the
         // no-placeholders invariant forbids.
         //
-        // It became wirable when the selection moved onto `OpenDoc`. While
-        // the selection lived in `egui::Memory` there was no route from a
-        // ribbon click to the thing it was about to delete, because this
-        // function had no `egui::Context` to read that memory through. That
-        // is the whole of why the control was drawn-but-unwired until then.
-        //
-        // ★ The correction, 2026-09-15: this function now DOES take an
-        // `egui::Context`, added for `format.select_text_line`'s parked pick.
-        // That does not reopen the old route and must not be read as doing
-        // so — the selection is on `OpenDoc` and stays there. A context
-        // parameter is how a command reads an operand the RIBBON could not
-        // have asked for; it is not a licence to move state back into frame
-        // memory, where nothing outside a frame can see it and no test can
-        // hold it.
+        // ★★ **The selection lives on `OpenDoc`, and this function's
+        // `egui::Context` is not a licence to move it back into frame
+        // memory.** The context is here so `format.select_text_line` can read
+        // an operand the RIBBON could not have asked for — a pointer pick
+        // parked by the right-click. State kept in `egui::Memory` is invisible
+        // to everything outside a frame and no test can hold it.
         //
         // **The rule is not restated here.**
-        // `SelectionState::deletable_objects_on` decides what a Delete may
-        // act on — Object rung only, ascending, de-duplicated, this page
-        // only — and the canvas's Delete key reads the same method. Two
-        // statements of a destructive rule is one too many.
+        // `crate::canvas::deleting::subject` decides what a Delete may act on,
+        // for whichever rung the operator is at, and the canvas's Delete key
+        // asks the same function. Two statements of a destructive rule is one
+        // too many.
         //
         // An empty list raises nothing rather than an empty action the
         // engine would have to refuse. That is reachable in practice: the
@@ -164,20 +151,20 @@ pub(crate) fn dispatch(
         // at a rung whose delete verb does not exist yet.
         "format.delete" => {
             if let Status::Open(doc) = &app.status {
-                // ★★★ **A FORM FIELD FIRST, and its absence here was a real
-                // divergence rather than a missing feature.**
+                // ★★★ **A FORM FIELD FIRST, and this arm must stay in step
+                // with the Delete KEY.**
                 //
-                // The Delete *key* has reached a selected widget since
-                // 2026-08-28 — `canvas::keys`' ladder, rung 0 of three. This
-                // command did not. So Delete-the-key and Delete-the-command
-                // acted on different things, which is precisely what
-                // `app::keyboard`'s header calls the defect the single
-                // dispatcher exists to make impossible.
+                // `canvas::keys`' Delete ladder reaches a selected widget at
+                // its first rung. An arm here that did not would make
+                // Delete-the-key and Delete-the-command act on different
+                // things, which is precisely what `app::keyboard`'s header
+                // calls the defect the single dispatcher exists to make
+                // impossible.
                 //
-                // ⇒ Nothing surfaced it while the only route to the command was
-                // the Format tab, because the Format tab is not drawn for a
-                // form selection. Adding `canvas.field` to the right-click
-                // gave the command a second door, and the divergence became
+                // ⇒ Nothing surfaces such a divergence while the only route to
+                // the command is the Format tab, because the Format tab is not
+                // drawn for a form selection. The `canvas.field` right-click is
+                // the second door, and it is where the divergence shows up as
                 // *"the menu's Delete does nothing"*.
                 //
                 // ★★ The guard is `edit_content`, matching `canvas::keys` and
@@ -198,13 +185,13 @@ pub(crate) fn dispatch(
                     // ★★★ R83 — ASKED HERE, THROUGH THE SAME FUNCTION THAT
                     // WITHHOLDS THE MENU ITEM AND DRAWS THE SENTENCE.
                     //
-                    // This arm asked nothing at all until 2026-08-29, and the
-                    // `canvas.field` menu that is its only pointer route
-                    // carried no `visible_when` either — so on an ordinary
-                    // certified fillable form the item was drawn, live and
-                    // undimmed, and the press reached `delete_widget`, was
-                    // refused into `actions::apply::vector_edit`'s `Err` arm,
-                    // and said nothing to the operator.
+                    // Without it — and without a `visible_when` on the
+                    // `canvas.field` menu that is this arm's only pointer
+                    // route — an ordinary certified fillable form draws the
+                    // item live and undimmed, the press reaches
+                    // `delete_widget`, and the refusal lands in
+                    // `actions::apply::vector_edit`'s `Err` arm and says
+                    // nothing to the operator.
                     //
                     // `panels::properties::formfield::refuses_delete` is the
                     // one derivation, asked here so that this arm, the
@@ -215,7 +202,7 @@ pub(crate) fn dispatch(
                     // control withheld by one rule while a panel explains a
                     // different one is the shape the forms audit found.
                     //
-                    // ⇒ Reaching this branch refused now means one of the two
+                    // ⇒ Reaching this branch refused means one of the two
                     // things the annotation arm below lists: a **chord** bound
                     // to `format.delete` (a chord consults no `visible_when`),
                     // or the condition having gone stale within a frame. The
@@ -261,22 +248,22 @@ pub(crate) fn dispatch(
                     // ★★★ R83 — ASKED HERE, THROUGH THE SAME FUNCTION THAT
                     // WITHHELD THE CONTROL.
                     //
-                    // This arm used to read `if !annot.target.locked`, which was
-                    // two thirds of the answer: it caught §12.5.3 Table 165's
-                    // `Locked` bit and knew nothing about `/Encrypt` or a
-                    // certification signature. On a certified drawing it pushed
-                    // the action, `delete_annotation` refused, and
-                    // `actions::apply::vector_edit`'s `Err` arm wrote one line
-                    // to the trace and said **nothing to the operator**.
+                    // ⚠ §12.5.3 Table 165's `Locked` bit is only part of the
+                    // answer: `/Encrypt` and a certification signature refuse a
+                    // deletion too. A guard reading `locked` alone pushes the
+                    // action on a certified drawing, `delete_annotation`
+                    // refuses, and `actions::apply::vector_edit`'s `Err` arm
+                    // writes one line to the trace and says **nothing to the
+                    // operator**.
                     //
-                    // `annotation_deletion_refusal` is the missing third, and it
+                    // `annotation_deletion_refusal` is the third part, and it
                     // is asked through `annotdelete::gate` rather than directly
                     // so that this arm, `canvas::keys`' Delete ladder,
                     // `app::conditions`' `selection.delete_permitted` and the
                     // Properties panel's sentence are **one derivation with four
                     // readers**. A control withheld by one rule while a panel
                     // explains a different one is the shape the forms audit
-                    // found on 2026-08-28.
+                    // found.
                     //
                     // ⇒ Reaching this branch at all now means one of two things,
                     // and neither is a state the operator can see: a **chord**
@@ -284,8 +271,7 @@ pub(crate) fn dispatch(
                     // `visible_when`), or the condition having gone stale within
                     // a frame. The sentence for both is already on screen in the
                     // Properties panel, which is why this declines silently to
-                    // the trace rather than inventing a second wording — exactly
-                    // as the `locked` arm it replaces always did.
+                    // the trace rather than inventing a second wording.
                     match crate::panels::properties::annotdelete::gate(doc, &annot.target) {
                         Some(refusal) => crate::diag::trace(|| {
                             // ui-text-exempt: diagnostic trace, never displayed.
@@ -301,36 +287,26 @@ pub(crate) fn dispatch(
                         )),
                     }
                 } else if !app.capabilities().edit_content {
-                    // ★★★ THE MODE, ASKED HERE, AND ITS ABSENCE DELETED PAGE
-                    // CONTENT IN READ — 2026-09-03.
+                    // ★★★ THE MODE, ASKED HERE, BECAUSE WITHOUT IT THE RIBBON
+                    // DELETES PAGE CONTENT IN READ.
                     //
-                    // `canvas::keys`' Delete-key path has carried this guard
-                    // for weeks and argues it at length. This arm — the ribbon
-                    // and every other command route — had **none**, so:
+                    // `canvas::keys`' Delete-key path carries this guard and
+                    // argues it at length. An arm here without it gives:
                     //
                     //   Read mode › click a picture › Format ▸ Delete
                     //     → `VectorAction::DeleteSelection`
                     //
                     // in the mode whose entire promise is that it authors
-                    // nothing. The keyboard refused and the button did it.
+                    // nothing — the keyboard refusing and the button doing it.
                     //
-                    // ★★ WHY IT WAS UNREACHABLE AND THEN WAS NOT. Both files
-                    // once rested on the same argument — *"entering a mode
-                    // without the capability clears the selection, and no
-                    // gesture can build a new one."* `canvas::keys` wrote the
-                    // guard anyway and said why:
-                    //
-                    //   > "Delete is safe because nothing can be selected"
-                    //   > holds only for as long as its other half does, and
-                    //   > the other half is in a different file.
-                    //
-                    // **O71 falsified that other half nine days later.**
-                    // `canvas::clicking`'s image arm runs precisely when
+                    // ★★ **A content selection IS reachable in Read**, so
+                    // *"entering a mode without the capability clears the
+                    // selection, and no gesture can build a new one"* is not a
+                    // guard. `canvas::clicking`'s image arm runs precisely when
                     // `!caps.edit_content` — it exists so a reader can click a
-                    // picture and copy it — so from 2026-08-31 a content
-                    // selection has been reachable in Read, and every
-                    // condition built on `selection.any` has been set there.
-                    // The control was not greyed. It was **enabled**.
+                    // picture and copy it (O71) — so every condition built on
+                    // `selection.any` can be set in Read. The control is not
+                    // greyed there; it is **enabled**.
                     //
                     // ★ The compound is what makes this a data-loss defect
                     // rather than an untidy one: `format.select_form` re-aims
@@ -339,11 +315,11 @@ pub(crate) fn dispatch(
                     // logo inside a title block in Read, and the title block
                     // goes.
                     //
-                    // ⇒ The lesson, which is why this comment is long: **a
+                    // ⇒ The rule, which is why this comment is long: **a
                     // guard justified as "unreachable in practice" is a claim
                     // about a different file, and it decays without either
-                    // file changing.** `canvas::keys` was right to write it
-                    // anyway. This arm is the one that did not.
+                    // file changing.** Write it anyway, in every route, and
+                    // say why.
                     crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed in the UI
                         "format-delete-declined reason=mode-cannot-edit-content".to_owned()
@@ -356,28 +332,17 @@ pub(crate) fn dispatch(
 
         // ★★★ **Select the form that contains what is selected.**
         //
-        // The deliberate second act that pays for the deep hit test. Since
-        // 2026-08-27 a click reaches inside a form XObject and the form
-        // itself is excluded from the hit test outright, because a `/BBox`
-        // is a clipping extent and not a claim about ink — so a page-sized
-        // form was winning every click at every point, which is what the
-        // operator reported as *"all I get is the page selected"*.
+        // The deliberate second act that pays for the deep hit test. A click
+        // reaches inside a form XObject and the form itself is excluded from
+        // the hit test outright, because a `/BBox` is a clipping extent and
+        // not a claim about ink — include it and a page-sized form wins every
+        // click at every point, which the operator reported as *"all I get is
+        // the page selected"*.
         //
         // A form is nonetheless a legitimate thing to want: it is one page
         // object with an ordinary paint-order index, and moving a title
         // block is *the form*, not the two hundred objects inside it. This
         // is the route to it, and it is the only one on the canvas.
-        //
-        // # Why the arm re-asks what `enabled_when` already asked
-        //
-        // Because `enabled_when` greys a ribbon item and **enforces
-        // nothing** — every non-ribbon route reaches this dispatcher
-        // without consulting it. That was recorded on this project after a
-        // blanket dispatcher guard was written and two tests refused it,
-        // for making `Ctrl+Z` on an empty stack do nothing *and say
-        // nothing*. The ruling: greying is a hint, the worded decline is
-        // the answer, and only the arms that would otherwise act
-        // unconditionally need the check — and they must say why.
         //
         // # The FIRST leaf, not all of them
         //
@@ -388,9 +353,9 @@ pub(crate) fn dispatch(
         // mean one thing always. `select_only` then replaces the selection
         // outright, which is the honest report: what you now have is the
         // form, and not the set you had before.
-        // ★ Guarded with the other two — 2026-09-03. Non-destructive on its
-        // own, but it is the FIRST HALF of the compound that made A18 a
-        // data-loss defect: in Read, click a picture inside a title block,
+        // ★ Guarded with the other re-aims. Non-destructive on its own, but
+        // it is the FIRST HALF of the compound that makes A18 a data-loss
+        // defect: in Read, click a picture inside a title block,
         // `select_form` re-aims the selection from the one image to the whole
         // form XObject, and `format.delete` then takes the lot.
         "format.select_form" if !app.capabilities().edit_content => {
@@ -414,23 +379,18 @@ pub(crate) fn dispatch(
                     Some(form) => {
                         doc.selection.select_only(page, form, "select-form");
                     }
-                    // ★★★ **This refusal was silent until 2026-09-11**, and it
-                    // was silent for the whole life of the verb.
+                    // ★★★ **The sentence must say that NOTHING is inside a
+                    // form, not that something is.**
                     //
-                    // Nothing selected is inside a form, or the page's model has
-                    // gone. Both are honestly reported by one sentence — that
-                    // part of the old comment was right. What it did not say is
-                    // which sentence, and the one it got was
-                    // *"That object is inside a form"*, recorded at the exact
-                    // moment pdfcer had established that no object is.
-                    //
-                    // ★ And it never reached the bar anyway.
-                    // `Declined::still_true` filtered `InsideForm` on
-                    // `selection_in_form`, which is false whenever this arm
-                    // runs — so the decline was discarded on the frame it was
-                    // written and the operator got no outline, no movement and
-                    // no explanation. A sentence that is wrong is at least
-                    // reportable; this one could not be seen to be wrong.
+                    // Nothing selected is drawn inside a form, or this page's
+                    // model could not be read; `NoContainingForm` reports both
+                    // honestly. A wording about a form-interior selection is
+                    // the exact inverse of what happened here, and it would not
+                    // even be visibly wrong: `Declined::still_true` retires
+                    // that fact on `selection_in_form`, which is false whenever
+                    // this arm runs, so the decline would be discarded on the
+                    // frame it was written. `InsideFormRefusal`'s own doc
+                    // carries the variant-per-fact rule.
                     None => crate::app::status::decline::record_inside_form(
                         crate::text::status::InsideFormRefusal::NoContainingForm,
                     ),
@@ -439,17 +399,17 @@ pub(crate) fn dispatch(
         }
         // ★★★ **Select just the line of text the pointer was over.**
         //
-        // O188(A), 2026-09-15. The operator's words, `OPERATOR_REQUESTS.md`:
+        // O188(A). The operator's words, `OPERATOR_REQUESTS.md`:
         // *"In text that is grouped together or whatever it is called, such
         // as in my title blocks, I would like a way to move the individual
         // text blocks within it around, and have the ability to delete
         // them"*.
         //
-        // Deleting one line has worked since 2026-09-05. **Reaching the rung
-        // it works at had exactly one route**, and nothing in the program
-        // named it: arm the Points tool first (`A`), then single-click. A
-        // route he can find only after already failing is not a route, which
-        // is the whole of what this arm is for.
+        // Deleting one line works. **Without this arm, reaching the rung it
+        // works at has exactly one route and nothing in the program names
+        // it**: arm the Points tool first (`A`), then single-click. A route he
+        // can find only after already failing is not a route, which is the
+        // whole of what this arm is for.
         //
         // # Where the operand comes from, and why it is not the selection
         //
@@ -485,7 +445,7 @@ pub(crate) fn dispatch(
         // saw it. The trace still says so, for the harness.
         //
         // ★ Guarded on `edit_content` with the other re-aim, and for the
-        // same measured reason: `select_form` + `delete` was a data-loss
+        // same measured reason: `select_form` + `delete` is a data-loss
         // compound in Read mode (A18). This one re-aims DOWN rather than up,
         // so the same compound narrows a delete rather than widening it —
         // but Read mode does not select parts of content at all, and an arm
@@ -572,8 +532,8 @@ pub(crate) fn dispatch(
         // is not `record_inside_form`'s: that one reports a verb refusing
         // BECAUSE the selection is in a form, and this one refuses because it is
         // not. Reusing it would state the exact inverse of what happened.
-        // ★ Guarded — it WRITES TO THE DOCUMENT (`EditSession::unshare_form`),
-        // and had no mode check at all. Reachable from Read by the same route.
+        // ★ Guarded — it WRITES TO THE DOCUMENT (`EditSession::unshare_form`)
+        // and is reachable from Read by the same route as the re-aims above.
         "format.unshare_form" if !app.capabilities().edit_content => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -699,8 +659,8 @@ pub(crate) fn dispatch(
                 change,
             });
         }
-        // ★★★ The Markup group. Five ids, ONE operand shape, and the operand
-        // arrives WITH the token rather than being re-derived here.
+        // ★★★ The Markup group. ONE operand shape, and the operand arrives
+        // WITH the token rather than being re-derived here.
         //
         // # Why this is the opposite of the Font arm above, deliberately
         //
@@ -724,16 +684,16 @@ pub(crate) fn dispatch(
         // ⇒ So the arm **verifies** rather than re-derives, which is the honest
         // middle: the parked target must still be what the selection names.
         //
-        // ★ `None` raises nothing and is not a defect: it is what a chord bound
-        // to one of the five ids produces, because a chord cannot park an
+        // ★ `None` raises nothing and is not a defect: it is what a chord
+        // bound to one of these ids produces, because a chord cannot park an
         // operand. Silence is the honest answer — there is no value to apply
         // and nothing was refused.
-        // ★ `format.line_style` joined the group on 2026-09-06 and needed no
-        // other change here: it parks a `MarkupEdit` like the other five, so it
-        // is the same operand shape reaching the same verb. That is the property
-        // `MarkupEdit`'s one-field-per-variant design buys — a sixth control was
-        // an enum variant and an arm of this list, and nothing about the
-        // dispatch had to learn what a dash is.
+        // ★ `format.line_style` needs no machinery of its own here: it parks a
+        // `MarkupEdit` like the rest of the group, so it is the same operand
+        // shape reaching the same verb. That is the property `MarkupEdit`'s
+        // one-field-per-variant design buys — a new control is an enum variant
+        // and an arm of this list, and nothing about the dispatch has to learn
+        // what a dash is.
         "format.colour" | "format.fill" | "format.line_width" | "format.opacity"
         | "format.line_style" | "format.arrowheads" => {
             // Taken before the document is borrowed: `take` needs `&mut app`
@@ -774,7 +734,7 @@ pub(crate) fn dispatch(
             // which is the silent-decline class this project was founded on.
             //
             // ★ It declines to the TRACE rather than to the status bar for
-            // `format.delete`'s reason two hundred lines up: the sentence for a
+            // `format.delete`'s reason above: the sentence for a
             // locked mark is already on screen, in the Properties panel and on
             // the greyed control's own hover
             // (`text::panels::properties::markup_locked`), so inventing a
@@ -810,31 +770,30 @@ pub(crate) fn dispatch(
 ///
 /// # ★★★ Why this is a function and not four lines inside the arm
 ///
-/// Because the arm used to hold the rule, and the rule is destructive.
-/// `format.delete` read `SelectionState::deletable_objects_on` — Object rung
-/// only — and, on an empty answer, either recorded the inside-a-form decline or
-/// said nothing at all. The Delete **key** did the same thing five hundred lines
-/// away in `canvas::keys`, from the same method, by hand.
+/// Because the rule is destructive and there must be exactly one of it. Both
+/// claimants — this command and the Delete **key** in `canvas::keys` — ask
+/// `crate::canvas::deleting::subject`, which answers for whichever rung of the
+/// ladder the operator is on.
 ///
 /// Two hand-written copies of one destructive rule is exactly what
 /// `deletable_objects_on`'s own header refuses, and the divergence is not
-/// hypothetical: it happened once already over form fields — the key reached a
-/// selected widget for a day while this command did not, so Delete-the-key and
-/// Delete-the-command acted on different things, which `app::keyboard`'s header
-/// calls the defect the single dispatcher exists to make impossible.
+/// hypothetical: it has happened over form fields, where the key reached a
+/// selected widget and this command did not, so Delete-the-key and
+/// Delete-the-command acted on different things — which `app::keyboard`'s
+/// header calls the defect the single dispatcher exists to make impossible.
 ///
-/// So the decision moved to [`crate::canvas::deleting::subject`] and **both**
-/// callers ask it. The Part and Node rungs came with it: as of 2026-09-05 the
-/// ribbon's Delete removes one line, one label or one corner point, exactly as
-/// the key does, because there is only one answer to ask for.
+/// **Both** callers therefore ask [`crate::canvas::deleting::subject`], and
+/// the Part and Node rungs come with it: the ribbon's Delete removes one line,
+/// one label or one corner point exactly as the key does, because there is
+/// only one answer to ask for.
 ///
 /// # ★★ The provider, and why it is read here rather than passed in
 ///
 /// The dispatcher is not inside the canvas's frame — it runs from the command
 /// funnel, after the ribbon or a menu has already closed — so it cannot inherit
-/// the canvas's borrow the way `canvas::keys` does. (It has taken an
-/// `egui::Context` since 2026-09-15, for a different arm's parked operand; a
-/// context is not a frame and buys this one nothing.) `doc.page_objects()` is keyed on
+/// the canvas's borrow the way `canvas::keys` does. (It takes an
+/// `egui::Context` for a different arm's parked operand; a context is not a
+/// frame and buys this one nothing.) `doc.page_objects()` is keyed on
 /// `(page, edit_epoch)` and the canvas built it on the frame that drew the
 /// selection outline the operator is looking at, so this is a cache read rather
 /// than a second `decompose_page` — the same key, the same epoch, the same
@@ -860,17 +819,15 @@ fn delete_the_selection(doc: &crate::app::state::OpenDoc, actions: &mut Vec<Acti
     match outcome {
         Ok(subject) => actions.push(crate::canvas::deleting::action(subject).into()),
         // ★ The identical channel the key uses, epoch and all — see
-        // `deleting::decline` for which of the eleven refusals speak and why the
-        // other eight are silent on purpose. Before this, an empty operand list
-        // here recorded the inside-a-form decline and nothing else, so a Part or
-        // Node rung reached the ribbon's Delete and produced no trace line at
-        // all: the command was quieter than the key.
+        // `crate::text::deleting::refusal` for which refusals speak and why the
+        // rest are silent on purpose. Routing an empty operand list to the
+        // inside-a-form decline instead leaves a Part or Node rung with no
+        // trace line at all, and the command ends up quieter than the key.
         // ★ `true` for `model_attempted`, and it is a fact rather than a
-        // convenience: this arm asks `doc.page_objects()` unconditionally three
-        // lines above, so a `None` here can only mean the page would not
-        // decompose. That is also why the ribbon's Delete worked at the deeper
-        // rungs on the commit where the KEY did not — the key inherited the
-        // canvas's conditional borrow and this route never had one.
+        // convenience: this arm asks `doc.page_objects()` unconditionally just
+        // above, so a `None` here can only mean the page would not decompose.
+        // The key's answer can differ, because it inherits the canvas's
+        // conditional borrow and this route never has one.
         Err(reason) => {
             crate::canvas::deleting::decline(&doc.selection, reason, doc.edit_epoch, true);
         }

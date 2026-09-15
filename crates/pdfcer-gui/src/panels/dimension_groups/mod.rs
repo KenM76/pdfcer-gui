@@ -3,57 +3,43 @@
 //!
 //! ## The gap this closes
 //!
-//! `measure.manage_groups` was registered, drawn on Measure ▸ Scale, listed in
-//! `shell::commands::reach`'s `SCAFFOLDED` set, and **inert for the whole life
-//! of this build**. The operator hit it by name on 2026-08-18: *"I still can't
-//! get to edit dimension groups when I click on it."*
+//! `measure.manage_groups` is a registered command drawn on Measure ▸ Scale,
+//! and a command that opens nothing is a control an operator presses to no
+//! effect. This panel is what it opens.
 //!
-//! The recorded blocker was *"needs a window, not an arm"* plus *"two of four
-//! verbs do not exist"*, and re-measuring it on 2026-08-18 found the second
-//! half had shrunk. Of the six things a group manager wants to do, **four are
-//! shipped engine verbs**:
+//! **Every verb a group manager needs is a shipped engine verb**, so nothing
+//! here waits on the engine:
 //!
-//! | | verb | `edit.rs` |
-//! |---|---|---|
-//! | create | `add_dimension_group` | 17692 |
-//! | calibrate | `set_group_scale` | 17718 |
-//! | drafting standard | `set_group_standard` | 18220 |
-//! | appearance defaults | `set_group_style` | 18289 |
-//! | show / hide the layer | `toggle_dimension_layer` | 17769 |
-//! | rename | `rename_dimension_group` | 19295 |
-//! | delete | `delete_dimension_group_with` | 19360 |
+//! | | verb, in `pdfcer_core::edit` |
+//! |---|---|
+//! | create | `add_dimension_group` |
+//! | calibrate | `set_group_scale` |
+//! | drafting standard | `set_group_standard` |
+//! | appearance defaults | `set_group_style` |
+//! | show / hide the layer | `toggle_dimension_layer` |
+//! | rename | `rename_dimension_group` |
+//! | delete | `delete_dimension_group_with` |
 //!
 //! ## ★ The control that was missing from the whole feature, not just from this
 //! surface
 //!
-//! `MeasureState::group` — *"the active authoring group the next dimension
-//! joins"* — has existed since the Phase 7 salvage, is documented as *"ui-spec
-//! §2.6 group picker"*, is seeded to `DEFAULT_GROUP_ID`, and **nothing in this
-//! build ever wrote to it**. So a second group could be created from the CLI,
-//! carry its own scale, and be joinable by nothing: every dimension the shell
-//! authored went into the default group, forever.
+//! `MeasureState::group` is the active authoring group the next dimension
+//! joins. It is seeded to `DEFAULT_GROUP_ID`, and **this panel is the only
+//! thing that writes to it**. Without that write a second group can be created
+//! from the CLI, carry its own scale, and be joinable by nothing: every
+//! dimension the shell authors goes into the default group, forever.
 //!
 //! The *Draw into* column is that picker. It is the first control here not
 //! because it is the most elaborate but because without it every other control
 //! governs a group nothing can reach.
 //!
-//! ## ★★ Why this is a PANEL, and why it was a window until 2026-08-19
+//! ## ★★ Why this is a PANEL and not an [`egui::Window`]
 //!
-//! It shipped as an [`egui::Window`] on 2026-08-18, on [`crate::dialogs`]'
-//! own test — *a dialog is one transaction with a start and an end; a panel is
-//! somewhere an operator dips in and out of while working* — and the argument
-//! given was that setting up a drawing's groups *"happens once at the start of
-//! a sheet and then not again for hours."*
-//!
-//! **That was wrong on the facts and the operator said so.** His words, of
-//! 2026-08-19:
-//!
-//! > *"the groups editor popup is too long for some screens so can't close it
-//! > … should come up in the side bar and be scrollable and each section should
-//! > be able to fold up like the settings one"*
-//!
-//! Three separate findings are packed into that sentence and each of them
-//! outranks the taxonomy argument:
+//! [`crate::dialogs`]' own test reads *a dialog is one transaction with a start
+//! and an end; a panel is somewhere an operator dips in and out of while
+//! working*, and group setup can be argued either way: it largely happens once
+//! at the start of a sheet. Three findings outrank that taxonomy argument, and
+//! all three are about what a tall free-floating window does on a laptop:
 //!
 //! 1. **A window taller than the screen cannot be closed.** Its title bar can
 //!    leave the desktop, and with it the only ✕. That is not a layout
@@ -66,7 +52,7 @@
 //!    whose natural height exceeds a laptop screen wants a **scroll region with
 //!    a bounded parent**, and a dock column is exactly that. A free-floating
 //!    window sized to its content is not — see the growth loop recorded below.
-//! 3. **The sections must fold**, and the model he named is
+//! 3. **The sections must fold**, on the model of
 //!    [`crate::dialogs::settings`]. That is the same reasoning that module's
 //!    header gives for its own seven groups: an operator arrives with a
 //!    *symptom* — "this group's arrowheads are wrong", "this one is measuring
@@ -80,23 +66,22 @@
 //! breath as which layer is visible. That is the Layers panel's question with a
 //! different noun, and Layers has never been a window.
 //!
-//! ## ★ The growth loop the window had, kept because it is the reason
+//! ## ★ The growth loop a window would have here, and why the dock removes it
 //!
-//! The window's body was a vertical `ScrollArea` and the window was given a
-//! `default_width` with no height, so it sized itself to its content. The
-//! scroll area asked for the height of everything inside it; the window grew to
-//! fit; the scroll area got more room and asked for more. A feedback loop
-//! between a measured size and the thing being measured — `D:/dev/rag/egui/`'s
-//! R128 in a second place. The driven run caught `dimension-groups.new_name`
-//! laid out at y=958 inside a body that ended at y=793: **the Add button was
-//! rendered below the bottom of the window and could not be clicked.**
+//! Put this body — a vertical `ScrollArea` — in a window with a
+//! `default_width` and no height and the window sizes itself to its content:
+//! the scroll area asks for the height of everything inside it, the window
+//! grows to fit, the scroll area gets more room and asks for more. A feedback
+//! loop between a measured size and the thing being measured —
+//! `D:/dev/rag/egui/`'s R128. A driven run of that arrangement laid
+//! `dimension-groups.new_name` out at y=958 inside a body that ended at y=793:
+//! **the Add button rendered below the bottom of the window, unclickable.**
 //!
-//! A `default_size` with a height stopped it. This landing removes the
-//! condition instead: **a dock panel's height is the dock's, decided before the
-//! body draws**, so no content this module lays out can influence it. The class
-//! of defect is gone rather than tuned, which is the difference `CONTINUE.md`
-//! §7 asks for — *"reserve-and-hope is the same defect with a tuning
-//! parameter."*
+//! A `default_size` carrying a height suppresses it. The dock removes the
+//! condition instead: **a dock panel's height is the dock's, decided before
+//! the body draws**, so no content this module lays out can influence it. The
+//! class of defect is gone rather than tuned, and *reserve-and-hope is the same
+//! defect with a tuning parameter*.
 //!
 //! ## ★ Which folds start open — one of six, and the rule behind it
 //!
@@ -124,11 +109,11 @@
 //!
 //! ## Everything is inside the one `ScrollArea`, and that is deliberate
 //!
-//! `CONTINUE.md` §7's application-side pattern, which recurred four times in
-//! one day: *"a control that must be reachable cannot be placed after an
-//! unbounded `ScrollArea`."* The window's answer was to hoist Add and Close out
-//! of the scroll area and reserve a footer for them. This panel has **no
-//! footer**: there is no Close button, because the dock tab carries one, and
+//! **A control that must be reachable cannot be placed after an unbounded
+//! `ScrollArea`** — an application-side pattern this shell has met on four
+//! separate surfaces. One answer is to hoist the reachable controls out of the
+//! scroll area and reserve a footer for them. This panel has **no footer**:
+//! there is no Close button, because the dock tab carries one, and
 //! Add sits at the bottom of the scroll region inside a fold of its own. With
 //! nothing after the scroll area there is nothing to be pushed off the end of
 //! it, and no `FOOTER_RESERVE` constant to be tuned wrong.
@@ -149,8 +134,7 @@
 //!   implementation of the hardest arithmetic in the feature — see
 //!   [`DimensionGroupsUi::take_scale_request`] for how the button hands over.
 
-/// ★ Renaming a group and removing one — the two controls this window shipped
-/// WITHOUT on 2026-08-18, with a sentence where they should have been.
+/// ★ Renaming a group and removing one.
 ///
 /// Its header carries the interesting half: deleting a populated group is the
 /// **orphan question**, the engine refuses by default with the member count in
@@ -256,10 +240,9 @@ pub struct DimensionGroupsUi {
     /// `ScrollArea::vertical()` clips horizontally and offers no bar in that
     /// axis, so a row wider than the column is simply cut off: no overflow
     /// indicator, no scroll, nothing on screen to say a control is out there.
-    /// The operator's report on 2026-08-20 was *"part of the control is hidden
-    /// … there's no scroll bar to show the part that is missing"*, and there
-    /// was no number anywhere in the application that could have contradicted
-    /// a claim that the panel was fine.
+    /// Part of a control goes missing with no scroll bar to show it, and
+    /// without this number nothing in the application can contradict a claim
+    /// that the panel is fine.
     ///
     /// Read by [`tests::no_row_in_this_panel_outruns_a_narrow_dock`] and traced
     /// once per change, so the same thing is checkable in a unit test and
@@ -363,11 +346,11 @@ impl DimensionGroupsUi {
     ///
     /// # ★ One `ScrollArea` and nothing after it
     ///
-    /// The single most important line of layout in this file. `CONTINUE.md`
-    /// §7: *"a control that must be reachable cannot be placed after an
-    /// unbounded `ScrollArea`, and reserve-and-hope is the same defect with a
-    /// tuning parameter."* Four surfaces shipped that defect in one day. This
-    /// one has no footer at all — the dock tab carries the close control and
+    /// The single most important line of layout in this file. **A control that
+    /// must be reachable cannot be placed after an unbounded `ScrollArea`, and
+    /// reserve-and-hope is the same defect with a tuning parameter** — four
+    /// surfaces in this shell have met it. This one has no footer at all: the
+    /// dock tab carries the close control and
     /// the Add button lives inside a fold at the bottom of the scroll region —
     /// so there is nothing that *can* be pushed past the end.
     ///
@@ -400,23 +383,21 @@ impl DimensionGroupsUi {
 
         // ★★ **The overflow measurement, and why a panel takes one.**
         //
-        // Operator, 2026-08-20: *"the measuring tool group option changes the
-        // width of the side bar so that part of the control is hidden. there's
-        // no scroll bar to show the part that is missing."*
-        //
-        // He was right, and the mechanism is worth writing down because it is
-        // silent by construction. A `ScrollArea::vertical()` clips
+        // A control wider than the dock column has part of itself hidden with
+        // no scroll bar to show the part that is missing, and the mechanism is
+        // worth writing down because it is silent by construction. A
+        // `ScrollArea::vertical()` clips
         // **horizontally** and offers no bar in that axis, so a row wider than
         // the dock column does not overflow visibly, does not scroll, and does
         // not report anything — it is simply cut off at the right edge. The
         // control that ends up outside is unreachable and there is nothing on
         // screen to say it exists.
         //
-        // The row that did it: `"no scale set — showing raw page units"`
-        // followed by the **Set scale…** button, in a `ui.horizontal` — about
-        // 310 pt of content in a 250 pt column. The rows in this panel are
-        // `horizontal_wrapped` now, so the button drops to the next line
-        // instead of off the edge.
+        // The row that reaches it: `"no scale set — showing raw page units"`
+        // followed by the **Set scale…** button — about 310 pt of content in a
+        // 250 pt column. In a `ui.horizontal` that is cut off; every row in
+        // this panel is `horizontal_wrapped`, so the button drops to the next
+        // line instead of off the edge.
         //
         // Wrapping is the fix; this is the **falsifier**. `content_size.x`
         // against the viewport's width is the one number that says whether it
@@ -485,20 +466,15 @@ impl DimensionGroupsUi {
         ui.label(t::draw_into_hint());
         ui.add_space(4.0);
 
-        // ★★ **A BLOCK PER GROUP, NOT A GRID ROW** — 2026-08-20, on the
-        // operator's report.
+        // ★★ **A BLOCK PER GROUP, NOT A GRID ROW.**
         //
-        // This was a four-column `egui::Grid`: radio | name | member count |
-        // scale phrase. In a dock column that does not fit and cannot be made
-        // to. The scale phrase alone is a sentence —
+        // The four columns a group wants — radio | name | member count | scale
+        // phrase — do not fit a dock column as an `egui::Grid` and cannot be
+        // made to. The scale phrase alone is a sentence —
         // `"no scale set — showing raw page units"`, about 200 pt — and the
-        // row totalled some 390 pt against the navigator's ~250. A `Grid` does
+        // row totals some 390 pt against the navigator's ~250. A `Grid` does
         // not wrap, a `ScrollArea::vertical()` offers no horizontal bar, so the
-        // right-hand columns were **cut off with nothing to say they existed**:
-        //
-        // > *"the measuring tool group option changes the width of the side bar
-        // > so that part of the control is hidden. there's no scroll bar to
-        // > show the part that is missing."*
+        // right-hand columns are **cut off with nothing to say they existed**.
         //
         // Two lines per group instead. The controls — the authoring radio and
         // the row selector — go on the first line where they are always
@@ -510,8 +486,8 @@ impl DimensionGroupsUi {
         // what can be pressed on the line that cannot overflow, and what can
         // only be read on the line that can.**
         //
-        // `no_row_in_this_panel_outruns_a_narrow_dock` is the falsifier, and it
-        // failed at 209 pt against this grid before the change.
+        // `no_row_in_this_panel_outruns_a_narrow_dock` is the falsifier, and a
+        // grid of those four columns overruns it by 209 pt.
         for group in model.groups() {
             ui.horizontal_wrapped(|ui| {
                 let response = ui.radio(group.id == active, "");
@@ -595,11 +571,11 @@ impl DimensionGroupsUi {
             // --- unit -------------------------------------------------------
             //
             // ★ Through `set_group_scale`, because a unit lives inside the group's
-            // `NumberFormat` and there is no narrower verb. The engine's reply of
-            // 2026-08-19 called that *"a discoverability problem, not a missing
-            // capability"* and declined to add sugar for it on speculation, which
-            // is right — the path works, it is just not obvious, and making it
-            // obvious is a surface's job rather than an API's.
+            // `NumberFormat` and there is no narrower verb. That is a
+            // discoverability problem rather than a missing capability, and the
+            // engine deliberately carries no sugar for it: the path works, it is
+            // just not obvious, and making it obvious is a surface's job rather
+            // than an API's.
             //
             // The group's **scale is carried through unchanged**. That is the whole
             // subtlety: `set_group_scale` takes both, so passing anything but the
@@ -746,16 +722,14 @@ impl DimensionGroupsUi {
             // instead would make the name field look like it does nothing.
             let response = ui.add_enabled(false, egui::Button::new(t::new_button()));
             crate::diag::ui_rect(REGION_ADD, response.rect);
-            // ★★★ **`on_disabled_hover_text`, since 2026-08-31** —
-            // `OPERATOR_REQUESTS.md` O77's sweep.
+            // ★★★ **`on_disabled_hover_text`, never `on_hover_text`.**
             //
-            // This read `on_hover_text`, and in egui 0.35 that builds
-            // `Tooltip::for_enabled`, which opens only when
-            // `response.enabled()` — so on a response that is already disabled
-            // it runs no content and paints nothing. The comment above
-            // promised *"greyed WITH an explanation"* and there was no
-            // explanation: the control was greyed, silent, and unexplainable
-            // by hovering, which is R9 breached by a one-word method name.
+            // In egui 0.35 `on_hover_text` builds `Tooltip::for_enabled`, which
+            // opens only when `response.enabled()` — so on a response that is
+            // already disabled it runs no content and paints nothing. The
+            // promise above is *greyed WITH an explanation*; `on_hover_text`
+            // here leaves the control greyed, silent and unexplainable by
+            // hovering, which is R9 breached by a one-word method name.
             response.on_disabled_hover_text(t::new_needs_a_name());
         } else {
             let response = ui.button(t::new_button());
@@ -852,21 +826,19 @@ mod width_tests {
 
     /// ★★ **No row in this panel outruns a narrow dock.**
     ///
-    /// The operator, 2026-08-20: *"the measuring tool group option changes the
-    /// width of the side bar so that part of the control is hidden. there's no
-    /// scroll bar to show the part that is missing."*
-    ///
-    /// He was right, and the defect is **invisible by construction**, which is
-    /// why it needed a number rather than a look. A `ScrollArea::vertical()`
+    /// A row wider than the side bar hides part of a control with no scroll bar
+    /// to show the part that is missing, and the defect is **invisible by
+    /// construction**, which is why it needs a number rather than a look. A
+    /// `ScrollArea::vertical()`
     /// clips horizontally and offers no bar in that axis: a row wider than the
     /// column is cut off at the right edge, does not scroll, and reports
     /// nothing. The control that ends up outside is unreachable and there is
     /// nothing on screen to say it exists.
     ///
-    /// The row that did it was `"no scale set — showing raw page units"`
-    /// followed by the **Set scale…** button — about 310 pt of content in a
-    /// 250 pt column, in a `ui.horizontal`, which does not wrap. Every row in
-    /// this panel is `horizontal_wrapped` now.
+    /// The widest row is `"no scale set — showing raw page units"` followed by
+    /// the **Set scale…** button — about 310 pt of content in a 250 pt column.
+    /// A `ui.horizontal` does not wrap; every row in this panel is
+    /// `horizontal_wrapped`.
     ///
     /// ## Why the assertion is on a measured overflow rather than on a
     /// screenshot

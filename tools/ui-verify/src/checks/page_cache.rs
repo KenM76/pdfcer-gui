@@ -4,23 +4,22 @@
 //!
 //! # The operator's report, and why it needed driving
 //!
-//! 2026-08-19: *"increase cache to maximum for page view so they don't
-//! constantly redraw with larger files."*
+//! > *"increase cache to maximum for page view so they don't constantly redraw
+//! > with larger files."*
 //!
-//! He had diagnosed it correctly and the cause was not a size.
-//! `render::strip::StripRasters::retain` was called once a frame as
-//! `retain(&visible, current)` and its first line dropped **every entry not in
-//! the visible set** — so the cache held exactly what was on screen. Scroll a
-//! sheet off the top and it was gone; scroll back and it was rendered again
-//! from the content stream, which `BENCHMARK.md` measures at **691 ms** for a
-//! dense A1.
+//! The report is right and the cause is not a size.
+//! `render::strip::StripRasters::retain` prunes the cache once a frame, and a
+//! prune that drops **every entry not in the visible set** leaves the cache
+//! holding exactly what is on screen. Scroll a sheet off the top and it is
+//! gone; scroll back and it is rendered again from the content stream, which
+//! `BENCHMARK.md` measures at **691 ms** for a dense A1.
 //!
-//! ★★ **The budget had therefore never bitten.** 48 M texels is roughly
-//! eighteen fit-width pages against a visible set of two or three, so the
-//! eviction loop had never run on any document he had opened. *Raising the
-//! number alone would have changed nothing at all* — which is exactly what
-//! "increase the cache" invites a reader to do, and it is why this check
-//! measures **re-requests** rather than the cache's size.
+//! **The texel budget then never bites.** 48 M texels is roughly eighteen
+//! fit-width pages against a visible set of two or three, so the eviction loop
+//! never runs on any document an operator opens. *Raising that number alone
+//! changes nothing at all* — which is exactly what "increase the cache" invites
+//! a reader to do, and it is why this check measures **re-requests** rather
+//! than the cache's size.
 //!
 //! # What it asserts, and why that is the only honest oracle
 //!
@@ -32,18 +31,17 @@
 //! Nothing else would do. The cache's *size* is not the claim — a build that
 //! held a gigabyte and still re-requested would pass a size assertion and fail
 //! the operator. A screenshot is worse than useless here, because a re-rendered
-//! page and a remembered one are **the same picture**; that is precisely why
-//! this went unnoticed for the life of the shell, and why the only symptom was
-//! a person waiting.
+//! page and a remembered one are **the same picture**. That is why a cache
+//! that forgets goes unnoticed, and why the only symptom is a person waiting.
 //!
-//! # ★ It needs a continuous mode and a document with pages to spare
+//! # It needs a continuous mode and a document with pages to spare
 //!
 //! Single-page mode keeps no strip at all (`fill_strip` clears the cache when
 //! `strip_visible` is empty), so the check runs in **Read**, whose default is
 //! continuous — `viewer::display::default_for_mode`. A document of at least a
 //! few pages is required for a scroll to take one off screen; the check says so
-//! rather than passing vacuously on a one-page fixture, which is
-//! `CONTINUE.md` §7's rule about instruments that can only return one answer.
+//! rather than passing vacuously on a one-page fixture. **An instrument that
+//! can only return one answer is not an instrument.**
 
 use crate::checks::driving;
 use crate::checks::{Check, CheckContext};
@@ -58,18 +56,23 @@ const MODE: &str = "read";
 const REQUEST_EVENT: &str = "strip-raster-requested";
 /// How many wheel notches to send in each direction.
 ///
-/// ★ Enough to take **several** pages off screen and bring them back, and the
-/// number was raised from 14 to 40 after the first driven run: 14 notches drew
-/// only three pages, and a round trip over three pages is a weak sample for a
-/// claim about a 36-sheet drawing set.
+/// Enough to take **several** pages off screen and bring them back. 14 notches
+/// draw only three pages, measured, and a round trip over three pages is a weak
+/// sample for a claim about a 36-sheet drawing set.
 ///
 /// Sent as a burst rather than one at a time because the question is what
 /// survives the round trip, not what happens during it.
 ///
-/// ★★ **Falsified**, which is the part that makes the number meaningful: with
-/// `retain` temporarily restored to keeping only the current page and its two
-/// neighbours, this check FAILS and names the pages drawn twice. A check that
-/// has never been shown to fail is a check that has measured nothing.
+/// **Falsified** against a planted defect: with `retain` cut down to keeping
+/// only the current page and its two neighbours, this check FAILS and names the
+/// pages drawn twice.
+///
+/// That falsification does not rescue the gesture. A continuous scroll
+/// rehomes every page it passes into the strip cache, so this check warms its
+/// own subject and evicts nothing — scrolling **further** makes that more true,
+/// not less. Both halves of the assertion rest on a precondition the gesture
+/// prevents. `DEFECTS.md` D52 names the repair: a discontinuity, then an
+/// assertion on `strip-raster-evicted`.
 const NOTCHES: i32 = 40;
 
 /// See the module documentation.
@@ -152,7 +155,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
 
     // --- 2: aim at the middle of the canvas --------------------------------
-    // ★ The canvas rect comes from the canvas's OWN trace event rather than
+    // The canvas rect comes from the canvas's OWN trace event rather than
     // from a `ui-rect` region, because that is the event the strip's own
     // geometry is published in — so the point this check turns the wheel over
     // is guaranteed to be inside the thing whose scroll it is measuring.
@@ -177,7 +180,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: scroll away, and let the strip settle --------------------------
     //
-    // ★ A settle after each direction rather than one at the end. The strip
+    // A settle after each direction rather than one at the end. The strip
     // renders one page per frame by design (`fill_strip`'s own budget), so a
     // check that scrolled and immediately looked would see a request stream
     // that had not finished — and would then read the *missing* requests as
@@ -205,7 +208,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(90);
     let all = requested(&session)?;
 
-    // ★★ THE ASSERTION. A page number appearing twice IS the defect.
+    // THE ASSERTION. A page number appearing twice IS the defect.
     let mut seen = std::collections::BTreeSet::new();
     let mut twice: Vec<usize> = Vec::new();
     for page in &all {

@@ -24,11 +24,12 @@
 //!
 //! Concretely, three states:
 //!
-//! | the document's default dimension group | what the ruler shows |
-//! |---|---|
-//! | no scale ever set (`ScaleState::NeverSet`) | **PDF points** — `100.00 pt`, `200.00 pt` … |
-//! | explicitly 1:1 (`ScaleState::OneToOne`) | the group's unit at true size — a 72 pt span reads `25.40 mm` |
-//! | calibrated (`ScaleState::Calibrated`) | the group's unit at the operator's scale — on a sheet drawn 1:50 in metres, a 72 pt span reads `1.270 m` |
+//! - `ScaleState::NeverSet`, no scale ever set → **PDF points**: `100.00 pt`,
+//!   `200.00 pt` …
+//! - `ScaleState::OneToOne`, explicitly 1:1 → the group's unit at true size,
+//!   so a 72 pt span reads `25.40 mm`.
+//! - `ScaleState::Calibrated` → the group's unit at the operator's scale, so
+//!   on a sheet drawn 1:50 in metres a 72 pt span reads `1.270 m`.
 //!
 //! ### Why points is the *default*, and why that is not an arbitrary pick
 //!
@@ -140,19 +141,19 @@
 //! **Every numbered ruler tick has a grid line under it**, because both come
 //! from the same 1-2-5 [`Ladder`] — which is the whole reason to ship a ruler
 //! and a grid rather than two independent ornaments: a feature sitting on a
-//! grid line can be read off the ruler without counting. Not the stronger
-//! "every *heavy* grid line is numbered", which was the first claim and is not
-//! true: both steps are 1-2-5 numbers and a 1-2-5 number is not always
-//! divisible by a smaller one (500 over 200 is 2.5). See
-//! [`tests::every_ruler_label_has_a_grid_line_under_it`].
+//! grid line can be read off the ruler without counting. ⚠ Not the stronger
+//! "every *heavy* grid line is numbered", which is **false**: both steps are
+//! 1-2-5 numbers and a 1-2-5 number is not always divisible by a smaller one
+//! (500 over 200 is 2.5). Asserted by `canvas::grid`'s
+//! `every_ruler_label_has_a_grid_line_under_it`.
 //!
-//! The two ladders are resolved by **different** constructors, and the
-//! difference is a defect this feature shipped once and had measured out of
-//! it: [`Ladder::for_labels`] bounds the *labelled* step, because that is what
-//! must not overlap; [`Ladder::for_lines`] bounds the *drawn* step, because
-//! every grid line is drawn. Using the first for the grid put a line every 1.4
-//! screen pixels on the benchmark sheet — a tint rather than a grid — and no
-//! screenshot and no test caught it.
+//! The two ladders are resolved by **different** constructors, and which one
+//! is which is load-bearing: [`Ladder::for_labels`] bounds the *labelled*
+//! step, because that is what must not overlap; [`Ladder::for_lines`] bounds
+//! the *drawn* step, because every grid line is drawn. ⚠ Using the first for
+//! the grid puts a line every 1.4 screen pixels on the benchmark sheet — a
+//! tint rather than a grid — and neither a screenshot nor the suite catches
+//! it.
 //!
 //! ---
 //!
@@ -165,8 +166,8 @@
 //! measured case): *a panel whose size feeds a fit-to-viewport computation has
 //! a fixed size.* A content-driven gutter — one that grew to fit its widest
 //! label — would be a measured feedback loop: a wider label on frame N is a
-//! smaller fit scale on frame N+1 is a different label on frame N+2. pdfcer has
-//! already watched a page shrink across three frames from exactly this shape.
+//! smaller fit scale on frame N+1 is a different label on frame N+2, which
+//! presents as a page visibly shrinking frame after frame.
 //!
 //! So [`THICKNESS_PTS`] is a constant, it is the *only* thing [`reserve`]
 //! subtracts, and nothing here measures a string before deciding how much room
@@ -204,14 +205,17 @@
 //!
 //! ## What is in this file
 //!
-//! | item | subject |
-//! |---|---|
-//! | [`THICKNESS_PTS`], [`reserve`], [`Gutters`] | the constant bite out of the viewport, and the child `Ui` the canvas is drawn into |
-//! | [`CanvasGeometry`] | what the frame learned about where its pages are, handed back so the gutters can be drawn against it |
-//! | [`Scale`] | what unit the ruler reads in, read from the document |
-//! | [`Ladder`], [`nice_step`] | the 1-2-5 tick ladder, chosen in display units and returned in points |
-//! | [`draw`] | the gutters: ticks, labels, the page's own edges, the pointer |
-//! | [`draw_grids`] | one grid per visible page, in that page's own space |
+//! - [`THICKNESS_PTS`], [`reserve`], [`Gutters`] — the constant bite out of
+//!   the viewport, and the child `Ui` the canvas is drawn into.
+//! - [`CanvasGeometry`] — what the frame learned about where its pages are,
+//!   handed back so the gutters can be drawn against it.
+//! - [`Scale`] — what unit the ruler reads in, read from the document.
+//! - [`Ladder`], [`nice_step`] — the 1-2-5 tick ladder, chosen in display
+//!   units and returned in points.
+//! - [`draw`] — the gutters: ticks, labels, the page's own edges, the pointer.
+//!
+//! The grid is [`super::grid`], drawn one per visible page in that page's own
+//! space and off the [`Ladder`] here.
 
 use egui::{Align, Layout, Pos2, Rect, Stroke, Ui, UiBuilder, pos2, vec2};
 use pdfcer_core::dimension::{
@@ -253,8 +257,8 @@ pub(super) const MIN_MAJOR_PITCH_PTS: f32 = 76.0;
 
 /// A hard ceiling on the ticks or grid lines drawn along one axis.
 ///
-/// [`MIN_GRID_PITCH_PTS`] and [`MIN_MAJOR_PITCH_PTS`] already bound the count
-/// by the viewport, so this is unreachable in ordinary use. It exists because
+/// [`MIN_MAJOR_PITCH_PTS`] and [`super::grid`]'s own minimum pitch already
+/// bound the count by the viewport, so this is unreachable in ordinary use. It exists because
 /// the ladder divides by a zoom and by a scale, both of which arrive from
 /// outside this module, and a degenerate value there would otherwise be a
 /// frame that never finishes rather than a frame that draws slightly wrong. A
@@ -510,29 +514,31 @@ impl Default for Scale {
 impl Scale {
     /// Read the document's scale from its dimensioning sidecar.
     ///
-    /// The **default group**, which `pdfcer-core` guarantees always exists
-    /// (`ui-spec` §5.3: *"a dimension always has a home and the group panel is
-    /// never empty"*).
+    /// The **default group**, which `pdfcer-core` guarantees always exists:
+    /// `DimensionModel::new` seeds exactly one group, `DEFAULT_GROUP_ID`, and
+    /// nothing can delete it.
     ///
-    /// ★ **This used to say "not an 'active' group, because the GUI has no
-    /// group picker yet … when that surface lands, this is the one line that
-    /// changes."* The surface landed on 2026-08-18 —
-    /// `crate::dialogs::dimension_groups`' *Draw into* column, written through
-    /// `crate::canvas::measure::set_active_group` — and **the line has
-    /// deliberately not changed.** The prediction assumed the answer was
-    /// obvious once the picker existed. It is not, and the two readings are
-    /// both defensible:
+    /// ★ **Not the *active* group, and that is an open behaviour question
+    /// rather than a gap.** A picker exists —
+    /// `crate::panels::dimension_groups`' *Draw into* column, written through
+    /// [`crate::canvas::measure::set_active_group`] — and both readings are
+    /// defensible:
     ///
-    /// | follow the **default** group (today) | follow the **active** group |
-    /// |---|---|
-    /// | the ruler is page furniture, read while panning and reading, and a tool state left over from ten minutes ago is an arbitrary thing for it to depend on | the ruler and the ce dimension the operator is about to draw would **agree**, which is the ruler's stated purpose — *"a ruler and a dimension across one span agree to the digit"* |
-    /// | a scale that changes because a radio moved in another window, with nothing on screen saying why, is a bug report | on a sheet with a 1:50 plan and a 1:5 detail, one fixed scale is wrong for half the sheet whatever it is |
+    /// - **The default group**, which is what this does: the ruler is page
+    ///   furniture, read while panning and reading, and a tool state left over
+    ///   from ten minutes ago is an arbitrary thing for it to depend on. A
+    ///   scale that changes because a radio moved in another window, with
+    ///   nothing on screen saying why, is a bug report.
+    /// - **The active group**: the ruler and the ce dimension the operator is
+    ///   about to draw would **agree**, which is the ruler's stated purpose.
+    ///   And on a sheet carrying a 1:50 plan and a 1:5 detail, one fixed scale
+    ///   is wrong for half the sheet whatever it is.
     ///
-    /// It is a **behaviour question for the operator**, not a gap, so it is
-    /// recorded here rather than decided. If it is answered *active*, this is
-    /// still the one line that changes — the function would take an
-    /// `&egui::Context` and ask `measure::active_group`, and everything
-    /// downstream is already scale-agnostic.
+    /// It is a question for the operator, so it is recorded here rather than
+    /// decided. Answered *active*, this is the one line that changes: the
+    /// function would take an `&egui::Context` and ask
+    /// [`crate::canvas::measure::active_group`], and everything downstream is
+    /// already scale-agnostic.
     ///
     /// A document whose sidecar is missing, unreadable or written by a newer
     /// build answers [`Scale::default`] — raw points. Every one of those means
@@ -696,22 +702,19 @@ impl Ladder {
     /// ★ **The grid's ladder**: every *drawn line* at least `min_pitch_pts`
     /// apart on screen — the **minor** step, not the major.
     ///
-    /// # Why this is a second constructor, and the defect that produced it
+    /// # Why this is a second constructor
     ///
-    /// The first version called [`Self::for_labels`] with
-    /// [`MIN_GRID_PITCH_PTS`], which bounds the **labelled** step. On the
-    /// benchmark A3 sheet at its fit zoom of 1.3634 that chose a 10-point major
-    /// and therefore a **1-point minor** — a grid line every 1.4 screen pixels.
+    /// ⚠ [`Self::for_labels`] bounds the **labelled** step, so handing it the
+    /// grid's minimum pitch bounds the wrong one. On the benchmark A3 sheet at
+    /// its fit zoom of 1.3634 that picks a 10-point major and therefore a
+    /// **1-point minor** — a grid line every 1.4 screen pixels, about 2,450
+    /// lines a frame instead of about 250. That is not a grid, it is a tint,
+    /// which is exactly what `grid`'s minimum pitch exists to prevent.
     ///
-    /// That is not a grid, it is a tint, which is the exact failure
-    /// [`MIN_GRID_PITCH_PTS`]'s own docs say the constant exists to prevent.
-    /// It also drew about 2,450 lines a frame instead of about 250.
-    ///
-    /// **Measured, not spotted.** It survived a screenshot — a 1.4-pixel mesh
-    /// over a drawing reads as a plausible fine grid — and it survived the
-    /// suite, because `the_grid_is_finer_than_the_ruler_and_its_heavy_lines_line_up`
-    /// asserted the grid was *finer*, which it emphatically was. What found it
-    /// was printing the ladder the running application had actually chosen.
+    /// **Neither a screenshot nor the suite can see that.** A 1.4-pixel mesh
+    /// over a drawing reads as a plausible fine grid, and a check asserting
+    /// the grid is *finer* than the ruler passes emphatically. Only printing
+    /// the ladder the running application actually chose separates the two.
     ///
     /// # How it climbs
     ///
@@ -772,19 +775,19 @@ impl Ladder {
     /// ★ **Every minor tick between `from` and `to`, as `index × minor`.**
     ///
     /// The one walk the rulers and both grid axes share, and it multiplies an
-    /// **integer index** rather than accumulating `value += minor`. That is a
-    /// correction made from a screenshot of this running, and it fixed two
-    /// things at once:
+    /// **integer index** rather than accumulating `value += minor`. Two things
+    /// turn on that:
     ///
-    /// 1. **The label at the page's top edge read `-0.00 pt`.** Repeated
+    /// 1. **The label at the page's top edge would read `-0.00 pt`.** Repeated
     ///    addition from a negative start lands on `-1.8e-15` instead of zero,
     ///    which `format_measurement` renders with two decimals *and its sign*.
     ///    A ruler whose origin is labelled "minus zero" is a ruler the operator
-    ///    has to stop and think about. Every test was green: the tick was in
-    ///    the right place to well under a pixel, and the number was wrong.
-    /// 2. **[`Self::is_major`] drifts.** Its tolerance exists because the
-    ///    accumulated error grows without bound; from an exact multiple the
-    ///    comparison is exact for any tick count a screen can hold.
+    ///    has to stop and think about — and every position check stays green,
+    ///    because the tick is in the right place to well under a pixel and only
+    ///    the number is wrong.
+    /// 2. **[`Self::is_major`] would drift.** Accumulated error grows without
+    ///    bound; from an exact multiple the comparison is exact for any tick
+    ///    count a screen can hold.
     ///
     /// The residual `-0.0` — `(-0.15f64).ceil()` is negative zero, and
     /// `-0.0 * 10.0` is still negative zero — is normalised by the `+ 0.0`
@@ -809,9 +812,15 @@ impl Ladder {
     /// Whether `value` is a whole number of major steps from zero.
     ///
     /// Compared against a tenth of a minor step rather than exactly, because
-    /// the tick walk accumulates `value` by repeated addition and an exact
-    /// remainder test starts missing majors after a few hundred ticks —
-    /// visible as a ruler that stops labelling halfway along.
+    /// `major` and `minor` both arrive from a division — by the scale factor
+    /// and by [`minor_divisions`] — so `value / self.major` lands a few ulps
+    /// either side of an integer even for exact multiples. An exact remainder
+    /// test drops those, visible as a ruler that stops labelling halfway
+    /// along.
+    ///
+    /// ★ [`Self::steps`] keeps the error at that floor by multiplying an
+    /// integer index. A walk that accumulated `value += minor` would outgrow
+    /// this tolerance after a few hundred ticks.
     pub(super) fn is_major(self, value: f64) -> bool {
         if self.major <= 0.0 || self.minor <= 0.0 {
             return false;
@@ -921,23 +930,21 @@ pub(super) fn draw(ui: &Ui, doc: &OpenDoc, gutters: Gutters, geometry: Option<&C
     };
     let scale = Scale::of(doc);
     let ladder = Ladder::for_labels(scale, doc.view.zoom, MIN_MAJOR_PITCH_PTS);
-    // ★ The content-area selection ink by its role name; see `overlay::ink`
-    // and `REVIEW_TRIAGE.md` T2 for why `visuals.selection` is not this
-    // canvas's channel to read. Same colour, named address.
+    // ★ The content-area selection ink by its role name; `overlay::ink`
+    // carries the argument for why `visuals.selection` is not this canvas's
+    // channel to read. Same colour, named address.
     let accent = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
 
-    // ★ **The page's own span, as a TINT across the gutter** — and it is a tint
-    // rather than the 2-point line it was in the first draft, which is a
-    // correction made from a screenshot of this running.
+    // ★ **The page's own span, as a TINT across the gutter** — not a line
+    // along the gutter's inner edge.
     //
     // The single most useful thing a ruler can say about a drawing sheet is
     // where its borders are: at a fit zoom the paper's edge against the grey
     // surround is a one-pixel difference in fill, legible on a white sheet and
-    // very nearly invisible on a dark theme. The first version said it with a
-    // heavy line along the gutter's inner edge — and *that line sat exactly on
-    // top of the ticks*, which run 2.5 points in from the same edge. Every
-    // minor tick over the page, which is every tick that matters, was drowned
-    // by the thing marking the page.
+    // very nearly invisible on a dark theme. ⚠ A heavy line along the inner
+    // edge says that and *sits exactly on top of the ticks*, which run 2.5
+    // points in from the same edge — drowning every minor tick over the page,
+    // which is every tick that matters, under the thing marking the page.
     //
     // A tint over the whole gutter says the same thing in a place nothing else
     // occupies, and it is the convention InDesign and Illustrator use for the
@@ -1342,8 +1349,7 @@ mod tests {
         assert!((Ladder::first_index(50.0, 101.0) - 3.0).abs() < f64::EPSILON);
     }
 
-    /// ★ **The origin is labelled `0.00 pt`, never `-0.00 pt`** — the defect a
-    /// screenshot of the running binary found and no test had.
+    /// ★ **The origin is labelled `0.00 pt`, never `-0.00 pt`.**
     ///
     /// The ruler's zero is the page's top-left corner, and a view scrolled so
     /// that the paper starts a little way into the gutter walks the ticks up
@@ -1362,7 +1368,7 @@ mod tests {
         let scale = Scale::default();
         let ladder = Ladder::for_labels(scale, 1.36, MIN_MAJOR_PITCH_PTS);
         // A gutter running from a little before the page's corner to well past
-        // it — exactly the geometry the screenshot was taken in.
+        // it — the geometry a view scrolled off the paper's edge produces.
         for from in [-1.5_f64, -18.4, -0.001, -999.0] {
             let zeroes: Vec<f64> = ladder.steps(from, 900.0).filter(|v| *v == 0.0).collect();
             assert_eq!(zeroes.len(), 1, "from {from}: the origin must be a tick");

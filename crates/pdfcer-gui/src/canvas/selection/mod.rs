@@ -20,7 +20,7 @@
 //!
 //! ## ★ The invariant, stated first because everything here is shaped by it
 //!
-//! `GUI_ROADMAP.md` Phase 1, from the operator's own words on 2026-08-13:
+//! `GUI_ROADMAP.md` Phase 1, from the operator's own words:
 //!
 //! > *"if I select a node or something for a tool, I should be able to pan
 //! > and zoom out without losing my first selection."*
@@ -33,11 +33,28 @@
 //! of which looks reasonable in isolation. This module closes all three, and
 //! each closure is a structural property rather than a promise:
 //!
-//! | # | The way it is lost | What closes it here |
-//! |---|---|---|
-//! | 1 | **Selection stored in screen coordinates.** Zoom changes the mapping, so the stored point stops naming the thing it named. | [`Selection`] holds **no coordinate of any kind**. It is `page + object + subpath + node`, four integers, none of which a zoom can touch. There is no constructor that takes a `Pos2`. This is the one closure that is a property of a *type* rather than of a method, which is why it lives in [`identity`] — see that file's header for the argument in full. |
-//! | 2 | **Selection cleared by a click that was really a drag.** A gesture begins with a press; if press-on-empty clears, every drag that starts on blank paper destroys the selection. | Nothing in this module is called on a press. The clear is driven by [`SelectionState::click`], which [`crate::canvas::gesture`] raises only for a **completed click with no drag**. |
-//! | 3 | **Selection invalidated by re-decomposition.** The provider rebuilds on page change and on edit; a rebuild triggered by zoom, or by a page change that is not a page change in the operator's sense, must not drop it. | [`SelectionState::resolve`] **re-resolves against the new decomposition** instead of discarding, and — the part that is easy to get wrong — it only validates entries **on the page the provider serves**. An entry for another page is left completely alone. |
+//! **1. Selection stored in screen coordinates.** Zoom changes the mapping, so
+//! the stored point stops naming the thing it named. ⇒ [`Selection`] holds **no
+//! coordinate of any kind**. It is `page + object + subpath + node`, four
+//! integers, none of which a zoom can touch, and there is no constructor that
+//! takes a `Pos2`. This is the one closure that is a property of a *type*
+//! rather than of a method, which is why it lives in [`identity`] — see that
+//! file's header for the argument in full.
+//!
+//! **2. Selection cleared by a click that was really a drag.** A gesture begins
+//! with a press; if press-on-empty clears, every drag that starts on blank
+//! paper destroys the selection. ⇒ Nothing in this module is called on a press.
+//! The clear is driven by [`SelectionState::click`], which
+//! [`crate::canvas::gesture`] raises only for a **completed click with no
+//! drag**.
+//!
+//! **3. Selection invalidated by re-decomposition.** The provider rebuilds on
+//! page change and on edit; a rebuild triggered by zoom, or by a page change
+//! that is not a page change in the operator's sense, must not drop it. ⇒
+//! [`SelectionState::resolve`] **re-resolves against the new decomposition**
+//! instead of discarding, and — the part that is easy to get wrong — it only
+//! validates entries **on the page the provider serves**. An entry for another
+//! page is left completely alone.
 //!
 //! Row 3's second half is the one that makes the acceptance criterion pass:
 //! *"select a node, zoom out three rungs, pan across the sheet, switch to
@@ -62,15 +79,15 @@
 //! provider trait, which is precisely why every invariant above can be
 //! asserted in a unit test rather than hoped for in a running window.
 
+/// Clicking the things pdfcer itself put on the page — stamps, notes, shapes
+/// and ce dimensions. A sibling of [`identity`], not a variant of it: an
+/// annotation is addressed by a STABLE `ObjId` where page content is addressed
+/// by a paint-order index, and the four ways the two differ are tabulated in
+/// its header.
+pub mod annot;
 /// What a selection **is** — the four `Copy` types the state below accumulates,
 /// none of which can hold a coordinate. The pure half; see its header for why
 /// "identity, not position" is a claim about a type rather than about a method.
-// Clicking the things pdfcer itself put on the page — stamps, notes, shapes and
-// ce dimensions. A sibling of `identity`, not a variant of it: an annotation is
-// addressed by a STABLE `ObjId` where page content is addressed by a
-// paint-order index, and the four ways the two differ are tabulated in its
-// header.
-pub mod annot;
 pub mod identity;
 
 pub use annot::{AnnotKind, AnnotSelection, AnnotTarget};
@@ -87,27 +104,23 @@ use crate::canvas::target::{CanvasTargetProvider, TargetId};
 /// # ★ Where this lives, and why that is the whole of its document scoping
 ///
 /// It is a field of `crate::app::state::OpenDoc` — the open document itself.
-/// That is not filing: it is the mechanism, and it replaced one.
+/// That is not filing: it is the mechanism.
 ///
-/// A selection is document-scoped state, so closing a document must forget it.
-/// Until this stage the value lived in `egui::Memory`, which outlives
-/// documents, so the canvas had to *detect* the change: a `DocumentToken`
-/// built from the `Arc<EditSession>`'s allocation address mixed with the page
-/// count, compared on every frame by a `sync_document` method that reset
-/// everything when it moved. Both are now **deleted**, along with the
-/// residual hazard they carried — an address is not an identity, and a reused
-/// allocation with a matching page count would have carried a stale selection
-/// into a new file, while holding an `Arc` or a `Weak` to make it a real
-/// identity would have disabled editing outright (`Arc::get_mut` fails while
-/// any other strong **or weak** reference exists).
+/// A selection is document-scoped state, so closing a document must forget it,
+/// and `OpenDoc::new`'s own doc comment is the guarantee: *"opening a document
+/// constructs a whole new `OpenDoc`, so a cached texture or a page index can
+/// never refer to a page from a previous file."* A selection held inside that
+/// structure inherits it by construction, on every frame, at no cost, with
+/// nothing to compare. `panels::DocKey` and the decomposition cache are scoped
+/// the same way for the same reason.
 ///
-/// What replaced them is `OpenDoc::new`'s own doc comment: *"opening a
-/// document constructs a whole new `OpenDoc`, so a cached texture or a page
-/// index can never refer to a page from a previous file."* A selection held
-/// inside that structure inherits the guarantee by construction, on every
-/// frame, at no cost, with nothing to compare. `panels::DocKey` and the
-/// decomposition cache went the same way in the same stage, for the same
-/// reason.
+/// ★ The alternative — living in `egui::Memory`, which outlives documents, and
+/// *detecting* the change against a token built from the `Arc<EditSession>`'s
+/// allocation address and the page count — cannot be made correct: an address
+/// is not an identity, so a reused allocation with a matching page count
+/// carries a stale selection into a new file, and holding an `Arc` or a `Weak`
+/// to make it a real identity disables editing outright (`Arc::get_mut` fails
+/// while any other strong **or weak** reference exists).
 ///
 /// **A page change is still not a document change**, and never was — that is
 /// invariant 3, and it is [`Self::resolve`]'s business, not this note's.
@@ -151,31 +164,25 @@ pub struct SelectionState {
     /// Here, [`Self::select_annot`] and the content paths are the only writers
     /// and each clears the other. One canvas, one selection.
     ///
-    /// # ★★★ Why it needs a `resolved_for` twin AFTER ALL — corrected 2026-09-07
+    /// # ★★★ Why it needs a `resolved_for` twin
     ///
-    /// This note used to read *"an annotation's outline is its `/Rect`, four
-    /// numbers in a dictionary, so it is re-read on the frame the selection is
-    /// made and carried on the selection itself."* Every clause of that is
-    /// true, and the conclusion drawn from it was wrong: **carrying it means it
-    /// goes stale the moment an edit changes the `/Rect`**, and nothing was
-    /// re-reading it.
-    ///
-    /// The measurement, from a driven run: draw a rectangle, select it, turn it
-    /// a quarter turn with the rotate handle. The engine reports
-    /// `/Rect` `473.7 × 249.6 → 256.6 × 477.4`; the painter goes on stroking
-    /// the outline it cached at click time, which is still 473.7 × 249.6 and in
-    /// the wrong place. It only came back to its mark when the operator clicked
-    /// somewhere else and clicked the shape again.
+    /// An annotation's outline is its `/Rect`, four numbers in a dictionary,
+    /// and reading it costs one `/Annots` walk with no decomposition. **That
+    /// makes it cheap to read; it does not make it safe to carry.** An outline
+    /// cached at click time goes stale the moment an edit changes the `/Rect`,
+    /// and the painter goes on stroking the box the mark has left: a quarter
+    /// turn with the rotate handle takes the `/Rect` from 473.7 × 249.6 to
+    /// 256.6 × 477.4 while the outline stays at the first, coming back to its
+    /// mark only when the operator clicks away and clicks the shape again.
     ///
     /// ⇒ [`Self::resolve_annot`] is the twin, keyed on `(page, epoch)` exactly
-    /// as [`Self::resolve`] is. It is **cheap in the way the old note claimed**
-    /// — one `/Annots` walk, no decomposition — which is why the fix is to run
-    /// it rather than to invalidate more aggressively.
+    /// as [`Self::resolve`] is. Being cheap is what makes re-running it the fix
+    /// rather than invalidating more aggressively.
     ///
-    /// ★ The lesson generalises past this field: *"it is cheap to read"* and
-    /// *"it does not need re-reading"* are different claims, and the first was
-    /// used here to justify the second. See [`annot`]'s header table for the
-    /// four ways content and annotation selections differ.
+    /// ★ *"It is cheap to read"* and *"it does not need re-reading"* are
+    /// different claims, and only the first is true here. See [`annot`]'s
+    /// header table for the four ways content and annotation selections
+    /// differ.
     annot: Option<AnnotSelection>,
     /// The `(page, edit epoch)` [`Self::annot`]'s geometry was last re-read
     /// for, or `None` before the first resolve.
@@ -417,33 +424,31 @@ impl SelectionState {
             .collect()
     }
 
-    /// ★ The indices a **Delete** may act on for `page` — empty unless the
-    /// operator is at the Object rung.
+    /// ★ The **Object-rung** indices on `page` — empty at the Part and Node
+    /// rungs.
     ///
-    /// # Why the rung guard lives here rather than at each call site
+    /// # ⚠ This is not the Delete rule any more
     ///
-    /// Because there are now two call sites and they must not be able to
-    /// disagree: the canvas's Delete/Backspace keys, and the ribbon's
-    /// `format.delete` on the contextual Format tab (reached through
-    /// `crate::app::PdfcerApp::dispatch_token`). A rule stated twice is a rule
-    /// that drifts, and the drift here is destructive rather than cosmetic.
+    /// `crate::canvas::deleting::subject` is, and it has arms for all three
+    /// rungs. Both claimants — the canvas Delete/Backspace keys and the
+    /// ribbon's `format.delete` — ask it, so a delete reaches the rung the
+    /// operator is actually on: a subpath at the Part rung, an anchor at the
+    /// Node rung, the whole object only at the Object rung.
     ///
-    /// # ★ And why the guard is not caution
+    /// What this method still answers is *"which whole objects are selected
+    /// such that `EditSession::delete_objects` could take them"*, which is a
+    /// narrower question and the right one for a caller that means the
+    /// whole-object verb specifically.
+    ///
+    /// # ★ Why the distinction is destructive rather than pedantic
     ///
     /// At the Part or Node rung the selection names a subpath or an anchor
-    /// *inside* one object, while the only verb wired to it is
-    /// `EditSession::delete_objects`, which removes **whole objects**. Deleting
-    /// the enclosing object because the operator asked to delete one line of it
-    /// is exactly the class of error that cannot be excused by "they can undo
-    /// it": one measured CAD export holds an entire drawing view as a single
-    /// path object with 1,194 subpaths, so the difference between the two
-    /// readings is one line and the whole view.
-    ///
-    /// `pdfcer-core` has the verbs for the deeper rungs — `delete_subpath`,
-    /// `delete_node` and `delete_text_run`, the last of which also needs the
-    /// `ObjectModelProvider::text_run_delete_would_move_next` guard asked
-    /// BEFORE the control is offered (R83). They are their own actions and
-    /// their own change; refusing here is the honest interim.
+    /// *inside* one object, while `EditSession::delete_objects` removes
+    /// **whole objects**. Deleting the enclosing object because the operator
+    /// asked to delete one line of it is the class of error that cannot be
+    /// excused by "they can undo it": one measured CAD export holds an entire
+    /// drawing view as a single path object with 1,194 subpaths, so the
+    /// difference between the two readings is one line and the whole view.
     ///
     /// # Returns
     ///
@@ -517,21 +522,21 @@ impl SelectionState {
 
     /// **The Node tool's click** — direct selection, with no descent ritual.
     ///
-    /// # ★★ What this replaces, and why it is a separate entry point
+    /// # ★★ Why it is a separate entry point from the ladder
     ///
     /// [`Self::click`] implements a *ladder*: a click selects an object, a
     /// double-click descends to its part, another descends to a node. That
     /// model is fine and it is what `move_node` and `move_subpath` are
-    /// addressed through — but until 2026-08-19 it was **the only way to reach
-    /// an anchor**, with nothing on screen at any stage saying a deeper rung
-    /// existed. The operator's report:
+    /// addressed through, but as the **only** way to reach an anchor it leaves
+    /// nothing on screen at any stage saying a deeper rung exists. The
+    /// operator:
     ///
     /// > *"How do I get to see the end points of an object and select them to
     /// > drag and move? This doesn't work either."*
     ///
-    /// He is right, and the fix is the one every vector editor already uses:
-    /// **the tool is the rung.** With the Node tool armed there is no state to
-    /// descend through, so there is no way to be somewhere you did not choose.
+    /// ⇒ **The tool is the rung**, which is what every vector editor does.
+    /// With the Node tool armed there is no state to descend through, so there
+    /// is no way to be somewhere you did not choose.
     ///
     /// It is a *separate function* rather than a flag inside `click` because
     /// the two make different decisions at every branch — this one never
@@ -626,11 +631,11 @@ impl SelectionState {
     /// **Take a band's hits OUT of the selection** — `OPERATOR_REQUESTS.md`
     /// O104.
     ///
-    /// The operator, 2026-09-03: *"I can't unselect things once I have selected
-    /// them for redaction."* [`Self::marquee`] could replace or extend and had
-    /// no third answer, so once several objects were picked the only way to
-    /// drop one was to shift-click it precisely — which on a CAD sheet of
-    /// overlapping strokes is often not practical.
+    /// The operator: *"I can't unselect things once I have selected them for
+    /// redaction."* [`Self::marquee`] can only replace or extend, so without a
+    /// third answer the only way to drop one of several picked objects is to
+    /// shift-click it precisely — which on a CAD sheet of overlapping strokes
+    /// is often not practical.
     ///
     /// ★ An empty `hits` is a no-op rather than a clear, and the asymmetry with
     /// [`Self::marquee`] is deliberate. A band that encloses nothing means
@@ -656,15 +661,6 @@ impl SelectionState {
     }
 
     /// Replace or extend the selection with a marquee's hits.
-    ///
-    /// ⚠ **This doc comment spent nine days attached to
-    /// [`Self::marquee_remove`]** — the O104 edit of 2026-09-03 inserted that
-    /// method's own block immediately below this one without a blank line, so
-    /// Rust glued the two together and this function shipped undocumented while
-    /// its neighbour carried a contract that was false for it. Two sentences
-    /// below, the merged comment said *"★★ The level is left alone"*, directly
-    /// contradicting the *"always resolves to the Object rung"* above it. A
-    /// reader believes the first half.
     ///
     /// Always resolves to the **Object** rung, and ascends if the operator
     /// was inside one. A rubber-band names a region of the page, and a region
@@ -695,22 +691,22 @@ impl SelectionState {
     ///
     /// # The complaint this closes
     ///
-    /// The operator, 2026-08-26: *"if I add an image I Expect to click on it to
-    /// resize but dragging doesn't resize."*
+    /// The operator: *"if I add an image I Expect to click on it to resize but
+    /// dragging doesn't resize."*
     ///
-    /// He was right about the symptom and it was not the resize. A driven check
-    /// had already proved that an image which **is** selected resizes from a
-    /// corner grip (`resize-commit grip=SouthEast sx=0.6810 sy=0.5899`) and
-    /// moves from a body drag. The image simply arrived **unselected** — so his
-    /// first press landed on unselected paper, `gesture::meaning` read it as a
-    /// marquee, and he watched a rubber band instead of a resize.
+    /// The resize itself is not the problem: an image which **is** selected
+    /// resizes from a corner grip (`resize-commit grip=SouthEast sx=0.6810
+    /// sy=0.5899`) and moves from a body drag. An image that arrives
+    /// **unselected** puts the first press on unselected paper, where
+    /// `gesture::meaning` reads it as a marquee — so the operator gets a rubber
+    /// band instead of a resize.
     ///
     /// # Why this is a convention rather than a convenience
     ///
-    /// Every one of the eight applications surveyed for `HOW_IT_SHOULD_WORK.md`
-    /// leaves a newly placed or pasted object **selected**, with its handles up.
-    /// It is what makes "place it, then get it right" a single continuous act
-    /// instead of a place, a hunt and a click. Nothing does otherwise.
+    /// Every one of the eight applications surveyed for this shell leaves a
+    /// newly placed or pasted object **selected**, with its handles up. It is
+    /// what makes "place it, then get it right" a single continuous act instead
+    /// of a place, a hunt and a click. Nothing does otherwise.
     ///
     /// # Always the Object rung, and always replacing
     ///
@@ -740,18 +736,16 @@ impl SelectionState {
     ///
     /// # ★★★ Why the Objects panel writes the SELECTION and not a focus
     ///
-    /// It used to write `PanelsState::focus`, a second notion of *"the thing I
-    /// am working on"* that the canvas knew nothing about and that only the
-    /// Properties panel read. The audit of 2026-08-26 named that as the root of
-    /// the operator's *"when I have an object selected like text the Tool tab
-    /// doesn't switch to giving me the editable stuff for that object"*: there
-    /// were three parallel answers to one question — the armed tool, the panel
-    /// focus and the canvas selection — with no bridge between them and none of
-    /// them authoritative.
+    /// A panel-local focus is a second notion of *"the thing I am working on"*
+    /// that the canvas knows nothing about, and it produces the operator's
+    /// *"when I have an object selected like text the Tool tab doesn't switch
+    /// to giving me the editable stuff for that object"*: three parallel
+    /// answers to one question — the armed tool, the panel focus and the canvas
+    /// selection — with no bridge between them and none of them authoritative.
     ///
     /// One notion, written from both ends. A row click selects on the canvas; a
-    /// canvas click is what the panel describes. Neither can now disagree with
-    /// the other, because there is nothing left to disagree with.
+    /// canvas click is what the panel describes. Neither can disagree with the
+    /// other, because there is nothing left to disagree with.
     pub fn select_only(&mut self, page: usize, object: TargetId, why: &'static str) {
         self.entries = vec![Selection::object(page, object)];
         self.level = SelectionLevel::Object;
@@ -776,11 +770,12 @@ impl SelectionState {
     ///
     /// # ★★★ Why this exists as its own verb
     ///
-    /// `OPERATOR_REQUESTS.md` O188(A). Until 2026-09-14 the Part rung had
-    /// exactly one entrance — [`Self::click_direct`], reached only by arming
-    /// the Points tool with a chord *before* clicking — and nothing on any
-    /// surface named it. [`crate::canvas::runmenu`] carries the measurement of
-    /// every other gesture and why each lands one rung up.
+    /// `OPERATOR_REQUESTS.md` O188(A). The ladder's own entrance to the Part
+    /// rung is [`Self::click_direct`], reached only by arming the Points tool
+    /// with a chord *before* clicking, and nothing on any surface names it —
+    /// so the rung needs a second entrance that a menu can offer.
+    /// [`crate::canvas::runmenu`] carries the measurement of every other
+    /// gesture and why each lands one rung up.
     ///
     /// A second entrance needs a way to *say* "stand here, on this part", and
     /// [`Self::select_only`] cannot: it hard-sets [`SelectionLevel::Object`],
@@ -974,26 +969,26 @@ impl SelectionState {
     }
 
     /// ★★★ **Re-read the selected annotation's geometry from the document** —
-    /// the annotation half of invariant 3, added 2026-09-07.
+    /// the annotation half of invariant 3.
     ///
     /// Called every frame from `canvas::interact`'s step 7, beside
     /// [`Self::resolve`]; does real work only when `(page, epoch)` has moved,
     /// which for an annotation means *an edit happened*.
     ///
-    /// # What goes stale, and what it looked like
+    /// # What goes stale without it
     ///
     /// [`AnnotSelection::outline`] and [`AnnotSelection::oriented`] are both
-    /// cached at click time. Every verb that changes an annotation's `/Rect` —
-    /// move, resize, rotate, a typed Apply in the properties panel, an undo of
-    /// any of them — therefore left the painter stroking a box the mark had
-    /// left. A driven run measured it: a quarter turn took the `/Rect` from
-    /// 473.7 × 249.6 to 256.6 × 477.4 and the outline stayed at the first,
-    /// with its grips on it, until the operator clicked away and back.
+    /// cached at click time, so every verb that changes an annotation's `/Rect`
+    /// — move, resize, rotate, a typed Apply in the properties panel, an undo
+    /// of any of them — leaves the painter stroking a box the mark has left. A
+    /// quarter turn takes the `/Rect` from 473.7 × 249.6 to 256.6 × 477.4 while
+    /// the outline stays at the first, with its grips on it, until the operator
+    /// clicks away and back.
     ///
-    /// ⇒ **The grips are the part that made this more than cosmetic.** They are
-    /// laid out on the same box, so after any edit the eight squares and the
-    /// rotate handle were somewhere the mark was not — and a press on the mark
-    /// itself could miss the body test entirely.
+    /// ⇒ **The grips are what make this more than cosmetic.** They are laid
+    /// out on the same box, so after an edit the eight squares and the rotate
+    /// handle are somewhere the mark is not — and a press on the mark itself
+    /// can miss the body test entirely.
     ///
     /// # Not found is left alone, deliberately
     ///
@@ -1180,24 +1175,20 @@ impl SelectionState {
     /// so carrying a part or node index across would address an index in a
     /// different object's space.
     fn descend(&mut self, page: usize, hit: ClickHit) {
-        // ★★★ **A LEAF DESCENDS TOO, as of 2026-09-01** —
-        // `OPERATOR_REQUESTS.md` O70.
+        // ★★★ **A LEAF DESCENDS TOO** — `OPERATOR_REQUESTS.md` O70.
         //
-        // A guard stood here for one day, refusing to descend into anything
-        // painted inside a form XObject, and its reasoning was sound while it
-        // lasted: the two deeper rungs were addressed by a page paint-order
-        // index, `canvas::input::probe` answered `(None, None)` for a leaf, and
-        // descending anyway would have set the Part rung with nothing
-        // addressable in it — `canvas::painting` declining to draw anchors and
-        // `pressing::grabbable` withholding the outline, so the operator's
-        // second double-click would make the selection box VANISH and offer
-        // nothing in its place.
+        // A leaf is painted from inside a form XObject, and the ladder may
+        // descend into one only because every rung below it is addressable:
+        // `provider::geometry` answers where a leaf's subpaths and anchors are,
+        // `canvas::input::probe` asks it, the anchors draw, and the drag routes
+        // to `pdfcer-core`'s `*_in_form` verbs.
         //
-        // All three of those changed together, which is the only order in which
-        // any of them should have: `provider::geometry` answers where a leaf's
-        // subpaths and anchors are, `probe` asks it, the anchors draw, and the
-        // drag routes to `pdfcer-core` Pass 188.0's `*_in_form` verbs. The rung
-        // is addressable, so the ladder descends.
+        // ⚠ All four are one condition. Entering the Part rung with nothing
+        // addressable in it makes `canvas::painting` decline to draw anchors
+        // and `pressing::grabbable` withhold the outline, so a second
+        // double-click makes the selection box VANISH and offers nothing in its
+        // place. A guard here would be the wrong repair for that; the right one
+        // is the rung being addressable in the first place.
         let Some(object) = hit.object else {
             // A double-click is also a click, and a click on empty paper
             // leaves. Doing anything else here strands the operator.
@@ -1287,7 +1278,7 @@ impl SelectionState {
     }
 }
 
-// The selection algebra's assertions. Split out under R2; see its header for
-// why the tests were the seam and the code was not.
+// The selection algebra's assertions; see its header for why the tests are a
+// seam of their own.
 #[cfg(test)]
 mod tests;

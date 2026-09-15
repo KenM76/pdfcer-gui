@@ -23,7 +23,7 @@
 //! 3. a release read from raw pointer input, because a drag begun on a tile
 //!    ends anywhere.
 //!
-//! # ★ The assertion that is the whole point of the feature
+//! # The assertion that is the whole point of the feature
 //!
 //! **The caret was drawn.** The operator's request was not "let me drag pages"
 //! — it was *"make indicators to show when moving pages where they are going
@@ -64,25 +64,22 @@ const MODE: &str = "review";
 /// the header, the previews checkbox and the slow-page note, so a caret
 /// "inside the panel" would be a weaker claim than a caret inside the grid.
 const GRID: &str = "panel-pages-grid";
-/// The prefix of the per-tile regions, published since 2026-08-18.
+/// The prefix of the per-tile regions.
 const TILE: &str = "panel-pages-tile.";
 /// The insertion caret's region.
 const CARET: &str = "panel-pages-drop-caret";
 /// The trace events the gesture emits.
 ///
-/// ★ `page-drag-start`, **singular**, since 2026-08-20 — and the rename is not
-/// cosmetic. The drag used to be the Pages panel's own and was traced by it;
-/// it now lives in `crate::pagedrag`, shared with the page view and with the
-/// document tab strip, because a drag that crosses documents cannot be owned
-/// by the panel it started in. So it is *a page drag*, not *the pages panel's
-/// drag*.
+/// `page-drag-start`, **singular**, and the name is not the panel's. The drag
+/// lives in `crate::pagedrag`, shared with the page view and with the document
+/// tab strip, because a drag that crosses documents cannot be owned by the
+/// panel it started in. So it is *a page drag*, not *the pages panel's drag*.
 ///
-/// This check went red on the rename and reported *"the tile does not sense a
-/// drag"* over a build whose trace carried the line two names away — a
-/// confident, specific, entirely wrong defect report about working code, which
-/// is `CONTINUE.md` §7's whole subject. A harness constant naming an
-/// application event is a **coupling**, and it decays silently in exactly one
-/// direction: absence reads as failure.
+/// **A harness constant naming an application event is a coupling, and it
+/// decays silently in exactly one direction: absence reads as failure.** A
+/// check holding the stale spelling reports *"the tile does not sense a drag"*
+/// over a build whose trace carries the line two names away — a confident,
+/// specific, entirely wrong defect report about working code.
 const DRAG_START: &str = "page-drag-start";
 /// See [`DRAG_START`].
 const DRAG_RELEASE: &str = "pages-drag-release";
@@ -252,21 +249,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("gesture began: `{}`", started.raw));
 
-    // --- 5: ★ the indicator was drawn --------------------------------------
+    // --- 5: the indicator was drawn --------------------------------------
     //
     // `ui_rect_visible` is a change log, so a caret that lived only during the
     // drag still leaves its rectangle in the trace. Reading the rectangle —
     // rather than only its presence — is what rules out the two failures that
     // publish a region and draw nothing an operator could see.
     //
-    // ★★ `declared_since`, NOT `declared`, and the difference is the whole
-    // assertion. This check FAILED on 2026-08-19 saying the caret was never
-    // published, over a trace that carried it four lines above the release:
-    // `declared` asks "is it on screen NOW", and a caret that exists only while
-    // the pointer is down is retired before the harness can look. Asking the
-    // present-tense question about a thing whose nature is to be gone is a
-    // guaranteed false negative — and it read as a missing feature, on the one
-    // feature the operator had asked for by name.
+    // `declared_since`, NOT `declared`, and the difference is the whole
+    // assertion. `declared` asks "is it on screen NOW", and a caret that
+    // exists only while the pointer is down is retired before the harness can
+    // look. **Asking the present-tense question about a thing whose nature is
+    // to be gone is a guaranteed false negative**, and it reads as a missing
+    // feature over a trace that carries the caret four lines above the
+    // release.
     //
     // The anchor is `started.lineno`, so a caret from an earlier gesture in the
     // same run cannot satisfy it. See `driving::declared_since`.
@@ -322,7 +318,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             release.raw
         )));
     }
-    // ★ Cross-check: the caret's own position and the gap the release used
+    // Cross-check: the caret's own position and the gap the release used
     // must be the same decision. They are computed once, in the layout pass,
     // and carried together — but "carried together" is exactly the kind of
     // claim that is true when written and false after a refactor.
@@ -353,9 +349,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// already docked — which is the default layout — this is not called at all,
 /// and pressing its toggle would have CLOSED the surface under test.
 ///
-/// ★ `pub(crate)` since 2026-08-31, for `checks::drop_onto_thumbnails`, which
-/// needs the same panel on screen and would otherwise carry a second copy of a
-/// two-click sequence that already handles the ribbon overflow.
+/// `pub(crate)` for `checks::drop_onto_thumbnails`, which needs the same panel
+/// on screen and would otherwise carry a second copy of a two-click sequence
+/// that already handles the ribbon overflow.
 pub(crate) fn open_pages_panel(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.view").ok_or_else(|| {

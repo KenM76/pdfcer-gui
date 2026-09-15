@@ -18,7 +18,7 @@
 #
 # ★★★ THIS PROJECT HANDED THAT CHANNEL TO THE CANVAS, AND THE CANVAS WON.
 #
-# `REVIEW_TRIAGE.md` §2b defect **T2**. `egui-shell`'s theme set
+# The theme set
 # `selection.bg_fill` to `palette.selection_fill` — a 27 %-alpha tint whose job
 # is washing a selected object on a drawing — and `selection.stroke` to
 # `palette.accent`, the ink the canvas outlines things with. Thirty-three
@@ -93,46 +93,41 @@
 # explanations, which is a bad trade.
 #
 # ═══════════════════════════════════════════════════════════════════════════
-# ★★★ THERE IS NO FILE-LEVEL EXEMPTION. THERE WAS ONE, AND CLOSING IT IS
-# WORTH MORE THAN THE LINE IT SAVED.
+# ★★★ THERE IS NO FILE-LEVEL EXEMPTION, AND A CORRECT READ IS NOT A REASON
+# FOR ONE
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# When this gate was written it exempted one path outright:
-# `crates/pdfcer-gui/src/icons/mod.rs`, whose `icons::selected_image` tinted a
-# toggle's glyph with `ui.visuals().selection.stroke.color`. The read was
-# CORRECT — the glyph sits on the fill `egui` paints behind a selected toggle,
-# so that channel's ink is exactly right for it — and the file was left alone
-# only because another track owned that directory that day.
+# The tempting case is a glyph drawn ON the plate `egui` paints behind a
+# selected toggle: that channel's ink really is the right colour for it, so
+# `ui.visuals().selection.stroke.color` really does produce the right pixel.
 #
-# ★★ THE EXEMPTION'S OWN PREMISE EXPIRED WITHIN A DAY, WHICH IS THE ARGUMENT.
-# It was written on the ground that "that channel carries `accent` +
-# `on_accent`". Within twenty-four hours the channel was re-pointed a second
-# time — to `selected_plate` + `accent` — because `on_accent` there had made
-# the focused-`TextEdit` frame stroke `egui` draws from the SAME field
-# unreadable (luminance gaps 17.9 / 5.0 / 29.1, floor 90). The exempted line
-# would have gone on compiling, gone on passing, and gone on tinting a glyph
-# with whatever the channel happened to hold.
+# ★★ **A BLESSING IS A CLAIM ABOUT A PREMISE, AND A PREMISE EXPIRES WITHOUT
+# TELLING ANYONE.** An exemption granted on the ground that *"that channel
+# carries `accent` + `on_accent`"* is worth nothing once the channel is
+# re-pointed to `selected_plate` + `accent` — which is exactly what readability
+# forces, because `on_accent` in that field makes the focused-`TextEdit` frame
+# stroke `egui` draws from the SAME field unreadable (luminance gaps
+# 17.9 / 5.0 / 29.1, floor 90). The exempted line goes on compiling, goes on
+# passing, and goes on tinting the glyph with whatever the channel now holds.
 #
-# That is `REVIEW_TRIAGE.md` **T1** in one file: `check-strong-text.sh` blessed
-# two sites on the stated ground that *"both are drawn ON the accent fill, so
-# `on_accent` is the right colour anyway"* — true of one of them, silently
-# false of the other, which passes `.selected(true)` and lets `egui` choose.
-# The gate went on passing a defective site for a reason that had expired,
-# which is why A15a shipped in all three presets.
+# The same shape has already cost this project a shipped defect in all three
+# presets: `check-strong-text.sh` blessed two sites on the stated ground that
+# *"both are drawn ON the accent fill, so `on_accent` is the right colour
+# anyway"* — true of one, silently false of the other, which passes
+# `.selected(true)` and lets `egui` choose.
 #
-# So the line was converted rather than re-blessed. `selected_image` now calls
+# ⇒ So the glyph tint is CONVERTED, not blessed. `icons::selected_image` calls
 # `Theme::selected_widget_ink(ui.ctx())`, and
 # `egui_shell::theme::tests::the_selected_widget_accessors_agree_with_the_style_egui_will_paint`
 # asserts that accessor equals `visuals.selection.stroke.color` in every
-# preset. Identical pixels; the difference is that the promise is now checked
-# by a test instead of by a comment in a gate.
+# preset. Identical pixels; the difference is that the promise is checked by a
+# test rather than by a comment in a gate.
 #
-# ⇒ **The gate has no holes.** Only two escapes remain, both narrow and both
+# ⇒ **The gate has no holes.** Only two escapes exist, both narrow and both
 # self-announcing: the theme directory, which DEFINES the channel, and a
 # per-line `selection-channel-exempt:` marker with a reason written on the
-# line. If a future case genuinely needs a third, the bar is the one that was
-# just failed: a written reason AND a Rust assertion that pins its premise —
-# and note that even that bar did not hold here.
+# line. The bar for a third is a written reason AND a Rust assertion that pins
+# its premise — prose alone has already failed this test once.
 #
 # ═══════════════════════════════════════════════════════════════════════════
 # ★ NON-VACUITY
@@ -145,16 +140,14 @@
 # the theme directory. A gate that reports a correct shape trains people to
 # ignore it, which is worse than not having the gate.
 #
-# The stronger evidence is historical rather than planted. Run against the tree
-# as it stood before 2026-09-04 (`git grep` over `HEAD`, comments filtered the
-# same way this gate filters them), it names **33 readings in 13 files** — 28
-# of `selection.stroke` and 5 of `selection.bg_fill`, 32 in `pdfcer-gui` and
-# one in `egui-shell`'s own `ribbon::mode_selector`. Thirty-two of the 33 were
-# converted by the fix this gate arrived with, and the 33rd — the glyph tint —
-# was converted the following day when the exemption was closed, so the gate
-# now runs with **zero** file-level escapes against a tree that once had 33
-# violations. A planted violation would have shown only that the pattern
-# matches; the real distribution shows the rule discriminates.
+# ★ The stronger evidence is measured rather than planted. Run against the
+# revision that preceded the conversion (`git grep` over that tree, comments
+# filtered the same way this gate filters them), it names **33 readings in 13
+# files** — 28 of `selection.stroke` and 5 of `selection.bg_fill`, 32 in
+# `pdfcer-gui` and one in `egui-shell`'s own `ribbon::mode_selector`. All 33
+# are now converted and the gate runs with **zero** file-level escapes. A
+# planted violation shows only that the pattern matches; a real distribution
+# of that size shows the rule discriminates.
 #
 # ═══════════════════════════════════════════════════════════════════════════
 # USAGE
@@ -266,8 +259,8 @@ RS
     cat > "$tmp/src/comment.rs" <<'RS'
 /// The colour is the theme's content-area ink.
 ///
-/// It was `visuals.selection.stroke.color` until T2 — `egui`'s selected-WIDGET
-/// channel, which this theme had handed to the canvas. Same value, new name.
+/// Not `visuals.selection.stroke.color` — that is `egui`'s selected-WIDGET
+/// channel, and it belongs to chrome. Same value, correct name.
 fn draw() {}
 RS
 
@@ -342,8 +335,8 @@ both fills AND the text colour for every `Button::selected(true)` and every
 It is not a canvas role, it is not a general-purpose accent, and it is not a
 focus-ring colour.
 
-Reading it from content code is how defect T2 happened: the theme pointed the
-channel at the canvas to satisfy ~33 readers like this one, and every selected
+Reading it from content code is how this project's worst theme defect
+happened: the theme pointed the channel at the canvas to satisfy ~33 readers like this one, and every selected
 chrome control in the application was then painted with canvas ink — accent
 text on a 27 % wash, luminance gap 72.5 in the Dark preset against a floor
 of 90. Every gate stayed green, because every colour involved was correctly
@@ -360,11 +353,11 @@ Say which role you actually want:
     plate egui painted (a tinted glyph)  → Theme::selected_widget_ink(ctx)
                                            Theme::selected_widget_pair(ctx)
 
-The last one is what the single historical exemption became. There is no
-file-level exemption left. A per-line `selection-channel-exempt:` marker with
-a written reason still exists, but the bar for using it is high: the previous
-blessing's premise ("the channel carries accent + on_accent") expired within a
-day, so a reason in prose is not enough — pin it with a Rust assertion too.
+The last one is what a correct-looking raw read should become. There is no
+file-level exemption. A per-line `selection-channel-exempt:` marker with a
+written reason exists, but the bar for using it is high: a blessing's premise
+("the channel carries accent + on_accent") can expire without telling anyone,
+so a reason in prose is not enough — pin it with a Rust assertion too.
 MSG
     exit 1
 fi

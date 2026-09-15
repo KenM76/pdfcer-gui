@@ -6,17 +6,15 @@
 //!
 //! ## Why a second module rather than a second type in `persistence`
 //!
-//! `app::persistence`'s header opens by saying it *"owns one type,
-//! [`crate::app::persistence::LayoutStore`]"*, and the file is shaped around
-//! that claim — its whole write-scheduling apparatus exists for one specific
-//! problem which this file does not have. Bolting a second, differently-shaped
-//! store into it would falsify the first line of its documentation and would
-//! put two unrelated schedules in one place.
+//! `app::persistence` owns one type, [`crate::app::persistence::LayoutStore`],
+//! and is shaped around it: its whole write-scheduling apparatus exists for a
+//! problem this file does not have. A second, differently-scheduled store in
+//! there would put two unrelated write policies under one header.
 //!
-//! ## ★ Why there is no debounce here, when the layout needs one
+//! ## Why there is no debounce here, when the layout needs one
 //!
-//! This is the one interesting difference between the two stores and it is
-//! worth being explicit, because the absence looks like an oversight.
+//! The one substantive difference between the two stores, stated because the
+//! absence otherwise reads as an oversight.
 //!
 //! `LayoutStore` debounces because a splitter drag reports a change **on every
 //! frame of the gesture** — a two-second drag is a hundred and twenty change
@@ -50,7 +48,7 @@
 //! would be a second answer to *"where is the profile?"*, and the two would
 //! disagree the first time either moved.
 //!
-//! ## ★★ Failure is silent, in one direction only, and that is deliberate
+//! ## Failure is silent, in one direction only, and that is deliberate
 //!
 //! **Loading never fails.** A missing file, an unreadable one, a directory
 //! that does not exist, or a line full of tokens from a newer build all yield a
@@ -129,7 +127,7 @@ pub fn load() -> PickFilter {
 /// Read from an explicit path. The twin of [`load`], for tests and for a
 /// future `--user-data-dir` override.
 ///
-/// ★ The `Err` arm and the `Ok` arm are deliberately **not** merged. They mean
+/// The `Err` arm and the `Ok` arm are deliberately **not** merged. They mean
 /// different things — "you have never set this" against "these are your
 /// settings" — and only the former may be answered with the default. See the
 /// module header's table.
@@ -214,7 +212,7 @@ mod tests {
     }
 
     /// The header's table, row 1: no file means "never touched", which is the
-    /// default and NOT "nothing selectable".
+    /// default and *not* "nothing selectable".
     #[test]
     fn a_missing_file_yields_the_default_rather_than_an_empty_filter() {
         let dir = scratch("missing");
@@ -237,7 +235,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// ★ The header's table, row 3 — the one that is easy to get wrong.
+    /// The header's table, row 3 — the one that is easy to get wrong.
     ///
     /// An operator who switched every class off and quit must get that back,
     /// not a helpfully-restored default. If this ever fails, the shell has

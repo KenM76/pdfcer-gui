@@ -9,16 +9,20 @@
 //! (`app::blank::tests`), the command registers, the arm raises `Action::New`,
 //! `new_document` replaces the status — and **not one of them can observe the
 //! chain being performed**. That is the same gap `markup_rectangle` was written
-//! for and the same one `HANDOFF.md` §2 is a list of.
+//! for: every link green, the join undriven.
 //!
 //! It is also the check for a failure mode this project has hit twice and which
 //! a unit test structurally cannot see: **a document that is open and will not
 //! draw.** A blank page is the one document where "open" and "renders" are most
 //! easily confused, because a blank page and a page that failed to rasterize
 //! produce the same screenshot — which is why this check reads the canvas's own
-//! `drawn=` count rather than looking at pixels. It is `HANDOFF.md` §2 defect 8
-//! wearing different clothes: 2,450 hairlines and a wash are the same picture,
-//! and so are a blank sheet and a sheet that did not render.
+//! `drawn=` count rather than looking at pixels.
+//!
+//! ★★ **A screenshot cannot distinguish "drew nothing" from "drew something
+//! featureless".** 2,450 hairlines and a flat wash are the same picture at a
+//! glance, and so are a blank sheet and a sheet that did not render. Wherever
+//! that ambiguity exists, the oracle has to be a count the application
+//! publishes, not a pixel.
 //!
 //! # What it asserts, in order, and why each step is separate
 //!
@@ -59,16 +63,15 @@
 //!    everything else is per-document — a distinction whose whole failure mode
 //!    is invisible until the second press.
 //!
-//! ## ★ It was actually run against such a build, on 2026-08-14
+//! ## ★ The falsification this check is held to
 //!
-//! Not as a thought experiment. `checks/mod.rs` says *"every check here has
-//! been run against such a build and seen to fail; that is what
-//! `PROJECT_PLAN.md` §4 stage S1's acceptance criterion asks for, and it is
-//! not optional"*, so answer 1 above was performed: the single line
-//! `"file.new" => actions.push(Action::New)` was deleted from
-//! `app::dispatch`, the release binary rebuilt, and this check run against it.
+//! `PROJECT_PLAN.md` §4 stage S1 requires every check here to have been run
+//! against a deliberately broken build and seen to fail — not reasoned about.
+//! For this one the break is deleting `"file.new" => actions.push(Action::New)`
+//! from `app::dispatch`.
 //!
-//! It reported **FAIL**, at step 3, with:
+//! ★★ The **shape of the failure it must produce** is the contract, and it is
+//! what the step separation above buys:
 //!
 //! > press 1: `file.new` was invoked and traced no new `new-document
 //! > name="Untitled 1.pdf"`. The application traced
@@ -76,14 +79,12 @@
 //! > `app::dispatch` and there is no arm for it — the fix is one match arm,
 //! > not a wiring hunt. Documents it did report creating this run: none.
 //!
-//! Two things in that sentence are the point. It failed at **step 3 and not
-//! step 2** — the click was reported as having reached the control, because it
-//! had — and it named the *right file*. A check that had stopped at step 2
-//! would have passed against that binary; a check whose failure said "New is
-//! broken" would have sent a reader looking at the manifest, the registry and
-//! the ribbon before reaching the one line that was missing.
-//!
-//! The arm was restored, the binary rebuilt, and the check re-run: PASS.
+//! Two properties of that message matter. It fails at **step 3 and not step
+//! 2** — the click did reach the control and the check says so — and it names
+//! the *right file*. A check that stopped at step 2 would pass against that
+//! binary; a check whose failure said only "New is broken" would send a reader
+//! through the manifest, the registry and the ribbon before reaching the one
+//! missing line.
 //!
 //! And what this check would **not** catch, stated so nobody reads it as
 //! covering more than it does:
@@ -488,19 +489,20 @@ mod tests {
 
     /// ★ **The expected names are the ones the application actually writes.**
     ///
-    /// These constants used to carry the surrounding quotes, because `PathBuf`
-    /// is traced through `{:?}` and the trace reads `name="Untitled 1.pdf"`.
-    /// **`TraceLine::get` now strips a value's surrounding quotes**, so they are
-    /// written bare and this test is what keeps the two in step: it parses a
-    /// real quoted trace line and asserts the bare constant matches it.
+    /// `PathBuf` is traced through `{:?}`, so the trace reads
+    /// `name="Untitled 1.pdf"` — quoted. **`TraceLine::get` strips a value's
+    /// surrounding quotes**, so these constants are written BARE, and this test
+    /// is what keeps the two in step: it parses a real quoted trace line and
+    /// asserts the bare constant matches it.
     ///
-    /// The change was forced by a chord spelled `[`. An unquoted `chord=[`
-    /// opened a bracket the field splitter never saw closed, and swallowed every
-    /// field after it on the line — so the application now quotes values that
-    /// may contain structural characters, and `get` unwraps them, so that no
-    /// caller has to know which values those are. Getting this backwards makes
-    /// the check report New as broken on a build where it works, which is the
-    /// exact false negative it was written to avoid.
+    /// ★ The quoting exists because a value can contain structural characters —
+    /// a chord spelled `[` in an unquoted `chord=[` opens a bracket the field
+    /// splitter never sees closed, and swallows every field after it on the
+    /// line. The application quotes such values and `get` unwraps them, so no
+    /// caller has to know which values those are.
+    ///
+    /// ⚠ Getting this backwards makes the check report New as broken on a build
+    /// where it works — the exact false negative it exists to avoid.
     #[test]
     fn the_expected_names_survive_the_trace_quoting_them() {
         let trace = Trace::parse(

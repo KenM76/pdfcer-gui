@@ -79,10 +79,11 @@
 # Marked explicitly so `* text=auto` above can never misdetect a NUL-free
 # synthetic PDF as text and mangle it. (`binary` == `-text -diff`.)
 #
-# The .png rules matter as much as the .pdf one here: `evidence/` is 18
-# screenshots that back observational claims in README.md's evidence
-# index. A normalized PNG is a corrupt PNG, and the claim it backs
-# silently loses its evidence.
+# The .png rule matters as much as the .pdf one. A normalized PNG is a
+# corrupt PNG, and the PNGs in this tree are load-bearing: the icon
+# sources under `crates/pdfcer-gui/assets/` and the pixel oracle's
+# calibration image `evidence/crop_settings.png`, which `ui-verify`
+# samples by fraction and which a single inflated byte would invalidate.
 *.pdf binary
 *.png binary
 *.jpg binary

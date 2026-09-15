@@ -1,19 +1,15 @@
-//! # `app::dispatch::navigate` — the five controls in View ▸ Navigate
+//! # `app::dispatch::navigate` — the controls in View ▸ Navigate
 //!
-//! The arrow, the white arrow, the type tool, the hand, and — since
-//! 2026-08-31 — the Smart-select switch beside them.
+//! The arrow, the white arrow, the type tool, the hand, and the Smart-select
+//! switch beside them.
 //!
 //! ## Why they are one module
 //!
 //! Because they are one **row**, and the row is a claim: *these are the things
-//! a press on the page can mean*. Four of them arm a tool and the fifth changes
-//! what the first one selects, which makes it the odd one out in mechanism and
-//! the obvious one out in placement — the operator asked for it *"in
+//! a press on the page can mean*. Most of them arm a tool; Smart select instead
+//! changes what the arrow selects, which makes it the odd one out in mechanism
+//! and the obvious one in placement — the operator asked for it *"in
 //! navigate"* by name.
-//!
-//! They were arms in `app::dispatch` until R2's 1,500-line gate refused the
-//! file on the day the fifth arrived. That is the gate doing its job: the seam
-//! was already there and nobody had needed to find it.
 //!
 //! ## ★★ The two shapes in here, and why the difference is not an
 //! ## inconsistency
@@ -21,7 +17,7 @@
 //! | control | capability check | why |
 //! |---|---|---|
 //! | Select, Hand | none | they author nothing, and `tool::retire_forbidden` permits them in every mode |
-//! | Text | none | *"copying is not authoring"* — the operator's own ruling, 2026-08-14 |
+//! | Text | none | *"copying is not authoring"* — the operator's own ruling |
 //! | **Points** | `edit_content`, **and it says so** | an anchor is selected in order to be DRAGGED |
 //! | **Smart select** | `edit_content`, and it says so | it governs a substitution that only happens where content is selectable |
 //!
@@ -52,6 +48,11 @@ pub(crate) fn handles(id: &str) -> bool {
 }
 
 /// Arm a tool, or flip the switch.
+///
+/// ★ Note the signature: **no `actions`**. Every control here changes how the
+/// next gesture is READ and none of them changes the document, so there is
+/// nothing to push. An arm that needed one would be a control that does not
+/// belong in this row.
 pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id: &str) {
     match id {
         "view.tool_select" => {
@@ -73,8 +74,8 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
         // is nothing to put there: selecting text authors nothing, so
         // `canvas::tool::retire_forbidden` permits this tool in every mode and
         // a decline here would contradict it. In one line, it is the operator's
-        // own *copying is not authoring* ruling of 2026-08-14, which already
-        // moved both text-copy verbs off the authoring tab.
+        // own *copying is not authoring* ruling, which is also why both
+        // text-copy verbs sit off the authoring tab.
         //
         // It therefore has no decline trace either, and that is consistent
         // rather than lax: a trace line exists to say *which* nothing happened,
@@ -89,9 +90,9 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
             // that refuses the drag must refuse the tool rather than arm it and
             // then say no to every gesture.
             //
-            // ★★★ **Two capabilities, corrected 2026-09-05, and this predicate
-            // must stay identical to `tool::retire_forbidden`'s Node arm** —
-            // which carries the table and the argument. In one line: the tool
+            // ★★★ **Two capabilities, and this predicate must stay identical
+            // to `tool::retire_forbidden`'s Node arm** — which carries the
+            // table and the argument. In one line: the tool
             // edits the anchors of a path on the page (`edit_content`) AND the
             // corners of a ce dimension (`author_measure`), and Review has the
             // second. `retire_forbidden` closes the same gap from the other end
@@ -157,10 +158,6 @@ fn decline(id: &str) {
     crate::app::status::decline::record_node_tool_needs_edit_mode();
 }
 
-/// ★ Note the signature: **no `actions`**. Every control here changes how the
-/// next gesture is READ and none of them changes the document, so there is
-/// nothing to push. An arm that needed one would be a control that does not
-/// belong in this row.
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -8,18 +8,17 @@
 //!
 //! ## ★ 1. The engine cannot create a document, and that is deliberate
 //!
-//! `pdfcer_core::document::Document` has exactly four constructors —
-//! `load`, `load_with_password`, `from_bytes`, `from_bytes_with_password`
-//! (`D:\Dev\pdfcer\crates\pdfcer-core\src\document.rs:360-404`) — and **every
-//! one of them parses existing PDF bytes**. `EditSession` can rotate, delete
-//! and reorder pages (`edit.rs:3848`, `:14739`, `:15039`) and has no verb that
+//! Every constructor on `pdfcer_core::document::Document` — `load`,
+//! `from_bytes`, and their password and options variants — **parses existing
+//! PDF bytes**. `EditSession` can rotate, delete and reorder pages
+//! (`rotate_pages`, `delete_pages`, `reorder_pages`) and has no verb that
 //! *creates* one. `pageops::insert` and `pageops::merge` take pages only from
 //! an already-loaded `DocumentView`. There is no path anywhere in the engine
 //! that conjures a page from nothing.
 //!
 //! The obvious response is to ask pdfcer for a `Document::blank(…)`. **Do not
-//! file that request.** The engine's own module header states the reason as a
-//! named, permanent invariant (`document.rs:10-19`):
+//! file that request.** The engine's `document` module header states the
+//! reason as a named, permanent invariant:
 //!
 //! > `Document` is simultaneously the parse result AND […] the write source
 //! > […]. **No separate builder/generation model may ever be introduced** —
@@ -28,17 +27,18 @@
 //!
 //! A blank-document constructor is a generation model. Asking for one is
 //! asking the engine to break the invariant that decides its architecture, and
-//! it would have been refused — which is the fifth instance of `HANDOFF.md`
-//! §11's rule that a claim gets verified against their source *before* it is
-//! filed, and the first where the verification stopped a filing rather than
-//! corrected one.
+//! it would be refused — which is the standing rule in miniature: **verify a
+//! claim about the engine against the engine's source before filing it**, and
+//! the verification is worth as much when it stops a filing as when it
+//! corrects one.
 //!
 //! The engine's own tests reach a blank document by writing minimal PDF bytes
-//! and parsing them back (`edit.rs:18066`, `fn blank_page_doc`). That helper is
-//! `#[cfg(test)]` and `pub(crate)`, with its own note saying why: *"a builder
-//! that produces deliberately-minimal PDFs is a testing tool, not part of the
-//! engine's API, and exposing it would invite production code to construct
-//! documents outside the one object model."*
+//! and parsing them back (`edit.rs`'s `blank_page_doc`, over
+//! `pageops::tests_support::build_pdf_bytes`). That builder is `#[cfg(test)]`
+//! and `pub(crate)`, with its own note saying why: *"a builder that produces
+//! deliberately-minimal PDFs is a testing tool, not part of the engine's API,
+//! and exposing it would invite production code to construct documents outside
+//! the one object model."*
 //!
 //! ## ★ 2. So New opens a file, which is the thing this shell already does
 //!
@@ -61,8 +61,8 @@
 //!
 //! ## ★ 3. The page is A4, and Letter was rejected on the evidence
 //!
-//! Standing instruction 4 (`HANDOFF.md` §3): *match what Inkscape, Acrobat and
-//! SolidWorks do — but first ask which of them actually has the surface.*
+//! The standing instruction: *match what Inkscape, Acrobat and SolidWorks do
+//! — but first ask which of them actually has the surface.*
 //!
 //! **All three have this surface**, which is unusual, so the head-count is
 //! worth having:
@@ -97,51 +97,27 @@
 //! That is what the size picker is for, and it is a follow-up row rather than a
 //! silent guess dressed up as a default.
 //!
-//! ### ★ 3a. The size picker WAS blocked on the engine — 2026-08-17, unblocked 2026-08-18
+//! ### ★ 3a. The size picker is one asset and one engine verb, never ten assets
 //!
-//! **Read this section as a record, not as current state.** Everything below
-//! was true when it was written and the conclusion — *do not build ten assets*
-//! — was the right one. `pdfcer-core` shipped `set_media_box` and `paper` the
-//! next day, and [`document_sized`] is the one-asset implementation this
-//! section said the verb would buy. It is kept because a decision NOT to build
-//! something is the kind that gets silently re-litigated, and because the shape
-//! of the argument — *a half-capability that forecloses the real fix is worse
-//! than no capability* — is the reusable part.
+//! §2 forbids authoring PDF bytes at runtime, so a shell that cannot ask the
+//! engine to resize a page has exactly one implementation open to it: **one
+//! checked-in template asset per size**. Counted honestly that is A0–A4 = five,
+//! doubled to **ten** because a drafting sheet is landscape, more again for
+//! ANSI — **and a custom size is impossible at any count.** An operator who
+//! needs 900 × 600 is not served by twenty assets.
 //!
-//! It is not merely unbuilt, and the reason is worth having here so the next
-//! session does not spend an afternoon rediscovering it.
+//! ⇒ **A half-capability that forecloses the real fix is worse than no
+//! capability**, and that is the reusable half of this argument. The answer is
+//! an engine verb: `EditSession::set_media_box` and `set_media_boxes`, with
+//! `pdfcer_core::paper` for the named sizes, which buys one asset and one
+//! dialog — every size, both orientations, custom included, with [`TEMPLATE`]
+//! unchanged. [`document_sized`] is that implementation.
 //!
-//! **Nothing in `pdfcer-core` writes a `/MediaBox`.** Verified three ways:
-//! `grep -rn "MediaBox" crates/pdfcer-core/src/` returns two non-test hits and
-//! both are comments; `EditSession`'s page verbs are rotate, delete, reorder
-//! and nothing else (`edit.rs:3848`, `:3981`, `:14739`, `:15039`, `:15158`);
-//! and `pageops` only ever takes pages from an already-loaded `DocumentView`.
-//! A page's size is fixed at parse time and no caller can change it.
-//!
-//! Which leaves exactly one implementation open to the shell: **one checked-in
-//! template asset per size**, because §2 forbids authoring PDF bytes at
-//! runtime. Counted honestly, that is A0–A4 = five, doubled to **ten** because
-//! a drafting sheet is landscape, more again for ANSI sizes — **and a custom
-//! size is still impossible at any count.** An operator who needs 900 × 600 is
-//! not served by twenty assets.
-//!
-//! A `set_media_box` verb makes it one asset and one dialog, every size, both
-//! orientations, custom included. So the request is filed
-//! (`request_no_verb_sets_a_pages_media_box.md`) and **neither implementation
-//! was built** — ten assets that still cannot answer the custom case is the
-//! kind of half-capability that looks like progress and forecloses the real
-//! fix.
-//!
-//! The request deliberately does not specify the semantics — whether content
+//! The semantics the shell needs are deliberately narrow — whether content
 //! moves, whether `/CropBox` follows, whether shrinking below content is a
-//! refusal — because those are the engine's questions and the narrow answer
-//! (*"only on a page with no content"*) is **entirely sufficient** here:
-//! `file.new`'s page is empty by construction.
-//!
-//! Priority stated in the request is **low**, and honestly so. Nobody drafts a
-//! sheet in pdfcer; documents arrive from SolidWorks. What the filing buys is
-//! that `NO_SURFACE.md`'s row stops looking like an unbuilt GUI surface when
-//! it is an absent engine capability.
+//! refusal are the engine's questions, and the narrow answer (*"only on a page
+//! with no content"*) is **entirely sufficient** here: `file.new`'s page is
+//! empty by construction.
 //!
 //! ## ★ 4. What a document with no file is, and what must not happen to it
 //!
@@ -161,21 +137,18 @@
 //! forms cache key, the Pages panel caption, the trace — and all of those are
 //! correct for a name. See the field's own documentation.
 //!
-//! ## ★ 5. A new document CAN be saved — corrected 2026-08-14
+//! ## ★ 5. A new document CAN be saved
 //!
-//! This section used to read *"A new document cannot be saved, because no
-//! document can"*, and it is kept as a correction rather than deleted because
-//! the analysis under it turned out to be exactly right and is what the fix was
-//! built from. It said: both engine verbs take `&self` so an `Arc<EditSession>`
-//! can call either, `crate::app::files::pick_save_path` already exists with its
-//! diagnostic seam, **"save a copy is a shell task, not an engine gap"**, and
-//! what remained was one decision — incremental preserves superseded content
-//! and any existing signature, a full rewrite destroys the signature.
+//! **Save a copy is a shell task, not an engine gap.** Both engine write verbs
+//! take `&self`, so an `Arc<EditSession>` can call either;
+//! `crate::app::files::pick_save_path` supplies the picker and its diagnostic
+//! seam; and the one decision left is which writer — incremental preserves
+//! superseded content and any existing signature, a full rewrite destroys the
+//! signature.
 //!
-//! `file.save_copy` was wired on 2026-08-14 and that decision was already made:
-//! **incremental**, because the command's own shipped tooltip had promised it in
-//! words on an operator-visible surface. `crate::app::save` §1 carries the
-//! argument.
+//! `file.save_copy` takes the **incremental** writer, because the command's own
+//! shipped tooltip promises it in words on an operator-visible surface.
+//! `crate::app::save` §1 carries the argument.
 //!
 //! What that means for New specifically: a created document saves like any
 //! other, and the copy it writes is the 443-byte template plus an appended
@@ -242,26 +215,14 @@ pub fn document() -> Result<(Document, Vec<Page>), String> {
 
 /// The blank document, **resized** to `rect` before anybody sees it.
 ///
-/// # ★ Why this exists at all, and why §3a above is now historical
+/// # ★ Why this exists at all
 ///
-/// The module header's §3a says the size picker is blocked, and sets out the
-/// evidence: nothing in `pdfcer-core` wrote a `/MediaBox`, so the only
-/// shell-side implementation was one checked-in template asset per size — ten
-/// with landscape, more with ANSI, *and a custom size still impossible at any
-/// count*. The filing was made
-/// (`request_no_verb_sets_a_pages_media_box.md`), neither implementation was
-/// built, and the reasoning for not building the half-capability is in §3a and
-/// still correct.
-///
-/// **`pdfcer-core` answered it on 2026-08-18** — `EditSession::set_media_box`,
-/// `set_media_boxes` and a `pdfcer_core::paper` table. So this is the one asset
-/// and one dialog §3a said the verb would buy: every size, both orientations,
-/// custom included, with [`TEMPLATE`] unchanged.
-///
-/// §3a is left standing rather than deleted. It is the record of a decision
-/// *not* to build something, and this project's own rule about prose that
-/// quotes a fact is that the useful moment is the one where the fact changed —
-/// which is here.
+/// The module header's §3a sets out the alternative and why it is refused: one
+/// checked-in template asset per size — ten with landscape, more with ANSI,
+/// *and a custom size impossible at any count*. This function is the other
+/// implementation, resting on `EditSession::set_media_box` and
+/// `pdfcer_core::paper`: one asset and one dialog, every size, both
+/// orientations, custom included, with [`TEMPLATE`] unchanged.
 ///
 /// # ★ Why the document is serialized and re-parsed rather than handed over
 ///

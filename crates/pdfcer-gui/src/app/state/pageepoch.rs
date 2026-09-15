@@ -19,27 +19,15 @@
 //! the more valuable half: **a thumbnail is the lowest-priority work in the
 //! program and must never sit between a click and its result.**
 //!
-//! ## What was measured, before anything was built
+//! ## What this buys, and what it costs to get wrong
 //!
 //! [`OpenDoc::edit_epoch`](crate::app::state::OpenDoc::edit_epoch) is a
-//! **document-wide** counter, and three separate caches of **per-page** derived
-//! state were using it as their invalidation key:
-//!
-//! | cache | what it holds | what one edit cost |
-//! |---|---|---|
-//! | `panels::pages::thumbnails::ThumbnailCache` | a picture per page, in the rail | every tile, re-rendered inline on the UI thread |
-//! | `render::strip::StripRasters` | a full-size raster per page, for continuous scroll | every cached page missing on the next frame |
-//! | `OpenDoc::page_texture_epoch` | the canvas's own raster | re-rasterised even when the edit was on another sheet |
-//!
-//! On `SW41177.pdf` — the operator's own 36-sheet SolidWorks set — twelve
-//! visible tiles cost **666 ms of UI-thread work after every single edit**,
-//! with a 282 ms worst frame. On the benchmark CAD drawing a full-size strip
-//! raster is ~950 ms *per page*.
-//!
-//! `strip.rs`' own header stated the global behaviour as though it were the
-//! design — *"the edit bumps the epoch, and every cached page misses on the
-//! next frame"* — which is why it was never questioned. It is not a design; it
-//! is the coarsest key that was available when it was written.
+//! **document-wide** counter. Keying a per-page cache on it invalidates every
+//! page on every edit, and the caches that would do so are expensive: the
+//! thumbnail rail re-renders inline on the UI thread (twelve visible tiles on
+//! the operator's 36-sheet SolidWorks set measure 666 ms of UI-thread work per
+//! edit, 282 ms worst frame), and a full-size strip raster on the benchmark CAD
+//! drawing is ~950 ms *per page*.
 //!
 //! ## ★★★ Why the default is `bump_all` and precision is opt-in
 //!
@@ -81,16 +69,9 @@
 //!
 //! Everything. `page_objects`, `page_text`, `form_runs`, `saved_epoch` and
 //! every rule-4 disclosure slot still key on it and still behave identically.
-//! This is a **finer answer laid beside the existing one**, not a replacement:
-//! the change is additive, so a reader who does not know this module exists
-//! cannot be wrong about anything.
-//!
-//! ## Why a module and not a field on `OpenDoc`
-//!
-//! R2. `app/state.rs` is at 1,481 lines against the 1,500 ceiling, and a field
-//! documented to this codebase's standard plus the type it needs would not fit.
-//! `app/state/` already holds `heldpreview.rs`, `identity.rs` and `fixtures.rs`
-//! on the same argument.
+//! This is a **finer answer laid beside the existing one**, not a replacement,
+//! so a reader who does not know this module exists cannot be wrong about
+//! anything.
 
 /// **A revision number per page, plus a document-wide floor.**
 ///
@@ -110,34 +91,22 @@ pub struct PageEpochs {
     /// most of them and is the point. See this module's header, §"Why the
     /// default is `bump_all`".
     all: u64,
-    /// ★★★ **One monotonic issuer for BOTH kinds of bump**, and it is the
-    /// thing that makes `bump_all` mean what it says.
+    /// ★★★ **One monotonic issuer for BOTH kinds of bump.** It is what makes
+    /// `bump_all` mean what it says, and it must not be split in two.
     ///
-    /// # The hole this closes, found by this module's own test
+    /// *Two counters compared with `max` do not compose.* Increment `all` and
+    /// `per_page[page]` independently and `get` = `max(all, per_page[page])` is
+    /// not enough: narrow page 2 (`per_page[2]` = 1, `all` = 0), then raise
+    /// everything (`all` = 1), and page 2 answers `max(1, 1)` = 1 — *the number
+    /// it already had*. A document-wide bump would then skip exactly the pages
+    /// most recently edited individually, leaving a cache holding a picture of
+    /// content the operator had already changed on precisely the page he was
+    /// working on.
     ///
-    /// The first version incremented `all` and `per_page[page]` independently.
-    /// With `get` = `max(all, per_page[page])` that is **not enough**: narrow
-    /// page 2 (`per_page[2]` = 1, `all` = 0), then raise everything (`all` =
-    /// 1), and page 2's answer is `max(1, 1)` = 1 — *the number it already
-    /// had*. A document-wide bump silently failed to invalidate exactly the
-    /// pages that had most recently been edited individually.
-    ///
-    /// That is the failure this whole module is written to make impossible: a
-    /// cache would keep a picture of content the operator had already changed,
-    /// which is rule 4's *sneaky*, and it would happen on precisely the page
-    /// he had been working on.
-    ///
-    /// ⇒ **Both bumps draw from one counter**, so every number ever issued is
-    /// strictly larger than every number issued before it, and any bump that
-    /// reaches a page changes that page's answer. The invariant is now a
-    /// property of the issuer rather than of the arithmetic in `get`, which is
-    /// why `get` can stay a plain `max`.
-    ///
-    /// ★ The lesson, worth the sentence: *two counters compared with `max` do
-    /// not compose.* `max(a, b)` is only monotonic in the pair if the two
-    /// sequences are ordered against each other, and independent counters are
-    /// not. The test that caught it (`a_page_that_leaves_and_returns_…`) was
-    /// written to check a different property and found this instead.
+    /// ⇒ Drawing both bumps from one counter makes every number strictly larger
+    /// than every number before it, so any bump that reaches a page changes that
+    /// page's answer. The invariant is a property of the issuer rather than of
+    /// the arithmetic in `get`, which is why `get` can stay a plain `max`.
     next: u64,
 }
 
@@ -188,9 +157,8 @@ impl PageEpochs {
     /// cannot disagree.
     ///
     /// ★ The number it issues comes from [`Self::next`], shared with
-    /// [`Self::bump_all`]. See that field: two independent counters compared
-    /// with `max` let a document-wide bump fail to move a recently narrowed
-    /// page, which is the one outcome this module exists to prevent.
+    /// [`Self::bump_all`] — see that field for why a second counter here would
+    /// let a document-wide bump fail to move a recently narrowed page.
     pub fn bump(&mut self, page: usize) {
         if self.per_page.len() <= page {
             self.per_page.resize(page + 1, self.all);
@@ -315,12 +283,10 @@ mod tests {
 
     /// ★★★ **A document-wide bump moves a page that was JUST narrowed.**
     ///
-    /// The regression test for the hole [`PageEpochs::next`] documents, and
-    /// the reason both bumps draw from one counter. Under the first version —
-    /// two independent counters compared with `max` — this failed: narrowing
-    /// page 1 and then raising everything left page 1 answering the number it
-    /// already had, so a document-wide invalidation skipped exactly the page
-    /// the operator had most recently edited.
+    /// This is what pins the shared issuer [`PageEpochs::next`] documents: with
+    /// two independent counters, narrowing page 1 and then raising everything
+    /// leaves page 1 answering the number it already had, so a document-wide
+    /// invalidation skips exactly the page most recently edited.
     #[test]
     fn a_narrowed_page_is_still_moved_by_a_document_wide_bump() {
         let mut e = PageEpochs::default();

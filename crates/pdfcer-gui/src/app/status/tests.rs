@@ -1,30 +1,28 @@
-//! # `app::status` tests — the bar's rules, and the two defects it surfaced
+//! # `app::status` tests — the bar's rules, stated as assertions
 //!
-//! Split out of `status.rs` on 2026-08-26 under R2, when the narrow-window shed
-//! rule and the theme-derived panel height took that file to 1,561 lines.
-//! Nothing moved but the tests, and they moved **whole**: the gate's own header
-//! is explicit that the right response to it firing is to split the module, not
-//! to shrink the prose.
+//! The tests for `status.rs`, taken out along the test/subject seam and kept
+//! **whole**: a module split is the right answer to a file that has outgrown
+//! its ceiling, and shrinking the prose is not.
 //!
-//! ## ★ What these are really guarding
+//! ## What these are really guarding
 //!
 //! **R128.** A status bar whose height depends on what it has to say forms a
 //! measured feedback loop with a per-frame fit-to-viewport zoom — 230 % → 224 %
 //! → 215 % on a real document. Most of the assertions here are one property in
 //! different clothes: *the bar is exactly as tall whatever is in it.*
 //!
-//! ★★ And one of them, [`tests::the_panel_is_tall_enough_for_the_controls_the_theme_actually_draws`],
-//! guards the case its neighbour could not see: the neighbour measures in an
+//! And one of them, [`tests::the_panel_is_tall_enough_for_the_controls_the_theme_actually_draws`],
+//! guards the case its neighbour cannot see: the neighbour measures in an
 //! `egui::Context::default()`, which carries egui's own spacing and **not this
 //! application's theme**, and in that world the bar's controls really are under
 //! 24 points. In the shipped theme they are 30, and two points of two controls
-//! were clipped off the bottom of the window at every UI scale. That is R1's
-//! founding shape verbatim — a test whose harness cannot contain the condition
-//! that breaks the real program.
+//! hang off the bottom of the window at every UI scale. That is R1's founding
+//! shape verbatim — a test whose harness cannot contain the condition that
+//! breaks the real program.
 
 #![cfg(test)]
-// ★ Scoped to the tests, because the non-test users of this alias moved
-// into `status::disclosure` when the three rule-4 lines were split out.
+// Scoped to the tests, because the only non-test users of this alias live
+// in `status::disclosure`.
 // At the top of the file it is an unused import that only
 // `clippy --all-targets` sees — `cargo build` skips the test module, so the
 // build stays green while the gate goes red.
@@ -66,7 +64,7 @@ fn bar_height(ctx: &Context, status: &Status) -> f32 {
     height
 }
 
-/// ★ **An edit disclosure does not change the bar's height** — R128 for
+/// **An edit disclosure does not change the bar's height** — R128 for
 /// the sentence a move or a delete puts there.
 ///
 /// # Why this needs its own test beside the fill one
@@ -162,8 +160,8 @@ fn an_edit_disclosure_does_not_change_the_bar_height() {
     );
 }
 
-/// ★★★ **The panel is tall enough for the controls THIS APPLICATION draws
-/// into it** — the test the one below could not be.
+/// **The panel is tall enough for the controls THIS APPLICATION draws
+/// into it** — the test the one below cannot be.
 ///
 /// `the_bar_is_exactly_as_tall_open_as_closed` asserts the same property
 /// and passes against a build where it is false, because it measures in an
@@ -173,15 +171,14 @@ fn an_edit_disclosure_does_not_change_the_bar_height() {
 /// adds 2 points of padding on each side, and the bar's content is 30
 /// against a panel whose content box was 26.
 ///
-/// Measured on a real window at both scales before this was written:
-/// `status-bar 972.0 .. 1002.0` in a 1000-point client at 1.00, and
-/// `416.4 .. 446.4` in a 444.4-point client at 1.80. Two points of two
-/// controls clipped off the bottom of the window, at every scale.
+/// Measured on a real window at both scales: `status-bar 972.0 .. 1002.0`
+/// in a 1000-point client at 1.00, and `416.4 .. 446.4` in a 444.4-point
+/// client at 1.80. Two points of two controls clipped off the bottom of the
+/// window, at every scale.
 ///
-/// ★ So this one **applies the theme** and asserts against every preset the
-/// application ships, not just the current one — because the defect was
-/// introduced by a preset raising its control height, and the next one will
-/// be too.
+/// So this one **applies the theme** and asserts against every preset the
+/// application ships, not just the current one — because what introduces
+/// this defect is a preset raising its control height.
 #[test]
 fn the_panel_is_tall_enough_for_the_controls_the_theme_actually_draws() {
     for preset in egui_shell::theme::Preset::ALL {
@@ -195,14 +192,13 @@ fn the_panel_is_tall_enough_for_the_controls_the_theme_actually_draws() {
         let _ = bar_height(&ctx, &opened());
         let content = bar_height(&ctx, &opened());
         let panel = height_for(&theme);
-        // ★ `- FRAME_MARGIN_PTS`, and the first version of this assertion
-        // omitted it and was therefore too loose to fail. egui insets a
-        // panel's content by 2 points top and bottom, so a 30-point panel
-        // has 26 points to lay out in — which is exactly the arithmetic
-        // that let 30 points of controls hang 2 points out of a 30-point
-        // panel and off the bottom of the window. Comparing against the
-        // panel's OUTER height measures the wrong box, and it passed
-        // against a deliberately broken `height_for`.
+        // `- FRAME_MARGIN_PTS`, without which this assertion is too loose
+        // to fail. egui insets a panel's content by 2 points top and
+        // bottom, so a 30-point panel has 26 points to lay out in — which
+        // is exactly the arithmetic that lets 30 points of controls hang 2
+        // points out of a 30-point panel and off the bottom of the window.
+        // Comparing against the panel's OUTER height measures the wrong
+        // box, and passes against a deliberately broken `height_for`.
         let usable = panel - FRAME_MARGIN_PTS;
         assert!(
             usable >= content,
@@ -216,7 +212,7 @@ fn the_panel_is_tall_enough_for_the_controls_the_theme_actually_draws() {
     }
 }
 
-/// ★ **The bar is exactly as tall with the disclosure open as closed —
+/// **The bar is exactly as tall with the disclosure open as closed —
 /// and as tall with no document as with one.**
 ///
 /// Rule R128, asserted rather than argued. A status panel whose height
@@ -263,11 +259,11 @@ fn the_bar_is_exactly_as_tall_open_as_closed() {
          here is laying out vertically"
     );
 
-    // ★ …and as tall with a live fill disclosure as without one.
+    // …and as tall with a live fill disclosure as without one.
     //
-    // Added 2026-08-14 with `fill_disclosure`, and it is the case most
-    // likely to break R128 in future: unlike the render notes, this line
-    // appears **without the operator doing anything** — a fill they made
+    // This is the case most likely to break R128: unlike the render notes,
+    // this line appears **without the operator doing anything** — a fill they
+    // made
     // on the canvas puts a sentence in the bar on the next frame. If it
     // grew the bar, the page would silently re-fit at the moment the
     // operator finished typing into a field, and the symptom would be
@@ -294,10 +290,10 @@ fn the_bar_is_exactly_as_tall_open_as_closed() {
         },
     );
     // The precondition, asserted rather than assumed. Without this the
-    // test passes just as well when `fill_disclosure` returned early and
-    // drew nothing — measuring that an absent line did not change the
-    // height, which is true and worthless. `HANDOFF.md` §10's rule: assert
-    // the measurement HAPPENED, not only its value.
+    // test passes just as well when `fill_disclosure` returns early and
+    // draws nothing — measuring that an absent line did not change the
+    // height, which is true and worthless. **Assert that the measurement
+    // HAPPENED, not only its value.**
     assert!(
         crate::panels::forms::edit::last_fill_disclosure(doc.edit_epoch).is_some(),
         "the planted disclosure is not live for this document's epoch, so \
@@ -316,47 +312,41 @@ fn the_bar_is_exactly_as_tall_open_as_closed() {
 // Legibility — the labels that are glyphs
 // =======================================================================
 
-/// ★ **Every glyph the bar draws exists in the bundled font set.**
+/// **Every glyph the bar draws exists in the bundled font set.**
 ///
 /// `⏴`, `⏵`, `⏷`, `−` and `·` are not decoration: three of them are the
 /// entire visible text of a control. A codepoint the font set cannot
 /// draw renders as a tofu box, which is defect D2's shape — an invisible
 /// label — with the operator's page position behind it.
 ///
-/// **This test has already paid for itself.** The catalog was written
-/// with `◀` `▶` for the page steps and `▸` `▾` for the disclosure, and
-/// all four are missing from egui's bundled fonts (Ubuntu-Light +
-/// NotoEmoji + emoji-icon-font). They would have shipped as four tofu
-/// boxes on the two controls an operator touches most.
+/// The obvious choices for this catalog — `◀` `▶` for the page steps and
+/// `▸` `▾` for the disclosure — are all four missing from egui's bundled
+/// fonts (Ubuntu-Light + NotoEmoji + emoji-icon-font), and would ship as
+/// four tofu boxes on the two controls an operator touches most.
 ///
 /// Checked against `FontFamily::Proportional`, which is what every label
 /// and button on this bar resolves to, and run inside a real pass because
 /// egui has no fonts before one.
 ///
-/// ## ★★ Corrected 2026-08-14: this test used to ask the wrong question
+/// ## Why this asks `GlyphProbe` and never [`epaint::Fonts::has_glyph`]
 ///
-/// It called [`epaint::Fonts::has_glyph`], **which returns false
-/// negatives**, and the one it returned here was expensive: it reported
-/// `⚠` (U+26A0) as undrawable, `DEFECTS.md` D12 was filed on that
-/// reading, and thirteen shipped sentences were recorded as rendering
-/// tofu when they render correctly. `has_glyph` returns
-/// `resolve_face(c) != replacement_face_key` — so it says "no" to every
-/// codepoint whose first supporting face happens to be the face that also
-/// supplies `epaint`'s substitution mark `◻`, which for the proportional
-/// family is `NotoEmoji-Regular`, which is `⚠`'s supplier.
+/// `has_glyph` returns `resolve_face(c) != replacement_face_key`, so it
+/// says "no" to every codepoint whose first supporting face happens to be
+/// the face that also supplies `epaint`'s substitution mark `◻` — which
+/// for the proportional family is `NotoEmoji-Regular`, the supplier of
+/// `⚠`. It reports `⚠` (U+26A0) as undrawable when it draws, and
+/// `DEFECTS.md` D12 records what believing that cost: thirteen shipped
+/// sentences recorded as rendering tofu when they render correctly.
 ///
-/// It now asks [`crate::icons::glyphs::GlyphProbe`], which lays the
-/// character out and looks at what was drawn. The full mechanism, the
-/// measurements and the three-sentinel fingerprint are in that module's
-/// header.
+/// [`crate::icons::glyphs::GlyphProbe`] instead lays the character out and
+/// looks at what was drawn. The full mechanism, the measurements and the
+/// three-sentinel fingerprint are in that module's header.
 ///
-/// **The mark on the edit-disclosure line was chosen under the wrong
-/// reading and is deliberately left alone.** `⚑` draws, it is in the
-/// bar today, and re-opening a settled copy decision on the strength of
-/// a correction to the diagnosis is churn, not a fix. What changed is
-/// what this test *knows*, not what it protects.
+/// **The mark on the edit-disclosure line is `⚑` and stays `⚑`.** It
+/// draws, it is in the bar, and re-opening a settled copy decision on the
+/// strength of a corrected diagnosis is churn, not a fix.
 ///
-/// This gate is now the narrow, hand-listed one; the broad one is
+/// This gate is the narrow, hand-listed one; the broad one is
 /// [`crate::icons::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph`],
 /// which reads the whole catalog from source and needs no list.
 #[test]
@@ -379,7 +369,7 @@ fn every_glyph_the_status_bar_draws_has_a_glyph() {
         t::page_number(37),
         t::page_clamped_note(99, 42, 42),
         t::page_rejected_note().to_owned(),
-        // ★ The framing this shell adds around a `pdfcer-core` disclosure
+        // The framing this shell adds around a `pdfcer-core` disclosure
         // — the mark in particular, which is what distinguishes a fact
         // about the operator's own document from the narration beside it.
         // Checked with a one-character note so what is under test is the
@@ -387,19 +377,12 @@ fn every_glyph_the_status_bar_draws_has_a_glyph() {
         // Latin text, and the mark is the only codepoint this bar
         // introduces that a bundled font could plausibly lack.
         //
-        // ★★ **The line was drafted with `⚠` and this test rejected it —
-        // wrongly.** That rejection became `DEFECTS.md` D12, and the
-        // diagnosis in it was backwards: `⚠` draws. The mark here stayed
-        // `⚑`, and stays `⚑`; see the doc comment above for why a
-        // corrected diagnosis is not a reason to re-litigate the copy.
-        //
         // A tofu box **on a disclosure** is worse than one on a label: it
         // reads as a rendering failure, and an operator who has decided a
         // surface is broken stops reading it — which is the one outcome
-        // rule 4's whole apparatus exists to prevent. That reasoning was
-        // always right; only the measurement behind it was wrong.
+        // rule 4's whole apparatus exists to prevent.
         t::edit_disclosure_line(&["x".to_owned()]),
-        // ★ …and the decline's mark, `⊗` (U+2297), which is the one
+        // …and the decline's mark, `⊗` (U+2297), which is the one
         // codepoint the worded decline introduces.
         //
         // Listed here as well as being swept by the catalog-wide gate,
@@ -438,7 +421,7 @@ fn every_glyph_the_status_bar_draws_has_a_glyph() {
     );
 }
 
-/// ★★ **The three disclosure lines are independent, and none of them is the
+/// **The three disclosure lines are independent, and none of them is the
 /// narrator.**
 ///
 /// Asserted as a truth table because the obvious mistake, when a third line is
@@ -485,24 +468,26 @@ mod disclosure_independence {
 // matters is the one that says the text will not fit
 // ===========================================================================
 
-/// ★★★ **THE DEFECT THIS FILE HAD NO TEST FOR, until 2026-09-07.**
+/// **The auto-size outcome the general sentence cannot state.**
 ///
-/// `fill_disclosure` called `forms_fill_autosize_note` for **every** auto-size
-/// outcome, so an operator whose field was too small for its text was told
-/// *"pdfcer chose 6.0 pt. Another program filling this field may choose
-/// differently."* — a sentence about interoperability, when the fact was that
-/// **the text is going to overflow the box**.
+/// Calling `forms_fill_autosize_note` for **every** auto-size outcome tells an
+/// operator whose field is too small for its text *"pdfcer chose 6.0 pt.
+/// Another program filling this field may choose differently."* — a sentence
+/// about interoperability, when the fact is that **the text is going to
+/// overflow the box**.
 ///
-/// The engine had been reporting it all along. `AutoFitBound::Floor` exists for
-/// exactly this and its own branch comment reads *"the one case where the
-/// returned size does NOT fit the constraint that produced it"*. This shell
-/// read `applied_autosize` and dropped `applied_autosize_bound` on the floor.
+/// The engine reports the difference. `AutoFitBound::Floor` exists for exactly
+/// this and its own branch comment reads *"the one case where the returned
+/// size does NOT fit the constraint that produced it"*, so a shell that reads
+/// `applied_autosize` and drops `applied_autosize_bound` has thrown the answer
+/// away.
 ///
-/// ⚠ And `OPERATOR_REQUESTS.md` **O86** told the operator, under a ✅, that
-/// *"pdfcer now tells you which way it decided … held at pdfcer's legibility
-/// floor; the box is too small for this text, which will overflow"*. That was
-/// true of the engine and the CLI and **false of this shell**, which is the
-/// worst of the three states a claim can be in.
+/// `OPERATOR_REQUESTS.md` **O86** tells the operator that *"pdfcer now tells
+/// you which way it decided … held at pdfcer's legibility floor; the box is
+/// too small for this text, which will overflow"*. That is true of the engine
+/// and the CLI, and a shell that drops the bound makes it false at the one
+/// surface the operator reads — the worst of the three states a claim can be
+/// in.
 #[test]
 fn the_overflow_case_says_the_text_will_not_fit_and_the_others_do_not() {
     use pdfcer_core::vartext::AutoFitBound as Bound;
@@ -511,7 +496,7 @@ fn the_overflow_case_says_the_text_will_not_fit_and_the_others_do_not() {
     let width = t_forms::forms_fill_autosize_width_note("Sheet title", 6.0);
     let height = t_forms::forms_fill_autosize_note("Sheet title", 6.0);
 
-    // ★★ The load-bearing assertion. Not "the sentences differ" — that a
+    // The load-bearing assertion. Not "the sentences differ" — that a
     // rename would satisfy — but that exactly ONE of them tells the operator
     // the outcome he cannot see until he prints the sheet.
     assert!(
@@ -525,7 +510,7 @@ fn the_overflow_case_says_the_text_will_not_fit_and_the_others_do_not() {
         );
     }
 
-    // ★ And it must carry the remedy, which is the operator's and is available.
+    // And it must carry the remedy, which is the operator's and is available.
     // A disclosure that names a problem it knows the fix for and withholds it
     // is a complaint.
     assert!(
@@ -533,7 +518,7 @@ fn the_overflow_case_says_the_text_will_not_fit_and_the_others_do_not() {
         "the Floor sentence must name what the operator can do: {floor:?}"
     );
 
-    // ⚠ The width case points at a DIFFERENT edit, and saying so is the whole
+    // The width case points at a DIFFERENT edit, and saying so is the whole
     // reason it is not folded into the general sentence: making a width-bound
     // field taller changes nothing, and that is the first thing anybody tries.
     assert!(
@@ -560,7 +545,7 @@ fn the_overflow_case_says_the_text_will_not_fit_and_the_others_do_not() {
 /// A field that fits keeps the ordinary sentence, and a **multiline** field —
 /// where the engine reports no bound at all — must not be given one.
 ///
-/// ★★★ `None` is a real state, not a missing one. The engine declines to name
+/// `None` is a real state, not a missing one. The engine declines to name
 /// a bound for multiline because that route derives from the whole box height
 /// and naming a constraint *"would report a constraint that was never
 /// evaluated"*. Reading `None` as `Height` would be the same error as reading a

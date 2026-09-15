@@ -17,7 +17,7 @@
 //! something before any test relies on it.
 //!
 //! ★ It is a **separate file** from `width_tests` for R2's reason and no
-//! other: that one is 1,433 lines against a 1,500-line limit, and a rule that
+//! other: that one is already close to the 1,500-line limit, and a rule that
 //! is obeyed by writing the new tests somewhere else is a rule that is
 //! working.
 
@@ -73,20 +73,19 @@ fn group_rect(rendered: &[(String, Rect)]) -> Option<Rect> {
 ///
 /// ★★★ **THE ORACLE FOR "SPACE IS RECLAIMED", AND THE GROUP'S WIDTH IS NOT.**
 ///
-/// The two reclaim tests below used to compare `group_rect(..).width()`, and
-/// that oracle is only valid while a group lays its items out on ONE ROW. On
-/// 2026-09-05 `band::measure_group_rows` began asking every group for the
-/// band's full row ceiling, so two equal-width controls stack into a column of
-/// two — and the column is exactly as WIDE with one item as with two. Both
-/// tests failed printing `126.71875 vs 126.71875`: **the same number on both
-/// sides, which is the tell that the measurement had stopped being able to see
-/// the property rather than that the property had gone.**
+/// A group's **width** is only a valid oracle for reclaimed space while the
+/// group lays its items out on ONE ROW. `band::measure_group_rows` asks every
+/// group for the band's full row ceiling, so two equal-width controls stack
+/// into a column — and a column is exactly as WIDE with one item as with two.
+/// A width comparison then prints the same number on both sides, which reads
+/// as "the property has gone" and actually means "the measurement can no
+/// longer see it".
 ///
 /// A hole — an item measured but not drawn — is still a hole under either
 /// layout, and under either layout it shows up as **area**: two items occupy
 /// twice one item's area whether they sit side by side or one above the other.
-/// So the assertion is layout-independent, which is what the original was
-/// silently not.
+/// So the assertion is layout-independent, which a width comparison silently
+/// is not.
 ///
 /// ⇒ **When a layout change turns a passing assertion red, ask whether the
 /// assertion was measuring the rule or the arrangement.** This project has
@@ -169,7 +168,7 @@ fn render(items: impl IntoIterator<Item = Item>, conditions: &ConditionSet) -> V
 /// ★★★ **An icon-only control is narrower than the same control labelled.**
 ///
 /// The whole point of `Small`, and the measurement that moved the 884-point
-/// number in `RIBBON_SCALING.md` §2. Asserted as a *comparison* between two
+/// number in `RIBBON_SCALING.md` §3. Asserted as a *comparison* between two
 /// renders of the same command rather than against a number, because the
 /// absolute width depends on the synthetic face's metrics and a literal here
 /// would be pinning the fixture rather than the rule.
@@ -323,21 +322,18 @@ fn a_small_that_has_not_earned_it_renders_at_medium_width() {
 
 /// ★★★ **A Large control in the OVERFLOW MENU is still tall enough to click.**
 ///
-/// The regression this file exists to hold, and the one thing here that was a
-/// shipped defect rather than a hypothetical.
+/// The sharpest failure this file holds shut.
 ///
 /// A group drawn in the menu uses `GroupBox::NATURAL`, whose row height is
 /// `0.0` **on purpose** — so a one-row group in the popup has no hole beneath
-/// it. The first `render_large` allocated exactly the height it was handed, so
-/// a Large control in the menu got a rect of **zero height**: it painted (the
+/// it. A `render_large` that allocated exactly the height it was handed would
+/// give a Large control in the menu a rect of **zero height**: it paints (the
 /// icon and label are placed from the rect's centre, which still exists), it
-/// reported its rect as required, and it **could not be clicked**.
+/// reports its rect as required, and it **cannot be clicked**.
 ///
-/// ★ Every unit test passed, because the band path hands a real row height and
-/// only the menu path does not. `ui-verify`'s `print_dialog_reaches_the_spooler`
-/// found it, at the width the harness drives, and said exactly the right
-/// thing: `ribbon.item.file.print` declared at `y 148.0 .. 148.0`, *"which has
-/// no usable area — the control is laid out and not on screen"*.
+/// ★ No band-path unit test can see that, because the band hands a real row
+/// height and only the menu path passes a zero; the observable is the
+/// published rect's height, which is what a driven check reads back.
 ///
 /// This drives the same path: a band too narrow for the group, a click on the
 /// affordance, and an assertion about the rect the menu reported.
@@ -345,15 +341,11 @@ fn a_small_that_has_not_earned_it_renders_at_medium_width() {
 fn a_large_control_in_a_popup_is_tall_enough_to_click() {
     let ctx = context();
     let registry = registry();
-    // ★★ RETARGETED 2026-08-25 from the `⏷ N more` dropdown to a COLLAPSED
-    // GROUP's popup, which S4 left as the only popup that renders groups. The
-    // defect guarded is unchanged and is one of the sharpest in this crate: a
-    // Large control handed `GroupBox::NATURAL` — whose `rows` is 0.0 — used to
-    // allocate a rect of ZERO HEIGHT. It painted, it published its rect, and it
-    // was not clickable, because a zero-height rect has no area to hit.
-    // `ui-verify` found it in the honest way, reporting `ribbon.item.file.print`
-    // at `y 148.0 .. 148.0`. Every unit test passed, because only the popup
-    // path passes a zero.
+    // ★★ A COLLAPSED GROUP's popup, which is the only popup that renders
+    // groups and therefore the only path that hands `render_large` a
+    // `GroupBox::NATURAL` whose `rows` is 0.0. A control allocated at that
+    // height paints, publishes its rect, and cannot be hit, because a
+    // zero-height rect has no area.
     let mut shell = shell([Item::command("a.one").sized(ItemSize::Large)]);
     if let Some(g) = shell
         .tabs
@@ -431,8 +423,7 @@ fn a_large_control_in_a_popup_is_tall_enough_to_click() {
     );
 }
 
-/// ★★★ **A custom item obeys `visible_when` exactly as a command does** —
-/// added 2026-08-27, with the field.
+/// ★★★ **A custom item obeys `visible_when` exactly as a command does.**
 ///
 /// # Why this is asserted through the RENDERER rather than through a rect
 ///
@@ -443,15 +434,15 @@ fn a_large_control_in_a_popup_is_tall_enough_to_click() {
 /// A count is that observation, and it is stronger than a rect would be: it
 /// distinguishes *"the shell skipped the item"* from *"the shell called the
 /// renderer and the renderer chose to draw nothing"*, which is exactly the
-/// difference the new field exists to remove.
+/// difference the field exists to remove.
 ///
 /// # And the group narrows, which is the half that is easy to leave out
 ///
 /// `super::sizing::visible` runs **before measurement**, so a hidden custom
 /// item must give back `plan::CUSTOM_ITEM_WIDTH` rather than leaving a hole
-/// the band has already budgeted for. Drawing nothing into a reserved slot is
-/// precisely what pdfcer would have had to do without this field, and the gap
-/// it leaves is why the field was added instead.
+/// the band has already budgeted for. Without the field an application could
+/// only draw nothing into a slot the band had already reserved, which is a gap
+/// on the band with no control in it.
 #[test]
 fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_back() {
     let mut on = ConditionSet::new();
@@ -460,24 +451,22 @@ fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_bac
 
     let render_counting = |conditions: &ConditionSet| -> (usize, Rect) {
         let ctx = context();
-        // ★★★ `with_prefer_rows(1)` since 2026-09-05, and it is the FIXTURE
-        // pinning the layout so that WIDTH is a valid oracle — not a change to
-        // what is being tested.
+        // ★★★ `with_prefer_rows(1)` is the FIXTURE pinning the layout so that
+        // WIDTH is a valid oracle — not part of what is being tested.
         //
         // A custom item publishes no `ribbon.item.*` rect (that is this test's
         // own first paragraph), so `item_area` cannot see it and the only
-        // observable is the group's box. Once `band::measure_group_rows` began
-        // asking every group for the band's row ceiling, the group's two items
-        // STACKED — and a column is as wide with one item as with two whenever
-        // the hidden one is not the widest. `CUSTOM_ITEM_WIDTH` is 96 and
-        // `a.one` labelled is ~115, so it never was. The test failed printing
-        // `126.71875 vs 126.71875`: the same number twice, which says the
-        // measurement stopped being able to see the property.
+        // observable is the group's box. `band::measure_group_rows` asks every
+        // group for the band's row ceiling, so the group's two items STACK —
+        // and a column is as wide with one item as with two whenever the
+        // hidden one is not the widest. `CUSTOM_ITEM_WIDTH` is 96 and `a.one`
+        // labelled is ~115, so the hidden one never is, and a width comparison
+        // over a stacked group prints the same number twice.
         //
         // One row is a state a manifest can legally declare, it is what makes
         // "gives its budgeted width back" a statement about width at all, and
         // it leaves the property under test — `sizing::visible` running BEFORE
-        // measurement — exactly where it was.
+        // measurement — untouched.
         let shell = Shell::new()
             .with_mode(Mode::new("only", "Only", ["t"]))
             .with_tab(Tab::new("t", "Tab").with_groups([
@@ -497,9 +486,9 @@ fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_bac
             rects.clear();
             let mut sink = |name: &str, rect: Rect| rects.push((name.to_owned(), rect));
             // ★ The renderer ALLOCATES. A renderer that drew nothing would
-            // leave both groups the same width and the width half of this
-            // test would pass against an implementation that never filtered
-            // anything — which is what the first draft of it did.
+            // leave both groups the same width, and the width half of this
+            // test would then pass against an implementation that never
+            // filtered anything at all.
             let mut custom = |ui: &mut egui::Ui, _: &crate::ribbon::CustomItem<'_>| {
                 calls += 1;
                 ui.allocate_space(egui::Vec2::new(60.0, 20.0));
@@ -543,7 +532,7 @@ fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_bac
 }
 
 // ===========================================================================
-// ★★★ THE MOCKUP'S `Large` CONTROL — 2026-09-04
+// ★★★ THE MOCKUP'S `Large` CONTROL
 //
 // `mockups/pdfcer-shell.html` specifies a Large control as
 //
@@ -558,8 +547,8 @@ fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_bac
 // change (which items are Large) and half is this file's subject: what a
 // Large control looks like once it is one.
 //
-// Three properties are pinned, and each is a thing the shipped control got
-// wrong rather than a restatement of the CSS:
+// Three properties are pinned, and each is a property of the drawn control
+// rather than a restatement of the CSS:
 //
 //   · the label WRAPS, so a long-labelled Large control is a button and not
 //     a letterbox;
@@ -678,11 +667,10 @@ fn a_large_control_never_narrows_below_the_mockups_floor() {
 /// ★★ **A Large control is SHORTER than the band's row area, not equal to it.**
 ///
 /// The mockup draws `.rb.big` at 56 px inside a 68 px row area, top-aligned
-/// by `.grp .items { align-items: flex-start }`. Until 2026-09-04 a Large
-/// control simply *was* the row area, and the difference is visible the
-/// moment a group holds nothing else: Pages ▸ Clipboard is three Large
-/// controls, and three full-height plates side by side read as one block of
-/// chrome rather than as three buttons.
+/// by `.grp .items { align-items: flex-start }`. A Large control that simply
+/// *was* the row area differs visibly the moment a group holds nothing else:
+/// full-height plates side by side read as one block of chrome rather than as
+/// separate buttons.
 ///
 /// ★ Asserted as a **relationship between the two metrics and the drawn
 /// rect**, not against 56. A literal would pass under `Quiet` and say nothing

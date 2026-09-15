@@ -21,18 +21,17 @@ Every step of that needs anchors that are:
      own drawings are ISO A1 sheets shown at 0.38x, where sixty points of page
      space is twenty-three pixels of screen.
 
-``SW41177.pdf`` — the drawing this check was written against — fails (1) and
-(3) at once. The first run that reached the Node rung reported::
+``SW41177.pdf`` fails (1) and (3) at once. Driven against it, the Node rung
+reports::
 
     canvas-anchors total=2 selected=0 unselected_drawn=2
 
-a two-anchor line, and the two published anchor marks landed at the same
-screen x once the descent had entered a subpath. There was no second anchor to
-pick, so the check SKIPPED — correctly, and uselessly.
+a two-anchor line whose two published anchor marks land at the same screen x
+once the descent has entered a subpath. There is no second anchor to pick, so
+the check SKIPS — correctly, and uselessly.
 
-★ **That is not a reason to weaken the check.** It is the fixture lesson
-``HANDOFF.md`` §2 and ``DEFECTS.md`` D4 both draw, arriving again: *a check
-that drives a document this project imagined tests the shape this project
+**That is not a reason to weaken the check.** It is the fixture lesson: *a
+check that drives a document this project imagined tests the shape this project
 imagined.* The right answer is a fixture with the shape the feature is about —
 and, separately, to keep driving the real drawing for the features whose
 subject IS a real drawing (text editing, the page cache), which is what

@@ -2,28 +2,18 @@
 //!
 //! ## Why a picture rather than a number
 //!
-//! Carried across from the old shell with its reasoning intact, because the
-//! reasoning is the reason this file was worth salvaging rather than
-//! rewriting:
+//! pdfcer diverges from Acrobat here on purpose: Acrobat clips silently when
+//! content falls outside the printable area, and pdfcer says so. That
+//! divergence is worth nothing if the GUI reduces it to a count an operator can
+//! look past. The whole reason `pdfcer-print` reads real device geometry
+//! instead of guessing a bounding box is so this picture can be exact — drawing
+//! only the SHEET and not the PRINTABLE AREA would show a page fitting that
+//! will not.
 //!
-//! > pdfcer diverges from Acrobat here on purpose — Acrobat clips silently
-//! > when content falls outside the printable area, and pdfcer says so. That
-//! > divergence is worth nothing if the GUI reduces it to a count an operator
-//! > can look past.
-//! >
-//! > The whole reason `pdfcer-print` reads real device geometry instead of
-//! > guessing a bounding box is so this can be exact. Drawing only the SHEET
-//! > and not the PRINTABLE AREA would be the naive version and would show a
-//! > page fitting that will not.
-//!
-//! And the correction that followed, kept because it records a mistake worth
-//! not repeating:
-//!
-//! > This function computed real device geometry from the first day and still
-//! > never drew the page: the "placed" rectangle was a flat fill in the
-//! > surface colour. So the preview was not broken — the geometry was right —
-//! > it simply answered "where will the page sit" and never "what is on it",
-//! > which is the half an operator checking a margin actually needs.
+//! **And the geometry is only half of it.** A preview that draws the correct
+//! rectangles and fills the placed one flat answers *"where will the page
+//! sit"* and never *"what is on it"*, which is the half an operator checking a
+//! margin actually needs. The page content at (4) below is not decoration.
 //!
 //! ## What is drawn, outermost first
 //!
@@ -43,14 +33,12 @@
 //!    a hatch means *"this will happen and has not happened yet"*, which is
 //!    exactly a pre-print clip. A solid fill reads as something already done.
 //!
-//! ## ★★★ (5) became ink-aware on 2026-09-03 — operator request O113
+//! ## (5) is ink-aware — operator request O113
 //!
-//! It used to hatch the **whole** overhanging region the moment
-//! `Placement::clipped` was true, and that flag is a *geometric* verdict: the
-//! page box exceeds the printable rectangle. On a CAD sheet printed 1:1 the
-//! part that exceeds it is empty paper, so the hatch shouted about losing
-//! something on every one of the operator's drawings while nothing was being
-//! lost — *"the area that isn't printed is just empty border."*
+//! `Placement::clipped` is a *geometric* verdict: the page box exceeds the
+//! printable rectangle. Hatching the whole overhang on the strength of it
+//! shouts about losing something on every 1:1 CAD drawing while nothing is
+//! being lost — *"the area that isn't printed is just empty border."*
 //!
 //! **A disclosure that is technically true and practically false is the worst
 //! kind.** An operator who sees the same red band on every drawing learns to
@@ -63,7 +51,7 @@
 //! holds the pixel test and the measurement behind its threshold, and
 //! [`Overhang`] is how the caption is kept from contradicting the picture.
 //!
-//! ## ★ The preview owns NO scroll area, deliberately
+//! ## The preview owns NO scroll area, deliberately
 //!
 //! Zoom is Ctrl+wheel and pan is a primary-button drag. Neither competes with
 //! the dialog's own [`egui::ScrollArea`]: per
@@ -96,7 +84,7 @@ use crate::text::print as t;
 /// What the shown sheet's overhang turned out to contain — the fact the hatch
 /// is drawn from, lifted out so the CAPTION can be drawn from the same one.
 ///
-/// # ★★★ Why this is a return value and not something the caption re-derives
+/// # Why this is a return value and not something the caption re-derives
 ///
 /// Operator request O113 makes the hatch ink-aware, and a caption that kept
 /// announcing a clip over a preview showing no hatch would be the identical
@@ -115,7 +103,7 @@ pub(super) enum Overhang {
     /// The placement reported a clip **and the overhanging band carries ink**,
     /// so something really will be cropped. Hatched.
     Losing,
-    /// ★ The placement reported a clip and the band is **blank paper** — the
+    /// The placement reported a clip and the band is **blank paper** — the
     /// 1:1 CAD drawing O113 is about. Nothing hatched, and the caption says so
     /// rather than leaving the operator to wonder why the warning has no
     /// picture.
@@ -127,56 +115,52 @@ pub(super) enum Overhang {
     Unknown,
 }
 
-// ★★★ `COLUMN_WIDTH_PTS` WAS HERE, AND ITS REASONING WAS THE DEFECT — 2026-09-03.
+// THE PREVIEW COLUMN'S WIDTH IS A PARAMETER, NEVER A CONSTANT IN THIS FILE.
 //
-// It was a fixed 340 pt, and its doc comment argued the case at length:
+// The circle that tempts one is real: the dialog body lives inside a
+// `ScrollArea::both`, a horizontally scrollable area has no bounded width to
+// report, so a column laid out to `available_width` inside one is measuring a
+// number its own content decides. Two fixed columns appear to break that.
 //
-// > **A CONSTANT, and that is the whole point.** The dialog body lives inside a
-// > `ScrollArea::both`, and a horizontally scrollable area has no bounded width
-// > to report [...] Two fixed columns break that circle — the content width is
-// > a constant, so the horizontal scrollbar has something stable to measure and
-// > the operator gets a scrollbar instead of a column that grows to meet it.
+// They do not, and the two defects are operator-visible:
 //
-// The circle it describes is real. The conclusion is wrong, and it produced two
-// separate operator-visible defects:
+//  1. **Two scrollbars that cannot be dismissed.** A fixed content width has to
+//     be `max`'d with `available_width` at the call site or a wide window
+//     leaves a dead strip — which puts `available_width` straight back into the
+//     circle the constant was there to break, and deadlocks the two bars
+//     against each other. `PrintDialog::body` documents the mechanism.
+//  2. **A preview that cannot be made bigger.** *"the preview should be
+//     adjustable size"* — widening the dialog widens the empty space and leaves
+//     the sheet the same postage stamp, because the column cannot grow.
 //
-//  1. **Two scrollbars that could not be dismissed.** The fixed content width
-//     was `max`'d with `available_width` at the call site precisely so a wide
-//     window would not leave a dead strip — which put `available_width` back
-//     into the circle the constant existed to break, and deadlocked the two
-//     bars against each other. `PrintDialog::body` documents the mechanism.
-//  2. **A preview that could not be made bigger.** *"the preview should be
-//     adjustable size"* — widening the dialog widened the empty space and left
-//     the sheet the same postage stamp, because the column could not grow.
+// ⇒ The answer to the circle is to lay the columns out to the width actually
+// available and tell the `ScrollArea` nothing. It then shows a bar when, and
+// only when, the content does not fit — the only thing a scrollbar should ever
+// mean.
 //
-// The right answer to the circle is not a constant, it is to lay the columns
-// out to the width actually available and tell the `ScrollArea` nothing. It
-// then shows a bar when, and only when, the content does not fit — which is
-// the only thing a scrollbar should ever mean.
-//
-// The width now comes from `PrintDialog::preview_width`, which the splitter
-// drags; the floor, the default and the options column's floor are
+// The width comes from `PrintDialog::preview_width`, which the splitter drags;
+// the floor, the default and the options column's floor are
 // `PREVIEW_MIN_WIDTH_PTS`, `PREVIEW_DEFAULT_WIDTH_PTS` and
-// `OPTIONS_COLUMN_MIN_WIDTH_PTS` in the parent module. `column` takes it as a
+// `OPTIONS_COLUMN_MIN_WIDTH_PTS` in [`super::layout`]. `column` takes it as a
 // parameter.
 
 /// Height of the fixed strip under the preview canvas, in egui points.
 ///
-/// # ★★ It reserves THREE rows, not two, since 2026-09-03
+/// # It reserves THREE rows, not two
 ///
-/// The strip is two `horizontal` rows — the seven controls, then the zoom
-/// caption. The first of those is now `horizontal_wrapped` (see [`strip`] for
-/// why), so on a narrow column it becomes two rows and the strip becomes three.
+/// The strip is two rows — the seven controls, then the zoom caption — but the
+/// first is `horizontal_wrapped` (see [`strip`] for why), so on a narrow column
+/// it becomes two rows and the strip becomes three.
 ///
-/// Reserving for the wrapped case is what keeps the constant honest. If it
-/// reserved two rows the strip would overflow the column vertically the moment
-/// it wrapped, the column's content would exceed the body, and a **vertical**
-/// scrollbar would appear — which is the defect this whole change removes,
-/// re-entering by the other axis. The cost of reserving the third row is about
-/// 28 pt of canvas height on a wide column where it is not needed, against a
-/// scrollbar that cannot be dismissed on a narrow one.
+/// Reserving for the wrapped case is what keeps the constant honest. Reserving
+/// two rows would let the strip overflow the column vertically the moment it
+/// wrapped, the column's content would exceed the body, and a **vertical**
+/// scrollbar would appear — the scrollbar defect this layout exists to remove,
+/// re-entering by the other axis. The cost of the third row is about 28 pt of
+/// canvas height on a wide column where it is not needed, against a scrollbar
+/// that cannot be dismissed on a narrow one.
 ///
-/// # ★ FIXED, so the canvas can never be shrunk by its own caption
+/// # FIXED, so the canvas can never be shrunk by its own caption
 ///
 /// The canvas height is computed as `available − this constant`. Reading the
 /// strip's ACTUAL laid-out height instead would reproduce a measured feedback
@@ -205,7 +189,7 @@ const CANVAS_MAX_HEIGHT_PTS: f32 = 1400.0;
 
 /// The Pop-out button's region, for the driven harness.
 ///
-/// ★ Declared with the **visibility-gated** publisher, unlike the preview
+/// Declared with the **visibility-gated** publisher, unlike the preview
 /// column's own region next door, and the two are opposites on purpose: this
 /// one exists to be clicked, so a rect the operator cannot reach is worse than
 /// no rect at all; that one exists to be seen to disappear, so a rect that is
@@ -238,14 +222,15 @@ const TARGET_DPI: f32 = 150.0;
 /// because large-format CAD sheets are exactly the document population this
 /// project's operator prints.
 ///
-/// **Set ABOVE the office page sizes on purpose.** The first value tried was
-/// 1600, which is below US Legal (2100 px) and below US Letter's own 1650 —
-/// so the "ceiling for exotic sheets" silently became the scale for every
-/// ordinary document, quietly costing preview sharpness on the common case to
-/// bound the rare one. 2200 leaves A4 (1754), Letter (1650) and Legal (2100)
-/// at the full target DPI and binds only where it was meant to.
-/// [`a_letter_page_previews_at_the_target_resolution`] is the test that caught
-/// it and is what keeps the two constants in step.
+/// **It must sit ABOVE the office page sizes, and that is the whole trick.** A
+/// ceiling meant for exotic sheets that falls below an ordinary one stops being
+/// a ceiling and becomes the scale for every document, costing sharpness on the
+/// common case to bound the rare one — silently, because a slightly softer
+/// preview still looks like a preview. At 150 DPI the long sides are A4
+/// 1754 px, Letter 1650 and Legal 2100, so 2200 leaves all three at the full
+/// target DPI and binds only where it is meant to.
+/// [`a_letter_page_previews_at_the_target_resolution`] asserts that, which is
+/// what keeps this constant and [`TARGET_DPI`] in step.
 const MAX_SIDE_PX: f32 = 2200.0;
 
 /// Smallest preview zoom, as a multiple of the fit scale.
@@ -262,14 +247,13 @@ const ZOOM_STEP: f32 = 1.25;
 
 /// The egui texture name the preview bitmap is uploaded under.
 ///
-/// ★ **Distinct from `crate::render::raster`'s `PAGE_TEXTURE_ID`, and it has
+/// **Distinct from `crate::render::raster`'s `PAGE_TEXTURE_ID`, and it has
 /// to be.** egui reuses the allocation when the same name is loaded again, so
 /// sharing a name with the canvas's page texture would make each surface
 /// silently overwrite the other's pixels — the canvas would show the preview's
 /// page at the preview's resolution, and neither would look broken enough to
-/// investigate. That module's own header already names this hazard: *"The
-/// moment a second live page texture exists … this must become a per-texture
-/// id."* This is that second live page texture.
+/// investigate. That module's own header names the hazard and says a second
+/// live page texture is what forces a per-texture id. This is that second one.
 const PREVIEW_TEXTURE_ID: &str = "pdfcer-print-preview"; // ui-text-exempt: internal texture id, never displayed
 
 /// What a cached preview bitmap is a picture OF.
@@ -293,31 +277,26 @@ const PREVIEW_TEXTURE_ID: &str = "pdfcer-print-preview"; // ui-text-exempt: inte
 /// turn the page. So the key stays as it is, and putting orientation in it
 /// would throw the cache away on every radio click for nothing.
 ///
-/// ## ★ The settings field, added 2026-08-17 in the commit that added its control
+/// ## The settings field, and the standing rule it satisfies
 ///
-/// This paragraph used to read:
+/// **A rendering knob and the key that invalidates its cache land in the same
+/// commit, or the control silently does nothing.** Every setting reaching
+/// [`crate::app::settings::SettingsExt::render_options`] changes these pixels,
+/// so the whole `Settings` value is in the key.
 ///
-/// > **Two fields the old shell's key carried are absent because their inputs
-/// > do not exist in this crate yet**: a font-environment generation (nothing
-/// > here lets an operator name a font folder) and the CMYK conversion intent
-/// > (no settings surface). … this key must gain both in the same commit as
-/// > those surfaces, or the preview will keep showing a page rendered under the
-/// > previous choice.
+/// A **font-environment generation is absent**, and the reason is that there is
+/// nothing to key on rather than that it was forgotten: the preview rasterises
+/// through `pdfcer_render::render_page_with_view`, which takes no font
+/// environment at all. The operator's font folders reach *embedding*
+/// ([`crate::app::fonts`]) and do not reach a render. The day a render takes
+/// one, this key gains a field in the same commit — the rule above is the whole
+/// point of this paragraph.
 ///
-/// The settings surface landed and the field landed with it, as instructed. It
-/// covers **five** rendering settings rather than the one that note anticipated
-/// — see [`crate::app::settings::SettingsExt::render_options`].
+/// ### Why the whole `Settings` and not the fields it reads
 ///
-/// A **font-environment generation is still absent**, and still for the stated
-/// reason: nothing in this build lets an operator name a font folder, so there
-/// is no input to key on. `tools.font_folders` is registered with no dispatch
-/// arm; the day it gains one, this key gains a field in the same commit.
-///
-/// ### Why the whole `Settings` and not the five fields it reads
-///
-/// Because listing five would be a second statement of which settings affect a
-/// render — one here and one in `SettingsExt::render_options` — and the failure
-/// mode of the two disagreeing is silent: a sixth rendering setting added to
+/// Because a list here would be a second statement of which settings affect a
+/// render — one in this key and one in `SettingsExt::render_options` — and the
+/// failure mode of the two disagreeing is silent: a rendering setting added to
 /// the funnel and not to this list produces a preview that never updates, with
 /// no error anywhere. Keying on the whole value cannot drift, and the cost is a
 /// `String` comparison on a cache hit against a rasterisation on a miss.
@@ -332,34 +311,32 @@ pub(super) struct PreviewKey {
     /// Which annotation classes are painted.
     scope: pdfcer_render::AnnotationScope,
     /// The operator's configuration, whole — see the type's own docs on why it
-    /// is not the five rendering fields spelled out.
+    /// is not the rendering fields spelled out.
     settings: pdfcer_core::settings::Settings,
 }
 
 impl PreviewKey {
     /// Build the key for one page.
     ///
-    /// # ★★★ Called from exactly one place, and that place is the VERDICT
+    /// # Called from exactly one place, and that place is the VERDICT
     /// # cache's context
     ///
-    /// [`super::verdicts::Context::preview_key`] is the sole caller — operator
-    /// request O113, 2026-09-04. The inversion is the point rather than
-    /// plumbing.
+    /// [`super::verdicts::Context::preview_key`] is the sole caller, and the
+    /// inversion is the point rather than plumbing.
     ///
     /// That module remembers, per sheet, whether the overhang the preview
     /// hatched turned out to be blank, so the commit button can subtract the
     /// sheets known to lose nothing. A remembered verdict is a claim about
-    /// **these pixels**, and this type's own doc comment states what a cache
-    /// key is: *"if these are equal, re-rendering would produce the same
-    /// image."* A verdict cached under a weaker key would be a verdict about a
-    /// page that has changed — and it would be confidently wrong, because its
-    /// whole purpose is to take a warning away.
+    /// **these pixels**, and a cache key claims that equal keys would render
+    /// the same image. A verdict cached under a weaker key would be a verdict
+    /// about a page that has changed — and it would be confidently wrong,
+    /// because its whole purpose is to take a warning away.
     ///
     /// Deriving this key **from** the verdict cache's context makes "the
     /// verdict is keyed on at least what the pixels are keyed on" a structural
     /// fact rather than a promise held by two doc comments. Constructing it
-    /// here as well, from the same three values, would be the second reading
-    /// of one rule that this file's `settings` field already argues against.
+    /// here as well, from the same three values, would be the second reading of
+    /// one rule that this type's `settings` field already argues against.
     pub(super) fn new(
         page: usize,
         scope: pdfcer_render::AnnotationScope,
@@ -394,7 +371,7 @@ pub(super) struct Inputs<'a> {
     /// The frame's cache context: the rendering inputs and the printable
     /// rectangle, built once in [`PrintDialog::show`].
     ///
-    /// ★ Both caches in this dialog hang off it. The page texture's
+    /// Both caches in this dialog hang off it. The page texture's
     /// [`PreviewKey`] is built from it (see [`PreviewKey::new`]), and every
     /// remembered overhang verdict is void the moment it changes — so the
     /// verdict cache cannot be keyed on less than the pixels are.
@@ -404,7 +381,7 @@ pub(super) struct Inputs<'a> {
 /// The preview zoom and pan after multiplying the zoom by `step` while
 /// holding the screen point `at` still.
 ///
-/// # ★ The anchor term, derived rather than tuned
+/// # The anchor term, derived rather than tuned
 ///
 /// The sheet is drawn at `origin(z) = centre − sheet·fit·z/2 + pan`. Holding
 /// the screen point `at` fixed across a zoom from `z0` to `z1 = k·z0`
@@ -472,7 +449,7 @@ fn raster_scale(page_pt: (f64, f64)) -> f32 {
 
 /// **Where this preview is being drawn** — operator request O112 ask 2.
 ///
-/// # ★★ One function, two homes, and the difference is one button
+/// # One function, two homes, and the difference is one button
 ///
 /// The preview is the same picture and the same arithmetic in the print
 /// dialog's column and in its own OS window. What differs is a single control:
@@ -482,7 +459,7 @@ fn raster_scale(page_pt: (f64, f64)) -> f32 {
 /// cheap — and a second draw function is how the two copies of a preview come
 /// to disagree about a margin.
 ///
-/// ★ There is deliberately **no** "put it back" button in the popped window.
+/// There is deliberately **no** "put it back" button in the popped window.
 /// The operator's own words were *"closing the window pops it back into place
 /// on the print window"*, and that is also the convention: a popped-out pane
 /// docks by being closed, everywhere this pattern appears. A second control
@@ -521,7 +498,7 @@ pub(super) fn column(
     // clamped at both ends.
     let canvas_height =
         (column_height - STRIP_HEIGHT_PTS).clamp(CANVAS_MIN_HEIGHT_PTS, CANVAS_MAX_HEIGHT_PTS);
-    // ★ The width is passed IN, not read from a constant, because the operator
+    // The width is passed IN, not read from a constant, because the operator
     // drags it — see `PrintDialog::splitter`. The `fit` computed below is
     // recomputed from this rect every frame, so a wider column simply shows a
     // bigger sheet with no further change; that coupling was already the
@@ -556,7 +533,7 @@ pub(super) fn column(
             zoom_by(dialog, step, at, rect.center());
         }
     }
-    // ★ `dragged_by(Primary)`, never bare `dragged()`. Per
+    // `dragged_by(Primary)`, never bare `dragged()`. Per
     // `D:\dev\rag\egui\egui_response_drag_predicates_are_button_agnostic.md`
     // the unqualified predicate fires for middle and right drags too, which
     // would silently claim the right-drag this preview may later want for a
@@ -571,7 +548,7 @@ pub(super) fn column(
     let (texture, overhang) = paint(ui, inputs, dialog, shown, rect, scale);
     strip(ui, inputs, dialog, shown, rect, scale, placement);
 
-    // ★ Read AFTER `paint`, which is what makes the sheet on screen count as
+    // Read AFTER `paint`, which is what makes the sheet on screen count as
     // examined on the frame it is drawn rather than on the next one — see the
     // clip summary below for what this number is and how its wording follows
     // from it. Also read BEFORE the trace, so the trace reports the claim this
@@ -582,7 +559,7 @@ pub(super) fn column(
 
     // The canvas rectangle and the two geometry rectangles, in one line.
     //
-    // ★ `sheet=` and `printable=` are here because they are the only honest
+    // `sheet=` and `printable=` are here because they are the only honest
     // evidence that the Orientation radio reaches the geometry. The radio
     // changes no pixel of the page bitmap (see `PreviewKey`) and turns a
     // rectangle whose aspect a screenshot can suggest but not measure. A trace
@@ -612,7 +589,7 @@ pub(super) fn column(
             dialog.preview_pan.x,
             dialog.preview_pan.y,
             u8::from(texture.is_some()),
-            // ★ `overhang=` is the ONLY headless evidence that operator request
+            // `overhang=` is the ONLY headless evidence that operator request
             // O113 works, and it is here because the thing that changed is
             // something a capture cannot distinguish: a preview with no hatch
             // over a blank band and a preview with no hatch because the ink
@@ -631,7 +608,7 @@ pub(super) fn column(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 Overhang::Unknown => "unknown",
             },
-            // ★ The job-wide claim beside the sheet-level verdict, because the
+            // The job-wide claim beside the sheet-level verdict, because the
             // pair is what a driven check has to read: `overhang=blank-band`
             // says this sheet's band is empty paper, and `claim=` says what
             // that did to the number on the button. `overhang=blank-band` next
@@ -646,18 +623,15 @@ pub(super) fn column(
     // The count, always, for a multi-page job whose clip is on a sheet the
     // preview is not showing.
     //
-    // ★★★ THE COUNT GOT BETTER — the sentence did not get vaguer. Operator
-    // request O113, 2026-09-04.
+    // THE COUNT GETS BETTER; THE SENTENCE DOES NOT GET VAGUER — operator
+    // request O113.
     //
-    // This comment used to say the line was "UNCHANGED by O113, deliberately",
-    // on the grounds that `Job::clipped()` is a plan-time geometric fact which
-    // is still exactly true and that softening its wording to match a picture
-    // that knows more would be trading a true statement for a comfortable one.
-    // **That reasoning stands, and it is the reason the fix is here rather
-    // than in the wording.** What changed is not the sentence; it is that the
-    // number is now corrected by verdicts the preview has *already* produced,
-    // at no rendering cost, and the wording follows what the corrected number
-    // can support:
+    // `Job::clipped()` is a plan-time geometric fact and is exactly true.
+    // Softening its wording to match a picture that knows more would trade a
+    // true statement for a comfortable one, so the correction belongs in the
+    // NUMBER, not in the prose: the count is corrected by verdicts the preview
+    // has *already* produced, at no rendering cost, and the wording follows
+    // what the corrected number can support:
     //
     //   * nothing subtracted  -> the geometric sentence, unchanged, word for
     //     word — including the case where the operator never stepped the
@@ -665,7 +639,7 @@ pub(super) fn column(
     //   * every clipped sheet examined -> the same sentence, now verified;
     //   * some examined, some not -> a ceiling, which says so.
     //
-    // ★ It must be the SAME claim the commit button draws, or this line and
+    // It must be the SAME claim the commit button draws, or this line and
     // the button would show two different numbers for one job — the exact
     // contradiction O113 reported, moved rather than fixed. Both call
     // `Verdicts::claim` on the same context, and `ClipClaim` owns which
@@ -673,7 +647,7 @@ pub(super) fn column(
     if let Some(summary) = claim.summary(job.plans.len()) {
         ui.label(egui::RichText::new(summary).color(ui.visuals().warn_fg_color));
     }
-    // ★★★ …and the sheet-level correction under it, which is what stops the
+    // …and the sheet-level correction under it, which is what stops the
     // caption and the hatch contradicting each other — operator request O113.
     //
     // The job-wide count above says "this sheet will lose content" while the
@@ -743,7 +717,7 @@ fn paint(
         StrokeKind::Middle,
     );
 
-    // ★ `page_sizes` is indexed by `plan.index`, NOT by `shown`.
+    // `page_sizes` is indexed by `plan.index`, NOT by `shown`.
     //
     // `shown` walks the JOB (which may be a custom range, odd/even filtered,
     // or reversed) and `page_sizes` is in document order, so the two coincide
@@ -809,14 +783,14 @@ fn paint(
     // happened yet", which is exactly a pre-print clip. A solid fill would
     // read as something already done.
     //
-    // ★ `plan.placement.clipped` is the cheap GEOMETRIC gate and is kept as
+    // `plan.placement.clipped` is the cheap GEOMETRIC gate and is kept as
     // one: it is a plan-time fact needing no raster, so it costs nothing and it
     // short-circuits every sheet that fits. Everything past it asks the
     // narrower question O113 is about — is anything actually THERE.
     if !plan.placement.clipped {
         return (texture, Overhang::Fits);
     }
-    // ★ The mask is re-borrowed here rather than returned from `texture_for`
+    // The mask is re-borrowed here rather than returned from `texture_for`
     // because it is 64 KiB (see `ink::CELLS_LONG_SIDE`) and cloning it once a
     // frame to satisfy a borrow would cost more than the hatch. The mutable
     // borrow `texture_for` took has ended by this line, so an immutable
@@ -834,8 +808,8 @@ fn paint(
         .filter(|(_, tex, _)| Some(tex.id()) == texture)
         .map(|(_, _, mask)| mask);
     let overhang = hatch_lost_content(&painter, placed, printable, mask, visuals.warn_fg_color);
-    // ★★★ REMEMBERED HERE, at the single point where the ink question was
-    // actually asked — operator request O113, 2026-09-04.
+    // REMEMBERED HERE, at the single point where the ink question is actually
+    // asked — operator request O113.
     //
     // The commit button's count is the geometric count minus the sheets known
     // blank, and this is where a sheet becomes known. It is recorded from the
@@ -857,56 +831,51 @@ fn paint(
 /// Hatch **only the parts of `placed` that fall outside `printable` AND carry
 /// ink**.
 ///
-/// # ★★★ Operator request O113 — what changed here and why
+/// # Why ink and not geometry — operator request O113
 ///
 /// > *"can you make it so the red pattern you put over the page if it is going
 /// > to print beyond the printable borders is only over the areas that extend
 /// > beyond the printable page? Our drawing get drawn 1:1 and the area that
 /// > isn't printed is just empty border."*
 ///
-/// This function used to hatch the whole overhanging region the moment
-/// `Placement::clipped` was true. That flag is a *geometric* verdict — the page
-/// box exceeds the printable rectangle — and on a CAD sheet printed 1:1 the
-/// part that exceeds it is empty paper. The hatch shouted about losing
-/// something on every drawing, and nothing was being lost, which is a
-/// disclosure that is technically true and practically false. An operator who
-/// sees the same red band on every 1:1 drawing learns to ignore it, and then
-/// does not see it on the one sheet where the border really does have a title
-/// block in it.
+/// `Placement::clipped` is a *geometric* verdict — the page box exceeds the
+/// printable rectangle — and on a CAD sheet printed 1:1 the part that exceeds
+/// it is empty paper. Hatching on that flag alone shouts about losing something
+/// on every drawing while nothing is being lost, which is a disclosure that is
+/// technically true and practically false. An operator who sees the same red
+/// band on every 1:1 drawing learns to ignore it, and then does not see it on
+/// the one sheet where the border really does have a title block in it.
 ///
-/// It now asks [`ink::InkMask`] what is actually in the band, and hatches the
-/// **ink extent within it**. No ink in the band ⇒ **no hatch at all**, which
-/// is the whole request.
+/// So this asks [`ink::InkMask`] what is actually in the band, and hatches the
+/// **ink extent within it**. No ink in the band ⇒ **no hatch at all**.
 ///
 /// # Only the right and bottom overhangs, and that is not an omission
 ///
-/// Carried from the original, because it is still true: a placement offsets the
-/// page *into* the printable area from its top-left corner, so content is lost
-/// off the far edges. Hatching all four would draw a warning over paper that
-/// will print.
+/// A placement offsets the page *into* the printable area from its top-left
+/// corner, so content is lost off the far edges. Hatching all four would draw a
+/// warning over paper that will print.
 ///
-/// # ★★ The two bands are now DISJOINT, which fixes a second over-hatch
+/// # The two bands are DISJOINT, and `Rect::union` cannot make them so
 ///
-/// The old code took `right_band.union(bottom_band)`, and `Rect::union` is a
-/// **bounding box**, not a set union: the union of a tall strip on the right
-/// and a wide strip along the bottom is a rectangle that also covers the region
-/// which is neither right of nor below the printable area — paper that prints
-/// perfectly. That was a second, smaller instance of the same defect O113
-/// reports, hiding inside the first.
+/// `Rect::union` is a **bounding box**, not a set union: the union of a tall
+/// strip on the right and a wide strip along the bottom is a rectangle that
+/// also covers the region which is neither right of nor below the printable
+/// area — paper that prints perfectly. That is the same over-hatch O113 reports,
+/// one size smaller and hiding inside it.
 ///
-/// The bottom band is therefore cut at `printable.max.x`, so the two bands meet
-/// without overlapping. Disjoint also means the shared bottom-right corner is
-/// hatched once rather than twice, so its lines are the same weight as
-/// everywhere else instead of reading as a darker patch.
+/// So the bottom band is cut at `printable.max.x` and the two meet without
+/// overlapping. Disjoint also means the shared bottom-right corner is hatched
+/// once rather than twice, so its lines are the same weight as everywhere else
+/// instead of reading as a darker patch.
 ///
-/// # ★ What happens when there is no mask
+/// # What happens when there is no mask
 ///
 /// `mask` is `None` when the page did not render — the same degraded state
 /// [`texture_for`] documents, in which the preview shows a flat fill instead of
 /// the page. In that state the honest answer to *"is anything in the band?"* is
-/// **"unknown"**, and the disclosure falls back to the old behaviour: hatch the
-/// whole band. Silence would be the wrong failure direction here. A missing
-/// render must not be able to turn a warning off.
+/// **"unknown"**, so the disclosure falls back to hatching the whole band.
+/// Silence is the wrong failure direction here: a missing render must not be
+/// able to turn a warning off.
 /// # Returns
 ///
 /// What the band turned out to hold, so the caption can be written from the
@@ -928,7 +897,7 @@ fn hatch_lost_content(
 /// **What is actually lost, and what to call it** — the whole of operator
 /// request O113's decision, with no painter in it.
 ///
-/// # ★★★ Pure on purpose, because this is the pair that must not disagree
+/// # Pure on purpose, because this is the pair that must not disagree
 ///
 /// It returns the rectangles to hatch *and* the [`Overhang`] the caption is
 /// written from, from **one** computation. That is the only structural
@@ -986,7 +955,7 @@ fn lost_regions(
         // and the placement scale, which is why nothing here has to know about
         // any of them.
         //
-        // ★ THE REQUEST, in one `else`: no ink in the band means the band is
+        // THE REQUEST, in one `else`: no ink in the band means the band is
         // empty paper, so nothing is lost and nothing is drawn.
         let Some(extent) = mask.ink_extent(normalised_in(band, placed)) else {
             continue;
@@ -1042,11 +1011,11 @@ fn denormalised_in(fraction: Rect, whole: Rect) -> Rect {
 
 /// Draw diagonal hatching across `area`.
 ///
-/// Split out of [`hatch_lost_content`] when that function gained the ink test,
-/// so the geometry question (*what is lost?*) and the drawing question (*what
-/// does a hatch look like?*) stopped sharing a body. The lines run at 45° and
-/// are clamped to the rectangle at both ends, which is what lets a caller hatch
-/// several small regions without any of them bleeding into the paper between.
+/// Separate from [`hatch_lost_content`] so the geometry question (*what is
+/// lost?*) and the drawing question (*what does a hatch look like?*) do not
+/// share a body. The lines run at 45° and are clamped to the rectangle at both
+/// ends, which is what lets a caller hatch several small regions without any of
+/// them bleeding into the paper between.
 fn hatch(painter: &egui::Painter, area: Rect, colour: Color32) {
     let step = 6.0;
     let mut x = area.min.x;
@@ -1080,30 +1049,24 @@ fn strip(
     placement: Placement,
 ) {
     let sheets = inputs.job.plans.len();
-    // ★★★ `horizontal_wrapped`, NOT `horizontal` — 2026-09-03, and this was the
-    // last cause of the operator's "two scroll bars that won't go away".
+    // `horizontal_wrapped`, NOT `horizontal` — this row is the operator's
+    // "two scroll bars that won't go away" if it is allowed to overflow.
     //
-    // Measured: `print-strip natural_w=379.9 column_w=340.0`. This row of seven
-    // controls has ALWAYS been wider than the column it sits in — 40 pt wider
-    // at the default width — and `ui.horizontal` does not care: it lays out
-    // past the end and reports a `min_rect` that wide. That overflow became the
-    // body's content width, and the body's content width is what raises the
-    // horizontal scrollbar.
+    // Measured: `print-strip natural_w=379.9 column_w=340.0`. Seven controls
+    // are wider than the column at the default width, and `ui.horizontal` does
+    // not care: it lays out past the end and reports a `min_rect` that wide.
+    // That overflow becomes the body's content width, and the body's content
+    // width is what raises the horizontal scrollbar. A body that forced its
+    // content to a fixed width would hide it, not fix it — the row would merely
+    // spill across the divider into the options column's space.
     //
-    // It was invisible for as long as the body forced its content to a fixed
-    // 764 pt, because the strip's 380 fitted inside that and merely spilled
-    // across the divider into the options column's space. It is visible in the
-    // very first capture of this defect, where the button row runs past the
-    // separator.
-    //
-    // ★★ Wrapped rather than given a wider minimum, and that choice is the
-    // point. A minimum would be a **constant asserting how wide seven buttons
-    // are**, and that depends on the theme preset's font size and button
-    // padding, and on the label text — so it would be correct in one preset and
-    // wrong in another, which is the same class of defect as the hard-coded
-    // item gap this file's caller was just corrected for. A wrapped row is
-    // bounded by its available width **by construction**: there is no number to
-    // get wrong, and no preset in which it can overflow.
+    // Wrapped rather than given a wider minimum, and that choice is the point.
+    // A minimum would be a **constant asserting how wide seven buttons are**,
+    // which depends on the theme preset's font size and button padding and on
+    // the label text — so it would be correct in one preset and wrong in
+    // another. A wrapped row is bounded by its available width **by
+    // construction**: there is no number to get wrong, and no preset in which
+    // it can overflow.
     //
     // The cost is that the row becomes two rows on a narrow column. That is
     // paid for in `STRIP_HEIGHT_PTS`, which reserves the space for it.
@@ -1151,7 +1114,7 @@ fn strip(
         {
             zoom_by(dialog, 1.0 / scale, rect.center(), rect.center());
         }
-        // ★★★ POP OUT — O112 ask 2, and it is the LAST control in the row.
+        // POP OUT — O112 ask 2, and it is the LAST control in the row.
         //
         // Last because the row is `horizontal_wrapped`: on a narrow column the
         // row becomes two, and the control that wraps first should be the one
@@ -1159,14 +1122,14 @@ fn strip(
         // a preview is for; moving it to another window is a once-per-session
         // act.
         //
-        // ★ It is a button and not a checkbox, and not a toggle that stays
+        // It is a button and not a checkbox, and not a toggle that stays
         // pressed. The window IS the state — while it is open the operator can
         // see it, and while it is closed there is nothing to un-toggle. A
         // latching control here would be a second place the truth lives, and
         // the two would disagree the moment the window was closed from its own
         // title bar, which is the documented way back.
         //
-        // ★ Absent — not greyed — in the popped window itself. See
+        // Absent — not greyed — in the popped window itself. See
         // [`Placement`]: there is nothing there for it to do, and R9's own
         // distinction is that greying is for *temporarily* unavailable.
         if placement == Placement::InDialog {
@@ -1177,9 +1140,8 @@ fn strip(
             // rect publishes the control's *content* position, which inside a
             // scroll area can be hundreds of points outside the window — the
             // harness then aims the real pointer at nothing, presses nothing,
-            // and reports the feature as inert. That has happened in this
-            // project before and is written up on `dialogs::formfield`'s
-            // rotation row.
+            // and reports the feature as inert. `dialogs::formfield`'s rotation
+            // row documents the same failure.
             crate::diag::ui_rect_visible(REGION_POP_OUT, popout.rect, ui.clip_rect());
             if popout.clicked() {
                 dialog.preview_popped = true;
@@ -1190,14 +1152,14 @@ fn strip(
             }
         }
     });
-    // ★ THE REGRESSION TEST FOR THE LAST CAUSE OF THE TWO-SCROLLBAR DEFECT,
-    // reported from inside the process because it cannot be seen from outside.
+    // THE REGRESSION TEST FOR THE TWO-SCROLLBAR DEFECT, reported from inside
+    // the process because it cannot be seen from outside.
     //
-    // `laid_w` must never exceed `column_w`. When it did — measured at
-    // `laid_w=379.9 column_w=340.0` on 2026-09-03 — the overflow propagated
-    // into the body's content width and raised a horizontal scrollbar that no
-    // amount of resizing could dismiss, because the strip's width did not
-    // depend on the window's.
+    // `laid_w` must never exceed `column_w`. Where it does — measured at
+    // `laid_w=379.9 column_w=340.0` with the row unwrapped — the overflow
+    // propagates into the body's content width and raises a horizontal
+    // scrollbar that no amount of resizing dismisses, because the strip's width
+    // does not depend on the window's.
     //
     // A driven check asserts the inequality rather than a value: the strip's
     // width is a function of the theme's font and button padding and of the
@@ -1269,7 +1231,7 @@ fn zoom_by(dialog: &mut PrintDialog, step: f32, at: Pos2, centre: Pos2) {
 /// staleness fields: a preview that re-rasterised sixty times a second would
 /// make an open dialog cost more than the print. [`PreviewKey`] carries every
 /// input that can change the pixels; see its docs for why orientation is not
-/// one of them, and for the two fields it must gain when their controls land.
+/// one of them, and for the rule a new rendering input lands under.
 ///
 /// A failed render clears the cache and returns `None`, which drops the
 /// preview back to the flat fill. **It is not reported as an error**: the same
@@ -1283,7 +1245,7 @@ fn texture_for(
     dialog: &mut PrintDialog,
     page: usize,
 ) -> Option<TextureId> {
-    // ★ From the frame's context, not built here — see [`PreviewKey::new`].
+    // From the frame's context, not built here — see [`PreviewKey::new`].
     // The verdict cache's validity is defined by that context, so a key
     // derived from it cannot be stronger than the one the verdicts are held
     // under, which is the property that stops a remembered "the overhang is
@@ -1310,7 +1272,7 @@ fn texture_for(
         dialog.preview_texture = None;
         return None;
     };
-    // ★ The ink mask is built HERE, from the same pixmap, on the same miss —
+    // The ink mask is built HERE, from the same pixmap, on the same miss —
     // operator request O113. Once per raster and never per frame: it is a pure
     // function of these bytes, so recomputing it while the operator pans would
     // be re-deriving an answer that cannot have changed. See the
@@ -1329,23 +1291,21 @@ fn texture_for(
 
 /// Upload a rendered pixmap as the preview's own texture.
 ///
-/// # ★ This is a SECOND premultiplied-alpha call site, and that is a defect
+/// # This is a SECOND premultiplied-alpha call site, and that is a defect
 /// # this module cannot fix from here
 ///
-/// [`crate::render::raster`]'s header is explicit that the convention is
-/// enforced *"by there being **one** function, not by review: both
-/// `ColorImage` constructors accept the bytes without complaint, and the
-/// wrong one silently darkens every antialiased glyph edge."* This is a
-/// second one, and it exists only because that module's public helper
-/// (`texture_from_pixels`) takes a `RenderedPixels` — a worker result carrying
-/// a `RenderKey` — and uploads under a *single fixed texture name* shared with
-/// the canvas.
+/// [`crate::render::raster`] states the convention and says it is enforced by
+/// there being **one** function rather than by review: both `ColorImage`
+/// constructors accept premultiplied bytes without complaint, and the wrong one
+/// silently darkens every antialiased glyph edge. This is a second one, and it
+/// exists only because that module's public helper (`texture_from_pixels`)
+/// takes a `RenderedPixels` — a worker result carrying a `RenderKey` — and
+/// uploads under a *single fixed texture name* shared with the canvas. Neither
+/// suits a preview, which has a pixmap and its own texture name.
 ///
-/// The old shell did not have this problem: it had
-/// `raster::texture_from_pixmap(ctx, name, &pixmap)`, and `SALVAGE.md` records
-/// that helper as *"left behind — it exists for the print preview (S5)"*.
-/// Restoring it and deleting this function is the correct fix, and it is a
-/// change to `render/raster.rs` rather than to this file.
+/// ⇒ **The fix is a `texture_from_pixmap(ctx, name, &pixmap)` in
+/// `render/raster.rs` and the deletion of this function**, which is a change to
+/// that module rather than to this one.
 ///
 /// Until then the convention is held by this doc comment and by the assertion
 /// in [`the_preview_upload_reads_pixels_as_premultiplied`], which is the same

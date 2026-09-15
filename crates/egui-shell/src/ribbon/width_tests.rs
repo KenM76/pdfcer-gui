@@ -1,11 +1,11 @@
 //! Layout tests that run the ribbon against **real text metrics**.
 //!
-//! # ★ Why this file exists, and why the tests next door were not enough
+//! # Why this file exists, and why the tests next door are not enough
 //!
 //! Every width-sensitive path in this module — [`super::plan`]'s
 //! reservation, [`super::band`]'s budget, [`super::mode_selector`]'s track
-//! — had, until this file was written, only ever been executed against
-//! text of **zero width**.
+//! — is a claim about measured text, and a test that installs no font
+//! measures text of **zero width**.
 //!
 //! `egui-shell` depends on `egui` with `default-features = false`, so a
 //! test process building this crate alone has no font data and every
@@ -20,18 +20,17 @@
 //!   sized for the wrong one of them is indistinguishable from a correct
 //!   one.
 //!
-//! Every one of those four sentences hid a real defect. Two of them were
-//! shipped defects (`the_overflow_control_is_hit_testable_at_a_width_that_hides_groups`
-//! and `groups_in_the_overflow_menu_are_captioned_too` both failed the
-//! moment fonts appeared); the other two were latent.
+//! Each of those four conditions hides a class of real defect, and hides it
+//! in the direction that reads as success: the test runs, asserts, and
+//! passes against numbers no glyph produced.
 //!
 //! # The trap this file is built to close
 //!
 //! The font situation was not merely absent — it was **inconsistent**:
 //!
 //! ```text
-//! cargo test -p egui-shell --lib   → egui alone         → no fonts  → 116 pass
-//! cargo test --workspace           → pdfcer-gui → eframe → fonts     → 2 fail
+//! cargo test -p egui-shell --lib   → egui alone         → no fonts
+//! cargo test --workspace           → pdfcer-gui → eframe → fonts
 //! ```
 //!
 //! Cargo unifies features across a workspace build, so `pdfcer-gui`'s
@@ -84,10 +83,10 @@ pub(super) struct Rendered {
     /// The height the whole ribbon occupied in the `Ui` it was handed,
     /// read back after [`Ribbon::render`] returned.
     ///
-    /// **`Option`, and it matters.** `HANDOFF.md` §10: a layout test can be
-    /// entirely vacuous under one of the two test commands, and an
-    /// assertion about a number nobody produced passes exactly like an
-    /// assertion about a number that was right. `None` means the closure
+    /// **`Option`, and it matters.** A layout test can be entirely vacuous
+    /// under one of the two commands above, and an assertion about a number
+    /// nobody produced passes exactly like an assertion about a number that
+    /// was right. `None` means the closure
     /// that measures never ran, which is a different failure from "the
     /// height was wrong" and gets a different message.
     pub(super) ribbon_height: Option<f32>,
@@ -296,7 +295,7 @@ fn capitalised(id: &str) -> String {
     }
 }
 
-/// **★ The ribbon really is measuring real text.**
+/// **The ribbon really is measuring real text.**
 ///
 /// The guard on every other test in this file. With no font data the
 /// three View groups would each collapse to their item count times
@@ -320,19 +319,16 @@ fn the_band_measures_real_text_and_not_a_floor() {
         .rect(&report::group("view", "render"))
         .expect("the band publishes its groups");
 
-    // ★★★ The floor is DERIVED, since 2026-09-05. It read `> 100.0`, and 100
-    // was the width of these three controls **laid out on one row** — a number
-    // taken from the arrangement, not from the rule. When
-    // `band::measure_group_rows` began asking every group for the band's row
-    // ceiling the three stacked, the group measured its widest control at
-    // 86.94 pt, and the test accused a correct build of having lost its font.
-    //
-    // What the test is actually for is that real glyph metrics reach the
-    // ribbon's measurement path. With no font every control collapses to
-    // [`super::plan::MIN_ITEM_WIDTH`], so THAT is the floor to clear — under
-    // any arrangement, because a stacked group is at least one control wide and
-    // a row of three is wider still. The `assert_ne!` below carries the other
-    // half and is untouched.
+    // The floor is DERIVED from the rule, never lifted from one arrangement.
+    // What this test is for is that real glyph metrics reach the ribbon's
+    // measurement path; with no font every control collapses to
+    // [`super::plan::MIN_ITEM_WIDTH`], so that is the floor to clear — under
+    // any arrangement, because a stacked group is at least one control wide
+    // and a row of three is wider still. A literal taken from the one-row
+    // arrangement instead (100 pt, these three controls side by side) accuses
+    // a correct build of having lost its font the moment the group stacks
+    // into columns and its widest control measures 86.94 pt. The `assert_ne!`
+    // below carries the other half of the claim.
     let floor = super::plan::MIN_ITEM_WIDTH;
     assert!(
         page_display.width() > floor * 2.0,
@@ -362,15 +358,15 @@ fn the_band_measures_real_text_and_not_a_floor() {
     );
 }
 
-/// **★ Failure mode #8, swept: the overflow affordance is on screen at
+/// **Failure mode #8, swept: the overflow affordance is on screen at
 /// every width, with real text.**
 ///
-/// The defect this replaces was not a mistake in the reservation
-/// arithmetic — that arithmetic was and is correct. It was that the band
-/// asked a `Ui` for its width *after* the tab-strip row above it had
-/// overflowed and grown that `Ui`'s `max_rect`, so the reservation was
-/// taken from a right edge 78 pt off screen. The affordance existed, had
-/// area, was reported, and could not be clicked.
+/// Correct reservation arithmetic is not enough on its own. The band asks a
+/// `Ui` for its width, and if the tab-strip row above it has overflowed and
+/// grown that `Ui`'s `max_rect`, the reservation is taken from a right edge
+/// off screen — measured at 78 pt past it. The affordance then exists, has
+/// area, is reported, and cannot be clicked, which is a state no arithmetic
+/// test can see.
 ///
 /// The sweep matters. A single narrow width would have caught this one,
 /// but the family of bugs it belongs to is "at *some* width the answer is
@@ -414,7 +410,7 @@ fn the_overflow_affordance_is_on_screen_at_every_width() {
     }
 }
 
-/// **★ No visible group reaches into the reserved space.**
+/// **No visible group reaches into the reserved space.**
 ///
 /// The other half of the reservation: it is worth nothing if a group
 /// drawn under real metrics overruns its budget and paints on top of the
@@ -444,7 +440,7 @@ fn no_visible_group_overlaps_the_overflow_affordance() {
     }
 }
 
-/// **★ When the plan says everything fits, everything actually fits.**
+/// **When the plan says everything fits, everything actually fits.**
 ///
 /// This is the estimate-accuracy check, asked through the renderer rather
 /// than of the estimator, and it is the one that would catch an
@@ -478,24 +474,22 @@ fn no_visible_group_overlaps_the_overflow_affordance() {
 /// separately) and asserts **there**, where any shortfall at all is
 /// visible, plus at the two widths above it.
 ///
-/// # Its sensitivity floor, and why it improved on 2026-08-14
+/// # Its sensitivity floor
 ///
 /// [`super::plan::GROUP_PADDING`] contributes 2 × 6 pt to every group's
-/// planned width. Until 2026-08-14 **nothing drew it**, so every band was
-/// over-planned by 12 pt per group and that surplus acted as an accidental
-/// safety margin: an under-estimate smaller than it was absorbed and this
-/// test could not see it. Measured at the time — cutting the item padding by
-/// 20 % was invisible here; removing it entirely failed at the transition
-/// width.
+/// planned width, and [`super::band::captioned_group`] insets the group by
+/// that same constant — so the reservation is spent on ink rather than
+/// standing as slack. That coupling is what gives this test its sensitivity.
+/// A band that planned the padding without drawing it would carry 12 pt per
+/// group of accidental safety margin, and any under-estimate smaller than
+/// the margin would be absorbed and invisible here: measured against such a
+/// band, cutting the item padding by 20 % changed nothing, and only removing
+/// it outright failed at the transition width.
 ///
-/// [`super::band::captioned_group`] now insets the group by that same
-/// constant, so the surplus is spent on ink rather than on slack and this
-/// test is 12 pt per group **more** sensitive than it was. Nothing about it
-/// had to change: it asserts that a band claiming to fit really fits, which
-/// is a claim about the renderer, and the renderer now consumes what the plan
-/// reserves. It is worth knowing that the floor moved, because a future
-/// under-estimate this test starts catching will look like a new defect and
-/// will in fact be an old one that finally became visible.
+/// The test itself asserts only that a band claiming to fit really fits —
+/// a claim about the renderer — so it needs no adjustment when the padding
+/// moves. What moves with the padding is the smallest under-estimate it can
+/// still see.
 #[test]
 fn a_band_that_claims_to_fit_really_does_fit() {
     let ctx = context();
@@ -540,7 +534,7 @@ fn a_band_that_claims_to_fit_really_does_fit() {
     }
 }
 
-/// **★ A band narrower than the affordance itself keeps the affordance.**
+/// **A band narrower than the affordance itself keeps the affordance.**
 ///
 /// The degenerate case the reservation exists for, and the one the
 /// arithmetic alone cannot answer: at 40 pt the band cannot fit the
@@ -584,7 +578,7 @@ fn a_band_narrower_than_the_affordance_still_shows_it() {
     );
 }
 
-/// **★ The affordance can actually be hit, at widths where it is
+/// **The affordance can actually be hit, at widths where it is
 /// crowded.**
 ///
 /// A rectangle proves something was allocated; only `egui`'s own hit test
@@ -595,19 +589,15 @@ fn a_band_narrower_than_the_affordance_still_shows_it() {
 /// affordance, one where none does, and one narrower than the affordance
 /// itself.
 ///
-/// ★★ **The first was 400 pt and is 300 since 2026-09-05**, and the reason is
-/// a result rather than a fudge: `band::measure_group_rows` now asks every
-/// group for the band's row ceiling, so the View tab's groups stack into
-/// columns and **all three fit inside 400 pt where they used to overflow**.
-/// The test's own precondition caught it — `overflow_visible` was false, and it
-/// says in as many words that it would then no longer be exercising the
-/// affordance. That guard is why this shows up as a red test naming its own
-/// vacuity rather than as a green test asserting nothing, which is what the
-/// same change would have done to a version without it.
-///
-/// ⚠ The number is a property of the fixture manifest and the synthetic face.
-/// If it goes red again the question is *"do the groups still not fit?"*, and
-/// the answer is a measurement, not a smaller literal.
+/// Those widths are a property of the fixture manifest and the synthetic
+/// face, not constants with meaning of their own: `band::measure_group_rows`
+/// asks every group for the band's row ceiling, so the View tab's groups
+/// stack into columns and fit in less width than a single-row arrangement
+/// needs. If the `overflow_visible` precondition goes red, the question is
+/// *"do the groups still not fit?"* and the answer is a measurement, not a
+/// smaller literal. That precondition is why a change to the band's
+/// arrangement surfaces here as a red test naming its own vacuity, rather
+/// than as a green test asserting nothing.
 #[test]
 fn the_affordance_is_hit_testable_under_real_metrics() {
     for width in [300.0_f32, 180.0, 40.0] {
@@ -678,13 +668,13 @@ fn widening_the_band_never_hides_a_group_under_real_metrics() {
     );
 }
 
-/// **★ The mode selector stays on screen when the row cannot hold it.**
+/// **The mode selector stays on screen when the row cannot hold it.**
 ///
-/// [`super`]'s header states the rule — *"two things on this ribbon must
-/// never be squeezed out by content: the mode selector and the overflow
-/// affordance"* — and laying the selector out first, from the right edge,
-/// delivers it against content. It delivers nothing when the selector
-/// alone is wider than the row: `egui` answers an over-wide
+/// Two things on this ribbon must never be squeezed out by content: the
+/// mode selector and the overflow affordance ([`super`]'s header owns that
+/// rule). Laying the selector out first, from the right edge, delivers it
+/// against content. It delivers nothing when the selector alone is wider
+/// than the row: `egui` answers an over-wide
 /// `allocate_exact_size` in a right-to-left layout by extending past the
 /// container's left edge, silently.
 ///
@@ -724,7 +714,7 @@ fn the_mode_selector_stays_within_the_row_at_every_width() {
     }
 }
 
-/// **★ The overflow reservation is wide enough for the label it will
+/// **The overflow reservation is wide enough for the label it will
 /// actually draw.**
 ///
 /// The circularity in [`super::plan::overflow_width`] — the reservation is
@@ -773,16 +763,18 @@ fn the_reservation_covers_every_label_the_control_could_show() {
 // The tab-strip row
 //
 // Everything below is `MODES_AND_PANELS.md` failure mode #8 one row up.
-// The defect these replace, measured with the synthetic face and the
-// two-tab fixture before `super::strip` existed:
+// Reserving the right island protects the right island and nothing else:
+// `egui` does not clip children to `max_rect`, so every other claimant on
+// the row runs off the edge instead. Measured with the synthetic face on a
+// two-tab fixture, a row that reserves only the selector lays out like
+// this:
 //
 //     window  QAT             tabs                selector      verdict
 //      500    0..166          188..265            322..500      correct
 //      320    0..166          188..265            142..320      tabs UNDER selector
 //      180   -6..160          182..259              2..180      both tabs off screen
 //
-// Reserving the right island protected the right island; `egui` does not
-// clip children to `max_rect`, so everything else simply ran off the edge.
+// Every test below pins one of those rows shut.
 // =====================================================================
 
 /// Every rect the tab strip published this frame, as
@@ -801,14 +793,14 @@ fn strip_rects(frame: &Rendered) -> Vec<(String, Rect)> {
         .collect()
 }
 
-/// **★ Failure mode #8 on the tab strip, swept: nothing on the row is
+/// **Failure mode #8 on the tab strip, swept: nothing on the row is
 /// ever off screen, at any width.**
 ///
 /// The single assertion the whole of [`super::strip`] exists to make true.
 /// It covers all four claimants at once — the QAT, every tab, the strip's
-/// affordance and the mode selector — because the defect was not in any
-/// one of them: it was that only *one* of them was reserved and the rest
-/// were laid out into whatever was left, which at 180 pt was a negative
+/// affordance and the mode selector — because the failure is in none of
+/// them individually: it is what happens when only *one* is reserved and the
+/// rest are laid out into whatever is left, which at 180 pt is a negative
 /// coordinate.
 ///
 /// The sweep step is 7 pt, which is deliberately finer than a "few
@@ -843,13 +835,13 @@ fn nothing_on_the_tab_strip_row_is_ever_off_screen() {
     }
 }
 
-/// **★ No tab is ever drawn under the mode selector.**
+/// **No tab is ever drawn under the mode selector.**
 ///
-/// The specific shape the old layout failed in at 320 pt: the tabs ran
-/// from 188 to 265 while the selector ran from 142 to 320, so the two
-/// overlapped by 77 pt and the tabs were the ones underneath. Nothing was
-/// off screen and nothing looked wrong in the reported rects; the tabs
-/// were simply unreachable.
+/// The shape an unreserved row fails in, measured at 320 pt: tabs from 188
+/// to 265 under a selector from 142 to 320 — a 77 pt overlap, with the tabs
+/// underneath. Nothing is off screen and nothing looks wrong in the reported
+/// rects; the tabs are simply unreachable, which is why a containment sweep
+/// does not cover this on its own.
 ///
 /// Asserted as a geometric relation (`tab.right ≤ selector.left`) rather
 /// than as coordinates, so it survives a fourth mode, a reworded label and
@@ -916,7 +908,7 @@ fn the_tab_strip_never_runs_under_the_mode_selector_or_the_qat() {
     }
 }
 
-/// **★ The active tab is pinned: it is on screen at every width the strip
+/// **The active tab is pinned: it is on screen at every width the strip
 /// can hold a tab at all, whichever tab it is.**
 ///
 /// Requirement 2, asserted through the renderer rather than through the
@@ -992,7 +984,7 @@ fn the_active_tab_is_on_screen_at_every_width_whichever_tab_it_is() {
     }
 }
 
-/// **★ The collapse happens only where it must, and only downwards.**
+/// **The collapse happens only where it must, and only downwards.**
 ///
 /// The guard on the exception the test above carves out. A collapse is a
 /// real loss — the strip stops showing which tab is current — so it must
@@ -1040,7 +1032,7 @@ fn the_strip_collapses_only_at_widths_too_narrow_to_hold_a_tab() {
     );
 }
 
-/// **★ The strip's affordance can actually be hit, at widths where it is
+/// **The strip's affordance can actually be hit, at widths where it is
 /// crowded.**
 ///
 /// A rectangle proves something was allocated; only `egui`'s own hit test
@@ -1048,8 +1040,8 @@ fn the_strip_collapses_only_at_widths_too_narrow_to_hold_a_tab() {
 /// for occlusion by a later widget and for a zero-area interact rect. The
 /// band's affordance has the same test for the same reason
 /// (`the_affordance_is_hit_testable_under_real_metrics`); this is its
-/// counterpart one row up, and the row up is the one where the old code
-/// drew controls at negative coordinates.
+/// counterpart one row up, and the row up is where an unreserved layout
+/// puts controls at negative coordinates.
 ///
 /// Three widths: one where several tabs still fit beside it, one where
 /// almost none do, and one narrower than the affordance itself — the case
@@ -1098,7 +1090,7 @@ fn the_tab_overflow_affordance_is_hit_testable_under_real_metrics() {
     }
 }
 
-/// **★ When the strip claims everything fits, everything actually fits.**
+/// **When the strip claims everything fits, everything actually fits.**
 ///
 /// The estimate-accuracy check for the tab strip, asked through the
 /// renderer, and the one that catches an **under**-estimate — the
@@ -1194,7 +1186,7 @@ fn the_strip_that_claims_to_fit_really_does_fit() {
     }
 }
 
-/// **★ Requirement 3, rendered: a contextual tab arriving into a full
+/// **Requirement 3, rendered: a contextual tab arriving into a full
 /// strip goes into the menu, and does not displace the active one.**
 ///
 /// The same frame twice, once with `selection.any` set and once without,
@@ -1251,7 +1243,7 @@ fn a_contextual_tab_arriving_into_a_full_strip_is_announced_by_the_count() {
     );
 }
 
-/// **★ No tab is lost between the strip and its menu, at any width.**
+/// **No tab is lost between the strip and its menu, at any width.**
 ///
 /// The counting form of failure mode #8, and the cheapest possible
 /// tripwire on it: a tab that is in neither place is a tab the operator
@@ -1292,12 +1284,11 @@ fn no_tab_is_lost_between_the_strip_and_its_menu() {
     }
 }
 
-/// **★ Requirement 4: the QAT never starts at a negative x.**
+/// **Requirement 4: the QAT never starts at a negative x.**
 ///
-/// The measured symptom of the old layout, stated as the narrowest
-/// possible assertion. At 180 pt the first QAT control ran from −6 to a
-/// point past the tabs; it was drawn, it was reported, and it could not be
-/// clicked.
+/// The narrowest possible assertion on a measured symptom: at 180 pt an
+/// unreserved row puts the first QAT control from −6 to a point past the
+/// tabs. It is drawn, it is reported, and it cannot be clicked.
 ///
 /// The QAT has no overflow menu of its own — it is a fixed cost, and
 /// `RIBBON_IA.md` treats its contents as the handful of things an operator

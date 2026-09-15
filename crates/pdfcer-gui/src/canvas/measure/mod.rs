@@ -1,8 +1,8 @@
 //! # `canvas::measure` — the dimensioning tools
 //!
-//! Phase 7. Placed under `canvas/` rather than at `tools/measure/` (which is
-//! where `SALVAGE.md` §"Class C" pencilled it in) to follow the precedent this
-//! shell actually set: [`crate::canvas::markup`] is the other on-canvas
+//! Phase 7. Placed under `canvas/` rather than at `tools/measure/`, following
+//! the precedent this shell sets: [`crate::canvas::markup`] is the other
+//! on-canvas
 //! authoring tool, it lives here, and a measure tool is the same kind of thing
 //! — a gesture that reads the page and raises an `Action`.
 //!
@@ -62,11 +62,10 @@ pub(in crate::canvas) use resolve::{Resolved, resolve_hover, snap_point};
 /// (click the first vertex to close the ring). Its header says why.
 pub mod perimeter;
 
-/// ★ `pub` rather than `pub(super)` as of 2026-09-03, because `crate::text`
-/// names [`circpick::PickOrigin`], which this module re-exports through
-/// [`pick`].
+/// ★ `pub` rather than `pub(super)` because `crate::text` names
+/// [`circpick::PickOrigin`], which this module re-exports through [`pick`].
 ///
-/// The visibility widened for one reason and it is the right one: a picked
+/// The visibility is wide for one reason and it is the right one: a picked
 /// point's ORIGIN is an operator-facing disclosure — `OPERATOR_REQUESTS.md`
 /// O106 — and every operator-facing string in this crate lives in
 /// `crate::text`, which `tools/gates/check-ui-strings.sh` enforces. The
@@ -74,8 +73,8 @@ pub mod perimeter;
 /// is the mirrored-type drift `canvas::target`'s header exists to refuse.
 pub mod pick;
 
-/// The radius/diameter tool's point set — split out of [`pick`] on 2026-09-03
-/// under R2. Its header carries the seam; [`pick`] re-exports its types so
+/// The radius/diameter tool's point set — split out of [`pick`] under R2.
+/// Its header carries the seam; [`pick`] re-exports its types so
 /// every existing `pick::CircularPick` path still resolves.
 pub mod circpick;
 pub mod scale;
@@ -125,10 +124,10 @@ pub enum MeasureKind {
     /// over the canvas, and decision 024 retired exactly that at the operator's
     /// instruction.
     ///
-    /// **The operator settled it on 2026-08-14: give it two endings.** A
-    /// **double-click** on the canvas, which is what every polyline-ish tool in
-    /// every drawing package uses to say "that was the last one" and is
-    /// therefore what *"make it work the way other programs do"* asks for; and
+    /// **So it has two endings.** A **double-click** on the canvas, which is
+    /// what every polyline-ish tool in every drawing package uses to say "that
+    /// was the last one" and is therefore what working the way other programs
+    /// do requires; and
     /// a ribbon command, `measure.finish`, for an operator who does not know
     /// the double-click or whose last pick was awkward to double-click on.
     /// Neither is a floating box, and both reach `circular::commit` — one
@@ -144,9 +143,8 @@ pub enum MeasureKind {
     /// it would arm a destructive control over a set the operator assembled for
     /// a completely different purpose.
     Circular,
-    /// **Click around a shape; one number for the whole way round.** The
-    /// operator's ask of 2026-08-20, and the tool `canvas::measure::perimeter`
-    /// implements.
+    /// **Click around a shape; one number for the whole way round.** The tool
+    /// `canvas::measure::perimeter` implements.
     ///
     /// Three endings rather than the usual one or two, and each is a different
     /// sentence the operator might mean: a **double-click** ends it as an open
@@ -158,9 +156,8 @@ pub enum MeasureKind {
     /// untouched - which matters, because tracing a building outline means
     /// aiming at the corners of paths that are already on the page.
     Perimeter,
-    /// **Click along something; one number for how far it runs.** The
-    /// operator's ask of 2026-08-20: *"add a length tool that works like the
-    /// perimeter tool without needing to close the profile."*
+    /// **Click along something; one number for how far it runs.** The perimeter
+    /// tool's gesture without the requirement to close the profile.
     ///
     /// # ★ Why this is a second KIND and not a checkbox on Perimeter
     ///
@@ -189,14 +186,13 @@ pub enum MeasureKind {
     /// and `measure.finish` are its endings.
     PathLength,
     /// Pick two lines on the page; the engine authors the dimension between
-    /// them. The gesture pdfcer's own ledger marks as shipped, whose caller was
-    /// missing on this side — see `SALVAGE.md`'s correction of 2026-08-14.
+    /// them — [`pdfcer_core::dimension::TwoLinePlacement`] decides where it
+    /// lands, so this side chooses the pair and nothing else.
     TwoLine,
     /// **Pick two points on the drawing to say what its scale is.**
     ///
-    /// The calibration gesture, and the one the operator asked for by name on
-    /// 2026-08-17: *"set the scale by selecting two lines or points and
-    /// defining what that distance represents."*
+    /// The calibration gesture: pick two lines or points and say what that
+    /// distance represents on the real thing.
     ///
     /// # ★ It authors no dimension, which is why it is a kind and not a verb
     ///
@@ -394,10 +390,10 @@ pub fn active_group(ctx: &egui::Context) -> Option<pdfcer_core::dimension::Group
 /// **Choose the group the next ce dimension will join.**
 ///
 /// The write half of [`active_group`], and the control the ui-spec calls the
-/// *group picker* (§2.6). `MeasureState::group` has carried that meaning since
-/// the Phase 7 salvage and **nothing wrote to it** until
-/// `crate::dialogs::dimension_groups` shipped on 2026-08-18 — so a second group
-/// could exist, carry its own scale, and be joinable by nothing.
+/// *group picker* (§2.6). `MeasureState::group` carries that meaning, and
+/// `crate::dialogs::dimension_groups` is what writes to it. **Without a
+/// writer** a second group can exist, carry its own scale, and be joinable by
+/// nothing.
 ///
 /// # Why it manufactures a state when there is none, and why not through `load`
 ///
@@ -456,8 +452,8 @@ pub use circular::{finish as finish_circular, finishable as finishable_circular}
 /// control that is live for one tool and dead for another with nothing on
 /// screen saying which.
 ///
-/// Added 2026-08-20 with the perimeter tool, which is the second open-ended
-/// gesture on this tab and the reason the singular form stopped working.
+/// The perimeter tool is the second open-ended gesture on this tab, which is
+/// why asking the question once per tool does not work.
 #[must_use]
 pub fn finishable(ctx: &egui::Context) -> bool {
     match crate::canvas::tool::selected(ctx).measure_kind() {
@@ -551,9 +547,9 @@ pub fn take_completed_scale_line(ctx: &egui::Context) -> Option<f64> {
 /// retiring the tool — see [`crate::canvas::tool::disarm_measure`], which
 /// carries the argument for why those are two separate presses.
 ///
-/// ★ Moved here on 2026-09-12. It sat above `take_completed_scale_line`, run
-/// together with that item's doc comment — so it documented `take_completed_scale_line`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
+/// ★ This block must stay attached to THIS function. A doc comment that drifts
+/// up against a neighbouring item documents that item and leaves this one bare,
+/// which is what `tools/gates/check-orphan-docs.py` exists to catch.
 pub fn abandon(ctx: &egui::Context) -> bool {
     let id = egui::Id::new(MEASURE_MEMORY_KEY);
     let Some(mut st) = ctx.data_mut(|d| d.get_temp::<MeasureState>(id)) else {
@@ -688,19 +684,17 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
     let mut st = load(ctx, page_index, kind);
 
     // ★★★ The circular tool's DOUBLE-click is handled here, and its single
-    // click is not — which is the reverse of the arrangement that stood until
-    // 2026-09-03.
+    // click is not.
     //
-    // The old code took the whole circular click before the snap resolution,
-    // with a written argument: the pick committed no point, it toggled an
-    // OBJECT, and the object under the pointer is the same object whether or
-    // not there is a midpoint six pixels away. The argument was sound and its
-    // premise is gone — `pick::CircularPick`'s header carries the measurement
-    // that removed it, and `OPERATOR_REQUESTS.md` O105 carries the operator's
-    // report. A pick is a POINT now, so it wants every part of the machinery
-    // below: the snap, the raw fallback that makes a bitmap measurable, and the
-    // derived-candidate confirm that keeps an inference from being committed by
-    // the click that finds it.
+    // Taking the whole circular click ahead of the snap resolution would only
+    // be right if the pick committed no point and merely toggled an OBJECT,
+    // since the object under the pointer is the same object whether or not
+    // there is a midpoint six pixels away. A circular pick is a **POINT** —
+    // `pick::CircularPick`'s header carries the measurement, and
+    // `OPERATOR_REQUESTS.md` O105 the report behind it — so it wants every part
+    // of the machinery below: the snap, the raw fallback that makes a bitmap
+    // measurable, and the derived-candidate confirm that keeps an inference
+    // from being committed by the click that finds it.
     //
     // The double-click stays above it because it is not a pick at all: it ends
     // the gesture, and running an ending through a point resolution would be
@@ -784,7 +778,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                 actions,
             );
         }
-        // ★ The circular tool, since 2026-09-03: one click is one point.
+        // ★ The circular tool: one click is one point.
         //
         // It sits here, after the resolution, for the same reason the perimeter
         // tool does — its picks are POINTS, so it gets the drawing's own
@@ -833,11 +827,11 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
             if let Some(line) = pick_line_in_page(model, p, map.tolerance()) {
                 // ★ **The OPERATOR's threshold, not the default.**
                 //
-                // This line read `ParallelPolicy::default().epsilon_degrees`
-                // until 2026-08-19, which made `Settings::parallel_epsilon_degrees`
-                // — persisted, shown in the Settings window, edited, and
-                // reaching `ScaleEntryFields` and the CLI — do **nothing** for
-                // the one gesture it exists for. `pick.rs`'s own doc says the
+                // Reading `ParallelPolicy::default().epsilon_degrees` here
+                // would make `Settings::parallel_epsilon_degrees` — persisted,
+                // shown in the Settings window, edited, and reaching
+                // `ScaleEntryFields` and the CLI — do **nothing** for the one
+                // gesture it exists for. `pick.rs`'s own doc says the
                 // value *"comes from `Settings::parallel_epsilon_degrees` and
                 // is never a literal at the call site, so this tool and the CLI
                 // cannot disagree about when two lines count as parallel"*, and
@@ -957,10 +951,10 @@ fn trace_pick(kind: MeasureKind, st: &MeasureState, committed: bool) {
 /// [`pick::dimension_preview_segments`]:
 ///
 /// 1. **A marker on every picked point**, straight out of
-///    [`pick::CircularPick::points`]. ★ Until 2026-09-03 this drew a rectangle
-///    round every picked *object*, which on the operator's own drawing outlined
-///    a 550 × 500 pt region for one click — see `pick::CircularPick`'s header
-///    and `OPERATOR_REQUESTS.md` O105. A marker per point is both the honest
+///    [`pick::CircularPick::points`]. ★ A rectangle round every picked *object*
+///    is the wrong picture: on a real drawing one click outlines a 550 × 500 pt
+///    region — see `pick::CircularPick`'s header and `OPERATOR_REQUESTS.md`
+///    O105. A marker per point is both the honest
 ///    picture of what is in the fit and the thing an operator aims at to take a
 ///    point back out.
 /// 2. **The fitted circle**, derived by handing the *same*
@@ -1260,9 +1254,9 @@ pub(super) fn preview(ui: &Ui, preview: Preview<'_>) {
 /// operator is zoomed to a whole A1 sheet or to one dimension line. Carried
 /// from the old shell's own indicator sizing.
 ///
-/// ★ `pub(in crate::canvas)` as of 2026-08-20, when the perimeter's vertex drag
-/// learned to snap and needed to draw the SAME marker at the SAME size. A
-/// second constant would have been two sizes for one affordance, free to
+/// ★ `pub(in crate::canvas)` because the perimeter's vertex drag snaps too and
+/// draws the SAME marker at the SAME size. A second constant would be two
+/// sizes for one affordance, free to
 /// diverge — and an operator who has learned that a small square means
 /// *endpoint* while placing a perimeter must read the identical square while
 /// correcting one.
@@ -1290,10 +1284,10 @@ const PICKED_RING_SCALE: f32 = 1.7;
 /// preview alike — was offset by wherever the page happened to sit in the
 /// window and drawn at 100 % regardless of the actual magnification.
 ///
-/// It is exactly `HANDOFF.md` defect 4's shape (Find's bar drawing 108 pt left
-/// of its place) and it is invisible to every test in this file, because the
-/// tests that exist are about *which point is picked* and the picking was
-/// always right. Only the drawing was wrong, and only in a window.
+/// It is a whole class — a mark authored in the right place and drawn in the
+/// wrong one — and it is invisible to every test in this file, because the
+/// tests that exist are about *which point is picked* and the picking is
+/// right. Only the drawing is wrong, and only in a window.
 ///
 /// The second hop is [`PageMapping::to_screen`] — the canvas's own outward
 /// boundary crossing, the one `canvas::overlay` has always used for selection
@@ -1384,7 +1378,7 @@ mod tests {
     /// corner at (37, 11), the page-space point that is 50 canvas units in from
     /// the page corner must land 100 screen points in from (37, 11). A test
     /// that merely checked "the two differ" would be satisfied by any wrong
-    /// answer in the right direction — `HANDOFF.md` §2's own lesson.
+    /// answer in the right direction.
     #[test]
     fn the_preview_projects_page_space_all_the_way_to_the_screen() {
         let origin = egui::Pos2::new(37.0, 11.0);

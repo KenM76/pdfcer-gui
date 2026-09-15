@@ -3,23 +3,15 @@
 //!
 //! ## What this closes
 //!
-//! The half of bookmark editing the panel shipped **without**. `Pass 156.0`
-//! gave this shell rename and delete, and [`super::edit`]'s header still says,
-//! in as many words, *"Reorder and re-parent do not [ship] … R9: a capability
-//! that does not exist renders nothing."* `pdfcer-core` `Pass 161.0` shipped
-//! both, and the engine's covering note names the gap it closes:
+//! Without a move verb an outline in the wrong **order** can only be repaired
+//! by deleting a branch and re-authoring it, which loses every destination,
+//! colour and style on it and is not an edit any operator would call a
+//! reorganisation.
 //!
-//! > *"an outline in the wrong **order** could only be fixed by deleting a
-//! > branch and re-authoring it, which loses every destination, colour and
-//! > style on it and is not an edit any operator would call a
-//! > reorganisation."*
-//!
-//! Two verbs arrived, deliberately kept apart, and the release note says why in
-//! a sentence that is a design instruction to this module:
-//!
-//! > *"Expand/collapse ships alongside, **as a separate verb, because whether
-//! > a move should reveal a collapsed destination has two defensible answers
-//! > and both now exist.**"*
+//! `EditSession::move_outline_item` and `EditSession::set_outline_open` are two
+//! verbs and are **deliberately kept apart**, because whether a move should
+//! reveal a collapsed destination has two defensible answers and the engine
+//! declines to pick one for its callers.
 //!
 //! ⇒ **This module does not fold expansion into the move.** A drop into a
 //! collapsed parent leaves that parent collapsed, exactly as
@@ -30,7 +22,7 @@
 //! acts is the honest count — the engine's own argument — and an operator who
 //! did not want the expansion can undo it without undoing the move.
 //!
-//! ## ★★★ The gesture is the conventional one, and it is copied rather than
+//! ## The gesture is the conventional one, and it is copied rather than
 //! invented
 //!
 //! Every program with an outline panel — Acrobat's Bookmarks, Word's
@@ -48,10 +40,10 @@
 //! |---|---|---|
 //! | the target is resolved **during the layout pass** | a gap has no position until the grid is laid out | a row's band has no position until the tree is laid out, and the *end of a subtree* is not known until its children are drawn |
 //! | the caret is a `Rect` carrying two endpoints, not a stroke | keeps geometry beside the tiles and appearance beside the theme | unchanged |
-//! | it is **dimmed**, never hidden, where the drop would change nothing | *"drawing no caret cannot be told apart from the panel having stopped tracking the pointer — and the no-op boundary is where every drag begins"* | unchanged, and it carries a second dimmed state for a drop pdfcer will refuse |
+//! | it is **dimmed**, never hidden, where the drop would change nothing | drawing no caret cannot be told apart from the panel having stopped tracking the pointer, and the no-op boundary is where every drag begins | unchanged, and it carries a second dimmed state for a drop pdfcer will refuse |
 //! | the release is read from **raw pointer input**, not from a `Response` | a drag that began on a row may end anywhere | unchanged |
 //!
-//! ## ★★ What a TREE needs that a grid does not: a depth
+//! ## What a TREE needs that a grid does not: a depth
 //!
 //! The pages grid has `n + 1` landings among `n` sheets, and a boundary is
 //! fully described by which gap it is. An outline has the same `n + 1`
@@ -74,7 +66,7 @@
 //! deeper. That is the whole of *"showing where it will land and at what
 //! depth"* in one mark, with no second idiom to learn.
 //!
-//! ### ★ Why the middle band is `LastChild` and not `FirstChild`
+//! ### Why the middle band is `LastChild` and not `FirstChild`
 //!
 //! Because the caret must be drawn **where the bookmark will actually appear**,
 //! and `LastChild` is the only choice that keeps the two lower bands at the
@@ -95,7 +87,7 @@
 //! makes *"move it back where a fresh one would go"* expressible — the engine
 //! names that as the reason [`OutlinePlacement::LastChild`] exists.
 //!
-//! ### ★★ The caret for the lower two bands sits at the END of the subtree,
+//! ### The caret for the lower two bands sits at the END of the subtree,
 //! which may be a long way from the pointer
 //!
 //! That is deliberate and it is information rather than a defect. *"After this
@@ -110,7 +102,7 @@
 //! collapsed row draws no children, so its subtree run is empty and its caret
 //! is at its own bottom edge, which is exactly right: nothing is between them.
 //!
-//! ## ★★★ `/Count` is two quantities and its SIGN is the open flag (§12.3.3)
+//! ## `/Count` is two quantities and its SIGN is the open flag (§12.3.3)
 //!
 //! Table 152 and Table 153 give the same key two meanings, and the item's
 //! **sign** carries open-or-closed because there is no `/Open` key:
@@ -123,27 +115,27 @@
 //! Four consequences land in this file, and every one of them would be a defect
 //! if it were missed:
 //!
-//! 1. **The panel now hides a collapsed row's children**, which it did not do
-//!    before this module existed. [`super::rows`] used to recurse
-//!    unconditionally, so a triangle that wrote `/Count`'s sign would have
-//!    changed the file and changed nothing on screen — a control that appears
-//!    not to work. See [`super`]'s header for the full note.
+//! 1. **A collapsed row draws no children**, and [`super::rows`] has to honour
+//!    that for the triangle to mean anything: a walk that recursed
+//!    unconditionally would let a triangle write `/Count`'s sign, change the
+//!    file and change nothing on screen — a control that appears not to work.
+//!    See [`super`]'s header for the full note.
 //! 2. **Nothing here sizes anything from `/Count`.** `OutlineItem::open` is the
 //!    shell's read of the sign and is the *only* field of it this module
-//!    touches; `declared_count` is carried *"verbatim … Do not use this to size
-//!    anything"* in core's own words, and [`super::tree::descendants`] walks
-//!    the tree instead.
+//!    touches; `declared_count` is the file's own number carried verbatim and
+//!    is not a count of anything this shell may size from, so
+//!    [`super::tree::descendants`] walks the tree instead.
 //! 3. **The engine's move report counts what was VISIBLE.**
 //!    `OutlineMove::visible_items` is the item plus its visible descendants —
 //!    `1` for a collapsed chapter of forty sections. So the disclosure needs a
 //!    second sentence for the collapsed case, and it comes from the tree rather
 //!    than from the report. See
 //!    [`crate::app::actions::bookmarks::BookmarkAction::Move`].
-//! 4. **A leaf has no `/Count` at all** (Table 153 makes it *"required if the
-//!    item has any descendants"*), so there is nothing to expand or collapse
-//!    and no triangle is drawn. `set_outline_open` answers `Ok(false)` for one
-//!    rather than refusing — *"asking a leaf to expand is what a 'collapse all'
-//!    sweep does to every row it walks"* — and this module simply never asks.
+//! 4. **A leaf has no `/Count` at all** — Table 153 requires the key only of an
+//!    item that has descendants — so there is nothing to expand or collapse and
+//!    no triangle is drawn. `set_outline_open` answers `Ok(false)` for a leaf
+//!    rather than refusing, so a future *collapse all* may ask every row it
+//!    walks; this module simply never asks.
 //!
 //! ## What is deliberately NOT done here
 //!
@@ -204,7 +196,7 @@ const CARET_DIMMED: f32 = 0.35;
 
 /// How much survives when the drop would be **refused**.
 ///
-/// ★ Fainter than [`CARET_DIMMED`], and a third state rather than a reuse of
+/// Fainter than [`CARET_DIMMED`], and a third state rather than a reuse of
 /// the second, because the two facts have different remedies. *"This changes
 /// nothing"* is answered by letting go somewhere else at leisure; *"pdfcer will
 /// not do this"* is answered by aiming outside the branch, and an operator who
@@ -217,7 +209,7 @@ const CARET_REFUSED: f32 = 0.15;
 
 /// One row of the outline **as it was actually drawn**, in draw order.
 ///
-/// # ★ Why the walk collects these instead of resolving the drop as it goes
+/// # Why the walk collects these instead of resolving the drop as it goes
 ///
 /// Two answers are unavailable at the moment a row is drawn:
 ///
@@ -280,7 +272,7 @@ pub enum Band {
 
 /// Fraction of a row's height each edge band occupies.
 ///
-/// ★ A quarter each, leaving the middle **half** to `Into`. The asymmetry is
+/// A quarter each, leaving the middle **half** to `Into`. The asymmetry is
 /// deliberate and is the conventional weighting: re-parenting is the gesture an
 /// operator aims at a row, and reordering is the one they aim at a *boundary*,
 /// which they do by moving toward the edge they can see. Equal thirds make the
@@ -317,7 +309,7 @@ pub fn band_at(rect: Rect, y: f32) -> Band {
 /// its own bottom edge, which is correct: there is nothing drawn between it and
 /// the next row at its level.
 ///
-/// ★ It reads the **drawn** rows and not the tree, which is the whole point. A
+/// It reads the **drawn** rows and not the tree, which is the whole point. A
 /// collapsed chapter has forty items under it in the document and none of them
 /// on screen, and the caret is a mark on the screen.
 ///
@@ -342,7 +334,7 @@ pub fn subtree_bottom(rows: &[VisibleRow], index: usize) -> f32 {
 /// What releasing on a landing would do — the three answers the caret has to
 /// be able to draw.
 ///
-/// # ★★ Why "changes nothing" and "would be refused" are separate
+/// # Why "changes nothing" and "would be refused" are separate
 ///
 /// They have different remedies and, on release, they do different things.
 ///
@@ -460,12 +452,11 @@ pub fn locate_in<'a, T>(
 
 /// **Would this move do anything, and would pdfcer allow it?**
 ///
-/// # ★★ This is a FORECAST of the engine's answer, not a second copy of it
+/// # This is a FORECAST of the engine's answer, not a second copy of it
 ///
-/// `move_outline_item` decides both facts for itself: it returns
-/// `OutlineMove::moved = false` for a placement the bookmark already occupies
-/// — *"a legitimate request with a legitimate answer — nothing"*, writing no
-/// objects and creating no undo entry — and it refuses
+/// `move_outline_item` decides both facts for itself: it answers
+/// `OutlineMove::moved = false` for a placement the bookmark already occupies,
+/// writing no objects and creating no undo entry, and it refuses
 /// `EditError::OutlineMoveIntoOwnSubtree` unconditionally.
 ///
 /// The shell asks anyway, and the reason is the caret: a mark that could only
@@ -658,10 +649,11 @@ pub fn resolve(
 /// [`egui_shell::theme::Theme::canvas_selection_ink`], the same source the
 /// pages caret and the current-page ring take, so a preset that changes the
 /// accent changes all three together. **Not `visuals().selection.stroke`** —
-/// that is `egui`'s selected-*widget* channel, and reading it from content
-/// chrome was defect T2 (`REVIEW_TRIAGE.md` §2b). The two dimmed states are `gamma_multiply` ratios of it
-/// rather than two more colours, for that module's stated reason: one colour
-/// with a stated relationship beats several that have to be kept in step.
+/// that is `egui`'s selected-*widget* channel, and a mark drawn over content is
+/// not a widget, so a theme that restyled selected list rows would silently
+/// restyle this caret with them. The two dimmed states are `gamma_multiply`
+/// ratios of the one colour rather than two more colours: one colour with a
+/// stated relationship beats several that have to be kept in step.
 pub fn paint_caret(ui: &Ui, target: Option<&DropTarget>) {
     let Some(target) = target else {
         return;
@@ -694,7 +686,7 @@ const CARET_SLOT: &str = "bookmark-drop-target"; // ui-text-exempt: trace slot n
 
 /// The placement as one word, for the trace.
 ///
-/// ★ A word rather than `{:?}`, because `OutlinePlacement`'s `Debug` prints the
+/// A word rather than `{:?}`, because `OutlinePlacement`'s `Debug` prints the
 /// anchor inside the variant and a driven check reading `placement=` would then
 /// be matching on a rendering of a struct. The two facts are traced as two
 /// keys, so a check can assert the *kind* of landing without pinning the
@@ -727,7 +719,7 @@ fn anchor_number(to: OutlinePlacement) -> u32 {
 
 /// **End a drag** — read the release, raise the move, clear the state.
 ///
-/// # ★ Why the release is read from raw pointer input
+/// # Why the release is read from raw pointer input
 ///
 /// [`crate::panels::pages`]' `settle_drag` discipline and its reason,
 /// unchanged: a drag that began on a row may end anywhere — over the panel
@@ -748,28 +740,28 @@ fn anchor_number(to: OutlinePlacement) -> u32 {
 /// | on the bookmark itself or inside it | [`BookmarkAction::Move`] | **a sentence**, from the engine's refusal |
 /// | anywhere else | [`BookmarkAction::Move`] | the engine's report, afterwards |
 ///
-/// # ★★★ Why a landing this module has already judged impossible is still
+/// # Why a landing this module has already judged impossible is still
 /// raised
 ///
 /// It looks wasteful and it is the only correct shape. **A refusal must be a
 /// sentence, never a silence**, and the channel for a decline is
-/// `crate::app::status::decline`, which is `pub(super)` inside `crate::app` on
-/// a stated boundary: *"a decline is written by the one dispatcher and read by
-/// the one bar."* A panel is outside it.
+/// `crate::app::status::decline`, which is `pub(super)` inside `crate::app`
+/// because a decline is written by the one dispatcher and read by the one bar.
+/// A panel is outside that boundary.
 ///
-/// The two ways round that boundary are both worse than going through it. A
-/// `record_note` from here would render the sentence under **`⚑ About your last
-/// edit:`** — which `crate::text::status`' own rule forbids for a decline, in
-/// as many words: *"an operator who reads 'About your last edit' after a
-/// gesture that did nothing has been told a small lie confidently."* Widening
-/// the module would trade a real invariant for one call site.
+/// The two ways round it are both worse than going through it. A `record_note`
+/// from here would render the sentence under **`⚑ About your last edit:`**,
+/// which `crate::text::status` forbids for a decline: nothing was edited, and
+/// an operator told otherwise after a gesture that did nothing has been lied to
+/// confidently. Widening the module would trade a real invariant for one call
+/// site.
 ///
 /// ⇒ So the action is raised, `EditSession::move_outline_item` refuses it by
 /// name, `crate::app::actions::bookmarks::move_to` records the decline from
 /// **inside** the closure, and nothing is written: the engine's guard runs
 /// before it plans anything, so there is no epoch bump and no undo entry.
 ///
-/// ★ And it puts the authority where the module header already says it is.
+/// And it puts the authority where the module header already says it is.
 /// [`landing_for`] is a **forecast**, and its whole purpose is the caret. The
 /// engine's guard decides what happens, exactly as it does for every other
 /// refusal in this shell, and the two cannot drift into disagreeing about the
@@ -813,7 +805,7 @@ pub fn settle(
         )
     });
     match target.landing {
-        // ★★★ Both of these raise, and the second is the whole of R83's rule:
+        // Both of these raise, and the second is the whole of R83's rule:
         // a refusal must be a SENTENCE, never a silence. See this function's
         // header for why the sentence has to be produced by the apply phase
         // rather than here.
@@ -823,7 +815,7 @@ pub fn settle(
                 to: target.placement,
             }));
         }
-        // ★ Nothing, and nothing said. The operator asked for the state they
+        // Nothing, and nothing said. The operator asked for the state they
         // are already in, and the caret was dimmed under their pointer before
         // they let go. Raising the action anyway would be honest — the engine
         // answers `moved: false` and writes nothing — and it would cost a
@@ -854,7 +846,7 @@ mod tests {
         }
     }
 
-    /// ★★ **The three bands are three, and the edges are quarters.**
+    /// **The three bands are three, and the edges are quarters.**
     ///
     /// The one piece of arithmetic the whole gesture rests on. Both plausible
     /// errors are pinned: bands that are equal thirds — which makes the nesting
@@ -886,7 +878,7 @@ mod tests {
         assert_eq!(band_at(flat, 50.0), Band::Into);
     }
 
-    /// ★★★ **The caret for the lower bands sits at the end of the SUBTREE**,
+    /// **The caret for the lower bands sits at the end of the SUBTREE**,
     /// which is what makes it truthful rather than comfortable.
     ///
     /// The fixture is deliberately shaped so the two wrong answers differ from
@@ -914,7 +906,7 @@ mod tests {
         );
     }
 
-    /// ★ **A collapsed row's caret is at its own edge**, because nothing of it
+    /// **A collapsed row's caret is at its own edge**, because nothing of it
     /// is drawn.
     ///
     /// The §12.3.3 case: the branch exists in the document and not on the
@@ -958,13 +950,14 @@ mod tests {
         locate_in(items, None, ObjId::new(num, 0), |n| n.id, kids)
     }
 
-    /// ★★ **A bookmark's place is its parent, its siblings and its index**, and
+    /// **A bookmark's place is its parent, its siblings and its index**, and
     /// all three come from one walk.
     ///
-    /// The nested case is the one that matters, for the reason the whole panel
-    /// addresses bookmarks by id: the engine got this wrong in its own CLI and
-    /// *"nested something two levels deeper than intended, and the output
-    /// looked entirely plausible."*
+    /// The nested case is the one that matters, and it is why the whole panel
+    /// addresses bookmarks by id: a walk that loses track of depth files an
+    /// item a level or two from where it was asked to go, and the outline it
+    /// produces still looks entirely plausible, so nothing downstream reports
+    /// it.
     #[test]
     fn a_nodes_place_is_found_at_any_depth() {
         let tree = vec![
@@ -988,7 +981,7 @@ mod tests {
         assert!(locate_node(&tree, 99).is_none());
     }
 
-    /// ★★★ **The two spellings of a bookmark's own slot are recognised as
+    /// **The two spellings of a bookmark's own slot are recognised as
     /// no-ops.**
     ///
     /// This is the assertion the caret's dimming rests on, and it is the one a
@@ -1020,7 +1013,7 @@ mod tests {
         assert_ne!(previous, Some(ObjId::new(3, 0)));
     }
 
-    /// ★ **The first and last child are recognised too**, which is what makes
+    /// **The first and last child are recognised too**, which is what makes
     /// the middle band's caret dim when a bookmark is dropped back into the
     /// parent it is already the last child of.
     #[test]
@@ -1038,7 +1031,7 @@ mod tests {
         );
     }
 
-    /// ★★ **The three landings are three distinct answers**, so a match on them
+    /// **The three landings are three distinct answers**, so a match on them
     /// cannot silently collapse.
     ///
     /// Each one paints a different caret and produces a different act on
@@ -1051,7 +1044,7 @@ mod tests {
         assert_ne!(Landing::Lands, Landing::OwnSubtree);
     }
 
-    /// ★ **The three dimming ratios are three**, and they are ordered.
+    /// **The three dimming ratios are three**, and they are ordered.
     ///
     /// A build that dimmed a refusal and a no-op equally would give the
     /// operator one mark for two facts with two different remedies — and they
@@ -1067,7 +1060,7 @@ mod tests {
         }
     }
 
-    /// ★★★ **The caret's DEPTH is the whole of what distinguishes nesting from
+    /// **The caret's DEPTH is the whole of what distinguishes nesting from
     /// reordering**, and the two lower bands sit at the same height.
     ///
     /// Driven through [`resolve_at`] with a real row list, because this is the
@@ -1115,7 +1108,7 @@ mod tests {
         assert!((into.caret.top() - 40.0).abs() < f32::EPSILON);
     }
 
-    /// ★★ **The top band's caret is at the row's own top edge and its own
+    /// **The top band's caret is at the row's own top edge and its own
     /// depth**, which is the one landing whose mark is beside the pointer.
     #[test]
     fn the_top_band_marks_the_row_it_is_over() {
@@ -1158,7 +1151,7 @@ mod tests {
         );
     }
 
-    /// ★ **The root is spelled `0` in the trace**, which is not a legal object
+    /// **The root is spelled `0` in the trace**, which is not a legal object
     /// number and so cannot be read as a real anchor.
     #[test]
     fn the_top_level_anchor_traces_as_zero() {

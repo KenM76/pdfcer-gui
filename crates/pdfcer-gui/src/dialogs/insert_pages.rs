@@ -3,23 +3,22 @@
 //! The second half of `pages.insert_from_file`. The picker asks *which file*;
 //! this asks the two questions a picker cannot.
 //!
-//! ## ★ Why this exists, which is a lesson rather than a feature note
+//! ## Why the dialog exists at all
 //!
-//! Insert shipped earlier the same day **without** it: it took every page of
-//! the chosen file and put them after the current one. That satisfied the
-//! sentence *"add insert from file"* and it is not the feature. The operator,
-//! 2026-08-18:
+//! A picker alone would satisfy the sentence *"add insert from file"* — take
+//! every page of the chosen file, put them after the current one — and that is
+//! not the feature. The operator:
 //!
 //! > *"when I ask for something, my expectation is usually that everything
 //! > surrounding that request is also done to where it would match the
 //! > behaviour a user would expect. Otherwise I am left typing out every little
 //! > missing detail."*
 //!
-//! `HANDOFF.md` §3 instruction 0 is that, written down. The test it asks for is
-//! *"what would a competent user reach for next, within this same gesture?"*,
-//! and for an insert the answers are immediate: **how many pages am I about to
-//! add**, **do I want all of them**, and **where do they go**. Acrobat's own
-//! Insert Pages dialog asks the last two and shows the first.
+//! ⇒ The standing test that falls out of it is *"what would a competent user
+//! reach for next, within this same gesture?"*, and for an insert the answers
+//! are immediate: **how many pages am I about to add**, **do I want all of
+//! them**, and **where do they go**. Acrobat's own Insert Pages dialog asks the
+//! last two and shows the first.
 //!
 //! ## The four positions are the engine's own vocabulary
 //!
@@ -33,18 +32,15 @@
 //!
 //! [`crate::dialogs::print::tabs::parse_page_range`] parses `3`, `1-4`,
 //! `5,1-2`, and its own header carries the argument for why there is exactly
-//! one of it:
-//!
-//! > *"Two range parsers would eventually disagree about something like
-//! > `5,1-2` — whether it reorders, whether it deduplicates — and an operator
-//! > moving between the GUI and a script would have no way to know which one
-//! > they were talking to."*
+//! one of it: two range parsers eventually disagree about something like
+//! `5,1-2` — whether it reorders, whether it deduplicates — and an operator
+//! moving between them has no way to know which one they are talking to.
 //!
 //! That argument was made about the GUI and the CLI. It is the same argument
 //! between two GUI surfaces, and stronger: an operator who learns the range
 //! syntax on Print is entitled to it working here.
 //!
-//! ★ **And the order-preserving, non-deduplicating behaviour is a feature
+//! **And the order-preserving, non-deduplicating behaviour is a feature
 //! here.** `5,1-2` inserts source page 5 first, then 1 and 2 — which is a
 //! reorder an operator can ask for in one gesture. `1,1` inserts page 1 twice,
 //! which is also legitimate. Both fall out of treating the text as a sequence,
@@ -179,7 +175,7 @@ impl InsertPagesDialog {
 
     /// Draw it. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
-        // ★ ITS OWN OS WINDOW as of 2026-08-21. Size is an opening bid; see
+        // ITS OWN OS WINDOW. Size is an opening bid; see
         // [`crate::dialogs::host::Host::fit`].
         let (frame, ()) = crate::dialogs::host::Host::new(
             "insert-pages", // ui-text-exempt: a viewport key, never displayed.
@@ -289,7 +285,7 @@ impl InsertPagesDialog {
             if ui.button(t::insert_cancel()).clicked() {
                 self.close_requested = true;
             }
-            // ★ ABSENT rather than greyed while the range is unparseable, on
+            // ABSENT rather than greyed while the range is unparseable, on
             // the standing rule: the refusal is already on screen immediately
             // above, naming what is wrong, so a greyed button would be a
             // second and quieter statement of a fact already made loudly.
@@ -314,7 +310,7 @@ mod tests {
         InsertPagesDialog::open(std::path::PathBuf::from("x.pdf"), 4, 6)
     }
 
-    /// ★ The four radios produce the engine's four positions, and the two that
+    /// The four radios produce the engine's four positions, and the two that
     /// need a page carry the RIGHT one.
     ///
     /// The failure this catches is an off-by-one between "after page 7" as the
@@ -334,7 +330,7 @@ mod tests {
         assert_eq!(d.position(), InsertPosition::End);
     }
 
-    /// ★ An unparseable range names NO pages, which is what hides the button.
+    /// An unparseable range names NO pages, which is what hides the button.
     ///
     /// Both halves matter: a bad range must not fall back to "all" — that would
     /// insert a document the operator did not ask for — and an empty result
@@ -354,9 +350,10 @@ mod tests {
 
     /// The default is every page, after the page the operator was on.
     ///
-    /// Pinned because it is the behaviour the first version of this feature had
-    /// with no dialog at all, and an operator who liked it should be able to
-    /// press Insert twice and get it.
+    /// Pinned because it is the fast path: an operator who wants the whole file
+    /// after the page they are on presses Insert twice and reads nothing. Any
+    /// change to the seeded state costs that operator a dialog they were not
+    /// reading.
     #[test]
     fn it_opens_on_every_page_after_the_current_one() {
         let d = dialog();
@@ -365,7 +362,7 @@ mod tests {
         assert_eq!(d.position(), InsertPosition::After(6));
     }
 
-    /// ★ The range grammar is the print dialog's, including the two surprises.
+    /// The range grammar is the print dialog's, including the two surprises.
     ///
     /// Order is preserved and duplicates are kept, because the text is a
     /// SEQUENCE the operator wrote. Here that is not a quirk to tolerate — it

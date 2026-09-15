@@ -31,14 +31,11 @@
 //! tidiness; it is the only way the *overflow* invariant can be tested at
 //! all.
 //!
-//! `MODES_AND_PANELS.md` Part 2 lists twelve failure modes observed in a
-//! shipping application, and number eight is the one this module exists
-//! to make impossible:
-//!
-//! > **Tab overflow has no escape** — past ~6 tabs the overflow *button
-//! > itself* gets hidden, leaving no route to the hidden tabs. → *The
-//! > overflow affordance is reserved space, never the first thing
-//! > squeezed out.*
+//! `MODES_AND_PANELS.md` Part 2's failure mode #8 is the one this module
+//! exists to make impossible: past a handful of tabs the overflow *button
+//! itself* gets hidden, leaving no route to whatever it was hiding. The
+//! rule that answers it — *the overflow affordance is reserved space, never
+//! the first thing squeezed out* — is enforced here as arithmetic.
 //!
 //! That defect is a *layout arithmetic* defect. It happens when the
 //! overflow control is emitted **after** the content, into whatever space
@@ -113,30 +110,28 @@
 //! ## width test in this crate
 //!
 //! The floor keeps the arithmetic *meaningful*; it does not make a
-//! zero-width-text test *equivalent* to a real one, and treating the two
-//! as equivalent cost this module two defects.
+//! zero-width-text test *equivalent* to a real one.
 //!
-//! The font situation is not merely "absent in tests". It is **decided by
+//! Which fonts exist is not a property of this crate. It is **decided by
 //! whichever sibling crate is in the build**:
 //!
 //! ```text
-//! cargo test -p egui-shell --lib   egui alone            → no fonts, widths ≈ 0
-//! cargo test --workspace           pdfcer-gui → eframe    → egui/default_fonts,
-//!                                                          real widths
+//! cargo test -p egui-shell --lib   egui alone             → no fonts, widths ≈ 0
+//! cargo test --workspace           application → eframe   → egui/default_fonts,
+//!                                                           real widths
 //! ```
 //!
 //! Cargo unifies features across a workspace build, so the same assertions
 //! measure different text under the two commands, and the *narrower*
 //! command — the one a developer working on the shell reaches for — is
-//! the one that measures nothing. Everything below that compares a width
-//! against another width was, for the whole of this module's life,
-//! trivially satisfied under that command.
+//! the one that measures nothing. Any assertion in this file that compares
+//! one width against another is trivially satisfied under it.
 //!
-//! Two consequences were real defects, both of which only appear with
-//! metrics: the overflow affordance being positioned from a `Ui` whose
-//! `max_rect` a sibling row had grown (see [`super::band`]), and
-//! [`overflow_width`] reserving for the label with the most *characters*
-//! rather than the most *width*.
+//! Two width rules therefore cannot be checked from here at all: that the
+//! overflow affordance is positioned from a `Ui` whose `max_rect` a sibling
+//! row has not grown (see [`super::band`]), and that [`overflow_width`]
+//! reserves for the label with the greatest *width* rather than the most
+//! *characters*.
 //!
 //! `super::width_tests` closes that hole by installing a synthetic
 //! proportional face this crate builds itself, so the width-sensitive
@@ -174,30 +169,26 @@ pub(crate) const CUSTOM_ITEM_WIDTH: f32 = 96.0;
 
 /// Horizontal padding inside a group, either side of its content.
 ///
-/// The mockup's `.group { padding: 0 13px }`, and — since 2026-08-14 —
-/// **both budgeted here and drawn** by [`super::band::captioned_group`].
+/// The mockup's `.group { padding: 0 13px }`, **both budgeted here and
+/// drawn** by [`super::band::captioned_group`].
 ///
-/// # ★ The history, because the resolution is the interesting part
+/// # ★ Budgeted and drawn must stay together
 ///
-/// From 2026-08-13 this constant was budgeted and **not drawn**. The
-/// renderer laid a group out as a bare `ui.vertical` with no horizontal
-/// inset, so the 12 pt it adds to every group's planned width was space the
-/// renderer never used. Measured against the synthetic face at the time: the
-/// three View-tab groups planned at 213.9, 174.4 and 165.6 pt and drew at
-/// 202.4, 165.1 and 157.5 pt. Measured in the running application at
-/// 1,100 pt, the Markup tab's Text-markup group box began at x = 322.5 and so
-/// did its first control — controls sat flush against the group boundary and
-/// against the rule separating them from the next group, which is most of
-/// what the operator meant by *"cluttered"*.
+/// Whether a ribbon group has internal padding is a design decision, not an
+/// arithmetic one, and it has exactly two consistent answers: draw it and
+/// budget it, or set this constant to zero. Splitting them is what hurts.
 ///
-/// The old note called resolving it a **design** decision rather than an
-/// arithmetic one, and that was right: either a ribbon group has internal
-/// padding (draw it, the plan is already correct) or it does not (this
-/// constant should be zero). The decision taken was the first, for the reason
-/// the note itself gives — the plan had been reserving the space all along,
-/// so **drawing it costs zero additional width budget**. Not one group moves
-/// into the overflow menu that was not already there; the band spends on
-/// padding exactly what it was already spending on nothing.
+/// Budgeted-and-not-drawn adds 12 pt to every group's planned width that the
+/// renderer never uses, and the symptom is not a layout fault — it is that a
+/// group's first control sits flush against the group boundary and against
+/// the rule separating it from the next group, which is most of what the
+/// operator meant by *"cluttered"*. Drawn-and-not-budgeted is the opposite
+/// error and clips the last group in the band.
+///
+/// Drawing it is the cheaper of the two answers because the plan reserves
+/// the space either way: **drawing it costs zero additional width budget**,
+/// so no group moves into the overflow menu that was not already there. The
+/// band spends on padding exactly what it would otherwise spend on nothing.
 ///
 /// # ★ 6 pt here against the mockup's 13 px, and why they agree anyway
 ///
@@ -214,8 +205,8 @@ pub(crate) const CUSTOM_ITEM_WIDTH: f32 = 96.0;
 /// point; what was missing was only that none of it was on the *inside* of
 /// the boundary. Raising this constant to 13 would make that gap 40 pt, which
 /// is not what the mockup shows — and it would cost 14 pt of planned width
-/// **per group**, which is 70 pt across the File tab's five band groups and
-/// is enough to push a group into the overflow menu. Overflow is a measured
+/// **per group**, which across a full tab's band groups is enough to push a
+/// group into the overflow menu. Overflow is a measured
 /// property of this band (see `super::width_tests` and the counts recorded in
 /// [`super::band`]'s header), so that is a regression, not a refinement.
 ///
@@ -254,75 +245,63 @@ pub(crate) const GROUP_PADDING: f32 = 6.0;
 /// unavoidable: it is a deliberate, global, one-off event, not something
 /// that happens when the operator clicks a tab.
 ///
-/// # ★★★ Why THREE — and the whole of the argument that said two
+/// # ★★★ Why THREE
 ///
-/// **It was `2` until 2026-09-05.** The operator's report that day was
-/// *"it looks like the edits to the ribbon got halfway done… the mockup GUI
-/// pdfcer-shell.html looks much cleaner and we should follow it's format
-/// exactly"*, and this constant is the largest single thing that was half
-/// done: `mockups/pdfcer-shell.html`'s numbers were adopted into
-/// [`crate::theme::Metrics`] on 2026-09-04 — `ribbon_rows: 68`,
-/// `ribbon_pad_top: 6`, an 11 pt caption, a 56 pt Large control — **and the
-/// row count that produces 68 was left at two.** The mockup's own arithmetic
-/// says what 68 is made of: `.rb { height: 22px }` and `.grp .col { gap: 1px }`
-/// give `3 × 22 + 2 × 1 = 68`. A band 68 pt tall holding two 24 pt rows is not
-/// the mockup's band; it is the old band with twelve points of air in it.
+/// Where `mockups/ribbon.html` — the ribbon study — and
+/// `mockups/pdfcer-shell.html` — the whole-shell mockup the operator approved
+/// under O123 — disagree, the approved one wins. This is a place they
+/// disagree, and the approved mockup's own arithmetic says what the band's
+/// 68 pt is made of: `.rb { height: 22px }` and `.grp .col { gap: 1px }` give
+/// `3 × 22 + 2 × 1 = 68`. A band 68 pt tall holding two rows of controls is
+/// not that band; it is a two-row band with twelve points of air in it, and
+/// the operator's word for the result was:
+///
+/// > *"it looks like the edits to the ribbon got halfway done… the mockup GUI
+/// > pdfcer-shell.html looks much cleaner and we should follow it's format
+/// > exactly"*
 ///
 /// Measured against the mock at 1400 px, `View` alone: the mock lays Zoom
 /// 2 × 3, Display 2 × 3, Panels 3 × 3 and Window 2 × 3, filling 1379 px of a
 /// 1400 px window. At two rows those four groups need roughly 460 px more than
-/// they are given, so groups that the mock shows on the band were **collapsing
-/// or scrolling** at his window width. That is what "halfway done" looked like.
+/// they are given, so groups the mock shows on the band collapse or scroll at
+/// that width.
 ///
-/// ## The refusal that used to be written here, and why each half lapsed
+/// The two arguments that sound like grounds for two rows do not hold here:
 ///
-/// > *"Two is what `mockups/ribbon.html` specifies… Three was considered and
-/// > refused on two grounds. **Screen budget:** a third row costs another
-/// > `control_height + gutter` — 28 pt at the quiet preset, 36 at the airy one
-/// > — off the top of the canvas on every tab, permanently… **The caption:**
-/// > the caption is what makes a group legible as a group, and it is drawn
-/// > `small()` and `weak()`; three rows of controls put it far enough from the
-/// > top row that it stops reading as that row's label."*
-///
-/// 1. **The specification named is the wrong file.** `mockups/ribbon.html` is
-///    the 320-line ribbon study; `mockups/pdfcer-shell.html` is the whole-shell
-///    mockup the operator approved under O123 and has now cited twice. Where
-///    they disagree the approved one wins, and this is a place they disagree.
-/// 2. **Screen budget: the third row is FREE.** It was true that a third row
-///    costs `control_height + gutter` *while the band was two rows tall by
-///    definition*. Since 2026-09-04 the band's height is
-///    [`crate::theme::Metrics::ribbon_rows`] — a fixed budget the rows are laid
-///    into — so the third row costs **nothing at all**: 68 pt before, 68 pt
-///    after, and the controls come down from 24 pt to 21.67 to suit. See
-///    [`super::band::band_row_height`]. Failure mode #4 is untouched.
-/// 3. **The caption: the mock answers it by measurement.** Its third row ends
-///    at y = 138 and its caption sits at y = 138.9. The caption was never in
-///    danger of drifting from the rows; it hangs off the bottom of the same
-///    fixed area whether the group used one row or three, which is the baseline
-///    invariant `height_tests::every_caption_in_a_band_shares_one_baseline`
-///    asserts.
+/// 1. **Screen budget: the third row is FREE.** A third row costs another
+///    `control_height + gutter` only while the band's height is *defined by*
+///    its row count. It is not: the band's height is
+///    [`crate::theme::Metrics::ribbon_rows`], a fixed budget the rows are laid
+///    into, so the third row costs **nothing at all** — 68 pt either way, with
+///    the controls coming down from 24 pt to 21.67 to suit. See
+///    [`super::rhythm::band_row_height`]. Failure mode #4 is untouched.
+/// 2. **The caption does not drift from its rows.** In the mock the third row
+///    ends at y = 138 and the caption sits at y = 138.9: the caption hangs off
+///    the bottom of the same fixed area whether the group used one row or
+///    three, which is the baseline invariant
+///    `height_tests::every_caption_in_a_band_shares_one_baseline` asserts.
 ///
 /// ★ Three is also what the product class does. Word's ribbon lays small
 /// buttons three rows deep at every width; so does Acrobat's. The convergence
-/// of the class is the specification, and two was the outlier.
+/// of the class is the specification.
 ///
-/// ## What did NOT change
+/// ## The number is in scope for a redesign; its scope is not
 ///
-/// The constant is still a **constant** — the table above is unaltered, and
-/// every reason it gives for refusing a per-group, per-tab or per-theme row
-/// count holds exactly as written. What moved is the number, not its scope.
+/// This is a **constant**, and every reason the table above gives for refusing
+/// a per-group, per-tab or per-theme row count holds whatever the number is.
 pub(crate) const GROUP_ROWS: usize = 3;
 
 /// **The most rows a group may be re-wrapped onto** when the band runs short of
 /// width — S5's ceiling.
 ///
 /// Three, from Word: its Font group is two rows at 1900 pt and **three** at
-/// 1000 pt (`evidence/word-ribbon/`). It never goes to four at any width in the
-/// series, including 460, where it collapses instead.
+/// 1000 pt. It never goes to four at any width in the series
+/// `tools/word-ribbon-study.ps1` photographs, including 460, where it
+/// collapses instead.
 ///
 /// ★ Why the ceiling is not simply "as many as it takes": the band's HEIGHT is
-/// fixed and must stay fixed — R128, and the reason [`GROUP_ROWS`]'s own doc
-/// gives for stopping at two in the first place. A fourth row would either grow
+/// fixed and must stay fixed — R128, and the reason [`GROUP_ROWS`] is a
+/// constant at all. A fourth row would either grow
 /// the band, which moves the canvas under a fit-to-page zoom, or shrink the
 /// controls below the size at which their icons are legible. Word reached the
 /// same answer, and reaching it independently is worth more than copying it.
@@ -447,8 +426,8 @@ const PACK_SLACK: f32 = 1.0e-3;
 /// monotone in the target width (a wider row never needs more rows), so the
 /// first feasible candidate in ascending order is the optimum.
 ///
-/// A ribbon group holds single digits of items — the widest in this
-/// project's own manifest is seven — so `n²` candidates is at most a few
+/// A ribbon group holds single digits of items, so `n²` candidates is at
+/// most a few
 /// dozen f32 sums per group per frame, against a measurement pass that has
 /// already asked `egui` for a galley per label. A binary search over a real
 /// interval would be *less* exact for no measurable saving, and "exhaustive
@@ -618,13 +597,12 @@ impl ItemWidths {
 /// A wrapped group costs its widest row and not the sum of its items — that
 /// substitution is the entire width benefit of wrapping.
 ///
-/// ★ It took a [`GroupRows`] until `ItemSize` landed, so that a caller could
-/// not ask for a group's width without having first decided how it wraps.
-/// That guard stopped being expressible once a group could also have a Large
-/// run *beside* its rows: the content width is then a sum of two things, and
-/// only the caller knows both. The guard it is replaced by is that
+/// ★ Why this takes a number and not a [`GroupRows`]: a group may have a
+/// Large run *beside* its rows, so the content width is a sum of two things
+/// and only the caller knows both. The guard that a width is never asked for
+/// before the wrap is decided is therefore structural rather than typed —
 /// `measure_group` is the one caller, and it computes the content width
-/// immediately above the call.
+/// immediately above this call.
 pub(crate) fn group_width(content_width: f32, caption_width: f32) -> f32 {
     content_width.max(caption_width) + GROUP_PADDING * 2.0
 }
@@ -771,19 +749,14 @@ pub(crate) fn plan_band(
 ///
 /// ## ★ The chevron is `⏷` U+23F7, and the obvious choices are all tofu
 ///
-/// This read `⌄` (U+2304, DOWNWARDS ARROWHEAD) until 2026-08-14 and
-/// **rendered as an empty box in every shipped build** — `□ 1 more`,
-/// `□ 2 more` — because egui's bundled font stack (Ubuntu-Light +
-/// NotoEmoji + emoji-icon-font) has no face for it.
-///
-/// It is worth naming the near misses, because every one of them is what
-/// somebody reaches for first and **four of them were already known to be
-/// missing** by a test in the consuming application:
+/// egui's bundled font stack (Ubuntu-Light + NotoEmoji + emoji-icon-font)
+/// has no face for most of the downward chevrons somebody reaches for first,
+/// and a codepoint with no face draws as an empty box — `□ 1 more`. The near
+/// misses are worth naming because each is a plausible substitution:
 ///
 /// | codepoint | in the font? |
 /// |---|---|
-/// | `⌄` U+2304 | **no** — what this was |
-/// | `▾` U+25BE, `▼` U+25BC, `⌃` U+2303, `˅` U+02C5 | **no** |
+/// | `⌄` U+2304, `▾` U+25BE, `▼` U+25BC, `⌃` U+2303, `˅` U+02C5 | **no** |
 /// | `⏷` U+23F7 | **yes** — and its siblings `⏴` U+23F4 / `⏵` U+23F5 are already in use |
 ///
 /// Measured with `Fonts::has_glyph`, not assumed.
@@ -791,11 +764,10 @@ pub(crate) fn plan_band(
 /// **Why this crate cannot test it and the application must.** `cargo test
 /// -p egui-shell` compiles without egui's `default_fonts`, so `has_glyph`
 /// here would answer about a font set that does not exist in any real
-/// build — the test would pass, vacuously, for the whole life of the
-/// defect. The assertion therefore lives with the fonts, in the
-/// application, beside the two that already guard the status bar and the
-/// find bar. That is also why this shipped: the crate that owns the string
-/// is structurally unable to check it.
+/// build — the test would pass, vacuously, for the whole life of a defect.
+/// The assertion therefore lives with the fonts, in the application, beside
+/// the ones that already guard the status bar and the find bar. The crate
+/// that owns the string is structurally unable to check it.
 pub(crate) fn overflow_label(hidden: usize) -> String {
     format!("⏷ {hidden} more")
 }
@@ -810,15 +782,14 @@ pub(crate) fn overflow_label(hidden: usize) -> String {
 /// broken by reserving for a label that has not been chosen yet, and the
 /// only safe direction is the worst case.
 ///
-/// An earlier version measured `"⏷ N more"` for `N = total_groups` alone,
-/// reasoning that more hidden groups means a longer string. That is true
-/// of the *character count* and false of the *width*: with no font
-/// installed every label measures zero and the two agree, but with real
-/// metrics `"⏷ 8 more"` is wider than `"⏷ 9 more"` in any face whose
-/// digits are not tabular, and a band of nine groups showing one would
-/// then draw a control wider than the space reserved for it — the
-/// affordance overhanging the band's right edge, which is failure mode #8
-/// with the control present but partly unclickable.
+/// Measuring `"⏷ N more"` for `N = total_groups` alone is the obvious
+/// answer and is wrong. More hidden groups means a longer *character count*
+/// and not a greater *width*: with no font installed every label measures
+/// zero and the two agree, but with real metrics `"⏷ 8 more"` is wider than
+/// `"⏷ 9 more"` in any face whose digits are not tabular, so a band of nine
+/// groups showing one hidden would draw a control wider than the space
+/// reserved for it — the affordance overhanging the band's right edge, which
+/// is failure mode #8 with the control present but partly unclickable.
 ///
 /// So the reservation is `max` over every label the control can ever
 /// display: `1..=total_groups`. That makes the claim *"the drawn control
@@ -843,7 +814,8 @@ pub(crate) fn overflow_width(
 mod tests {
     use super::*;
 
-    /// Ten groups of 100 pt each, the shape most of these tests want.
+    /// `n` groups of `each` points, the uniform shape most of these tests
+    /// want.
     fn widths(n: usize, each: f32) -> Vec<f32> {
         vec![each; n]
     }
@@ -990,16 +962,6 @@ mod tests {
     /// a column of one control per row, which is narrower and is not a
     /// ribbon. Most groups in a real manifest are under the cap, so this is
     /// the common path and not the corner.
-    ///
-    /// ★ Moved here on 2026-09-13. It sat above `a_group_that_asks_for_rows_wraps_when_it_would_otherwise_fit`,
-    /// run together with that item's doc comment — so it documented
-    /// `a_group_that_asks_for_rows_wraps_when_it_would_otherwise_fit` and this item had none.
-    ///
-    /// ★ It went unseen for as long as it did because the title that
-    /// absorbed it opens with a decoration run, and until 2026-09-13
-    /// `tools/gates/check-orphan-docs.py` could only express an
-    /// undecorated title — 42% of this crate's titles were outside its
-    /// scope while it reported clean. See that gate's `DECOR`.
     #[test]
     fn a_group_that_fits_the_cap_stays_on_one_row() {
         for widths in [
@@ -1182,8 +1144,8 @@ mod tests {
     /// groups, one working affordance", never to "some clipped groups, no
     /// affordance".
     ///
-    /// Checked at three widths on the way down, because the interesting
-    /// failure is not at zero — it is at the width where a naive
+    /// Checked at a series of widths on the way down, because the
+    /// interesting failure is not at zero — it is at the width where a naive
     /// implementation still has *just* enough room for a group and
     /// therefore spends the overflow control's space on it.
     #[test]
@@ -1351,9 +1313,9 @@ mod tests {
     /// text cannot: in a face whose digits are not tabular, `"⏷ 8 more"`
     /// can be wider than `"⏷ 9 more"` even though the counts and the
     /// lengths say otherwise. Reserving for `N = total_groups` alone —
-    /// which reads as obviously sufficient, and is what this function used
-    /// to do — then draws a control wider than the space held for it, and
-    /// the affordance overhangs the band's right edge.
+    /// which reads as obviously sufficient — then draws a control wider than
+    /// the space held for it, and the affordance overhangs the band's right
+    /// edge.
     ///
     /// The `measure` below is deliberately perverse about exactly that:
     /// every character costs 7 pt except `8`, which costs 40. A
@@ -1419,9 +1381,7 @@ mod tests {
     /// `the_ribbon_overflow_chevron_has_a_glyph`), because `cargo test -p
     /// egui-shell` compiles without egui's `default_fonts` — a `has_glyph`
     /// call here would answer about a font set no real build has, and would
-    /// pass for the whole life of a defect. It did: `⌄` U+2304 shipped as a
-    /// tofu box on every ribbon band and dock tab bar this project has
-    /// produced.
+    /// pass for the whole life of a defect.
     ///
     /// So this test does the half it *can* do honestly: pin the codepoint,
     /// so that changing it is a deliberate act which fails a named test and

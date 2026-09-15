@@ -1,41 +1,40 @@
 #!/usr/bin/env python
 """check-patch-residue.py -- damage done to a file by the tool that wrote it.
 
-WHAT THIS GATE IS FOR
+THE PROPERTY ASSERTED
 =====================
 
+No file in the working tree carries the fingerprint of a patch script that
+mis-quoted its own payload.
+
 Almost every source edit in this project is applied by a short Python script
-that writes a payload into a `.rs` or `.md` file. Those scripts use two devices
-that have now silently corrupted committed source on separate occasions:
+that writes a payload into a `.rs` or `.md` file. Those scripts use devices that
+silently corrupt what they write:
 
 * a **marker translated into a glyph** -- the payload is written in plain ASCII
   and a helper maps a short token onto a star, an arrow or a warning sign,
-  because a literal non-ASCII character in a heredoc has been mangled by the
-  shell before now;
+  because a literal non-ASCII character in a heredoc can be mangled by the
+  shell;
 * a **backslash**, which is eaten once by a `<<'EOF'` heredoc, once more by
   Python's own escape handling if the payload is not a raw string, and NOT
-  decoded at all if it is.
+  decoded at all if it is;
+* a **brace token** left unsubstituted because nothing ever formatted it.
 
-Both failures share the worst possible signature, which is why they need a gate
+All three share the worst possible signature, which is why they need a gate
 rather than care: **the file compiles, `cargo fmt` is happy, `clippy` is happy,
 every test passes, and every other gate here is green.** The damage is inside a
 doc comment or a string, so no machine downstream has an opinion about it, and
-the only oracle is a human reading the emitted region back.
+the only other oracle is a human happening to read the emitted region back.
 
 MECHANISM 1 -- A MARKER TRANSLATED INSIDE A WORD
 -------------------------------------------------
 
 A helper that maps `S` -> star and `SS` -> two stars does not know what a word
 is. Applied to a payload containing the ordinary English word `ASSERTION`, it
-emits `A<star><star>ERTION`. Measured 2026-09-14, by eye, while reading an
-unrelated function -- not by any gate, and not by any test:
-
-| file | what shipped | what was written |
-|---|---|---|
-| `tools/ui-verify/src/checks/font_group.rs` | `AN A<star><star>ERTION ABOUT A CLICK` | `AN ASSERTION ABOUT A CLICK` |
-| `crates/pdfcer-gui/src/canvas/textsel.rs` | `THE STALENE<star><star> RULE` | `THE STALENESS RULE` |
-
-Both had been in the tree for days.
+emits `A<star><star>ERTION`; `STALENESS` becomes `STALENE<star><star>`. The
+shape to recognise: a heading in shouted ASCII where a run of capitals has been
+replaced by glyphs mid-word. Nothing downstream objects, so such a line survives
+in the tree indefinitely.
 
 The detector is deliberately narrow: a star or a warning sign **immediately
 preceded by an ASCII letter**. Every legitimate use in this repository has
@@ -44,6 +43,9 @@ is a marker precisely because it stands alone. The one exception that is not a
 defect is a Rust newline escape immediately before the glyph, which is a string
 literal starting a new line with a marker on it, and it is excluded by name.
 
+This mechanism runs on EVERY walked extension, because a payload-writing script
+damages whatever it is pointed at.
+
 MECHANISM 2 -- A UNICODE ESCAPE THAT WAS NEVER DECODED
 --------------------------------------------------------
 
@@ -51,32 +53,7 @@ A backslash-u escape inside a Python **raw** string is six characters, not a
 character. It reaches the file verbatim. In a `.rs` file that sequence is never
 valid: Rust spells a unicode escape with braces, so a brace-less one is either
 dead text inside a doc comment -- where it renders as itself and nobody notices
--- or a compile error. Three occurrences have been caught by hand; this catches
-the fourth.
-
-MECHANISM 3 -- A PLACEHOLDER THAT WAS NEVER SUBSTITUTED
---------------------------------------------------------
-
-The patch scripts in this project spell their glyphs two ways: by CONCATENATING
-a named constant (`"... " + STAR * 3 + " ..."`), and by writing a brace token
-into the payload (`"...{STAR}..."`) for a later `.format()` or an f-string. Both
-are fine. **Mixing them in one payload is not**, because the brace form is inert
-unless something formats it, and a payload assembled by concatenation never is.
-
-Measured 2026-09-15 in `DESIGNS.md`: a block built almost entirely by
-concatenation carried a single `*{LQ}one status sentence{RQ}*`, which reached
-the file verbatim and rendered as itself. It was found by eye, immediately, only
-because the session that wrote it happened to re-grep -- the rest of the block
-was correct, so nothing looked wrong at any distance.
-
-MARKDOWN ONLY, and the narrowing is MEASURED rather than assumed. The same
-pattern in Rust is a captured format identifier and is correct and idiomatic:
-`{PREFIX}`, `{MIN_COLUMN_WIDTH}`. Counted on 2026-09-15 across `crates/` and
-`tools/`: **2,311** legitimate occurrences in `.rs`, and **zero** in `.md`
-anywhere in the tree. A gate whose claim is "this construct never appears here"
-is only worth registering where the current count is zero; in Rust it would
-need 2,311 carve-outs and would mean nothing. In Markdown it means exactly one
-thing.
+-- or a compile error.
 
 RUST ONLY, and the narrowness is deliberate. In a `.py` file the brace-less
 escape is correct and idiomatic -- it is how the patch scripts spell their own
@@ -86,32 +63,85 @@ in which the sequence cannot be right, so Rust is the only place it is called
 wrong. A gate that fires on legitimate content gets carved out until it means
 nothing, and this one has exactly one claim to make.
 
+MECHANISM 3 -- A PLACEHOLDER THAT WAS NEVER SUBSTITUTED
+--------------------------------------------------------
+
+The patch scripts in this project spell their glyphs two ways: by CONCATENATING
+a named constant (`"... " + STAR * 3 + " ..."`), and by writing a brace token
+into the payload (`"...{STAR}..."`) for a later `.format()` or an f-string. Both
+are fine. **Mixing them in one payload is not**, because the brace form is inert
+unless something formats it, and a payload assembled by concatenation never is.
+The shape to recognise: a block that is correct throughout except for one
+all-capitals brace token that reached the file and renders as itself. Nothing
+looks wrong at any distance, because the surrounding text is right.
+
+MARKDOWN ONLY, and the narrowing is MEASURED rather than assumed. The same
+pattern in Rust is a captured format identifier and is correct and idiomatic:
+`{PREFIX}`, `{MIN_COLUMN_WIDTH}`. Across `crates/` and `tools/` there are
+**2,311** legitimate occurrences in `.rs` and **zero** in `.md` anywhere in the
+tree. A gate whose claim is "this construct never appears here" is only worth
+registering where the count is zero; in Rust it would need 2,311 carve-outs and
+would mean nothing. In Markdown it means exactly one thing. Re-measure both
+numbers before widening it.
+
+WHAT IT PROVABLY CANNOT SEE
+---------------------------
+
+* **Any other corruption a patch script can do**: a dropped line, a doubled
+  paragraph, a mis-indented block, a smart quote where a straight one belonged.
+  These three are the shapes with a machine-recognisable fingerprint; there is
+  no claim that they are the only damage.
+* **A marker translated at a word BOUNDARY**, which is indistinguishable from a
+  correct marker.
+* **A brace token that is not all-capitals**, or longer than the length bound,
+  which is there so a shouted prose fragment inside braces is not reported.
+* **Anything in `.txt` or `.jsonl`** -- gate snapshots and captured traces hold
+  whatever the program emitted, and a gate that reports its own recorded
+  evidence is a gate that gets carved out until it means nothing.
+* Files under the skipped directories, and the interiors of Markdown code
+  fences for mechanism 3 only.
+
 THE INPUT SET IS THE WORKING TREE, NOT THE INDEX
 -------------------------------------------------
 
-Walked from disk, never asked of git. `check-gate-input-scope.py` exists
-because four gates in this repository have been written asking git which files
-exist, and a file written and not yet added is invisible to that question --
-which is exactly the state a file is in when a patch script has just damaged
-it. A gate that goes green on a defect until it is committed is worse than no
-gate, because the green is read as a measurement.
+Walked from disk, never asked of git. A file written and not yet `git add`-ed is
+invisible to a git query -- which is exactly the state a file is in when a patch
+script has just damaged it. A gate that goes green on a defect until it is
+committed is worse than no gate, because the green is read as a measurement.
+`check-gate-input-scope.py` is the instrument that enforces this across the
+directory.
 
-FALSIFICATION IS BUILT IN
--------------------------
+TWO CARVE-OUTS, KEPT SEPARATE ON PURPOSE
+----------------------------------------
 
-`--self-test` plants both mechanisms in synthetic lines and asserts the scanner
-finds exactly those and nothing else -- in both directions, so a scanner that
-answered "yes" unconditionally fails it too. It is registered in `run-all.sh`
-ahead of the real run, for the reason recorded across this project: a check
-that has never been watched fail is not evidence, and a falsification that
-lives only in a session's memory has to be re-derived by the next one.
+A document recording either lesson has to be able to spell the thing it forbids,
+so a line that is ABOUT a hazard is not a line suffering from it. There are two
+such patterns and they are NOT merged: widening one carve-out to excuse a second
+mechanism is how a detector loses the claim it was registered to make.
 
-EXIT CODES
-----------
+USAGE AND EXIT CODES -- the project's three-state gate contract
+===============================================================
 
-0  no residue found (or the self-test passed).
-1  residue found; every occurrence printed with `file:line`.
-2  SKIPPED -- no source tree to walk.
+  tools/gates/check-patch-residue.py              walk the tree
+  tools/gates/check-patch-residue.py --self-test  falsify the mechanisms
+
+  0  clean    -- no residue found (or the self-test passed)
+  1  FAIL     -- residue found; every occurrence printed with `file:line`
+  2  SKIPPED  -- no source files to walk
+
+HOW TO FALSIFY IT
+-----------------
+
+`--self-test` plants all three mechanisms in synthetic lines and asserts the
+scanner finds exactly those and nothing else -- in both directions, so a scanner
+answering "yes" unconditionally fails too. Each narrowing is falsified against
+the legitimate construct it exists to permit: the valid Rust brace escape, the
+same line in a Python file, a Rust captured identifier, and a Rust line quoted
+inside a Markdown fence followed by a real hit after the fence closes (a fence
+toggle that latched open would make every mechanism-3 claim below the first
+fence vacuous). It is registered in `run-all.sh` ahead of the real run: a check
+that has never been watched fail is not evidence, and a falsification that lives
+only in a session's memory has to be re-derived by the next one.
 """
 
 from __future__ import annotations

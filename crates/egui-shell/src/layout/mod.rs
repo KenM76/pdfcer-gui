@@ -1,14 +1,9 @@
 //! # `layout` — persistence, named workspaces, and scoped reset
 //!
-//! `MODES_AND_PANELS.md` Part 2's capability table calls this
-//! **"2–3 days — highest value per hour on this list"**, and its
-//! recommended build order puts it first with a one-line justification
-//! that is the whole argument for this module existing before anything
-//! else in the dock is made more flexible:
-//!
-//! > **(f) persistence** — cheapest, highest value, unblocks everything.
-//! > *A rearrangeable layout that forgets itself each restart is worse
-//! > than a fixed one.*
+//! `MODES_AND_PANELS.md`'s capability register carries persistence as
+//! capability **(f)**, and it comes before anything else in the dock is
+//! made more flexible for one reason: **a rearrangeable layout that
+//! forgets itself each restart is worse than a fixed one.**
 //!
 //! Worse, not merely less good. A fixed layout costs an operator nothing
 //! after the first day; a rearrangeable one that forgets charges them the
@@ -89,29 +84,29 @@
 //!    this, every field ever added becomes a day on which everybody's
 //!    layout resets.
 //! 2. **A panel the application does not register is dropped, and that is
-//!    the healthy path, not the error path.** `SHELL_FRAMEWORK.md` §5b:
-//!    *a capability's presence is expressed by registering it, and by
-//!    nothing else.* A build compiled without OCR does not register an
-//!    OCR panel, so a saved layout that mounts one loses that tab and
-//!    keeps everything else — with no `#[cfg]` anywhere in this crate.
+//!    the healthy path, not the error path.** `SHELL_FRAMEWORK.md` §7:
+//!    *"A capability's presence is expressed by registering its command,
+//!    and by nothing else."* A build compiled without a capability
+//!    registers no panel for it, so a saved layout that mounts one loses
+//!    that tab and keeps everything else — with no `#[cfg]` anywhere in
+//!    this crate.
 //!
 //! ## What this module does **not** do
 //!
 //! It does not decide *when* to save, and it does not choose a path. An
 //! application saves on [`crate::dock::DockFrameReport::layout_changed`]
-//! and picks its own location — which for this project means a named
-//! partition of the distribution folder rather than a platform app-data
-//! directory. The previous implementation records the reasoning:
-//! `eframe`'s own persistence *"writes to a platform app-data directory,
-//! contradicting decision 003's single-folder-portable posture"*. A
-//! shell that chose the path would have made that decision for every
+//! and picks its own location. That is not fastidiousness: `eframe`'s own
+//! persistence writes to a platform app-data directory, which an
+//! application distributed as a single portable folder cannot accept, and
+//! a shell that chose the path would be making that choice for every
 //! application that ever uses it.
 //!
 //! ## Reset, and why it has scopes
 //!
-//! See [`ResetScope`]. `RIBBON_IA.md`'s reasoning is short and decisive:
-//! *"an operator who only wanted the right dock back must not lose their
-//! left one."*
+//! See [`ResetScope`]. `MODES_AND_PANELS.md` §"Reset has scopes" states
+//! why: a single global reset has a blast radius always larger than the
+//! problem, and *"an operator who only wanted the right dock back must
+//! not lose their left one."*
 
 pub mod reset;
 pub mod skip;
@@ -620,7 +615,7 @@ mod tests {
     /// ★ **A panel this build does not offer loses its tab and nothing
     /// else.**
     ///
-    /// The `SHELL_FRAMEWORK.md` §5b case: a capability compiled out
+    /// The `SHELL_FRAMEWORK.md` §7 case: a capability compiled out
     /// registers no panel, so its saved mount is dropped — with the
     /// operator's arrangement of everything else intact, and with no
     /// `#[cfg]` anywhere in this crate.

@@ -132,12 +132,10 @@ unsafe extern "system" fn enum_proc_all(hwnd: HWND, lparam: LPARAM) -> i32 {
 
 /// **Every visible top-level window belonging to `pid`.**
 ///
-/// ★★ Written 2026-08-21, when thirteen dialogs became real OS windows and six
-/// driven checks began clicking hundreds of pixels from the control they named.
-/// A process used to have exactly one window; it now has one per open dialog,
-/// and a harness that knows only the first cannot raise the one it is aiming
-/// at — so it raises the main window instead, which puts the dialog BEHIND it,
-/// and the click lands on the application.
+/// The application has one window per open dialog, not one window overall. A
+/// harness that knows only the first cannot raise the one it is aiming at — it
+/// raises the main window instead, which puts the dialog BEHIND it, and the
+/// click lands on the application hundreds of pixels from the control it named.
 ///
 /// Order is `EnumWindows`' own, which is **z-order, front to back**. Callers
 /// that want a specific window must identify it by geometry rather than by
@@ -234,7 +232,7 @@ pub fn window_frame(w: WindowHandle) -> Result<WindowFrame> {
 /// created behind an already-maximised window, so the capture photographed
 /// whoever owned those pixels.
 pub fn raise_window(w: WindowHandle) {
-    // ★★★ `AttachThreadInput` AROUND THE RAISE, and it is not defensive
+    // `AttachThreadInput` AROUND THE RAISE, and it is not defensive
     // decoration — it is the documented way this call is allowed to succeed.
     //
     // Windows refuses `SetForegroundWindow` to a process that does not already
@@ -244,21 +242,17 @@ pub fn raise_window(w: WindowHandle) {
     // thread that currently owns the foreground, which makes the two count as
     // one input context for the duration, and detach again immediately.
     //
-    // ★★ Found on 2026-09-02, and the symptom is why it is worth the unsafe
-    // block. A sweep stalled with every input check reporting *"the foreground
-    // is held by BluetoothNotificationAreaIconWindowClass"* — an **invisible**
-    // 136 x 39 explorer tray helper at the origin. The harness's own advice was
-    // *"dismiss it and run again"*, which is unactionable for a window with no
-    // pixels, and its one retry did not help because the condition is not a
-    // race: a bare `SetForegroundWindow` from a background process is simply
-    // refused, and whatever holds the foreground keeps it.
-    //
-    // ★ This is also the likely root of the older measurement recorded in
-    // `Driver::raise_and_confirm_at`: a full sweep reporting 45 of 127 checks
-    // skipped on *"could not be brought to the front"*, each passing when
-    // re-run alone. That was patched with a single retry, which treats a
-    // permissions rule as a timing one. The retry stays — it costs nothing and
-    // covers the genuine churn case — but this is the mechanism.
+    // The symptom is why it is worth the unsafe block. **The condition is a
+    // permissions rule, not a race**, so a retry does not clear it: a bare
+    // `SetForegroundWindow` from a background process is simply refused, and
+    // whatever holds the foreground keeps it. Measured once as a whole sweep
+    // stalling with every input check reporting *"the foreground is held by
+    // BluetoothNotificationAreaIconWindowClass"* — an **invisible** 136 x 39
+    // explorer tray helper at the origin, for which the harness's advice to
+    // dismiss it is unactionable; and once as 45 of 127 checks skipping on
+    // *"could not be brought to the front"*, each passing when re-run alone.
+    // `Driver::raise_and_confirm_at`'s single retry stays because it costs
+    // nothing and covers genuine churn, but this is the mechanism.
     //
     // SAFETY: every call is side-effect-only and tolerates a stale handle by
     // returning false. The attach is unconditionally undone on both paths, so
@@ -279,25 +273,22 @@ pub fn raise_window(w: WindowHandle) {
             AttachThreadInput(ours, theirs, 0);
         }
 
-        // ★★★ THE ALT NUDGE, and it is the only thing that actually recovered a
-        // stuck foreground — measured 2026-09-02, after `AttachThreadInput`
-        // alone did not.
+        // THE ALT NUDGE, and it is the only thing that recovers a stuck
+        // foreground; `AttachThreadInput` alone does not.
         //
         // Windows grants `SetForegroundWindow` to a process that has received
         // recent user input. Synthesising a bare Alt press-and-release is the
         // long-standing way to satisfy that rule from a harness: it is input,
         // it targets nothing, and Alt on its own opens no menu.
         //
-        // ★★ The condition that forced it: an **invisible** 136 x 39 explorer
-        // tray helper (`BluetoothNotificationAreaIconWindowClass`) took the
-        // foreground and would not yield — not to a retry, not to
-        // `AttachThreadInput`, and not to an explicit `SetForegroundWindow`
-        // from an elevated shell. The harness's own advice was *"dismiss it and
-        // run again"*, which is unactionable for a window with no pixels. It
-        // recurred within a minute of being cleared by hand, so a sweep could
-        // not be run at all without this.
+        // The condition that forces it: an **invisible** 136 x 39 explorer
+        // tray helper (`BluetoothNotificationAreaIconWindowClass`) takes the
+        // foreground and yields to nothing — not a retry, not
+        // `AttachThreadInput`, not an explicit `SetForegroundWindow` from an
+        // elevated shell — and recurs within a minute of being cleared by
+        // hand. Without this nudge a sweep cannot be run at all while it is up.
         //
-        // ★ Guarded on failure, so the ordinary path never synthesises input.
+        // Guarded on failure, so the ordinary path never synthesises input.
         // A harness that pressed Alt before every raise would be injecting a
         // keystroke into the application it is measuring, which is exactly the
         // kind of side effect that makes a check's result mean something else.
@@ -314,7 +305,7 @@ pub fn raise_window(w: WindowHandle) {
 
 /// Maximise the window.
 ///
-/// # ★ Why a harness needs this, and what it stops being a false failure
+/// # Why a harness needs this, and what it stops being a false failure
 ///
 /// A ribbon **overflows** when it is wider than its window: groups past the fold
 /// move into an overflow menu, and their controls stop publishing a rect. That
@@ -360,21 +351,20 @@ pub fn cursor_position() -> Result<(i32, i32)> {
 
 /// Move the pointer.
 ///
-/// # ★★ Why it tries twice, measured 2026-08-31
+/// # Why it tries twice
 ///
-/// `SetCursorPos` failed once, at a coordinate that was demonstrably on screen
-/// and inside the target window, and succeeded at that same coordinate on the
-/// very next run of the same check. The cause is a **transient**: the previous
-/// session’s window had just been killed, and for a few milliseconds after a
-/// process holding a pointer capture dies, the platform declines to move the
-/// cursor at all.
+/// `SetCursorPos` can fail at a coordinate that is demonstrably on screen and
+/// inside the target window, and succeed at that same coordinate a moment
+/// later. The cause is a **transient**: for a few milliseconds after a process
+/// holding a pointer capture dies — the previous session’s window, killed by
+/// the harness itself — the platform declines to move the cursor at all.
 ///
-/// ⇒ The cost of not retrying is a check reporting SKIP — *"unable to
+/// The cost of not retrying is a check reporting SKIP — *"unable to
 /// begin"* — for a reason that has nothing to do with the application. This
 /// harness exists to turn "told you nothing" into something, and a suite whose
 /// members randomly do not run is that same failure wearing another colour.
 ///
-/// ★ **One retry, not a loop.** A genuinely bad coordinate — off every
+/// **One retry, not a loop.** A genuinely bad coordinate — off every
 /// monitor, which is an arithmetic error in the calling check — must still
 /// fail, and fail quickly, with the message that names it. A loop would turn a
 /// check’s own mistake into a slow timeout.
@@ -383,7 +373,7 @@ pub fn set_cursor_position(x: i32, y: i32) -> Result<()> {
     if unsafe { SetCursorPos(x, y) } != 0 {
         return Ok(());
     }
-    // ★ One retry, 120 ms later. See the doc comment.
+    // One retry, 120 ms later. See the doc comment.
     std::thread::sleep(std::time::Duration::from_millis(120));
     // SAFETY: as above.
     if unsafe { SetCursorPos(x, y) } == 0 {
@@ -416,17 +406,15 @@ pub fn mouse_button(down: bool) {
 
 /// Press (`true`) or release (`false`) the **secondary** mouse button.
 ///
-/// ★★★ Added 2026-08-28, and its absence until then is worth recording: this
-/// harness had driven 92 checks and **had never once opened a context menu**.
-/// pdfcer has had canvas right-click menus since Phase 1 — `canvas.object` and
-/// `canvas.empty` — and every assertion about them is a unit test over
-/// `MenuHost::would_open`, which is a question about the manifest rather than
-/// about the running program.
+/// Without it no check can open a context menu at all, and the canvas menus
+/// (`canvas.object`, `canvas.empty`) are then covered only by unit tests over
+/// `MenuHost::would_open` — a question about the manifest rather than about
+/// the running program.
 ///
-/// ⇒ A whole gesture class was outside R1's reach for the life of the project,
-/// and nothing said so, because a missing capability in a harness leaves no
-/// failing test behind. It surfaced only when a fourth menu was added and
-/// somebody went looking for the driver to exercise it with.
+/// **A missing capability in a harness leaves no failing test behind.** A
+/// whole gesture class can therefore sit outside R1's reach with nothing
+/// saying so, which is why these primitives are worth auditing against the
+/// gestures the application actually offers.
 pub fn mouse_button_secondary(down: bool) {
     let flags = if down {
         MOUSEEVENTF_RIGHTDOWN
@@ -443,14 +431,13 @@ pub fn mouse_button_secondary(down: bool) {
 /// operator), negative down, which is the sign convention `WM_MOUSEWHEEL`
 /// itself uses.
 ///
-/// # ★ Why the harness needs this at all
+/// # Why the harness needs this at all
 ///
 /// Because a dock panel is a few hundred points tall and a real document's
 /// content is not. A check that can only click what is on screen at launch can
 /// only ever verify the top of every list — and it reports everything below the
 /// fold as *"the control is drawn and inert"*, which is a **confident, wrong
-/// defect report about a control that works**. That failure was produced three
-/// times on 2026-08-19 before this existed.
+/// defect report about a control that works**.
 ///
 /// `mouse_event` rather than `SendInput` for the same reason the button press
 /// uses it: no variable-length array to get the size of, and at the current
@@ -469,9 +456,9 @@ pub fn wheel(notches: i32) {
 /// window is not a failed keystroke; it is a keystroke into the operator's
 /// editor.
 ///
-/// ★ Moved here on 2026-09-12. It sat above `wheel`, run
-/// together with that item's doc comment — so it documented `wheel`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
+/// Two doc blocks separated by a blank line concatenate onto whatever item
+/// follows, so a block written for one function silently documents the next.
+/// `tools/gates/check-orphan-docs.py` is what refuses that.
 pub fn key_stroke(vk: u16) {
     // SAFETY: no pointers; the scan-code argument is 0, which tells Windows to
     // derive it from the virtual key.
@@ -483,19 +470,17 @@ pub fn key_stroke(vk: u16) {
 
 /// **Which top-level window owns this screen point.**
 ///
-/// ★★ Added 2026-08-20, after an afternoon of confident, specific and entirely
-/// wrong defect reports.
-///
 /// `SetForegroundWindow` succeeding says the target has focus. It says
 /// **nothing about what is drawn over it**, and an always-on-top window — the
 /// Windows on-screen keyboard is the one that bit us — sits above a focused
 /// window and swallows every click aimed at the region it covers.
 ///
-/// The failure that produces is the worst shape available: `markup_rectangle`
-/// and `insert_image` both reported the ribbon as unresponsive, intermittently,
-/// over a build in which it works. The oracle that settled it was a screenshot
-/// (`D:/dev/rag/egui/` — *a layout or reachability defect has exactly one
-/// oracle*), which showed `osk.exe` lying across the ribbon's tab row.
+/// The failure that produces is the worst shape available: checks reporting
+/// the ribbon as unresponsive, intermittently, over a build in which it works.
+/// The oracle that settles it is a screenshot (`D:/dev/rag/egui/` — *a layout
+/// or reachability defect has exactly one oracle*), which shows the covering
+/// window — `osk.exe` is the usual one — lying across the region the click was
+/// aimed at.
 ///
 /// So a click now asks who owns the point first, and refuses rather than
 /// missing. `WindowFromPoint` returns the deepest child; the ancestor walk is
@@ -521,7 +506,7 @@ pub fn window_at(x: i32, y: i32) -> Option<WindowHandle> {
 /// with a second monitor to the left it starts at a negative `x`, which is why
 /// the origin is returned rather than assumed to be zero.
 ///
-/// # ★★★ Why a harness needs this at all
+/// # Why a harness needs this at all
 ///
 /// Because **`SetCursorPos` clamps.** Asked for a coordinate beyond the
 /// desktop it moves the pointer to the nearest edge and reports success, so a
@@ -530,14 +515,13 @@ pub fn window_at(x: i32, y: i32) -> Option<WindowHandle> {
 /// honoured, and nothing in the trace can, because from the application's side
 /// a click arrived exactly where the pointer was.
 ///
-/// Not hypothetical: on 2026-09-06 `checks::form_field` asked for a 1400 px
-/// window, [`crate::launch`]'s `SAFE_ORIGIN_X` placed it at desktop x = 780 on
-/// a 1920 px screen, and the click aimed at a checkbox in the right-hand panel
-/// landed six points above it. The check spent a week reporting that the
-/// application had failed to record an edit. See `Driver::confirm_uncovered`,
-/// which is the guard this feeds.
+/// Measured: a check asking for a 1400 px window, [`crate::launch`]'s
+/// `SAFE_ORIGIN_X` placing it at desktop x = 780 on a 1920 px screen, and the
+/// click aimed at a control in the right-hand panel landing six points above
+/// it — reported for a week as the application failing to record an edit. See
+/// `Driver::confirm_uncovered`, which is the guard this feeds.
 ///
-/// # ★★ `WindowFromPoint` cannot answer this question, and that was the first
+/// # `WindowFromPoint` cannot answer this question, and that was the first
 /// attempt
 ///
 /// It hit-tests **window rectangles, not monitors**, so it returns the target
@@ -583,13 +567,11 @@ pub fn move_window(w: WindowHandle, x: i32, y: i32) {
 
 /// **Resize the window**, keeping its position.
 ///
-/// ★★★ Added 2026-08-28 for `OPERATOR_REQUESTS.md` **O55**, whose whole
-/// subject is *"if the canvas window is resized the pdf should resize to
-/// match"*. Until then this harness could move a window and could not resize
-/// one — so **no check had ever exercised a resize**, and a fit's behaviour
-/// across one was outside R1's reach entirely.
+/// Required by `OPERATOR_REQUESTS.md` **O55**, whose whole subject is *"if the
+/// canvas window is resized the pdf should resize to match"*. Without it a
+/// harness can move a window and not resize one, and a fit's behaviour across
+/// a resize is outside R1's reach entirely.
 ///
-/// ⇒ The second gesture class found missing today, after the secondary click.
 /// The pattern is worth naming: a harness grows a primitive when a feature
 /// needs it, so the primitives it has are a map of the features somebody
 /// already had to prove — and the ones it lacks are where nothing has been
@@ -624,15 +606,10 @@ pub fn resize_window(w: WindowHandle, width: i32, height: i32) {
 /// `SetForegroundWindow`" is not "the window is in front", and the gap between
 /// those two is where a keystroke lands in the operator's editor.
 ///
-/// `key_stroke`'s own doc comment has said since it was written that "the
+/// This is the function that makes [`key_stroke`]'s promise true — that the
 /// input driver refuses to type when the foreground window is not the one
-/// under test". That was a description of an intent, not of the code: the
-/// driver checked only that a target *existed*. This is the function that
-/// makes the sentence true.
-///
-/// ★ Moved here on 2026-09-12. It sat above `window_at`, run
-/// together with that item's doc comment — so it documented `window_at`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
+/// under test. A driver that checks only that a target *exists* has stated an
+/// intent, not enforced it.
 pub fn is_foreground(w: WindowHandle) -> bool {
     // SAFETY: no pointers, no ownership; returns a handle or null.
     unsafe { GetForegroundWindow() == w.hwnd() }
@@ -640,7 +617,7 @@ pub fn is_foreground(w: WindowHandle) -> bool {
 
 /// **Whatever window currently has the foreground**, whoever owns it.
 ///
-/// ★ Distinct from [`is_foreground`] in the way that matters: that answers
+/// Distinct from [`is_foreground`] in the way that matters: that answers
 /// *"is THIS window in front"*, and the question a harness needs once the
 /// application has several windows is *"which of them is"*. A dialog that just
 /// opened has the foreground and was never clicked, so no record of a click can
@@ -654,7 +631,7 @@ pub fn foreground_window() -> Option<WindowHandle> {
 
 /// **Name whatever currently holds the foreground**, for a refusal message.
 ///
-/// # ★★★ Why a refused raise must name the window that refused it
+/// # Why a refused raise must name the window that refused it
 ///
 /// `SetForegroundWindow` fails for exactly one reported reason — *"this
 /// process does not have foreground rights"* — and that sentence is true of
@@ -665,17 +642,17 @@ pub fn foreground_window() -> Option<WindowHandle> {
 /// | the harness is a background process and Windows' foreground lock is doing its job | nothing; retry, or run the check when the desktop is free |
 /// | **another window is holding the foreground and will not yield it** | dismiss that window — no amount of retrying will help |
 ///
-/// On 2026-08-25 the second one cost forty minutes. Nine driven checks
-/// reported SKIP with the foreground-rights sentence; three raise strategies
-/// were probed against a running build; the harness itself came under
-/// suspicion. The actual cause was a stray **`OpenWith.exe` "Open With"
-/// dialog** sitting on the desktop from some earlier action, holding the
-/// foreground the way a system modal does and yielding it to nothing. One
-/// `taskkill` fixed all nine.
+/// The second one is expensive to diagnose without this. Measured once at
+/// forty minutes: nine driven checks reporting SKIP with the foreground-rights
+/// sentence, three raise strategies probed against a running build, and the
+/// harness itself under suspicion — where the cause was a stray
+/// **`OpenWith.exe` "Open With" dialog** holding the foreground the way a
+/// system modal does and yielding it to nothing. One `taskkill` fixed all
+/// nine.
 ///
-/// The diagnosis was a `GetForegroundWindow` followed by `GetClassNameW` —
-/// two calls the harness could have made itself, at the moment of failure,
-/// when it already knew something was wrong. **A check that reports a refusal
+/// The diagnosis is a `GetForegroundWindow` followed by `GetClassNameW` — two
+/// calls the harness can make itself, at the moment of failure, when it
+/// already knows something is wrong. **A check that reports a refusal
 /// without naming the refuser has withheld the only fact that distinguishes
 /// "wait" from "act".** That is the same shape as the `osk.exe` finding
 /// recorded against [`window_at`]: an unrelated always-on-top window silently
@@ -697,24 +674,17 @@ pub fn describe_foreground() -> String {
 
 /// Name **any** window, the way [`describe_foreground`] names the front one.
 ///
-/// # ★★ Added 2026-08-27, because the same lesson had been applied to one
-/// guard and not to its neighbour
+/// # The rule, stated once and applied to both guards
 ///
-/// [`describe_foreground`]'s own doc records what it cost to learn: *"a check
-/// that reports a refusal without naming the refuser has withheld the only fact
-/// that distinguishes 'wait' from 'act'."* That was written after a stray
-/// `OpenWith.exe` dialog held the foreground and made nine checks SKIP, and the
-/// diagnosis — a `GetForegroundWindow` plus a `GetClassNameW` — was two calls
-/// the harness could have made itself.
+/// [`describe_foreground`] carries it: *a check that reports a refusal without
+/// naming the refuser has withheld the only fact that distinguishes "wait"
+/// from "act".* The **cover** guard (`Driver::confirm_uncovered`) refuses for
+/// the same class of reason, so it names its subject with this function rather
+/// than guessing at one. A refusal reading *"the point (1627, 895) belongs to
+/// another window"* followed by a guess at which window is unactionable
+/// whenever the guess is wrong.
 ///
-/// The **cover** guard (`Driver::confirm_uncovered`) refuses for the same class
-/// of reason and, until today, named nothing: *"the point (1627, 895) belongs to
-/// another window"*, and then a paragraph guessing that it might be `osk.exe`.
-/// On 2026-08-27 it was not `osk.exe` — the on-screen keyboard was not running —
-/// and the SKIP was therefore unactionable in exactly the way the foreground
-/// message had been before it was fixed.
-///
-/// ⇒ **When a guard learns to name its subject, check every other guard that
+/// **When a guard learns to name its subject, check every other guard that
 /// refuses for the same kind of reason.** A lesson applied at one call site and
 /// not at its sibling is a lesson half-learned, and the sibling is where it will
 /// be paid for again.
@@ -762,7 +732,7 @@ fn window_title(w: WindowHandle) -> String {
 /// `modifiers` are virtual-key codes (`VK_CONTROL` 0x11, `VK_SHIFT` 0x10,
 /// `VK_MENU` 0x12) held down for the duration of the stroke.
 ///
-/// # ★ Every modifier is released, on every path, in reverse order
+/// # Every modifier is released, on every path, in reverse order
 ///
 /// A modifier left down is not a failed keystroke — it is a **stuck key on
 /// the operator's real keyboard**, applied to whatever they do next, until
@@ -777,16 +747,15 @@ fn window_title(w: WindowHandle) -> String {
 /// press and the release. Reverse order because that is what a human hand
 /// does, and because a shell watching for a chord may key on the release
 /// sequence.
-/// # ★ The pauses are load-bearing, and their absence is why chords silently
+/// # The pauses are load-bearing, and their absence is why chords silently
 /// did nothing
 ///
-/// Added 2026-08-17. Without them this function posted four or more
-/// `keybd_event` calls in the same microsecond, and the result was that **no
-/// chord this harness sent ever reached the application** — while a plain
-/// [`key_stroke`] of the very same key worked. `HANDOFF.md` §8 recorded that
-/// asymmetry as *"synthetic keyboard input does not reach the target window"*
-/// and blocked several checks on it; the truth is narrower and is about
-/// ordering, not delivery.
+/// Without them this function posts four or more `keybd_event` calls in the
+/// same microsecond, and **no chord the harness sends reaches the
+/// application** — while a plain [`key_stroke`] of the very same key works.
+/// That asymmetry reads as *"synthetic keyboard input does not reach the
+/// target window"* and is not: the truth is narrower and is about **ordering,
+/// not delivery**.
 ///
 /// `keybd_event` posts into the system input queue **asynchronously**. The
 /// target reads that queue on its own schedule — for an `egui`/`winit`
@@ -821,7 +790,7 @@ pub fn key_stroke_with(modifiers: &[u16], vk: u16) {
         std::thread::sleep(CHORD_GAP);
         keybd_event(vk as u8, 0, KEYEVENTF_KEYUP, 0);
         std::thread::sleep(CHORD_GAP);
-        // ★ The releases stay unconditional and un-gated by any early return,
+        // The releases stay unconditional and un-gated by any early return,
         // for the reason above: a leaked modifier is a stuck key on the
         // operator's real keyboard. The sleeps are between the posts, never
         // around the loop, so no path can skip a release.
@@ -952,7 +921,7 @@ pub fn capture_screen(region: PixRect) -> Result<Vec<u8>> {
 
 /// Hold `modifiers` down, run `body`, and release them **on every path**.
 ///
-/// # ★ Why this takes a closure instead of exposing down/up
+/// # Why this takes a closure instead of exposing down/up
 ///
 /// Because a leaked modifier is a stuck key on the operator's real keyboard,
 /// and this harness runs on the operator's real desktop. `key_stroke_with`'s own
@@ -992,7 +961,7 @@ pub fn with_modifiers<T>(modifiers: &[u16], body: impl FnOnce() -> T) -> T {
 // The clipboard
 // ===========================================================================
 //
-// ★★ WHY THE HARNESS HAS TO READ THE CLIPBOARD ITSELF
+// WHY THE HARNESS HAS TO READ THE CLIPBOARD ITSELF
 //
 // Defect O18: the operator selected text, pressed Ctrl+C, pasted into Notepad
 // and got "1 object copied from pdfcer" — because Ctrl+C reached the object
@@ -1008,7 +977,7 @@ pub fn with_modifiers<T>(modifiers: &[u16], body: impl FnOnce() -> T) -> T {
 // So this is not harness convenience. It is the *only* place the assertion the
 // defect needs can be made.
 //
-// ★ A NOTE ON THE DEPENDENCY POSTURE. This adds two `windows-sys` FEATURES,
+// A NOTE ON THE DEPENDENCY POSTURE. This adds two `windows-sys` FEATURES,
 // not a dependency. This crate's manifest records that a new dependency which
 // is not already in `D:\Dev\pdfcer`'s lockfile is an operator decision;
 // `windows-sys 0.61` is already there and already linked, so enabling
@@ -1030,7 +999,7 @@ const CF_UNICODETEXT: u32 = 13;
 
 /// How many times to retry opening the clipboard, and how long to wait between.
 ///
-/// ★ The clipboard is a **global, singly-owned** resource: `OpenClipboard`
+/// The clipboard is a **global, singly-owned** resource: `OpenClipboard`
 /// fails outright while any other process holds it, and on a live desktop
 /// something always might — a clipboard manager, an editor polling for
 /// changes, the shell itself. A single attempt would make this check flake in a
@@ -1112,7 +1081,7 @@ pub fn clipboard_text() -> Option<String> {
 
 /// Empty the clipboard, reporting whether it was actually emptied.
 ///
-/// ★★ **A check that asserts on the clipboard MUST call this first**, and the
+/// **A check that asserts on the clipboard MUST call this first**, and the
 /// reason is the whole shape of defect O18. The failing build left a marker
 /// sentence on the clipboard; a check that copied, read, and found that marker
 /// would fail correctly — but a check that copied *nothing at all* and found a
@@ -1128,7 +1097,7 @@ pub fn clear_clipboard() -> bool {
     .unwrap_or(false)
 }
 
-/// ★★★ **Every format on the clipboard, IN PLACEMENT ORDER, with its name.**
+/// **Every format on the clipboard, IN PLACEMENT ORDER, with its name.**
 ///
 /// The oracle `checks::copy_as_vector` needs and the one
 /// [`clipboard_text`] cannot supply. `OPERATOR_REQUESTS.md` O120's whole design
@@ -1195,10 +1164,11 @@ pub fn clipboard_formats() -> Option<Vec<(u32, String)>> {
 
 /// **Is CapsLock currently latched on?**
 ///
-/// # ★★★ The run this exists for — 2026-09-05
+/// # The failure this exists for
 ///
-/// `an_encrypted_document_can_be_opened_with_its_password` typed the fixture's
-/// documented user password, `userpw`, and the application answered:
+/// `an_encrypted_document_can_be_opened_with_its_password` types the fixture's
+/// documented user password, `userpw`. Under a latched CapsLock the
+/// application answers:
 ///
 /// ```text
 /// password-submitted chars=6 non_ascii=0
@@ -1207,20 +1177,20 @@ pub fn clipboard_formats() -> Option<Vec<(u32, String)>> {
 ///
 /// Six characters, all ASCII, and wrong. The check's own failure message —
 /// *"the fixture's user password is published in its PROVENANCE file; if it has
-/// changed, this check is aimed at the wrong string"* — sent a reader to a
-/// provenance file that was correct, and the fixture was byte-identical to the
-/// engine's copy. **CapsLock was on.** `Driver::type_ascii` spells a lowercase
-/// letter by pressing that letter's virtual key with no Shift, which under a
-/// latched CapsLock produces `USERPW`.
+/// changed, this check is aimed at the wrong string"* — sends a reader to a
+/// provenance file that is correct, against a fixture byte-identical to the
+/// engine's copy. `Driver::type_ascii` spells a lowercase letter by pressing
+/// that letter's virtual key with no Shift, which under a latched CapsLock
+/// produces `USERPW`.
 ///
-/// ★★ The damage is not confined to one check: every check that types letters
-/// was silently typing the wrong case, and most of them do not compare what
-/// they typed against anything, so they passed. The one that DID compare failed
-/// and blamed the document. **A machine state nobody set is the hardest kind of
-/// wrong answer to see**, and this is the second recorded instance on this
-/// project after the locked workstation that made the foreground unreachable.
+/// The damage is not confined to one check: every check that types letters
+/// types the wrong case, and most of them compare what they typed against
+/// nothing, so they pass. The one that DOES compare fails and blames the
+/// document. **A machine state nobody set is the hardest kind of wrong answer
+/// to see** — the same shape as a locked workstation making the foreground
+/// unreachable.
 ///
-/// ⇒ Read the state and compensate, rather than clearing it: CapsLock belongs
+/// Read the state and compensate, rather than clearing it: CapsLock belongs
 /// to the operator, and a harness that toggles his keyboard's latches is a
 /// harness that leaves his machine changed. See `Driver::type_ascii`.
 #[must_use]

@@ -11,6 +11,10 @@
 //! `canvas::keys`
 //!
 //! **Because the verb already exists and is already called.** A nudge is a
+//! ⚠ **Annotations only.** `MANUAL.md` tells the operator the arrow keys nudge
+//! *"what is selected"*, and with a content object selected they do nothing and
+//! say nothing. `DEFECTS.md` D43.
+//!
 //! **delta**, and `EditSession::move_annotation` takes a delta —
 //! [`crate::app::actions::annot::AnnotAction::Move`] is raised by
 //! [`crate::canvas::annotdrag`] on the release of a pointer drag and this raises

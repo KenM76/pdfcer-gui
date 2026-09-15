@@ -160,9 +160,9 @@ const CORNERS: [(f64, f64); 4] = [(0.25, 0.25), (0.55, 0.25), (0.55, 0.55), (0.2
 /// 423 ink pixels of 1,406 — because `four-pages.pdf`'s page 1 carries a
 /// coloured **title block** in exactly that corner. The assertion still passed,
 /// on a delta of 28 pixels against a floor of 423, which is a measurement one
-/// stray antialiased edge could have made either way. ⇒ **Read the capture
-/// before believing a pixel assertion**; the artifact was sitting in
-/// `evidence/` saying so.
+/// stray antialiased edge could have made either way. ⇒ **Read the run's own
+/// capture before believing a pixel assertion.** The title block was plain in
+/// it; only the number hid it.
 const DESTINATION: (f64, f64) = (0.85, 0.75);
 /// **The smallest ink change this check will call a change.**
 ///

@@ -17,17 +17,17 @@
 # listing looks complete, and the index looks complete, because neither is
 # measured against the other.
 #
-# ⇒ **This gate was written on 2026-09-13, after finding exactly that.**
+# ⇒ **This gate exists because that is not hypothetical.**
 # `user_he_is_not_at_the_keyboard_unless_he_says_so.md` — the standing rule that
 # decides whether a session drives the release binary or defers the work to the
 # operator, one of the most operationally load-bearing memories in the folder —
-# existed on disk, in git, and was named nowhere in `MEMORY.md`. It was found by
-# a `comm` run for an unrelated reason.
+# can exist on disk, be committed, and be named nowhere in `MEMORY.md`. Only a
+# `comm` between the two lists can see it.
 #
-# That is the same shape this repository has now recorded several times under
-# different names: a checker named in every document and registered in no
-# runner; a `--self-test` written and never dispatched. **Writing the artifact
-# and registering the artifact are two edits, and the second one is the one that
+# ★★ It is the same shape this repository has recorded under several other
+# names: a checker named in every document and registered in no runner; a
+# `--self-test` written and never dispatched. **Writing the artifact and
+# registering the artifact are two edits, and the second one is the one that
 # gets skipped**, because the first is where the thinking was.
 #
 # ═══════════════════════════════════════════════════════════════════════════
@@ -35,7 +35,7 @@
 # ═══════════════════════════════════════════════════════════════════════════
 #
 # The index is injected into context wholesale and **TRUNCATED when it is too
-# big** — the harness's own warning, printed on 2026-09-13, reads:
+# big** — the harness's own warning reads:
 #
 #     "WARNING: MEMORY.md is 25.4KB (limit: 24.4KB) — index entries are too
 #      long. Only part of it was loaded."
@@ -45,9 +45,9 @@
 # most needs — the ones written last — while continuing to display the oldest
 # ones, so nothing about the loaded text looks wrong.
 #
-# ★★★ THAT CITATION IS NOW ARITHMETIC, MEASURED 2026-09-14, and the difference
-# matters: a borrowed number with an unknown shelf life gets re-guessed by every
-# session, while a conversion can be checked in one line.
+# ★★★ THAT CITATION IS ARITHMETIC RATHER THAN A BORROWED NUMBER, and the
+# difference matters: a figure with an unknown shelf life gets re-guessed by
+# every session, while a conversion can be checked in one line.
 #
 #   **25,411 bytes is exactly `git show dc5c0c3:…/MEMORY.md | wc -c`**, and the
 #   harness called that file `25.4KB`.
@@ -61,23 +61,24 @@
 # 24.4 KB, change the constant here, say so in the commit, and keep the check.
 #
 # ⚠ AND DO NOT TRUST THE WARNING'S FRESHNESS. The `MEMORY.md` block injected
-# into a session, warning and all, is a SNAPSHOT taken earlier — the one quoted
-# above was **thirty-six hours stale**, describing a 25,411-byte file that had
-# already been cut to 23,987 (= 24.0 KB, under the limit, not truncated). A
-# session that believed it was minutes from renaming all 136 memory files to
-# claw back the filename bytes. **This gate is the live instrument. The prompt
-# is not.** See `feedback_the_injected_memory_warning_is_a_snapshot.md`.
+# into a session, warning and all, is a SNAPSHOT that can be a day and a half
+# behind the file — the quotation above describes 25,411 bytes against a file
+# since cut to 23,987 (= 24.0 KB, under the limit, not truncated). A session
+# that believes such a warning is minutes from renaming all 136 memory files to
+# claw back bytes that are not the problem. **This gate is the live instrument.
+# The prompt is not.** See
+# `feedback_the_injected_memory_warning_is_a_snapshot.md`.
 #
-# ★★ WHERE THE BYTES ACTUALLY ARE, measured 2026-09-14 over 135 rows:
+# ★★ WHERE THE BYTES ACTUALLY ARE, measured over 135 rows:
 #
 #     titles 6,914   FILENAMES 8,942   hooks 6,900   markup 1,080
 #
-# This gate used to say *“the hook is the only slack there is.”* It is the
-# SMALLEST third, and the least compressible: rewriting the **36 fattest rows**
-# with intent — keeping every actionable clause, pushing counts and second
-# examples down into the topic file where they already live — freed **506
-# bytes, 14 a row**. A hook is a relevance decision, not a summary, and at one
-# clause each the next trim costs meaning rather than bytes.
+# ⚠ The hook is the obvious place to look for slack and it is the WRONG one:
+# it is the smallest third and the least compressible. Rewriting the **36
+# fattest rows** with intent — keeping every actionable clause, pushing counts
+# and second examples down into the topic file where they already live — freed
+# **506 bytes, 14 a row**. A hook is a relevance decision, not a summary, and at
+# one clause each the next trim costs meaning rather than bytes.
 #
 # ⇒ THE LEVERS, IN THE ORDER THEY ARE NOW WORTH PULLING:
 #
@@ -90,10 +91,10 @@
 #      that `[[wikilinks]]` resolve against, and `MEMORY.md`'s title carries
 #      the prose. A 30-byte name costs the index half of a 60-byte one.
 #   3. **Renaming the existing 136** is the big win (≈4,000 bytes) and the one
-#      to resist: it rewrites 309 `[[wikilinks]]`, the `DOC_DRIFT.md` and
-#      `HANDOFF.md` citations, and every filename a past session ever grepped
-#      for. *Tidying an input changes every instrument that reads it.* Do it
-#      only when 1 and 2 are exhausted, and in a commit of its own.
+#      to resist: it rewrites 309 `[[wikilinks]]`, every citation of a memory
+#      filename anywhere in the tree, and every filename a past session ever
+#      grepped for. *Tidying an input changes every instrument that reads it.*
+#      Do it only when 1 and 2 are exhausted, and in a commit of its own.
 #   4. **Shortening hooks** — spent, see above. Listed last deliberately,
 #      because it is the one a session reaches for first.
 #
@@ -136,14 +137,13 @@ MAX_INDEX=24000  # bytes. The harness truncates at 24,400 — exactly, see the
 NEAR_INDEX=2400  # bytes of headroom below which a GREEN run says so loudly.
 
 # ★★★ A PASS THAT DOES NOT SAY HOW CLOSE IT CAME IS A PASS THAT EXPIRES
-# WITHOUT WARNING. On 2026-09-14 this gate went red at 24,177 bytes, fifteen
-# hooks were shortened, and it went green again at **23,984** — sixteen bytes
-# of headroom. The next session to add one memory would have hit the same red
-# and re-derived the same remedy from scratch, because nothing green had ever
-# told it the budget was spent.
+# WITHOUT WARNING. Red at 24,177 bytes, fifteen hooks shortened, green again at
+# **23,984** — sixteen bytes of headroom, and a green run that says only
+# "clean". The next session to add one memory hits the same red and re-derives
+# the same remedy from scratch, because nothing green ever told it the budget
+# was spent.
 #
-# ⚠ AND NEAR THE CEILING THE REMEDY CHANGES — which was a prediction when it
-# was written this morning and is a measurement by this afternoon. "Shorten
+# ⚠ AND NEAR THE CEILING THE REMEDY CHANGES. "Shorten
 # hooks" works while the hooks are padded; **36 of the fattest rows, rewritten
 # carefully, yielded 14 bytes each.** Below NEAR_INDEX the instruction is the
 # lever list in the header: consolidate same-shape entries first, write shorter

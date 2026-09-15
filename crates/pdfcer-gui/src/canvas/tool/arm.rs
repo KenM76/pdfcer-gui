@@ -1,10 +1,6 @@
 //! # `canvas::tool::arm` — how a tool is CHOSEN
 //!
-//! Split out of `canvas/tool.rs` on 2026-08-18, when the fourth tool family
-//! (`TextAnnot`) took that file past rule R2's 1,500-line ceiling. `HANDOFF.md`
-//! §10 had flagged it as one edit from the wall, and this is that edit.
-//!
-//! ## The seam is a real one
+//! ## The seam against `super`
 //!
 //! `super` answers *"what IS a tool?"* — the enum, and the predicates that are
 //! properties of a variant: which cursor it wants, whether it pans, which kind
@@ -18,10 +14,8 @@
 //! retires a tool the mode may not use.
 //!
 //! Those two subjects change for different reasons. A new variant is a `super`
-//! change; a new rule about what pressing something does is a change here. The
-//! test for whether a split was along a seam is whether the reasoning came with
-//! it, and it did: every "why does pressing this twice do that?" argument is
-//! now in one file.
+//! change; a new rule about what pressing something does is a change here, so
+//! every "why does pressing this twice do that?" argument is in one file.
 
 use super::{CanvasTool, MarkupKind, MeasureKind, TOOL_MEMORY_KEY, TextEditKind};
 use crate::app::modes::Capabilities;
@@ -30,11 +24,11 @@ use egui::{CursorIcon, Key};
 /// **What the pointer looks like this frame** — the whole precedence, in one
 /// pure function.
 ///
-/// Lifted out of `canvas::interact` when the markup tool arrived, along the
-/// same seam [`crate::canvas::gesture::press_kind`] was: the first rung of this
-/// decision was already [`CanvasTool::cursor`], so the remaining three rungs
-/// were the rest of one question living in the wiring, where they could not be
-/// tested and where a fourth tool would have had to be remembered.
+/// It lives here rather than in `canvas::interact`, on the same seam
+/// [`crate::canvas::gesture::press_kind`] sits on: the first rung is
+/// [`CanvasTool::cursor`], so putting the remaining three in the wiring would
+/// scatter one question across two places, leave it untestable, and make every
+/// new tool a thing to remember in the wiring as well as in the enum.
 ///
 /// # The order is the rule
 ///
@@ -75,31 +69,19 @@ pub fn cursor_for(
     }
     if let Some(kind) = gesture {
         return Some(match kind {
-            // One crosshair for both marquee intents: the band is the same band
-            // and `gesture`'s header refuses a second set of pixels for it. What
-            // tells the operator a zoom is armed is the ribbon control that
-            // armed it, off-canvas, where a mode indicator belongs. A markup
-            // band answers the same way, and is stated rather than wildcarded
-            // even though rung 1 already claimed it — a drag cannot be in flight
-            // without the tool that started it, so this is unreachable today and
-            // spelling it keeps the two answers one answer if that changes.
-            // The text-annotation band joins them: it is the same crosshair
-            // for the same reason, and what tells the operator which tool is
-            // armed is the pressed ribbon control, off-canvas.
-            // ★ …and the text box joins them, which is the same crosshair for
-            // the same reason: it is a rubber-band being dragged out, and what
-            // tells the operator it will hold text rather than a comment is the
-            // pressed ribbon control, off-canvas, where a mode indicator
-            // belongs.
-            // ★ …and a form control's band is the fifth, for the reason the
-            // four above share: it is a rubber band being dragged out, and what
-            // says which of the five kinds is armed is the pressed ribbon
-            // control, off-canvas.
-            // ★ …and a PLACEMENT band is the sixth (O66), on the same
-            // argument: it is a rubber band being dragged out, and what says
-            // what it will place is the Tool panel's armed instruction —
-            // off-canvas, because the window that would have said so has
+            // ★★ **One crosshair for every rubber band**, whatever the band will
+            // become. All six are the same gesture — a rectangle dragged out —
+            // and `gesture`'s header refuses a second set of pixels for it.
+            // What says which of them is armed is off-canvas: the pressed
+            // ribbon control, or for a placement (O66) the Tool panel's armed
+            // instruction, because the window that would have said so has
             // stepped aside.
+            //
+            // ★ Every kind is spelled rather than wildcarded, including the
+            // ones rung 1 already claims. A drag cannot be in flight without
+            // the tool that started it, so those arms are unreachable today;
+            // naming them is what keeps the six answers one answer the day one
+            // of them stops agreeing.
             DragKind::Marquee(_)
             | DragKind::Markup(_)
             | DragKind::TextAnnot(_)
@@ -130,40 +112,30 @@ pub fn cursor_for(
             DragKind::Handle { .. }
             | DragKind::DimensionVertex { .. }
             | DragKind::MarkupVertex { .. } => CursorIcon::Grabbing,
-            // ★ The I-beam for a sweep that began under the MODE rule rather
-            // than under an armed tool — and that distinction is now the whole
-            // of what this arm is for.
+            // ★★★ The I-beam for a sweep that began under the MODE rule rather
+            // than under an armed tool, which is the whole of what this arm is
+            // for.
             //
-            // ★ **The paragraph that used to stand here has been half
-            // discharged, and the discharged half is quoted rather than
-            // deleted** because it predicted its own expiry: *"The hover I-beam
-            // becomes free on the day a `CanvasTool::Text` lands, because it is
-            // then rung 1's answer like every other tool's."* That day is
-            // 2026-08-14. With the tool armed, `CanvasTool::Text`'s `cursor`
-            // answers `Text` at rung 1, so the pointer is an I-beam from the
-            // moment the tool is chosen — on hover, before any drag, over the
-            // grey surround as readily as the paper — and it costs one match arm
-            // per frame rather than a hit test.
+            // With `CanvasTool::Text` armed, rung 1 answers `Text` on hover,
+            // before any drag, over the grey surround as readily as the paper,
+            // at the cost of one match arm per frame. But in **Read and
+            // Review** a press means text with *no tool armed at all* — the
+            // select tool, under `textsel::takes_the_press`'s first disjunct —
+            // so rung 1 has nothing to answer with and this rung is the only
+            // one that can.
             //
-            // The undischarged half stands unchanged and is why this arm
-            // survives: in **Read and Review** a press means text with *no tool
-            // armed at all* (the select tool, under
-            // `textsel::takes_the_press`'s original disjunct), so rung 1 has
-            // nothing to answer with there and this rung is the only one that
-            // can. Making it hover in those modes would still mean asking "is
-            // there a glyph under the pointer?" on every frame the pointer moves
-            // — a hit test against the page's extraction, paid on canvases
-            // nobody is selecting on, which is most of them. And threading
-            // `Capabilities` into this function to synthesise a tool from the
-            // mode would put the mode gate in a second place, which is the thing
-            // `canvas::textsel`'s header §3 spends its length arguing against.
+            // Making it hover in those modes would mean asking "is there a
+            // glyph under the pointer?" on every frame the pointer moves: a hit
+            // test against the page's extraction, paid on canvases nobody is
+            // selecting on, which is most of them. Threading `Capabilities` in
+            // here to synthesise a tool from the mode would put the mode gate
+            // in a second place, which `canvas::textsel`'s header §3 argues
+            // against at length.
             //
-            // So the shipped rule is: **armed ⇒ I-beam always; un-armed ⇒ I-beam
-            // once the sweep starts.** A reader may reasonably ask whether that
-            // is an inconsistency an operator would notice, and the answer is
-            // that they cannot: the two cases never coexist on one canvas,
-            // because arming the tool is what moves a mode from the second to
-            // the first.
+            // ⇒ So the rule is: **armed ⇒ I-beam always; un-armed ⇒ I-beam once
+            // the sweep starts.** No operator sees that as an inconsistency,
+            // because the two cases never coexist on one canvas: arming the
+            // tool is what moves a mode from the second case to the first.
             DragKind::TextSelect => CursorIcon::Text,
         });
     }
@@ -468,19 +440,16 @@ pub fn disarm_markup(ctx: &egui::Context) -> bool {
 
 /// ★★★ **Put down whatever is armed**, and report whether anything was.
 ///
-/// The operator, 2026-08-20: *"Escape should get me out of a tool."*
+/// The operator: *"Escape should get me out of a tool."*
 ///
-/// # Why this exists when `disarm_markup` and `disarm_measure` already did
+/// # Why it covers every tool rather than a list of them
 ///
-/// Because between them they covered **two** of the seven tools. Escape put
-/// down a pen and a measure tool and did nothing at all for the caret, the node
-/// tool, the text tool or the hand — so the answer to *"how do I stop doing
-/// this?"* depended on which tool you had picked, which is not something an
-/// operator should have to know.
-///
-/// The convention is universal and has no exceptions worth carving: **Escape
-/// returns you to the pointer.** Every drawing program, every CAD package,
-/// every vector editor.
+/// [`disarm_markup`] and [`disarm_measure`] between them reach two of the seven
+/// tools. A ladder built only from those leaves the answer to *"how do I stop
+/// doing this?"* depending on which tool the operator picked, which is not
+/// something they should have to know. The convention is universal and has no
+/// exceptions worth carving — every drawing program, every CAD package, every
+/// vector editor: **Escape returns you to the pointer.**
 ///
 /// # It is the LAST rung of the tool group, not the first
 ///
@@ -561,12 +530,12 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         //    inspection, none of which touches the document"* — and its nearest
         //    neighbour there is Find, which also extracts the page's text, also
         //    derives quads from it, and also washes the result.
-        // 2. **The operator settled it for the commands already.** On 2026-08-14
-        //    both text-copy verbs moved off the authoring tab under the sentence
-        //    *copying is not authoring*. A capability invented here would be that
-        //    ruling restated in a second place, free to disagree with it — which
-        //    is the same argument `canvas::textsel` §3 makes for why there is no
-        //    `select_text` flag.
+        // 2. **The operator settled it for the commands already**, under the
+        //    sentence *copying is not authoring*, which is why both text-copy
+        //    verbs sit off the authoring tab. A capability invented here would
+        //    be that ruling restated in a second place, free to disagree with
+        //    it — the same argument `canvas::textsel` §3 makes for why there is
+        //    no `select_text` flag.
         // 3. **The retirement would be actively wrong in both directions.**
         //    Retiring it on the way into Read would take away a tool that mode
         //    plainly permits (its select tool already sweeps text). Retiring it on
@@ -580,32 +549,32 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         // of the two groups it joins.
         CanvasTool::Select | CanvasTool::Hand | CanvasTool::Text => true,
         // ★★★ **Node is on the OTHER side of the line the paragraph above
-        // draws, and it answers to TWO capabilities** — corrected 2026-09-05.
+        // draws, and it answers to TWO capabilities.**
         //
         // It is the first tool in this enum whose whole purpose is to *change*
         // the document — a point is selected in order to be dragged — so unlike
         // Select, Hand and Text it retires when the mode forbids the change.
-        // What the old single-disjunct form got wrong is that it named only one
-        // of the two things this tool changes:
+        // The disjunct must name both of the things it changes, or the tool is
+        // retired in a mode that has one of them:
         //
-        // | subject | verb | capability | drawn by |
-        // |---|---|---|---|
-        // | an anchor of a **path on the page** | `move_nodes`, `move_handle` | `edit_content` | `canvas::painting::draw_anchors` |
-        // | a corner of a **ce dimension** | `move_dimension_vertex`, and since 2026-09-05 `insert_dimension_vertex` / `remove_dimension_vertex` | **`author_measure`** | `canvas::painting`'s vertex-handle loop |
+        // * an anchor of a **path on the page** — `move_nodes`, `move_handle`
+        //   — **`edit_content`** — drawn by `canvas::painting::draw_anchors`;
+        // * a corner of a **ce dimension** — `move_dimension_vertex`,
+        //   `insert_dimension_vertex`, `remove_dimension_vertex` —
+        //   **`author_measure`** — drawn by `canvas::painting`'s vertex-handle
+        //   loop.
         //
         // The second row is the one Review has. `canvas::gesture::press_kind`
-        // has gated the ce-dimension rung on `author_measure` since 2026-08-20,
-        // on the ruling that *reshaping a ce dimension is a measure edit — it
-        // writes the sidecar and one annotation and touches no page content* —
-        // and `canvas::dimdrag` now gates **adding and removing** a corner on
-        // this tool being armed, which is what makes the arming mean something
-        // here rather than being a widened gate for its own sake.
+        // gates the ce-dimension rung on `author_measure`, on the ruling that
+        // *reshaping a ce dimension is a measure edit — it writes the sidecar
+        // and one annotation and touches no page content* — and
+        // `canvas::dimdrag` gates **adding and removing** a corner on this tool
+        // being armed, which is what makes the arming mean something here
+        // rather than being a widened gate for its own sake.
         //
-        // ★★ **The old comment's fear is still honoured, and it is worth
-        // spelling out how, because it is the thing that must not regress.** It
-        // said that leaving the tool armed in Review *"would put anchor marks
-        // on a page whose every drag is refused"*. It would not, and three
-        // independent gates say so, none of which this change touches:
+        // ★★ **Keeping the tool armed in Review does NOT put anchor marks on a
+        // page whose every drag is refused**, and this is the thing that must
+        // not regress. Three independent gates say so:
         //
         // 1. `canvas::clicking`'s node-tool branch is `is_node() &&
         //    caps.edit_content`, so a Node-tool click in Review picks no
@@ -619,10 +588,9 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         //
         // ⇒ In Review the tool draws exactly what R9 says an unavailable
         // capability draws: **nothing** on page content, and the ce dimension's
-        // own corner handles, which were already on screen and are already
-        // draggable. What changes is that the operator can now reach the tool
-        // whose sentence explains them — and that a Ctrl-drag on one of those
-        // corners can add or remove one.
+        // own corner handles, which are on screen and draggable there anyway.
+        // What the arming buys in that mode is reach to the tool whose sentence
+        // explains those handles, and a Ctrl-drag that adds or removes one.
         CanvasTool::Node => caps.edit_content || caps.author_measure,
         // ★ Authoring a form field is a change to the DOCUMENT's content, not
         // an annotation over it — a `/Widget` and its field are page objects
@@ -729,22 +697,20 @@ pub fn arm_text_edit(ctx: &egui::Context, kind: TextEditKind) -> CanvasTool {
 
 /// Whether the space bar is down **and the canvas is entitled to it**.
 ///
-/// # ★★★ It asks `textedit::composing`, and asking anything narrower was a
-/// # defect the operator hit within a day of text editing working
+/// # ★★★ It must ask `textedit::composing`, and nothing narrower
 ///
-/// This read `!ctx.text_edit_focused()`, which is true for an operator typing
-/// into the **canvas caret** — that caret is deliberately not an
-/// `egui::TextEdit`, so egui reports no focused text field for somebody who is
-/// visibly mid-word. The space bar is this tool's modifier, so the canvas took
-/// it and panned the paper. **Text editing could not type a space.**
+/// `ctx.text_edit_focused()` is **false** for an operator typing into the
+/// canvas caret: that caret is deliberately not an `egui::TextEdit`, so egui
+/// reports no focused text field for somebody who is visibly mid-word. The
+/// space bar is this tool's modifier, so a canvas asking egui takes the space
+/// and pans the paper — and text editing cannot type a space at all.
 ///
 /// > *"I can edit text now, but there is no live preview of that either, and it
-/// > doesn't accept spaces. Like how?"* — 2026-08-20
+/// > doesn't accept spaces. Like how?"* — the operator
 ///
-/// `app::keyboard` had the right predicate, written out with a paragraph
-/// explaining the second claimant, and this call site had a different one. One
-/// truth, two copies, one of them wrong — which is why the predicate now exists
-/// exactly once and a gate refuses a second.
+/// `app::keyboard` asks the same question about the same second claimant, so
+/// the predicate exists exactly **once** and `tools/gates/check-typing-guard.sh`
+/// refuses a second copy.
 #[must_use]
 pub fn space_held(ctx: &egui::Context) -> bool {
     !crate::canvas::textedit::composing(ctx) && ctx.input(|i| i.key_down(Key::Space))
@@ -763,7 +729,7 @@ pub fn active(ctx: &egui::Context) -> CanvasTool {
 /// The `egui::Memory` key the mode's capabilities are parked under.
 ///
 /// Salted like every other key in this module, for the reason
-/// [`SELECTED_KEY`]'s own note gives.
+/// `super::TOOL_MEMORY_KEY`'s own note gives.
 const CAPABILITIES_KEY: &str = "pdfcer.canvas.capabilities"; // ui-text-exempt: memory key, never displayed
 
 /// **Park what this mode may do, so a surface that is not handed it can ask.**

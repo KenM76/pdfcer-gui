@@ -4,26 +4,21 @@
 //! again: how the first page is fitted, and which of the three View ▸ Display
 //! overlays are already on.
 //!
-//! ## ★ Why these are preferences at all, and not just defaults somebody picked
+//! ## Why these are preferences and not compiled-in defaults
 //!
-//! Both were compiled-in constants in `crate::viewer::ViewState::default`, and
-//! `NO_SURFACE.md` §2 recorded them as such:
+//! Without them both are constants in `crate::viewer::ViewState::default`, and
+//! `NO_SURFACE.md` §2 is where that state is catalogued: the View ▸ Display
+//! toggles exist, and **the default is not settable**. The operator's words for
+//! it were *"there is no surface for changing or editing the settings for
+//! them"*.
 //!
-//! | | value | where |
-//! |---|---|---|
-//! | Rulers / grid / guides **default visibility** | all `false` | `viewer/mod.rs:302-304` |
-//! | Default fit mode | `FitMode::Page` | `viewer/mod.rs:300` |
-//!
-//! …with the note *"toggles exist (View ▸ Display); **the default is not
-//! settable**"*. That is the exact shape the operator reported on 2026-08-17 —
-//! *"there is no surface for changing or editing the settings for them"* — and
-//! it is worse here than the phrase implies, because **the toggle is per
-//! document**. There is no memory of it at all: `viewer::remembered` persists
-//! the page-display arrangement and nothing else, deliberately (see its header).
-//! So an operator who works with rulers on flicks the same switch on every
+//! It is worse than that phrase implies, because **the toggle is per
+//! document**. Nothing remembers it: `viewer::remembered` persists the
+//! page-display arrangement and nothing else, deliberately (see its header). So
+//! an operator who works with rulers on flicks the same switch on every
 //! document they will ever open, forever, and the program never learns.
 //!
-//! ## ★ The trio is ONE setting, not three, because they interlock
+//! ## The trio is ONE setting, not three, because they interlock
 //!
 //! `canvas::guides`' [`ruler_drag`](crate::canvas::guides) states the coupling
 //! in its own doc comment:
@@ -45,8 +40,8 @@
 //! has a per-document store (`viewer::remembered`) built to an explicit
 //! operator requirement: *"Mode persists per document, not globally — opening a
 //! drawing set must not inherit a report's setting."* A global default for it
-//! would be a second axis colliding with the per-document one, which is
-//! `HANDOFF.md` §9's open question 2 and is deliberately unbuilt.
+//! would be a second axis colliding with the per-document one, and is
+//! deliberately unbuilt.
 //!
 //! The distinction is worth stating because it looks arbitrary from outside:
 //! the display arrangement is remembered per document **because the right
@@ -101,8 +96,9 @@ impl OpeningFit {
     /// Every value, in the order the settings window lists them.
     ///
     /// Whole-page first because it is the default and the least surprising,
-    /// then the two single-axis fits, then actual size — which is *most* zoomed on the drawings
-    /// this shell is for and therefore reads as the far end of a scale.
+    /// then the two single-axis fits, then actual size — which is *most*
+    /// zoomed on the drawings this shell is for and therefore reads as the far
+    /// end of a scale.
     pub const ALL: &'static [Self] = &[Self::Page, Self::Width, Self::Height, Self::ActualSize];
 
     /// The token written to the preferences file.
@@ -134,8 +130,9 @@ impl OpeningFit {
     /// # The zoom returned for the two fitting modes is not ignored
     ///
     /// `FitMode::Page`, `FitMode::Width` and `FitMode::Height` are recomputed
-    /// every frame against the viewport, so the zoom handed back for them is only what the state
-    /// holds until the first frame measures the window. It is `1.0` rather than
+    /// every frame against the viewport, so the zoom handed back for them is
+    /// only what the state holds until the first frame measures the window. It
+    /// is `1.0` rather than
     /// `0.0` because a `ViewState` is legal to inspect before any frame has run
     /// — `OpenDoc::assemble` copies it straight into `observed_zoom` — and a
     /// zero there would make the first `observed_zoom` comparison meaningless
@@ -164,7 +161,7 @@ impl OpeningFit {
 /// window's control takes one argument rather than three, so a fourth overlay
 /// added later changes one signature instead of every call site.
 ///
-/// # ★ These are file-format `bool`s, and they are the first in the project
+/// # These are file-format `bool`s, and they are the first in the project
 ///
 /// `pdfcer_core::settings` has **no boolean settings at all** — every one of its
 /// thirteen is a named enum, because a named enum states what each side means
@@ -191,7 +188,7 @@ pub struct PageChrome {
     pub grid: bool,
     /// Draggable guides.
     ///
-    /// ★ **Turning this on does not let an operator place a guide.** A guide is
+    /// **Turning this on does not let an operator place a guide.** A guide is
     /// dragged out of a ruler gutter, so `rulers` must be on as well —
     /// `canvas::guides::ruler_drag` registers nothing without them. The setting
     /// says so, because the alternative is an operator switching one of the two
@@ -273,12 +270,12 @@ mod tests {
         assert!(OpeningFit::from_key("nonesuch").is_none());
     }
 
-    /// ★ The shipped opening view is the one the constant it replaced held.
+    /// The shipped opening view is `fit: FitMode::Page, zoom: 1.0`, with every
+    /// overlay off.
     ///
-    /// `ViewState::default` was `fit: FitMode::Page, zoom: 1.0` before this
-    /// module existed. A build whose operator never opens the Settings window
-    /// has to behave exactly as the build before it did — the standing rule for
-    /// a capability becoming choosable, and the check that would catch a
+    /// A build whose operator never opens the Settings window must behave
+    /// exactly as one with no preference at all — the standing rule for a
+    /// capability becoming choosable. This is also the check that catches a
     /// reordering of `ALL` that moved the `#[default]`.
     #[test]
     fn the_shipped_opening_fit_is_what_the_constant_held() {
@@ -292,7 +289,7 @@ mod tests {
         );
     }
 
-    /// ★ Every opening fit produces a usable zoom.
+    /// Every opening fit produces a usable zoom.
     ///
     /// Not a tautology: `to_view` is the only place the `(FitMode, zoom)`
     /// pairing is stated, and a zero or negative zoom for any of the three
@@ -308,7 +305,7 @@ mod tests {
         }
     }
 
-    /// ★ Only `ActualSize` pins the zoom.
+    /// Only `ActualSize` pins the zoom.
     ///
     /// The distinction the enum exists to make: two of the three values are
     /// *rules* recomputed every frame, and one is a *pinned number*. If a future

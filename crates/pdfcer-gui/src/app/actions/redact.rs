@@ -1,8 +1,8 @@
 //! # `app::actions::redact` — the three arms that MARK content for removal,
 //! and the one that removes it
 //!
-//! Split out of [`super::apply`] on 2026-08-18 under rule R2, and the seam is a
-//! real one rather than a line count.
+//! A file of its own under rule R2, and the seam is a real one rather than a
+//! line count.
 //!
 //! These are the only arms whose subject is **marking content for removal**.
 //! They share a vocabulary nothing else in the funnel uses — `RedactAppearance`,
@@ -11,31 +11,16 @@
 //! undo. Moving the arms and leaving the reasoning behind would have been
 //! exactly the split this project's own R2 note warns against.
 //!
-//! ## ★★★ CORRECTED 2026-09-04 (evening), AND AGAIN 2026-09-05 — the removal
-//! is armed here, and the old section said it could never be here at all
+//! ## NOTHING IN THIS FILE REMOVES ANYTHING — and that is a property of the
+//! engine, not a principle
 //!
-//! What stood here, verbatim, until the afternoon of 2026-09-04:
-//!
-//! > *"## ★ What is NOT here, and that is the point. **Nothing in this file
-//! > removes anything.** Marking is the reversible half of redaction; the
-//! > irreversible half is `crate::dialogs::redact`, which reaches no arm in
-//! > this funnel at all — it changes no document through the queue, so it has
-//! > nothing to order against and no epoch to bump. Routing the one operation
-//! > that cannot be undone through a queue that replays would be the defect,
-//! > not the tidiness."*
-//!
-//! The middle clause was a **fact about the engine**, not a principle, and it
-//! expired that day: `EditSession::apply_redactions` (`Pass 250.1`) applied a
-//! redaction into the open session, so the operation *did* change a document
-//! through the queue and *did* have an epoch to bump.
-//!
-//! ★★★ **And a day later the engine changed again, in the direction that makes
-//! the ORIGINAL paragraph's instinct look better than its conclusion.**
-//! `Pass 250.2`'s [`crate::redact::stage_into_session`] does not remove
-//! anything and does not touch the session's content: it arms the next save.
-//! So *"nothing in this file removes anything"* is true once more — and it is
-//! still not a principle, which is the whole lesson of having written it as
-//! one. It is a dated property of an engine this project does not build.
+//! Marking authors annotations. [`crate::redact::stage_into_session`] does not
+//! remove anything either and does not touch the session's content: it **arms
+//! the next save**. Written as a principle — *"the irreversible half can never
+//! reach this funnel"* — that sentence would be a claim about an engine this
+//! project does not build, and it would go false the day the engine grows a
+//! verb that applies into the open session. It is stated as what it is: a fact
+//! about the verbs that exist, re-checked rather than inherited.
 //!
 //! ⇒ The arm below is [`RedactAction::Pending`], and it goes through the
 //! identical `vector_edit` funnel as the three marking arms, for a reason that
@@ -45,15 +30,14 @@
 //! other way here — is what makes them reachable at all. The epoch bump comes
 //! with it and is wanted for its own reason (below).
 //!
-//! ★ The old paragraph's last sentence — *"routing the one operation that
-//! cannot be undone through a queue that replays would be the defect"* —
-//! deserves an answer rather than a deletion, because it names a real hazard.
-//! **This queue does not replay.** `crate::app::actions` drains it once per
-//! frame in order and discards it. And on `Pass 250.2` the hazard is smaller
-//! still: the arming is not irreversible — [`crate::redact::Staging::Cancel`]
-//! is the second half of this very arm.
+//! The hazard the principle was reaching for is real and has a different
+//! answer: routing an operation that cannot be undone through a queue that
+//! **replays** would be a defect. **This queue does not replay.**
+//! `crate::app::actions` drains it once per frame in order and discards it.
+//! And the arming is not irreversible — [`crate::redact::Staging::Cancel`] is
+//! the second half of this very arm.
 //!
-//! ## ★★★ Why the epoch is bumped for an edit that changes no pixel
+//! ## Why the epoch is bumped for an edit that changes no pixel
 //!
 //! Staging alters nothing a rasteriser would draw (rule 4: no badge, no tint,
 //! no provisional layer — see `crate::redact` §1.0.3), so on the face of it a
@@ -81,56 +65,35 @@
 // THE ACTION FAMILY
 // ===========================================================================
 
-/// ★★★ **Everything whose subject is a redaction**, as one family.
+/// **Everything whose subject is a redaction**, as one family.
 ///
-/// Moved out of [`super::Action`] under **R2** on 2026-09-06, when document
-/// signing needed a variant that file could not afford — it was at exactly
-/// 1,500 of 1,500 lines, which is a state its own header had predicted and
-/// named the remedy for: *"the next family of variants to grow is the one that
-/// will have to become a sub-enum beside `PageAction` and `DimensionAction`."*
+/// A sub-enum here rather than five variants on [`super::Action`], under
+/// **R2**, and the deciding term is not the line count. It is
+/// [`super::pages::PageAction`]'s own argument verbatim: *"the destination
+/// already existed. This module has held the five verbs' bodies since page
+/// operations shipped, and `apply` already routed every one of them here. The
+/// enum was the only half still living elsewhere."* The markup family is
+/// larger and would be the bigger saving, and its bodies are split across
+/// `canvas::markup` and `actions::annots`, so moving it is two destinations
+/// rather than one.
 ///
-/// ## Why redaction, when the written plan nominated markup
-///
-/// `super`'s declaration of `action` carries a 2026-08-20 measurement naming
-/// **markup** as the candidate, *"written down here so the next person does not
-/// have to re-measure it under deadline."* It was not taken, and departing from
-/// a plan that was written down deserves its reason in the same place:
-///
-/// | family | lines in `action.rs` | call sites | destination module |
-/// |---|---|---|---|
-/// | markup | ~370 | **48** | `canvas::markup` + `actions::annots` — two |
-/// | redaction | 114 | **19** | `actions::redact` — this one, already holding every body |
-///
-/// The deciding term is the third column, and it is
-/// [`super::pages::PageAction`]'s own third argument verbatim: *"the
-/// destination already existed. This module has held the five verbs' bodies
-/// since page operations shipped, and `apply` already routed every one of them
-/// here. The enum was the only half still living elsewhere."* That is exactly
-/// true of this file and is not true of markup, whose bodies are split across
-/// two modules.
-///
-/// ⇒ **Markup remains the next candidate and its measurement stands.** This is
-/// a cheaper move taken first, not a revision of that judgement.
-///
-/// ## ★★★ The property that puts all five in an `Action` at all: they are
+/// ## The property that puts all five in an `Action` at all: they are
 /// REVERSIBLE
 ///
 /// Marking authors a `/Redact` annotation and removes nothing — the engine
 /// records each as an undoable command, so every one goes through `vector_edit`
 /// exactly as a markup does and `Ctrl+Z` takes it back. [`Self::Pending`] arms
-/// the removal at the next save (`Pass 250.2`) and can be called off.
+/// the removal at the next save and can be called off.
 ///
 /// **The verb that actually destroys content is not in this family and is not
 /// an `Action`.** Routing the one operation that cannot be undone through a
 /// queue that replays would be the defect, not the tidiness.
 ///
-/// ## ★★ The names lost their `Redaction` stutter, and nothing else changed
+/// ## The variants carry no `Redaction` stutter
 ///
-/// `MarkRedactionsBySearch` became `RedactAction::BySearch`, and its four
-/// siblings likewise: the family name is now carried by the enum, so repeating
-/// it in every variant would spell it twice at every call site. The **fields
-/// are untouched**, deliberately — a rename and a change of shape in one commit
-/// is a diff nobody can review, and the fields are what the engine sees.
+/// `RedactAction::BySearch`, not `MarkRedactionsBySearch`: the family name is
+/// carried by the enum, so repeating it in every variant would spell it twice
+/// at every call site.
 #[derive(Debug, Clone, PartialEq)]
 pub enum RedactAction {
     /// **Mark every occurrence of some text for redaction.**
@@ -141,7 +104,7 @@ pub enum RedactAction {
     /// question, and taking back "mark every occurrence of this name" one
     /// annotation at a time would be unusable.
     ///
-    /// # ★ The query is carried, not a hit list
+    /// # The query is carried, not a hit list
     ///
     /// The panel could resolve the matches itself and push the quads, the way
     /// [`super::super::actions::Action::CommitTextMarkup`] carries the selection's boxes. It must not,
@@ -167,7 +130,7 @@ pub enum RedactAction {
         pattern: bool,
         /// How the marks this creates will look once applied.
         ///
-        /// ★ Carried on the action, not read at apply time, and it is the same
+        /// Carried on the action, not read at apply time, and it is the same
         /// rule the pen follows for markup: the operator's choice is the one
         /// they had **when they pressed the control**. Reading it in the
         /// dispatcher would let a frame in which they also changed the fill
@@ -195,14 +158,14 @@ pub enum RedactAction {
         /// [`Self::BySearch`]'s field of the same name.
         appearance: pdfcer_core::annot_author::RedactAppearance,
     },
-    /// ★★★ **Mark what is SELECTED on the page for redaction** — the third
+    /// **Mark what is SELECTED on the page for redaction** — the third
     /// marking route, and the first that does not go through text.
     ///
-    /// **Ken, 2026-08-30:** *"am I able to select objects on the canvas and
-    /// redact them that way yet? … it just told me it couldn't."* It could not:
-    /// [`Self::BySearch`] reaches text pdfcer can read as text and
-    /// [`Self::WholePage`] reaches everything, and on a CAD drawing
-    /// most of what wants redacting is in between.
+    /// **Ken:** *"am I able to select objects on the canvas and redact them
+    /// that way yet? … it just told me it couldn't."* Without this route it
+    /// cannot: [`Self::BySearch`] reaches text pdfcer can read as text and
+    /// [`Self::WholePage`] reaches everything, and on a CAD drawing most of
+    /// what wants redacting is in between.
     ///
     /// `super::redactsel`'s header carries the argument in full, including why
     /// neither a page nor a rectangle is carried here.
@@ -211,8 +174,8 @@ pub enum RedactAction {
         /// [`Self::BySearch`]'s field of the same name.
         appearance: pdfcer_core::annot_author::RedactAppearance,
     },
-    /// ★★★ **Mark everything drawn outside the page boundary, on every sheet
-    /// that has any** — the fourth marking route, added 2026-09-11.
+    /// **Mark everything drawn outside the page boundary, on every sheet
+    /// that has any** — the fourth marking route.
     ///
     /// Raised by [`crate::dialogs::offpage`], and it is the only one of the
     /// four raised by a **window**. That is not an accident of where the button
@@ -222,7 +185,7 @@ pub enum RedactAction {
     /// does not print, and the whole reason the window exists is that nothing in
     /// an ordinary reading of the document discloses it.
     ///
-    /// # ★★★ Why the BANDS travel and not the objects
+    /// # Why the BANDS travel and not the objects
     ///
     /// The census this comes from lists objects, and it would be natural to
     /// carry their boxes. It would also be wrong twice over:
@@ -244,7 +207,7 @@ pub enum RedactAction {
     /// **disclosure** — which is exactly rule 4's split: what is removed is a
     /// geometry, what is reported is the words that were found in it.
     ///
-    /// # ★★ Why the page indices travel with them
+    /// # Why the page indices travel with them
     ///
     /// One press covers many sheets, so there is no "current page" to resolve
     /// against — and resolving against one would silently mark one sheet of a
@@ -264,7 +227,7 @@ pub enum RedactAction {
         bands: Vec<(usize, Vec<pdfcer_core::page_tree::Rect>)>,
         /// How many sheets the census could not read at all.
         ///
-        /// ★★ Carried so the status line can say so, and it is the sentence
+        /// Carried so the status line can say so, and it is the sentence
         /// that keeps this window from issuing a clean bill it has not earned:
         /// a page whose content streams will not decode was **not checked**,
         /// and "marked everything outside the sheet" said over such a document
@@ -295,29 +258,28 @@ pub enum RedactAction {
         /// The `/Redact` annotation to delete.
         annot_id: pdfcer_core::object::ObjId,
     },
-    /// ★★★ **Arm the removal of every redaction mark at the next save, or
-    /// disarm it** — O125, corrected 2026-09-05 for `Pass 250.2`. **The whole
-    /// argument — undo-preserving, why Cancel had to exist — is on the apply
-    /// arm** in `app::actions::redact`, on this file's own R2 rule.
+    /// **Arm the removal of every redaction mark at the next save, or
+    /// disarm it** — O125. **The whole argument — undo-preserving, why Cancel
+    /// exists — is on the apply arm** in `app::actions::redact`, on this
+    /// file's own R2 rule.
     Pending(crate::redact::Staging),
-    /// **Apply the removal into the open document, now** — the operator's
-    /// 2026-09-08 report.
+    /// **Apply the removal into the open document, now.**
     ///
-    /// # ★★★ Why this carries COUNTS and not the document
+    /// # Why this carries COUNTS and not the document
     ///
     /// `PreparedRedaction::bytes` is private *"deliberately and
     /// load-bearingly"*, because a public accessor would restore the surface
-    /// `pdfcer`'s own `redact-apply` used to write an **unverified** file. So
+    /// a caller would need to write an **unverified** file from. So
     /// the whole value travels, and the only thing this arm may do with it is
     /// call [`crate::redact::PreparedRedaction::into_verified_document`], which
     /// re-proves the removal before handing back anything.
     ///
-    /// ★★ The acknowledgement travels with it for the same reason it is an
+    /// The acknowledgement travels with it for the same reason it is an
     /// argument to `write_to` rather than a field: consent belongs to the
     /// press, not to the preparation. A `PreparedRedaction` sitting in a queue
     /// carries no permission of its own.
     ///
-    /// ⚠ Boxed. `PreparedRedaction` holds a whole redacted document, and an
+    /// Boxed. `PreparedRedaction` holds a whole redacted document, and an
     /// unboxed variant would make every `Action` in the program that size.
     ApplyNow {
         /// How many marked regions the removal covered, for the trace and the
@@ -347,7 +309,7 @@ use crate::redact::Staging;
 pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::settings::Settings) {
     match action {
         // ===============================================================
-        // ★ THE REDACTION MARKING VERBS
+        // THE REDACTION MARKING VERBS
         //
         // Three arms, each one call, through the same `vector_edit` funnel
         // every other document change uses — which is the whole reason they
@@ -356,13 +318,9 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
         // page has to re-raster because a `/Redact` mark draws a red
         // outline the operator needs to see.
         //
-        // ★ **Nothing in THESE THREE removes anything** — corrected
-        // 2026-09-04, when the fourth arm arrived. This comment used to say
-        // "nothing here removes anything" of the whole file and to argue
-        // that the irreversible half could never reach this funnel. See the
-        // module header for why that expired the day
-        // `EditSession::apply_redactions` shipped. Marking is still the
-        // reversible half and these three are still all of it.
+        // **Nothing in THESE THREE removes anything** — the scope of that
+        // claim is these arms, not the file. See the module header for why it
+        // is a statement about the verbs that exist rather than a principle.
         //
         // `.map(|_| Vec::new())` on the first two adapts the engine's
         // `Vec<ObjId>`/`ObjId` to the disclosure list `vector_edit` traces,
@@ -397,25 +355,23 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                 // benefits from it.
                 let mut unreadable: u64 = 0;
                 vector_edit(doc, label, page, 1, |session| {
-                    // ★ Case-INSENSITIVE, always, and it is not a missing
+                    // Case-INSENSITIVE, always, and it is not a missing
                     // control. Over-marking is the safe direction of error
                     // on this verb and under-marking is not: a mark the
                     // operator did not want is one row and one click in the
                     // review list, and a mark they did want and did not get
                     // is a name shipped in a document they believe is
-                    // redacted. The old shell made the same ruling in the
-                    // same words.
-                    //  The `_styled` verbs, which arrived on 2026-08-17
-                    // (`a7210a4`) in answer to this shell's filing: before
-                    // them `author_text_matches` built its spec internally
-                    // with `fill: None`, so a fill the operator chose was
-                    // discarded on this path and honoured on the whole-page
-                    // one. A control honoured on some marks and silently
-                    // dropped on others is worse than no control, on the
-                    // one operation that cannot be undone.
-                    // ★★★ `search_and_mark_redactions_styled`, NOT
-                    // `mark_redactions_by_search_styled` — Pass 127.1, wired
-                    // 2026-08-25.
+                    // redacted.
+                    //
+                    // The `_styled` verb, because the unstyled one builds its
+                    // spec internally with `fill: None`: a fill the operator
+                    // chose would be discarded on this path and honoured on
+                    // the whole-page one, and a control honoured on some marks
+                    // and silently dropped on others is worse than no control
+                    // on the one operation that cannot be undone.
+                    //
+                    // `search_and_mark_redactions_styled`, NOT
+                    // `mark_redactions_by_search_styled`.
                     //
                     // The two run the identical scan and author the identical
                     // marks. The difference is that this one also hands back
@@ -432,38 +388,34 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                     // reported success, the file still contains it — and then
                     // they send it.
                     //
-                    // ★ Both populations RENDER PERFECTLY, which is what makes
+                    // Both populations RENDER PERFECTLY, which is what makes
                     // it invisible. Nothing on the page looks unredacted.
                     //
-                    // ★★★ **Both routes disclose now**, and until 2026-09-11 only
-                    // one did. The pattern branch called
-                    // `mark_redactions_by_pattern_styled`, which returns the
-                    // marks and nothing else, and this shell then wrote
-                    // `(created, None)` — discarding a census the engine had
+                    // **Both routes disclose**, and the pattern one is the
+                    // easier to get wrong: `mark_redactions_by_pattern_styled`
+                    // returns the marks and nothing else, so a shell calling it
+                    // writes `(created, None)` and discards a census the engine
                     // already computed on that exact scan.
                     //
-                    // `None` here did NOT mean *unknown*. It collapsed into
+                    // `None` there does NOT mean *unknown*. It collapses into
                     // `unreadable = 0` two statements below, which is the
                     // shell asserting *"no font in this document hides text
                     // from a search"* — on the route least able to know it.
-                    // Worse: a pattern pass run after a literal one
-                    // **overwrote a true warning already on screen**, so the
-                    // operator watched an honest disclosure disappear.
+                    // Worse: a pattern pass run after a literal one would
+                    // **overwrite a true warning already on screen**, so the
+                    // operator watches an honest disclosure disappear.
                     //
-                    // ★★ And the pattern route is the MORE exposed of the two,
+                    // And the pattern route is the MORE exposed of the two,
                     // not the less. What people reach for wildcards for is
                     // structured confidential material — account numbers,
                     // dates of birth, case references — which is exactly the
                     // content a redaction is run for.
                     //
-                    // `search_and_mark_redactions_by_pattern_styled`
-                    // (`Pass 296.3`, `5943beb`) is the same scan with the
-                    // diagnostics attached, and it is now the single
-                    // implementation the other three pattern entry points
-                    // delegate to, so the four cannot disagree about what was
-                    // marked. ★ Wiring it found the identical blind spot in
-                    // pdfcer's own CLI — `redact-mark --pattern` was silent
-                    // where `--search` three lines above it disclosed.
+                    // `search_and_mark_redactions_by_pattern_styled` is the
+                    // same scan with the diagnostics attached, and it is the
+                    // single implementation the other three pattern entry
+                    // points delegate to, so the four cannot disagree about
+                    // what was marked.
                     let marked = if pattern {
                         session
                             .search_and_mark_redactions_by_pattern_styled(&query, true, &appearance)
@@ -485,7 +437,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                         Vec::new()
                     })
                 });
-                // ★ Reported AFTER the edit, from the same census the panel
+                // Reported AFTER the edit, from the same census the panel
                 // lists from, so the number on the trace and the number of
                 // rows on screen cannot disagree. `created=0` is the
                 // interesting value: it is a search that found nothing,
@@ -493,7 +445,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                 // — `crate::text::redact::search_hint` is the sentence that
                 // warns about it, and this is how a reader of a trace sees
                 // it happen.
-                // ★ Recorded on the document BEFORE the trace, so a reader of
+                // Recorded on the document BEFORE the trace, so a reader of
                 // the trace and a reader of the panel see the same number.
                 doc.last_redaction_unreadable_fonts = unreadable;
                 let after = crate::panels::redact::mark_ids(&doc.session).len();
@@ -520,7 +472,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                 .get(page)
                 .map(|p| crate::panels::redact::whole_page_spec(p, &appearance))
             {
-                // ★ Asked before the edit, for the same reason the selection
+                // Asked before the edit, for the same reason the selection
                 // route asks early: `vector_edit` bumps the epoch and the
                 // object model is rebuilt underneath. See `super::redactimg`.
                 //
@@ -545,7 +497,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
             }
         }
         // ===============================================================
-        // ★★★ THE FOURTH MARKING ROUTE — content off the sheet, 2026-09-11.
+        // THE FOURTH MARKING ROUTE — content off the sheet.
         //
         // The only arm here that authors marks on MORE THAN ONE PAGE, and
         // the only one whose geometry the operator never saw on screen.
@@ -584,7 +536,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                     if rects.is_empty() {
                         continue;
                     }
-                    // ★ One annotation per PAGE carrying every band, not one
+                    // One annotation per PAGE carrying every band, not one
                     // per band — §12.5.6.23 makes `/QuadPoints` a list
                     // precisely so a single mark can cover a disjoint region,
                     // and `actions::redactsel` made the same call for the same
@@ -608,7 +560,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                     }
                 }
                 if marked_pages == 0 {
-                    // ★★★ NOTHING landed, so this is a decline and must travel
+                    // NOTHING landed, so this is a decline and must travel
                     // as one. Returning `Ok` with a sad sentence would bump the
                     // epoch, invalidate every page cache and write a disclosure
                     // about an edit that did not happen — and the operator
@@ -618,7 +570,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                         "no page accepted a mark".to_owned()
                     }));
                 }
-                // ★★★ From here the edit SUCCEEDED, partially or wholly, and
+                // From here the edit SUCCEEDED, partially or wholly, and
                 // every remaining sentence is rule 4's surviving half: the
                 // marks are visible, so nothing below is about what the
                 // operator can see. It is about what they cannot —
@@ -661,8 +613,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
             });
         }
         // ===============================================================
-        // ★★★ THE ONE THAT ARMS A REMOVAL — `OPERATOR_REQUESTS.md` O125,
-        // 2026-09-04, rebuilt on `Pass 250.2` 2026-09-05.
+        // THE ONE THAT ARMS A REMOVAL — `OPERATOR_REQUESTS.md` O125.
         //
         // Raised by `crate::dialogs::redact` on its default destination,
         // after the operator has read a measured report, ticked the
@@ -670,7 +621,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
         // Nothing is written and nothing is removed: the next save carries
         // the removal out, which is the whole of what he asked for.
         //
-        // ★★ `vector_edit`, NOT `vector_edit_on_page`. A redaction is a
+        // `vector_edit`, NOT `vector_edit_on_page`. A redaction is a
         // whole-document change by construction — the removal at save is a
         // full rewrite, every page of it — so the page-scoped funnel would
         // be a claim this verb cannot make. The `page` argument below is the
@@ -683,7 +634,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
             // reason: the closure holds the only `&mut EditSession`, and
             // `doc` is borrowed for the whole of the call.
             //
-            // ★★★ `absence_claims` is the load-bearing one. It is
+            // `absence_claims` is the load-bearing one. It is
             // `RedactionReport::redacted_text` — the exact strings the engine
             // says the save will remove — and it is the standing claim
             // `crate::app::save` greps the bytes for. On the staged path the
@@ -695,7 +646,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
             let mut absence_claims: Vec<String> = Vec::new();
             let mut armed = false;
             vector_edit(doc, "redact-stage", page, 1, |session| {
-                // ★ `{:?}` rather than a `Display` impl on the refusal, and
+                // `{:?}` rather than a `Display` impl on the refusal, and
                 // deliberately so. `vector_edit` needs `E: Display` to put the
                 // cause on the trace, and `RedactApplyRefusal` has no `Display`
                 // ON PURPOSE — `check-ui-strings.sh`'s exclusion 3 permits a
@@ -717,7 +668,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                         // operator acknowledged and the number he is told about
                         // afterwards cannot disagree.
                         //
-                        // ★ `None` for the verification, and it is a statement:
+                        // `None` for the verification, and it is a statement:
                         // the staging verb discards its bytes, so no absence
                         // sweep has run and the raw-byte residuals the dialog
                         // could list are not among these. Passing a default
@@ -733,7 +684,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                         vec![line]
                     })
             });
-            // ★ Recorded only on success. An empty claim list means
+            // Recorded only on success. An empty claim list means
             // `crate::app::save` proves nothing on the ordinary path — which is
             // correct, because on a refusal nothing is armed and there is
             // nothing to prove about it. Assigning unconditionally would have
@@ -744,15 +695,14 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
             }
         }
         // ===============================================================
-        // ★★★ …AND THE ONE THAT DISARMS IT — new 2026-09-05.
+        // …AND THE ONE THAT DISARMS IT.
         //
         // It exists because a stageable operation that cannot be un-staged
         // is a trap, and this one has teeth: while a removal is armed the
-        // engine refuses BOTH ordinary save modes by name, so an operator
-        // who changed his mind and had no way to say so could not save his
-        // document at all.
+        // engine refuses BOTH ordinary save modes by name, so an operator who
+        // changed his mind with no way to say so could not save at all.
         //
-        // ★ Through the same funnel, and it is not symmetry: the engine's
+        // Through the same funnel, and it is not symmetry: the engine's
         // verb takes `&mut EditSession` and `Arc::get_mut` is the funnel's
         // second step. The epoch bump that comes with it is wanted for the
         // module header's reason — `has_unsaved_edits` reads it — and the
@@ -760,18 +710,16 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
         // about the page ever changed.
         // ===============================================================
         // ===============================================================
-        // ★★★ APPLY NOW — the removal happens and the page changes.
+        // APPLY NOW — the removal happens and the page changes.
         //
-        // The operator, 2026-09-08: *"the redaction feature regressed back to
-        // just giving me the 'don't apply yet' button."*
+        // The operator, on a build where arming was the only destination:
+        // *"the redaction feature regressed back to just giving me the 'don't
+        // apply yet' button."* Arming costs nothing and changes nothing on the
+        // page, which is its whole design — and an operator who presses it and
+        // watches nothing happen reads that as a broken feature. This arm is
+        // the destination that does change the page.
         //
-        // Nothing had regressed. `Destination::OpenDocument` became the default
-        // on 2026-09-04 because he asked for it, and `Pass 250.2` made it cost
-        // nothing on 2026-09-05 — at the price stated in its own doc: **the
-        // page does not change**. He pressed the only button the default
-        // offered and watched nothing happen.
-        //
-        // ★★★ THIS ARM REPLACES THE WHOLE `OpenDoc`, which nothing else here
+        // THIS ARM REPLACES THE WHOLE `OpenDoc`, which nothing else here
         // does, and that is deliberate rather than convenient. `OpenDoc::new`'s
         // own doc argues against a `reset()`: *"opening a document constructs a
         // whole new `OpenDoc`, so a cached texture or a page index can never
@@ -779,7 +727,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
         // content is exactly that case — every cached raster, extraction and
         // selection describes bytes that no longer exist.
         //
-        // ⚠ **The undo log goes with it**, and that is the price his own ruling
+        // **The undo log goes with it**, and that is the price his own ruling
         // accepted: *"finalizing the document and can't be undone is ok for
         // now."* It is stated at the control, in
         // `destination_open_document_now_tooltip`, rather than discovered.
@@ -796,7 +744,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                 return;
             };
             let Ok(page_tree) = pdfcer_core::page_tree::pages(&document) else {
-                // ★ Refused rather than unwrapped. A redacted document whose
+                // Refused rather than unwrapped. A redacted document whose
                 // page tree will not read is an engine defect worth a request,
                 // and the operator's own document is still open and intact —
                 // which is the outcome to protect.
@@ -806,14 +754,14 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                 });
                 return;
             };
-            // ★★ The page he was looking at is carried over by hand, and it is
+            // The page he was looking at is carried over by hand, and it is
             // the only thing that is. A redaction removes content, never pages,
             // so the index still names the same sheet — and being thrown back
             // to page 1 of a hundred-page set after every redaction would be
             // its own defect.
             let was_on = doc.view.page_index.min(page_tree.len().saturating_sub(1));
             let path = doc.path.clone();
-            // ★★★ `settings.open_session`, NEVER `EditSession::new`. The
+            // `settings.open_session`, NEVER `EditSession::new`. The
             // funnel's own doc calls its absence *"a live defect for the whole
             // life of this shell"*: a session built raw discards the extraction
             // and write options the operator chose — and on THIS path that is
@@ -821,9 +769,9 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
             // offsets and therefore changes which runs a later
             // redaction-by-text matches (`pdfcer-core` R35).
             //
-            // ⇒ Caught by `no_call_site_builds_its_own_options` on the day this
-            // arm was written, which is the whole reason that test scans call
-            // sites rather than trusting a convention.
+            // ⇒ `no_call_site_builds_its_own_options` catches a call site
+            // that builds its own, which is why that test scans call sites
+            // rather than trusting a convention.
             use crate::app::settings::SettingsExt as _;
             *doc = OpenDoc::new(path, settings.open_session(document), page_tree);
             doc.view.page_index = was_on;
@@ -851,7 +799,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                 // constrains `E`.
                 Ok::<_, String>(vec![crate::text::redact::staging_cancelled(marks)])
             });
-            // ★★★ The claims go with it, and this line is the one that must
+            // The claims go with it, and this line is the one that must
             // not be dropped. They are this shell's statement that *every file
             // it writes for this document has this text removed from it*, and
             // after a cancel that statement is false — the content is

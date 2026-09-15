@@ -1,18 +1,16 @@
 //! # `app::actions::sign` — the one arm that signs a document
 //!
-//! [`Action::SignDocument`]'s body, split out of [`super::apply`] under **R2**
-//! on the same seam [`super::saving`], [`super::redact`] and
-//! [`super::destination`] already occupy: one subject, one file, with its
-//! reasoning beside its mechanism rather than three screens away in a match.
+//! [`Action::SignDocument`]'s body, kept beside its reasoning rather than
+//! inside [`super::apply`]'s match.
 //!
 //! The window is [`crate::dialogs::sign`] and the model is [`crate::sign`];
 //! read the second of those first, because everything about *what a signature
-//! is and which refusals exist* is argued there. This file is about the four
-//! things that have to happen, in order, on the far side of the action queue.
+//! is and which refusals exist* is argued there. This file is about what has to
+//! happen, in order, on the far side of the action queue.
 //!
 //! ---
 //!
-//! # 1. ★★★ WHY THIS IS MATCHED BEFORE THE DOCUMENT GUARD — a BORROW reason
+//! # 1. Why this is matched before the document guard — a borrow reason
 //!
 //! [`super::apply`] takes `let Status::Open(doc) = &mut self.status` and keeps
 //! that borrow for the rest of the function. This arm needs **two** of
@@ -20,11 +18,11 @@
 //! [`crate::dialogs::DialogsState`], to hand the outcome back to the window
 //! that asked. Splitting the borrow has to happen while `self` is still whole.
 //!
-//! ★ That is exactly `Action::Find`'s argument, which is matched in the same
-//! early block and says so at its arm. Two arms, one reason, and the reason is
-//! about Rust rather than about signing.
+//! That is exactly `Action::Find`'s argument, which is matched in the same
+//! early block and says so at its arm. One reason, and it is about Rust rather
+//! than about signing.
 //!
-//! # 2. ★★★ THE FOUR STEPS, AND THE ORDER IS LOAD-BEARING
+//! # 2. The steps, and the order is load-bearing
 //!
 //! `EditSession::sign` takes `&mut self`, so this is a funnel path and it owes
 //! the funnel's protocol — [`super::apply::vector_edit`]'s four steps, which
@@ -50,7 +48,7 @@
 //! 4. **Hand the outcome back.** The window is showing
 //!    `Phase::Signing` until it hears, and that is its only way out.
 //!
-//! ## ★★ Why NOT `vector_edit`, when every other `&mut` verb uses it
+//! ## Why not `vector_edit`, when every other `&mut` verb uses it
 //!
 //! Because two of that funnel's four steps would be **wrong here**, and both
 //! wrongs are silent:
@@ -60,7 +58,7 @@
 //! | bump `edit_epoch` | the epoch is what makes the canvas re-resolve its selection and rebuild its raster. Signing changes **nothing the canvas draws** — a visible signature's widget goes into the bytes that were written to disk, not into the session, which keeps only the zero-filled placeholder. Bumping it would re-rasterize a CAD sheet to draw an identical picture. |
 //! | drop the cached texture | same fact, same cost. |
 //!
-//! ★★★ And the deeper reason, which is the one worth carrying: **the session
+//! And the deeper reason, which is the one worth carrying: **the session
 //! is left holding a placeholder, not a signature.** The engine says so —
 //! *"the session still holds the staged placeholder objects (zeros in
 //! `/Contents`) … a caller that wants to keep editing must re-open the returned
@@ -74,7 +72,7 @@
 //! pointless"*. Rewinding it here would look like tidying up and would put an
 //! entry on the operator's undo stack for an act that produced a file.
 //!
-//! # 3. ★★★ THE IDENTITY IS LOADED AGAIN, HERE, AND THAT IS THE DESIGN
+//! # 3. The identity is loaded again, here, and that is the design
 //!
 //! The dialog has already opened this `.pfx` — that is how the operator saw
 //! whose certificate it is — and it does **not** hand the loaded key over.
@@ -109,11 +107,14 @@ use std::path::{Path, PathBuf};
 
 /// Whether `action` is the one this module handles.
 ///
-/// ★ A predicate paired with [`apply`] over one variant, on
-/// [`crate::app::dispatch::security::claims`]'s arrangement: a guard and a
-/// handler that disagree turn a raised action into one that silently does
-/// nothing, which is indistinguishable from the outside from an action nobody
-/// wired.
+/// The predicate half of the guard/handler pair
+/// [`crate::app::dispatch::security::claims`] uses: a guard and a handler that
+/// disagree turn a raised action into one that silently does nothing, which is
+/// indistinguishable from the outside from an action nobody wired.
+///
+/// [`super::apply`] currently re-matches the variant itself rather than calling
+/// this, so the two can drift; a caller that routes on the predicate should use
+/// this one rather than spelling the pattern a second time.
 #[must_use]
 pub fn claims(action: &Action) -> bool {
     matches!(action, Action::SignDocument { .. })
@@ -141,11 +142,11 @@ pub fn apply(app: &mut PdfcerApp, action: &Action) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ `written=` rather than the outcome Debug-formatted, because a
+        // `written=` rather than the outcome Debug-formatted, because a
         // check parses this line and `{:?}` on a domain type is a spelling
-        // nobody chose — which produced two false failure reports on
-        // 2026-09-05. The failure's own sentence is on screen, where it
-        // belongs; here it is one bit.
+        // nobody chose: it changes whenever a variant's fields change, and
+        // the check then reports a failure that did not happen. The failure's
+        // own sentence is on screen, where it belongs; here it is one bit.
         format!(
             "sign-applied written={} replaced={}",
             u8::from(matches!(outcome, Outcome::Written { .. })),
@@ -157,10 +158,11 @@ pub fn apply(app: &mut PdfcerApp, action: &Action) {
 
 /// The body, returning the outcome rather than reporting it.
 ///
-/// ★ Split from [`apply`] so that every exit is a `return` of a value the
+/// Separate from [`apply`] so that every exit is a `return` of a value the
 /// compiler counts, rather than a `return` after a call somebody has to
-/// remember to make. There are six ways out of this function and the window is
-/// stuck until one of them is taken.
+/// remember to make. Every early exit here leaves the window stuck in
+/// `Phase::Signing` until its outcome is handed back, and the compiler is what
+/// guarantees one exists.
 fn run(
     app: &mut PdfcerApp,
     certificate: &Path,
@@ -250,10 +252,10 @@ fn run(
 /// **Which operator-facing sentence an engine refusal gets.**
 ///
 /// Pure, so every arm is asserted headlessly rather than by driving a window —
-/// which matters more here than usual, because two of these arms are only
+/// which matters more here than usual, because some of these arms are only
 /// reachable on documents this repository does not commit.
 ///
-/// # ★★★ 5. THE ONE DECISION IN THIS FUNCTION: WHOSE RULE REFUSED
+/// # 5. The one decision in this function: whose rule refused
 ///
 /// `SignApplyError` has a distinct, already-written sentence per variant, and
 /// [`crate::text::sign::engine_refused`] frames them all as *"pdfcer did not
@@ -261,7 +263,7 @@ fn run(
 /// for the seed-value pair**, and the wrongness is expensive rather than
 /// cosmetic.
 ///
-/// `Pass 10.13` enforces a signature field's `/SV` dictionary (Table 234) **in
+/// The engine enforces a signature field's `/SV` dictionary (Table 234) **in
 /// full** and is deliberately **stricter than Acrobat**: a required constraint
 /// unmet is refused by name, and a constraint pdfcer cannot evaluate is refused
 /// **rather than skipped**. So an operator will meet refusals here on documents
@@ -270,13 +272,13 @@ fn run(
 /// conclude that from the sentence and wrong about the program, and a working
 /// feature would be reported as a defect.
 ///
-/// ⇒ [`crate::text::sign::author_imposed`] puts **the person who prepared the
+/// So [`crate::text::sign::author_imposed`] puts **the person who prepared the
 /// document** in the subject position, quotes the engine's message verbatim
 /// (because it names the constraint AND the satisfying values, which are the
 /// actionable half), states the strictness as a deliberate choice, and gives two
 /// remedies that do not require pdfcer to change.
 ///
-/// ★ Three more variants get their own wording for smaller reasons, each noted
+/// A few other variants get their own wording for smaller reasons, each noted
 /// at its arm. Everything else keeps the general form: the engine's sentence is
 /// already an operator-facing one and re-wording it here would be a second
 /// spelling of a fact with one author.
@@ -284,9 +286,9 @@ fn worded(error: &pdfcer_core::sign::apply::SignApplyError) -> String {
     use pdfcer_core::sign::apply::SignApplyError as E;
     let detail = error.to_string();
     match error {
-        // ★★★ The author's rule, not pdfcer's. See above.
+        // The author's rule, not pdfcer's. See above.
         E::SeedValueViolated { .. } | E::SeedValueUnevaluable { .. } => t::author_imposed(&detail),
-        // ★★ The chosen box turned out not to be usable. Reachable despite the
+        // The chosen box turned out not to be usable. Reachable despite the
         // window filtering its list, because the list is read once when the
         // window opens and the document can change under it — and the remedy
         // ("choose another box, or place your own") is a thing the operator can
@@ -303,20 +305,20 @@ fn worded(error: &pdfcer_core::sign::apply::SignApplyError) -> String {
         | E::FieldHasKids { .. }
         | E::FieldNameTaken { .. }
         | E::RectRefusedForExistingField { .. } => t::field_refused(&detail),
-        // ★ New in `Pass 10.14`: the composed appearance does not fit. The
-        // engine's advice is "enlarge --visible", and there is no such control
-        // here — the box's size is fixed by `crate::sign::default_rect` — so the
-        // remedy offered is the one that exists.
+        // The composed appearance does not fit. The engine's advice is
+        // "enlarge --visible", and there is no such control here — the box's
+        // size is fixed by `crate::sign::default_rect` — so the remedy offered
+        // is the one that exists.
         E::AppearanceOverflow { .. } => t::appearance_overflow(&detail),
-        // ★ The one refusal whose own advice this shell cannot follow: it ends
+        // The refusal whose own advice this shell cannot follow: it ends
         // "sign again with a larger reserve" and there is no control that sets
         // one. `crate::sign::prepare`'s note argues why asking would be handing
         // the operator arithmetic.
         E::ReservationTooSmall { .. } => t::reservation_too_small(&detail),
-        // ★★★ NO arm for `Edit(FieldAuthoring(DottedPartialName))`,
-        // deliberately, and this comment is the record of why — because the
-        // engine's own doc names `sign` as one of that variant's three
-        // raisers, so its absence here looks like an omission.
+        // No arm for `Edit(FieldAuthoring(DottedPartialName))`, deliberately,
+        // and this comment is the record of why — the engine's own doc names
+        // `sign` among that variant's raisers, so its absence here looks like
+        // an omission.
         //
         // The engine raises it on the CREATE path only, and this shell never
         // takes that path. `crate::sign::Placement::ExistingField { name }` is
@@ -328,7 +330,7 @@ fn worded(error: &pdfcer_core::sign::apply::SignApplyError) -> String {
         // to sign into, which is the shape a title block on a drawing leaves,
         // and the engine allows it for exactly that reason.
         //
-        // ⇒ An arm here would word a refusal no operator can provoke. If this
+        // An arm here would word a refusal no operator can provoke. If this
         // shell ever grows a "name a NEW signature box" control, the arm and
         // its sentence are wanted then — and the sentence must say *the name
         // of a new signature box*, because a flat *"a signature box's name
@@ -343,16 +345,16 @@ mod tests {
     use super::worded;
     use pdfcer_core::sign::apply::SignApplyError as E;
 
-    /// ★★★ **A seed-value refusal is worded as the AUTHOR'S rule, and every
+    /// **A seed-value refusal is worded as the author's rule, and every
     /// other refusal is not.**
     ///
-    /// The whole of §5, asserted rather than argued. `Pass 10.13` enforces
+    /// The whole of §5, asserted rather than argued. The engine enforces
     /// `/SV` in full and is deliberately stricter than Acrobat, so the operator
     /// will meet these on documents another reader signs — and the general
     /// wording, *"pdfcer did not sign the document: …"*, would tell him in
     /// plain English that pdfcer is broken.
     ///
-    /// ⚠ The negative half matters as much: a refusal that is genuinely
+    /// The negative half matters as much: a refusal that is genuinely
     /// pdfcer's (the fixed reservation) must NOT be dressed up as somebody
     /// else's rule. Blaming the document's author for a pdfcer limit is the
     /// same defect pointed the other way.
@@ -404,7 +406,7 @@ mod tests {
     /// **The appearance-overflow refusal does not repeat advice this shell
     /// cannot take.**
     ///
-    /// `Pass 10.14`'s message ends *"enlarge --visible, or drop
+    /// The engine's message ends *"enlarge --visible, or drop
     /// --reason/--location"*, and there is no control here that enlarges the
     /// box — `crate::sign::default_rect` fixes it. So the engine's sentence is
     /// shown and the remedy offered is one the operator can actually perform.

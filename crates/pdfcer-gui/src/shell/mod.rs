@@ -106,7 +106,7 @@ mod tests {
         (manifest::built_in(), registry)
     }
 
-    /// **★ The built-in manifest is structurally valid.**
+    /// **The built-in manifest is structurally valid.**
     ///
     /// Everything `egui_shell::Shell::validate` checks, which includes the
     /// rule this whole information architecture is built on: **a command
@@ -125,11 +125,10 @@ mod tests {
             .expect("the built-in manifest must satisfy every structural rule");
     }
 
-    /// ★★★ **THE BUILT-IN MANIFEST SURVIVES A BUILD WITH A CAPABILITY
-    /// COMPILED OUT — and this is R8's whole point, asserted rather than
-    /// hoped for.**
+    /// **THE BUILT-IN MANIFEST SURVIVES A BUILD WITH A CAPABILITY COMPILED
+    /// OUT — and this is R8's whole point, asserted rather than hoped for.**
     ///
-    /// `SHELL_FRAMEWORK.md` §5b, the operator's directive of 2026-08-13:
+    /// `SHELL_FRAMEWORK.md` §5b, the operator's directive:
     /// *"Everything should be capable of being modular… if not needed by
     /// someone they could just remove them and they would not show up as
     /// options in the GUI."*
@@ -265,7 +264,7 @@ mod tests {
         );
     }
 
-    /// **★ Every command the manifest names is registered.**
+    /// **Every command the manifest names is registered.**
     ///
     /// Walks every reference site — tab groups, the quick-access toolbar
     /// and the keymap — not just the groups. A key bound to a command that
@@ -273,8 +272,8 @@ mod tests {
     /// reference easiest to leave behind when a command is renamed,
     /// because unlike a button it is invisible until pressed.
     ///
-    /// ★★★ **It validates the MERGED shell, not the raw manifest** — corrected
-    /// 2026-09-06, when `file.sign` became the first conditional item.
+    /// **It validates the MERGED shell, not the raw manifest**, because the
+    /// manifest carries conditional items.
     ///
     /// `validate_against` is strict by design and rejects any reference to an
     /// unregistered command. That is right for a mandatory item and wrong for a
@@ -283,9 +282,9 @@ mod tests {
     /// two apart, and `PdfcerApp::new` runs it before validating for exactly
     /// this reason.
     ///
-    /// ⚠ So this test asserts something slightly stronger than it used to: not
-    /// only that everything resolves, but that **the only things the merge had
-    /// to drop were capability-absent items.** An `UnknownCommand` skip fails
+    /// ⚠ So this test asserts two things rather than one: that everything
+    /// resolves, and that **the only things the merge had to drop were
+    /// capability-absent items.** An `UnknownCommand` skip fails
     /// here rather than being swallowed by the merge's fail-soft posture —
     /// which is the hole a naive "merge then validate" would have opened.
     #[test]
@@ -306,7 +305,7 @@ mod tests {
             .expect("every referenced command id must be registered");
     }
 
-    /// **★ …and the converse: no registered command is orphaned.**
+    /// **…and the converse: no registered command is orphaned.**
     ///
     /// A command in the registry that no tab, no QAT slot and no key
     /// binding mentions is unreachable. It is not a crash and it is not
@@ -320,7 +319,7 @@ mod tests {
     /// the old id is simply never referenced again, the button disappears,
     /// and the suite stays green.
     ///
-    /// # ★ A context menu does not count as reachability
+    /// # A context menu does not count as reachability
     ///
     /// `command_references()` walks tab groups, the QAT and the keymap —
     /// and deliberately **not** [`menus`]. That is not an omission in
@@ -335,7 +334,7 @@ mod tests {
     /// states the same rule from the menu side, where the failure message
     /// can name the menu.
     ///
-    /// # ★ …and a CUSTOM ITEM does count, because it is a ribbon control
+    /// # …and a CUSTOM ITEM does count, because it is a ribbon control
     ///
     /// `command_references()` walks the places a command *id* can appear, and
     /// an `egui_shell::manifest::Item::Custom` carries none — the shell
@@ -362,7 +361,7 @@ mod tests {
                 .iter()
                 .map(|(id, _, _)| (*id).to_owned()),
         );
-        // ★★ …and a command whose operand is THE SURFACE THE OPERATOR
+        // …and a command whose operand is THE SURFACE THE OPERATOR
         // GESTURED AT, which no ribbon control can supply. See
         // `manifest::TAB_SCOPED`, whose header holds the bar (the same one
         // `CUSTOM_BACKED` sets), the discoverability answer, and the
@@ -380,7 +379,7 @@ mod tests {
         );
     }
 
-    /// **★ Every `CUSTOM_BACKED` entry is real, in both directions.**
+    /// **Every `CUSTOM_BACKED` entry is real, in both directions.**
     ///
     /// The register buys an exemption from the orphan check above, so it has
     /// to be worth exactly what it claims and no more:
@@ -432,7 +431,7 @@ mod tests {
         }
     }
 
-    /// **★ Read ⊂ Review ⊂ Edit.**
+    /// **Read ⊂ Review ⊂ Edit.**
     ///
     /// The premise of the whole mode feature, and the thing nothing else
     /// enforces. `MODES_AND_PANELS.md` Part 1:
@@ -563,7 +562,7 @@ mod tests {
         }
     }
 
-    /// **★ Nothing in `PLANNED` is also in the manifest, and nothing in
+    /// **Nothing in `PLANNED` is also in the manifest, and nothing in
     /// `PLANNED` is registered.**
     ///
     /// The two lists are complementary by construction and would drift
@@ -621,12 +620,10 @@ mod tests {
     /// know without looking. Adding to it is a decision; drifting into it
     /// is not.
     ///
-    /// ★ **`file.save_copy` became `file.save` on 2026-08-20**, and that is a
-    /// decision rather than a drift. `RIBBON_IA.md` §6's list is *open, save,
-    /// undo, redo* — the four every application in this class puts there — and
-    /// the second slot held Save-a-copy only because in-place save did not
-    /// exist. A quick-access Save that opens a file dialog is not the control
-    /// those hands are reaching for.
+    /// ⚠ **The second slot is `file.save`, not `file.save_copy`.**
+    /// `RIBBON_IA.md` §6's list is *open, save, undo, redo* — the four every
+    /// application in this class puts there — and a quick-access Save that
+    /// opens a file dialog is not the control those hands are reaching for.
     #[test]
     fn the_qat_is_the_four_documented_commands() {
         let shell = manifest::built_in();
@@ -639,12 +636,12 @@ mod tests {
 
     /// Undo and redo are reachable, and they are reachable from the QAT.
     ///
-    /// This is the Pass 47.1 defect, inverted into a test. That defect was
-    /// caused by mirroring undo/redo onto *every* tab, which made the
-    /// ribbon render only the active band and left undo unreachable from
-    /// the Measure tab. The rule that came out of it — one command, one
-    /// tab — is enforced by `egui-shell`. The rule's own failure mode is
-    /// the opposite one: a command reachable from **no** surface at all.
+    /// Mirroring undo/redo onto *every* tab is the obvious way to make them
+    /// always reachable, and it does the opposite: the ribbon renders only the
+    /// active band, so undo disappears with whichever tab is not in front. The
+    /// rule is therefore **one command, one tab**, enforced by `egui-shell`.
+    /// That rule's own failure mode is the opposite one — a command reachable
+    /// from **no** surface at all — which is what this test guards.
     ///
     /// Undo and redo sit on no tab in `RIBBON_IA.md`'s layout. That is
     /// deliberate and it is only safe because the QAT is always visible.
@@ -672,7 +669,7 @@ mod tests {
         }
     }
 
-    /// ★ **The ribbon's overflow chevron exists in the bundled fonts.**
+    /// **The ribbon's overflow chevron exists in the bundled fonts.**
     ///
     /// The third of this family — `crate::app::status` and
     /// `crate::find::bar` each guard their own glyphs, and the reason there
@@ -722,10 +719,11 @@ mod tests {
                 .fonts_mut(|f| has = Some(f.has_glyph(&font, CHEVRON)));
         });
 
-        // `Some(false)` rather than `None` — `HANDOFF.md` §10's rule.
-        // Under `cargo test -p egui-shell` there are no fonts at all, and a
+        // **A measurement that did not happen must not read as a pass.**
+        // Under `cargo test -p egui-shell` there are no fonts at all, so a
         // bare `assert!(has_glyph)` written as `unwrap_or(true)` would be
-        // vacuous in exactly the command a developer runs most.
+        // vacuous in exactly the command a developer runs most. `Some(false)`
+        // and `None` are therefore distinguished rather than collapsed.
         assert_eq!(
             has,
             Some(true),

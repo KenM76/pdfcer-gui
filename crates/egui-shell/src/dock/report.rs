@@ -3,17 +3,13 @@
 //!
 //! # Why a rect stream exists at all
 //!
-//! `MODES_AND_PANELS.md` Part 2 lists three prerequisites before any of
-//! the flexible-panel work, and the second is the one this module
-//! serves:
+//! `MODES_AND_PANELS.md` Part 2 makes a screenshot oracle a prerequisite
+//! for the flexible-panel work, and this module is the geometric half of
+//! it.
 //!
-//! > **A screenshot oracle for panel layout.** Two recorded instances
-//! > where a traced rect was correct and the control was still clipped
-//! > out of its pane: *"layout/clipping defects have exactly one oracle:
-//! > a rendered screenshot."*
-//!
-//! Note carefully what that says and what it does not. A rect stream is
-//! **not** the oracle for legibility or for clipping; the RAG entry
+//! Note carefully what a rect stream is and is not. It is **not** the
+//! oracle for legibility or for clipping — a correct rect and a control
+//! clipped out of its pane are perfectly compatible, and the RAG entry
 //! `headless_trace_asserts_reached_not_visible_a_clipped_widget_needs_a_pixel_oracle`
 //! makes the same point from the other side. What a rect stream *is* good
 //! for is the class of assertion where the geometry is the whole
@@ -47,44 +43,40 @@ use super::model::{DockSide, PanelId};
 
 /// **One drawn region, as the dock reports it.**
 ///
-/// # ★★★ Why this is a struct, and why it carries a second rectangle
+/// # Why it carries a second rectangle
 ///
-/// Until 2026-09-04 the dock's sink was `FnMut(&str, Rect)` — a name and
-/// a rectangle — and the application on the other end of it published
-/// every one of those through its unconditional rect channel. That is
-/// **a report about LAYOUT, and it was being read as a report about
-/// VISIBILITY.** The two are not the same claim, and on this project the
-/// gap between them has a body count: `D:/dev/rag/egui/` records
-/// Bookmarks, Layers and Signatures shipping *unreachable in a real
-/// build with every gate green*, each of them with a rail entry and a
-/// perfectly healthy rectangle in the trace.
+/// A name and a rectangle is **a report about layout**, and it is
+/// routinely read as a report about **visibility**. The two are not the
+/// same claim: a surface can hold a perfectly ordinary rectangle, publish
+/// it, satisfy every check built on it, and still be unreachable on
+/// screen. `D:/dev/rag/egui/` records that costing this project three
+/// panels at once.
 ///
-/// A consumer that wants to make the stronger claim — *the operator can
-/// see this* — needs to know what the region was **clipped to**, because
+/// A consumer that wants the stronger claim — *the operator can see
+/// this* — needs to know what the region was **clipped to**, because
 /// "laid out at these coordinates" and "at least three fifths of it
-/// survived the clip" are answerable only together. So the dock now
-/// hands over the clip rectangle in force at the moment the region was
-/// published, and what the consumer does with it is the consumer's
-/// business (see this module's [`Reporter::report`] and, on the
-/// application side, `pdfcer_gui::diag::ui_rect_visible`).
+/// survived the clip" are answerable only together. So a report carries
+/// the clip rectangle in force at the moment the region was published,
+/// and what the consumer does with it is the consumer's business (see
+/// [`Reporter::report`] and, on the application side,
+/// `pdfcer_gui::diag::ui_rect_visible`).
 ///
-/// # ★★ Why a struct rather than a third positional parameter
+/// # Why a struct rather than two positional rectangles
 ///
-/// `FnMut(&str, Rect, Rect)` was the obvious widening and it is the
-/// dangerous one: **two adjacent parameters of the same type, whose
-/// meanings are not symmetric.** A consumer that swaps them compiles,
-/// runs, and produces plausible numbers — `clip.intersect(rect)` is
-/// commutative, so the *intersection* is unchanged, but the denominator
-/// a visibility fraction divides by is not. A region 20 % inside a huge
-/// clip and a region containing a tiny clip would then be told apart
-/// only by which way round the caller happened to write them, and the
-/// failure is silent in exactly the way this whole change exists to
-/// stop.
+/// `FnMut(&str, Rect, Rect)` is the dangerous shape: **two adjacent
+/// parameters of the same type, whose meanings are not symmetric.** A
+/// consumer that swaps them compiles, runs, and produces plausible
+/// numbers — `clip.intersect(rect)` is commutative, so the *intersection*
+/// is unchanged, but the denominator a visibility fraction divides by is
+/// not. A region 20 % inside a huge clip and a region containing a tiny
+/// clip would then be told apart only by which way round the caller
+/// happened to write them, and that failure is silent in exactly the way
+/// the clip field exists to stop.
 ///
 /// Named fields cannot be swapped by accident. They are also the
 /// extension point: a fourth thing to report (a z-order, an "is this
-/// enabled") adds a field rather than a fourth breaking change to every
-/// call site in three crates.
+/// enabled") adds a field rather than a breaking change to every call
+/// site in three crates.
 ///
 /// Not `Copy`, not stored: it borrows the freshly formatted name and
 /// lives only for the duration of one sink call.
@@ -92,9 +84,8 @@ pub struct RectReport<'a> {
     /// The structural name — see this module's header for the scheme.
     pub name: &'a str,
     /// **Where the region was laid out**, in the drawing viewport's
-    /// coordinates. This is exactly what the old `FnMut(&str, Rect)`
-    /// sink was handed, so a consumer that wants the old behaviour reads
-    /// this field and ignores the next one.
+    /// coordinates. A consumer asking only "did this draw, and where"
+    /// reads this field and ignores the next one.
     pub rect: Rect,
     /// **What the region was clipped to** — the `egui` clip rectangle in
     /// force on the `Ui` that drew it.
@@ -112,13 +103,12 @@ pub struct RectReport<'a> {
     pub clip: Rect,
 }
 
-/// # ★★★ Why the dock reports a clip and the ribbon does not
+/// # Why the dock reports a clip and the ribbon does not
 ///
-/// This is the judgement in this change, and it is deliberately
-/// **asymmetric**. [`crate::ribbon::RectSink`] and
-/// [`crate::menu`]'s (which is the ribbon's, shared) are still
-/// `FnMut(&str, Rect)`. That is not an unfinished migration; the two
-/// surfaces are asked different questions and want different answers.
+/// The asymmetry is deliberate. [`crate::ribbon::RectSink`] and
+/// [`crate::menu`]'s (which is the ribbon's, shared) are `FnMut(&str,
+/// Rect)`. That is not an unfinished migration; the two surfaces are
+/// asked different questions and want different answers.
 ///
 /// **The dock's rects are compartments, never content.** Every name
 /// this module publishes is a subdivision of the side the dock drew:
@@ -133,7 +123,7 @@ pub struct RectReport<'a> {
 /// **reachability**, *can the operator get to this*, and reachability
 /// is precisely what a rectangle alone cannot state.
 ///
-/// ★ That the dock itself can miss is not hypothetical, and it does not
+/// That the dock itself can miss is not hypothetical, and it does not
 /// need a broken layout. [`super::plan::MIN_SIDE_WIDTH`] is a hard
 /// floor that wins over the window
 /// ([`super::DockLayout::drawn_side_width`] clamps *up* to it) and
@@ -151,12 +141,10 @@ pub struct RectReport<'a> {
 ///
 /// Everything the dock puts at the side's **trailing edge** — the
 /// splitter that resizes it and the chevron that minimises it — is off
-/// screen with a perfectly ordinary rectangle. `D:/dev/rag/egui/`
-/// records this project shipping Bookmarks, Layers and Signatures
-/// unreachable in a real build with every gate green, each with a rail
-/// entry and a healthy rectangle; `SHELL_LAYOUT_PROPOSAL.md` §5 makes
-/// closing that gap a precondition for the panel rail, on the ground
-/// that no check could otherwise tell a working rail from that defect.
+/// screen with a perfectly ordinary rectangle. Without the clip no check
+/// can tell a working panel rail from one whose entries are all off the
+/// right-hand edge, which is why the rail's regions are not allowed to
+/// ship on a layout-only stream.
 ///
 /// **The ribbon's rects are content.** A group's rectangle is what
 /// its controls laid out to, a caption's is a galley, and a menu
@@ -170,24 +158,20 @@ pub struct RectReport<'a> {
 /// — and stacking a second on the same stream multiplies the ways a
 /// check can stop running without turning red.
 ///
-/// ⚠ **The failure mode of getting this wrong is a SKIP, and a SKIP is
-/// not red.** A consumer that filters on visibility drops regions
-/// silently by design; over-apply the filter and checks that were
-/// asserting something become checks that assert nothing, with no
-/// signal anywhere. So the rule this crate follows is: **widen a
-/// surface's sink when a consumer needs to make a reachability claim
-/// about compartments, and leave it alone where the consumer is
-/// asking "did this draw" or "where do I scroll to" about content.**
-/// If the ribbon ever needs the clip, [`RectReport`] is the
-/// shape to copy — and the decision has to be re-made per region
-/// name, not per crate.
+/// **The failure mode of getting this wrong is a skip, and a skip is not
+/// red.** A consumer that filters on visibility drops regions silently by
+/// design; over-apply the filter and checks that were asserting something
+/// become checks that assert nothing, with no signal anywhere. So the
+/// rule this crate follows is: **widen a surface's sink when a consumer
+/// needs to make a reachability claim about compartments, and leave it
+/// alone where the consumer is asking "did this draw" or "where do I
+/// scroll to" about content.** If the ribbon ever needs the clip,
+/// [`RectReport`] is the shape to copy — and the decision has to be made
+/// per region name, not per crate.
 ///
-/// # In one line
-///
-/// **No longer identical in shape to [`crate::ribbon::RectSink`].** An
-/// application driving both surfaces now writes two closures, which is the
-/// honest spelling: it was always free to treat the two streams differently,
-/// and it now has to decide that it does.
+/// The consequence for a caller: this is **not** the same shape as
+/// [`crate::ribbon::RectSink`], so an application driving both surfaces
+/// writes two closures and has to decide what each stream means.
 pub type RectSink<'a> = dyn FnMut(&RectReport<'_>) + 'a;
 
 /// The name prefix every rect this module publishes begins with.
@@ -280,7 +264,7 @@ pub fn rail(side: DockSide) -> String {
     format!("{PREFIX}.{}.rail", side.key())
 }
 
-/// ★ The **tool rail** — the permanent vertical strip down a side's outer
+/// The **tool rail** — the permanent vertical strip down a side's outer
 /// edge, carrying the panel tabs and the tool groups. `OPERATOR_REQUESTS.md`
 /// O123 part 7.
 ///
@@ -300,7 +284,7 @@ pub fn tool_rail(side: DockSide) -> String {
 /// **The rail's auto-hide trigger** — the rectangle whose hover reveals a
 /// hidden rail, and the rail itself when it is not hiding.
 ///
-/// ★★★ Published in BOTH settings, and that is what makes it the reachability
+/// Published in **both** settings, and that is what makes it the reachability
 /// oracle. A rail that is hiding publishes `toolrail` only on the frames it is
 /// revealed, so a check reading `toolrail` alone cannot distinguish *"the rail
 /// is hidden and one pointer-move away"* from *"the rail is gone and the panels
@@ -350,7 +334,7 @@ impl<'a> Reporter<'a> {
     /// Publish a rect under a lazily-formatted name, together with the
     /// clip rectangle in force where it was drawn.
     ///
-    /// # ★★ Why this takes the `Ui` rather than a `clip: Rect`
+    /// # Why this takes the `Ui` rather than a `clip: Rect`
     ///
     /// The clip is not a parameter a call site should be *choosing*; it
     /// is a fact about the `Ui` the region was drawn into, and the only
@@ -368,12 +352,10 @@ impl<'a> Reporter<'a> {
     ///    clip from another. Asking the `Ui` at the moment of
     ///    publication cannot go stale.
     ///
-    /// The cost is that this module now knows about [`egui::Ui`] and not
-    /// only [`Rect`]. That is a widening of an `egui` dependency the
-    /// crate already has from end to end, and it names nothing outside
-    /// `egui` — R7 (`tools/gates/check-shell-purity.sh`) is about
-    /// `pdfcer-*`, and a clip rectangle is as domain-free as the
-    /// rectangle beside it.
+    /// The cost is that this module knows about [`egui::Ui`] and not only
+    /// [`Rect`]. That names nothing outside `egui`, so R7
+    /// (`tools/gates/check-shell-purity.sh`) is untouched: a clip
+    /// rectangle is as domain-free as the rectangle beside it.
     ///
     /// # Which `Ui` to pass
     ///
@@ -455,11 +437,10 @@ mod tests {
         });
     }
 
-    /// ★★★ **The clip a region is reported against is the one in force on
-    /// the `Ui` that drew it — not the region, and not the window.**
+    /// **The clip a region is reported against is the one in force on the
+    /// `Ui` that drew it — not the region, and not the window.**
     ///
-    /// This is the property the whole widening exists for, and it is
-    /// worth a test of its own because the failure mode is invisible: a
+    /// Worth a test of its own because the failure mode is invisible: a
     /// reporter that handed back `rect` as its own clip, or the screen
     /// rectangle as everybody's clip, would make every consumer's
     /// visibility fraction come out at exactly 1.0 and every check built

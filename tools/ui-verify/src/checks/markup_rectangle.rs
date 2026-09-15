@@ -4,17 +4,12 @@
 //!
 //! # The defect class this exists for
 //!
-//! `HANDOFF.md` §2 lists nine defects found only by running the program. The
-//! second one is this file's ancestor and its whole justification:
-//!
-//! > The icon painter existed, was tested, and was never passed to the ribbon
-//! > — the whole ribbon was text buttons.
-//!
-//! Nothing was *wrong*. `icons` proved the painter draws, with 52 tests.
-//! `egui-shell` proved its seam accepts a painter. Both were true, both were
-//! green, and the one fact neither crate could state is that the application
-//! hands the former to the latter — because that is a property of a **call
-//! site**, and a call site's effect is observable only in a running window.
+//! A chain in which every link has a passing unit test and no test observes a
+//! join. `icons` proves the painter draws, with 52 tests. `egui-shell` proves
+//! its seam accepts a painter. Both can be true and green while the
+//! application hands neither to the other and the ribbon draws text buttons —
+//! because the join is a property of a **call site**, and a call site's effect
+//! is observable only in a running window.
 //!
 //! Clicking `Markup ▸ Shapes ▸ Rectangle` is the same shape with four links
 //! instead of one:
@@ -28,31 +23,22 @@
 //!
 //! Four passing tests, four joins, and **no test anywhere observes two
 //! adjacent links being connected**. Deleting the guard arm in step 2 breaks
-//! the feature completely and breaks no test in the workspace — which is
-//! exactly the state the icon painter shipped in.
+//! the feature completely and breaks no test in the workspace.
 //!
-//! # Why this check could not be written before now
+//! # What this check depends on to aim a click
 //!
-//! Because nothing outside the process could find the button. The trace
-//! published a `ui-rect` for every group caption and every mode segment and
-//! **nothing for any individual command control**, so there was no way to
-//! aim a click at Rectangle, and therefore no way to prove that clicking it
-//! did anything. `egui_shell::ribbon::report::band_item` and its call site in
-//! `band::render_command` landed with this check, for this check.
+//! `egui_shell::ribbon::report::band_item`, called from
+//! `band::render_command`, publishes a `ui-rect` per individual command
+//! control. Without it the trace carries rectangles for group captions and
+//! mode segments only, there is nothing to aim a click at, and therefore no
+//! way to prove that clicking Rectangle does anything.
 //!
 //! # What it does, through the operating system
 //!
 //! Mouse only, because nothing below needs a key — not because a key could
-//! not be sent.
-//!
-//! ★ **CORRECTED 2026-08-18.** These headers used to say synthetic keyboard
-//! input does not reach the target window on this machine. It DOES — see
-//! [`crate::checks::add_text`], which types real characters into a caret
-//! draft and asserts they landed. The belief came from `Ctrl+E` producing no
-//! trace, which was the dead-keymap defect (fourteen of twenty-one declared
-//! chords were dispatched by nothing) misread as a property of the machine —
-//! and while it stood nobody drove a chord, so nothing could contradict it.
-//! Every gesture below is a real `SetCursorPos` +
+//! not be sent. Synthetic keyboard input does reach the target window; see
+//! [`crate::checks::add_text`], which types real characters into a caret draft
+//! and asserts they landed. Every gesture below is a real `SetCursorPos` +
 //! `mouse_event` click at a point derived from a rectangle **the application
 //! itself declared on the frame it drew it**; see
 //! [`crate::coords::WindowFrame::declared_center`].
@@ -77,9 +63,8 @@
 //! The second is the one that matters, and it is genuinely necessary: the
 //! armed tool is otherwise invisible from outside the process. A crosshair is
 //! a cursor, and a screenshot of an armed canvas and an unarmed one are the
-//! same picture — which is `HANDOFF.md`'s defect 8 exactly, the grid that was
-//! a wash, found by printing the ladder the running program had chosen rather
-//! than by looking at it.
+//! same picture, so the only way to see the arm is to have the running
+//! program print what it chose.
 //!
 //! ## Pixel evidence — that the control renders pressed
 //!
@@ -115,9 +100,9 @@
 //! branch). Contrast *ratio* is deliberately not the measure — under the
 //! palette this was calibrated against the two fills were a light grey and a
 //! light blue, about 1.3:1 apart, which a legibility threshold would call
-//! identical. Since 2026-09-04 that channel carries an opaque accent and the
-//! pair is far apart, but the measure stays a channel difference so the check
-//! keeps working under every palette this program has had. See
+//! identical. That channel now carries an opaque accent and the pair is far
+//! apart, but the measure stays a channel difference so the check keeps
+//! working under every palette this program can be given. See
 //! [`MIN_PRESSED_DELTA`], which enumerates all three.
 //!
 //! # Why the check does not simply assert on `selected:markup.rectangle`
@@ -158,8 +143,8 @@ use crate::trace::Trace;
 ///
 /// Read is the default and its tabs are `["file", "view"]`; Markup is in
 /// Review's list and in Edit's. Review rather than Edit because it is the
-/// weaker claim — a markup tool that works in Review works in Edit, and Edit
-/// carries text editing, which is `HANDOFF.md`'s Phase 5 and unbuilt.
+/// weaker claim — a markup tool that works in Review works in Edit — and
+/// because Review's capability set is the narrower one to depend on.
 const MODE_SEGMENT: &str = "ribbon.mode.review";
 
 /// The tab that carries the Shapes group.
@@ -244,16 +229,15 @@ const UNIMPLEMENTED_EVENT: &str = "command-unimplemented";
 ///
 /// # ★ Three candidate palettes, and the threshold is below the smallest
 ///
-/// The number is deliberately derived from every pair the running build could
-/// plausibly produce, rather than from the one somebody assumed. Three have
-/// been true of this program at different times, and the check has to survive
-/// all of them, because a threshold tuned to one palette is a check that goes
-/// red on a restyle and reports it as a broken feature.
+/// The number is derived from every pair the running build could plausibly
+/// produce, not from one measured pair. Three are reachable, and the check has
+/// to survive all of them, because a threshold tuned to one palette is a check
+/// that goes red on a restyle and reports it as a broken feature.
 ///
-/// **(a) The `quiet` preset as it shipped until 2026-09-04.** A band button's
-/// unpressed frame fill is `widgets.inactive.weak_bg_fill` = `panel` =
-/// `#E8E8EA`; a pressed one takes `visuals.selection.bg_fill`, which that
-/// theme pointed at `selection_fill` = `rgba(90, 140, 220, 70)`, composited
+/// **(a) A `quiet` preset whose selection channel is a translucent wash.** A
+/// band button's unpressed frame fill is `widgets.inactive.weak_bg_fill` =
+/// `#E8E8EA`; a pressed one takes `visuals.selection.bg_fill`, which such a
+/// theme points at `selection_fill` = `rgba(90, 140, 220, 70)`, composited
 /// over it —
 ///
 /// ```text
@@ -265,31 +249,20 @@ const UNIMPLEMENTED_EVENT: &str = "command-unimplemented";
 ///
 /// — a maximum channel difference of **39**.
 ///
-/// **(b) `egui`'s own stock light values.** Measured from a real capture on
-/// 2026-08-14: unpressed `#E5E5E5`, pressed `#90D1FF`, a difference of **85**
-/// (`widgets.inactive.weak_bg_fill` = grey 230, `selection.bg_fill` =
-/// 144, 209, 255).
+/// **(b) `egui`'s own stock light values.** Unpressed `#E5E5E5`, pressed
+/// `#90D1FF`, a difference of **85** (`widgets.inactive.weak_bg_fill` = grey
+/// 230, `selection.bg_fill` = 144, 209, 255). These are a floor rather than
+/// the shipped look: `app::frame` calls `theme.apply(&ctx)` every frame from
+/// the operator's own settings, so the stock values are what a build paints
+/// with only where the theme leaves a role untouched.
 ///
-/// ⚠ **The sentence that used to explain (b) was false, and is corrected
-/// here** — `REVIEW_TRIAGE.md` **T3**. It said the stock palette was what the
-/// built binary paints with *"because nothing in `crates/pdfcer-gui` calls
-/// `Theme::apply`"*. That was true when it was written and stopped being true
-/// on 2026-08-14, when `DEFECTS.md` D10 was fixed: `app::frame` calls
-/// `theme.apply(&ctx)` every frame, from the operator's own settings. The
-/// capture behind the 85 was taken from a build on the wrong side of that
-/// commit. **The constant is unaffected** — it was chosen to cover both
-/// palettes and says so — so this is a false sentence rather than a wrong
-/// number, which is exactly the kind that survives: nothing recomputes when a
-/// premise expires.
-///
-/// **(c) The `quiet` preset since 2026-09-04** — `REVIEW_TRIAGE.md` **T2**.
-/// `visuals.selection` is `egui`'s SELECTED-WIDGET channel and now carries the
-/// pair it is named for: a pressed control's fill is `accent` = `#175CC4`,
-/// opaque, against the same `#E8E8EA` unpressed fill. Maximum channel
-/// difference **209** — by far the largest of the three, so the check gets
-/// easier rather than harder. (Before that change the theme had handed the
-/// channel to the canvas, which is why (a)'s pressed "fill" was a 27 % wash
-/// that composited *paler than the button beside it*.)
+/// **(c) The `quiet` preset as it ships.** `visuals.selection` is `egui`'s
+/// SELECTED-WIDGET channel and carries the pair it is named for: a pressed
+/// control's fill is `accent` = `#175CC4`, opaque, against the same `#E8E8EA`
+/// unpressed fill. Maximum channel difference **209** — by far the largest of
+/// the three, so the check gets easier rather than harder. A theme that hands
+/// that channel to the canvas instead produces (a), whose pressed "fill" is a
+/// 27 % wash compositing *paler than the button beside it*.
 ///
 /// # Why the threshold is 12, and why it survives all three
 ///
@@ -300,15 +273,13 @@ const UNIMPLEMENTED_EVENT: &str = "command-unimplemented";
 /// So the verdict is the same under any of them, and neither a palette tweak
 /// nor a preset change nor a display colour profile flips it.
 ///
-/// ★ That margin is the whole reason this constant did not have to move when
-/// the theme was installed (b→a) and did not have to move again when the
-/// selection channel was re-pointed (a→c). A threshold derived from ONE
-/// measured pair would have been wrong twice.
+/// That margin is why one constant serves all three: a threshold derived from
+/// ONE measured pair would be wrong under the other two.
 ///
 /// # Why a channel difference and not a contrast ratio
 ///
-/// Because the two older pairs are near-equal in luminance. The pre-2026-09-04
-/// `quiet` pair is about **1.3:1** and the stock pair about **1.5:1** — both
+/// Because two of the three pairs are near-equal in luminance. The wash pair
+/// (a) is about **1.3:1** and the stock pair about **1.5:1** — both
 /// far under [`crate::pixels::AA_LARGE`]'s 3.0, so a legibility oracle would
 /// call a pressed control and an unpressed one the same colour. Contrast
 /// answers "can this be read"; the question here is "is this a different

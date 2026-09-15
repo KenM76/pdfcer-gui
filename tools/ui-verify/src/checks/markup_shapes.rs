@@ -4,12 +4,11 @@
 //!
 //! # What this is about
 //!
-//! `FEATURES.md` carried Ink, PolyLine and Polygon as *"engine-ready, but not
-//! drag-shaped; each needs its own gesture"* for the whole project. They shipped
-//! on 2026-08-14 with two new gestures — a freehand trail
+//! Ink, PolyLine and Polygon are engine-ready but **not drag-shaped**; each
+//! needs its own gesture. There are two — a freehand trail
 //! (`canvas::markup::ink`) and a run of clicks with two endings
-//! (`canvas::markup::vertex`) — and neither of those gestures can be observed by
-//! any unit test in the workspace, because both are **joins**:
+//! (`canvas::markup::vertex`) — and neither can be observed by any unit test in
+//! the workspace, because both are **joins**:
 //!
 //! | # | Link | Its own test |
 //! |---|---|---|
@@ -21,8 +20,9 @@
 //! | 6 | `app::conditions` publishes `markup.finishable` from the run | its own test — yes |
 //! | 7 | the ribbon reads that condition and enables the control | **nothing** |
 //!
-//! Links 5 and 7 are call sites, and a call site's effect is observable only in
-//! a running window — which is `HANDOFF.md` defect 2's structure, and the reason
+//! Links 5 and 7 are call sites, and **a call site's effect is observable only
+//! in a running window**: every function a join calls can pass its own test
+//! while the join itself is missing. That is why
 //! [`crate::checks::markup_rectangle`] exists for the four-link version of the
 //! same chain.
 //!
@@ -37,7 +37,7 @@
 //! | E | …then a third click, Finish, and Finish again | one `markup-commit kind=Polygon vertices=3`, and the **second** press authors nothing |
 //! | F | **Revision cloud** armed | three clicks, then Finish | one `markup-commit kind=`**`Cloud`**` vertices=3` — and NOT `kind=Polygon` |
 //!
-//! ★ **Phase F asserts one field**, and one field is the whole of it. A revision
+//! **Phase F asserts one field**, and one field is the whole of it. A revision
 //! cloud is a `/Polygon` with `/BE` on it, so a control that armed `Polygon`
 //! instead of `Cloud` would place three vertices, finish, author a legal
 //! annotation, render it and add an undo entry — every observable in phases C
@@ -60,7 +60,7 @@
 //! the real binary at all; the *quality* of the simplification is the unit
 //! test's subject, and that division is stated rather than blurred.
 //!
-//! # ★ Phase D is the falsifier, and here is the build it catches
+//! # Phase D is the falsifier, and here is the build it catches
 //!
 //! Everything in A, B, C and E would pass against a build whose
 //! `markup.finishable` was published **unconditionally** — or gated on
@@ -89,14 +89,13 @@
 //! Every gesture here is a real `SetCursorPos` + `mouse_event`, because nothing
 //! in this check needs a key.
 //!
-//! ★ **CORRECTED 2026-08-18.** These headers used to say synthetic keyboard
-//! input does not reach the target window on this machine. It DOES — see
-//! [`crate::checks::add_text`], which types real characters into a caret
-//! draft and asserts they landed. The belief came from `Ctrl+E` producing no
-//! trace, which was the dead-keymap defect (fourteen of twenty-one declared
-//! chords were dispatched by nothing) misread as a property of the machine —
-//! and while it stood nobody drove a chord, so nothing could contradict it.
-
+//! **Synthetic keyboard input DOES reach the target window** — see
+//! [`crate::checks::add_text`], which types real characters into a caret draft
+//! and asserts they landed, and [`crate::checks::chords`], which presses
+//! declared chords and asserts the command each one resolves to. A chord that
+//! produces no trace line is evidence about *that chord's dispatch*, never
+//! about the machine's ability to type, and a misdiagnosis recorded as fact
+//! protects the defect that produced it.
 //!
 //! Two things follow, and both are on the record rather than implied by a green
 //! result:
@@ -172,7 +171,7 @@ const POLYLINE: (&str, &str) = ("ribbon.item.markup.polyline", "markup.polyline"
 const POLYGON: (&str, &str) = ("ribbon.item.markup.polygon", "markup.polygon");
 /// Revision cloud — the closed run again, with `/BE` on the border.
 ///
-/// ★ **The kind whose failure mode is silent**, which is why it is driven at
+/// **The kind whose failure mode is silent**, which is why it is driven at
 /// all rather than left to the unit test that already asserts its subtype. A
 /// cloud IS a `/Polygon` in the file — `MarkupSpec::Cloud` writes `/Subtype
 /// /Polygon` and differs only by `/BE << /S /C /I n >>` — so a build whose
@@ -717,7 +716,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // ==================================================================
-    // PHASE D — ★ THE FALSIFIER: two corners are a polyline and are not a
+    // PHASE D — THE FALSIFIER: two corners are a polyline and are not a
     //           polygon
     // ==================================================================
     if let Some(failure) = arm(&session, &driver, ui_rect, POLYGON, "Markup(Polygon)")? {
@@ -827,7 +826,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // ==================================================================
-    // PHASE F — ★ THE REVISION CLOUD, and the one thing that distinguishes
+    // PHASE F — THE REVISION CLOUD, and the one thing that distinguishes
     //           it from phase E
     // ==================================================================
     //
@@ -880,7 +879,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let clouds = commits(&trace, "Cloud");
     if clouds.len() != clouds_before + 1 {
-        // ★ The interesting failure, and the reason this phase exists. Read
+        // The interesting failure, and the reason this phase exists. Read
         // the POLYGON count before blaming the commit path: a control that
         // armed the wrong kind authors an annotation perfectly well, it just
         // authors the wrong one, and every other signal in the trace looks
@@ -1041,7 +1040,7 @@ mod tests {
         }
     }
 
-    /// ★ **The fixture geometry is what the phases claim it is** — three corners
+    /// **The fixture geometry is what the phases claim it is** — three corners
     /// that are not collinear, and two of them that are a legal polyline.
     ///
     /// Phase D rests entirely on `CORNERS[..2]` being a run a **polyline** would

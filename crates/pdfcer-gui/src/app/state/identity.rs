@@ -1,15 +1,9 @@
 //! # `app::state::identity` — the two small types that say *which thing*
 //!
-//! Split out of [`super`] on 2026-08-26, when adding form-field selection
-//! pushed that file past R2's 1,500-line limit. The seam is not arbitrary:
-//! both types here answer the question *which one?* about something the shell
-//! is pointing at, and neither has anything to do with the large document
-//! record that fills the rest of the file.
-//!
 //! [`Origin`] says which file a document came from — or that it came from
 //! none. [`SelectedField`] says which form field, and which of its boxes, the
-//! operator clicked. Both are plain data with no behaviour, which is what makes
-//! them the cheapest thing in that file to move and the easiest to find here.
+//! operator clicked. Both are plain data with no behaviour; neither touches the
+//! large document record in [`super`].
 
 /// **Whether an open document has a file behind it.**
 ///

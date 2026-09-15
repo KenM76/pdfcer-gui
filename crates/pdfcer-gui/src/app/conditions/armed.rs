@@ -1,14 +1,10 @@
-//! # `app::conditions::armed` — **which control renders pressed**
+//! # `app::conditions::armed` — which control renders pressed
 //!
-//! One question, split out of [`super`] on 2026-08-31 under R2 when
-//! `view.smart_select` (`OPERATOR_REQUESTS.md` O70) took that file to 1,513
-//! lines.
-//!
-//! ## ★★ Why this is a seam and not an arbitrary cut
+//! ## Why this is a seam and not an arbitrary cut
 //!
 //! Everything [`super`] publishes answers *"may this control be pressed?"* —
 //! it reads the document, the selection, the undo log, the mode. Everything
-//! here answers a different question: **"is this control ALREADY in the state
+//! here answers a different question: **"is this control already in the state
 //! it names?"** The two differ in three ways at once, which is the test this
 //! project uses for a seam:
 //!
@@ -18,19 +14,20 @@
 //! | scope | mostly inside `Status::Open` | **outside** it, deliberately: an armed tool survives closing a file |
 //! | shape | `set.set("doc.pages")` | `set.set(selected_condition(id))` |
 //!
-//! ## ★★★ The recurring defect this file is the home of
+//! ## The failure mode this file exists to concentrate
 //!
-//! **Adding a tool is five changes, and the fifth has no unit test to remind
-//! you.** Phase 7 shipped `CanvasTool::Measure`, `arm_measure`,
-//! `measure_command` and a dispatch arm — every one with a passing test — and
-//! no call here. So Measure ▸ Linear armed the tool, placed a dimension the
-//! engine accepted, and **the button never lit up**. `ui-verify` found it in a
-//! running window, because the missing link was a *call site*, and a call
-//! site's effect is only observable in one.
+//! **Adding a tool is five changes, and the fifth is the one with no unit test
+//! to remind you.** A tool needs its `CanvasTool` variant, its arming helper,
+//! its command id, a dispatch arm — each of which a unit test can cover — and
+//! a call here. Omit only the call and the tool arms, does its work, and its
+//! control never lights up: the program is correct and the surface the
+//! operator looks at does not say so. Nothing but a check that drives a
+//! running window can see it, because what is missing is a *call site*, and a
+//! call site's effect exists only in a frame.
 //!
-//! Collecting them in one file is the mitigation: the next person adding a tool
-//! meets every existing one in a single screen rather than finding four of them
-//! scattered through a thousand lines of enable logic.
+//! Collecting every pressed condition in one file is the mitigation: the next
+//! person adding a tool meets all of them in a single screen rather than
+//! finding four scattered through a thousand lines of enable logic.
 
 use egui_shell::commands::ConditionSet;
 
@@ -42,18 +39,11 @@ impl crate::app::PdfcerApp {
     /// returning a second one to be merged — a merge being a place two answers
     /// about one control could both be present.
     pub(super) fn armed_conditions(&self, ctx: &egui::Context, set: &mut ConditionSet) {
-        // ★ **The two toggles whose state lives in `egui::Memory`.**
+        // **The armed tool's state lives in `egui::Memory`**, and is read back
+        // from there rather than shadowed on `PdfcerApp`. That is why this
+        // function takes an `egui::Context` at all.
         //
-        // These were the last controls in the ribbon with no pressed state,
-        // and the reason was structural rather than an oversight: this
-        // function took `&self` and no `egui::Context`, so a toggle whose
-        // state is in egui's own memory had no route here at all. Three
-        // separate pieces of work recorded the gap and declined to invent a
-        // second mechanism for it, which was right — the fix is to hand this
-        // function the context, not to keep a shadow copy of the tool on
-        // `PdfcerApp` that the canvas would then have to remember to update.
-        //
-        // A shadow copy is worth naming as the road not taken, because it is
+        // The shadow copy is worth naming as the road not taken, because it is
         // the obvious one: it would put the truth about which tool is armed in
         // two places, and the failure mode is a ribbon that says Hand while
         // the canvas selects — a disagreement no test would catch, because
@@ -69,27 +59,17 @@ impl crate::app::PdfcerApp {
         if crate::canvas::tool::selected(ctx) == crate::canvas::tool::CanvasTool::Hand {
             set.set(egui_shell::ribbon::selected_condition("view.tool_hand"));
         }
-        // ★ **The text tool's pressed state**, published exactly as the hand's
+        // **The text tool's pressed state**, published exactly as the hand's
         // is, from the same `egui::Memory`-backed value and outside the
         // `Status::Open` arm for the same reason.
         //
-        // # This is the step that was forgotten once, and the reason it has a
-        // test of its own
-        //
-        // Phase 7 shipped `CanvasTool::Measure`, `arm_measure`, `measure_command`
-        // and a dispatch arm using its inverse — every one with a passing unit
-        // test — and did **not** publish the condition here, so Measure ▸ Linear
-        // armed the tool, placed a dimension the engine accepted, and the button
-        // never lit up. `ui-verify` found it in a running window, because the
-        // missing link was a *call site*.
-        //
-        // The text tool is more exposed to that failure than either family
-        // before it, and the reason is worth stating: arming it changes the
-        // **cursor and nothing else**. A markup tool at least draws a band the
-        // moment you use it; an armed text tool that did not light its control
-        // would leave an operator with no on-screen evidence of the mode they are
-        // in at all — and a captured window does not carry the pointer, so not
-        // even a screenshot would show it.
+        // The text tool is the one most exposed to the missing-call-site
+        // failure above, because arming it changes the **cursor and nothing
+        // else**. A markup tool at least draws a band the moment you use it;
+        // an armed text tool whose control did not light would leave the
+        // operator with no on-screen evidence of the mode they are in — and a
+        // captured window does not carry the pointer, so not even a screenshot
+        // would show it.
         //
         // `selected` rather than `active`, matching the hand: a held space bar
         // borrows the hand for as long as it is down, and a control that
@@ -98,7 +78,7 @@ impl crate::app::PdfcerApp {
         if crate::canvas::tool::selected(ctx).is_text() {
             set.set(egui_shell::ribbon::selected_condition("view.tool_text"));
         }
-        // ★ **The two View ▸ Window toggles' pressed state.**
+        // **The two View ▸ Window toggles' pressed state.**
         //
         // Outside the `Status::Open` arm, and more obviously so than the armed
         // tools above: these describe the **application's own shape**, which has
@@ -115,7 +95,7 @@ impl crate::app::PdfcerApp {
         // on `PdfcerApp`, where the two would drift and the control would render
         // pressed over a windowed application.
         //
-        // ★ Note what that costs, so it is not mistaken for a defect: the
+        // Note what that costs, so it is not mistaken for a defect: the
         // full-screen control lights up on the frame **after** the press,
         // because a viewport command is answered by the backend. That is the
         // honest lag — the alternative is a control that reports a request as a
@@ -129,7 +109,7 @@ impl crate::app::PdfcerApp {
         if crate::canvas::zoom::region_zoom_armed(ctx) {
             set.set(egui_shell::ribbon::selected_condition("view.zoom_region"));
         }
-        // ★★ **Smart select's pressed state** — `OPERATOR_REQUESTS.md` O70.
+        // **Smart select's pressed state** — `OPERATOR_REQUESTS.md` O70.
         //
         // Read from `egui::Memory` through `canvas::smart`, which is the same
         // value the click path resolves with — so the control and the canvas
@@ -146,7 +126,7 @@ impl crate::app::PdfcerApp {
         if crate::canvas::smart::enabled(ctx) {
             set.set(egui_shell::ribbon::selected_condition("view.smart_select"));
         }
-        // ★ The armed markup tool, published the same way and outside the
+        // The armed markup tool, published the same way and outside the
         // `Status::Open` arm for the same reason as the two above.
         //
         // **At most one**, because `CanvasTool::Markup` carries the kind
@@ -160,27 +140,16 @@ impl crate::app::PdfcerApp {
                 crate::shell::commands::markup_command(kind),
             ));
         }
-        // ★ …and the armed **measure** tool, for the identical reason.
+        // …and the armed **measure** tool, for the identical reason.
         //
-        // # This arm was missing, and `ui-verify` is what found it
-        //
-        // Phase 7 shipped `CanvasTool::Measure(MeasureKind)`, `arm_measure`,
-        // `measure_command` — the exact twin of `markup_command` — and a
-        // dispatch arm that uses its inverse. Every one of those has a passing
-        // unit test. What nothing tested is that *this function* hands the
-        // second to the first, because that is a property of a **call site**,
-        // and a call site's effect is observable only in a running window.
-        //
-        // So Measure ▸ Linear armed the tool, placed a dimension the engine
-        // accepted, and **the button never lit up**. That is `HANDOFF.md`
-        // defect 2's shape one layer up: the thing works, and the surface the
-        // operator looks at does not say so. It was found by
-        // `ui_verify::checks::measure_linear`, which compares the control's fill
-        // against its sibling's *in one capture* — a differential nothing that
-        // happens to both controls can satisfy.
-        //
-        // The lesson worth keeping: adding a tool is not four changes, it is
-        // five, and the fifth is the one with no unit test to remind you.
+        // `measure_command` is the exact twin of `markup_command`, and both it
+        // and `arm_measure` carry unit tests of their own. What no unit test
+        // can cover is that *this function* hands the second to the first —
+        // that is a property of a call site, and its effect is observable only
+        // in a running window. `ui_verify::checks::measure_linear` is what
+        // covers it, by comparing this control's fill against a sibling's *in
+        // one capture*: a differential that nothing happening to both controls
+        // at once can satisfy.
         if let Some(kind) = crate::canvas::tool::selected(ctx).measure_kind() {
             set.set(egui_shell::ribbon::selected_condition(
                 crate::shell::commands::measure_command(kind),

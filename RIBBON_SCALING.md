@@ -129,6 +129,37 @@ bind.
 
 ## 3. The three mechanisms
 
+All three are **measured**, not reasoned. Word's ribbon scaling rules are not in
+its object model — `CommandBars` is the legacy 2003 toolbar surface and says
+nothing about the ribbon, and the ribbon itself is RibbonX XML compiled into the
+product with the scaling behaviour inside the Office UI framework, exposed
+nowhere. So the instrument is the one this project treats as authoritative for
+any layout question: **a photograph.**
+
+`tools/word-ribbon-study.ps1` sets a window width, waits for the re-layout and
+captures, across twelve widths from 1,884 down to 444 client points.
+`tools/our-ribbon-study.ps1` is its twin, pointed at
+`target/release/pdfcer-gui.exe` at the same widths. Each writes a frame per
+width — `evidence/word-ribbon/ribbon-<width>.png` and `evidence/our-ribbon/` —
+which is **build output and is not committed**, so a source comment citing a
+frame by width is citing something you regenerate by running the script, not a
+file you can open. Two properties of the instrument are load-bearing:
+
+- **The series runs largest first.** Word re-lays-out incrementally, so a series
+  that *grew* would photograph the recovery path rather than the collapse path,
+  and the two are not the same sequence run backwards.
+- **`Process.MainWindowHandle` is not the visible window** for a `winit`
+  application. It can be an invisible helper whose rect is nonsense; sizing it
+  succeeds, reports the new size back, and moves nothing on screen. The first
+  run of the pdfcer study photographed the same width six times because of it.
+  Both scripts find the window the way `ui-verify`'s win32 layer does.
+
+**884 client points is the reference width** — what a laptop or a docked
+half-screen actually is, and the number the rest of this document and several
+source comments quote. Word keeps **ten** groups on the band there, and at 604
+it keeps **seven** plus a scroll chevron. That is the target the three
+mechanisms below exist to reach.
+
 ### 3.1 Item sizes
 
 | size | form |
@@ -184,13 +215,16 @@ not. The popup is drawn by `band::captioned_group` — the same renderer as the
 band, with the same row split — so a group reads identically on the band and in
 its popup.
 
-- **The ranking is not right-to-left and not smallest-first.** The property
-  being ranked is **importance**, which is editorial: the group that never
-  collapses is the one carrying the verb the operator came to the tab for, not
-  the narrowest one. A width- or item-count-based heuristic measures the wrong
-  property and no amount of tuning repairs it. It is also what keeps
-  `egui-shell` domain-free (R7): the shell reads a number, the application
-  decides what matters.
+- **The ranking is not right-to-left and not smallest-first**, and that is a
+  photographed finding rather than a preference. Word's Home tab collapses
+  *Editing* before *Styles*, which sits to its left, and **Clipboard never
+  collapses at any width** — the group its author considers most important keeps
+  its full layout down to 444 points. The property being ranked is therefore
+  **importance**, which is editorial: the group that never collapses is the one
+  carrying the verb the operator came to the tab for, not the narrowest one. A
+  width- or item-count-based heuristic measures the wrong property and no amount
+  of tuning repairs it. It is also what keeps `egui-shell` domain-free (R7): the
+  shell reads a number, the application decides what matters.
 - **A group may declare that it never collapses** — `manifest::Group::collapse`
   absent means never.
 - **Every tab keeps at least one group off the ladder.** A tab whose every group
@@ -385,7 +419,8 @@ which it flickers.**
 cargo test -p egui-shell                     # the plan, the rhythm, the widths
 cargo test -p pdfcer-gui shell::manifest     # the ladder table and the Large rule
 cargo run --release -q -p ui-verify -- --exe target/release/pdfcer-gui.exe \
-    --pdf D:/Dev/temp/pdfcer/SW41177.pdf --only ribbon_matches_the_mockup_geometry
+    --pdf D:/Dev/pdfTests/SW41177/SW41177.pdf \
+    --only ribbon_matches_the_mockup_geometry
 ```
 
 The driven checks that cover this document are

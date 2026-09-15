@@ -17,7 +17,7 @@
 //!
 //! # The four rules this module holds
 //!
-//! ## 1. ★ A command that does not exist is *absent*, not greyed
+//! ## 1. A command that does not exist is *absent*, not greyed
 //!
 //! `GUI_ROADMAP.md`'s no-placeholders rule (P3) and
 //! `SHELL_FRAMEWORK.md` §4's *disclosed skip* meet here, and they say
@@ -33,7 +33,7 @@
 //! disclosed through [`crate::verify`]; a registered-but-disabled command
 //! survives as a [`Slot::Command`] with `enabled: false`.
 //!
-//! ## 2. ★ A menu with no *enabled* item does not open
+//! ## 2. A menu with no *enabled* item does not open
 //!
 //! Right-clicking something that has nothing to offer must do **nothing**
 //! — not flash an empty box, and not open a menu of five greyed rows.
@@ -51,38 +51,25 @@
 //! is one would silently delete a control the application asked for. The
 //! application decides; the shell does not guess.)
 //!
-//! ## 3. ★★★ `visible_when` HIDES a row, and until 2026-09-06 it did nothing
+//! ## 3. `visible_when` HIDES a row; `Enable` only greys it
 //!
 //! [`crate::manifest::Item`] is the shared vocabulary of ribbon groups and
-//! menus, and its `visible_when` field is documented as *"the item is drawn
-//! **only** while the condition holds"* — R9's disappearing half, as against
-//! [`crate::commands::Enable`]'s greying half.
-//!
-//! **[`resolve`] ignored it.** Only [`crate::ribbon::sizing::visible`] and
-//! [`crate::ribbon::tabs`] ever read `visible_condition()`, so a menu row
-//! carrying `visible_when` was resolved exactly as though it carried nothing:
-//! present, and greyed or not according to the command's own predicate.
-//!
-//! ⇒ The consuming application had been writing that field on menu items for
-//! over a week, with prose at each site describing the behaviour above as
-//! though it happened — a Delete withheld on a certified document, a *Float*
-//! row that never appears on an already-floating panel. Every one of those was
-//! **greyed instead of gone**, which is the R9 inversion the field exists to
-//! prevent, and no test could see it because every test asked the model
-//! (`command_ids()`) rather than the resolution.
-//!
-//! It is the shape this project keeps finding: **a field that is read on one
-//! surface and silently ignored on another, with the documentation written
-//! against the surface that reads it.** The fix is three lines; the reason it
-//! is worth this much prose is that the same `Item` type serves both surfaces,
-//! so *"the ribbon honours it"* reads, at a call site, exactly like *"it is
-//! honoured"*.
+//! menus, and its `visible_when` field means *"the item is drawn **only**
+//! while the condition holds"* — R9's disappearing half, as against
+//! [`crate::commands::Enable`]'s greying half. [`resolve`] honours it, and
+//! must: a row greyed where the document said hidden is the R9 inversion the
+//! field exists to prevent, and it is invisible to any test that asks the
+//! model (`command_ids()`) rather than the resolution.
 //!
 //! The predicate is the ribbon's own — [`crate::ribbon::sizing::visible`],
 //! called rather than restated, so a menu and a band can never disagree about
-//! what `visible_when` means. Rule 4 below then does the rest: a row removed
-//! here can leave a separator with nothing above it, and that is exactly the
-//! stale-document shape [`collapse`] already handles.
+//! what `visible_when` means. That one shared reader is the point: the same
+//! `Item` type serves both surfaces, so a field honoured on one and ignored on
+//! the other reads, at every call site, exactly like a field that is honoured.
+//!
+//! Rule 4 below then does the rest: a row removed here can leave a separator
+//! with nothing above it, and that is exactly the stale-document shape
+//! [`collapse`] already handles.
 //!
 //! ## 4. Separators are punctuation, and punctuation collapses
 //!
@@ -222,7 +209,7 @@ pub fn resolve<'a>(
 
 /// Drop leading and trailing separators and collapse runs of them.
 ///
-/// Rule 3 in the module header. Separate from [`resolve`] so it can be
+/// Rule 4 in the module header. Separate from [`resolve`] so it can be
 /// asserted on hand-built input, including the shapes a real document
 /// would have to be perverse to produce but a *stale* one produces
 /// routinely.
@@ -316,7 +303,7 @@ impl IconSlot {
 /// separator has no columns, and a custom row is drawn by the application,
 /// which is the only party that knows whether its widget has a glyph.
 ///
-/// # ★ Why the decision is per-menu and not per-row
+/// # Why the decision is per-menu and not per-row
 ///
 /// A menu is a list of words and reads as one. The eye scans the left edge
 /// of the labels, and the single thing that makes that scan cheap is that
@@ -337,14 +324,13 @@ impl IconSlot {
 /// width and paints nothing ([`IconSlot::Blank`]). An indent is not a
 /// hole — it is the same left margin every other row has.
 ///
-/// # ★★ Why the empty menu is the common case and must stay free
+/// # Why the empty menu is the common case and must stay free
 ///
 /// A menu where *no* command has an icon reserves nothing
-/// ([`IconSlot::Absent`] everywhere) and is laid out exactly as it was
-/// before this rule existed. That matters more than it sounds: it means
-/// the rule cannot make a plain menu wider, indent it, or move a single
-/// pixel of it. Only a menu that has something to show pays for the
-/// column.
+/// ([`IconSlot::Absent`] everywhere): no slot, no indent, no extra width.
+/// That matters more than it sounds — it means the column rule cannot make
+/// a plain menu wider or move a single pixel of it. Only a menu that has
+/// something to show pays for the column.
 #[must_use]
 pub fn reserves_icon_column(slots: &[Slot<'_>]) -> bool {
     slots.iter().any(|slot| match slot {
@@ -430,7 +416,7 @@ pub const MAX_BODY_WIDTH: f32 = 420.0;
 pub struct RowWidths {
     /// The icon slot, or `0.0` if this row lays none out.
     ///
-    /// ★ Note the wording: **this row**, not *this command*. A row in a
+    /// Note the wording: **this row**, not *this command*. A row in a
     /// menu that reserves the column spends the width whether or not its
     /// own command has a key ([`IconSlot::Blank`]), and a measurement that
     /// asked about the command instead would under-estimate every
@@ -564,24 +550,18 @@ mod tests {
         ))
     }
 
-    /// **★★★ `visible_when` takes the row AWAY, and `Enable` only greys it.**
+    /// **`visible_when` takes the row AWAY, and `Enable` only greys it.**
     ///
-    /// Rule 3, and it is asserted here because it was **not implemented** until
-    /// 2026-09-06 while three consuming menus already carried the field with
-    /// prose describing this behaviour as though it happened. Every one of those
-    /// rows was greyed instead of gone — R9 inverted, silently, because the same
-    /// `Item` type is honoured on the ribbon and was ignored here.
-    ///
-    /// Three rows, one condition set, three outcomes, so the two mechanisms
-    /// cannot be confused:
+    /// Rule 3. The two mechanisms are easy to confuse and produce menus that
+    /// both look plausible, so three rows are resolved against one condition
+    /// set for three outcomes:
     ///
     /// * a hidden row leaves **no slot at all** — not a disabled one;
     /// * an unhidden but disabled row leaves a slot with `enabled: false`;
     /// * a row with no condition is unaffected.
     ///
-    /// ★ Falsified by deleting the `visible` check in [`resolve`]: the first
-    /// assertion fails with three slots instead of two, which is exactly the
-    /// state that shipped.
+    /// Falsified by deleting the `visible` check in [`resolve`]: the first
+    /// assertion fails with three slots instead of two.
     #[test]
     fn a_hidden_item_leaves_no_row_while_a_disabled_one_leaves_a_greyed_one() {
         let items = [
@@ -632,10 +612,9 @@ mod tests {
     /// The interaction the two rules have to get right together: hiding the only
     /// item in a group leaves a rule with nothing above it, which is the stale
     /// document shape [`collapse`] already handles — asserted rather than
-    /// assumed, because rule 3 is new and this is the way it can go wrong
-    /// visibly.
+    /// assumed, because it is the way rule 3 goes wrong visibly.
     ///
-    /// ★ Falsified by running `resolve` without `collapse`: the leading
+    /// Falsified by running `resolve` without `collapse`: the leading
     /// separator survives and the menu opens with a horizontal line at the top.
     #[test]
     fn hiding_a_group_collapses_the_rule_that_introduced_it() {
@@ -657,8 +636,8 @@ mod tests {
         assert!(!slots[0].is_separator());
     }
 
-    /// **★ An unregistered command is absent; a disabled one is present
-    /// and greyed.**
+    /// **An unregistered command is absent; a disabled one is present and
+    /// greyed.**
     ///
     /// The two halves of rule 1, asserted together because the whole
     /// difficulty is telling them apart. Getting either one wrong produces
@@ -715,7 +694,7 @@ mod tests {
         );
     }
 
-    /// **★ A menu whose every command is disabled offers nothing.**
+    /// **A menu whose every command is disabled offers nothing.**
     ///
     /// The decision behind "right-clicking something with nothing to offer
     /// does nothing". Asserted here, before any drawing, because after
@@ -807,9 +786,9 @@ mod tests {
         );
     }
 
-    /// **★ Punctuation collapses to match what survived.**
+    /// **Punctuation collapses to match what survived.**
     ///
-    /// Rule 3. The input here is what a real document turns into once a
+    /// Rule 4. The input here is what a real document turns into once a
     /// build without the editing commands has had its way with it: leading
     /// rules, a doubled rule where a command used to be, and a trailing
     /// rule.
@@ -925,7 +904,7 @@ mod tests {
         assert!(matches!(slots[0], Slot::Command { selected: true, .. }));
     }
 
-    /// **★ The atom count charges for the invisible `grow` atom.**
+    /// **The atom count charges for the invisible `grow` atom.**
     ///
     /// `AtomLayout` bills `gap × (atoms − 1)` whether or not an atom has
     /// any size, so the zero-width atom that right-aligns the chord costs
@@ -1052,8 +1031,8 @@ mod tests {
             .collect()
     }
 
-    /// **★ ONE row with a glyph gives the whole menu a column; none gives
-    /// it nothing.**
+    /// **ONE row with a glyph gives the whole menu a column; none gives it
+    /// nothing.**
     ///
     /// The two halves of the rule, asserted together because the whole
     /// difficulty is that they are the same question asked of different
@@ -1097,7 +1076,7 @@ mod tests {
         );
     }
 
-    /// **★★ An icon-less row beside an icon row spends the width and paints
+    /// **An icon-less row beside an icon row spends the width and paints
     /// nothing.**
     ///
     /// The per-row half of the rule, swept over every input pair, because
@@ -1137,8 +1116,8 @@ mod tests {
         assert!(!IconSlot::Absent.is_reserved() && !IconSlot::Absent.draws());
     }
 
-    /// **★★★ A blank slot costs exactly what a glyph slot costs, and an
-    /// absent one costs nothing.**
+    /// **A blank slot costs exactly what a glyph slot costs, and an absent
+    /// one costs nothing.**
     ///
     /// The geometry the whole rule rests on. If a blank row were measured
     /// as though it had no slot, the arithmetic would under-estimate every

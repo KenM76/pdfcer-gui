@@ -1,11 +1,8 @@
 //! # `app::status::decline::record` — every writer of the decline slot
 //!
-//! ★★★ **The recording half of [`super`], moved here on 2026-09-05 under R2.**
-//! That file stood at 1,497 lines against the 1,500-line ceiling — three lines
-//! of headroom — and the clipboard's mode refusal needed a variant, two match
-//! arms and their reasons.
+//! **The recording half of [`super`].**
 //!
-//! ## Why this is the seam, and not a size-driven cut anywhere convenient
+//! ## Why this is the seam, and not a cut anywhere convenient
 //!
 //! [`super`] answers two questions that share a store and nothing else:
 //!
@@ -20,19 +17,17 @@
 //! argument twenty times over. It reads better as a file about recording than
 //! as a tail on a file about retirement.
 //!
-//! ★ It is the **third** split from [`super`], after `decline/floor.rs` and
-//! `decline/textedit.rs`, and both of those are recorders too — so this move
-//! makes the arrangement regular rather than inventing one. Those two keep
-//! their own files because each carries an argument of its own (the floor's
+//! `decline/floor.rs` and `decline/textedit.rs` are recorders too, so the
+//! arrangement is regular rather than invented for this file. Those two keep
+//! files of their own because each carries an argument of its own (the floor's
 //! ordering rule; the text caret's channel argument) that would be buried in a
 //! file of twenty siblings.
 //!
-//! ## ★ Re-exported, so no call site moved
+//! ## Re-exported, so no call site names this module
 //!
-//! [`super`] carries `pub(crate) use record::*;`. Every `decline::record_*`
-//! call in the crate resolves exactly as it did, which is what makes this a
-//! move rather than a refactor: a split that also renames its callers cannot be
-//! reviewed as a split.
+//! [`super`] carries `pub(crate) use record::*;`, so every `decline::record_*`
+//! call in the crate resolves through the parent. A split that also renamed
+//! its callers could not be reviewed as a split.
 //!
 //! **Written unconditionally, overwriting whatever was live**, everywhere in
 //! this file. `LAST` is a slot rather than a queue precisely so the most recent
@@ -59,45 +54,16 @@ pub(crate) fn record(outcome: ZoomOutcome) {
     LAST.with_borrow_mut(|slot| *slot = declined);
 }
 
-/// Record that `file.save_copy` was given a destination and produced no file.
-///
-/// Called from `crate::app::save::write_and_report`, which is in the **apply**
-/// phase rather than in the dispatcher — the one difference from [`record`]'s
-/// call site, and it is why this is a separate entry point rather than a second
-/// argument to that one. [`retire`] runs at the top of `dispatch_command`, so a
-/// sentence recorded during the apply of the *same* frame survives it: the
-/// order is dispatch (retire, raise the action) → apply (write, record) → next
-/// frame (the bar draws it) → the operator's next command (retire).
-///
-/// Unconditional, and there is deliberately no matching "the save worked" call
-/// that stores `None`. A successful save-a-copy produces a file at a path the
-/// operator typed into a dialog they were looking at, which is the most visible
-/// confirmation this application has; adding a sentence for it would narrate
-/// what they just did. Two saves in a row, one failing and one succeeding, are
-/// still handled — the second press retires the first's sentence through
-/// [`retire`] before its own arm runs.
-/// Record that a push button was asked for and pdfcer cannot make a working one.
-///
-/// Called from `crate::app::dispatch`'s form arm, in the **dispatch** phase
-/// like [`record`] rather than in apply — the command never reaches a document,
-/// so there is no apply to decline in.
-///
-/// ★ It exists as its own function rather than joining [`record`] for the
-/// reason that one's neighbours already show: [`record`] converts a
-/// `ZoomOutcome`, and this has no outcome to convert. A constructor per source
-/// of truth is what keeps the enum from acquiring a `From` impl for every type
-/// in the crate.
 /// Record that a restyle of existing text refused, and why.
 ///
 /// Called from `crate::app::actions::textstyle`, in the **apply** phase like
 /// [`record_save_failure`] rather than in the dispatcher — the refusal comes
 /// from the engine, which is only reached once the action is being applied.
 ///
-/// ★ A constructor of its own rather than a second argument to [`record`], for
-/// the reason [`record_push_button_inert`]'s docs give: [`record`] converts a
-/// `ZoomOutcome` and this has no outcome to convert. One constructor per source
-/// of truth is what keeps this enum from acquiring a `From` impl for every type
-/// in the crate.
+/// A constructor of its own rather than a second argument to [`record`]:
+/// [`record`] converts a `ZoomOutcome` and this has no outcome to convert. One
+/// constructor per source of truth is what keeps this enum from acquiring a
+/// `From` impl for every type in the crate.
 pub(crate) fn record_text_style(why: crate::text::status::TextStyleRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::TextStyle(why)));
 }
@@ -112,39 +78,14 @@ pub(crate) fn record_flatten_certified() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::FlattenCertified));
 }
 
-/// Record that a **form-field or widget delete** was refused by the document's
-/// structure gate.
-///
-/// Called from `crate::app::actions::forms::delete`, in the **apply** phase —
-/// which is unusual for a refusal that is knowable from a query, and is the
-/// honest place for it here. [`record_flatten_certified`] is called from the
-/// dispatch arm precisely so that no action is raised for a refusal already
-/// known; these two verbs have **four** doors instead of one, every one of
-/// which already asks `formfield::refuses_delete` before offering anything.
-/// What is left for the verb to say is the residue those four cannot cover — a
-/// chord, a stale frame, an engine guard the query does not forecast, and a
-/// delete arriving with no field selected — and the verb is the one place all
-/// of it passes through.
-///
-/// ★★★ Without it that residue was a **silence**, because
-/// `crate::app::actions::apply::vector_edit`'s `Err` arm wrote a trace line and
-/// said nothing to the operator by its own recorded decision. It now words
-/// [`Declined::EditRefused`] (O116), which is a floor rather than a
-/// replacement: it cannot say *form fields* or *certification*. R83's rule is
-/// not *gate the controls*; it is *a refusal must be a sentence*. See
-/// [`Declined::FieldDeleteRefused`].
 /// Record that a field-group deletion **preview** was refused.
 ///
-/// ★★★ These two replace `record_note` calls, and the swap is the point.
-/// `record_note` renders under **`⚑ About your last edit:`**, which
+/// These two use the decline slot and never `record_note`, and the channel is
+/// the point. `record_note` renders under **`⚑ About your last edit:`**, which
 /// `crate::text::status`' own rule forbids for a decline — *"an operator who
 /// reads 'About your last edit' after a gesture that did nothing has been told
 /// a small lie confidently."* Nothing happened; the slot that says so is this
 /// one, and it wears `⊗`.
-///
-/// The sibling verb in the same commit — `unshare_form` — used the right
-/// channel from the start, which is what made the mismatch findable: two verbs
-/// shipped together, one wording its refusal as a disclosure and one not.
 pub(crate) fn record_field_group_preview_refused() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::FieldGroupPreviewRefused));
 }
@@ -158,14 +99,14 @@ pub(crate) fn record_field_group_delete_refused() {
 /// Record that **one of the operator's own stamps could not be placed** —
 /// [`Declined::CustomStampUnavailable`], `OPERATOR_REQUESTS.md` O172.
 ///
-/// ★★ Called from two places in `crate::app::actions::customstamp`, one on
+/// Called from two places in `crate::app::actions::customstamp`, one on
 /// each side of the funnel: the collection is opened *before* `vector_edit`
 /// (a `DocumentView` must outlive the borrow), and the page is asked for
 /// *inside* it. That is why this recorder takes a reason rather than being
 /// split in two — the two call sites are an artefact of where a borrow ends,
 /// not two different things to say.
 ///
-/// ★ It is the *verb speaking first*, in `vector_edit`'s sense: the inner call
+/// It is the *verb speaking first*, in `vector_edit`'s sense: the inner call
 /// records this and then returns the engine's error, so the funnel's floor
 /// yields to it and the operator gets the sentence that names a remedy instead
 /// of `Declined::EditRefused`'s floor, which names none.
@@ -192,7 +133,7 @@ pub(crate) fn record_node_tool_needs_edit_mode() {
 /// the same frame. Two audiences, two lines, one event — the split
 /// [`record_node_tool_needs_edit_mode`] states.
 ///
-/// ★ This is the **only** report of that refusal. The gesture preflights, so
+/// This is the **only** report of that refusal. The gesture preflights, so
 /// no action is raised, no funnel is entered and no `EditRefused` is recorded;
 /// if this call is removed the operator gets a drag that does nothing and says
 /// nothing, which is the exact defect the variant exists for.
@@ -200,6 +141,27 @@ pub(crate) fn record_vertex_edit_refused(why: crate::text::measure::VertexEditRe
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::VertexEditRefused(why)));
 }
 
+/// Record that a **form-field or widget delete** was refused by the document's
+/// structure gate.
+///
+/// Called from `crate::app::actions::forms::delete`, in the **apply** phase —
+/// which is unusual for a refusal that is knowable from a query, and is the
+/// honest place for it here. [`record_flatten_certified`] is called from the
+/// dispatch arm precisely so that no action is raised for a refusal already
+/// known; these two verbs have **four** doors instead of one, every one of
+/// which already asks `formfield::refuses_delete` before offering anything.
+/// What is left for the verb to say is the residue those four cannot cover — a
+/// chord, a stale frame, an engine guard the query does not forecast, and a
+/// delete arriving with no field selected — and the verb is the one place all
+/// of it passes through.
+///
+/// Without this call that residue is a **silence**:
+/// `crate::app::actions::apply::vector_edit`'s `Err` arm writes a trace line
+/// and, by its own recorded decision, says nothing to the operator. The
+/// funnel's floor words it as [`Declined::EditRefused`] (O116), which is a
+/// floor rather than a replacement — it cannot say *form fields* or
+/// *certification*. R83's rule is not *gate the controls*; it is *a refusal
+/// must be a sentence*. See [`Declined::FieldDeleteRefused`].
 pub(crate) fn record_field_delete_refused() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::FieldDeleteRefused));
 }
@@ -207,7 +169,7 @@ pub(crate) fn record_field_delete_refused() {
 /// Record that a **bookmark move** did not happen, and which of the two
 /// sentences it owes.
 ///
-/// ★★★ The whole point of the function, stated for whoever adds the next
+/// The whole point of the function, stated for whoever adds the next
 /// refusal to this gesture: **a refusal must be a sentence, never a silence.**
 /// A drag that is released and does nothing is this project's founding defect
 /// shape, and a bookmark drag is the worst instance of it — the row leaves the
@@ -215,7 +177,7 @@ pub(crate) fn record_field_delete_refused() {
 /// I cannot find it"*, which is a state this very feature can genuinely
 /// produce.
 ///
-/// ★★ Called from **inside** the `vector_edit` closure, one position rather
+/// Called from **inside** the `vector_edit` closure, one position rather
 /// than [`record_rotate`]'s two, and the difference is worth stating: the
 /// shell-side condition that gesture words from the canvas — *"this landing is
 /// inside the thing you are dragging"* — is one the **engine** also refuses by
@@ -240,7 +202,7 @@ pub(crate) fn record_bookmark_move_refused(own_subtree: bool) {
 
 /// Record that a resize was refused because the artwork cannot be rebuilt.
 ///
-/// ★★ Called from **inside** the `vector_edit` closure, which is unusual and is
+/// Called from **inside** the `vector_edit` closure, which is unusual and is
 /// the honest place for it: whether an appearance is pdfcer's own is not
 /// knowable before the call, so — unlike [`record_flatten_certified`], whose
 /// refusal is a query — this one can only be recognised from the error the verb
@@ -264,13 +226,13 @@ pub(crate) fn record_resize_fixed_size_marker(by_flag: bool) {
 
 /// Record that a **rotation** did not happen, and why.
 ///
-/// ★★★ The whole point of the function, stated for whoever adds the next
+/// The whole point of the function, stated for whoever adds the next
 /// refusal to `RotateRefusal`: **a refusal must be a sentence, never a
 /// silence.** A rotate handle that is dragged, released, and does nothing with
-/// no explanation is this project's founding defect shape, and it is exactly
-/// what the eight resize grips did for the whole life of this shell.
+/// no explanation is this project's founding defect shape, and every resize
+/// grip is one drag away from the same fault.
 ///
-/// ★★ Called from **two positions**, deliberately, and the split is the same
+/// Called from **two positions**, deliberately, and the split is the same
 /// one this module already draws twice:
 ///
 /// | caller | when | precedent |
@@ -287,14 +249,14 @@ pub(crate) fn record_rotate(why: crate::text::rotating::RotateRefusal) {
 
 /// Record that *"give this page its own copy"* did not happen.
 ///
-/// ★★ Called from **three positions**, extending [`record_rotate`]'s split:
+/// Called from **three positions**, extending [`record_rotate`]'s split:
 /// `app::dispatch::format` records `NothingInAForm` from the **selection**
 /// ([`record_inside_form`]'s placement); `app::actions::xobject::fanout`
 /// records `NotShared` from the **document**, after one page walk on the press
 /// and before `vector_edit`; and `xobject::unshare` records what the **engine**
 /// returns from inside the closure ([`record_resize_not_rebuildable`]'s).
 ///
-/// ★★★ **There is deliberately no matching "it worked" call**, unlike
+/// **There is deliberately no matching "it worked" call**, unlike
 /// [`record`], which writes `None` on a grant. This verb's success is narrated
 /// instead — `crate::text::unshare::unshared`, carried out through
 /// `vector_edit`'s **disclosure** list rather than through this store, because
@@ -304,6 +266,23 @@ pub(crate) fn record_unshare(why: crate::text::unshare::UnshareRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Unshare(why)));
 }
 
+/// Record that `file.save_copy` was given a destination and produced no file.
+///
+/// Called from `crate::app::save::write_and_report`, which is in the **apply**
+/// phase rather than in the dispatcher — the one difference from [`record`]'s
+/// call site, and it is why this is a separate entry point rather than a second
+/// argument to that one. [`retire`] runs at the top of `dispatch_command`, so a
+/// sentence recorded during the apply of the *same* frame survives it: the
+/// order is dispatch (retire, raise the action) → apply (write, record) → next
+/// frame (the bar draws it) → the operator's next command (retire).
+///
+/// Unconditional, and there is deliberately no matching "the save worked" call
+/// that stores `None`. A successful save-a-copy produces a file at a path the
+/// operator typed into a dialog they were looking at, which is the most visible
+/// confirmation this application has; adding a sentence for it would narrate
+/// what they just did. Two saves in a row, one failing and one succeeding, are
+/// still handled — the second press retires the first's sentence through
+/// [`retire`] before its own arm runs.
 pub(crate) fn record_save_failure() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::SaveFailed));
 }
@@ -317,7 +296,7 @@ pub(crate) fn record_save_failure() {
 /// they were looking at, the window closed, and a sentence telling them so
 /// would narrate what they just did.
 ///
-/// # ★ What must be true at the call site before this is reached
+/// # What must be true at the call site before this is reached
 ///
 /// The configuration has **already been adopted**. That ordering is the whole
 /// meaning of [`Declined::SettingsNotSaved`]'s sentence, and calling this
@@ -336,11 +315,11 @@ pub(crate) fn record_settings_not_saved() {
 /// top of `dispatch_command`, so a sentence recorded during the apply of the
 /// same frame survives it.
 ///
-/// # ★ Why the dispatcher does not decide this
+/// # Why the dispatcher does not decide this
 ///
 /// It could: `PdfcerApp` has the session, and `view.zoom_selection` sets the
 /// precedent of a dispatch arm recording an outcome. It must not, because the
-/// dispatcher's arms **route** (`HANDOFF.md` §6), and "is there anything to
+/// dispatcher's arms **route**, and "is there anything to
 /// undo?" is a question about the document that the apply phase has to ask
 /// anyway before it touches the session. Asking it in both places is how the
 /// greyed control and the sentence come to disagree.
@@ -361,7 +340,7 @@ pub(crate) fn record_history_empty(declined: Declined) {
 /// [`record_history_empty`] is and for the same reason: the arm holding the
 /// session is the one that can tell.
 ///
-/// # ★ Why only two of the engine's five refusals reach here
+/// # Why only two of the engine's five refusals reach here
 ///
 /// `adopt_widget` refuses five ways. Three of them cannot happen from this
 /// surface and wording them would be wording states the operator cannot be in:
@@ -377,14 +356,13 @@ pub(crate) fn record_history_empty(declined: Declined) {
 /// visible to whoever is debugging, and never on the status bar in the engine's
 /// own words.
 ///
-/// ★ **Corrected 2026-09-04 (O116):** this used to end *"absent from the status
-/// bar an operator reads"*, and that is no longer true. Those three now reach
-/// the bar as [`Declined::EditRefused`] — *"That change was refused, and the
-/// document is unchanged."* — because the funnel's floor words every refusal no
-/// verb claimed. That is the right outcome rather than a leak: an unreachable
-/// refusal that somehow happened is still a gesture that did nothing, and the
-/// operator is owed a sentence about it. What stays off the bar is the engine's
-/// *prose*, which was always the property this paragraph was defending.
+/// Those three still reach the bar as [`Declined::EditRefused`] — *"That
+/// change was refused, and the document is unchanged."* — because the funnel's
+/// floor words every refusal no verb claimed (O116). That is the right outcome
+/// rather than a leak: an unreachable refusal that somehow happened is still a
+/// gesture that did nothing, and the operator is owed a sentence about it. What
+/// stays off the bar is the engine's *prose*, which is the property this
+/// paragraph defends.
 pub(crate) fn record_adopt_refusal(declined: Declined) {
     LAST.with_borrow_mut(|slot| *slot = Some(declined));
 }
@@ -396,7 +374,7 @@ pub(crate) fn record_adopt_refusal(declined: Declined) {
 /// closure, exactly as [`record_adopt_refusal`] is and for the same reason: the
 /// arm holding the session is the one that can tell which refusal happened.
 ///
-/// # ★ Why this is a second function with an identical body rather than a
+/// # Why this is a second function with an identical body rather than a
 /// second caller of the first
 ///
 /// Because the name is the documentation. `record_adopt_refusal`'s doc carries
@@ -407,17 +385,16 @@ pub(crate) fn record_adopt_refusal(declined: Declined) {
 /// a reason to merge them; `record_history_empty` above makes the same argument
 /// and has the same body.
 ///
-/// # ★★ Why a decline and not a `record_note`
+/// # Why a decline and not a `record_note`
 ///
-/// The pre-check this replaced used `crate::app::actions::record_note`, which
-/// was right for a sentence the shell produced on its own before any verb ran.
-/// It is wrong now. A note reports something that **happened**; this reports
-/// that nothing did. The funnel's floor (`decline::floor`) exists precisely to
-/// word a refusal no verb claimed, and its contract is that a verb recording
-/// from inside the closure **speaks first** and the floor yields to it. So this
-/// is the seventh such recorder, and using the note channel instead would put a
-/// specific sentence in one slot while the floor put a generic one in the
-/// other, for a single gesture.
+/// `crate::app::actions::record_note` is the channel for a sentence the shell
+/// produces on its own before any verb runs. A note reports something that
+/// **happened**; this reports that nothing did. The funnel's floor
+/// (`decline::floor`) exists precisely to word a refusal no verb claimed, and
+/// its contract is that a verb recording from inside the closure **speaks
+/// first** and the floor yields to it — so using the note channel here would
+/// put a specific sentence in one slot while the floor put a generic one in
+/// the other, for a single gesture.
 pub(crate) fn record_field_author_refusal(declined: Declined) {
     LAST.with_borrow_mut(|slot| *slot = Some(declined));
 }
@@ -430,7 +407,7 @@ pub(crate) fn record_field_author_refusal(declined: Declined) {
 /// `apply::vector_edit`'s closure, which is where the session is and therefore
 /// the only place that can tell which refusal happened.
 ///
-/// # ★ The third one-line sibling, and the same argument as the second
+/// # The third one-line sibling, and the same argument as the second
 ///
 /// [`record_adopt_refusal`] and [`record_field_author_refusal`] have this
 /// body. So does [`record_history_empty`]. The family's rule is in this file's
@@ -440,18 +417,18 @@ pub(crate) fn record_field_author_refusal(declined: Declined) {
 /// false about where they are. Identical bodies are not a reason to merge; the
 /// bodies are not what a reader is reading.
 ///
-/// # ★★ Why this did not exist until 2026-09-12, which is the finding
+/// # Why the rename route needs a recorder of its own
 ///
-/// Because **the rename route recorded nothing at all**. `forms::rename`
-/// called `session.rename_field` and mapped only the success case, so every
-/// way a rename can fail reached the operator as `decline::floor`'s generic
-/// *"That change was refused"*. The floor worked exactly as designed and that
-/// is what made it invisible: there was a sentence, it just was not an answer.
+/// Without one, `forms::rename` maps only the success case of
+/// `session.rename_field` and every way a rename can fail reaches the operator
+/// as `decline::floor`'s generic *"That change was refused"*. The floor works
+/// exactly as designed, and that is what makes such a gap invisible: there is
+/// a sentence, it just is not an answer.
 ///
-/// ⇒ And the one that mattered was a **collision**, not anything exotic. The
+/// ⇒ And the one that matters is a **collision**, not anything exotic. The
 /// Properties panel greys its button on every refusal it can predict from the
 /// typed string alone; a collision needs the field tree, so it is the one
-/// refusal that had to arrive from the engine — and the one an operator meets.
+/// refusal that must arrive from the engine — and the one an operator meets.
 pub(crate) fn record_field_rename_refusal(declined: Declined) {
     LAST.with_borrow_mut(|slot| *slot = Some(declined));
 }
@@ -464,7 +441,7 @@ pub(crate) fn record_field_rename_refusal(declined: Declined) {
 /// both land. Two raisers, one recorder, because they are one event from the
 /// operator's side: *I looked for a node edit and did not get one.*
 ///
-/// ★ This is the **only** report of that refusal. The gesture preflights
+/// This is the **only** report of that refusal. The gesture preflights
 /// through `EditSession::reshape_annotation_preview`, so no action reaches an
 /// engine verb, no funnel is entered and no `EditRefused` is recorded; if this
 /// call is removed the operator gets a drag that does nothing and says nothing,

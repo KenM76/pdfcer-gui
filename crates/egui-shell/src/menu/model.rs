@@ -3,7 +3,7 @@
 //! # A menu is a ribbon band with a different key
 //!
 //! `RIBBON_IA.md` §6 describes the context menu as *"the other half of
-//! making selection meaningful"*, and §5 as **a third surface carrying the
+//! making selection mean something"*, and §5 as **a third surface carrying the
 //! same commands again** for the user who right-clicks. "The same commands
 //! again" is the design constraint that decides this file's entire shape:
 //! if a context menu were a second vocabulary, every command an application
@@ -54,21 +54,13 @@
 //! A menu belongs in the same document as the ribbon it mirrors: one file
 //! to ship, one file to merge, one file for the operator to edit. So
 //! [`Shell::menus`] carries them, and [`menus_of`] is the **single**
-//! function that reads it.
+//! function that reads that field — nothing else in this crate touches it,
+//! so there is one answer to "where did this menu come from".
 //!
-//! That field arrived on 2026-08-13, after this module was written against
-//! its absence. Until it landed, `menus_of` returned a static empty
-//! catalog and two tests asserted the gap — one of them worded to fail on
-//! the day the field appeared, so the pending edit would be found by CI
-//! rather than by an operator whose customized menus silently did nothing.
-//! Both were rewritten into assertions about the working behaviour rather
-//! than deleted, which is why they still read as though they are about the
-//! seam: they are.
-//!
-//! Nothing else in this crate is blocked by it: every entry point takes a
-//! [`MenuLookup`], [`Menus`] implements it, and an application can carry
-//! its menus in a separate `.ron` file today via [`Menus::from_ron`] with
-//! no loss of function.
+//! No entry point requires the manifest, though. Every one of them takes a
+//! [`MenuLookup`], [`Menus`] implements it, and an application that keeps
+//! its menus in a separate `.ron` file loads them with [`Menus::from_ron`]
+//! and loses nothing.
 
 use serde::{Deserialize, Serialize};
 
@@ -274,9 +266,8 @@ impl Menus {
     /// as well as on a ribbon tab.** `RIBBON_IA.md` §5 states this
     /// explicitly: the context menu *"carries the same commands again …
     /// that is not duplication in the P1 sense — context menus are not
-    /// tabs"*. When the [`Shell`] field lands, `Shell::validate`'s
-    /// one-command-one-tab check must continue to walk `all_tabs()` only;
-    /// extending it over menus would forbid the design.
+    /// tabs"*. `Shell::validate`'s one-command-one-tab check therefore walks
+    /// `all_tabs()` only; extending it over menus would forbid the design.
     ///
     /// # Errors
     ///
@@ -343,11 +334,10 @@ impl Menus {
 
     /// Parse a menu catalog from RON.
     ///
-    /// Exists so an application can ship and an operator can customize
-    /// context menus **today**, before the [`Shell`] field lands. Once it
-    /// does, the ordinary path is [`Shell::from_ron`] and this becomes the
-    /// escape hatch for an application that wants menus in a file of their
-    /// own.
+    /// The ordinary path is [`Shell::from_ron`], which reads the menus out
+    /// of the same document as the ribbon. This is the escape hatch for an
+    /// application that would rather keep its menus in a file of their own,
+    /// or ship them without using the manifest at all.
     ///
     /// # Errors
     ///
@@ -372,11 +362,11 @@ impl Menus {
     ///
     /// As [`Self::to_ron`].
     pub fn to_ron_pretty(&self) -> Result<String, MenuError> {
-        // ★ Through the manifest's `tidy` for the reason its own doc gives:
+        // Through the manifest's `tidy` for the reason its own doc gives:
         // RON 0.8 breaks every struct variant across three lines, and
-        // `Item::Command` became one when `ItemSize` landed. A menu document
-        // is edited by hand exactly as a ribbon manifest is, and the two
-        // must not disagree about how a command is spelled on disk.
+        // `Item::Command` is one. A menu document is edited by hand exactly
+        // as a ribbon manifest is, and the two must not disagree about how a
+        // command is spelled on disk.
         Ok(crate::manifest::tidy(&ron_options().to_string_pretty(
             self,
             ron::ser::PrettyConfig::default().extensions(IMPLICIT_SOME),
@@ -399,7 +389,7 @@ const IMPLICIT_SOME: ron::extensions::Extensions = ron::extensions::Extensions::
 
 /// The RON dialect a menu document is read and written in.
 ///
-/// # ★ This must stay identical to [`crate::manifest`]'s
+/// # This must stay identical to [`crate::manifest`]'s
 ///
 /// It is a second copy of one decision, which is a drift hazard, and the
 /// alternative was worse: `manifest::ron_options` is private and
@@ -471,18 +461,17 @@ pub enum MenuError {
 ///
 /// # Why the entry points take this rather than a `&Shell`
 ///
-/// [`Shell`] is where menus belong and where they will live (see the
-/// module header). But the field is not there yet, and a renderer written
-/// against `shell.menus` would either fail to compile today or — far
-/// worse — compile against a stub, so that **every rendering test passed
-/// by drawing nothing**. That is the vacuum this crate has already been
-/// bitten by once, recorded in `ribbon/testfont.rs`: a suite that is green
-/// because there was nothing for it to fail against.
+/// [`Shell`] is where menus belong, and it is not the only place they can
+/// come from: an application may build a menu in code, or load one from a
+/// file of its own, and neither has a `Shell` to hand. A renderer that
+/// demanded one would force such an application to construct an otherwise
+/// empty manifest, and a rendering test to do the same — which is how a
+/// suite ends up green because there was nothing for it to fail against
+/// (the failure mode `ribbon/testfont.rs` exists to prevent).
 ///
-/// A trait removes the choice. [`Menus`] implements it and is fully
-/// exercised today; `Shell` implements it through the single pending
-/// [`menus_of`]; and the entry-point signatures do not change on the day
-/// the field lands.
+/// A trait removes the choice. [`Menus`], a single [`Menu`] and [`Shell`]
+/// all implement it, and every entry point in this module accepts whichever
+/// of the three the caller already has.
 pub trait MenuLookup {
     /// The menu for this context id, if one is defined.
     fn menu_for(&self, context_id: &str) -> Option<&Menu>;
@@ -531,28 +520,15 @@ impl MenuLookup for Shell {
     }
 }
 
-/// **★ The one function waiting on the `Shell` field.**
+/// **The one function that reads [`Shell::menus`].**
 ///
-/// When [`Shell`] gains
+/// Everything in this crate that asks a `Shell` for a menu comes through
+/// here, so the field has exactly one reader and the absent case has
+/// exactly one answer.
 ///
-/// ```text
-/// pub menus: Option<crate::menu::Menus>,
-/// ```
-///
-/// this body becomes exactly:
-///
-/// ```text
-/// shell.menus.as_ref().unwrap_or(&EMPTY)
-/// ```
-///
-/// and `a_shell_carries_no_menus_until_the_manifest_field_lands` starts
-/// failing, which is the point of that test: the pending edit is
-/// discovered by CI rather than by an operator whose customized menus
-/// silently do nothing.
-///
-/// Until then a `Shell` honestly carries no menus, and the renderer's
-/// answer to "no menu for this context" is already the right one — the
-/// menu does not open.
+/// A manifest that declares no menus resolves to the empty catalog rather
+/// than to an error: no menu for a context is a right-click that does nothing,
+/// which is the correct behaviour and not a failure.
 pub(crate) fn menus_of(shell: &Shell) -> &Menus {
     shell.menus.as_ref().unwrap_or(&EMPTY)
 }
@@ -616,19 +592,19 @@ mod tests {
         // The shapes this module documents must actually appear, or the
         // examples are fiction.
         //
-        // ★ Asserted on the COMPACT form since `ItemSize` made `Item::Command`
-        // a struct variant: RON's pretty printer puts a tuple variant on one
-        // line and breaks a struct variant across three, so a `contains` for
-        // the one-line spelling now fails on the pretty form for a manifest
-        // that is perfectly correct. The compact form is where the spelling
-        // is a single token, and the spelling is what this line is pinning.
+        // The one-token spelling is asserted on the COMPACT form because
+        // `Item::Command` is a struct variant, and RON's pretty printer
+        // breaks a struct variant across three lines. A `contains` for the
+        // one-line spelling would fail on the pretty form of a perfectly
+        // correct document; the compact form is where the spelling this line
+        // pins is a single token.
         let compact = original.to_ron().expect("serializes");
         assert!(compact.contains("Command(id:\"edit.cut\")"), "{compact}");
         assert!(pretty.contains("Separator"), "{pretty}");
         assert!(pretty.contains("canvas.object"), "{pretty}");
     }
 
-    /// **★ The menu RON dialect is the manifest's dialect.**
+    /// **The menu RON dialect is the manifest's dialect.**
     ///
     /// [`ron_options`] is a second copy of one decision, made because
     /// `manifest`'s is private and `manifest/` is not this module's to
@@ -677,7 +653,7 @@ mod tests {
         assert!(back.0[0].items.is_none(), "`None` must not resurrect");
     }
 
-    /// **★ Customization: replace, add, and reference.**
+    /// **Customization: replace, add, and reference.**
     ///
     /// The three rows of [`Menus::overlay`]'s table, asserted together
     /// because the interesting part is that they coexist — a layer that
@@ -790,7 +766,7 @@ mod tests {
         );
     }
 
-    /// **★ A command may appear in many menus, and on a tab as well.**
+    /// **A command may appear in many menus, and on a tab as well.**
     ///
     /// `RIBBON_IA.md` §5: the context menu *"carries the same commands
     /// again … that is not duplication in the P1 sense — context menus are
@@ -822,14 +798,7 @@ mod tests {
         );
     }
 
-    /// **★ A `Shell` carries its menus, and both arms of the `Option` work.**
-    ///
-    /// This test was written before the field existed, asserting the gap so
-    /// that adding the field would *fail CI* rather than be discovered by
-    /// an operator whose customized menus silently did nothing. The field
-    /// landed 2026-08-13; this is the replacement its own doc comment
-    /// asked for, and it keeps both halves under test rather than only the
-    /// interesting one.
+    /// **A `Shell` carries its menus, and both arms of the `Option` work.**
     ///
     /// The `None` arm matters as much as the `Some` arm: a manifest that
     /// declares no menus is the common case, and it must resolve to "no
@@ -868,14 +837,13 @@ mod tests {
         );
     }
 
-    /// **★ One document carries the ribbon and its menus, hand-written.**
+    /// **One document carries the ribbon and its menus, hand-written.**
     ///
-    /// Before the `Shell::menus` field landed, a `menus:` key in a shell
-    /// document was silently *dropped* — `serde` ignores unknown fields, so
-    /// the file loaded, the ribbon worked, and the operator's context menus
-    /// did nothing with no error anywhere. This test asserted that gap; it
-    /// now asserts the fix, which is the same reason its sibling above was
-    /// rewritten rather than deleted.
+    /// The claim under test is that a `menus:` key in a shell document
+    /// survives the parse. It is worth a test of its own because the failure
+    /// is silent: `serde` ignores a field it does not know, so a shell that
+    /// did not carry menus would load the file, draw the ribbon, and leave
+    /// the operator's context menus doing nothing with no error anywhere.
     ///
     /// The input is deliberately **hand-written** rather than produced by
     /// the serializer. A round-trip test cannot detect an ergonomics defect

@@ -2,30 +2,24 @@
 //!
 //! # ★ The reservation, and the exact ordering that enforces it
 //!
-//! `MODES_AND_PANELS.md` Part 2, failure mode #8:
+//! `MODES_AND_PANELS.md` Part 2, failure mode #8 — **tab overflow with no
+//! escape**: past a handful of tabs the overflow *button itself* gets
+//! hidden, leaving no route to the hidden tabs. The rule it sets is that
+//! *the overflow affordance is reserved space, never the first thing
+//! squeezed out.*
 //!
-//! > **Tab overflow has no escape** — past ~6 tabs the overflow *button
-//! > itself* gets hidden, leaving no route to the hidden tabs. → *The
-//! > overflow affordance is reserved space, never the first thing
-//! > squeezed out.*
+//! It is an easy shape to walk into. A tiling dependency that answers an
+//! overflowing tab bar with `ScrollBarVisibility::AlwaysHidden` hides tabs
+//! behind scroll arrows, which is the same class of failure; §"It is built
+//! on `egui` directly, not on `egui_tiles`" counts that among the reasons
+//! this dock owns its own layout.
 //!
-//! And the same document's assessment of the engine originally chosen for
-//! this dock, which is why the requirement is written down at all:
-//!
-//! > And one it walks straight into: **#8, tab overflow.** `egui_tiles`
-//! > 0.16 answers an overflowing tab bar by hiding tabs behind scroll
-//! > arrows with `ScrollBarVisibility::AlwaysHidden` — the same class of
-//! > failure. The existing `dock.rs` already caps default tab groups at
-//! > two panes specifically to dodge it, with a test enforcing the cap.
-//! > **The ~1-day overflow menu is what retires that cap safely**, and it
-//! > must reserve its own space rather than compete for it.
-//!
-//! This file is that overflow menu, and **the cap is retired**: nothing
-//! in this crate limits how many panels a stack may hold, and
+//! This file is that overflow menu, and it is why **nothing in this crate
+//! limits how many panels a stack may hold**. A cap on tabs per stack is a
+//! mitigation for a missing affordance; with the affordance present it is
+//! only a restriction.
 //! `a_stack_of_nine_panels_keeps_every_one_reachable` is the test that
-//! replaces the old two-pane cap test. The cap was a mitigation for a
-//! missing affordance; with the affordance present it would only be a
-//! restriction.
+//! holds the line.
 //!
 //! ## The order of operations, which is the whole mechanism
 //!
@@ -42,9 +36,9 @@
 //! reservation. Step 5 then enforces it a second time, in a different
 //! currency: the tabs are given a rectangle whose width *is* the budget,
 //! so `egui`'s own clipping backs up the arithmetic. Two independent
-//! mechanisms, because the field report describes a control that was
-//! *drawn* — the arithmetic alone is what everybody writes and it is what
-//! failed.
+//! mechanisms, because the failure mode describes a control that **is**
+//! drawn and still unreachable — the arithmetic alone is what everybody
+//! writes, and on its own it is not enough.
 //!
 //! The arithmetic itself lives in [`super::plan`] with no `egui` in its
 //! signatures, so it can be swept across hundreds of widths in a unit
@@ -56,11 +50,11 @@
 //! here reports a minimum size. The stack's width comes from the
 //! column's share and [`super::plan::MIN_COLUMN_WIDTH`], both of which
 //! are ignorant of the tab list. An inactive tab therefore cannot hold
-//! the dock open — the observed defect where you must close a panel you
-//! cannot see in order to narrow a dock you can.
+//! the dock open — the defect where you must close a panel you cannot see
+//! in order to narrow a dock you can.
 //!
-//! **#11 — focus-existing shows stale content.** *"Reopening a stacked
-//! dialog selected its tab but kept rendering the previous one."* This
+//! **#11 — focus-existing shows stale content.** Reopening a stacked
+//! dialog selects its tab but keeps rendering the previous one. That
 //! cannot arise here, because the tab bar does not *select* anything: it
 //! records a `super::ctx::Intent`, and the body is drawn from
 //! `stack.active` on the next frame. There is exactly one source of
@@ -89,10 +83,9 @@
 //! Every tab carries a `WidgetInfo` with the panel's **purpose** as its
 //! accessible name — not its label, which a screen-reader user would
 //! learn nothing from that a sighted user does not already see — and its
-//! selected state. This is carried across wholesale from the previous
-//! implementation, which had to supply the same information manually
-//! because its engine *"ships its tab bars unnamed to AccessKit"* while
-//! still making them focusable, which it correctly called the worst case.
+//! selected state. It is supplied here rather than inherited, because a
+//! tab bar that ships unnamed to AccessKit while still being focusable is
+//! the worst case there is: reachable, and silent about what it is.
 //!
 //! The same honest limitation applies and is restated rather than
 //! quietly dropped: **`egui` 0.35 has no `Tab` or `TabList`
@@ -228,9 +221,8 @@ fn draw_tab(
 
     // R84 — selected state is never colour alone. The fill is the
     // familiar cue; the weight is the one that survives greyscale and
-    // colour-vision deficiency, and the previous implementation added it
-    // for exactly that reason after an audit found colour-fill-only
-    // selection to be a recurring blind spot on this project.
+    // colour-vision deficiency. Colour-fill-only selection is a recurring
+    // blind spot, which is why the rule is written as a rule.
     let text = if selected {
         RichText::new(label)
             .strong()
@@ -257,8 +249,7 @@ fn draw_tab(
                 // and the tab would overhang into the reservation — the
                 // defect this file exists to prevent, arriving from the
                 // tab's side rather than the affordance's.
-                // ★★★ THE PLATE IS STATED, and not stating it was a defect
-                // that shipped in all three presets — 2026-09-03.
+                // ★★★ THE PLATE IS STATED, and it has to be.
                 //
                 // `Button::selected(true)` alone does NOT leave the fill
                 // alone. `egui::Style::button_style` overwrites it:
@@ -282,17 +273,16 @@ fn draw_tab(
                 // the worst because its panel is pure white, so the wash barely
                 // darkens it.
                 //
-                // ★★ `ribbon::tabs` had the identical shape and already states
-                // its fill — `Button::selectable(...).fill(accent)`. The two
-                // are the same control in two docks and they now agree.
+                // ★★ `ribbon::tabs` has the identical shape and states its
+                // fill the same way — `Button::selectable(...).fill(accent)`.
+                // The two are the same control in two docks and they agree.
                 //
-                // ★★★ AND `tools/gates/check-strong-text.sh` WAS BLESSING THIS
-                // SITE ON A FALSE PREMISE. Its header said of both tab files:
-                // *"Both are drawn ON the accent fill, so `on_accent` is the
-                // right colour anyway."* True of `ribbon/tabs.rs`, which fills.
-                // This file contained **no `.fill(` at all**. The gate's
-                // sentence is corrected in the same change; the sentence is
-                // now true rather than merely written down.
+                // ★★★ AND `tools/gates/check-strong-text.sh` PASSES THIS SITE
+                // ON THAT PREMISE. Its header says of both tab files that both
+                // are drawn on the accent fill, so `on_accent` is the right
+                // colour anyway. That sentence is true only while both files
+                // state their fill; drop the `.fill(` below and the gate goes
+                // on passing a site whose reason has stopped being true.
                 //
                 // `.fill()` wins over the class-based styling because
                 // `Button`'s own fill is applied after `button_style` has run.
@@ -414,8 +404,7 @@ fn draw_overflow(
     // reported with a perfectly plausible `Rect`, and unclickable. That
     // is the exact failure the RAG entry
     // `a_sibling_row_that_overflows_grows_the_parent_max_rect_...`
-    // records costing this project a real defect in the ribbon a few
-    // hours before this file was written. Clamping keeps the affordance
+    // records, on the ribbon. Clamping keeps the affordance
     // on screen and spends the shortfall on characters, which the
     // tooltip recovers; spending it on position recovers nothing.
     let left = rect.left().max(rect.right() - bar.overflow_width);
@@ -556,15 +545,14 @@ mod tests {
         rects
     }
 
-    /// ★ **The two-pane cap is retired: nine panels in one stack, and
-    /// every one of them is reachable.**
+    /// ★ **No cap on tabs per stack: nine panels in one stack, and every
+    /// one of them is reachable.**
     ///
-    /// The previous implementation capped a default tab group at two
-    /// panes and enforced the cap with a test, *"specifically to dodge"*
-    /// the engine hiding overflowing tabs behind scroll arrows. This is
-    /// the test that replaces it, and it asserts the property the cap was
-    /// a proxy for: at a width that cannot show nine tabs, the affordance
-    /// exists — so nothing is stranded.
+    /// Capping a stack at two panes is the cheap way to dodge an engine
+    /// that hides overflowing tabs behind scroll arrows, and a test on the
+    /// cap asserts a proxy rather than the property. This asserts the
+    /// property itself: at a width that cannot show nine tabs, the
+    /// affordance exists — so nothing is stranded.
     #[test]
     fn a_stack_of_nine_panels_keeps_every_one_reachable() {
         let rects = render(9, 240.0, Vec2::new(1280.0, 800.0));
@@ -583,9 +571,9 @@ mod tests {
     /// inside the bar it belongs to.**
     ///
     /// The unit tests in [`super::super::plan`] prove the arithmetic; this
-    /// proves the *drawing* obeys it. Both are needed, because the field
-    /// report describes a control that was computed correctly and placed
-    /// where nobody could click it.
+    /// proves the *drawing* obeys it. Both are needed, because the failure
+    /// mode describes a control that is computed correctly and placed where
+    /// nobody can click it.
     #[test]
     fn the_overflow_affordance_is_drawn_inside_its_tab_bar() {
         let rects = render(9, 240.0, Vec2::new(1280.0, 800.0));

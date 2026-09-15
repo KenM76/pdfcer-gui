@@ -1,48 +1,22 @@
 //! # `app::state::renderreq` — what this view is asking the renderer FOR
 //!
-//! ## The seam
+//! `state.rs` answers *what is open and how it is being looked at*. This file
+//! answers the narrower question hanging off the end of it: **given all of
+//! that, what exactly do we hand to `pdfcer-render`, and how do we know whether
+//! the picture we already have is still a picture of it?** These are the only
+//! members of `impl OpenDoc` that name `RenderKey`, `RenderRequest` or a raster
+//! scale.
 //!
-//! `state.rs` answers *what is open and how it is being looked at*: the
-//! document, the pages, the zoom, the scroll, the selection, the epochs. This
-//! file answers a narrower question that hangs off the end of it — **given all
-//! of that, what exactly do we hand to `pdfcer-render`, and how do we know
-//! whether the picture we already have is still a picture of it?**
+//! ★★★ **The key and the request must change together.** A new input that
+//! affects the picture has to enter the **key** — or a stale texture survives an
+//! edit — *and* the **request** — or the new picture is drawn without it.
+//! Splitting the two across files is how a toggle ships that visibly does
+//! nothing; `crate::panels::layers`' own test names which of its preconditions
+//! remains open.
 //!
-//! Four functions, and they are one subject:
-//!
-//! | function | question |
-//! |---|---|
-//! | [`OpenDoc::render_key`] | is the texture I am holding still true? |
-//! | [`OpenDoc::render_key_for`] | …for a page that is not the current one |
-//! | [`OpenDoc::region_for`] | which part of that page is worth rasterizing? |
-//! | [`OpenDoc::render_request_for`] | the whole order, ready for the worker |
-//!
-//! They belong together because a change to one is nearly always a change to
-//! the others: a new input that affects the picture has to enter the **key**
-//! (or a stale texture survives an edit) *and* the **request** (or the new
-//! picture is drawn without it). Splitting those two across files is how a
-//! toggle ships that visibly does nothing — this crate has had exactly that
-//! defect, and `crate::panels::layers`' own test still names which of its
-//! preconditions remains open.
-//!
-//! ## Why it moved, 2026-09-10
-//!
-//! R2. `state.rs` reached 1,580 lines when [`OpenDoc::load_options`] landed for
-//! the duplicate-key re-read, and `tools/gates/check-file-size.sh`'s header says
-//! what to do about that: *"Split the module along its seams — one subject per
-//! file — rather than raising the limit."*
-//!
-//! This is the seam that was already there. Everything else in that `impl` is
-//! about the document or the operator's view of it; these four are about an
-//! **order placed with another crate**, and they are the only members that name
-//! `RenderKey`, `RenderRequest` or a raster scale.
-//!
-//! ## What it does NOT contain, deliberately
-//!
-//! [`OpenDoc::strip`] stayed behind. A strip is where the pages *are* — a
-//! layout fact the whole frame agrees on, used by hit-testing and scrolling as
-//! much as by drawing — and it names no render type. It sits directly under
-//! these four in `state.rs` and the resemblance is superficial.
+//! [`OpenDoc::strip`] deliberately stays in `state.rs`: a strip is where the
+//! pages *are*, a layout fact the whole frame agrees on and used by hit-testing
+//! and scrolling as much as by drawing, and it names no render type.
 
 use std::sync::Arc;
 
@@ -127,10 +101,10 @@ impl OpenDoc {
     ) -> Option<RenderRequest> {
         let page = self.pages.get(page_index)?;
         Some(RenderRequest {
-            // ★ O24's region tier, live since 2026-08-22. `None` below the
-            // pixmap ceiling — which is every zoom that can render whole-page,
-            // so panning there is unchanged — and `Some` above it, where the
-            // alternative is the operator's `MAX_PIXMAP_EDGE` failure.
+            // ★ O24's region tier. `None` below the pixmap ceiling — which is
+            // every zoom that can render whole-page, so panning there is
+            // unchanged — and `Some` above it, where the alternative is the
+            // operator's `MAX_PIXMAP_EDGE` failure.
             region: self.region_for(page_index),
             // The `Arc` is handed over rather than a `DocumentView`, which is
             // what lets the borrow stay local to the worker thread.
@@ -158,9 +132,9 @@ impl OpenDoc {
             // cache instead, which is the more direct mechanism and the visible
             // one.
             //
-            // Cloned rather than shared: one `String` and twelve `Copy` fields,
-            // paid once per render request, against a rasterization measured in
-            // tens of milliseconds.
+            // Cloned rather than shared: a flat record of scalars and one
+            // `String`, paid once per render request, against a rasterization
+            // measured in tens of milliseconds.
             settings: self.settings.clone(),
         })
     }

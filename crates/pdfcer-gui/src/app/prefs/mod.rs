@@ -5,8 +5,8 @@
 //! That store has a stated purpose and this is not it. Its own window says so
 //! in its first paragraph: *"The PDF standard leaves some things genuinely
 //! undefined … Where that happens, pdfcer asks you rather than deciding
-//! quietly."* Every one of its thirteen entries exists because a **standard
-//! declines to have an opinion**, and each one states what clause is silent.
+//! quietly."* Every one of its entries exists because a **standard declines to
+//! have an opinion**, and each one states what clause is silent.
 //!
 //! How sharp a page is rasterised is not that. Nothing in ISO 32000-1 is silent
 //! about it; it is a **preference**, a trade of sharpness against time that
@@ -15,10 +15,8 @@
 //! framing dishonest — and would put a value with no clause number in a file
 //! whose every entry cites one.
 //!
-//! `canvas::markup::pen`'s header already named this module before it existed:
-//!
-//! > Persisting it belongs with the ribbon layout and the keymap, under the
-//! > same `userdata/` roof and in their own file.
+//! Persisting it belongs with the ribbon layout and the keymap, under the same
+//! `userdata/` roof and in their own file.
 //!
 //! ## Same roof, same shape, same fail-soft contract
 //!
@@ -34,51 +32,42 @@
 //! The file is meant to be hand-editable, and a parser that fails a whole
 //! document over one typo punishes the operator for using it.
 //!
-//! ## ★ Why the RENDER settings were two and not seven
+//! ## ★ Why there are two render preferences and not seven
 //!
-//! `RIBBON_IA.md` §5.2 commissioned a View ▸ Render group of five, plus two
-//! behaviour settings, and `shell::manifest`'s `DIRECTED` list carried all
-//! seven as *"named individually, with their value sets and their defaults,
-//! when this shell was commissioned"*. They were registered, drawn on the
-//! ribbon, and inert.
-//!
-//! Checked against the engine on 2026-08-17, only two can be honoured:
+//! `RIBBON_IA.md` §5.2 commissions a View ▸ Render group of five, plus two
+//! behaviour settings. Only two of the seven name something this shell and
+//! this engine can honour:
 //!
 //! | commissioned | verdict |
 //! |---|---|
-//! | **Render quality** | ✅ [`RenderQuality`] — a raster-scale multiplier. `viewer::raster_scale` was `zoom × pixels_per_point` exactly, with no multiplier at all, so this is new capability rather than an exposed constant |
-//! | **Zoom settle delay** | ✅ [`Prefs::zoom_settle_ms`] — `render::settle::ZOOM_SETTLE` was a compiled-in 150 ms |
+//! | **Render quality** | ✅ [`RenderQuality`] — a raster-scale multiplier over `viewer::raster_scale`, which is otherwise `zoom × pixels_per_point` exactly |
+//! | **Zoom settle delay** | ✅ [`Prefs::zoom_settle_ms`] — the operator's number in place of `render::settle::ZOOM_SETTLE`'s compiled-in one |
 //! | Render strategy (whole page · tiled progressive) | ❌ there is no tiled-progressive path in this shell. `pdfcer_render::render_page_region` exists, so it is buildable — but it is a rendering **architecture**, not a setting, and a radio offering it would be an affordance for a code path that does not exist |
-//! | Thin lines | ⚠ **❌ then, ✅ now.** It had no such field — verified by reading `RenderOptions`' eleven public fields — and the engine shipped a twelfth on 2026-09-05 (`stroke_display`, `Pass 254.0`), the day this shell asked, because the operator asked for the control back by name (`OPERATOR_REQUESTS.md` O137). It is a **View toggle** rather than a preference — `view.line_weights`, per document, on `crate::viewer::ViewState` — for the reason the row below this table gives about what a ribbon tab picks: it is flipped several times while reading one sheet. The argument for where a persisted default would go, if he asks for one, is at `crate::text::commands::view_line_weights` |
-//! | Antialiasing | ❌ `interpret.rs` sets `anti_alias: true` as a literal at two call sites and `RenderOptions` exposes no knob. (`shading.rs`'s `anti_alias` is the *document's* `/AntiAlias` key — a property of the shading pattern, not a viewer preference, and honouring it is correct.) |
-//! | Floating panels (Off · Allowed) | ❌ `egui-shell`'s dock has no floating mode. Its only `floating` is `egui`'s scroll-bar style |
+//! | Thin lines | ⚠ Not a preference. `RenderOptions::stroke_display` is the engine's knob, and this shell drives it as a **View toggle** — `view.line_weights`, per document, on `crate::viewer::ViewState` — because it is flipped several times while reading one sheet, which is what a ribbon tab is for. Where a persisted default would go, if one is ever asked for, is argued at `crate::text::commands::view_line_weights` |
+//! | Antialiasing | ❌ `RenderOptions` exposes no knob; the rasteriser sets `anti_alias: true` as a literal. (`shading.rs`'s `anti_alias` is the *document's* `/AntiAlias` key — a property of the shading pattern, not a viewer preference, and honouring it is correct.) |
+//! | Floating panels (Off · Allowed) | ❌ nothing to gate: `egui_shell::dock::float` implements tear-out and no code path forbids it, so *Allowed* is the only state that exists |
 //! | App initiative (Never · Ask · Allowed) | ❌ **the setting has nothing to gate.** Nothing in this build opens a surface unasked — which is the specified default, *Never*, already true by construction. A control whose only value is the one already in force is a control that does nothing |
 //!
-//! The last row is the interesting one, and it is why this table is here
-//! rather than in a commit message: `app_initiative`'s absence is not a gap.
-//! It is a setting that would exist to switch off a behaviour pdfcer does not
-//! have. Building it would mean building the behaviour first.
+//! The last two rows are the interesting ones, and they are why this table is
+//! here: an absent preference is not always a gap. A setting that exists only
+//! to switch off a behaviour pdfcer does not have would mean building the
+//! behaviour first.
 //!
-//! `DIRECTED`'s own doc comment anticipated exactly this outcome — *"if it
-//! turns out to be wrong, the fix is deleting eight rows from one list rather
-//! than re-deriving which entries were deliberate"* — and that is what
-//! happened.
-//!
-//! ## ★ …and then two more arrived, from the opposite direction
+//! ## ★ …and two more, from the opposite direction
 //!
 //! [`opening`]'s two preferences — how the first page is fitted, and which
-//! overlays are already on — were **not** commissioned by `RIBBON_IA.md`. They
-//! came out of the `NO_SURFACE.md` sweep, which is the inventory of *every
+//! overlays are already on — are **not** commissioned by `RIBBON_IA.md`. They
+//! come from the `NO_SURFACE.md` sweep, which is the inventory of *every
 //! tunable an operator would plausibly want to change and cannot*, and they are
 //! the two rows in it that cost an operator something on **every document they
 //! ever open** rather than once.
 //!
 //! That contrast is worth carrying, because it says where the next preference
-//! will come from. The commissioned list was written from the outside, before
-//! the shell existed, and five of its seven turned out to name nothing. The
-//! sweep was written from the inside, by reading the constants the code
-//! actually holds, and both of its candidates were real. **An inventory of what
-//! the program does beats a wishlist of what it might.**
+//! will come from. A commissioned list is written from the outside, before the
+//! shell exists, and most of its rows name nothing. The sweep is written from
+//! the inside, by reading the constants the code actually holds, and both of
+//! its candidates are real. **An inventory of what the program does beats a
+//! wishlist of what it might.**
 //!
 //! ## The two stores are two files, and the operator never finds out
 //!
@@ -87,50 +76,55 @@
 //! discards both, one Save writes both, and `is_dirty` is true if either
 //! moved."*
 
-/// How big the **program's own controls** are drawn — the one accessibility
-/// preference, and the only one here that changes nothing about the document.
+/// Where pdfcer looks for a font it has to embed — the input
+/// `tools.embed_fonts` needs, and an unrecorded dependency of that command's
+/// blocker. See its header.
+pub mod fonts;
+
 /// ★★ How much memory pdfcer may spend so a page it has already drawn does not
 /// have to be drawn again.
 ///
-/// Its header carries the defect it exists for and the part of that defect a
-/// reader would otherwise carry out wrongly: the cache pruned itself to the
-/// VISIBLE SET on every frame, so the budget had never bitten, and raising the
-/// number alone would have changed nothing at all.
-/// Where pdfcer looks for a font it has to embed — the input `tools.embed_fonts`
-/// has been waiting for, and an unrecorded dependency found by re-deriving that
-/// command's blocker. See its header.
-pub mod fonts;
-
+/// Its header carries the part a reader would otherwise carry out wrongly: the
+/// cache prunes itself to the VISIBLE SET on every frame, so raising the budget
+/// on its own changes nothing at all.
 pub mod cache;
+
+/// How big the **program's own controls** are drawn — the one accessibility
+/// preference, and the only one here that changes nothing about the document.
 pub mod chrome;
+
 /// What an operator is shown when a page **first appears** — read once per
 /// document open, never on the hot path.
 pub mod opening;
-// What a plain wheel does when the document is not one long scroll -- O30.
-/// ★★ **Whether the canvas grows to show what sits off the sheet — one
-/// answer per ribbon mode**, 2026-09-11. Its own file because *why the
-/// answer is per mode at all* is the whole of the operator's request, and
-/// because it carries this group's file format — parser and writer
-/// together, on [`printing`]'s precedent. See its header.
-/// ★★ **What the three Export windows open with** -- `OPERATOR_REQUESTS.md`
-/// **O196**, 2026-09-13. Its own file for the reason [`printing`] has one: it
-/// carries this group's whole file format, parser and writer together, and the
-/// judgement about *which* of those windows' settings may be remembered is
-/// worth keeping. The DXF scale is the interesting omission; see its header.
+
+/// ★★ **What the three Export windows open with** — `OPERATOR_REQUESTS.md`
+/// **O196**. Its own file for the reason [`printing`] has one: it carries this
+/// group's whole file format, parser and writer together, and the judgement
+/// about *which* of those windows' settings may be remembered is worth keeping.
+/// The DXF scale is the interesting omission; see its header.
 pub mod exporting;
+
+/// ★★ **Whether the canvas grows to show what sits off the sheet — one answer
+/// per ribbon mode.** Its own file because *why the answer is per mode at all*
+/// is the whole of the operator's request, and because it carries this group's
+/// file format — parser and writer together, on [`printing`]'s precedent. See
+/// its header.
 pub mod offpage;
+
 /// ★ Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
 pub mod pastechords;
-/// ★★ **What the Print window opens with** — `OPERATOR_REQUESTS.md` **O166**,
-/// 2026-09-10. Its own file because deciding *which* of that window's twenty
-/// controls may be remembered is a judgement worth keeping, and because it
-/// carries this group's whole file format — parser and writer together. See
-/// its header.
+/// ★★ **What the Print window opens with** — `OPERATOR_REQUESTS.md` **O166**.
+/// Its own file because deciding *which* of that window's controls may be
+/// remembered is a judgement worth keeping, and because it carries this group's
+/// whole file format — parser and writer together. See its header.
 pub(crate) mod printing;
+
 /// How sharply a page is drawn, and how long zoom waits before drawing it.
 /// The two preferences that change what a **frame costs**.
 pub mod quality;
+
+/// What a plain wheel does when the document is not one long scroll — O30.
 pub mod wheel;
 
 use std::path::PathBuf;
@@ -179,28 +173,34 @@ pub const DEFAULT_MAX_ZOOM_PERCENT: f32 = MAX_MAX_ZOOM_PERCENT;
 /// configure a document they cannot magnify at all.
 pub const MIN_MAX_ZOOM_PERCENT: f32 = 10.0;
 
-/// The highest a maximum-zoom setting may be — **a hundred billion percent**,
-/// which is the deepest zoom the page has been confirmed to actually DRAW at.
+/// The highest a maximum-zoom setting may be — **a trillion percent**, the
+/// figure the operator named.
 ///
-/// ★★ The operator named a trillion, and a trillion very nearly works: driving
-/// to it renders cleanly with no failed rasters. What it does not do is put a
-/// page on screen. The limit there is no longer the scroll offset — tier 3's
-/// `f64` anchor fixed that — but the **strip's own extent**, which is still
-/// `page × zoom` in `f32` and reaches 6×10^12 points at a trillion percent on
-/// US Letter. Measured by driving: drawn at 8.6×10^9× (859 billion percent),
-/// not drawn at 1×10^10×.
+/// ⚠ **It is past the range the page has been confirmed to draw in, and that
+/// is `DEFECTS.md` D27.** Read the units carefully, because this constant is a
+/// *percentage* and the measurement below is a *factor*: a trillion percent is
+/// a zoom factor of 1×10^10. Driving the real binary found the page **drawn**
+/// at 8.6×10^9× (859 billion percent) and **not drawn** at 1×10^10× — so this
+/// value is the first rung measured to fail, not a margin inside the working
+/// range.
 ///
-/// ★ So this is set an order of magnitude inside the confirmed-working range
-/// rather than at the edge of it. Offering a rung that renders without error
-/// and shows a blank page would be the same defect this feature has refused
-/// throughout: a control that accepts a number and then misbehaves.
+/// What fails is not the raster: at a trillion percent the strip renders
+/// cleanly with no failed tiles and simply shows no page. The limit is no
+/// longer the scroll offset — tier 3's `f64` anchor fixed that — it is the
+/// **strip's own extent**, still computed as `page × zoom` in `f32`, which
+/// reaches 6×10^12 points at that zoom on US Letter.
 ///
-/// Removing this needs the strip to stop being built in `page × zoom` space at
-/// deep zoom — the same move tier 3 made for the offset, one layer out.
+/// Two ways out, and they are a choice for the operator rather than a cleanup:
+/// lower this to the confirmed range, or stop building the strip in
+/// `page × zoom` space at deep zoom — the move tier 3 made for the offset, one
+/// layer out. Until one of them happens the shell offers a rung that accepts a
+/// number and then misbehaves, which is the defect this feature has otherwise
+/// refused throughout.
 ///
-/// ★ It is not a judgement about what is sensible. He was explicit that the
-/// performance trade is his to make; this is about what the shell can put on
-/// the screen.
+/// ★ None of this is a judgement about what is sensible. The operator was
+/// explicit that the performance trade is his to make (*"it is up to the user
+/// to determine how much of a performance hit they want to take"*); the
+/// question here is only what the shell can put on the screen.
 pub const MAX_MAX_ZOOM_PERCENT: f32 = 1e12;
 
 /// Format a percentage for the preferences file without an exponent or a

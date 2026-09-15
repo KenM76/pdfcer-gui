@@ -1,6 +1,6 @@
 //! Layout tests against **real** font metrics.
 //!
-//! # ★ Why this file is separate, and why it would otherwise be worthless
+//! # Why this file is separate, and why it would otherwise be worthless
 //!
 //! `egui-shell` depends on `egui` with `default-features = false`, so in a
 //! `cargo test -p egui-shell --lib` build there is **no font data at all**
@@ -22,7 +22,7 @@
 //! `testfont::install` asserts that it took effect — so a font that failed
 //! to load fails the suite rather than quietly restoring the vacuum.
 //!
-//! # ★ The harness: a justified scope, not a popup
+//! # The harness: a justified scope, not a popup
 //!
 //! Most tests here render into a `Ui` built with
 //! `Layout::top_down_justified(Align::Min)` rather than through a real
@@ -145,12 +145,12 @@ fn draw(
         let theme = Theme::of(ui.ctx());
         let atom_gap = ui.spacing().icon_spacing;
         let padding = button_padding(ui);
-        // ★ The icon column is decided ONCE for the menu, exactly as the
+        // The icon column is decided ONCE for the menu, exactly as the
         // renderer decides it (`plan::reserves_icon_column`) — so a row
         // with no key in a menu that has one is measured *with* its blank
-        // slot. Mirroring the old per-command rule here would make this
-        // harness agree with a renderer that no longer exists, which is
-        // the worst kind of green.
+        // slot. A per-command rule here would make the harness agree with
+        // a renderer that does not exist, which is the worst kind of
+        // green.
         let reserved = rows.iter().any(|(_, _, icon)| *icon);
         let totals: Vec<f32> = rows
             .iter()
@@ -205,7 +205,7 @@ fn draw(
 
 // =====================================================================
 
-/// **★ Every row is the same width, which is what makes a chord column a
+/// **Every row is the same width, which is what makes a chord column a
 /// column.**
 ///
 /// `Atom::grow` right-aligns the chord *inside its own button*. If the
@@ -241,8 +241,8 @@ fn every_row_is_justified_to_the_same_width() {
     }
 }
 
-/// **★ The chord column is really reserved: the same menu is wider when
-/// its commands have chords.**
+/// **The chord column is really reserved: the same menu is wider when its
+/// commands have chords.**
 ///
 /// The direct consequence of [`plan::COLUMN_GAP`] and of charging for the
 /// chord's own text. With no font data this test is vacuous — both menus
@@ -272,7 +272,7 @@ fn a_menu_with_chords_is_wider_than_the_same_menu_without() {
     );
 }
 
-/// **★ The rendered width is the width the plan asked for.**
+/// **The rendered width is the width the plan asked for.**
 ///
 /// The plan is pure arithmetic and the renderer is `egui`; they agree only
 /// because the renderer measures with the plan's own inputs. This is the
@@ -389,8 +389,8 @@ fn an_icon_slot_is_reserved_rather_than_overlaid() {
     );
 }
 
-/// **★★★ A menu with one icon costs the same as a menu with all icons,
-/// and a menu with none costs nothing.**
+/// **A menu with one icon costs the same as a menu with all icons, and a
+/// menu with none costs nothing.**
 ///
 /// The rendered proof of the icon-column rule, against real font metrics.
 /// Three menus, identical labels and chords, differing only in which rows
@@ -404,17 +404,17 @@ fn an_icon_slot_is_reserved_rather_than_overlaid() {
 ///
 /// The first two being **equal** is the whole rule: a blank slot costs
 /// what a glyph costs, so the label column starts at one x whatever the
-/// mix. If the renderer had kept the per-command rule the middle menu
-/// would come out narrower than the first and its labels would zig-zag —
-/// and no width assertion that looked at one menu at a time would notice.
+/// mix. Under a per-command rule the middle menu would come out narrower
+/// than the first and its labels would zig-zag — and no width assertion
+/// that looked at one menu at a time would notice.
 ///
 /// The third being narrower is the other half, and it is what keeps the
-/// rule cheap: a menu whose commands have no icons is laid out exactly as
-/// it was before the column existed.
+/// rule cheap: a menu whose commands have no icons pays nothing for the
+/// column — no slot, no indent, no extra width.
 #[test]
 fn one_icon_costs_a_menu_the_same_column_as_four() {
     let ctx = context();
-    // ★ The LONGEST label belongs to a row with NO icon, and that is the
+    // The LONGEST label belongs to a row with NO icon, and that is the
     // whole design of this fixture. The body width is set by the widest
     // row, so if the widest row were the one carrying the glyph the
     // equality below would hold under the wrong rule too — a per-command
@@ -452,7 +452,7 @@ fn one_icon_costs_a_menu_the_same_column_as_four() {
         one.body.width()
     );
 
-    // ★ And the column costs no HEIGHT. The slot is `icon_pts` square and
+    // And the column costs no HEIGHT. The slot is `icon_pts` square and
     // the row is `control_height` tall, so a menu that gained a column
     // must not have grown taller — a taller menu is how "we added an icon
     // column" turns into "the menus all got bigger", which nobody asks for
@@ -502,7 +502,7 @@ fn rows_stack_in_document_order_without_overlapping() {
     );
 }
 
-/// **★ The real popup path justifies every row too.**
+/// **The real popup path justifies every row too.**
 ///
 /// The harness above installs the popup's layout by hand for
 /// determinism. This asserts the same property through an actual

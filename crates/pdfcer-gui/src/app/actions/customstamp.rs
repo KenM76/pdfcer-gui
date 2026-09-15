@@ -6,7 +6,7 @@
 //! finding what is in it — is [`crate::stamps::library`]; the half that writes
 //! a NEW collection for Acrobat to load is [`super::stamps`].
 //!
-//! ## ★★★ Why this is a module and not an arm of `super::textannot`
+//! ## Why this is a module and not an arm of `super::textannot`
 //!
 //! It looks like one. Both place a `/Stamp` annotation, both are raised by the
 //! same dialog, both take a rectangle the operator dragged, and both give the
@@ -21,16 +21,16 @@
 //! needs no second file, has nothing to fail at before the edit begins, and
 //! cannot report anything about a source. This module opens a **second PDF**
 //! off the operator's disk, fails in ways that have nothing to do with editing
-//! (moved, renamed, corrupt), imports an object graph, and comes back with
-//! four disclosures about what did and did not travel. Sharing a function
+//! (moved, renamed, corrupt), imports an object graph, and comes back with a
+//! report of what did and did not travel. Sharing a function
 //! would have meant a `commit` whose first forty lines were about neither of
 //! the things it does.
 //!
-//! ⇒ What they DO share is deliberately shared rather than duplicated: the
+//! What they DO share is deliberately shared rather than duplicated: the
 //! upright-turn rule for `/Rotate` pages is one argument, written once in
 //! [`super::textannot`]'s header, and applied here by the same two calls.
 //!
-//! ## ★★ The fork — what `app::actions::apply` decides before it gets here
+//! ## The fork — what `app::actions::apply` decides before it gets here
 //!
 //! One action, `Action::CommitTextAnnot`, reaches two modules. The arm that
 //! chooses between them is three facts long and each is easy to get wrong:
@@ -48,16 +48,16 @@
 //!    false, and a condition that cannot be false is a line every future
 //!    reader has to prove harmless before they may change anything near it.
 //!
-//! 3. **The custom arm destructures with `..`.** Six of the action's values —
-//!    `kind`, `text`, `stamp`, `stamp_size`, `icon` — belong to the standard
-//!    route and mean nothing here. Naming them only to leave them unused would
-//!    mean six underscore-prefixed bindings, which is six places for a field
-//!    added later to be silently dropped on this route with no warning.
+//! 3. **The custom arm destructures with `..`.** `kind`, `text`, `stamp`,
+//!    `stamp_size` and `icon` belong to the standard route and mean nothing
+//!    here. Naming them only to leave them unused would mean one
+//!    underscore-prefixed binding each, and each is a place for a field added
+//!    later to be silently dropped on this route with no warning.
 //!
-//! ⚠ Why the argument is written **here** and not at the arm: `apply.rs` has
-//! overflowed R2's 1,500-line ceiling six times, and the seam it keeps finding
-//! is *"the reasoning goes where the mechanism is"*. The arm carries a
-//! two-line pointer to this section.
+//! Why the argument is written **here** and not at the arm: `apply.rs` sits
+//! against R2's 1,500-line ceiling, and the seam it keeps finding is *"the
+//! reasoning goes where the mechanism is"*. The arm carries a two-line
+//! pointer to this section.
 //!
 //! ## The order of operations, and why the load is outside the funnel
 //!
@@ -68,7 +68,7 @@
 //!    closure would arrive wearing the edit's refusal sentence.
 //! 2. **Work out the upright turn** from the target page's `/Rotate`.
 //! 3. **One `vector_edit`**, one undo entry: place the artwork, then turn it.
-//! 4. **Four disclosures**, off-canvas, on the status line.
+//! 4. **The disclosures**, off-canvas, on the status line.
 //!
 //! ## Rule 4 — what is disclosed, what is traced, and what is neither
 //!
@@ -82,7 +82,7 @@
 //! | `resources_renamed` | trace only | permanently `0` by construction |
 //! | `transparency_group_carried` | trace only | `false` means the source had none, not that one was dropped |
 //!
-//! ★ **`objects_imported` is traced and not said, and that is a judgement
+//! **`objects_imported` is traced and not said, and that is a judgement
 //! worth writing down.** The engine exposes it because *"an operator stamping
 //! a 5.6 MB drawing is entitled to know which act grew the file"*, and that is
 //! a fair reason — but the number is a count of PDF objects, which is not a
@@ -94,7 +94,7 @@
 //! bug-hunting session can both reach it, and the day the operator asks *"why
 //! did my file get bigger"* the answer is one grep away.
 //!
-//! ⚠ **Nothing is drawn onto the canvas.** R8b rule 4: a placed stamp renders
+//! **Nothing is drawn onto the canvas.** R8b rule 4: a placed stamp renders
 //! exactly as it will render once saved and reopened — stretched if it was
 //! stretched, with last year's date if that is what its author typed. No
 //! badge, no tint, no dashed outline. The report is words, elsewhere.
@@ -136,9 +136,9 @@ pub(super) fn place(doc: &mut OpenDoc, stamp: &CustomStamp, page: usize, rect: R
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!("custom-stamp-refused file={file:?} reason={detail}")
             });
-            // ⊗, not ⚑. Nothing was edited — see
-            // `t::CustomStampUnavailable`'s header, which carries why this was
-            // a `record_note` for an afternoon and why that was wrong.
+            // ⊗, not ⚑. Nothing was edited, and a refusal reported under
+            // `⚑ About your last edit:` claims one was — see
+            // `t::CustomStampUnavailable`'s header.
             crate::app::status::decline::record_custom_stamp_unavailable(
                 t::CustomStampUnavailable::Unreadable,
             );
@@ -155,7 +155,7 @@ pub(super) fn place(doc: &mut OpenDoc, stamp: &CustomStamp, page: usize, rect: R
     // sideways unless it is pre-turned by the same amount. Acrobat pre-rotates
     // its own stamps for exactly this reason.
     //
-    // ★ Unconditional here, where `textannot` excludes the sticky note. There
+    // Unconditional here, where `textannot` excludes the sticky note. There
     // is no sticky-note case in this module — a custom stamp is always a
     // `/Stamp`, and §12.5.6.4's `NoRotate` exemption belongs to `/Text`.
     let rotate = doc.pages.get(page).map(|p| p.rotate).unwrap_or(0);
@@ -174,7 +174,7 @@ pub(super) fn place(doc: &mut OpenDoc, stamp: &CustomStamp, page: usize, rect: R
 
     // ── 3. One edit, one undo entry ──────────────────────────────────────
     //
-    // ★ `vector_edit`, not `vector_edit_on_page`, and the choice is not
+    // `vector_edit`, not `vector_edit_on_page`, and the choice is not
     // cosmetic. The narrow variant asserts that EVERY call of the verb changes
     // nothing a rasteriser would draw on any other sheet. This one imports an
     // object graph into the document's own object table — a resource closure
@@ -183,7 +183,7 @@ pub(super) fn place(doc: &mut OpenDoc, stamp: &CustomStamp, page: usize, rect: R
     // demands is about the verb rather than about this operand. It is not one
     // this shell can make on the engine's behalf.
     vector_edit(doc, "place-custom-stamp", page, 1, move |session| {
-        // ★★★ The one refusal on this route that has a REMEDY, and therefore
+        // The one refusal on this route that has a REMEDY, and therefore
         // the one worth intercepting.
         //
         // `EditError::SourcePageOutOfRange` means the collection opened and no
@@ -195,7 +195,7 @@ pub(super) fn place(doc: &mut OpenDoc, stamp: &CustomStamp, page: usize, rect: R
         // floor sentence, which is correct for them: there is nothing to do
         // about an encrypted file that the floor does not already imply.
         //
-        // ⚠ Recorded and then re-raised, deliberately. Swallowing it would
+        // Recorded and then re-raised, deliberately. Swallowing it would
         // leave the funnel thinking the edit succeeded: the epoch would move,
         // the page caches would be thrown away and `⚑ About your last edit`
         // would go stale — for an edit that never happened. The engine's error
@@ -228,14 +228,12 @@ pub(super) fn place(doc: &mut OpenDoc, stamp: &CustomStamp, page: usize, rect: R
             });
         }
 
-        // ★★ The measurement line. Its first token is `custom-stamp-placed`,
+        // The measurement line. Its first token is `custom-stamp-placed`,
         // deliberately NOT `place-custom-stamp` — the funnel writes a line
         // under the bare label and `Trace::last(name)` matches on the first
         // token, so sharing the name would hand a driven check the funnel's
         // `page= n= epoch= disclosures=` when it asked for `scale-x=`.
-        // `tools/gates/check-trace-names.py` enforces the suffix convention;
-        // its header records the three times this was got wrong before the
-        // gate existed.
+        // `tools/gates/check-trace-names.py` enforces the suffix convention.
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!(
@@ -279,7 +277,7 @@ fn disclosures(placed: &pdfcer_core::edit::PlacedArtwork, dynamic: bool) -> Vec<
     if dynamic {
         said.push(t::placed_dynamic().to_owned());
     } else if placed.source_widgets_ignored > 0 {
-        // ★ The `else` is the whole rule. A dynamic stamp's widgets ARE its
+        // The `else` is the whole rule. A dynamic stamp's widgets ARE its
         // recomputed text, so on that route these are two descriptions of one
         // fact — and an operator told the same thing twice in two vocabularies
         // reasonably concludes that two different things went wrong.
@@ -297,13 +295,13 @@ fn disclosures(placed: &pdfcer_core::edit::PlacedArtwork, dynamic: bool) -> Vec<
 mod tests {
     //! The disclosure rules, over hand-built outcomes.
     //!
-    //! ★ These do NOT place anything. The placement itself is the engine's
+    //! These do NOT place anything. The placement itself is the engine's
     //! verb and is tested there; what is this shell's own is the decision
-    //! about which of four facts becomes a sentence, and that decision is a
-    //! pure function of a `PlacedArtwork` and one boolean. A test that opened
-    //! a document to reach it would be measuring the engine.
+    //! about which facts become sentences, and that decision is a pure
+    //! function of a `PlacedArtwork` and one boolean. A test that opened a
+    //! document to reach it would be measuring the engine.
     //!
-    //! ★★ The rest of the route is measured by DRIVING it, in
+    //! The rest of the route is measured by DRIVING it, in
     //! `tools/ui-verify/src/checks/custom_stamp.rs`
     //! (`custom_stamp_reaches_the_page`): it arms Markup ▸ Stamp, presses one
     //! of the operator's own stamps in the gallery, drags a rectangle of the
@@ -312,11 +310,11 @@ mod tests {
     //! collection into a scratch `%APPDATA%`, so it is neither vacuous on a
     //! machine with no stamps nor dependent on his own folder.
     //!
-    //! ⚠ The two are not interchangeable. Everything above `place()` — the
+    //! The two are not interchangeable. Everything above `place()` — the
     //! gallery, the selection, the fork in `apply` — is invisible to the tests
     //! in this module, which is why the driven check exists; and the driven
-    //! check cannot enumerate the four disclosure rules, which is why these
-    //! do. R1 — a passing unit test is not a report of working software.
+    //! check cannot enumerate the disclosure rules, which is why these do.
+    //! R1 — a passing unit test is not a report of working software.
 
     use super::*;
 
@@ -325,15 +323,15 @@ mod tests {
     /// `PlacedArtwork` is `#[non_exhaustive]`, so it cannot be built with a
     /// struct literal from outside its crate. It is `Copy` and every field is
     /// public, so the fixture is made by placing artwork once — which is
-    /// exactly what a unit test must not do. ⇒ The rules are therefore tested
+    /// exactly what a unit test must not do. The rules are therefore tested
     /// through a shape this module owns instead, and the mapping from
     /// `PlacedArtwork` to it is the two-line `disclosures` signature above,
     /// which a reader can check by eye.
     ///
     /// This is a real limitation and it is written down rather than worked
-    /// around: if the disclosure rules grow a third condition, this comment is
-    /// the signal to ask the engine for a constructor rather than to bolt a
-    /// fourth boolean onto the test helper.
+    /// around: when the disclosure rules grow another condition, this comment
+    /// is the signal to ask the engine for a constructor rather than to bolt
+    /// another boolean onto the test helper.
     fn said(distorted: bool, dynamic: bool, widgets: usize, annots: usize) -> Vec<String> {
         let mut out = Vec::new();
         if distorted {
@@ -381,9 +379,9 @@ mod tests {
 
     /// The stretch sentence names a direction, and gets it the right way round.
     ///
-    /// ★ Both signs, deliberately. A helper that only ever divides one way
-    /// passes on a symmetric bug — this project has already recorded that *a
-    /// suite which only tries one SIGN is not testing the value*.
+    /// Both signs, deliberately. A helper that only ever divides one way
+    /// passes on a symmetric bug: *a suite which only tries one SIGN is not
+    /// testing the value*.
     #[test]
     fn the_stretch_direction_follows_the_ratio() {
         assert!(t::placed_distorted(1.5, 1.0).contains("wider"));

@@ -1,27 +1,24 @@
 //! # `dialogs::import_text` — a text file becomes pages
 //!
-//! `file.import_text`, registered and wired 2026-09-07, closing the half of the
-//! operator's 2026-09-04 ask that could not be built at the time:
+//! `file.import_text`, the import half of the operator's ask:
 //!
 //! > *"also the engine can export PDFs as text. we should have export/import
 //! > for that."*
 //!
-//! ## ★★★ Why this could not exist until 2026-09-06
+//! ## It stands on a primitive only the engine can own
 //!
-//! **`pdfcer-core` could not create a page.** It could copy one, insert one
-//! from another document, delete one — and there was no verb anywhere in the
-//! crate that made a sheet out of nothing. `blank_document` is that primitive
-//! and `place_text` is the paginating placer built on it, both shipped as
-//! `Pass 252.0` in answer to this shell's own request, and the engine's reply
-//! names the gap in those words.
+//! **Making a sheet out of nothing is `pdfcer-core`'s verb.** Copying a page,
+//! inserting one from another document and deleting one all rearrange pages
+//! that already exist; `blank_document` creates one, and `place_text` is the
+//! paginating placer built on it. A shell cannot stand in for either without
+//! writing a second page writer, which is the one thing this crate must not do.
 //!
-//! ⇒ Until then `dialogs::export_text`'s header said, correctly, *"there is no
-//! import and this window says nothing about one"*, and no control was drawn
-//! that would decline when pressed. That was R9 working. This window is what
-//! replaces it, and the export window's paragraph is corrected rather than
-//! deleted.
+//! ⇒ The standing rule that follows, and the reason a window like this arrives
+//! all at once rather than in halves: **a capability the engine does not have is
+//! disclosed in words, never as a control that declines when pressed.** R9 greys
+//! what is *temporarily* unavailable, and an absent engine verb is not that.
 //!
-//! ## ★★ This window is a CHOOSER, and that inverts its sibling's job
+//! ## This window is a CHOOSER, and that inverts its sibling's job
 //!
 //! `export_text` names **losses** — layout, fonts, position — because exporting
 //! throws things away. Importing **invents**: a sheet size, margins, a
@@ -30,7 +27,7 @@
 //! answers to *"what would he have picked?"*, and only one sentence warns about
 //! anything. `text::import_text`'s header carries that argument in full.
 //!
-//! ## ★ The defaults, and each one is a choice rather than an inheritance
+//! ## The defaults, and each one is a choice rather than an inheritance
 //!
 //! | control | default | why |
 //! |---|---|---|
@@ -40,14 +37,14 @@
 //! | size | 11 pt | the engine's is 12; 11 fits a 66-character line on A4 at one-inch margins, which is the classic measure for readable prose |
 //! | position | **after the current page** | `insert_pages`' default, and for its stated reason: it is what *"insert here"* means to somebody who navigated to a sheet first |
 //!
-//! ★★ **The sheet list is `pdfcer_core::paper::PaperSize::ALL`**, rendered by
+//! **The sheet list is `pdfcer_core::paper::PaperSize::ALL`**, rendered by
 //! `text::new_document::size_name` — the same list and the same labels the New
 //! Document and Page Size windows use. Three surfaces, one answer to *"what is
 //! A1?"*, and an operator who learned the list in one meets it unchanged in the
 //! others. A fourth private table here would be a fourth chance to disagree
 //! about a sheet's dimensions.
 //!
-//! ## ★★★ What this window does NOT do, and the reason is the engine's
+//! ## What this window does NOT do, and the reason is the engine's
 //!
 //! **It does not read the file.** Not to count its lines, not to preview its
 //! pagination, not to check its characters against the chosen face. Every one of
@@ -75,7 +72,7 @@ const REGION_FACE: &str = "import-text.face"; // ui-text-exempt: diagnostic regi
 
 /// The faces this window offers.
 ///
-/// # ★★ Five of the fourteen, and the narrowing is the design
+/// # Five of the fourteen, and the narrowing is the design
 ///
 /// `Std14` has fourteen members; twelve are text faces and two (`Symbol`,
 /// `ZapfDingbats`) are pictorial. A chooser listing all fourteen would offer
@@ -99,7 +96,7 @@ const FACES: &[pdfcer_core::fontdata::Std14] = &[
 
 /// The narrowest and widest font size the spinner will reach, in points.
 ///
-/// ★ Six is below the smallest an operator would set for body text and is where
+/// Six is below the smallest an operator would set for body text and is where
 /// a `PageTooShort` refusal stops being plausible; seventy-two is one inch, past
 /// which a single line no longer fits an A4 measure and the import becomes one
 /// word per page. Both ends are far outside anything reasonable **on purpose**:
@@ -109,7 +106,7 @@ const SIZE_RANGE: std::ops::RangeInclusive<f64> = 6.0..=72.0;
 
 /// The margin spinner's range, in points.
 ///
-/// ★ Zero is legal and is what somebody importing a listing to be re-cropped
+/// Zero is legal and is what somebody importing a listing to be re-cropped
 /// wants; the ceiling is a quarter of A4's short edge, past which the column is
 /// narrower than the margins around it and `PageTooShort` becomes likely. The
 /// engine refuses that case by name and this range makes reaching it a
@@ -118,7 +115,7 @@ const MARGIN_RANGE: std::ops::RangeInclusive<f64> = 0.0..=150.0;
 
 /// Where the pages land, as the four radios offer it.
 ///
-/// ★★ A local enum **only** for the radio state, converted to
+/// A local enum **only** for the radio state, converted to
 /// `pdfcer_core::pageops::InsertPosition` at the point of use — copied
 /// deliberately from `dialogs::insert_pages`, whose own note gives the reason:
 /// two of the four need the current page index, which the radio does not carry
@@ -157,7 +154,7 @@ pub struct ImportTextDialog {
     current_page: usize,
     /// Which sheet, as an index into `PaperSize::ALL`.
     ///
-    /// ★ An index rather than the `PaperSize` itself, because `PaperSize` is
+    /// An index rather than the `PaperSize` itself, because `PaperSize` is
     /// `#[non_exhaustive]` and the engine has said the table will grow — an
     /// index survives that, and `text::new_document` already stores it this way
     /// for the same reason.
@@ -172,7 +169,7 @@ pub struct ImportTextDialog {
     position: Where,
     /// Set by the commit button, consumed after the window closure returns.
     ///
-    /// ★ Deferred by one statement, which is `insert_pages`' and the print
+    /// Deferred by one statement, which is `insert_pages`' and the print
     /// dialog's rule: the action replaces most of the document's derived state,
     /// and doing that inside `Window::show`'s closure runs it while egui is
     /// part-way through laying this window out.
@@ -213,7 +210,7 @@ impl ImportTextDialog {
 
     /// The template the chosen controls describe.
     ///
-    /// ★★ Built from `PageTemplate::new()` and then overridden, rather than
+    /// Built from `PageTemplate::new()` and then overridden, rather than
     /// constructed field by field. `PageTemplate` is the engine's type and it
     /// gains fields — `leading`, `alignment`, `color` and `unmappable` are all
     /// left exactly as the engine set them, which is the whole point: this
@@ -251,7 +248,7 @@ impl ImportTextDialog {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★★ It carries the CHOICES and not just the press. A build
+                // It carries the CHOICES and not just the press. A build
                 // whose chooser wrote the wrong sheet, or whose margin never
                 // left its default, raises an identical action from an
                 // identical click — and the pages it makes are wrong in a way
@@ -330,9 +327,9 @@ impl ImportTextDialog {
                     .suffix(t::points_suffix()),
             );
         });
-        // ★ Under the chooser it qualifies, not at the foot of the window —
-        // `REVIEW_TRIAGE.md`'s rule and the properties panel's placement: a
-        // caveat below everything arrives after the operator has decided.
+        // Beside the chooser it qualifies, not at the foot of the window —
+        // `panels::properties`' standing rule, for its reason: a caveat below
+        // everything arrives after the operator has already decided.
         ui.label(egui::RichText::new(t::face_note()).small().weak());
 
         ui.separator();
@@ -353,7 +350,7 @@ impl ImportTextDialog {
             if response.clicked() {
                 self.import_requested = true;
             }
-            // ★ Cancel closes the host, which is the same act as the window's
+            // Cancel closes the host, which is the same act as the window's
             // own close button — so there is one way to abandon this and not
             // two that could come to differ.
             if ui.button(t::cancel()).clicked() {
@@ -365,7 +362,7 @@ impl ImportTextDialog {
 
 /// The sheet at `index`, clamped.
 ///
-/// ★ Clamped rather than indexed, because `PaperSize::ALL` can shrink between
+/// Clamped rather than indexed, because `PaperSize::ALL` can shrink between
 /// builds as well as grow — the engine says the table moves — and a stored
 /// index from a longer list must not panic a window open.
 fn sheet_of(index: usize) -> pdfcer_core::paper::PaperSize {
@@ -375,7 +372,7 @@ fn sheet_of(index: usize) -> pdfcer_core::paper::PaperSize {
 
 /// The index of the sheet this window opens on.
 ///
-/// ★★ **A4, found by id rather than by position.** `PaperSize::ALL`'s order is
+/// **A4, found by id rather than by position.** `PaperSize::ALL`'s order is
 /// the engine's business and it has said the table will grow; a hard-coded
 /// index would silently open on a different sheet the day one is inserted
 /// before A4 — and a window that opens on the wrong paper is a defect an
@@ -392,11 +389,11 @@ fn default_sheet() -> usize {
 
 /// The label for the face at `index` in [`FACES`], clamped.
 ///
-/// ★ A one-line adapter over `text::import_text::face_name`, and the clamp is
+/// A one-line adapter over `text::import_text::face_name`, and the clamp is
 /// the whole reason it exists: this window stores an INDEX, and a stored index
 /// from a longer list must not panic a window open. The words themselves live
-/// in the catalogue, where `check-ui-strings` can see them — it reported all
-/// four of them the first time this file tried to keep them locally.
+/// in the catalogue rather than here, because `check-ui-strings` reads the
+/// catalogue — a displayed label spelled in this file is one the gate reports.
 fn face_name(index: usize) -> &'static str {
     t::face_name(FACES[index.min(FACES.len() - 1)])
 }

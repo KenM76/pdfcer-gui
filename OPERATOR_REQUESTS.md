@@ -29,6 +29,13 @@ record — not a chat reply, not a session summary, not an agent's memory.
    "blocked" with nothing behind it is a row I have not done the work on.
 5. **Nothing is silently rescoped.** If I ship half of what you asked for, the
    row stays open and says which half.
+6. **A retraction stays beside what it retracts.** When a row turns out to
+   have been wrong — the defect was mine, the capability was already there,
+   the measurement was of something else — the row is marked RETRACTED and
+   stays exactly where it is, with the correction under it. Deleting it
+   leaves the next reader free to re-derive the same wrong conclusion from
+   the same evidence, and leaves you unable to see that I noticed. O115 is
+   the shape to copy.
 
 A request made in conversation lives exactly as long as the conversation:
 sessions end, context is compacted, and an ask made in turn three is gone by
@@ -55,6 +62,16 @@ partially finished features."*
 > *"Please don't just fix the bugs and add the features for the exact tools I am
 > outlining. You need to do a proper sweep and diagnosis to ensure all tools and
 > features."*
+
+**And believe the report before scoping it.** A report that sounds like a
+misunderstanding is still a report, and the ones that sound least precise
+have been the most precise. *"I can’t delete an object"* and *"text editing
+is weird"* each resolved to one locatable bug. The worst instance: *"text
+editing doesn’t work"* was true of most of the text on his own drawings
+while every driven check in the harness was green — because the checks drove
+fixtures this repository authored, and those fixtures did not have the
+property his documents have. A green suite is evidence about the fixtures.
+It is not evidence against him.
 
 **The basics get audited as basics.**
 
@@ -147,6 +164,24 @@ not to work; the pattern is the row, not the feature.
 > center mark is shown, and how it looks (like solidworks has). Again, it should
 > have a live preview, be easy to select the dimension text or the leader to
 > relocate. Also we should have control over how arrows are displayed."*
+
+Surveyed in `DESIGNS.md` → *O183 — the nine-part ce-dimension request*, which
+takes each clause in turn with the call sites. **Four of the nine are already
+shipped, so that much of the report is a discoverability finding rather than a
+gap.** Read the survey before scheduling any of it; the table below indexes it
+and does not replace it.
+
+| his clause | verdict |
+|---|---|
+| units cannot be changed after creation | **partly false**, with a different defect underneath |
+| the per-dimension override does nothing | **false as a capability claim** — masked by the comment box, clause 7 |
+| tolerance missing from the group | **true**, and a written decision rather than an oversight |
+| tolerance does not work on the override | **false** — the same mask |
+| thinner tolerance control than SolidWorks | a scope question for you, not a defect |
+| no live preview, and text versus line is unclear | first half **false**, second half **real** |
+| clicking a ce dimension pops the comment box | **the keystone** — it is what hides four of the above |
+| radius ce dimensions have no controls | **two shipped, two absent** |
+| arrow display is not controllable | **false** — controllable on both tiers |
 
 ## O184 — ◑ **BUILT, DRIVEN AND FALSIFIED** — the drag preview outline grew with zoom until it was the width of the canvas
 
@@ -399,6 +434,37 @@ every pinned fixture reaches you as *"that entire area is always greyed out"*.
 **What was measured.** Nine aims on page 1 of your drawing, one per distinct
 font size on the sheet (5, 6, 8, 9, 10, 11.8, 12, 13.2 and 16 pt), each aim two
 units inside the run's own box, driven against the real binary.
+
+## O199 — ◑ **FOUND, NEEDS YOUR VERDICT — nothing has been changed** — not something you asked for: the Save button no longer looks like the three controls beside it
+
+You did not ask for this row. It is here because the File tab's Save group now
+carries four controls in a row — **Save**, **Save as…**, **Save a copy…** and
+**Save compacted…** — and the last three were drawn as a family while the first
+was not. Which way that should go is a taste call about the control you press
+most often, so it is a question rather than a change.
+
+**The three share one body and differ by one interior mark each.** A square
+sheet with a shutter across the top, then a pencil for *Save as* (a new name), a
+second body showing behind for *Save a copy* (a second file), and an arrow that
+stays inside the body for *Save compacted* (the same file, smaller). That
+grammar is right, and none of the three can be read as either of the others at
+the 16 px they ship at.
+
+**Save's glyph is a different shape entirely** — a rounded body with a cut
+corner and one label bar, no shutter and no interior mark. So the family is
+correct and Save is now the odd member of it.
+
+**It was left alone deliberately, and the reason is on the record rather than
+left to be rediscovered:** Save is the bare one, the press you make fifty times
+a day without reading the label, and at 16 px those interior marks are the only
+thing separating four otherwise identical icons. Redraw Save onto the shared
+body and there are four near-twins where there are now three and a distinct one.
+
+**Two ways to go, and nothing is blocked either way.** Leave Save as the odd one
+and let its outline keep doing the work of telling the most-used control apart;
+or redraw it onto the family body and let the interior marks carry the whole
+distinction. It is the picture on your Save button, so you should see the change
+before it ships rather than after.
 
 ## O176 — ◑ **MEASURED, NEEDS YOUR VERDICT** — not something you asked for: on a big sheet at fit zoom, a small form field is all grip and no body
 
@@ -1195,9 +1261,7 @@ ruling in this row is **not** what was built: the deferral itself was.
 > controls (lasso tool when we implement one, etc) and these will fold up into a
 > drop down arrow if space becomes scarce."*
 
-### This overrules `SHELL_LAYOUT_PROPOSAL.md` §3, and his version answers the objection that document raised
-
-Cited: `SALVAGE.md:44`.
+### His version is the one that ships: one tabbed dock, not a second dock with a fixed split
 
 Checks: `the_armed_tools_settings_are_in_properties`, `the_first_frame_names_the_armed_tool`, `the_inspector_is_one_master_detail_column`.
 
@@ -1301,8 +1365,8 @@ rather than implied by a green test count.
 
 A question about pictures and layout is answered by rendering the mockups
 headlessly and looking at them, never by reading their JSON or HTML as source
-text. Full adjudication of the proposed glyph set is in `GLYPH_ADOPTION.md`:
-a glyph is adopted only when a command or role in this build would use it today.
+text. A glyph is adopted only when a command or role in this build would use it
+today.
 
 ### Awaiting your decision — the Save family reads as three floppies and one odd one out
 
@@ -2411,7 +2475,24 @@ there isn't a real preview like there is in inkscape."*
 5. **Undo grouping.** One entry per gesture, not per frame — and `EditSession`
  has no grouping verb, which is already filed.
 
-Cited: `canvas/handledrag.rs:216-222`, `painting.rs:437-450`, `moving/mod.rs:722`, `resizing.rs:521`, `rotating.rs:340`, `funnel.rs:60-72`, `worker.rs:706`, `backdrop.rs:88`, `present.rs:726-757`, `moving/mod.rs:9-16`.
+Where the preview lives, so the next reader does not have to find it:
+
+- `canvas/painting.rs:497` — the shape itself following the pointer, drawn
+  above the bounding ghost and below the snap marker, with the rule-4 argument
+  for why a cursor may be drawn and applied content may not.
+- `app/state/heldpreview.rs:112` and `:176` — the hold that outlives the
+  gesture. `shape_preview` is `None` at release; the raster still shows the
+  object where it started for a second or two, so dropping the preview there
+  makes the object snap back and jump forward.
+- `canvas/handledrag.rs:216` — why a node drag previews the pointer position
+  rather than a ghost of the curve: the Bézier belongs to the engine.
+- `canvas/rotating.rs:340` — a gesture publishing its in-flight outcome, which
+  is the shape every canvas gesture uses.
+- `canvas/moving/mod.rs:9` — one gesture is one command, which is why the
+  preview cannot be emitted per frame as a series of small commits.
+- `canvas/present.rs:672` and `canvas/backdrop.rs:88` — the previous texture
+  held while the new raster is computed, and the backdrop under it.
+- `app/actions/funnel.rs:60` — the commit funnel the release goes through.
 
 ## O62b — ✅ Bold stopped using real bold fonts, and nothing failed
 
@@ -2864,7 +2945,6 @@ which every declared check actually launched. **All four resolved the same day**
 defects in the tests**, which is worth stating plainly rather than counting four
 fixes.
 
-Evidence: `evidence/ui-verify-run--rotated.txt` for the discovery run.
 Every claim below was driven, and every driven claim was falsified first.
 
 Filed as *"typing a width and pressing Apply does nothing"* — and the real
@@ -3649,5 +3729,4 @@ sits `Pass 257.0`, the engine's answer to the O141 measurement filed today.
 You said you saw *"a lot of residual background tasks"*. Measured rather than
 assumed: no `pdfcer-gui`, `ui-verify`, `cargo`, `rustc` or stray shell
 processes were running on the machine. The entries are completed tasks that
-stay listed. One genuinely stuck watchdog was killed earlier in the session and
-is recorded in `HANDOFF.md`.
+stay listed. One genuinely stuck watchdog was killed earlier in the session.

@@ -159,7 +159,7 @@
 //! at all, and the character sweep's gate (`canvas::textsel::gate`) is decided
 //! by the armed tool and the mode's capabilities alone. Unlike
 //! [`PickClass::Link`], whose tooltip is honest about being inert, these four
-//! promise that clicks will pass through.
+//! promise that clicks will pass through. `DEFECTS.md` D49.
 //!
 //! The rule: **a row is inert until an `allows` call reads it.** Wire the
 //! consumer in the same change that adds the row, or the popup becomes the

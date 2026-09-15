@@ -16,7 +16,7 @@
 //! is a different subject with a different failure mode, and it is the reason
 //! this is the only form verb in the shell that takes **two** operator presses.
 //!
-//! ## ★★★ The two-press protocol, and why it is not a confirmation dialog
+//! ## The two-press protocol, and why it is not a confirmation dialog
 //!
 //! ```text
 //!   press 1  ──▶  ArmGroupDeletion(Some(name))
@@ -63,7 +63,7 @@
 //!    arm, a window, a region, a close path and a focus policy — and the
 //!    disclosure is the substance here, not the chrome.
 //!
-//! ## ★★ Where the armed preview is kept, and why it is a thread-local
+//! ## Where the armed preview is kept, and why it is a thread-local
 //!
 //! Exactly [`crate::app::actions::disclosure`]'s answer, restated because the
 //! reasoning has to be re-checked rather than inherited:
@@ -80,7 +80,7 @@
 //!   the reader are the same thread, and a test on another thread gets its own
 //!   empty slot rather than another test's leftovers.
 //!
-//! ### ★★★ Staleness is handled by the EPOCH, not by remembering to clear
+//! ### Staleness is handled by the EPOCH, not by remembering to clear
 //!
 //! [`Armed::epoch`] is the `OpenDoc::edit_epoch` current **when the preview was
 //! taken**, and [`armed`] answers `None` for anything else. That one comparison
@@ -104,7 +104,7 @@
 //! refusal, and — inside the funnel closure —
 //! **`delete-field-group-applied`**, with the `-applied` suffix.
 //!
-//! ★★★ That suffix is not decoration. `vector_edit` writes its own line for the
+//! That suffix is not decoration. `vector_edit` writes its own line for the
 //! same edit under the bare label (`delete-field-group page=0 n=1 epoch=…`),
 //! and trace matching is on the **exact event name**, so a driven check taking
 //! `.last()` would read the funnel's line — which carries no `terminals=` key —
@@ -146,7 +146,7 @@ pub struct Armed {
 thread_local! {
     /// The one armed preview, if any.
     ///
-    /// ★ One rather than a map keyed by group name, and that is a decision.
+    /// One rather than a map keyed by group name, and that is a decision.
     /// Arming a second group while a first is armed **replaces** it, because
     /// two disclosure blocks open at once in a narrow dock pane is two
     /// destructive confirmations competing for one glance — and the operator
@@ -169,11 +169,11 @@ pub fn armed(epoch: u64) -> Option<Armed> {
 /// `Some(name)` asks the engine what deleting that node would remove and stores
 /// the answer; `None` clears — the operator pressed Cancel, or clicked away.
 ///
-/// ★ `None` is a real event and not a no-op, for `FieldAction::Select`'s
+/// `None` is a real event and not a no-op, for `FieldAction::Select`'s
 /// reason: a disclosure block that will not let go is worse than none, because
 /// its contents look current.
 ///
-/// # ★★ It changes NO document and must never bump the epoch
+/// # It changes NO document and must never bump the epoch
 ///
 /// `field_group_deletion_preview` writes nothing — it resolves the node, runs
 /// the gates and describes the removal set. So this does not go through
@@ -192,7 +192,7 @@ pub(in crate::app::actions) fn arm(doc: &mut OpenDoc, group: Option<String>) {
         ARMED.with_borrow_mut(|slot| *slot = None);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            // ★★ `-cleared`, not the bare name, and the suffix is load-bearing
+            // `-cleared`, not the bare name, and the suffix is load-bearing
             // for the same reason `check-trace-names` exists — one rung further
             // out than that gate can see.
             //
@@ -213,23 +213,23 @@ pub(in crate::app::actions) fn arm(doc: &mut OpenDoc, group: Option<String>) {
     };
 
     let epoch = doc.edit_epoch;
-    // ★★★ **The render worker holds the other `Arc`, so this line is the whole
+    // **The render worker holds the other `Arc`, so this line is the whole
     // difference between a preview and an inert button.**
     //
     // `RenderWorker` clones `doc.session` into its request (`app::state`), so
     // `Arc::get_mut` fails for as long as a raster is in flight — which is after
-    // every scroll, zoom, page turn and mode change. Without this call, pressing
-    // *Delete group…* a moment after moving the view wrote one trace line and
-    // **nothing to the screen**: no block, no numbers, no sentence. Press again
-    // a second later and it worked.
+    // every scroll, zoom, page turn and mode change. Without this call,
+    // pressing *Delete group…* a moment after moving the view writes one trace
+    // line and **nothing to the screen**: no block, no numbers, no sentence.
+    // Press again a second later and it works — which is precisely *"the
+    // inert-control failure this project exists to remove"* that this
+    // function's own doc comment names.
     //
-    // ⇒ This function's own doc comment four lines up calls that outcome *"the
-    // inert-control failure this project exists to remove"* — and then produced
-    // it, because it reported to the trace and to nothing else. It was the only
-    // production `Arc::get_mut` in the crate outside `vector_edit`, which takes
-    // this step as its **first statement** for exactly this reason.
+    // ⇒ This is the only production `Arc::get_mut` in the crate outside
+    // `vector_edit`, which takes this step as its **first statement** for
+    // exactly this reason.
     //
-    // ★ A preview is a read and cancelling a raster for a read looks wasteful.
+    // A preview is a read and cancelling a raster for a read looks wasteful.
     // It is not: the operator pressed a button, the raster restarts on the next
     // frame from a cache that the preview does not invalidate, and the
     // alternative is a control that works only when the page happens to be
@@ -263,7 +263,7 @@ pub(in crate::app::actions) fn arm(doc: &mut OpenDoc, group: Option<String>) {
             ARMED.with_borrow_mut(|slot| *slot = Some(Armed { epoch, preview }));
         }
         Err(error) => {
-            // ★★ Close to unreachable, because the section asks
+            // Close to unreachable, because the section asks
             // `deletion_refusal` before it draws the control that raises this —
             // and `field_group_deletion_preview` runs those same two gates.
             // Reaching it means the pure query and the preview have come apart,
@@ -285,7 +285,7 @@ pub(in crate::app::actions) fn arm(doc: &mut OpenDoc, group: Option<String>) {
 /// **Delete a grouping node and everything beneath it**, as one undoable
 /// command.
 ///
-/// # ★★★ The disclosure is built from the ENGINE'S REPORT, not from the preview
+/// # The disclosure is built from the ENGINE'S REPORT, not from the preview
 ///
 /// `delete_field_group` returns a [`FieldGroupDeletion`] whose `nodes_removed`
 /// is *"what the cascade ACTUALLY emptied, not a prediction"* — core replaces
@@ -302,7 +302,7 @@ pub(in crate::app::actions) fn arm(doc: &mut OpenDoc, group: Option<String>) {
 /// is not a courtesy on this verb, it is the only evidence that the press did
 /// anything — which is why it names all three counts and the group.
 ///
-/// # ★ The armed preview is not cleared here, and does not need to be
+/// # The armed preview is not cleared here, and does not need to be
 ///
 /// A successful deletion bumps the epoch through `vector_edit`, and [`armed`]
 /// filters on the epoch. A *failed* one does not bump it, so the preview
@@ -310,7 +310,7 @@ pub(in crate::app::actions) fn arm(doc: &mut OpenDoc, group: Option<String>) {
 /// describing a group that is still there, beside a sentence saying it was not
 /// removed.
 ///
-/// # ★★★ The refusal is worded HERE, because `vector_edit`'s refusal arm only
+/// # The refusal is worded HERE, because `vector_edit`'s refusal arm only
 /// traces
 ///
 /// That arm's own comment is explicit about it: a refusal *"is deliberately not
@@ -377,7 +377,7 @@ mod tests {
     /// `Personal.Address.Zip`, so `Personal` and `Personal.Address` are both
     /// grouping nodes and the second is emptied by deleting the first.
     ///
-    /// ★ The fixture is chosen for the **cascade**, which is the case the
+    /// The fixture is chosen for the **cascade**, which is the case the
     /// disclosure exists for. A one-level group would exercise the verb and
     /// prove nothing about the number an operator cannot predict — how many
     /// *other* nodes go with the one they named. `PROVENANCE.md` records that
@@ -387,7 +387,7 @@ mod tests {
     /// terminals and both grouping nodes are in the removal set.
     const GROUP: &str = "Personal";
 
-    /// ★★★ The whole two-press protocol, end to end, against a real engine.
+    /// The whole two-press protocol, end to end, against a real engine.
     ///
     /// Written as one test rather than three because the facts it asserts are
     /// only meaningful in sequence: a preview that is readable is worth nothing
@@ -415,7 +415,7 @@ mod tests {
              confirmation with no numbers in it",
         );
         assert_eq!(live.preview.group_name, GROUP);
-        // ★ Three, measured rather than assumed: `Personal.Name`,
+        // Three, measured rather than assumed: `Personal.Name`,
         // `Personal.Address.City` and `Personal.Address.Zip`. The first draft
         // of this test said two, from reading `PROVENANCE.md`'s summary of the
         // fixture rather than asking the engine — which is the same mistake in
@@ -487,7 +487,7 @@ mod tests {
 
     /// **Cancel changes nothing and clears the block.**
     ///
-    /// ★ Asserted separately because it is the one path that must move no
+    /// Asserted separately because it is the one path that must move no
     /// epoch: an operator who backs out of a destructive confirmation has done
     /// nothing, and a shell that bumped the revision for it would silently
     /// retire whatever disclosure was on screen and mark a clean document
@@ -508,7 +508,7 @@ mod tests {
 
     /// **A terminal field's name is refused, not silently redirected.**
     ///
-    /// ★★ The engine rules that `NotAGroupingNode` is a *wrong verb on a sound
+    /// The engine rules that `NotAGroupingNode` is a *wrong verb on a sound
     /// document* and deliberately does not fall back to `delete_field` —
     /// *"the two remove different amounts, and guessing which the caller meant
     /// is exactly the sneakiness rule 4 forbids on a destructive verb."* This

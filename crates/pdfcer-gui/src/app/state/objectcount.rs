@@ -1,33 +1,13 @@
-//! # `app::state::objectcount` — **what a document tells the diagnostic
-//! channel about the page in front of it**
+//! # `app::state::objectcount` — what a document tells the diagnostic channel
+//! # about the page in front of it
 //!
-//! One function, [`OpenDoc::trace_object_count`], and a long argument for why
-//! the number it emits is the number it emits. Split out of
-//! [`super`](crate::app::state) on 2026-09-11 under **R2**, when a sixty-line
-//! doc block on `OpenDoc::render_refused` took that file to 1,531 lines
-//! against the 1,500 ceiling.
+//! One function, [`OpenDoc::trace_object_count`], and the argument for why the
+//! number it emits is the number it emits.
 //!
-//! ## Why this is the seam, and not an arbitrary cut to get under a number
-//!
-//! `app::state` is, almost entirely, **the shape of an open document**: one
-//! enum, one large struct, and the handful of questions you may ask it. This
-//! function is the only member that is not about the document at all — it is
-//! about **the harness**. Its subject is `PROJECT_PLAN.md` §4.3 requirement 3
-//! and `DEFECTS.md` D1: the count that lets `ui-verify` assert a deletion
-//! actually removed something, rather than assert that a verb was called.
-//!
-//! That makes it the third R2 split of the same file and the third one taken
-//! along a subject boundary rather than a line number — `fixtures` (how a test
-//! opens a document) and `heldpreview` (for how long a picture is still true)
-//! came out the same way. A file that has been split three times along real
-//! seams is a file whose seams were there all along.
-//!
-//! ## What stays behind
-//!
-//! Everything. This is an inherent `impl OpenDoc` block in a child module, so
-//! the method is reached as `doc.trace_object_count()` exactly as before and
-//! no call site changes. An R2 split moves where code **lives**; it does not
-//! change what the crate offers.
+//! The rest of `app::state` is the **shape of an open document**. This member
+//! alone is about **the harness**: `PROJECT_PLAN.md` §4.3 requirement 3 and
+//! `DEFECTS.md` D1 — the count that lets `ui-verify` assert a deletion actually
+//! removed something, rather than assert that a verb was called.
 
 use super::OpenDoc;
 
@@ -60,7 +40,8 @@ impl OpenDoc {
     /// # The line
     ///
     /// ```text
-    /// pdfcer-diag objects n=412 page=0 paths=380 text=30 images=2 forms=0
+    /// pdfcer-diag objects n=412 page=0 paths=380 text=30 images=2 forms=0 \
+    ///   leaves=242 depth_overflow=0 cycles=0
     /// ```
     ///
     /// `n=` is the total — the field name `ui-verify`'s vocabulary already
@@ -98,18 +79,13 @@ impl OpenDoc {
     /// expensive part is the count itself, so the gate has to sit in front of
     /// it.
     ///
-    /// # ★ It counts the SHARED decomposition, not one of its own
+    /// # ★ It counts the SHARED decomposition, never one of its own
     ///
-    /// Until S4 this ran its own `decompose_page`, because the only cache was
-    /// on the panels and this is not a panel — a second decomposition of the
-    /// same page, i.e. the *"two decompositions quietly diverge"* pattern
-    /// decision 011 warns about, sitting in the code whose entire job is to
-    /// report a trustworthy number about that page. It now reads
-    /// [`Self::page_objects`], so `n=` is by construction the count of the
-    /// objects the Objects panel lists and the canvas hit-tests. The cost
-    /// gate is unchanged: nothing is built with tracing off, and with it on
-    /// the page decomposes once per `(page, epoch)` — what the private
-    /// decomposition already cost, minus the duplicate.
+    /// It reads [`Self::page_objects`], so `n=` is by construction the count of
+    /// the objects the Objects panel lists and the canvas hit-tests. A private
+    /// `decompose_page` here would be a second decomposition of the same page —
+    /// two counts free to diverge — inside the code whose entire job is to
+    /// report a trustworthy number about that page.
     pub(crate) fn trace_object_count(&mut self) {
         if !crate::diag::enabled() {
             return;
@@ -148,30 +124,21 @@ impl OpenDoc {
             // Read out before the closure so the `Ref` is not held across it.
             let (n, paths, text, images, forms) =
                 (model.objects.len(), d.paths, d.text, d.images, d.forms);
-            // ★★ **`leaves=` — how many objects are painted from INSIDE those
-            // forms**, added 2026-08-27 with form-XObject descent.
+            // ★★ **`leaves=` — how many objects are painted from INSIDE the
+            // form XObjects `forms=` counts.**
             //
-            // `n=` counts `PageObjects::objects`, which is the page's own
-            // content stream and nothing else. On a wrapped drawing that is a
-            // small fraction of what is on screen and of what a click can now
-            // select: the industry print-conformance suite's composite page 1
-            // reports `n=28 forms=4` and carries **242** leaves;
-            // `ncored-benchmark-cad-drawing` page 1 reports `n=129758 forms=1`
-            // and carries **10,256**.
+            // `n=` counts `PageObjects::objects`: the page's own content stream
+            // and nothing else. On a wrapped drawing that is a small fraction
+            // of what is on screen and of what a click can select — the
+            // industry print-conformance suite's composite page 1 reports
+            // `n=28 forms=4` and carries 242 leaves. Without `leaves=`, a
+            // harness reading `n=28` on a page with hundreds of selectable
+            // things reads a number that does not mean what its name suggests.
             //
-            // Without this field, `objects n=` is a half-truth on exactly the
-            // documents the operator complained about — and it is the line a
-            // driven check reads to answer *"did the page decompose, and how
-            // much is there?"*. A harness reading `n=28` on a page with 270
-            // selectable things is reading a number that no longer means what
-            // its name suggests.
-            //
-            // ★ `depth_overflow=` and `cycles=` come with it, and they are the
-            // half that stops `leaves=` becoming its own half-truth: a non-zero
-            // count means the walk did NOT reach everything, so `leaves` is a
-            // floor rather than a total. The engine counts them rather than
-            // truncating silently for that reason, and a consumer that ignored
-            // them would present an incomplete list as complete.
+            // ★ `depth_overflow=` and `cycles=` stop `leaves=` becoming its own
+            // half-truth: either one non-zero means the walk did NOT reach
+            // everything, so `leaves` is a floor rather than a total. A consumer
+            // that ignored them would present an incomplete list as complete.
             let (leaves, depth_overflow, cycles) =
                 (model.leaves.len(), d.form_depth_overflows, d.form_cycles);
             let page_index = self.view.page_index;

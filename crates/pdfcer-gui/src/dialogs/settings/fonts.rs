@@ -3,31 +3,29 @@
 //! One control: the list of folders pdfcer searches when it has to embed a font
 //! a document names but does not carry.
 //!
-//! ## ★★★ Why it is HERE and not on a batch pane
+//! ## Why it is HERE and not on a batch pane
 //!
-//! `tools.font_folders`' recorded blocker said the list *"needs the pane it
-//! lives in"* — the old shell's batch pane, one of the few units
-//! `SALVAGE.md` still lists as not carried across. That was an **assumption
-//! rather than a finding**, and re-deriving it on 2026-08-28 is what turned it
-//! up: nothing about a list of directories needs a batch pane. This window has
-//! nine modules and seven groups and is the surface whose whole subject is
-//! *"settings that persist across documents"*, which is exactly what a font
-//! search path is.
+//! Nothing about a list of directories needs the host it was first drawn in.
+//! This window is the surface whose whole subject is *"settings that persist
+//! across documents"*, which is exactly what a font search path is.
 //!
-//! ⇒ Recorded because the shape recurs: a blocker naming a **missing host** is
-//! weaker than one naming a missing capability, and it goes stale the moment
-//! any other host will do. Nobody had asked whether one would.
+//! ⇒ Worth stating because the shape recurs: a blocker naming a **missing
+//! host** is weaker than one naming a missing capability, and it goes stale the
+//! moment any other host will do — without anyone noticing, because a
+//! host-shaped blocker never prompts the question of whether some other host
+//! would already serve.
 //!
-//! ## ★★ The command still exists, and points here
+//! ## The command that points here
 //!
-//! `tools.font_folders` on the Tools tab raises
-//! `Action::Command("file.settings")`. That is `format.properties`' precedent
-//! and its stated rule: *"a second route to an existing command cannot become
-//! a second implementation of it."* An operator who looks on the Tools tab
-//! finds the command where it has always been drawn; it opens the window that
-//! holds the list.
+//! `tools.font_folders` on the Tools tab opens this window **landed on this
+//! group**. It is not a route to `file.settings`: both ids are owned by
+//! [`crate::app::dispatch::settings`] and share one window, one draft and one
+//! Save, differing only in where the window lands. They are still one
+//! implementation — what separates them is that *"where do font folders live"*
+//! is a different **request** from *"show me the settings"*, and a route's
+//! target is a bare id with nowhere to carry that.
 //!
-//! ## ★ What this group deliberately does NOT do
+//! ## What this group deliberately does NOT do
 //!
 //! **It does not check that a folder exists**, and it does not list the faces
 //! in one. The first is [`crate::app::prefs::fonts::add`]'s stated position —
@@ -68,7 +66,7 @@ pub fn folders(ui: &mut Ui, prefs: &mut Prefs) {
     ui.small(t::font_folders_hint());
     ui.add_space(4.0);
 
-    // ★ The list is drawn before the buttons, and each row carries its own
+    // The list is drawn before the buttons, and each row carries its own
     // Remove. A single "remove selected" would need a selection model for a
     // list that is at most sixteen rows — and a row whose delete is on the row
     // is the arrangement every list in this shell already uses.
@@ -82,7 +80,7 @@ pub fn folders(ui: &mut Ui, prefs: &mut Prefs) {
             {
                 remove = Some(index);
             }
-            // ★ `truncate` with the full path on hover — `panels::properties`'
+            // `truncate` with the full path on hover — `panels::properties`'
             // row rule, and for its reason: a path can run to any length and a
             // row that grew to three lines would push the buttons under it
             // around as the operator added folders.
@@ -96,16 +94,16 @@ pub fn folders(ui: &mut Ui, prefs: &mut Prefs) {
     }
 
     if prefs.font_folders.is_empty() {
-        // ★★ The empty state is a SENTENCE, not a blank. An empty list is
+        // The empty state is a SENTENCE, not a blank. An empty list is
         // indistinguishable from a broken control, and this one has a
         // consequence worth stating before the operator meets it at the far end
         // of an embed.
         //
-        // ★★★ TWO sentences, because as of the OS-fonts checkbox there are two
-        // states and only one of them is a problem. "No folders" no longer
-        // means "nothing to embed from" — the box may be ticked — and an empty
-        // state that contradicted a control four rows below it would tell an
-        // operator who HAS ticked it that their setting does not work.
+        // TWO sentences, because there are two states and only one is a
+        // problem. "No folders" does not mean "nothing to embed from" — the
+        // OS-fonts box may be ticked — and a single empty state would
+        // contradict a control four rows below it, telling an operator who HAS
+        // ticked it that their setting does not work.
         ui.small(if prefs.use_os_fonts {
             t::font_folders_none()
         } else {
@@ -133,7 +131,7 @@ pub fn folders(ui: &mut Ui, prefs: &mut Prefs) {
 
     ui.add_space(8.0);
     ui.separator();
-    // ★★★ **The checkbox the operator asked for — `OPERATOR_REQUESTS.md` O50.**
+    // **The checkbox the operator asked for — `OPERATOR_REQUESTS.md` O50.**
     //
     // *"just a simple checkbox to include fonts from the OS installed font
     // folders."* Below the list rather than above it, and the order is the
@@ -143,14 +141,14 @@ pub fn folders(ui: &mut Ui, prefs: &mut Prefs) {
     // main event.
     let os = ui.checkbox(&mut prefs.use_os_fonts, t::use_os_fonts_label());
     crate::diag::ui_rect_visible(OS_REGION, os.rect, ui.clip_rect());
-    // ★★ The hint is DRAWN, not put on hover, and it is the one place in this
+    // The hint is DRAWN, not put on hover, and it is the one place in this
     // window that argues for itself. Every other hint here describes a control;
     // this one hands the operator a licensing decision, and a decision nobody
     // reads is a decision the program took. Hover text is for the operator who
     // went looking — this is for the one who did not.
     ui.small(t::use_os_fonts_hint());
 
-    // ★★★ The folders the tick resolves to, drawn under it.
+    // The folders the tick resolves to, drawn under it.
     //
     // A checkbox whose effect is invisible is one nobody can verify. The
     // per-user folder in particular — `…\AppData\Local\Microsoft\Windows\Fonts`
@@ -159,7 +157,7 @@ pub fn folders(ui: &mut Ui, prefs: &mut Prefs) {
     // it is the difference between a setting an operator trusts and one they
     // re-tick to see whether it took.
     //
-    // ★ Drawn only when ticked. An unticked box with a list of folders under it
+    // Drawn only when ticked. An unticked box with a list of folders under it
     // states a fact about the machine and implies a promise about the program.
     if prefs.use_os_fonts {
         let found = fonts::os_font_dirs();
@@ -211,7 +209,7 @@ pub fn folders(ui: &mut Ui, prefs: &mut Prefs) {
 /// | Fake it and say so (`Warn`) | the same, plus a sentence of its own on the status bar |
 /// | Never fake it (`Refuse`) | nothing changes, and pdfcer says no real face on the page can show that text |
 ///
-/// # ★★ Why it lives in Fonts and not in Text
+/// # Why it lives in Fonts and not in Text
 ///
 /// The window's rule is *"whichever group matches the SYMPTOM that would send
 /// somebody looking"*. The symptom here is **"my bold looks wrong / pdfcer did
@@ -219,7 +217,7 @@ pub fn folders(ui: &mut Ui, prefs: &mut Prefs) {
 /// what comes out when you copy, which this never touches: a synthesised weight
 /// changes how a run is painted, not what it extracts as.
 ///
-/// # ★ Never fake it is NOT the same as an error
+/// # Never fake it is NOT the same as an error
 ///
 /// The third option changes nothing and says so, which makes it the only
 /// setting in this window that can make a control appear not to work. The note

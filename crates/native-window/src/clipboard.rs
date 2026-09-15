@@ -7,9 +7,9 @@
 //! > *"In read mode the regular pointer should also allow us to select images
 //! > so we can copy and paste them as well as text outside of the pdfcergui."*
 //!
-//! *"Outside of pdfcer-gui"* is the whole requirement. pdfcer has had an internal
-//! clipboard since 2026-08-20 and it is the right thing for pdfcer→pdfcer work —
-//! it carries a `MarkupSpec`, an `ObjectClip`, structure a bitmap cannot. None
+//! *"Outside of pdfcer-gui"* is the whole requirement. pdfcer's own internal
+//! clipboard is the right thing for pdfcer→pdfcer work — it carries a
+//! `MarkupSpec`, an `ObjectClip`, structure a bitmap cannot. None
 //! of it means anything to Word, Outlook or Paint, and those are where the
 //! operator is going.
 //!
@@ -101,11 +101,11 @@ struct BitmapInfoHeader {
 
 // ★★ **Two libraries, named explicitly**, where `win32.rs` names none.
 //
-// That module's four symbols are all in `user32`, which the Rust toolchain
-// links by default on this target; `kernel32` it links too. The clipboard's
-// eight are split across BOTH — the clipboard itself is `user32`, the moveable
-// memory it takes is `kernel32` — and the first build of this file failed to
-// link with eight `LNK2019 unresolved external symbol` errors.
+// That module's symbols are all in `user32`, which the Rust toolchain links by
+// default on this target. This file's are split across two libraries — the
+// clipboard itself is `user32`, the moveable memory it takes is `kernel32` —
+// and an undeclared library here is not a warning: it is `LNK2019 unresolved
+// external symbol`, one per call, at link time.
 //
 // ⇒ So they are declared per library rather than in one block. Being explicit
 // is also the honest form: a reader can see which DLL each call crosses into,

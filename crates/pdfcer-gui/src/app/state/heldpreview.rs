@@ -1,42 +1,23 @@
-//! # `app::state::heldpreview` — **the preview that outlives the gesture**
+//! # `app::state::heldpreview` — the preview that outlives the gesture
 //!
-//! `OPERATOR_REQUESTS.md` **O63**, third piece. Split out of `app::state` under
-//! **R2** on 2026-08-30, when adding it took that file to 1,672 lines.
-//!
-//! ## The subject, which is a seam rather than a size-driven cut
-//!
-//! `app::state` answers *"what does the shell know about the open document?"*.
-//! This answers one much narrower question with an unusual property: **for how
-//! long is a picture of the document still true?**
-//!
-//! Everything here is about a race between two things that are both correct —
-//! an edit that has already happened, and a raster that has not caught up — and
-//! the whole content of the module is the rule for deciding which of them the
-//! operator should be looking at. That rule has three clauses, two of them
-//! bounded by wall-clock time, and neither of those is obvious. It earns a file.
-//!
-//! ## What it exists to remove, in the operator's own words
+//! `OPERATOR_REQUESTS.md` **O63**, third piece. The module owns one question:
+//! **for how long is a picture of the document still true?** A released gesture
+//! leaves two correct things racing — an edit that has already landed, and a
+//! raster that has not caught up — and everything here is the rule for deciding
+//! which of them the operator should be looking at.
 //!
 //! **Ken, 2026-08-30:** *"the live preview should remain while the update to the
-//! pdf structure runs in the background."*
+//! pdf structure runs in the background."* Without the hold, releasing a drag
+//! drops the preview while the raster underneath still shows the object where it
+//! started; the object appears to **snap back** and then jump, which reads as
+//! the program having refused the edit and changed its mind.
 //!
-//! Before this, releasing a drag discarded the preview **and the raster
-//! underneath still showed the object where it started** — for one to two
-//! seconds on his own CAD drawing. What that looks like is: the preview
-//! vanishes, the object is back where it was, a pause, and then it jumps to
-//! where he put it. **It appears to snap back**, which reads as the program
-//! having refused the edit and then changed its mind.
-//!
-//! ## ★★ Why holding a picture is honest rather than optimistic
-//!
-//! The edit **has happened**. The document already reads the way the preview is
-//! drawn; the only thing behind is the picture. So this is not a guess about a
-//! commit that might fail — it is the true state of the document, drawn by the
-//! one path that can produce it in under a second.
-//!
-//! ⇒ Which is why every clause below keys on evidence that the commit
-//! *actually* landed, and why the one clause that cannot get that evidence
-//! immediately is bounded by a quarter of a second rather than trusted.
+//! ★ Holding the picture is honest rather than optimistic: the edit **has**
+//! happened, so the held shape is the true state of the document, drawn by the
+//! only path that can produce it in under a second. That is why every clause
+//! below keys on evidence that the commit landed, and why the one clause that
+//! cannot get that evidence immediately is bounded by a quarter of a second
+//! rather than trusted.
 
 use super::OpenDoc;
 
@@ -58,38 +39,32 @@ pub(crate) struct HeldPreview {
 
 /// How long a held preview may survive before it is dropped regardless.
 ///
-/// # ★★★ Why a wall-clock backstop, when the epoch test should be enough
+/// A wall-clock backstop, because the epoch test alone can fail to fire at all:
+/// a render that fails, a page that will not rasterise, or any path that leaves
+/// `page_texture_epoch` behind strands the hold, and the operator is left
+/// looking at a selection-coloured tracing of their drawing with no way to clear
+/// it. A stuck preview is worse than a late one — it is indistinguishable from a
+/// corrupted document.
 ///
-/// Because *"should be enough"* is how a preview becomes permanent. The epoch
-/// test drops the hold when the raster carrying the edit arrives — and if that
-/// raster never arrives (a render that fails, a page that will not rasterise, a
-/// strip path that leaves `page_texture_epoch` behind for a reason nobody has
-/// thought of yet), the operator is left looking at a selection-coloured
-/// tracing of their drawing with no way to clear it.
-///
-/// ⇒ A stuck preview is worse than a late one: it is indistinguishable from a
-/// corrupted document. Four seconds is roughly four times the measured
-/// whole-page raster on the operator's hardest drawing, so it cannot fire on a
-/// render that is merely slow.
+/// Four seconds is roughly four times the measured whole-page raster on the
+/// operator's hardest drawing, so it cannot fire on a render that is merely
+/// slow.
 const HELD_PREVIEW_MAX: std::time::Duration = std::time::Duration::from_secs(4);
 
 /// How long a hold may sit with the edit epoch **unmoved** before it is dropped.
 ///
-/// # ★★★ This is the difference between "not applied yet" and "refused"
-///
-/// Actions are drained *after* the frame that raised them, so there is a real
+/// ★ This is the only thing separating *"not applied yet"* from *"refused"*.
+/// Actions are drained after the frame that raised them, so there is a real
 /// window — one frame, ~16 ms — in which a hold is legitimate and the epoch has
-/// not moved. There is also a state in which the epoch never moves at all: the
-/// **engine refused the edit**. By epoch alone the two are identical.
+/// not moved; there is also a state in which the epoch never moves at all,
+/// because the engine refused the edit. By epoch the two are identical; by
+/// elapsed time they are not remotely alike. 250 ms is fifteen frames at 60 Hz,
+/// far longer than the real window can be and far shorter than a refusal stays
+/// wrong for.
 ///
-/// By elapsed time they are not remotely alike. 250 ms is fifteen frames at
-/// 60 Hz — far longer than the real window can be, far shorter than a refusal
-/// stays wrong for.
-///
-/// ★ Getting this wrong ships a preview of a move that did not happen, sitting
-/// over a document that disagrees with it, for the full four seconds of
-/// [`HELD_PREVIEW_MAX`]. That is the single worst outcome available to this
-/// feature, because it is a picture of a lie rather than a picture that is late.
+/// Getting it wrong ships a preview of a move that did not happen, over a
+/// document that disagrees with it, for the full [`HELD_PREVIEW_MAX`] — a
+/// picture of a lie rather than a picture that is late.
 const HELD_PREVIEW_GRACE: std::time::Duration = std::time::Duration::from_millis(250);
 
 impl OpenDoc {
@@ -114,37 +89,23 @@ impl OpenDoc {
         if held.since.elapsed() > HELD_PREVIEW_MAX {
             return None;
         }
-        // ★★★ The one-frame window described above — and it is bounded by TIME,
-        // not by the epoch, and the difference is a defect that would otherwise
-        // ship.
-        //
-        // Actions are drained after the frame that raised them, so for one frame
-        // `edit_epoch` still equals `captured_at_epoch`. Accepting that state
-        // unconditionally would also accept it **forever** — which is exactly
-        // what happens when the engine REFUSES the edit: the epoch never moves,
-        // and the operator is left looking at a preview of a move that did not
-        // happen, for four seconds, with the document underneath disagreeing
-        // with it.
-        //
-        // ⇒ A refusal is indistinguishable from "not applied yet" by epoch
-        // alone. It is entirely distinguishable by *how long it has been*: one
-        // frame is 16 ms and a refusal is forever. `moving::drag` already
-        // declines to hold anything for the refusals IT can see; this covers the
-        // ones only the apply phase can — the engine saying no after the Action
-        // was raised.
+        // The one-frame window, bounded by TIME rather than by the epoch:
+        // accepting an unmoved epoch unconditionally would also accept a
+        // refusal, which never moves it at all. `moving::drag` declines to hold
+        // for the refusals it can see; this covers the ones only the apply phase
+        // can — the engine saying no after the Action was raised. See
+        // [`HELD_PREVIEW_GRACE`].
         if self.edit_epoch == held.captured_at_epoch {
             return (held.since.elapsed() < HELD_PREVIEW_GRACE).then_some(&held.shape);
         }
         // The raster carrying the edit has landed. The document's own picture is
         // correct now, and it is better than this one in every way.
         //
-        // ★★★ COMPARED AGAINST THE PAGE'S OWN EPOCH, not the document's —
-        // corrected 2026-09-03. See [`Self::page_is_catching_up`] for the full
-        // account; in one line: `page_texture_epoch` has held a `PageEpochs`
-        // value since O74, and `edit_epoch` is a different counter, so the two
-        // can diverge permanently and this early return could stop firing for
-        // the rest of the session — leaving a held preview drawn over a raster
-        // that had already caught up.
+        // ★ Compared against the PAGE's own epoch, never against `edit_epoch`:
+        // the two are issued by independent counters and diverge permanently
+        // (see [`Self::page_is_catching_up`]). Comparing the wrong pair makes
+        // this early return stop firing for the rest of the session, leaving a
+        // held preview drawn over a raster that had already caught up.
         if self.page_texture_epoch == self.page_epochs.get(self.view.page_index) {
             return None;
         }
@@ -223,46 +184,22 @@ impl OpenDoc {
     /// picture is not the answer yet**, which is the third of the three options
     /// the operator chose between and the one with no failure mode.
     ///
-    /// ★ Deliberately silent under [`CATCHING_UP_AFTER`]: see that constant.
-    /// # ★★★ IT COMPARES TWO VALUES FROM THE SAME COUNTER, and until
-    /// # 2026-09-03 it did not
+    /// Deliberately silent under [`CATCHING_UP_AFTER`]: see that constant.
     ///
-    /// This read `self.page_texture_epoch != self.edit_epoch`, and those are
-    /// **values issued by two independent counters**:
+    /// ★★★ **Both sides of the comparison must come from the same counter.**
+    /// `edit_epoch` is incremented by the action modules; `page_texture_epoch`
+    /// holds a `PageEpochs` value written by `render::settle`. They are issued
+    /// independently, so an `EditScope::Page(other)` edit advances `edit_epoch`
+    /// without advancing this page's entry and the two pass each other for good
+    /// — deleting a page guarantees it, because `actions::pages` calls
+    /// `bump_all` and a `resize` in the same breath. Comparing across the two
+    /// counters therefore does not flicker, it **sticks**: *"the picture is
+    /// catching up"* stays on the status bar for the rest of the session over a
+    /// picture that is perfectly correct.
     ///
-    /// | field | issued by |
-    /// |---|---|
-    /// | `edit_epoch` | `actions::funnel`, `actions::pages`, `actions::extract` — its own `+= 1` |
-    /// | `page_texture_epoch` | `render::settle` — `self.page_epochs.get(page)`, from `PageEpochs::next` |
-    ///
-    /// They were the same quantity once. **`Pass O74` repurposed
-    /// `page_texture_epoch` to carry a per-page epoch** so that an edit on
-    /// sheet 3 would stop re-rasterising the canvas while it showed sheet 7 —
-    /// and `app::state::pageepoch`'s own header lists this field in its table
-    /// of the caches it converted. The correct comparison was written at the
-    /// same time, two hundred lines away in `render::settle`:
-    ///
-    /// ```text
-    /// let stale_edit = doc.page_texture_epoch != doc.page_epochs.get(doc.view.page_index);
-    /// ```
-    ///
-    /// These two readers were not converted with it.
-    ///
-    /// ★★ The consequence is not a flicker, it is a **stuck sentence**. One
-    /// `EditScope::Page(other)` edit advances `edit_epoch` without advancing
-    /// this page's entry, the two numbers pass each other, and nothing brings
-    /// them back — so *"the picture is catching up"* stays on the status bar
-    /// for the rest of the session, over a picture that is perfectly correct.
-    /// Deleting a page guarantees it: `actions::pages` calls `bump_all` and a
-    /// `resize` in the same breath.
-    ///
-    /// ★ The unit tests could not have caught it. They set both fields by hand
-    /// to equal or adjacent values, so they hold under either model and never
-    /// exercise the divergence — the same shape as
-    /// `the_body_width_holds_both_columns`, retired earlier the same day for
-    /// pinning a relationship between quantities that were not the ones the
-    /// mechanism used. `a_page_edit_elsewhere_does_not_strand_the_catching_up_line`
-    /// is the replacement, and it fails on the old comparison.
+    /// ★ A unit test that sets both fields by hand cannot see this — equal or
+    /// adjacent values hold under either model. Only a test that edits a
+    /// *different* page exercises the divergence.
     pub(crate) fn page_is_catching_up(&self) -> bool {
         self.page_texture_epoch != self.page_epochs.get(self.view.page_index)
             && self

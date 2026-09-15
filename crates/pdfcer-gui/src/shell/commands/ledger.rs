@@ -9,9 +9,8 @@
 //!
 //! ## Why this is a file of its own, and why it is mostly comments
 //!
-//! Split out of [`super::tests`] under **R2** on 2026-09-10, when the O169
-//! entry took that file to 1,507 lines. The seam is the one that file's own
-//! header names for its parent: **the assertions about a catalog are a
+//! A file of its own under **R2**, along the seam that file's own header
+//! names for its parent: **the assertions about a catalog are a
 //! different subject from the catalog**, and this is the third cut along it —
 //! [`super::catalog`] moved the *entries*, [`super::tests`] moved the *rules
 //! about them*, and this moves the *history of the counts*.
@@ -45,10 +44,10 @@
 //! `tools/gates/check-ui-strings.sh` stops scanning a file at a
 //! `#[cfg(test)]` line and a whole-file test module has no such line to stop
 //! at, and `check-theme-colors.sh` recognises the same inner attribute from
-//! the AST. [`super::tests`]' header records what it cost the day
-//! `canvas/selection/tests.rs` was split without one: 28 assertion messages
-//! reported as operator-facing copy, and *"the noise is the actual hazard"*.
-//! `crate::stamps::tests` paid it again on 2026-09-10, for 19.
+//! the AST. [`super::tests`]' header records what omitting it costs: a split
+//! of `canvas/selection/tests.rs` without one reported 28 assertion messages
+//! as operator-facing copy, and `crate::stamps::tests` later paid it again for
+//! 19 — *"the noise is the actual hazard"*.
 
 #![cfg(test)]
 
@@ -76,28 +75,28 @@ fn registry() -> CommandRegistry {
 /// `super::manifest`'s, and a silent drift makes both wrong.
 #[test]
 fn registration_succeeds_and_registers_every_command() {
-    // ★ 121 → 122 on 2026-08-28: `file.save_compacted`
+    // ★ 121 → 122: `file.save_compacted`
     // (`OPERATOR_REQUESTS.md` O48), the save that rewrites the whole file
     // so the space a deletion freed is actually reclaimed.
-    // ★ 122 → 123 on 2026-08-28: `edit.reflow_block` (O54b), the
-    // paragraph re-wrap `pdfcer-core` has carried since Pass 91.
-    // ★ 123 → 124 on 2026-08-28: `edit.attachments`, the Attachments panel
+    // ★ 122 → 123: `edit.reflow_block` (O54b), the
+    // paragraph re-wrap `pdfcer-core` had carried, unreachable, for months.
+    // ★ 123 → 124: `edit.attachments`, the Attachments panel
     // — `attach_file`, `detach_file`, `list_attachments` and
     // `extract_attachment` had existed in `pdfcer-core` with no command, no
     // menu item and no panel, which is a capability that does not exist as
     // far as the operator is concerned.
-    // ★ 124 → 125 on 2026-08-28: `format.unshare_form`, the "option"
+    // ★ 124 → 125: `format.unshare_form`, the "option"
     // half of `pdfcer-core`'s decision 076. `EditSession::unshare_form` had
     // existed in the engine with no command, no menu item and no route of
     // any kind — so the operator had the edit-in-place default and no
     // choice at all, which is the state `R206` exists to prevent.
-    // ★ 125 → 126 on 2026-08-29: `edit.paste_duplicate`, the second
+    // ★ 125 → 126: `edit.paste_duplicate`, the second
     // sense of a form-field paste (`OPERATOR_REQUESTS.md` O58). It is a
     // registered COMMAND rather than a modifier read inside `edit.paste`
     // because a command is the unit this shell can bind, place on a
     // ribbon, put in a menu and withhold by mode — a modifier read inside
     // a handler is reachable from the keyboard and from nowhere else.
-    // ★★ 126 → 129 on 2026-08-29: `pages.copy`, `pages.cut` and
+    // ★★ 126 → 129: `pages.copy`, `pages.cut` and
     // `pages.paste` — `OPERATOR_REQUESTS.md` O59 item 2, consuming the
     // engine's page clipboard.
     //
@@ -107,21 +106,21 @@ fn registration_succeeds_and_registers_every_command() {
     // ALWAYS resolves, so a chord rung consulting it would answer yes on
     // every document and take the clipboard from the canvas permanently.
     // See `app::dispatch::pageclip`.
-    // ★★ 129 → 130 on 2026-08-30: `edit.redact_selection` — the THIRD
+    // ★★ 129 → 130: `edit.redact_selection` — the THIRD
     // redaction-marking route, and the first that does not go through text.
     // Ken: *"am I able to select objects on the canvas and redact them that
     // way yet? … it just told me it couldn't."* It could not: the search box
     // reaches text pdfcer can read as text, and on a CAD drawing a
     // title-block value is often vector strokes and a stamp is often an
     // image. Neither is findable by typing.
-    // ★★★ 130 → 129 on 2026-08-31: `edit.objects` DELETED — O69. Ken:
+    // ★★★ 130 → 129: `edit.objects` DELETED — O69. Ken:
     // *"We shouldn't even need an Edit Objects button."* It was a route to
     // `view.tool_select` under a tooltip promising node dragging, so
     // pressing it after arming the Points tool put him back on the arrow.
     // The count moves WITH the list, in the same commit, which is this
     // file's standing rule and the reason four earlier drifts are recorded
     // above it.
-    // ★★★ 129 → 126 on 2026-08-31: `tools.split_files`, `pages.split`
+    // ★★★ 129 → 126: `tools.split_files`, `pages.split`
     // and `view.sidebar` UNREGISTERED — `OPERATOR_REQUESTS.md` O68. Ken
     // named the first; the sweep found the other two. All three were
     // drawn, enabled and had no dispatch arm at all, so a press traced
@@ -134,30 +133,30 @@ fn registration_succeeds_and_registers_every_command() {
     // greying is for the temporarily unavailable, and "the dialog was
     // never written" is not temporary. The two splits come back together
     // when the boundary chooser exists.
-    // ★ 126 → 127 on 2026-08-31: `view.smart_select` REGISTERED —
+    // ★ 126 → 127: `view.smart_select` REGISTERED —
     // `OPERATOR_REQUESTS.md` O70. Ken: *"we should have a checkbox in
     // navigate for a Smart-Selector option."* The count moves WITH the
     // list, in the same commit, which is this file's standing rule.
-    // ★★ 127 → 128 on 2026-09-01: `edit.select_all`. Ken: *"we should be
+    // ★★ 127 → 128: `edit.select_all`. Ken: *"we should be
     // able to select things off the side of the page, especially since I
     // sometimes drop objects there, and when I do I can't get them back."*
     // The canvas senses input over the page rect only, so an object dragged
     // past the edge is unclickable, unbandable and unpainted — this is the
     // way back to it.
-    // ★★ 128 → 129 on 2026-09-02: `file.save_as`. Ken: *"we need a Save As
+    // ★★ 128 → 129: `file.save_as`. Ken: *"we need a Save As
     // option so that we are then making edits in the save as file instead
     // of the original just like other programs have it."* Save a copy
     // already wrote the bytes; what it could not do was MOVE the document,
     // so the next Ctrl+S went back to the file he was leaving.
-    // ★★ 129 → 130 on 2026-09-04: `file.export_image` — O120. Ken, to the
-    // engine side on 2026-09-03: *"can you add the ability to export
-    // page(es) to png, jpg, svg."* `RIBBON_IA.md` §5.1 had carried the row
+    // ★★ 129 → 130: `file.export_image` — O120. Ken, to the
+    // engine side: *"can you add the ability to export page(es) to png, jpg,
+    // svg."* `RIBBON_IA.md` §5.1 had carried the row
     // since the ribbon was specified, and nothing was required to read it.
-    // ★ 130 → 131 on 2026-09-04: `file.open_in_acrobat` — O122. The
+    // ★ 130 → 131: `file.open_in_acrobat` — O122. The
     // operator: *"beside our read-review-edit buttons at the top there
     // should be an open in acrobat button."* The first command this shell
     // has whose job is to STOP being the program holding the document.
-    // ★★ 131 → 130 on 2026-09-04: `view.panel_tool` RETIRED — O123. The
+    // ★★ 131 → 130: `view.panel_tool` RETIRED — O123. The
     // panel it toggled no longer exists; its status is permanent dock
     // chrome, its live controls are in Properties, and a toggle for a
     // surface that is always drawn would be a control with nothing to
@@ -165,7 +164,7 @@ fn registration_succeeds_and_registers_every_command() {
     // recorded the same way every increment is — with the operator's
     // reason, in the same commit as the list — because a count that only
     // ever goes up is a count nobody has had to think about.
-    // ★★★ 130 → 134 on 2026-09-04: the four panel-layout verbs —
+    // ★★★ 130 → 134: the four panel-layout verbs —
     // `view.panel_float`, `view.panel_dock`, `view.panel_close` and
     // `view.dock_all_panels`. Panels now tear out into real OS windows
     // (`egui_shell::dock::float` / `::floatwin`), and R8 is why these are
@@ -178,7 +177,7 @@ fn registration_succeeds_and_registers_every_command() {
     // the panel the operator right-clicked, which no ribbon control can
     // supply. The fourth has no operand at all and is on the ribbon in
     // View ▸ Window, which is where the capability is discovered.
-    // ★★★ 134 → 136 on 2026-09-04: `file.encrypt` and `file.permissions` —
+    // ★★★ 134 → 136: `file.encrypt` and `file.permissions` —
     // `OPERATOR_REQUESTS.md` O119, approved as *"yes add encryption and
     // permissions"*. Two commands and one window; the pair sits in a new
     // File ▸ Security band immediately after Export, which is where the
@@ -193,7 +192,7 @@ fn registration_succeeds_and_registers_every_command() {
     // learn that two sessions were writing at once, which is the fact that
     // explains the token collision recorded in `catalog::file`.
     //
-    // ★★★ …and 137 → 138 on 2026-09-04: `edit.copy_as_vector`
+    // ★★★ …and 137 → 138: `edit.copy_as_vector`
     // (`OPERATOR_REQUESTS.md` **O120**) — *"copy and paste vector graphics
     // into word or inkscape"*. The clipboard's copy-OUT, and the first
     // command in this registry whose whole point is what happens in
@@ -206,7 +205,7 @@ fn registration_succeeds_and_registers_every_command() {
     // besides: the operator did not know pdfcer could do this, which is why
     // he asked, so a keyboard-only route would have answered the request
     // with something he still could not find.
-    // ★★ 138 → 140 on 2026-09-05: `view.ribbon_auto_hide` and
+    // ★★ 138 → 140: `view.ribbon_auto_hide` and
     // `view.rail_auto_hide`. Ken: *"we should also add the capability to
     // auto hide the ribbon until we hover over top of it… left rail should
     // also have the option to auto hide as well."* Two commands rather than
@@ -214,24 +213,24 @@ fn registration_succeeds_and_registers_every_command() {
     // surfaces and Office — which HAS the three-position version — puts all
     // three of its positions on ONE surface. The count moves WITH the list,
     // in the same commit, which is this file's standing rule.
-    // ★★ 140 → 141 on 2026-09-05: `file.document_properties`. The operator:
+    // ★★ 140 → 141: `file.document_properties`. The operator:
     // *"the document properties are still always visible in the properties
     // tab. it needs to get out of there and be in its own document
     // properties tab."* It opens `crate::panels::docprops` — a panel that
     // already existed as the last section of the Properties panel — so this
     // is a **surface being separated**, not a capability arriving, and the
     // count moves anyway because a separated surface needs its own control.
-    // ★★★ 141 → 142 on 2026-09-05: `view.line_weights` — `OPERATOR_REQUESTS.md`
+    // ★★★ 141 → 142: `view.line_weights` — `OPERATOR_REQUESTS.md`
     // O137, and the only entry in this ledger that RESTORES a command.
     // *"awhile ago you told me you removed the button to show all lines
     // without their thickness … I do want that display option!"*
-    // `view.thin_lines` was unregistered on 2026-08-17 because
-    // `RenderOptions` had no field behind it; the engine shipped
-    // `stroke_display` (`Pass 254.0`) the day this shell asked, so the
-    // capability exists and R8 says registering the command is how the GUI
+    // `view.thin_lines` had been unregistered because `RenderOptions` had no
+    // field behind it; the engine shipped `stroke_display` the day this shell
+    // asked, so the capability exists and R8 says registering the command is
+    // how the GUI
     // learns it. A **new token (235)**, not the retired 213 — see the
     // registration for why a retired token is never handed back.
-    // ★★★ 142 → 143 on 2026-09-06: `file.sign`, and it is **the first
+    // ★★★ 142 → 143: `file.sign`, and it is **the first
     // entry in this counter that depends on how the binary was built.**
     //
     // `SHELL_FRAMEWORK.md` §5b's whole mechanism is that a capability which
@@ -246,14 +245,14 @@ fn registration_succeeds_and_registers_every_command() {
     // signing exists — and this expression is a test asserting that the
     // mechanism did what it says. A test that could not mention the feature
     // could not check that turning it off removes exactly one command.
-    // ★★★ 143 → 144 on 2026-09-06: `pages.resize`, and it closes the
+    // ★★★ 143 → 144: `pages.resize`, and it closes the
     // largest gap `EDITABLE_SURFACES.md` had listed with no sentence
     // anywhere against it.
     //
-    // `EditSession::set_media_boxes` shipped on **2026-08-18** — written
-    // for the drawing-set case, one undo entry however many sheets — and
-    // was called by nothing for nineteen days, because no command reached
-    // it. Worse: a complete size chooser was already built and unreachable,
+    // `EditSession::set_media_boxes` — written for the drawing-set case, one
+    // undo entry however many sheets — was called by nothing for **nineteen
+    // days**, because no command reached it. Worse: a complete size chooser
+    // was already built and unreachable,
     // in `dialogs::new_document`, which offers `PaperSize::ALL`, both
     // orientations and a custom size and opens **only while creating a
     // file**. An operator with a drawing open could not resize its sheets
@@ -263,19 +262,18 @@ fn registration_succeeds_and_registers_every_command() {
     // in the engine, written down in three files, reachable from
     // nowhere"* to reachable. That transition is the one this whole
     // register exists to make legible.
-    // ★★★ 143 → 148 on 2026-09-06: the five Format ▸ Markup controls —
+    // ★★★ 143 → 148: the five Format ▸ Markup controls —
     // `format.colour`, `format.fill`, `format.line_width`,
     // `format.opacity` and `format.arrowheads`. The operator: *"getting
     // full editing working for the Markup tools."*
     //
     // The largest single step this counter has taken, and every one of the
     // five was in `manifest::PLANNED` under a reason that had been false
-    // since **2026-08-18** — the day `EditSession::set_markup_style`
-    // shipped and the day the canvas learned to address an annotation.
-    // `manifest::format`'s header stated both blockers in the present tense
-    // for eighteen days after they were gone; it is corrected there, and
-    // the correction is longer than the feature's manifest entry because
-    // the lesson is the more valuable half.
+    // since the day `EditSession::set_markup_style` shipped and the canvas
+    // learned to address an annotation. ⚠ `manifest::format`'s header went on
+    // stating both blockers in the present tense for **eighteen days** after
+    // they were gone; the correction there is longer than the feature's
+    // manifest entry, because the lesson is the more valuable half.
     //
     // ★ Five commands rather than one "markup style" command with a
     // payload, for `edit.paste_duplicate`'s reason and one more: a command
@@ -285,7 +283,7 @@ fn registration_succeeds_and_registers_every_command() {
     // width would overwrite whatever the operator set from the other
     // control. One command per field is that rule expressed in the
     // registry.
-    // ★★★ 148 → 149 on 2026-09-06: `edit.duplicate` — Ctrl+D over a
+    // ★★★ 148 → 149: `edit.duplicate` — Ctrl+D over a
     // selected comment, and the ONLY route to a second copy of one that
     // does not destroy the clipboard. Until it existed an operator laying
     // out a row of identical revision marks paid `Ctrl+C`/`Ctrl+V` per
@@ -300,7 +298,7 @@ fn registration_succeeds_and_registers_every_command() {
     // argument the 125 → 126 line above makes for the two pastes being two
     // commands.
     //
-    // ★★★ 149 → 151 on 2026-09-06: `markup.add_node` and `markup.remove_node`,
+    // ★★★ 149 → 151: `markup.add_node` and `markup.remove_node`,
     // the right-click route to a drawn shape's corners
     // (`OPERATOR_REQUESTS.md`: *"I also can't edit or delete nodes of a markup
     // shape once it is drawn."*). They are the first two commands in this
@@ -309,12 +307,13 @@ fn registration_succeeds_and_registers_every_command() {
     // was on*, which a button pressed on the ribbon cannot name. See the block
     // comment at their registration in `catalog::markup`.
     //
-    // ★★★ 151 → 155 on 2026-09-06: the four **Markup ▸ Arrange** commands —
+    // ★★★ 151 → 155: the four **Markup ▸ Arrange** commands —
     // `markup.bring_to_front`, `markup.bring_forward`, `markup.send_backward`
     // and `markup.send_to_back`. `/Annots` order is paint order, the engine has
-    // permuted it since 2026-09-02 (`reorder_annotations`), and until today the
-    // only surface that could ask for a permutation was the form-field tab-order
-    // panel — a place nobody putting a cloud on top of a highlight would open.
+    // permuted it for some time (`reorder_annotations`), and until these four
+    // the only surface that could ask for a permutation was the form-field
+    // tab-order panel — a place nobody putting a cloud on top of a highlight
+    // would open.
     //
     // ★ The ids are `markup.*` although the group and its catalog file are
     // called Arrange: the block table below asserts a token sits in the hundred
@@ -327,13 +326,12 @@ fn registration_succeeds_and_registers_every_command() {
     // `manifest::registers`' planned register carrying an argued "engine gap"
     // note, and `MarkupStyle::dash` shipped that afternoon. That register's own
     // entry records the six-hour life of the note.
-    // ★★★ 156 → 157 on 2026-09-07: `file.import_text`. The other half of the
-    // operator's *"we should have export/import for that"*, which had been half
-    // a feature since 2026-09-04 for a reason that was recorded rather than
-    // shrugged at — `pdfcer-core` could not create a page, only copy one. It
-    // could when `blank_document` shipped, and the control was registered the
-    // day after.
-    // ★★★ 157 → 158 on 2026-09-10: `file.stamp_collection`
+    // ★★★ 156 → 157: `file.import_text`. The other half of the
+    // operator's *"we should have export/import for that"*, which was half a
+    // feature for a reason that was recorded rather than shrugged at —
+    // `pdfcer-core` could not create a page, only copy one. It could once
+    // `blank_document` shipped, and the control followed.
+    // ★★★ 157 → 158: `file.stamp_collection`
     // (`OPERATOR_REQUESTS.md` O169). The operator asked for Acrobat's custom
     // stamps *"with the same import/export"*, and the finding that shaped the
     // command is that **there is no import/export to match**: Acrobat has no
@@ -346,7 +344,7 @@ fn registration_succeeds_and_registers_every_command() {
     // twin would be a second door onto `file.open` with a narrower filter, which
     // is a control that exists to make a menu look symmetrical.
     //
-    // ★★★ 158 → 159 on 2026-09-11: `edit.offpage`, and it moves the counter
+    // ★★★ 158 → 159: `edit.offpage`, and it moves the counter
     // by ONE for a reason worth the two lines. The operator asked *"how do I
     // view and edit objects that are off of the page?"* — three verbs, and the
     // first two were already reachable: the canvas shows the off-sheet band
@@ -364,7 +362,7 @@ fn registration_succeeds_and_registers_every_command() {
     // command inside the arm/mark/obliterate family the `protect` group is
     // built around rather than opening a private back door through it.
     //
-    // ★★★ 159 → 160 on 2026-09-11: `view.off_page`, and it is the
+    // ★★★ 159 → 160: `view.off_page`, and it is the
     // SECOND command about off-page content registered in one day. The two
     // are not a duplication and the distinction is the reason this row is
     // worth its paragraph: `edit.offpage` (Protect, above) is a **census**
@@ -384,13 +382,13 @@ fn registration_succeeds_and_registers_every_command() {
     // question about what the operator is doing, not about which file is
     // open. A second, per-document control could only contradict the
     // first, and the contradiction would present as the toggle forgetting.
-    // ★★★ 160 → 161 on 2026-09-15: `format.select_text_line` —
+    // ★★★ 160 → 161: `format.select_text_line` —
     // *Select this line of text* — and it is the first command in this
     // register whose **operand no ribbon control can ask for**.
     //
-    // O188(A). Deleting one line of a title block has worked since
-    // 2026-09-05 and could be reached one way only: arm the Points tool
-    // (`A`) BEFORE clicking. Nothing in the program said so. The operator's
+    // O188(A). Deleting one line of a title block already worked and could be
+    // reached one way only: arm the Points tool (`A`) BEFORE clicking.
+    // Nothing in the program said so. The operator's
     // row records the bar plainly — *"a route he can find before failing is
     // owed"* — and a right-click row is that route.
     //
@@ -458,7 +456,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // Failing here means the registry changed. Read the diff, decide
     // whether the new command should have a glyph, and move the number
     // that is genuinely wrong.
-    // ★ 104 → 105 on 2026-08-28: `format.unshare_form` NAMES a glyph,
+    // ★ 104 → 105: `format.unshare_form` NAMES a glyph,
     // breaking the run of four refusals above it, and the reason it is
     // entitled to one is that it is not new art. It reuses
     // `pick-form-xobject` — the pick filter's form class — under the
@@ -467,40 +465,40 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // XObject, drawn the same, is the convention working rather than an
     // economy; `icons/assets/PROVENANCE.md` is untouched, because nothing
     // was drawn.
-    // ★ 105 → 106 on 2026-08-29: `edit.paste_duplicate` reuses the
+    // ★ 105 → 106: `edit.paste_duplicate` reuses the
     // `paste` glyph under the header's shared-key convention. A second
     // paste icon would be a distinction the operator has to learn for no
     // gain; Word and Acrobat tell their paste variants apart by label and
     // by chord, not by art, and `icons/assets/PROVENANCE.md` is untouched
     // because nothing was drawn.
-    // ★ 106 → 109 on 2026-08-29: the three page-clipboard commands reuse
+    // ★ 106 → 109: the three page-clipboard commands reuse
     // the `cut`, `copy` and `paste` glyphs under the header's shared-key
     // convention. A second set of scissors for pages would be a
     // distinction the operator has to learn for no gain — the tab they are
     // on already says what the command acts on, which is exactly what a
     // shared icon plus a distinct label is for.
-    // ★ 109 → 110 on 2026-08-30: `edit.redact_selection` reuses the
+    // ★ 109 → 110: `edit.redact_selection` reuses the
     // `redact` glyph, as `edit.redact_apply` already does. Three controls
     // about one operation, told apart by their labels.
-    // ★ 110 → 109 on 2026-08-31: `edit.objects` deleted (O69), and the
+    // ★ 110 → 109: `edit.objects` deleted (O69), and the
     // `edit-objects` glyph it named is now unused. The asset stays in the
     // directory — `icons/assets/PROVENANCE.md` makes that the operator's
     // own work and deleting his drawing because a button went away is not
     // ours to do — but no command claims it.
-    // ★ 109 → 106 on 2026-08-31: the three unregistered by O68 each
+    // ★ 109 → 106: the three unregistered by O68 each
     // named a glyph (`split` twice, `sidebar` once). The assets stay in
     // the directory — `icons/assets/PROVENANCE.md` makes them the
     // operator's own work — but no command claims them.
-    // ★ 106 → 107 on 2026-08-31: `view.smart_select` names the
+    // ★ 106 → 107: `view.smart_select` names the
     // `show-points` glyph (O70). Deliberately a REUSE rather than a new
     // asset: the two controls are about the same subject — how deep a
     // click reaches — and `icons/assets/PROVENANCE.md` makes that
     // directory the operator's own drawing, so inventing art for a control
-    // he asked for this afternoon would be putting a machine's hand in it.
-    // ★★★ 107 → 119 on 2026-09-04, in ONE move and deliberately so.
+    // he has just asked for would be putting a machine's hand in it.
+    // ★★★ 107 → 119, in ONE move and deliberately so.
     //
-    // Twelve commands gained a key from the icon batch adopted that day
-    // (`GLYPH_ADOPTION.md`): nine whose refusal was written out at their
+    // Twelve commands gained a key from one adopted icon batch: nine whose
+    // refusal was written out at their
     // registration — `file.new`, `file.new_from_template`, `file.ocr`,
     // `file.save_as`, `file.save_copy`, `file.save_compacted`,
     // `file.recent`, `edit.attachments`, `edit.reflow_block` — plus
@@ -531,7 +529,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // bumped three times in a race records the last writer's arithmetic and
     // none of the reasoning. The bands reported their deltas and the
     // coordinating session settled it once.
-    // ★ 119 → 120 on 2026-09-04: `file.export_image` (O120) NAMES a
+    // ★ 119 → 120: `file.export_image` (O120) NAMES a
     // glyph, and is entitled to one for the reason `format.unshare_form`
     // above is — it is not new art. It reuses `export`, the download
     // glyph its two band neighbours already wear, under the header's
@@ -539,30 +537,30 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // equally and completely true of all three, and what differs is the
     // FORMAT, which is a word only a label can say. `icons/assets/
     // PROVENANCE.md` is untouched, because nothing was drawn.
-    // ★ 120 → 119 on 2026-09-04: `view.panel_tool` is retired (O123) and it
+    // ★ 120 → 119: `view.panel_tool` is retired (O123) and it
     // named `pointer`. The glyph itself is untouched — `view.tool_select`
     // still wears it — so this is a command leaving, not art leaving.
-    // ★ 119 → 120 on 2026-09-04: `file.open_in_acrobat` (O122) NAMES a
+    // ★ 119 → 120: `file.open_in_acrobat` (O122) NAMES a
     // glyph. It was registered a few hours earlier with the refusal argued
     // at its registration — see the `refused` note below — and
     // `open-in-acrobat.svg` then landed on the icon track, drawn for this
     // command before this command existed to name it. Purpose-drawn art,
     // so `icons/assets/PROVENANCE.md` is untouched.
-    // ★ 120 → 121 on 2026-09-04: `edit.select_all` names a glyph. Not a
+    // ★ 120 → 121: `edit.select_all` names a glyph. Not a
     // new capability and not new art arriving on its own — a **correction**.
     // Its refusal was written by a build session, quoted four times, and
     // reported to the operator as settled until he said *"I didn't refuse
     // that."* The registration carries the account.
-    // ★ 121 → 124 on 2026-09-04: `view.panel_float`, `view.panel_dock`
+    // ★ 121 → 124: `view.panel_float`, `view.panel_dock`
     // and `view.dock_all_panels` name `floating-panels`, which was in the
     // set before anything used it — drawn for a capability that had been
     // specified and not built. `view.panel_close` refuses one and is
     // counted below with the other refusals.
     //
-    // ★★★ **CORRECTED IN PLACE 2026-09-04.** This entry read: *"there is
-    // no close art in this set, and the row is a labelled menu item where
-    // a glyph would add nothing a word does not."* Both halves are false,
-    // and they were false when written:
+    // ★★★ **CORRECTED IN PLACE.** This entry read: *"there is no close art
+    // in this set, and the row is a labelled menu item where a glyph would
+    // add nothing a word does not."* Both halves are false, and they were
+    // false when written:
     //
     //   · **There is close art.** `close.svg` / `crate::icons::Icon::Close`
     //     has been in the set since it landed and is worn by `file.close`.
@@ -571,9 +569,9 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     //     is so expensive: it reads as settled and it is quotable.
     //   · **The row is not a place a glyph could not go.** That half rested
     //     on this build's context menus wiring no icon painter, which was
-    //     true until `shell::menus_wiring::attach` wired one on 2026-09-04
-    //     — after which 25 menu rows began drawing glyphs their commands
-    //     had named all along. A missing wire is not a design decision, and
+    //     true until `shell::menus_wiring::attach` wired one — after which
+    //     25 menu rows began drawing glyphs their commands had named all
+    //     along. A missing wire is not a design decision, and
     //     stating it in the grammar of one is how a refusal outlives its
     //     reason.
     //
@@ -582,26 +580,25 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // file another track owns this session.** The full ruling, and the
     // argument for why sharing the X with `file.close` is the relationship
     // rather than a collision, is at the refusal count below.
-    // ★★★ 124 → 126 on 2026-09-04: `format.bold` and `format.italic`. **A
+    // ★★★ 124 → 126: `format.bold` and `format.italic`. **A
     // CORRECTION of a refusal, not a new capability** — the same shape as
-    // `edit.select_all` five entries up, and the second time in three days.
+    // `edit.select_all` five entries up.
     //
-    // Both commands did on 2026-08-26 exactly what they do now. What changed
-    // is that the reason they were bare — *"Word draws `B` and `I` as
-    // glyphs; this build has no such art"*, in the `refused` note below —
-    // was a statement about **supply**, and the operator has a standing
-    // ruling on supply that predates it by three weeks. From 2026-08-06,
-    // carried in `icons::Icon::Back`'s doc comment: a missing glyph is
+    // Neither command's behaviour changed. What changed is that the reason
+    // they were bare — *"Word draws `B` and `I` as glyphs; this build has no
+    // such art"*, in the `refused` note below — was a statement about
+    // **supply**, and the operator's standing ruling on supply predates it by
+    // weeks. Carried in `icons::Icon::Back`'s doc comment: a missing glyph is
     // **AUTHORED**, not worked around, because working around it *"spends
     // the operator's affordance to protect the font stack; an icon costs one
-    // asset and keeps both."* On 2026-09-04 he applied it to this pair
-    // himself: *"if bold and italics have no art in the set, why weren't
+    // asset and keeps both."* He applied it to this pair himself:
+    // *"if bold and italics have no art in the set, why weren't
     // they made automatically as I have instructed to be done for anything
     // that a glyph is missing for on multiple occasions?"*
     //
     // ★★ **Why the distinction between a correction and a discharge is the
-    // whole point of this entry.** A DISCHARGE (the twelve of 2026-09-04,
-    // below) is a refusal that was right when written and stopped applying
+    // whole point of this entry.** A DISCHARGE (the twelve below) is a
+    // refusal that was right when written and stopped applying
     // because the world changed — art arrived. A CORRECTION is a refusal
     // that was never entitled to be made: it contradicted a ruling that was
     // already on the books, and it survived because it was quoted rather
@@ -618,25 +615,24 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // command cannot support (`Icon::Signatures`' seal, `Icon::Fonts`'
     // pencil). The three surviving Format ▸ Font refusals are the second
     // kind and are argued at their registration.
-    // ★ 126 → 128 on 2026-09-04: `file.encrypt` and `file.permissions`
+    // ★ 126 → 128: `file.encrypt` and `file.permissions`
     // (O119). Both name a glyph and neither needed one drawn — `encrypt`
-    // and `permissions` were adopted in the 2026-09-03 batch and have been
-    // in `icons/assets/` waiting for the commands that would use them, which
-    // is the adoption rule working exactly as `GLYPH_ADOPTION.md` states it.
+    // and `permissions` were adopted in an earlier batch and sat in
+    // `icons/assets/` waiting for the commands that would use them, which is
+    // the adoption rule working as intended: **art may precede its button;
+    // a button waiting on art is the refusal this counter's other half
+    // exists to make somebody argue for.**
     //
     // ★ 128 → 129 the same afternoon: `file.export_text`, from a concurrent
     // track. Named separately for the reason the registry counter above
     // gives.
     //
     // ★ 129 → 130 the same afternoon: `edit.copy_as_vector` (O120). Another
-    // adoption already on disk — `copy-as-vector` was drawn in the
-    // 2026-09-04 batch for a control the ribbon did not yet reach, and
-    // `icons/catalog/mapping`'s note calling it *"art before button"* is one
-    // name shorter as of this commit. Art waiting for a command is the
-    // adoption rule working; a command waiting for art is the refusal this
-    // counter's other half exists to make somebody argue for.
+    // adoption already on disk — `copy-as-vector` was drawn for a control
+    // the ribbon did not yet reach, and `icons/catalog/mapping`'s note
+    // calling it *"art before button"* is one name shorter for it.
     //
-    // ★★★ 130 → 131 on 2026-09-05: `view.panel_close` takes `close`. This
+    // ★★★ 130 → 131: `view.panel_close` takes `close`. This
     // is a **CORRECTION**, not a discharge, and the distinction argued
     // twenty lines up is exactly why it is worth a separate entry: the
     // refusal read *"there is no close art in this set"* and `file.close`
@@ -648,15 +644,15 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // ⇒ The rule the ledger below already states, earning its keep a second
     // time: **verify an absence against the source, never against the
     // document that asserts it.**
-    // ★ 131 → 133 on 2026-09-05: `view.ribbon_auto_hide` (`collapse`) and
+    // ★ 131 → 133: `view.ribbon_auto_hide` (`collapse`) and
     // `view.rail_auto_hide` (`sidebar`). Neither is new art. `collapse` is
     // the chevron the bookmark tree already draws, and `sidebar` was freed
-    // when `view.sidebar` was unregistered on 2026-08-31 — a picture of a
-    // strip down the side of a window, drawn for exactly this surface and
+    // when `view.sidebar` was unregistered — a picture of a strip down the
+    // side of a window, drawn for exactly this surface and
     // orphaned by that retirement. Both are reused under the header's
     // shared-key convention rather than commissioned, which is the test
     // this ledger applies to every increment.
-    // ★ 133 → 134 on 2026-09-05: `file.document_properties` NAMES a glyph,
+    // ★ 133 → 134: `file.document_properties` NAMES a glyph,
     // and it is entitled to one for `format.unshare_form`'s reason — it is
     // not new art. It **shares** `properties` with `file.properties`, the
     // control it was cut out of and the control it now sits beside, under
@@ -683,23 +679,23 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     //   any of it** — `named` counts commands that name *an* icon, and both
     //   spellings do. What caught it was `tools/compare-mockup-ribbon.py`'s
     //   item phase, which compares *which* one.
-    // ★ 134 → 135 on 2026-09-05: `view.line_weights` names `line-weights`,
+    // ★ 134 → 135: `view.line_weights` names `line-weights`,
     // which is NEW art rather than a shared key. There was no lineweight
     // glyph in the set and no honest neighbour to share with — the three
     // toggles beside it are a ruler pair, a framed lattice and two
     // overshooting guides, none of which is a picture of stroke width. So
-    // it was AUTHORED (operator's standing ruling of 2026-08-06: a missing
-    // glyph is drawn, not worked around), and it is the one asset in the
+    // it was AUTHORED (the operator's standing ruling: a missing glyph is
+    // drawn, not worked around), and it is the one asset in the
     // directory that deliberately breaks the uniform 2.5 stroke, because
     // the varying weight is the subject. `line-weights.svg` carries the
     // ruling and the 16 px measurement behind every number in it.
-    // ★ 135 → 136 on 2026-09-06: `file.sign` names `sign`, which is NEW
+    // ★ 135 → 136: `file.sign` names `sign`, which is NEW
     // art rather than a shared key — `signatures` belongs to the panel
     // TOGGLE, which reads a report about signatures that already exist,
     // and sharing would have put one picture on a control that reads and
     // one that writes. See `catalog::file`'s registration.
     //
-    // ★★ 136 → 137 on 2026-09-06: `pages.resize` names `page-single`,
+    // ★★ 136 → 137: `pages.resize` names `page-single`,
     // which is a SHARED key rather than new art — the second entry in this
     // ledger to share, and the first to do so under duress rather than on
     // the merits.
@@ -707,8 +703,8 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // The merits are real: `view.page_single` is on a different tab, one
     // tab's band shows at a time, so the two are never drawn together, and
     // a single sheet is a fair picture of "what size is this sheet". What
-    // makes it duress is that the operator's standing ruling of 2026-08-06
-    // is that **a missing glyph is drawn, not worked around**, and there is
+    // makes it duress is that the operator's standing ruling is that **a
+    // missing glyph is drawn, not worked around**, and there is
     // no glyph in the set that says *sheet size*. It was not drawn because
     // `icons::catalog::mod` sits at **1,498 of R2's 1,500 lines**: minting
     // an `Icon` variant there is a file split, not an icon, and a file
@@ -722,7 +718,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // Build-dependent for `registry().len()`'s reason above: with the
     // capability compiled out the command is not registered, so it names
     // no icon and this count is one lower.
-    // ★ 136 → 137 on 2026-09-06: `edit.duplicate` NAMES a glyph, and it
+    // ★ 136 → 137: `edit.duplicate` NAMES a glyph, and it
     // names `copy` — a REUSE under this header's shared-key convention,
     // exactly as `edit.paste_duplicate` reuses `paste` and for the same
     // argument. The mark is two overlapping sheets and what it means is
@@ -731,14 +727,14 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // all draw Duplicate that way. `icons/assets/PROVENANCE.md` is
     // untouched, because nothing was drawn — which is the whole reason the
     // reuse was preferred to a second two-sheets glyph.
-    // ★★ 137 → 139 on 2026-09-06: `markup.add_node` and `markup.remove_node`,
+    // ★★ 137 → 139: `markup.add_node` and `markup.remove_node`,
     // and BOTH name `show-points` — a reuse under this header's shared-key
     // convention, and a reuse by two commands at once. The glyph is a run with
     // square node boxes on it, meaning *these points are aimable*, which is the
     // subject both verbs act on; they are told apart by their labels, which is
     // what the convention is for. Nothing was drawn, so
     // `icons/assets/PROVENANCE.md` is untouched.
-    // ★★ 139 → 140 on 2026-09-07: `file.import_text` names `insert-pages` — a
+    // ★★ 139 → 140: `file.import_text` names `insert-pages` — a
     // REUSE under this header's shared-key convention, and the third one. The
     // glyph is pages arriving from a file, and this command makes pages out of a
     // file and inserts them; `pages.insert_pages` takes them from another PDF
@@ -754,7 +750,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     //
     // Nothing was drawn, so `icons/assets/PROVENANCE.md` is untouched — which is
     // the reason a reuse was reached for at all.
-    // ★★ 140 → 141 on 2026-09-10: `file.stamp_collection` names `stamp` — a
+    // ★★ 140 → 141: `file.stamp_collection` names `stamp` — a
     // REUSE under this header's shared-key convention, and the fourth one. The
     // argument is at the registration and it is the strongest case for a reuse
     // this register has recorded: `markup.stamp` already wears that glyph, so
@@ -766,7 +762,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // the condition the `file.import_text` note above says a reuse must meet.
     // Nothing was drawn, so `icons/assets/PROVENANCE.md` is untouched.
     //
-    // ★ 141 → 142 on 2026-09-11: `edit.offpage` names `off-page`, a glyph
+    // ★ 141 → 142: `edit.offpage` names `off-page`, a glyph
     // DRAWN for it rather than borrowed, and the borrow it declined is the
     // near one: `redact`. The three redaction commands carry a solid bar
     // because they are about **removal**; this command's whole claim is that
@@ -776,7 +772,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // put it; `icons/assets/PROVENANCE.md` covers the whole directory as the
     // operator's own work and takes no per-glyph row, by its own instruction.
     //
-    // ★★ 142 → 143 on 2026-09-11: `view.off_page` names `off-page` — a
+    // ★★ 142 → 143: `view.off_page` names `off-page` — a
     // REUSE under this header's shared-key convention, the fifth, and the
     // one with the least to argue. The glyph was drawn five hours earlier
     // for `edit.offpage` and it is a picture of *content outside the
@@ -785,7 +781,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // at a time, and what tells them apart is the label — which is what
     // the convention asks a label to do. Nothing was drawn, so
     // `icons/assets/PROVENANCE.md` is untouched.
-    // ★★★ 143 → 144 on 2026-09-15: `format.select_text_line` names
+    // ★★★ 143 → 144: `format.select_text_line` names
     // `pick-part` — a REUSE under this header's shared-key convention, the
     // sixth, and the only one so far where the borrowed glyph was drawn for
     // the identical ACT rather than merely a neighbouring one.
@@ -805,7 +801,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         144 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
-    // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
+    // ★ 12 → 17: the Format ▸ Font group's five commands
     // all refuse a glyph, and they refuse it for one reason argued once at
     // their registration. Word draws `B` and `I` as glyphs; this build has
     // no such art, and `icons/assets/PROVENANCE.md` declares that directory
@@ -814,15 +810,15 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // false. Without an icon a `Small` item resolves to `Medium`, so the
     // labels render, and "Bold" is less ambiguous than a home-made glyph
     // would have been.
-    //   ⇒ ★★★ **Two of those five were CORRECTED on 2026-09-04** — see the
+    //   ⇒ ★★★ **Two of those five were CORRECTED** — see the
     //   17 → 15 entry at the end of this block, and the `named` note above
     //   for why "corrected" and "discharged" are different words. The
     //   paragraph is kept unedited because it is the exhibit: it welds a
     //   supply claim (*"this build has no such art"*) to a provenance
     //   constraint (*"a machine-drawn substitute would make that note
     //   false"*) in one sentence, and being unable to tell the two apart is
-    //   how a work item spent six weeks looking like a decision.
-    // ★ 17 → 18 on 2026-08-28: `file.save_compacted` refuses a glyph, and
+    //   how a work item spends weeks looking like a decision.
+    // ★ 17 → 18: `file.save_compacted` refuses a glyph, and
     // it refuses one for a reason worth stating rather than inheriting.
     // Its two neighbours in the Save group carry icons, and a third disc
     // beside them would be a picture whose only job is to look like the
@@ -830,7 +826,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // built to prevent. `icons/assets/PROVENANCE.md` makes that directory
     // the operator's own work, so the alternative is not "draw one" but
     // "ask him for one", and the label reads better than any of the three.
-    // ★ 18 → 19 on 2026-08-28: `edit.reflow_block` refuses a glyph. Its
+    // ★ 18 → 19: `edit.reflow_block` refuses a glyph. Its
     // three neighbours in the Edit ▸ Content group carry one, so this is
     // the same judgment as `file.save_compacted` one paragraph up and
     // reached the same way: the operator's own art is the only art this
@@ -838,26 +834,26 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // glyph to borrow — Word gives it a menu line, not a picture. A
     // home-made pilcrow-with-arrows would be a symbol nobody has been
     // taught. The label says it and the tooltip qualifies it.
-    // ★ 19 → 20 on 2026-08-28: `edit.attachments` refuses a glyph, and it is
+    // ★ 19 → 20: `edit.attachments` refuses a glyph, and it is
     // the third registration in a row to reach the same judgment by the same
     // route. The conventional icon for this is a paperclip;
     // `icons/assets/PROVENANCE.md` makes that directory the operator's own
     // work, so the alternative is not "draw one" but "ask him for one", and
     // a home-made paperclip beside hand-drawn art is the mismatch a
     // borrowed icon set exists to avoid. The label is the word Acrobat uses.
-    // ★ 20 → 21 on 2026-09-01: `edit.select_all` refuses a glyph, and the
+    // ★ 20 → 21: `edit.select_all` refuses a glyph, and the
     // reason is the same one the three before it reached. There is no
     // conventional icon for Select All — Word, Acrobat and Illustrator all
     // present it as words, in a menu or a list, because what it selects is
     // the thing a picture cannot show. A marquee glyph would say "rubber
     // band", which is the gesture this command exists to replace when the
     // rubber band cannot reach.
-    // ★ 21 → 22 on 2026-09-02: `file.save_as`, refused on the same
+    // ★ 21 → 22: `file.save_as`, refused on the same
     // reasoning `file.new` and `file.ocr` record. There is no conventional
     // Save-As glyph — Word and Acrobat both present it as words — and every
     // reuse would mislead: the disk of `save` says "save", which is the
     // sibling command this one must not be confused with.
-    // ★★★ 22 → 10 on 2026-09-04. Twelve of the refusals argued above were
+    // ★★★ 22 → 10. Twelve of the refusals argued above were
     // DISCHARGED by the icon batch, and "discharged" is the right word for
     // eleven of them rather than "reversed": each named, correctly, a reuse
     // that would have misled, and each ended with some version of *"the
@@ -879,8 +875,8 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     //     §3.2. No supply of art touches that.
     //   · `edit.select_all` — refused because no comparable program draws
     //     one and a marquee glyph would say "rubber band", which is the
-    //     gesture the command exists to replace when it cannot reach. The
-    //     2026-09-03 sheet did offer a `select-all` marquee. It was
+    //     gesture the command exists to replace when it cannot reach. An
+    //     adoption sheet did offer a `select-all` marquee; it was
     //     deliberately not adopted, for this paragraph's reason.
     //
     // ★★★ **And that last sentence was wrong, within hours, in the one way
@@ -902,7 +898,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // `Item::Custom` — a combo box, a drag field and a colour swatch — and
     // none of those widgets has an icon slot. That is a MISSING SLOT, not a
     // missing picture, and no amount of drawing touches it.
-    // ★ 11 → 10 on 2026-09-04, within hours of 10 → 11. The intervening
+    // ★ 11 → 10, within hours of 10 → 11. The intervening
     // entry was `file.open_in_acrobat`, registered with no glyph and with
     // the refusal argued at its registration — two reuses were available
     // and both would have MISLED: `export` says "out of this document,
@@ -917,8 +913,8 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // wrong picture is a refusal with an expiry date, and both of this
     // file's discharges have now proved it.
     assert_eq!(
-        // ★ 10 → 9, 2026-09-04 — `edit.select_all`, and the reason is a
-        // correction rather than a discharge. See the `named` note above.
+        // ★ 10 → 9 — `edit.select_all`, and the reason is a correction
+        // rather than a discharge. See the `named` note above.
         //
         // ★ 9 → 10 the same day — `view.panel_close`. It refuses a glyph
         // because it is only ever drawn as a MENU ROW, and a menu row is
@@ -928,7 +924,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         // distinguishes them from the text rows around them; a close has
         // nothing to be distinguished from.
         //   ⇒ ★★ **The verdict stands and two of its sentences do not**,
-        //   corrected 2026-09-04 by the refusal audit. This entry also
+        //   corrected by the refusal audit. This entry also
         //   said *"there is no close art in this set"*. There is:
         //   `close.svg`, `icons::Icon::Close`, worn by `file.close` since
         //   the set landed. A false supply claim inside a valid structural
@@ -945,8 +941,8 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //   their keys are correct data waiting for a surface that reads
         //   them, not a picture the operator sees today.
         //
-        //   ⇒ ★★★ **And the structural half expired the same day, 2026-09-04,
-        //   by being acted on rather than re-argued.** Every sentence above
+        //   ⇒ ★★★ **And the structural half expired too, by being acted on
+        //   rather than re-argued.** Every sentence above
         //   is kept, because the shape of the mistake is the record; this
         //   is what is now true instead.
         //
@@ -963,7 +959,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //   line nobody had written, stated in the grammar of a design
         //   decision — which is the exact failure this ledger keeps
         //   catching, arriving this time in the STRUCTURAL half rather than
-        //   the supply half. The operator's test (2026-08-06, quoted in
+        //   the supply half. The operator's test (quoted in
         //   `crate::icons::Icon::Back`) discriminates them: *"there is no
         //   icon SLOT on this surface"* is a valid refusal only if adding
         //   one would be **wrong**, not merely if it would be **work**.
@@ -990,15 +986,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //       below a Float that has a glyph. The same word, twice, one
         //       of them pictured.
         //
-        //   ⇒ ★★★ **APPLIED 2026-09-05, and this is the third discharge in
-        //   this ledger: 8 → 7.** The one-line change
-        //   (`.with_icon("close")`) now stands at the command's
-        //   registration in `catalog::view`, which carries the full
-        //   argument. It was deferred on 2026-09-04 only because
-        //   `shell/commands/catalog/` belonged to a concurrent track that
-        //   day and a two-agent edit of one registration list is how a
-        //   command gets registered twice; the deferral was about
-        //   ownership, never about the merits, and its condition expired.
+        //   ⇒ ★★★ **APPLIED — the third discharge in this ledger: 8 → 7.**
+        //   The one-line change (`.with_icon("close")`) stands at the
+        //   command's registration in `catalog::view`, which carries the
+        //   full argument.
         //
         //   ★ The refusal it retires was FALSE AT SOURCE — *"there is no
         //   close art in this set"* while `file.close` had worn `close`
@@ -1008,7 +999,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //   document that asserts it.** One grep would have settled it, and
         //   the claim survived because nobody ran one.
         //
-        // ★★★ 10 → 8 on 2026-09-04 — `format.bold` and `format.italic`,
+        // ★★★ 10 → 8 — `format.bold` and `format.italic`,
         // **corrected, not discharged**. The `named` note above carries the
         // account and the rule it leaves behind; the two assets carry the
         // art's own reasoning, which is where `icons/assets/PROVENANCE.md`
@@ -1029,11 +1020,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //   · `view.zoom_actual` — WRONG PICTURE, argued against BY NAME in
         //     the icon ui-spec §3.2 and marked `{noicon:1}` in the approved
         //     mockup. No supply of art touches that.
-        //   · `view.panel_close` — **DISCHARGED 2026-09-05**, and it is no
+        //   · `view.panel_close` — **DISCHARGED**, and it is no
         //     longer in this list at all. It was the only entry whose
         //     reason had expired rather than survived: recorded as MISSING
         //     SLOT because this build's context menus wired no icon
-        //     painter, and they wire one as of 2026-09-04. It now carries
+        //     painter, and they wire one now. It carries
         //     `close`, which is why the count below is 7 and not 8.
         //
         // ★ So the seven that remain divide into exactly two kinds, and
@@ -1043,10 +1034,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         // (`view.zoom_actual`). A future session reading this list looking
         // for something to draw will find nothing to draw, and that is the
         // point of writing the division down.
-        // ★★★ 7 → 12 on 2026-09-06: the five Format ▸ Markup controls, and
+        // ★★★ 7 → 12: the five Format ▸ Markup controls, and
         // every one of them is a **structural** refusal rather than a
         // supply one — the distinction this ledger has now had to make
-        // three times, and the one the operator's own test of 2026-08-06
+        // three times, and the one the operator's own test
         // discriminates: *"there is no icon SLOT on this surface"* is valid
         // only if adding one would be **wrong**, not merely if it would be
         // work.
@@ -1058,7 +1049,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         // the kind of refusal with no expiry date. A swatch's entire face
         // IS the colour it reports, and a glyph over it would cover the one
         // thing the control exists to say.
-        // ★★★ 12 → 16 on 2026-09-06 — the four **Markup ▸ Arrange** commands,
+        // ★★★ 12 → 16 — the four **Markup ▸ Arrange** commands,
         // and the refusal is a MISSING PICTURE with no supply in sight rather
         // than a missing slot.
         //
@@ -1077,7 +1068,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         // about the feature (`catalog::arrange`'s header carries the whole
         // argument, including why *z-order* appears in none of them).
         //
-        // ★★★ 16 → 17 on 2026-09-06 — `format.line_style`, and it is a
+        // ★★★ 16 → 17 — `format.line_style`, and it is a
         // **MISSING SLOT** refusal exactly like the three Font controls and
         // the five Markup ones above it. It is drawn by an `Item::Custom` as
         // an `egui::ComboBox`, and a combo box has nowhere to put a glyph. No

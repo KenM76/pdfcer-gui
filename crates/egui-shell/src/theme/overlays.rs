@@ -2,9 +2,10 @@
 //!
 //! # Why this module exists
 //!
-//! The salvage source's [`Palette`](super::Palette) carried nineteen
-//! roles. Twelve of them were chrome — surface, panel, text, accent,
-//! outline, danger, notice — and are perfectly generic. Seven were not:
+//! The salvage source's [`Palette`](super::Palette) carries nineteen
+//! roles. Twelve are chrome — surface, panel, text, accent, outline,
+//! danger, notice and the like — and are perfectly generic. Seven are
+//! not:
 //!
 //! | Role | What it meant |
 //! |---|---|
@@ -22,9 +23,9 @@
 //! shipped them would be telling the next application that it has
 //! subpaths.
 //!
-//! So they move out. What must **not** move out is the *enforcement* the
-//! salvage source built around them, because that enforcement is generic
-//! and is the part that was expensive to learn.
+//! So they stay out, and the application owns them. What must **not**
+//! stay out is the *enforcement* built around them, because that
+//! enforcement is generic and is the part that is expensive to learn.
 //!
 //! # The enforcement, and why it is worth carrying
 //!
@@ -51,10 +52,12 @@
 //! the application keeps working while telling the operator slightly
 //! less. Nothing but an explicit check finds it.
 //!
-//! The check found a real collision on its first run: a chrome accent had
-//! been chosen that landed exactly on an overlay role meaning something
-//! else. That is recorded in `Theme::quiet`'s source as the
-//! reason its accent is `#175CC4` rather than the more obvious blue.
+//! The collision it catches is not hypothetical: a chrome accent picked
+//! for chrome reasons alone can land exactly on an overlay role meaning
+//! something else, at which point selection and that overlay are
+//! indistinguishable on the same surface. `Theme::quiet`'s accent is
+//! `#175CC4` rather than the more obvious blue for that reason, and its
+//! source says so.
 //!
 //! # How an application uses this
 //!

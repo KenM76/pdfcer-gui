@@ -29,38 +29,27 @@
 //! | 6 | it is in the saved file | `save_copy` — for an annotation, not for a text edit |
 //! | 7 | a **second process** reads the new text back | nothing |
 //!
-//! # ★★ NOTHING IS TYPED AND NO KEY IS PRESSED, and both facts are findings
+//! # NOTHING IS TYPED AND NO KEY IS PRESSED, and both facts are findings
 //!
 //! **Text cannot be injected on this machine.** `crate::sys::vk` is a closed
 //! list of eight non-character keys whose own comment refuses to grow into
 //! `pub const A..Z`.
 //!
-//! ★★ **The paragraph that used to be here was WRONG, and its wrongness is the
-//! most instructive thing in this file.** It said *keyboard input does not reach
-//! the target window from the session that injects it on this machine*, and
-//! called that **re-confirmed on 2026-08-15**: a first cut pressed `Ctrl+E` to
-//! arm the tool, the trace carried no `text-edit-tool` line, and a pointer click
-//! on the same command armed it.
+//! **Synthetic keyboard input DOES reach the target window.**
+//! `crate::checks::add_text` types real characters and passes. A chord that
+//! produces no trace line is evidence about *that chord's dispatch*, never
+//! about the machine's ability to type — drawing the conclusion one layer too
+//! low is how a dead chord gets recorded as an environment fact, and a
+//! misdiagnosis recorded as fact protects the defect that produced it.
 //!
-//! `Ctrl+E` was **dead in the dispatcher**. It was one of fourteen chords the
-//! manifest declared and `app::keyboard::commands` never dispatched, because it
-//! matched against a hand-written table of eight spellings. The experiment was
-//! sound and the conclusion was drawn one layer too low: *this chord does
-//! nothing* became *this machine cannot type*.
-//!
-//! That reading was then written into NINE module headers as a fact about the
-//! environment. While it stood, no check drove a chord; because no check drove a
-//! chord, nothing contradicted it; and the dead chords stayed dead. **A
-//! misdiagnosis recorded as fact protected the defect that produced it.**
-//! `crate::checks::add_text` types real characters and passes.
-//!
-//! The seam below is kept anyway — it supplies a *known* string, which is worth
-//! having — but it is a convenience now, not a workaround.
+//! The seam below is a convenience, not a workaround: it supplies a *known*
+//! string, which is worth having.
 //!
 //! Typing is this feature's entire input, so a check that could supply no text
-//! would be reduced to asserting *"the tool armed"* — `HANDOFF.md` §2's grid
-//! lesson exactly, an assertion in the right direction that measures the wrong
-//! thing. So the draft's characters arrive through `PDFCER_DIAG_TYPE`, a seam in
+//! would be reduced to asserting *"the tool armed"* — **an assertion in the
+//! right direction that measures the wrong thing**, which is satisfied by any
+//! absurdity pointing the same way. So the draft's characters arrive through
+//! `PDFCER_DIAG_TYPE`, a seam in
 //! the shape of `PDFCER_DIAG_OPEN_PATH` and `PDFCER_DIAG_SAVE_PATH` — both of
 //! which exist because a native modal cannot be driven from here. What the seam
 //! **does not** replace is any other link: the mode still has to change, the
@@ -86,10 +75,10 @@
 //! | D | click blank paper | `text-edit-plan … disposition=Pin reason=Flush(Right)`, `edit-text` |
 //! | E | File ▸ **Save a copy** | `save-copy …`, a file at the named path |
 //! | F | read the copy | the source's bytes are its prefix, verbatim (§7.5.6) |
-//! | G | ★ scan the **appended** revision | the untouched line's `Tm` is there **verbatim** |
-//! | H | ★ launch a **second process** on the copy | it opens and draws the edited page |
+//! | G | scan the **appended** revision | the untouched line's `Tm` is there **verbatim** |
+//! | H | launch a **second process** on the copy | it opens and draws the edited page |
 //!
-//! # ★ Why phase G is the verdict and phase H cannot replace it
+//! # Why phase G is the verdict and phase H cannot replace it
 //!
 //! Phase H proves the copy opens. It cannot see the defect at all: a
 //! build that pushed the two untouched lines sideways would still have written
@@ -132,7 +121,7 @@ const EDIT_TEXT: (&str, &str) = ("ribbon.item.edit.text", "edit.text");
 /// Where the copy goes — the seam every other write-driving check uses.
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
-/// ★ The seam that supplies the draft. See this module's header.
+/// The seam that supplies the draft. See this module's header.
 const TYPE_ENV: &str = "PDFCER_DIAG_TYPE";
 
 /// What is typed. Deliberately **longer** than what it replaces: the whole
@@ -150,7 +139,7 @@ const REPLACED: &str = "REVISION B";
 /// keystroke.
 const ELSEWHERE: (f64, f64) = (300.0 / 612.0, 600.0 / 792.0);
 
-/// ★ The untouched operator. `tools/gen-textedit-fixtures.py` places the block's
+/// The untouched operator. `tools/gen-textedit-fixtures.py` places the block's
 /// third line at this exact `Tm`, and prints the number when it runs. Under
 /// `Pin` it is re-emitted verbatim; under `Reflow` its `e` gains the advance
 /// delta and this string is gone.
@@ -255,7 +244,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              learned nothing.",
         ));
     }
-    // ★ NOT `ctx.pdf`. This check's verdict is a byte scan for a `Tm` this
+    // NOT `ctx.pdf`. This check's verdict is a byte scan for a `Tm` this
     // repository's own generator placed, so it is meaningless against any other
     // document — and a check that silently measured whatever `--pdf` named would
     // be measuring a different claim under the same name. `redaction` makes the
@@ -373,7 +362,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         };
         report.note(format!("the commit planned: `{}`", plan.raw));
 
-        // ★★ The disposition, named. This is the assertion a build with the fix
+        // The disposition, named. This is the assertion a build with the fix
         // reverted fails: it would plan `Reflow` here, and everything else in
         // this check would still pass except phase G.
         if plan.get("disposition") != Some("Pin") {
@@ -441,7 +430,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             appended.len()
         )));
     }
-    // ★★★ THE VERDICT.
+    // THE VERDICT.
     if !holds(appended, UNTOUCHED_TM) {
         return Ok(Some(format!(
             "★ THE UNTOUCHED LINE MOVED — `DEFECTS.md` D4b case 1, in the bytes. The fixture's \

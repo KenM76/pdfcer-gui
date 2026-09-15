@@ -51,9 +51,8 @@
 //!
 //! # ★ Why one `&mut TabMenu` rather than two arguments
 //!
-//! The obvious spelling is `FnMut(&PanelId, &egui::Response)`, and it was
-//! the first shape considered. It is rejected for one concrete reason and
-//! one structural one.
+//! The obvious spelling is `FnMut(&PanelId, &egui::Response)`. It is
+//! rejected for one concrete reason and one structural one.
 //!
 //! **The concrete reason: a two-argument handler has no way back in.** The
 //! dock's whole design turns on *recording an intent rather than mutating*
@@ -82,14 +81,15 @@
 //!
 //! | The application… | The tab's secondary click is owned by | "Close" |
 //! |---|---|---|
-//! | supplies **no** handler | the dock | **drawn, exactly as before** |
+//! | supplies **no** handler | the dock | **drawn** |
 //! | supplies a handler | the application | offered as [`TabMenu::request_close`] |
 //!
 //! **Row 1 is a compatibility guarantee, not an implementation detail.**
-//! The built-in Close is today the only way to close a panel from its tab,
-//! and a consumer that has not adopted the seam must not lose it by
-//! standing still. `the_built_in_close_still_closes_a_panel_with_no_handler`
-//! in [`super::tabs`] is the test that says so.
+//! The built-in Close is the only way to close a panel from its tab without
+//! a handler, and a consumer that has not adopted the seam must not lose it
+//! by standing still.
+//! `the_built_in_close_still_closes_a_panel_with_no_handler` in
+//! [`super::tabs`] is the test that says so.
 //!
 //! **Row 2 is not the dock being precious about its menu.** It is the one
 //! technical constraint in this design that is not negotiable: a

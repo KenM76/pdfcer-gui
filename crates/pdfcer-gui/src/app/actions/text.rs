@@ -1,111 +1,74 @@
 //! # `app::actions::text` — the verbs that re-shape a page's own text
 //!
-//! Split out of [`super::action`] under **R2** on 2026-08-28, when paragraph
-//! reflow landed and took that file past 1,500 lines for the fourth time.
+//! Every variant here has the page's existing text as its subject: the caret
+//! commit, the free-text commit, the restyle and the reflow.
 //!
-//! ## ★★ Why THIS family, when the file's own header names markup
+//! ## The verbs compose, and that is asserted rather than stated
 //!
-//! [`super::action`]'s header pre-measured the next sub-enum and named
-//! **markup** — some 370 lines, still the largest. The rule it stated is *"the
-//! next family of variants to **grow**"*, and today that was this one: reflow is
-//! the fourth verb whose subject is the page's existing text, after the caret
-//! commit, the free-text commit and the restyle.
+//! `CommitTextEdit`, `TextStyle` and `Reflow` all **accumulate**: they stage
+//! onto the session, and a page may take twenty of them. Add text to a page,
+//! then re-wrap a paragraph on it, and the add survives.
 //!
-//! ⇒ The markup measurement stands and is still the answer the day markup grows.
-//! Taking a different family because it is bigger would be re-deciding a
-//! decision on a criterion nobody chose.
+//! ⚠ **Do not restate that as a prose limitation.** Whether reflow composes
+//! with the other verbs is a property of a branch dependency, so a sentence
+//! here is a citation of something that moves with no command run in this
+//! repository — and a citation nobody re-measures is a claim about an engine
+//! that has changed underneath it. `the_three_text_verbs_compose` below is the
+//! re-measurement: it adds a run to `fixtures/paragraph.pdf`, reflows the
+//! paragraph on the same page in the same session, and asserts both that the
+//! reflow is accepted and that the added run is still on the page. A guard
+//! reintroduced upstream turns that test red in the commit that bumps the pin.
 //!
-//! ## ★★★ The three verbs DO compose now, and the history of this paragraph
-//! ## is the reason it is an assertion rather than a sentence
-//!
-//! `CommitTextEdit` and `TextStyle` **accumulate**: they stage onto the
-//! session, and a page may take twenty of them. **So does `Reflow`, as of
-//! engine `025d703d`** — add text to a page, then re-wrap a paragraph on it,
-//! and the add survives.
-//!
-//! ⚠⚠⚠ **This paragraph has said the opposite twice, and both times it was
-//! right when written and wrong by the time it was read.**
-//!
-//! | version | claim | true at | falsified by |
-//! |---|---|---|---|
-//! | 1 | reflow plans against the BASE document, so one typed character blocks it | engine `Pass 251.0` | `Pass 257.0` (2026-09-06) moved the planner onto the session view |
-//! | 2 | reflow still refuses a page carrying a non-empty EXTRA content stream, so **adding** text blocks it even though editing does not | engine `7378c838` | `G015` (2026-09-14) deleted the guard |
-//!
-//! Version 2 was written on 2026-09-14 while correcting version 1, from the
-//! engine source, and it was accurate for about six hours. The guard it
-//! described was already known to be wrong — its condition was **structural**
-//! (*does `contents[1..]` hold a non-empty stream*), which ISO 32000-1 §7.8.2
-//! permits a producer to author and which SOLIDWORKS does routinely, so it
-//! fired on pages nobody had edited. That was `request_G015`, filed from
-//! `SW41177.pdf`, whose title sheet carries eight producer-authored streams and
-//! was refused with *"text was added to this page this session"* on a freshly
-//! opened file. The engine agreed and removed it.
-//!
-//! ⇒ **Version 3 is a test, not a sentence.** `the_three_text_verbs_compose`
-//! below adds a run to `fixtures/paragraph.pdf` and then reflows the paragraph
-//! on the same page, in that order, and asserts the reflow is accepted and the
-//! added run is still on the page afterwards. The day the engine reintroduces a
-//! guard of either shape, that test goes red in the same commit that bumps the
-//! pin — which is the only mechanism that has ever caught this. *A limitation
-//! sentence is a citation, and a citation nobody re-measures is a claim about
-//! an engine that has moved.*
-//!
-//! ## ★★ What is still worth knowing about `Reflow`'s shape
+//! ## What is worth knowing about `Reflow`'s shape
 //!
 //! `reflow_block` re-emits the page's **first** content object, and the commit
-//! sweep empties every other one — that has not changed and is not a defect.
-//! What changed is where the plan is read FROM: since `Pass 257.0` it is the
-//! session's graph, and `ContentStream::from_page` concatenates every
-//! `/Contents` entry, so an appended run is inside the plan's source and is
-//! carried through verbatim rather than dropped. The engine discloses the
-//! collapse in its own report — *"multi-stream page: N additional /Contents
-//! stream(s) were collapsed into the first"* — and
-//! `app::actions::textstyle::reflow` forwards that disclosure to the status
-//! line verbatim, which is the whole of what the operator is owed about it.
+//! sweep empties every other one — that is by design, not a defect. It is safe
+//! because the plan is read from the session's graph and
+//! `ContentStream::from_page` concatenates every `/Contents` entry, so an
+//! appended run is inside the plan's source and is carried through verbatim
+//! rather than dropped. The engine discloses the collapse in its own report —
+//! *"multi-stream page: N additional /Contents stream(s) were collapsed into
+//! the first"* — and `app::actions::textstyle::reflow` forwards that
+//! disclosure to the status line verbatim, which is the whole of what the
+//! operator is owed about it.
 //!
-//! ⚠ One refusal a reader WILL still meet on a CAD sheet, and it is unrelated
-//! to any of the above: a paragraph set in a **composite (Type 0 / CIDFont)**
-//! face is refused by name (`R-INV-4`, FF-E), and
-//! [`crate::text::textedit::ReflowRefusal::FontIsComposite`] words it. That is
-//! a deferred engine feature rather than a guard, and it is the answer to every
-//! reflow on `SW41177.pdf`.
+//! ⚠ One refusal a reader will meet on a CAD sheet, unrelated to any of the
+//! above: a paragraph set in a **composite (Type 0 / CIDFont)** face is refused
+//! by name, and [`crate::text::textedit::ReflowRefusal::FontIsComposite`] words
+//! it. That is an engine feature not yet built rather than a guard, and it is
+//! the answer to most reflows on a SOLIDWORKS-exported drawing.
 
 /// The verbs that re-shape a page's own text.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TextAction {
-    /// ★★★ **Re-wrap a paragraph to its own box.** `OPERATOR_REQUESTS.md`
+    /// **Re-wrap a paragraph to its own box.** `OPERATOR_REQUESTS.md`
     /// **O54**.
     ///
-    /// Raised by `edit.reflow_block` and by nothing else.
-    /// **This module's header is the argument** — the short of it is that this
-    /// verb does not accumulate like its neighbours: it refuses a page carrying
-    /// a non-empty EXTRA content stream, because it re-emits the first one and
-    /// the commit sweep empties the rest. Adding text trips it; editing text
-    /// does not. (Corrected 2026-09-14: this said "planned against the base
-    /// document" and "one typed character trips it" for eight days after engine
-    /// `Pass 257.0` made both false.)
+    /// Raised by `edit.reflow_block` and by nothing else. It accumulates like
+    /// its neighbours — see this module's header, and the test that keeps that
+    /// claim honest.
     ///
-    /// ★★★ It carries a BLOCK index, not a run, and the index is numbered in
-    /// **the engine's relaxed recognition** — `reflow_recognition_options()`,
-    /// the list `reflow_block` itself builds — never the caret's. That mapping
-    /// is made in exactly one place, `canvas::textedit::reflow::block_of_run`,
-    /// whose header carries the measurement: on the operator's own drawing the
-    /// two recognitions number the same paragraph 106-of-144 and 49-of-70. This
-    /// doc comment asserted the opposite until 2026-09-14, and so did the code.
+    /// It carries a **block** index, not a run, and the index is numbered in
+    /// the engine's *relaxed* recognition — `reflow_recognition_options()`, the
+    /// list `reflow_block` itself builds — never the caret's default one. The
+    /// two recognitions group the same page's runs into different numbers of
+    /// paragraphs, so passing a default-recognition index here re-wraps the
+    /// wrong paragraph. The mapping is made in exactly one place,
+    /// `canvas::textedit::reflow::block_of_run`; do not re-derive it.
     Reflow {
         /// The 0-based page.
         page: usize,
         /// Which paragraph on it.
         block: usize,
     },
-    /// ★★★ **Enter was pressed where a line break cannot go** —
+    /// **Enter was pressed where a line break cannot go** —
     /// `OPERATOR_REQUESTS.md` **O127**, defect 2.
     ///
     /// Raised by `canvas::textedit::keys` when the caret is in an existing show
     /// operator, and by nothing else. It changes **no document**: it exists
     /// solely to carry a sentence from a keystroke handler to the status bar.
     ///
-    /// # ★★ Why a keystroke needs an `Action` to say something
+    /// # Why a keystroke needs an `Action` to say something
     ///
     /// Because of a module boundary that is worth keeping. `app::status::decline`
     /// is `pub(super)` inside `crate::app`, with its own note saying why:
@@ -119,17 +82,11 @@ pub enum TextAction {
     /// for *"something in the canvas happened and `crate::app` must react"* —
     /// the same one every commit, every markup and every move travels on.
     ///
-    /// ★ It carries no fields, and that is the honest shape: there is exactly
+    /// It carries no fields, and that is the honest shape: there is exactly
     /// one thing to say, the sentence is in the catalog, and an anchor or a run
     /// index here would be data nobody reads.
-    ///
-    /// ★★ Nested under [`TextAction`] rather than added to
-    /// `super::action::Action`, per **R2**: that file is at its 1,500-line
-    /// ceiling and its own header names this as the remedy — *"nest a domain
-    /// enum"*. The subject fits: this variant's subject is the page's own text
-    /// and the caret in it, which is what this enum is for.
     EnterCannotSplit,
-    /// ★★★ **A key was pressed that the caret's run cannot spell** — the
+    /// **A key was pressed that the caret's run cannot spell** — the
     /// pre-commit half of `OPERATOR_REQUESTS.md` **O140/O141**, 2026-09-09.
     ///
     /// Raised by `canvas::textedit::keys` when
@@ -140,7 +97,7 @@ pub enum TextAction {
     /// `crate::app` boundary. The same module-visibility argument applies
     /// verbatim; see that variant's docs.
     ///
-    /// # ★★ Why this one carries fields when its neighbour carries none
+    /// # Why this one carries fields when its neighbour carries none
     ///
     /// Because there are two surfaces to feed, not one. The status bar gets a
     /// sentence that names the character; `panels::properties::refusedchar`
@@ -153,7 +110,7 @@ pub enum TextAction {
     /// candidate list is measured against. It is **not** the `/Resources /Font`
     /// key.
     ///
-    /// # ★★★ The one thing this variant must never become
+    /// # The one thing this variant must never become
     ///
     /// A mark on the page. The draft is left alive and the text in it renders
     /// exactly as it did before the refused key — no red, no strike, no
@@ -177,47 +134,45 @@ pub enum TextAction {
 
 #[cfg(test)]
 mod tests {
-    //! ★★★ The header's load-bearing claim, made falsifiable.
+    //! The header's load-bearing claim, made falsifiable.
     //!
-    //! This module exists for one assertion. See the table above for why a
-    //! prose claim here is not good enough: the paragraph it replaces has been
-    //! wrong twice in nine days, both times because an engine guard was removed
-    //! and nothing in this crate could notice.
+    //! This module exists for one assertion, because the claim is about a
+    //! branch dependency: prose here cannot notice the engine changing, and a
+    //! test run against the pinned engine can.
 
-    /// ★★★ **Add, then reflow: the engine composes them, and the added run
+    /// **Add, then reflow: the engine composes them, and the added run
     /// survives.**
     ///
     /// # What this measures, precisely
     ///
     /// 1. `add_text` puts a new run on page 0 of `fixtures/paragraph.pdf`. On a
-    ///    single-stream page that necessarily creates a SECOND `/Contents`
-    ///    stream, which is exactly the condition the deleted guard tested.
+    ///    single-stream page that necessarily creates a **second** `/Contents`
+    ///    stream, which is the structural condition a reinstated guard would
+    ///    test.
     /// 2. `reflow_block` is then asked to re-wrap block 0 — the fixture's one
     ///    paragraph — in the same session, with no save in between.
     /// 3. The reflow must be **accepted**, and the added text must still be
     ///    extractable from the page afterwards.
     ///
-    /// # ★★ Why all three steps, and why the third is not redundant
+    /// # Why the third step is not redundant
     ///
-    /// Step 3 is the one that matters most and is the easiest to leave out. The
-    /// guard that was removed existed to prevent **silent data loss**, not to
-    /// prevent an error: its argument was that the plan read the base document,
-    /// which did not contain the appended run, and committing that plan ran a
-    /// sweep that emptied every extra stream. An engine that accepted the
-    /// reflow and dropped the added text would satisfy a test asserting only
-    /// `is_ok()` — and would be a far worse defect than the refusal.
+    /// Step 3 matters most and is the easiest to leave out. The hazard the
+    /// composition claim guards against is **silent data loss**, not an error:
+    /// reflow's commit sweep empties every `/Contents` stream but the first, so
+    /// an engine that accepted the reflow and dropped the added run would
+    /// satisfy a test asserting only `is_ok()` — and would be far worse than a
+    /// refusal, because nothing would tell the operator. Acceptance and
+    /// survival are therefore asserted separately, and the failure messages say
+    /// which happened.
     ///
-    /// ⇒ So the acceptance and the survival are asserted separately, and the
-    /// failure messages say which happened.
-    ///
-    /// # ★ Why this fixture
+    /// # Why this fixture
     ///
     /// `fixtures/paragraph.pdf` is a flush-left six-line paragraph in
     /// `Helvetica`, a simple (single-byte) face. That matters: a composite face
-    /// is refused by name (`R-INV-4`) whatever the stream layout, so a CAD
-    /// sheet cannot distinguish "the guard came back" from "the font is out of
-    /// scope" and would make this test permanently unable to fail for the
-    /// reason it was written.
+    /// is refused by name whatever the stream layout, so a CAD sheet cannot
+    /// distinguish "a guard came back" from "the font is out of scope" and
+    /// would make this test permanently unable to fail for the reason it was
+    /// written.
     #[test]
     fn the_three_text_verbs_compose() {
         use pdfcer_core::text_edit::{AddTextRequest, ReflowRequest};

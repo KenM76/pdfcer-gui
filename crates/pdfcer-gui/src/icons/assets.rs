@@ -9,13 +9,11 @@
 //! distinguishable from, and a paraphrase would lose exactly the part that
 //! is expensive to re-derive.
 //!
-//! ## ★ Why the art lives in `src/icons/assets/` rather than a top-level
+//! ## Why the art lives in `src/icons/assets/` rather than a top-level
 //! ## `crates/pdfcer-gui/assets/`
 //!
-//! The salvage source read its art with
-//! `include_str!("../assets/icons/<name>.svg")` — a sibling directory of
-//! `src/`. Here the same `include_str!` reaches a directory *inside* the
-//! icon module. Two reasons:
+//! `include_str!` reaches a directory *inside* the icon module rather than a
+//! sibling of `src/`. Two reasons:
 //!
 //! 1. **This module's write territory is `src/icons/`.** The rebuild runs
 //!    several agents in parallel over one tree, and the boundaries between
@@ -25,25 +23,18 @@
 //!    reads it and the painter that draws it are one subject. A reader who
 //!    opens `src/icons/` sees all of it.
 //!
-//! `include_str!` — rather than a runtime file read — is carried across
-//! unchanged, and its reason is unchanged: pdfcer ships single-folder
-//! portable, so the executable must not depend on an `assets/` directory
-//! travelling beside it. The whole set is **79 files, 82,336 bytes** of text
-//! (measured 2026-08-14) and an icon that fails to load at startup is not a
-//! failure mode worth having. (It was 46 files and 34 KB when this module
-//! landed; the 2026-08-14 pass that filled the ribbon's remaining text
-//! buttons added 25. Roughly half of the growth is the embedded rationale
-//! comments, which are the point of copying assets verbatim rather than
-//! re-emitting them — see §4.)
+//! `include_str!` rather than a runtime file read, because pdfcer ships
+//! single-folder portable: the executable must not depend on an `assets/`
+//! directory travelling beside it, and an icon that fails to load at startup
+//! is not a failure mode worth having. The whole set measured **79 files,
+//! 82,336 bytes** of text, roughly half of which is the embedded rationale
+//! comments — the point of copying assets verbatim rather than re-emitting
+//! them, see §4.
 //!
-//! ★ **That figure read "75 files, ~76 KB" until 2026-08-14 and was wrong by
-//! four files**, having been written before the three Phase 6 markup glyphs
-//! and `text-select` landed. It is the same defect `HANDOFF.md` §10 names —
-//! *prose that quotes a number drifts from the number* — and it is corrected
-//! here rather than silently updated, because the correction is the fifth
-//! instance and the pattern is the useful part. Unlike `Icon::ALL`'s size,
-//! which `catalog.rs` pins with an assertion, **nothing tests this one**: it
-//! counts files on disk, and no test walks the directory.
+//! ⚠ **Nothing tests that figure.** `Icon::ALL`'s size is pinned by an
+//! assertion in `catalog.rs`; this one counts files on disk and no test walks
+//! the directory, so it is a measurement of one moment and drifts silently
+//! from what is there. Re-count before relying on it.
 //!
 //! ## Licensing
 //!
@@ -54,7 +45,7 @@
 //! shipped `LICENSE` already covers it, and there is no third-party grant to
 //! reproduce. §1 below is the primary record of how that was established.
 //!
-//! ## ★ Why the SVG text is NOT inlined into Rust source
+//! ## Why the SVG text is NOT inlined into Rust source
 //!
 //! The obvious alternative — a `const FOLDER: &str = r##"<svg …>"##;` with
 //! the markup inline — was implemented first and then **withdrawn**,
@@ -77,7 +68,7 @@
 //! is recorded here because the inline form *looks* simpler and someone will
 //! propose it again.
 //!
-//! ## ★ Regenerating
+//! ## Regenerating
 //!
 //! The `.svg` files are copied from the salvage source; the constants below
 //! are produced mechanically from the directory listing. If the set gains an
@@ -175,14 +166,10 @@
 //! asserts both halves — that redaction is filled and that nothing outside a
 //! named set is.
 //!
-//! ★ That test was called `redaction_is_the_only_filled_icon` until
-//! 2026-08-19, when the arrow pair joined the set and the name stopped
-//! being true. **Four doc comments went on citing the old name for sixteen
-//! days**, and on 2026-09-04 an audit grepped for it, found it in zero test
-//! bodies, and correctly reported that the cited gate did not exist. It did
-//! exist — under a name none of its citations had been told about. A rename
-//! that leaves its citations behind blinds a reader exactly as thoroughly as
-//! a deletion, and costs the same to fix.
+//! ⇒ **A rename carries its citations with it.** A gate cited under a name it
+//! no longer has reads, to anyone who greps for it, as a gate that does not
+//! exist — which blinds a reader exactly as thoroughly as deleting it, and
+//! costs the same to fix.
 //!
 //! `shape-highlight.svg` uses `stroke-width="1"` for its 45° hatch. Also
 //! deliberate (ui-spec §3.3): the hatch is a *texture* standing in for
@@ -216,15 +203,15 @@
 //!
 //! ### §4b — Copied from ScripTree with ONE comment added
 //!
-//! Five more of the operator's own files were brought across on 2026-08-14.
-//! Their **geometry is unmodified** — every `path`/`rect`/`circle` element is
+//! Five more of the operator's own files, copied on the same terms. Their
+//! **geometry is unmodified** — every `path`/`rect`/`circle` element is
 //! byte-identical to the ScripTree original, and so is the original's own
-//! `<!-- Generic … -->` comment. What was added to each is a **second XML
+//! `<!-- Generic … -->` comment. Each carries one addition: a **second XML
 //! comment naming the ui-spec clause that assigns it**, because §3's style
-//! contract as this module now states it wants both: the trademark
-//! disclaimer *and* the citation. The §4 files above predate that and keep
-//! their single comment; a mass edit to "harmonise" them would break the
-//! byte-for-byte claim those rows make, which is the more valuable property.
+//! contract wants both the trademark disclaimer *and* the citation. The §4
+//! files above carry only their single original comment, and a mass edit to
+//! "harmonise" them would break the byte-for-byte claim those rows make,
+//! which is the more valuable property.
 //!
 //! | Here | ScripTree source | Role | Assigned by |
 //! |---|---|---|---|
@@ -246,8 +233,8 @@
 //! deviates only with a recorded reason. Eight:
 //!
 //! 1. **`edit-objects.svg` is an addition the spec does not cover.** The
-//!    ui-spec was written 2026-08-01 and audited the toolbar as it then
-//!    stood; the "Obj" vector-edit toggle shipped afterwards. Its metaphor
+//!    ui-spec audits the toolbar as it stood when the spec was written, and
+//!    the "Obj" vector-edit toggle shipped afterwards. Its metaphor
 //!    (a path with draggable nodes) is chosen to collide with nothing: not
 //!    `edit.svg`'s pencil (page **text**), not `markup.svg`'s shapes
 //!    (annotation **authoring**).
@@ -272,14 +259,14 @@
 //!    editing capability the panel does not have.
 //! 6. **`form-field.svg`, `back.svg`, `close.svg`, `search.svg`,
 //!    `chevron-up.svg` and `chevron-down.svg` were authored under the
-//!    operator's 2026-08-06 ruling** that a missing glyph is **created** as
+//!    operator's standing ruling** that a missing glyph is **created** as
 //!    part of the work rather than the feature reworded around it. The last
 //!    four each replace a text character that was verified to have no face
 //!    in the shipped font stack — `←` (U+2190), `✕` (U+2715), `▲` (U+25B2)
 //!    and `▾` (U+25BE) — and so rendered as a tofu box on real controls.
-//! 7. **Twenty-five glyphs were added on 2026-08-14 for controls the spec
-//!    never saw**, and they are one deviation rather than twenty-five
-//!    because they all have the same cause: the spec's §0 audited the OLD
+//! 7. **Twenty-five glyphs cover controls the spec never saw**, and they are
+//!    one deviation rather than twenty-five because they all have the same
+//!    cause: the spec's §0 audited the OLD
 //!    shell's toolbar, and this shell's ribbon carries controls that toolbar
 //!    did not have. The page-display radio, the rulers/grid/guides row, the
 //!    Window group (read mode, full screen, floating panels, reset layout),
@@ -288,10 +275,11 @@
 //!    dialogs are all in that category. Each asset's own comment names which
 //!    of them it is and what it was drawn to stay distinguishable from.
 //!
-//!    The occasion was the ribbon reading as half-finished: of 88 registered
-//!    commands, 47 named an icon and 41 did not, so a band mixed glyphs and
-//!    bare words with no rule behind which was which. Thirty of the 41 now
-//!    have one; the other eleven are **recorded refusals** — deviation #8.
+//!    The occasion was the ribbon reading as half-finished: a band that mixes
+//!    glyphs and bare words with no rule behind which is which reads as
+//!    unfinished work. Every command that can carry a glyph has one; every
+//!    command that cannot is a **recorded refusal** — deviation #8, which
+//!    is also why no count of either appears here.
 //!
 //!    `list.svg` is the one of the twenty-five that contradicts a spec row
 //!    rather than filling a gap: ui-spec §8.2 assigns `icon-ring.svg` to
@@ -300,65 +288,40 @@
 //!    was written at reservation depth before the Measure surface existed
 //!    and offers no reasoning to weigh against; the asset carries the
 //!    replacement's.
-//! 8. **Eleven commands are deliberately left with no icon**, which is a
+//! 8. **Some commands are deliberately left with no icon**, which is a
 //!    deviation from the operator's "icons for all GUI features" instruction
-//!    and is therefore recorded rather than assumed. Each is also stated at
-//!    its own registration in `crate::shell::commands`:
+//!    and is therefore recorded rather than assumed. Each is argued at its own
+//!    registration in `crate::shell::commands`, and the only place the count
+//!    of them is true is that module's own assertion — **not here**.
 //!
-//!    > ★★★ **THE NUMBER AND THE LIST BELOW ARE HISTORICAL — the live count
-//!    > is SEVEN as of 2026-09-05, and the only place that count is true is
-//!    > the assertion in `crate::shell::commands`' test module, which fails
-//!    > the build when it moves.** This paragraph is a dated block about one
-//!    > pass and is kept in its own tense; do not read it as an inventory.
-//!    > Six of the eleven have left it — the five **Render** knobs and
-//!    > `view.app_initiative` moved off the ribbon into Settings, and
-//!    > `file.recent` became an `Item::Custom` with no command behind it —
-//!    > while `format.font`, `format.font_size` and `format.font_colour`
-//!    > joined it when the Format tab's Font group shipped, and
-//!    > `view.panel_close` joined and then left again on 2026-09-05 when it
-//!    > took `close`.
-//!    >
-//!    > ⇒ **A count written into prose in one file cannot be kept true by any
-//!    > mechanism in another.** This one drifted through at least four
-//!    > separate changes without a single test going red, and what caught it
-//!    > was a human reading two files side by side — which is exactly the
-//!    > labour an assertion exists to replace. The seven that remain divide
-//!    > into six with **no slot to put a glyph in** and one that would be
-//!    > wearing the **wrong picture**; neither kind is about the supply of
-//!    > art, and a session arriving here to draw something will find nothing
-//!    > to draw.
+//!    ⇒ **A count written into prose in one file cannot be kept true by any
+//!    mechanism in another.** The number that used to stand here drifted
+//!    through four separate changes without a single test going red, and what
+//!    caught it was a human reading two files side by side — which is exactly
+//!    the labour an assertion exists to replace.
+//!
+//!    ⚠ **Two kinds of refusal, and only one of them is about the supply of
+//!    art.** A command with **no slot to put a glyph in** — a text segment, a
+//!    combo box, a control whose whole content is its own value — gains
+//!    nothing from new art; nor does one that would be wearing the **wrong
+//!    picture**. A session arriving here to draw something for a refusal of
+//!    either kind will find nothing to draw.
 //!
 //!    * `view.zoom_actual` — ui-spec §3.2 is an explicit, reasoned
 //!      recommendation AGAINST iconifying it ("a numeral read at a glance is
 //!      clearer than any glyph substitute could be… both add a decode step a
 //!      bare percentage does not need"). Honoured as written.
-//!    * The five **Render** knobs (`view.render_strategy`, `render_quality`,
-//!      `render_settle`, `render_thin_lines`, `render_antialias`) — their
-//!      labels are the parameter names ("Strategy", "Raster scale", "Settle
-//!      delay"), there is no industry-conventional glyph for any of them,
-//!      and an invented one on a control whose whole content is its value is
-//!      decoration. This is §3.2's reasoning applied to a whole group.
-//!    * `view.app_initiative` — a three-position policy (Never · Ask ·
-//!      Allowed) about whether the application may float a surface over the
-//!      page on its own. Any honest drawing of it is a picture of the
-//!      floating surface, i.e. of what the default FORBIDS. An icon is a
-//!      claim (§5.4), and that one would be the wrong claim.
-//!    * `file.recent` — predates this pass, and its reason is unchanged:
-//!      reusing `open` would draw two adjacent controls in one band as
-//!      though they were one control drawn twice.
 //!    * `mode.read`, `mode.review`, `mode.edit` — not ribbon buttons at all.
 //!      `egui_shell::ribbon::mode_selector` renders the three as **text
 //!      segments** of a segmented control, and that module contains no icon
 //!      path whatsoever (verified by reading it: the string `icon` does not
 //!      appear in the file). A key on these would be art nothing can draw.
 //!
-//! ## §5b — One glyph added on 2026-08-14, for the text tool
+//! ## §5b — The text tool's glyph
 //!
-//! `text-select.svg`, and it is recorded here rather than folded into §5's
-//! deviation #7 because that entry is a dated block about one pass and this is a
-//! separate occasion. The cause is nonetheless #7's: the spec's §0 audited the
-//! **old** shell's toolbar, and that toolbar had no text tool, because this
-//! shell had no `CanvasTool::Text` until the same day.
+//! `text-select.svg`, recorded apart from §5's deviation #7 because it is a
+//! separate occasion, though the cause is #7's: the spec's §0 audited the
+//! **old** shell's toolbar, and that toolbar had no text tool.
 //!
 //! It sits beside `add-text.svg` in the I-beam family and the difference between
 //! them is the badge: a plus **creates** text, and the bare beam **selects** it.
@@ -748,7 +711,7 @@ pub(super) const SIGNATURES: &str = include_str!("assets/signatures.svg");
 
 /// `sign.svg` — the art for [`super::Icon::Sign`].
 ///
-/// ★ The SIGNING control's glyph, and deliberately a different asset from
+/// The SIGNING control's glyph, and deliberately a different asset from
 /// [`SIGNATURES`] even though the two subjects are one word apart. That one
 /// is a **panel toggle** — it opens a report about signatures that already
 /// exist — and this one **authors** a new one. Sharing a key would make
@@ -882,35 +845,36 @@ pub(super) const PICK_FORM_XOBJECT: &str = include_str!("assets/pick-form-xobjec
 pub(super) const PICK_LINK: &str = include_str!("assets/pick-link.svg");
 
 // ══════════════════════════════════════════════════════════════════════════
-// The 2026-09-04 batch — thirty-six glyphs adopted from the outside review
+// The glyphs that discharge a written-down refusal, or unshare a borrowed one
 // ══════════════════════════════════════════════════════════════════════════
 //
-// Every one of these fills a gap that was already WRITTEN DOWN. Nine close a
-// registration that carries a "No icon" refusal in prose — `file.new`,
-// `file.ocr`, `markup.finish` and the rest — and the refusals all give the
-// same reason: this directory is declared the operator's own art, reusing a
-// neighbour's glyph would make two controls say the same thing, and naming a
-// key that does not exist draws a slashed placeholder. Each refusal is
-// discharged by the art existing, not by an argument.
+// Every one of these fills a gap that was already WRITTEN DOWN. Some close a
+// registration carrying a "No icon" refusal in prose — `file.new`, `file.ocr`,
+// `markup.finish` and the rest — and those refusals all give the same reason:
+// this directory is declared the operator's own art, reusing a neighbour's
+// glyph would make two controls say the same thing, and naming a key that does
+// not exist draws a slashed placeholder. **A refusal of that kind is
+// discharged by the art existing, not by an argument.**
 //
 // The rest replace a BORROWED glyph. Four form-field tools shared
 // `form-field.svg` and four measure tools shared `measure.svg`: eight
 // controls rendering as two pictures, which is the failure the set's
 // one-asset-per-role rule exists to prevent.
 //
-// ★ Provenance: these are drawn from primitives for pdfcer in the same style
+// Provenance: these are drawn from primitives for pdfcer in the same style
 // contract as the rest of the directory — 48×48, stroke 2.5, round caps and
 // joins, no fill except the redaction family. `assets/PROVENANCE.md` covers
-// the whole directory and its terms are unchanged by this batch.
+// the whole directory and its terms cover these too.
 
 /// `apply-redactions.svg` — the art for [`super::Icon::ApplyRedactions`].
 ///
-/// Edit ▸ Apply redactions (`edit.redact_apply`) — the one irreversible
+/// Edit ▸ Apply redactions (`edit.redact_apply`) — the one irreversible verb
+/// in the redaction family.
 pub(super) const APPLY_REDACTIONS: &str = include_str!("assets/apply-redactions.svg");
 
 /// `attachment.svg` — the art for [`super::Icon::Attachment`].
 ///
-/// Attachments (`edit.attachments`) — the files this document carries
+/// Attachments (`edit.attachments`) — the files this document carries.
 pub(super) const ATTACHMENT: &str = include_str!("assets/attachment.svg");
 
 /// `check.svg` — the art for [`super::Icon::Accept`].
@@ -945,7 +909,7 @@ pub(super) const COPY_PAGE_TEXT: &str = include_str!("assets/copy-page-text.svg"
 
 /// `dimension-groups.svg` — the art for [`super::Icon::DimensionGroups`].
 ///
-/// Dimension groups — `measure.manage_groups`, and the caption's dock tab
+/// Dimension groups — `measure.manage_groups`, and the caption's dock tab.
 pub(super) const DIMENSION_GROUPS: &str = include_str!("assets/dimension-groups.svg");
 
 /// `document-next.svg` — the art for [`super::Icon::NextDocument`].
@@ -955,7 +919,7 @@ pub(super) const DOCUMENT_NEXT: &str = include_str!("assets/document-next.svg");
 
 /// `document-previous.svg` — the art for [`super::Icon::PreviousDocument`].
 ///
-/// Switch to the previous open document — `view.previous_document`
+/// Switch to the previous open document — `view.previous_document`.
 pub(super) const DOCUMENT_PREVIOUS: &str = include_str!("assets/document-previous.svg");
 
 /// `drop-down.svg` — the art for [`super::Icon::DropDown`].
@@ -965,7 +929,7 @@ pub(super) const DROP_DOWN: &str = include_str!("assets/drop-down.svg");
 
 /// `embed-fonts.svg` — the art for [`super::Icon::EmbedFonts`].
 ///
-/// Embed the font programs a document references but does not carry
+/// Embed the font programs a document references but does not carry.
 pub(super) const EMBED_FONTS: &str = include_str!("assets/embed-fonts.svg");
 
 /// `expand.svg` — the art for [`super::Icon::Expand`].
@@ -975,12 +939,14 @@ pub(super) const EXPAND: &str = include_str!("assets/expand.svg");
 
 /// `finish-shape.svg` — the art for [`super::Icon::FinishShape`].
 ///
-/// Markup ▸ Finish shape (`markup.finish`) — commit the vertex run a
+/// Markup ▸ Finish shape (`markup.finish`) — place the polyline or polygon
+/// whose corners have been clicked out.
 pub(super) const FINISH_SHAPE: &str = include_str!("assets/finish-shape.svg");
 
 /// `lock.svg` — the art for [`super::Icon::Locked`].
 ///
 /// A row the **document** forbids changing — an optional-content group
+/// carrying §12.5.3's `/Locked` bit.
 pub(super) const LOCK: &str = include_str!("assets/lock.svg");
 
 /// `measure-angle.svg` — the art for [`super::Icon::MeasureAngle`].
@@ -1055,11 +1021,13 @@ pub(super) const OFF_PAGE: &str = include_str!("assets/off-page.svg");
 /// `redact-selection.svg` — the art for [`super::Icon::RedactSelection`].
 ///
 /// Edit ▸ Redact selection (`edit.redact_selection`) — mark whatever is
+/// selected — a shape, an image, a piece of text — to be removed.
 pub(super) const REDACT_SELECTION: &str = include_str!("assets/redact-selection.svg");
 
 /// `reflow.svg` — the art for [`super::Icon::Reflow`].
 ///
 /// Reflow paragraph (`edit.reflow_block`) — re-wrap the paragraph the caret
+/// is in so its lines fill their box again.
 pub(super) const REFLOW: &str = include_str!("assets/reflow.svg");
 
 /// `render-diagnostics.svg` — the art for [`super::Icon::RenderDiagnostics`].
@@ -1074,7 +1042,8 @@ pub(super) const SAVE_AS: &str = include_str!("assets/save-as.svg");
 
 /// `save-compact.svg` — the art for [`super::Icon::SaveCompacted`].
 ///
-/// Save compacted — `file.save_compacted`, the copy with unused objects
+/// Save compacted — `file.save_compacted`, the copy written fresh with
+/// anything no longer used dropped.
 pub(super) const SAVE_COMPACT: &str = include_str!("assets/save-compact.svg");
 
 /// `save-copy.svg` — the art for [`super::Icon::SaveCopy`].
@@ -1084,7 +1053,7 @@ pub(super) const SAVE_COPY: &str = include_str!("assets/save-copy.svg");
 
 /// `unembed-fonts.svg` — the art for [`super::Icon::UnembedFonts`].
 ///
-/// Remove embedded font programs, leaving the references behind
+/// Remove embedded font programs, leaving the references behind.
 pub(super) const UNEMBED_FONTS: &str = include_str!("assets/unembed-fonts.svg");
 
 /// `wheel-flip.svg` — the art for [`super::Icon::WheelFlip`].
@@ -1092,20 +1061,18 @@ pub(super) const UNEMBED_FONTS: &str = include_str!("assets/unembed-fonts.svg");
 /// The wheel-paging toggle on the status bar — `OPERATOR_REQUESTS.md` O30.
 pub(super) const WHEEL_FLIP: &str = include_str!("assets/wheel-flip.svg");
 
-// ── the last three aliases, broken 2026-09-04 ─────────────────────────────
+// ── the three aliases, broken ─────────────────────────────────────────────
 //
-// `properties`, `insert-pages` and `set-scale` were live icon KEYS that
-// resolved to another role's asset: `document.svg`, `upload.svg` and
-// `convert.svg`. That is the same defect as the four form tools sharing one
-// glyph — a control wearing a picture drawn for something else — one level
-// down, and it survived the 2026-09-04 batch because a mechanical pre-filter
-// removed every proposed name that collided with an existing key, on the
-// reasoning that a collision means a restyle.
+// `properties`, `insert-pages` and `set-scale` were live icon KEYS resolving
+// to another role's asset: `document.svg`, `upload.svg` and `convert.svg`.
+// That is the same defect as four form tools sharing one glyph — a control
+// wearing a picture drawn for something else — one level down. Each of the
+// three below is the FIRST art drawn for its role.
 //
-// ★ The reasoning was right and the conclusion was wrong: there was no
-// purpose-drawn art to restyle. Each of the three is the FIRST art drawn for
-// its role. Found because the layout mockup draws shipped art beside proposed
-// art and the adoption count did not add up — 36 + 26 = 62 of 65.
+// ⇒ **A proposed name colliding with an existing key does not mean there is
+// art to restyle.** Filtering such names out mechanically is what hid these
+// three: the key existed, the drawing for that role did not. Check what the
+// colliding key actually resolves to before dropping the proposal.
 
 /// `insert-pages.svg` — the art for [`super::Icon::InsertPages`].
 ///
@@ -1126,12 +1093,10 @@ pub(super) const PROPERTIES: &str = include_str!("assets/properties.svg");
 pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 
 // ══════════════════════════════════════════════════════════════════════════
-// Five glyphs drawn 2026-09-04 — ★ ALL FIVE NOW HAVE BUTTONS (2026-09-05)
+// Export image, copy as vector, encrypt, permissions, open in Acrobat
 // ══════════════════════════════════════════════════════════════════════════
 //
-// ★★★ THIS HEADING USED TO READ *"the commands the ribbon does not reach
-// yet"*, AND IT WAS FALSE WITHIN THE DAY. Every one of the five is now named
-// by a registered command:
+// Five glyphs, each named by a registered command:
 //
 // | glyph | command | where it is drawn |
 // |---|---|---|
@@ -1141,28 +1106,18 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 // | `permissions` | `file.permissions` (127) | File ▸ Security, large |
 // | `open-in-acrobat` | `file.open_in_acrobat` | the ribbon's trailing item |
 //
-// The art was drawn in the morning of 2026-09-04 and four of the five buttons
-// were wired the same afternoon, by the tracks this block names as future
-// work. The block is corrected rather than deleted because **the shape of the
-// mistake is the transferable part**: a sentence that says a thing is not
-// built is a dated citation whose shelf life on this project has repeatedly
-// been measured in hours, and this one was overtaken by the very tracks it
-// predicted. ⇒ Write such a claim so it can be an assertion; where it cannot,
-// date it and expect to return.
+// ⇒ **Do not write "this is not built" into a comment as a fact about the
+// future.** A claim anchored to a schedule rots; a claim anchored to a
+// mechanism does not — which is why the paragraph at the foot of this block,
+// about `Icon::ALL` membership and the tests that walk it, stays true in both
+// directions while a sentence about what the ribbon does not reach yet does
+// not survive the week. Write such a claim so a test can assert it, or expect
+// to come back and correct it.
 //
-// ★ What did NOT need correcting is the paragraph at the foot of this block —
-// *"a variant with no command is the SUPPORTED state"* — and the reason is
-// instructive. That claim is about `Icon::ALL` membership and the tests that
-// walk it, so it stayed true through the whole transition in both directions.
-// A claim anchored to a mechanism does not rot; a claim anchored to a schedule
-// does.
+// The argument for each PICTURE is unaffected by whether a button exists, and
+// is what this block is for.
 //
-// The original argument for each glyph is kept below, in the tense it was
-// written in, because each carries the reasoning for the picture and that
-// reasoning is unaffected by whether a button exists.
-//
-// ★ `export-image` is the live one. `file.export_image` shipped earlier the
-// same day wearing `export` (`download.svg`) with a paragraph in
+// `file.export_image` first wore `export` (`download.svg`), on a paragraph in
 // `shell::commands::catalog::file` defending the share — three export verbs,
 // one act, and the FORMAT is "a word only a label can say". That argument is
 // right about DXF and form data and wrong about a picture, because this set
@@ -1171,48 +1126,36 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 // horizon means here. The registration is repointed and its comment records
 // the reversal rather than being quietly rewritten.
 //
-// ★★ The other four were ART BEFORE BUTTON when drawn — each is annotated
-// with what happened to it, so the prediction and the outcome stay side by
-// side rather than the prediction being quietly deleted:
-//
-// * `open-in-acrobat` — a command being built on another track as this lands.
-//   That track was told not to add icons; this is the icon it will name.
-//   ✅ **It named it.** `file.open_in_acrobat` ships as the ribbon's trailing
-//   item, gated on `acrobat.available`. The prediction was exactly right.
-// * `copy-as-vector` — the clipboard's missing copy-out. Drawn so the layout
-//   mockup could put the proposal in front of the operator as a picture rather
-//   than as a sentence.
-//   ✅ **BUILT 2026-09-04** as `edit.copy_as_vector`, token 408, drawn
-//   icon-only beside Cut / Copy / Paste on Edit ▸ Clipboard. This entry said
-//   *"not built, not scheduled"* and was overtaken the same day — the mockup
-//   asking the question is what got it built, which is the mechanism working,
-//   not a mis-prediction. What was wrong was writing "not scheduled" as a fact
-//   about the future rather than as a reading of that morning.
-// * `encrypt` and `permissions` — the engine grew both on 2026-09-04 and
-//   nothing in this GUI reached either. `OPERATOR_REQUESTS.md` O119 is the
-//   question to him, and it is a question about a SURFACE (a password box, a
-//   permission list, a save that rewrites the file), not about a button. The
-//   art did not pre-empt his answer; it let the mockup ask.
-//   ✅ **HE ANSWERED — *"yes add encryption and permissions"*** — and both
-//   ship as `file.encrypt` / `file.permissions` on a new File ▸ Security
-//   group, both large, exactly where the mockup drew them. This is the one
-//   entry whose reasoning was vindicated rather than merely overtaken: the art
-//   existed so a question could be asked as a picture, the question was asked,
-//   and the answer arrived within the day.
+// * `open-in-acrobat` — the ribbon's trailing item. The command is
+//   `enabled_when("doc.open")`; it is the ribbon ITEM that carries
+//   `shown_when("acrobat.available")`, which is where R9 is enforced for it.
+// * `copy-as-vector` — the clipboard's missing copy-out, `edit.copy_as_vector`
+//   (token 408), drawn icon-only beside Cut / Copy / Paste on Edit ▸
+//   Clipboard. Drawn first so the layout mockup could put the proposal in
+//   front of the operator as a picture rather than as a sentence, which is
+//   what got it built. ⇒ **A mockup that asks the question as a picture is a
+//   mechanism, not decoration.**
+// * `encrypt` and `permissions` — the engine grew both and nothing in this GUI
+//   reached either. `OPERATOR_REQUESTS.md` O119 is the question to him, and it
+//   is a question about a SURFACE (a password box, a permission list, a save
+//   that rewrites the file), not about a button: the art did not pre-empt his
+//   answer, it let the mockup ask. He answered *"yes add encryption and
+//   permissions"*, and both ship as `file.encrypt` / `file.permissions` on
+//   File ▸ Security, both large, exactly where the mockup drew them.
 //
 // ⇒ A variant with no command is the SUPPORTED state, not a loose end.
-// [`super::Icon::EditObjects`] is the standing precedent — its command was
-// deleted on 2026-08-31 and its variant remains — and the reason is
-// mechanical rather than sentimental: `every_icon_parses`,
+// [`super::Icon::EditObjects`] is the standing precedent — its command is
+// deleted and its variant remains — and the reason is mechanical rather than
+// sentimental: `every_icon_parses`,
 // `every_icon_rasterizes_to_visible_pixels`,
 // `fill_is_semantic_and_the_set_that_uses_it_is_closed`,
 // `crlf_line_endings_parse_identically` and
 // `no_two_icons_render_as_the_same_picture` all iterate
-// [`super::Icon::ALL`]. Art that is kept outside that list is art no test
-// walks, and untested art rots quietly until somebody wires it up months
-// later and finds it blank.
+// [`super::Icon::ALL`]. Art kept outside that list is art no test walks, and
+// untested art rots quietly until somebody wires it up months later and finds
+// it blank.
 //
-// ★ Provenance unchanged: drawn from primitives for pdfcer in the same style
+// Provenance: drawn from primitives for pdfcer in the same style
 // contract as the rest of the directory — 48×48, stroke 2.5, round caps and
 // joins, no fill except the redaction family. `assets/PROVENANCE.md` covers
 // the whole directory. ⚠ `open-in-acrobat` names a vendor in its LABEL and
@@ -1224,22 +1167,21 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 ///
 /// Copy the selection to the clipboard as vector geometry rather than as a
 /// picture of it — `edit.copy_as_vector`, token 408, drawn icon-only beside
-/// Cut / Copy / Paste on Edit ▸ Clipboard since 2026-09-04. See the asset for
-/// which glyph it must stay distinguishable from and by what cue.
+/// Cut / Copy / Paste on Edit ▸ Clipboard. See the asset for which glyph it
+/// must stay distinguishable from and by what cue.
 pub(super) const COPY_AS_VECTOR: &str = include_str!("assets/copy-as-vector.svg");
 
 /// `encrypt.svg` — the art for [`super::Icon::Encrypt`].
 ///
-/// Put a password on this document — the engine's `set_encryption`. ★ Worn by
-/// `file.encrypt` (token 126) on File ▸ Security since 2026-09-04; this line
-/// said *"awaiting the operator's ruling as O119"* until 2026-09-05, and he
-/// had answered *"yes add encryption and permissions"* the day before.
+/// Put a password on this document — the engine's `set_encryption`. Worn by
+/// `file.encrypt` (token 126) on File ▸ Security.
 pub(super) const ENCRYPT: &str = include_str!("assets/encrypt.svg");
 
 /// `export-image.svg` — the art for [`super::Icon::ExportImage`].
 ///
 /// Export the page as a raster image — `file.export_image`, which wore
-/// [`DOWNLOAD`] for one day. See the asset for the reversal and its reason.
+/// [`DOWNLOAD`] before this art existed. See the asset for the reversal and
+/// its reason.
 pub(super) const EXPORT_IMAGE: &str = include_str!("assets/export-image.svg");
 
 /// `open-in-acrobat.svg` — the art for [`super::Icon::OpenInAcrobat`].
@@ -1251,45 +1193,44 @@ pub(super) const OPEN_IN_ACROBAT: &str = include_str!("assets/open-in-acrobat.sv
 
 /// `permissions.svg` — the art for [`super::Icon::Permissions`].
 ///
-/// What the document permits — the engine's `set_permissions`. ★ Worn by
-/// `file.permissions` (token 127) on File ▸ Security since 2026-09-04; O119 is
-/// answered and closed, and this line described it as open until 2026-09-05.
+/// What the document permits — the engine's `set_permissions`. Worn by
+/// `file.permissions` (token 127) on File ▸ Security; `OPERATOR_REQUESTS.md`
+/// O119 is answered and closed.
 pub(super) const PERMISSIONS: &str = include_str!("assets/permissions.svg");
 
 /// `select-all.svg` — the art for [`super::Icon::SelectAll`].
 ///
-/// ★ Added 2026-09-04 to correct a record, not to fill a gap. Its absence had
-/// been argued as a refusal by a build session and then quoted until it read as
-/// the operator's own ruling; it was not, and he said so. The asset's own
-/// comment carries the whole account, including which half of the old argument
+/// Select all — `edit.select_all`. ⇒ **A refusal argued by a build session is
+/// not the operator's ruling, however often it is re-quoted.** This glyph
+/// exists because that distinction was lost and he corrected it; the asset's
+/// own comment carries the account, including which half of the old argument
 /// is drawn into the glyph rather than discarded.
 pub(super) const SELECT_ALL: &str = include_str!("assets/select-all.svg");
 
 /// `bold.svg` — the art for [`super::Icon::Bold`].
 ///
-/// ★ Added 2026-09-04 to correct a refusal, not to fill a gap. `format.bold`
-/// was registered with no icon because *"this build has no such art"* — a
-/// statement about supply, and the operator's standing ruling is that a missing
-/// glyph is **authored**. The asset's own comment carries the account, and the
-/// reason its stroke is 4 rather than the set's 2.5.
+/// `format.bold`'s glyph. It was registered with no icon because *"this build
+/// has no such art"* — a statement about SUPPLY, and the operator's standing
+/// ruling is that a missing glyph is **authored**. The asset's own comment
+/// carries the account, and the reason its stroke is 4 rather than the set's
+/// 2.5.
 pub(super) const BOLD: &str = include_str!("assets/bold.svg");
 
 /// `italic.svg` — the art for [`super::Icon::Italic`].
 ///
-/// ★ Added 2026-09-04 alongside [`BOLD`], on the same correction and for the
-/// same reason. See the asset for why the slant is exaggerated and why the
-/// serifs are offset rather than centred.
+/// [`BOLD`]'s sibling, on the same ruling and for the same reason. See the
+/// asset for why the slant is exaggerated and why the serifs are offset rather
+/// than centred.
 pub(super) const ITALIC: &str = include_str!("assets/italic.svg");
 
 /// `line-weights.svg` — the art for [`super::Icon::LineWeights`].
 ///
-/// ★★★ Authored 2026-09-05 for `view.line_weights` (O137), a control that had
-/// been **deleted** on 2026-08-17 for want of an engine field. The field
-/// arrived (`RenderOptions::stroke_display`, `Pass 254.0`), so the button came
-/// back and the glyph was drawn for it — the operator's standing ruling is that
-/// a missing glyph is authored, not worked around.
+/// `view.line_weights` (`OPERATOR_REQUESTS.md` O137), a control that exists
+/// only because the engine has `RenderOptions::stroke_display` behind it. The
+/// glyph was authored rather than borrowed, on the operator's standing ruling
+/// that a missing glyph is authored, not worked around.
 ///
-/// ★★ The **only** asset in this directory that does not stroke at a uniform
+/// The **only** asset in this directory that does not stroke at a uniform
 /// 2.5, and the asset's own comment carries why: the varying weight IS the
 /// subject, so a glyph drawn at one width would be a picture of the feature
 /// switched off. It also carries the 16 px measurement behind the thinnest

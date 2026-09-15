@@ -14,7 +14,7 @@
 //! click, and then *something* has to say "that was the last one". This shell has
 //! met that exact problem once before — [`crate::canvas::measure::circular`], the
 //! radius/diameter tool, whose pick set has no natural arity either — and the
-//! operator settled it on **2026-08-14**:
+//! operator settled it:
 //!
 //! > **Two endings, routed through one commit path**: a **double-click** on the
 //! > canvas, and a registered **command**.
@@ -43,8 +43,9 @@
 //!
 //! ### 1.1 The reference applications, and where they disagree
 //!
-//! Under `HANDOFF.md` §3's standing instruction, and answering the sharpened
-//! form of it — *ask which of the three actually has the surface in question*:
+//! Under the standing instruction to match Inkscape, Acrobat and SolidWorks, in
+//! its sharpened form — *ask which of the three actually has the surface in
+//! question*:
 //!
 //! | | polyline / polygon gesture | ends by |
 //! |---|---|---|
@@ -75,9 +76,9 @@
 //!   argument the operator's own zoom-to-selection decision settled: this shell's
 //!   manifest chords are `Ctrl`-modified by construction, `Enter` is not one, and
 //!   **keyboard input cannot be driven into this window from a harness on this
-//!   machine** (`HANDOFF.md` §8), so a key-only ending would be a way out that
-//!   nothing outside the process can ever prove works. `markup.finish` is a
-//!   control, and a control is clickable.
+//!   machine**, so a key-only ending would be a way out that nothing outside the
+//!   process can ever prove works. `markup.finish` is a control, and a control
+//!   is clickable.
 //!
 //! ### 1.2 ★ Polygon closes and polyline does not — what that means for the last
 //! ### click and for the preview
@@ -225,9 +226,9 @@ impl VertexRun {
 /// `measure`'s `asking_whether_finish_is_available_creates_no_measure_state` is
 /// the test that caught the shape of it there.
 ///
-/// ★ `pub` as of 2026-08-19, for `crate::panels::tool`'s stage row — *"3 corners
-/// placed. Double-click the last one to finish."* That is the one place a live
-/// vertex count may be rendered: a number floated near the pointer would be
+/// ★ `pub` for `crate::panels::tool`'s stage row — *"3 corners placed.
+/// Double-click the last one to finish."* That is the one place a live vertex
+/// count may be rendered: a number floated near the pointer would be
 /// pdfcer putting a surface over the drawing on its own initiative, which
 /// `MODES_AND_PANELS.md` sets to **never**, and the count is a real need because
 /// a polygon and a revision cloud both refuse at two corners.

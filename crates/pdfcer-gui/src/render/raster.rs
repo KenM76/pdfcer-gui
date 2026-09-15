@@ -1,14 +1,5 @@
 //! # `render::raster` — the bridge from `pdfcer-render`'s pixmaps to egui textures
 //!
-//! **Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\raster.rs`** (Class A,
-//! `SALVAGE.md`: *"Premultiplied alpha handled correctly; stale texture
-//! scaled `LINEAR` during settle. This is *why* zoom feels smooth."* —
-//! change needed: none). The premultiplied-alpha and texture-filtering
-//! sections below are carried across verbatim; they are the reason this
-//! module exists as a module rather than as four lines at a call site.
-//!
-//! ---
-//!
 //! One job, kept in one place: take a [`tiny_skia::Pixmap`] out of
 //! [`pdfcer_render::render_page`] and hand egui a
 //! [`egui::TextureHandle`] it can draw, plus the [`Diagnostics`] that
@@ -44,22 +35,14 @@
 //! blocky or absent. Nearest-neighbour filtering would make the interim
 //! state look broken rather than merely soft.
 //!
-//! ## The prediction this module made, and how it turned out
+//! ## This module is the threading seam
 //!
-//! The original carried a section headed *"Why rendering is synchronous"*,
-//! which argued that a background worker "needs a channel, a cancellation
-//! protocol and a 'which request was this a reply to' generation counter,
-//! and building all of that before there is a measured stall would be
-//! speculative complexity" — and named this module as *"the seam where it
-//! would happen, since nothing outside it knows how a texture gets made."*
-//!
-//! It was right on both counts, and the record is kept rather than deleted
-//! because the shape of the eventual answer is the argument's vindication:
-//! a real corpus did produce pages slow enough to drop frames (~10 s at 1×,
-//! ~58 s at 2× on a CAD sheet), the worker was then built with exactly the
-//! three pieces predicted, and it landed *behind this seam* —
-//! [`texture_from_pixels`] is the only new public function it required.
-//! That is what "defer until there is evidence" looks like when it works.
+//! Rendering is off the UI thread — a dense CAD sheet takes on the order of
+//! ten seconds at 1× and a minute at 2×, which drops frames if it runs inline.
+//! [`crate::render::worker`] owns the channel, the cancellation and the
+//! generation counter; nothing outside this module knows how a texture is
+//! made, so the whole of that machinery reaches the rest of the crate through
+//! [`texture_from_pixels`] and nothing else.
 
 use egui::{ColorImage, Context, TextureHandle, TextureOptions};
 use pdfcer_render::{Diagnostics, tiny_skia};
@@ -68,7 +51,7 @@ use crate::render::worker::RenderKey;
 
 /// A rasterized page, uploaded and ready to draw.
 ///
-/// # ★ The key is ONE field, and that is the whole staleness contract
+/// # The key is ONE field, and that is the whole staleness contract
 ///
 /// [`Self::key`] is a [`RenderKey`] — the *same* type
 /// [`crate::render::worker::RenderWorker::spawn`] de-duplicates in-flight
@@ -76,24 +59,19 @@ use crate::render::worker::RenderKey;
 /// comparing it against the key it currently wants, and there is no parallel
 /// bookkeeping struct that could disagree with it.
 ///
-/// It was two loose fields (`page_index`, `raster_scale`) until S4, and this
-/// type's own doc comment carried the warning that eventually came true:
+/// **Do not unpack it back into loose fields.** A staleness input the request
+/// varies but the texture does not record cannot be compared, and the symptom
+/// is a control that appears inert. Holding the key type itself is the version
+/// of that rule the compiler keeps: a field added to [`RenderKey`] is compared
+/// here the moment it exists, because there is nothing here to forget to
+/// update.
 ///
-/// > The set of fields here must stay in lock-step with `RenderRequest`'s
-/// > staleness keys — a key the request varies but the texture does not
-/// > record cannot be compared, and the symptom is a control that appears
-/// > inert.
-///
-/// "Must stay in lock-step" is a promise a reviewer keeps. Holding the key
-/// type itself is the version the compiler keeps: a field added to
-/// [`RenderKey`] is compared here the moment it exists, because there is
-/// nothing here to forget to update.
-/// ★ `Clone` since 2026-08-26, for the backdrop. Cloning a `PageTexture` is
-/// cheap and shares pixels rather than copying them: `TextureHandle` is a
-/// reference-counted handle into egui's texture manager, and `Diagnostics` and
-/// `RenderKey` are small. The backdrop and the live texture are therefore the
-/// same pixels until the operator zooms past the backdrop, and only then does a
-/// second texture exist at all. See `OpenDoc::base_texture`.
+/// `Clone` is for the backdrop. Cloning a `PageTexture` is cheap and shares
+/// pixels rather than copying them: `TextureHandle` is a reference-counted
+/// handle into egui's texture manager, and `Diagnostics` and `RenderKey` are
+/// small. The backdrop and the live texture are therefore the same pixels
+/// until the operator zooms past the backdrop, and only then does a second
+/// texture exist at all. See `OpenDoc::base_texture`.
 #[derive(Clone)]
 pub struct PageTexture {
     /// The uploaded raster. Freed when this struct drops.
@@ -110,7 +88,7 @@ pub struct PageTexture {
     pub key: RenderKey,
     /// The honesty report that came with these pixels — which glyphs were
     /// substituted, which features were skipped. Displayed in the status
-    /// bar from stage S2; never discarded.
+    /// bar; never discarded.
     pub diagnostics: Diagnostics,
     /// How long the rasterization that produced these pixels took.
     ///
@@ -165,7 +143,7 @@ fn pixmap_to_color_image(pixmap: &tiny_skia::Pixmap) -> ColorImage {
 /// The most pixels a whole-page raster may have and still be kept as the
 /// backdrop.
 ///
-/// ★★ Four megapixels — comfortably more than a whole-page raster at any fit
+/// Four megapixels — comfortably more than a whole-page raster at any fit
 /// zoom on any monitor this shell runs on, and far below the hundreds of
 /// megapixels a whole-page raster reaches just under the region tier. The
 /// budget is what makes `OpenDoc::base_texture` free: it retains the small
@@ -177,7 +155,7 @@ pub const BASE_MAX_PIXELS: u32 = 4_000_000;
 
 /// Whether this raster is small enough to keep as the page's backdrop.
 ///
-/// ★ Asked of the PIXMAP rather than computed from the scale and the page size,
+/// Asked of the PIXMAP rather than computed from the scale and the page size,
 /// because the pixmap is the thing whose memory is at stake and the two can
 /// disagree — a rotated page, a crop box smaller than the media box, or the
 /// renderer's own `ceil()` on the edge. Measuring the artefact is one fewer

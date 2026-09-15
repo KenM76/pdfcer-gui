@@ -1,16 +1,12 @@
 //! # `app::dispatch::markupnodes` — the three commands about a markup shape's
 //! **points**
 //!
-//! Split out of [`super`] under **R2** on 2026-09-06, when that file stood at
-//! exactly 1,500 of its 1,500 lines and the right-click route to a shape's
-//! corners needed an arm.
+//! ## ★★ The seam, and it is a subject rather than a size
 //!
-//! ## ★★★ The seam, and it is a subject rather than a size
-//!
-//! Three ids, and what they share is not the `markup.` prefix — `markup.cloud`
-//! arms a pen, `markup.stamp` arms a different one, `markup.comments` opens a
-//! panel, and none of those is here. What these three share is their
-//! **operand: a point on a shape.**
+//! What these ids share is not the `markup.` prefix — `markup.cloud` arms a
+//! pen, `markup.stamp` arms a different one, `markup.comments` opens a panel,
+//! and none of those is here. What they share is their **operand: a point on a
+//! shape.**
 //!
 //! | id | the point it is about |
 //! |---|---|
@@ -18,13 +14,12 @@
 //! | `markup.add_node` | a place on one edge of a drawn shape — *put a corner there* |
 //! | `markup.remove_node` | one existing corner — *take it away* |
 //!
-//! `markup.finish` came across from [`super`] unchanged, and it belongs with
-//! the other two on its merits rather than on line count: its own arm described
-//! it as *"the ribbon half of the vertex tools' ending"*, which is a statement
+//! `markup.finish` belongs here rather than beside the other `markup.*` arms:
+//! it is the ribbon half of the vertex tools' ending, which is a statement
 //! about points, and an operator who has just used it is one keystroke from
 //! wanting the two below it.
 //!
-//! ⇒ The three also form the whole answer to one operator sentence, which is
+//! ⇒ Together they form the whole answer to one operator sentence, which is
 //! this project's usual test for a module:
 //!
 //! > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
@@ -50,9 +45,9 @@
 //! A second copy of the engine's subtype matrix here is exactly what
 //! `canvas::annotnodes`' header refuses by name.
 //!
-//! ## The capability gate is one sentence, three times
+//! ## The capability gate is one sentence, asked once
 //!
-//! `author_markup`, for all three, and they must decline **alike**: a mode that
+//! `author_markup`, for every id here, and they must decline **alike**: a mode that
 //! may not place a shape has no business finishing one, adding a corner to one
 //! or taking one away. Three different refusals for one capability would read
 //! as arbitrary. Each traces separately all the same, because *"the mode says
@@ -66,22 +61,21 @@ use crate::app::PdfcerApp;
 use crate::app::actions::Action;
 use crate::app::state::Status;
 
-/// Whether `id` is one of the three point commands this module dispatches.
+/// Whether `id` is one of the point commands this module dispatches.
 ///
-/// ★ Named `claims` rather than `handles`, and the choice is not cosmetic:
+/// ★ Named `claims` rather than `handles` because
 /// `shell::commands::reach::guards::EVALUATED_GUARDS` is a set of **function
 /// names** read out of `dispatch.rs`'s syntax tree and asserted equal to the
-/// set the reachability checker evaluates. `claims` is already in it —
-/// `dispatch::panels` and `dispatch::security` both use the name — so this
-/// module joins the checker with one line in `guard_claiming` and no change to
-/// that list. `handles` would also have worked; `claims` costs one register
-/// edit fewer, and the register's own note blesses two guards sharing a name.
+/// set the reachability checker evaluates. A guard function whose name is not
+/// in that set is a place commands can hide from the check that exists to find
+/// them, so a new module reuses an evaluated name rather than inventing one.
 ///
-/// ★★ A predicate paired with [`dispatch`] over the same three ids, which is
-/// two statements of one set — the shape this crate usually refuses. It is
-/// accepted here for `dispatch::pages`' stated reason: the two sit adjacent in
-/// one small file, and the `match` below has no catch-all, so a member of this
-/// list missing from that one is a compile error rather than a silent drop.
+/// ★★ A predicate paired with [`dispatch`] over the same ids, which is two
+/// statements of one set — the shape this crate usually refuses. It is accepted
+/// here only because the two sit adjacent in one small file. **Nothing
+/// mechanical welds them**: the `match` below ends in a `_ => {}`, so an id
+/// added here and not there is a control that does nothing and says nothing.
+/// Add to both, in the same edit.
 #[must_use]
 pub(crate) fn claims(id: &str) -> bool {
     matches!(
@@ -90,9 +84,9 @@ pub(crate) fn claims(id: &str) -> bool {
     )
 }
 
-/// Dispatch one of the three.
+/// Dispatch one of the point commands.
 pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &mut Vec<Action>) {
-    // ★ The capability, asked once for all three. See the module header: they
+    // ★ The capability, asked once for every arm. See the module header: they
     // decline alike because they are one capability, and the trace names the
     // command so a reader can still tell which was pressed.
     if !app.capabilities().author_markup {
@@ -103,17 +97,14 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
         return;
     }
     match id {
-        // ★ **Finish** — moved here verbatim from `super` on 2026-09-06. Its
-        // original arm's reasoning, unchanged and still true:
-        //
-        // It is `measure.finish`'s twin, deliberately down to the shape of this
-        // arm, because it answers the identical problem: PolyLine and Polygon
-        // are runs of clicks with no natural end, exactly as the
-        // radius/diameter pick set has none, and the operator settled that on
-        // 2026-08-14 with **two endings through one commit path**. A
-        // double-click on the canvas is the other half and is the one most
-        // operators will use; this is the discoverable one, and the one that
-        // works when the last vertex sits somewhere awkward to double-click.
+        // ★ **Finish** — `measure.finish`'s twin, deliberately down to the
+        // shape of this arm, because it answers the identical problem: PolyLine
+        // and Polygon are runs of clicks with no natural end, exactly as the
+        // radius/diameter pick set has none. The settled answer is **two
+        // endings through one commit path**. A double-click on the canvas is
+        // the other half and is the one most operators will use; this is the
+        // discoverable one, and the one that works when the last vertex sits
+        // somewhere awkward to double-click.
         //
         // It must not be reached by `markup_for_command`'s arm in `super`:
         // that mapping takes ids to *kinds*, this id names no kind, and if it
@@ -148,11 +139,11 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
         // operand's direction — add or remove — and everything else about the
         // operand is the parked pick that `action_for` reads.
         //
-        // ★★ There is no `Status::Open` guard written as a `match` with five
-        // arms, on `super`'s own stated reasoning for the text-mark arm: every
-        // state but `Open` is *no document*, therefore no selection, therefore
-        // no shape to reshape, and that is the only property this arm reads. A
-        // sixth failure state arriving later does not have to be classified.
+        // ★★ A `let else` rather than a `match` enumerating every `Status`, on
+        // `super`'s own stated reasoning for the text-mark arm: every state but
+        // `Open` is *no document*, therefore no selection, therefore no shape
+        // to reshape, and that is the only property this arm reads. A new
+        // failure state arriving later does not have to be classified here.
         //
         // ★ It raises **nothing** when the row it came from has stopped being
         // live — an undo between the frame the menu was drawn and the frame it

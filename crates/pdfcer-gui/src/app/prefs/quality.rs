@@ -1,8 +1,7 @@
 //! # `app::prefs::quality` — how sharply a page is drawn, and how long zoom waits
 //!
-//! The two preferences that shipped with [`super`] on 2026-08-17, split out of
-//! its `mod.rs` on 2026-08-17 when the opening-view preferences arrived and the
-//! file approached rule R2's 1,500-line ceiling.
+//! [`RenderQuality`] and the zoom-settle bounds: the two preferences that
+//! change what a rendered frame costs.
 //!
 //! ## Why these two are one module and the opening view is another
 //!
@@ -49,7 +48,7 @@
 pub enum RenderQuality {
     /// 0.75× — fewer pixels, softer lines, quicker.
     Faster,
-    /// 1× — one raster pixel per device pixel. The shipped answer.
+    /// 1× — one raster pixel per device pixel. The default.
     #[default]
     Normal,
     /// 1.5× — more pixels than the display can show, for small text.
@@ -60,9 +59,9 @@ impl RenderQuality {
     /// Every value, in the order the settings window lists them.
     ///
     /// Worst-to-best rather than best-to-worst, so the control reads left to
-    /// right as *less … more* — which is the direction a reader expects of a
-    /// quality scale and the opposite of the order the enum's own reasoning
-    /// arrived in.
+    /// right as *less … more*, which is the direction a reader expects of a
+    /// quality scale. The default sits in the middle of it, where a three-way
+    /// control wants it.
     pub const ALL: &'static [Self] = &[Self::Faster, Self::Normal, Self::Sharper];
 
     /// The multiplier applied to the natural raster scale.
@@ -122,10 +121,10 @@ pub const MAX_SETTLE_MS: u64 = 1000;
 
 /// The shipped settle, in milliseconds.
 ///
-/// 150 ms is the value the old shell settled on against real CAD sheets, and it
-/// was `render::settle::ZOOM_SETTLE`'s compiled-in constant before this module
-/// existed. It stays the default for the standing reason: a build that omits
-/// nothing must behave as it did before the choice existed.
+/// 150 ms, measured against real CAD sheets, and the same value
+/// `crate::render::settle::ZOOM_SETTLE` compiles in. The two must agree: a
+/// preferences file that names no settle has to debounce exactly as the
+/// compiled-in deadline does, or the choice changes behaviour by existing.
 pub const DEFAULT_SETTLE_MS: u64 = 150;
 
 #[cfg(test)]

@@ -1,30 +1,27 @@
 //! # `app::markupband` tests — the Format ▸ Markup band's own assertions
 //!
-//! ## ★★ Why they live in a file of their own
+//! ## Why they live in a file of their own
 //!
-//! **R2.** `markupband.rs` crossed 1,500 lines on 2026-09-06, when two tracks
-//! landed in it on the same afternoon: the line-style chooser and the deletion
-//! of this crate's copy of the engine's subtype list. The seam taken is the
-//! one `canvas::annotnodes` and `app::conditions` already use — module beside
-//! module, `#[cfg(test)] mod tests;` — and it is a **subject** seam and not an
-//! arithmetic one: what is left in the parent draws controls, what moved here
-//! asserts what they decide.
+//! Module beside module, `#[cfg(test)] mod tests;` — the seam
+//! `canvas::annotnodes` and `app::conditions` also take. It is a **subject**
+//! seam rather than an arithmetic one: the parent draws controls, and this
+//! file asserts what they decide.
 //!
-//! ## ★★★ What these can and cannot prove, stated first
+//! ## What these can and cannot prove, stated first
 //!
 //! **They cannot prove an operator can restyle a mark.** Every test here calls
 //! a function directly, and R1's whole point is that a passing unit test is not
 //! a report of working software. Nothing below draws a pixel, opens a combo, or
 //! reaches `set_markup_style`; `tools/ui-verify` is the instrument for that.
 //!
-//! What they DO prove, and it is the half this module was rewritten for:
+//! What they do prove:
 //!
-//! 1. **The engine's subtype list is ASKED, not restated.** Every visibility
+//! 1. **The engine's subtype list is *asked*, not restated.** Every visibility
 //!    predicate is checked against `MarkupStyleSupport::for_subtype` rather
 //!    than against a table kept here — see
 //!    [`each_predicate_reads_the_engines_flag_and_nothing_else`], and
-//!    `NO_SURFACE.md` §1a for why a table alone would be two copies of one
-//!    constant that cannot disagree.
+//!    `NO_SURFACE.md`'s *How to read a row* for why a table alone would be two
+//!    copies of one constant that cannot disagree.
 //! 2. **A parked edit sets exactly one field**, which no operator could
 //!    report going wrong: a width that silently reverts one frame after it is
 //!    set reads as *the drag did not take*.
@@ -32,31 +29,28 @@
 //!    change whose whole effect is invisible on screen and visible only in the
 //!    saved bytes, so a test is the only place it can be seen at all.
 //!
-//! ⚠ **Every negative assertion here is paired with a positive control**, per
-//! the engine's own methodology note of 2026-09-06: its first foreign-appearance
-//! test asserted `!appearance_rebaked` and *passed with the whole feature
-//! disabled*, because a "not X" assertion is vacuous when the thing that would
-//! produce X is absent.
+//! **Every negative assertion here is paired with a positive control.** A
+//! "not X" assertion is vacuous when the thing that would produce X is absent:
+//! it passes just as well on a build where the feature is switched off
+//! entirely, and only a positive row beside it separates the two.
 
-// ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
+// The *inner* attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
 // file** rather than from its name, and without it every assertion message here
 // is reported as operator-facing copy. `canvas::annotnodes::tests` carries the
-// same line for the same reason; this file learned it the same way, by the gate
-// biting the moment the split landed.
+// same line for the same reason.
 #![cfg(test)]
 
 use super::*;
 
-/// ★★★ **Every custom kind the manifest declares for this group is drawn
-/// here, and every kind drawn here backs a registered command.**
+/// **Every custom kind the manifest declares for this group is drawn here,
+/// and every kind drawn here backs a registered command.**
 ///
 /// The assertion that closes the gap `manifest::COLOUR_SWATCH`'s own doc
-/// comment records: the manifest wrote a custom kind, **no renderer ever
-/// matched it**, and the Markup ▸ Style group drew a caption over an empty
-/// band for the whole of v0.1.0 with nothing anywhere reporting the
-/// mismatch. The shell reserves the item's space, the application declines
-/// to draw, and the only symptom is a gap.
+/// comment records: a custom kind the manifest declares and no renderer
+/// matches draws as a caption over an empty band, with nothing anywhere
+/// reporting the mismatch. The shell reserves the item's space, the
+/// application declines to draw, and the only symptom is a gap.
 ///
 /// It is asserted through `manifest::CUSTOM_BACKED`, which already pairs a
 /// command id with the kind that draws it and is already tested against the
@@ -87,11 +81,11 @@ fn every_markup_kind_in_the_register_is_drawn_by_this_module() {
 /// The six kinds this module claims are exactly the six the manifest
 /// declares — asserted as an **exact set**, not as six `contains`.
 ///
-/// ★ A sixth kind added here and not to the manifest is a renderer arm
-/// nothing can ever reach; a sixth added to the manifest and not here is the
+/// A further kind added here and not to the manifest is a renderer arm
+/// nothing can ever reach; one added to the manifest and not here is the
 /// empty-band defect above. Only an equality catches both.
 ///
-/// ★★ It also asserts that this module does **not** claim the Font group's
+/// It also asserts that this module does **not** claim the Font group's
 /// three or the Markup tab's pen swatch. `COLOUR_SWATCH` is the one that
 /// matters: it is a colour control called `colour_swatch` that sits two tabs
 /// away and means the opposite thing about *when* — it chooses the colour of
@@ -135,16 +129,16 @@ fn this_module_draws_exactly_the_six_markup_kinds() {
     assert!(command_for("nonsense").is_none());
 }
 
-/// ★★★ **Every parked edit sets exactly ONE field of `MarkupStyle`.**
+/// **Every parked edit sets exactly one field of `MarkupStyle`.**
 ///
-/// The rule `MarkupStyle`'s own doc states — *"a Format tab whose colour
-/// picker also had to restate the current width would overwrite whatever
-/// the operator had set from the other control"* — asserted rather than
-/// trusted, because the failure it prevents has no symptom the operator
-/// could report: a width silently reverting one frame after it was set
-/// reads as *the drag did not take*.
+/// The rule `MarkupStyle`'s own doc states, asserted rather than trusted: a
+/// Format tab whose colour picker also restated the current width would
+/// overwrite whatever the operator had set from the other control. The
+/// failure that prevents has no symptom the operator could report — a width
+/// silently reverting one frame after it was set reads as *the drag did not
+/// take*.
 ///
-/// ★ Counted by comparing against `MarkupStyle::default()` field by field,
+/// Counted by comparing against `MarkupStyle::default()` field by field,
 /// which is the only way to state "exactly one" over a struct of `Option`s.
 #[test]
 fn only_one_field_is_ever_set() {
@@ -158,7 +152,7 @@ fn only_one_field_is_ever_set() {
         MarkupEdit::Opacity(StyleEdit::Clear),
         MarkupEdit::Endings(StyleEdit::Set((LineEnding::None, LineEnding::OpenArrow))),
         MarkupEdit::Endings(StyleEdit::Clear),
-        // ★ Both arms of the dash, and `Clear` is not a filler case: it is
+        // Both arms of the dash, and `Clear` is not a filler case: it is
         // the *Solid* entry, and a bug that routed it to `None` would leave
         // the mark's existing dash in place while the chooser showed Solid.
         MarkupEdit::Dash(StyleEdit::Set(
@@ -167,12 +161,11 @@ fn only_one_field_is_ever_set() {
         )),
         MarkupEdit::Dash(StyleEdit::Clear),
     ];
-    // ★ `&cases` and a `clone`, because `MarkupEdit` stopped being `Copy`
-    // when the dash arrived — `BorderDash` owns a `Vec<f64>`. This is the
-    // one clone the change cost anywhere, it is in a test, and it is here
-    // rather than in `into_style`'s signature: the production path
-    // constructs each edit once and consumes it once, which is what the
-    // reply's warning about cloning in a hot path was about.
+    // `&cases` and a `clone`, because `MarkupEdit` is not `Copy` —
+    // `BorderDash` owns a `Vec<f64>`. The clone sits here rather than in
+    // `into_style`'s signature: the production path constructs each edit once
+    // and consumes it once, so the cost belongs in a test and not on the hot
+    // path.
     for case in &cases {
         let style = case.clone().into_style();
         let set = usize::from(style.stroke.is_some())
@@ -189,7 +182,7 @@ fn only_one_field_is_ever_set() {
     }
 }
 
-/// ★★ **The arrowhead chooser changes WHICH ends, never WHAT SHAPE.**
+/// **The arrowhead chooser changes *which* ends, never *what shape*.**
 ///
 /// The property that makes a four-entry list honest over a nine-value
 /// field: a mark drawn with closed arrowheads keeps them when the operator
@@ -225,7 +218,7 @@ fn changing_which_ends_preserves_the_arrowhead_shape() {
 /// The four positions have four distinct, non-empty labels, in the
 /// documented order.
 ///
-/// ★ The **order** is the assertion worth making: the chooser lists them
+/// The **order** is the assertion worth making: the chooser lists them
 /// fewest-endings-first, so an operator scanning for "both" finds it last
 /// every time, and a reordering that put the common case first would be a
 /// change to the control's shape rather than to its wording.
@@ -248,7 +241,7 @@ fn the_four_arrowhead_positions_are_named_and_ordered() {
 /// A swatch shows only colours it can show without converting, and an sRGB
 /// pick round-trips back out as `DeviceRGB`.
 ///
-/// ★ Grey is accepted **in** and never produced **out**, which is the
+/// Grey is accepted **in** and never produced **out**, which is the
 /// asymmetry `srgb_to_colour` argues: reading `Gray(v)` as an equal-channel
 /// swatch is lossless, and writing an equal-channel pick back as `Gray`
 /// would be pdfcer choosing a colour space the operator did not ask for.
@@ -265,7 +258,7 @@ fn a_swatch_shows_only_colours_it_can_show_without_converting() {
     assert_eq!(rgb_of(srgb_to_colour([1, 2, 3])), Some([1, 2, 3]));
 }
 
-/// ★ The width range is the same one the markup pen offers, and the same
+/// The width range is the same one the markup pen offers, and the same
 /// one the Properties panel offers.
 ///
 /// Two ranges for one quantity would let an operator author a 2 pt mark and
@@ -281,7 +274,7 @@ fn the_width_range_matches_the_pen_that_authors() {
 /// A `Current` carrying every value a control could want, so that the only
 /// thing left deciding whether one draws is [`Current::support`].
 ///
-/// ★ Deliberately over-supplied: a width, an interior, a dash, an endings
+/// Deliberately over-supplied: a width, an interior, a dash, an endings
 /// pair and a `/LE` in the file, all at once, on a mark no real subtype
 /// could be. That is the point — a test that fed each control only the
 /// values its own subtype really carries could not tell "the engine's
@@ -293,7 +286,7 @@ fn every_value_present(subtype: &[u8]) -> Current {
         interior: Some([255, 255, 255]),
         interior_set: true,
         width: Some(2.0),
-        // ★ `Solid` is a **value**, not an absence — `linestyle::read` is
+        // `Solid` is a **value**, not an absence — `linestyle::read` is
         // total and every dictionary answers it — so there is no "dash
         // missing" state for this helper to over-supply. Which is why
         // `offers_dash` is `takes_border` alone.
@@ -304,31 +297,28 @@ fn every_value_present(subtype: &[u8]) -> Current {
     }
 }
 
-/// ★★★ **What hides a control is the ENGINE's answer, not the shape of the
+/// **What hides a control is the *engine's* answer, not the shape of the
 /// `MarkupSpec` arm this module read.**
 ///
-/// This is the assertion that the workaround is gone. Until 2026-09-06 the
-/// three answers came from `Current::read`'s `match`: `fillable` was set on
-/// four arms, the width control was hidden by the `TextMarkup` arm making
-/// no width assignment, and the chooser was hidden by `endings` being
-/// `None`. Every one of those was a copy of a list `pdfcer-core` owns, and
-/// this project filed it: *"the first subtype that gains or loses a border
-/// is the day our copy is wrong and nothing tells us."*
+/// Each predicate consults `MarkupStyleSupport::for_subtype`; none of them
+/// derives an answer from which `MarkupSpec` arm came back, or from which
+/// fields that arm happened to fill. A predicate that read the arm instead
+/// would be a copy of a list `pdfcer-core` owns, and the first subtype to gain
+/// or lose a border is the day the copy is wrong with nothing to say so.
 ///
-/// ★ The `Current` fed in has **every value present** for every subtype, so
+/// The `Current` fed in has **every value present** for every subtype, so
 /// the values cannot be what differs. If a control is withheld here it is
 /// because `MarkupStyleSupport::for_subtype` said so, and if a control is
 /// offered it is for the same reason.
 ///
-/// ★★ Both directions, per the engine's own methodology note: a `Highlight`
-/// row asserting three `false`s would pass with the whole feature deleted
-/// — every predicate returning `false` satisfies it — so the `Square`,
-/// `Line` and `Ink` rows are the positive control that makes the negative
-/// one mean something.
+/// Both directions: a `Highlight` row asserting three `false`s would pass
+/// with the whole feature deleted — every predicate returning `false`
+/// satisfies it — so the `Square`, `Line` and `Ink` rows are the positive
+/// control that makes the negative one mean something.
 ///
-/// Falsified by restoring the old rule — `offers_width` reading only
-/// `self.width.is_some()` turned the `Highlight` row red; `offers_fill`
-/// reading `self.interior_set` turned the `Line` and `Ink` rows red.
+/// The rows are not vacuous. `offers_width` reading only
+/// `self.width.is_some()` turns the `Highlight` row red, and `offers_fill`
+/// reading `self.interior_set` turns the `Line` and `Ink` rows red.
 #[test]
 fn the_engines_answer_is_what_hides_a_control_not_the_spec_arm() {
     // (subtype, fill, width, endings)
@@ -362,8 +352,9 @@ fn the_engines_answer_is_what_hides_a_control_not_the_spec_arm() {
         );
         // The line-style chooser is the fourth reader of the same answer —
         // `/BS` `/D` is a border property, so `takes_border` governs it too,
-        // and `set_markup_style` refuses a `dash` on a text markup by the
-        // same predicate it refuses a `width` with (`edit.rs:26469`).
+        // and `pdfcer_core::edit::EditSession::set_markup_style` refuses a
+        // `dash` on a text markup by the same `takes_border` test it refuses a
+        // `width` with, raising `EditError::StylePropertyNotApplicable`.
         assert_eq!(
             current.offers_dash(),
             width,
@@ -382,16 +373,16 @@ fn the_engines_answer_is_what_hides_a_control_not_the_spec_arm() {
 /// …and the engine is asked, rather than a table like the one above being
 /// kept here and consulted.
 ///
-/// ★ The test above is a table, and a table is the very thing this session
-/// deleted — so it needs this beside it. It asserts the **relation**: for
-/// every subtype named above, each predicate equals the corresponding field
-/// of `MarkupStyleSupport::for_subtype`, whatever that field happens to
-/// say. The table pins today's behaviour; this pins the *source*, and the
-/// day the engine changes an answer the table fails and this one does not,
-/// which is how a reader is told which of the two to edit.
+/// The test above is a table, so it needs this one beside it. This asserts
+/// the **relation**: for every subtype named above, each predicate equals the
+/// corresponding field of `MarkupStyleSupport::for_subtype`, whatever that
+/// field happens to say. The table pins today's behaviour; this pins the
+/// *source*, and the day the engine changes an answer the table fails and this
+/// one does not, which is how a reader is told which of the two to edit.
 ///
-/// `NO_SURFACE.md` §1a's rule is the one being obeyed — *"two copies of one
-/// constant cannot disagree"*, so assert a relation and not a magnitude.
+/// `NO_SURFACE.md`'s *How to read a row* is the rule being obeyed — two
+/// copies of one constant cannot disagree, so assert a relation and not a
+/// magnitude.
 #[test]
 fn each_predicate_reads_the_engines_flag_and_nothing_else() {
     for subtype in [
@@ -417,25 +408,21 @@ fn each_predicate_reads_the_engines_flag_and_nothing_else() {
     }
 }
 
-/// ★★★ **The fifth state: `Clear` REMOVES `/LE`, and the four positions
-/// WRITE it.**
+/// **The fifth state: `Clear` *removes* `/LE`, and the four positions
+/// *write* it.**
 ///
-/// The distinction the engine shipped `StyleEdit` for, asserted at the one
-/// place this module decides it. `Set((None, None))` and `Clear` are the
-/// pair that matters: they draw the same line and are different files, and
-/// before 2026-09-06 only the first was expressible.
+/// The distinction `StyleEdit` exists for, asserted at the one place this
+/// module decides it. `Set((None, None))` and `Clear` are the pair that
+/// matters: they draw the same line and they are different files.
 ///
-/// ★★ **Paired, deliberately.** The engine's reply records a first attempt
-/// whose assertion was `!appearance_rebaked` and which *passed with the
-/// whole feature disabled*, because a "not X" assertion is vacuous when the
-/// thing that would produce X is absent. So *"Clear does not write an
-/// array"* is not asserted on its own — the `Set` row asserting an array
-/// **is** written sits beside it, and a `MarkupEdit::Endings` that had
-/// stopped producing anything at all would fail that row.
+/// **Paired, deliberately.** A "not X" assertion is vacuous when the thing
+/// that would produce X is absent, so *"Clear does not write an array"* is
+/// not asserted on its own — the `Set` row asserting an array **is**
+/// written sits beside it, and a `MarkupEdit::Endings` that had stopped
+/// producing anything at all would fail that row.
 ///
-/// Falsified by re-wrapping the payload as `StyleEdit::Set(..)` in
-/// `into_style`, which is the code that shipped this morning: the `Clear`
-/// row went red and the `Set` row stayed green.
+/// Not vacuous: re-wrapping the payload as `StyleEdit::Set(..)` in
+/// `into_style` turns the `Clear` row red and leaves the `Set` row green.
 #[test]
 fn clearing_the_arrowheads_removes_the_key_where_choosing_a_position_writes_it() {
     use LineEnding::{None as NoEnd, OpenArrow};
@@ -466,21 +453,21 @@ fn clearing_the_arrowheads_removes_the_key_where_choosing_a_position_writes_it()
     );
 }
 
-/// ★★ **The removal is absent when there is no `/LE` to remove.**
+/// **The removal is absent when there is no `/LE` to remove.**
 ///
-/// [`fill`]'s Clear rule applied to the chooser: *a Clear beside a mark
-/// that has nothing to clear is a control whose only possible effect is an
-/// undo entry the operator did not earn.* It needs its own field because
+/// [`fill`]'s Clear rule applied to the chooser: a Clear beside a mark that
+/// has nothing to clear is a control whose only possible effect is an undo
+/// entry the operator did not earn. It needs its own field because
 /// `spec_from_dict` cannot answer it — Table 176's default means an absent
 /// `/LE` and a written `[/None /None]` both read back as `(None, None)`,
 /// which is right for a reader whose subject is the picture and useless to
 /// a control whose subject is the difference.
 ///
-/// ★ Both directions again. "Absent when the key is absent" alone would
+/// Both directions again. "Absent when the key is absent" alone would
 /// pass with the action deleted.
 ///
-/// Falsified by making `offers_endings_clear` return `self
-/// .offers_endings()`, which turned the first assertion red.
+/// Not vacuous: `offers_endings_clear` returning `self.offers_endings()`
+/// turns the first assertion red.
 #[test]
 fn the_removal_is_offered_only_when_the_file_carries_a_line_ending_entry() {
     let mut line = every_value_present(b"Line");
@@ -505,7 +492,7 @@ fn the_removal_is_offered_only_when_the_file_carries_a_line_ending_entry() {
 /// The default `Current` — what a mark whose dictionary could not be read
 /// gets — offers nothing, and gets that answer from the engine.
 ///
-/// ★ Asserted against `for_subtype(b"")` rather than against three literal
+/// Asserted against `for_subtype(b"")` rather than against three literal
 /// `false`s, for this module's whole reason: an all-`false` literal here
 /// would be the last surviving copy of the engine's list, three entries
 /// long.

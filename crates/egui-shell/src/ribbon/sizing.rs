@@ -4,20 +4,14 @@
 //!
 //! ## Why this file exists
 //!
-//! Until 2026-08-24 every control in the band was the same: icon, gap, label,
-//! one row, always. [`crate::ribbon::band::render_command`] passed a hard-coded
-//! `shows_label: true` and the comment beside it argued the case —
-//! *"icon-only belongs to the QAT … in the band there are forty and the label
-//! is the only thing that makes one findable"*.
-//!
-//! That argument is right about **findability** and was wrong about **every
-//! control**, and driving Word settled it. Measured at 884 client points, on
-//! the widest tab each application has:
+//! One shape for every control — icon, gap, label, one row, always — is
+//! defensible on **findability** grounds and fits very little on the band.
+//! Measured against Word at 884 client points, on the widest tab it has:
 //!
 //! | | groups on the band |
 //! |---|---|
 //! | Word | **10** |
-//! | this shell, before | **3** — four in a `⏷ 4 more` menu |
+//! | one size for every control | **3**, the rest behind a `⏷ N more` menu |
 //!
 //! Word gets there by mixing three sizes in one group: its Clipboard is one
 //! Large button beside a column of three icon-only Small ones, its Font group
@@ -69,13 +63,11 @@ use crate::ribbon::plan::ItemWidths;
 
 /// The gap between a Large control's icon and its label, in points.
 ///
-/// ★ **2 → 4 on 2026-09-04**, from `mockups/pdfcer-shell.html`'s
-/// `.rb.big { gap: 4px }`. The old value's argument — *"vertically the two
-/// are already separated by the icon's own bottom edge and the label's
-/// ascent"* — is sound and was calibrated against a 16 pt glyph. The glyph is
-/// now 24 pt ([`crate::theme::Metrics::ribbon_icon_large_pts`]), and a
-/// two-point gap under a half-again-larger picture reads as the label
-/// touching it.
+/// ★ `4`, from the mockup's `.rb.big { gap: 4px }`. Two points is enough when
+/// the glyph is 16 pt — vertically the two parts are already separated by the
+/// icon's own bottom edge and the label's ascent — but the glyph here is 24 pt
+/// ([`crate::theme::Metrics::ribbon_icon_large_pts`]), and a two-point gap
+/// under a half-again-larger picture reads as the label touching it.
 pub(super) const LARGE_STACK_GAP: f32 = 4.0;
 
 /// How much wider a Large control is than its widest part, in points.
@@ -84,10 +76,10 @@ pub(super) const LARGE_STACK_GAP: f32 = 4.0;
 /// symmetric breathing room; the ordinary button padding is tuned for a row of
 /// text and looks tight around a centred icon.
 ///
-/// ★ **10 → 8 on 2026-09-04** — `.rb.big { padding: 5px 8px 2px }`, the
-/// horizontal figure. Narrower, and that is the point: the mockup pays for a
-/// Large control's presence with **height and glyph size**, not with width,
-/// so its columns sit closer together than the shipped band's did.
+/// ★ `8` — `.rb.big { padding: 5px 8px 2px }`, the horizontal figure. Narrow
+/// on purpose: a Large control pays for its presence with **height and glyph
+/// size**, not with width, so a row of them sits closer together than the side
+/// padding alone would suggest.
 pub(super) const LARGE_SIDE_PADDING: f32 = 8.0;
 
 /// The narrowest a Large control may be drawn, in points —
@@ -109,10 +101,10 @@ pub(super) const LARGE_MIN_WIDTH: f32 = 52.0;
 /// The width a Large control's label wraps at, in points —
 /// `.rb.big .lb { max-width: 76px }`.
 ///
-/// ★★★ **The label WRAPS, since 2026-09-04, and before that it did not.**
+/// ★★★ **The label WRAPS.**
 ///
-/// This is the second half of the operator's *"text label location"*
-/// complaint and it is the half that is not a manifest change. A Large
+/// This is the half of the operator's *"text label location"* complaint that
+/// is not a manifest change. A Large
 /// control is *icon above label, centred*, and the labels this ribbon
 /// carries are sentences by button standards — `Recognise text…`,
 /// `Save a compacted copy…`, `New from template…`. Laid out on one line,
@@ -239,8 +231,7 @@ pub(crate) fn width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command, size: ItemS
         // Stacked: the wider of the two parts decides, and neither is a gap
         // away from the other horizontally.
         //
-        // ★ Three things changed here on 2026-09-04 and each is visible in
-        // the arithmetic:
+        // ★ Three decisions, each visible in the arithmetic:
         //
         // 1. The icon term is the **Large** icon (24 pt, not 16), because a
         //    Large control draws a bigger picture rather than the same picture
@@ -292,31 +283,26 @@ pub(crate) fn render_large(
     // the control's height and painted into it — see [`large_label`] for why
     // one call rather than two.
     let galley = large_label(ui, ctx, &command.label);
-    // ★★★ NEVER SHORTER THAN ITS OWN CONTENT — and this was a shipped defect,
-    // caught by driving.
+    // ★★★ NEVER SHORTER THAN ITS OWN CONTENT.
     //
     // `height` is the band's row area, which a Large control spans. In the
     // **overflow menu** there is no row area: a group in the menu is drawn
     // with `GroupBox::NATURAL`, whose `rows` is `0.0` deliberately, so that a
     // one-row group in the popup does not get a hole under it. A Large control
-    // handed that zero allocated a rect of zero height — it painted (the icon
-    // and label are placed from the rect's centre, which still exists), it
-    // reported its rect as required, and it was **not clickable**, because a
-    // zero-height rect has no area to hit.
-    //
-    // `ui-verify` caught it in the honest way: `print_dialog_reaches_the_spooler`
-    // opened the overflow menu, found `ribbon.item.file.print` declared at
-    // `y 148.0 .. 148.0`, and said so — *"which has no usable area — the
-    // control is laid out and not on screen"*. Every unit test passed, because
-    // the band path hands a real row height and only the menu path does not.
+    // handed that zero would allocate a rect of zero height — which still
+    // paints (the icon and label are placed from the rect's centre, which
+    // exists) and still reports its rect, and is **not clickable**, because a
+    // zero-height rect has no area to hit. Nothing in this crate's unit tests
+    // can see that: they exercise the band path, which hands a real row
+    // height, and only a driven check reads the declared rect back.
     //
     // So: span the rows when there are rows, and be as tall as the content
     // otherwise. Both are the same expression.
     let content_height = icon_size + LARGE_STACK_GAP + galley.size().y + LARGE_STACK_GAP * 2.0;
-    // ★★ **CAPPED AT [`crate::theme::Metrics::ribbon_large_pts`], 2026-09-04.**
+    // ★★ **CAPPED AT [`crate::theme::Metrics::ribbon_large_pts`].**
     //
-    // `height` is the band's row area, and until this pass a Large control
-    // simply *was* that area. The mockup says otherwise:
+    // `height` is the band's row area, and a Large control is not simply that
+    // area. The mockup's arithmetic:
     // `.rb.big { height: 56px }` inside a 68 px row area, top-aligned by
     // `.grp .items { align-items: flex-start }`. A Large control spans most
     // of the band and not all of it, which is what stops a group made only of
@@ -335,40 +321,31 @@ pub(crate) fn render_large(
             .min(ctx.theme.metrics.ribbon_large_pts)
             .max(content_height),
     );
-    // ★★★ **ALLOCATED FROM A DISABLED SCOPE WHEN IT IS DISABLED**, since
-    // 2026-08-31, and the line it replaces was wrong about the one thing it
-    // claimed.
+    // ★★★ **ALLOCATED FROM A DISABLED SCOPE WHEN IT IS DISABLED**, and this
+    // is the only thing that makes `enabled` mean anything here.
     //
-    // It read `ui.allocate_exact_size(want, Sense::click())` followed by
-    // `response.on_disabled_hover_text(...)`, with a comment promising *"the
-    // response is neutered … and still refuses the click."*
+    // `Ui::interact` passes `self.enabled` into the response's `ENABLED` flag
+    // (egui 0.35 `ui.rs:928`, `context.rs:1385`). Allocating from an *enabled*
+    // `Ui` and merely painting greyed — choosing `visuals.widgets.inactive` by
+    // hand fifteen lines below — therefore leaves `response.enabled()`
+    // **true**, with two consequences:
     //
-    // **It refused nothing.** `Ui::interact` passes `self.enabled` into the
-    // response's `ENABLED` flag (egui 0.35 `ui.rs:928`, `context.rs:1385`),
-    // and this allocated from an *enabled* `Ui` — it only painted greyed,
-    // choosing `visuals.widgets.inactive` by hand fifteen lines below. So
-    // `response.enabled()` was **always true**, with two consequences:
-    //
-    // 1. **The tooltip was dead.** `on_disabled_hover_text` opens only when
-    //    `!response.enabled()`, so it never ran — here, and again at the
+    // 1. **The tooltip is dead.** `on_disabled_hover_text` opens only when
+    //    `!response.enabled()`, so it never runs — here, and again at the
     //    caller in `ribbon::control`, which attaches the same explanation the
-    //    same way. Every Large band command is greyed with no explanation, and
-    //    R9 requires one.
-    // 2. ★★★ **And the click still fired.** `ribbon::control` does
+    //    same way. A Large band command would be greyed with no explanation,
+    //    and R9 requires one.
+    // 2. ★★★ **And the click still fires.** `ribbon::control` does
     //    `if response.clicked() { ctx.invoke(command.handler) }` with no
-    //    second gate, so pressing a greyed Large control **invoked its
-    //    command**. The band said no and the shell did it anyway.
+    //    second gate, so pressing a greyed Large control would **invoke its
+    //    command**. The band says no and the shell does it anyway.
     //
-    // ⇒ The scope is the fix for both, because both read one flag. It wraps
-    // the ALLOCATION only; the painting below still uses the outer `ui`'s
-    // painter, so the greyed appearance is unchanged to the pixel and the
-    // hand-picked `inactive` visuals keep working. Wrapping the painting too
-    // would multiply the disabled alpha a second time and dim every greyed
-    // Large control twice over.
-    //
-    // ★ Found by `OPERATOR_REQUESTS.md` O77's sweep for dead hover
-    // explanations. The sweep was looking for silence and found a control that
-    // acts.
+    // ⇒ One scope answers both, because both read one flag. It wraps the
+    // ALLOCATION only; the painting below still uses the outer `ui`'s painter,
+    // so the greyed appearance is unchanged to the pixel and the hand-picked
+    // `inactive` visuals keep working. Wrapping the painting too would
+    // multiply the disabled alpha a second time and dim every greyed Large
+    // control twice over.
     let (rect, response) = if enabled {
         ui.allocate_exact_size(want, Sense::click())
     } else {
@@ -384,8 +361,8 @@ pub(crate) fn render_large(
     } else {
         ui.style().visuals.widgets.inactive
     };
-    // ★★★ **FRAMELESS AT REST**, 2026-09-04 — the operator's single biggest
-    // complaint about this band, and the one that held at every width:
+    // ★★★ **FRAMELESS AT REST** — the operator's single biggest complaint
+    // about this band, and the one that held at every width:
     //
     // > "Every ribbon item in the real build is drawn with a visible button
     // >  FRAME … the mockup draws them frameless."
@@ -401,13 +378,12 @@ pub(crate) fn render_large(
     // instant the control is hovered, focused, pressed or selected the full
     // frame appears at the size it always occupied.
     //
-    // ★ **The disabled state is frameless too**, which is a deliberate
-    // asymmetry with the shipped behaviour. `.rb[disabled]` in the mockup
-    // changes the *ink* (`color: var(--ink-quiet); opacity: .45`) and nothing
-    // else. Painting a greyed plate behind a greyed label was the shipped
-    // band's way of saying "unavailable", and it said it by drawing MORE ink
-    // than an available control — which is backwards, and is most of why a
-    // File tab with three greyed groups read as louder than one with none.
+    // ★ **The disabled state is frameless too**, deliberately.
+    // `.rb[disabled]` in the mockup changes the *ink*
+    // (`color: var(--ink-quiet); opacity: .45`) and nothing else. Painting a
+    // greyed plate behind a greyed label says "unavailable" by drawing MORE
+    // ink than an available control — which is backwards, and is what makes a
+    // tab of mostly-greyed groups read as louder than one with none.
     //
     // ★★ **Feedback is not lost, it is relocated** — see the sibling note in
     // `super::control::command_button`, which reaches the same behaviour
@@ -449,8 +425,8 @@ pub(crate) fn render_large(
         );
         ctx.icons = Some(painter);
     }
-    // ★ `painter.galley` rather than `painter.text`, since 2026-09-04, and the
-    // difference is the wrap. `Painter::text` lays a string out **unwrapped**
+    // ★ `painter.galley` rather than `painter.text`, and the difference is
+    // the wrap. `Painter::text` lays a string out **unwrapped**
     // at the point it is given — there is no width to wrap against — so a
     // Large control's label could only ever be one line, however long. Here
     // the galley was already laid out at [`LARGE_LABEL_WRAP`] by
@@ -489,22 +465,23 @@ mod tests {
     }
 
     /// ★★★ **A response allocated from an ENABLED `Ui` is enabled, however it
-    /// is painted** — the assumption `render_large` made and that was false.
+    /// is painted** — the assumption [`render_large`] would otherwise be
+    /// making.
     ///
     /// This is a claim about **egui**, so it is asserted against egui rather
-    /// than reasoned about. `render_large` painted itself greyed by choosing
-    /// `visuals.widgets.inactive` by hand, and allocated its response from the
-    /// ordinary `Ui` — so `response.enabled()` stayed true, its
-    /// `on_disabled_hover_text` never opened, and `ribbon::control`'s
-    /// `if response.clicked() { ctx.invoke(…) }` **still invoked the command**.
-    /// The band said no and the shell did it anyway.
+    /// than reasoned about. A control painted greyed by choosing
+    /// `visuals.widgets.inactive` by hand, but allocated from the ordinary
+    /// `Ui`, keeps `response.enabled() == true`: its `on_disabled_hover_text`
+    /// never opens, and `ribbon::control`'s
+    /// `if response.clicked() { ctx.invoke(…) }` invokes the command anyway.
+    /// The band says no and the shell does it regardless.
     ///
-    /// The second half is the fix: allocating inside `ui.disable()`'s scope
-    /// produces a response that reports itself disabled, which is what both
-    /// the tooltip and the click gate read.
+    /// The second case is what this crate relies on: allocating inside
+    /// `ui.disable()`'s scope produces a response that reports itself
+    /// disabled, which is what both the tooltip and the click gate read.
     ///
-    /// ★ Written as a table over the two cases rather than asserting only the
-    /// fixed one, because a build in which BOTH were disabled would satisfy a
+    /// ★ Written as a table over both cases rather than asserting only the
+    /// second, because a build in which BOTH were disabled would satisfy a
     /// one-sided assertion and would grey every Large control permanently.
     #[test]
     fn only_a_disabled_scope_produces_a_disabled_response() {
@@ -559,7 +536,7 @@ mod tests {
     /// 2. **The ink really goes.** A frameless resting button emits strictly
     ///    fewer paint shapes than a framed one. Without this half the test
     ///    would pass against an implementation where the flag did nothing at
-    ///    all — which is precisely the state this change is trying to leave.
+    ///    all — which is precisely the vacuity this test exists to avoid.
     ///
     /// ★ The second assertion counts `Shape::Rect`s recursively, because
     /// `egui` nests shapes (`Shape::Vec`) and a top-level count would miss a

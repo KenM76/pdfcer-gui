@@ -6,14 +6,14 @@
 //! > *"I never understood why there is a tool dock when everything can be in
 //! > object and properties."*
 //!
-//! The Tool panel was dissolved. Its live controls — the text pen's face, size
-//! and colour, the circular measure's pick list, and the three resize switches
-//! — moved to `crate::panels::properties::tool`. **That move is the one thing in
-//! O123 that could silently cost a capability**, and
-//! `SHELL_LAYOUT_PROPOSAL.md` §3 was right to say so before the operator
-//! overruled the remedy rather than the diagnosis.
+//! There is no Tool panel. Its live controls — the text pen's face, size and
+//! colour, the circular measure's pick list, and the three resize switches —
+//! live in `crate::panels::properties::tool`. **Moving a control between
+//! modules is the one thing in O123 that can silently cost a capability**: the
+//! mapping keeps compiling, the unit tests keep passing, and the row simply
+//! never draws.
 //!
-//! # ★★★ Why a unit test cannot close this, and this file can
+//! # Why a unit test cannot close this, and this file can
 //!
 //! `panels::properties::tool::block_for` is a pure function and it IS unit
 //! tested: `each_moved_control_has_a_tool_that_reaches_it` asserts the shipped
@@ -29,7 +29,7 @@
 //! different now; the failure mode is identical, and a **move between modules
 //! is exactly when it recurs**.
 //!
-//! # ★★ Three launches, not three arming clicks
+//! # Three launches, not three arming clicks
 //!
 //! Each block belongs to a different armed tool, so one arming cannot exercise
 //! them all:
@@ -40,7 +40,7 @@
 //! | *Add text* (`edit.add_text`) | the text pen | `properties.tool.text_pen` |
 //! | radius/diameter (`measure.radius_diameter`) | the pick list | `properties.tool.measure_points` |
 //!
-//! ★ Each is a **separate launch** with its own `PDFCER_DIAG_INVOKE`, rather
+//! Each is a **separate launch** with its own `PDFCER_DIAG_INVOKE`, rather
 //! than one session that arms three tools in turn. Two reasons, and the second
 //! is the load-bearing one:
 //!
@@ -61,13 +61,13 @@
 //! *"`Apply` was not [on screen]. The typed-geometry feature was complete,
 //! wired, tested and unusable."*
 //!
-//! # ★ What it deliberately does NOT assert
+//! # What it deliberately does NOT assert
 //!
 //! That the controls **work**. `the_line_weight_switch_reaches_the_resize`
 //! already drives the stroke switch through to a resized annotation, and
 //! `measure_circular_points` already presses a pick row and watches the point
-//! leave the set. Both were re-pointed at these regions on 2026-09-04. This
-//! check answers the one question neither of them asks about all three at once:
+//! leave the set, and both read these regions. This check answers the one
+//! question neither of them asks about all three at once:
 //! *are they there at all, after the move?*
 
 use std::path::Path;
@@ -98,7 +98,7 @@ struct Case {
 const CASES: [Case; 3] = [
     Case {
         what: "the three resize switches",
-        // ★ Nothing is armed. `CanvasTool::Select` is the default and the
+        // Nothing is armed. `CanvasTool::Select` is the default and the
         // application opens in it, which is the whole point of the branch these
         // live in — and the reason the first version of them was dead code was
         // that the old panel could not reach that branch at all.
@@ -237,7 +237,7 @@ fn probe(
 
 /// Put the Properties panel on screen, or SKIP.
 ///
-/// ★ A dock tab header, never a ribbon toggle: a toggle would *unmount* a panel
+/// A dock tab header, never a ribbon toggle: a toggle would *unmount* a panel
 /// that is already mounted, and this check would then report absent controls
 /// about a panel it closed itself. Every mode's default arrangement mounts
 /// Properties, so an absence here means the operator's persisted layout removed

@@ -337,12 +337,11 @@ pub fn recent_entry_label(path: &Path) -> String {
 /// `Untitled` with no ordinal. Two of the three number them.
 ///
 /// The tie-break is a reason of this project's own, and it is the stronger
-/// half: `HANDOFF.md` §2 says a defect here is found by *reading the trace of
-/// a driven run*, and `new-document name="Untitled 1.pdf"` twice in a row is
-/// a trace that cannot distinguish "New was pressed twice" from "New was
-/// pressed once and the second press did nothing" — which is precisely the
-/// class of failure that founding rule exists to catch. The ordinal is what
-/// makes the second press observable.
+/// half. ★★ **A defect in this area is found by reading the trace of a driven
+/// run**, and `new-document name="Untitled 1.pdf"` twice in a row is a trace
+/// that cannot distinguish "New was pressed twice" from "New was pressed once
+/// and the second press did nothing". The ordinal is what makes the second
+/// press observable.
 ///
 /// # Why the extension is on it
 ///
@@ -414,9 +413,8 @@ mod tests {
     /// The property the ordinal exists for, asserted rather than assumed. An
     /// `untitled` that ignored its argument would satisfy every other test in
     /// this module, and would make the `new-document` trace line unable to
-    /// distinguish a second New from a New that did nothing — exactly the
-    /// class of failure `HANDOFF.md` §2 records as findable only by reading a
-    /// driven run's trace.
+    /// distinguish a second New from a New that did nothing — a class of
+    /// failure findable only by reading a driven run's trace.
     #[test]
     fn each_created_document_gets_its_own_name() {
         assert_eq!(untitled(1), "Untitled 1.pdf");

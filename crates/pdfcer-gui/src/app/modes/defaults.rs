@@ -26,13 +26,13 @@
 //!
 //! * This file changes when the **information architecture** changes — when
 //!   `MODES_AND_PANELS.md`'s table is amended, when a panel is invented, when
-//!   the operator answers a taxonomy question. Its most recent change was
-//!   exactly that: Read gained Forms on 2026-08-14 because the operator
-//!   answered the question the module had been carrying.
+//!   the operator answers a taxonomy question. Read carrying Forms on its
+//!   right — the operator's own answer to a question this module had been
+//!   holding open — is exactly such a change.
 //! * `super` changes when **persistence** changes — a new workspace naming
-//!   rule, a new upgrade-reconciliation case, a different start-up order.
-//!   Its most recent change was exactly that: the `Unseen` stamp, so a panel
-//!   added in a new release is not born invisible.
+//!   rule, a new upgrade-reconciliation case, a different start-up order. The
+//!   `Unseen` stamp, so a panel added in a new release is not born invisible,
+//!   is exactly such a change.
 //!
 //! The two are also readable at different times. Someone asking *"why does
 //! Read have no Objects panel"* never needs to know how a workspace is
@@ -64,7 +64,7 @@
 //! | **Edit** | Pages, Bookmarks, Layers, Signatures, Fonts | Objects / Properties, Comments, Forms, Redact, Dimension groups, Attachments, **Document properties** |
 //!
 //! ★★★ **Document properties is in all three, and it is the only panel besides
-//! Pages that is** — 2026-09-05, the operator: *"the document properties are
+//! Pages that is** — the operator: *"the document properties are
 //! still always visible in the properties tab. it needs to get out of there and
 //! be in its own document properties tab."* Reading a document's title is
 //! reading, so no mode is withheld from it; its command sits on File ▸ Document
@@ -76,9 +76,9 @@
 //! inspection panels available but nothing that authors anything"* — so its
 //! default mounts the two surfaces that answer *where am I* and nothing that
 //! merely describes an object you are not allowed to edit. **Forms on its
-//! right is the one amendment to that sentence**, made on 2026-08-14 when
-//! the operator answered the open question; the arms of `spec` carry the
-//! full reasoning and it is not repeated here. Review adds the two surfaces
+//! right is the one amendment to that sentence**, on the operator's own
+//! answer to the open question; the arms of `spec` carry the full reasoning
+//! and it is not repeated here. Review adds the two surfaces
 //! markup work needs. Edit is everything, with **Objects on the right**,
 //! opposite the navigators, because an inspector and a navigator are
 //! consulted in different directions.
@@ -89,24 +89,22 @@
 //!
 //! ## ★ Panels this build does not have
 //!
-//! **As of 2026-08-14, none — and [`ABSENT_PANELS`] is empty.** Both entries
-//! that lived there have now landed, and the pair is worth keeping in view
-//! because they failed in *opposite* directions and the same mechanism
-//! caught both.
+//! **None — [`ABSENT_PANELS`] is empty.** The list is kept anyway, because
+//! there are two opposite ways to get it wrong and the same mechanism catches
+//! both.
 //!
-//! **Comments** (`markup.comments`) was declared absent with the reason
-//! *"annotation authoring does not exist yet, so neither does the panel that
-//! lists comments"*. That was wrong on its merits: listing what a document
-//! already carries needs no authoring, and the panel shipped against
+//! **A blocker recorded from the wrong end** holds back a surface nothing is
+//! blocking. *"Annotation authoring does not exist yet, so neither does the
+//! panel that lists comments"* is false on its merits: listing what a document
+//! already carries needs no authoring, and the Comments panel works against
 //! `pdfcer_core::annot` while this shell still cannot place a single markup.
-//! A blocker recorded from the wrong end held back a surface that was never
-//! blocked. Note also that the id changed — the defaults named
-//! `view.panel_comments` for the whole time nothing implemented it, and
-//! `RIBBON_IA.md` §7's migration map puts the control on Markup ▸ Comments.
-//! An id no code has ever resolved is a guess, and this one was wrong.
+//! An **id** recorded the same way is the same failure — `view.panel_comments`
+//! is a guess, while `RIBBON_IA.md` §7's migration map puts the control on
+//! Markup ▸ Comments, and an id no code has ever resolved is a guess by
+//! definition.
 //!
-//! **Pages** went the other way: the body existed and the *command* did not,
-//! so it was correctly not an absent panel and still not reachable.
+//! **A panel whose body exists and whose COMMAND does not** goes the other
+//! way: it is correctly not an absent panel and is still not reachable.
 //!
 //! Both are the `SHELL_FRAMEWORK.md` §5b mechanism rather than an oversight:
 //! [`layout_for_build`] filters every default through the live
@@ -117,8 +115,8 @@
 //! than writing only what exists today, because the alternative is that the
 //! intent lives in a document nobody re-reads when the panel lands. The
 //! Pages panel is the worked proof of that: it was built long after these
-//! defaults were written, and the day its command is registered it appears
-//! in all three with **no edit in this file at all**.
+//! defaults named it, and the day its command is registered it appears in
+//! all three with **no edit in this file at all**.
 //! `every_default_panel_is_registered_or_declared_absent` is what keeps
 //! [`ABSENT_PANELS`] honest in both directions.
 
@@ -141,51 +139,31 @@ use crate::panels::Panel;
 /// panel lands, the suite fails until this entry is removed — which is the
 /// same commit in which the default starts mounting it.
 pub const ABSENT_PANELS: &[(&str, &str)] = &[
-    // ★ `view.panel_pages` WAS here, and its removal is what
-    // `every_default_panel_is_registered_or_declared_absent` predicted:
-    // *"the day either panel lands, the suite fails until this entry is
-    // removed — which is the same commit in which the default starts
-    // mounting it."* `crate::panels::Panel::Pages` now implements it, so the
-    // entry had to go or that test would fail from the other direction.
+    // ★★ **The list is empty, and empty is a valid state** — it means every
+    // panel the defaults name exists in this build. Do not delete the list:
+    // it is the discipline and not the entries, and the next
+    // intended-but-unbuilt panel belongs here rather than in a document
+    // nobody re-reads.
     //
-    // **The panel is still not reachable**, and the distinction is exactly
-    // the one this list is for. It is no longer an *absent panel* — the body
-    // exists, `Panel::ALL` enumerates it, and `layout_for` mounts it. What is
-    // absent is the **command** `view.panel_pages`, which lives in
-    // `crate::shell::manifest::PLANNED` and must be registered in
-    // `crate::shell::commands` and referenced by a `View ▸ Panels` control
-    // before `crate::app::PdfcerApp::new`'s panel registry will accept it. See
+    // ★★ **The distinction this list draws**, which is the one that is easy
+    // to get wrong: an *absent panel* is one whose **body** does not exist. A
+    // panel whose body exists but whose **command** is not registered is NOT
+    // an entry here — it belongs in `crate::shell::manifest::PLANNED`, and
+    // `crate::app::PdfcerApp::new`'s panel registry will not accept the id
+    // until a `View ▸ Panels` control references a registered command. See
     // `crate::panels::pages`' header for the exact lines.
     //
-    // Nothing here changes when that happens: `layout_for_build` filters
-    // through the live catalog, so the panel appears in all three defaults on
-    // the frame the command is registered and this file is untouched — which
-    // is what this whole mechanism was for.
-    // ★ `view.panel_comments` was the last entry, and it is gone for the
-    // reason this list predicted of itself. It read:
+    // ★ **A reason recorded from the wrong end is worse than no entry at
+    // all.** *"Annotation authoring does not exist yet, so neither does the
+    // panel that lists comments"* is false on its merits — listing what a
+    // document already carries needs no authoring — and an entry carrying it
+    // would hold back a surface nothing was blocking.
     //
-    //   "N — annotation authoring does not exist yet, so neither does the
-    //    panel that lists comments. It is what Review's right dock is FOR,
-    //    per Part 1's table, so the arrangement names it and mounts nothing
-    //    until it is real."
-    //
-    // `crate::panels::Panel::Comments` landed 2026-08-14 and the panel is
-    // reachable, so the entry had to go or
-    // `every_default_panel_is_registered_or_declared_absent` would fail from
-    // the other direction — exactly as it did for `view.panel_pages` before
-    // it, and exactly as the doc comment above promised.
-    //
-    // Note the reason was ALSO wrong on its merits, and that is worth more
-    // than the entry was. It said the panel waits on annotation *authoring*.
-    // It did not: listing what a document already carries needs no authoring
-    // at all, and the panel shipped against `pdfcer_core::annot` while this
-    // shell still cannot place a single markup. A blocker recorded from the
-    // wrong end delayed a surface that was never blocked.
-    //
-    // **The list is now empty, and empty is a valid state** — it means every
-    // panel the defaults name exists. Do not delete the list: it is the
-    // discipline, not the entries, and the next intended-but-unbuilt panel
-    // belongs here rather than in a document nobody re-reads.
+    // Nothing in this file changes when a panel lands: `layout_for_build`
+    // filters through the live catalog, so it appears in all three defaults
+    // on the frame its command is registered.
+    // `every_default_panel_is_registered_or_declared_absent` fails until the
+    // entry is removed, which is the same commit that makes it reachable.
 ];
 
 /// One side's default arrangement: a list of stacks, each a list of tabs.
@@ -220,15 +198,15 @@ struct ModeSpec {
 
 /// The Comments panel's id.
 ///
-/// ★ **Was `const COMMENTS: &str = "view.panel_comments"` until 2026-08-14**,
-/// when the panel landed — and both halves of that line were wrong by then,
-/// which is why this is a function like [`pages`] rather than a corrected
-/// constant.
+/// ★ **Asked of the panel, never spelled as a literal** — and both halves of
+/// `const COMMENTS: &str = "view.panel_comments"` would be wrong, which is why
+/// this is a function like [`pages`] rather than a corrected constant.
 ///
-/// The *value* was wrong: the panel's command is `markup.comments`, because
-/// `RIBBON_IA.md` §7's migration map sends the control to Markup ▸ Comments
-/// by name, and a ruling about one control beats §5.2's list that merely
-/// contains its name. The *form* was wrong for the reason [`pages`] records:
+/// The *value* would be wrong: the panel's command is `markup.comments`,
+/// because `RIBBON_IA.md` §7's migration map sends the control to
+/// Markup ▸ Comments by name, and a ruling about one control beats §5.2's list
+/// that merely contains its name. The *form* would be wrong for the reason
+/// [`pages`] records:
 /// a literal here is a second spelling of an id that
 /// [`Panel::command_id`] already owns, kept in step by a test instead of by
 /// construction. Asking the panel is how the two cannot drift.
@@ -238,17 +216,17 @@ fn comments() -> &'static str {
 
 /// The Pages panel's id.
 ///
-/// A function rather than the `const` it used to be, because the panel now
-/// exists and its id must come from [`Panel::command_id`] like every other
-/// one — a second spelling of the same string is a second thing to keep in
-/// step, and [`SideSpec`]'s own doc comment explains why that matters here.
+/// A function rather than a `const`, because the id must come from
+/// [`Panel::command_id`] like every other one — a second spelling of the same
+/// string is a second thing to keep in step, and [`SideSpec`]'s own doc
+/// comment explains why that matters here.
 ///
 /// It is a function and not an inline call only so the three arms below read
-/// the same way they did, and so this doc comment has somewhere to live.
+/// alike, and so this doc comment has somewhere to live.
 ///
-/// `pub(super)` rather than private: it stayed with the arrangements when
-/// `app/modes.rs` was split, and `super`'s upgrade-reconciliation tests name
-/// the Pages panel the same way its own arms do. Deliberately not `pub` —
+/// `pub(super)` rather than private: it belongs with the arrangements, and
+/// `super`'s upgrade-reconciliation tests name the Pages panel the same way
+/// its own arms do. Deliberately not `pub` —
 /// outside this module the id comes from [`Panel::command_id`] directly.
 pub(super) fn pages() -> &'static str {
     Panel::Pages.command_id()
@@ -292,43 +270,39 @@ const INSPECTOR_WIDTH: f32 = 320.0;
 /// ## ★★★ Why 360 rather than "as wide as the widest row"
 ///
 /// Because no width fits every row and a dock that tried would be one nobody
-/// wants. `SHELL_LAYOUT_PROPOSAL.md` §0.2 measured the real complaint: our
-/// object rows already carry paint style, colour hex, line width, node count,
-/// text preview, font name and size, image pixels **and a trailing diagnostic
-/// note the mockup has no equivalent for**. They were never missing content;
-/// they were being cut mid-character at 320 pt.
+/// wants. The complaint this number answers is real: our object rows already
+/// carry paint style, colour hex, line width, node count, text preview, font
+/// name and size, image pixels **and a trailing diagnostic note the mockup has
+/// no equivalent for**. They are never missing content; at 320 pt they are cut
+/// mid-character.
 ///
-/// 360 stops the *common* row being cut. The uncommon one is elided with a
-/// tooltip — see `crate::panels::objects`' row work, which is the other half of
-/// O123 and the half that actually closes the defect.
+/// ## ⚠ No width stops the common row being cut, and this one does not either
 ///
-/// ## ⚠ RETRACTED, 2026-09-05: 360 did NOT stop the common row being cut
+/// Driven against `fixtures/a1-titleblock.pdf`,
+/// `the_inspector_is_one_master_detail_column` reports **8 of 8 object rows
+/// elided** at 360, and the panel's `objects-rows overflow=` field names the
+/// numbers: the widest row wants **473.6 pt**, the narrowest **306.3 pt**,
+/// against **296 pt** of text room. *Every* row of that sheet is over — so
+/// "the common row" is the case a width lever fails at, not the case it
+/// handles.
 ///
-/// The paragraph above was written before anything drove the panel. When
-/// `the_inspector_is_one_master_detail_column` first ran it reported **8 of 8
-/// object rows elided**, and the panel's `objects-rows overflow=` field named
-/// the numbers: the widest row of `fixtures/a1-titleblock.pdf` wanted
-/// **473.6 pt**, the narrowest **306.3 pt**, against **296 pt** of text room.
-/// *Every* row of that sheet was over — so "the common row" was the case the
-/// width failed at, not the case it handled.
-///
-/// ⚠ And that run traced `mode-changed … remembered=true`: the dock restored a
-/// saved workspace and this constant was never consulted. **A default width
+/// ⚠ That run also traces `mode-changed … remembered=true`: the dock restores
+/// a saved workspace and this constant is never consulted. **A default width
 /// cannot reach an operator who has ever dragged the dock**, which is the
-/// second and more permanent reason the lever was the wrong one.
+/// second and more permanent reason the width is the wrong lever.
 ///
-/// ⇒ The fix landed in the row rather than in the width, and this number is
-/// deliberately left where it is: `crate::panels::objects`' row work now draws
-/// a headline (widest on that sheet: 207.6 pt) and hovers the full
-/// description. **Nothing here follows the content** — R128 — and a future
-/// reader tempted to raise this constant because a row does not fit should
-/// read that module's §1b first, and the `overflow=` field second.
+/// ⇒ The remedy lives in the row rather than in the width, and this number is
+/// deliberately left where it is: `crate::panels::objects`' row work draws a
+/// headline (widest on that sheet: 207.6 pt) and hovers the full description.
+/// **Nothing here follows the content** — R128 — and a future reader tempted
+/// to raise this constant because a row does not fit should read that module's
+/// §1b first, and the `overflow=` field second.
 ///
 /// ⚠ **Widening this is a harness re-baseline.** The canvas rect moves when the
 /// right dock widens, so every canvas-relative click coordinate in
-/// `tools/ui-verify` shifts. `SHELL_LAYOUT_PROPOSAL.md` §2.4 calls it *"the
-/// single most under-estimated line in this document"*, and it is a one-line
-/// constant change that is a suite-wide event.
+/// `tools/ui-verify` shifts. It is a one-line constant change that is a
+/// suite-wide event, and it is the single most under-estimated edit this file
+/// offers.
 const EDIT_INSPECTOR_WIDTH: f32 = 360.0;
 
 /// The default arrangement for `mode_id`, **before** this build's panels
@@ -376,11 +350,11 @@ fn spec(mode_id: &str) -> ModeSpec {
         // an inspector in a mode with no edit verbs is a panel whose every
         // row is a fact you cannot act on.
         //
-        // ★ **Forms is here as of 2026-08-14, and it is the one exception
-        // to the sentence above.** The operator answered the question this
-        // module had been carrying: pdfcer should fill forms without leaving
-        // Read, because Acrobat Reader does and replacing it is the stated
-        // goal. So the taxonomy is amended openly, as the old note asked.
+        // ★ **Forms is here, and it is the one exception to the sentence
+        // above.** On the operator's own answer: pdfcer should fill forms
+        // without leaving Read, because Acrobat Reader does and replacing it
+        // is the stated goal. The taxonomy is amended openly rather than
+        // quietly bent.
         //
         // It does not contradict the "no panel whose rows you cannot act
         // on" rule — it satisfies it. The rule keeps out surfaces that
@@ -399,25 +373,24 @@ fn spec(mode_id: &str) -> ModeSpec {
         // "where am I" — down a tab bar in the mode that needs them most.
         "read" => ModeSpec {
             left: vec![vec![pages(), Panel::Bookmarks.command_id()]],
-            // ★★★ **COMMENTS IS MOUNTED IN READ, and it is the fix for the
-            // report he made on 2026-09-05:**
+            // ★★★ **COMMENTS IS MOUNTED IN READ**, on the operator's report:
             //
             // > *"I could add a yellow sticky note but even in read mode I
             // > don't think I could figure out how to read it."*
             //
-            // He was right, and it was an absence rather than a
-            // discoverability problem. Until this line, Read's dock held
-            // Pages, Bookmarks and Forms — **no comment list at all** — and
-            // the panel's only command sits on the Markup tab, which
+            // He is right, and it is an absence rather than a discoverability
+            // problem. Without this line Read's dock holds Pages, Bookmarks
+            // and Forms — **no comment list at all** — while the panel's only
+            // command sits on the Markup tab, which
             // `crate::shell::manifest`'s mode table does not show to Read.
-            // Two independent barriers, so neither one alone was the bug and
-            // fixing either alone would have left him exactly where he was.
-            // The other half is `manifest::view`'s Panels group, which now
-            // carries the toggle.
+            // Two independent barriers, so neither one alone is the bug and
+            // fixing either alone leaves him exactly where he was. The other
+            // half is `manifest::view`'s Panels group, which carries the
+            // toggle.
             //
             // ★★ **The argument is the Forms argument, and it is STRONGER
-            // here.** Forms is mounted in Read on the operator's 2026-08-14
-            // ruling, and that one had to overcome a real objection: filling
+            // here.** Forms is mounted in Read on the operator's ruling, and
+            // that one had to overcome a real objection: filling
             // a field *writes to the file*. Reading a comment writes nothing.
             // If a mode whose stance is *the document is not yours to alter*
             // may nonetheless set `/V` and regenerate an appearance, it may
@@ -435,8 +408,8 @@ fn spec(mode_id: &str) -> ModeSpec {
             // is *for* goes at the front and the one that writes goes behind
             // it. In Review the front is the reviewer's work list; in Read the
             // front is the thing being read.
-            // ★★★ **Document properties is mounted in READ**, 2026-09-05, and
-            // the argument is one clause long: **reading a document's title is
+            // ★★★ **Document properties is mounted in READ**, and the
+            // argument is one clause long: **reading a document's title is
             // reading.** It authors nothing, it writes nothing, and the panel's
             // four boxes are the same four boxes Acrobat Reader shows under
             // File ▸ Properties in a product with no editing at all.
@@ -474,33 +447,29 @@ fn spec(mode_id: &str) -> ModeSpec {
         // than altering what it says. That is the same stance markup takes,
         // which is why the two share a mode.
         //
-        // ★ **It used to say "deliberately NOT in Read", and that question
-        // was put to the operator and answered on 2026-08-14: Read fills
-        // forms.** The note that stood here said what the change would cost
-        // if the answer came back yes — *this line plus a fill verb on
-        // Read's ribbon, amended openly rather than quietly bent* — and
-        // that is exactly what it cost. The verb is `view.panel_forms`, on
-        // View ▸ Panels, moved off the Edit tab because P1 gives a command
-        // one tab and Read is shown `file` and `view` alone.
+        // ★ **Read fills forms too, on the operator's own ruling**, and the
+        // cost of that is exactly two things: Forms in Read's arrangement
+        // plus a fill verb Read can reach. The verb is `view.panel_forms`, on
+        // View ▸ Panels rather than on the Edit tab, because P1 gives a
+        // command one tab and Read is shown `file` and `view` alone.
         //
         // Review's own argument for mounting Forms is untouched by that. It
-        // was never "only Review may fill"; it was "filling is the change
-        // the author invited, which is the Review stance". A stance Read
-        // now shares is not a stance Review has lost.
+        // is not "only Review may fill"; it is "filling is the change the
+        // author invited, which is the Review stance". A stance Read shares
+        // is not a stance Review has lost.
         "review" => ModeSpec {
             left: vec![vec![pages(), Panel::Bookmarks.command_id()]],
             right: vec![
                 // ★★★ **The Tool panel is gone** — `OPERATOR_REQUESTS.md` O123.
                 //
-                // It used to hold a stack of its own here, at the top, and the
-                // argument was recorded at length: *"Its entire purpose is
-                // being OFFERED rather than asked for … A tab that is
-                // invisible until clicked cannot fix a discoverability
-                // defect."* That argument was about a **tab**, and it is not
-                // what replaced the panel: `crate::app::toolstatus` is a
-                // permanent strip the dock reserves above these columns, which
-                // is offered harder than a stack was — it cannot be closed at
-                // all.
+                // The argument for giving it a stack of its own here was
+                // *"its entire purpose is being OFFERED rather than asked for
+                // … a tab that is invisible until clicked cannot fix a
+                // discoverability defect"*. That argument is about a **tab**,
+                // and it does not reach what stands in the panel's place:
+                // `crate::app::toolstatus` is a permanent strip the dock
+                // reserves above these columns, offered harder than a stack —
+                // it cannot be closed at all.
                 //
                 // The panel's live controls did not go with it. They are in
                 // `crate::panels::properties::tool`, one stack down, which is
@@ -548,13 +517,13 @@ fn spec(mode_id: &str) -> ModeSpec {
             // *"Layers, Signatures and Fonts join Pages and Bookmarks as tabs
             // in one dock instead of a second dock with a fixed split."*
             //
-            // It used to be two stacks with a splitter between them, on the
-            // rule *"reaching one surface must not hide another you are using
-            // AT THE SAME TIME"* — navigating pages while reading the layer
-            // list being the named pair. The operator has ruled the other way,
-            // and the cost he is buying is real: a second stack is a second
-            // tab bar plus `plan::MIN_STACK_HEIGHT` of floor, and it spent
-            // that on a pair nobody had reported using together.
+            // The rule that argues for two stacks with a splitter between
+            // them is *"reaching one surface must not hide another you are
+            // using AT THE SAME TIME"* — navigating pages while reading the
+            // layer list being the named pair. The operator has ruled the
+            // other way, and the cost he is buying is real: a second stack is
+            // a second tab bar plus `plan::MIN_STACK_HEIGHT` of floor, spent
+            // on a pair nobody has reported using together.
             //
             // ★ Five tabs is where `plan`'s overflow affordance starts to
             // matter at a 280 pt navigator, and that is the same three-rung
@@ -577,18 +546,18 @@ fn spec(mode_id: &str) -> ModeSpec {
                 // > in the space where the tool dock currently shown."*
                 //
                 // Two adjacent stacks in ONE column is exactly that shape, and
-                // it is what this dock already builds: `SHELL_LAYOUT_PROPOSAL`
-                // §2.1 — *"We already ship a master–detail, and it is already a
-                // vertical pair with a draggable split."* The split is
+                // it is what this dock already builds — a master–detail that
+                // is already a vertical pair with a draggable split. The split
+                // is
                 // `egui_shell::dock`'s own stack splitter, dragged at
                 // `dock/mod.rs`, floored at `plan::MIN_STACK_HEIGHT`.
                 //
-                // ★ So what O123 changes here is **room, not linkage**. The
-                // Tool panel's stack was taking a third of the side; deleting
-                // it hands that third to these two. A row click already raises
+                // ★ So what O123 changes here is **room, not linkage**. A
+                // Tool panel stack takes a third of the side; without it that
+                // third is these two panels'. A row click already raises
                 // `Action::SelectObject` and Properties already reads the same
-                // canvas selection — since 2026-08-26, and neither end is
-                // touched by this change.
+                // canvas selection, and neither end is touched by the
+                // arrangement.
                 vec![Panel::Objects.command_id()],
                 vec![
                     Panel::Properties.command_id(),
@@ -596,7 +565,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                     Panel::Forms.command_id(),
                     // ★ Redact, and it is deliberately the LAST tab of this
                     // stack rather than a stack of its own or the first of
-                    // this one — 2026-08-15.
+                    // this one.
                     //
                     // "Edit is everything" is this module's rule and
                     // `the_three_defaults_are_the_specified_arrangements`
@@ -858,8 +827,8 @@ mod tests {
             [
                 comments(),
                 Panel::Forms.command_id(),
-                // ★ Document properties joined Read on 2026-09-05. Restated
-                // here by hand, like every other member: this assertion is a
+                // ★ Document properties is in Read's stack. Restated here by
+                // hand, like every other member: this assertion is a
                 // *literal transcript* of the arrangement, and the arrangement
                 // is the spec, so a change to it cannot slip through as an
                 // incidental.
@@ -929,12 +898,12 @@ mod tests {
     ///
     /// # The report this exists for
     ///
-    /// Ken, 2026-09-05: *"I could add a yellow sticky note but even in read
-    /// mode I don't think I could figure out how to read it."*
+    /// Ken: *"I could add a yellow sticky note but even in read mode I don't
+    /// think I could figure out how to read it."*
     ///
-    /// He was right, and it was an **absence**, not a discoverability problem.
-    /// Two independent barriers stood between him and a comment he had just
-    /// written, and each one alone was sufficient:
+    /// He is right, and it is an **absence**, not a discoverability problem.
+    /// Two independent barriers stand between him and a comment he has just
+    /// written, and each one alone is sufficient:
     ///
     /// 1. Read's default dock held Pages, Bookmarks and Forms. **No comment
     ///    list was mounted at all.**
@@ -974,8 +943,8 @@ mod tests {
         // `Shell::validate` enforces it. Worse, the failure is not local:
         // `Capabilities::for_mode` returns `FULL` when the shell is absent, so
         // an invalid manifest silently grants every authoring capability to
-        // every mode. It was tried on 2026-09-05 and eight mode-gating tests
-        // went red at once, one of them reading *"the pen is never picked up
+        // every mode — measured: putting it there turns eight mode-gating
+        // tests red at once, one of them reading *"the pen is never picked up
         // in Read"*.
         //
         // The rail is not a tab, so P1 does not reach it — the same permission
@@ -1030,7 +999,7 @@ mod tests {
     /// saved file: the intended arrangement names Pages and Comments, this
     /// build registers neither, and what the operator gets is the rest of
     /// the arrangement — never a tab whose body cannot be drawn, and never
-    /// an empty compartment where one used to be.
+    /// an empty compartment where a panel would have gone.
     #[test]
     fn a_default_drops_panels_this_build_does_not_register() {
         let registry = registry();
@@ -1046,9 +1015,9 @@ mod tests {
             [
                 Panel::Pages.command_id(),
                 Panel::Bookmarks.command_id(),
-                // ★ Comments joined Read's default on 2026-09-05 — his report
-                // that a sticky note could not be read in Read. Listed here
-                // because this assertion is a *literal transcript* of the
+                // ★ Comments is in Read's default, on his report that a
+                // sticky note could not be read in Read. Listed here because
+                // this assertion is a *literal transcript* of the
                 // arrangement, which is the point of it: the arrangement is
                 // the spec, so a change to it must be restated here by hand
                 // and cannot slip through as an incidental.
@@ -1076,18 +1045,13 @@ mod tests {
             "a panel the catalog does not hold must not be mounted"
         );
 
-        // ★ This assertion used to read "Comments went; Properties and Forms
-        // stayed", and Comments going was the *point* of it — the panel was
-        // declared in `ABSENT_PANELS`, so a real absent panel demonstrated
-        // the filtering against the real registry.
-        //
-        // The Comments panel landed 2026-08-14 and `ABSENT_PANELS` is now
-        // empty, so **nothing real is filtered here any more**. That is a
-        // better state to be in and a weaker test, and both halves are worth
-        // saying: the property is still proven above, by the constructed
-        // `without_pages` registry, which is the form it must keep now that
-        // there is no absent panel to borrow. If a future panel is declared
-        // absent, this is the assertion that will notice.
+        // ★ `ABSENT_PANELS` is empty, so **nothing real is filtered here**:
+        // this assertion borrows no absent panel and proves nothing on its
+        // own. That is a better state to be in and a weaker test, and both
+        // halves are worth saying — the property itself is proven above, by
+        // the constructed `without_pages` registry, which is the form it has
+        // to keep while there is no declared absence to borrow. If a future
+        // panel is declared absent, this is the assertion that notices.
         let review = layout_for_build("review", &registry);
         assert_eq!(
             review

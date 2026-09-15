@@ -1152,6 +1152,8 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
         // answer in hand."* Not on the status row — it is a fact about the
         // file rather than about the page, and rule 4 asks for a disclosure in
         // terms of what the operator can see.
+        // ⚠ A paste does not select what it pasted, while a place does
+        // (`actions::apply` calls `select_placed`). `DEFECTS.md` D42.
         VectorAction::PasteObjects { page, clip, at } => {
             let mut added = 0_u64;
             let mut pasted = 0_u64;

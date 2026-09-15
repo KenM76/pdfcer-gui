@@ -1,37 +1,25 @@
 #![cfg(test)]
 //! # `app::state::tests` — the document record's own assertions
 //!
-//! Split out of [`super`] on 2026-08-26, when form-field selection pushed that
-//! file past R2's 1,500-line limit. The convention is already in this tree —
-//! `app::actions::tests` is the same split for the same reason — and it is the
-//! right one: a test module is a distinct subject from the type it tests, and
-//! moving it changes nothing about what runs.
-//!
-//! `use super::*;` below is what keeps that true: every name these tests reach
-//! for is still the one they reached for when they lived in that file.
-//!
 //! ★ The inner `#![cfg(test)]` at the top is **load-bearing beyond the
 //! compiler**. `check-ui-strings.sh` recognises that exact attribute as "this
 //! whole file is out of the shipped binary" and stops reporting its assertion
 //! messages as operator copy — matched on the attribute rather than on the
 //! filename, because the property that earns the exemption is *not in the
-//! binary* and a filename is a restatement of that which goes stale. Without
-//! it this split reports fourteen false positives, which is how a report gets
-//! trained out of being read.
+//! binary* and a filename is a restatement of that which goes stale. Remove it
+//! and every assertion message here is reported as untranslated operator copy,
+//! which is how a report gets trained out of being read.
 
 use super::*;
 
-// Named here rather than inherited. Both used to arrive through
-// `app::state`'s own `use` list; the 2026-09-12 R2 split moved `LayerOverride`
-// -- the only thing up there that needed them -- into `state::layers`, and the
-// parent's imports went with it. Spelling them here makes this file's
-// dependencies its own, which is what the `use super::*;` glob was hiding.
+// Named here rather than left to the `use super::*;` glob, so this file's
+// dependencies are its own and survive the parent's import list changing.
 use std::collections::BTreeSet;
 
 use pdfcer_core::object::ObjId;
 
 // =======================================================================
-// The staleness keys that landed at S4
+// The staleness keys
 // =======================================================================
 
 /// **★ Every input that changes the picture changes the render key.**
@@ -203,27 +191,20 @@ fn hiding_annotations_or_a_layer_is_not_an_edit() {
 }
 
 // =======================================================================
-// The selection move — what replaced `canvas::selection::DocumentToken`
+// Selection lifetime
 // =======================================================================
 
 /// **★ A selection cannot outlive the document it was made on.**
 ///
-/// The `DocumentToken` deletion, asserted rather than argued — the same
-/// shape as `a_documents_decomposition_cannot_outlive_the_document` in
-/// [`crate::app::cache`], because it is the same deletion for the same
-/// reason.
+/// The property holds by construction: opening a document builds a whole new
+/// `OpenDoc`, so its selection is `SelectionState::default()`. There is no
+/// document-identity key to compare, and there must not be one — an `Arc`
+/// address is not an identity, and a reused allocation with a matching page
+/// count would carry a stale selection into a new file.
 ///
-/// The old mechanism compared an `Arc` **address** every frame and cleared
-/// on a mismatch; an address is not an identity, and a reused allocation
-/// with a matching page count would have carried a stale selection into a
-/// new file. Here the question cannot be asked: opening a document builds a
-/// whole new `OpenDoc`, so its selection is `SelectionState::default()` by
-/// construction.
-///
-/// Written as a replacement **in the same binding** — the sequence an
-/// address reuse would have needed — so that reintroducing any kind of
-/// document-identity key here is a test failure rather than a review
-/// finding.
+/// Written as a replacement **in the same binding**, the sequence an address
+/// reuse would have needed, so reintroducing any document-identity key here is
+/// a test failure rather than a review finding.
 #[test]
 fn a_selection_cannot_outlive_the_document_it_was_made_on() {
     use crate::canvas::selection::{ClickHit, SelectionLevel};
@@ -259,12 +240,8 @@ fn a_selection_cannot_outlive_the_document_it_was_made_on() {
     );
 }
 
-// =======================================================================
-// Opening a document is what forgets the panels' state
-// =======================================================================
-
 // ===========================================================================
-// ★★★ The held preview — `OPERATOR_REQUESTS.md` O63's third piece
+// The held preview — `OPERATOR_REQUESTS.md` O63's third piece
 // ===========================================================================
 
 /// Build a document with a hold already in place, `captured_at_epoch` frames
@@ -282,22 +259,16 @@ fn with_hold(
 ) -> OpenDoc {
     let mut doc = open_local_fixture("polyline-nodes.pdf");
     doc.edit_epoch = edit_epoch;
-    // ★★★ THE TEXTURE'S EPOCH IS SET THROUGH ITS REAL RELATIONSHIP, not by
-    // assignment — corrected 2026-09-03 with the readers it exercises.
+    // ★★★ THE TEXTURE'S EPOCH IS SET THROUGH ITS REAL RELATIONSHIP, never by
+    // assignment. `page_texture_epoch` carries a **`PageEpochs`** value and
+    // `render::settle` is its only writer — `self.page_texture_epoch =
+    // self.page_epochs.get(page)`. It is not an `edit_epoch`.
     //
-    // `page_texture_epoch` has carried a **`PageEpochs`** value since O74, and
-    // `render::settle` is the only writer: `self.page_texture_epoch =
-    // self.page_epochs.get(page)`. It is not an `edit_epoch` and has not been
-    // one for weeks.
-    //
-    // Every caller of this helper passes the two arguments EQUAL to mean *"the
-    // raster has caught up"* and unequal to mean *"it is behind"*. That
-    // intention is preserved exactly — but it is now expressed against the
-    // counter the readers actually consult, so a test cannot pass by describing
-    // a model the program stopped using. The previous version assigned both
-    // fields directly, which is precisely why three tests went on passing while
-    // `page_is_catching_up` compared two unrelated counters and could stick on
-    // for a whole session.
+    // Callers pass the two arguments EQUAL to mean *"the raster has caught up"*
+    // and unequal to mean *"it is behind"*, and that intention is expressed here
+    // against the counter the readers actually consult. Assigning both fields
+    // directly instead lets a test pass while describing a model the program
+    // does not use.
     doc.page_texture_epoch = if page_texture_epoch == edit_epoch {
         // Caught up: the texture carries this page's current revision.
         doc.page_epochs.get(doc.view.page_index)
@@ -470,27 +441,20 @@ fn the_catching_up_line_stops_when_the_raster_lands() {
     );
 }
 
-/// **An edit on another sheet must not strand the line on this one** — the
-/// regression test for the epoch type-confusion found on 2026-09-03.
+/// **An edit on another sheet must not strand the line on this one.**
 ///
-/// # Why the two tests above could not catch this
-///
-/// They set `edit_epoch` and `page_texture_epoch` by hand, to equal or adjacent
-/// values. That holds under either model, because it never makes the two
-/// counters *diverge* — and divergence is the whole defect.
-///
-/// `page_texture_epoch` has carried a **`PageEpochs`** value since O74;
-/// `edit_epoch` is a different counter with its own `+= 1`. Comparing them was
-/// meaningful only while they were the same quantity. Once an edit lands on a
-/// page the operator is not looking at, `edit_epoch` moves and this page's
-/// entry does not, the two numbers pass each other, and **nothing ever brings
-/// them back**. The status bar then says *"the picture is catching up"* for the
-/// rest of the session, over a picture that is correct.
+/// The two tests above cannot see this: they set `edit_epoch` and
+/// `page_texture_epoch` by hand to equal or adjacent values, which never makes
+/// the two counters *diverge*, and divergence is the whole defect.
+/// `page_texture_epoch` carries a `PageEpochs` value; `edit_epoch` is a
+/// different counter. Let an edit land on a page the operator is not looking at
+/// and `edit_epoch` moves while this page's entry does not — the two numbers
+/// pass each other and **nothing ever brings them back**, so *"the picture is
+/// catching up"* sits on the bar for the rest of the session over a correct
+/// picture.
 ///
 /// ★ This test drives the counters through their **own issuers** rather than
-/// assigning both fields, which is what makes it able to fail. Assigning the
-/// fields directly is how the original pair came to describe a model the
-/// program had stopped using.
+/// assigning both fields, which is what makes it able to fail at all.
 #[test]
 fn a_page_edit_elsewhere_does_not_strand_the_catching_up_line() {
     let mut doc = open_local_fixture("polyline-nodes.pdf");

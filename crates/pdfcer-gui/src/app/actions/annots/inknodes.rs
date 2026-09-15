@@ -1,12 +1,11 @@
 //! # `app::actions::annots::inknodes` — **the three point verbs of a freehand
 //! mark**, and the one body behind them
 //!
-//! Split out of [`super`] under **R2** on 2026-09-09, the day it was written:
-//! `annots.rs` stood at 1,458 of its 1,500 lines when `pdfcer-core`
-//! `Pass 278.0` (`c8a6697`) shipped `EditSession::reshape_ink`, and the
-//! apply-side of consuming it is two hundred lines of function and argument.
+//! Held here rather than in [`super`] so that the annotation-action router
+//! stays inside R2's 1,500-line ceiling: the apply side of
+//! `EditSession::reshape_ink` is two hundred lines of function and argument.
 //!
-//! ## ★★ The seam is a VERB FAMILY, not a line count
+//! ## The seam is a VERB FAMILY, not a line count
 //!
 //! [`super::reshape`] is the one body behind the three `/Vertices` verbs
 //! (`move_node`, `insert_node`, `remove_node`) and it reaches
@@ -21,19 +20,19 @@
 //! `appearance_was_pdfces`) into a trace line about polygons, and the polygon (old-name-exempt: the engine's own field name)
 //! forecast's (`measure_not_recomputed`) into one about ink.
 //!
-//! ⇒ So the boundary is the same one `canvas::annotnodes::Plan` draws on the
+//! So the boundary is the same one `canvas::annotnodes::Plan` draws on the
 //! canvas side: `Plan::Vertex` arrives here as `AnnotAction::{MoveNode,
 //! InsertNode, RemoveNode}` and goes to [`super::reshape`]; `Plan::Ink`
 //! arrives as `AnnotAction::{MoveInkPoint, InsertInkPoint, RemoveInkPoint}`
 //! and comes here. Neither side converts an address; the `(stroke, point)`
 //! pair the canvas planned is the pair the engine is handed.
 //!
-//! ## ★ Why [`apply`] exists, and the one catch-all in it
+//! ## Why [`apply`] exists, and the one catch-all in it
 //!
-//! `annots.rs` stood at 1,506 lines with three destructuring arms for these
-//! verbs — rustfmt lays a five-field struct pattern vertically — and R2's
-//! limit is 1,500. So [`super::apply_action`] has **one** arm for the three,
-//! an or-pattern binding nothing, and [`apply`] destructures them here. The
+//! Destructuring these verbs in the router costs it a vertical five-field
+//! struct pattern each, which is what pushes it against R2's 1,500-line
+//! limit. So [`super::apply_action`] has **one** arm for the three, an
+//! or-pattern binding nothing, and [`apply`] destructures them here. The
 //! `_` arm that leaves is reachable only by a caller that widened the
 //! or-pattern without adding a case here, which the or-pattern's own comment
 //! forbids; it traces rather than panics, for the reason every other "cannot
@@ -47,11 +46,11 @@
 //! `forecast` (a `pdfcer_core::edit::InkForecast`, identical to what the
 //! preview answered), its `appearance`, its `dropped` list and
 //! `mod_date_written`. `pdfcer_core::edit::InkEditKind` rides in the forecast's
-//! `edit` field and in `CommandKind::ReshapeInk`'s undo label — six variants,
+//! `edit` field and in `CommandKind::ReshapeInk`'s undo label —
 //! `InkEditKind::PointMoved`, `InkEditKind::PointInserted`,
 //! `InkEditKind::PointRemoved`, `InkEditKind::StrokeReplaced`,
 //! `InkEditKind::StrokeMoved`, `InkEditKind::StrokeRemoved` — of which this
-//! shell raises the first three. The trace line prints it through
+//! shell raises the three point edits. The trace line prints it through
 //! `InkEditKind::as_str` rather than `{:?}`, so it reads `move-point` exactly
 //! as `pdfcer ink-edit --op move-point` does. `InkEditKind::changes_stroke_count`
 //! is not read: the trace carries `strokes=before->after` outright, which says
@@ -62,8 +61,7 @@
 //! > *"the draw a line that follows the pointer tool — I can't edit the nodes
 //! > that make it"* (O158, 2026-09-08)
 //!
-//! The engine's reply, in `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\`
-//! (`reply_2026-09-09-ink-nodes-are-editable-SHIPPED-…`), is the source for
+//! The engine's reply to O158 is the source for
 //! every fact this module states about the verb: that it re-bakes the
 //! appearance, that pdfcer bakes an `/InkList` as a polyline, that `/Rect` is
 //! derived rather than preserved, and that `appearance_was_pdfces == false` (old-name-exempt: the engine's own field name)
@@ -109,9 +107,8 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AnnotAction) {
 }
 
 /// **Apply one point edit to a freehand mark**, as one undoable command —
-/// `EditSession::reshape_ink` (`pdfcer-core` `Pass 278.0`, `c8a6697`; the
-/// operator's O158, *"the draw a line that follows the pointer tool — I can't
-/// edit the nodes that make it"*).
+/// `EditSession::reshape_ink`, for the operator's O158, *"the draw a line that
+/// follows the pointer tool — I can't edit the nodes that make it"*.
 ///
 /// The one body behind [`move_ink_point`], [`insert_ink_point`] and
 /// [`remove_ink_point`], and [`super::reshape`]'s twin for the second verb
@@ -119,7 +116,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AnnotAction) {
 /// engine's wrappers pass `modified: None` and *"leave `/M` exactly as it was
 /// and say so"*), same disclosure list.
 ///
-/// # ★★ What it discloses, and the one sentence that is new
+/// # What it discloses, and the one sentence that is new
 ///
 /// | condition | sentence | why a canvas cannot say it |
 /// |---|---|---|
@@ -134,7 +131,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AnnotAction) {
 /// No `measure_stale` here: an `/Ink` carries no `/Measure`, and the ink
 /// forecast has no such field to read.
 ///
-/// # ★ Why `reshape_ink` and not the three wrappers
+/// # Why `reshape_ink` and not the three wrappers
 ///
 /// [`super::reshape`]'s own argument, unchanged: the wrappers pass
 /// `modified: None` and can never stamp `/M`; this shell knows the time and
@@ -142,7 +139,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AnnotAction) {
 /// `insert_ink_point` and `remove_ink_point` are therefore named here and
 /// called nowhere.
 ///
-/// # ★ The refusal is not caught here
+/// # The refusal is not caught here
 ///
 /// `canvas::annotnodes` asks `reshape_ink_preview` on **every frame** of the
 /// drag — it shares `ink_plan` with this verb — so a release that reaches this
@@ -155,8 +152,11 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AnnotAction) {
 /// stroke_points=before→after strokes=before→after rect=before→after
 /// was_pdfces=… ap=… dropped=… m=…`, and the first token is deliberately (old-name-exempt: the engine's own field name)
 /// **not** one of the three funnel labels (`move-ink-point`,
-/// `insert-ink-point`, `remove-ink-point`) — `tools/gates/check-trace-names.py`
-/// carries the three days that rule cost. `stroke=` and the per-stroke counts
+/// `insert-ink-point`, `remove-ink-point`): a module line sharing its first
+/// token with the funnel's makes `Trace::last(name)` return the funnel's,
+/// which carries none of the keys this line exists to publish.
+/// `tools/gates/check-trace-names.py` is what holds that.
+/// `stroke=` and the per-stroke counts
 /// are what a wrong build gets wrong invisibly: an insert that landed in the
 /// neighbouring stroke and a correct one both report one more point in total,
 /// and only the stroke index with its before/after says which. `rect=` is the
@@ -180,7 +180,7 @@ fn reshape_ink(doc: &mut OpenDoc, id: ObjId, edit: &pdfcer_core::edit::InkEdit, 
                          stroke_points={}->{} strokes={}->{} rect={before}->{:?} \
                          was_pdfces={} ap={:?} dropped={} m={}", // old-name-exempt: the engine's own field name
                         f.annot_id.num,
-                        // ★ `as_str`, the engine's own stable token — `move-point`,
+                        // `as_str`, the engine's own stable token — `move-point`,
                         // `insert-point`, `remove-point` — so this line and
                         // `pdfcer ink-edit --op …` spell one fact one way.
                         f.edit.as_str(),
@@ -199,7 +199,7 @@ fn reshape_ink(doc: &mut OpenDoc, id: ObjId, edit: &pdfcer_core::edit::InkEdit, 
                     )
                 });
                 let mut notes = Vec::new();
-                // ★★ THE disclosure the engine said not to drop. `false` means
+                // THE disclosure the engine said not to drop. `false` means
                 // the appearance on disk was another producer's and has just
                 // been replaced by pdfcer's polyline rendering. Said here, on
                 // the release, rather than drawn anywhere on the canvas.

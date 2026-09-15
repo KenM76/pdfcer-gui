@@ -1,27 +1,24 @@
 //! # `panels::properties` — the detail of what is selected, and nothing else
 //!
-//! ## ★★★ 2026-09-05 — the document's own properties LEFT this panel
+//! ## ★★★ Every section here is scoped to a SELECTION
 //!
-//! The operator: *"the document properties are still always visible in the
-//! properties tab. it needs to get out of there and be in its own document
-//! properties tab."*
-//!
-//! `info::section` — the file's `/Info` fields and the seven facts about the
-//! file itself — is now [`crate::panels::docprops`], reached by
+//! The file's `/Info` fields and the seven facts about the file itself are
+//! [`crate::panels::docprops`], a panel of its own, reached by
 //! `file.document_properties` on File ▸ Document and mounted in all three
-//! modes. **Every section that remains in this panel is scoped to a selection**,
-//! and that is the property to preserve: the one thing this panel is now for is
-//! answering *what is the thing I picked*, which is what makes it the detail
-//! half of the Objects/Properties master–detail column O123 asked for.
+//! modes. **Every section in THIS panel is scoped to a selection**, and that is
+//! the property to preserve: the one thing this panel is for is answering
+//! *what is the thing I picked*, which is what makes it the detail half of the
+//! Objects/Properties master–detail column `OPERATOR_REQUESTS.md` O123 asks
+//! for.
 //!
 //! ⇒ **A section added here must read the selection.** If it does not, it
-//! belongs in `docprops` or in a panel of its own; a second permanent block at
-//! the foot of this one would recreate the exact defect that was just removed,
-//! and it would take another operator report to find, because every test in
-//! this file would stay green.
+//! belongs in `docprops` or in a panel of its own; a permanent block at the
+//! foot of this one puts something on screen that is true of no selection, and
+//! it takes an operator report to find, because every test in this file stays
+//! green.
 //!
-//! ★★ The egui finding the departed section carried is kept here rather than
-//! deleted with it, because it is about the toolkit and not about metadata: a
+//! ★★ An egui finding kept here because it is about the toolkit rather than
+//! about any one section: a
 //! `CollapsingHeader` whose open state must follow a condition **and** stay
 //! overridable by the operator cannot use `default_open` (consulted only
 //! through `load_with_default_open`, so it is dead after frame one) and cannot
@@ -31,12 +28,11 @@
 //! condition flips**. Checked against the vendored egui 0.35 source rather than
 //! remembered.
 //!
-//! ## What it was, and the part of that which is unchanged
+//! ## Built from the specification
 //!
-//! **New.** Nothing like it exists in the old shell — `SALVAGE.md`'s "What
-//! is NOT salvaged" list names *"a properties panel of any kind"* explicitly
-//! — so this is `RIBBON_IA.md` §5.8 built from the specification rather than
-//! carried across from anything.
+//! **New.** Nothing like it exists in the shell this one replaces — a
+//! properties panel of any kind is not among what is carried across — so this
+//! is `RIBBON_IA.md` §5.8 built from the specification.
 //!
 //! ## Why the panel is built before the tab
 //!
@@ -135,8 +131,7 @@
 
 /// ★★★ **Whether the selected annotation can be deleted, and what would go with
 /// it** — `EditSession::annotation_deletion_refusal` and
-/// `annotation_deletion_preview`, both of which were named nowhere in this
-/// shell until 2026-08-29.
+/// `annotation_deletion_preview`.
 ///
 /// `pub` rather than private, unlike [`dimension`] and [`markup`], for two
 /// reasons that are both about a single derivation being reachable from
@@ -162,7 +157,7 @@ mod dimension;
 mod disclose;
 /// ★★★ The **face chooser**, which is one control drawn on two surfaces — this
 /// panel's [`text`] section and the ribbon's Format ▸ Font group in
-/// [`crate::app::fontband`], which were two copies of one loop until 2026-08-29.
+/// [`crate::app::fontband`], which draw the one loop from the one place.
 ///
 /// `pub(crate)` reach rather than private, because the ribbon is not under
 /// `crate::panels` and must draw the identical body: *"a face offered in one
@@ -175,42 +170,42 @@ mod disclose;
 /// write itself, and why the fourteen are offered without being
 /// coverage-tested first.
 pub mod face;
-/// ★★ The **form field** clicked on the page in Edit mode — the operator's
-/// request of 2026-08-26. `pub` for the same reason [`geometry`] is: its rename
-/// box holds a draft in `crate::panels::PanelsState`.
+/// ★★ The **form field** clicked on the page in Edit mode. `pub` for the same
+/// reason [`geometry`] is: its rename box holds a draft in
+/// `crate::panels::PanelsState`.
 /// The editable half of a placed form field's properties —
-/// `EditSession::edit_field`, consumed 2026-08-27. See its header for the
-/// sentence it deletes and for the field-vs-widget scope rule.
+/// `EditSession::edit_field`. See its header for the sentence it deletes and
+/// for the field-vs-widget scope rule.
 pub mod fieldedit;
 pub mod formfield;
 pub mod geometry;
-// ★★★ `mod info` was HERE and is now `crate::panels::docprops`, a panel of its
-// own — the operator, 2026-09-05: *"the document properties are still always
-// visible in the properties tab. it needs to get out of there and be in its own
-// document properties tab."* See that module's header for the argument, and
-// [`body_sections`] for what its departure changed about this one.
+// ★★★ The document's own properties are `crate::panels::docprops`, a panel of
+// its own, and never a section here: a block that draws with no reference to
+// the selection is on screen whenever nothing else has anything to say. See
+// that module's header for the argument, and [`body_sections`] for the rule
+// this panel keeps because of it.
 /// ★★ Restyling a markup that is already on the page — colour, line width and
 /// opacity, through `EditSession::set_markup_style`.
 ///
-/// Its header carries why this is the PANEL rather than the Format tab (the
-/// operator's own 2026-08-12 decision, quoted from `RIBBON_IA.md` §5.8) and why
-/// every control raises one action carrying one field.
+/// Its header carries why this is the PANEL rather than the Format tab
+/// (`RIBBON_IA.md` §5.8) and why every control raises one action carrying one
+/// field.
 mod markup;
-/// The colour of a selected path. O89's vector half — and since 2026-09-05 the
-/// colour of a whole **selection** of paths, with the indeterminate state the
-/// product class already agrees on.
+/// The colour of a selected path. `OPERATOR_REQUESTS.md` O89's vector half, and
+/// the colour of a whole **selection** of paths, with the indeterminate state
+/// the product class already agrees on.
 mod paint;
 /// ★★★ **The character an edit was refused for, and the face that can type it**
-/// — `OPERATOR_REQUESTS.md` O141, 2026-09-05.
+/// — `OPERATOR_REQUESTS.md` O141.
 ///
 /// > *"if the character isn't available in a pdf are we able to change to a
 /// > different font?"*
 ///
-/// Yes, and every piece existed on the day he asked: the engine refuses by name
-/// and hands back `Refusal::character`, [`face`] has offered the fourteen
-/// standard faces since `Pass 162.0`, and `set_font` authors a resource the page
-/// does not carry. **Nothing connected the refusal to the chooser.** This
-/// section is that connection.
+/// Yes, and each piece is separately ordinary: the engine refuses by name and
+/// hands back `Refusal::character`, [`face`] offers the fourteen standard
+/// faces, and `set_font` authors a resource the page does not carry. **What
+/// connects the refusal to the chooser is this section**, and nothing else
+/// does.
 ///
 /// `pub` for [`text`]'s reason: `crate::panels::PanelsState` holds its state,
 /// because the face list costs a provenance extraction and a pre-flight.
@@ -255,8 +250,8 @@ pub mod textobject;
 /// `pub` rather than private because `block_for` is the shipped decision a
 /// driven check and a unit test both assert against.
 pub mod tool;
-/// The **box** a form field is drawn in — `EditSession::edit_widget`, consumed
-/// 2026-08-27. Its own file rather than four more rows in [`fieldedit`],
+/// The **box** a form field is drawn in — `EditSession::edit_widget`. Its own
+/// file rather than four more rows in [`fieldedit`],
 /// because the engine has two verbs and Acrobat's own scripting model has two
 /// scopes; see its header.
 pub mod widgetedit;
@@ -316,7 +311,7 @@ pub fn font_embedded(
 
 /// Draw the Properties panel.
 ///
-/// ## ★ Every section is scoped to a selection, and that is now the whole rule
+/// ## ★ Every section is scoped to a selection, and that is the whole rule
 ///
 /// | section | subject | when |
 /// |---|---|---|
@@ -326,57 +321,50 @@ pub fn font_embedded(
 /// | [`text`] / [`textobject`] / [`paint`] / [`geometry`] | the **content** swept or clicked | only while something is |
 /// | [`object_section`] | the **page object** the canvas selection names | only while one is |
 ///
-/// ★★ **The one row that used to break that pattern is gone.** `info::section`
-/// — the file's own title, author, subject and keywords — drew with no
-/// condition of any kind, so it was on screen every frame under everything
-/// else. It is [`crate::panels::docprops`] now, with a tab of its own. See this
-/// module's header for the operator's sentence and for the rule it leaves
-/// behind.
+/// ★★ **The row that would break that pattern is the file's own title, author,
+/// subject and keywords**, which have no selection to be scoped to and so draw
+/// with no condition of any kind — on screen every frame under everything else.
+/// They are [`crate::panels::docprops`], with a tab of their own. See this
+/// module's header for the rule that leaves behind.
 ///
 /// ## Why `object_section` is a function rather than inlined
 ///
 /// Because it has two early returns — no selection, and a selection naming an
 /// object that has gone — and an early return written straight into `body`
-/// would skip everything after it. That mattered acutely while the metadata
-/// form sat underneath: the section that was *always* shown must not have been
-/// reachable only through the section that usually was not. It matters less now
-/// that nothing follows it, and the shape is kept because the reason will
-/// return the moment a section is appended.
+/// would skip everything after it. Nothing follows it today, so the shape costs
+/// one function and buys the guarantee back the moment a section is appended.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
-    // ★★★ **ONE SCROLL AREA, ROUND EVERYTHING** — added 2026-08-26, and its
-    // absence was a defect an operator could not work around.
+    // ★★★ **ONE SCROLL AREA, ROUND EVERYTHING**, and its absence is a defect an
+    // operator cannot work around.
     //
-    // This body draws its selection-scoped sections straight into `ui` — and,
-    // until 2026-09-05, the file's own metadata under them. Only
-    // `object_section`'s read-only rows had
-    // a `ScrollArea`, nested deep inside — so **every section above it was laid
-    // out unscrolled**, and when the panel's dock slot was shorter than they
-    // needed, the overflow was simply clipped. Not below a fold: below the
-    // window, with no scrollbar and no gesture that would reach it.
+    // This body draws its selection-scoped sections straight into `ui`. With a
+    // `ScrollArea` only on `object_section`'s read-only rows, nested deep
+    // inside, **every section above it is laid out unscrolled**, and when the
+    // panel's dock slot is shorter than they need the overflow is simply
+    // clipped. Not below a fold: below the window, with no scrollbar and no
+    // gesture that reaches it.
     //
-    // What that cost, measured and photographed on 2026-08-26 with a path
-    // object selected in a 1100 x 800 window
+    // What that costs, measured and photographed with a path object selected
+    // in a 1100 x 800 window
     // (`evidence/` via `ui-verify geometry_fields_resize_a_shape`):
     //
-    // > `Left`, `Bottom`, `Width` and `Height` were on screen. **`Apply` was
-    // > not.** The typed-geometry feature was complete, wired, tested and
-    // > unusable, because the only control that commits it could not be
-    // > reached at any window size the dock would give this panel.
+    // > `Left`, `Bottom`, `Width` and `Height` on screen. **`Apply` not.** The
+    // > typed-geometry feature complete, wired, tested and unusable, because
+    // > the only control that commits it cannot be reached at any window size
+    // > the dock will give this panel.
     //
-    // ★ It was reported as *"the Width field was scrubbed and Apply committed
-    // nothing"*, filed as a dead button, and is neither: the button was never
-    // pressed. The coordinates said so all along —
-    // `properties.geometry.apply` at y 776 in a viewport ending at 762 — and
-    // three readings of them still reached the wrong conclusion. **The
-    // screenshot settled it in one look**, which is the standing rule about
-    // layout defects having exactly one oracle.
+    // ★ It reads as *"the Width field was scrubbed and Apply committed
+    // nothing"* — a dead button — and is not one: the button is never pressed.
+    // The coordinates say so — `properties.geometry.apply` at y 776 in a
+    // viewport ending at 762 — and readings of them still reach the wrong
+    // conclusion. **A screenshot settles it in one look**, which is the
+    // standing rule: a layout defect has exactly one oracle.
     //
-    // The inner `ScrollArea` on the metadata rows was removed with this, rather
-    // than left to nest: a scroll area inside a scroll area steals the wheel
-    // from its parent depending on where the pointer happens to be, which is a
-    // worse surface than the one being fixed. ★ `crate::panels::docprops` now
-    // owns those rows and carries a wrapper of its own — one per panel, still
-    // never one inside another.
+    // ★ Nothing nests a second `ScrollArea` inside this one: a scroll area
+    // inside a scroll area steals the wheel from its parent depending on where
+    // the pointer happens to be, which is a worse surface than the one being
+    // fixed. `crate::panels::docprops` carries a wrapper of its own — one per
+    // panel, never one inside another.
     egui::ScrollArea::vertical()
         .id_salt("properties-body")
         .auto_shrink([false, false])
@@ -397,9 +385,9 @@ fn body_sections(
 ) {
     // ★★★ **The disclosure block, FIRST** — `OPERATOR_REQUESTS.md` O123.
     //
-    // Above everything, on `REVIEW_TRIAGE.md`'s rule that every disclosure
-    // sits above the thing it qualifies: *"a caveat below a list arrives after
-    // the operator has already drawn a conclusion."* Everything below this
+    // Above everything, on the rule that a disclosure sits above the thing it
+    // qualifies: a caveat below a list arrives after the operator has already
+    // drawn a conclusion. Everything below this
     // line describes what is selected, and a refusal read after that
     // description arrives too late to explain it. See its header for why the
     // status bar could not be the home and this panel can.
@@ -412,7 +400,7 @@ fn body_sections(
     // picked.
     let _drew_disclosure = disclose::section(ui, doc);
     // ★★★ **The character an edit was refused for, and the way out of it** —
-    // `OPERATOR_REQUESTS.md` O141, 2026-09-05.
+    // `OPERATOR_REQUESTS.md` O141.
     //
     // Directly under the disclosure block and above everything else, on the same
     // rule that puts the disclosure first: everything below describes what is
@@ -482,16 +470,13 @@ fn body_sections(
     // "change how this looks" rows and above the read-only facts, which is the
     // order `RIBBON_IA.md` §5.6 asks a properties surface to use.
     //
-    // ★★★ CORRECTED 2026-09-14 (O198). This note used to say that this section
-    // and `geometry` "describe different KINDS of selection (a text sweep, an
-    // object) and never both draw", so the placement was reading order rather
-    // than precedence. The first half is now false: since O198 a **clicked**
-    // text object resolves through `app::textoperand` into runs, so this
-    // section draws for an object selection as well, and `geometry` draws for
-    // the same selection in the same frame. The conclusion is unchanged and the
-    // reason is better than it was — they are not competing for one slot, they
-    // are two paragraphs about one object, and "what you can change about how
-    // it looks" reads before "where it is".
+    // ★★★ This section and `geometry` DO both draw for one selection
+    // (`OPERATOR_REQUESTS.md` O198): a **clicked** text object resolves through
+    // `app::textoperand` into runs, so this section draws for an object
+    // selection and `geometry` draws for the same selection in the same frame.
+    // They are not competing for one slot — they are two paragraphs about one
+    // object, and "what you can change about how it looks" reads before "where
+    // it is".
     let drew_text = text::section(ui, doc, state.text_style_mut(), actions);
     // ★★★ **The clicked-text colour, directly under the swept-text editor** —
     // `OPERATOR_REQUESTS.md` O89, piece 1.
@@ -511,25 +496,18 @@ fn body_sections(
     let drew_text_object = textobject::section(ui, doc, state.text_object_mut(), actions);
     let drew_geometry = geometry::section(ui, doc, state.geometry_mut(), actions);
     let drew_paint = paint::section(ui, doc, actions);
-    // ★★★ **BOUND, since 2026-08-31** — `OPERATOR_REQUESTS.md` O75, and it
-    // outlived the section it was bound for.
+    // ★★★ **BOUND** — `OPERATOR_REQUESTS.md` O75: *has anything in this panel
+    // described the selection?*
     //
-    // The operator, 2026-08-31: *"the Properties section is always showing the
-    // This document properties instead of just the properties of the objects I
-    // am editing."* He was describing `info::section`, drawn with **no
-    // condition of any kind** — the "This document" heading on screen every
-    // frame, and the only thing on screen whenever nothing above it had
-    // anything to say. The sections above DO read the selection; the document
-    // section never asked whether they had spoken. This disjunction was the
-    // answer: it told that section whether to start collapsed.
+    // A block drawn with **no condition of any kind** is the only thing on
+    // screen whenever nothing above it has anything to say, which reads as the
+    // panel showing the wrong subject. The sections above DO read the
+    // selection; this disjunction is what lets anything below them ask whether
+    // they spoke.
     //
-    // ★★ **On 2026-09-05 he ruled that collapsing was not enough** — *"it needs
-    // to get out of there and be in its own document properties tab"* — and the
-    // section left. The predicate stays, with one consumer instead of two:
-    // `object_section` still needs it to decide whether *"nothing is selected"*
-    // is true, which was always the sharper of the two questions. Each term
-    // below keeps its own note, because each records a case where omitting it
-    // put a wrong sentence on screen.
+    // ★★ One consumer: `object_section` needs it to decide whether *"nothing
+    // is selected"* is true. Each term below keeps its own note, because each
+    // records a case where omitting it puts a wrong sentence on screen.
     let something_drew = drew_dimension
         || drew_markup
         || drew_annot_delete
@@ -539,32 +517,28 @@ fn body_sections(
         // ★★ Part of the predicate, and not for symmetry. A selected text
         // object makes the COLOUR row speak, and omitting this term would put
         // *"Pick a row in the Objects panel"* under a live colour control for a
-        // selected label. (Before 2026-09-05 the same omission collapsed the
-        // panel to "This document" instead — O75 re-created by the fix for O89.
-        // The term is load-bearing either way; only the wrong sentence it
-        // prevents has changed.)
+        // selected label. The term is load-bearing whatever else the panel
+        // ends with; what changes is only which wrong sentence it prevents.
         //
-        // ★★ Since O198 the term is also no longer the only thing standing
-        // between a clicked label and that sentence: `drew_text` above is true
-        // in the same state, because the face, size and weight rows now draw
-        // for a clicked object too. Keeping this one is still right — the two
+        // ★★ It is not the only thing standing between a clicked label and
+        // that sentence: `drew_text` above is true in the same state, because
+        // the face, size and weight rows draw for a clicked object too
+        // (`OPERATOR_REQUESTS.md` O198). Keeping this one is still right — the
+        // two
         // sections are independently removable, and a predicate that relies on
         // a sibling drawing is a predicate that breaks when the sibling is
         // gated on something new.
         || drew_text_object
-        // ★★★ And so is the PAINT section, which was `let _ = drew_paint;`
-        // until 2026-09-05.
+        // ★★★ And so is the PAINT section, whose answer must not be discarded.
         //
-        // The discard was harmless while `paint::section` drew only for a
+        // Discarding it is harmless only while `paint::section` draws for a
         // single selected path, because `object_section` speaks for that same
-        // selection. It stopped being harmless when the section grew a
+        // selection. It stops being harmless because the section has a
         // **multi-object** state: a selection of eleven paths makes
         // `object_section` say nothing (it has one subject) and
         // `paint::section` say something, so with the answer discarded the
-        // panel drew a live Fill and Line control with the "This document"
-        // heading immediately above it — the exact shape O75 reported. Today
-        // the same omission would draw those controls under *"Pick a row in the
-        // Objects panel"*, which is the same defect wearing the other sentence.
+        // panel draws a live Fill and Line control under *"Pick a row in the
+        // Objects panel"* — the O75 shape exactly.
         || drew_paint;
     // ★★ …and `object_section` is what USES that predicate, rather than
     // contributing to it. It is the last section, it is the only one that can
@@ -574,31 +548,24 @@ fn body_sections(
     // object, so for a selected **image or path** (the commonest selection in a
     // CAD file) this is the only section that speaks at all.
     //
-    // ★★★ Its return value used to be consumed too, as the last term of the
-    // disjunction handed to `info::section` — *"does anything in this panel
-    // describe the selection?"*, which decided whether the document-metadata
-    // form started collapsed (O75). That section is a panel of its own now
-    // (`crate::panels::docprops`), so there is nothing below this to inform and
-    // the answer is discarded. **The binding above is still read**, by this
-    // call, which is the whole of what O75 needed it for; what has gone is the
-    // second consumer, not the predicate.
+    // ★★★ Its own return value is discarded, because nothing is drawn below it
+    // to inform. **The binding above is still read**, by this call, which is
+    // the whole of what O75 needs it for.
     let _drew_object = object_section(ui, doc, something_drew);
-    // ★★★ **THE STANDING PREFERENCES, LAST** — `OPERATOR_REQUESTS.md` O198,
-    // and this line is a MOVE rather than an addition.
+    // ★★★ **THE STANDING PREFERENCES, LAST** — `OPERATOR_REQUESTS.md` O198.
     //
-    // The three *When you resize something* switches drew at the top of this
-    // function until 2026-09-14, in the `tool::section` call twenty lines up.
-    // They are on screen whenever the Select tool is armed, which is the
-    // resting state, so in an ordinary dock slot they were the entire visible
-    // height of the panel: a driven click on a text object photographed the
-    // font editor half clipped and the Colour swatch below the viewport
-    // altogether. See `tool::Slot` for the measurement.
+    // The three *When you resize something* switches are on screen whenever
+    // the Select tool is armed, which is the resting state, so drawn at the top
+    // of this function they are the entire visible height of an ordinary dock
+    // slot: a driven click on a text object photographs the font editor half
+    // clipped and the Colour swatch below the viewport altogether. See
+    // `tool::Slot` for the measurement.
     //
     // ★ The rule is O75's, restated: a section that draws with no reference to
     // the selection must not sit above the sections that describe it. `tool`
-    // now answers WHICH of its blocks that applies to, through `tool::slot_of`,
-    // so the text pen and the measure pick list keep the top of the panel and
-    // only the standing preference moved.
+    // answers WHICH of its blocks that applies to, through `tool::slot_of`, so
+    // the text pen and the measure pick list keep the top of the panel and only
+    // the standing preference sits here.
     let _drew_preferences = tool::preferences_section(ui);
 }
 
@@ -608,53 +575,46 @@ fn body_sections(
 /// whether the panel is already saying something — see the *nothing focused*
 /// arm.
 ///
-/// ★ It was named `drew_dimension` until 2026-08-31 while being fed a six-way
-/// disjunction since the line that calls it was written. The name was a live
-/// trap for the next reader and cost one word.
+/// ★ The parameter is named `something_drew` and not after any one section: it
+/// carries a disjunction of every section above, and a name that points at one
+/// of them is a trap for the next reader.
 ///
-/// # ★ It returns whether it DREW, and since 2026-09-05 nothing reads that
+/// # ★ It returns whether it DREW, and nothing reads that
 ///
 /// `true` on the two paths that draw property rows, `false` on both early
 /// returns **including** the *nothing is selected* label — that sentence draws,
 /// but it is not a description of a selection.
 ///
-/// The answer used to join the sections above it to decide whether the
-/// **document-metadata** section started collapsed (O75). That section is
-/// `crate::panels::docprops` now, and this is the last thing in the panel, so
-/// the value is bound to `_drew_object` at the call site rather than deleted:
-/// the distinction it encodes is real, it is one line, and the next section
-/// appended here will want it. Deleting it would leave the next author to
-/// rediscover that *"nothing is selected"* must not count as having spoken.
-/// ★ No `PanelsState` since 2026-08-26. This section used to take one, for the
-/// sole purpose of reading `focus` — see the read below for why it no longer
-/// does. Dropping the parameter rather than underscoring it is what keeps a
-/// future reader from wiring panel-local state back in without noticing they
-/// are recreating the thing that was removed.
+/// This is the last thing in the panel, so the value is bound to `_drew_object`
+/// at the call site rather than deleted: the distinction it encodes is real, it
+/// is one line, and the next section appended here will want it. Deleting it
+/// leaves the next author to rediscover that *"nothing is selected"* must not
+/// count as having spoken.
+/// ★ **No `PanelsState`**, deliberately. Taking one to read a panel-local
+/// `focus` is what the read below replaces; the absent parameter is what keeps
+/// a future reader from wiring panel-local state back in without noticing they
+/// are recreating it.
 fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> bool {
-    // ★★★ **THE CANVAS SELECTION**, since 2026-08-26. This read used to be
-    // `state.focus()`.
+    // ★★★ **THE CANVAS SELECTION**, and never a panel-local focus.
     //
-    // The operator, 2026-08-26: *"when I have an object selected like text the
-    // Tool tab doesn't switch to giving me the editable stuff for that
-    // object."* He was describing this. The panel was fed by
-    // `PanelsState::focus` — a panel-local variable written **only** by an
-    // Objects-panel row click and read **only** here — while the canvas
-    // selection, which is what he had just made by clicking the page, was
-    // something this panel had never heard of.
+    // A `PanelsState::focus` — written **only** by an Objects-panel row click
+    // and read **only** here — leaves the canvas selection, which is what an
+    // operator makes by clicking the page, something this panel has never heard
+    // of: select an object on the canvas and the panel does not switch to the
+    // editable stuff for it.
     //
-    // The interaction audit found three parallel notions of *"the thing I am
-    // working on"* — the armed tool, this focus, and the canvas selection —
-    // with no bridge between them and none of them authoritative, and named it
-    // the root of his complaint. There is one now, written from both ends: the
-    // Objects panel's row click raises `Action::SelectObject`, and this reads
-    // the selection those two share.
+    // Parallel notions of *"the thing I am working on"* — the armed tool, a
+    // panel focus, the canvas selection — with no bridge between them and none
+    // authoritative are the root of that. There is one notion here, written
+    // from both ends: the Objects panel's row click raises
+    // `Action::SelectObject`, and this reads the selection those two share.
     //
     // ★ **The first object on the current page**, and the choice is stated
     // rather than incidental. A multi-selection has no single set of properties
-    // to show — that is §4.4 of `HOW_IT_SHOULD_WORK.md` and it wants a
-    // *"3 objects selected"* summary, which is a build rather than a read. Until
-    // it exists, describing the first is better than describing nothing, and it
-    // is what the panel did when `focus` could only ever hold one.
+    // to show; the *"3 objects selected (2 paths, 1 text)"* orientation line
+    // belongs to the status bar and the Objects panel's header, which both take
+    // `summary::census`. This panel has no such readout, and describing the
+    // first object is better than describing nothing.
     //
     // Object-scoped rather than annotation-scoped: `object_indices_on` returns
     // page-content objects, which is exactly what this section describes. An
@@ -714,10 +674,9 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
     );
     ui.separator();
 
-    // ★ No `ScrollArea` here since 2026-08-26 — `body` wraps the whole panel in
-    // one, and nesting a second inside it would steal the wheel from the outer
-    // depending on where the pointer sat. The block below is otherwise
-    // unchanged.
+    // ★ No `ScrollArea` here — `body` wraps the whole panel in one, and nesting
+    // a second inside it steals the wheel from the outer depending on where the
+    // pointer sits.
     {
         {
             for (label, value) in property_rows(index, &described, embedded) {

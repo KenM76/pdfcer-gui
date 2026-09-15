@@ -44,25 +44,18 @@
 //! reason, so the number this panel shows and the number the apply acts on
 //! cannot disagree.
 //!
-//! ## ★ Layout: state, then action, then detail — and it was measured, twice
+//! ## ★ Layout: state, then action, then detail
 //!
 //! Deliberately **not** the usual detail-then-action order. The count and the
 //! *Review & apply* control come **first**, above the marking controls and
 //! above the mark list.
 //!
-//! The old shell reached the same conclusion from one direction: at a realistic
-//! panel height the conventional order pushed *"Review & apply"* below the
-//! fold, so an operator with eleven marks could not see the control that acts
-//! on them without scrolling past all eleven.
-//!
-//! **This build's first cut put the apply control second rather than last, and
-//! that was still not enough** — a finding from driving the binary, which is
-//! `HANDOFF.md` §2's founding rule paying for itself again. With the marking
-//! controls above it (a heading, a button, a field, a second button, a
-//! two-position switch and a four-line hint), `tools/ui-verify`'s redaction
-//! check reported the control declared at `y = 801.7` inside a panel whose body
-//! ended at `y = 770.0`: **off the bottom of its own pane**, on a 1100×800
-//! window, with one mark made. Every unit test passed, because a unit test
+//! The order is measured, not assumed. Put the apply control anywhere below
+//! the marking controls — a heading, a button, a field, a second button, a
+//! two-position switch and a four-line hint — and on a 1100×800 window with
+//! one mark made, `tools/ui-verify`'s redaction check finds it declared at
+//! `y = 801.7` inside a panel whose body ends at `y = 770.0`: **off the bottom
+//! of its own pane**. Unit tests stay green throughout, because a unit test
 //! cannot see where a control landed.
 //!
 //! So the rule is stronger than *"above the list"*: the census and the apply
@@ -75,20 +68,16 @@
 //!
 //! | absent | why |
 //! |---|---|
-//! | **Canvas drag-to-mark** | Shipped panel-only. See this module's *"Marking by drag"* section below — it is the salvage row's "change needed", and it is a canvas-tool build rather than a panel addition. |
+//! | **Canvas drag-to-mark** | Marking is panel-only. See this module's *"Marking by drag"* section below — it is a canvas-tool build rather than a panel addition. |
 //! | **A confirmation on Remove** | Removing a mark is reversible twice over (the mark can be re-made, and `Ctrl+Z` restores it) and nothing has been removed from the document. A confirmation on a reversible action is how operators learn to dismiss confirmations — including the one that matters, three controls away. |
 //! | **A confirmation on Mark whole page** | Same argument, and its tooltip says so in words. |
 //! | **An Apply button that applies** | The control opens a **report**. The click that opens it must not feel like the click that commits, which is why its label ends in an ellipsis and the commit lives behind two checkboxes in another surface. |
 //!
-//! ## ★ Marking by drag: shipped panel-only, and the reasoning
+//! ## ★ Marking by drag: panel-only, and the reasoning
 //!
-//! `SALVAGE.md`'s row for `redact_apply.rs` names *"Canvas drag-to-mark
-//! (currently panel-driven only)"* as the change needed. It is **not** in this
-//! landing, and the brief's own instruction is the one being followed: *"if the
-//! canvas gesture is more than a modest addition, ship the panel-driven version
-//! and say so."*
-//!
-//! Three reasons it is more than modest here:
+//! Marks are made from this panel. There is no canvas drag-to-mark gesture,
+//! and that is a decision rather than an omission: a canvas gesture here is
+//! more than a modest addition, for three reasons.
 //!
 //! 1. **The shipped tooltip does not promise it.**
 //!    `crate::text::commands::edit_redact` enumerates what marking offers — *"a
@@ -97,14 +86,13 @@
 //! 2. **It is a canvas-tool build, not a panel one.** It would need a
 //!    `CanvasTool` variant, an `app::modes::capability` entry so Read cannot
 //!    reach it, a rung on `canvas::keys`' Escape ladder, an overlay preview in
-//!    `canvas::overlay`, and an `Action` carrying page-space quads —
-//!    `HANDOFF.md` §8's warning that a tool substrate is bigger than its row
-//!    implies, applied to a substrate that would be arming the one irreversible
-//!    verb in the program.
-//! 3. **The proof is what was blocking, and the proof is now here.** A correct,
-//!    verified, panel-driven redaction is the thing `FEATURES.md`'s row was
-//!    waiting on. A half-built canvas gesture on top of it would add a way to
-//!    make marks, not a way to trust them.
+//!    `canvas::overlay`, and an `Action` carrying page-space quads. A tool
+//!    substrate is always bigger than the one-line feature it serves, and this
+//!    one would be arming the one irreversible verb in the program.
+//! 3. **The proof is what matters, and the proof is the panel.** A correct,
+//!    verified, panel-driven redaction is what `FEATURES.md`'s row depends on.
+//!    A half-built canvas gesture on top of it adds a way to make marks, not a
+//!    way to trust them.
 //!
 //! What it would take, so the next hand does not re-derive it: the whole-page
 //! marking path below already builds a `RedactSpec` from a `Rect` and pushes it
@@ -183,13 +171,13 @@ pub struct RedactUi {
     /// afterwards. The marks themselves live in the document as `/Redact`
     /// annotations and carry their own appearance from the moment they are
     /// made.
-    /// ★ `pub(crate)` since 2026-08-30, when a THIRD marking route arrived.
+    /// ★ `pub(crate)` because a third marking route reads it.
     ///
-    /// The panel and the dialog were the only readers while marking happened
-    /// only in the panel. `edit.redact_selection` is a ribbon command dispatched
-    /// from `app::dispatch`, and it must use the operator's CHOSEN look rather
-    /// than a fresh default — three routes producing three differently-coloured
-    /// marks on one page is the divergence this field being one place prevents.
+    /// The panel and the dialog are two readers; `edit.redact_selection` is a
+    /// ribbon command dispatched from `app::dispatch` and is the third. Each
+    /// must use the operator's CHOSEN look rather than a fresh default — three
+    /// routes producing three differently-coloured marks on one page is the
+    /// divergence this field being one place prevents.
     pub(crate) appearance: appearance::Appearance,
     /// What the operator has typed into the search field.
     pub(super) query: String,
@@ -253,7 +241,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 ///
 /// Split out because [`body`] would otherwise be one long function whose two
 /// halves — *make marks* and *review marks* — change for entirely different
-/// reasons, which is the same seam `app/actions.rs` was split along.
+/// reasons, which is the same seam `app/actions.rs` is split along.
 fn marking_controls(
     ui: &mut egui::Ui,
     doc: &OpenDoc,
@@ -309,9 +297,9 @@ fn marking_controls(
     // It is a collapsing group for the same reason: the default — a plain
     // black box — is what almost every redaction wants, so the controls that
     // change it should not cost vertical space until somebody asks. This
-    // panel has already shipped its primary verb off the bottom of its own
-    // pane once (`HANDOFF.md` §2 defect 11) and everything added below the
-    // fold is measured against that.
+    // panel's primary verb can be pushed off the bottom of its own pane by
+    // what sits above it, so everything added below the fold is measured
+    // against that.
     appearance::show(ui, state);
 
     // ---- find and mark --------------------------------------------------
@@ -491,46 +479,31 @@ fn mark_rows(
 /// apart: *"strip metadata, scripts and hidden content. Distinct from
 /// redaction."*
 ///
-/// # ★ The three `None`s were BLOCKED, and are now UNBLOCKED — 2026-08-17
+/// # Why an engine field is not evidence of a consumer
 ///
-/// This comment has been rewritten twice in one day and both versions are
-/// worth their space, because the sequence is the lesson.
+/// `fill`, `overlay_text` and `quadding` are the operator's choice, made in
+/// [`appearance`] and carried to every marking route by the engine's `_styled`
+/// verbs (`EditSession::mark_redactions_by_search_styled` and its pattern and
+/// page-level siblings). Routing all three routes through one appearance is
+/// the invariant; the rule behind it is the part worth keeping:
 ///
-/// It first said the three values were neutral *"because this build has no
-/// surface to choose them from"* — which invited the next session to build the
-/// surface. Checking the engine said the surface was the wrong thing to build:
+/// **An engine field that exists, is documented, and is written into the PDF
+/// is not evidence that anything reads it.** A field can reach the file with
+/// nothing rendering it, and a field honoured on the whole-page path can be
+/// hard-coded `None` on the search path — which makes a swatch work on
+/// whole-page marks and vanish silently on searched ones. The only check that
+/// separates *supported* from *accepted and discarded* is following the value
+/// to its consumer.
 ///
-/// | field | the blockage |
-/// |---|---|
-/// | `fill` | honoured here and **unreachable from the other marking path** — `EditSession::author_text_matches` hard-coded `fill: None`, so a swatch would work on whole-page marks and be silently dropped on searched ones |
-/// | `overlay_text` | **written into the file and never read.** An operator would type *REDACTED*, apply, and get plain black boxes with nothing said |
-/// | `quadding` | a consequence of the row above — `/Q` is written only inside the `if let Some(text)` branch |
+/// The same rule one layer up, about disclosure: rustdoc is not a disclosure
+/// surface. A deferral described in a doc comment is a claim about a backlog,
+/// never evidence that the operator will be told.
 ///
-/// Both were filed rather than worked around. Both came back **fixed the same
-/// day** — `a7210a4` added `RedactAppearance` and the two `_styled` verbs,
-/// `a705d14` implemented the whole Table 192 overlay ladder — and both replies
-/// end *"build the control"*. [`appearance`] is that control.
+/// # ★★ `fill: None` means TRANSPARENT, which is the dangerous half
 ///
-/// **The generalisation survives the unblocking and is why this stays:** an
-/// engine field that exists, is documented, and is *written into the PDF* is
-/// not evidence that anything **reads** it. Two of these three reached the file
-/// the whole time. The only check that separates *supported* from *accepted and
-/// discarded* is following the value to its consumer — `HANDOFF.md` §10's
-/// *"registration is not implementation"*, one layer down.
-///
-/// A second finding came from a concurrent session and is sharper than mine
-/// was: `pdfcer`'s `ARCHITECTURE.md` described the burn-in deferral as
-/// *"disclosed at mark time"* while **nothing in the API disclosed it at all**.
-/// The engine's reply put the rule better than either of us: *"Rustdoc is not a
-/// disclosure surface. Treat a doc-comment 'follow-up' as a claim about our
-/// backlog, never as evidence the operator will be told."*
-///
-/// # ★★ And `fill: None` CHANGED MEANING, which is the dangerous half
-///
-/// Under the old engine `None` meant a black box. Under `a705d14` it means
-/// **transparent**, per Table 192 — the old behaviour was wrong against the
-/// standard. So a shell that kept passing `None` would remove the content and
-/// draw **nothing over it**: not a security failure, but an operator seeing no
+/// `RedactAppearance::fill`'s `None` is transparent, per Table 192 — not a
+/// black box. So a shell that passes `None` removes the content and draws
+/// **nothing over it**: not a security failure, but an operator seeing no
 /// evidence that anything happened, on the operation they cannot undo.
 ///
 /// [`appearance::Appearance::default`] therefore passes an **explicit**
@@ -550,8 +523,8 @@ pub fn whole_page_spec(
     // `to_spec` rather than a struct literal, because it is the engine's own
     // one place for joining an appearance to a geometry — its docs say why:
     // *"a caller that acquires geometry some new way cannot accidentally
-    // reintroduce a hard-coded appearance."* That is precisely the defect this
-    // function used to have.
+    // reintroduce a hard-coded appearance."* A struct literal here is exactly
+    // that accident.
     appearance.to_spec(vec![pdfcer_core::annot_author::Quad::from_rect(
         page.crop_box,
     )])

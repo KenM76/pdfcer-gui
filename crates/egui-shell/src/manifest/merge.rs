@@ -41,23 +41,16 @@
 //!
 //! # Why a skip is disclosed rather than silent
 //!
-//! The salvage source learned this the expensive way, in a different
-//! subsystem. Its diagnostic script parser skipped unparseable steps
-//! *silently*, and on 2026-08-07 a misspelled step was dropped — the
-//! resulting silence was read as a defect in the feature under test, and
-//! was caught only by running a known-good sibling step and noticing the
-//! difference. Its own note on the fix applies here word for word:
+//! An absence is indistinguishable from a thing that ran and produced
+//! nothing, so a silently dropped item presents as **the application
+//! having removed a control** rather than as a stale reference in a file
+//! the operator can fix. The operator then attributes it to the update
+//! they just installed, and there is nothing anywhere that says otherwise.
 //!
-//! > An absent trace line is indistinguishable from a step that ran and
-//! > produced no output, so a typo presented as **a feature failing to
-//! > respond** rather than as a step that never executed.
-//!
-//! A silently dropped ribbon item is the same failure with a slower
-//! feedback loop: the operator sees a button missing and concludes the
-//! application removed it. So every drop produces a [`Skip`] carrying the
-//! layer, the site and the reason, and the application is expected to
-//! surface them. [`MergeReport`] is a value the caller must deal with,
-//! not a side effect it may forget.
+//! So every drop produces a [`Skip`] carrying the layer, the site and the
+//! reason, and the application is expected to surface them.
+//! [`MergeReport`] is returned by value — something the caller must deal
+//! with, not a side effect it may forget.
 //!
 //! # Ordering falls out of the same rule
 //!
@@ -97,16 +90,16 @@
 //! quietly repaired at start-up, which would hide the bug on every machine
 //! that runs it.
 //!
-//! ## ★★ The one exception, added 2026-09-06 — and it is an exception to
-//! *what is filtered*, not to the rule above
+//! ## The one exception — to *what* is filtered, not to the rule above
 //!
 //! [`prune_absent_capabilities`] drops built-in items that name a
 //! **capability** ([`super::Item::Command::capability`]) whose command is not
 //! registered. `SHELL_FRAMEWORK.md` §5b calls this the *second, legitimate*
-//! case: the built-in manifest names `file.sign`, the build was compiled
-//! without signing, and that is not a bug — it is the configuration the
-//! operator asked for on 2026-08-13, *"if not needed by someone they could
-//! just remove them and they would not show up as options in the GUI."*
+//! case: the built-in manifest names an optional command, the build was
+//! compiled without that capability, and that is not a bug — it is the
+//! configuration the operator asked for, *"if not needed by someone they
+//! could just remove them and they would not show up as options in the
+//! GUI."*
 //!
 //! The paragraph above still holds for every **mandatory** item. A built-in
 //! item with no `capability` and no registered command is untouched here and
@@ -148,21 +141,16 @@ pub enum SkipReason {
     },
     /// **The item was conditional on a capability this build does not have.**
     ///
-    /// ★★★ A DIFFERENT REASON FROM [`Self::UnknownCommand`], AND THE
-    /// DIFFERENCE IS THE WHOLE POINT — `SHELL_FRAMEWORK.md` §5b:
-    ///
-    /// > `CapabilityAbsent` is a *different* reason from `UnknownCommand`
-    /// > precisely so the two never get confused in a log: one says "this
-    /// > build does not include that", the other says "someone made a
-    /// > mistake".
+    /// A deliberately different reason from [`Self::UnknownCommand`], so that
+    /// the two can never be confused in a log: this one says *this build does
+    /// not include that*, the other says *someone made a mistake*. Collapsing
+    /// them would make a lite build indistinguishable from a typo.
     ///
     /// Raised when an [`Item::Command`] carrying a
     /// [`capability`](super::Item::Command::capability) names a command the
-    /// registry does not hold — a build compiled without an optional
-    /// capability, behaving exactly as the operator's 2026-08-13 directive
-    /// asks. It is the one reason also raised against the **built-in** layer;
-    /// [`prune_absent_capabilities`] carries why that is not a weakening of the
-    /// rule beside it.
+    /// registry does not hold. It is the one reason also raised against the
+    /// **built-in** layer; [`prune_absent_capabilities`] carries why that is
+    /// not a weakening of the rule beside it.
     CapabilityAbsent {
         /// The capability the item named. Carried so the report can say what
         /// is missing; the shell never matches it against anything.
@@ -240,10 +228,9 @@ impl std::fmt::Display for Skip {
 
 /// Everything a merge had to skip.
 ///
-/// Returned by value so the caller must deal with it. The salvage source
-/// makes the argument for that shape explicitly: returning the rejects
-/// alongside the result makes them *a value the caller must handle*
-/// instead of a side effect it may forget.
+/// Returned by value so the caller must deal with it: returning the rejects
+/// alongside the result makes them a value that has to be handled rather
+/// than a side effect that can be forgotten.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct MergeReport {
     skips: Vec<Skip>,
@@ -367,7 +354,7 @@ pub fn merge(input: MergeInput<'_>, catalog: &dyn CommandCatalog) -> Merged {
         );
     }
 
-    // ★ BEFORE `prune_mode_tabs`, and the order is load-bearing. Dropping a
+    // BEFORE `prune_mode_tabs`, and the order is load-bearing. Dropping a
     // capability's items can empty a group and empty a tab; a mode still
     // naming that tab must then lose the reference, and only the pass below
     // does that. Running them the other way round leaves a mode pointing at a
@@ -380,24 +367,24 @@ pub fn merge(input: MergeInput<'_>, catalog: &dyn CommandCatalog) -> Merged {
 
 /// **Drop the conditional items whose capability this build does not have.**
 ///
-/// `SHELL_FRAMEWORK.md` §5b's *"gap that must be closed"*, closed 2026-09-06
-/// by the work that wired document signing — a capability the operator asked
-/// for, which `pdfcer-core` gates behind a Cargo feature, and which therefore
-/// had to be able to be **absent** without a single `#[cfg]` in a ribbon.
+/// An application may gate a feature behind a build-time flag, so a command
+/// its built-in manifest names can legitimately be unregistered. Expressing
+/// that in the manifest rather than with a `#[cfg]` in a ribbon is what keeps
+/// the ribbon layout one document instead of one per build configuration.
 ///
-/// # ★★★ Why this runs over the whole merged shell, built-in layer included
+/// # Why this runs over the whole merged shell, built-in layer included
 ///
 /// It is the one deliberate exception to this module's standing rule that the
-/// built-in layer is not filtered. That rule's reason is sound and unchanged:
-/// an unknown command compiled into the binary is a programming error, and
-/// quietly repairing it at start-up hides the bug on every machine that runs
-/// it. But §5b names a **second, legitimate** case — the built-in manifest
-/// names `file.sign`, signing is compiled out, and that is not a bug, it is
-/// the intended configuration. Under the old rule that was either a validation
-/// failure that blocks start-up or a live command with no handler.
+/// built-in layer is not filtered. That rule's reason is unchanged: an unknown
+/// command compiled into the binary is a programming error, and quietly
+/// repairing it at start-up hides the bug on every machine that runs it. But
+/// `SHELL_FRAMEWORK.md` §5b names a **second, legitimate** case — the built-in
+/// manifest names an optional command and that capability is compiled out.
+/// Treating it under the strict rule leaves only two outcomes, both wrong: a
+/// validation failure that blocks start-up, or a live control with no handler.
 ///
-/// The fix is not to weaken the strict rule but to make the two cases
-/// distinguishable, which is exactly what
+/// The resolution is not to weaken the strict rule but to make the two cases
+/// distinguishable, which is what
 /// [`Item::Command::capability`](super::Item::Command::capability) does. A
 /// mandatory item is still untouched here and still reaches
 /// [`super::Shell::validate_against`] to fail loudly.
@@ -423,12 +410,12 @@ fn prune_absent_capabilities(
     catalog: &dyn CommandCatalog,
     report: &mut MergeReport,
 ) {
-    // ★★★ CONDITIONAL ITEMS ONLY. `filter_group_items` is deliberately NOT
-    // reused here even though it is one line shorter, because it would also
-    // drop a MANDATORY item whose command is missing — silently repairing, in
-    // the built-in layer, exactly the programming error this module's header
-    // says must reach `validate_against` and fail loudly. The two filters
-    // share `absence_reason`; only this one narrows what it acts on.
+    // CONDITIONAL ITEMS ONLY. `filter_group_items` is deliberately not reused
+    // here even though it is shorter, because it would also drop a MANDATORY
+    // item whose command is missing — silently repairing, in the built-in
+    // layer, exactly the programming error this module's header says must
+    // reach `validate_against` and fail loudly. The two filters share
+    // `absence_reason`; only this one narrows what it acts on.
     let mut retain_conditional = |items: &mut Vec<Item>, site: &Site| {
         items.retain(|item| match absence_reason(item, catalog) {
             Some(reason @ SkipReason::CapabilityAbsent { .. }) => {
@@ -504,7 +491,7 @@ fn apply(
         )));
     }
     if let Some(trailing) = &overlay.trailing {
-        // ★ Replaced whole, exactly as the QAT is, and for the same reason:
+        // Replaced whole, exactly as the QAT is, and for the same reason:
         // both are short ORDERED lists whose whole content is their order. A
         // per-item merge would have to answer "what does it mean to override
         // item 2?" and every answer to that is worse than "the layer that
@@ -527,8 +514,8 @@ fn apply(
 ///
 /// The item twin of [`filter_ids`]. Kept separate rather than generalised
 /// because the two carry different payloads — a bare id and a whole `Item` —
-/// and a generic over "things that might contain a command id" would be more
-/// machinery than the six lines it replaced.
+/// and a generic over "things that might contain a command id" would cost
+/// more machinery than the duplication it removes.
 fn filter_items(
     items: &[Item],
     layer: Layer,
@@ -565,7 +552,7 @@ fn filter_items(
 /// | conditional (`capability: Some`) | registered | `None` — it stays; the build has the capability |
 /// | conditional | **not** registered | [`SkipReason::CapabilityAbsent`] — this build is smaller, on purpose |
 ///
-/// ★ Note the third row: a conditional item whose command **is** registered is
+/// Note the third row: a conditional item whose command **is** registered is
 /// indistinguishable at render time from a mandatory one, and must be. The
 /// field says how to read the item's absence, never how to draw its presence.
 fn absence_reason(item: &Item, catalog: &dyn CommandCatalog) -> Option<SkipReason> {
@@ -672,12 +659,12 @@ fn merge_groups(
                     group.caption.clone_from(&ogroup.caption);
                 }
                 if ogroup.items.is_some() {
-                    // Items are REPLACED, not merged element-wise: an item
-                    // has no id, so there is nothing to match on. This is
-                    // the level at which "wholesale" is the only coherent
-                    // rule, and it is also where the per-item FAILURE
-                    // granularity does its work — one stale command costs
-                    // one item, not the group.
+                    // Items are replaced, not merged element-wise: an item
+                    // has no id, so there is nothing to match on. This is the
+                    // level at which "wholesale" is the only coherent rule,
+                    // and it is also where the per-item FAILURE granularity
+                    // does its work — one stale command costs one item, not
+                    // the group.
                     group.items.clone_from(&ogroup.items);
                     filter_group_items(&mut group, tab_id, layer, catalog, report);
                 }
@@ -915,7 +902,7 @@ mod tests {
             .expect("the fixture must be valid or every test here is vacuous");
     }
 
-    /// **★ A layer overrides per item: what it does not mention survives
+    /// **A layer overrides per item: what it does not mention survives
     /// untouched.**
     ///
     /// This is the contract in one test. An operator layer that renames
@@ -1009,8 +996,8 @@ mod tests {
         assert_eq!(merged.shell.tabs()[0].groups().len(), 1);
     }
 
-    /// **★ An item naming a command that no longer exists is a disclosed
-    /// skip, not an error — and the rest of the group survives.**
+    /// **An item naming a command that no longer exists is a disclosed skip,
+    /// not an error — and the rest of the group survives.**
     ///
     /// `SHELL_FRAMEWORK.md` §4: *"A customization referencing a command
     /// that no longer exists loses that one item and says so in the status
@@ -1340,22 +1327,20 @@ mod tests {
     // SHELL_FRAMEWORK.md §5b — a capability that is not in this build
     // ------------------------------------------------------------------
     //
-    // ★★★ These four tests are the whole of the §5b contract, and they are
-    // written against the MERGE rather than against a ribbon on purpose:
-    // the rule they defend is *a capability's presence is expressed by
-    // registering its command, and by nothing else*, and a test that drew a
-    // band would be a test of the renderer's obedience rather than of the
-    // mechanism. If the renderer is the only thing that knows, the exe→DLL
-    // move is a rewrite.
+    // These tests are written against the MERGE rather than against a ribbon
+    // on purpose: the rule they defend is *a capability's presence is
+    // expressed by registering its command, and by nothing else*, and a test
+    // that drew a band would test the renderer's obedience rather than the
+    // mechanism. If the renderer is the only thing that knows, moving the
+    // application behind a different entry point is a rewrite.
 
     /// **A conditional item whose command is absent is dropped — from the
     /// BUILT-IN layer, which nothing else in this module filters.**
     ///
-    /// The case §5b was written for and left open: the manifest compiled
-    /// into the binary names a command the build did not register, because
-    /// the build was compiled without that capability. Before this, that was
-    /// either a hard validation failure at start-up or a live control with
-    /// no handler.
+    /// The case §5b is written for: the manifest compiled into the binary
+    /// names a command the build did not register, because the build was
+    /// compiled without that capability. The alternatives are a hard
+    /// validation failure at start-up and a live control with no handler.
     #[test]
     fn a_built_in_item_provided_by_an_absent_capability_is_dropped_by_name() {
         let built_in = Shell::new().with_tab(Tab::new("file", "File").with_groups([
@@ -1396,12 +1381,12 @@ mod tests {
 
     /// **A MANDATORY built-in item is still not filtered.**
     ///
-    /// ★★★ The other half, and the one a careless implementation loses. The
-    /// pass that drops conditional items runs over the same lists, and reusing
-    /// the ordinary item filter there would have silently repaired a
-    /// programming error in the built-in manifest — the exact behaviour this
-    /// module's header says must never happen, because it hides the bug on
-    /// every machine that runs it.
+    /// The other half, and the one a careless implementation loses. The pass
+    /// that drops conditional items runs over the same lists, and reusing the
+    /// ordinary item filter there would silently repair a programming error in
+    /// the built-in manifest — the exact behaviour this module's header says
+    /// must never happen, because it hides the bug on every machine that runs
+    /// it.
     ///
     /// So the item survives the merge, and `validate_against` is left to fail
     /// on it, which is asserted here rather than assumed.

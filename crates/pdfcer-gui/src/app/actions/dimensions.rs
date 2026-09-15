@@ -1,7 +1,6 @@
-//! # `app::actions::dimensions` — everything the ce-dimension feature asks the
-//! document to do
+//! Everything the ce-dimension feature asks the document to do.
 //!
-//! ## Rule 15 first, because this module is where it bites
+//! # Rule 15 first, because this module is where it bites
 //!
 //! A **ce dimension** is one *pdfcer itself authors*: a `/Line` annotation
 //! carrying `/IT /LineDimension`, a baked `/AP`, and a record in the
@@ -11,7 +10,7 @@
 //! second kind. Every verb here names the first, and the bare word
 //! "dimension" is not used on its own anywhere in it.
 //!
-//! ## Why this is its own file
+//! # Why this is its own file
 //!
 //! **R2**, and the seam the sibling modules already draw: [`super::pages`] is
 //! *what happens to a page*, [`super::annots`] is *what happens to an
@@ -20,14 +19,14 @@
 //! their scales and standards, the style cascade, and the per-ce-dimension
 //! overrides.
 //!
-//! It is a real subject rather than a size-driven cut, and the evidence is
-//! that its verbs share a property none of the others do: **most of them
-//! regenerate appearance streams for annotations the operator is not looking
-//! at.** A group's members are wherever they were placed, across any number of
-//! pages, and a change to the group rewrites all of them. Every arm below has
-//! to reason about that, and no arm anywhere else does.
+//! It is a subject rather than a size-driven cut, and the evidence is that its
+//! verbs share a property none of the others do: **most of them regenerate
+//! appearance streams for annotations the operator is not looking at.** A
+//! group's members are wherever they were placed, across any number of pages,
+//! and a change to the group rewrites all of them. Every arm below has to
+//! reason about that, and no arm anywhere else does.
 //!
-//! ## ★ The one thing every reader of this file needs to know first
+//! # The two blast radii, which is what to know first
 //!
 //! `EditSession`'s ce-dimension verbs come in two shapes, and confusing them
 //! is the failure this module is arranged to prevent:
@@ -35,14 +34,14 @@
 //! | shape | verbs | blast radius |
 //! |---|---|---|
 //! | **group** | `set_group_scale`, `set_group_standard`, `set_group_style`, `toggle_dimension_layer` | every member of the group, on every page |
-//! | **one ce dimension** | `set_dimension_style`, `set_dimension_display`, `place_dimension`, `delete_dimension` | exactly one annotation |
+//! | **one ce dimension** | `set_dimension_style`, `set_dimension_display`, `place_dimension`, `set_dimension_label`, the vertex verbs | exactly one annotation |
 //!
 //! The group verbs therefore clear **every** cached raster rather than the
 //! current page's, and they pass page `0` to [`super::apply::vector_edit`]
 //! with a note, because a group is document-scoped and has no page. The
 //! per-ce-dimension verbs pass the real page and invalidate normally.
 //!
-//! ## ★ And the second: a returned count is not a count of anything visible
+//! # A returned count is not a count of anything visible
 //!
 //! `set_group_style` and `set_group_standard` both return `usize`, and
 //! `docs/core-api/03-capabilities.md` §1.6 trap (a) warns in as many words
@@ -70,21 +69,20 @@ use crate::app::state::OpenDoc;
 
 /// Everything the ce-dimension feature can ask the document for.
 ///
-/// ## Why this is a sub-enum rather than eight more variants on [`Action`]
+/// # Why this is a sub-enum rather than that many more variants on [`Action`]
 ///
 /// [`Action`]: super::Action
 ///
-/// Three reasons, in the order they decided it:
-///
-/// 1. **They share a routing rule that the flat enum could not express.**
-///    Four of the eight are group-scoped and must invalidate the whole strip;
-///    four are annotation-scoped and must not. As flat variants that rule
-///    lives in eight arms and is re-derived in each; as a family it lives once,
-///    in [`apply`], where a new verb has to pick a side to compile.
-/// 2. **R2.** `super`'s enum was 1,456 lines before this family existed and
-///    these variants carry the documentation this project asks for. The
-///    alternative to a seam is thinner prose, which the file-size gate's own
-///    header names as the incentive it refuses to create.
+/// 1. **They share a routing rule that the flat enum could not express.** Some
+///    are group-scoped and must invalidate the whole strip; the rest are
+///    annotation-scoped and must not. As flat variants that rule lives in one
+///    arm per verb and is re-derived in each; as a family it lives once, in
+///    [`Self::regenerates_the_whole_group`], where a new verb has to pick a
+///    side to compile.
+/// 2. **R2.** `super`'s enum is already near the file-size ceiling and these
+///    variants carry the documentation this project asks for. The alternative
+///    to a seam is thinner prose, which the file-size gate's own header names
+///    as the incentive it refuses to create.
 /// 3. **It matches what the engine did.** `pdfcer-core` groups these verbs
 ///    behind one module (`pdfcer_core::dimension`) and one sidecar, for the
 ///    same reason.
@@ -103,16 +101,16 @@ pub enum DimensionAction {
     /// to what, and where it sits) and for the others is the pick that first
     /// makes the geometry knowable.
     ///
-    /// # ★ Why the geometry arrives whole rather than as points
+    /// # Why the geometry arrives whole rather than as points
     ///
     /// `DimensionKind` is `pdfcer-core`'s own type and it is carried across
-    /// unchanged, which is the property the salvage's two equivalence tests
-    /// exist to protect: the value built here is **byte-for-byte the one
-    /// `pdfcer dimension-add` builds** from the same picks, so a ce
-    /// dimension authored on the canvas and one authored from the command line
-    /// are the same bytes in the file. Decomposing it into coordinates here and
-    /// rebuilding it in the apply arm would put a second constructor in the
-    /// path and quietly end that guarantee.
+    /// unchanged, which is the property the salvage's equivalence tests exist
+    /// to protect: the value built here is **byte-for-byte the one `pdfcer
+    /// dimension-add` builds** from the same picks, so a ce dimension authored
+    /// on the canvas and one authored from the command line are the same bytes
+    /// in the file. Decomposing it into coordinates here and rebuilding it in
+    /// the apply arm would put a second constructor in the path and quietly end
+    /// that guarantee.
     ///
     /// This is also why the variant carries no colour, width or standard: those
     /// live on the **group**, which is why `group` is the other field.
@@ -124,7 +122,7 @@ pub enum DimensionAction {
         group: GroupId,
         /// The immutable geometry, straight from the pick machine.
         kind: DimensionKind,
-        /// ★ **What the gesture inferred, in the operator's words** — carried
+        /// **What the gesture inferred, in the operator's words** — carried
         /// with the edit rather than recorded when the gesture ended.
         ///
         /// Empty for the linear and circular tools, whose output is what the
@@ -132,10 +130,10 @@ pub enum DimensionAction {
         /// classifies: it may read two lines as parallel *because the operator
         /// asked*, overriding a real measured angle, and it may find an apex
         /// that exists only if the lines are extended. `pdfcer-core` requires
-        /// both to be said (`03-capabilities.md` §1.5 obligation 4), and this
-        /// build said neither until 2026-08-19.
+        /// both inferences to be said aloud (`03-capabilities.md` §1.5
+        /// obligation 4).
         ///
-        /// # ★ Why it travels HERE and not through `record_note`
+        /// # Why it travels HERE and not through `record_note`
         ///
         /// Because the apply phase runs **after** the frame that raised this,
         /// and `vector_edit` writes its own disclosure list to the same slot on
@@ -152,7 +150,7 @@ pub enum DimensionAction {
         disclosures: Vec<String>,
     },
 
-    /// ★ **Calibrate a dimension group** — say what its numbers mean.
+    /// **Calibrate a dimension group** — say what its numbers mean.
     ///
     /// Raised by `crate::dialogs::scale` and by nothing else.
     ///
@@ -190,7 +188,7 @@ pub enum DimensionAction {
         format: NumberFormat,
     },
 
-    /// ★ **Create a dimension group** — a second answer to *"what scale is
+    /// **Create a dimension group** — a second answer to *"what scale is
     /// this drawn at?"* in one document.
     ///
     /// Raised by `crate::dialogs::dimension_groups` and by nothing else.
@@ -235,7 +233,7 @@ pub enum DimensionAction {
         unit: Unit,
     },
 
-    /// ★ **Rename a dimension group.**
+    /// **Rename a dimension group.**
     ///
     /// Raised by `crate::dialogs::dimension_groups`.
     ///
@@ -252,14 +250,13 @@ pub enum DimensionAction {
     /// group verb of which it is true, and a reader checking why the list has a
     /// hole in it should find the reason here.
     ///
-    /// # Why it took a request
+    /// # Why the verb has to exist
     ///
-    /// `Group::name` is a `pub String` on a snapshot, and `EditSession` had no
-    /// verb for it, so a mistyped group name was permanent for the life of the
-    /// document. Filed 2026-08-18, shipped 2026-08-19. The engine's reply
-    /// corrected the request's other half: of `Group`'s eight fields, **`name`
-    /// alone** had no session route — the unit is reachable through
-    /// `set_group_scale`, which takes a whole `NumberFormat`.
+    /// `Group::name` is a `pub String` on a snapshot, so without a session verb
+    /// a mistyped group name would be permanent for the life of the document.
+    /// It is the only field of `Group` reached solely through this verb: the
+    /// display unit rides on `set_group_scale`, which takes a whole
+    /// `NumberFormat`, and the rest have verbs of their own.
     RenameGroup {
         /// The group to rename.
         group: GroupId,
@@ -269,11 +266,33 @@ pub enum DimensionAction {
         name: String,
     },
 
-    /// ★ **Delete a dimension group**, answering the members question.
+    /// **Say something other than the measurement**, without changing it.
+    ///
+    /// `EditSession::set_dimension_label`. Raised by
+    /// `panels::properties::dimension::label_row` and by nothing else.
+    ///
+    /// # It does not destroy the measurement
+    ///
+    /// The override is a **caption**. The measured value stays underneath, so
+    /// `None` restores it with **no re-measurement** — the number that comes
+    /// back is the one that was always there rather than a fresh calculation
+    /// that might round differently.
+    ///
+    /// Which is why `label` is an `Option` and why the panel has no Clear
+    /// button: clearing the box *is* `None`, and a second control that meant
+    /// the same thing would be a second way to reach one state.
+    SetLabel {
+        /// Which ce dimension.
+        dimension: pdfcer_core::dimension::DimensionId,
+        /// The caption, or `None` to show the measurement again.
+        label: Option<String>,
+    },
+
+    /// **Delete a dimension group**, answering the members question.
     ///
     /// Raised by `crate::dialogs::dimension_groups`.
     ///
-    /// # ★ The policy is the whole design, and it is the ORPHAN question again
+    /// # The policy is the whole design, and it is the ORPHAN question again
     ///
     /// A group with members cannot simply be removed, and the engine's answer
     /// is the one it gave for `insert_pages`' orphaned widgets — **report and
@@ -284,7 +303,7 @@ pub enum DimensionAction {
     /// | [`GroupDeletion::Refuse`] | `EditError::DimensionGroupNotEmpty { id, members }` if it is populated. The **default** |
     /// | `GroupDeletion::Reassign(dest)` | the members move to `dest` first, **re-measured** against its scale and format, then the group goes |
     ///
-    /// The count is in the error because *"this group is not empty"* and
+    /// The member count is in the error because *"this group is not empty"* and
     /// *"this group holds forty dimensions"* prompt different decisions from an
     /// operator — and only a surface can put that question in front of them.
     ///
@@ -293,40 +312,18 @@ pub enum DimensionAction {
     /// doing it inside this verb would be a second implementation of
     /// `delete_dimension`'s removal; and calling `delete_dimension` in a loop
     /// would produce one undo entry **per member**, so undoing a group deletion
-    /// would take forty presses and could stop halfway with the group already
-    /// gone. If this shell ever needs it, the engine has offered to factor
-    /// `delete_dimension`'s core out properly — which is a request, not a
-    /// workaround to write here.
+    /// would take one press per member and could stop halfway with the group
+    /// already gone. Factoring `delete_dimension`'s core out belongs in the
+    /// engine, as a request — not as a workaround written here.
     ///
-    /// # ★ A refusal validates before mutating, and the dialog relies on it
+    /// # A refusal validates before mutating, and the dialog relies on it
     ///
-    /// The engine's reply states it: *"a rejected deletion leaves the model
-    /// byte-identical. You can call it speculatively to populate a confirmation
-    /// dialog."* The dialog does not — it reads `member_count` from the model
-    /// it is already holding, which costs nothing and needs no round trip — but
-    /// the guarantee is what makes a Delete press safe to offer at all rather
-    /// than gated behind a count the surface might have got wrong.
-    /// ★★★ **Say something other than the measurement**, without changing it.
-    ///
-    /// `EditSession::set_dimension_label`, shipped 2026-08-30. Raised by
-    /// `panels::properties::dimension::label_row` and by nothing else.
-    ///
-    /// # The engine's own headline: it does NOT destroy the measurement
-    ///
-    /// The override is a **caption**. The measured value stays underneath, so
-    /// `None` restores it with **no re-measurement** — the number that comes
-    /// back is the one that was always there rather than a fresh calculation
-    /// that might round differently.
-    ///
-    /// ⇒ Which is why `label` is an `Option` and why the panel has no Clear
-    /// button: clearing the box *is* `None`, and a second control that meant
-    /// the same thing would be a second way to reach one state.
-    SetLabel {
-        /// Which ce dimension.
-        dimension: pdfcer_core::dimension::DimensionId,
-        /// The caption, or `None` to show the measurement again.
-        label: Option<String>,
-    },
+    /// A rejected deletion leaves the model byte-identical, so the verb may be
+    /// called speculatively to populate a confirmation dialog. The dialog does
+    /// not — it reads `member_count` from the model it is already holding,
+    /// which costs nothing and needs no round trip — but the guarantee is what
+    /// makes a Delete press safe to offer at all rather than gated behind a
+    /// count the surface might have got wrong.
     DeleteGroup {
         /// The group to remove.
         group: GroupId,
@@ -334,11 +331,11 @@ pub enum DimensionAction {
         policy: GroupDeletion,
     },
 
-    /// ★ **Move a placed ce dimension to another group.**
+    /// **Move a placed ce dimension to another group.**
     ///
     /// Raised by `crate::panels::properties::dimension`.
     ///
-    /// # ★ This is NOT a field assignment, and the surface has to know that
+    /// # This is NOT a field assignment, and the surface has to know that
     ///
     /// The single most important fact about this verb, and the engine spent a
     /// section of its reply on it. A ce dimension's label is **derived from its
@@ -379,44 +376,19 @@ pub enum DimensionAction {
         group: GroupId,
     },
 
-    /// ★ **Place a ce dimension** - where its line stands off the geometry, and
-    /// where its number sits along that line.
-    ///
-    /// Raised by `crate::canvas::dimdrag` on the release of a drag, and by
-    /// nothing else. There is no panel control for these two numbers and that
-    /// is deliberate: they are a position, and a position is set by putting it
-    /// somewhere, not by typing two scalars whose frame the operator would have
-    /// to hold in their head.
-    ///
-    /// # Why this and not `move_dimension`
-    ///
-    /// `place_dimension` writes two fields the value function does not read, so
-    /// it is **value-preserving by construction**: no drag, however far, can
-    /// change the number the dimension prints. `move_dimension` translates the
-    /// measured points as well - the distance survives a rigid motion, but the
-    /// dimension leaves the feature it was measuring, which is not what an
-    /// operator dragging a dimension line means. The engine's own doc comment
-    /// settles it: *"This, not `move_dimension`, is what dragging a dimension
-    /// does."* See `canvas::dimdrag`'s header for the table.
-    ///
-    /// # Blast radius
-    ///
-    /// **One annotation**, redrawn where it now sits, so
-    /// [`Self::regenerates_the_whole_group`] answers `false`. Nothing else in
-    /// the group moves and no value is re-measured.
-    /// ★★ **Move one vertex of a perimeter ce dimension**, re-measuring it.
+    /// **Move one vertex of a perimeter ce dimension**, re-measuring it.
     ///
     /// Raised by `crate::canvas::dimdrag::drag_vertex` on the release of a
-    /// corner drag. The operator's ask of 2026-08-20: *"I want to be able to
-    /// edit the endpoints of the lines to adjust the shape."*
+    /// corner drag. The operator's ask: *"I want to be able to edit the
+    /// endpoints of the lines to adjust the shape."*
     ///
-    /// # ★ This one CHANGES THE NUMBER, and it is the first that does
+    /// # This one CHANGES THE NUMBER
     ///
     /// [`Self::Place`] writes fields the value function does not read, so no
     /// label drag can alter what a dimension prints. `SetDimensionGroup`
     /// re-measures under a different scale. This moves a corner of the measured
-    /// shape itself, and the engine names it: *"the first ce-dimension verb that
-    /// deliberately changes what a ce dimension measures."*
+    /// shape itself, which is what makes it the ce-dimension verb that
+    /// deliberately changes what a ce dimension measures.
     ///
     /// So it owes a disclosure the others do not, and the engine hands over the
     /// material for it — `VertexOutcome` carries `previous_label` beside
@@ -440,8 +412,8 @@ pub enum DimensionAction {
         dy: f64,
     },
 
-    /// ★★★ **Add a corner to a perimeter ce dimension** — 2026-09-05, and the
-    /// half of the operator's report this shell could close.
+    /// **Add a corner to a perimeter ce dimension**, answering half of the
+    /// operator's report:
     ///
     /// > *"I also can't edit or delete nodes of a markup shape once it is
     /// > drawn."*
@@ -450,13 +422,13 @@ pub enum DimensionAction {
     /// Ctrl-drag from a corner handle with the Points tool armed, and by
     /// nothing else.
     ///
-    /// # ★★ `after` is a SEGMENT, not a position in a list
+    /// # `after` is a SEGMENT, not a position in a list
     ///
-    /// `insert_dimension_vertex(dimension, after, at)`
-    /// (`D:/Dev/pdfcer/crates/pdfcer-core/src/edit.rs:37927`) puts the new
-    /// corner **between** `after` and the one following it, which is why the
-    /// engine's own doc comment describes the gesture as *"what a right-click
-    /// on a segment offers"*: `after` names that segment by its first corner.
+    /// `EditSession::insert_dimension_vertex(dimension, after, at)` puts the
+    /// new corner **between** `after` and the one following it, which is why
+    /// the engine's own doc comment describes the gesture as *"what a
+    /// right-click on a segment offers"*: `after` names that segment by its
+    /// first corner.
     ///
     /// `after == len - 1` is meaningful rather than out of range, and both
     /// readings are correct: on a **closed** perimeter it names the closing
@@ -490,28 +462,28 @@ pub enum DimensionAction {
         at: pdfcer_core::vector::Point,
     },
 
-    /// ★★★ **Take a corner off a perimeter ce dimension** — the literal half of
-    /// *"or delete nodes"*, 2026-09-05.
+    /// **Take a corner off a perimeter ce dimension** — the other half of *"or
+    /// delete nodes"*.
     ///
     /// Raised by `crate::canvas::dimdrag::count_edit` on the release of a
     /// Ctrl+Shift-drag from a corner handle with the Points tool armed, and by
     /// nothing else.
     ///
-    /// # ★★ The refusal is preflighted, so this variant never carries one
+    /// # The refusal is preflighted, so this variant never carries one
     ///
-    /// `remove_dimension_vertex` (`edit.rs:37955`) refuses rather than leaving
-    /// a degenerate record — an open path keeps two corners, a closed one keeps
-    /// three — and the engine's own advice is to *"grey the menu item from
-    /// `vertex_edit_preview` rather than catch the error"*, in the
-    /// `adopt_widget` requester's words: *"a verb with no preflight makes the
-    /// UI find out by pressing."* This shell has no menu item to grey, so it
-    /// applies the same rule to the gesture: `dimdrag` asks
-    /// `vertex_edit_preview` on every frame, the preview shows the shape
-    /// unchanged when the answer is no, and **this action is never raised**.
+    /// `EditSession::remove_dimension_vertex` refuses rather than leaving a
+    /// degenerate record — an open path keeps two corners, a closed one keeps
+    /// three. The rule is to grey the affordance from
+    /// `EditSession::vertex_edit_preview` rather than catch the error, because
+    /// a verb with no preflight makes the UI find out by pressing. This shell
+    /// has no menu item to grey, so it applies the same rule to the gesture:
+    /// `dimdrag` asks `vertex_edit_preview` on every frame, the preview shows
+    /// the shape unchanged when the answer is no, and **this action is never
+    /// raised**.
     ///
-    /// ⇒ So an arm here that mapped `EditError` to a sentence would be dead
-    /// code describing a state the caller guarantees cannot arrive. The
-    /// refusal's sentence lives where the refusal is detected —
+    /// So an arm here that mapped `EditError` to a sentence would be dead code
+    /// describing a state the caller guarantees cannot arrive. The refusal's
+    /// sentence lives where the refusal is detected —
     /// `app::status::decline::record_vertex_edit_refused`.
     ///
     /// # Blast radius
@@ -525,14 +497,14 @@ pub enum DimensionAction {
         index: usize,
     },
 
-    /// ★★★ **Say, in words, why a corner could not be added or taken away.**
+    /// **Say, in words, why a corner could not be added or taken away.**
     ///
     /// Raised by `crate::canvas::dimdrag::count_edit` on the release frame of a
     /// count-editing drag whose preflight refused. It edits nothing and is not
     /// an edit — no funnel, no epoch, no undo entry — and that is the whole
     /// point of it.
     ///
-    /// # ★★ Why a refusal travels as an ACTION rather than being recorded on
+    /// # Why a refusal travels as an ACTION rather than being recorded on
     /// the spot
     ///
     /// Because of a module boundary that is deliberate. `app::status::decline`
@@ -543,20 +515,12 @@ pub enum DimensionAction {
     ///
     /// [`crate::app::actions::Action::DeclineOnCanvas`] is the standing
     /// precedent for exactly this — an action whose entire body is one
-    /// `decline::record_*` call — and this one rides on `DimensionAction`
-    /// rather than joining it at the top level for a reason that is
-    /// unglamorous and real: `app/actions/action.rs` has been within a few
-    /// lines of R2's 1,500 ceiling for as long as this variant has existed
-    /// (**1,495 on 2026-09-15**, after O188 rewrote `DeclineOnCanvas`'s doc
-    /// block in place precisely because there was no room to add a second
-    /// variant), and this file has three hundred to spare. The subject is a
-    /// ce dimension either way.
+    /// `decline::record_*` call. This one rides on `DimensionAction` rather
+    /// than joining it at the top level for a reason that is unglamorous and
+    /// real: `app/actions/action.rs` sits against R2's file-size ceiling and
+    /// this file does not. The subject is a ce dimension either way.
     ///
-    /// ★ The count is dated because an undated line count in prose is a
-    /// measurement that goes stale invisibly; the sentence it replaced said
-    /// *exactly 1,500* and had been wrong for some time.
-    ///
-    /// ⇒ ★ It is deliberately NOT `record_note`. That channel draws
+    /// It is deliberately NOT `record_note`. That channel draws
     /// *"⚑ About your last edit:"*, and `app::status::decline`'s own header
     /// rules it out for this case in as many words — *"an operator who reads
     /// 'About your last edit' after a gesture that did nothing has been told a
@@ -569,6 +533,31 @@ pub enum DimensionAction {
         why: crate::text::measure::VertexEditRefusal,
     },
 
+    /// **Place a ce dimension** — where its line stands off the geometry, and
+    /// where its number sits along that line.
+    ///
+    /// Raised by `crate::canvas::dimdrag` on the release of a drag, and by
+    /// nothing else. There is no panel control for these two numbers and that
+    /// is deliberate: they are a position, and a position is set by putting it
+    /// somewhere, not by typing two scalars whose frame the operator would have
+    /// to hold in their head.
+    ///
+    /// # Why this and not `move_dimension`
+    ///
+    /// `place_dimension` writes two fields the value function does not read, so
+    /// it is **value-preserving by construction**: no drag, however far, can
+    /// change the number the dimension prints. `move_dimension` translates the
+    /// measured points as well — the distance survives a rigid motion, but the
+    /// dimension leaves the feature it was measuring, which is not what an
+    /// operator dragging a dimension line means. The engine's own doc comment
+    /// settles it: *"This, not `move_dimension`, is what dragging a dimension
+    /// does."* See `canvas::dimdrag`'s header for the table.
+    ///
+    /// # Blast radius
+    ///
+    /// **One annotation**, redrawn where it now sits, so
+    /// [`Self::regenerates_the_whole_group`] answers `false`. Nothing else in
+    /// the group moves and no value is re-measured.
     Place {
         /// The ce dimension to place.
         dimension: DimensionId,
@@ -580,7 +569,7 @@ pub enum DimensionAction {
         text_along: f64,
     },
 
-    /// ★ **Set a dimension group's drafting standard** — ANSI or ISO.
+    /// **Set a dimension group's drafting standard** — ANSI or ISO.
     ///
     /// Raised by `crate::dialogs::dimension_groups`.
     ///
@@ -596,11 +585,10 @@ pub enum DimensionAction {
     ///
     /// # Why it is per group and not per ce dimension
     ///
-    /// `pdfcer-core`'s own reasoning, quoted because it is the answer to the
-    /// obvious question (`dimension/group.rs:71-79`): per ce dimension *"would
-    /// be a foot-gun with no use case (nobody wants dimension #3 ISO and #4
-    /// ANSI)"*, and the standards' decimal conventions are unit-dependent while
-    /// the unit is per group. The style cascade does allow a per-ce-dimension
+    /// `pdfcer_core::dimension::Group::standard` carries the reasoning: per ce
+    /// dimension is a foot-gun with no use case — nobody wants dimension #3 ISO
+    /// and #4 ANSI — and the standards' decimal conventions are unit-dependent
+    /// while the unit is per group. The style cascade does allow a per-ce-dimension
     /// override of it — see [`Self::SetStyle`] — for the operator who has a
     /// reason; this is the default that override departs from.
     SetGroupStandard {
@@ -610,24 +598,24 @@ pub enum DimensionAction {
         standard: DimStandard,
     },
 
-    /// ★ **Set a dimension group's appearance defaults** — the middle tier of
+    /// **Set a dimension group's appearance defaults** — the middle tier of
     /// the style cascade.
     ///
     /// Raised by `crate::dialogs::dimension_groups`.
     ///
     /// # Why the whole [`GroupStyle`] travels, rather than one property
     ///
-    /// Because a `GroupStyle` **is** the tier: seven `Option`s, each of which
+    /// Because a `GroupStyle` **is** the tier: every field is an `Option` that
     /// is the operator's override checkbox for one property, and `None` on any
     /// of them is a meaningful value — *"this group has not spoken; use the
     /// factory default"*. A per-property variant would have to carry
     /// `Option<Option<T>>` to distinguish *leave it alone* from *clear it*,
     /// which is a shape nobody reads correctly twice.
     ///
-    /// The engine's own verb takes the whole struct and says why
-    /// (`edit.rs:18263-18271`): per-property setters *"would make 'clear this
-    /// override' a different call from 'set it', so a surface would have two
-    /// code paths where the operator sees one checkbox."* The dialog therefore
+    /// `EditSession::set_group_style` takes the whole struct for the same
+    /// reason: per-property setters would make *clear this override* a
+    /// different call from *set it*, so a surface would have two code paths
+    /// where the operator sees one checkbox. The dialog therefore
     /// performs the read-modify-write that the CLI convention describes —
     /// setting one property leaves the others alone — which is what keeps a
     /// panel click and a `pdfcer group-style` invocation the same edit.
@@ -638,11 +626,11 @@ pub enum DimensionAction {
         style: GroupStyle,
     },
 
-    /// ★ **Show or hide a dimension group's layer.**
+    /// **Show or hide a dimension group's layer.**
     ///
     /// Raised by `crate::dialogs::dimension_groups`.
     ///
-    /// # ★ Why this is not `Action::SetLayerVisible`
+    /// # Why this is not `Action::SetLayerVisible`
     ///
     /// They look identical and are not, and the difference is the operator's
     /// rather than an implementation detail.
@@ -675,16 +663,16 @@ pub enum DimensionAction {
         visible: bool,
     },
 
-    /// ★ **Set one ce dimension's own style overrides** — the bottom tier of
+    /// **Set one ce dimension's own style overrides** — the bottom tier of
     /// the cascade.
     ///
     /// Raised by `crate::panels::dimension`, against the selected annotation.
     ///
     /// # Why the whole [`StyleOverrides`] travels
     ///
-    /// Identical reasoning to [`Self::SetGroupStyle`]: eleven `Option`s, each
-    /// one an override checkbox, and `None` is a value rather than an absence —
-    /// it means *inherit*.
+    /// Identical reasoning to [`Self::SetGroupStyle`]: every field is an
+    /// `Option` standing for one override checkbox, and `None` is a value
+    /// rather than an absence — it means *inherit*.
     ///
     /// `Some(Tolerance::None)` and `None` are deliberately different states, and
     /// the engine's own doc comment gives the case that makes the distinction
@@ -709,7 +697,7 @@ pub enum DimensionAction {
         style: StyleOverrides,
     },
 
-    /// ★ **Switch a placed circular ce dimension between radius and diameter.**
+    /// **Switch a placed circular ce dimension between radius and diameter.**
     ///
     /// Raised by `crate::panels::dimension`.
     ///
@@ -722,7 +710,7 @@ pub enum DimensionAction {
     /// object identity, in order to change which of two numbers derived from
     /// *the same fitted circle* gets printed.
     ///
-    /// # ★ It commits even when nothing changes
+    /// # It commits even when nothing changes
     ///
     /// `set_dimension_display` is documented as committing unconditionally
     /// (`docs/core-api/02-editing-and-saving.md` §1.19 flags it as *"the
@@ -751,18 +739,18 @@ impl DimensionAction {
     /// Whether this verb's blast radius is **the whole document** rather than
     /// one page.
     ///
-    /// The module header's first table, expressed once as code so a ninth
-    /// variant cannot be added without picking a side. [`apply`] uses it to
-    /// decide whether to clear every cached raster, and the honest answer is
-    /// derived from *what the engine verb touches*, not from what the operator
-    /// was looking at when they asked.
+    /// The module header's first table, expressed once as code so a new variant
+    /// cannot be added without picking a side. [`apply`] uses it to decide
+    /// whether to clear every cached raster, and the honest answer is derived
+    /// from *what the engine verb touches*, not from what the operator was
+    /// looking at when they asked.
     ///
     /// [`Self::Commit`] is `false` even though it is the one that *creates* a
     /// member: authoring places a single annotation on a single page, and the
     /// group's other members are not redrawn by it.
     ///
-    /// ★ Three of the 2026-08-19 verbs are `false` and each for its own reason,
-    /// which is why they are worth stating rather than leaving to the
+    /// Three verbs that look group-scoped answer `false`, each for its own
+    /// reason, which is why they are worth stating rather than leaving to the
     /// `matches!`:
     ///
     /// - [`Self::RenameGroup`] regenerates **nothing at all** — no member's
@@ -788,7 +776,7 @@ impl DimensionAction {
 
 /// **Set or clear a ce dimension's caption.**
 ///
-/// # ★★ What is reported, and why the restore says something different
+/// # What is reported, and why the restore says something different
 ///
 /// `DimensionLabelChange` carries `measured` and `printed` separately. When an
 /// override goes on they differ, and the receipt names **both** — the operator
@@ -801,7 +789,7 @@ impl DimensionAction {
 /// measurement rather than re-measuring, and a receipt naming the number is
 /// what lets an operator confirm it did.
 ///
-/// ★ `changed: false` produces no disclosure at all. The engine returns `Ok`
+/// `changed: false` produces no disclosure at all. The engine returns `Ok`
 /// for a no-op — setting a caption to what it already says — and a sentence
 /// there would evict a real disclosure to report that nothing happened.
 fn set_label(
@@ -832,7 +820,7 @@ fn set_label(
 
 /// Apply one ce-dimension verb to the open document.
 ///
-/// ## The two-step every arm shares
+/// # The two-step every arm shares
 ///
 /// 1. **Invalidate as widely as the verb reaches.** A group verb clears
 ///    `doc.strip_rasters` wholesale, because a group's members are wherever the
@@ -845,17 +833,13 @@ fn set_label(
 ///    and the disclosure store are the ones every other edit in this
 ///    application uses, rather than a second implementation of them here.
 ///
-/// ## Why the group arms pass page `0`
+/// # Why the group arms pass page `0`
 ///
 /// `vector_edit` takes a page for its trace line and its per-page raster drop.
 /// A group is document-scoped and has no page, so `0` is passed with this note
 /// rather than the signature gaining an `Option<usize>` that every other caller
 /// would have to spell. The wholesale clear in step 1 is what actually
 /// discharges the invalidation; the page reaches the funnel only as a label.
-///
-/// ★ Moved here on 2026-09-12. It sat above `set_label`, run
-/// together with that item's doc comment — so it documented `set_label`
-/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
     if action.regenerates_the_whole_group() {
         doc.strip_rasters.clear();
@@ -891,7 +875,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     .map(|_| Vec::new())
             });
         }
-        // ★ Creating a group regenerates nothing — it has no members yet — so
+        // Creating a group regenerates nothing — it has no members yet — so
         // it is not in `regenerates_the_whole_group` and clears no rasters.
         // It is still a document edit: the sidecar gains a record, and a save
         // taken afterwards carries the group.
@@ -900,7 +884,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                 session.add_dimension_group(&name, unit).map(|_| Vec::new())
             });
         }
-        // ★ The one group verb that regenerates NOTHING. No member's
+        // The one group verb that regenerates NOTHING. No member's
         // appearance depends on what its group is called, so no raster is
         // dropped and `regenerates_the_whole_group` says so.
         DimensionAction::RenameGroup { group, name } => {
@@ -910,7 +894,13 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     .map(|()| Vec::new())
             });
         }
-        // ★ Routed through `delete_dimension_group_with` for BOTH policies,
+        // One line: `set_dimension_label` owns the whole contract — the
+        // whitespace-only refusal, keeping the measurement, and regenerating
+        // the appearance at the new caption.
+        DimensionAction::SetLabel { dimension, label } => {
+            set_label(doc, dimension, label.as_deref());
+        }
+        // Routed through `delete_dimension_group_with` for BOTH policies,
         // including `Refuse` — which is exactly what the no-argument
         // `delete_dimension_group` does.
         //
@@ -926,12 +916,6 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
         // Reporting a second count afterwards would be two answers to one
         // question — the shape `set_group_style`'s return value already taught
         // this module to refuse.
-        // ★ One line: `set_dimension_label` owns the whole contract — the
-        // whitespace-only refusal, keeping the measurement, and regenerating
-        // the appearance at the new caption.
-        DimensionAction::SetLabel { dimension, label } => {
-            set_label(doc, dimension, label.as_deref());
-        }
         DimensionAction::DeleteGroup { group, policy } => {
             // A reassignment moves members between groups, which re-measures
             // and redraws each of them wherever it is. A refusal moves nothing.
@@ -947,7 +931,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     .map(|_| Vec::new())
             });
         }
-        // ★ One annotation redrawn, and its printed NUMBER changes — see the
+        // One annotation redrawn, and its printed NUMBER changes — see the
         // variant. The page it is on is not known here (a `DimensionId` names a
         // sidecar record, not a page), so page `0` is passed with the note every
         // document-scoped verb in this file passes it with, and the strip is
@@ -959,17 +943,11 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     .map(|()| Vec::new())
             });
         }
-        // ★ One annotation redrawn, in place. No value is re-measured -
-        // `place_dimension` writes two fields the value function does not read
-        // - so unlike `SetDimensionGroup` above there is not even a number to
-        // disclose. The page is not known here (a `DimensionId` names a sidecar
-        // record, not a page), so page `0` is passed with the note every
-        // document-scoped verb in this file passes it with.
-        // ★★ The one dimension verb that RE-MEASURES, so it is the one that
-        // owes a disclosure. `VertexOutcome` carries the label before and
-        // after, because the old value cannot be reconstructed once the
-        // geometry it came from is gone - and "12.40 m -> 13.85 m" is a
-        // disclosure where "13.85 m" is just the number already on the page.
+        // Re-measures, so it owes a disclosure. `VertexOutcome` carries the
+        // label before and after, because the old value cannot be
+        // reconstructed once the geometry it came from is gone — and
+        // "12.40 m -> 13.85 m" is a disclosure where "13.85 m" is just the
+        // number already on the page.
         DimensionAction::MoveVertex {
             dimension,
             index,
@@ -996,16 +974,21 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     })
             });
         }
-        // ★★★ The two verbs that change how many corners a measured shape has
-        // — 2026-09-05, closing the ce-dimension half of the operator's *"I
-        // also can't edit or delete nodes"*.
+        // The one arm in this file that touches no document. See the variant:
+        // it exists because the canvas cannot reach `app::status::decline`, and
+        // a corner drag that is refused with no sentence is the founding defect
+        // of this project wearing a new grip.
+        DimensionAction::DeclineVertexEdit { why } => {
+            crate::app::status::decline::record_vertex_edit_refused(why);
+        }
+        // The two verbs that change how many corners a measured shape has.
         //
         // Both re-measure, so both owe the disclosure `MoveVertex` owes, plus
         // the corner count: that is the fact the gesture exists to change, and
         // an insert that landed on the wrong segment looks exactly like one
         // that landed on the right one until you read the number.
         //
-        // ★ Unlike `MoveVertex` above, the disclosure is NOT suppressed when
+        // Unlike `MoveVertex` above, the disclosure is NOT suppressed when
         // the label is unchanged, and the asymmetry is deliberate. A corner
         // dragged along its own segment changes the shape and not the length,
         // so "13.85 m -> 13.85 m" there is noise. Here the operator changed the
@@ -1017,13 +1000,6 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
         // Page `0` with the note every document-scoped verb in this file passes
         // it with (a `DimensionId` names a sidecar record, not a page), and the
         // strip is deliberately NOT cleared: exactly one annotation moved.
-        // ★ The one arm in this file that touches no document. See the variant:
-        // it exists because the canvas cannot reach `app::status::decline`, and
-        // a corner drag that is refused with no sentence is the founding defect
-        // of this project wearing a new grip.
-        DimensionAction::DeclineVertexEdit { why } => {
-            crate::app::status::decline::record_vertex_edit_refused(why);
-        }
         DimensionAction::InsertVertex {
             dimension,
             after,
@@ -1054,6 +1030,12 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     })
             });
         }
+        // One annotation redrawn, in place. No value is re-measured —
+        // `place_dimension` writes two fields the value function does not read
+        // — so unlike `SetDimensionGroup` there is not even a number to
+        // disclose. The page is not known here (a `DimensionId` names a sidecar
+        // record, not a page), so page `0` is passed with the note every
+        // document-scoped verb in this file passes it with.
         DimensionAction::Place {
             dimension,
             offset,
@@ -1077,7 +1059,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                 session.set_group_style(group, style).map(|_| Vec::new())
             });
         }
-        // ★ The returned `bool` is the RESULTING visibility, and it is
+        // The returned `bool` is the RESULTING visibility, and it is
         // deliberately dropped. The dialog re-reads the model next frame, so
         // carrying the answer back would give the surface two sources for one
         // fact — and the one carried here would be the older of the two by the
@@ -1116,10 +1098,15 @@ mod tests {
 
     /// The blast-radius predicate agrees with the module header's table.
     ///
-    /// Written as an exhaustive listing rather than as `matches!` twice, so
-    /// that a ninth variant fails to compile here and forces the author to
-    /// state which side it is on — which is the whole reason the predicate is a
-    /// method rather than a condition inlined in [`apply`].
+    /// Written as a listing of values rather than as `matches!` a second time,
+    /// so the assertion is about the verbs themselves and not about a repeated
+    /// copy of the predicate's own pattern.
+    ///
+    /// Note the limit: because `regenerates_the_whole_group` is a `matches!`
+    /// with an implicit fallback, a variant added to [`DimensionAction`] and
+    /// not added here silently answers `false`. Nothing in this test compels
+    /// the author to pick a side; only turning the predicate into an exhaustive
+    /// `match` would.
     #[test]
     fn every_group_verb_is_document_wide_and_every_other_is_not() {
         let g = DEFAULT_GROUP_ID;
@@ -1151,7 +1138,8 @@ mod tests {
             );
         }
 
-        // Annotation-scoped, plus the two that create rather than change.
+        // Annotation-scoped, plus `AddGroup`, which creates rather than changes
+        // and so has no members to regenerate.
         for a in [
             DimensionAction::AddGroup {
                 name: "Detail".to_owned(),

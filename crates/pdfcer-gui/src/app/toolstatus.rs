@@ -9,12 +9,11 @@
 //!
 //! ## ★★★ What moved where, and why nothing was deleted
 //!
-//! `SHELL_LAYOUT_PROPOSAL.md` §3 ranked this proposal fourth of four and said
-//! **do not build it**, on the ground that it deletes the armed block's live
-//! controls and orphans a disclosure slot. That analysis was right about the
-//! cost and wrong about the remedy, and the operator's first sentence is why:
-//! the controls were never the tool panel's to hold. They are properties of
-//! what is selected or about to be drawn.
+//! The standing objection to collapsing the Tool panel is that it deletes the
+//! armed block's live controls and orphans a disclosure slot. That objection
+//! is right about the cost and wrong about the remedy, and the operator's
+//! first sentence is why: the controls were never the tool panel's to hold.
+//! They are properties of what is selected or about to be drawn.
 //!
 //! | what the Tool panel held | where it is now |
 //! |---|---|
@@ -29,10 +28,9 @@
 //! | the **disclosure block** (Block C) | `crate::panels::properties::disclose` |
 //!
 //! ★ The tool list is the only genuine subtraction, and it is the one he asked
-//! for by name. It is worth writing down that it was the *answer to a
-//! discoverability defect* — `panels::tool` existed because *"The feature
-//! works. He could not find it."* — and that removing it is his call to make
-//! and not this module's. What survives of that argument is the sentence on
+//! for by name. It answered a **discoverability** defect — `panels::tool`
+//! exists because *"The feature works. He could not find it."* — and removing
+//! it is his call to make and not this module's. What survives of that argument is the sentence on
 //! this strip: it is permanent chrome, it names what is armed at frame one with
 //! no clicks, and it cannot be closed, which is more than the panel could say.
 //!
@@ -51,16 +49,16 @@
 //!
 //! `CanvasTool::Select` **is** the resting state; putting a tool down returns
 //! to it. A *Put this tool down* button beside `Select` would be a control
-//! whose press changes nothing — `SHELL_LAYOUT_PROPOSAL.md` §3.3 caught the
-//! mock shipping exactly that — and R9 forbids a dead control. So the button
+//! whose press changes nothing, and R9 forbids a dead control. So the button
 //! appears when something is armed and is absent otherwise.
 //!
 //! ## ★★★ And the strip draws its sentence even when it cannot name the tool
 //!
 //! `OPERATOR_REQUESTS.md` **O66**. A `CanvasTool::Place` is armed from inside a
 //! dialog that then hides itself, so there is no ribbon control to name and
-//! [`command_for`] answers `None` — the old identity row was absent in exactly
-//! that case. But the *stage* line still drew, and its own comment says why:
+//! [`command_for`] answers `None`, so there is no identity row to draw in
+//! exactly that case. The *stage* line still draws, and its own comment says
+//! why:
 //! *"This one is the ONLY place the gesture and the way out are stated …
 //! Deleting this line would strand an operator who has forgotten what they
 //! armed."*
@@ -321,8 +319,8 @@ fn perimeter_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
 ///
 /// `OPERATOR_REQUESTS.md` O105 — *"selecting more points around a hole doesn't
 /// always get it to narrow down to the size of the hole."* An operator adding
-/// points to a fit is watching a number converge, and before this existed there
-/// was no number to watch: every correction was a commit and an undo.
+/// points to a fit is watching a number converge, and with no number to watch
+/// every correction is a commit and an undo.
 ///
 /// ★ **Radius or diameter follows the pick set's own display toggle**, so the
 /// number the strip shows is the number the placed dimension will show. A

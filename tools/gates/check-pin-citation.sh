@@ -4,113 +4,122 @@
 # must be the same forty characters.
 #
 # ===========================================================================
-# ★★★ WHY THIS GATE EXISTS
-# ===========================================================================
-#
-# Measured 2026-09-11, 22:55, while preparing the fifth release of the day.
-#
-# `FEATURES.md` is the document that ships to the operator. Its header opens
-# with a dated revision note naming the engine version and the exact commit
-# the build consumed:
-#
-#   **Updated:** 2026-09-11, evening (twenty-fourth revision — re-measured
-#   against the build about to ship, engine `pdfcer-core` v0.53.0, a git
-#   dependency on the local engine repository, pinned at `d2465f5` which is
-#   the tip of its `main`. …
-#
-# That header was written at 19:52. The pin moved to `01c4a10` at 22:01 and
-# was about to move again to `a431641`. **Nothing noticed, and nothing could
-# have**, because the number lives in one file and the fact lives in another:
-#
-#   - `Cargo.lock` holds the truth, as a `git+file:///D:/Dev/pdfcer?branch=main#<sha>`
-#     source line. It is rewritten by `cargo update`, silently and correctly.
-#   - `FEATURES.md` holds a hand-typed seven-character copy of it, made once,
-#     at the moment a human happened to look.
-#
-# ⇒ **The file that changed does not contain the number that went wrong.**
-# This is the eighth recorded instance in this repository of a verbatim
-# quotation of another artefact's state going stale invisibly, and the
-# previous seven were all corrected by hand after somebody noticed. A
-# correction that depends on noticing is not a correction; it is luck with a
-# commit message.
-#
-# It matters more here than in the general case for one specific reason:
-# **the pin in that header is a claim to the operator about what he is
-# running.** When he reports a defect, the first question is always *which
-# build and which engine pin* — and the answer he can reach for is the one in
-# the document that shipped beside the exe. A wrong answer there does not
-# merely mislead him; it misleads the next session reading his report.
-#
-# ===========================================================================
-# WHAT IT CHECKS
+# THE PROPERTY ASSERTED
 # ===========================================================================
 #
 #   1. `Cargo.lock` names exactly one `pdfcer?branch=main#<sha>` revision.
-#      Zero means the dependency shape changed (a path dependency, a
-#      different branch) and every assumption below is void — FAIL, loudly,
-#      rather than skip. More than one distinct sha would mean the three
-#      engine crates had diverged, which is its own defect.
+#      Zero means the dependency shape changed — a path dependency, a
+#      different branch — and every assumption below is void: that is a FAIL,
+#      loudly, rather than a skip. More than one distinct sha would mean the
+#      three engine crates had diverged, which is its own defect.
 #
-#   2. `FEATURES.md`'s **current** header — the FIRST line beginning
-#      `**Updated:**`, and only that one — names a pin, and it is a prefix
-#      of (or equal to) the locked sha. Later `**Updated:**` lines in that
-#      file are RETAINED HISTORY of earlier revisions and legitimately quote
-#      older pins; checking them would be checking that the past has not
-#      changed, which is both true and useless.
+#   2. `FEATURES.md`'s CURRENT header — the FIRST line beginning
+#      `**Updated:**`, and only that one — names a pin, and it is a prefix of
+#      the locked sha. Later `**Updated:**` lines are RETAINED HISTORY of
+#      earlier revisions and legitimately quote older pins; checking those
+#      would be checking that the past has not changed, which is both true
+#      and useless.
 #
 #   3. `RESUME.md`'s measured-state table carries an `| Engine pin |` row
-#      whose recorded value matches. That row prints its own re-measurement
-#      command in the adjacent cell, which is the right design and is exactly
-#      why the stale value in it is so convincing: a number sitting beside
-#      the command that would disprove it reads as having been measured.
+#      whose value matches — the FIRST backticked sha on the row, because the
+#      row's house style is value-then-explanation and the last sha on it is
+#      the one the pin moved away from.
+#
+# An ABSENT pin is not a pass. If a rewording drops the phrase, or the
+# document is not there at all, this gate FAILS and says so in those words. A
+# gate keyed on a name is discharged by prose that stops using the name, so
+# absence is red — never green, and never a skip.
 #
 # ===========================================================================
-# WHAT IT DELIBERATELY DOES NOT DO
+# WHY A HUMAN CANNOT HOLD IT
 # ===========================================================================
 #
-# It does not scan every markdown file for every hex string. Most of the
-# hashes in this repository are historical citations inside landed-feature
-# rows — `engine Pass 287.0 (a705d14)` — and those are records. A gate that
-# forced records to move would teach re-baselining, which is the failure mode
-# `check-engine-backlog.sh` already warns about in its own header.
+# The file that changes does not contain the number that goes wrong.
+# `Cargo.lock` holds the truth, as a `git+file:///…?branch=main#<sha>` source
+# line that cargo rewrites silently and correctly. `FEATURES.md` holds a
+# hand-typed seven-character copy of it, made once, at the moment somebody
+# happened to look. Nothing links the two, so there is no event at which the
+# copy becomes wrong — it simply is, some minutes later, and it reads exactly
+# as it did when it was right.
 #
-# ⚠ AND IT CANNOT SEE THE ONE HAZARD WORTH NAMING, so name it here.
+# The dependency is taken on a BRANCH with no `rev`, so cargo re-resolves it
+# opportunistically: the pin can move between two commands in one session with
+# nobody typing `cargo update`. A number transcribed in the evening can be
+# stale before the release it describes has finished building.
 #
-# `Cargo.lock` is this gate's oracle, and `Cargo.lock` is not stable between
-# two commands in the same session. `crates/pdfcer-gui/Cargo.toml` takes the
-# three engine crates as `{ git = …, branch = "main" }` — a BRANCH, with no
-# `rev` — and cargo re-resolves such a dependency opportunistically, without
-# anybody typing `cargo update`. That was measured on 2026-09-11: the lock
-# moved `d2465f5` → `f8f9a26` at 20:04 with no update command in the session's
-# history.
-#
-# So the strictly correct oracle is *the revision compiled into the exe*, and
-# what we have is *the revision the lock names now*. The two diverge in the
-# window between `cargo build` and this gate. That window is small, the gate
-# and `tools/package-portable.py`'s `locked_engine_rev` read the SAME source,
-# so `FEATURES.md` and `BUILD-INFO.txt` will at least agree with each other —
-# and a shipped pair that agree wrongly is a far smaller problem than a pair
-# that disagree. But if this gate ever demands an edit that surprises you,
-# **suspect the lock moved under the build** before editing the document:
-# re-run the build, then the gate, in that order.
-#
-# It also does not accept an ABSENT pin as a pass. If a future rewording
-# drops the phrase from the header, this gate FAILS and says so in those
-# words. A gate keyed on a name is discharged by prose that stops using the
-# name, and this repository has been bitten by that too: the remedy is that
-# absence is red, never green and never a skip.
+# And the copy is a claim to the operator about what he is running. When he
+# reports a defect, the first question is which build and which engine pin,
+# and the answer he can reach for is the one in the document that shipped
+# beside the exe. A wrong answer there does not merely mislead him; it
+# misleads the next session that reads his report.
 #
 # ===========================================================================
-# SELF-TEST
+# IT IS SILENT ON SUCCESS, SO IT IS NOT EVIDENCE UNTIL FALSIFIED
 # ===========================================================================
 #
-# `--self-test` copies the two documents to a scratch directory, sabotages
-# each in turn, and asserts the checker reports the sabotage. A checker that
-# has never been observed to fail is not evidence that the thing it checks is
-# healthy; it is evidence that it ran.
+# A passing run prints NOTHING and exits 0. A transcript showing this gate
+# green is therefore indistinguishable from a transcript of this gate doing
+# nothing whatever: an extractor whose pattern stopped matching, a checker
+# short-circuited by an early return, a document renamed out from under it —
+# each of those is also silent, and also exits 0. Silence is the output of
+# success and of total failure alike, and a reader cannot tell them apart.
 #
-# Exit status: 0 all citations agree with the lock · 1 a citation is stale,
-# missing, or the lock itself is not the shape this gate understands.
+# That is why `--self-test` is registered as a SECOND `run-all.sh` entry and
+# is not optional. It copies the documents to a scratch directory, sabotages
+# each in turn, and asserts the checker reports the sabotage; its output is
+# the only evidence in a green run that the instrument is connected to
+# anything at all. READ THE SELF-TEST'S LINES, NOT THIS GATE'S BLANK.
+#
+# To falsify it by hand, each of these must exit 1 and name the file:
+#
+#   * alter by one character the sha in `FEATURES.md`'s first `**Updated:**`
+#     line;
+#   * alter the first backticked sha in `RESUME.md`'s `| Engine pin |` row;
+#   * delete the pin phrase from that header entirely, or move the file away
+#     — absence must be red;
+#   * put two different engine revisions in `Cargo.lock`;
+#   * make `Cargo.lock` name no git-on-main engine source at all.
+#
+# `--self-test` does all five on copies in a scratch directory and leaves the
+# working tree untouched, which is the only form of falsification safe to run
+# in a tree carrying somebody else's uncommitted work.
+#
+# ===========================================================================
+# WHAT IT PROVABLY CANNOT SEE
+# ===========================================================================
+#
+#   * THE REVISION ACTUALLY COMPILED INTO THE EXE. Its oracle is the revision
+#     the lock names NOW, and the two diverge in the window between
+#     `cargo build` and this run. The window is small, and this gate and
+#     `tools/package-portable.py`'s `locked_engine_rev` read the SAME source,
+#     so the shipped documents will at least agree with each other — a pair
+#     that agree wrongly is a far smaller problem than a pair that disagree.
+#     But if this gate ever demands an edit that surprises you, SUSPECT THE
+#     LOCK MOVED UNDER THE BUILD before editing the document: re-run the
+#     build, then the gate, in that order.
+#   * Every other hex string in the repository. It does not scan markdown for
+#     hashes. Most of them are historical citations inside landed-feature rows
+#     — `engine Pass 287.0 (a705d14)` — and those are records. A gate that
+#     forced records to move would teach re-baselining, which is the failure
+#     mode `check-engine-backlog.sh` exists to resist.
+#   * Whether the pin is the RIGHT one. It checks that two places agree, not
+#     that the engine revision is the one anybody intended to ship.
+#   * Any citation outside the two sentences it aims at. A third document
+#     quoting the pin is outside its corpus entirely, and so is a header that
+#     names the pin in some other wording — the extractor matches one phrasing
+#     and nothing else.
+#
+# ===========================================================================
+# THE EXIT CONTRACT
+# ===========================================================================
+#
+#   0  every citation agrees with the lock — rendered as SILENCE, see above
+#   1  a citation is stale, a citation is absent, a named document is absent,
+#      or the lock is not the shape this gate understands
+#
+# There is no exit 2. Every input it needs is inside this repository, so there
+# is no "could not measure" state to distinguish: a missing document is a
+# missing citation, and a missing citation is a failure.
 
 set -u
 
@@ -211,17 +220,14 @@ cite_features() {
 # cosmetic. The row's house style is value-then-explanation:
 #
 #   | Engine pin | <re-measure command> | `3e73a02` -- moved from `d86cb19`
-#     at 09:40 today to take reply_G013 |
+#     at 09:40 today |
 #
-# so the last sha on the row is the one it moved AWAY from. A `tail -1` here
-# read that, and on 2026-09-13 it failed a row that was right.
-#
-# The direction of that error is why this carries a comment at all. `tail -1`
-# does not merely mis-read a narrating row -- it reads the pin a STALE row is
-# most likely to carry, so a row that had genuinely gone stale (old sha in the
-# value, new sha mentioned in the prose after it) would have passed. An
+# so the last sha on the row is the one the pin moved AWAY from. Reading the
+# last one does not merely mis-read a narrating row: it reads the sha a STALE
+# row is most likely to carry, so a row that had genuinely gone stale -- old
+# sha in the value, new sha mentioned in the prose after it -- would pass. An
 # assertion that both outcomes satisfy is not a measurement of which one
-# shipped. Self-test cases 7 and 8 below pin both directions.
+# shipped. Self-test cases 7 and 8 below hold both directions.
 #
 # `head -1` is safe against the command cell for a structural reason worth
 # stating: that cell holds ONE backticked span containing a shell command, and
@@ -327,8 +333,8 @@ self_test() {
     expect "an older revision header quoting an older pin is LEFT ALONE" 0 "$s6"
 
     # Case 7 -- the row NARRATES a move. Current pin first, superseded pin in
-    # the prose after it. Must stay quiet. This is the real row that failed on
-    # 2026-09-13 and it is the cheaper half of the pair.
+    # the prose after it. Must stay quiet: that is the shape a CORRECT row
+    # takes, and it is the cheaper half of the pair.
     local s7="$tmp/s7"; cp -r "$good" "$s7"
     printf '| Engine pin | `grep -m1 x Cargo.lock` | `abcdef1` -- moved from `0000000` at 09:40 today |\n' > "$s7/RESUME.md"
     expect "a row that narrates its own move is read at its CURRENT value" 0 "$s7"

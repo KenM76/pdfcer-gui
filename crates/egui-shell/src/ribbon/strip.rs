@@ -10,42 +10,40 @@
 //!        1               5           4                  2              3
 //! ```
 //!
-//! The fifth region — [`super::trailing`] — is the only one on this row that
-//! may be granted **nothing** when the row is narrow. See
+//! The trailing region — [`super::trailing`] — is the only one on this row
+//! that may be granted **nothing** when the row is narrow. See
 //! [`super::plan::plan_strip_row`]'s ★★ for why an optional extra is a
 //! different kind of claimant from a promise the interface has already made.
 //!
-//! # ★ The defect this module exists to retire
+//! # ★ The failure mode this module holds shut
 //!
 //! `MODES_AND_PANELS.md` Part 2, failure mode #8:
 //!
-//! > **Tab overflow has no escape** — past ~6 tabs the overflow *button
-//! > itself* gets hidden, leaving no route to the hidden tabs. → *The
-//! > overflow affordance is reserved space, never the first thing squeezed
-//! > out.*
+//! > Tab overflow with no escape: past a handful of tabs the overflow
+//! > *button itself* gets hidden, leaving no route to the hidden tabs. →
+//! > *The overflow affordance is reserved space, never the first thing
+//! > squeezed out.*
 //!
-//! [`super::band`] and [`super::plan`] made that unreachable **in the
-//! band**. The row above the band had the same defect and no cure, and it
-//! was worse, because the band's overflow menu at least reaches every
-//! group: the strip's hidden tabs could not be reached at all.
+//! [`super::band`] and [`super::plan`] answer that **in the band**. The row
+//! above the band needs its own answer, and needs it more, because the
+//! band's overflow menu at least reaches every group: a tab that falls off
+//! this row cannot be reached at all.
 //!
-//! What was there before was one right-to-left `Ui` with a left-to-right
-//! `Ui` nested in it (`tabs::with_right_island`). The mode selector was
-//! emitted first, from the right edge, and the QAT and tabs took the
-//! remainder — which is exactly the "reserve first" shape, and it still
-//! failed. Two reasons, and both are the same reason:
+//! Nesting a left-to-right `Ui` inside a right-to-left one does not answer
+//! it, even when the mode selector is emitted first, from the right edge,
+//! and the QAT and tabs take the remainder — which is exactly the "reserve
+//! first" shape. Two reasons, and both are the same reason:
 //!
 //! 1. **`egui` does not clip a `Ui`'s children to its `max_rect`.** A
 //!    widget that does not fit is still laid out, still allocated, still
 //!    given a `Response` and a `Rect`. It is simply painted where nobody
 //!    can see or click it. Nothing errors and nothing warns.
-//! 2. **Reserving the right island protects the right island.** Nothing
-//!    was reserved for the QAT, nothing was reserved for the tabs, and
-//!    nothing at all was reserved for a tab overflow affordance because
-//!    there was not one.
+//! 2. **Reserving the right island protects the right island**, and
+//!    nothing else: not the QAT, not the tabs, and not a tab overflow
+//!    affordance, which such a layout has nowhere to put.
 //!
-//! Measured against the synthetic proportional face of
-//! [`super::testfont`], with the two-control QAT and two tabs of the test
+//! What that produces, measured against the synthetic proportional face of
+//! [`super::testfont`] with the two-control QAT and two tabs of the test
 //! manifest:
 //!
 //! ```text
@@ -56,12 +54,13 @@
 //! ```
 //!
 //! At 180 pt the first QAT control starts at **x = −6** and neither tab is
-//! on screen. Every unit test passed, because with
-//! `egui = { default-features = false }` there is no font data, every
+//! on screen. ★ None of that is visible to a test that measures no text:
+//! with `egui = { default-features = false }` there is no font data, every
 //! galley measures ≈ 0, the row always fits, and the failure cannot be
-//! reproduced. See `D:\dev\rag\egui\` for both findings written up.
+//! reproduced at all — which is what [`super::testfont`] exists to fix. See
+//! `D:\dev\rag\egui\` for both findings written up.
 //!
-//! # The cure: plan the row, then draw into the plan
+//! # The answer: plan the row, then draw into the plan
 //!
 //! Nothing here nests layouts and hopes. The row is divided into three
 //! rectangles **before a single widget is emitted**, and each region is
@@ -70,8 +69,8 @@
 //! | Step | Function | What it decides |
 //! |---|---|---|
 //! | bounds | [`super::band::entitled_bounds`] | the row's true width — *not* `available_rect_before_wrap()` |
-//! | 1 & 2 | [`super::plan::plan_strip_row`] | QAT ← left, selector ← right, tabs ← the rest |
-//! | 3 & 4 | [`super::plan::plan_tab_strip`] | which tabs are drawn, which are in the menu, and the affordance's width |
+//! | 1–3 | [`super::plan::plan_strip_row`] | QAT ← left, then selector and trailing ← right, tabs ← the rest |
+//! | 4 & 5 | [`super::plan::plan_tab_strip`] | the affordance's width, then which tabs are drawn and which are in the menu |
 //!
 //! The reservation order is **the order of those two calls**, and it is
 //! not re-derivable anywhere else: [`render`] computes `row`, calls
@@ -80,7 +79,7 @@
 //! a region it was not given, because the drawing code is not laying out
 //! in that space.
 //!
-//! # ★ Four rules, and the disclosure each one carries
+//! # ★ The rules, and the disclosure each one carries
 //!
 //! Every degradation below is announced through [`crate::verify`], for the
 //! reason that channel exists: *a control that silently rendered at less

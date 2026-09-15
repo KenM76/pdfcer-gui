@@ -7,33 +7,31 @@
 //! **Ken, 2026-08-30:** *"I think pdfcer added support for several button
 //! features and protections for outgoing submits."*
 //!
-//! Half right, and the half that is right is this one. pdfcer cannot yet
-//! **author** a button action — that is still in the engine's planned list, and
-//! it is a policy decision rather than a missing verb. What it did ship is the
-//! **detection** side, and this shell was not asking.
+//! This module is the **detection** half of that. Authoring a button action is
+//! a separate capability the engine also ships — `EditSession::set_button_action`
+//! and `EditSession::button_action` — and no surface in this module writes
+//! anything; it only reports.
 //!
-//! ## ★★★ The engine's own account of why detection matters
+//! ## Why detection is a security-shaped question rather than an inventory
 //!
-//! `Pass 133.0`, in their words:
+//! `pdfcer_core::forms::scan_javascript` answers *"what would this document run
+//! in Acrobat/Reader?"*, and two properties of the answer decide how a shell may
+//! present it:
 //!
-//! > `scan_javascript` exists to answer *"what would this document run in
-//! > Acrobat/Reader?"* and it walked `/AA` **only** — but a widget's primary
-//! > action lives in `/A`, so a push button that submits a form to a web server
-//! > reported `js_network_actions=0` … **three surfaces, none disclosing it.**
-//! >
-//! > **The failure mode is what makes it urgent rather than merely incomplete:
-//! > a check that under-reports reads as a clean bill of health**, because
-//! > silence and safety are indistinguishable to the reader.
+//! - **A widget's primary action lives in `/A`, not `/AA`.** A scan that walks
+//!   only the additional-action dictionary misses the push button that submits a
+//!   form to a web server, and reports a network count of zero about it.
+//! - **`/Next` chaining makes a per-carrier scan unsafe rather than merely
+//!   incomplete.** An action dictionary may name a successor action, and those
+//!   may chain further, so a document can park a benign `/GoTo` where a scanner
+//!   looks and hang the `/SubmitForm` off its `/Next`. The engine's walk follows
+//!   the chain to a bounded depth; a shell that reimplemented the question over
+//!   one carrier would not.
 //!
-//! They then fixed it *from the carrier set rather than from the symptom* — 17
-//! carrier sites, 10 container types, 7 key names — including `/Next` chaining,
-//! which makes a per-carrier scan **unsafe rather than incomplete**: a document
-//! can put a benign `/GoTo` where a scanner looks and hang the `/SubmitForm` off
-//! its `/Next`.
-//!
-//! ⇒ And this shell called none of it. The engine could tell an operator that
-//! the drawing somebody just sent them will post data to a web server the
-//! moment they press a button, and nothing on screen said so.
+//! ⇒ **A check that under-reports reads as a clean bill of health**, because
+//! silence and safety are indistinguishable to the reader. That is the whole
+//! reason this shell asks the engine rather than inspecting annotations itself,
+//! and the reason [`ReachOut::truncated`] is disclosed rather than swallowed.
 //!
 //! ## What is disclosed, and what deliberately is not
 //!
@@ -52,23 +50,23 @@
 //!
 //! ★ **`scan_truncated` is disclosed too**, and it is the subtle one: it means
 //! the engine stopped walking. A truncated scan that reported *"nothing found"*
-//! would be exactly the clean-bill-of-health failure their note names, so when
-//! the walk gave up this says *"pdfcer could not finish checking"* rather than
-//! implying an all-clear.
+//! would be exactly the clean-bill-of-health failure above, so when the walk
+//! gave up this says *"pdfcer could not finish checking"* rather than implying
+//! an all-clear.
 //!
 //! ## ★★ Why it is a status line and not a dialog
 //!
-//! Because pdfcer **executes none of these**. NF4 is standing: actions are
-//! recognised and round-tripped, never run. So nothing is about to happen, and
-//! a modal that stopped the operator to say *"this document contains a submit
-//! button"* would be alarm without a decision attached — the operator cannot
-//! act on it at open time and the drawing is not doing anything.
+//! Because pdfcer **executes none of these**. The engine's standing NF4 rule is
+//! that actions are recognised and round-tripped, never run. So nothing is about
+//! to happen, and a modal that stopped the operator to say *"this document
+//! contains a submit button"* would be alarm without a decision attached — the
+//! operator cannot act on it at open time and the drawing is not doing anything.
 //!
 //! What they can do is *know*, before they hand the file on or press a button
 //! in another viewer. That is a sentence, not a barrier.
 //!
-//! ★ Rule 4's shape exactly, one more time: **render normally, report
-//! separately.** Nothing is drawn on the page and no button is marked.
+//! ★ **Render normally, report separately.** Nothing is drawn on the page and
+//! no button is marked.
 
 use pdfcer_core::forms::FormJavaScript;
 
@@ -76,8 +74,11 @@ use pdfcer_core::forms::FormJavaScript;
 ///
 /// A struct rather than the engine's whole `FormJavaScript`, because this
 /// shell's question is narrower than the engine's: it asks *"does anything here
-/// leave the document?"*, and eleven of that type's sixteen fields answer a
-/// different question.
+/// leave the document?"*, and most of that type's fields answer a different one
+/// — how much of the document is click-activated, which triggers fired, how many
+/// field-level hooks there are. `FormJavaScript` is `#[non_exhaustive]` and
+/// grows; this projection is what keeps that growth from widening the
+/// disclosure by accident.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct ReachOut {
     /// Actions that can send data somewhere — `/SubmitForm`, `/URI`, and the
@@ -89,9 +90,10 @@ pub struct ReachOut {
     pub script_on_open: bool,
     /// The engine stopped walking before it finished.
     ///
-    /// ★★ Disclosed, never swallowed. A truncated scan reporting *"nothing
-    /// found"* is the clean-bill-of-health failure the engine's own note calls
-    /// the urgent one — silence and safety are indistinguishable to a reader.
+    /// ★★ Disclosed, never swallowed. A count of zero from a walk that stopped
+    /// early means *"nothing found so far"*, not *"nothing is there"*, and
+    /// presenting the first as the second is the clean-bill-of-health failure —
+    /// silence and safety are indistinguishable to a reader.
     pub truncated: bool,
 }
 

@@ -29,20 +29,20 @@
 //! one place rather than two, and a change to it cannot apply to one row
 //! and not the other.
 //!
-//! # The defect this file was written for
+//! # The defect this arithmetic exists to make impossible
 //!
 //! `MODES_AND_PANELS.md` Part 2's failure mode #8, one row above the band:
+//! past a handful of tabs the overflow affordance itself gets hidden and
+//! there is no route left to the tabs behind it.
 //!
-//! > **Tab overflow has no escape** — past ~6 tabs the overflow *button
-//! > itself* gets hidden, leaving no route to the hidden tabs.
-//!
-//! Before this existed the row had no arithmetic at all. The mode selector
-//! was emitted first from the right edge and everything else took what was
-//! left — which is the "reserve first" shape, and it still failed, because
-//! reserving the right island protects the right island and **`egui` does
-//! not clip a `Ui`'s children to its `max_rect`**. Measured against the
-//! synthetic proportional face of [`super::super::testfont`], with the
-//! two-control QAT and two tabs of the test manifest:
+//! Emitting the right-hand regions first and letting everything else take
+//! what is left is the "reserve first" shape and it is **not** sufficient,
+//! because reserving the right island protects only the right island and
+//! **`egui` does not clip a `Ui`'s children to its `max_rect`**. A region
+//! granted less width than its controls need does not draw a smaller
+//! control; it draws the same control over its neighbour. Measured without
+//! this module's floors, against the synthetic proportional face of
+//! [`super::super::testfont`] with a two-control QAT and two tabs:
 //!
 //! ```text
 //! window  QAT             tabs                selector      verdict
@@ -51,7 +51,7 @@
 //!  180   -6..160          182..259              2..180      both tabs off screen
 //! ```
 //!
-//! At 180 pt the first QAT control started at **x = −6**. Everything here
+//! At 180 pt the first QAT control starts at **x = −6**. Everything here
 //! is a pure function over `f32` for the reason [`super`]'s header gives:
 //! that is the only way the invariant can be tested without a window, and
 //! [`super::super::width_tests`] then asserts the same properties of the
@@ -88,10 +88,9 @@ pub(crate) struct RowDemand {
     /// Separate from [`Self::button_floor`] because a QAT control may
     /// carry an **icon slot**, which `truncate()` cannot shrink at all: a
     /// labelled control with a 16 pt icon bottoms out around 40 pt, not
-    /// 19.7. Granting the QAT the smaller figure produced exactly the
-    /// defect the floors exist to prevent — the region was 21.5 pt wide,
-    /// the control was drawn 39.7 pt wide, and it landed on top of the
-    /// first tab.
+    /// 19.7. Granting the QAT the smaller figure produces exactly the defect
+    /// the floors exist to prevent — measured, a 21.5 pt region holding a
+    /// control drawn 39.7 pt wide, on top of the first tab.
     pub qat_floor: f32,
     /// The mode selector's natural track width, from
     /// [`super::super::mode_selector::measure_track`].
@@ -104,7 +103,7 @@ pub(crate) struct RowDemand {
     ///
     /// Held back from the **QAT's** share rather than merely clamped
     /// afterwards, which is what stops a wide QAT compressing the selector
-    /// to a sliver. Without it a 166 pt QAT in a 180 pt row left the
+    /// to a sliver. Without it a 166 pt QAT in a 180 pt row leaves a
     /// three-position selector 19.7 pt — 6.6 pt per position.
     pub selector_floor: f32,
     /// What the tab area needs to keep both its promises: a pinned tab
@@ -204,9 +203,8 @@ pub(crate) struct RowPlan {
 /// function was written for. A QAT wider than the window, reserved first
 /// and unconditionally, leaves the tabs nothing at all — and `egui` does
 /// not clip children to a `Ui`'s `max_rect`, so "nothing at all" is not
-/// drawn as nothing: it is drawn *off the edge*. Requirement 4 of the S2
-/// clean-up states it directly: *"the QAT is not allowed to consume the
-/// strip."*
+/// drawn as nothing: it is drawn *off the edge*. The rule, stated directly:
+/// **the QAT is not allowed to consume the strip.**
 ///
 /// So each reservation is capped at *what leaves the regions after it
 /// their floors*:
@@ -227,9 +225,9 @@ pub(crate) struct RowPlan {
 ///
 /// # ★ `grant`: a sliver is worse than nothing
 ///
-/// The QAT goes through [`grant`] rather than a plain `min`, and that is
-/// the correction that made this function work rather than merely look
-/// right — see this module's header for the measurement.
+/// The QAT goes through [`grant`] rather than a plain `min`, because a
+/// `min` hands back a sliver and a sliver is a control drawn outside its own
+/// rectangle — see this module's header for the measurement.
 ///
 /// The **selector** is exempt, deliberately: its positions are painted
 /// rectangles rather than `egui::Button`s
@@ -396,10 +394,9 @@ impl StripPlan {
 /// *its* band. A strip that moved the active tab into the menu would leave
 /// the operator reading a band whose owner is invisible, with the strip
 /// showing a set of tabs none of which is current — which reads as "the
-/// ribbon has lost its selection", not as "the window is narrow".
-/// Requirement 2 of the S2 clean-up states it as a rule: *a strip that
-/// hides the tab you are looking at is worse than one that hides the
-/// others.*
+/// ribbon has lost its selection", not as "the window is narrow". The rule:
+/// *a strip that hides the tab you are looking at is worse than one that
+/// hides the others.*
 ///
 /// So the active tab's width is charged to the budget **before**
 /// [`plan_band`] measures anything else against the remainder. If it alone
@@ -408,8 +405,8 @@ impl StripPlan {
 /// applies here as everywhere else on this row: position is not
 /// negotiable, characters are.
 ///
-/// A **contextual** tab therefore needs no special case at all, which is
-/// requirement 3. [`super::super::tabs::visible_tabs`] appends contextual
+/// A **contextual** tab therefore needs no special case at all.
+/// [`super::super::tabs::visible_tabs`] appends contextual
 /// tabs last, so a contextual tab arriving into a full strip is simply the
 /// next thing the greedy fill cannot place: it goes into the menu like any
 /// other tab, it cannot displace the active one (that one is already paid
@@ -608,10 +605,9 @@ mod tests {
             selector_floor: selector.min(positions as f32 * FLOOR),
             tabs_floor: 2.0 * FLOOR + GAP,
             button_floor: FLOOR,
-            // No trailing region, which is the ordinary case: every existing
-            // assertion in this file is about a row that has none, and the
-            // arithmetic must be unchanged for it. `trailing_demand` below is
-            // the fixture for a row that has one.
+            // No trailing region, which is the ordinary case and the one
+            // most of this file's assertions are about. `trailing_demand`
+            // below is the fixture for a row that has one.
             trailing: 0.0,
             trailing_floor: 0.0,
         }
@@ -628,11 +624,11 @@ mod tests {
         }
     }
 
-    /// **★ Requirement 4: the QAT is not allowed to consume the strip.**
+    /// **★ The QAT is not allowed to consume the strip.**
     ///
-    /// The observed defect, measured against the synthetic face at a
-    /// 180 pt viewport, was a QAT running from x = −6 to x = 160 with both
-    /// tabs entirely off screen. The arithmetic form of "must be
+    /// Without the floors, measured against the synthetic face at a 180 pt
+    /// viewport, the QAT runs from x = −6 to x = 160 with both tabs
+    /// entirely off screen. The arithmetic form of "must be
     /// impossible" is this: **whatever the QAT asks for, the tabs are left
     /// something usable**, at every row width above zero.
     ///
@@ -787,7 +783,7 @@ mod tests {
     // The tabs within the tab area
     // -----------------------------------------------------------------
 
-    /// Five tabs of unequal width, the shape most of the strip tests want.
+    /// `n` tabs of unequal width, the shape most of the strip tests want.
     fn tabs(n: usize) -> Vec<f32> {
         (0..n).map(|i| 60.0 + i as f32 * 5.0).collect()
     }
@@ -801,7 +797,7 @@ mod tests {
     /// be drawn. Below it [`plan_tab_strip`] collapses — see its header.
     const BOTH: f32 = 2.0 * FLOOR + GAP;
 
-    /// **★ Requirement 2: the active tab is never in the overflow menu.**
+    /// **★ The active tab is never in the overflow menu.**
     ///
     /// The rule the whole pin exists for. A band may legitimately degrade
     /// to "no groups, one working affordance" because everything it hid is
@@ -929,12 +925,12 @@ mod tests {
         assert!(p.hidden.contains(&4), "{p:?}");
     }
 
-    /// **★ Requirement 3: a contextual tab arriving into a full strip goes
-    /// into the menu and does not displace the active one.**
+    /// **★ A contextual tab arriving into a full strip goes into the menu
+    /// and does not displace the active one.**
     ///
     /// [`super::super::tabs::visible_tabs`] appends contextual tabs last,
     /// so this is stated as "the tab that appeared at the end". Three
-    /// claims, and the middle one is the requirement:
+    /// claims, and the middle one is the rule:
     ///
     /// 1. Adding it does not change which *other* tabs are shown when the
     ///    strip was already full — the appearance of a Format tab must not
@@ -1062,9 +1058,9 @@ mod tests {
     /// **★ Below the collapse width the strip becomes the affordance, and
     /// the affordance reaches every tab — the active one included.**
     ///
-    /// The one place requirement 2's pin is deliberately given up, and the
-    /// reasoning is in [`plan_tab_strip`]'s header: the alternative is one
-    /// visible tab and no route at all to the other six, which is failure
+    /// The one place the pin is deliberately given up, and the reasoning is
+    /// in [`plan_tab_strip`]'s header: the alternative is one visible tab
+    /// and no route at all to any of the others, which is failure
     /// mode #8 in its original form. Reachability wins over pinning
     /// because an unreachable tab is a lost capability and a hidden active
     /// tab is a confusing one.
@@ -1182,10 +1178,10 @@ mod tests {
 
     /// **★ A row with no trailing region is arithmetically unchanged.**
     ///
-    /// The first thing to establish about a new claimant on a shared budget:
-    /// it costs nothing when it is not there. Every other assertion in this
-    /// file was written against the three-region row, and if adding a fourth
-    /// moved any of them the fourth is wrong rather than the third.
+    /// The first thing a claimant on a shared budget owes the others: it
+    /// costs nothing when it is not there. Every other assertion in this
+    /// file is about the three-region row, so if the fourth region's
+    /// arithmetic moves any of them, the fourth is the one that is wrong.
     #[test]
     fn a_row_with_no_trailing_region_divides_exactly_as_it_did_before() {
         for row in (1..600).map(|r| r as f32) {
@@ -1207,9 +1203,9 @@ mod tests {
     /// **★★ The trailing region never eats the selector, the QAT or the tabs'
     /// floor — at any width.**
     ///
-    /// This is `the_qat_is_not_allowed_to_consume_the_strip` restated for the
-    /// new claimant, and it is the assertion that makes reserving a fourth
-    /// region safe. A trailing control four times wider than the whole window
+    /// `no_reservation_may_leave_the_tabs_with_nothing` restated for the
+    /// fourth claimant, and the assertion that makes reserving one safe.
+    /// A trailing control four times wider than the whole window
     /// must still leave every load-bearing region what it had; the only thing
     /// that may give is the trailing region itself.
     #[test]

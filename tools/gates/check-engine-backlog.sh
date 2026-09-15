@@ -4,75 +4,57 @@
 # SHELL DOES NOT OWES A WRITTEN VERDICT.
 #
 # ---------------------------------------------------------------------------
-# ★★★ WHY THIS GATE EXISTS, and the day that bought it
+# THE PROPERTY ASSERTED
 # ---------------------------------------------------------------------------
 #
-# On 2026-09-03 the operator asked the ENGINE session for PNG / JPEG / SVG
-# export and for copy-paste of vector graphics into Word and Inkscape. The
-# engine shipped all of it that day, across four passes, and sent a note —
-# "here is what a shell wires" — carrying the call for every capability, a
-# clipboard format order validated against a real Word paste, and a worked
-# example.
-#
-# **This shell built none of it and had no ticket for it.** The note landed in
-# `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\` marked "informational,
-# no reply needed; consume when convenient", and was found a day later only
-# because a session read that folder looking for something else.
-#
-# The same morning two new engine verbs — `set_encryption` and
-# `set_permissions` — arrived with NO note at all. Those were caught
-# IMMEDIATELY, by `tools/gates/check-verb-coverage.sh`, because that gate reads
-# the engine's API and fails when this shell names none of it.
-#
-# ⇒ ★★★ **A capability announced in an API has a gate. A capability announced
-#   in prose has none.** That asymmetry is the defect this gate closes, and it
-#   is the fifth time this project has recorded the same shape:
-#
-#     * `EDITABLE_SURFACES.md` §"The sweep found…" — three of the first four
-#       gaps were capabilities the engine shipped BECAUSE this shell asked, and
-#       then never consumed. "A reply arriving is not a capability landing."
-#     * `check-string-gaps.sh` — a catalogued string that reaches no rectangle.
-#     * `check-verb-coverage.sh` — a verb the engine implements that nothing
-#       here names.
-#     * O119's own row — "it is the fourth time: this landed with no note and
-#       no announcement, and the only thing that made a noise was that gate."
-#     * This.
-#
-# ---------------------------------------------------------------------------
-# WHAT IT ASSERTS
-# ---------------------------------------------------------------------------
-#
-# `D:\Dev\pdfcer\docs\FEATURES.md` is a table whose first four columns are
+# The engine's `docs/FEATURES.md` is a table whose first four columns are
 # `core | cli | gui | Acrobat`. A row reading `[x]` under `core` and `[ ]`
 # under `gui` is the engine stating, in a machine-readable place, that it has
 # something this shell does not.
 #
-#     For every such row, `ENGINE_BACKLOG.md` must carry an entry whose
-#     first table cell opens with the same words the row opens with.
+#     For every such row, `ENGINE_BACKLOG.md` carries an entry whose first
+#     table cell opens with the same words the row opens with.
 #
 # That is the whole rule, and — exactly like `check-verb-coverage.sh` — it is
 # deliberately weak in one direction and strong in the other:
 #
-#   * **Weak**: it does not judge the verdict. An entry saying `declined`
-#     because somebody could not be bothered passes. This gate cannot read
-#     English and must not pretend to.
-#   * **Strong**: a capability that appears in the engine's table and is
-#     discussed NOWHERE fails the build on the first `git pull` in the engine's
-#     checkout that brings it. Somebody has to look at it and write a sentence
-#     — which is the entire mechanism, and is exactly what did not happen on
-#     2026-09-03.
+#   * Weak: it does not judge the verdict. An entry saying `declined` because
+#     nobody could be bothered passes. This gate cannot read English and must
+#     not pretend to.
+#   * Strong: a capability that appears in the engine's table and is discussed
+#     NOWHERE fails the build on the first `git pull` in the engine checkout
+#     that brings it. Somebody has to look at it and write a sentence, which is
+#     the entire mechanism.
 #
-# ★★ The failure is therefore not "you have a gap". It is **"the engine has
-# said it has something you do not, and nobody here has said anything about
-# it"**, which is a different and much more actionable statement.
+# So the failure is not "you have a gap". It is "the engine has said it has
+# something you do not, and nobody here has said anything about it", which is a
+# different and much more actionable statement.
 #
 # ---------------------------------------------------------------------------
-# ★★★ THE ROW KEY, AND WHY IT SURVIVES REWORDING
+# WHY A HUMAN CANNOT HOLD IT
+# ---------------------------------------------------------------------------
+#
+# A capability announced in an API has a gate. A capability announced in PROSE
+# has none. New engine verbs are caught the same morning they land, by
+# `check-verb-coverage.sh`, because that gate is keyed on the engine's API. A
+# whole subsystem announced instead in a note — "here is what a shell wires",
+# marked informational, no reply needed, consume when convenient — trips
+# nothing at all, and is found days later only because somebody happened to
+# read the folder looking for something else.
+#
+# The asymmetry is structural. The document that changed is in the other
+# repository; it reaches this one as a `git pull` in a checkout nobody diffs,
+# so there is no moment here at which a person is looking at the new row. And
+# the announcement's own courtesy removes the last human prompt there was: a
+# note that asks for no reply gets none.
+#
+# ---------------------------------------------------------------------------
+# THE ROW KEY, AND WHY IT SURVIVES REWORDING
 # ---------------------------------------------------------------------------
 #
 # A gate that re-keys on every prose tweak teaches people to re-baseline it,
-# and a gate people re-baseline is a gate that has stopped measuring. So the
-# key is chosen against the way this particular file actually churns.
+# and a gate people re-baseline has stopped measuring. So the key is chosen
+# against the way this particular file actually churns.
 #
 #   THE KEY IS THE ROW'S **OPENING CLAUSE**: the first six content words of
 #   the Feature cell — markdown stripped, punctuation stripped, lower-cased,
@@ -84,39 +66,39 @@
 # Every part of that is a decision, and each one was measured against the real
 # file rather than assumed:
 #
-# ★ **Why not the whole description.** The churn in `FEATURES.md` is ALL in
-#   the tail. A row is written as a capability statement and then grows
+# ★ **Why not the whole description.** The churn in the engine's table is ALL
+#   in the tail. A row is written as a capability statement and then grows
 #   measurements, Pass IDs, corrections, `Acrobat` comparisons and a closing
-#   "**Not reachable in `pdfcer-gui`** — …" sentence that is rewritten every
-#   time either project moves. The longest target row is **12,043 characters**;
-#   a second is 8,708. Any key over the whole cell churns weekly, on rows whose
-#   capability has not changed at all. The engine's own header even says the
-#   tail is volatile: *"When a row changes, **replace** the sentence — never
-#   append a note to it."*
+#   "not reachable in the GUI" sentence that is rewritten every time either
+#   project moves. Target rows run to a couple of thousand characters, nearly
+#   all of it tail, so any key over the whole cell churns weekly on rows whose
+#   capability has not changed at all. The engine's own header says the tail is
+#   volatile: when a row changes, REPLACE the sentence rather than append to it.
 #
-# ★ **Why not the section heading.** Rows MOVE between sections. One of the
-#   rows this gate reads records, in its own prose, being "moved here from
-#   *Planned* this filing". A section-qualified key would go red on a filing
-#   that changed nothing about the capability, which is the worst kind of
-#   false positive: correct-looking, and about nothing.
+# ★ **Why not the section heading.** Rows MOVE between sections, and some
+#   record the move in their own prose. A section-qualified key would go red on
+#   a filing that changed nothing about the capability, which is the worst kind
+#   of false positive: correct-looking, and about nothing.
 #
 # ★ **Why not the backticked API symbol.** Not every row has one — "Reflow
 #   within a block, including justified alignment." names no symbol at all, and
 #   "Set a page's size (`/MediaBox`)" names a PDF key rather than a verb. And
-#   the symbols themselves get rewritten in bulk: `Pass 247.1` mechanically
-#   renamed `pdfceGUI` → `pdfcer-gui` across the whole file in one filing.  # old-name-exempt: a note about a rename must spell the name that was renamed
+#   the symbols themselves get rewritten in bulk: one filing can mechanically
+#   rename this project across every row of the file at once.
 #
-# ★ **Why SIX words.** Measured on the 90 live rows: at four content words two
-#   rows COLLIDE (`cut-copy-paste-whole`, once for PAGES and once for a
-#   BOOKMARK SUBTREE). At five, all 90 are unique. Six is five plus one word of
-#   margin against a future collision — and it stops there, because every extra
-#   word is one more chance to churn. The gate FAILS on a collision rather than
-#   silently accepting one entry for two rows.
+# ★ **Why SIX words.** Measured against the live target rows: at three content
+#   words two rows COLLIDE; at four and above, none do. Six is the first count
+#   carrying two words of margin against a future collision — and it stops
+#   there, because every extra word is one more chance to churn. The gate FAILS
+#   on a collision rather than silently accepting one entry for two rows, and
+#   says to raise `KEYWORDS` by one and re-measure, which is the only correct
+#   response.
 #
 # ★ **Why a stopword list at all.** So that "Split a document" and "Split the
-#   document" are the same key. The list is fixed in this file (`STOPWORDS`
-#   below) and **must not be edited casually**: changing it re-keys all 90 rows
-#   at once, and a re-key is indistinguishable from 90 new capabilities.
+#   document" key alike. The list is fixed in this file (`STOPWORDS` below) and
+#   **must not be edited casually**: changing it re-keys every row at once, and
+#   a wholesale re-key is indistinguishable from a wholesale arrival of new
+#   capabilities.
 #
 # ⇒ **The key is not claimed to be churn-proof.** A row whose opening clause is
 # genuinely rewritten WILL go red, and that is correct — a capability that got
@@ -127,24 +109,23 @@
 # sharing its first three words. That is the reworded case, named.
 #
 # ---------------------------------------------------------------------------
-# ★★ PARSING, DEFENSIVELY — the table is not as simple as it looks
+# PARSING, DEFENSIVELY — the table is not as simple as it looks
 # ---------------------------------------------------------------------------
 #
 #   * Five columns, of which four are the checkbox columns; the fifth is prose.
-#   * The prose contains `|` — always escaped as `\|`, inside backticks
+#   * The prose contains `|` — always escaped as `\|`, usually inside backticks
 #     (`edit-text --target auto\|page\|form:N`). Splitting naively on `|`
 #     **truncates the cell at the first escaped pipe**, so `\|` is swapped for
 #     a sentinel byte before the split and back after it.
 #
-#     ★ Being precise about the hazard, because the first draft of this comment
-#     overstated it and the self-test then asserted the wrong thing: an escaped
-#     pipe in a row's PROSE cannot shift the four checkbox columns, because it
-#     is always *after* them — the row is still measured and, if the pipe falls
-#     past the sixth content word, still keyed identically. **The hazard is a
-#     pipe INSIDE the first six content words**, of a feature row or of a
-#     register label, where a naive split truncates the key and turns a
-#     correctly-filed row into a false failure. The self-test plants exactly
-#     that shape, on an ACCOUNTED row, and asserts it is not reported.
+#     Be precise about the hazard: an escaped pipe in a row's PROSE cannot
+#     shift the four checkbox columns, because it is always *after* them — the
+#     row is still measured and, if the pipe falls past the sixth content word,
+#     still keyed identically. **The hazard is a pipe INSIDE the first six
+#     content words**, of a feature row or of a register label, where a naive
+#     split truncates the key and turns a correctly-filed row into a false
+#     failure. The self-test plants exactly that shape, on an ACCOUNTED row,
+#     and asserts it is not reported.
 #   * The checkbox columns carry `[x]`, `[ ]`, `—`, `◐` and (in *Planned*) `?`.
 #     Only `[x]` in `core` AND `[ ]` in `gui` is a target; every other
 #     combination — including `◐` in `gui`, which is a partial and NOT a gap —
@@ -152,8 +133,8 @@
 #     legend exists to prevent, and this gate does not make it.
 #   * Header (`| core | cli | gui | …`) and separator (`|:----:|…`) rows fall
 #     out for free: neither has `[x]` in its first column.
-#   * The whole file is read, not just *Implemented* — three target rows live
-#     under *Planned*, and they are the export rows O120 is about.
+#   * The whole file is read, not just *Implemented*, so that a target row
+#     filed under *Planned* is measured wherever it happens to sit.
 #
 # ---------------------------------------------------------------------------
 # WHERE THE ENGINE IS, AND WHY IT IS NOT A LITERAL
@@ -163,34 +144,60 @@
 # same answer Cargo itself resolved, and the same rule `tools/engine_path.py`
 # was written to enforce after a hard-coded path survived a rename and made a
 # gate report `PASS` having examined nothing. **A check that cannot fail is not
-# evidence**, so every unreadable-input case below SKIPs loudly instead.
+# evidence**, so every unreadable-input case below announces itself loudly.
 #
-# ★ It reads the engine's **working tree**, not the revision `Cargo.lock` pins
-# — deliberately, and the opposite choice to `verb-coverage.py`'s. That tool
-# asks "could this shell CALL this?", where the lock is the only honest answer.
-# This one asks "has the engine SAID it has something we do not?", and a
-# statement in a document is made when it is written, not when it is pinned.
+# It reads the engine's **working tree**, not the revision `Cargo.lock` pins —
+# deliberately, and the opposite choice to `verb-coverage.py`'s. That tool asks
+# "could this shell CALL this?", where the lock is the only honest answer. This
+# one asks "has the engine SAID it has something we do not?", and a statement
+# in a document is made when it is written, not when it is pinned.
 #
 # ---------------------------------------------------------------------------
-# USAGE
+# WHAT IT PROVABLY CANNOT SEE
+# ---------------------------------------------------------------------------
+#
+#   * Whether a verdict is true, current, or honest. `declined` discharges a
+#     row exactly as completely as a worked plan does.
+#   * A capability the engine has and its own table does not list. The table is
+#     the oracle; anything outside it is outside this gate.
+#   * A row whose boxes are wrong — `[ ]` under `gui` for something already
+#     wired, or `[x]` under `core` for something the engine only intends. It
+#     reads the boxes; it never reads either program.
+#   * Which of the two causes an unaccounted key has. It can name the near-miss
+#     and nothing more; the judgement is a person's.
+#   * A register entry matching no row. That is a NOTE, never a failure: the
+#     register deliberately keeps an entry after its row is discharged, because
+#     the argument is the valuable part.
+#   * Its own inputs having gone unreadable — see the exit contract below,
+#     where that is currently indistinguishable from a pass.
+#
+# ---------------------------------------------------------------------------
+# USAGE, THE EXIT CONTRACT, AND HOW TO FALSIFY IT
 # ---------------------------------------------------------------------------
 #   tools/gates/check-engine-backlog.sh              measure
 #   tools/gates/check-engine-backlog.sh --self-test  prove it can fail
 #
-# EXIT CODES
 #   0  every `[x] core / [ ] gui` row is accounted for in `ENGINE_BACKLOG.md`
-#      (or an input was unreadable, which SKIPs — see below)
-#   1  at least one row is accounted for nowhere, or a key collided, or the
-#      self-test did not detect its plant
+#   1  at least one row is accounted for nowhere, or two rows share one key, or
+#      the self-test did not detect its plant
 #
-# ★ SKIPs rather than fails when the engine checkout, the manifest or the
-# register is unreadable, and says so loudly. The word SKIP in the output is
-# the signal; `run-all.sh` counts them separately from passes.
+# THERE IS NO EXIT 2, AND THERE SHOULD BE. Every unreadable-input path below
+# prints the word SKIP and then exits 0 — missing register, a manifest naming
+# no engine, an unreadable feature table, no awk — and `report`'s own "nothing
+# parsed" return of 2 is converted to `exit 0` as well. `run-all.sh` classifies
+# purely by exit code (0 pass, 2 skip, anything else fail), so every one of
+# those lands in the PASSED column with the word SKIP surviving only in the
+# scrollback. That contradicts the rule this gate's own prose states: a check
+# which cannot fail is not evidence, and an unmeasured run counted as a pass is
+# exactly that. Correcting it means changing those `exit 0`s to `exit 2`, which
+# is a code change and not something a comment can do.
 #
-# ★★ NOT YET REGISTERED in `run-all.sh` — another track owns that file as this
-# is written, and it is registered at reconciliation. Until then: run it
-# standalone. A gate nobody runs is a gate that does not exist, which is the
-# whole lesson above.
+# To falsify: copy `ENGINE_BACKLOG.md`, delete one entry row from the copy, and
+# point `PDFCER_ENGINE_BACKLOG` at it — the matching capability must be named
+# and the exit must be 1. Delete the same row's near-neighbours too and the
+# near-miss hint must disappear while the failure stays. The override exists so
+# that falsifying this gate never needs a `git checkout`, which in a tree
+# carrying other sessions' uncommitted work is not a safe thing to reach for.
 # ===========================================================================
 set -uo pipefail
 

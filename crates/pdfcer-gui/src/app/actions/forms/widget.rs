@@ -7,14 +7,13 @@
 //! the field — which is why every function here takes a widget INDEX and why
 //! each reports how many siblings it left alone.
 //!
-//! Split out of `super` under R2 on 2026-08-30, when rotation took that file
-//! past 1,500 lines.
+//! Its own file under **R2**, along that seam rather than at a line count.
 
 use crate::app::state::OpenDoc;
 
 /// **Turn one of a field's boxes.**
 ///
-/// # ★★ What the engine may not be able to do, and why it says so
+/// # What the engine may not be able to do, and why it says so
 ///
 /// `WidgetRotation::appearance_stale` carries a reason when the widget's baked
 /// `/AP` could not be regenerated at the new angle. That is not a failure — the
@@ -22,7 +21,7 @@ use crate::app::state::OpenDoc;
 /// old orientation until something regenerates it, and an operator watching a
 /// box refuse to turn deserves the sentence rather than a mystery.
 ///
-/// ★ `siblings_untouched` is surfaced for the same reason `edit_widget`'s is: a
+/// `siblings_untouched` is surfaced for the same reason `edit_widget`'s is: a
 /// field with three boxes has three orientations, and turning one is a
 /// statement about one placement. Saying how many were left alone is what stops
 /// *"I rotated the field"* meaning two different things.

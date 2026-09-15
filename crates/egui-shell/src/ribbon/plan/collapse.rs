@@ -1,14 +1,17 @@
 //! # `ribbon::plan::collapse` — the compaction ladder
 //!
-//! **S5 and S3 of `RIBBON_SCALING.md`, as one mechanism.** When a band does not
+//! **The re-wrap and collapse rungs of `RIBBON_SCALING.md` §1's ladder, as one
+//! mechanism.** When a band does not
 //! fit, this decides how compact each group must be drawn — and in what order
 //! the compactions are applied — before anything is pushed into the overflow
 //! affordance at all.
 //!
 //! ## What Word actually does, measured rather than remembered
 //!
-//! The specification for this file is a series of photographs in
-//! `evidence/word-ribbon/`, taken at twelve window widths, because a ribbon's
+//! The specification for this file is a series of photographs taken at twelve
+//! window widths by `tools/word-ribbon-study.ps1` (`RIBBON_SCALING.md` §3 —
+//! the images themselves are build output and are not committed), because a
+//! ribbon's
 //! scaling rules are implemented inside the Office UI framework and exposed
 //! through no API — `Application.CommandBars` is the 2003 toolbar surface and
 //! says nothing about any of this. Four readings decide everything here:
@@ -27,16 +30,14 @@
 //!    rows at 1900 and three at 1000, the size stepper and the case/clear
 //!    controls dropping to a third row on the way.
 //!
-//!    ★★★ This file asserted the *opposite* for one day, and was corrected by
-//!    the operator on 2026-08-25 against evidence already committed to this
-//!    repository. The widths compared when the wrong claim was written were
-//!    1300 and 800 — and **by 800 the group has already collapsed**, so the
-//!    reflow between them appears in neither photograph. A twelve-frame series
-//!    was taken and three frames were read. *Sampling either side of a
-//!    transition and concluding there is no transition* is the shape of the
-//!    mistake; `D:/dev/rag/egui/` carries it as a finding, because it is
-//!    repeatable and it is not carelessness — the two endpoints agreeing is
-//!    exactly what makes the conclusion feel safe.
+//!    This is the reading the series is easiest to get backwards, and the way
+//!    to get it backwards is to read two frames out of the twelve. Compare
+//!    1300 with 800 and the reflow is in neither photograph, because by 800
+//!    the group has already collapsed. *Sampling either side of a transition
+//!    and concluding there is no transition* is the shape of that mistake;
+//!    `D:/dev/rag/egui/` carries it as a finding, because it is repeatable and
+//!    it is not carelessness — the two endpoints agreeing is exactly what
+//!    makes the conclusion feel safe.
 //!
 //! 2. **Re-wrapping comes before collapsing, and no group may decline it.**
 //!    Re-wrapping hides nothing: every control stays on the band, labelled.
@@ -55,14 +56,14 @@
 //!    that scrolled first would be hiding commands while the space to show
 //!    them, compacted, was still there.
 //!
-//! ## ★★★ The `plan_band` invariants, restated
+//! ## The `plan_band` invariants, restated
 //!
-//! `RIBBON_SCALING.md` names this stage's real cost: invariants that
-//! `super::plan_band` has held since it was written have to be re-stated for a
-//! world in which a group can **shrink** instead of vanishing.
+//! `RIBBON_SCALING.md` names this stage's real cost: `super::plan_band`'s
+//! invariants have to hold in a world where a group can **shrink** instead of
+//! vanishing.
 //!
-//! **`the_visible_groups_are_a_prefix_and_nothing_is_lost`.** Still true, and
-//! now says something stronger. The shown groups remain a prefix of the
+//! **`the_visible_groups_are_a_prefix_and_nothing_is_lost`.** True, and it
+//! says something stronger for it. The shown groups remain a prefix of the
 //! manifest order; what changes is that a group in that prefix may be present
 //! in a compacted form. Nothing is lost in any of them — a re-wrapped group
 //! draws every control, and a collapsed group's are all reachable through its
@@ -71,8 +72,8 @@
 //! many of the shown are compacted, and [`fit`] never changes `n`.
 //!
 //! **`widening_the_band_never_hides_a_group_that_was_visible`.** This is the
-//! one that needed real care, because the obvious implementation breaks it.
-//! Monotonicity now has **three** rungs and all must hold: widening never
+//! one that needs real care, because the obvious implementation breaks it.
+//! Monotonicity has **three** rungs and all must hold: widening never
 //! re-wraps a group that was natural, never collapses one that was re-wrapped,
 //! and never hides one that was visible in any form.
 //!
@@ -82,12 +83,11 @@
 //! of a group at width `w` is a pure function of `w`, it only ever moves back
 //! up the ladder as `w` grows, and there is no hysteresis to tune.
 //!
-//! ★ That is also why this is a free function over slices rather than a method
+//! That is also why this is a free function over slices rather than a method
 //! on something that remembers. **A layout that remembers what it did last
-//! frame is how a ribbon acquires a width at which it flickers**, and this
-//! project has already paid three times for a measurement fed back into a size
-//! — R128's zoom drift, the About window's creep, and the print dialog's
-//! runaway.
+//! frame is how a ribbon acquires a width at which it flickers** — a
+//! measurement fed back into the size that produced it, which is the loop R128
+//! forbids.
 
 /// How compact one group is being drawn.
 ///
@@ -100,7 +100,7 @@ pub(crate) enum State {
     Natural,
     /// Re-wrapped onto up to [`super::MAX_GROUP_ROWS`] rows, which is narrower.
     ///
-    /// ★ **Non-destructive**: every control is still drawn, still labelled,
+    /// **Non-destructive**: every control is still drawn, still labelled,
     /// still on the band. That is why this rung comes before collapsing and why
     /// no group is exempt from it.
     Rewrapped,
@@ -143,7 +143,7 @@ pub(crate) struct Candidate {
     /// Its rung on the collapse ladder, or `None` for a group that never
     /// collapses.
     ///
-    /// ★ This gates **collapsing only**. Every group re-wraps, including one
+    /// This gates **collapsing only**. Every group re-wraps, including one
     /// that declines to collapse: Word's Clipboard never collapses, and Font,
     /// which does, still re-wraps from two rows to three on the way there.
     /// Re-wrapping hides nothing, so there is nothing to decline.
@@ -162,7 +162,7 @@ impl Candidate {
 
     /// Whether advancing to `state` is worth anything at all.
     ///
-    /// ★ Measured, not assumed. A group whose three-row layout is no narrower
+    /// Measured, not assumed. A group whose three-row layout is no narrower
     /// than its natural one — anything with few enough items — would otherwise
     /// consume a rung of the ladder, change nothing, and make the band appear
     /// to stall at one width and jump at the next.
@@ -193,7 +193,7 @@ impl Candidate {
 ///    is left over goes to [`super::plan_band`] and its overflow affordance,
 ///    which was always going to be the last resort.
 ///
-/// ★ Each step re-measures rather than subtracting a precomputed saving,
+/// Each step re-measures rather than subtracting a precomputed saving,
 /// because the two are not the same once separators are involved, and the
 /// difference is exactly the kind of one-group-too-many error that shows up
 /// only at a single window width.
@@ -324,10 +324,10 @@ mod tests {
         );
     }
 
-    /// ★★★ **Re-wrapping is exhausted before anything collapses.**
+    /// **Re-wrapping is exhausted before anything collapses.**
     ///
-    /// The rung order is the whole of S5, and it is the property most likely to
-    /// be broken by a later "optimisation" that collapses the widest group
+    /// The rung order is the whole of the ladder, and it is the property most
+    /// likely to be broken by an "optimisation" that collapses the widest group
     /// first because that converges faster. It does converge faster and it is
     /// wrong: re-wrapping keeps every control on the band and collapsing hides
     /// them all, so five re-wraps beat one collapse however the arithmetic
@@ -363,8 +363,8 @@ mod tests {
         );
     }
 
-    /// ★★ **A group with no priority never collapses — but it still
-    /// re-wraps.** The Clipboard case, and the distinction S5 introduced.
+    /// **A group with no priority never collapses — but it still re-wraps.**
+    /// The Clipboard case, and the distinction between the two rungs.
     #[test]
     fn a_group_that_declines_to_collapse_still_rewraps() {
         let g = vec![
@@ -452,7 +452,7 @@ mod tests {
         assert_eq!(fit(&g, 120.0, 8.0), vec![State::Collapsed, State::Natural]);
     }
 
-    /// ★★★ **Widening never compacts further, on any rung.** The restated
+    /// **Widening never compacts further, on any rung.** The restated
     /// monotonicity invariant, swept rather than spot-checked.
     ///
     /// For every pair of adjacent widths, no group's state may move DOWN the
@@ -460,11 +460,10 @@ mod tests {
     /// planning from the previous frame's answer instead of from scratch —
     /// shows up here as a width at which some group compacts again.
     ///
-    /// ★ The sweep is one point at a time, deliberately, and this test is now
-    /// the project's standing example of why: the wrong claim about Word's
-    /// re-wrapping that S5 exists to correct was made by comparing exactly two
-    /// widths. Endpoints agreeing is not evidence about what happens between
-    /// them.
+    /// The sweep is one point at a time, deliberately. A claim about what
+    /// happens across a range that is checked at two widths is a claim about
+    /// two widths: endpoints agreeing is not evidence about what happens
+    /// between them.
     #[test]
     fn widening_the_band_never_compacts_a_group_further() {
         let g = trio();

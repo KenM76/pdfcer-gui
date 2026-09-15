@@ -43,9 +43,9 @@
 //! that is precisely why it was chosen over `deny` — so an `unsafe` block in
 //! the shell is not a lint to be quietened, it is a claim to be given up.
 //!
-//! `crates/native-window` already answered this question once, for four
-//! `user32` calls that make a dialog owned by its parent window. This crate is
-//! that answer applied one question further on, and it is deliberately built to
+//! `crates/native-window` already answers this question, for the `user32` calls
+//! that make a dialog owned by the window it belongs to. This crate is that
+//! answer applied one question further on, and it is deliberately built to
 //! the same shape: no dependencies, hand-written `extern` declarations copied
 //! from the SDK signatures, one `unsafe` block per call, and a `SAFETY` comment
 //! on each one naming the invariant it upholds.

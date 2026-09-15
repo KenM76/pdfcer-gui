@@ -10,16 +10,14 @@
 //! [`Capabilities`], and once per *mode change* to retire the things that
 //! would otherwise survive into a mode that forbids them.
 //!
-//! ## Why this is its own file
+//! ## Where this sits among its siblings
 //!
-//! Split from `app/mod.rs` when that file crossed the 1,500-line gate for the
-//! third time — the earlier splits produced `app/dispatch.rs` and
-//! `app/conditions.rs`. The seam is the same shape as both: `mod.rs` composes
-//! a frame, `dispatch.rs` answers *what does this verb do*, `conditions.rs`
-//! answers *what is true right now*, and this file answers *what is this mode
-//! allowed to do, and what has to be put down on the way in*.
+//! `mod.rs` composes a frame, `dispatch.rs` answers *what does this verb do*,
+//! `conditions.rs` answers *what is true right now*, and this file answers
+//! *what is this mode allowed to do, and what has to be put down on the way
+//! in*.
 //!
-//! ## ★ The two halves, and why neither is sufficient alone
+//! ## The two halves, and why neither is sufficient alone
 //!
 //! The gate is genuinely two mechanisms, and the reason is that a mode change
 //! is a moment while a capability is a state:
@@ -100,7 +98,7 @@ impl PdfcerApp {
     /// a no-op, and Read → Review leaves an armed Rectangle armed.
     pub(crate) fn on_mode_capabilities_changed(&mut self, ctx: &egui::Context) {
         let caps = self.capabilities();
-        // ★ Park it where a dock panel can read it. `crate::panels::tool` has
+        // Park it where a dock panel can read it. `crate::panels::tool` has
         // to answer "what does a press mean in this mode" and is handed no
         // `Capabilities` — see `canvas::tool::store_capabilities` for why this
         // is a park rather than a sixth parameter on `Panel::show`, and why it
@@ -114,7 +112,7 @@ impl PdfcerApp {
         let retired = crate::canvas::tool::retire_forbidden(ctx, caps);
         let mut cleared = false;
         let mut abandoned = false;
-        // ★ **The text selection is retired in the OTHER direction**, and that
+        // **The text selection is retired in the other direction**, and that
         // is the whole reason it needs its own line here rather than joining the
         // `!caps.edit_content` block below.
         //
@@ -144,7 +142,7 @@ impl PdfcerApp {
                 cleared = doc.selection.clear();
             }
         }
-        // ★ The ANNOTATION selection retires on its own capability, and the
+        // The *annotation* selection retires on its own capability, and the
         // separation is the point rather than an accident of ordering.
         //
         // A selected stamp is governed by `author_markup`, which **Review
@@ -209,7 +207,7 @@ mod tests {
         assert!(review.author_markup && review.author_measure);
     }
 
-    /// ★ **Entering Read drops a selection made in Edit.**
+    /// **Entering Read drops a selection made in Edit.**
     ///
     /// The defect this closes is not "Delete works in Read" — it is the
     /// *outline and eight resize handles* left on the page, which are visible
@@ -261,7 +259,7 @@ mod tests {
         assert!(doc.selection.is_empty());
     }
 
-    /// ★ **An armed markup tool does not survive into Read**, so the crosshair
+    /// **An armed markup tool does not survive into Read**, so the crosshair
     /// does not promise a gesture the canvas has decided not to give.
     #[test]
     fn entering_read_retires_an_armed_markup_tool() {
@@ -311,7 +309,7 @@ mod tests {
         );
     }
 
-    /// ★ **A `markup.*` command declines in a mode that does not author
+    /// **A `markup.*` command declines in a mode that does not author
     /// markup** — the belt to `retire_forbidden`'s braces, for an arming that
     /// happens while already in the mode.
     #[test]
@@ -343,11 +341,11 @@ mod tests {
     // Panel controls are toggles
     // ---------------------------------------------------------------
 
-    /// ★ **Pressing an open panel's control closes it** — operator
-    /// decision, 2026-08-14.
+    /// **Pressing an open panel's control closes it.**
     ///
-    /// Before this, `show_panel` was show-only, so the control for a panel
-    /// already on screen rendered *pressed* and did nothing.
+    /// The control is a toggle rather than a show. A show-only control for a
+    /// panel already on screen renders *pressed* and does nothing when pressed
+    /// — a visible control that is silently inert.
     #[test]
     fn a_panel_control_closes_a_panel_that_is_on_screen() {
         use crate::panels::Panel;
@@ -377,7 +375,7 @@ mod tests {
         assert!(app.dock.is_on_screen(&id), "the third press reopens it");
     }
 
-    /// ★ **A panel mounted but hidden behind a sibling tab is RAISED, not
+    /// **A panel mounted but hidden behind a sibling tab is raised, not
     /// closed.**
     ///
     /// The middle state, and the one that would be easy to get wrong. Getting

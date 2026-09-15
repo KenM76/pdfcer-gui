@@ -1,46 +1,40 @@
 //! # `dock::banner` — a permanent one-line strip above a side's columns
 //!
-//! ## What this is, in one sentence
-//!
 //! A caller-drawn horizontal strip that a dock side reserves off the top of
 //! its own rectangle, **before** the columns are laid out, so whatever the
 //! application draws there is on screen for as long as the side is — no tab
 //! to click, no stack to keep open, no panel that can be closed and lost.
 //!
-//! ## ★★★ Why it is dock CHROME and cannot be a panel
+//! ## Why it is dock chrome and cannot be a panel
 //!
-//! `SHELL_LAYOUT_PROPOSAL.md` §3.2 worked this out and the arithmetic is the
-//! whole argument. The strip an application wants here is one row —
-//! twenty-something points. A dock stack cannot be that:
+//! The arithmetic is the whole argument. The strip an application wants here
+//! is one row — twenty-something points. A dock stack cannot be that:
 //!
 //! * [`super::plan::MIN_STACK_HEIGHT`] is **80 pt**, and it is a *layout*
 //!   floor rather than only a drag floor: it is handed to
 //!   [`super::plan::resolve_spans`] when a column's stacks are measured, so a
 //!   stack asking for less is silently given more.
 //! * [`super::plan::TAB_BAR_HEIGHT`] is **24 pt** on its own, so a 28 pt
-//!   stack would be a tab bar with four points under it — which reads as a
-//!   rendering fault, which is exactly the reasoning `MIN_STACK_HEIGHT`'s own
-//!   doc comment gives for existing.
+//!   stack would be a tab bar with four points under it, which reads as a
+//!   rendering fault.
 //!
 //! So the strip is drawn **over** the side's rectangle rather than inside its
-//! column layout, in the same place and for the same reason as
-//! [`super::collapse`]'s chevron: *"Over rather than inside, because inserting
-//! it into the column layout would take height from a panel body on every
-//! frame — and it is dock chrome, not a panel's content."*
+//! column layout, for the same reason as [`super::collapse`]'s chevron:
+//! inserting it into the column layout would take height from a panel body on
+//! every frame, and it is dock chrome rather than a panel's content.
 //!
-//! ⚠ The one difference from the chevron, and it is deliberate: the chevron is
-//! painted over the columns and takes no space, while a banner **does** take
-//! its height off the top before the columns are resolved. A strip that
-//! overlapped the first stack's tab bar would be unclickable chrome sitting on
-//! top of clickable chrome, which is failure mode #1 (*never put a control
-//! under something that looks the same*) in miniature.
+//! The one difference from the chevron is deliberate: the chevron is painted
+//! over the columns and takes no space, while a banner **does** take its
+//! height off the top before the columns are resolved. A strip that overlapped
+//! the first stack's tab bar would be unclickable chrome sitting on top of
+//! clickable chrome — a control hidden under something that looks the same.
 //!
-//! ## ★★ R7 — this module must not learn what the application puts in it
+//! ## R7 — this module must not learn what the application puts in it
 //!
-//! `tools/gates/check-shell-purity.sh` forbids `egui-shell` naming anything
-//! from `pdfcer-*`. Everything here is a rectangle, a height and a closure.
-//! The banner does not know it is showing a tool status any more than
-//! [`super::tabs`] knows a panel shows a PDF: the caller draws, this module
+//! `tools/gates/check-shell-purity.sh` forbids `egui-shell` naming the
+//! application's crates. Everything here is a rectangle, a height and a
+//! closure. The banner does not know what is drawn into it any more than
+//! [`super::tabs`] knows what a panel holds: the caller draws, this module
 //! reserves.
 //!
 //! ## The height is negotiated, not obeyed
@@ -52,7 +46,7 @@
 //! |---|---|
 //! | at least [`MIN_HEIGHT`] | below one text row the strip is a coloured line an operator cannot read, which is a placeholder with a rectangle (R9) |
 //! | at most [`MAX_FRACTION`] of the side | a banner that could take half the dock would be a panel that cannot be closed, which is the one thing chrome must never become |
-//! | zero when the side is too short to give it | ★ **absent rather than squeezed**: a 4 pt strip publishes a rectangle and shows nothing, and a rectangle with nothing in it is precisely the shape that let three panels ship unreachable with every gate green |
+//! | zero when the side is too short to give it | **absent rather than squeezed**: a 4 pt strip publishes a rectangle and shows nothing, and a region that reads healthy while showing nothing is how a surface ships unreachable with every check green |
 //!
 //! The clamp is a pure function so the third row above is testable without a
 //! frame, which is the only way anybody would ever notice it.
@@ -67,9 +61,9 @@ use super::{Ctx, report};
 /// Called at most once per side per frame, with a [`egui::Ui`] whose
 /// `max_rect` **and clip rectangle** are the strip. The clip is the load
 /// bearing half: a caller that draws two rows into a one-row strip gets the
-/// second row clipped away rather than pushing the columns down, which is the
-/// content-driven-height feedback loop (pdfcer's R128) this crate is arranged
-/// to make unwritable.
+/// second row clipped away rather than pushing the columns down. Content that
+/// drives the height of the region containing it is a feedback loop this crate
+/// is arranged to make unwritable.
 pub type BannerHandler<'a> = dyn FnMut(&mut egui::Ui) + 'a;
 
 /// The least height a banner may be drawn at, in points.
@@ -93,14 +87,14 @@ pub const MAX_FRACTION: f32 = 0.25;
 /// seeing zero draws **nothing** — no rectangle is published and the columns
 /// get the whole side back.
 ///
-/// # ★ Why zero rather than [`MIN_HEIGHT`] when the side is short
+/// # Why zero rather than [`MIN_HEIGHT`] when the side is short
 ///
 /// Because the alternative is a strip that exists in the trace and not on the
-/// screen. `report::RectSink`'s header records what that costs on this
-/// project: Bookmarks, Layers and Signatures shipped **unreachable** with a
-/// rail entry and a perfectly healthy rectangle each. A banner squeezed into a
-/// side too short for both it and a panel would reproduce that exactly — the
-/// region publishes, the check goes green, and the operator sees a sliver.
+/// screen. A banner squeezed into a side too short for both it and a panel
+/// publishes a region, satisfies every reachability check, and shows the
+/// operator a sliver. A surface with a healthy rectangle and nothing legible
+/// in it is indistinguishable from a working one everywhere except the screen,
+/// so it is refused outright.
 #[must_use]
 pub fn resolve_height(requested: f32, side_height: f32) -> f32 {
     if !requested.is_finite() || !side_height.is_finite() {
@@ -165,11 +159,11 @@ impl<'a> super::Dock<'a> {
 /// height resolved to zero — so the no-banner path costs one comparison and
 /// changes no geometry, which is what keeps every existing layout test valid.
 ///
-/// # ★★ The region is published against the SIDE's `Ui`, not the child's
+/// # The region is published against the side's `Ui`, not the child's
 ///
-/// [`report::Reporter::report`]'s own doc states the rule and the reason:
-/// reporting a region against a clip derived from itself is *"the tautology
-/// `visible == 1.0` dressed up as a measurement"*. The question asked of
+/// [`report::Reporter::report`] owns the rule: a region reported against a
+/// clip derived from itself can only ever measure fully visible, which is a
+/// tautology rather than a measurement. The question asked of
 /// `dock.<side>.banner` is *can the operator see this strip*, and only the
 /// side's clip can answer it — in a window narrower than
 /// [`super::plan::MIN_SIDE_WIDTH`] the side is drawn at the floor and clipped,
@@ -199,7 +193,7 @@ pub(super) fn draw(
             .max_rect(strip)
             .layout(Layout::left_to_right(Align::Center)),
     );
-    // ★ The clip is set explicitly rather than inherited. A child `Ui` built
+    // The clip is set explicitly rather than inherited. A child `Ui` built
     // from `max_rect` alone keeps its parent's clip, so a caller drawing a
     // second row would paint it straight over the first stack's tab bar —
     // visible, unclickable, and indistinguishable in a screenshot from a
@@ -228,16 +222,16 @@ mod tests {
         assert!((resolve_height(26.0, 800.0) - 26.0).abs() < f32::EPSILON);
     }
 
-    /// ★ A greedy request is capped at a quarter of the side, so chrome can
+    /// A greedy request is capped at a quarter of the side, so chrome can
     /// never become the majority of the dock.
     #[test]
     fn a_greedy_request_is_capped_at_a_quarter_of_the_side() {
         assert!((resolve_height(10_000.0, 800.0) - 200.0).abs() < f32::EPSILON);
     }
 
-    /// ★★★ **A side too short for both a legible banner and a panel gets no
-    /// banner at all** — the case the module header argues is the whole point
-    /// of the clamp being a function.
+    /// A side too short for both a legible banner and a panel gets no banner
+    /// at all — the case the module header argues is the whole point of the
+    /// clamp being a pure function.
     #[test]
     fn a_short_side_keeps_its_room_and_publishes_nothing() {
         // A quarter of 60 pt is 15 pt, under the 18 pt floor.

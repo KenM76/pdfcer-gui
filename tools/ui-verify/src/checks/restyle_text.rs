@@ -3,14 +3,13 @@
 //!
 //! # What this is for
 //!
-//! O37 — *"We should also have all the font tools available that Word does"* —
-//! shipped on 2026-08-27, and every claim about it up to this check came from
-//! unit tests over the release engine. R1 is explicit that this is not a report
-//! of working software, and it is the founding rule of this project because two
-//! of the old shell's worst defects were invisible to a green suite and obvious
-//! within thirty seconds of using the program.
+//! O37 — *"We should also have all the font tools available that Word does"*.
+//! Without this check every claim about that feature rests on unit tests over
+//! the engine, and R1 is explicit that a green suite is not a report of working
+//! software: a defect can be invisible to every test and obvious within thirty
+//! seconds of using the program.
 //!
-//! ## ★★ The specific way this feature can pass its unit tests and be dead
+//! ## The specific way this feature can pass its unit tests and be dead
 //!
 //! `app::actions::textstyle` is tested against a document. It calls
 //! `format_text`, reads the file back, and asserts the size changed. **Every
@@ -27,31 +26,33 @@
 //! |---|---|---|
 //! | 1 | a sweep on the canvas produces a `TextSelection` | shared with `clipboard_text` |
 //! | 2 | `TextSelection::runs` answers with run ordinals | unit-tested |
-//! | 3 | the Properties panel draws a Text section for it | ★ **nothing** |
-//! | 4 | the section's read-back stamp does not wipe itself every frame | ★ **nothing** — a per-frame `sync`, and a stale stamp is invisible to a unit test |
-//! | 5 | Bold is on screen and clickable | ★ **nothing** |
+//! | 3 | the Properties panel draws a Text section for it | **nothing** |
+//! | 4 | the section's read-back stamp does not wipe itself every frame | **nothing** |
+//! | 5 | Bold is on screen and clickable | **nothing** |
 //! | 6 | the press reaches `format_text` | unit-tested, eight ways |
 //!
-//! Links 3, 4 and 5 have no other instrument. Link 4 is the one that would fail
+//! Links 3, 4 and 5 have no other instrument — link 4 because `sync` runs
+//! per frame and a stale stamp is invisible to a unit test. Link 4 is also the
+//! one that would fail
 //! most plausibly: `sync` runs every frame, and a stamp recomputed too eagerly
 //! re-reads the document between the operator's press and the button's read.
 //!
-//! ## ★★ There is a link 0, and this check spent a red run learning it
+//! ## There is a link 0, and this check spent a red run learning it
 //!
 //! **The panel has to be on screen before any of the six can be observed**, and
 //! the dock arrangement is *persisted per machine* — so it is not a constant
-//! this check may assume. Until 2026-08-29 it assumed it, found no
-//! `properties.text` region, and reported the panel as saying nothing about 266
-//! selected characters. The panel was not saying nothing; it was not there.
-//! [`INVOKE`] carries the fix and the evidence.
+//! this check may assume. A check that assumes it finds no `properties.text`
+//! region and reports the panel as saying nothing about the selection. The
+//! panel is not saying nothing; it is not there. [`INVOKE`] carries the
+//! mechanism and the evidence.
 //!
-//! ⇒ The general form, and it is worth stating because it will apply again:
+//! The general form, and it is worth stating because it will apply again:
 //! **a driven check must put the surface it is about on screen itself.** An
 //! arrangement that happens to be right on the machine the check was written on
 //! is not a precondition, it is a coincidence, and the failure it produces
 //! accuses the program of exactly the defect the check exists to find.
 //!
-//! # ★ Why Bold and not the size field
+//! # Why Bold and not the size field
 //!
 //! Because it is **one click on a button** and the size field is an
 //! `egui::DragValue`, which takes a number by double-click-then-type or by
@@ -75,7 +76,7 @@
 //! and asserting it alone would let a check pass on a build where some *other*
 //! verb wrote that label in the same window.
 //!
-//! ★ A `text-style-declined` is reported as a **failure with its reason**, not
+//! A `text-style-declined` is reported as a **failure with its reason**, not
 //! as a skip. A refusal here is the program answering, and the sentence it
 //! answers with is the thing worth reading — a `FaceLacksCharacters` on this
 //! fixture would mean the two-verb retry took the offer and the offer was bad,
@@ -94,7 +95,7 @@ use crate::report::CheckReport;
 const MODE: &str = "edit";
 /// The commands run at startup, in order, before this check touches anything.
 ///
-/// # ★★★ The Properties panel has to be ASKED FOR, and not asking for it cost
+/// # The Properties panel has to be ASKED FOR, and not asking for it cost
 /// a red run
 ///
 /// `file.properties` is the command that mounts and activates the Properties
@@ -107,10 +108,10 @@ const MODE: &str = "edit";
 /// > so the check does not have to know what dock layout the machine it runs
 /// > on happens to have persisted.
 ///
-/// This check did not, and on 2026-08-29 it failed with *"266 character(s) are
-/// selected and the Properties panel says nothing about them"*. Its own failure
-/// text named three candidates and **candidate (1) was the right one**. The
-/// trace settles it without ambiguity:
+/// Without it the check fails with *"266 character(s) are selected and the
+/// Properties panel says nothing about them"* and names three candidates, of
+/// which the first — the panel is not mounted — is the real one. A trace from
+/// that state settles it without ambiguity:
 ///
 /// | evidence | in `restyle-text.trace.txt` |
 /// |---|---|
@@ -118,18 +119,18 @@ const MODE: &str = "edit";
 /// | ten panel **tabs** were declared | none of them `dock.tab.file.properties` |
 /// | the Properties panel | **no tab, no body, and no `panel-shown` line** |
 ///
-/// So the section was not guarded out and the run did not fail to pin — there
-/// was no panel for `panels::properties::text::section` to draw into at all.
-/// Candidates (2) and (3) could not have been reached, and neither can be
-/// judged until this line exists.
+/// The section is then neither guarded out nor failing to pin — there is no
+/// panel for `panels::properties::text::section` to draw into at all, and the
+/// other two candidates cannot be reached, let alone judged, until this
+/// command has run.
 ///
-/// ★ `mode.edit` is first and is load-bearing: `dispatch`'s mode arm sets the
+/// `mode.edit` is first and is load-bearing: `dispatch`'s mode arm sets the
 /// ribbon mode and *"the dock follows on the same frame"*, so a panel mounted
 /// before the mode moved would be mounted into the workspace the check is about
 /// to leave. Ordering them here rather than clicking afterwards is what makes
 /// that impossible.
 ///
-/// ★★ The Edit-mode segment is still **clicked** below, and that is not
+/// The Edit-mode segment is still **clicked** below, and that is not
 /// redundant: `docks` compares `ribbon.mode()` against `modes.active()` and
 /// does nothing when they agree, so the click cannot disturb the panel, and it
 /// keeps the check driving the operator's own gesture rather than trusting an
@@ -142,7 +143,7 @@ const BOLD_REGION: &str = "properties.text.bold";
 /// The `text-style-applied page=… change=… applied=… of=…` line — this
 /// module's own summary of the whole gesture.
 ///
-/// ★ Named `-applied` rather than plain `text-style` because `vector_edit`'s
+/// Named `-applied` rather than plain `text-style` because `vector_edit`'s
 /// label for the same edit is a sibling event, and trace matching is on the
 /// exact event name. Two lines sharing a name is how a check reads the wrong
 /// one and then reports `applied=0` about a gesture that worked.
@@ -165,7 +166,7 @@ const SWEEP_PT: f64 = 60.0;
 const SCROLL_ATTEMPTS: usize = 6;
 /// `T`, as a Windows virtual key — the text-sweep tool.
 ///
-/// ★★ Pressing it is not optional, and the first run of this check is why.
+/// Pressing it is not optional, and the first run of this check is why.
 ///
 /// `textsel::gate::takes_the_press` reads
 /// `tool.is_text() || (Select && !caps.edit_content)`. In **Edit** the second
@@ -173,7 +174,7 @@ const SCROLL_ATTEMPTS: usize = 6;
 /// first run of this check produced `sel=1` on the trace and reported the panel
 /// as broken, when what had actually happened is that it never swept any text.
 ///
-/// ★ That is a discoverability finding about the product, not only about the
+/// That is a discoverability finding about the product, not only about the
 /// harness, and it is written up rather than absorbed: an operator who wants to
 /// restyle text in Edit mode has to know to arm a tool first, and nothing on
 /// screen tells them so.
@@ -206,10 +207,10 @@ impl Check for RestylingSelectedTextReachesTheDocument {
 /// Poll until the restyle reports one way or the other, and answer how long it
 /// took.
 ///
-/// ★ A bounded poll rather than a fixed sleep, for the reason `CONTINUE.md` §7
-/// gives about harness-owned failure modes: a fixed sleep long enough for the
-/// worst case makes every run slow, and one short enough to be pleasant fails
-/// on the operator's own drawings — which is where this check is aimed.
+/// A bounded poll rather than a fixed sleep. **A wait the harness owns is a
+/// failure mode the harness owns**: a sleep long enough for the worst case
+/// makes every run slow, and one short enough to be pleasant fails on the
+/// operator's own drawings — which is where this check is aimed.
 ///
 /// Returns the elapsed milliseconds. Reaching the ceiling is **not** an error
 /// here: the caller then reads a trace with neither line in it and reports the
@@ -239,14 +240,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
     //
-    // This check needs a click or a sweep that lands IN TEXT. On 2026-09-12
-    // it was handed the sweep's shared aim, which on `a1-titleblock.pdf`
-    // lands on a path - and that sheet is 2383.9 × 1683.8 pt carrying 123
-    // characters, so its tallest glyph is 2.4 screen pixels at fit zoom and
-    // no aim on it would have been reliable either. Sixteen checks reported
-    // sixteen plausible reasons for that one fact.
+    // This check needs a click or a sweep that lands IN TEXT, so it cannot
+    // take the sweep's shared aim: on `a1-titleblock.pdf` that lands on a
+    // path, and the sheet is 2383.9 × 1683.8 pt carrying 123 characters, so
+    // its tallest glyph is 2.4 screen pixels at fit zoom and no aim on it
+    // would be reliable either. **A fixture that cannot carry the gesture
+    // produces a plausible, different, wrong diagnosis in every check that
+    // uses it** — sixteen of them, for one fact.
     //
     // `fixture::text_point_target` holds the document, the point, and the
     // measurement behind both. Read its doc comment before changing either.
@@ -297,9 +299,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    // ★ See [`INVOKE`]: without this the Properties panel is only on screen if
-    // the machine happens to have persisted an arrangement containing it, and
-    // on 2026-08-29 it had not.
+    // See [`INVOKE`]: without this the Properties panel is only on screen if
+    // the machine happens to have persisted an arrangement containing it,
+    // which is a coincidence rather than a precondition.
     spec.env
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
@@ -333,7 +335,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         target.x + SWEEP_PT,
         target.y,
     ))?);
-    // ★ Arm the text-sweep tool FIRST — see `VK_T`'s own note. Without this the
+    // Arm the text-sweep tool FIRST — see `VK_T`'s own note. Without this the
     // drag below is an object marquee and the check reports a working panel as
     // broken.
     driver.press(VK_T)?;
@@ -364,7 +366,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: the section must be on screen ----------------------------------
     //
-    // ★ Link 3, and the first thing with no other instrument. `properties.text`
+    // Link 3, and the first thing with no other instrument. `properties.text`
     // is published with `ui_rect_visible`, so its absence means the section is
     // not merely un-drawn but not VISIBLE — which is the operator's own test.
     let trace = session.trace()?;
@@ -375,13 +377,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         if crate::capture::window_to_png(&session, &shot).is_ok() {
             report.artifact(shot);
         }
-        // ★★★ ASK THE APPLICATION WHY BEFORE GUESSING WHY.
+        // ASK THE APPLICATION WHY BEFORE GUESSING WHY.
         //
-        // On 2026-09-12 the candidate list below sent a reader at three
-        // correct functions. The section had drawn every control it owns and
-        // its own box had overflowed the dock, so `ui_rect_visible` declined
-        // to publish it and said nothing. `ui-rect-clipped` is that silence
-        // filled in, and this branch is the whole reason it exists.
+        // The candidate list below names three correct functions and none of
+        // them is the answer when the section drew every control it owns and
+        // its own box overflowed the dock: `ui_rect_visible` then declines to
+        // publish and says nothing. `ui-rect-clipped` is that silence filled
+        // in, and this branch is the whole reason it exists.
         if let Some(detail) = driving::clipped_away(&trace, ui_rect, SECTION_REGION) {
             return Ok(Some(format!(
                 "★ {swept} CHARACTER(S) ARE SELECTED AND THE TEXT SECTION DREW, BUT TOO \
@@ -461,7 +463,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let frame = session.frame()?;
     driver.click_at(frame.declared_center(bold))?;
 
-    // ★★ WAIT FOR THE GESTURE, do not guess at it. `settle(30)` — 750 ms — was
+    // WAIT FOR THE GESTURE, do not guess at it. `settle(30)` — 750 ms — was
     // the first shape here and it read the trace mid-restyle: the trace held
     // ELEVEN completed `format-text` lines and neither of this module's own
     // summary lines, so the check reported "Bold was pressed and nothing

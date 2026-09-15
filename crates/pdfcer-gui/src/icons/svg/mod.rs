@@ -5,21 +5,18 @@
 //! pixel** size. Nothing here knows what any icon means; it knows how to
 //! read a path `d` attribute and how to stroke it.
 //!
-//! Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\icons.rs` (Class A,
-//! `SALVAGE.md`). The doc comments below are carried across with their
-//! reasoning intact — every one of them records a decision that cost real
-//! investigation, and the ones about *refusing* rather than guessing are
-//! the reason a hand-rolled parser is safe to rely on at all.
+//! A hand-rolled parser is safe to rely on here only because of the rule the
+//! doc comments below keep restating: it **refuses** what it does not
+//! understand rather than guessing at it.
 //!
 //! This module is the **element scanner**: it walks tags, reads attributes,
 //! decides how a shape is painted, and rasterizes the result. The **path
 //! `d` grammar** — the lexer, the command state machine and the arc
-//! conversion — is [`path`], split out because it is a different subject
-//! that grows for different reasons (a new element touches only this file, a
-//! new path command touches only that one) and because together they were
-//! within a hundred lines of the 1,500-line limit.
+//! conversion — is [`path`], split out because it is a different subject that
+//! grows for different reasons: a new element touches only this file, a new
+//! path command touches only that one.
 //!
-//! ## ★ What the parser supports, and what it refuses
+//! ## What the parser supports, and what it refuses
 //!
 //! This is deliberately NOT a general SVG implementation. It reads exactly
 //! the shape of file the [`super::assets`] §3 style contract describes:
@@ -35,17 +32,14 @@
 //!   `stroke-linejoin`, `stroke-dasharray`. Unknown attributes are ignored
 //!   (they are cosmetic metadata like `aria-hidden`/`xmlns`).
 //!
-//!   ★★★ That sentence used to end **"never geometry"**, and on 2026-09-04 it
-//!   was found to be false — of exactly one attribute, and an important one.
-//!   `stroke-dasharray` is geometry, and ignoring it does not lose decoration:
-//!   it draws a **different, existing icon**. Six of sixty-five proposed
-//!   glyphs turned on it, and in every case the dash was the whole
-//!   distinction — `new-from-template` becomes `new-document`,
+//!   `stroke-dasharray` is the exception and is **parsed**, because it is
+//!   geometry: ignoring it does not lose decoration, it draws a **different,
+//!   existing icon** — `new-from-template` becomes `new-document`,
 //!   `unembed-fonts` becomes `embed-fonts`, `redact-selection` becomes
 //!   `redact`, `select-all` becomes a plain rectangle — while passing every
-//!   icon test this crate has. It is parsed now. **The lesson is the general
-//!   one: "ignored because cosmetic" is a claim about a list somebody wrote,
-//!   and the list grows.**
+//!   icon test this crate has. **Before adding an attribute to the ignored
+//!   list, establish that it cannot change what shape is drawn**; "cosmetic"
+//!   is a claim about a list somebody wrote, and the list grows.
 //! * **Paint:** `stroke="currentColor"` strokes; `stroke="none"`/absent does
 //!   not. `fill="currentColor"` fills; `fill="none"`/absent does not. The
 //!   colour VALUE is discarded — see "Theming" below — but its presence or
@@ -66,7 +60,7 @@
 //! Every failure mode returns an [`IconError`] carrying enough context to
 //! find the offending byte; nothing falls back to "draw something".
 //!
-//! ## ★ Theming: one raster per icon, tinted at draw time
+//! ## Theming: one raster per icon, tinted at draw time
 //!
 //! Every asset is `stroke="currentColor"` — a single-colour outline with no
 //! palette. So each icon is rasterized ONCE as a **white-on-transparent
@@ -262,17 +256,13 @@ struct Shape {
     /// The `stroke-dasharray` pattern, in viewBox units, or `None` for a solid
     /// stroke.
     ///
-    /// # ★★★ Why this is here at all, added 2026-09-04
+    /// # Why this is parsed when almost no other attribute is
     ///
-    /// This module's header said *"Unknown attributes are ignored (they are
-    /// cosmetic metadata like `aria-hidden`/`xmlns`, **never geometry**)."*
-    /// That sentence was true of every attribute the shipped set uses, and it
-    /// is **false of `stroke-dasharray`**, which is the most geometry-bearing
-    /// attribute in SVG short of `d` itself.
-    ///
-    /// It came up when 65 proposed glyphs were rendered and looked at. Six of
-    /// them use a dashed outline, and in every case **the dash is the whole
-    /// distinction**:
+    /// `stroke-dasharray` is the most geometry-bearing attribute in SVG short
+    /// of `d` itself, which makes it the one exception to the header's rule
+    /// that an unrecognised attribute is cosmetic and may be ignored. Several
+    /// glyphs in the set use a dashed outline, and for each of them **the dash
+    /// is the whole distinction**:
     ///
     /// | glyph | without dashes it becomes |
     /// |---|---|
@@ -451,14 +441,14 @@ impl IconArt {
                     width: width * weight_factor,
                     line_cap: shape.line_cap,
                     line_join: shape.line_join,
-                    // ★ The dash is in VIEWBOX units, like the width beside it,
+                    // The dash is in VIEWBOX units, like the width beside it,
                     // and tiny-skia dashes in path space before transforming
                     // the outline — so the pattern scales with the glyph
                     // exactly as the stroke width does. That is the property
                     // the comment below states for `width`, and it is why the
                     // dash needs no scaling of its own here.
                     //
-                    // ★★ NOT scaled by `weight_factor`. That factor exists to
+                    // NOT scaled by `weight_factor`. That factor exists to
                     // thicken a glyph at small sizes; multiplying the dash by
                     // it too would change the PATTERN as well as the weight,
                     // so a 16 px icon would show a different number of dashes
@@ -609,14 +599,14 @@ fn parse_paint(body: &str) -> Result<PaintAttrs, IconError> {
         }
     };
 
-    // ★ `stroke-dasharray`, parsed rather than ignored. See `Shape::dash`.
+    // `stroke-dasharray`, parsed rather than ignored. See `Shape::dash`.
     //
     // The subset is deliberately narrow: a comma- or space-separated list of
     // non-negative numbers, which is what every glyph in the set uses and what
     // the style contract would allow. `none` is the explicit "solid" spelling
     // and is accepted so an asset can say so.
     //
-    // ★★ An ODD-LENGTH list is doubled, because that is what SVG 1.1 §11.4
+    // An ODD-LENGTH list is doubled, because that is what SVG 1.1 §11.4
     // specifies — `4` means 4-on 4-off — and getting it wrong would draw a
     // plausible dash at the wrong duty cycle, which is the confidently-wrong
     // outcome this module refuses everywhere else.
@@ -858,19 +848,17 @@ mod tests {
 
     // -- rasterization ------------------------------------------------------
 
-    /// ★★★ **A dashed stroke draws fewer pixels than a solid one** — the
-    /// regression test for the attribute this parser used to ignore.
+    /// **A dashed stroke draws fewer pixels than a solid one** — the guard on
+    /// `stroke-dasharray` reaching the rasterizer.
     ///
     /// # Why this test is a pixel count and not a parse assertion
     ///
-    /// Because "the attribute parsed" was never the question. The old
-    /// behaviour parsed the file perfectly, ignored `stroke-dasharray`, and
-    /// drew a **solid** line — which is a valid icon, of a different thing.
-    /// Six of the sixty-five glyphs proposed on 2026-09-03 turned on that
-    /// attribute, and each one silently became a glyph the set already had:
-    /// `new-from-template` → `new-document`, `unembed-fonts` →
-    /// `embed-fonts`, `redact-selection` → `redact`, `select-all` → a plain
-    /// rectangle.
+    /// Because "the attribute parsed" is not the question. A build that parses
+    /// the file perfectly and ignores the dash draws a **solid** line, which is
+    /// a valid icon of a different thing: the glyphs that use a dash silently
+    /// become ones the set already has — `new-from-template` →
+    /// `new-document`, `unembed-fonts` → `embed-fonts`, `redact-selection` →
+    /// `redact`, `select-all` → a plain rectangle.
     ///
     /// A test that asserted `shape.dash == Some(vec![4.0, 4.0])` would pass on
     /// a build that parsed the attribute and then dropped it before
@@ -878,7 +866,7 @@ mod tests {
     /// mode. **The only assertion that cannot be satisfied by a build which
     /// forgets to USE it is one about the pixels.**
     ///
-    /// ★ Counted rather than compared to a reference image: a count is stable
+    /// Counted rather than compared to a reference image: a count is stable
     /// against antialiasing, against tiny-skia's version, and against the
     /// weight factor, where a golden image is not. The relationship — dashed
     /// covers strictly less ink than solid, and both cover some — is what is
@@ -910,7 +898,7 @@ mod tests {
 
     /// An odd-length dash array is doubled, per SVG 1.1 §11.4.
     ///
-    /// ★ `stroke-dasharray="4"` means *4 on, 4 off*, not *4 on, nothing off*.
+    /// `stroke-dasharray="4"` means *4 on, 4 off*, not *4 on, nothing off*.
     /// Getting it wrong draws a plausible dash at the wrong duty cycle — the
     /// confidently-wrong outcome this module refuses everywhere else — so it
     /// is pinned rather than left to the reader of the spec.
@@ -983,7 +971,7 @@ mod tests {
         );
     }
 
-    /// ★ The arithmetic precondition of the whole theming story.
+    /// The arithmetic precondition of the whole theming story.
     ///
     /// Every non-transparent pixel must be premultiplied WHITE, i.e.
     /// `r == g == b == a`. That property is what makes a multiplicative tint

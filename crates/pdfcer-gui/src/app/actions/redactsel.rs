@@ -2,16 +2,14 @@
 //!
 //! ## What this closes
 //!
-//! **Ken, 2026-08-30:** *"the redaction tool — am I able to select objects on
+//! **Ken:** *"the redaction tool — am I able to select objects on
 //! the canvas and redact them that way yet? I only tried it when it only worked
 //! with the search box and it didn't work for some things. it just told me it
 //! couldn't."*
 //!
-//! He was right on both counts, and the second half is the more interesting one.
+//! ## Why the search box cannot do what he wanted
 //!
-//! ## ★★★ Why the search box could not do what he wanted
-//!
-//! Until now this shell had exactly **two** ways to mark a redaction:
+//! The other two routes to a redaction mark are:
 //!
 //! | route | what it can reach |
 //! |---|---|
@@ -24,10 +22,10 @@
 //! are all invisible to a text search. There is nothing to type that would find
 //! them.
 //!
-//! ⇒ So *"it just told me it couldn't"* was the program being honest about a
-//! route that genuinely could not reach the thing — not a bug, and not a thing
-//! any amount of retyping would have fixed. What was missing was **a third
-//! route that does not go through text at all.**
+//! ⇒ *"It just told me it couldn't"* is the program being honest about a route
+//! that genuinely cannot reach the thing — not a bug, and not something any
+//! amount of retyping would fix. This module is **the route that does not go
+//! through text at all.**
 //!
 //! ## What this is
 //!
@@ -36,12 +34,11 @@
 //! bounds**, which the canvas already computes to draw the outline, so what gets
 //! marked is exactly the box the operator can see around what they picked.
 //!
-//! ★ It is `EditSession::add_redaction`, the same verb the *mark whole page*
+//! It is `EditSession::add_redaction`, the same verb the *mark whole page*
 //! control uses, with the page's crop box swapped for the selection's bounds.
-//! No new engine capability was needed and none was asked for: the verb takes
-//! arbitrary quads and always has.
+//! It needs no new engine capability: the verb takes arbitrary quads.
 //!
-//! ## ★★ Marking is not applying, and this changes nothing about that
+//! ## Marking is not applying, and this changes nothing about that
 //!
 //! A `/Redact` annotation is a **mark**: it removes no content. Applying is a
 //! separate, deliberate, confirmed act (`edit.redact_apply`), and this route
@@ -88,7 +85,7 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
         return;
     };
 
-    // ★★ The bounds come from the SELECTION's own cached outlines — the same
+    // The bounds come from the SELECTION's own cached outlines — the same
     // rectangles the canvas draws — so what is marked is exactly the box the
     // operator was looking at. Deriving them again from the decomposition would
     // be a second answer to a question the canvas has already answered, and the
@@ -105,7 +102,7 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
             let min = crate::viewer::canvas_to_pdf_space(canvas.min, &page)?;
             let max = crate::viewer::canvas_to_pdf_space(canvas.max, &page)?;
             Some(Quad::from_rect(pdfcer_core::page_tree::Rect {
-                // ★ NORMALISED, because the y flip inverts the corners: the
+                // NORMALISED, because the y flip inverts the corners: the
                 // canvas rect's `min` is its TOP-left and the PDF rect's `llx`
                 // / `lly` is its BOTTOM-left. A quad built from the unswapped
                 // pair is inside-out, and §12.5.6.23 does not say what a
@@ -127,29 +124,30 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
     }
 
     let count = quads.len();
-    // ★ `-requested`, not the bare label: `vector_edit` writes
+    // `-requested`, not the bare label: `vector_edit` writes
     // `redact-mark-selection page=… n=… epoch=…` for the same edit, and
     // `Trace::last()` matches on the FIRST TOKEN. Two lines with one name means
     // a driven check asking for `quads=` gets the funnel's line and reports
-    // that the verb did nothing. `tools/gates/check-trace-names.py` caught it.
+    // that the verb did nothing — which `tools/gates/check-trace-names.py`
+    // exists to prevent.
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("redact-mark-selection-requested page={page_index} quads={count}")
     });
 
-    // ★★★ ONE annotation carrying every quad, not one annotation per object.
+    // ONE annotation carrying every quad, not one annotation per object.
     //
     // §12.5.6.23 makes `/QuadPoints` a list precisely so one mark can cover
     // several regions, and the operator made **one** gesture — they selected a
     // group of things and asked for them to go. Six marks would mean six rows
     // in the review list and six presses to undo a decision they made once.
     //
-    // ★ It also keeps the apply honest: `apply_redactions` removes what the
+    // It also keeps the apply honest: `apply_redactions` removes what the
     // quads cover, and one annotation with six quads and six annotations with
     // one each remove exactly the same content. The difference is entirely in
     // what the operator has to manage afterwards.
     let spec = appearance.to_spec(quads);
-    // ★★★ ASKED BEFORE THE EDIT, because afterwards the selection is gone.
+    // ASKED BEFORE THE EDIT, because afterwards the selection is gone.
     //
     // `vector_edit` bumps the epoch and the canvas resolves its selection
     // against the new revision, so the objects the operator picked are no
@@ -160,7 +158,7 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
     vector_edit(doc, "redact-mark-selection", page_index, count, |session| {
         session.add_redaction(page_index, &spec).map(|_| {
             let mut notes = vec![crate::text::redact::marked_selection(count)];
-            // ★ Second, never first. The mark SUCCEEDED — that is the sentence
+            // Second, never first. The mark SUCCEEDED — that is the sentence
             // he is owed first, and the caveat belongs beside it rather than
             // instead of it. This module's header carries rule 4's ordering:
             // "a residual is named in the SAME sentence as the success, never

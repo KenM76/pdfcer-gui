@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """check-trace-names.py — a module's own trace line must not share its first
-token with an edit-funnel label.
+token with an edit-funnel label, read as a debugging leftover, or break in two.
 
 ===========================================================================
-WHY THIS GATE EXISTS
+THE PROPERTY ASSERTED
 ===========================================================================
 
-`tools/ui-verify` reads a trace by its FIRST TOKEN:
+Every diagnostic line this crate writes is addressable: it has a name no other
+line answers to, a name somebody chose on purpose, and it arrives at a reader
+in one piece.
+
+All three mechanisms below defend the same downstream consumer. `tools/ui-verify`
+reads a trace by its FIRST TOKEN:
 
     pub fn last(&self, name: &str) -> Option<&TraceLine> {
         self.lines.iter().rev().find(|l| l.event == name)
@@ -23,30 +28,25 @@ keys the module's line was written to publish.
 
 The failure mode is the worst shape a diagnostic can have: a driven check asks
 for `name=` or `chars=`, finds nothing, and reports **"the verb did nothing"**
-about a verb that worked perfectly. A confident false negative.
-
----------------------------------------------------------------------------
-This has happened three times
----------------------------------------------------------------------------
-
-  * `text-style`, 2026-08-27. Written up the same day.
-  * `import-form-data`, 2026-08-28 — **by the session that had written up the
-    first one**. Reading the note did not prevent it, because the note was
-    about *text-style* rather than about every edit through the funnel.
-  * `attach-file`, 2026-08-28, in code written hours after the second. Caught
-    only because somebody sat down to write a driven check against it.
-
-The agreed fix after the second instance was *"a naming convention at the point
-of use — a module's summary takes a verb suffix, the funnel keeps the bare
-name"*. A convention held by memory has now failed once per day.
+about a verb that worked perfectly. A confident false negative. Mechanisms 3
+and 4 produce the identical symptom by different routes, which is why they live
+in one gate.
 
   > An incident does not generalise itself. A grep does.
 
+The reason this is a gate and not a convention: the convention ("a module's
+summary takes a verb suffix, the funnel keeps the bare name") was agreed, and
+then broken on consecutive days by the same sessions that had just written it
+down — because a note about one collision reads as being about that collision
+rather than about every edit through the funnel.
+
 ===========================================================================
-WHAT IT CHECKS
+MECHANISM 1 — A NAME THAT COLLIDES WITH A FUNNEL LABEL
 ===========================================================================
 
-1. Every string literal passed to `vector_edit(..)` is a funnel LABEL.
+1. Every string literal passed to `vector_edit(..)` is a funnel LABEL. The set
+   is collected across the whole crate first; an empty set is treated as the
+   pattern having moved, not as a clean tree (see the exit contract).
 2. Every `format!("<token> ...")` in the crate whose first token equals a label
    is a violation, EXCEPT the `vector_edit` call itself (which does not
    `format!` its label) and any line carrying `trace-name-exempt:`.
@@ -55,37 +55,132 @@ Suffixed names are fine and are the point: `attach-file-read`,
 `move-annotation-applied`, `detach-file-requested` all pass, because the token
 compared is the whole first word.
 
-3. ★★ **A trace name that reads like a debugging leftover is a violation** —
-   any uppercase letter in the token, or a `tmp`/`temp`/`dbg`/`debug`/`xxx`/
-   `todo`/`fixme`/`hack` prefix.
+The scan is over whole file text rather than line by line, because `format!(`
+sits on its own line above the literal in every multi-line trace here. See
+`line_of` in `main` for why that cost is worth paying.
 
 ===========================================================================
-WHY MECHANISM 3 EXISTS — and why mechanism 1 could never have found it
+MECHANISM 3 — A NAME THAT READS LIKE A DEBUGGING LEFTOVER
 ===========================================================================
 
-Found 2026-09-11, in a **release** binary, by an ordinary off-screen smoke
-launch before a release:
+Any uppercase letter in the token, or a `tmp`/`temp`/`dbg`/`debug`/`xxx`/
+`todo`/`fixme`/`hack` prefix, is a violation in its own right.
+
+★★ WHY MECHANISM 1 COULD NEVER HAVE FOUND IT. The shape this catches is a
+release binary emitting
 
     pdfcer-diag TMPASK title="Open PDFs with pdfcer" now=4 opened_at=0
 
-`TMPASK` is the shape of a name somebody types while chasing a focus bug and
-means to take out again. It had survived long enough to be swept through this
-project's own rename, and it appears eight times per dialog in captured
-`ui-verify` traces that several sessions have read.
-
-⇒ **This gate was structurally incapable of seeing it.** `FIRST_TOKEN` is
-anchored `[a-z]`, because every deliberate trace name in this crate is
-lowercase-and-hyphens — so an all-caps scratch name did not even enter the
-scan. The gate was not silent because the rule was weak; it was silent
+`FIRST_TOKEN` is anchored `[a-z]`, because every deliberate trace name in this
+crate is lowercase-and-hyphens — so an all-caps scratch name never entered the
+scan at all. The gate was not silent because the rule was weak; it was silent
 because the name did not look like a trace name, which is exactly what makes a
-leftover a leftover.
+leftover a leftover. Such a name survives a whole-repository rename and appears
+in captured `ui-verify` traces that several sessions read without noticing.
 
 This project's recorded rule is that a temporary shim needs a tripwire naming
 its own deletion. A `TMP` prefix IS that tripwire — it is the author telling
-the future this is not meant to stay. Nothing was reading it. Now something is.
+the future this is not meant to stay. This is the thing that reads it.
 
-Exit 0 clean, 1 on a violation. `--self-test` falsifies both mechanisms
-against planted inputs and exits 0 only if each one fires.
+Mechanism 3 is anchored at a `trace…(` call rather than applied to whole files,
+and that anchor is load-bearing: applied file-wide it reported thirty-one hits
+of which one was real, because `format!` in this crate also builds PDF content
+streams (`BT /F1 12 Tf …`), operator-facing strings and test fixture labels,
+all of which legitimately begin with a capital. A rule about TRACE names has to
+find the traces first.
+
+===========================================================================
+MECHANISM 4 — A TRACE LITERAL THAT BREAKS INTO TWO LINES
+===========================================================================
+
+In Rust a SINGLE backslash at the end of a line inside a string literal is a
+CONTINUATION: the newline and the following indentation are dropped and the
+literal stays one line. That is how every long trace line in this crate is
+written. TWO backslashes are a literal backslash, and the newline after it is
+emitted verbatim.
+
+A trace line is a RECORD, and `Trace::parse` keys on the `pdfcer-diag` prefix.
+A record that breaks in the middle does not continue: the remainder is not a
+trace line at all, every field after the break is invisible to every reader,
+and the field the break lands in comes back with a stray backslash glued to it,
+so a numeric field stops parsing. A driven check then reports that a thing did
+not happen, while quoting a line that proves it did.
+
+The doubling is a patch-script artefact — a backslash in a raw-string payload
+that nothing decoded — so the tell is a pair of backslashes in the RAW literal
+body, not in the emitted string, which only a running program has.
+
+It also fires on a deliberate newline escape or a Windows path in a trace, and
+that is wanted: a reader splits the trace on lines, so an escaped newline has
+the same consequence as a real one, and a path in a trace should be
+forward-slashed anyway.
+
+★ ANCHORED, NOT SEARCHED, and this is the difference between a rule that can
+fail and one that cannot. `TRACE_LITERAL` matches from the trace call itself
+across a prefix that admits only whitespace, closure syntax, a slot-name string
+and whole `//` comment lines — none of which can contain a `format!`. So an
+anchored match either finds the literal belonging to THIS call or finds
+nothing; it can never walk forward into an unrelated one, however long the
+comment block above the literal runs. The first cut searched forward within a
+fixed window instead, could not reach past a fifteen-line comment block, and
+printed PASS over the live defect it had just been written for.
+
+===========================================================================
+WHAT IT PROVABLY CANNOT SEE
+===========================================================================
+
+* **Anything outside `crates/pdfcer-gui/src/**.rs`.** The tree is walked with
+  `rglob`, so a trace written in `egui-shell`, in `tools/ui-verify` itself, or
+  in any other crate is not examined.
+* **A trace built without `format!`.** A bare `"...".to_owned()` literal is not
+  matched by any mechanism. Deliberate for mechanism 4 — such a literal is
+  written in one piece and has no continuation to double — but it also means
+  mechanisms 1 and 3 do not see those names.
+* **A name assembled at runtime.** An interpolated or concatenated first token
+  is invisible; `FIRST_TOKEN` and `ANY_TOKEN` are anchored to the literal's
+  start.
+* **A funnel label that is not an inline string literal** at the `vector_edit`
+  call site. A label passed through a constant or a variable never enters
+  `labels`, so a genuine collision with it goes unreported.
+* **Whether an exemption is DESERVED.** `trace-name-exempt:` records a
+  decision; nothing verifies the reason beside it.
+* **Whether the name is a GOOD one.** Mechanism 3 tests the shape of the token,
+  not its meaning: `zzz-thing` is lowercase-and-hyphens and passes.
+* **A collision between two module lines** that share a first token with each
+  other but not with any funnel label. The claim is about the funnel.
+
+===========================================================================
+USAGE AND EXIT CODES
+===========================================================================
+
+  tools/gates/check-trace-names.py              scan the crate
+  tools/gates/check-trace-names.py --self-test  falsify all four mechanisms
+
+  0  clean  — every trace name is unique against the funnel, deliberate, and
+              emitted on one line
+  1  FAIL   — one or more violations of any mechanism, each printed with
+              `file:line` and the offending source line
+
+There is deliberately **no SKIPPED state**. This gate reads a fixed path in
+this repository rather than a git query, so "no input" is not a legitimate
+condition here: an empty label set means the `vector_edit` pattern moved and
+mechanism 1 has gone blind, which is reported on stderr and exits 1. A gate
+whose pattern has stopped matching must not print what a clean run prints.
+
+===========================================================================
+HOW TO FALSIFY IT
+===========================================================================
+
+`--self-test` plants inputs for all four mechanisms and asserts each fires on
+its own defect AND declines the legitimate construct it would otherwise flood:
+a multi-line `format!` (the per-line regression mechanism 1 already suffered
+once), a `vector_edit` label, the all-caps leftover, an ordinary trace name, a
+PDF content stream, a doubled continuation, a correct single continuation, a
+literal carrying Debug-quoted fields, a literal under a 400-character comment
+block, and a `trace_on_change` slot name. It exits 0 only if every one behaves.
+
+Both halves matter equally here: three of these mechanisms are regex-shaped,
+and a regex that stops matching is silent rather than loud.
 """
 
 from __future__ import annotations
@@ -234,16 +329,22 @@ def split_across_lines(body: str) -> bool:
 
 
 def self_test() -> int:
-    """Plant one violation per mechanism and assert each is seen.
+    """Plant a violation per mechanism, and the legitimate construct it must not flag.
 
-    ★★ A gate is evidence only if it has been made to fail. Both of these
+    ★★ A gate is evidence only if it has been made to fail. Three of these
     mechanisms are regex-shaped, and a regex that stops matching is silent
     rather than loud: `FIRST_TOKEN` already has one recorded near-miss in its
     own history (a per-line scan that let a multi-line `format!(` through), and
     mechanism 3 exists because an anchor nobody questioned made a whole class
-    of name invisible. So the four assertions below are, in order: each
-    mechanism fires on its own planted input, and each declines a legitimate
-    one.
+    of name invisible.
+
+    So the planted inputs below come in pairs, in mechanism order: each
+    mechanism must fire on its own defect, and must decline the correct
+    construct that looks most like it — an ordinary trace name and a PDF
+    content stream for mechanism 3, a single-backslash continuation, a
+    Debug-quoted literal, a literal under a long comment block and a
+    `trace_on_change` slot name for mechanism 4. A one-directional self-test
+    would pass for a checker that answers "yes" unconditionally.
     """
     multiline = 'format!(\n    "attach-file page={p}"\n)'
     assert FIRST_TOKEN.findall(multiline) == ["attach-file"], (

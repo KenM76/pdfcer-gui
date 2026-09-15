@@ -1,44 +1,21 @@
-//! # `canvas::resizing` — the eight grips finally do something, and what it
-//! cost to get there without a verb
+//! # `canvas::resizing` — what the eight resize grips commit
 //!
-//! ## What this closes
+//! ## ★★★ The verb is `transform_objects`, and it is kind-agnostic
 //!
-//! `GUI_ROADMAP.md` Phase 1.3 drew eight resize grips at S4. They have been
-//! **cursored, hit-tested and drag-consuming ever since, and have committed
-//! nothing** — the last ⛔ in `FEATURES.md`'s Phase 1 list and the oldest
-//! unbuilt thing in this project.
+//! `EditSession::transform_objects` wraps each object's operator run in
+//! `q <cm> … Q`. **That never looks at an operand**, which is what makes it
+//! kind-agnostic — not a match arm per kind that somebody has to remember to
+//! extend. A text run and an image therefore resize exactly as a path does
+//! (neither has nodes to move, and neither needs any), and a selection of N
+//! objects is **one** call, one command, one undo entry.
 //!
-//! [`crate::canvas::handles`]' header states the reason and it is still true:
-//!
-//! > `pdfcer-core` has `move_object`, `move_objects`, `move_subpath`,
-//! > `move_node`, `move_nodes` and `move_handle` — and **no scale or resize
-//! > verb for a vector object at all**.
-//!
-//! Re-derived against the engine on 2026-08-19 rather than taken from that
-//! note: `grep "pub fn .*scale" edit.rs` returns exactly one hit and it is
-//! `set_group_scale`, a ce-dimension calibration. **The blocker is real** —
-//! unlike two others this project re-checked the same week, both of which had
-//! quietly expired.
-//!
-//! ## ★★★ IT IS BUILT OUT OF `transform_objects` NOW — 2026-08-20
-//!
-//! Everything below this block describes how a resize was built out of
-//! `move_nodes` between 2026-08-19 and 2026-08-20, and **it is kept**, because
-//! the reasoning is the record of a substitution that was correct while it
-//! lasted and of the four limits it could not get past. Three of the four are
-//! gone; the fourth turned out to be a decision rather than a limit.
-//!
-//! `EditSession::transform_objects` (`Pass 113.0`) wraps each object's operator
-//! run in `q <cm> … Q`. **That never looks at an operand**, which is what makes
-//! it kind-agnostic — not a match arm per kind that somebody has to remember to
-//! extend. So:
-//!
-//! | was refused | now |
-//! |---|---|
-//! | **text runs** | works. A text object has no nodes, and it does not need any |
-//! | **images** | works |
-//! | **more than one object** | works, in **one** call, one command, one undo entry — the slice is the point |
-//! | **stroke width** | still not scaled, and it is still the right answer: on a CAD drawing a line weight is a *drafting standard*. Now a genuine decision rather than a consequence, and still disclosed |
+//! **Stroke width is not scaled on page content**, and that is a decision
+//! rather than a consequence: on a CAD drawing a line weight is a *drafting
+//! standard* — 0.25 mm is 0.25 mm whatever size the detail is — so keeping it
+//! is right far more often than scaling it would be, and it is what every
+//! drafting package does. It is nonetheless something pdfcer decided and the
+//! operator did not, so it is **disclosed** ([`crate::text::resizing`]) rather
+//! than assumed.
 //!
 //! ★★ **The matrix is PAGE space and nothing else.** `cm` composes into the CTM
 //! in force at that point in the stream — the object's *user* space — so the
@@ -51,43 +28,29 @@
 //!
 //! ---
 //!
-//! ## ★★ It used to be built out of `move_nodes`, and that was the whole idea
+//! ## The arithmetic, and why it is not written out here
 //!
-//! **Scaling a path IS moving every one of its nodes.** For an anchor `a` and
+//! **Scaling about an anchor is moving every point.** For an anchor `a` and
 //! factors `(sx, sy)`:
 //!
 //! ```text
 //! p' = a + (p - a) * (sx, sy)
 //! ```
 //!
-//! `EditSession::move_nodes` takes a **slice** of `(node, Point)`, so a whole
-//! resize is **one call, one command, one undo entry** — which is this
-//! project's standing rule for one gesture (`canvas::moving`'s §1) and the
-//! thing a naive per-node loop would break, both by producing N undo entries
-//! and by planning each move against byte offsets the previous one invalidated.
+//! `Matrix::scale(sx, sy).about(a)` is `translate(a) × M × translate(-a)`,
+//! which is that expression exactly — so the map is stated once, by the crate
+//! that owns matrices, rather than once per point here. A shell keeping its own
+//! copy would be a second derivation of one answer in coordinate space, which
+//! is the shape every silent defect this project has met there has had.
 //!
-//! The operator's instruction, 2026-08-19: *"finish off phase 1 and phase 5.
-//! Get everything unblocked on phase 5 — no excuses about slowness of feature
-//! from pdfcer as a reason not to implement."* This is that applied to Phase 1.
+//! One gesture is **one call, one command, one undo entry** — this project's
+//! standing rule for a gesture (`canvas::moving`'s §1), and the thing a
+//! per-object loop would break both by producing N undo entries and by planning
+//! each edit against byte offsets the previous one invalidated.
 //!
-//! ## ★ What this CANNOT do, stated here rather than discovered
-//!
-//! All four are consequences of the substitution, not of the implementation,
-//! and all four are **worded refusals** rather than silent no-ops:
-//!
-//! | | why |
-//! |---|---|
-//! | **text runs** | a text object has no nodes. Scaling one means writing a `Tm`, and this shell will not synthesise one — that is the engine's arithmetic |
-//! | **images** | likewise, a `cm` |
-//! | **more than one object** | `move_nodes` is per object, so N objects is N commands and N undo entries. One gesture is one command; the honest answer is to decline |
-//! | **stroke width** | a scaled path keeps its original `w`, so a 2× box has 1× linework |
-//!
-//! The last is **not** refused, and that is a judgement rather than an
-//! oversight. On a CAD drawing a line weight is a *drafting standard* — 0.25 mm
-//! is 0.25 mm whatever size the detail is — so keeping it is right far more
-//! often than scaling it would be, and it is the behaviour every drafting
-//! package has. It is nonetheless something pdfcer decided and the operator did
-//! not, so it is **disclosed** ([`crate::text::resizing`]) rather than assumed.
+//! The operator's instruction: *"finish off phase 1 and phase 5. Get everything
+//! unblocked on phase 5 — no excuses about slowness of feature from pdfcer as a
+//! reason not to implement."*
 //!
 //! ## Why the arithmetic is here and not in `moving`
 //!
@@ -113,12 +76,12 @@
 //!
 //! - D1 live-preview: the resize ghost is drawn from the same scale factors the
 //!   release commits.
-//! - D2 derived-from-commit: `Some` only when a release would reach
-//!   `move_nodes` on real operands.
+//! - D2 derived-from-commit: `Some` only when a release would reach a
+//!   transform verb on real operands.
 //! - D3 escape-cancels: the gesture machine drops it; nothing is written before
 //!   `Complete`.
-//! - D4 one-undo-entry: scaling a path is moving every one of its nodes, and
-//!   `move_nodes` takes a slice — one command.
+//! - D4 one-undo-entry: `transform_objects` takes the whole selection — one
+//!   command.
 //! - D5 modifiers-constrain: **Shift preserves aspect**, applied in [`drag`]
 //!   between [`factors`] and the ghost so the preview and the commit read one
 //!   value; the arithmetic and the reasoning are
@@ -149,10 +112,9 @@ use crate::panels::objects::provider::ObjectModelProvider;
 /// Why a resize could not be committed.
 ///
 /// Every variant is **a sentence to show**, never a silent drop —
-/// `canvas::textedit::Refusal`'s rule, and for the reason that module's own
-/// history proves: this project has already shipped one feature whose answer to
-/// a case it could not handle was to do nothing, and the operator reported it
-/// as broken for weeks.
+/// `canvas::textedit::Refusal`'s rule. A gesture whose answer to a case it
+/// cannot handle is to do nothing is a gesture the operator reports as broken,
+/// because from the outside it is indistinguishable from one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Refusal {
     /// Nothing is selected, or the selection names no object on this page.
@@ -170,15 +132,16 @@ pub enum Refusal {
 }
 
 // ★★ THE PREFLIGHT IS NOT BUILT, AND THIS IS THE NOTE THAT SAYS SO.
+// `DEFECTS.md` D44.
 //
 // `transform_preview` is `&self`, side-effect-free, and shares one body with
-// the verb — so `preview(..).is_ok()` **is** the predicate, and the engine's
-// guidance is explicit about what a shell should do with it:
+// the verb — so `preview(..).is_ok()` **is** the predicate, and the engine
+// distinguishes two errors the shell must treat differently:
 //
-// | error | means | UI |
-// |---|---|---|
-// | `DegenerateCtm` | this object cannot be transformed AT ALL — its own CTM is singular | **do not offer a handle** |
-// | `SingularTransform` | this DRAG is degenerate | offer the handle, refuse on release |
+// * `DegenerateCtm` — this object cannot be transformed AT ALL, because its
+//   own CTM is singular. **Do not offer a handle.**
+// * `SingularTransform` — this DRAG is degenerate. Offer the handle, refuse on
+//   release.
 //
 // The second is handled: `is_usable` refuses a collapsing drag before the
 // engine is asked, and anything that gets past it is worded by `vector_edit`'s
@@ -190,19 +153,18 @@ pub enum Refusal {
 // y cm`, which is rare — but it is named here rather than left to be
 // discovered.
 //
-// ★ Why it is not built tonight: **the preview decomposes the page.** Measured
-// by the engine on the benchmark drawing, 129,758 objects, **~4 s in a debug
-// build** — and both the verb and the preview pay it. The engine's own advice
-// is *"call `transform_preview` on selection change and on gesture start, not
-// per frame"*, which means a cache keyed on `(page, edit epoch, selection)`,
-// which is a piece of work rather than a line. `app::cache::FormRunCache` is
-// the shape it should take.
+// ★ Why it is not built: **the preview decomposes the page.** Measured by the
+// engine on the benchmark drawing, 129,758 objects, **~4 s in a debug build**
+// — and both the verb and the preview pay it. The engine's own advice is
+// *"call `transform_preview` on selection change and on gesture start, not per
+// frame"*, which means a cache keyed on `(page, edit epoch, selection)` — a
+// piece of work rather than a line. `app::cache::FormRunCache` is the shape it
+// should take.
 //
-// ★★ A variant WAS added here for it and then removed on the same evening,
-// because `every_refusal_is_still_raised_somewhere` — written in the same hour
-// — failed on its first run: it had a sentence and no call site. That is the
-// test doing exactly what it was written for, and inventing a call site to
-// satisfy it would have been the failure it exists to catch.
+// ★★ A [`Refusal`] variant must not be added ahead of the call site that
+// raises it: `every_refusal_is_still_raised_somewhere` fails on a variant with
+// a sentence and no caller, and inventing a call site to satisfy that test
+// would be the failure it exists to catch.
 
 /// The scale factors a grip's drag implies, about the anchor opposite it.
 ///
@@ -292,7 +254,7 @@ pub fn action(
     if !is_usable(sx, sy) {
         return Err(Refusal::Degenerate);
     }
-    // ★ The provider is still asked for, and it is no longer asked ANYTHING.
+    // ★ The provider is asked FOR and asked nothing.
     //
     // A transform needs no node positions and no kind check — that is the whole
     // point of the mechanism. What the model is still needed for is the same
@@ -311,11 +273,9 @@ pub fn action(
     // about the EDIT, and a driven check that asserts on it is asserting the
     // thing both routes share rather than the thing one of them happens to log.
     //
-    // It was added on the first driven run of the typed route, which failed
-    // reporting "Apply committed nothing" while the trace clearly showed the
-    // object's bounds changing from 317.87 to 358.00. The check was right about
-    // its oracle being absent and wrong about what that meant — a defect in the
-    // instrument, and exactly the shape `CONTINUE.md` §7 warns about.
+    // ⚠ A driven check with no line to assert on reports a working edit as
+    // "committed nothing" — a defect in the instrument that reads exactly like
+    // a defect in the feature. The trace line is what stops that.
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
@@ -328,16 +288,11 @@ pub fn action(
     // ★★ `scale(...).about(anchor)` — the whole arithmetic, in the engine's own
     // `Matrix`, in PAGE space.
     //
-    // What this replaced was the same map written out per node:
-    //
-    //     p' = a + (p - a) * (sx, sy)
-    //
-    // and it is worth naming what that cost. `about` is
-    // `translate(a) × M × translate(-a)`, which is that expression exactly — so
-    // this is not a new formula, it is the same one stated once by the crate
-    // that owns matrices instead of once here per point. A shell that kept its
-    // own copy would be the second derivation of one answer, which is the
-    // failure this project has now met four times in coordinate space.
+    // `about` is `translate(a) × M × translate(-a)`, which is
+    // `p' = a + (p - a) * (sx, sy)` exactly — so this is the same formula the
+    // header states, written once by the crate that owns matrices instead of
+    // once here per point. A shell keeping its own copy would be a second
+    // derivation of one answer in coordinate space.
     //
     // ★ Page space, not the object's. See the module header: the engine
     // conjugates by each object's own CTM, and a caller that "helpfully"
@@ -369,27 +324,25 @@ pub struct Frame<'a> {
     pub grip: Grip,
     /// ★★★ How far the pointer has travelled since then, **in PAGE space**.
     ///
-    /// # This doc comment said "in screen points" until 2026-08-29, and it was
-    /// never true
+    /// # ⚠ The unit is load-bearing, and [`Self::bounds`] is in the other one
     ///
     /// The gesture machine works in page space by design — `canvas::interact`
     /// builds its `PointerFrame` with `pos: screen_pos.map(|p| map.to_page(p))`
-    /// — so every caller has always passed a page-space displacement. The
-    /// contract was wrong, not the callers.
+    /// — so every caller passes a page-space displacement. [`Self::bounds`] is
+    /// **screen** space, and [`factors`] divides one by the other.
     ///
-    /// ⇒ **And [`Self::bounds`] genuinely IS screen space**, so the two were
-    /// divided against each other and every factor's distance from unity came
-    /// out inflated by `1/zoom`. At the operator's fitted 29.55 % a corner
-    /// dragged 60 px committed a **5.94×** stretch where the geometry says
-    /// 2.46×, and the shape shot **143 px past the cursor** on both axes —
-    /// this module's own D8 convention (*"the grabbed corner tracks the
-    /// pointer"*) violated by the module that states it. `DEFECTS.md` **D18**.
+    /// ⇒ Divide them unreconciled and every factor's distance from unity comes
+    /// out inflated by `1/zoom`: at a fitted 29.55 % a corner dragged 60 px
+    /// commits a **5.94×** stretch where the geometry says 2.46×, and the shape
+    /// runs **143 px past the cursor** on both axes — this module's own D8
+    /// convention (*"the grabbed corner tracks the pointer"*) broken by the
+    /// module that states it. `DEFECTS.md` **D18**.
     ///
-    /// ★★ The fix is a conversion in [`drag`], where the two meet, rather than
-    /// at the call site — because there is one consumer and three would-be
-    /// converters, and the honest contract is the one every caller already
-    /// satisfies. Two `Vec2`s in two spaces are indistinguishable to the
-    /// compiler; the only defence is that exactly one function reconciles them.
+    /// ★★ So the conversion is in [`drag`], where the two meet, rather than at
+    /// the call site — one consumer and three would-be converters, and the
+    /// honest contract is the one every caller already satisfies. Two `Vec2`s
+    /// in two spaces are indistinguishable to the compiler; the only defence is
+    /// that exactly one function reconciles them.
     pub delta: Vec2,
     /// Draw the ghost, or commit.
     pub phase: Phase,
@@ -493,9 +446,10 @@ pub fn drag(
     //
     // ★★ When there is no mapping the delta passes through unchanged, which is
     // the zoom-1.0 identity — and is exactly what every unit test in this
-    // module supplies. **That is why a green suite never saw D18**: at zoom 1.0
-    // the bug is arithmetically invisible, and the harness only ever compared
-    // the same quantity against itself, where a common factor cancels.
+    // module supplies. ⚠ **A green suite is therefore no evidence that the two
+    // spaces agree**: at zoom 1.0 a mismatch is arithmetically invisible,
+    // because the harness compares the same quantity against itself and a
+    // common factor cancels. Only a driven run at a fitted zoom can see it.
     let delta = map.map_or(delta, |m| m.page_vec_to_screen(delta));
     let Some((sx, sy)) = factors(grip, bounds, delta) else {
         if phase == Phase::Complete {
@@ -509,10 +463,9 @@ pub fn drag(
     //
     // Applying it in the caller would have been the smaller diff and is the
     // trap: the caller sees `drag`'s return value (the ghost) but not the
-    // commit path inside it, so a constrained preview would have committed
+    // commit path inside it, so a constrained preview would commit
     // unconstrained factors. That is `drag-moves` D2 — *the preview is derived
-    // from what the release will commit* — and it is the failure this project
-    // has already met three times in coordinate space.
+    // from what the release will commit*.
     let (sx, sy) = if constrain {
         crate::canvas::constrain::aspect(sx, sy)
     } else {
@@ -541,16 +494,14 @@ pub fn drag(
         return None;
     };
     // ★★ The anchor is converted ONCE, here, through the same mapping the
-    // outline was drawn with. `canvas::mapping`'s header calls a second
+    // outline was drawn with — the same TWO hops `canvas::textedit::resolve_run`
+    // takes, in the same order, through the same two functions: screen → canvas
+    // → PDF user space. The canvas is Y-down from the page's top-left with
+    // `/Rotate` applied and every coordinate the engine speaks is Y-up from the
+    // un-rotated CropBox, and `canvas::mapping`'s header calls a second
     // conversion *the classic silent defect*: the ghost and the commit would
-    // then disagree about which corner stayed still, and the object would jump
-    // by whatever the two conversions differed by on release.
-    // The same TWO hops `canvas::textedit::resolve_run` takes, in the same
-    // order, through the same two functions — screen → canvas → PDF user space.
-    // `canvas::mapping`'s header calls doing this any other way *the classic
-    // silent defect*: the canvas is Y-down from the page's top-left with
-    // `/Rotate` applied, and every coordinate the engine speaks is Y-up from
-    // the un-rotated CropBox.
+    // disagree about which corner stayed still, and the object would jump by
+    // whatever the two conversions differed by on release.
     // ★★ `pivot`, NOT `anchor`. `anchor` is where the grip IS; the point that
     // must stay still is the OPPOSITE corner. Using `anchor` here would scale
     // the object about the very corner the operator is dragging, so the shape
@@ -615,11 +566,10 @@ pub fn drag(
                 uniform: (sx - sy).abs() <= f32::EPSILON,
                 // ★★★ **What the operator asked to ride along** — O51's switches.
                 //
-                // `uniform` above and this are different facts and both travel: the
-                // first is a measurement of the drag, the second is a decision by
-                // the operator, and until 2026-08-28 the apply arm derived the
-                // second from the first. See `canvas::scaling` for why that was a
-                // workaround rather than a rule.
+                // `uniform` above and this are different facts and both travel:
+                // the first is a measurement of the drag, the second is a
+                // decision by the operator. Deriving either from the other puts
+                // words in one of their mouths — see `canvas::scaling`.
                 modifiers,
             },
         ));
@@ -669,20 +619,16 @@ pub fn drag(
             crate::app::actions::forms::FieldAction::EditWidget {
                 field: selected.field,
                 widget: selected.widget,
-                // ★★★ **AND THE OPERATOR'S SWITCHES, as of 2026-08-31** —
-                // `OPERATOR_REQUESTS.md` O76, the row that began *"Form shape
-                // outlines of checkboxes and such scale when I drag them
-                // larger."*
+                // ★★★ **AND THE OPERATOR'S SWITCHES** —
+                // `OPERATOR_REQUESTS.md` O76: *"Form shape outlines of
+                // checkboxes and such scale when I drag them larger."*
                 //
-                // For the life of that row this line read `.with_rect(..)` and
-                // nothing else, and it could not read otherwise: `WidgetEdit`
-                // had no way to carry a scale answer, so the three switches on
-                // the Tool row reached an annotation and stopped at a form
-                // field. That gap was filed rather than worked around, and
-                // `pdfcer-core` Pass 187.0 answered it by **reusing the same
-                // type** the annotation path takes rather than mirroring three
-                // fields — so the two destinations of this one gesture now
-                // differ in their verb and not in what the operator said.
+                // `WidgetEdit` carries the scale answer in **the same type**
+                // the annotation path takes rather than in three mirrored
+                // fields, so the two destinations of this one gesture differ in
+                // their verb and not in what the operator said. A `.with_rect`
+                // and nothing else would leave the Tool-row switches reaching
+                // an annotation and stopping at a form field.
                 //
                 // ★ `to_options()` is the same call `annots::resize` makes,
                 // from the same `modifiers` value captured on the same frame.
@@ -736,7 +682,7 @@ pub(crate) fn decline(reason: Refusal) {
     crate::app::actions::record_note(
         // Epoch zero rather than the document's, and this is the one place in
         // the crate that does it. **It is a live defect, and the sentence it
-        // was meant to produce is never seen.**
+        // was meant to produce is never seen.** `DEFECTS.md` D41.
         //
         // `crate::app::actions::last_edit_disclosure` is an EQUALITY filter —
         // it returns the slot only while `d.epoch == epoch`, and the status bar

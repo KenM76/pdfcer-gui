@@ -2,23 +2,15 @@
 //!
 //! # Why this module exists
 //!
-//! `grep context_menu` across the salvage source returns **zero hits**.
-//! That is the whole motivation, and `RIBBON_IA.md` §6 says what it costs:
+//! A selection that can be made and not acted on is worse than no selection,
+//! and right-click is the path most users try after the keyboard.
+//! `RIBBON_IA.md` §6 puts it as *"the other half of making selection mean
+//! something"*: every selectable kind needs a menu carrying the same
+//! commands as its Format tab section plus the clipboard verbs, and no
+//! amount of ribbon design substitutes for it.
 //!
-//! > **Context menus** — currently zero in the entire crate. Every
-//! > selection type above needs one, carrying the same commands as its
-//! > Format tab section plus Cut/Copy/Paste/Delete. This is not a ribbon
-//! > question, but it is **the other half of making selection meaningful**,
-//! > and no amount of ribbon design substitutes for it.
-//!
-//! `GUI_ROADMAP.md` Phase 1 puts them first for the same reason:
-//! *"Everything a user would try next — right-click, drag a handle, press
-//! Delete — fails today."* A selection that can be made and not acted on
-//! is worse than no selection, and right-click is the path most users try
-//! after the keyboard.
-//!
-//! `RIBBON_IA.md` §5 places this surface precisely. There are three, and
-//! they are not redundant:
+//! `RIBBON_IA.md` §5 places this surface among the others, which are not
+//! redundant with it:
 //!
 //! | Surface | Answers | Lives |
 //! |---|---|---|
@@ -74,17 +66,15 @@
 //! header for why that is the only key that keeps this crate free of the
 //! application's document model.
 //!
-//! # ★ The one thing this module is waiting for
+//! # Where the menus come from
 //!
-//! [`crate::Shell`] has no `menus` field yet, and `manifest/` is not this
-//! module's to edit. [`model::menus_of`] is the single function that will
-//! read it and
-//! `model::tests::a_shell_carries_no_menus_until_the_manifest_field_lands`
-//! is the test that fails the day it lands. Everything else — the
-//! document, the customization overlay, the resolution rules, the width
-//! arithmetic, the rendering, the accessibility — works today against a
-//! [`Menus`] the application holds itself, which is also how every test in
-//! this module exercises it.
+//! [`crate::Shell::menus`] carries them, and [`model::menus_of`] is the
+//! single function that reads that field — everything else in this module
+//! goes through it, so the manifest is the one source. An application that
+//! is not using the manifest yet can hold a [`Menus`] itself and pass it in;
+//! the document, the customization overlay, the resolution rules, the width
+//! arithmetic, the rendering and the accessibility layer all work either
+//! way, and the tests here exercise both.
 
 pub mod a11y;
 pub mod ctx;
@@ -94,18 +84,17 @@ pub mod render;
 pub mod report;
 pub mod shortcut;
 
-// Test-only, and separate files rather than one `mod tests` for the same
-// three reasons the ribbon gives: R2 caps a source file at 1,500 lines;
-// the width tests need a fixture (a synthetic font) whose construction has
-// nothing to do with menus and should not be read as if it did; and
-// structural tests and geometric tests are different kinds of claim that
-// should not be filed together.
+// Test-only, and split into separate files rather than one `mod tests` for
+// the reasons the ribbon gives: the width tests need a fixture (a synthetic
+// font) whose construction has nothing to do with menus and should not be
+// read as if it did, and structural tests and geometric tests are different
+// kinds of claim that should not be filed together.
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod width_tests;
 
-// ★ The synthetic proportional face, borrowed rather than duplicated.
+// The synthetic proportional face, borrowed rather than duplicated.
 //
 // `crate::ribbon::testfont` is `mod testfont;` — private to the ribbon —
 // so it cannot be reached by a path from here, and `ribbon/` is not this

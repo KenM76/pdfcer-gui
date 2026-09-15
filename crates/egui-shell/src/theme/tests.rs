@@ -4,17 +4,16 @@
 //!
 //! # ★ Why these live in their own file
 //!
-//! Rule **R2**: no `.rs` file over 1500 lines. `theme/mod.rs` carries the
-//! palette, the presets, the accessors and `write_style`, every one of which
-//! is documented at this project's deliberately verbose register (rule R5) —
-//! and the colour decisions in it each carry their arithmetic, which is the
-//! part a future reader cannot reconstruct. Splitting the tests out is the
-//! seam that costs the least: the crate already does it for
-//! `dock::width_tests`, `menu::tests` and `ribbon::height_tests`.
+//! Rule **R2** keeps `theme/mod.rs` under its ceiling, and the tests are the
+//! seam that costs the least — the crate splits the same way for
+//! `dock::width_tests`, `menu::tests` and `ribbon::height_tests`. What must not
+//! move out of `mod.rs` is the arithmetic behind each colour decision, which is
+//! the part a future reader cannot reconstruct.
 //!
-//! `use super::*` keeps every one of these assertions able to see private
-//! items — `clamp_to_i8`, `Theme::quiet` and friends — exactly as it could
-//! when the module was inline. Nothing was weakened to move it.
+//! ★ `use super::*` rather than a narrowed import list, so every assertion here
+//! can still see private items — `clamp_to_i8`, `Theme::quiet` and friends. A
+//! test that can only reach the public surface would quietly stop covering the
+//! helpers the presets are built out of.
 
 use super::*;
 
@@ -29,8 +28,8 @@ fn luma(c: Color32) -> f32 {
 /// **Text is legible on the surface it is drawn on, in every
 /// preset.**
 ///
-/// Salvaged verbatim in intent. A crude relative-luminance gap rather
-/// than a full WCAG contrast ratio: the point is to catch a preset
+/// A crude relative-luminance gap rather than a full WCAG contrast
+/// ratio: the point is to catch a preset
 /// where someone set a light text colour against a light panel — which
 /// is what a `..quiet` spread does the moment a surface is darkened
 /// and the text is not — and a coarse check that always fires beats a
@@ -64,7 +63,7 @@ fn text_contrasts_with_its_background_in_every_preset() {
 /// **The label backdrop stays light in every preset, including the
 /// dark one.**
 ///
-/// Salvaged. Labels sit over CONTENT, not over chrome, and the content
+/// Labels sit over CONTENT, not over chrome, and the content
 /// is whatever colour the document says — overwhelmingly white. A dark
 /// theme that darkened the label backdrop would put dark text on a
 /// dark plate on a white page, which is unreadable in the one place it
@@ -76,9 +75,9 @@ fn text_contrasts_with_its_background_in_every_preset() {
 /// **Note what this test does NOT do**, because it is half of why D2
 /// shipped: it asserts `label_backdrop` is light *and stops there*. It
 /// says nothing about what is behind `label_backdrop` when something
-/// draws with it, and in the salvage source something did — the active
-/// widget state's foreground. A test that pins a colour without
-/// pinning its pairing is a test that will agree with the bug.
+/// draws with it — and the active widget state's foreground is exactly
+/// something that can. **A test that pins a colour without pinning its
+/// pairing is a test that will agree with the bug.**
 #[test]
 fn label_plates_stay_content_facing_not_chrome_facing() {
     for preset in Preset::ALL {
@@ -139,24 +138,22 @@ fn label_plates_stay_content_facing_not_chrome_facing() {
 /// property — *the test enumerates the render surface, not the
 /// author's intentions* — is the transferable lesson.
 ///
-/// # ★★★ The widening, 2026-09-04 — `REVIEW_TRIAGE.md` A15e
+/// # ★★★ Why it enumerates twenty-seven pairs and not the widget ten
 ///
-/// This test was called `..._widget_pair_...` until that date, and the
-/// word was load-bearing in the wrong direction: it enumerated ten pairs
-/// and **was green through three separately shipped contrast defects**,
-/// because none of the three was a widget pair. [`contrast::pairs`] now
-/// returns **twenty-seven**, and its module header states which of the
-/// three the widening reaches (the selection channel) and which two it
-/// deliberately still cannot (a caller's `RichText::color`, and a
-/// background produced by geometry) with the gates that do cover those.
+/// The ten `WidgetVisuals` pairs are the ones easiest to name, and a gate
+/// that stops there is green through every contrast defect that is not a
+/// widget pair. [`contrast::pairs`] therefore also returns the seventeen
+/// foregrounds `egui` resolves through a `Visuals` **accessor** rather
+/// than storing in a `WidgetVisuals` — body text, weak text, strong text,
+/// hyperlink, warn, error — each measured on the ground it is really drawn
+/// on, plus the two roles the selection channel serves.
 ///
-/// The seventeen new pairs are the foregrounds `egui` resolves through a
-/// `Visuals` *accessor* rather than storing in a `WidgetVisuals` — body
-/// text, weak text, strong text, hyperlink, warn, error — each measured
-/// on the grounds it is really drawn on, plus the two roles the selection
-/// channel serves.
+/// ⚠ Two classes remain out of reach by construction, and
+/// [`contrast`]'s own header names the gates that cover them instead: a
+/// caller's `RichText::color`, which the theme never sees, and a
+/// background produced by geometry rather than by a `Visuals` field.
 ///
-/// # The numbers, measured 2026-09-04, floor 90
+/// # The numbers, measured at the floor of 90
 ///
 /// Every new pair, per preset. The widget ten are omitted; they were
 /// already comfortable and are unchanged.
@@ -191,12 +188,12 @@ fn label_plates_stay_content_facing_not_chrome_facing() {
 /// expired by `every_contrast_exemption_still_has_a_subject`. What covers
 /// it instead is `tools/gates/check-strong-text.sh`, at the call site.
 ///
-/// **`error_fg_color` on `window_fill` in Dark is the pair the widening
-/// actually caught.** It measured **89.7** against this floor on the day
-/// it was first enumerated — a real, if marginal, shortfall in the colour
-/// every dialog uses to say the operator must act. The fix was to move the
-/// role (`Palette::danger` in the dark preset, `#FF6B6B` → `#FF7B7B`), not
-/// the threshold and not the pair; `Theme::dark` carries the arithmetic.
+/// **`error_fg_color` on `window_fill` in Dark is the tightest real pair
+/// this gate holds**, and the colour every dialog uses to say the operator
+/// must act. ★ When it shortfalls, the thing to move is the **role** —
+/// `Palette::danger` in the dark preset, whose arithmetic `Theme::dark`
+/// carries — never the threshold and never the pair. Loosening either
+/// would keep the gate green by making it stop asking the question.
 ///
 /// # On the threshold
 ///
@@ -240,12 +237,12 @@ fn every_rendered_pair_is_readable_in_every_preset() {
 ///
 /// That is not tidiness. A stale exemption is a **licence**: the next
 /// person who wants a contrast failure waved through finds a precedent in
-/// the list, and the precedent is a state that has not existed for months.
-/// This project has already paid for the same shape twice in one week — a
-/// gate exemption whose premise expired within a day, and
-/// `check-strong-text.sh` blessing a site on a sentence that had stopped
-/// being true (`REVIEW_TRIAGE.md` T1). ⇒ **Blessings expire with their
-/// subject, and something has to notice.**
+/// the list, and the precedent describes a state that no longer exists.
+/// A gate exemption's premise is a fact about the code, and facts about
+/// the code expire without announcing it — `check-strong-text.sh` can
+/// bless a site on the ground that it is drawn on the accent fill, and go
+/// on blessing it after the site stops being drawn there. ⇒ **Blessings
+/// expire with their subject, and something has to notice.**
 ///
 /// The shape is `icons::catalog::tests::every_declared_share_is_still_a_share`,
 /// which is where this project settled the pattern.
@@ -310,9 +307,10 @@ fn every_contrast_exemption_still_has_a_subject() {
 /// with its `bg_fill` left at `egui`'s default — and asserts the gate
 /// catches it and *names the state*.
 ///
-/// This is the same discipline the salvage source applied to its
-/// script-parser tests: a test that proves a typo is rejected is worth
-/// nothing beside a test that proves the correct spelling is accepted.
+/// ★★ The discipline generalises past theming: a test that proves a typo
+/// is rejected is worth nothing beside a test that proves the correct
+/// spelling is accepted. A gate needs one of each or it cannot tell
+/// "nothing is wrong" from "nothing is being asked".
 #[test]
 fn the_contrast_gate_catches_the_exact_defect_it_was_written_for() {
     let mut style = egui::Style::default();
@@ -358,20 +356,12 @@ fn on_accent_inverts_where_the_accent_is_light() {
     );
 }
 
-// ★ **`a_selected_widgets_text_is_readable_on_the_fill_egui_paints_behind_it`
-// used to live here, and was deleted on 2026-09-04 during the A15e
-// widening.** It measured one half of what
-// `both_roles_the_selection_channel_serves_are_readable_in_every_preset`
-// measures, with the same arithmetic and a weaker message, and both of
-// them now read their numbers out of the one gate rather than
-// reproducing `egui`'s substitution by hand. Its own table — `accent` on
-// the 27 % wash at 120 / 137 / **72.5**, which is what defect T2
-// actually shipped — is preserved in that test's doc comment below, so
-// nothing it recorded was lost with it.
-//
-// The reason it is worth a note rather than a silent deletion: three
-// tests measuring one pair is how a project ends up unable to say which
-// of them is the contract.
+// ★★ **One pair, one test.** Both roles the selection channel serves are
+// measured by `both_roles_the_selection_channel_serves_are_readable_in_every_preset`
+// below, out of `contrast::pairs`. Do not add a second test that measures
+// half of that with its own copy of `egui`'s substitution arithmetic:
+// three tests measuring one pair is how a project ends up unable to say
+// which of them is the contract.
 
 /// **The selection channel carries the CHROME pair, not the canvas one.**
 ///
@@ -394,13 +384,12 @@ fn on_accent_inverts_where_the_accent_is_light() {
 /// accessors drift, `icons::selected_image` tints a glyph for a plate that
 /// is no longer behind it, and nothing else in the tree would notice.
 ///
-/// `REVIEW_TRIAGE.md` T1 is what happens when such a premise lives only in
-/// prose: `check-strong-text.sh` blessed two sites on the ground that
-/// *"both are drawn ON the accent fill"*, which was true of one of them
-/// and had silently stopped being true of the other. The gate passed a
-/// defective site for a reason that had expired. **A blessing whose
-/// premise is a fact about the code should be held by an assertion about
-/// the code**, and this is that assertion.
+/// ⚠ A premise that lives only in prose cannot expire loudly. A gate that
+/// blesses two sites because *"both are drawn ON the accent fill"* goes on
+/// passing when that stops being true of one of them, and passes a
+/// defective site for a reason that no longer holds. **A blessing whose
+/// premise is a fact about the code must be held by an assertion about the
+/// code**, and this is that assertion.
 #[test]
 fn the_selection_channel_resolves_to_the_selected_plate_pair_in_every_preset() {
     for preset in Preset::ALL {
@@ -444,11 +433,12 @@ fn the_selection_channel_resolves_to_the_selected_plate_pair_in_every_preset() {
 ///    [`Theme::write_style`] points at [`Palette::panel`]. `TextEdit` has
 ///    **no `.frame_stroke()`**: there is no per-widget escape hatch.
 ///
-/// A test that measured only (1) is how the ring was lost. It existed, it
-/// was green, and it was green about the wrong half of the channel. So this
-/// measures both, from the `Style` that actually ships.
+/// ★★ A test that measures only (1) is green about the wrong half of the
+/// channel — the ring can be unreadable while the selected pair is
+/// comfortable, and nothing says so. This measures both, from the `Style`
+/// that actually ships.
 ///
-/// # The numbers, measured 2026-09-04, floor 90
+/// # The numbers, measured at the floor of 90
 ///
 /// | preset | selected pair (`accent` on `selected_plate`) | focus ring (`accent` on `panel`) |
 /// |---|---:|---:|
@@ -456,10 +446,11 @@ fn the_selection_channel_resolves_to_the_selected_plate_pair_in_every_preset() {
 /// | Airy  | 118.9 | 170.2 |
 /// | Dark  | 123.2 |  **96.0** |
 ///
-/// For comparison, the arrangement this replaced (`on_accent` on `accent`,
-/// `on_accent` on `panel`) measured 165 / 165 / 125 on the first column and
-/// **17.9 / 5.0 / 29.1** on the second. Airy's ring was white on white to
-/// within five levels of luminance.
+/// ⚠ The obvious alternative arrangement — `on_accent` on `accent` for the
+/// plate, `on_accent` on `panel` for the ring — measures 165 / 165 / 125 on
+/// the first column and **17.9 / 5.0 / 29.1** on the second. Airy's ring
+/// lands white on white to within five levels of luminance. `on_accent` is
+/// the ink for the accent FILL and is not a general foreground.
 ///
 /// ★ Dark's ring, at 96.0, is the tightest pair in the theme. It is also
 /// the reason this is a loop over `Preset::ALL` and not a spot check: the
@@ -480,14 +471,13 @@ fn both_roles_the_selection_channel_serves_are_readable_in_every_preset() {
         let ink = style.visuals.selection.stroke.color;
 
         // ★ Both numbers come out of `contrast::pairs` rather than being
-        // recomputed here. Until the A15e widening this test reproduced
-        // `egui`'s substitution arithmetic by hand, because the gate could
-        // not reach it; the gate reaches it now, and a second hand-rolled
-        // copy of an arithmetic this delicate is a place for the two to
-        // disagree. What this test still owns — and the reason it was not
-        // simply deleted into the gate — is the two MESSAGES below, which
-        // say what to tune and in which direction. The gate's own message
-        // names the fields; these name the move.
+        // recomputed here. A second hand-rolled copy of `egui`'s
+        // substitution arithmetic is a place for the two to disagree, and
+        // the arithmetic is delicate enough that the disagreement would be
+        // silent. What this test owns instead — and the reason it is not
+        // folded into the gate — is the two MESSAGES below, which say what
+        // to tune and in which direction. The gate's own message names the
+        // fields; these name the move.
         let find = |origin: contrast::Origin| {
             measured
                 .iter()
@@ -584,17 +574,19 @@ fn the_selected_widget_accessors_agree_with_the_style_egui_will_paint() {
     }
 }
 
-/// **The canvas accessors return the canvas roles — the values the
-/// content area used to reach through `visuals.selection` for.**
+/// **The canvas accessors return the canvas roles**, and the widget
+/// channel returns the chrome ones — two separate pairs that must not be
+/// unified.
 ///
-/// The whole safety argument for defect T2's fix is that re-pointing the
-/// widget channel cost the canvas **nothing**: the ~33 content-area
-/// readers were moved to [`Theme::canvas_selection_ink`] and
-/// [`Theme::canvas_selection_fill`], which hand back `accent` and
-/// `selection_fill` — bit-for-bit the two values that channel used to
-/// carry. This asserts it rather than asserting it in a comment, so a
-/// later edit that "tidies" one of these into the chrome pair turns the
-/// overlay a different colour *and goes red* instead of shipping.
+/// [`Theme::canvas_selection_ink`] and [`Theme::canvas_selection_fill`]
+/// hand back `accent` and `selection_fill`; the widget channel carries
+/// `selected_plate` and `accent` instead. The content area reads the
+/// canvas pair through these accessors and never through
+/// `visuals.selection`, which is `egui`'s channel for selected widgets.
+///
+/// ★★★ Asserted here rather than argued in a comment, so a later edit that
+/// "tidies" one of these into the chrome pair turns the overlay a different
+/// colour **and goes red** instead of shipping.
 ///
 /// Read through a real `Context` with the theme applied, not off the
 /// struct, because the accessors go via [`Theme::of`] and a stash that
@@ -633,7 +625,8 @@ fn the_canvas_accessors_hand_back_the_values_the_canvas_used_to_read() {
 }
 
 /// Settings keys round-trip, and an unknown key is `None` rather than
-/// a silent default. Salvaged.
+/// a silent default — a stored preset name from a newer build must not
+/// resolve to whichever preset happens to be first.
 #[test]
 fn preset_keys_round_trip_and_unknown_keys_are_refused() {
     for preset in Preset::ALL {

@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 """check-gate-input-scope.py — a verification whose input set is the index.
 
-WHAT THIS GATE IS FOR
+THE PROPERTY ASSERTED
 =====================
+
+Every `git grep` / `git ls-files` invocation under `tools/` either reads the
+WORKING TREE or carries a written reason for not doing so.
 
 A check that enumerates the files it will examine with `git grep` or
 `git ls-files` is asking git what is **in the index**. The working tree is a
@@ -14,41 +17,36 @@ verification is run by hand. A session writes three files, runs the gate suite,
 sees green, commits, and the same tree goes red on the next run with nothing
 edited in between. All that changed was `git add`.
 
-★★★ THE TELL IS THE TIMING, NOT THE CONTENT. Green before the commit, red
+THE TELL IS THE TIMING, NOT THE CONTENT. Green before the commit, red
 after it, nothing edited. If you ever see that, stop looking at the content and
 look at how the check chose its files.
 
-WHY THIS GATE EXISTS RATHER THAN A PARAGRAPH
---------------------------------------------
+WHY THIS IS A GATE RATHER THAN A PARAGRAPH
+------------------------------------------
 
-Because the paragraph was already written, twice, and did not work.
+Because the paragraph does not work. The generalisation — *"a gate whose input
+set is 'what is already committed' cannot see the commit you are about to
+make"* — is written into a docstring in this tree, and the same mechanism
+recurs in the same directory regardless, because prose does not sweep.
+**A lesson in a docstring is not an instrument.** This file is the sweep, so
+the next sibling cannot be written the same way.
 
-1. **2026-09-0x — `tools/check-suite-name-absent.py`.** It used a bare
-   `git ls-files` and a bare `git grep`, could not see the commit it was gating,
-   and paid for it with a red CI run on three newly-written files — one of them
-   its own scrub script. Its docstring then stated the generalisation in as many
-   words: *"a gate whose input set is 'what is already committed' cannot see the
-   commit you are about to make."* Both of its queries were fixed.
+The three shapes it takes, all of which occur here:
 
-2. **2026-09-12 — `tools/gates/check-old-name-absent.sh`, first failure.** An
-   untracked file under `evidence/` went unscanned. The repair **excluded that
-   one directory**, which treated the instance and left the mechanism.
+1. **A bare query.** `git ls-files` or `git grep` with no working-tree flag
+   cannot see the commit the gate is being run to clear, so the gate goes green
+   by hand and red in CI on newly-written files — including, on occasion, the
+   scrub script of the gate itself.
 
-3. **2026-09-13 — the same gate, again.** `run-all.sh` reported **41 of 41
-   green**; the commit added `DESIGNS.md` and `DOC_DRIFT.md`; then
-   `package-portable.py`'s pre-flight failed the **same tree** thirty minutes
-   later on two lines that had been sitting in those files the whole time. Both
-   `git grep` calls now pass `--untracked`.
+2. **A repair aimed at the instance.** An untracked file under one directory
+   goes unscanned, and the fix **excludes that one directory**. The mechanism
+   survives and fires again on the next directory. The repair has to be to the
+   query, never to the path list.
 
-4. **2026-09-13 — `tools/gates/check-doc-markup.py`, found by audit.** It listed
-   `git ls-files "*.md"`, so a Markdown file written and not yet added was not
-   scanned — and a brand-new document is precisely where an unescaped pipe or an
-   inert `**` lives, because nobody has ever rendered it. It had never fired.
-
-⇒ **A lesson in a docstring is not an instrument.** The correct generalisation
-was written into this tree at instance 1 and the same mechanism then shipped two
-more times in the same directory, because nothing swept for the pattern. This
-file is that sweep, so the next sibling cannot be written the same way.
+3. **An index listing with a glob.** An index listing of `*.md` skips a
+   Markdown file written and not yet added — and a brand-new document is
+   precisely where an unescaped pipe or an inert `**` lives, because nobody has
+   ever rendered it. Such a gate can run for its whole life without ever firing.
 
 WHAT IT CHECKS
 ==============
@@ -62,14 +60,17 @@ real invocation of `git grep` or `git ls-files` must either
 * carry an exemption marker `gate-input-scope-exempt: <reason>` on the call's
   own line, or on one of the two lines above it.
 
-★ **Both of those are deliberately tight, and the tightness is the gate.** The
+**Both of those are deliberately tight, and the tightness is the gate.** The
 flag is looked for in the invocation's own extent — from the command forward
 while its argument list is open — and the backward walk for an exemption stops
-at any line holding another git call. The first draft used one symmetric
-six-line window for both and its own self-test reported **zero of three**
-planted bare calls, because a compliant call above them was inside the window.
-⇒ A condition that something other than the subject can satisfy is not
-testing the subject.
+at any line holding another git call.
+
+The rejected design worth naming, because it is the obvious simplification: a
+single symmetric window of N lines for both. It lets a compliant call sitting
+above a bare one satisfy the condition on its behalf, and a self-test over that
+design reports **zero of three** planted bare calls while printing a confident
+PASS. **A condition that something other than the subject can satisfy is not
+testing the subject.**
 
 WHAT THE EXEMPTION IS FOR, AND IT IS A REAL CASE
 ------------------------------------------------
@@ -99,34 +100,56 @@ means nothing.
 
 * **Either language:** a line whose first non-blank character is `#` is a
   comment and is skipped.
-* **Shell:** a match inside an unclosed quote is skipped as well. The first live
-  run reported `check-old-name-absent.sh`'s own FAILURE MESSAGE — the words
-  *"the scan itself failed (git grep exited $STATUS)"* inside an `echo`. The
-  documentation a gate prints when it fails is the documentation most likely to
-  name the command it runs.
-* **Python:** only the **argv form** counts — a quoted `git` followed by a quoted
-  `grep` or `ls-files`, as a subprocess argument list. Prose cannot produce that
+* **Shell:** a match inside an unclosed quote is skipped as well. The shape this
+  closes is a gate's own FAILURE MESSAGE naming the command it runs — an `echo`
+  saying the scan itself failed and quoting the exit status. **The documentation
+  a gate prints when it fails is the documentation most likely to name the
+  command it runs.**
+* **Python:** only the **argv form** counts — a quoted `git` followed by a
+  quoted subcommand, as a subprocess argument list. Prose cannot produce that
   shape, and Python code cannot avoid it, because `subprocess` takes a list.
-  ⚠ A `shell=True` string invocation would slip through. None exists here, and
-  the repository's style forbids it; if one is ever written, extend this.
 
-USAGE
-=====
+WHAT IT PROVABLY CANNOT SEE
+---------------------------
+
+* **A `shell=True` string invocation in Python**, which never takes the argv
+  shape. None exists here and the repository's style forbids it; if one is ever
+  written, extend `PY_CALL`.
+* **An indirection** — a command name held in a variable, built by
+  concatenation, or reached through a wrapper function or shell alias.
+* **A non-git input set with the same defect**, such as a tool reading a
+  committed file list from disk. The subject here is specifically the two git
+  queries.
+* **Whether an exemption's stated reason is TRUE.** The gate enforces that a
+  reason was written, not that it is correct; that judgment needs a reader.
+
+USAGE AND EXIT CODES — the project's three-state gate contract
+==============================================================
 
   tools/gates/check-gate-input-scope.py              audit tools/
   tools/gates/check-gate-input-scope.py --self-test  falsify the mechanism
 
-Exit: 0 clean, 1 violations, 2 could not run.
+  0  clean    — every invocation reads the working tree or says why it does not
+  1  FAIL     — one or more index-scoped invocations, each with `file:line`
+  2  SKIPPED  — `tools/` not found
 
-★ The self-test falsifies in BOTH directions, per this repository's rule that a
+HOW TO FALSIFY IT
+-----------------
+
+`--self-test` falsifies in BOTH directions, per this repository's rule that a
 check which cannot fail is not evidence. It plants a bare call, a flagged call, a
 call whose flag is on its second line, an exempted call, two calls under one
 exemption, three bare calls below a compliant one, a shell comment, a Python
 comment quoting the argv form, a docstring mention, a command name inside an
 `echo`, and a real call whose argument is quoted — and asserts exactly which of
 them is reported. Each of the two prose filters is falsified in both directions,
-because each was added in response to a false positive and is therefore a
-carve-out.
+because each is a carve-out added in response to a false positive, and an
+unfalsified carve-out is how a gate stops seeing its subject.
+
+Note that the fixture lines embedding bare calls carry an exemption marker on
+their own SOURCE line, outside the fixture string: the scanner under test sees a
+bare call, while this gate's live scan of its own file sees a declared one.
+Deleting those trailing markers makes this gate report its own test data.
 """
 
 import os
@@ -148,11 +171,11 @@ CALL_MAX_LINES = 6
 # How far ABOVE a call an exemption comment may sit. Deliberately tiny, and the
 # walk stops at any line containing another git call.
 #
-# ★★★ This asymmetry is the whole repair of this gate's first draft, which used
-# a symmetric six-line window for both. Its own self-test then reported ZERO of
-# three planted bare calls, because a compliant call and an exemption comment
-# sitting above them were inside the window and laundered all three. A condition
-# that something other than the subject can satisfy is not testing the subject.
+# The asymmetry with `CALL_MAX_LINES` is load-bearing. A symmetric window lets
+# a compliant call, or an exemption comment meant for something else, sit above
+# a bare call and launder it: the self-test over such a window reports ZERO of
+# three planted bare calls. A condition that something other than the subject
+# can satisfy is not testing the subject.
 EXEMPT_ABOVE = 2
 
 EXEMPT = "gate-input-scope-exempt:"
@@ -182,12 +205,11 @@ def in_string(line, col):
     for the only question asked here: *is this occurrence of a command name
     actually prose?*
 
-    ★ It exists because the first live run reported
-    `check-old-name-absent.sh:165`, which is that gate's own FAILURE MESSAGE —
-    `echo "... the scan itself failed (git grep exited $STATUS)."` Skipping whole
-    comment lines was not enough: a command name inside an `echo` is
-    documentation, and the documentation a gate prints when it fails is the
-    documentation most likely to name the command it runs.
+    It exists because skipping whole comment lines is not enough. A gate's own
+    FAILURE MESSAGE names the command it runs —
+    `echo "... the scan itself failed (git grep exited $STATUS)."` is a real
+    example from a sibling — and **the documentation a gate prints when it
+    fails is the documentation most likely to name the command it runs**.
     """
     head = line[:col]
     return (head.count(Q) % 2 == 1) or (head.count(SQ) % 2 == 1)
@@ -294,7 +316,7 @@ def scan_lines(lines, is_python):
 def self_test():
     """Falsify both mechanisms in both directions.
 
-    ★ Every fixture line below that embeds a bare call carries an exemption
+    Every fixture line below that embeds a bare call carries an exemption
     marker on its own SOURCE line, outside the fixture string. So the scanner
     under test sees a bare call (which is the point of the fixture) while the
     live scan of this very file sees a declared one. Without that the gate
@@ -322,9 +344,9 @@ def self_test():
               ' ls-files), got ' + str(hits))
         ok = False
 
-    # ---- ★★★ the laundering the first draft allowed, by name ------------
-    # A compliant call above a bare one must NOT cover it. This is the property
-    # the symmetric window broke, and it broke silently: the gate went green.
+    # ---- the laundering a symmetric window allows, by name ---------------
+    # A compliant call above a bare one must NOT cover it. A symmetric window
+    # breaks this property silently: the gate simply goes green.
     launder = [
         '    subprocess.run(["git", "grep", "--untracked", "-n", "x"])',
         '    subprocess.run(["git", "grep", "-n", "a"])',  # gate-input-scope-exempt: self-test fixture, not an invocation

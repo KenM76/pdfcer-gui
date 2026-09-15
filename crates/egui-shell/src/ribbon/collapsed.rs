@@ -7,12 +7,12 @@
 //!
 //! A single control the height of the band's row area, carrying the group's
 //! **caption** and a **chevron**, with the group's real contents one click
-//! away in a popup. That is Word's collapsed group, measured from
-//! `evidence/word-ribbon/ribbon-0800.png`: at 800 pt its Font and Paragraph
+//! away in a popup. That is Word's collapsed group, measured by photographing
+//! it with `tools/word-ribbon-study.ps1`: at 800 pt its Font and Paragraph
 //! groups are exactly this — a captioned button with a `⌄` beneath — while
 //! Clipboard beside them is untouched.
 //!
-//! ★ The caption is **kept**, not replaced by an icon. Word can use an icon
+//! The caption is **kept**, not replaced by an icon. Word can use an icon
 //! there because Office ships one per group and its operators have seen them
 //! for twenty years. This shell has no group icons in its manifest at all, and
 //! inventing a glyph per group would be the mistake recorded against the
@@ -21,20 +21,20 @@
 //! two mystery glyphs.* A collapsed group whose caption still reads **Export**
 //! is findable. One showing an invented arrow-in-a-box is not.
 //!
-//! ## ★★ The popup is the SAME renderer as the band
+//! ## The popup is the SAME renderer as the band
 //!
 //! [`super::band::captioned_group`] draws it, with the same row split it would
-//! have had expanded — exactly as the overflow menu does. This is not code
-//! tidiness, it is the fix for a defect the salvage source actually shipped:
-//! a second, simpler drawing path for a menu is how two groups ended up with
-//! no caption at all. One closure, three surfaces (band, overflow menu,
-//! collapsed popup), and a group reads identically in all three.
+//! have had expanded. This is not code tidiness: a second, simpler drawing
+//! path for a popup is how a group ends up drawn with no caption at all. One
+//! closure, two surfaces — the band and the collapsed popup — and a group
+//! reads identically in both.
 //!
-//! ★ `GroupBox::NATURAL` is passed, whose `rows` is `0.0`. That is deliberate
-//! and it is the reason `sizing::render_large` has to be as tall as its own
-//! content when handed a zero — a fact that cost a shipped, unclickable
-//! **Print** button in the overflow menu and is documented at that function.
-//! A collapsed group's popup is the third caller to depend on it.
+//! `GroupBox::NATURAL` is passed, whose `rows` is `0.0`. That is deliberate,
+//! and it is why `sizing::render_large` has to be as tall as its own content
+//! when handed a zero: a Large control given a zero-height row area allocates
+//! a rect with no area to hit, so it paints and reports a rectangle and is
+//! **not clickable**. The rule is documented at that function; a collapsed
+//! group's popup is what depends on it.
 
 use egui::{TextStyle, Vec2};
 
@@ -63,8 +63,8 @@ const SIDE_PADDING: f32 = 10.0;
 /// vary. The ladder needs this before it can decide anything, which is why it
 /// is a free function taking a `&Ui` rather than something the renderer
 /// returns — a width that were only known after drawing would be a
-/// measurement fed back into a layout, which is the shape this project has
-/// paid for twice.
+/// measurement fed back into a layout, which is the feedback loop R128
+/// forbids.
 pub(crate) fn width(ui: &egui::Ui, group: &Group) -> f32 {
     let caption = super::band::caption_text(group);
     let text = super::measure::text_width(ui, caption, &TextStyle::Button);
@@ -77,7 +77,7 @@ pub(crate) fn width(ui: &egui::Ui, group: &Group) -> f32 {
 /// `rows` is the split the group *would* have had expanded, passed through
 /// untouched so the popup is identical to the band's rendering. `box_` is the
 /// band's box, used for the button's height only — the popup gets
-/// [`GroupBox::NATURAL`] like every other menu surface.
+/// [`GroupBox::NATURAL`], so it is as tall as its own content.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn render(
     ui: &mut egui::Ui,
@@ -91,16 +91,16 @@ pub(crate) fn render(
 ) {
     let caption = super::band::caption_text(group);
     let w = width(ui, group);
-    // `pad_top + rows` rather than `rows` alone since 2026-09-04: the band's
-    // row area now starts BELOW a stated top padding (`GroupBox::pad_top`), so
-    // "as tall as the rows" is the sum of the two. `total` still wins in the
-    // band, where it is the full height; the `max` is for the overflow menu,
-    // whose `GroupBox::NATURAL` makes every term zero.
+    // `pad_top + rows` rather than `rows` alone: the band's row area starts
+    // BELOW a stated top padding (`GroupBox::pad_top`), so "as tall as the
+    // rows" is the sum of the two. `total` wins in the band, where it is the
+    // full height; the `max` is for the popup, whose `GroupBox::NATURAL` makes
+    // every term zero.
     let h = box_.total.max(box_.pad_top + box_.rows);
 
     let (rect, response) = ui.allocate_exact_size(Vec2::new(w, h), egui::Sense::click());
 
-    // ★ Announced as a button whose label is the group's caption, so a screen
+    // Announced as a button whose label is the group's caption, so a screen
     // reader hears "Font" rather than "collapsed group 2". The collapse is a
     // layout fact and not something the operator asked for; naming it would
     // report our arithmetic instead of their ribbon.
@@ -157,8 +157,8 @@ pub(crate) fn render(
     });
 }
 
-// ★ There is deliberately no `count` helper here, and the absence is worth a
-// line because the first draft had one.
+// There is deliberately no `count` helper here, and the absence is worth a
+// line.
 //
 // `band`'s `debug_assert_eq!(groups_rendered, captions_emitted)` is the
 // tripwire for a group drawn without a caption. A collapsed group contributes
@@ -197,10 +197,9 @@ mod tests {
     #[test]
     fn a_longer_caption_is_wider() {
         let ctx = egui::Context::default();
-        // ★ Without a real font every width is zero and BOTH assertions below
-        // pass vacuously on the first and fail confusingly on the second —
-        // which is exactly what happened when this test was first written
-        // ("20 vs 20", both of them the padding). A width test with no font
+        // Without a real font every width is zero: the padding assertion in
+        // the test above passes vacuously, and this one compares the padding
+        // with itself and fails confusingly. A width test with no font
         // measures nothing; `width_tests` carries the same note.
         super::super::testfont::install(&ctx);
         let (mut short, mut long) = (0.0, 0.0);

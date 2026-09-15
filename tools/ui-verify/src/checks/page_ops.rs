@@ -19,7 +19,7 @@
 //! reaches the page vector the canvas draws from, and that it survives onto
 //! disk.
 //!
-//! # ★ What this check adds that `save_copy_round_trip` does not
+//! # What this check adds that `save_copy_round_trip` does not
 //!
 //! That check proves an **annotation** reaches a file. This one proves a
 //! **structural** change does, and the two are different claims because the
@@ -74,7 +74,7 @@
 //! `crate::panels::pages::ops::operands`' documented rule and is the path an
 //! operator who has never opened the panel takes.
 //!
-//! # ★ Three falsifying phases, and the build each one catches
+//! # Three falsifying phases, and the build each one catches
 //!
 //! ## D catches: *the panel changed and the session did not*
 //!
@@ -102,7 +102,7 @@
 //! passes E, F and G — G *trivially*, because the copy simply is the source —
 //! and its page count is the one it started with.
 //!
-//! # ★★ Two plants were RUN, on 2026-08-14, and both fired
+//! # Two plants were RUN, and both fired
 //!
 //! [`crate::checks`]' rule for a new check is that *"it must fail against a
 //! build where the wiring is absent"*, and that every check here "has been run
@@ -110,10 +110,15 @@
 //! `D:\Dev\pdfcer\fixtures\synthetic\pageops\four-pages.pdf` (4 pages, 2453 B,
 //! no `/Rotate`):
 //!
-//! | Plant | What was changed | Result |
-//! |---|---|---|
-//! | the five `pages.*` dispatch arms **deleted** — the shipped v0.1.0 state | `app/dispatch.rs` | **FAIL at B**: *"`ribbon.item.pages.rotate_right` WAS INVOKED AND THE ENGINE NEVER RAN … ★ the application traced `command-unimplemented id=pages.rotate_right`"* |
-//! | the resync's renumbering test reduced to `before.len() != now.len()` | `app/actions/pages.rs` | **FAIL at C**: *"★ A REORDER WAS NOT TREATED AS A RENUMBERING: `pages-resync was=4 now=4 renumbered=0`"*, having passed B |
+//! **Plant 1** — the five `pages.*` dispatch arms **deleted** from
+//! `app/dispatch.rs`, which is the shipped v0.1.0 state. **FAIL at B**:
+//! *"`ribbon.item.pages.rotate_right` WAS INVOKED AND THE ENGINE NEVER RAN
+//! … the application traced `command-unimplemented id=pages.rotate_right`"*.
+//!
+//! **Plant 2** — the resync's renumbering test in `app/actions/pages.rs`
+//! reduced to `before.len() != now.len()`. **FAIL at C**: *"A REORDER WAS NOT
+//! TREATED AS A RENUMBERING: `pages-resync was=4 now=4 renumbered=0`"*, having
+//! passed B.
 //!
 //! The second is the more instructive, and is the reason phase C exists rather
 //! than being folded into phase D. **A page count is not a renumbering test.**
@@ -131,13 +136,13 @@
 //! # What this check does NOT cover, stated rather than implied
 //!
 //! * **The keyboard.** `[`, `]`, `Alt+Up` and `Alt+Down` are bound in the
-//!   manifest and are **not driven**: synthetic keystrokes do not reach the
-//!   target window from the session that injects them on this machine (see
-//!   [`crate::checks::find_bar`], and `HANDOFF.md` §8's record of a lead against
-//!   that which failed to reproduce). Those four chords are covered by
-//!   `shell::manifest`'s keymap test and by the single dispatcher every route
-//!   shares, and the gap is on the record rather than papered over by a green
-//!   result.
+//!   manifest and none of them is pressed *here*: this check drives the ribbon.
+//!   They are not unreachable. Synthetic keystrokes DO reach the target window,
+//!   and [`crate::checks::chords`] presses `[` and `Alt+Down` and asserts the
+//!   `chord-command` line each one resolves to. `]` and `Alt+Up` rest on
+//!   `shell::manifest`'s keymap test and on the single dispatcher every route
+//!   shares, and that narrower gap is on the record rather than papered over by
+//!   a green result.
 //! * **The page tile's context menu.** Reaching it means mounting the Pages
 //!   panel, finding a tile and right-clicking it; the menu that opens is an
 //!   `egui` popup which declares no `ui-rect` regions, so there is nothing to
@@ -583,7 +588,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .map_err(|e| Error::new(format!("cannot read {}: {e}", pdf.display())))?;
     let before_digest = digest(&source);
 
-    // ★ Phase H's precondition, checked BEFORE anything is driven so the SKIP
+    // Phase H's precondition, checked BEFORE anything is driven so the SKIP
     // costs nothing. A fixture that already carries a `/Rotate` entry would
     // make "the copy contains `/Rotate 90`" evidence of the fixture rather than
     // of this run's edit, and a check whose evidence is ambiguous is worse than
@@ -648,7 +653,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(16);
         click_tab(&session, &driver, ui_rect, PAGES_TAB)?;
 
-        // --- ★ PHASE A2: extract the current page to a new document --------
+        // --- PHASE A2: extract the current page to a new document --------
         //
         // First, and its result is deliberately thrown away: phase E's save
         // writes to the **same** path, because `pick_save_path` has one
@@ -714,7 +719,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
         }
 
-        // --- ★ PHASE B: rotate the current page ----------------------------
+        // --- PHASE B: rotate the current page ----------------------------
         let seen = resyncs(&session)?;
         click_command(&session, &driver, ui_rect, ROTATE, 24)?;
         if session.trace()?.last(ROTATE_APPLIED).is_none() {
@@ -729,7 +734,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  vector, so the sheet on screen would keep drawing the way it was."
             )));
         };
-        // ★ The assertion no other check in the suite makes.
+        // The assertion no other check in the suite makes.
         if line.get("renumbered") != Some("0") {
             return Ok(Some(format!(
                 "★ A ROTATION WAS TREATED AS A RENUMBERING: `{}`.\n\n\
@@ -743,7 +748,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
         report.note(format!("rotate: `{}`", line.raw));
 
-        // --- ★ PHASE C: send the current page one place later --------------
+        // --- PHASE C: send the current page one place later --------------
         let seen = resyncs(&session)?;
         click_command(&session, &driver, ui_rect, MOVE_DOWN, 24)?;
         if session.trace()?.last(REORDER_APPLIED).is_none() {
@@ -776,7 +781,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
         report.note(format!("move down: `{}`", line.raw));
 
-        // --- ★ PHASE D: delete the current page ----------------------------
+        // --- PHASE D: delete the current page ----------------------------
         let seen = resyncs(&session)?;
         click_command(&session, &driver, ui_rect, DELETE, 28)?;
         if session.trace()?.last(DELETE_APPLIED).is_none() {
@@ -856,7 +861,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .map_err(|e| Error::new(format!("cannot read {}: {e}", target.display())))?;
     report.artifact(target.clone());
 
-    // --- ★ PHASE F: the document that was opened is untouched ---------------
+    // --- PHASE F: the document that was opened is untouched ---------------
     //
     // It matters more for this check than for `save_copy`'s, and the reason is
     // the verb: a page DELETE is the one operation in this application that
@@ -903,7 +908,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    // --- ★★ PHASE H: the rotation is IN THE FILE ---------------------------
+    // --- PHASE H: the rotation is IN THE FILE ---------------------------
     let rotated = occurrences(&copy, ROTATED_90);
     if rotated == 0 {
         return Ok(Some(format!(
@@ -925,7 +930,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // =======================================================================
-    // ★★ PHASE I — THE ROUND TRIP: re-open the file that came out
+    // PHASE I — THE ROUND TRIP: re-open the file that came out
     // =======================================================================
     let reopened_pages = {
         let session = launch(
@@ -1021,7 +1026,7 @@ mod tests {
         assert_eq!(MODE, "review");
     }
 
-    /// ★ **The occurrence counter really counts, and really finds nothing when
+    /// **The occurrence counter really counts, and really finds nothing when
     /// there is nothing.**
     ///
     /// Phase H's whole verdict rests on this function in both directions: a
@@ -1047,7 +1052,7 @@ mod tests {
         assert_eq!(occurrences(b"aaaa", b"aa"), 3);
     }
 
-    /// ★ **The digest notices a single changed byte and a truncation.**
+    /// **The digest notices a single changed byte and a truncation.**
     ///
     /// Phase F's verdict rests on it, and phase F is this check's assertion that
     /// a **page delete** did not reach the file the operator opened. A digest
@@ -1093,7 +1098,7 @@ mod tests {
                 .any(|l| l.get("id") == Some(DELETE.1))
         );
 
-        // ★ The page count survives a path with SPACES in it. The application
+        // The page count survives a path with SPACES in it. The application
         // Debug-quotes the path for exactly this reason; `pages=` sits BEFORE
         // it on the line, which is why this parses either way — asserted so a
         // future reordering of that line's fields cannot silently break the

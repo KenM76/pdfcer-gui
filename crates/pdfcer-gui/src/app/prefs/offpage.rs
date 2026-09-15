@@ -2,10 +2,11 @@
 //! separately for each ribbon mode.**
 //!
 //! This module owns one preference and the whole of its reasoning: the type,
-//! the per-mode default, the file keys, the parser and the writer. It follows
-//! [`printing`](super::printing)'s precedent — *"the parser and the writer are
-//! two spellings of one vocabulary and must not live in different files"* —
-//! rather than adding a fourth family of arms to `prefs::file`.
+//! the per-mode default, the file keys, the parser and the writer. The parser
+//! and the writer are two spellings of one vocabulary and must not live in
+//! different files, which is why this group is a module rather than another
+//! family of arms in `prefs::file`. [`printing`](super::printing) is grouped on
+//! the same rule.
 //!
 //! # What the preference is about
 //!
@@ -221,17 +222,13 @@ pub(super) fn write_block(prefs: &OffPagePrefs, out: &mut String) {
 ///
 /// Called from the single `Action::ToggleViewChrome` arm in
 /// [`crate::app::actions`], for *every* chrome toggle, and it returns
-/// immediately for the five that have no memory. That shape is deliberate and
-/// it is worth defending, because the obvious alternative — an `if chrome ==
-/// OffPage` at the call site — looks tidier and is worse:
-///
-/// * **The knowledge stays in one module.** That off-page is the one toggle
-///   with a remembered answer, that the answer is keyed by mode, and that a
-///   mode-less shell has nothing to key it by are all facts about *this*
-///   preference. A caller that had to know the first of them would be a second
-///   place to update when a second toggle grows a memory.
-/// * **`apply.rs` has fourteen lines of R2 headroom** and an action arm is the
-///   wrong place to spend them on a preference's business rules.
+/// immediately for the [`ViewChrome`] variants that have no memory. That shape
+/// is deliberate, because the obvious alternative — an `if chrome == OffPage` at
+/// the call site — looks tidier and is worse: **the knowledge stays in one
+/// module.** That off-page is the toggle with a remembered answer, that the
+/// answer is keyed by mode, and that a mode-less shell has nothing to key it by
+/// are all facts about *this* preference. A caller that had to know the first of
+/// them would be a second place to update when a second toggle grows a memory.
 ///
 /// # What it writes, and why immediately
 ///
@@ -284,9 +281,9 @@ pub fn remember(chrome: ViewChrome, on: bool, prefs: &mut super::Prefs, mode: Op
 /// is off, so the band of pasteboard that held off-sheet material goes, and
 /// with it the gap it opened between one sheet and the next. That is the
 /// operator's request — *"when not showing the stuff that is off page there
-/// shouldn't be a gap between pages where the stuff is"* — arriving at the
-/// moment he asked for it. It is not a surprise to be softened; a mode change
-/// is a deliberate gesture and this is the thing it was asked to do.
+/// shouldn't be a gap between pages where the stuff is"*. It is not a surprise
+/// to be softened; a mode change is a deliberate gesture and this is the thing
+/// it was asked to do.
 ///
 /// # Why EVERY document and not just the active one
 ///
@@ -318,9 +315,9 @@ mod tests {
 
     /// The operator's request, restated as an assertion.
     ///
-    /// Read off, Review and Edit on. This is the whole of requirement (c) and
-    /// it is asserted against the *names the manifest uses*, because those ids
-    /// are what reaches [`OffPagePrefs::default_for_mode`] at runtime.
+    /// Read off, Review and Edit on, asserted against the *ids the manifest
+    /// uses* rather than against display names, because those ids are what
+    /// reaches [`OffPagePrefs::default_for_mode`] at runtime.
     #[test]
     fn read_ships_off_and_the_working_modes_ship_on() {
         assert!(!OffPagePrefs::default_for_mode("read"));

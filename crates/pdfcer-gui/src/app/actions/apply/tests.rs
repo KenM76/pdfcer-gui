@@ -1,10 +1,9 @@
 //! # `app::actions::apply` tests — the funnel's own assertions
 //!
-//! Split out of `apply.rs` on 2026-08-26 under R2, when the placed-object
-//! selection and the save-epoch work took that file past 1,500 lines. Nothing
-//! moved but the tests, and they moved whole — the gate's own header is
-//! explicit that the right response to it firing is to split the module, not to
-//! shrink the prose.
+//! Held here rather than in `apply.rs` so that the funnel stays inside R2's
+//! 1,500-line ceiling. The tests moved whole: the file-size gate's own header
+//! is explicit that the right response to it firing is to split the module,
+//! not to shrink the prose.
 //!
 //! ## What these guard
 //!
@@ -24,7 +23,7 @@ use crate::app::actions::last_edit_disclosure;
 use crate::app::actions::{EditDisclosure, record_edit_disclosure};
 use crate::app::state::{FOUR_PAGES, open_fixture};
 
-/// ★ **An undo is an edit, and moves the epoch like one — while an undo
+/// **An undo is an edit, and moves the epoch like one — while an undo
 /// with nothing to undo moves nothing at all.**
 ///
 /// # The two failures this pins, and why neither is visible anywhere else
@@ -103,7 +102,7 @@ fn an_undo_is_an_edit_and_moves_the_epoch_like_one() {
         "authoring something is not a reason to offer a redo"
     );
 
-    // --- ★ the undo ----------------------------------------------------
+    // --- the undo ------------------------------------------------------
     crate::app::actions::history::history_step(
         &mut doc,
         crate::app::actions::history::Direction::Undo,
@@ -137,7 +136,7 @@ fn an_undo_is_an_edit_and_moves_the_epoch_like_one() {
     assert!(!doc.session.can_redo());
 }
 
-/// ★ **A disclosure a verb returns is live for the revision that verb
+/// **A disclosure a verb returns is live for the revision that verb
 /// produced** — the wiring, driven rather than planted.
 ///
 /// [`plant_edit_disclosure_for_test`] proves the status bar can *draw* a
@@ -207,7 +206,7 @@ fn a_verbs_disclosure_is_live_for_the_revision_the_edit_produced() {
     record_edit_disclosure(None);
 }
 
-/// ★ **A disclosure is shown only while it describes the revision on
+/// **A disclosure is shown only while it describes the revision on
 /// screen.**
 ///
 /// The staleness rule, and the whole reason nothing anywhere has to
@@ -252,17 +251,16 @@ fn a_disclosure_is_hidden_once_the_document_moves_past_it() {
     record_edit_disclosure(None);
 }
 
-/// ★★★ **A row click and a canvas click now write the same thing.**
+/// **A row click and a canvas click write the same thing.**
 ///
 /// The operator, 2026-08-26: *"when I have an object selected like text the
 /// Tool tab doesn't switch to giving me the editable stuff for that object."*
 ///
-/// The cause was three parallel notions of *"the thing I am working on"* — the
-/// armed tool, a panel-local `focus` written only by the Objects panel, and the
-/// canvas selection — with no bridge between them. The Properties panel read
-/// the second; he had just created the third.
+/// There is ONE notion of *"the thing I am working on"* — the canvas
+/// selection. A panel-local `focus` beside it is a second, and a panel reading
+/// the second while the operator writes the third is the shape of that report.
 ///
-/// This asserts the binding that replaced it: the Objects panel raises
+/// This asserts the binding that holds it: the Objects panel raises
 /// `Action::SelectObject`, and what it produces is an **ordinary canvas
 /// selection**, indistinguishable from one made by clicking the page. That is
 /// the property that makes the Properties panel, the row highlight, the
@@ -300,7 +298,7 @@ fn selecting_from_the_objects_panel_produces_an_ordinary_canvas_selection() {
          second, private notion of what is being worked on"
     );
 
-    // ★ And clicking the selected row again clears it, which is what clicking a
+    // And clicking the selected row again clears it, which is what clicking a
     // selected item does in every list in every application. The panel decides
     // WHICH of the two it is asking for; the action does what it is told.
     app.apply_actions(
@@ -328,10 +326,10 @@ fn selecting_from_the_objects_panel_produces_an_ordinary_canvas_selection() {
 /// The engine's own prose for the refusal that produced **O116**, kept
 /// verbatim.
 ///
-/// ★ A real `EditError`'s `Display` is what these two tests are defending
+/// A real `EditError`'s `Display` is what these two tests are defending
 /// against, and paraphrasing it would have made them defend a paraphrase.
-/// `vector_edit`'s error bound is `Display` and nothing more (see
-/// [`super::vector_edit`]'s ★ section on why), so a bespoke type carrying the
+/// `vector_edit`'s error bound is `Display` and nothing more (its own header
+/// carries why), so a bespoke type carrying the
 /// engine's exact sentence is a faithful stand-in for the value the funnel
 /// really meets — and it keeps the test independent of
 /// `pdfcer_core::edit::EditError`, which is `#[non_exhaustive]` and whose
@@ -349,15 +347,15 @@ impl std::fmt::Display for SymbolicFontRefusal {
     }
 }
 
-/// ★★★ **A refused edit is a sentence, never a silence** —
+/// **A refused edit is a sentence, never a silence** —
 /// `OPERATOR_REQUESTS.md` O116.
 ///
 /// The founding defect class of this project, pinned at the one place every
-/// document change passes through. Before 2026-09-04 this arm wrote a line to
-/// `PDFCER_DIAG` and stopped, so an operator who armed Edit ▸ Edit text on a
-/// CAD drawing, placed a caret, typed and committed was told **nothing at
-/// all** — and the engine's refusal was correct, which is what makes the
-/// silence indefensible rather than merely unhelpful.
+/// document change passes through. An error arm that writes to `PDFCER_DIAG`
+/// and stops tells an operator who armed Edit ▸ Edit text on a CAD drawing,
+/// placed a caret, typed and committed **nothing at all** — and the engine's
+/// refusal is correct, which is what makes that silence indefensible rather
+/// than merely unhelpful.
 ///
 /// # The four properties asserted, and why each would fail invisibly
 ///
@@ -367,9 +365,10 @@ impl std::fmt::Display for SymbolicFontRefusal {
 /// 2. **The document did not move.** The sentence says *"the document is
 ///    unchanged"*, and that has to be true by construction rather than by
 ///    intention: no epoch bump, so no cache invalidation and no undo entry.
-/// 3. **The verb's own sentence wins.** Six recorders fire from inside the
-///    closure, and an unconditional write in the error arm would replace a
-///    sentence naming a one-click remedy with one naming nothing. This is the
+/// 3. **The verb's own sentence wins.** Verbs record their own refusals from
+///    inside the closure, and an unconditional write in the error arm would
+///    replace a sentence naming a one-click remedy with one naming nothing.
+///    This is the
 ///    assertion that stops a future "simplification" of `BeforeTheVerb` into a
 ///    bare `record`.
 /// 4. **Two presses are two events.** The second commit on the same
@@ -426,7 +425,7 @@ fn a_refused_edit_is_a_sentence_rather_than_a_silence() {
     decline::retire();
 }
 
-/// ★★★ **The sentence names no cause and carries none of the engine's own
+/// **The sentence names no cause and carries none of the engine's own
 /// words.**
 ///
 /// Two rules that look like one and are not.
@@ -444,7 +443,7 @@ fn a_refused_edit_is_a_sentence_rather_than_a_silence() {
 /// text through an error type"*. That gate cannot see a `format!("{error}")`
 /// that reaches a label at runtime; this can.
 ///
-/// # ★ How the second half is asserted, and why it is not a keyword list
+/// # How the second half is asserted, and why it is not a keyword list
 ///
 /// Every word of the engine's prose is checked against every word of the
 /// sentence, and a collision fails — except for a short, explicitly-named set
@@ -453,7 +452,7 @@ fn a_refused_edit_is_a_sentence_rather_than_a_silence() {
 /// catches **any** leak, including the one that matters most — somebody
 /// appending `format!(": {error}")` to make the message "more helpful".
 ///
-/// ★ `refused` is on the allow-list and is the interesting entry: it is the
+/// `refused` is on the allow-list and is the interesting entry: it is the
 /// plain English verb for what happened, not part of the engine's diagnostic
 /// vocabulary, and both sentences are entitled to it.
 #[test]

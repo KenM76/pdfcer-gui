@@ -28,26 +28,25 @@
 //!   about a legal file has been misled just as surely as one told nothing.
 //! - [`layers_session_only_note`] exists because a panel of tickboxes over a
 //!   document is, by every other application's convention, an editor — and
-//!   this one is not. Its doc comment carries the full wording history,
-//!   including the two occasions the sentence was wrong.
+//!   this one is not. Its doc comment carries the reasoning the wording holds.
 //! - [`fonts::font_verdict_removable`] and its four siblings are **two
-//!   words each**, and were full sentences until a screenshot of the running
-//!   panel showed the row clipped at the dock's edge with the byte size cut
-//!   to `59`.
+//!   words each**, because a full sentence there clips at the dock's edge and
+//!   takes the byte size with it.
 //!
-//! Rewriting any of those from scratch would re-derive a decision already
-//! paid for, which is exactly what `SALVAGE.md`'s procedure forbids.
+//! ⚠ **Rewriting any of those from fresh words re-derives a decision already
+//! paid for**, and the rewrite has no access to the screenshot or the defect
+//! that bought the current wording. Amend a string only with a reason, and
+//! write the reason into its doc comment.
 //!
 //! ## The three panels in this file share a posture
 //!
-//! **Each says what it cannot tell you, first.** The Signatures panel opens
-//! with the sentence that pdfcer performs no cryptographic verification,
-//! because a panel headed "Signatures" listing byte counts is the single
-//! likeliest place in this application for an operator to take away more
-//! than was said. The Layers panel opens by saying that a toggle changes what
-//! you see and not the document, and that nothing it does is saved — which at
-//! S3 also had to say the toggle was absent, and at S4 does not, because it
-//! is back. The Bookmarks panel says when its own reader gave up.
+//! **Each leads with the shape of what it is about to tell you**, because a
+//! panel headed "Signatures" listing byte counts is the single likeliest
+//! place in this application for an operator to take away more than was said.
+//! The Signatures panel's opener is [`crate::text::trust::panel_intro`],
+//! beside the rest of the trust copy. The Layers panel opens by saying that a
+//! toggle changes what you see and not the document, and that nothing it does
+//! is saved. The Bookmarks panel says when its own reader gave up.
 //!
 //! That ordering is not stylistic. A caveat below a list arrives after the
 //! operator has already drawn a conclusion.
@@ -57,12 +56,13 @@
 //! - **Sentence case, no trailing period on labels; full sentences with
 //!   punctuation for prose.**
 //! - **Name the thing and what the operator can do about it.**
-//! - **Never state a capability the build does not have.** Several strings
-//!   below were amended at salvage for exactly this reason, and each says so
-//!   in its own doc comment rather than being quietly reworded.
+//! - **Never state a capability the build does not have** — and never state
+//!   the ABSENCE of one either, which is the half that rots. A denial is a
+//!   claim about the engine with a shelf life of hours; see the note above
+//!   [`signatures_none`].
 
 /// ★★ **The annotation half of the Properties panel's geometry section** —
-/// added 2026-09-06 when X/Y/W/H became typeable over a selected markup.
+/// X/Y/W/H, typeable over a selected markup.
 ///
 /// A module of its own rather than four more functions in [`properties`], and
 /// its header argues the seam: the heading, the units note, the four labels and
@@ -109,11 +109,9 @@ pub mod dimension;
 /// subject and keywords, the seven facts pdfcer read about it, and the two
 /// disclosures it can owe.
 ///
-/// Split out of [`properties`] on 2026-09-05 when the section became a panel of
-/// its own, on the operator's instruction. Its header carries both reasons for
-/// the split — the surface moved, and `properties.rs` stood at 1,469 of its
-/// 1,500-line R2 ceiling — and why every function lost its `properties_`
-/// prefix in the move.
+/// A module of its own because the surface is a panel of its own, and because
+/// `properties.rs` sits against its 1,500-line R2 ceiling. Nothing here
+/// carries a `properties_` prefix: the module path already says it.
 pub mod docprops;
 /// ★ The **face chooser**, which is one control drawn on two surfaces — the
 /// Properties panel's *This text* section and the ribbon's Format ▸ Font group.
@@ -244,27 +242,22 @@ pub fn panel_unknown() -> &'static str {
 // Signatures
 // ---------------------------------------------------------------------------
 
-// ★★★ `signatures_not_a_validity_check` STOOD HERE AND WAS DELETED
-// 2026-09-05, with the sentence quoted so the deletion is legible:
+// ★★★ THERE IS NO "pdfcer cannot check whether these signatures are valid"
+// SENTENCE HERE, AND ONE MUST NOT BE ADDED BACK.
 //
-//   > "pdfcer does not check whether these signatures are valid — it cannot
-//   > yet. What follows is what each signature COVERS …"
+// `signature::verify_all_with_trust` is wired into `crate::panels::signatures`
+// (`crate::trust::examine`), so any such sentence is false. ⚠ **A denial of an
+// engine capability is the most expensive shape of prose this project has: it
+// is true when written, it has a shelf life measured in hours, and it sits
+// inside surrounding prose that stays true — so nothing about the paragraph
+// looks stale.**
 //
-// It was true when written and became FALSE the moment
-// `signature::verify_all_with_trust` was wired into
-// `crate::panels::signatures` — which is this project's most expensive
-// recorded failure shape: a claim about what the engine cannot do, with a
-// shelf life measured in hours, sitting inside prose that stayed true.
-//
-// ★ It is DELETED rather than reworded, because the sentence it would have
-// to become is not a caveat at all: the panel now reports three facts and its
-// leading line describes their SHAPE rather than denying one of them. That
-// sentence lives in `crate::text::trust::panel_intro`, beside the other trust
-// copy, because the four rules governing it are that module's.
-//
-// The opener test below now aims at that function, so the "each structure
-// panel leads with its own limitation" property still holds and is measured
-// against the sentence actually on screen.
+// The panel's opening line describes the SHAPE of the three facts it reports
+// rather than denying one of them, and it lives in
+// `crate::text::trust::panel_intro` beside the rest of the trust copy, because
+// the four rules governing it are that module's. The opener test below aims at
+// that function, so "each structure panel leads with its own limitation" is
+// measured against the sentence actually on screen.
 
 /// No signature carries a byte range.
 #[must_use]
@@ -399,9 +392,9 @@ pub fn layers_count(total: usize) -> String {
 /// *"Switching a layer changes what you see, not the document"* is the thing
 /// an operator most needs to know and the hardest for them to discover: a
 /// panel of tickboxes over a document is, by every other application's
-/// convention, an editor. Restating it in fresh words would re-derive a
-/// decision already paid for (`SALVAGE.md`), so it comes back exactly as it
-/// was.
+/// convention, an editor. ★ Restating it in fresh words re-derives a decision
+/// already paid for, and the restatement has none of the evidence that bought
+/// this wording — so it stands verbatim.
 ///
 /// ## Why a clause was ADDED, and what it is for
 ///

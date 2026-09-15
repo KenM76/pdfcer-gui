@@ -2,31 +2,40 @@
 # check-shell-purity.sh — `crates/egui-shell/` must not know what a PDF is.
 #
 # ===========================================================================
-# THE RULE, AND WHY IT IS WORTH A GATE
+# THE PROPERTY ASSERTED
 # ===========================================================================
 #
-# `egui-shell` is a REUSABLE application shell: ribbon, dock, modes, layout
-# persistence, theme, command registry. The workspace root says it "knows
-# nothing about PDF and must never learn", and SHELL_FRAMEWORK.md's whole
-# design rests on that. It is to be extracted to its own MIT repository at or
-# before fold-in.
+# The `egui-shell` crate carries no dependency edge to the application's
+# domain crates: none in its manifest, none in its source, not through a
+# re-export and not through a dev-dependency.
 #
-# The failure this catches is not a crash. It is one `use pdfcer_core::PageSize`
-# in a layout helper, added because it was there and it was convenient. That
-# single line:
+# `egui-shell` is a REUSABLE application shell — ribbon, dock, modes, layout
+# persistence, theme, command registry — to be extracted to its own MIT
+# repository at or before fold-in. The workspace root says it "knows nothing
+# about PDF and must never learn", and SHELL_FRAMEWORK.md's whole design rests
+# on that.
 #
-#   * makes the shell un-extractable — the standalone repo will not compile —
-#     and nobody finds out until extraction day, by which time there are
-#     forty such lines and the extraction is cancelled;
-#   * inverts the dependency the architecture depends on. The shell is meant
-#     to be the stable substrate that the application plugs into. A shell that
-#     depends on the application cannot be that;
-#   * is invisible to every other gate. It compiles, it is formatted, clippy
-#     likes it, the tests pass. Nothing but this script says no.
+# ===========================================================================
+# WHY A HUMAN CANNOT HOLD IT
+# ===========================================================================
+#
+# The failure this catches is not a crash. It is one `use
+# pdfcer_core::PageSize` in a layout helper, added because the type was there
+# and it was convenient. That single line compiles, is formatted, satisfies
+# clippy and passes every test — there is no moment at which anything visibly
+# goes wrong, so there is nothing for a reviewer to notice. Its costs all
+# arrive later and elsewhere:
+#
+#   * the shell becomes un-extractable — the standalone repository will not
+#     compile — and nobody finds out until extraction day, by which time there
+#     are forty such lines and the extraction is cancelled;
+#   * the dependency the architecture rests on is inverted. The shell is meant
+#     to be the stable substrate the application plugs into, and a shell that
+#     depends on the application cannot be that.
 #
 # A reusable component stays reusable only while something mechanically
-# refuses the convenient shortcut. Six months of "just this one import" and
-# the shell is not a shell, it is the application's other half.
+# refuses the convenient shortcut. Enough "just this one import" and the shell
+# is not a shell, it is the application's other half.
 #
 # ===========================================================================
 # WHAT IS CHECKED
@@ -34,39 +43,54 @@
 #
 # 1. `crates/egui-shell/Cargo.toml` names no `pdfcer-*` dependency. Caught at
 #    the manifest, which is where the coupling is cheapest to see and where a
-#    reviewer looks first. Matches `pdfcer-core`, `pdfcer-render`, `pdfcer-print`,
-#    `pdfcer-gui` and anything else in the family, including the
-#    `{ path = "..." }` and `{ workspace = true }` spellings, because the
-#    dependency KEY is what is matched.
+#    reviewer looks first. The dependency KEY is what is matched, so the
+#    `{ path = "..." }` and `{ workspace = true }` spellings are covered
+#    alike, as is a `[dependencies.pdfcer-...]` table header.
 #
 # 2. No `.rs` file under the crate mentions `pdfcer_core`, `pdfcer_render` or
 #    `pdfcer_print`. The underscore spelling is the one that appears in Rust
-#    source; it catches `use`, a fully-qualified path, and a `#[cfg]`-gated
-#    import alike. This is the backstop for the case where the manifest is
-#    clean because the type arrived through a re-export or a dev-dependency.
+#    source; it catches a `use`, a fully-qualified path and a `#[cfg]`-gated
+#    import alike. This is the backstop for a type that arrives through a
+#    re-export or a dev-dependency while the manifest stays clean.
 #
 # Comment lines are exempt from check 2. This file's own architecture notes
 # name the forbidden crates, and so will the shell's — a rule you cannot
 # describe in a doc comment is a rule that will not be described at all.
 #
 # ===========================================================================
-# WHAT IS DELIBERATELY *NOT* CHECKED
+# WHAT IT PROVABLY CANNOT SEE
 # ===========================================================================
 #
-# The word "pdf" in prose, an icon named `pdf.svg`, or a doc comment that says
-# "the pdfcer application supplies this". Purity is about the DEPENDENCY EDGE,
-# not about vocabulary. A gate that fired on the word would be switched off
-# within a week, and a gate that has been switched off enforces nothing — the
-# lesson `check-ui-strings.sh`'s header records at length.
+#   * VOCABULARY, on purpose. The word "pdf" in prose, an icon named
+#     `pdf.svg`, a doc comment saying "the pdfcer application supplies this" —
+#     all pass. Purity is about the DEPENDENCY EDGE. A gate that fired on the
+#     word would be switched off within a week, and a gate that has been
+#     switched off enforces nothing.
+#   * A domain crate reached under another name: a rename, a `package =`
+#     alias in the manifest, or a fourth engine crate. Check 1 catches the
+#     manifest half by prefix; check 2's three crate names are spelled out and
+#     do not grow by themselves.
+#   * Conceptual coupling with no import. A shell API shaped around exactly
+#     one application's needs is impure in every sense but this one.
+#   * Anything under `target/`, which is build output rather than authored
+#     code.
 #
 # ===========================================================================
-# USAGE / EXIT CODES
+# USAGE, THE EXIT CONTRACT, AND HOW TO FALSIFY IT
 # ===========================================================================
 #   tools/gates/check-shell-purity.sh [SHELL_CRATE_DIR]
 #
-#   0  pure
+#   0  pure — the manifest is clean AND at least one source file was scanned
 #   1  a domain dependency was found
-#   2  PRECONDITION ABSENT — the crate is not there yet
+#   2  PRECONDITION ABSENT — the crate directory, its manifest, or any `.rs`
+#      file under it is missing. NOT a pass: a clean manifest with no source
+#      is check 1 passing and check 2 never running, and those two states must
+#      not print the same line. `run-all.sh` prints skips in their own block
+#      and exits 3.
+#
+# To falsify: add `pdfcer-core = { workspace = true }` to the shell's manifest,
+# or a non-comment line naming `pdfcer_core` in any shell source file — both
+# must exit 1. Point it at an empty directory and it must exit 2.
 
 set -euo pipefail
 

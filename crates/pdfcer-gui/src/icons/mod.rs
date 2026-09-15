@@ -7,11 +7,7 @@
 //! turn a path `d` attribute into pixels, how not to do it twice, and how to
 //! report the one thing it cannot draw.
 //!
-//! Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\icons.rs` (Class A,
-//! `SALVAGE.md`: *"SVG path data rasterized at physical pixel size rather
-//! than pre-baked PNGs. Mostly data."*). The source was 1,747 code lines and
-//! 383 test lines in one file, over this project's 1,500-line limit, so it
-//! is split along the seams the original already had:
+//! It is split along the seams of that pipeline:
 //!
 //! | module | what it owns |
 //! |---|---|
@@ -30,7 +26,7 @@
 //!    NEW Cargo dependency — and `resvg` is MPL-2.0 (weak copyleft). The
 //!    standing rule is that an agent does not add a dependency solo,
 //!    copyleft or not, and this was an explicit operator go/no-go.
-//!    **Rejected by the operator, 2026-08-02.**
+//!    **Rejected by the operator.**
 //! 2. **Pre-rasterize to PNG at build time.** Zero dependencies, but the
 //!    resolution is baked: a raster sized for a 16 pt slot at 100% display
 //!    scale is visibly soft at 150%/200% Windows scaling, and would be wrong
@@ -46,8 +42,8 @@
 //!    implies, so icons are crisp at any DPI — strictly better than (2) and
 //!    free of (1)'s licensing question.
 //!
-//! **This is the load-bearing decision of the whole module**, and it is the
-//! one `SALVAGE.md` singles out. Everything else here — the cache key
+//! **This is the load-bearing decision of the whole module.** Everything else
+//! here — the cache key
 //! including the physical size, the mask-plus-tint theming, the refusal to
 //! guess at malformed path data — follows from choosing (3), and any future
 //! "simplification" that pre-bakes rasters gives up crispness at every
@@ -155,8 +151,8 @@ use cache::with_cache;
 ///
 /// # Recorded deviation: 16 pt, not the 18–20 px the ui-spec suggested
 ///
-/// The salvage source's toolbar button was 28×24 pt and egui's default
-/// `button_padding` is (4,1), leaving a 20×22 pt content box. The ui-spec
+/// A toolbar button is 28×24 pt and egui's default `button_padding` is (4,1),
+/// leaving a 20×22 pt content box. The ui-spec
 /// §4.1 asked for "roughly 18–20px … leaving a few px of padding on every
 /// side"; those two halves of the sentence conflict — 18 pt in a 20 pt box
 /// leaves 1 pt, not "a few".
@@ -246,19 +242,15 @@ pub fn image(ui: &egui::Ui, icon: Icon) -> egui::Image<'static> {
 ///
 /// # ★★ Why not `ui.visuals().selection.stroke.color`, which is the same value
 ///
-/// It **was** that read, and it was this file that held
-/// `check-selection-channel.sh`'s one file-level exemption. The exemption is
-/// gone and so is the read.
-///
-/// Same value, different promise. `visuals.selection` is a raw `egui` channel
-/// whose meaning the theme decides and has now re-decided twice in two days —
-/// it carried the canvas's 27 % wash (defect T2), then `accent` + `on_accent`
-/// (which broke the focused-`TextEdit` ring `egui` drives from the *same*
-/// field), and now `selected_plate` + `accent`. Each of those re-pointings
-/// silently changed what this glyph would be tinted with, and nothing here
-/// would have failed. A named accessor cannot drift that way: it is checked
-/// against the shipped style, and a future re-pointing has to walk past a red
-/// test that names this call site.
+/// Same value, different promise, and `check-selection-channel.sh` forbids the
+/// raw read here for that reason. `visuals.selection` is a raw `egui` channel
+/// whose meaning the theme decides, and re-pointing it is cheap: it has
+/// variously carried the canvas's 27 % wash (defect T2), `accent` + `on_accent`
+/// (which breaks the focused-`TextEdit` ring `egui` drives from the *same*
+/// field), and `selected_plate` + `accent`. Each re-pointing silently changes
+/// what this glyph is tinted with, and nothing here fails. A named accessor
+/// cannot drift that way: it is checked against the shipped style, and a
+/// re-pointing has to walk past a red test that names this call site.
 ///
 /// ★ Note the ink is deliberately NOT [`egui_shell::theme::Theme::accent_pair`]'s
 /// `on_accent`. That pair is the *emphasised action* surface — the full accent
@@ -330,18 +322,14 @@ mod tests {
     /// "audit" that outlined it would silently delete a test as well as a
     /// meaning.
     ///
-    /// ★★ **Widened on 2026-08-19, and the widening is the point rather than a
-    /// concession.** The rule this test enforces is *fill is semantic, never
-    /// decorative*, and the black-arrow / white-arrow pair is the purest
-    /// available instance of it: `cursor` and `cursor-node` have
+    /// ★★ **The assertion is membership of a NAMED SET with a reason per
+    /// member**, not `icon == Icon::Redact`. The rule it enforces is *fill is
+    /// semantic, never decorative*, and the black-arrow / white-arrow pair is
+    /// the purest available instance of it: `cursor` and `cursor-node` have
     /// **byte-identical outlines** and differ only in fill, and that difference
     /// has meant "the whole object" versus "the points inside it" in every
-    /// vector editor since Illustrator 88.
-    ///
-    /// So the assertion is no longer `icon == Icon::Redact` but membership of a
-    /// named set with a reason per member. A future audit that outlines one of
-    /// these deletes a meaning as well as a test — which is what the original
-    /// comment warned about, applied to a larger set.
+    /// vector editor since Illustrator 88. An audit that outlines any member of
+    /// the set deletes a meaning as well as a test.
     #[test]
     fn fill_is_semantic_and_the_set_that_uses_it_is_closed() {
         /// Every icon entitled to a fill, and why.
@@ -355,8 +343,8 @@ mod tests {
         ///   you picked* in the same language `canvas::overlay` draws on the
         ///   page itself.
         /// - [`Icon::RedactSelection`] and [`Icon::ApplyRedactions`] —
-        ///   **2026-09-04, and they inherit the reason rather than extending
-        ///   it.** Both are members of the redaction family, both draw the
+        ///   **they inherit the reason rather than extending it.** Both are
+        ///   members of the redaction family, both draw the
         ///   same solid bar [`Icon::Redact`] draws, and both act on the same
         ///   irreversible thing. An outline-only redaction glyph understates a
         ///   feature that removes content permanently, and that argument does
@@ -399,17 +387,15 @@ mod tests {
     ///
     /// # Why this exists
     ///
-    /// Because on 2026-09-04 thirty-six glyphs were adopted at once, and the
-    /// tests that guard the set answer *"does it parse"*, *"does it draw more
-    /// than twenty pixels"* and *"is the fill semantic"*. None of them can see
-    /// that two icons look **the same**, which is the exact defect the batch
-    /// was adopted to fix — four form tools and four measure tools were each
-    /// rendering as one picture, and every test was green throughout.
+    /// The tests that guard the set answer *"does it parse"*, *"does it draw
+    /// more than twenty pixels"* and *"is the fill semantic"*. None of them can
+    /// see that two icons look **the same** — the state in which four form
+    /// tools and four measure tools each render as one picture with every test
+    /// green.
     ///
-    /// This project's standing rule, learned twice: **a layout or rendering
-    /// defect has exactly one oracle, and it is a rendered image.** The same
-    /// review that supplied this art was only correctly assessed once somebody
-    /// rendered it instead of reading its source.
+    /// This project's standing rule: **a layout or rendering defect has exactly
+    /// one oracle, and it is a rendered image.** Art is judged by rendering it,
+    /// never by reading its source.
     #[test]
     #[ignore = "an instrument, not an assertion — writes a PNG for a human to look at"]
     fn contact_sheet() {
@@ -519,26 +505,25 @@ mod tests {
 
     /// ★★★ **No two icons may render as the same picture.**
     ///
-    /// # Why this test had to be written, and why it is a raster comparison
+    /// # Why it is a raster comparison
     ///
     /// Every other test in this module asks whether an icon DREW something:
     /// does it parse, does it produce more than twenty lit pixels, is its fill
     /// semantic, does CRLF change it. None of them can see two icons that draw
-    /// the same thing — and on 2026-09-04 that was not hypothetical. **Four
-    /// form-field tools shared one asset and four measure tools shared
-    /// another**: eight controls rendering as two pictures, in a ribbon whose
-    /// own module header says those controls are *"distinguishable only by icon
-    /// and tooltip"*. The whole suite was green for weeks.
+    /// the same thing — and four form-field tools on one asset plus four
+    /// measure tools on another is eight controls rendering as two pictures,
+    /// in a ribbon where a control is distinguishable only by its icon and its
+    /// tooltip, with the whole suite green.
     ///
-    /// That particular shape was visible in [`Icon::source`], which is why
+    /// Shared ART is visible in [`Icon::source`], which is why
     /// [`super::catalog::tests`]' `only_the_documented_assets_are_shared`
     /// catches it. This catches the shape that one **cannot**: two DIFFERENT
-    /// assets that happen to draw nearly the same marks. That is what a future
+    /// assets that happen to draw nearly the same marks. That is what a
     /// "consistency pass" or a careless re-draw produces, and it is what the
-    /// enum's doc comments spend paragraphs warning about, pair by pair —
-    /// [`Icon::Back`] vs [`Icon::ChevronLeft`], [`Icon::ShowPoints`] vs
-    /// [`Icon::EditObjects`], [`Icon::Layers`] vs [`Icon::Combine`]. Those
-    /// warnings had no enforcement until now.
+    /// enum's doc comments warn about pair by pair — [`Icon::Back`] vs
+    /// [`Icon::ChevronLeft`], [`Icon::ShowPoints`] vs [`Icon::EditObjects`],
+    /// [`Icon::Layers`] vs [`Icon::Combine`]. This is the enforcement behind
+    /// those warnings.
     ///
     /// # ★★ Same-asset pairs are excluded, deliberately and by construction
     ///
@@ -551,8 +536,8 @@ mod tests {
     ///
     /// # ★★★ The threshold and the exemptions are MEASURED, not chosen
     ///
-    /// `closest_pairs` ranks every pair at 16 px. Over the set as it stood on
-    /// 2026-09-04 it produced, in order:
+    /// `closest_pairs` ranks every pair at 16 px. Over the current set it
+    /// produces, in order:
     ///
     /// ```text
     /// 0.000  open ~ font-folders                   (one asset — excluded here)
@@ -569,14 +554,13 @@ mod tests {
     /// So `0.15` sits below the real minimum with about 40 % of headroom, and
     /// the two families above it are exempted BY NAME with a reason each —
     /// rather than the threshold being lowered to 0.09 to swallow them, which
-    /// would have made the test assert almost nothing.
+    /// would make the test assert almost nothing.
     ///
-    /// ★ `new-document ~ new-from-template` at 0.211 is also the dash support
-    /// added earlier the same day, working: the ONLY difference between those
-    /// two glyphs is a `stroke-dasharray` placeholder box. Before that landed
-    /// they would have measured far closer, and this test — had it existed —
-    /// would have caught the visual duplicate the whole icon batch was blocked
-    /// on. It is kept as the tightest genuine pair for exactly that reason.
+    /// ★ `new-document ~ new-from-template` at 0.211 is the tightest genuine
+    /// pair, and it is also [`svg`]'s dash support working: the ONLY difference
+    /// between those two glyphs is a `stroke-dasharray` placeholder box.
+    /// Without dashes they measure far closer than the threshold, which is why
+    /// the pair is kept as the floor rather than exempted.
     ///
     /// ★★ 16 px and not 32: the raster the operator sees is the one that must
     /// discriminate. Two glyphs that separate cleanly at 32 and collapse at 16
@@ -608,11 +592,10 @@ mod tests {
             ("zoom-in", "zoom-out"),
             ("zoom-in", "zoom-region"),
             ("zoom-out", "zoom-region"),
-            // ★ `("insert-pages", "export")` was here until 2026-09-04, when
-            // `insert-pages` stopped wearing `upload` and took art of its own.
-            // The pair now measures well clear of the floor, so the exemption
-            // has nothing to exempt — and an exemption with nothing behind it
-            // is a hole waiting for a future pair to fall into silently.
+            // ★ No `("insert-pages", "export")` entry: `insert-pages` has art
+            // of its own rather than wearing `upload`, so that pair measures
+            // well clear of the floor. An exemption with nothing behind it is a
+            // hole waiting for a future pair to fall into silently.
             ("import-form-data", "export"),
         ];
 
@@ -639,9 +622,8 @@ mod tests {
                 // `include_str!`s of byte-identical files may or may not be
                 // interned to one pointer depending on the compiler, and a skip
                 // condition that changes with the optimiser is not a skip
-                // condition. (Found by falsification — a planted duplicate
-                // slipped through a `ptr::eq` guard because the two literals
-                // WERE interned.)
+                // condition — a planted duplicate walks straight past a
+                // `ptr::eq` guard whenever the two literals are interned.
                 if ia.source() == ib.source() {
                     continue;
                 }

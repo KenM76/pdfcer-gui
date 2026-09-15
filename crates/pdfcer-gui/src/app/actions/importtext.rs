@@ -4,7 +4,7 @@
 //! `Action::ImportText`'s body. Reached from `dialogs::import_text`'s Import
 //! button and from nowhere else.
 //!
-//! ## ★★★ THIS MODULE IS MOSTLY A DISCLOSURE, AND THAT IS THE DESIGN
+//! ## THIS MODULE IS MOSTLY A DISCLOSURE, AND THAT IS THE DESIGN
 //!
 //! `EditSession::place_text` does the work in one call. What takes the space
 //! here is `PlaceTextReport` — **23 fields**, six of which are judgements the
@@ -25,18 +25,17 @@
 //! collapsed tab looks like a space he typed. Render normally; report
 //! separately. Both.
 //!
-//! ★ And `box_overflow_lines` is not in that table because it is **not** a
+//! And `box_overflow_lines` is not in that table because it is **not** a
 //! judgement — it is the engine's own self-check, and it must be zero. It is
 //! reported only when it is not, in the language of a defect rather than of a
 //! disclosure.
 //!
-//! ## ★★ The undo promise is READ, never assumed
+//! ## The undo promise is READ, never assumed
 //!
 //! The engine's own doc is explicit that the one-undo-entry fold is *checked,
-//! not assumed*: an import needing more commands than `MAX_UNDO_DEPTH` — more
-//! than 255 non-blank pages — still places **every** page and simply fails to
-//! group them, reporting `coalesced == false` with `undo_entries` giving the
-//! real count.
+//! not assumed*: an import needing more commands than `MAX_UNDO_DEPTH` still
+//! places **every** page and simply fails to group them, reporting
+//! `coalesced == false` with `undo_entries` giving the real count.
 //!
 //! ⇒ A surface that promised one `Ctrl+Z` without reading `coalesced` would be
 //! promising something the engine has already said may not be true. This one
@@ -44,7 +43,7 @@
 //! which is the only moment an operator can act on the fact, because after the
 //! first press the rest look like a program undoing things by itself.
 //!
-//! ## ★ Three refusals are named, and the reason is that two of them are
+//! ## Three refusals are named, and the reason is that two of them are
 //! answerable BEFORE the press
 //!
 //! `PlaceTextError` has ten variants. `NoColumn` and `PageTooShort` both mean
@@ -67,7 +66,7 @@ use crate::text::importtext as t;
 /// **What a File-tab command asks the document to do**, when the answer is an
 /// edit rather than a write.
 ///
-/// # ★★★ Why this enum exists, and it is R2 arriving on time for once
+/// # Why this enum exists, and it is R2 arriving on time for once
 ///
 /// `Action` already carries four sub-enums — `Annot`, `Vector`, `Field` and
 /// the write family — and adds a fifth here. The pattern is the same one
@@ -75,23 +74,16 @@ use crate::text::importtext as t;
 /// dispatch arm, one apply arm and one module, so the shared files carry a line
 /// each and the family's reasoning lives with the family.
 ///
-/// ⚠ **It has one member today, and that is the honest shape rather than
-/// premature structure.** `Action::ImportText` was added directly to `Action`
-/// first, with its full argument, and so was its `apply` arm, and so was its
-/// `dispatch` arm — which pushed `action.rs`, `apply.rs` and `dispatch.rs` all
-/// past R2's 1,500-line ceiling **in one commit**. All three were already
-/// within twenty lines of it, and `RESUME.md` had said so in as many words:
-/// *"one added line in either fails the build. Split before adding, not
-/// after."*
-///
-/// ⇒ The line count was the symptom. The defect was that one feature's
-/// argument had been written **three times in three files nobody owns**, which
-/// is precisely what R2 is for — *"when a file approaches the limit, that is the
-/// signal to find the seam"*. This is the seam.
+/// **It has one member, and that is the honest shape rather than premature
+/// structure.** Spelled directly on `Action` instead, one feature's argument
+/// would be written **three times in three files nobody owns** — `action.rs`,
+/// `apply.rs` and `dispatch.rs`, each already at R2's 1,500-line ceiling. The
+/// line count is the symptom; the duplication is the defect, and R2's rule is
+/// *"when a file approaches the limit, that is the signal to find the seam"*.
+/// This is the seam.
 #[derive(Debug, Clone, PartialEq)]
 pub enum FileAction {
-    /// **Turn a plain text file into new pages** — `file.import_text`,
-    /// `pdfcer-core` `Pass 252.0`.
+    /// **Turn a plain text file into new pages** — `file.import_text`.
     ///
     /// Raised by [`crate::dialogs::import_text`]'s Import button and by nothing
     /// else. This module's header carries why the file is read here rather than
@@ -102,7 +94,7 @@ pub enum FileAction {
         path: std::path::PathBuf,
         /// The sheet, margins, face and size the operator chose.
         ///
-        /// ★ **Boxed**, and clippy is not the reason: `PageTemplate` carries a
+        /// **Boxed**, and clippy is not the reason: `PageTemplate` carries a
         /// rect, four margins, a face, a size, an optional leading, an
         /// alignment, a colour and a policy — the largest thing any `Action`
         /// variant holds — and every action in the queue is as large as the
@@ -144,7 +136,7 @@ fn import(
     template: &pdfcer_core::text_edit::PageTemplate,
     position: pdfcer_core::pageops::InsertPosition,
 ) {
-    // ★★ Read as BYTES and decoded explicitly, rather than `read_to_string`.
+    // Read as BYTES and decoded explicitly, rather than `read_to_string`.
     //
     // The two failures are different facts and the operator needs to be told
     // which: *"I could not open that file"* names a path, a permission or a
@@ -168,12 +160,12 @@ fn import(
         }
     };
 
-    // ★ The page count BEFORE, so the receipt can say where the new sheets
+    // The page count BEFORE, so the receipt can say where the new sheets
     // landed in terms of the document the operator is looking at. Read here
     // rather than after, because after is the whole point of the sentence.
     let before = doc.pages.len();
 
-    // ★ The refusal is caught in a cell rather than recorded directly, because
+    // The refusal is caught in a cell rather than recorded directly, because
     // `record_note` needs `doc.edit_epoch` and `doc` is borrowed mutably by
     // `vector_edit` for the length of the closure. One `Option`, written inside
     // and read after — which is also what makes the ordering above provable
@@ -184,7 +176,7 @@ fn import(
         session
             .place_text(&text, template, position)
             .inspect_err(|error| {
-                // ★★ `record_note`, not the `decline` channel, and the reason is
+                // `record_note`, not the `decline` channel, and the reason is
                 // a property of the TYPE rather than a preference: `Declined` is
                 // `Copy` and its `line()` returns `&'static str`, so it cannot
                 // carry a character listing, a page count or an `io::Error`.
@@ -192,7 +184,7 @@ fn import(
                 // own file, and a static sentence would have to drop exactly the
                 // part he needs.
                 //
-                // ⚠ It is recorded from INSIDE the closure, so it is in the slot
+                // It is recorded from INSIDE the closure, so it is in the slot
                 // before `vector_edit`'s generic arm runs — the precedence
                 // `decline::floor` states: a decline the verb can name always
                 // beats one it cannot.
@@ -202,7 +194,7 @@ fn import(
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★★ It carries `pages=`, `coalesced=` and `undo=`, which
+                    // It carries `pages=`, `coalesced=` and `undo=`, which
                     // are the three a wrong build gets wrong: a build that
                     // placed nothing, a build that promised one undo it cannot
                     // deliver, and a build whose fold silently stopped working.
@@ -230,7 +222,7 @@ fn import(
 
 /// **Everything the import decided, as sentences.**
 ///
-/// ★★★ Ordered by what an operator would act on, not by the struct's field
+/// Ordered by what an operator would act on, not by the struct's field
 /// order. The count of pages comes first because it is the answer to *"did that
 /// work?"*; the undo warning comes second because it is the only one with a
 /// deadline on it; the six judgements follow, and the engine's self-check is
@@ -240,7 +232,7 @@ fn disclosures(report: &PlaceTextReport, pages_before: usize) -> Vec<String> {
     let mut out = Vec::new();
     out.push(t::pages_created(report.pages_created, pages_before));
 
-    // ★ Only when the promise cannot be kept. A sentence saying *"this can be
+    // Only when the promise cannot be kept. A sentence saying *"this can be
     // undone in one press"* on every import would be the third-time-unread
     // disclosure this project keeps deleting.
     if !report.coalesced {
@@ -267,7 +259,7 @@ fn disclosures(report: &PlaceTextReport, pages_before: usize) -> Vec<String> {
         out.push(t::unmappable_dropped(report.chars_dropped_unmappable));
     }
 
-    // ★★★ LAST, and it is not one of the six. `box_overflow_lines` is the
+    // LAST, and it is not one of the six. `box_overflow_lines` is the
     // engine's own self-check — its doc says it *must* be 0 — so a non-zero
     // here is a defect in the placer, not a judgement about the operator's
     // file. It is worded as one, because an operator who reads it needs to know
@@ -285,17 +277,17 @@ fn disclosures(report: &PlaceTextReport, pages_before: usize) -> Vec<String> {
 /// `annots::refusal_for`'s posture and its argument applies here unchanged.
 fn refusal_for(error: &PlaceTextError) -> String {
     match error {
-        // ★★ Both of these are the SAME operator problem seen from two sides —
+        // Both of these are the SAME operator problem seen from two sides —
         // the column has no width, or the column has no height — and both are
         // answerable in the window that is still open behind this message. So
         // both name the two controls rather than the two clauses of §9.
         PlaceTextError::NoColumn { .. } => t::no_column(),
         PlaceTextError::PageTooShort { .. } => t::page_too_short(),
-        // ★ The command is greyed on `doc.pages`, so reaching this means the
+        // The command is greyed on `doc.pages`, so reaching this means the
         // document lost its last page between the press and the drain — which
         // is rare, real, and worth saying plainly rather than generically.
         PlaceTextError::NoPageToInsertBeside => t::no_page_to_insert_beside(),
-        // ★★★ The refusal a real text file is most likely to meet — an em
+        // The refusal a real text file is most likely to meet — an em
         // dash, a curly quote, an accented name — and the one this window's
         // `face_note` warns about before the press. The engine's LISTING is
         // carried verbatim because the operator has to find those characters in

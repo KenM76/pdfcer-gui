@@ -4,12 +4,10 @@
 //!
 //! # The defect class this exists for
 //!
-//! `HANDOFF.md` §2's defect 8 is the sharpest one this project has recorded:
-//!
-//! > The grid was a tint rather than a grid: a one-point minor step, ~2,450
-//! > lines a frame. **A screenshot could not catch this one** — 2,450 hairlines
-//! > and a wash are the same picture. It was found by printing the ladder the
-//! > running app had actually chosen.
+//! The sharpest defect class this project has: a grid drawn at a one-point
+//! minor step is ~2,450 hairlines a frame, and **a screenshot cannot catch
+//! that** — 2,450 hairlines and a wash are the same picture. The only way to
+//! see it is to have the running program print the ladder it chose.
 //!
 //! Text selection is that trap in a purer form. Its output *is* a wash, drawn
 //! at `canvas::overlay::TEXT_SELECTION_ALPHA` — deliberately low, so the
@@ -158,8 +156,8 @@ const PAGE_TEXT_EVENT: &str = "page-text";
 ///
 /// # Why these, in this order
 ///
-/// Ordered for the drawing fixtures this project uses (`HANDOFF.md` §2's
-/// table). A SolidWorks sheet keeps its dense text in the **title block, bottom
+/// Ordered for the drawing fixtures this project uses. A SolidWorks sheet keeps
+/// its dense text in the **title block, bottom
 /// right**, and its sparse text in view labels across the middle — so the title
 /// block is tried first here, where `read_mode`'s object ladder tries the middle
 /// first. Each band is a wide sweep, because a narrow one on a sparse sheet is
@@ -452,9 +450,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the verdict is the trace, and this is evidence — the thing a reader needs
     // when the trace says `chars=17 quads=1` and they want to know whether the
     // band landed on the words they expected, or whether the highlight covers
-    // its own text the way Find's current hit once did (`HANDOFF.md` §2's
-    // defect 3, and `canvas::overlay::CURRENT_ALPHA`'s screenshot-derived
-    // bound).
+    // its own text — the failure `canvas::overlay::CURRENT_ALPHA`'s
+    // screenshot-derived bound exists to keep Find's current hit out of.
     //
     // `crate::capture`'s own rule: *every check that looks at pixels saves its
     // evidence, pass or fail — on a failure it is what the reader needs; on a

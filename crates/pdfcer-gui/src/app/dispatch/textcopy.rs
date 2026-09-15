@@ -6,12 +6,10 @@
 //!
 //! ## Why this is a module and not two match arms
 //!
-//! [`super::images`]' reason, in one sentence: `super`'s file crossed R2's
-//! 1,500-line ceiling for the third time on 2026-08-20, and this is a family
-//! whose two bodies are longer than most whole tabs and whose subject is
-//! genuinely its own. It sits beside [`super::pages`] (six ids sharing an
-//! operand rule) and [`super::images`] (one id whose body is a four-step
-//! sequence) as the third application of the same seam.
+//! [`super::images`]' reason: these bodies are longer than most whole tabs and
+//! their subject is genuinely its own. It is the same seam [`super::pages`]
+//! (ids sharing an operand rule) and [`super::images`] (one id whose body is a
+//! sequence) are cut on — a subject, not a size.
 //!
 //! ## ★ Both read the SAME extraction, and that is the load-bearing fact
 //!
@@ -41,8 +39,8 @@ use crate::app::state::Status;
 ///
 /// The same shape [`super::pages::handles`] uses, and for the same reason: the
 /// `match` in `super` stays a list a reader can scan, and the routing predicate
-/// lives beside the bodies it routes to — so a third verb here is one edit
-/// rather than two.
+/// lives beside the bodies it routes to — so a new verb here is one edit rather
+/// than two.
 #[must_use]
 pub fn handles(id: &str) -> bool {
     matches!(id, "file.copy_page_text" | "file.copy_document_text")
@@ -55,32 +53,12 @@ pub fn handles(id: &str) -> bool {
 /// document.
 pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str) {
     match id {
-        // ★ **The two text-copy verbs — registered since 2026-08-14 and
-        // dead until now.**
-        //
-        // They were drawn on File ▸ Export, `Ctrl+Shift+C` was bound to the
-        // page one, and neither had an arm: a live control that does
-        // nothing, which is defect D1's shape and which this project's
-        // own `both_text_copy_commands_are_offered_by_every_mode` test could
-        // not see, because offering a command and implementing it are
-        // different facts.
-        //
-        // What made them wirable was the per-page extraction cache
-        // (`app::cache::PageTextCache`) arriving for canvas text selection.
-        // Before it, `file.copy_page_text` had no cheap route to one page's
-        // text: `EditSession::find_text_with` is the only text verb on the
-        // session, it needs `&mut`, and it walks the **whole document**.
-        //
-        // ★ Both arms read `page_text()` / `extract_*_view`, so the string
-        // an operator copies from the ribbon and the string a canvas
-        // selection copies come from **one** extraction of one revision.
-        // Two paths to "the text of this page" is how a Copy and a
-        // selection come to disagree about what is on it.
-        //
-        // Neither raises an `Action`: a clipboard write touches no document
-        // and needs no frame boundary — the same call `file.print` makes,
-        // for the same stated reason. `canvas::textsel::copy` is the one
-        // place the clipboard is written and the one place a copy is traced.
+        // ★★ **The page's text comes from the per-page extraction cache**
+        // (`app::cache::PageTextCache`), which is what canvas text selection
+        // reads too. The session has no cheap route to one page's text —
+        // `EditSession::find_text_with` needs `&mut` and walks the **whole
+        // document** — so the cache is not an optimisation here, it is the
+        // reason a per-page copy is affordable at all.
         "file.copy_page_text" => {
             if let Status::Open(doc) = &app.status {
                 match doc.page_text() {
@@ -100,12 +78,12 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str) {
                         // ★ The engine's own reason where there is one, and
                         // a distinct token where there is not.
                         //
-                        // Three states reach here and they are three
-                        // different facts: the page's content stream would
-                        // not walk (`detail=` carries `pdfcer-core`'s error),
-                        // there is no such page at all, and — a fourth,
-                        // handled by `copy` rather than here — the page
-                        // extracted fine and has no text on it. A reader of
+                        // Two facts reach here and they are traced apart:
+                        // the page's content stream would not walk
+                        // (`detail=` carries `pdfcer-core`'s error), and
+                        // there is no such page at all. Another — the page
+                        // extracted fine and has no text on it — is handled
+                        // by `copy` rather than here. A reader of
                         // a trace from a machine they cannot see should not
                         // have to guess which kind of nothing happened;
                         // that is the same argument `objects-unavailable`
@@ -127,12 +105,10 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str) {
             }
         }
         // The whole-document twin. It really can block the window on a long
-        // file — its own tooltip says so — because
-        // `extract_document_view` walks every page, which `crate::find`
-        // measured at 331–449 ms on this project's fixtures. That cost is
-        // paid here and nowhere else: it is a verb the operator invoked
-        // once, not a per-frame derivation, which is exactly the line the
-        // page-level cache exists to draw.
+        // file — its own tooltip says so — because `extract_document_view`
+        // walks every page. That cost is paid here and nowhere else: it is a
+        // verb the operator invoked once, not a per-frame derivation, which
+        // is exactly the line the page-level cache exists to draw.
         //
         // Deliberately NOT cached: a document-wide extraction keyed on the
         // edit epoch would hold the whole document's text alive for the life
@@ -143,7 +119,7 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str) {
                 match pdfcer_core::text_extract::extract_document_view(
                     // The SESSION's revision, as everywhere else: the
                     // operator is copying the document they are looking at,
-                    // unsaved edits included (decision 018).
+                    // unsaved edits included.
                     &doc.session.view(),
                     // ★ The funnel, not `ExtractOptions::default()`. This
                     // and the page-level extraction in `app::cache` must
@@ -169,10 +145,9 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str) {
             }
         }
         // Unreachable: [`handles`] is the only route in and it names exactly
-        // the two ids above. Spelled rather than `unreachable!`, because a
-        // third id added to `handles` and forgotten here should do nothing
-        // visible and say so on the trace, not abort the frame the operator is
-        // looking at.
+        // the ids above. Spelled rather than `unreachable!`, because an id
+        // added to `handles` and forgotten here should do nothing visible and
+        // say so on the trace, not abort the frame the operator is looking at.
         other => crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI

@@ -3,49 +3,38 @@
 //!
 //! ## Why this is a file of its own
 //!
-//! `apply.rs` crossed R2's 1,500-line gate on 2026-08-19 when the unsaved-edits
-//! guard landed, and `tools/gates/check-file-size.sh`'s own header says what
-//! not to do about that: *"Split the module along its seams — one subject per
-//! file — rather than raising the limit."*
-//!
-//! This is the seam, and it was already drawn in prose before it was drawn in
-//! files. `apply`'s match has a block at the top whose own comment reads: *"The
+//! `apply`'s match has a block at the top whose own comment reads: *"The
 //! three actions that are about WHICH document is open, matched BEFORE the
-//! guard below."* Everything below that block acts **on** the open document;
+//! guard below."* That is the seam this file is cut along. Everything below
+//! that block acts **on** the open document;
 //! everything in it decides **which** document is open, or whether there is
 //! one. That is a different subject with a different failure mode — the arms
 //! below can be wrong about a page, and these can be wrong about an afternoon's
 //! work.
 //!
-//! ## ★★ 2026-08-19: three of the five arms stopped needing the guards, and
-//! that is the point of the change rather than a relaxation of it
-//!
-//! There are now **five** arms here, and they split two-three:
+//! ## Which arms carry the guards, and which must not
 //!
 //! | arm | discards a document? | guards |
 //! |---|---|---|
 //! | `apply_open` | **no** — it adds a tab | none |
+//! | `apply_open_with_password` | **no** — the same, after a retry | none |
 //! | `apply_new` | **no** | none |
 //! | `apply_new_sized` | **no** | none |
 //! | `apply_close` | yes — the one on screen | both |
 //! | `apply_close_document` | yes — the one whose tab was clicked | both |
+//! | `apply_close_other_documents` | yes — every other tab | both, by delegation |
 //! | `apply_reread_with_duplicate_keys` | **yes** — replaces it with a fresh parse of its own bytes | both |
 //!
-//! Before the document tabs, Open and New *replaced* what was open, and the
-//! guard on them was the most valuable one in the file — see `apply_open`,
-//! which keeps the old argument verbatim because it was right. Now they park
-//! the open document and add a tab, so the question they used to ask —
-//! *"your unsaved edits will be lost"* — would be **false**, and a
-//! confirmation that says something untrue is how an operator learns to
-//! dismiss confirmations unread.
-//!
-//! So the protection did not weaken; it moved to where the loss now happens.
-//! And the loss now happens in **two** places rather than one, which is
-//! exactly what
+//! Open and New park what is open and add a tab. Nothing is discarded, so the
+//! question a guard on them would ask — *"your unsaved edits will be lost"* —
+//! would be **false**, and a confirmation that says something untrue is how an
+//! operator learns to dismiss confirmations unread. The protection belongs
+//! where the loss happens, and the loss happens in more than one place, which
+//! is exactly what
 //! [`tests::every_action_that_discards_a_document_asks_about_unsaved_edits`]
 //! is shaped to notice.
 //!
-//! ## ★ The two guards, in order, and why the order is not interchangeable
+//! ## The two guards, in order, and why the order is not interchangeable
 //!
 //! Both closing arms ask the same two questions in the same sequence:
 //!
@@ -67,25 +56,21 @@
 //! `UnsavedEdits` refusal reads `edit_epoch != 0` and would break the moment
 //! somebody merged them.
 //!
-//! ## ★★ The defect this file's shape closes
+//! ## The failure mode this file's shape closes
 //!
-//! Guard 2 did not exist until 2026-08-19. Every one of the four arms that
-//! then existed destroyed every edit made since the file was opened, silently,
-//! with no prompt and no undo — while `file.close`'s shipped tooltip promised
-//! the operator *"You are asked what to do about unsaved edits first."*
+//! The two guards look alike from a distance, and an arm that has one reads as
+//! an arm that is protected. `file.close`'s tooltip promises the operator
+//! *"You are asked what to do about unsaved edits first."* A guard that is
+//! present, well argued, correct, **and answering the other question** looks
+//! exactly like the guard that promise needs — which is how an arm comes to
+//! destroy every edit made since the file was opened, silently, with a doc
+//! comment above it explaining the guard it does have. Keeping every such arm
+//! in one file, under the table above, is what makes the mismatch visible.
 //!
-//! It was found by an audit against `pdfcer`'s capability register, not by a
-//! test and not by use, and the reason it survived so long is worth keeping:
-//! **the guard that should have caught it existed, was well argued, was
-//! correct, and was answering a different question.** A reader arriving at
-//! `Action::Close` saw a guard, saw a doc comment explaining the guard, and had
-//! no reason to ask whether it was the guard the tooltip was describing.
+//! ## An arm can discard a document without closing anything
 //!
-//! ## ★★★ 2026-09-10: a SIXTH arm, and it discards a document without closing
-//! anything
-//!
-//! `apply_reread_with_duplicate_keys` is the first arm here whose destruction
-//! is invisible in its own shape. It does not say *close*. The tab does not go
+//! `apply_reread_with_duplicate_keys` is the arm whose destruction is
+//! invisible in its own shape. It does not say *close*. The tab does not go
 //! away. The path, the name and the page count are all identical afterwards.
 //! What is gone is **every edit made since the file was opened**, because the
 //! engine's intervention is a re-load rather than a patch — *"a decision made
@@ -93,23 +78,17 @@
 //! discarded one was never built into the document"* — so the document that
 //! comes back is a fresh parse of the bytes on disk with an empty undo stack.
 //!
-//! That is exactly the 2026-08-19 defect's shape arriving from a new direction:
-//! **a reader has no reason to ask whether this arm needs the guards**, because
-//! nothing about it looks destructive. It is in this file, in the table above,
-//! and inside the test's destructive set for that reason and no other.
+//! That is the same failure mode from a new direction: **a reader has no
+//! reason to ask whether this arm needs the guards**, because nothing about it
+//! looks destructive. It is in this file, in the table above, and inside the
+//! test's destructive set for that reason and no other — the test's predicate
+//! names the re-read verb as well as the two close verbs, because *"names a
+//! close verb"* is only a proxy for *discards a document*.
 //!
-//! The test needed one change to see it, and the change is a finding in itself:
-//! its `closes_a_document` predicate searched for two *close* verbs, which is a
-//! proxy for *discards a document*. The proxy held while every discarding arm
-//! closed something. This arm discards by re-opening, so the predicate now
-//! names the re-read verb too — see the test's own note.
-//!
-//! Putting every such arm in one file with the guard table above is the
-//! structural half of not repeating that. The other half is
-//! [`tests::every_action_that_discards_a_document_asks_about_unsaved_edits`],
-//! which fails when a sixth one arrives without the guards — and which had to
-//! be rewritten when the count moved, because its first form counted *arms*
-//! and the property was never about the count.
+//! [`tests::every_action_that_discards_a_document_asks_about_unsaved_edits`]
+//! is the half of this that fails when a new arm arrives without the guards.
+//! It asserts the property rather than a count of arms, because the count was
+//! never what mattered.
 
 use crate::app::PdfcerApp;
 use crate::dialogs::unsaved::PendingIntent;
@@ -122,31 +101,23 @@ impl PdfcerApp {
     /// this arm is matched before `apply`'s document guard rather than being
     /// subject to it.
     ///
-    /// ★★ **This arm used to ask about unsaved edits and no longer does, and
-    /// the change is the whole point of the multi-document work.**
+    /// **It asks nothing about unsaved edits, and that is deliberate.**
     ///
-    /// What it used to say, kept because the reasoning was correct for the
-    /// application it was written about:
+    /// `open_path` parks what was open and adds a tab. Nothing is discarded, so
+    /// there is nothing to ask about — and asking anyway would be worse than
+    /// useless, because the question *"Open another document? Your unsaved
+    /// edits will be lost."* would be **false**.
     ///
-    /// > ★ **The arm that needed the unsaved-edits question most**, and it is
-    /// > worth saying why it is not Close. An operator who has marked up a
-    /// > drawing and then opens the next one has destroyed exactly as much
-    /// > work as one who pressed Close — and is far more likely to do it,
-    /// > because opening the next file is what you do all day, whereas closing
-    /// > a document deliberately is something you do at the end of one.
+    /// The reasoning a guard here would rest on is worth keeping in view,
+    /// because it is the strongest case for one anywhere in the file: an
+    /// operator who has marked up a drawing and then opens the next one
+    /// destroys exactly as much work as one who pressed Close, and is far more
+    /// likely to do it, because opening the next file is what you do all day
+    /// whereas closing a document deliberately is something you do at the end
+    /// of one. That case is answered where the loss actually happens, which is
+    /// a close.
     ///
-    /// Every word of that was true while an Open **replaced** the document.
-    /// Since 2026-08-19 it does not: `open_path` parks what was open and adds
-    /// a tab. Nothing is discarded, so there is nothing to ask about — and
-    /// asking anyway would be worse than useless, because the question
-    /// *"Open another document? Your unsaved edits will be lost."* would be
-    /// **false**.
-    ///
-    /// The protection the old guard gave is not lost. It moved to where the
-    /// loss now actually happens, which is a close — and there are two of
-    /// those.
-    ///
-    /// The `save_pending` guard went with it, for the same reason: it means
+    /// The `save_pending` guard is absent for the same reason: it means
     /// *this document's bytes are mid-write*, and opening a different document
     /// does not touch them.
     pub(super) fn apply_open(&mut self, path: std::path::PathBuf) {
@@ -159,7 +130,7 @@ impl PdfcerApp {
     /// [`crate::dialogs::password::PasswordDialog`], which is the only surface
     /// that can obtain a password.
     ///
-    /// ★ The password is **borrowed**, never cloned into a second place. It
+    /// The password is **borrowed**, never cloned into a second place. It
     /// arrives inside the action, is handed to `Document::load_with_password`
     /// through `Secret::expose`, and the action is dropped with it. There is no
     /// step here that stores it.
@@ -169,7 +140,7 @@ impl PdfcerApp {
         password: &crate::secret::Secret,
     ) {
         match self.open_path_with_password(path, password) {
-            // ★ The prompt stays up and says WHICH failure it was. The two are
+            // The prompt stays up and says WHICH failure it was. The two are
             // different instructions to the operator — "try again" against
             // "pdfcer cannot open this file however correct your password is" —
             // and the engine separated them precisely so this last step could.
@@ -183,19 +154,18 @@ impl PdfcerApp {
 
     /// `Action::New` — a blank document, in a tab of its own.
     ///
-    /// Unguarded since 2026-08-19, for [`Self::apply_open`]'s reason: it adds
-    /// a document rather than replacing one.
+    /// Unguarded, for [`Self::apply_open`]'s reason: it adds a document rather
+    /// than replacing one.
     pub(super) fn apply_new(&mut self) {
         self.new_document();
     }
 
     /// `Action::NewSized` — the same, with a page box the operator chose.
     ///
-    /// ★ Beside the plain New, and unguarded with it since 2026-08-19. The two
-    /// used to be *"the same arm shape, deliberately next to its twin, so that
-    /// a change to what either guard means cannot be applied to one New and
-    /// missed on the other"* — and the guards are now gone from both, which is
-    /// that same property arrived at by subtraction.
+    /// Beside the plain New and unguarded with it, for [`Self::apply_open`]'s
+    /// reason. The two are kept adjacent and identical in shape so that a
+    /// change to what either guard means cannot be applied to one New and
+    /// missed on the other.
     pub(super) fn apply_new_sized(&mut self, width_pt: f64, height_pt: f64) {
         // The lower-left corner is the origin: a new page has nothing to offset
         // from, and `Action::NewSized`'s own docs say why the action carries a
@@ -208,7 +178,7 @@ impl PdfcerApp {
     /// `Action::RereadWithDuplicateKeys` — **read this file again, taking the
     /// other value wherever it names a key twice.**
     ///
-    /// The sixth arm, and the operator's own intervention in a parse decision:
+    /// The operator's own intervention in a parse decision:
     ///
     /// > *"We should be making pdfcer so that it opens pdfs that have errors,
     /// > and have a way that it manages those errors such that they aren't
@@ -221,7 +191,7 @@ impl PdfcerApp {
     /// mean anything. R8b rule 4 puts that disclosure **off-canvas** and this
     /// keeps its control there with it.
     ///
-    /// # ★★★ Why it carries both guards when nothing about it says *close*
+    /// # Why it carries both guards when nothing about it says *close*
     ///
     /// Because it destroys as much as a Close does and advertises none of it.
     /// The tab stays, the path stays, the pages look identical — and every edit
@@ -234,7 +204,7 @@ impl PdfcerApp {
     /// [`Self::apply_close`]. This file's header carries the argument for the
     /// order and it transfers here without amendment.
     ///
-    /// # ★★ The intent is `Reread`, not `Close`, and that is load-bearing
+    /// # The intent is `Reread`, not `Close`, and that is load-bearing
     ///
     /// [`PendingIntent::Reread`] carries the operator's chosen
     /// [`pdfcer_core::document::LoadOptions`] **across the dialog**. Resuming
@@ -244,12 +214,12 @@ impl PdfcerApp {
     /// step of the chain has to hold the reading, and this is the step where it
     /// would be easiest to drop.
     ///
-    /// # ⚠ It does not validate `policy`, and one value must never reach it
+    /// # It does not validate `policy`, and one value must never reach it
     ///
     /// [`pdfcer_core::parser::DuplicateKeyPolicy::Refuse`] is representable in
     /// the action and is that enum's own `Default`. Sent to a loader it is the
-    /// behaviour that **refused the operator's 46 KB drawing whole over one
-    /// repeated `/PageMode`** — the exact failure `Pass 283.0` exists to end.
+    /// behaviour that **refuses a 46 KB drawing whole over one repeated
+    /// `/PageMode`** — the failure this whole offer exists to end.
     /// The rule is enforced where the value is constructed, in
     /// `crate::panels::docprops`, which offers two of the three; this arm is
     /// the transport and cannot second-guess a policy the engine may extend.
@@ -311,7 +281,7 @@ impl PdfcerApp {
     /// `Action::CloseDocument` — close the tab at `slot`, which may not be the
     /// one on screen.
     ///
-    /// The fifth arm, and it asks the same two questions in the same order as
+    /// It asks the same two questions in the same order as
     /// [`Self::apply_close`]. What it adds is one step between them, and that
     /// step is the reason it is a separate function rather than a parameter:
     ///
@@ -346,11 +316,11 @@ impl PdfcerApp {
             });
             return;
         }
-        // ★★★ O65: `save::has_unsaved_edits`, not `session.is_modified()`.
-        // The engine's answer is "differs from the BASE revision", which an
-        // incremental save cannot clear — so a **saved** background tab was
-        // treated as modified, which yanked the canvas to it (`activate_slot`
-        // below) before asking a question that should not have been asked.
+        // O65: `save::has_unsaved_edits`, not `session.is_modified()`. The
+        // engine's answer is "differs from the BASE revision", which an
+        // incremental save cannot clear — so a **saved** background tab reads
+        // as modified, which yanks the canvas to it (`activate_slot` below) to
+        // ask a question that should not be asked at all.
         let modified = matches!(
             self.slot(slot),
             Some(crate::app::state::Status::Open(doc))
@@ -370,17 +340,17 @@ impl PdfcerApp {
     /// `Action::CloseOtherDocuments` — close everything except the tab at
     /// `keep`.
     ///
-    /// ★★ **The sixth arm, and it has both guards by DELEGATION** rather than
-    /// by carrying its own copies. Every close it performs goes through
+    /// **It has both guards by DELEGATION** rather than by carrying its own
+    /// copies. Every close it performs goes through
     /// [`Self::apply_close_document`], which is where the guards live, so there
     /// is no second place for *"does this ask about unsaved edits?"* to be
     /// answered differently.
     ///
-    /// This is also why [`tests::every_action_that_discards_a_document_asks_about_unsaved_edits`]
-    /// still holds with a sixth arm present: this body names a close verb only
-    /// through its sibling, and the sibling is checked.
+    /// It is also why [`tests::every_action_that_discards_a_document_asks_about_unsaved_edits`]
+    /// holds without listing this arm: the body names a close verb only through
+    /// its sibling, and the sibling is checked.
     ///
-    /// # ★ It closes from the RIGHT, and `keep` is adjusted as it goes
+    /// # It closes from the RIGHT, and `keep` is adjusted as it goes
     ///
     /// Slots renumber every time one is removed, so the loop takes the
     /// **rightmost tab that is not `keep`** each pass — which is either the
@@ -392,7 +362,7 @@ impl PdfcerApp {
     /// obvious version and is wrong after the first close, because every index
     /// it holds names a different document from then on.
     ///
-    /// # ★★ It survives the unsaved-edits question, which is what makes it
+    /// # It survives the unsaved-edits question, which is what makes it
     /// usable
     ///
     /// A modified document brings itself to the front and asks, and answering
@@ -465,34 +435,23 @@ impl PdfcerApp {
 
 #[cfg(test)]
 mod tests {
-    /// ★★ **Every action here that DISCARDS a document asks about unsaved
-    /// edits, in the right order.**
+    /// **Every action here that DISCARDS a document asks about unsaved edits,
+    /// in the right order.**
     ///
-    /// The gate that would have caught the 2026-08-19 defect, and the shape it
-    /// had to be rewritten into on the same day.
+    /// # What is asserted, and what deliberately is not
     ///
-    /// # ★★ Why it was rewritten, which is the more useful half
+    /// Not *"there are N arms in this file and all of them call
+    /// `ask_unsaved`"*. A count is not the property, and an arm that adds a tab
+    /// rather than replacing one must **not** ask — a guard there would state
+    /// something false to the operator, so a test keyed on the count would
+    /// demand a lie the moment the count moved.
     ///
-    /// Its first form asserted *"there are exactly four arms in this file and
-    /// all four call `ask_unsaved`"*. The count was load-bearing — it was the
-    /// floor that stopped a rename making the loop iterate zero times and
-    /// report success.
-    ///
-    /// Then the document tabs landed and **three of the arms stopped
-    /// discarding anything**, while a fifth arrived that does. The old test
-    /// failed, correctly, and the tempting repair was to move `4` to `5`. That
-    /// repair would have been wrong in the direction this project keeps
-    /// finding: it would have demanded a guard on `apply_open`, whose guard is
-    /// now a *false statement to the operator*, and the test would have
-    /// enforced a lie.
-    ///
-    /// The property was never "how many arms are there". It is **an arm that
-    /// can destroy a document must ask first**. So that is what is asserted:
-    /// any body naming a close verb must also name both guards, in order. The
-    /// counts remain as floors — an instrument that cannot fail detects
-    /// nothing — but they are floors on *both* populations now, so neither
-    /// "no arms were found" nor "no destructive arms were found" can pass
-    /// silently.
+    /// The property is **an arm that can destroy a document must ask first**,
+    /// and that is what is checked: any body naming a destructive verb must
+    /// also name both guards, in order. The counts survive only as floors — an
+    /// instrument that cannot fail detects nothing — and they are floors on
+    /// *both* populations, so neither "no arms were found" nor "no destructive
+    /// arms were found" can pass silently.
     ///
     /// # Why it reads the source rather than driving the functions
     ///
@@ -512,21 +471,19 @@ mod tests {
         // The function bodies, split on their own signatures. `skip(1)` drops
         // everything before the first, which is the module header.
         //
-        // ★★ The marker is ASSEMBLED from two pieces rather than written as one
-        // literal, and this test's first two drafts are why.
+        // The marker is ASSEMBLED from two pieces rather than written as one
+        // literal, and it has to be.
         //
         // The scan looks for the function signatures. Writing that signature
         // out as a single string — here, or in a comment explaining why not to
         // — puts an extra copy of it into the very file being scanned, and the
-        // split finds one body too many. Both drafts did it: the first in the
-        // `split` call, the second in the comment warning about the first.
+        // split finds one body too many.
         //
-        // Funny, and the shape is not. **The instrument was counting itself**,
-        // and the spurious body would have contained `ask_unsaved` and
-        // `save_pending` — they appear in the assertion messages — so it would
-        // have passed every check below. `CONTINUE.md` §7's rule arriving from
-        // a direction nobody predicted: a source-scanning test is part of its
-        // own corpus, and the floor assertion is what noticed.
+        // **The instrument would then be counting itself**, and the spurious
+        // body would contain `ask_unsaved` and `save_pending` — they appear in
+        // the assertion messages — so it would pass every check below. A
+        // source-scanning test is part of its own corpus; only the floor
+        // assertion notices when that stops being accounted for.
         let marker = format!("    pub(super) {}", "fn apply_");
         let bodies: Vec<&str> = SRC.split(marker.as_str()).skip(1).collect();
         assert!(
@@ -535,32 +492,24 @@ mod tests {
             bodies.len()
         );
 
-        // ★ The verbs that actually destroy a document. Assembled the same way
+        // The verbs that actually destroy a document. Assembled the same way
         // and for the same reason: spelled as one literal each, they would
         // appear in this test's own body and make every arm look destructive.
         //
-        // ★★★ **The third verb does not close anything, and adding it was the
-        // finding of 2026-09-10.**
-        //
-        // Since 2026-08-19 this predicate was two *close* verbs, and it was
-        // right every day of that — because every arm that discarded a document
-        // did it by closing one. That made "names a close verb" a **proxy** for
-        // the property actually being asserted, which is *"this arm can destroy
-        // the operator's work"*.
-        //
-        // `apply_reread_with_duplicate_keys` breaks the proxy. It discards every
-        // edit in the document and closes nothing: the tab stays, the path
+        // **The third verb does not close anything.** "Names a close verb" is
+        // only a **proxy** for the property being asserted, which is *"this arm
+        // can destroy the operator's work"*, and
+        // `apply_reread_with_duplicate_keys` breaks the proxy: it discards every
+        // edit in the document and closes nothing — the tab stays, the path
         // stays, and the engine hands back a fresh parse of the same bytes with
-        // an empty undo stack. Under the old predicate it would have been
-        // classified **harmless**, the loop would have skipped it, the arm count
-        // would still have added up, and the test would have gone green over an
-        // arm that could lose an afternoon.
+        // an empty undo stack. Left out of this list it would be classified
+        // **harmless**, the loop would skip it, the arm count would still add
+        // up, and the test would go green over an arm that can lose an
+        // afternoon.
         //
-        // That is this project's recurring shape — a check keyed on a name
-        // rather than on the property — and the guard against the next one is
-        // not a better name. It is the rule stated here: **when an arm can
-        // discard a document, it goes in this list, whatever its verb is
-        // called.**
+        // The guard against the next one is not a better name. It is the rule
+        // stated here: **when an arm can discard a document, it goes in this
+        // list, whatever its verb is called.**
         let closes_a_document = |body: &str| {
             let whole = format!("close_{}", "document();");
             let one = format!("close_{}", "slot(");
@@ -588,7 +537,7 @@ mod tests {
                 body.contains("save_pending"),
                 "`apply_{name}` closes a document without checking `save_pending`"
             );
-            // ★ And in that order. Reversed, the operator would be asked a
+            // And in that order. Reversed, the operator would be asked a
             // question whose answer cannot be honoured: they press *Close
             // without saving* and are declined anyway, which reads as a broken
             // button rather than as a busy program.

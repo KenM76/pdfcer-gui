@@ -1,44 +1,30 @@
 //! # diag — an opt-in trace of what the shell actually received
 //!
-//! Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\diag.rs` (Class A,
-//! `SALVAGE.md`). **The header below is carried across verbatim**, because
-//! it records *why* the channel exists — an argument that took a real
-//! investigation to earn and that a paraphrase would lose.
-//!
-//! What is salvaged at S0 is the trace channel itself ([`enabled`],
-//! [`trace`]). The other 800 lines of the original — the `PDFCER_DIAG_SCRIPT`
-//! scripted-input harness, its `Step` grammar, `ScriptTool`, the font-folder
-//! preload — land with `tools/ui-verify` at stage S1, which is the thing
-//! that consumes them. Salvaging a script grammar before there is a harness
-//! to run it would be shipping a language with no speakers.
-//!
-//! ---
+//! This file is the channel itself — [`enabled`], [`trace`], and the
+//! change-gated writers built on them. Nothing in it is a feature; it is the
+//! instrument every other module in the crate is measured with, and the
+//! contract below is what keeps it safe to leave switched on in the source.
 //!
 //! ## Why this exists
 //!
 //! A GUI defect in this project has exactly one honest oracle: the running
-//! application (standing rule R86). Everything else — reading the dispatch
-//! chain, unit-testing the pure decision functions, checking the CLI's answer
-//! to the same query — can be entirely green while the operator still cannot
-//! select an object, because the thing that failed sits between the window
-//! manager and our first line of code.
+//! application (**R1**). Everything else — reading the dispatch chain,
+//! unit-testing the pure decision functions, checking the CLI's answer to the
+//! same query — can be entirely green while the operator still cannot select
+//! an object, because the thing that failed sits between the window manager
+//! and our first line of code.
 //!
-//! That happened. On 2026-08-04 the operator reported that clicking a drawing
-//! object selected nothing. The hit-test was verified correct through
-//! `pdfcer` (the same `pdfcer-core` query, same fixture, right answer), every
-//! selection decision function passed headless, and the dispatch from toolbar
-//! toggle to `run_vector_edit_tool` read correctly line by line. Reading harder
-//! was not going to close the gap: the remaining candidates were all of the
-//! form "does `Response::clicked()` fire at all", which is unobservable from
-//! the source.
+//! ⇒ The candidates that survive a careful reading are all of the form *"does
+//! `Response::clicked()` fire at all"*, and **that is unobservable from the
+//! source**. It has to be reported from inside the process, on the frame it
+//! happens, or it is not observed at all.
 //!
 //! ## Why it does not just take a screenshot
 //!
-//! The operator was using the machine for real work and explicitly asked that
-//! the screen not be commandeered. So the diagnostic has to come out of the
-//! process as *text*, from a window that need never be looked at — which also
-//! makes it usable from a script, a CI run, or a machine with no display at
-//! all.
+//! The operator uses this machine for real work and has asked that the screen
+//! not be commandeered. So the diagnostic comes out of the process as *text*,
+//! from a window that need never be looked at — which also makes it usable
+//! from a script, a CI run, or a machine with no display at all.
 //!
 //! ## Contract
 //!
@@ -67,12 +53,11 @@
 //!
 //! ---
 //!
-//! ## What stage S2 added, and why: three things the harness needs
+//! ## What the harness is owed, and by what
 //!
-//! `PROJECT_PLAN.md` §4.3 tabulates *"what the application owes the
-//! harness"* — three requirements discovered by **building** `tools/ui-verify`
-//! at S1 rather than by reading code. Each removes a harness workaround.
-//! Two of the three are implemented in terms of machinery added here.
+//! `PROJECT_PLAN.md` §4.3 tabulates the three contracts this crate honours so
+//! that `tools/ui-verify` needs no workarounds; each of them removes a harness
+//! workaround, and two are implemented by machinery in this file.
 //!
 //! ### The de-duplicating gate ([`trace_changed`])
 //!
@@ -80,18 +65,19 @@
 //! is almost always *"what is the current value of X?"* — answered by the
 //! **last** line carrying X. A call site in the frame loop that re-emits an
 //! unchanged value 60 times a second answers that question no better and
-//! buries every other event while doing it. Measured on the S1 binary: the
-//! `canvas-pointer` line produced **50 identical lines in 9 seconds** with
-//! the pointer stationary, because it fired once per frame rather than once
-//! per movement.
+//! buries every other event while doing it. Measured: an ungated
+//! `canvas-pointer` line produces **50 identical lines in 9 seconds** with the
+//! pointer stationary, because it fires once per frame rather than once per
+//! movement.
 //!
 //! That is not merely untidy. `ui-verify` reads the trace file repeatedly
 //! while it drives (`Session::trace` re-parses the whole capture after every
 //! settle), so per-frame noise is re-parsed on every read and grows the
 //! capture without adding information. Worse, it makes a human reading the
-//! trace scroll past thousands of lines to find the one event that mattered
-//! — which is exactly how pdfcer's own investigation missed a `UNPARSEABLE`
-//! rejection that was traced on every single run.
+//! trace scroll past thousands of lines to find the one event that matters —
+//! and a rejection line that is traced on every run is one a reader stops
+//! seeing, which is how a capture that contains the answer still fails to
+//! deliver it.
 //!
 //! So: [`trace_changed`] remembers the last line emitted under a **slot**
 //! and emits only when the newly built line differs. "Changed" is defined as
@@ -108,15 +94,14 @@
 //! resized — the hazard §4.2 prerequisite 1 names). [`ui_rect`] is the first
 //! source.
 //!
-//! It is a **process-global sink on purpose**, and that is the seam: the
-//! ribbon is being built in `egui-shell`, which cannot depend on this crate
-//! (`tools/gates/check-shell-purity.sh` enforces the one-directional
-//! dependency), so it will expose a *callback* that the application supplies.
-//! [`ui_rect`] already has the exact `fn(&str, egui::Rect)` shape such a
-//! callback takes, captures nothing, and needs no `&mut` threaded through
-//! every widget signature. Wiring the ribbon to it is therefore a single
-//! registration line at start-up and **no change to this file** — which is
-//! the property that lets the two agents' work land independently.
+//! It is a **process-global sink on purpose**, and that is the seam.
+//! `egui-shell` cannot depend on this crate —
+//! `tools/gates/check-shell-purity.sh` enforces the one-directional dependency
+//! — so the ribbon and the dock take a *rect sink* from their caller and this
+//! crate supplies one that forwards to [`ui_rect`]
+//! (`crate::app::surfaces`). Because the sink captures nothing and needs no
+//! `&mut` threaded through every widget signature, the shell can grow new
+//! named regions without a line changing here.
 //!
 //! ### Zero-cost when off, in both
 //!
@@ -187,7 +172,7 @@ static LAST_UI_RECT: LazyLock<Mutex<HashMap<String, egui::Rect>>> =
 
 /// The region names [`ui_rect`] has been called with **so far this frame**.
 ///
-/// ## ★ Why this exists: the trace is a CHANGE LOG, and a change log cannot
+/// ## Why this exists: the trace is a CHANGE LOG, and a change log cannot
 /// say that something stopped
 ///
 /// [`ui_rect`] emits only when a region's rect *differs* from the last one
@@ -197,14 +182,12 @@ static LAST_UI_RECT: LazyLock<Mutex<HashMap<String, egui::Rect>>> =
 /// rect stands in the trace forever and a reader has no way to tell "still
 /// there, unmoved" from "gone forty frames ago".
 ///
-/// That is not academic. It made `ui-verify`'s UI-scale check report **18
-/// ribbon controls as lying outside the window** at a large scale. They did
-/// not: the ribbon's overflow had correctly swallowed them, and every one of
-/// those rects was its position from an earlier frame at a smaller scale. The
-/// screenshot showed a perfectly laid-out ribbon with a *5 more* button. The
-/// harness was reading a fossil and reporting it as a live layout defect —
-/// the exact false-defect outcome `crate::diag`'s own contract is written to
-/// avoid.
+/// That is not academic, and the failure it produces is **confident and
+/// wrong**: a ribbon whose overflow has correctly swallowed a control leaves
+/// that control's last rect standing in the trace, at the position it held
+/// under an earlier layout, and a harness measuring it reports a live layout
+/// defect against a fossil. A screenshot of the same frame shows a perfectly
+/// laid-out ribbon.
 ///
 /// So [`end_ui_frame`] diffs this set against the previous frame's and emits
 /// `ui-rect-gone name=…` for anything that disappeared. The log stays a change
@@ -341,7 +324,7 @@ fn record_if_changed(
 /// Renaming one silently un-aims whatever check was measuring it.
 /// [`ui_rect`], but **only if the region is actually visible** inside `clip`.
 ///
-/// # ★ Why a scroll area needs this, and why the plain call is a trap there
+/// # Why a scroll area needs this, and why the plain call is a trap there
 ///
 /// `egui` lays out every child of a `ScrollArea` and then *clips* the ones
 /// outside the viewport. So a collapsible header scrolled below the fold still
@@ -353,13 +336,11 @@ fn record_if_changed(
 /// document, the desktop. It then reports a contrast figure that is a fact
 /// about the wrong widget.
 ///
-/// That is not hypothetical. The first live run of `settings_headings_legible`
-/// — the regression check for `DEFECTS.md` **D2**, which had SKIPPED for the
-/// whole life of the project — reported three of eight headings as illegible
-/// or blank. The dialog was fine: the two headings actually on screen measured
-/// **13.91:1** against a 3:1 floor. All three "failures" were headings
-/// scrolled out of view, and the check was reading the Pages panel and the
-/// drawing behind the dialog.
+/// That is not hypothetical: `settings_headings_legible` — the regression
+/// check for `DEFECTS.md` **D2** — measures headings in a scrolled dialog, and
+/// an ungated declaration hands it the Pages panel and the drawing behind the
+/// window instead. Those read as illegible against the 3:1 floor while the
+/// headings genuinely on screen measure **13.91:1**.
 ///
 /// A check that fires when nothing is wrong is one that gets switched off, and
 /// this one guards the defect that justified building the harness.
@@ -373,29 +354,27 @@ fn record_if_changed(
 /// It is the same repair as `ui-rect-gone`: the channel should describe what
 /// is visible, not what was laid out.
 ///
-/// # ★★★ The test is MOSTLY VISIBLE, and it used to be bare intersection
+/// # The test is MOSTLY VISIBLE, not bare intersection
 ///
-/// The rule here read: *"a heading half-scrolled off the bottom is still partly
-/// on screen and still worth measuring — a contrast check samples what it can
-/// reach. Requiring full containment would silently drop the boundary case."*
-///
-/// **Measured false on 2026-08-21.** A settings heading sitting two points
-/// inside the scroll area's bottom edge published a rect, and the contrast
-/// sampler measured **1.53:1** on it — reading the anti-aliased top rows of
-/// glyphs whose bodies had been clipped away, at 5.3 % coverage, and reporting
-/// an illegible heading in a dialog whose other headings measured 15.07:1.
+/// Bare intersection is the tempting rule — a heading half-scrolled off the
+/// bottom is still partly on screen, and a contrast check samples what it can
+/// reach — but it is measurably wrong at the boundary. A settings heading
+/// sitting two points inside the scroll area's bottom edge is 5.3 % visible,
+/// and a contrast sampler reads **1.53:1** off the anti-aliased top rows of
+/// glyphs whose bodies are clipped away, in a dialog whose other headings
+/// measure 15.07:1.
 ///
 /// So the test is a *proportion*: a region must be at least
 /// [`VISIBLE_FRACTION`] inside the clip before it is worth naming. Both ends of
-/// the old argument survive — a heading three-quarters visible is still
-/// measured, and full containment is still not required — but a sliver is no
-/// longer offered to a sampler as though it were a surface.
+/// the argument survive — a heading three-quarters visible is still measured,
+/// and full containment is still not required — but a sliver is not offered to
+/// a sampler as though it were a surface.
 ///
-/// ★ The general form, and it is the second instance of it in one afternoon:
-/// **a measurement of the wrong surface is indistinguishable from a measurement
-/// of a broken one.** The first was a capture of the wrong window; this is the
-/// wrong part of the right one. A diagnostic channel that publishes a region
-/// nobody can read is not being generous, it is manufacturing false failures.
+/// ⇒ The general form: **a measurement of the wrong surface is
+/// indistinguishable from a measurement of a broken one.** A capture of the
+/// wrong window and a capture of the wrong part of the right one fail the same
+/// way. A diagnostic channel that publishes a region nobody can read is not
+/// being generous, it is manufacturing false failures.
 /// How much of a region must be inside the clip before it is published.
 ///
 /// Three fifths, and the number is a judgement rather than a measurement: it is
@@ -409,7 +388,7 @@ const VISIBLE_FRACTION: f32 = 0.6;
 ///
 /// `true` when at least [`VISIBLE_FRACTION`] of `rect` survives `clip`.
 ///
-/// # ★★ Why this is split out of [`ui_rect_visible`]
+/// # Why this is split out of [`ui_rect_visible`]
 ///
 /// Because *a change to a diagnostic channel is exactly the kind that can be
 /// green and wrong*, and the only way to write a test that fails on the wrong
@@ -423,11 +402,10 @@ const VISIBLE_FRACTION: f32 = 0.6;
 /// is public, and `crates/pdfcer-gui/src/app/surfaces.rs`'s dock-sink test
 /// calls it against rectangles a **real** `egui_shell::dock::Dock` produced.
 ///
-/// ★ Note what it does with a zero-area region: `false`. A rectangle with no
-/// area cannot be 60 % anything, and the old spelling's `area > 0.0` guard said
-/// the same thing by falling through to silence. Named rather than implied,
-/// because "a collapsed control is not visible" is a claim worth being able to
-/// read.
+/// Note what it does with a zero-area region: `false`. A rectangle with no
+/// area cannot be 60 % anything. Said outright rather than left to fall out of
+/// a division, because "a collapsed control is not visible" is a claim worth
+/// being able to read and to test.
 #[must_use]
 pub fn visible_enough(rect: egui::Rect, clip: egui::Rect) -> bool {
     let shown = clip.intersect(rect);
@@ -441,7 +419,7 @@ pub fn visible_enough(rect: egui::Rect, clip: egui::Rect) -> bool {
 /// asking "can the operator see this?" gets the same answer with
 /// `PDFCER_DIAG` unset, which is what makes the answer testable.
 pub fn ui_rect_visible(name: &str, rect: egui::Rect, clip: egui::Rect) -> bool {
-    // ★ The verdict is computed BEFORE the `enabled()` short-circuit, which
+    // The verdict is computed BEFORE the `enabled()` short-circuit, which
     // costs six floating-point operations per region on a channel-off build.
     // That is deliberate and it is cheap: the alternative is a function whose
     // return value means "visible" when the channel is on and "no" when it is
@@ -456,12 +434,12 @@ pub fn ui_rect_visible(name: &str, rect: egui::Rect, clip: egui::Rect) -> bool {
     }
     ui_rect(name, rect);
     true
-    // Not silent when it does not intersect - see [`report_clipped`], which
-    // was the whole of this comment until 2026-09-12 and was wrong about the
-    // cost of saying nothing. This is still not a retirement: `end_ui_frame`
-    // handles that, and a region that scrolls out of view and back is exactly
-    // the case it was built for: it emits `ui-rect-gone` on the frame the
-    // region stops being declared, and the rect is re-emitted when it returns.
+    // NOT silent when the region fails the test - see [`report_clipped`] for
+    // why an absence is not an answer. It is still not a retirement:
+    // `end_ui_frame` owns that, and a region that scrolls out of view and back
+    // is exactly the case it was built for - it emits `ui-rect-gone` on the
+    // frame the region stops being declared, and the rect is re-emitted when
+    // it returns.
 }
 
 /// **Why a region was not published, on the frame the answer changes.**
@@ -470,22 +448,15 @@ pub fn ui_rect_visible(name: &str, rect: egui::Rect, clip: egui::Rect) -> bool {
 /// pdfcer-diag ui-rect-clipped name=<region> rect=[[..]] clip=[[..]] shown=0.41 floor=0.60
 /// ```
 ///
-/// # ★★★ The defect this is a fix for, and it cost three correct functions
+/// # Why silence is not an answer
 ///
 /// [`ui_rect_visible`] answers a real question, *can the operator see this?*,
-/// and until 2026-09-12 it answered `no` by saying nothing at all. An absence
-/// is not a measurement. A driven check reading the trace cannot tell
-/// a region that was never drawn from one that drew and was clipped, and the
-/// two have completely different causes.
-///
-/// Measured that day: `restyling_selected_text_reaches_the_document` reported
-/// *“12 characters are selected and the Properties panel says nothing about
-/// them: no `properties.text` region”* and named three candidate causes, in
-/// `app::panels::show_panel`, `panels::properties::text::section` and
-/// `TextStyleDraft::sync`. All three were correct code. The same trace carried
-/// `properties.text.face`, `.size`, `.bold` and `.italic` - every control the
-/// section draws - at rectangles inside the dock body. The section had drawn;
-/// only its own bounding box failed [`visible_enough`], and nothing said so.
+/// and answering `no` by saying nothing at all makes the two causes
+/// indistinguishable: a driven check reading the trace cannot tell a region
+/// that was never drawn from one that drew and was clipped, and they have
+/// completely different fixes. A check reporting the first sends a reader into
+/// the drawing code — which is correct — while the section drew perfectly and
+/// only its own bounding box failed [`visible_enough`].
 ///
 /// ⇒ **A diagnostic channel that declines to publish owes the reason.** The
 /// rule generalises past this function: an unevidenced absence reads as an
@@ -529,24 +500,21 @@ fn report_clipped(name: &str, rect: egui::Rect, clip: egui::Rect) {
 /// pdfcer-diag viewport-inner id=<hash> rect=[[x0 y0] - [x1 y1]]
 /// ```
 ///
-/// # ★★ Why this line has to exist, and what breaks silently without it
+/// # Why this line has to exist, and what breaks silently without it
 ///
 /// [`ui_rect`] publishes a named region's rectangle **relative to the viewport
-/// that drew it**. Until 2026-08-20 there was exactly one viewport, so a
-/// harness could add the application window's client origin and be right — and
-/// that assumption is baked into every driven check in `tools/ui-verify/`.
+/// that drew it**, and a harness converting to desktop coordinates has to add
+/// that viewport's client origin. With one window there is nothing to get
+/// wrong; `crate::dialogs::host` makes a dialog a real OS window, and its
+/// regions publish rectangles that look exactly like the application window's
+/// while naming a completely different place on the desktop — typically by the
+/// few hundred points between the two windows' corners.
 ///
-/// `crate::dialogs::host` makes a dialog a real OS window, which is a second
-/// viewport with its own origin. Its regions keep publishing rectangles that
-/// look exactly like the ones the harness has always converted, and they now
-/// name a completely different place on the desktop — typically by the few
-/// hundred points between the two windows' corners.
-///
-/// **That is a coordinate-space defect with plausible numbers**, which
-/// `D:/dev/rag/egui/` already records twice on this project. Both cost days,
-/// both were invisible to every unit test, and both presented as *"the click
-/// lands somewhere else"*. This line is the fix rather than care: the harness
-/// is handed the child's origin instead of assuming one.
+/// **That is a coordinate-space defect with plausible numbers**, a class
+/// `D:/dev/rag/egui/` records twice on this project: invisible to every unit
+/// test, and presenting only as *"the click lands somewhere else"*. This line
+/// removes the assumption instead of asking for care — the harness is handed
+/// the child's origin.
 ///
 /// It is also the only way a check can **assert that a dialog opened in its own
 /// window at all**, which is what makes `ui-conventions/dialogs.md` G1 testable
@@ -559,7 +527,7 @@ pub fn viewport_inner(id: egui::ViewportId, rect: egui::Rect) {
     if !enabled() {
         return;
     }
-    // ★ Keyed by id, so two dialogs open at once are two independent change
+    // Keyed by id, so two dialogs open at once are two independent change
     // logs. Keying by "the last viewport" would make each one's move retire the
     // other's rect and republish it, which is a change log that reports motion
     // nothing moved.
@@ -593,20 +561,19 @@ thread_local! {
 /// belongs to, and threading that through a closure parameter would push the
 /// borrow problem into every caller.
 ///
-/// # ★ What this is for, and the defect it is a fix for rather than a nicety
+/// # What this is for, and the defect it is a fix for rather than a nicety
 ///
-/// A region's rectangle is **relative to the viewport that drew it**. There was
-/// one viewport until 2026-08-20, so `tools/ui-verify` adds the application
-/// window's client origin and is right. A dialog in its own OS window keeps
-/// publishing rectangles that look exactly the same and name a different place
-/// on the desktop.
+/// A region's rectangle is **relative to the viewport that drew it**, and a
+/// harness that adds the application window's client origin to every rect is
+/// right until a dialog opens in its own OS window — whose rectangles look
+/// exactly the same and name a different place on the desktop.
 ///
-/// That is a coordinate-space defect with plausible numbers, which this project
-/// has met three times — the snap marker off by the scroll origin, the vertex
-/// drag tracking at `1/zoom`, and the caret measured against the wrong font.
-/// Every one presented as *"it lands somewhere else"* and every one cost a day.
-/// The tag plus [`viewport_inner`] is the fix in the instrument, not in the
-/// care.
+/// A coordinate-space defect with plausible numbers is the one class this
+/// project keeps meeting: a marker off by the scroll origin, a drag tracking at
+/// `1/zoom`, a caret measured against the wrong font. Each presents only as
+/// *"it lands somewhere else"*, and none of them is visible to a test that does
+/// not drive the real window. The tag plus [`viewport_inner`] puts the fix in
+/// the instrument rather than in anybody's care.
 pub struct ViewportScope;
 
 impl ViewportScope {
@@ -675,28 +642,26 @@ const FRAME_TICK_EVERY: u64 = 10;
 /// pdfcer-diag frame n=1230
 /// ```
 ///
-/// # ★★★ Why this exists, and it is a fix for a whole class of false failure
+/// # Why this exists, and it is a fix for a whole class of false failure
 ///
-/// `ui-verify`'s `Session::settle(frames)` was
-/// `sleep(frames * 25ms)` — a **wall clock wearing the word "frames"**. On an
-/// idle machine 25 ms is about a frame and the name is nearly true. Under load
-/// it is not: the application renders fewer frames in the same wall time, so
-/// every check that "settled" then clicked was acting before the interface had
-/// caught up.
+/// A `settle(frames)` implemented as `sleep(frames * 25ms)` is a **wall clock
+/// wearing the word "frames"**. On an idle machine 25 ms is about a frame and
+/// the name is nearly true; under load it is not — the application renders
+/// fewer frames in the same wall time, so a check that "settles" and then
+/// clicks acts before the interface has caught up.
 ///
-/// Measured 2026-09-02, running the suite in batches: three checks failed with
-/// substantive, believable messages — a bookmark that went to the page and did
-/// not zoom, a canvas that stopped seeing the pointer, a list of rows that never
-/// drew — and **all three passed when re-run alone against the same binary**.
-/// The convenient reading was "contention", which explains nothing and excuses
-/// everything. The real mechanism is that the harness was measuring a UI that
-/// had not finished responding.
+/// The failures that produces are the expensive kind: substantive, believable
+/// messages — a bookmark that went to the page and did not zoom, a canvas that
+/// stopped seeing the pointer, a list of rows that never drew — that pass when
+/// re-run alone against the same binary. "Contention" explains nothing and
+/// excuses everything; the mechanism is that the harness measured a UI that had
+/// not finished responding.
 ///
-/// ⇒ With a counter on the channel, `settle` can wait for the application to
-/// actually **produce** frames, and becomes fast when idle and patient when
-/// loaded — which is what it always claimed to be.
+/// ⇒ With a counter on the channel, `Session::settle` waits for the
+/// application to actually **produce** frames: fast when idle and patient when
+/// loaded, which is what the name always claimed.
 ///
-/// ★ Only under `PDFCER_DIAG`, like everything here, and only every tenth frame.
+/// Only under `PDFCER_DIAG`, like everything here, and only every tenth frame.
 /// A per-frame line would be the one diagnostic that measurably changed the
 /// thing it measures.
 fn frame_tick() {
@@ -717,8 +682,8 @@ fn frame_tick() {
 /// Called once at the end of every frame, from `crate::app::frame`. See
 /// [`UI_RECTS_THIS_FRAME`] for the defect this exists to remove — in one
 /// sentence: a change log that only reports appearances lets a consumer read a
-/// stale rect as a live one, and that produced a confident, wrong,
-/// eighteen-item layout-defect report.
+/// stale rect as a live one, and report a layout defect against a region that
+/// is no longer drawn.
 ///
 /// # What it emits
 ///
@@ -825,10 +790,10 @@ static LAST_BY_KEY: LazyLock<Mutex<std::collections::HashMap<String, String>>> =
 /// is the same idea for a string, keyed so several callers can use it without
 /// interfering.
 ///
-/// ★ **It has [`ui_rect`]'s known weakness and it is stated rather than
+/// **It has [`ui_rect`]'s known weakness, stated rather than left to be
 /// discovered.** A change log cannot report that something *stopped* — see
-/// [`end_ui_frame`], added after that exact gap made `ui-verify` report
-/// eighteen controls as mislaid. Here the equivalent is a state that ceases:
+/// [`end_ui_frame`], which exists to close that gap for regions. Here the
+/// equivalent is a state that ceases:
 /// the last line stands, and a reader must not take it for "still true". Where
 /// that matters, include the *ceasing* in the value — `draft=false` is a value,
 /// not an absence, which is why the text-edit line reports it that way.
@@ -889,8 +854,8 @@ mod tests {
     /// The property the gate exists for: a repeated identical line is
     /// emitted once.
     ///
-    /// This is the fix for the measured defect — 50 identical
-    /// `canvas-pointer` lines in 9 seconds with the pointer stationary.
+    /// The measurement behind it: an ungated `canvas-pointer` emits 50
+    /// identical lines in 9 seconds with the pointer stationary.
     #[test]
     fn an_unchanged_line_is_emitted_once_and_then_suppressed() {
         let mut map = HashMap::new();

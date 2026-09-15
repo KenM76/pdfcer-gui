@@ -1,25 +1,13 @@
 //! # `panels::properties::markup` — restyling a markup that is already on the
 //! page
 //!
-//! ## What this closes
+//! The panel half of `FEATURES.md`'s Phase 1 row *"Format tab contents —
+//! colour, width, style, opacity for a **placed** markup"*: the surface that
+//! reaches `pdfcer-core`'s `set_markup_style`.
 //!
-//! `FEATURES.md`'s Phase 1 row *"Format tab contents — colour, width, style,
-//! opacity for a **placed** markup"*, and the row `pdfcer`'s own capability
-//! register carried as ⬜ with a note this project wrote:
+//! ## Why the PANEL and not the Format tab
 //!
-//! > **`set_markup_style` shipped in the engine on 2026-08-18 and has zero GUI
-//! > callers.** It appears only in doc comments.
-//!
-//! It was, until this landed, **the largest engine capability with no route
-//! from this GUI**. Both blockers `shell::manifest::format`'s header recorded
-//! are discharged — the verb landed 2026-08-18, and annotations became
-//! selectable the same day — so what remained was work rather than a block, and
-//! the operator's instruction of 2026-08-19 was to do the work.
-//!
-//! ## ★ Why the PANEL and not the Format tab
-//!
-//! `RIBBON_IA.md` §5.8 settles it and the wording is the operator's own
-//! decision of 2026-08-12:
+//! `RIBBON_IA.md` §5.8 settles it, in the operator's own words:
 //!
 //! > The division of labour: the **tab** carries what a user changes *while
 //! > working* — colour, width, style, align, delete. The **panel** carries
@@ -29,10 +17,10 @@
 //! So the panel is where the complete set goes, and it is also the cheaper
 //! surface by a wide margin: a ribbon band cannot hold a colour picker or a
 //! slider without a new `Item::custom` kind and a renderer for it, which is
-//! shell work in a crate that must never learn what a PDF is. The tab's slice
-//! is a later, smaller job that reads the same actions.
+//! shell work in a crate that must never learn what a PDF is (R7). The tab's
+//! slice is a smaller job that reads the same actions.
 //!
-//! ## ★★ Every control is `None` unless the operator touched it
+//! ## Every control is `None` unless the operator touched it
 //!
 //! `MarkupStyle`'s own doc comment is the rule and the reason:
 //!
@@ -46,154 +34,103 @@
 //! same annotation, one of them stale by a frame, and a colour change that
 //! silently reverts a width the operator set a moment earlier.
 //!
-//! ## ★★★ Where the style verb cannot reach — the defect of 2026-09-06
+//! ## Where the style verb can reach, and how that is decided
 //!
-//! **This section used to draw live controls that could not commit.** The guard
-//! was `AnnotKind::Markup` plus the locked flag, and `AnnotKind::Markup`'s own
-//! doc says what it covers: *"a shape, a note, a stamp, a text markup"*. But
-//! `set_markup_style` begins by calling `annot_author::spec_from_dict`, and that
-//! function's `match` reads exactly ten `/Subtype`s — `Square`, `Circle`,
-//! `Line`, `Ink`, `Polygon`, `PolyLine`, `Highlight`, `Underline`, `StrikeOut`,
-//! `Squiggly` — with every other name falling to an `other =>` arm that answers
-//! `SpecReadError::UnsupportedSubtype`. **Verified by reading the engine source
-//! on 2026-09-06, not inferred.**
+//! `set_markup_style` begins by calling `annot_author::spec_from_dict`, whose
+//! `match` reads a fixed set of `/Subtype`s — `Square`, `Circle`, `Line`,
+//! `Ink`, `Polygon`, `PolyLine`, `Highlight`, `Underline`, `StrikeOut`,
+//! `Squiggly` — with every other name answering
+//! `SpecReadError::UnsupportedSubtype`. `AnnotKind::Markup` is wider than that:
+//! its own doc covers *"a shape, a note, a stamp, a text markup"*. So the kind
+//! check alone would draw a live colour swatch and a live opacity spinner over
+//! a `/Text`, a `/FreeText` or a `/Stamp`, and every press would be refused
+//! with `EditError::MarkupSpec` — the *visible control, silently inert* class
+//! this project forbids by name.
 //!
-//! So `/Text` (a sticky note), `/FreeText` (a text box) and `/Stamp` were
-//! selectable, drew a live colour swatch and a live opacity spinner, and every
-//! press was refused with `EditError::MarkupSpec`. That is the *visible
-//! control, silently inert* class this project forbids by name.
+//! ### Reachability is asked of `spec_from_dict`, never of a subtype list
 //!
-//! ### ★★ Reachability is asked of `spec_from_dict`, never of a subtype list
+//! A `matches!(subtype, "Square" | "Circle" | …)` beside the kind check goes
+//! stale the day the engine learns an eleventh subtype, and it goes stale
+//! **silently**, in the direction that withholds a control that would have
+//! worked. [`Current::read`] already calls `spec_from_dict`, so
+//! [`Current::reach`] carries that verdict forward: this section and the verbs
+//! answer the same question through the same function, and an engine that grows
+//! a subtype grows this panel with it and no shell change.
 //!
-//! The obvious fix — a `matches!(subtype, "Square" | "Circle" | …)` beside the
-//! kind check — is the fix that goes stale the day the engine learns an
-//! eleventh subtype, and it goes stale **silently**, in the direction that
-//! withholds a control that would have worked. [`Current::read`] already called
-//! `spec_from_dict`; all that was missing was carrying its verdict forward.
-//! [`Current::reach`] is that verdict, so this section and the verbs are
-//! answering the same question through the same function, and an engine that
-//! grows a subtype grows this panel with it and no shell change.
+//! ### Two verbs, one routing decision
 //!
-//! ### ★★★ …AND HALF OF THAT WENT OUT OF DATE THE SAME DAY — `Pass 253.2`
-//!
-//! The paragraph above is kept because its history is exact, and **its present
-//! tense is not**. `pdfcer-core` shipped `set_text_annot_style` on the
-//! afternoon of 2026-09-06: a `/Text`'s icon and colour and a `/Stamp`'s colour
-//! ARE changeable, through a **second verb with a second reader and a second
-//! style struct**. Two of the three subtypes named above are no longer refused
-//! here; they are routed. [`textannot`] is that route and its header carries
-//! the whole account, including why the third — `/FreeText` — is still refused
-//! and now for a **different reason**.
+//! A `/Text`'s icon and colour and a `/Stamp`'s colour are changeable, but
+//! through a **second engine verb with a second reader and a second style
+//! struct** — `set_text_annot_style`. [`textannot`] is that route and its
+//! header carries the account, including why `/FreeText` is refused and on what
+//! grounds.
 //!
 //! ⇒ Nothing here goes through `set_markup_style` on their behalf. The two are
 //! separated by [`Reach`], an enum whose arms the compiler makes exhaustive,
-//! because a routing decision that can be got wrong silently is precisely what
-//! produced the defect above.
+//! because a routing decision that can be got wrong silently is exactly the
+//! defect this seam exists to prevent.
 //!
-//! ### ★ The refusal SAYS something
+//! ### The refusal SAYS something
 //!
 //! R9 makes an unavailable capability render nothing. It does not make the
 //! panel go silent: the heading and the subtype line still draw, because
 //! something *is* selected, and a heading over an empty space reads as a bug.
 //! [`t::markup_not_restylable`] names what is still possible — move, resize,
 //! delete, edit the note — and its doc comment records the engine verb each of
-//! those four claims was checked against, **and the correction it took on
-//! 2026-09-06** when two of the subtypes it was written for stopped being
-//! unstyleable.
+//! those four claims is checked against.
 //!
-//! ## ★★★ What WAS deliberately absent, and the two arguments that were wrong
+//! ## Two properties this panel offers that the author-time path does not
 //!
-//! This header shipped on 2026-08-19 with three refusals written into it. On
-//! 2026-09-06 the operator asked for **full editing of the markup tools**, and
-//! two of the three did not survive contact with that. They are kept here with
-//! the correction beside each rather than deleted, because a header that
-//! quietly loses an argument teaches the next reader nothing — and because the
-//! surviving half of the first one is still load-bearing elsewhere.
+//! - **Fill (`/IC`) is offered on restyle and never at author time.**
+//!   `canvas::markup::spec` writes `interior: None` on purpose — *"a filled
+//!   comment shape hides the drawing it is a comment about, which on a CAD
+//!   sheet is the whole content under it"* — and this module does not go near
+//!   that. A default and a prohibition are different acts, and letting one
+//!   stand in for the other is how a sensible default becomes a capability
+//!   nobody can reach. Acrobat's shape tools all offer fill and all default it
+//!   to none; that is the shape matched here.
 //!
-//! - **Fill (`/IC`) — WAS refused, and is now offered on restyle.** What this
-//!   header used to say:
-//!
-//!   > `canvas::markup::spec` authors `interior: None` on purpose — *"a filled
-//!   > comment shape hides the drawing it is a comment about, which on a CAD
-//!   > sheet is the whole content under it"* — and `NO_SURFACE.md` records that
-//!   > reversing it is the operator's call, not this module's. A control here
-//!   > would make the decision by offering it.
-//!
-//!   ★ **The author-time half of that stands and is untouched.**
-//!   `canvas::markup::spec` still writes `interior: None`, and this module does
-//!   not go near it: a shape this shell *places* is still unfilled, and still
-//!   does not hide the drawing under it. What the argument never justified is
-//!   the second thing it was being used for — refusing to fill a shape the
-//!   operator has **already placed** and is looking at right now. A default and
-//!   a prohibition are different acts, and letting one stand in for the other
-//!   is how a sensible default becomes a capability nobody can reach. Acrobat's
-//!   shape tools all offer fill and all default it to none; that is the shape
-//!   matched here. **No fill at author time, fill available on restyle**, and
-//!   the difference between the two is the whole point.
-//!
-//! - **Line endings (`/LE`) — WAS refused, and is now offered on a `/Line`.**
-//!   What this header used to say:
-//!
-//!   > They are meaningful for `/Line` alone, and the one `/Line` an operator
-//!   > of this application places is an arrow whose endings are what makes it
-//!   > an arrow. A control that could turn an arrow into a plain line belongs
-//!   > with a *kind* change, which nothing here does.
-//!
-//!   ★ **Wrong on its own terms.** "An arrow with no head is a different kind
-//!   of mark" is a claim about this shell's tool palette, not about the file: a
-//!   `/Line` with `/LE [/None /None]` is the same `/Subtype`, with the same
-//!   geometry, reached by the same verb, and §12.5.6.7 treats its endings as
-//!   *style* in exactly the way `/C` and `/BS` `/W` are style — which is why
+//! - **Line endings (`/LE`) are offered on a `/Line`.** A `/Line` with
+//!   `/LE [/None /None]` is the same `/Subtype`, with the same geometry,
+//!   reached by the same verb, and §12.5.6.7 treats its endings as *style* in
+//!   exactly the way `/C` and `/BS` `/W` are style — which is why
 //!   `MarkupStyle::endings` sits beside them in one struct rather than in a
-//!   reshape. It is also a mark operators want and ask for: a leader with a
-//!   head at one end only is among the commonest annotations on a drawing
-//!   sheet, and Acrobat's line tool has carried this control for twenty years.
+//!   reshape. A leader with a head at one end only is among the commonest
+//!   annotations on a drawing sheet.
 //!
-//! - **A ce dimension — STANDS, unchanged.** [`super::dimension`] owns those,
+//! - **A ce dimension is NOT restyled here.** [`super::dimension`] owns those,
 //!   through `set_dimension_style` — a different verb with a different model,
 //!   and `AnnotKind` carries the distinction **in the type** so this section's
 //!   guard is a `match` the compiler checks. Restyling a ce dimension as
 //!   ordinary markup regenerates it as a bare line with its label and witness
 //!   lines gone. Rule 15 in one sentence: never write a bare dimension.
 //!
-//! ## ★★★ WHICH subtype takes WHICH property is the ENGINE's question — the
-//! shell's copy of the list was deleted on 2026-09-06
+//! ## WHICH subtype takes WHICH property is the ENGINE's question
 //!
-//! [`Current::from_spec`] used to answer three capability questions from
-//! `MarkupSpec`'s arms: which shapes have an `/IC` to fill (four arms, with a
-//! comment saying the list had been *"checked against the engine source"*),
-//! which have a border to widen (the `TextMarkup` arm returning no width), and
-//! which have `/LE` (the `Line` arm alone).
-//!
-//! Every one of those was correct on the day it was written, and this project
-//! filed it as a boundary defect anyway:
+//! This shell holds no copy of that list:
 //!
 //! > *"That list is the engine's to know. The first subtype that gains or loses
 //! > a border is the day our copy is wrong and nothing tells us."*
 //!
-//! ⇒ `pdfcer-core` shipped **`edit::MarkupStyleSupport::for_subtype`**
-//! (`edit.rs:4493`; the type at `edit.rs:4460`) the same afternoon, with
-//! `takes_border`, `takes_interior` and `takes_endings`, and quoted that
-//! sentence into the type's doc comment as its justification. [`Current::support`]
+//! `pdfcer-core`'s `edit::MarkupStyleSupport::for_subtype` answers it, with
+//! `takes_border`, `takes_interior` and `takes_endings`. [`Current::support`]
 //! holds the answer and the rows read it. **A comment saying a list was checked
 //! against the engine source is a comment that ages; a call cannot.**
 //!
-//! ⚠ **What did NOT move.** *"What IS this mark's width?"* is still read off
+//! ⚠ **What this does NOT cover.** *"What IS this mark's width?"* is read off
 //! the `MarkupSpec` arm, because only `MarkupSpec::Square` has a `border_width`
 //! field and the engine publishes no API that would answer it. A **value** read
 //! and a **capability** question are different questions with different owners;
-//! `canvas::annotnodes`' header draws the same line for painting, and it is
-//! right.
+//! `canvas::annotnodes`' header draws the same line for painting.
 //!
-//! ### ★ The refusal, which is the other half of the same Pass
+//! ### The refusal, which is the other half of the same contract
 //!
-//! `EditError::StylePropertyNotApplicable { id, subtype, property }`
-//! (`edit.rs:7353`) is raised at `edit.rs:26460`–`26483`, **before** anything is
-//! regenerated. So the predicate above shapes this panel and the refusal
-//! catches a shell that drifted anyway — belt and braces, and the reason
-//! [`Current::reach`]'s neighbours are not enough on their own. It reaches
-//! the operator through the channel every engine refusal uses,
-//! `app::actions::funnel::vector_edit`'s `Err` arm (`funnel.rs:276`): the
+//! `EditError::StylePropertyNotApplicable { id, subtype, property }` is raised
+//! by `set_markup_style` **before** anything is regenerated. So the predicate
+//! above shapes this panel and the refusal catches a shell that drifted anyway
+//! — belt and braces, and the reason [`Current::reach`]'s neighbours are not
+//! enough on their own. It reaches the operator through the channel every
+//! engine refusal uses, `app::actions::funnel::vector_edit`'s `Err` arm: the
 //! decline sentence on screen, the engine's own words into `PDFCER_DIAG`.
 //! Nothing here builds a second route, because `check-ui-strings.sh`'s
 //! exclusion 3 forbids one in as many words.
@@ -208,7 +145,7 @@ use crate::app::state::OpenDoc;
 use crate::canvas::selection::annot::AnnotKind;
 use crate::text::panels::properties as t;
 
-// ★ `Reach` lives in the SUBMODULE and is used here. See its own doc for why:
+// `Reach` lives in the SUBMODULE and is used here. See its own doc for why:
 // it is the seam between two verbs rather than a property of either, and R2
 // gave it the file with the room. The parent still owns the routing `match`.
 use textannot::Reach;
@@ -238,7 +175,7 @@ const MAX_WIDTH_PT: f64 = 12.0;
 
 /// The width of the Line style chooser, in points.
 ///
-/// ★ Wider than the Format band's `DASH_WIDTH` (88), and deliberately so: this
+/// Wider than the Format band's `DASH_WIDTH` (88), and deliberately so: this
 /// is the surface with room for the whole of
 /// [`crate::text::markup::line_style_foreign`] — *"Dashed (the file's own
 /// pattern)"* — which the band clips. §5.8's division of labour is that the tab
@@ -256,7 +193,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     let Some(selection) = doc.selection.annot() else {
         return false;
     };
-    // ★ Markup only. A ce dimension is `super::dimension`'s, and the
+    // Markup only. A ce dimension is `super::dimension`'s, and the
     // distinction is in the type rather than in a string comparison so that
     // routing one to the wrong verb is a compile error. Restyling a ce
     // dimension through `set_markup_style` regenerates it as a bare line with
@@ -280,7 +217,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
             .weak(),
     );
 
-    // ★★ **Locked is R9's "temporarily unavailable", so it GREYS with a reason
+    // **Locked is R9's "temporarily unavailable", so it GREYS with a reason
     // rather than vanishing.**
     //
     // §12.5.3 Table 165 bit 8 says a locked annotation's properties "shall not
@@ -296,7 +233,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         return true;
     }
 
-    // ★★ Read from the SESSION every frame, never from a cache, and read
+    // Read from the SESSION every frame, never from a cache, and read
     // through the SAME function the selection was made with.
     //
     // The verb this section raises rewrites the very values it displays, and an
@@ -311,12 +248,11 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     // symptom would be controls drawn for a selection that no verb could name.
     let current = Current::read(doc, target.id);
 
-    // ★★★ **WHICH VERB REACHES THIS MARK — one `match`, and the compiler
-    // checks it.**
+    // **WHICH VERB REACHES THIS MARK — one `match`, and the compiler checks
+    // it.**
     //
-    // Until 2026-09-06 this read `if !current.restylable { … }` and there was
-    // only one verb to be reachable by. There are now two, over two spec
-    // families, and the arms below are the whole routing decision:
+    // Two verbs over two spec families, and the arms below are the whole
+    // routing decision:
     //
     // | arm | verb | reader |
     // |---|---|---|
@@ -325,15 +261,13 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     // | `TextBoxWithheld` | — | this shell declines; see [`Reach`] |
     // | `Neither` | — | both readers refused |
     //
-    // ★★ A `match` rather than two `if`s, and that is a correctness
-    // requirement rather than a style preference: a third verb, or a fourth
-    // face, arrives here as a non-exhaustive-match error instead of as a mark
-    // that quietly falls through to the refusal sentence. The previous shape of
-    // this code shipped *"live controls, every press refused"* for three
-    // subtypes; a routing decision that can be got wrong silently is the shape
-    // that produced it.
+    // A `match` rather than two `if`s, and that is a correctness requirement
+    // rather than a style preference: a third verb, or a fourth face, arrives
+    // here as a non-exhaustive-match error instead of as a mark that quietly
+    // falls through to the refusal sentence. **A routing decision that can be
+    // got wrong silently produces live controls whose every press is refused.**
     //
-    // ★ Both predicates are the engine's own readers succeeding — the SAME
+    // Both predicates are the engine's own readers succeeding — the SAME
     // calls the two verbs make — rather than subtype lists written here. A list
     // is correct today and wrong on the day the engine adds a subtype, and
     // wrong in the silent direction: withholding a control that had started
@@ -341,7 +275,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     match &current.reach {
         Reach::Markup => markup_rows(ui, &current, &target, actions),
         Reach::TextAnnot(reading) => textannot::rows(ui, reading, &target, actions),
-        // ★★★ A `/FreeText`. `set_text_annot_style` would take it and this
+        // A `/FreeText`. `set_text_annot_style` would take it and this
         // shell will not send it — `textannot`'s header carries the
         // measurement, and the short form is that the engine's reader always
         // reports `multiline: false` and this verb, unlike `set_markup_note`,
@@ -372,11 +306,10 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     true
 }
 
-/// **The rows `set_markup_style` can commit** — every control this section drew
-/// before 2026-09-06, unchanged, and now behind one arm of [`section`]'s
+/// **The rows `set_markup_style` can commit**, behind one arm of [`section`]'s
 /// `match`.
 ///
-/// ★ Extracted rather than left inline purely so the routing `match` above
+/// Extracted rather than left inline purely so the routing `match` above
 /// reads as four one-line arms. A `match` whose first arm is forty lines and
 /// whose others are three is a `match` a reader stops seeing as a routing
 /// decision, which is the one thing this one has to remain.
@@ -388,10 +321,10 @@ fn markup_rows(
 ) {
     colour_row(ui, current, target, actions);
     fill_row(ui, current, target, actions);
-    // ★ The narrowing disclosure sits under BOTH swatches and above the rest,
-    // because it qualifies them and `REVIEW_TRIAGE.md`'s rule is that a caveat
-    // below the thing it qualifies arrives after the operator has drawn their
-    // conclusion. It is absent — not greyed, not blank — for the overwhelming
+    // The narrowing disclosure sits under BOTH swatches and above the rest,
+    // because it qualifies them and a caveat below the thing it qualifies
+    // arrives after the operator has drawn their conclusion. It is absent —
+    // not greyed, not blank — for the overwhelming
     // majority of marks, whose `/C` is RGB or grey and costs no conversion.
     if current.colour.narrowed || current.interior.narrowed {
         ui.label(
@@ -401,7 +334,7 @@ fn markup_rows(
         );
     }
     width_row(ui, current, target, actions);
-    // ★ Directly under the width, because the two are one subject — *what the
+    // Directly under the width, because the two are one subject — *what the
     // line looks like* — and the Format tab's band puts them adjacent for the
     // same reason. A panel is read top to bottom, and an operator setting a
     // mark's linework should not have to read past the arrowheads to finish.
@@ -415,12 +348,11 @@ fn markup_rows(
 /// What the selected mark's dictionary currently says, in the terms this
 /// section can change — **and whether it can change any of them at all**.
 ///
-/// It described three terms until 2026-09-06 (colour, width, opacity) and now
-/// describes five, having gained the fill and the two line endings; the sixth
-/// field, [`Self::reach`], is not a term at all but the answer to WHICH VERB
-/// the other five are reachable.
+/// Five terms — colour, fill, width, opacity and the two line endings — plus a
+/// sixth field, [`Self::reach`], which is not a term at all but the answer to
+/// WHICH VERB the other five are reachable through.
 ///
-/// # ★★ Why it is read through `spec_from_dict` and not from `annot::Annotation`
+/// # Why it is read through `spec_from_dict` and not from `annot::Annotation`
 ///
 /// `pdfcer_core::annot::Annotation` is the **reader's** view — id, subtype,
 /// rect, flags, `/CA`, appearance — and it deliberately carries no `/C` and no
@@ -433,48 +365,30 @@ fn markup_rows(
 /// the values these controls show are the values `set_markup_style` will read
 /// when it plans — one derivation, not two.
 ///
-/// ★ Its refusals are `None` here rather than an error, and that is honest
+/// Its refusals are `None` here rather than an error, and that is honest
 /// rather than lax. `SpecReadError`'s own doc says every variant is *"a refusal
 /// to guess"* — an unsupported `/Subtype`, or geometry that is missing or is
 /// not something pdfcer models.
 ///
-/// ⚠ **What a refusal MEANS here changed on 2026-09-06, and the old reading was
-/// the defect.** This paragraph used to continue:
-///
-/// > A mark like that can still be **given** a colour; what cannot be done is
-/// > show the one it has, so the swatch falls back to its default and offers no
-/// > Clear. Nothing is destroyed by touching nothing.
-///
-/// The first clause is **false**, and it was the whole mistake:
-/// `set_markup_style` opens by calling this same function and propagating its
-/// error with `?`, so a mark it refuses cannot be given a colour either. The
-/// swatch was not merely uninformative — it could not commit. See
-/// [`Self::reach`] and the module header.
-/// ⚠ **`Clone`, not `Copy`, since 2026-09-07** — [`Self::reach`] carries a
+/// ⚠ **A refusal here means the mark cannot be given a colour either**, not
+/// merely that the one it has cannot be shown. `set_markup_style` opens by
+/// calling this same function and propagating its error with `?`. So a swatch
+/// drawn over a refused mark would not be uninformative — it would be unable to
+/// commit. See [`Self::reach`] and the module header.
+/// ⚠ **`Clone`, not `Copy`** — [`Self::reach`] carries a
 /// [`textannot::Reading`] on its `TextAnnot` arm, which carries a `StickyIcon`,
-/// which gained an owning `Other(Vec<u8>)` variant in `pdfcer-core`
-/// `Pass 253.5`. The frame reads one of these and hands it out by reference.
+/// which has an owning `Other(Vec<u8>)` variant. The frame reads one of these
+/// and hands it out by reference.
 #[derive(Debug, Clone)]
 struct Current {
-    /// ★★★ **Which style verb reaches this mark, if either does.**
+    /// **Which style verb reaches this mark, if either does.**
     ///
-    /// ⚠ **This field replaced a `restylable: bool` on 2026-09-06 (afternoon)**,
-    /// whose doc comment read:
-    ///
-    /// > **Whether `spec_from_dict` could read a spec out of this annotation at
-    /// > all** — and therefore whether `set_markup_style` will do anything but
-    /// > refuse. `false` is not "this mark has no colour". It is *"the style
-    /// > verb does not reach this `/Subtype`"*, which is a different fact with
-    /// > a different consequence: no rows at all, plus a sentence.
-    ///
-    /// Every word of that was true and it stopped being **enough** the morning
-    /// `pdfcer-core` shipped a second style verb. *"The style verb"* is now two
-    /// verbs, and a `bool` can only answer *"is it the one I know about?"* —
-    /// which for a sticky note is `false`, and `false` there had exactly one
-    /// consequence: the refusal sentence, on a mark whose icon and colour had
-    /// just become changeable. **A `false` that used to mean "nothing is
-    /// possible" came to mean "nothing THIS verb can do", and nothing in the
-    /// type said which.**
+    /// ⚠ **Not a `bool`, and the reason is the whole of this field.** A `bool`
+    /// can only answer *"is it the verb I know about?"*, and a `false` there
+    /// means both *"nothing is possible"* and *"nothing THIS verb can do" —
+    /// with nothing in the type to say which. For a sticky note the second is
+    /// true and the first is false, so a `bool` would produce the refusal
+    /// sentence over a mark whose icon and colour are changeable.
     ///
     /// [`Reach`] says which, in a type whose arms the compiler makes
     /// exhaustive.
@@ -484,31 +398,23 @@ struct Current {
     /// and two calls to one function is how the panel and the verb come to
     /// disagree about the same annotation.
     reach: Reach,
-    /// ★★★ **Which of these properties this `/Subtype` can take at all — the
+    /// **Which of these properties this `/Subtype` can take at all — the
     /// ENGINE's answer, not this module's.**
     ///
-    /// `MarkupStyleSupport::for_subtype` (`pdfcer-core` `edit.rs:4493`) is
-    /// asked once, off the annotation's own `/Subtype`, and [`fill_row`],
-    /// [`width_row`] and [`endings_row`] consult it before drawing anything.
+    /// `pdfcer-core`'s `MarkupStyleSupport::for_subtype` is asked once, off the
+    /// annotation's own `/Subtype`, and [`fill_row`], [`width_row`] and
+    /// [`endings_row`] consult it before drawing anything.
     ///
-    /// ⚠ **This field replaced a `has_interior: bool` on 2026-09-06**, whose
-    /// doc comment read:
-    ///
-    /// > **Whether this shape has an interior to fill at all**, which is a
-    /// > property of its `MarkupSpec` arm rather than of its dictionary: a
-    /// > `/Square`, `/Circle`, `/Polygon` and a cloud carry `/IC`; a `/Line`, an
-    /// > `/Ink`, a `/PolyLine` and a text markup have no interior for one to
-    /// > mean anything in.
-    ///
-    /// Every word of that was true, and it was still four subtypes' worth of
-    /// the engine's knowledge kept in a shell — the boundary defect this
-    /// project filed and the engine answered. Note what has *not* changed: the
-    /// row is still **absent** when the answer is `false`, for the same R9
-    /// reason, and the cloud is still handled correctly, now because
-    /// `for_subtype(b"Polygon")` says so rather than because this module
+    /// ⚠ **This shell keeps no subtype list of its own.** Which shapes carry
+    /// an `/IC`, which have a border to widen and which have `/LE` is four
+    /// subtypes' worth of the engine's knowledge, and a copy of it here is
+    /// correct until the first subtype gains or loses one. The row is
+    /// **absent** when the answer is `false`, for the R9 reason, and a cloud is
+    /// handled correctly because `for_subtype(b"Polygon")` says so rather than
+    /// because this module
     /// remembered that a revision cloud is a `/Polygon` in the file.
     ///
-    /// ★ It is not the same question as [`Self::reach`] and neither
+    /// It is not the same question as [`Self::reach`] and neither
     /// subsumes the other: `reach` asks *which verb can read this mark at all*,
     /// this asks *which of that verb's properties mean anything*. A `/Highlight` answers **yes** to the first
     /// and **no** to `takes_border` — which is exactly the mark the engine now
@@ -522,7 +428,7 @@ struct Current {
     interior: Swatch,
     /// `/BS` `/W`, the border width in points.
     ///
-    /// ★ A **value**, from the `MarkupSpec` arm that has one. Whether the row is
+    /// A **value**, from the `MarkupSpec` arm that has one. Whether the row is
     /// offered is `support.takes_border`; see the module header's distinction
     /// between a value read and a capability question.
     width: Option<f64>,
@@ -531,28 +437,28 @@ struct Current {
     /// **`/BS` `/S` and `/D` — the border's line style**, as the chooser shows
     /// it.
     ///
-    /// ★★ Read off the **dictionary**, not off the spec, and that is the same
+    /// Read off the **dictionary**, not off the spec, and that is the same
     /// exception `/CA` is rather than a departure from this struct's rule. A
-    /// dash cuts across `MarkupSpec`'s variants rather than belonging to any one
-    /// of them, so the engine carries it in `AppearanceOptions` beside the spec
-    /// instead of inside it (`pdfcer-core` `annot_author.rs:1633-1673`) and
-    /// `spec_from_dict` returns none. The engine's own reader is `pub(crate)`
-    /// (`annot_author.rs:840`), so [`crate::canvas::markup::linestyle::read`] is
-    /// this shell's copy of it — declared as a copy in that function's header,
-    /// with the bound on what a divergence can cost written down beside it.
+    /// dash cuts across `MarkupSpec`'s variants rather than belonging to any
+    /// one of them, so `pdfcer-core` carries it in `AppearanceOptions` beside
+    /// the spec instead of inside it and `spec_from_dict` returns none. The
+    /// engine's own reader is `pub(crate)`, so
+    /// [`crate::canvas::markup::linestyle::read`] is this shell's copy of it —
+    /// declared as a copy in that function's header, with the bound on what a
+    /// divergence can cost written down beside it.
     ///
-    /// ★ It therefore travels **through** `from_spec` rather than being derived
+    /// It therefore travels **through** `from_spec` rather than being derived
     /// in it, exactly as `alpha` and `endings_key_present` do, and for the same
     /// reason: it is a fact about the dictionary that the spec reader does not
     /// carry.
     dash: crate::canvas::markup::linestyle::DashReading,
     /// `/LE`, the pair of line endings the mark currently draws.
     ///
-    /// ★ Also a value, and `MarkupSpec::Line` is the only arm carrying one — a
+    /// Also a value, and `MarkupSpec::Line` is the only arm carrying one — a
     /// fact the compiler checks. `support.takes_endings` is what decides
     /// whether the choosers appear.
     endings: Option<(LineEnding, LineEnding)>,
-    /// ★★ **Whether `/LE` is actually IN the dictionary**, as distinct from
+    /// **Whether `/LE` is actually IN the dictionary**, as distinct from
     /// being supplied by Table 176's default on the way through
     /// `spec_from_dict`.
     ///
@@ -567,7 +473,7 @@ struct Current {
 
 /// A colour a swatch can show, and the honesty that goes with it.
 ///
-/// ★★ The second field is the whole reason this is a struct rather than an
+/// The second field is the whole reason this is a struct rather than an
 /// `Option<[u8; 3]>`. `/C` and `/IC` may be grey, RGB **or CMYK** (§12.5.2), and
 /// the three are not equally showable: grey is the same ink as its equal-
 /// component RGB and converts losslessly in both directions, where CMYK does
@@ -585,7 +491,7 @@ struct Swatch {
     narrowed: bool,
 }
 
-/// ★ Even "nothing to show" asks the engine what the properties are.
+/// Even "nothing to show" asks the engine what the properties are.
 ///
 /// `MarkupStyleSupport` is `#[non_exhaustive]` and has no `Default`, so the
 /// derive had to go — and that is worth keeping rather than working around.
@@ -630,7 +536,7 @@ impl Current {
         // composites the annotation onto the page rather than affecting what
         // the appearance draws, which is why `set_markup_style` applies it to
         // the dictionary directly.
-        // ★ `ObjectGraph::resolve` comes from the TRAIT, so it has to be in
+        // `ObjectGraph::resolve` comes from the TRAIT, so it has to be in
         // scope. Reaching for the inherent method — there is none — is the
         // error a reader will hit first, and importing the trait beside the use
         // is what makes the call read as what it is: an indirect reference
@@ -642,17 +548,17 @@ impl Current {
             .map(|o| graph.resolve(o))
             .and_then(Object::as_number);
 
-        // ★★★ **The one call**, and its verdict is carried rather than
+        // **The one call**, and its verdict is carried rather than
         // recomputed. `.ok().as_ref()` turns the refusal into the `None` that
         // [`Self::from_spec`] reads as *"the style verb does not reach this
         // mark"* — which is precisely what a `SpecReadError` means to
         // `set_markup_style`, since that verb's next line after this same call
         // is `?`.
-        // ★★★ **The capability question, asked of the engine, off the same key
+        // **The capability question, asked of the engine, off the same key
         // the engine itself reads.** `set_markup_style` derives its
         // `MarkupStyleSupport` from `/Subtype` on the annotation dictionary
-        // (`edit.rs:26453`–`26460`) and refuses a property the answer excludes
-        // before anything is regenerated. Reading the same key through the same
+        // and refuses a property the answer excludes before anything is
+        // regenerated. Reading the same key through the same
         // function is what makes a row drawn here and a call refused there
         // impossible to disagree.
         let subtype = dict
@@ -662,7 +568,7 @@ impl Current {
             .map_or_else(Vec::new, |n| n.as_bytes().to_vec());
         let support = MarkupStyleSupport::for_subtype(&subtype);
 
-        // ★★ Presence, not value — see `Self::endings_key_present`. This is
+        // Presence, not value — see `Self::endings_key_present`. This is
         // the one fact `spec_from_dict` erases, and the *Clear the setting*
         // button exists to act on it.
         let endings_key_present = dict
@@ -670,30 +576,31 @@ impl Current {
             .map(|o| graph.resolve(o))
             .is_some_and(|o| !matches!(o, Object::Null));
 
-        // ★ Read BEFORE `spec_from_dict` and carried across its refusal is not
+        // Read BEFORE `spec_from_dict` and carried across its refusal is not
         // needed here — a mark the spec reader refuses gets no rows at all
         // (`Self::reach`) — but it is read off the dictionary for the same
         // reason `/CA` is: the spec has no dash in it to read.
         let dash = crate::canvas::markup::linestyle::read(&graph, dict);
 
-        // ★★★ **Both readers, in order, and the second only when the first
+        // **Both readers, in order, and the second only when the first
         // refuses.** `spec_from_dict`'s arms and `text_spec_from_dict`'s are
         // disjoint — no `/Subtype` is read by both — so the order is a saving
         // rather than a precedence rule, and the `?`-shaped fallback below
         // reads as one because of it.
         //
-        // ★ The second call is what makes [`Reach::TextAnnot`] reachable, and
-        // it is the same call `set_text_annot_style` opens with. The panel and
-        // the verb ask the same function about the same dictionary, which is
-        // the property this section has had since 2026-09-06 and now has twice.
+        // The second call is what makes [`Reach::TextAnnot`] reachable, and it
+        // is the same call `set_text_annot_style` opens with. The panel and the
+        // verb ask the same function about the same dictionary, which is what
+        // makes a row drawn here and a call refused there impossible to
+        // disagree.
         let markup = spec_from_dict(&graph, dict).ok();
         let text = markup
             .is_none()
             .then(|| text_spec_from_dict(&graph, dict).ok())
             .flatten();
 
-        // ★★★ **The stamp's label parameters, and the ONE call that needs the
-        // session rather than the spec** (`pdfcer-core` `Pass 292.0`).
+        // **The stamp's label parameters, and the ONE call that needs the
+        // session rather than the spec.**
         //
         // A stamp's label size is not in `TextAnnotSpec` and cannot be — it is
         // recovered by parsing the annotation's `/AP` `/N` content stream for
@@ -705,7 +612,7 @@ impl Current {
         // form would answer `None` for exactly the stamp the operator just
         // placed and is now looking at.
         //
-        // ★ `.ok().flatten()` collapses two different `None`s that mean the
+        // `.ok().flatten()` collapses two different `None`s that mean the
         // same thing HERE and nothing else: `Err(AnnotationNotFound)` — the id
         // is not an annotation on any page of this session — and `Ok(None)`,
         // which is the engine's honest answer for a stamp whose appearance
@@ -728,7 +635,7 @@ impl Current {
     /// The pure half: everything this section shows, derived from the spec the
     /// engine read (or from its absence).
     ///
-    /// # ★ Why it is split out from [`Self::read`]
+    /// # Why it is split out from [`Self::read`]
     ///
     /// Because it is the part with the decisions in it, and it is the part a
     /// test can reach. `read` needs an `OpenDoc`, a session and a real
@@ -750,14 +657,14 @@ impl Current {
         endings_key_present: bool,
     ) -> Self {
         let Some(spec) = spec else {
-            // ★ Note what is NOT carried across: `alpha`. `/CA` reads fine off
+            // Note what is NOT carried across: `alpha`. `/CA` reads fine off
             // any annotation dictionary, so it would be easy to keep — and it
             // would be a value shown under a heading whose every control is
             // about to be withheld. Neither style verb writes `/CA` for a mark
             // `set_markup_style` refuses, so the value it would display is
             // decoration.
             return Self {
-                // ★★ The three-way answer the second reader gives, and the
+                // The three-way answer the second reader gives, and the
                 // nesting is load-bearing rather than awkward: the OUTER
                 // `Option` is *"did `text_spec_from_dict` produce a spec?"* and
                 // the INNER is *"does this shell serve that face?"*. Collapsing
@@ -794,42 +701,29 @@ impl Current {
             // `/QuadPoints` and there is nothing to stroke, so the arm has no
             // width to hand over.
             //
-            // ⚠ **Corrected 2026-09-06.** This comment used to continue:
-            //
-            //   > The width row still draws, with the engine's own default
-            //   > showing, because `set_markup_style` accepts a width for it
-            //   > and simply has nothing to apply it to.
-            //
-            // Two things about that are now wrong, and neither was wrong when
-            // it was written. `set_markup_style` no longer *accepts* a width
-            // here — it answers `EditError::StylePropertyNotApplicable`
-            // (`edit.rs:26462`) before touching the file, which is the request
-            // this project filed against the silent no-op. And whether the row
-            // draws is no longer decided by this arm handing over `None`; it is
-            // `support.takes_border`, which is the engine's to say.
+            // ⚠ **The `None` here is not what withholds the width row.**
+            // `support.takes_border` decides that, and it is the engine's to
+            // say. `set_markup_style` answers
+            // `EditError::StylePropertyNotApplicable` for a width on a text
+            // markup before touching the file, so a row drawn from this arm
+            // could not commit anyway.
             MarkupSpec::TextMarkup { color, .. } => (swatch_of(Some(color)), None),
             // `MarkupSpec` is `#[non_exhaustive]`. A kind this build does
             // not know the shape of gets no readback and no Clear, which is
             // the same answer a refused parse gets and for the same reason.
             _ => (Swatch::default(), None),
         };
-        // ★★ The interior VALUE, read off the spec arm because that is where a
+        // The interior VALUE, read off the spec arm because that is where a
         // value lives — only these four arms have an `interior` field and the
         // compiler checks which.
         //
-        // ⚠ **Corrected 2026-09-06.** This comment used to close with the
-        // sentence that made it a capability decision:
-        //
-        //   > `apply_markup_style` applies `style.interior` to exactly these
-        //   > four arms — checked against the engine source, not assumed.
-        //
-        // A comment recording that a list was checked against the engine source
+        // ⚠ **This `match` is not the capability answer.** Whether a subtype
+        // has an `/IC` at all is `support.takes_interior`, and [`fill_row`] is
+        // what asks it; this arm list supplies the colour and stops there. A
+        // comment recording that a list was checked against the engine source
         // is a comment that goes stale the first time the engine changes and
-        // nothing says so. `support.takes_interior` is the answer now, and
-        // [`fill_row`] is what asks it; this `match` supplies the colour and
-        // stops there. The cloud case the old comment was proud of still works
-        // and now works for a better reason: `for_subtype(b"Polygon")` is what
-        // says a revision cloud has an `/IC`, rather than this module
+        // nothing says so — which includes the cloud: `for_subtype(b"Polygon")`
+        // is what says a revision cloud has an `/IC`, rather than this module
         // remembering that a cloud is a `/Polygon` in the file.
         let interior = match spec {
             MarkupSpec::Square { interior, .. }
@@ -845,13 +739,13 @@ impl Current {
             interior,
             width,
             alpha,
-            // ★ Carried through untouched, like `alpha`. There is no arm to
+            // Carried through untouched, like `alpha`. There is no arm to
             // derive it from — a dash is not in `MarkupSpec` at all — and no
             // decision to take about it here: the chooser's absence for a
             // borderless subtype is `support.takes_border`'s answer, and the
             // reading itself is the dictionary's.
             dash,
-            // ★ The pair `/Line` draws, from the one arm that has one. That
+            // The pair `/Line` draws, from the one arm that has one. That
             // `/Line` is the only subtype the control is *offered* for is
             // `support.takes_endings`' answer, and the engine's own words for
             // it are on `MarkupStyleSupport::takes_endings`: Table 176 declares
@@ -866,7 +760,7 @@ impl Current {
     }
 
     // -----------------------------------------------------------------------
-    // ★★★ WHETHER a row is drawn — one question, one place, testable
+    // WHETHER a row is drawn — one question, one place, testable
     //
     // The three rows take a `Ui` and can only be exercised by driving the
     // binary; these take nothing and are reachable from a unit test, which is
@@ -899,7 +793,7 @@ impl Current {
 
     /// Whether the Line style row draws.
     ///
-    /// ★★ **Purely the engine's answer, with no second term** — unlike
+    /// **Purely the engine's answer, with no second term** — unlike
     /// [`Self::offers_width`], which also asks whether a width was read. The
     /// asymmetry is real: a width has to be *shown* in a spinner, so a mark
     /// whose width this build could not read has nothing to put in one; a line
@@ -909,8 +803,7 @@ impl Current {
     ///
     /// ⇒ So the only question left is the engine's *does this subtype have a
     /// border?*, which is the same predicate `set_markup_style` guards
-    /// `style.dash` with (`pdfcer-core` `edit.rs:26463-26476`). A row drawn here
-    /// cannot produce that refusal.
+    /// `style.dash` with. A row drawn here cannot produce that refusal.
     const fn offers_dash(&self) -> bool {
         self.support.takes_border
     }
@@ -922,7 +815,7 @@ impl Current {
 
     /// Whether the *Clear the setting* button draws under them.
     ///
-    /// ★ Strictly narrower than [`Self::offers_endings`]: there has to be a
+    /// Strictly narrower than [`Self::offers_endings`]: there has to be a
     /// chooser to sit under **and** a `/LE` in the file to take out.
     const fn offers_endings_clear(&self) -> bool {
         self.offers_endings() && self.endings_key_present
@@ -932,25 +825,20 @@ impl Current {
 /// An annotation's `/C` or `/IC` as something a swatch can show, plus whether
 /// showing it cost a conversion.
 ///
-/// # ★★★ The CMYK arm, and the position it replaced
+/// # Why CMYK gets a converted swatch rather than none
 ///
-/// This function used to answer `None` for CMYK, with an argument worth keeping
-/// because half of it is still right:
+/// §12.5.2 lets `/C` be a 0-, 1-, 3- or 4-component array, so the tempting
+/// answer is `None` for anything that is not RGB — on the grounds that showing
+/// a CMYK mark's *converted* colour is a readback the operator never asked for.
 ///
-/// > `None` for anything that is not RGB, and that is honest rather than lossy:
-/// > §12.5.2 lets `/C` be a 0-, 1-, 3- or 4-component array, and a swatch
-/// > showing a CMYK mark's *converted* colour would be a control whose readback
-/// > is a conversion the operator never asked for — pick it up, put it down
-/// > unchanged, and the file now says something different.
+/// **That answer is worse than the thing it avoids.** A CMYK mark is not rare
+/// on a CAD sheet, where a plotter-bound producer writes process colour, and
+/// `None` gives it a **default black swatch and no Clear**: the panel would
+/// tell the operator their coloured mark has no colour, which is not a smaller
+/// misstatement than an approximate one, and it would withhold Clear, the one
+/// operation on a CMYK `/C` that loses nothing at all.
 ///
-/// ★ **What that shipped was worse than the thing it avoided.** A CMYK mark —
-/// not rare on a CAD sheet, where a plotter-bound producer writes process colour
-/// — got a **default black swatch and no Clear**. So the panel told the operator
-/// their coloured mark had no colour, which is not a smaller misstatement than
-/// an approximate one; and it withheld Clear, which is the one operation on a
-/// CMYK `/C` that loses nothing at all.
-///
-/// ★ **And the feared round trip is not a thing this control can do.** egui's
+/// **And the feared round trip is not a thing this control can do.** egui's
 /// colour button reports `changed()` only when the value actually moves, so
 /// *pick it up and put it down unchanged* raises no action and writes no byte.
 ///
@@ -999,17 +887,16 @@ fn swatch_of(color: Option<&Color>) -> Swatch {
             narrowed: true,
         },
     }
-    // ★ EXHAUSTIVE, with no wildcard, and deliberately so. `Color` is not
+    // EXHAUSTIVE, with no wildcard, and deliberately so. `Color` is not
     // `#[non_exhaustive]`, so a fourth device space would fail to compile here
     // rather than fall into a catch-all that shows the operator a default black
-    // square. The old wildcard was what let CMYK sit unhandled and unnoticed
-    // for the life of this module.
+    // square. A wildcard arm here is what lets a colour space sit unhandled and
+    // unnoticed.
 }
 
-// ★ The seven per-property rows, moved out on 2026-09-12 when this file hit
-// 1503 lines. `rows.rs`'s header carries the seam and the contract; the
-// short version is that a row knows its own control and nothing else, and
-// everything that decides WHICH rows exist stayed here.
+// The seven per-property rows. `rows.rs`'s header carries the seam and the
+// contract; the short version is that a row knows its own control and nothing
+// else, and everything that decides WHICH rows exist lives here.
 mod rows;
 
 mod textannot;

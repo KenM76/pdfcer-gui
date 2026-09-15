@@ -5,18 +5,17 @@
 #
 # ## Why this gate exists
 #
-# On 2026-09-02 `EditSession::reorder_annotations` shipped a few hours after the
-# request that asked for it. Wiring it up took a morning. Finding everything
-# that had *asserted the gap* took longer, and most of it was found by looking
-# rather than by any instrument:
+# When the engine answers a request, wiring the capability up is the short part.
+# Finding everything on this side that had *asserted the gap* is the long part,
+# and nothing but looking finds most of it:
 #
-#   * the panel's on-screen explainer — "This view reports the order; it does
+#   * a panel's on-screen explainer — "This view reports the order; it does
 #     not change it";
-#   * the module header, which was a flat prohibition on building the drag;
-#   * a PASSING unit test that would have forbidden the feature;
-#   * a ⛔ row in FEATURES.md that had stood for nineteen days.
+#   * a module header carrying a flat prohibition on building the verb;
+#   * a PASSING unit test that would forbid the feature;
+#   * a ⛔ row in FEATURES.md.
 #
-# ★★ Every one of them was correct when written. That is exactly what makes the
+# ★★ Every one of those is correct when written. That is exactly what makes the
 # class survive — nothing about a true-when-written sentence looks wrong, and no
 # other gate evaluates it. `check-ui-strings` proves a string is in the catalog,
 # not that it is TRUE.
@@ -31,9 +30,9 @@
 #
 # ⬜ It does NOT catch the other three. A stale sentence in a module header, a
 # stale operator-facing string, or an absence test that outlived its absence are
-# all semantic, and this gate makes no attempt at them. See HANDOFF.md §10 for
-# the manual procedure, which this gate supplements and does not replace. A gate
-# that silently implied full coverage of that class would be worse than none.
+# all semantic, and this gate makes no attempt at them: they are swept by hand,
+# and this gate supplements that sweep rather than replacing it. A gate that
+# silently implied full coverage of that class would be worse than none.
 #
 # ## Exit codes
 #
@@ -46,11 +45,10 @@
 #   2  SKIPPED — the channel is not on this machine, or it holds no
 #      consumption notes at all, so there was nothing to check against
 #
-# ★ Exit 2 corrected 2026-09-14. The paragraph below has always said this
-# gate SKIPs rather than passes when it cannot see its evidence — and the
-# code exited **0**, which `run-all.sh` counts as a PASS. The prose was
-# right, the statement was wrong, and nothing could see the difference
-# because the two sat forty lines apart in the same file.
+# ★ Exit 2 is load-bearing: `run-all.sh` counts an exit of 0 as a PASS, so a
+# SKIP that exits 0 reports a gate which looked at nothing as green. The
+# paragraph below and the `exit` statement that enacts it sit forty lines
+# apart in the same file, and nothing but this rule holds them together.
 #
 # ## Skipping honestly
 #
@@ -73,12 +71,12 @@ ROOT="${PDFCER_GATE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 # --self-test — four cases, each the only witness for one property.
 # ---------------------------------------------------------------------------
 #
-# ★★★ The `archived` case is the regression guard for 2026-09-14. Before that
-# date this gate globbed `open/*CONSUMED*.md`; the channel sweep moved every
-# consumption note to `archive/`, the glob matched nothing, and the gate went
-# permanently green over an evidence set of size zero. The `archived` case
-# returns 1 only if `archive/` is actually read, so narrowing the evidence set
-# back to `open/` turns this suite red instead of turning this gate blind.
+# ★★★ The `archived` case is the regression guard on the evidence set. A gate
+# that globbed `open/*CONSUMED*.md` alone matches nothing the moment the channel
+# sweeps its consumption notes into `archive/`, and then goes permanently green
+# over an evidence set of size zero. The `archived` case returns 1 only if
+# `archive/` is actually read, so narrowing the evidence set back to `open/`
+# turns this suite red instead of turning this gate blind.
 #
 # ⚠ Hermetic on purpose: a throwaway ROOT and a throwaway channel. A case
 # keyed on a real ⛔ row in FEATURES.md would be testing that row's wording,
@@ -147,19 +145,17 @@ if [ ! -d "$CHANNEL" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# THE EVIDENCE SET — and the afternoon it silently became empty.
+# THE EVIDENCE SET, AND HOW IT GOES SILENTLY EMPTY.
 # ---------------------------------------------------------------------------
 #
-# ★★★ This gate used to glob `"$CHANNEL"/*CONSUMED*.md`, which is `open/` and
-# nothing else. On 2026-09-14 this project swept the channel — `open/` went
-# 48 → 4 — and all fifty-one consumption notes moved to `archive/`. **From
-# that moment the glob matched nothing**, a `grep` over an empty file list
-# never matches, and the gate could not go red however stale a row became. It
-# printed "OK — no row declares a blocker that has been closed" over an
-# evidence set of size **zero**, in the same suite run as the sweep that
-# emptied it.
+# ★★★ A glob of `"$CHANNEL"/*CONSUMED*.md` reads `open/` and nothing else.
+# Sweep the channel — every consumption note moved to `archive/` — and **the
+# glob matches nothing**; a `grep` over an empty file list never matches, and
+# the gate cannot go red however stale a row becomes. It prints "OK — no row
+# declares a blocker that has been closed" over an evidence set of size
+# **zero**, in the same suite run as the sweep that emptied it.
 #
-# Two lessons, both of which this file now ENACTS rather than merely records:
+# Two rules, both of which this file ENACTS rather than merely records:
 #
 #   1. **Tidying an input is a change to the instrument.** Nothing about
 #      archiving closed exchanges looks like touching a gate, and no check on
@@ -204,36 +200,31 @@ if [ "${#NOTES[@]}" -eq 0 ]; then
 fi
 
 # Documents that carry status rows. Deliberately a short, named list rather than
-# a sweep of every *.md: CONTINUE.md and HANDOFF.md are HISTORICAL records, and
-# a past tick correctly says "blocked" about the day it was written. Rewriting
-# history to keep a gate green would destroy the thing those files are for.
+# a sweep of every *.md: a dated record correctly says "blocked" about the day
+# it was written, and rewriting history to keep a gate green would destroy the
+# thing such a file is for.
 #
-# ★★★ ENGINE_BACKLOG.md WAS MISSING FROM THIS LIST UNTIL 2026-09-09, AND IT IS
-# THE FILE WHOSE ENTIRE PURPOSE IS BLOCKED ROWS.
-#
-# Three rows in it declared `BLOCKED` on requests the engine had answered on
-# 2026-09-06 — dashed borders, a discarded markup width, and `endings` not being
-# a `StyleEdit`. All three shipped, all three were wired here, and this gate ran
-# green over them for three days because it never opened the file. The list is
-# hand-written, so a document is invisible to the check built to find exactly
-# this class until somebody remembers to add it; nothing about the omission
-# looked wrong, and the count of documents scanned still added up.
+# ★★★ THE LIST IS HAND-WRITTEN, AND THAT IS THE HOLE IN IT. A document carrying
+# blocked rows is invisible to the check built to find exactly this class until
+# somebody adds it here, and nothing about the omission looks wrong because the
+# count of documents scanned still adds up. The list below is the entirety of
+# this gate's scope: a blocked row in any other file is unchecked, and the run
+# that missed it reports exactly the same green as the run that checked it.
 #
 # ⇒ When adding a document that carries status rows, add it HERE in the same
 # commit. There is no discovery step that will do it for you, and that is
 # deliberate: see the paragraph above about historical records, which is why
 # this cannot simply become a sweep of every *.md.
 #
-# ★★ AND ADDING THE FILE WAS ONLY HALF THE FIX. This gate's evidence is a
+# ★★ AND LISTING THE FILE IS ONLY HALF OF IT. This gate's evidence is a
 # `*CONSUMED*.md` note that THIS side writes, which is correct — a reply that
 # schedules, defers or refuses must not clear a blocker, and only this side
 # knows when a capability has actually been taken. The consequence is that a
-# consumption nobody records makes the gate blind by construction. All four of
-# the 2026-09-06 markup asks were wired here and no note was ever written, so
-# even with the file in this list the gate would still have passed. Writing the
-# CONSUMED note is the act that arms this check; see
-# `archive/2026-09-06-markup-style-four-CONSUMED.md` — archived 2026-09-14,
-# which is why this gate now reads both folders rather than just `open/`.
+# consumption nobody records makes the gate blind by construction: every ask can
+# be wired here and, with no note written, the gate still passes. **Writing the
+# CONSUMED note is the act that arms this check.** A note may sit in either
+# folder, because the channel sweeps consumed threads out of `open/`, which is
+# why this gate reads both and not just `open/`.
 DOCS=("OPERATOR_REQUESTS.md" "FEATURES.md" "GUI_ROADMAP.md" "ENGINE_BACKLOG.md")
 
 status=0
@@ -255,28 +246,26 @@ for doc in "${DOCS[@]}"; do
     # ★★★ A ROW THAT HAS ALREADY BEEN CORRECTED STILL CONTAINS THE WORD IT WAS
     # CORRECTED ABOUT, AND FIRING ON IT IS WORSE THAN MISSING IT.
     #
-    # Added 2026-09-09, immediately after this gate found three genuinely stale
-    # rows. Re-run on the FIXED file, it reported two more — and both were
-    # correct rows narrating their own history:
+    # A row that has been corrected keeps the sentence recording the correction,
+    # so it still contains the word it was corrected about:
     #
     #   FEATURES.md      "⚠ THE ⛔ ON THIS ROW WAS STALE AND IS CORRECTED …"
-    #   ENGINE_BACKLOG.md "**Reachable** … ★★★ This row was `blocked` for about
-    #                      six hours and is the shortest-lived blocker …"
+    #   ENGINE_BACKLOG.md "**Reachable** … this row was `blocked` for about six
+    #                      hours …"
     #
     # Both are ✅/Reachable rows. Both name the request file, because a
     # correction that erased its own citation could not be audited — which this
     # project requires. ⇒ **The word "blocked" on those lines is a NARRATION OF
-    # THE PAST, not a claim about today**, and the gate had no way to tell the
-    # two apart because its predicate was "the token appears anywhere on the
-    # line".
+    # THE PAST, not a claim about today**, and a predicate of "the token appears
+    # anywhere on the line" cannot tell the two apart.
     #
-    # ★★ Why this mattered enough to fix rather than tolerate. This gate's own
-    # header records the first version firing on a TRUE warning and warns that
-    # such a failure "would have had somebody delete a true warning to make a
-    # build go green". A false positive on a correctly-updated row is the same
-    # hazard pointing the other way: the cheapest way to clear it is to delete
-    # the history sentence, and the history sentence is the most valuable part
-    # of a corrected row.
+    # ★★ Why this needs a rule rather than tolerance. Firing on a TRUE warning
+    # — the hazard the CONSUMED-not-ANSWERED block below exists to prevent —
+    # would have somebody delete a true warning to make a build go green. A
+    # false positive on a correctly-updated row is the same hazard pointing the
+    # other way: the cheapest way to clear it is to delete the history
+    # sentence, and the history sentence is the most valuable part of a
+    # corrected row.
     #
     # The rule: a Markdown table row's VERDICT lives at the start of a cell, so
     # a cell-initial closure token settles the row's status for today and any
@@ -306,15 +295,13 @@ for doc in "${DOCS[@]}"; do
       # ★★★ THE PREDICATE IS "CONSUMED", NOT "ANSWERED", AND THE DIFFERENCE IS
       # THE WHOLE CORRECTNESS OF THIS GATE.
       #
-      # The first version of this script asked only whether the request was
-      # still in `open/` under its own name. It fired immediately, on
-      # FEATURES.md's deep-zoom row, which is blocked on
-      # `request_reusable_parsed_handle.md` — a request the engine answered on
-      # 2026-08-13 with "scheduled as a Pass", and then archived. The reply
-      # CLOSED THE THREAD. The Pass has not landed; there is still no reusable
-      # handle anywhere in `pdfcer-render`. **The row was correct and the gate
-      # was wrong**, and it was wrong in the direction that costs most: it would
-      # have had somebody delete a true warning to make a build go green.
+      # A predicate of "the request is no longer in `open/` under its own name"
+      # fires on every request the engine merely *replied* to. A reply that
+      # schedules the work, and then archives the thread, leaves the capability
+      # exactly as absent as it was — and the blocked row naming it is still
+      # correct. A gate that goes red there is wrong in the direction that costs
+      # most: it would have somebody delete a true warning to make a build go
+      # green.
       #
       # So the signal is a `*CONSUMED*.md` note, which is written by THIS side
       # and only once the capability has actually been taken. A reply that
@@ -324,7 +311,7 @@ for doc in "${DOCS[@]}"; do
       # ★ The note names the request by its ORIGINAL filename, because a
       # consumed pair gets renamed to a dated `done_*` stem and the name the
       # rows cite would otherwise be unrecoverable. That is a convention this
-      # gate depends on; `done_2026-09-02-*-CONSUMED.md` carry it as an
+      # gate depends on: a `done_<date>-*-CONSUMED.md` note carries it as an
       # "Originally filed as:" line.
       note="$(grep -lF "$req" "${NOTES[@]}" 2>/dev/null | head -1)"
       if [ -n "$note" ]; then
@@ -362,11 +349,10 @@ if [ "$status" -ne 0 ]; then
   exit 1
 fi
 
-# ⚠ STATE THE EVIDENCE SET, NOT JUST THE VERDICT. On 2026-09-14 this gate
-# reported the line below over an evidence set of size zero and nobody could
-# tell, because "OK" is what it prints when it has looked and found nothing
-# AND what it printed when it had nothing to look at. The two readings are
-# now distinguishable from the output alone.
+# ⚠ STATE THE EVIDENCE SET, NOT JUST THE VERDICT. "OK" on its own is what this
+# gate prints when it has looked and found nothing AND what it would print with
+# nothing to look at. The count below is what makes the two readings
+# distinguishable from the output alone.
 echo "check-stale-blockers: OK — no row declares a blocker that has been closed."
 echo "  Evidence: ${#NOTES[@]} consumption note(s) across"
 echo "    $CHANNEL"

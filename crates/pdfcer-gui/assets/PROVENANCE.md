@@ -72,7 +72,9 @@ flank opened. There is no font in this repository and none was used.
 
 `tools/make-icon.py` is the source. It draws the page, the fold, the badge and
 both lines of lettering from geometry, supersamples 4×, and writes every file
-in the table above plus a review strip at `evidence/app-icon.png`.
+in the table above, plus a review strip at `evidence/app-icon.png`. The strip
+is an output and is **not committed** — running the script is what produces
+it.
 
 ```bash
 python tools/make-icon.py
@@ -101,8 +103,8 @@ To replace it:
   `tools/make-icon.py`. Margins, fold size, badge position, stroke weight and
   every colour are named constants in one block.
 
-**Look at `evidence/app-icon.png` after any change.** It shows all seven sizes
-at 1:1 on mid grey. An icon that is fine at 256 px and mud at 16 px is the
+**Run `tools/make-icon.py` and look at `evidence/app-icon.png` after any
+change.** It shows all seven sizes at 1:1 on mid grey. An icon that is fine at 256 px and mud at 16 px is the
 normal failure, it is invisible from the source, and 16 px is the size an
 operator sees most because it is what a file list shows.
 

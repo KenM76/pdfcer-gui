@@ -18,7 +18,7 @@
 //! list or page view at a caret between two sheets. See [`crate::pagedrag`]
 //! for the state that survives the document switch in the middle.
 //!
-//! ## 2. ★ It is a COPY, and the reason is undo
+//! ## 2. It is a COPY, and the reason is undo
 //!
 //! [`crate::text::doctabs::drag_landing_other`] carries the argument in the
 //! words the operator reads. The engineering form:
@@ -35,10 +35,10 @@
 //! where the evidence is a page count nobody checks.
 //!
 //! Windows Explorer reaches the same conclusion from a different direction and
-//! copies between volumes by default. Acrobat's Insert Pages is a copy. So this
-//! is a copy, and the caption says so before the operator releases the button.
+//! copies between volumes by default. So this is a copy, and the caption says
+//! so before the operator releases the button.
 //!
-//! ## 2b. ★★ And Shift makes it a move, which is the operator's call
+//! ## 2b. And Shift makes it a move, which is the operator's call
 //!
 //! Requested 2026-08-20: *"can you also make it so you can move the pages
 //! between documents instead of just copy by holding one of the keys like shift
@@ -115,7 +115,7 @@ impl PdfcerApp {
     /// press would name whatever was active when the *drag started* — which,
     /// with spring-loading, is precisely the document it is not.
     ///
-    /// # The three ways it declines, and why each is silent or spoken
+    /// # How it declines, and why each refusal is silent or spoken
     ///
     /// | condition | what happens |
     /// |---|---|
@@ -140,7 +140,7 @@ impl PdfcerApp {
             return;
         }
 
-        // ★ The parked index, which is NOT the slot.
+        // The parked index, which is NOT the slot.
         //
         // `crate::app::documents` §1: `parked` holds the open documents in tab
         // order **with the active one removed**, so every slot above the
@@ -233,7 +233,7 @@ impl PdfcerApp {
         // shared: the caller's copy is inside a borrow that has ended by the
         // time this runs, and a helper returning it would be a third place the
         // encoding is known.
-        // ★ Read BEFORE `self.parked` is borrowed mutably below. `Settings`'
+        // Read BEFORE `self.parked` is borrowed mutably below. `Settings`'
         // fields are `Copy`, so this is a value rather than a borrow, which is
         // what lets the closure use it while the source document is borrowed.
         let separations = self.settings.separations;
@@ -252,7 +252,7 @@ impl PdfcerApp {
             return;
         };
         let before = source.pages.len();
-        // ★★ The SOURCE's own disclosures are captured on the way past, and
+        // The SOURCE's own disclosures are captured on the way past, and
         // that is not tidiness — it is the only way they reach anybody.
         //
         // `delete_pages` reports what the removal broke: outline items and
@@ -266,7 +266,7 @@ impl PdfcerApp {
         // Captured here and re-filed under the target's epoch below, together
         // with the move's own sentence.
         let mut source_notes: Vec<String> = Vec::new();
-        // ★ `vector_edit` on the SOURCE, which is what buys the whole protocol
+        // `vector_edit` on the SOURCE, which is what buys the whole protocol
         // for a document that is not on screen: the render worker is cancelled,
         // the mutation goes through `Arc::get_mut`, the epoch is bumped, and
         // `pages::resync` drops the rasters of sheets that have moved.
@@ -277,7 +277,7 @@ impl PdfcerApp {
         // waiting behind its tab — visible the moment the operator clicks back,
         // and attributable to nothing.
         super::apply::vector_edit(source, "page-move-take", 0, pages.len(), |session| {
-            // ★ The operator's separation policy, as on every other delete —
+            // The operator's separation policy, as on every other delete —
             // this is a page delete wearing a drag's clothes, and a policy that
             // applied on one route and not the other would be the divergence
             // the single funnel exists to prevent.
@@ -296,7 +296,7 @@ impl PdfcerApp {
             )
         });
 
-        // ★ Which sentence, decided by what HAPPENED rather than by what was
+        // Which sentence, decided by what HAPPENED rather than by what was
         // attempted. `removed == 0` means the insert landed and the delete did
         // not, so the pages are in both documents — a third state neither of
         // the two things anybody asked for, and the one an operator must not

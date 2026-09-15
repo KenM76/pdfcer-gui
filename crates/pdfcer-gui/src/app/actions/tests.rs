@@ -1,34 +1,25 @@
 //! # `app::actions::tests` — the vocabulary's own assertions
 //!
-//! Split out of [`super`] on 2026-08-19 when that file crossed R2's 1,500-line
-//! ceiling, and the seam is the one `tools/gates/check-file-size.sh` asks for
-//! rather than a size: [`super`] is the **vocabulary** — one enum, and the
-//! argument for every variant in it — and this is what is asserted *about* that
-//! vocabulary. A reader looking up what `crate::app::actions::VectorAction::MoveNodes.into()` means never needs
-//! this file, and a reader asking whether the dispatch reaches it never needs
-//! the other 1,400 lines of prose.
+//! [`super`] is the **vocabulary** — one enum, and the argument for every
+//! variant in it. This is what is asserted *about* that vocabulary. A reader
+//! looking up what a variant means never needs this file, and a reader asking
+//! whether the dispatch reaches it never needs the prose.
 //!
-//! ★ It is a file rather than an inline module for one more reason worth
-//! stating: `super`'s content is nine-tenths doc comments, so a `#[cfg(test)]`
-//! block at the bottom of it is a hundred lines of *code* at the end of a
-//! document. That is exactly the shape R2 exists to prevent — the old shell's
-//! `main.rs` was 25,005 lines plus 3,579 of tests, and nothing in it could be
-//! reasoned about locally.
+//! A separate file rather than an inline `#[cfg(test)]` block, because
+//! `super`'s content is nearly all doc comments and a test block at the bottom
+//! of it would be a hundred lines of *code* at the end of a document.
 
 use super::*;
 
-/// ★ **`edit.undo` and `edit.redo` raise actions rather than falling
+/// **`edit.undo` and `edit.redo` raise actions rather than falling
 /// through to `command-unimplemented`.**
 ///
-/// The dispatch link, and the one this pair spent the whole project
-/// missing. It is `crate::app::files`'
-/// `the_save_copy_command_raises_the_save_action` for the other two
-/// commands that were registered, drawn on the quick-access toolbar, bound
-/// to a chord, and wired to nothing — and it is written the same way for
-/// the same reason: through `PdfcerApp::dispatch_token` with the token the
-/// **ribbon** would raise, so a build that renamed the id or reassigned the
-/// token fails here rather than shipping a control whose press is traced
-/// and discarded.
+/// The dispatch link. Written through `PdfcerApp::dispatch_token` with the
+/// token the **ribbon** would raise, so a build that renamed the id or
+/// reassigned the token fails here rather than shipping a control whose press
+/// is traced and discarded. `crate::app::files`'
+/// `the_save_copy_command_raises_the_save_action` is the same assertion for
+/// the save commands.
 ///
 /// # What it deliberately does not assert
 ///
@@ -69,50 +60,33 @@ fn the_history_commands_raise_actions() {
     }
 }
 
-/// ★★★ **THE PUSH BUTTON ARMS, like every other kind** — and this test is the
-/// second half of a story that is worth reading whole.
+/// **The push button arms its tool, like every other kind, and does not also
+/// decline.**
 ///
-/// # What it used to assert, and why
+/// `edit.form_push_button` is live: `pdfcer-core`'s
+/// `EditSession::set_button_action` gives a placed button an `/A`, so the
+/// button pdfcer draws runs something. `app::conditions` sets
+/// `forms.push_button_runnable` and the command is `enabled_when` it — one
+/// line, and therefore one careless revert away from re-greying the control.
+/// Without this test that revert is invisible: the ribbon item goes grey and
+/// every other test still passes.
 ///
-/// It was called `a_greyed_push_button_declines_in_words_rather_than_arming`,
-/// and it was the regression test for a hole this project carried since the
-/// registry gained `enabled_when`: **the greying was drawn, never enforced.**
-/// `egui` refuses a click on a disabled widget and that is the whole of what
-/// greying does — a chord, the QAT, a context menu or the `PDFCER_DIAG_INVOKE`
-/// seam all reach `dispatch_command` without passing the ribbon at all.
+/// # Why it also asserts that nothing was declined
 ///
-/// Found by driving the release binary, not by reading:
-/// `PDFCER_DIAG_INVOKE=mode.edit,edit.form_push_button` traced
-/// `form-tool-armed kind=PushButton`, arming a tool whose control was greyed.
+/// Because **greying is a hint and a sentence is the answer**, and the two are
+/// not interchangeable. `egui` refuses a click on a disabled widget and that is
+/// the whole of what greying does — a chord, the QAT, a context menu or the
+/// `PDFCER_DIAG_INVOKE` seam all reach `dispatch_command` without passing the
+/// ribbon at all. So a command that is unavailable must say so in words at the
+/// point it is refused, and a blanket refusal at the top of `dispatch_command`
+/// is not that repair: it stops the arming and removes the words in one move.
+/// `the_history_commands_raise_actions`' header states the same rule from the
+/// other side — the dispatcher must not consult the undo log, because the apply
+/// arm is what declines an empty stack in words.
 ///
-/// ★★ It asserted **two** facts and the second was the one worth having: the
-/// tool was not armed, **and** a decline was recorded so the operator got a
-/// sentence. The second is what stopped the obvious repair — a blanket refusal
-/// at the top of `dispatch_command`, which satisfied the first for all
-/// ninety-nine `enabled_when` commands at once and was rejected by the suite
-/// because it also removed the words. `the_history_commands_raise_actions` says
-/// so in its own header: *"the dispatcher must not consult one … the apply arm
-/// declines an empty stack IN WORDS."* **Greying is a hint; a sentence is the
-/// answer.**
-///
-/// # Why it now asserts the opposite
-///
-/// The push button was greyed because a button pdfcer placed ran nothing.
-/// `pdfcer-core` shipped `EditSession::set_button_action` on 2026-08-30 and this
-/// shell consumed it on 2026-09-01, so the command is live and the decline it
-/// used to record has been deleted along with the branch that recorded it.
-///
-/// ⇒ **This test lost its subject rather than its point.** Inverted rather than
-/// deleted, because a regression that re-greyed the button — by dropping the
-/// `forms.push_button_runnable` line in `app::conditions`, which is one line and
-/// therefore one careless revert — would otherwise be invisible: the ribbon item
-/// would go grey and every test would still pass.
-///
-/// ★ The general rule the old test protected is not orphaned. It lives in
-/// `app::dispatch::forms`' header, and the guard that would force a future
-/// author to rebuild the worded-decline branch is
-/// `canvas::formfield::tests::no_kind_is_authorable_but_inert`, whose failure
-/// message names both halves of the repair.
+/// The guard that forces a future author to rebuild a worded decline for a kind
+/// that becomes inert is `canvas::formfield::tests::no_kind_is_authorable_but_inert`,
+/// whose failure message names both halves of the repair.
 #[test]
 fn the_push_button_arms_its_tool_like_every_other_kind() {
     let ctx = egui::Context::default();
@@ -144,13 +118,18 @@ fn the_push_button_arms_its_tool_like_every_other_kind() {
     );
 }
 
-/// **The other four form commands still arm**, so the guard above is a guard
-/// and not a blanket refusal.
+/// **Every `FormFieldKind` that is useful once placed arms its tool.**
 ///
-/// ★ The positive control. Without it, a mistake that declined every form
-/// command would leave the test above passing and the whole feature dead — the
-/// standing rule that a check which cannot fail is not evidence, applied to its
-/// own neighbour.
+/// The positive control for the test above. Without it, a mistake that declined
+/// every form command would leave that test passing and the whole feature dead
+/// — the standing rule that a check which cannot fail is not evidence, applied
+/// to its own neighbour.
+///
+/// The `is_useful_once_placed` filter is the enumeration's own answer to *"can
+/// pdfcer do anything with this once it is on the page?"*. It currently admits
+/// every kind, so the `continue` is dormant; it is kept so that a kind added
+/// while it is still inert does not turn this control red for the wrong reason.
+/// The name says four and the body says all of them — read the body.
 #[test]
 fn the_four_useful_form_commands_still_arm() {
     use crate::canvas::formfield::FormFieldKind;

@@ -1,8 +1,8 @@
 //! # verify — an opt-in trace of what the shell actually received
 //!
-//! *Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\diag.rs` (963 lines,
-//! 2026-08-12). What came across is the **channel**; what did not is
-//! recorded under "What did not come across" below.*
+//! *Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\diag.rs` (963
+//! lines). What came across is the **channel**; what did not is recorded
+//! under "What did not come across" below.*
 //!
 //! ## Why this exists
 //!
@@ -13,14 +13,14 @@
 //! object, because the thing that failed sits between the window manager
 //! and the first line of application code.
 //!
-//! That happened. On 2026-08-04 the operator reported that clicking a
-//! drawing object selected nothing. The hit-test was verified correct
-//! through the CLI (same engine query, same fixture, right answer), every
-//! selection decision function passed headless, and the dispatch from
-//! toolbar toggle to the tool's entry point read correctly line by line.
-//! Reading harder was not going to close the gap: the remaining
-//! candidates were all of the form "does `Response::clicked()` fire at
-//! all", which is unobservable from the source.
+//! That is not a hypothetical shape. An operator reports that clicking a
+//! drawing object selects nothing; the hit-test verifies correct through
+//! the CLI (same engine query, same fixture, right answer), every
+//! selection decision function passes headless, and the dispatch from
+//! toolbar toggle to the tool's entry point reads correctly line by line.
+//! Reading harder cannot close that gap, because the remaining candidates
+//! are all of the form "does `Response::clicked()` fire at all", which is
+//! unobservable from the source.
 //!
 //! ## Why it does not just take a screenshot
 //!
@@ -122,18 +122,17 @@
 //! re-derived:
 //!
 //! - **Injecting at `egui`'s seam beats posting OS messages.** The
-//!   obvious harness posts `WM_MOUSEMOVE`/`WM_LBUTTONDOWN` to the window.
-//!   That was tried first, on 2026-08-04, and does not work for an
-//!   off-screen window: `winit` calls `TrackMouseEvent` on the move,
-//!   Windows answers `WM_MOUSELEAVE` because the physical cursor is
-//!   elsewhere, and the button message is dropped before it becomes an
-//!   `egui` event. The observed event list was `[PointerMoved,
-//!   PointerGone]` — forever, no matter how the messages were ordered.
-//! - **A dropped step must announce itself.** The source's parser skipped
-//!   unparseable steps silently, and on 2026-08-07 a misspelled step
-//!   (`placefield` for `tool:placefield`) was dropped — the resulting
-//!   silence was read as a defect in the feature under test, and was
-//!   caught only by running a known-good sibling step and noticing the
+//!   obvious harness posts `WM_MOUSEMOVE`/`WM_LBUTTONDOWN` to the window,
+//!   and that does not work for an off-screen window: `winit` calls
+//!   `TrackMouseEvent` on the move, Windows answers `WM_MOUSELEAVE`
+//!   because the physical cursor is elsewhere, and the button message is
+//!   dropped before it becomes an `egui` event. Measured, the event list
+//!   is `[PointerMoved, PointerGone]` — forever, no matter how the
+//!   messages are ordered.
+//! - **A dropped step must announce itself.** A parser that skips an
+//!   unparseable step silently — `placefield` for `tool:placefield`, say
+//!   — turns a typo into a feature that appears not to work, and the only
+//!   way back is running a known-good sibling step and noticing the
 //!   difference. That is luck, not method. *An absent trace line is
 //!   indistinguishable from a step that ran and produced no output.*
 //! - **This is a diagnostic, not a substitute for a unit test.** It
@@ -141,10 +140,11 @@
 //!   script is evidence, not a regression guard. Anything it discovers
 //!   should end up pinned by a headless test as well.
 //!
-//! The seam and those rules become the shell's `verify` hooks at stage
-//! S1, driven by `tools/ui-verify` — which is the consumer that will say
-//! what shape they need. Building them now, with no consumer, is the
-//! mistake `SHELL_FRAMEWORK.md` §7 warns about.
+//! The seam and those rules are what this module's hooks are for, and
+//! `tools/ui-verify` is the consumer that says what shape they need.
+//! Growing them ahead of a consumer that asks is the mistake
+//! `SHELL_FRAMEWORK.md` §11 names: a framework designed without a
+//! consumer gets the abstractions wrong.
 
 use std::fmt::Display;
 use std::sync::OnceLock;
@@ -257,8 +257,8 @@ impl Line {
     /// counts and booleans all work without the caller formatting them.
     /// Neither key nor value is escaped: this is a diagnostic read by a
     /// `grep`, and a quoting scheme would make the output harder to read
-    /// in exchange for handling a case that has not arisen in a year of
-    /// use. Keep values free of spaces.
+    /// in exchange for a case a `key=value` diagnostic does not need to
+    /// handle. Keep values free of spaces.
     #[must_use]
     pub fn kv(mut self, key: &str, value: impl Display) -> Self {
         if let Some(buf) = self.0.as_mut() {

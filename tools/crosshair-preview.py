@@ -33,8 +33,9 @@ square and countable. Use 4 for the 32 px bitmap (scale 1.0) and 2 for the
 makes the two directly comparable — the point of checking both is that the core
 must stay a hairline while the halo grows.
 
-Committed artefacts live in `evidence/`. Regenerate them if you change the
-geometry; a stale one is worse than none, because it looks like verification.
+The output path is yours to choose and nothing written there is committed,
+so regenerate before you look. A preview left over from a previous geometry is
+worse than none, because it looks like verification.
 
 WHY THE THREE BACKGROUNDS
 =========================

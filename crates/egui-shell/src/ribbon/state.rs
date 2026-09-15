@@ -17,11 +17,10 @@
 //!
 //! # Why it is not `serde`-derived
 //!
-//! Layout persistence arrives with `layout` at S3 and will want to persist
-//! the ribbon's state alongside the dock's, in **one** document rather
-//! than two. Deriving it here would create a second serialization format
-//! that then has to be migrated when the first one arrives — and a format
-//! that shipped is a format somebody has a file in.
+//! Layout persistence wants the ribbon's state alongside the dock's, in
+//! **one** document rather than two. Deriving it here would create a
+//! second serialization format that then has to be migrated into the
+//! first — and a format that shipped is a format somebody has a file in.
 //!
 //! # ★ Why the base `egui::Id` lives here
 //!

@@ -1,29 +1,24 @@
 //! # `app::actions::textcommit` — **committing an edit to text that is already
 //! on the page**
 //!
-//! One verb: [`commit_text_edit`], the body of `Action::CommitTextEdit`. Split
-//! out of [`super::apply`] on 2026-09-12 under **R2**, when O177's page-display
-//! one-shot pushed that file past the 1,500-line ceiling.
+//! One verb: [`commit_text_edit`], the body of `Action::CommitTextEdit`.
 //!
-//! ## Why this is the seam, and not some other 115 lines
+//! ## Why this is its own file
 //!
-//! `super::apply`'s match is a **router**: almost every arm in it names a
-//! function somewhere else and gets out of the way, and its own header says
-//! so — *"the arm routes; it does not compute"*. This arm had stopped being a
-//! router. It plans the edit, traces the plan's disposition, gathers a
-//! page-level form report **before** the mutation because of a borrow, copies
+//! [`super::apply`]'s match is a **router**: almost every arm in it names a
+//! function somewhere else and gets out of the way — *"the arm routes; it does
+//! not compute"*, as that module's own header puts it. This verb cannot be an
+//! arm of that shape. It plans the edit, traces the plan's disposition, gathers
+//! a page-level form report **before** the mutation because of a borrow, copies
 //! one fact out of the plan so a closure can take the rest by reference,
 //! classifies the engine's refusal, and appends two independent disclosure
 //! sources to the report. Six decisions, none of which is *"which verb is
-//! this?"*.
+//! this?"*. So it lives here, and the arm in `apply.rs` is a single call with
+//! the variant's four fields.
 //!
-//! So the cut restores the rule the surrounding file already keeps everywhere
-//! else, rather than inventing one to get under a number. The arm that remains
-//! in `apply.rs` is a single call with the variant's four fields.
+//! ## What is NOT here, and why
 //!
-//! ## What did NOT move, and why
-//!
-//! `Action::CommitAddText` and `Action::CommitTextAnnot` stayed. They look
+//! `Action::CommitAddText` and `Action::CommitTextAnnot` are elsewhere. They look
 //! adjacent — all three end in text on a page — but they are different
 //! subjects with different failure modes: adding a run cannot destroy content
 //! that was already there, and a text *annotation* never touches the content
@@ -70,14 +65,12 @@ pub(super) fn commit_text_edit(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ It names the DISPOSITION and the REASON, and it has to
-        // name both. `HANDOFF.md` §2's grid lesson is that a check
-        // asserting a relation is satisfied by any absurdity in the
-        // right direction — and "an edit happened" is exactly such a
-        // relation here. A build that had reverted to
-        // `EditOptions::default()` would produce an identical
-        // `edit-text` line one line below this one; only this line
-        // carries the number that build would get wrong.
+        // It names the DISPOSITION and the REASON, and it has to name
+        // both. A check that asserts only a relation — here, "an edit
+        // happened" — is satisfied by any absurdity pointing the right
+        // way. A build reverted to `EditOptions::default()` would emit
+        // an identical `edit-text` line one line below this one; only
+        // this line carries the value such a build gets wrong.
         format!(
             "text-edit-plan page={page} run={run} disposition={:?} reason={reason:?} \
              pinned={}",
@@ -85,23 +78,23 @@ pub(super) fn commit_text_edit(
             plan.request.pinned_span.is_some()
         )
     });
-    // ★ Gathered BEFORE the edit, because it reads a `Ref` into the
+    // Gathered BEFORE the edit, because it reads a `Ref` into the
     // decomposition cache and `vector_edit` wants `&mut OpenDoc`.
     // It decides whether the engine's SHARED CONTENT sentence may
     // be followed by a remedy; `report::PageLevelForms` carries the
     // whole argument, including the nested-form case where the
     // remedy would succeed and change nothing.
     let page_forms = crate::canvas::textedit::report::PageLevelForms::of(doc);
-    // ★★★ **The one fact that turns the engine's answer into a
-    // sentence he can act on** — `OPERATOR_REQUESTS.md` O140. Copied
+    // **The one fact that turns the engine's answer into a sentence an
+    // operator can act on** — `OPERATOR_REQUESTS.md` O140. Copied
     // out of the plan before the closure takes `plan` by reference,
     // because the classification below runs inside it.
     let one_operator = plan.one_operator;
     vector_edit(doc, "edit-text", page, 1, |session| {
         session
             .edit_text(&plan.request, &plan.options)
-            // ★★★ **O140 — the refusal is CLASSIFIED, and the arm
-            // routes rather than deciding.**
+            // **O140 — the refusal is CLASSIFIED, and the arm routes
+            // rather than deciding.**
             //
             // `app::status::decline::textedit` owns *"what does the
             // text caret decline, and who says so"*; this is its
@@ -111,7 +104,7 @@ pub(super) fn commit_text_edit(
             // a single show operator), and why the tidier-looking
             // home in `canvas::textedit::report` was rejected.
             //
-            // ★ Inside the closure, through `inspect_err`, on
+            // Inside the closure, through `inspect_err`, on
             // `textstyle::reflow`'s precedent: the funnel takes its
             // decline floor *before* running this and fills the slot
             // only `if slot.is_none()`, so the classified sentence
@@ -125,7 +118,7 @@ pub(super) fn commit_text_edit(
                 );
             })
             .map(|report| {
-                // ★ The shared-content fan-out, on the trace.
+                // The shared-content fan-out, on the trace.
                 // `canvas::textedit::trace_target` owns the whole
                 // argument for why those three numbers exist and
                 // what a wrong build gets wrong about them; this arm
@@ -135,7 +128,7 @@ pub(super) fn commit_text_edit(
                 if reason.pins_the_tail() {
                     notes.push(crate::text::textedit::pinned_tail_disclosure(reason));
                 }
-                // ★ The engine's SHARED CONTENT sentence says WHAT
+                // The engine's SHARED CONTENT sentence says WHAT
                 // happened; it cannot say what to do, because it
                 // has never heard of this shell's commands. Nothing
                 // here re-words it — this is appended after it.

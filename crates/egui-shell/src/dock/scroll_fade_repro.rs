@@ -2,19 +2,20 @@
 //! `egui::Panel` holding a solid-style `ScrollArea` whose scroll bar is
 //! fading in.
 //!
-//! Written 2026-09-09 after `dock/overflow_probe.rs` named the overflowing
-//! widget on its first read: the Comments list's vertical scroll bar, whose
-//! rect ran to `1400.4` and then `1400.1` on consecutive frames — a decay,
-//! so an animation. This file asks egui the question directly, with no
-//! application in the way: **does a solid-style scroll bar fading in push
-//! an exact-size panel's rect past the window edge?** Every number printed
-//! here is egui's own, from a `Context` driven with a fixed clock, so the
-//! per-frame profile is reproducible to the digit.
+//! `dock/overflow_probe.rs` names the overflowing widget inside a running
+//! application; this file asks egui the same question with no application
+//! in the way: **does a solid-style scroll bar fading in push an
+//! exact-size panel's rect past the window edge?** A rect that runs to
+//! `1400.4` and then `1400.1` on consecutive frames is a decay, and a
+//! decay is an animation — which is why the reproduction drives a
+//! `Context` on a fixed clock rather than rendering one frame. Every
+//! number printed is egui's own, so the per-frame profile is reproducible
+//! to the digit.
 //!
-//! The test is not a regression guard — it is the measurement the RAG
-//! entry cites. It asserts only the fact the probe saw, so that an egui
-//! upgrade that fixes the behaviour turns it red and tells the next reader
-//! that the workaround in `Dock::show` can go.
+//! This is a measurement, not a regression guard. It asserts only the
+//! overflow it observes, so an egui release that removes the behaviour
+//! turns the test red and tells the next reader that the `Dock::show`
+//! workaround built on it can go.
 
 #[cfg(test)]
 mod tests {

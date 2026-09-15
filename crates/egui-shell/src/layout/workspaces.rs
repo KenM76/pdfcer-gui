@@ -4,32 +4,31 @@
 //!
 //! A workspace is **a name and an arrangement**. That is the whole type.
 //!
-//! `MODES_AND_PANELS.md` closes its analysis by identifying the two
-//! requests that arrived together — a Read/Review/Edit mode selector, and
-//! flexible panel areas — as one system:
+//! `MODES_AND_PANELS.md` treats a mode selector and flexible panel areas
+//! as one system — *"A mode is a named workspace plus a capability
+//! set"* — and its capability **(g)** is this module: *"Capability (g) is
+//! what the modes are: Read, Review and Edit are three registered
+//! workspaces."*
 //!
-//! > **A mode is capability (g).** Read, Review and Edit are three
-//! > built-in named workspaces, shipped as defaults, each remembering the
-//! > operator's arrangement of it.
-//!
-//! So the three mode names live in the **application's** configuration,
-//! not here. Nothing in this file knows them, and nothing in this crate
-//! ever will: `SHELL_FRAMEWORK.md` §4 already states the same rule for
-//! the manifest — *Read/Review/Edit is a **configuration**, not a
-//! built-in* — and a workspace store that shipped three magic names would
-//! be the same violation wearing a different hat. An application that
-//! wants three modes registers three workspaces; one that wants eleven
-//! registers eleven; one that wants none never calls this module.
+//! So the mode names live in the **application's** configuration, not
+//! here. Nothing in this file knows them, and nothing in this crate ever
+//! will: `SHELL_FRAMEWORK.md` §4 states the same rule for the manifest —
+//! *"Read/Review/Edit is a configuration; nothing in the crate knows
+//! those names"* — and a workspace store that shipped three magic names
+//! would be the same violation wearing a different hat. An application
+//! that wants three modes registers three workspaces; one that wants
+//! eleven registers eleven; one that wants none never calls this
+//! module.
 //!
 //! # Why this is table stakes rather than a luxury
 //!
 //! The peer table in `MODES_AND_PANELS.md` is unambiguous: Photoshop,
-//! Krita and Affinity all ship named layouts, and the benchmarked
-//! application does not — with the recorded consequence that its
-//! community's workaround is *"copying `dialogs-state-ex.ini` aside and
-//! back, awkward because the file is rewritten on every exit."* Failure
-//! mode #12 names it directly: *no named workspaces, no in-app reset →
-//! **both are table stakes, not luxuries.***
+//! Krita and Affinity all ship named layouts, and the benchmark product
+//! does not — with the consequence that its community's workaround is
+//! *"copying a state file aside and back, awkward because the file is
+//! rewritten on every exit"*. Failure mode #12 pairs that with the
+//! missing in-app reset and rules on both: *"Both are table stakes, not
+//! luxuries."*
 //!
 //! Note what that workaround actually is: an operator hand-rolling this
 //! module out of file copies, and losing to a race with the application's
@@ -70,7 +69,7 @@ pub struct Workspace {
     /// *"the operator closed this"* from *"this did not exist yet"*, two
     /// states that are otherwise identical in a saved layout.
     ///
-    /// # The defect this exists to fix
+    /// # The failure this prevents
     ///
     /// A consumer that adds a panel in a new release ships it **invisible
     /// to everyone who already uses the program**. Their saved layout does
@@ -538,8 +537,8 @@ mod tests {
     /// than a built-in. A default store with three magic names would
     /// quietly weld one application's modes into the framework, which is
     /// the exact class of coupling the purity gate exists to prevent —
-    /// and the gate greps for PDF crate names, so it would not catch
-    /// this one.
+    /// and that gate greps for the application crates' names, so it would
+    /// not catch this one.
     #[test]
     fn a_fresh_document_ships_no_workspaces_at_all() {
         assert!(LayoutDocument::default().workspaces.is_empty());

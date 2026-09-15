@@ -1,13 +1,12 @@
 //! [`DockFrameReport`] — what one frame of the dock drew, and what the
 //! operator did to it.
 //!
-//! Split out of `dock/mod.rs` on 2026-09-05, when that file crossed R2's
-//! 1,500-line limit. The seam is the one [`crate::ribbon::frame_report`]
-//! already uses one surface over: **a report is a vocabulary, not a
-//! mechanism.** Nothing in this file draws, lays out or decides anything; it
-//! is the set of nouns `Dock::show` fills in and a harness reads back, and each
-//! one carries the argument for why it is published separately from its
-//! neighbours rather than inferred from them.
+//! The seam is the one [`crate::ribbon::frame_report`] uses one surface
+//! over: **a report is a vocabulary, not a mechanism.** Nothing in this file
+//! draws, lays out or decides anything; it is the set of nouns `Dock::show`
+//! fills in and a harness reads back, and each one carries the argument for
+//! why it is published separately from its neighbours rather than inferred
+//! from them.
 //!
 //! ★ Two fields on it are worth reading together, because they are the pair a
 //! reader will otherwise try to derive one from the other:
@@ -34,10 +33,10 @@ pub struct DockFrameReport {
     /// **This is the honest answer to "what is on screen".** A panel
     /// behind another tab is not in this list, and neither is one on a
     /// hidden side. An application deriving a toolbar toggle's selected
-    /// state should read this rather than keeping a boolean of its own;
-    /// the previous implementation records a `properties_open` flag that
-    /// *"could disagree with what was on screen"*, which is the defect
-    /// the field exists to make unnecessary.
+    /// state reads this rather than keeping a boolean of its own: a
+    /// separate `panel_open` flag is a second copy of a fact the dock
+    /// already owns, and the two disagree the first time a panel is closed
+    /// by any route the flag's owner did not write.
     pub panels_drawn: Vec<PanelId>,
     /// How many tabs were moved into an overflow menu, across every
     /// stack.
@@ -75,13 +74,12 @@ pub struct DockFrameReport {
     /// application's top-level frame rather than from inside a side
     /// panel's layout closure.
     ///
-    /// ⇒ That makes forgetting it a *silent* failure of exactly the class
-    /// this project has already shipped: three panels that were laid out,
-    /// published a rectangle, and could not be reached, with every gate
-    /// green. `crate::dock::report`'s header records the response —
-    /// *a rect proves layout, not visibility* — and this field is the same
-    /// response for a surface that has no rect at all because its window
-    /// was never opened.
+    /// ⇒ That makes forgetting the second call a *silent* failure: panels
+    /// that are laid out, publish a rectangle, and cannot be reached, with
+    /// every gate green. `crate::dock::report`'s header states the rule —
+    /// *a rect proves layout, not visibility* — and this field is that rule
+    /// applied to a surface with no rect at all, because its window was
+    /// never opened.
     ///
     /// An application asserts this is zero in its own frame test. It is
     /// measured against the **previous** frame's float report, because
@@ -93,11 +91,12 @@ pub struct DockFrameReport {
     /// Whether the layout changed this frame and is therefore worth
     /// saving.
     ///
-    /// An application persists on this rather than on a timer: writing a
-    /// layout file on every frame is what makes the benchmarked
-    /// application's own layout file *"rewritten on every exit"* and its
-    /// community's workaround — copying the file aside and back — as
-    /// awkward as `MODES_AND_PANELS.md` records it being.
+    /// An application persists on this rather than on a timer or on every
+    /// frame. A layout file rewritten unconditionally can never be pinned:
+    /// the operator who wants one arrangement kept is reduced to copying
+    /// the file aside and back, which is the workaround
+    /// `MODES_AND_PANELS.md` records the benchmarked application's users
+    /// resorting to.
     pub layout_changed: bool,
     /// **What the rail did about auto-hide this frame** —
     /// [`crate::peek::Show`].

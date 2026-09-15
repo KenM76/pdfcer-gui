@@ -1,19 +1,13 @@
 //! # `render::worker` — rasterization on a background thread
 //!
-//! **Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\render_worker.rs`**
-//! (Class A, `SALVAGE.md`: *"Generation counter + between-operator
-//! cancellation. **Measured**: six rapid zoom steps start six generations
-//! and complete one. Do not touch the design."*). The header and every
-//! explanatory comment below are carried across; the measured numbers in
-//! them are the evidence that justifies the whole module and must not be
-//! lost to a paraphrase.
-//!
-//! ---
-//!
 //! One job: keep a slow page from freezing the application. This module
 //! owns the worker thread, the channel, the cancellation token and the
-//! generation counter that `raster.rs` named when it documented itself
-//! as the seam where off-thread rendering would happen.
+//! generation counter; [`crate::render::raster`] owns the texture upload
+//! on the far side of that seam.
+//!
+//! The measured numbers below are the evidence for the design and must not
+//! be paraphrased away: **six rapid zoom steps start six generations and
+//! complete one.**
 //!
 //! ## Why this exists, and what it is NOT
 //!
@@ -22,11 +16,9 @@
 //! operator is not waiting on, so the window keeps repainting, the
 //! zoom keeps responding, and the render can be abandoned.
 //!
-//! The evidence that justified building it: a real CAD sheet measured
-//! **~10 s at 1× and ~58 s at 2×**, rasterized inline on the UI thread.
-//! At those numbers the application does not render slowly — it stops
-//! answering. `raster.rs` predicted exactly this and deferred the work
-//! until "a real corpus produces pages slow enough to drop frames".
+//! The evidence that justifies it: a real CAD sheet measures **~10 s at 1×
+//! and ~58 s at 2×** when rasterized inline on the UI thread. At those
+//! numbers the application does not render slowly — it stops answering.
 //!
 //! ## The three things that make it correct
 //!
@@ -56,48 +48,23 @@
 //! This module only reports, via [`RenderWorker::in_flight_since`], how
 //! long the current render has been outstanding, so the shell can decide.
 //!
-//! ---
+//! ## The staleness keys, and the rule that governs adding one
 //!
-//! ## Salvage note: the staleness keys, and which one is still deferred
+//! **A key lands in the same commit as the surface that varies it, never
+//! earlier and never later.** Both halves of that matter:
 //!
-//! The original [`RenderKey`] compared **five** inputs. Three were absent at
-//! S0, and their absence was a decision rather than an oversight:
+//! - Without the key, the cached texture does not invalidate and the
+//!   operator-facing control **silently does nothing**. That is the failure
+//!   mode to expect here — not a crash, a control that appears inert.
+//! - With the key but no surface, the request carries a constant and the
+//!   comparison carries an untriggerable branch, which is the "no state a
+//!   surface can reach" invariant broken from the other side.
 //!
-//! | key | what it invalidates | state |
-//! |---|---|---|
-//! | `annotations` | the annotation-visibility toggle (§12.5 `/AP` `/N`) | **landed, S4** |
-//! | `layers_generation` | the optional-content layer overrides (§8.11.4.3) | **landed, S4** |
-//! | `font_env_generation` | operator-supplied font folders | still deferred |
-//!
-//! Each was added to the original because **without it the cached texture
-//! does not invalidate and the control silently does nothing** — a real,
-//! separately-diagnosed defect in all three cases. That is the failure
-//! mode to expect: not a crash, a control that appears inert. So the rule
-//! for every one of them is: *the key lands in the same commit as the
-//! surface that varies it, never later.* Carrying a key with no surface able
-//! to change it would put a constant in the request and an untriggerable
-//! branch in the comparison — which is the "no state a surface can reach"
-//! invariant broken from the other side.
-//!
-//! ### Why two landed at S4 and the third did not
-//!
-//! Both of the two are **inputs an operator-facing control now varies**, and
-//! both of those controls are `RIBBON_IA.md`'s rather than this module's
-//! invention:
-//!
-//! - `view.show_annotations` is a View ▸ Display control that is already
-//!   drawn, already enabled whenever a document has pages, and — until this
-//!   key existed — could not have changed a pixel if it had been wired up.
-//! - The Layers panel was built **without its visibility checkbox
-//!   specifically because this key did not carry `layers_generation`**;
-//!   `crate::panels::layers`' own header names that as the false one of its
-//!   three preconditions.
-//!
-//! `font_env_generation` has no such control: nothing in this build lets an
-//! operator name a font folder, so the bundled [`pdfcer_render::FontEnvironment`]
-//! is the only environment any render can use and a generation counter over
-//! it would count to one and stop. It lands with the font-folder surface,
-//! under the same rule.
+//! `font_env_generation` is the one input this module deliberately does not
+//! key on. Nothing in this build lets an operator name a font folder, so the
+//! bundled [`pdfcer_render::FontEnvironment`] is the only environment any
+//! render can use and a generation counter over it would count to one and
+//! stop. It lands with the font-folder surface, under the rule above.
 //!
 //! ### The other half of the invalidation, which is NOT in this module
 //!
@@ -109,20 +76,19 @@
 //! reads **this same [`RenderKey`]**, recorded on
 //! [`crate::render::raster::PageTexture`] when the pixels were uploaded.
 //!
-//! That is deliberate and it is the structural half of the fix. Before S4 the
-//! shell kept its own two-field comparison (page index, raster scale) beside
-//! this type's two-field one, and a third key added to one and not the other
-//! would compile, run, and produce exactly the inert control this table
-//! warns about. There is now one key type, constructed by one function
-//! ([`RenderKey::new`]), and adding a field to it changes both sides at once.
+//! That is deliberate and it is the structural half of the guarantee. Two
+//! independent comparisons — one in the shell, one here — would let a third
+//! key be added to one and not the other, compile, run, and produce exactly
+//! the inert control described above. There is **one** key type, constructed
+//! by **one** function ([`RenderKey::new`]), so adding a field to it changes
+//! both sides at once.
 //!
-//! The original also carried `cmyk_intent`, `fonts` and
-//! `view_magnification` on the request. All three have correct defaults in
-//! [`pdfcer_render::RenderOptions`] (the operator-ruled `NeutralBlack`
-//! intent, the bundled font environment, and `None` = the print-correct
-//! `/D`-initial optional-content state), and this build has no surface that
-//! varies any of them, so they are left to that default and travel on the
-//! request when a settings surface exists to move them.
+//! `cmyk_intent`, `fonts` and `view_magnification` are not on the request at
+//! all. All three have correct defaults in [`pdfcer_render::RenderOptions`]
+//! (the operator-ruled `NeutralBlack` intent, the bundled font environment,
+//! and `None` = the print-correct `/D`-initial optional-content state), and
+//! no surface varies any of them, so they are left to that default and
+//! travel on the request when a settings surface exists to move them.
 //!
 //! **`view_magnification` deserves one extra sentence**, because it looks
 //! adjacent to `layers_generation` and is not. §8.11.4.4's usage
@@ -176,11 +142,12 @@ pub struct RenderedPixels {
     pub pixmap: Pixmap,
     /// Render-time findings for the diagnostics surface.
     ///
-    /// Carried even though S0 has no status bar to show them in: they are
-    /// the renderer's honesty report (which glyphs were substituted, which
-    /// features were skipped), and a render that produced them and threw
-    /// them away would have to be re-run to get them back. The surface
-    /// that displays them lands at stage S2.
+    /// The renderer's honesty report — which glyphs were substituted, which
+    /// features were skipped, which blends fell back to the wrong space. It
+    /// travels with the pixels because a render that produced it and threw it
+    /// away would have to be re-run to get it back, and because the surfaces
+    /// that read it (`tools.render_diagnostics`, the status-bar disclosure)
+    /// are describing *this* raster, not the next one.
     pub diagnostics: Diagnostics,
     /// Everything this render was *of*, so the shell can key its texture.
     ///
@@ -201,10 +168,9 @@ pub struct RenderedPixels {
     /// Carried on the result rather than left in the trace because
     /// `tools.render_diagnostics` shows it to the operator, and a number a
     /// surface displays cannot come from a diagnostic line nothing parses.
-    /// `HANDOFF.md` §10 already records the reason this matters on this
-    /// project's documents: ~99 % of render cost is resolution-independent on
-    /// dense CAD, so *how long* and *at what scale* only mean something
-    /// together — which is why the two travel on one struct.
+    /// It matters because ~99 % of render cost is resolution-independent on
+    /// dense CAD: *how long* and *at what scale* only mean something
+    /// together, which is why the two travel on one struct.
     pub elapsed: std::time::Duration,
 }
 
@@ -221,9 +187,9 @@ enum Outcome {
 /// **Why a render came back with no pixels**, as a fact the shell can act on
 /// rather than only repeat.
 ///
-/// # ★★★ Why a refusal stopped being a bare `String` — `OPERATOR_REQUESTS.md` O186
+/// # ★★★ Why a refusal is typed and not a bare `String` — `OPERATOR_REQUESTS.md` O186
 ///
-/// The operator, 2026-09-12:
+/// The operator:
 ///
 /// > *"If this error is caused by some other limitation that will always
 /// > happen, zoom should stop at the limit and not end up showing an error —
@@ -231,11 +197,9 @@ enum Outcome {
 ///
 /// That ruling is only executable if the shell can tell **this page cannot be
 /// rasterized any further** apart from **this page is broken**. Both arrive
-/// here as an `Err`; both used to arrive as a sentence; and a sentence is
-/// exactly the wrong thing to branch on — see the standing lesson *never
-/// substring-match another crate's prose*, which this project has been bitten
-/// by before (a narrowing left the words in place and shrank the condition
-/// underneath them).
+/// here as an `Err`, and a sentence is exactly the wrong thing to branch on:
+/// never substring-match another crate's prose, because a narrowing upstream
+/// leaves the words in place and shrinks the condition underneath them.
 ///
 /// So the category travels beside the sentence, typed, set in exactly the two
 /// arms of [`render_on_worker`]'s `match` that know it.
@@ -364,9 +328,9 @@ pub struct RenderRequest {
     /// The edit session to render. Rendered through `session.view()` **on
     /// the worker**, never `session.document()` — the view composes the
     /// overlay and the staging buffer, so unsaved edits are what gets
-    /// drawn. S0 makes no edits, but the rule is structural: the canvas
-    /// renders the *edited* state, and a base read here is how every
-    /// editing feature becomes invisible at once.
+    /// drawn. The rule is structural: the canvas renders the *edited*
+    /// state, and a base read here is how every editing feature becomes
+    /// invisible at once.
     pub session: Arc<EditSession>,
     /// The page to draw. Cloned out of the page vector by the caller so
     /// the worker owns it.
@@ -387,7 +351,7 @@ pub struct RenderRequest {
     pub annotations: bool,
     /// ★★★ **Whether to draw strokes at the widths the file declares, or to cap
     /// every one of them at one device pixel** —
-    /// [`pdfcer_render::RenderOptions::stroke_display`], engine `Pass 254.0`.
+    /// [`pdfcer_render::RenderOptions::stroke_display`].
     ///
     /// `view.line_weights`, `OPERATOR_REQUESTS.md` **O137**, in his words:
     /// *"the button to show all lines without their thickness — thin lines or
@@ -427,10 +391,10 @@ pub struct RenderRequest {
     /// **Five of the thirteen settings change what a rasterization looks
     /// like** — the CMYK intent, the mask resampling filter, the minification
     /// filter, the CMYK JPEG polarity, and what is drawn for an annotation
-    /// with no stated appearance state — and until 2026-08-17 not one of them
-    /// reached this worker. The old shell had the same hole: every setting in
-    /// that group was persisted, shown in a window, edited by the operator,
-    /// and then discarded here by a bare `RenderOptions::default()`.
+    /// with no stated appearance state. All five have to travel here. A bare
+    /// `RenderOptions::default()` in the worker is correct in isolation and
+    /// discards every one of them, which is how a setting comes to be
+    /// persisted, shown in a window, edited by the operator — and never read.
     ///
     /// It is **not** a staleness key, and that is a decision. Adding it to
     /// [`RenderKey`] would mean deriving `Hash`/`Eq` over a struct that is
@@ -462,16 +426,19 @@ pub struct RenderRequest {
     /// ★★ **The page-space rectangle to rasterize, or `None` for the whole
     /// page.** O24.
     ///
-    /// `None` is today's path and is what every caller asks for at every
-    /// zoom the shell currently offers — `render::strategy::for_page` only
-    /// answers `Region` above the pixmap ceiling, which `viewer::MAX_ZOOM`
-    /// currently stops the operator reaching. So this field is **dormant**
-    /// until that ceiling is raised, and wiring it changes nothing today.
+    /// `None` is the whole-page tier: everything at or below the zoom where
+    /// the page's raster still fits `MAX_PIXMAP_EDGE`. That is where panning
+    /// is free, because the texture does not depend on where the operator is
+    /// looking. `Some` is the region tier, chosen by
+    /// `render::strategy::for_page` above that ceiling and recorded on the
+    /// document by `canvas::tier`; there the raster stops scaling with the
+    /// zoom, and a pan beyond the overscan costs a new one.
     ///
-    /// ★ That dormancy is the point of landing it separately: the region
-    /// path can be built, keyed and reviewed while it is provably unreachable,
-    /// rather than arriving in the same change as the thing that makes it
-    /// reachable.
+    /// ★ It is a staleness key ([`RenderKey::with_region`]) and not merely an
+    /// option. Two rasters of one page at one scale can show different parts
+    /// of it, so a cache that could not tell them apart would serve the first
+    /// for every position: the operator pans, the picture does not move, and
+    /// nothing anywhere reports an error.
     pub region: Option<pdfcer_core::page_tree::Rect>,
 }
 
@@ -652,7 +619,7 @@ impl RenderWorker {
 
     /// **What the worker is rendering right now**, if anything.
     ///
-    /// Two callers need it and both are Phase 4's:
+    /// Two callers need it:
     ///
     /// * a page that is being drawn *now* says so
     ///   ([`crate::render::strip::PageState::Drawing`]) rather than saying it
@@ -686,11 +653,6 @@ impl RenderWorker {
     /// session would need a public deep-copy impl on `EditSession`
     /// (which is not `Clone`) and would copy the document per edit.
     /// Cancel-then-mutate costs the measured **28.9 ms** of teardown.
-    ///
-    /// S0 makes no edits, so nothing calls this yet outside [`Drop`]. It
-    /// is salvaged now, with its argument intact, because the first edit
-    /// to arrive without it would reintroduce the 58-second freeze
-    /// through a door that had already been closed once.
     #[allow(
         dead_code,
         reason = "the mutation choke point; S0 has no mutations, and the first stage that does (S4) must route through this rather than re-derive it" // ui-text-exempt: clippy lint justification, never displayed
@@ -739,9 +701,9 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     // `crate::app::settings::SettingsExt` is the one place that turns the
     // operator's configuration into render options, and a `syn` check in that
     // module fails the build if any other file constructs these itself. The
-    // reason is the defect it replaced: a bare `::default()` here is correct
-    // in isolation and silently discards five settings, which is exactly how
-    // the old shell came to persist nine settings it never read.
+    // rule exists because a bare `::default()` here is correct in isolation and
+    // silently discards the five settings that change what a raster looks
+    // like — which is how a shell comes to persist settings it never reads.
     //
     // Everything NOT set below keeps whatever the funnel produced: the bundled
     // font environment (reproducible on any machine) and `None` view
@@ -753,7 +715,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     options.annotations = request.annotations;
     // ★★★ **The canvas's stroke-width display convention, and the ONE
     // assignment of this field in the whole crate** — O137,
-    // `RenderOptions::stroke_display`, engine `Pass 254.0`.
+    // `RenderOptions::stroke_display`.
     //
     // This function draws the interactive canvas and nothing else. Print, print
     // preview and every export build their options through the same funnel and
@@ -812,11 +774,11 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
         Ok(rendered) => {
             // ★★★ **The compositing space, published per raster.**
             //
-            // Added 2026-08-26. The operator reported colours changing with
-            // zoom; the cause is that `pdfcer-render` composites a page with
-            // transparency in a subtractive CMYK buffer only while that buffer
-            // fits under `MAX_CMYK_BUFFER_BYTES`, and falls back to sRGB above.
-            // Which side of that a given raster landed on is **invisible in a
+            // `pdfcer-render` composites a page with transparency in a
+            // subtractive CMYK buffer only while that buffer fits under
+            // `MAX_CMYK_BUFFER_BYTES`, and falls back to sRGB above it. So the
+            // colours of one page can change with the zoom. Which side of that
+            // threshold a given raster landed on is **invisible in a
             // screenshot** and is the single most useful fact about why two
             // renders of one page disagree.
             //
@@ -853,54 +815,29 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
             let _ = e;
             Outcome::Cancelled
         }
-        // ★★★ **The one render error whose `Display` must not reach the
-        // canvas**, and the reason it gets a named arm rather than falling
-        // into the pass-through below.
+        // ★★★ **The renderer's own sentence must not reach the canvas here**,
+        // which is why this gets a named arm rather than falling into the
+        // pass-through below.
         //
-        // `pdfcer-render` `Pass 296.0` (`69d4d67`, consumed 2026-09-11). Until
-        // it landed, a region render at an extreme scale did not fail — it
-        // **panicked a worker thread inside `tiny-skia`**, and this shell lost
-        // the worker rather than receiving an `Err` at all. The engine now
-        // catches that panic at the single `catch_unwind` in the crate and
-        // hands back `RasterizerLimit`, so the thread survives and the event
-        // arrives here as an ordinary refusal.
+        // The engine raises `RasterizerLimit` when `tiny-skia`'s arithmetic
+        // gives out at an extreme scale: it catches that panic at the single
+        // `catch_unwind` in `pdfcer-render` and hands back this variant, so the
+        // worker thread survives and the event arrives here as an ordinary
+        // refusal rather than as a lost thread.
         //
-        // The wildcard arm below would have been *enough to keep the worker*,
-        // which is why this is easy to leave alone and wrong to.
+        // The split is deliberate: the **diagnosis is traced** and the
+        // **operator gets the actionable half**. The engine's `Display` is a
+        // fact about the renderer — *"the rasterizer cannot work at scale
+        // 8053069"* — and a man looking at a blank drawing can do nothing with
+        // it; `canvas_zoom_past_rasterizer` tells him to zoom out and that his
+        // page is undamaged. `panic_message` is `tiny-skia`'s own text and
+        // explicitly not a contract, so it is traced and never painted.
         //
-        // # ★★ Why this arm is still here after the engine fixed its `Display`
-        //
-        // For about four hours on 2026-09-11 this arm was load-bearing for a
-        // different reason: `RasterizerLimit`'s `Display` carried
-        // `panic_message` in its format string, so the wildcard below painted
-        // `"the rasterizer cannot work at scale 8053069: range start index
-        // 442613758592 out of range for slice of length 1088737"` across a
-        // site plan — `tiny-skia`'s panic text, which the engine's own reply
-        // called *"third-party text and explicitly not a contract"*. That was
-        // filed under decision 058 as a workaround already written rather than
-        // as a request, and `Pass 296.5` (`4f6f5a5`, pin `d2465f5`) took the
-        // panic text out. **The `Display` is now `"the rasterizer cannot work
-        // at scale {scale}"` and the wildcard would no longer leak anything.**
-        //
-        // ⇒ The named arm survives on the SECOND half of its argument, which
-        // was always the stronger one: the engine's sentence is a **fact about
-        // the renderer** and this shell owes the operator an **instruction**.
-        // "The rasterizer cannot work at scale 8053069" tells a man looking at
-        // a blank drawing nothing he can act on; `canvas_zoom_past_rasterizer`
-        // tells him to zoom out and that his page is undamaged. Deleting this
-        // arm now would be the mechanical reading of *delete the workaround
-        // when the cause is removed* — the leak was the cause of the URGENCY,
-        // not the cause of the arm.
-        //
-        // So the split stands: the **diagnosis is traced** (where the engine
-        // deliberately left the panic hook unsilenced, so it has already been
-        // printed once) and the **operator gets the actionable half**. `scale`
-        // is traced too, because the first failing scale was measured to order
-        // with nothing across page geometries: an E-size sheet failed at
-        // 284,964 where a business card reached 8,053,069, so the only way
-        // this shell will ever learn which boundary a real drawing met is to
-        // record the one that was actually hit. The engine asked for that
-        // number if it is ever seen on a real sheet.
+        // `scale` is traced because the first failing scale has no order across
+        // page geometries: an E-size sheet was measured failing at 284,964
+        // where a business card reached 8,053,069. Recording the boundary a
+        // real drawing actually met is the only way either side learns where it
+        // is.
         Err(pdfcer_render::RenderError::RasterizerLimit {
             scale,
             panic_message,
@@ -917,7 +854,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
             ))
         }
         // ★★★ **THE SENTENCE THE OPERATOR ACTUALLY SAW** —
-        // `OPERATOR_REQUESTS.md` O186, 2026-09-12, his words:
+        // `OPERATOR_REQUESTS.md` O186, his words:
         //
         // > *"I think this sometimes results in similar error to 'This page
         // > could not be drawn. requested raster size 50411508x32619210 is
@@ -943,19 +880,21 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
         //
         // # ★★ Why this is a net and not the fix
         //
-        // The cause of the sentence he saw was measured and fixed one layer
-        // up: `crate::render::settle`'s `fill_strip` was ordering a WHOLE-PAGE
-        // raster for a visible neighbour sheet at the current page's deep
-        // scale, because `OpenDoc::region_for` refuses a region to any page
-        // but the current one and nothing asked whether the order could be
-        // filled. `50411508 x 32619210` is 1,224 x 792 pt at scale 41,185.87,
-        // and the failing sheet was one of the two odd-sized pages in a
-        // thirty-six page set — never the sheet he was zoomed into.
+        // The cause of a sentence like his lives one layer up.
+        // `OpenDoc::region_for` refuses a region to any page but the current
+        // one, so a visible neighbour sheet would be ordered as a WHOLE-PAGE
+        // raster at the current page's deep scale unless something asks
+        // whether the order can be filled at all — which is what
+        // `crate::render::settle`'s `fill_strip` exists to ask.
+        // `50411508 x 32619210` is 1,224 x 792 pt at scale 41,185.87: an
+        // odd-sized neighbour in a mixed-size set, never the sheet the
+        // operator was zoomed into.
         //
-        // So by construction nothing should reach this arm any more. It is
-        // here because *"by construction"* is the claim that was already wrong
-        // once today, and because a path that reaches it now hands the shell a
-        // ceiling rather than a blank page with somebody else's prose on it.
+        // So by construction nothing should reach this arm. It is here because
+        // *"by construction"* is exactly the sort of claim that stops being
+        // true without anyone noticing, and because a path that reaches it
+        // hands the shell a ceiling rather than a blank page with somebody
+        // else's prose on it.
         Err(pdfcer_render::RenderError::BadRasterSize { width, height }) => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -997,8 +936,8 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
             // ordinary page is three orders of magnitude away from it.
             //
             // ★★ **The two predicates are the engine's own, copied from its
-            // source rather than inferred from its sentence** —
-            // `pdfcer-render/src/lib.rs:839` as of the pin in `Cargo.lock`:
+            // source rather than inferred from its sentence** — the size guard
+            // in `pdfcer_render`'s `render_impl_rasterize`:
             //
             // ```text
             // if width == 0 || height == 0
@@ -1072,10 +1011,6 @@ mod tests {
     /// frame then **never finishes at all** — which is strictly worse
     /// than the freeze this module was written to remove, and it would
     /// look like a hang rather than a bug.
-    ///
-    /// This was a real defect in the original's first draft: the guard did
-    /// not exist, and the livelock was reasoned out before it could be
-    /// observed.
     #[test]
     fn the_same_request_twice_is_recognised_as_the_same_render() {
         assert_eq!(key(3, 2.0), key(3, 2.0));
@@ -1206,7 +1141,7 @@ mod tests {
     /// `OPERATOR_REQUESTS.md` **O137**, and the assertion without which the
     /// whole feature can ship inert.
     ///
-    /// # The vacuous test this replaces, and it is the likeliest mistake here
+    /// # The vacuous test this must not become, and it is the likeliest mistake
     ///
     /// A test that `view.line_weights` is *plumbed* — that the request carries
     /// it and the worker assigns it — **passes on a build where the cache
@@ -1321,7 +1256,7 @@ mod tests {
 
     /// A fresh worker is idle, and reports no in-flight age.
     ///
-    /// Guards the (stage S2) status-bar disclosure against the most
+    /// Guards the status-bar staleness disclosure against its most
     /// embarrassing failure mode: announcing that the canvas is behind
     /// when nothing is rendering.
     #[test]
@@ -1372,7 +1307,7 @@ mod region_accessor_tests {
     /// The placement is computed from what comes back out, and the render was
     /// run from what went in. A rounding step between them is a rounding step
     /// between the pixels and where they are drawn — which at a high zoom is a
-    /// visible offset, and is the class of defect O24c was.
+    /// visible offset (O24c).
     #[test]
     fn the_region_round_trips_bit_exactly() {
         let awkward = Rect {

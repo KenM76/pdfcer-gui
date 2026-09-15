@@ -9,7 +9,7 @@
 //! | [`field`] | the field **and every widget it draws**, on every page | *Delete field* in the Properties panel |
 //! | [`widget`] | **one box**, leaving the field — unless it was the last, in which case the engine removes the field too and says so | *Delete this box*, the `canvas.field` menu's Delete, or the Delete key over a widget |
 //!
-//! ## ★★★ Why this is a file of its own
+//! ## Why this is a file of its own
 //!
 //! R2 (no `.rs` over 1,500 lines) forced the split and the subject boundary
 //! decided where: `super` is the whole form-authoring surface — five `add_*`
@@ -17,21 +17,18 @@
 //! only ones that **destroy** something. Both therefore carry a gate none of
 //! the others needs, and the gate's argument is longer than either verb.
 //!
-//! ## ★★★ THE DEFECT THIS FILE IS THE FIX FOR (2026-08-29)
+//! ## THE FAILURE MODE THIS FILE GUARDS AGAINST
 //!
-//! Both verbs opened with `doc.selected_field = None`, **before** the engine
-//! call, and neither said anything when the engine refused. On an ordinary
-//! certified fillable form — `/Perms /DocMDP` at `/P 2`, which §12.8.2.2
-//! Table 257 says permits *filling* and forbids *restructuring* — the sequence
-//! an operator saw was:
+//! Clear `doc.selected_field` **before** the engine call and say nothing when
+//! the engine refuses, and on an ordinary certified fillable form — `/Perms
+//! /DocMDP` at `/P 2`, which §12.8.2.2 Table 257 permits *filling* and forbids
+//! *restructuring* — the operator gets:
 //!
 //! 1. right-click a widget, or press Delete over it;
 //! 2. the box stays, because `deletion_refusal` was always going to refuse;
 //! 3. the selection vanishes anyway;
-//! 4. nothing was said, because `crate::app::actions::apply::vector_edit`'s `Err` arm wrote
-//!    one trace line and — by that arm's own recorded decision — said nothing
-//!    to the operator (it words an un-categorised decline since O116,
-//!    2026-09-04, which ends the silence and still names no field);
+//! 4. nothing is said, because `crate::app::actions::apply::vector_edit`'s
+//!    `Err` arm words an un-categorised decline and names no field;
 //! 5. **and the Properties panel, which was correctly showing "This document
 //!    does not allow form fields to be removed", goes blank**, because that
 //!    section is drawn from `doc.selected_field`.
@@ -50,11 +47,11 @@ use crate::app::state::OpenDoc;
 
 /// **Delete a whole field, with every widget it draws.**
 ///
-/// ★ The disclosure names the **widget count**, because that is the part the
+/// The disclosure names the **widget count**, because that is the part the
 /// operator cannot see: a field drawn in three places disappears from three
 /// pages, and they are looking at one of them. A confirmation that said only
 /// "deleted" would be true and would leave two pages changed without mention.
-/// ★★★ **The selection is cleared ON SUCCESS, never ahead of the call** — see
+/// **The selection is cleared ON SUCCESS, never ahead of the call** — see
 /// [`clear_selection_if_edited`], which carries the whole argument.
 pub(in crate::app::actions) fn field(doc: &mut OpenDoc, field: &str) {
     if refused(doc, "delete-field", field) {
@@ -66,7 +63,7 @@ pub(in crate::app::actions) fn field(doc: &mut OpenDoc, field: &str) {
             let mut lines = vec![crate::text::forms::form_field_deleted(
                 outcome.widgets_removed,
             )];
-            // ★★★ Rule 4, and the sharper half of it: pdfcer knows it just
+            // Rule 4, and the sharper half of it: pdfcer knows it just
             // broke buttons elsewhere and CANNOT repair them.
             //
             // A rename can repoint an action, because the field still exists
@@ -75,7 +72,7 @@ pub(in crate::app::actions) fn field(doc: &mut OpenDoc, field: &str) {
             // nothing. Its own words: *"each one is a button that will do less
             // than it says when pressed."*
             //
-            // ⚠ Nothing in the saved file records that pdfcer knew. Without
+            // Nothing in the saved file records that pdfcer knew. Without
             // this sentence the operator discovers it when a Reset button
             // quietly stops resetting one field, which is not a thing anybody
             // notices until it matters.
@@ -92,12 +89,12 @@ pub(in crate::app::actions) fn field(doc: &mut OpenDoc, field: &str) {
 
 /// **Delete one widget, leaving the field.**
 ///
-/// ★★ The engine may report that the field went too, and the disclosure has to
+/// The engine may report that the field went too, and the disclosure has to
 /// follow it rather than assume: removing the last widget of a field leaves a
 /// name nothing draws and nothing can fill, so `delete_widget` removes the
 /// field as well. That is the right behaviour and it is **not** what the
 /// operator pressed, so it is said out loud.
-/// ★★★ **The selection is cleared ON SUCCESS, never ahead of the call** — see
+/// **The selection is cleared ON SUCCESS, never ahead of the call** — see
 /// [`clear_selection_if_edited`], which carries the whole argument.
 pub(in crate::app::actions) fn widget(doc: &mut OpenDoc, field: &str, widget: usize) {
     if refused(doc, "delete-widget", field) {
@@ -120,7 +117,7 @@ pub(in crate::app::actions) fn widget(doc: &mut OpenDoc, field: &str, widget: us
 ///
 /// Returns `true` when the caller must not proceed.
 ///
-/// ★★★ THE LAST DOOR, and the one that is not a control. Every *drawn* route to
+/// THE LAST DOOR, and the one that is not a control. Every *drawn* route to
 /// these two verbs already asks
 /// [`crate::panels::properties::formfield::refuses_delete`] and withholds
 /// itself where it answers `true`: the Properties panel's two buttons, the
@@ -131,15 +128,12 @@ pub(in crate::app::actions) fn widget(doc: &mut OpenDoc, field: &str, widget: us
 /// condition gone stale within a frame, and a refusal the query does not
 /// predict.
 ///
-/// Before 2026-08-29 that residue was a **silence**:
-/// `crate::app::actions::apply::vector_edit`'s `Err` arm wrote one line to the trace and, by
-/// its own recorded decision, said nothing to the operator. (Since O116,
-/// 2026-09-04, it words an un-categorised decline — the floor under every verb,
-/// and no substitute for a sentence that names the field.) R83's rule is not
-/// *gate the controls*; it is **a refusal must be a sentence, never a
-/// silence.**
+/// Left to `crate::app::actions::apply::vector_edit`'s `Err` arm, that residue
+/// gets an un-categorised decline — the floor under every verb, and no
+/// substitute for a sentence that names the field. R83's rule is not *gate the
+/// controls*; it is **a refusal must be a sentence, never a silence.**
 ///
-/// ★★ Asked here rather than left to the engine's own guard so that the
+/// Asked here rather than left to the engine's own guard so that the
 /// decline is *worded*: the engine returns an `EditError` into a funnel that
 /// discards it, whereas this returns before the funnel and puts
 /// [`crate::text::status::field_delete_declined_structural`] in the status bar.
@@ -147,12 +141,12 @@ pub(in crate::app::actions) fn widget(doc: &mut OpenDoc, field: &str, widget: us
 /// through the one derivation — so a state where a control is drawn and this
 /// refuses cannot arise from two rules disagreeing.
 ///
-/// ★ It does **not** clear the selection, and that is half the fix: the
+/// It does **not** clear the selection, and that is half the fix: the
 /// Properties panel's own sentence is drawn from `doc.selected_field`, so
 /// clearing here would delete the explanation on the same frame as the
 /// refusal.
 ///
-/// # ★ Why `document_refuses_delete` rather than `refuses_delete`
+/// # Why `document_refuses_delete` rather than `refuses_delete`
 ///
 /// Not a second derivation — the **same** engine query, asked at a different
 /// scope. `refuses_delete` answers *would deleting **the selected field** be
@@ -170,7 +164,7 @@ fn refused(doc: &OpenDoc, label: &str, field: &str) -> bool {
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI.
-            // ★ `-declined`, NOT the bare `{label}`: `tools/gates/check-trace-names.py`
+            // `-declined`, NOT the bare `{label}`: `tools/gates/check-trace-names.py`
             // forbids a module's own line from sharing its first token with a
             // `vector_edit` funnel label, and both labels passed here are such
             // labels. A harness asking `last("delete-widget")` would otherwise
@@ -184,7 +178,7 @@ fn refused(doc: &OpenDoc, label: &str, field: &str) -> bool {
 
 /// **Clear the field selection only if the edit actually landed.**
 ///
-/// ★★★ The defect this replaces, in one sentence: `doc.selected_field = None`
+/// The defect this replaces, in one sentence: `doc.selected_field = None`
 /// was the FIRST statement of both delete verbs, so a refused delete cleared
 /// the selection anyway — and the Properties panel's
 /// `panels::properties::formfield` section, which draws the sentence
@@ -194,7 +188,7 @@ fn refused(doc: &OpenDoc, label: &str, field: &str) -> bool {
 /// own explanation is strictly worse than one that merely fails, because after
 /// it there is nothing on screen to read.
 ///
-/// # ★★ Why the epoch, rather than a second copy of the gate
+/// # Why the epoch, rather than a second copy of the gate
 ///
 /// [`refused`] already turns back the refusal the query can
 /// forecast. This covers **every other way the engine can decline** — a field
@@ -210,7 +204,7 @@ fn refused(doc: &OpenDoc, label: &str, field: &str) -> bool {
 /// deliberately does not report success — every caller that needed to know has
 /// asked the epoch.
 ///
-/// ★ On success the clear is still wanted, and for the reason it was always
+/// On success the clear is still wanted, and for the reason it was always
 /// wanted: the field or the box is gone, so a selection naming it describes
 /// nothing. `panels::properties::formfield`'s second early return handles the
 /// dangling case (undo and redo do not clear selections), which is why this is
@@ -244,7 +238,7 @@ mod tests {
     /// it.
     const CERTIFIED_NESTED: &str = "certified-nested-form.pdf";
 
-    /// ★★★ **The fixture contract for `certified-nested-form.pdf`, asserted
+    /// **The fixture contract for `certified-nested-form.pdf`, asserted
     /// with the engine rather than by eye.**
     ///
     /// # Why this test exists at all, and why here
@@ -296,7 +290,7 @@ mod tests {
     ///    indistinguishable from a correct one. R162 — an assertion that cannot
     ///    come out false is not an assertion.
     ///
-    /// ★ Claim 4 is what makes claims 2 and 3 a *withholding* rather than an
+    /// Claim 4 is what makes claims 2 and 3 a *withholding* rather than an
     /// outage. On this one document the two gates disagree, so the control
     /// group is inside the file and no second fixture is needed to supply it.
     #[test]
@@ -370,7 +364,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **A refused delete keeps the selection AND says something.**
+    /// **A refused delete keeps the selection AND says something.**
     ///
     /// The defect in one line: `doc.selected_field = None` was the first
     /// statement of this verb, so on a certified form the press cleared the
@@ -413,7 +407,7 @@ mod tests {
         );
     }
 
-    /// ★★ **[`field`] has the identical shape, and it was checked rather
+    /// **[`field`] has the identical shape, and it was checked rather
     /// than assumed.**
     ///
     /// The reviewer named [`widget`]. An absence claim is a claim about
@@ -433,7 +427,7 @@ mod tests {
         assert_eq!(recorded_for_test(), Some(Declined::FieldDeleteRefused));
     }
 
-    /// ★★★ **The uncertified twin still deletes**, which is what makes the two
+    /// **The uncertified twin still deletes**, which is what makes the two
     /// tests above evidence rather than a tautology.
     ///
     /// `threaded-comments.pdf` differs from `certified-comments.pdf` in one
@@ -443,7 +437,7 @@ mod tests {
     /// withheld where it would have worked leaves the operator no gesture that
     /// reports it.
     ///
-    /// ★ And the selection IS cleared on the success path, which is the other
+    /// And the selection IS cleared on the success path, which is the other
     /// half of [`clear_selection_if_edited`]: the box is gone, so a selection
     /// naming it describes nothing.
     #[test]

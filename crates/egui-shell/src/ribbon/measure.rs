@@ -1,15 +1,11 @@
-//! # `ribbon::measure` — the four primitives every ribbon row measures with
+//! # `ribbon::measure` — the primitives every ribbon row measures with
 //!
-//! Split out of [`super::band`] on 2026-09-04, when the mockup-parity pass
-//! took that file past the project's 1,500-line ceiling (R2). The seam is a
-//! real one and not a line count, and it is the same seam
-//! [`super::control`]'s header describes from the other side: everything left
-//! in `band` answers *"how are the groups arranged?"*, and everything here
-//! answers a question that has nothing to do with groups at all — **"how wide
-//! is this, in this theme, in this font?"**
+//! The seam [`super::control`]'s header describes from the other side:
+//! [`super::band`] answers *"how are the groups arranged?"*, and everything
+//! here answers a question that has nothing to do with groups at all — **"how
+//! wide is this, in this theme, in this font?"**
 //!
-//! ## Why these four belong together, and why they were always slightly
-//! ## misfiled in `band`
+//! ## Why these belong together, and why none of them belongs to the band
 //!
 //! Not one of them is about the band. They are used by:
 //!
@@ -23,13 +19,13 @@
 //! | [`super::collapsed`] | a collapsed group's button |
 //! | [`crate::menu::render`] | a menu row — a different surface entirely |
 //!
-//! ★★★ **That list is the whole argument for one copy.** Every row of the
+//! **That list is the whole argument for one copy.** Every row of the
 //! ribbon plans its own width, and a row that measured a button differently
 //! from the row above it would disagree about whether the window is wide
 //! enough — which is not a wrong number, it is *two* numbers, and the
 //! symptom is a control drawn outside its own rectangle on top of its
-//! neighbour. `band`'s own doc comments say so at each of these functions and
-//! said it while they lived in a file named after one of the seven callers.
+//! neighbour. A file named after any one of those callers would be the wrong
+//! home for it.
 //!
 //! ## What is deliberately NOT here
 //!
@@ -50,8 +46,8 @@ pub(crate) fn button_padding(ui: &egui::Ui) -> f32 {
     ui.spacing().button_padding.x * 2.0
 }
 
-/// **★ The narrowest an `egui::Button` can be drawn — the floor
-/// `truncate()` cannot go below.**
+/// **The narrowest an `egui::Button` can be drawn — the floor `truncate()`
+/// cannot go below.**
 ///
 /// # Why this number decides the whole tab-strip row
 ///

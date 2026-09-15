@@ -156,11 +156,17 @@ pub(super) fn tab() -> Tab {
             // command on Tools is unreachable in the one mode the operator
             // specifically asked for it in.
             //
-            // Between File and Save, which is where it belongs on its own terms:
-            // this band's neighbours are the verbs that make a document exist
-            // (open) and the verbs that write one out (save, export), and OCR is
-            // the second kind. Its product is a new file and it never touches
-            // this one.
+            // Between File and Save, which is where it belongs on its own
+            // terms: this band's neighbours are the verbs that make a document
+            // exist (open) and the verbs that write one out (save, export), and
+            // recognition is adjacent to both — it is what turns a scan into a
+            // document you can search and save as one.
+            //
+            // ⚠ It is an EDIT of the open document, not a separate output.
+            // `app::actions::apply` runs it as an ordinary `vector_edit`
+            // through `EditSession::add_ocr_layer`, so it dirties the document
+            // and lands on the undo stack like any other edit — one step for
+            // the whole run, however many pages it covered.
             // ---------------------------------------------------------------
             group(
                 "recognise",

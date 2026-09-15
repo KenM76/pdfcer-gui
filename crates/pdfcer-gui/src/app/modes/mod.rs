@@ -95,9 +95,8 @@
 //!   continuous-scroll display mode in this build yet — and it is recorded
 //!   here only so the next reader knows it is a known, deliberate omission
 //!   rather than a missed row of the table.
-//! - **It does not decide the default mode.** Part 1 rule 5 makes that a
-//!   setting; today `crate::app::PdfcerApp::new` starts in the manifest's
-//!   first mode and [`start`] adopts whatever it is handed.
+//! - **It does not decide the start mode.** [`start`] does: it adopts the mode
+//!   remembered from the last session, falling back to the manifest's first.
 
 pub mod capability;
 pub mod defaults;
@@ -180,8 +179,9 @@ impl Modes {
         &self.ids
     }
 
-    /// The first mode the manifest declares — what the application opens
-    /// in until the default-mode setting exists (Part 1 rule 5).
+    /// The first mode the manifest declares — the **fallback** start mode,
+    /// used when no mode was remembered from the last session and whenever a
+    /// remembered id cannot be honoured.
     #[must_use]
     pub fn first(&self) -> Option<&str> {
         self.ids.first().map(String::as_str)
@@ -412,7 +412,8 @@ pub struct Startup {
     pub dock: DockState,
 }
 
-/// Load the layout and adopt the manifest's first mode.
+/// Load the layout and adopt the start mode — remembered, else the manifest's
+/// first.
 ///
 /// The whole start-up sequence, in one call, because its order is
 /// load-bearing and getting it wrong is silent:

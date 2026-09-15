@@ -45,13 +45,7 @@
 //! doing exactly one of the two, and a type that could say both would need
 //! discipline to keep honest.
 //!
-//! ## §3. It clicks AND drags — and until 2026-08-21 it only clicked
-//!
-//! This section read: *"There is no drag in 'put the caret here', so there is no
-//! `DragKind` for one, and inventing a `DragKind::TextEdit` that every arm
-//! ignored would be the placeholder this project's no-placeholders invariant
-//! forbids."* Correct, and it answered the wrong question — because the
-//! operator's next ask was not about carets:
+//! ## §3. It clicks AND it drags
 //!
 //! > *"I should be able to make it multi line."*
 //!
@@ -67,14 +61,12 @@
 //! | click on bare page | [`Anchor::Origin`] | `add_text`, one line at a point |
 //! | **drag a rectangle** | [`Anchor::Box`] | `add_text` boxed, a wrapped paragraph |
 //!
-//! ★★ The drag belongs to **this** tool and not to `CanvasTool::Text`, and that
-//! was decided by two unit tests rather than by taste. The box was briefly
-//! offered from the sweep tool's rung — where it took the text sweep away in
-//! Edit, which `text_tool_selects_and_marks_in_edit` depends on to make a
-//! selection the markup verbs can act on. **Two features claiming one drag is a
-//! choice somebody has to make, and taking a shipped gesture away to make room
-//! is the wrong way to make it.** Add-text drags; the text tool goes on
-//! sweeping.
+//! ★★ The drag belongs to **this** tool and not to `CanvasTool::Text`. On the
+//! sweep tool's rung the box would take the text sweep away in Edit, which
+//! `text_tool_selects_and_marks_in_edit` depends on to make a selection the
+//! markup verbs can act on. **Two features claiming one drag is a choice
+//! somebody has to make, and taking a shipped gesture away to make room is the
+//! wrong way to make it.** Add-text drags; the text tool goes on sweeping.
 //!
 //! ## §4. It does not disturb the text-selection gate
 //!
@@ -100,14 +92,15 @@
 //!
 //! ## §6. What is out of scope, said in words rather than by a dead key
 //!
-//! `DEFECTS.md` D4a's **cross-run editing** is not built, and cannot be from
-//! here: it needs a multi-run edit request in `pdfcer-core` that does not exist —
-//! `EditRequest` pins to one show operator, and *"a `TJ` array is one
-//! operator"*. The old shell handled this by setting a `cross_run` flag that
-//! **silently disabled the whole typing loop**, which is the failure this
-//! module's [`Refusal::SpansRuns`] exists to avoid: a caret that lands where two
-//! runs meet refuses **in a sentence**, on the status bar, naming what to do
-//! instead. The sentence is `crate::text::textedit::spans_runs`.
+//! `DEFECTS.md` D4a's **cross-run editing** is not built: it needs a multi-run
+//! edit request in `pdfcer-core` that does not exist — `EditRequest` pins to one
+//! show operator, and *"a `TJ` array is one operator"*.
+//!
+//! ★ What a caret landing where two runs meet does **not** do is go quiet. It
+//! opens on the piece that was clicked and **discloses** the consequence on the
+//! status bar — `crate::text::textedit::shares_the_line_note` — because a
+//! control that takes keystrokes it will not honour is this module's defining
+//! defect class, and so is a typing loop that is silently disabled.
 //!
 //! D4c's **reflow gates** are out of scope and untouched.
 //!
@@ -141,51 +134,51 @@
 //!   slightly on commit and is still a preview.
 //! - T2 caret-has-a-position: a click lands it at the nearest character
 //!   boundary; arrows, Ctrl+arrows, Home and End move it; Backspace and Delete
-//!   act either side of it. Added 2026-08-20 — before that there was no index at
-//!   all, and the painter drew its line at the right edge because that is the
-//!   only position an append-only draft has.
+//!   act either side of it. Without an index a draft can only append, and the
+//!   painter can only draw its line at the right edge of the run.
 //! - T3 graphemes-not-bytes: **PARTIAL** — characters, not bytes, so `é` takes
 //!   one keystroke. Not grapheme clusters, so a combining mark or an emoji
 //!   sequence still takes two. `unicode-segmentation` is already in the tree.
 //! - T4 clamp-never-assert: every operation clamps on entry. A panic in a caret
 //!   would take the whole window down over a keystroke.
 //! - T5 composer-owns-the-keyboard: `composing` is the one predicate, and
-//!   `tools/gates/check-typing-guard.sh` fails the build on a second copy.
-//!   **This row exists because it failed twice** — Delete after a canvas click,
-//!   then the space bar, which the pan tool took because this caret is not an
-//!   `egui::TextEdit` and egui's own predicate cannot see it.
-//! - T6 enter-commits-escape-abandons: both — **and Enter has a second meaning
-//!   as of 2026-08-21**. Inside a dragged text BOX a plain Enter is a paragraph
-//!   break and `Ctrl+Enter` commits; everywhere else Enter commits. That is the
-//!   old shell's own split, carried across, and it is why [`Anchor::Box`] is a
-//!   variant rather than a flag: the keystroke handler has to know which gesture
-//!   started the draft, and asking the TEXT would make the first Enter commit
-//!   and every one after it insert. A draft identical to what it replaces still
-//!   raises no action.
-//! - T7 no-control-characters: [`caret::insert`] filters them, and **that filter
-//!   ate the paragraph break for one driven run.** The Enter arrived, the branch
-//!   was right, `insert` was called, and the newline was dropped one call
-//!   deeper — by a guard whose own doc argued, correctly, that *"a control
-//!   character arriving in a `Text` event is something this shell has no meaning
-//!   for."* Still true of typed text; no longer true of the whole draft. The
-//!   filter stays and the newline has its own door, [`caret::newline`], because
-//!   relaxing `insert` would have let a stray `\t` or `\r` from a paste into a
-//!   show string as well.
+//!   `tools/gates/check-typing-guard.sh` fails the build on a second copy. This
+//!   caret is not an `egui::TextEdit`, so egui's own predicate cannot see it:
+//!   any page key answered by a bare `text_edit_focused()` is a key taken out
+//!   of a word the operator is visibly typing — Delete, and the space bar the
+//!   pan tool claims.
+//! - T6 enter-commits-escape-abandons: both, **and Enter has two meanings**.
+//!   Inside a dragged text BOX a plain Enter is a paragraph break and
+//!   `Ctrl+Enter` commits; everywhere else Enter commits. That is why
+//!   [`Anchor::Box`] is a variant rather than a flag: the keystroke handler has
+//!   to know which gesture started the draft, and asking the TEXT would make
+//!   the first Enter commit and every one after it insert. A draft identical to
+//!   what it replaces still raises no action.
+//! - T7 no-control-characters: [`caret::insert`] filters them, on the ground
+//!   that *a control character arriving in a `Text` event is something this
+//!   shell has no meaning for* — true of typed text, and not true of the draft
+//!   as a whole, which may hold a deliberate paragraph break. So the filter
+//!   stays and the newline has its own door, [`caret::newline`]: relaxing
+//!   `insert` would let a stray `\t` or `\r` from a paste into a show string as
+//!   well.
 //! - T8 selection: **GAP** — no Shift+arrow, no Ctrl+A, no drag-select within a
 //!   draft. Named rather than left implied, because a highlight that some keys
 //!   respect and others silently ignore is worse than none.
 
+/// ★★ **The page's lines, reassembled into paragraphs** — and the arrow keys
+/// that walk between them. Its header carries the four lines the behaviour is
+/// modelled on and why the reassembly is `pdfcer-core`'s rather than this
+/// shell's.
 pub mod blocks;
-/// The caret's own arithmetic - insert, delete, and the four movements -
-/// split out under R2 on 2026-08-20. Pure functions of a `&str` and an index,
-/// with no window in them; its header says why that is a seam and not a cut.
+/// The caret's own arithmetic — insert, delete, and the four movements. Pure
+/// functions of a `&str` and an index, with no window in them; its header says
+/// why that is a seam and not a cut.
 pub mod caret;
 /// Where the pointer is in relation to the editor box, published by `paint`
 /// and read by everything that has to decide whether a press belongs to the
 /// draft or to the page.
 pub mod hit;
-/// What every key means inside a draft — the keystroke contract, split out
-/// under R2 on the day the selection landed.
+/// What every key means inside a draft — the keystroke contract.
 pub mod keys;
 /// ★★★ **The caret's arithmetic inside a draft that holds more than one line**
 /// — `OPERATOR_REQUESTS.md` **O127**, defect 2.
@@ -197,18 +190,14 @@ pub mod keys;
 /// (nothing, against 336 ms), and confusing them moves the caret to another
 /// part of the sheet mid-word.
 pub mod lines;
-/// What a draft looks like on the page - the in-place editor and its caret.
-/// Split out under R2 on 2026-08-20; its header carries the standing rule that
-/// the text and the caret are measured from ONE layout.
+/// What a draft looks like on the page — the in-place editor and its caret. Its
+/// header carries the standing rule that the text and the caret are measured
+/// from ONE layout.
 pub mod paint;
-pub mod place;
 /// ★ **Where a press puts the caret** — the three gestures that start a draft,
-/// and the refusals each of them can raise. Split out under R2 on 2026-08-21;
-/// its header carries why a text BOX must be a drag rather than a click.
-/// ★★ **The page's lines, reassembled into paragraphs** — and the arrow keys
-/// that walk between them. SALVAGE from the shell this project replaces, on the
-/// operator's report of 2026-08-21; its header carries the four lines it came
-/// from and why the reassembly was always `pdfcer-core`'s.
+/// and the refusals each of them can raise. Its header carries why a text BOX
+/// must be a drag rather than a click.
+pub mod place;
 /// Which paragraph the caret is in — the one question `reflow_block` needs and
 /// the shell has to answer. Its header carries the refusal that shapes the
 /// whole feature: a reflow is planned against the BASE document, so a page
@@ -216,8 +205,8 @@ pub mod place;
 pub mod reflow;
 /// ★ **What an edit report is worth telling anyone** — which of
 /// `EditReport`'s eleven fields reach the operator, which reach the diagnostic
-/// channel, and which reach neither. Split out under R2; its header carries
-/// the rule and why the middle row of it exists.
+/// channel, and which reach neither. Its header carries the rule and why the
+/// middle row of it exists.
 pub mod report;
 pub use caret::{backspace, delete_forward, insert, word_left, word_right};
 /// **Naming the exact show operator, and the exact buffer it lives in** — the
@@ -232,9 +221,9 @@ pub mod repertoire;
 
 pub use place::{Click, begin_box, click};
 pub mod disposition;
-// The byte-level proof that the untouched tail did not move, with the old
-// shell's own `EditOptions::default()` run beside it as the falsifier.
-// `#[cfg(test)]` inside; it compiles to nothing in a release build.
+// The byte-level proof that the untouched tail did not move, with an
+// `EditOptions::default()` run beside it as the falsifier. `#[cfg(test)]`
+// inside; it compiles to nothing in a release build.
 mod proof;
 // ★★★ The experiment that decides whose defect O141's last step is: ONE
 // `EditSession`, `format_text` then `edit_text`, located by find text alone so
@@ -242,18 +231,15 @@ mod proof;
 // with a reopen between them succeeds. `#[cfg(test)]` inside.
 mod facewall;
 /// ★★ **Planning the commit** — the whole of what a text edit decides, from a
-/// caret and two strings to one `EditRequest`. Split out of this file on
-/// 2026-09-06 under R2, along the seam its own section banner had already
-/// named; `plan` and `Plan` are re-exported below so no call site moved.
+/// caret and two strings to one `EditRequest`. `plan` and `Plan` are
+/// re-exported below, so every caller reaches them through this module.
 mod plan;
 pub use plan::{Plan, plan};
-// ★★★ O142 — his typo, and the guard that stops the fix for it becoming a worse
-// defect. A run written one glyph per show operator can only be reached by
-// `find`, and `Pass 256.0`'s contract says a PINNED request never spans — so the
-// pin must come off, and the pin is the only thing `EditRequest` carries that
-// can choose between two identical strings on a page. Two fixtures: one where
-// the run is unique and the edit must LAND, one where it appears twice and the
-// edit must be REFUSED. `#[cfg(test)]` inside.
+// ★★★ O142 — a typo in a run written one glyph per show operator, which only
+// a spanning match can reach, and the guard that keeps the spanning match
+// addressed to the occurrence the operator clicked. Two fixtures: one where the
+// run is unique, one where the same text appears twice and the edit must land
+// on the clicked one. `#[cfg(test)]` inside.
 mod glyphwall;
 // The per-keystroke re-measure measurement `DEFECTS.md` D4b's fix would need,
 // and the reason it is not wired. `#[ignore]`d; run it and read the numbers.
@@ -285,9 +271,8 @@ const DRAFT_MEMORY_KEY: &str = "pdfcer-textedit-draft"; // ui-text-exempt: inter
 /// key is a harness whose scripts stop being readable"*.
 ///
 /// Typing is this feature's entire input, so without a seam the only honest
-/// verification would be *"the tool armed"* — which is `HANDOFF.md` §2's
-/// grid lesson exactly: an assertion in the right direction that measures the
-/// wrong thing.
+/// verification would be *"the tool armed"* — an assertion pointing in the
+/// right direction that measures the wrong thing.
 ///
 /// **It is not load-bearing and it is not a second input path.** It is read at
 /// exactly one place, [`typing`], on the frame a caret is set, and what it does
@@ -346,7 +331,7 @@ pub enum Anchor {
     Origin { x: f64, y: f64 },
     /// ★★★ **A RECTANGLE in PDF user space** — new text, wrapped to its width.
     ///
-    /// The operator, 2026-08-21: *"I should be able to make it multi line."*
+    /// The operator: *"I should be able to make it multi line."*
     ///
     /// # Why multi-line needs a BOX and cannot be a point with newlines in it
     ///
@@ -355,8 +340,8 @@ pub enum Anchor {
     /// where the second line starts — and the only thing that can is a width to
     /// wrap against and a leading to step by.
     ///
-    /// `pdfcer-core`'s `AddTextRequest::wrap_box` is exactly that (`Pass 16.1`),
-    /// and it is more than a container: **paragraphs split on a hard `\n` and
+    /// `pdfcer-core`'s `AddTextRequest::wrap_box` is exactly that, and it is
+    /// more than a container: **paragraphs split on a hard `\n` and
     /// each is wrapped independently**, so an operator gets both behaviours —
     /// Enter makes a new paragraph, and running past the right edge makes a new
     /// line — from one field.
@@ -368,9 +353,9 @@ pub enum Anchor {
     /// and folding them would make "did the operator drag or click?" a runtime
     /// question at commit time rather than a fact the press already settled. A
     /// click places a single-line run at a point; a drag places a paragraph in
-    /// a box. That is the old shell's own split — *"in box mode a plain Enter
-    /// is a paragraph break; Ctrl+Enter accepts. In point mode Enter accepts"*
-    /// — and it is what every program in the class does.
+    /// a box. In box mode a plain Enter is a paragraph break and `Ctrl+Enter`
+    /// accepts; in point mode Enter accepts — which is what every program in
+    /// the class does.
     ///
     /// It is also what keeps the Enter key honest. Enter cannot mean *insert a
     /// line* and *commit* in one draft, and the variant is how the keystroke
@@ -405,32 +390,31 @@ pub struct Draft {
     /// invariant `caret <= text.chars().count()` holds by construction and no
     /// caller has to check it.
     ///
-    /// # The defect this field is
+    /// # Why an index and not an append point
     ///
-    /// It did not exist until 2026-08-20. `insert` extended the end of the
-    /// string and `backspace` popped the last character, so the caret was not
-    /// merely fixed at the end - **there was no caret**, and the painter drew
-    /// its line at the right edge of the run's glyph box because that is the
-    /// only position an append-only draft has. The operator:
+    /// Without one, `insert` can only extend the end of the string and
+    /// `backspace` can only pop the last character — the caret is not merely
+    /// fixed at the end, **there is no caret**, and the painter can only draw
+    /// its line at the right edge of the run's glyph box. The operator:
     ///
     /// > *"the cursor just sits at the end of a text line. It can't be moved to
     /// > the center of an existing text block."*
     ///
-    /// Exactly right, and it made editing existing page text almost useless: a
-    /// title-block cell reading `SHEET 1 OF 4` could only be changed by deleting
-    /// it back to `SHEET ` and retyping.
+    /// That makes editing existing page text almost useless: a title-block cell
+    /// reading `SHEET 1 OF 4` can only be changed by deleting it back to
+    /// `SHEET ` and retyping.
     ///
     /// # Why characters and not bytes
     ///
     /// Because every operation here is expressed in keystrokes, and one
-    /// keystroke is one `char`. A byte index would make Left-arrow over `e` -
-    /// two bytes - either move half a character or need a decode at every use.
+    /// keystroke is one `char`. A byte index would make Left-arrow over `é` —
+    /// two bytes — either move half a character or need a decode at every use.
     /// `backspace` already worked in `char`s for the same reason (a byte
     /// truncation of a multi-byte character is a panic in Rust, not mojibake),
     /// so this is that decision applied consistently rather than a new one.
     ///
     /// The cost is that every operation is O(n) in the draft's length. A draft
-    /// is one show operator - a cell, a label, a line of a note - so n is tens
+    /// is one show operator — a cell, a label, a line of a note — so n is tens
     /// of characters, and the alternative is a byte index plus a boundary check
     /// at every call site.
     pub caret: usize,
@@ -450,13 +434,12 @@ pub struct Draft {
     /// different answer, and two fields called anchor in one struct is how a
     /// wrong one gets read.
     ///
-    /// # The defect this field is
+    /// # Why the field exists at all
     ///
-    /// `OPERATOR_REQUESTS.md` O14 item 11, from the conventions sweep of
-    /// 2026-08-20: *"no selection inside a draft — no Shift+arrow, no Ctrl+A,
-    /// no drag-select."* Every text field the operator has ever used has all
-    /// three, and without them replacing a word means pressing Backspace once
-    /// per character.
+    /// `OPERATOR_REQUESTS.md` O14 item 11: *"no selection inside a draft — no
+    /// Shift+arrow, no Ctrl+A, no drag-select."* Every text field the operator
+    /// has ever used has all three, and without them replacing a word means
+    /// pressing Backspace once per character.
     ///
     /// ★ **It is cleared by any un-shifted movement**, which is what makes a
     /// selection feel like a selection rather than a mode. That rule lives in
@@ -478,13 +461,14 @@ pub struct Draft {
 /// the whole difference from the old shell, which set a boolean and stopped
 /// responding to the keyboard.
 ///
-/// ★★ **`SpansRuns` was the third variant and is gone as of 2026-08-19.** It
-/// refused every click whose visual line was made of more than one show
-/// operator, which on a CAD sheet is nearly every click — see [`resolve_run`]
-/// for the measurement and for why the refusal was answering a question about
-/// the *line* when the operator was editing a *run*. The two that are left are
-/// both genuine absences of a thing to edit: no text under the pointer, and no
-/// readable text on the page at all.
+/// ★★ **There is no variant for "the line is made of several runs"**, and
+/// there must not be: on a CAD sheet that describes nearly every click, and it
+/// answers a question about the *line* when the operator is editing a *run*.
+/// `place::resolve_run` carries the measurement. That case is a disclosure —
+/// `text::textedit::shares_the_line_note` — not a refusal.
+///
+/// Every variant here is a genuine absence of a thing to edit, or a run that
+/// nothing could be typed into.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Refusal {
     /// The click landed on no text at all.
@@ -492,80 +476,31 @@ pub enum Refusal {
     /// The page's text could not be extracted (an image-only page, a damaged
     /// content stream).
     NoText,
-    /// ★★ **The run is real, readable, and inside a form XObject — which
-    /// `pdfcer-core`'s text-edit surgery does not enter.** 2026-08-20.
+    /// ★★ **The run is real and readable, and it covers no show operator the
+    /// surgery could anchor on** — its glyphs come from `/ActualText`, which
+    /// supplies the text without drawing it.
     ///
-    /// # Why this variant had to exist, and what it replaced
+    /// This is not *"out of reach"*; it is *"there is nothing to reach for"*,
+    /// and the engine carries it as its own [`Editability::NoAnchor`] variant
+    /// precisely so a shell can say something different about it. The shell
+    /// asks that predicate rather than modelling the surgery's internals — a
+    /// guard built here out of what the engine happens not to support yet is a
+    /// workaround that goes on refusing after the support lands.
     ///
-    /// Nothing. The click was accepted, a caret was placed, keystrokes were
-    /// taken, a plan was built, and the engine then refused the commit with
-    /// *"text to edit (\"p\") was not found in an editable run on the page"* —
-    /// **to the trace only**. The operator saw a caret that took their typing
-    /// and threw it away in silence. Their words:
+    /// # Why refusing at the click rather than at the commit
     ///
-    /// > *"Still no editing text on top of the canvas."*
-    ///
-    /// # The mechanism, because it is not obvious from either side
-    ///
-    /// `GlyphProvenance` carries two fields and the shell was reading one:
-    /// `operator_span` is a **byte span into a decoded content buffer**, and
-    /// `content_stream` names *which* buffer. For text drawn by the page's own
-    /// stream the two agree with what the edit surgery walks. For text inside a
-    /// `Do`-invoked form XObject the span indexes the FORM's bytes, and
-    /// `pdfcer-core`'s `find_anchor` compares it against page-stream offsets —
-    /// where it can never match. Worse, a pinned request skips the text search
-    /// entirely, so the loop exhausts and reports `NoMatch(find)`, which blames
-    /// the operator's text for a failure of the pin.
-    ///
-    /// # Why refusing is better than trying
-    ///
-    /// Because the attempt **cannot** succeed — this is a named non-goal of
-    /// that cut of the engine (`pdfcer-core/src/text_edit/edit.rs:79`) — and a
-    /// control that accepts input it will discard is this project's defining
-    /// defect class. An honest refusal at the click costs the operator one
-    /// click; the silent version cost them a sentence they had already typed
-    /// and the belief that the feature works.
-    ///
-    /// ★ **On a CAD sheet this is the common case, not an edge case.** Measured
-    /// on the benchmark drawing: 1,696 show operators of real drawing text
-    /// inside the form, against 3,007 metadata glyphs in the page stream. Filed
-    /// as an engine request the same day.
-    ///
-    /// # ★★★ AND IT IS GONE, 2026-08-20 — `Pass 119.0` shipped form editing
-    ///
-    /// The variant above is **deleted**, not deprecated, and everything written
-    /// about it is kept because the *shape of the episode* is the durable part.
-    /// `Editability::InsideForm` is `#[deprecated]` in the engine and never
-    /// returned; `edit_text` resolves a target stream and reaches form content
-    /// as one undoable command.
-    ///
-    /// ★ **The reason this cost one deletion instead of an investigation** is
-    /// the argument this project made when it filed the request:
-    ///
-    /// > *"my shell encodes a fact about your surgery's internals. The day form
-    /// > editing lands, my guard silently keeps refusing until I notice and
-    /// > delete it — a workaround that outlives its bug, which is decision
-    /// > 058's exact failure mode."*
-    ///
-    /// The engine's answer was to publish `TextRun::editability()` so the shell
-    /// asked pdfcer rather than modelling it. When the capability landed, the
-    /// predicate started answering `Editable` and **a `#[deprecated]` attribute
-    /// pointed at the one line to remove.** That is the whole value of not
-    /// hand-rolling a guard, demonstrated end to end inside two days.
-    ///
-    /// # What replaces it, and it is a genuinely different fact
-    ///
-    /// A run whose glyphs come from `/ActualText` covers **no show operators of
-    /// its own**, so there is nothing for the surgery to anchor on. That is not
-    /// "out of reach" — it is "there is nothing to reach for", and the engine
-    /// carries it as its own [`Editability::NoAnchor`] variant precisely so a
-    /// shell can say something different about it.
+    /// Because the attempt cannot succeed, and a control that accepts input it
+    /// will discard is this project's defining defect class. Without this, the
+    /// click is accepted, a caret placed, keystrokes taken, a plan built, and
+    /// the engine refuses the commit **to the trace only** — so the operator
+    /// sees a caret that took their sentence and threw it away in silence. An
+    /// honest refusal at the click costs them one click instead.
     ///
     /// [`Editability::NoAnchor`]: pdfcer_core::text_extract::Editability::NoAnchor
     NoAnchor,
     /// ★★★ **The run is real, addressable, and its font can spell nothing at
     /// all** — so the caret declines to open rather than open and refuse every
-    /// key. `Pass 280.0`, 2026-09-09.
+    /// key.
     ///
     /// # The engine built this distinction because this shell asked for it
     ///
@@ -610,11 +545,10 @@ pub enum Refusal {
 /// ★★★ **Is the operator composing text ANYWHERE?** The one predicate, asked in
 /// one place.
 ///
-/// # This function exists because the answer was written twice and one copy was
-/// # wrong
+/// # Two claimants, one predicate
 ///
-/// Two claimants have to be asked about, because this shell composes text in
-/// two different places:
+/// This shell composes text in two different places, and both have to be asked
+/// about:
 ///
 /// 1. [`egui::Context::text_edit_focused`] — a real `egui::TextEdit`: a form
 ///    field, the page-number box, a dialog's box, the Find bar. **D1's
@@ -626,26 +560,22 @@ pub enum Refusal {
 ///    cannot do). **egui therefore reports no focused text field for an
 ///    operator who is visibly mid-word.**
 ///
-/// `app::keyboard` asked both. `canvas::tool::arm::space_held` asked only the
-/// first — and the space bar is the hand tool's modifier, so **an operator
-/// typing on the canvas could not type a space.** They got a pan instead. The
-/// operator, 2026-08-20: *"it doesn't accept spaces. Like how?"*
+/// A call site that asks only the first is **defect D1 one rung along**: D1 was
+/// `egui_wants_keyboard_input()` where `text_edit_focused()` was meant; this is
+/// `text_edit_focused()` where *"anybody is composing"* was meant. Same shape,
+/// same invisibility to a harness that builds a bare `Context` with no draft in
+/// it, same silent loss of a key the operator is plainly pressing — the space
+/// bar is the hand tool's modifier, so an operator typing on the canvas gets a
+/// pan instead of a space. The operator: *"it doesn't accept spaces. Like how?"*
 ///
-/// That is **defect D1 one rung along**: D1 was `egui_wants_keyboard_input()`
-/// where `text_edit_focused()` was meant; this is `text_edit_focused()` where
-/// *"anybody is composing"* was meant. Same shape, same invisibility to a
-/// harness that builds a bare `Context` with no draft in it, same silent loss
-/// of a key the operator is plainly pressing.
-///
-/// The lesson is not "be careful". It is that **a predicate with two claimants
-/// must exist once**, and `tools/gates/check-typing-guard.sh` now fails the
-/// build on any bare `text_edit_focused()` outside this function.
+/// ⇒ **A predicate with two claimants must exist once**, and
+/// `tools/gates/check-typing-guard.sh` fails the build on any bare
+/// `text_edit_focused()` outside this function.
 ///
 /// # Why "is a draft in flight" and not "is a caret tool armed"
 ///
 /// An armed tool that has not been clicked yet owns no keystrokes — the page
-/// keys must keep working right up until the caret is placed. Carried over from
-/// `app::keyboard`, where it was already right.
+/// keys must keep working right up until the caret is placed.
 #[must_use]
 pub fn composing(ctx: &egui::Context) -> bool {
     ctx.text_edit_focused() || read(ctx).is_some()
@@ -775,11 +705,11 @@ pub(super) fn commit_into(
 ///
 /// When the engine refuses a commit because the run's font has no code for the
 /// character just typed, the shell offers a face that carries it
-/// (`panels::properties::refusedchar`). Taking that offer used to be **two**
-/// gestures: the face swap, and then clicking back into the text and typing the
-/// character a second time — because `Ctrl+Enter` calls `commit_into` and then
-/// `abandon` unconditionally, so by the time the offer is on screen the draft
-/// the operator wrote is gone.
+/// (`panels::properties::refusedchar`). Taking that offer must be **one**
+/// gesture, and cannot be without this: `Ctrl+Enter` calls `commit_into` and
+/// then `abandon` unconditionally, so by the time the offer is on screen the
+/// draft the operator wrote is gone — leaving them to click back into the text
+/// and type the character a second time.
 ///
 /// The replacement text is the one operand of the retry that cannot be recovered
 /// from anywhere else: the page still holds the *original* words (the refusal
@@ -794,8 +724,8 @@ pub(super) fn commit_into(
 /// **inside** `vector_edit`'s closure in `app::actions::apply`, where the only
 /// things in scope are the session and the engine's error. Widening its
 /// parameter list means widening the router's call, and `app/actions/apply.rs`
-/// is a file whose whole job is to route — it decides nothing, and it stands a
-/// few dozen lines under R2's 1,500-line ceiling.
+/// is a file whose whole job is to route: it decides nothing, and an operand it
+/// carries only to hand on is a decision it would then appear to have made.
 ///
 /// More importantly the datum is not the router's. *What this edit is trying to
 /// write* is a fact about the edit, and [`plan`] is the one function that has
@@ -896,7 +826,7 @@ mod tests {
     /// ★★★ **A box draft commits as a WRAPPED PARAGRAPH, and carries its
     /// rectangle.**
     ///
-    /// The operator, 2026-08-21: *"I should be able to make it multi line."*
+    /// The operator: *"I should be able to make it multi line."*
     ///
     /// Asserted through the ACTION rather than through the engine, because the
     /// action is where this shell's decision lives: `wrap: Some(..)` is what

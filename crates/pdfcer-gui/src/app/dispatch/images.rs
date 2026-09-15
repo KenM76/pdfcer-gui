@@ -3,14 +3,14 @@
 //!
 //! ## Why this is a module and not a match arm
 //!
-//! Because it is a **sequence**, not a verb. `edit.insert_image` is four steps
-//! before anything is drawn — pick a file, read it, import it, and then either
-//! refuse it or open a window — and a ninety-line sequence inside a `match` arm
-//! is precisely how `super`'s file crossed 1,500 lines.
+//! Because it is a **sequence**, not a verb. `edit.insert_image` is several
+//! steps before anything is drawn — pick a file, read it, import it, and then
+//! either refuse it or open a window — and a sequence that long inside a
+//! `match` arm is unreadable among arms that are one line each.
 //!
 //! It sits beside [`super::pages`], which is here for the same reason: that
-//! module holds six ids whose bodies share an operand rule, and this one holds
-//! one id whose body is longer than most tabs.
+//! module holds the Pages tab's ids, whose bodies share an operand rule, and
+//! this one holds a single id whose body is longer than most tabs.
 //!
 //! ## ★ Why the import happens BEFORE the window opens
 //!
@@ -64,23 +64,16 @@ pub(super) fn insert(dialogs: &mut DialogsState, status: &Status) {
 /// # ★★ Why this is split out of [`insert`]
 ///
 /// Because a **dropped** image has already answered the question `insert`'s
-/// first line asks. The picker and the import were one function until
-/// 2026-08-19, so drag-and-drop could not reuse the second half without opening
-/// a file dialog over a file the operator had already chosen — which is the
-/// shape of thing that gets built as a duplicate instead.
+/// first line asks. Fused with the picker, drag-and-drop could not reach the
+/// import without opening a file dialog over a file the operator had already
+/// chosen — which is the shape of thing that gets built as a duplicate instead.
 ///
 /// One import, one set of disclosures, one placement window, two doors. The
 /// alternative is two code paths that agree today and disagree the first time
 /// one of them learns something.
 pub(crate) fn insert_path(dialogs: &mut DialogsState, status: &Status, path: &std::path::Path) {
-    // Read and import on this thread. A drawing's logo is a few
-    // kilobytes and a site photograph is a few megabytes; the
-    // decode is milliseconds either way, and a worker would need a
-    // channel, a pending state and a way to say the operator
-    // changed their mind — machinery for a wait nobody notices.
-    // A SCAN at 600 dpi is the case that would justify it, and it
-    // is the case to re-measure before building it rather than the
-    // case to assume.
+    // Read and import on this thread — see the module header for why a worker
+    // would be machinery for a wait nobody notices.
     let outcome = std::fs::read(path)
         .map_err(|e| e.to_string())
         .and_then(|bytes| pdfcer_core::image_import::import(&bytes).map_err(|e| e.to_string()));

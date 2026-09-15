@@ -1,25 +1,14 @@
 //! # `canvas::measure::pick` — the measure tools' pick state machines
 //!
-//! **Salvaged** from the old shell's `measure_tool.rs`
-//! (`D:\Dev\pdfce\crates\pdfce-gui\src\measure_tool.rs`, Pass 12.M2b). That
-//! file was 2,044 lines and breaks this project's R2 limit whole, so it was
-//! split along **its own section banners** rather than at an invented seam:
-//! the pick machines land here, the scale-entry and dimension-group model in
-//! [`super::scale`], and the tool-entry container in [`super::state`]. The
-//! reasoning below is the original's, carried across intact, because the doc
-//! comments are the part of the old GUI worth the most.
+//! The **pure, GUI-free authoring-state logic** the three measure tools drive
+//! on the canvas (decision 011 §2.3/§2.4): the pick state machines and the
+//! circular fit-set. The scale-entry and dimension-group model lives in
+//! [`super::scale`], the tool-entry container in [`super::state`].
 //!
-//! The **pure, GUI-free authoring-state logic** the three Pass 12.M2 measure
-//! tools drive on the canvas (`docs/ui_specs/pass-12.M2-dimension-tools.md`,
-//! decision 011 §2.3/§2.4). Pass 12.M2 shipped the dimensioning *engine* +
-//! `pdfcer` (`c7c1744`); the old GUI shipped the "Measure ▾" menu, the three
-//! `CanvasTool` variants, the 12.M1 snap-indicator primitives, and a status
-//! overlay — but **not** the click-to-author interaction. This module is that
-//! missing slice's testable heart: the pick state machines and the circular
-//! fit-set, all expressed over `pdfcer-core` types (never egui), so every
-//! transition is unit-tested here without a live frame — the same discipline
-//! that keeps [`crate::canvas`]/[`crate::viewer`] headlessly testable while
-//! `main.rs` stays a thin, compile-and-launch-only shell.
+//! Everything here is expressed over `pdfcer-core` types and never over egui,
+//! so every transition is unit-tested without a live frame — the same
+//! discipline that keeps [`crate::canvas`]/[`crate::viewer`] headlessly
+//! testable while `main.rs` stays a thin, compile-and-launch-only shell.
 //!
 //! ## What this module owns vs. what the shipped engine owns (REUSE, never reimplement)
 //!
@@ -27,24 +16,23 @@
 //! arithmetic, or storage. Every load-bearing computation is a call into the
 //! already-shipped `pdfcer-core::dimension` / `pdfcer-core::vector`:
 //!
-//! - [`constrained_second_point`] / [`measured_length`] (12.M1) — the H/V/
-//!   aligned projection and the measured page-space length.
-//! - [`fit_circle_taubin`] (12.M2) — the best-fit circle over a sample set.
-//! - [`author_from_two_lines`] (`Pass 68.0`) — the entire reading of a picked
-//!   PAIR of lines: parallel-vs-angled, which of the four angles, whether the
-//!   apex is virtual, whether the pair is collinear and must be refused.
-//!   (Listed here rather than in the old header's four bullets only because
-//!   `Pass 68.0` post-dates them; the rule it obeys is the same one.)
-//! - [`DimensionKind`] (12.M2) — the immutable geometry the GUI hands to
+//! - [`constrained_second_point`] / [`measured_length`] — the H/V/aligned
+//!   projection and the measured page-space length.
+//! - [`fit_circle_taubin`] — the best-fit circle over a sample set.
+//! - [`author_from_two_lines`] — the entire reading of a picked PAIR of
+//!   lines: parallel-vs-angled, which of the four angles, whether the apex is
+//!   virtual, whether the pair is collinear and must be refused.
+//! - [`DimensionKind`] — the immutable geometry the GUI hands to
 //!   `EditSession::add_dimension`, **byte-for-byte the same value the CLI's
 //!   `dimension-add` builds** (`pdfcer` stores `Linear { a: *a, b: *b,
 //!   constraint }` from its two raw `--points`, and `Circular { fit,
 //!   show_diameter }` from `fit_circle_taubin(&pts)` — so this module stores
 //!   the **raw** snapped picks, NOT the constrained projection, matching the
 //!   CLI exactly; the constrained segment is a *display-only* preview,
-//!   ui-spec §2.5). The equivalence tests [`tests::gui_linear_kind_equals_cli_
-//!   linear_kind`] / [`tests::gui_circular_kind_equals_cli_circular_kind`] pin
-//!   this: identical `DimensionKind` ⇒ identical `add_dimension` call ⇒
+//!   ui-spec §2.5). The equivalence tests pin this —
+//!   [`tests::gui_linear_kind_equals_cli_linear_kind`] here, and
+//!   `gui_circular_kind_equals_cli_circular_kind` in [`super::circpick`]:
+//!   identical `DimensionKind` ⇒ identical `add_dimension` call ⇒
 //!   identical additive `/Line`+`/Measure`+`/PieceInfo`+`/OCG` bytes (rule:
 //!   same engine path).
 //!
@@ -63,7 +51,7 @@
 //!   `canvas_selection`), live-refit on every toggle (§3.2), with the
 //!   display-only radius/diameter toggle (§3.4).
 //! - [`LinearPickMode`] + [`TwoLinePick`] — which geometry the linear tool's
-//!   clicks target (`Pass 68.0`): two snapped POINTS, or two picked LINES that
+//!   clicks target: two snapped POINTS, or two picked LINES that
 //!   the engine reads into whichever ce dimension the geometry calls for.
 //! - [`super::scale::ScalePick`] + [`super::scale::ScaleEntryFields`] — draw a
 //!   reference line, then the two co-equal scale-entry paths (real-length
@@ -73,24 +61,6 @@
 //!
 //! Everything is `pdfcer-gui`-internal; `cargo tree -p pdfcer-core` is
 //! unaffected (this module is not in core), and it adds no dependency.
-//!
-//! ## Adaptations made on the way across
-//!
-//! Recorded rather than silently applied, because the next reader will
-//! otherwise wonder whether the original said something different:
-//!
-//! 1. **`CanvasTool::MeasureLinear` is prose, not a doc link.** This shell's
-//!    [`crate::canvas::CanvasTool`] has `Select`, `Hand` and `Markup`; the
-//!    three measure variants land with the canvas hosting. Every place the old
-//!    file linked to that variant now names it in backticks, so the link
-//!    cannot resolve to the wrong thing while it does not exist.
-//! 2. **`GestureInterrupt::Discard` is prose too.** The old shell had a
-//!    `crate::canvas::GestureInterrupt` enum; `grep GestureInterrupt` over this
-//!    crate returns zero hits. The *concept* — a mid-gesture state that is safe
-//!    to throw away — is what those doc comments are about, and it survives.
-//! 3. **Nothing computational changed.** No arithmetic, no transition, no
-//!    engine call was touched. The only edits are module paths and the two
-//!    substitutions above.
 
 use pdfcer_core::dimension::{
     DimensionKind, TwoLineAuthoring, TwoLinePlacement, TwoLineRefusal, author_from_two_lines,
@@ -98,8 +68,8 @@ use pdfcer_core::dimension::{
 use pdfcer_core::vector::linepick::{ParallelPolicy, PickedLine};
 use pdfcer_core::vector::{AxisConstraint, Point, constrained_second_point, measured_length};
 
-/// ★ The circular pick set lives in [`super::circpick`] as of 2026-09-03 (R2),
-/// and is re-exported here.
+/// ★ The circular pick set lives in [`super::circpick`] and is re-exported
+/// here.
 ///
 /// Not a compatibility shim to be deleted: `pick` is the module every measure
 /// tool's pick type is reached through, and a reader looking for "the circular
@@ -133,17 +103,15 @@ pub struct LinearPick {
     /// Point A (page space) once picked; `None` while awaiting the first pick.
     pub first: Option<Point>,
     /// Point B, once picked — the tool is then in its PLACING state, waiting
-    /// for the third click that decides where the dimension is drawn (Pass
-    /// 27.1).
+    /// for the third click that decides where the dimension is drawn.
     ///
     /// # Why a third click
     ///
     /// The operator asked for SolidWorks behaviour, and SolidWorks dimensions
     /// in three: what, to what, and where. The third is not ceremony — it is
-    /// the only chance to say how far off the drawing the dimension sits, and
-    /// without it every dimension lands on top of the geometry it measures and
-    /// has to be dragged off afterwards. pdfcer committed on the second click
-    /// with a zero standoff, which is exactly that.
+    /// the only chance to say how far off the drawing the dimension sits.
+    /// Without it every dimension lands on top of the geometry it measures,
+    /// at a zero standoff, and has to be dragged clear afterwards.
     pub second: Option<Point>,
     /// Whether this pick needs the third, PLACING click.
     ///
@@ -274,10 +242,9 @@ impl LinearPick {
         self.second = None;
     }
 
-    /// Whether a first point is placed (the tool is mid-gesture — a discardable
-    /// gesture, which the old shell modelled as
-    /// `crate::canvas::GestureInterrupt::Discard`; this shell has no such enum
-    /// yet, module docs §"Adaptations").
+    /// Whether a first point is placed — the tool is mid-gesture, and the
+    /// gesture is discardable: nothing has committed, so throwing it away
+    /// costs the operator nothing and needs no confirmation.
     #[must_use]
     pub fn in_progress(&self) -> bool {
         self.first.is_some()
@@ -303,11 +270,11 @@ impl LinearPick {
 }
 
 // ---------------------------------------------------------------------------
-// Two-line pick — select two lines, pdfcer reads what they mean (`Pass 68.0`)
+// Two-line pick — select two lines, pdfcer reads what they mean
 // ---------------------------------------------------------------------------
 
-/// Which geometry the linear measure tool (`CanvasTool::MeasureLinear`)'s next
-/// pick targets (ui-spec `pass-68.0` §1/§2.2).
+/// Which geometry the linear measure tool's next pick targets (ui-spec §1/
+/// §2.2).
 ///
 /// A real change in what a click MEANS: [`Self::Points`] resolves any snap
 /// candidate anywhere on the page, while [`Self::TwoLines`] calls
@@ -318,11 +285,10 @@ impl LinearPick {
 /// # Why this is a mode and not a fourth tool
 ///
 /// Because the operator declares it explicitly, in a control that is visible
-/// the whole time the tool is armed. That is the test pass-46 §1.2 already
-/// applied to `MarkupKind`'s ten kinds: a click's meaning may vary by mode, so
-/// long as it never turns on state the operator cannot see. The full argument,
-/// including why the `AddText`-vs-sub-mode precedent does NOT apply, is on
-/// `CanvasTool::MeasureLinear`.
+/// the whole time the tool is armed. That is the test the canvas already
+/// applies to `MarkupKind`'s ten kinds: a click's meaning may vary by mode, so
+/// long as it never turns on state the operator cannot see. The carried-kind
+/// argument itself is on [`crate::canvas::tool::CanvasTool::Measure`].
 ///
 /// Switching mode discards any in-progress pick first — free, because nothing
 /// has committed.
@@ -339,7 +305,7 @@ pub enum LinearPickMode {
 /// authors the ce dimension the geometry calls for — a LINEAR one between two
 /// parallel lines, an ANGULAR one between two that meet.
 ///
-/// The operator's request, verbatim (2026-08-12): *"dimensioning tool should
+/// The operator's request, verbatim: *"dimensioning tool should
 /// allow the selection of two lines. if those lines are parallel it makes a
 /// linear dimension between them like SolidWorks would, if they are at an
 /// angle it makes an angle dimension."*
@@ -364,27 +330,20 @@ pub enum LinearPickMode {
 ///
 /// `pending` looks like the obvious home — it is already documented as "the
 /// linear tool's completed-but-not-yet-authored dimension". It is the wrong
-/// home, and the reason is a shipped piece of machinery that would break
-/// silently. `PdfcerApp::committable_gesture` reads:
-///
-/// ```text
-/// let measure = doc.active_tool() == Some(CanvasTool::MeasureLinear)
-///     && doc.measure.as_ref().is_some_and(|s| s.pending.is_some());
-/// ```
-///
-/// That is decision 031's commit-on-interrupt path: a completed *two-point*
-/// pick is safe to auto-commit when something else interrupts the gesture,
-/// because nothing about it is inferred — it is exactly what the operator
-/// clicked. The same function deliberately EXCLUDES the circular tool, whose
-/// best fit is inferred.
+/// home, and the reason is decision 031's commit-on-interrupt path. A
+/// completed *two-point* pick is safe to auto-commit when something else
+/// interrupts the gesture, because nothing about it is inferred: it is exactly
+/// what the operator clicked. That is why the rule may be expressed as a bare
+/// "is `pending` populated?" test, and why it excludes the circular tool,
+/// whose best fit is inferred.
 ///
 /// A two-line verdict is inferred in precisely the circular sense:
 /// parallel-vs-angled, which of four angles, whether the apex is virtual. Put
-/// it in `pending` and that `is_some()` check — which cannot tell an ordinary
-/// pick from an inference, having only ever asked whether the field was
-/// populated — would quietly make it interrupt-committable, reopening for this
-/// gesture exactly the hazard decision 031 closed. A sibling field keeps the
-/// existing, already-tested rule correct without teaching it a new distinction.
+/// it in `pending` and a populated-field test — which cannot tell an ordinary
+/// pick from an inference — would quietly make it interrupt-committable,
+/// reopening for this gesture exactly the hazard decision 031 closed. A
+/// sibling field keeps that rule correct without teaching it a new
+/// distinction.
 ///
 /// # ★ Why the verdict is DERIVED on every read instead of cached
 ///
@@ -396,10 +355,10 @@ pub enum LinearPickMode {
 /// settings panel, and moving it re-reads the same two lines into a different
 /// answer (pinned by
 /// [`tests::changing_the_epsilon_setting_re_reads_the_same_pair`]). A cache
-/// listing two of its three producers is the failure mode already recorded in
-/// `D:\dev\rag\egui\a_derived_value_with_one_producer_cannot_drift_a_cached_copy_with_n_producers_will.md`
-/// — found in this very codebase on `recovery_note`, and fixed in `149fd03` by
-/// deleting the cache rather than adding the missing reset site.
+/// listing two of its three producers is the failure mode recorded in
+/// `D:\dev\rag\egui\a_derived_value_with_one_producer_cannot_drift_a_cached_copy_with_n_producers_will.md`,
+/// and the fix it names is deleting the cache rather than hunting for the
+/// missing reset site.
 ///
 /// The recomputation is a few dozen floating-point operations on two stored
 /// segments, so the cache buys nothing and costs a synchronisation obligation.
@@ -414,12 +373,12 @@ pub struct TwoLinePick {
     pub second: Option<PickedLine>,
     /// The operator's **"treat these two lines as parallel"** override.
     ///
-    /// Requested directly (2026-08-12): *"When making or editing a dimension
+    /// Requested directly: *"When making or editing a dimension
     /// of this type, there should be a checkbox option to treat the two lines
     /// as parallel."* It exists because the automatic reading is a GUESS and a
     /// global threshold cannot be right for every pair in a drawing — two
     /// nominally-parallel edges can arrive 0.8° apart from an exporter's
-    /// rounding, and the operator, looking at the part, knows which.
+    /// rounding, and the operator, looking at the part, is the one who knows.
     ///
     /// Ticking it never fakes the measurement: the true angle survives in
     /// [`pdfcer_core::dimension::TwoLineAuthoring::measured_angle_degrees`] so
@@ -567,29 +526,26 @@ const ARC_PREVIEW_STEPS: usize = 24;
 ///
 /// Returns page-space pairs; the caller supplies the projection to screen.
 ///
-/// # ★ The circular arm used to return nothing, and why it no longer does
+/// # ★ Why the circular arm draws the fitted circle
 ///
-/// This paragraph replaced *"empty for `DimensionKind::Circular`, which the
-/// ce-dimension preview does not draw (the circular tool outlines its source
-/// objects instead)"*, which was true and insufficient at the same time. The
-/// outlines say **which objects are in the fit**; they cannot say **what circle
-/// those objects imply**, and the circle is the entire output of the tool. An
-/// operator looking at three outlined arcs has no way to tell a fit that lands
-/// on their hole from one that has caught a leader line and bulged — the
-/// residual is a number nobody sees until the dimension is on the page.
+/// Outlining the picked objects says **which objects are in the fit**; it
+/// cannot say **what circle those objects imply**, and the circle is the
+/// entire output of the tool. An operator looking at three outlined arcs has
+/// no way to tell a fit that lands on their hole from one that has caught a
+/// leader line and bulged — the residual is a number nobody sees until the
+/// dimension is on the page.
 ///
-/// So the circle is drawn, and it is drawn **from here** rather than from a
-/// loop in the canvas hosting, for this function's own stated reason one
-/// paragraph up: the fit is an *inference*, and rule 4's pre-commit affordance
-/// only means anything if what is previewed is derived from what will be
-/// committed. `canvas::measure::preview` hands this the identical
-/// `DimensionKind` that `circular::commit` raises on the action — so the circle
-/// on screen and the circle in the file are one derivation, not two that agree.
+/// The circle is drawn **from here** rather than from a loop in the canvas
+/// hosting, for this function's own stated reason one paragraph up: the fit is
+/// an *inference*, and a pre-commit affordance only means anything if what is
+/// previewed is derived from what will be committed.
+/// `canvas::measure::preview` hands this the identical `DimensionKind` that
+/// `circular::commit` raises on the action — so the circle on screen and the
+/// circle in the file are one derivation, not two that agree.
 #[must_use]
 pub fn dimension_preview_segments(kind: &DimensionKind) -> Vec<(Point, Point)> {
-    // ★★ The PERIMETER arm, 2026-08-20, and it is the shortest in this
-    // function for a reason worth stating: **a perimeter's notation is its own
-    // shape.**
+    // ★★ The PERIMETER arm is the shortest in this function for a reason
+    // worth stating: **a perimeter's notation is its own shape.**
     //
     // Every other kind here draws something that is not the geometry — a
     // dimension line standing off the drawing with witness lines reaching back
@@ -733,14 +689,12 @@ mod tests {
 
     // ---- LinearPick A→B state machine (ui-spec §2.1) --------------------
 
-    /// **Three clicks: what, to what, WHERE** (Pass 27.1).
+    /// **Three clicks: what, to what, WHERE.**
     ///
-    /// This test previously asserted that the SECOND click authored and reset.
-    /// It changed because the operator asked for SolidWorks behaviour, and
-    /// SolidWorks dimensions in three steps — the third is what says how far
-    /// off the drawing the dimension sits. Committing on the second click
-    /// meant every ce dimension landed on top of the geometry it measured,
-    /// with a zero standoff, and had to be dragged clear afterwards.
+    /// SolidWorks dimensions in three steps, and the third is what says how
+    /// far off the drawing the dimension sits. Committing on the second click
+    /// would land every ce dimension on top of the geometry it measures, at a
+    /// zero standoff, to be dragged clear afterwards.
     #[test]
     fn linear_pick_needs_a_third_placing_click_then_resets() {
         let mut lp = LinearPick::new();
@@ -869,7 +823,7 @@ mod tests {
         let b = p(216.0, 144.0);
         let constraint = AxisConstraint::Horizontal;
 
-        // GUI path: two snapped picks, then the Pass 27.1 placing click.
+        // GUI path: two snapped picks, then the placing click.
         // Placed at the midpoint of the measured line, which is the NEUTRAL
         // placement — zero standoff, centred text — so this test still compares
         // the two paths' DEFAULTS rather than accidentally comparing a placed
@@ -893,7 +847,7 @@ mod tests {
         assert_eq!(gui_kind, cli_kind);
     }
 
-    // ---- Two-line pick (`Pass 68.0`) ------------------------------------
+    // ---- Two-line pick ---------------------------------------------------
 
     /// A picked line with its pick point at the midpoint.
     fn picked(sx: f64, sy: f64, ex: f64, ey: f64) -> PickedLine {
@@ -1101,7 +1055,7 @@ mod tests {
         );
     }
 
-    // ---- Shared ce-dimension preview shape (`Pass 68.0`) ----------------
+    // ---- Shared ce-dimension preview shape -------------------------------
 
     /// A linear ce dimension previews as its dimension line plus two extension
     /// lines — three segments, the same three the placement drag draws.
@@ -1185,16 +1139,11 @@ mod tests {
     /// ★ **A circular preview is the fitted circle itself**, and every point
     /// of it lies on that circle.
     ///
-    /// This test used to assert the opposite — that the circular arm returned
-    /// nothing. It changed when the radius/diameter tool was armed, because the
-    /// outlines of the picked objects say which arcs are in the fit and cannot
-    /// say what circle they imply, and the circle is the tool's entire output.
-    ///
     /// The assertion is on the **radius of every drawn point**, not on the
-    /// segment count: a count would be satisfied by twenty-four segments of any
-    /// shape at all, which is the *"a test that checks a relation rather than a
-    /// magnitude"* trap `HANDOFF.md` §2 names. A circle drawn at the wrong
-    /// radius, or centred on the origin instead of on the fit, fails here.
+    /// segment count: a count would be satisfied by twenty-four segments of
+    /// any shape at all, which is the trap of checking a relation rather than
+    /// a magnitude. A circle drawn at the wrong radius, or centred on the
+    /// origin instead of on the fit, fails here.
     #[test]
     fn a_circular_preview_is_the_fitted_circle() {
         const R: f64 = 10.0;
@@ -1237,9 +1186,8 @@ mod tests {
 
         // ★ …and the diameter draws the SAME circle with the mark across it.
         // `show_diameter` is a display toggle on one fit, so a build that
-        // re-fitted or re-sized for it would be committing decision 011's
-        // mistake — and an operator toggling between the two would see the
-        // circle move.
+        // re-fitted or re-sized for it would contradict decision 011 — and an
+        // operator toggling between the two would see the circle move.
         let dia = dimension_preview_segments(&DimensionKind::Circular {
             fit,
             show_diameter: true,

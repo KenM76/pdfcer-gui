@@ -4,25 +4,20 @@
 //!
 //! # The defect class this exists for
 //!
-//! `SALVAGE.md`'s salvage procedure has six steps, and step 5 is the one this
-//! file discharges:
+//! R1: a UI change is done when it has been asserted against the running
+//! binary, not when a test passes. A green unit test is the floor.
 //!
-//! > **Assert it in `ui-verify` before calling it done (R1). A green unit test
-//! > is the floor.**
-//!
-//! The measure salvage landed with 36 carried tests, all green, including two
-//! that prove a canvas-authored `DimensionKind` is byte-for-byte the one
+//! The measure feature carries dozens of unit tests, including two that prove
+//! a canvas-authored `DimensionKind` is byte-for-byte the one
 //! `pdfcer dimension-add` builds. Every one of them runs without a window.
 //! None of them can state that a ribbon click arms the tool, that a click on
 //! the page becomes a pick, that the third pick raises an action, or that the
 //! action reaches the engine — because each of those is a property of a **call
 //! site**, and a call site's effect is observable only in a running process.
 //!
-//! `SALVAGE.md`'s own correction of 2026-08-14 is the cautionary half of the
-//! same story: five documents said the two-line gesture "has no caller" while
-//! it had had one for two days, because *a status word in a table is a claim,
-//! and it decays*. This check is the opposite of a status word. It is six
-//! links, driven in order, through the operating system:
+//! A status word in a table is a claim, and it decays. This check is the
+//! opposite of a status word: six links, driven in order, through the
+//! operating system.
 //!
 //! | # | Link | Where | Its own test |
 //! |---|---|---|---|
@@ -66,18 +61,11 @@
 //!
 //! # What it does, through the operating system
 //!
-//! Mouse only, and nothing below needs a key:
-//!
-//! ★ **CORRECTED 2026-08-18.** These headers used to say synthetic keyboard
-//! input does not reach the target window on this machine. It DOES — see
-//! [`crate::checks::add_text`], which types real characters into a caret
-//! draft and asserts they landed. The belief came from `Ctrl+E` producing no
-//! trace, which was the dead-keymap defect (fourteen of twenty-one declared
-//! chords were dispatched by nothing) misread as a property of the machine —
-//! and while it stood nobody drove a chord, so nothing could contradict it.
-//!
-//! To restate the reason this check is mouse-only: a linear dimension is three
-//! clicks, and *that is the feature*.
+//! Mouse only, because a linear dimension is three clicks and *that is the
+//! feature*. Synthetic keyboard input does reach the target window — see
+//! [`crate::checks::add_text`], which types real characters into a caret draft
+//! and asserts they landed — so this check being mouse-only is a statement
+//! about the gesture, not about the harness.
 //!
 //! 1. Click the **Review** mode segment. Measure is in Review's and Edit's tab
 //!    lists and not in Read's, and Read is the default, so without this step
@@ -101,11 +89,11 @@
 //!
 //! The second is genuinely necessary: an armed measure tool is invisible from
 //! outside the process. A crosshair is a cursor, and a screenshot of an armed
-//! canvas and an unarmed one are the same picture — `HANDOFF.md`'s defect 8
-//! exactly, the grid that was a wash, found by printing the ladder the running
-//! program had chosen rather than by looking at it. `canvas::measure`'s own
-//! comment above the `measure-pick` line makes the same point about picks:
-//! *"a first pick and a second are the same screenshot."*
+//! canvas and an unarmed one are the same picture, so the only way to see the
+//! arm is to have the running program print what it chose.
+//! `canvas::measure`'s own comment above the `measure-pick` line makes the
+//! same point about picks: *"a first pick and a second are the same
+//! screenshot."*
 //!
 //! ## Pixel evidence — that the control renders pressed
 //!
@@ -190,11 +178,10 @@
 //!
 //! `measure-snap-cycle index=N` reports the operator choosing *"the other
 //! candidate"* between an endpoint and the midpoint a few pixels from it. It is
-//! driven by <kbd>Tab</kbd>, and this check has never asserted it. It is named
+//! driven by <kbd>Tab</kbd>, and this check does not assert it. It is named
 //! rather than omitted so the gap is on the record: **the snap cycle is covered
-//! by unit test alone.** ★ The reason given here used to be that keyboard input
-//! could not be sent; that was false (see the correction below), so this gap is
-//! now simply unwritten work rather than a limitation.
+//! by unit test alone.** Nothing prevents driving it — synthetic keys reach the
+//! window — so this is unwritten work rather than a limitation.
 //!
 //! ## Document evidence — that the engine accepted it
 //!
@@ -268,11 +255,12 @@ const SUBJECT_ID: &str = "measure.linear";
 /// **The control that must NOT change** — the sibling in the same group,
 /// drawn by the same code, in the same capture, on the same frame.
 ///
-/// `measure.two_line` rather than `measure.radius_diameter` for a reason worth
-/// stating: two-line is a *registered and dispatching* command (`SALVAGE.md`'s
-/// Phase 7 entry), so a build where it vanished from the band would be news in
-/// its own right, whereas radius/diameter is one of the three decisions
-/// `HANDOFF.md` §8 records as still open and could legitimately move.
+/// The sibling has to be a control that is enabled and unpressed for as long
+/// as Linear is armed, so the Dimension group's `measure.finish` cannot serve:
+/// it is `enabled_when("measure.finishable")` and is greyed except mid-fit,
+/// and a greyed control is not a stable "unchanged" half of a differential.
+/// `measure.two_line` is a registered, dispatching tool in the same group, so
+/// its absence from the band fails the check loudly rather than silently.
 const SIBLING: &str = "ribbon.item.measure.two_line";
 
 /// Where the pointer is parked before each capture.

@@ -146,7 +146,7 @@ impl Frame {
 
     /// The label a click announced, if a click was announced.
     ///
-    /// # ★ Why the *last* one
+    /// # Why the *last* one
     ///
     /// One click produces **two** `OutputEvent::Clicked`. `egui::Button`
     /// publishes its own default info from inside `atom_ui` — the atoms
@@ -283,7 +283,7 @@ fn click_events(at: Pos2, button: PointerButton) -> Vec<Event> {
 /// Frame 1 (lay the target out), frame 2 (right-click it), frame 3 (let
 /// the popup settle), and return what frame 3 drew.
 ///
-/// # ★ Why the settle frame is not optional
+/// # Why the settle frame is not optional
 ///
 /// An `egui::Area` that has never been shown runs a **sizing pass**: it is
 /// laid out invisibly, at a provisional size, purely to measure its
@@ -315,7 +315,7 @@ pub(super) fn open_menu(ctx: &egui::Context, scene: &mut Scene<'_>) -> Frame {
 // The invariant the whole module exists for
 // =====================================================================
 
-/// **★ Right-clicking something with nothing to offer does nothing.**
+/// **Right-clicking something with nothing to offer does nothing.**
 ///
 /// Not "opens and closes", not "flashes", not "shows three greyed rows" —
 /// nothing. The menu here is the real one; the only difference from the
@@ -372,7 +372,7 @@ fn right_clicking_something_with_one_enabled_command_opens_a_menu() {
     );
 }
 
-/// **★ An open menu closes when its offer evaporates.**
+/// **An open menu closes when its offer evaporates.**
 ///
 /// The half of decision 1 that is easy to leave out. `egui` remembers a
 /// popup as open in memory, not by whether anyone drew it — so a renderer
@@ -425,7 +425,7 @@ fn right_clicking_a_context_with_no_menu_does_nothing() {
 // What gets drawn
 // =====================================================================
 
-/// **★ Disabled is drawn; unregistered is not.**
+/// **Disabled is drawn; unregistered is not.**
 ///
 /// The rendered half of [`super::plan`]'s rule 1. `edit.paste` is
 /// registered and its predicate is false, so it is a row; `edit.rasterize`
@@ -499,7 +499,7 @@ fn the_icon_painter_is_asked_for_each_row_that_has_an_icon() {
     );
 }
 
-/// **★★★ A painted icon slot publishes its rectangle, and a blank one does
+/// **A painted icon slot publishes its rectangle, and a blank one does
 /// not.**
 ///
 /// The only signal a *driven* check has on this surface, and the reason it
@@ -508,9 +508,7 @@ fn the_icon_painter_is_asked_for_each_row_that_has_an_icon() {
 /// holds a blank, or does not exist. The QAT's trick — an icon-only
 /// control is square and a text button is a word wide — has no menu
 /// equivalent, so without this name a harness cannot tell an application
-/// that wired an icon painter from one that did not. Which is exactly the
-/// state this project shipped in, undetectably, for the whole life of the
-/// menu engine.
+/// that wired an icon painter from one that did not.
 ///
 /// The fixture is the mixed case on purpose: `edit.cut` has a key and the
 /// other three do not, so the menu reserves a column and three rows draw a
@@ -569,7 +567,7 @@ fn only_a_painted_icon_slot_publishes_a_rectangle() {
 // The seam
 // =====================================================================
 
-/// **★ Choosing a row reports a token and runs nothing.**
+/// **Choosing a row reports a token and runs nothing.**
 ///
 /// The seam, end to end: the shell hands back
 /// [`crate::commands::HandlerToken`] and the application dispatches. There
@@ -670,7 +668,7 @@ fn a_menu_whose_only_offer_is_a_custom_row_opens() {
 // Accessibility, observed
 // =====================================================================
 
-/// **★ A screen reader hears the label *and* the chord.**
+/// **A screen reader hears the label *and* the chord.**
 ///
 /// [`super::a11y`] argues from `egui` 0.35's source that the chord has
 /// nowhere else to go. This is the end-to-end proof: click Copy and read
@@ -725,7 +723,7 @@ fn a_row_with_no_binding_announces_its_label_alone() {
 // Customization, end to end
 // =====================================================================
 
-/// **★ An operator's customization reaches the screen.**
+/// **An operator's customization reaches the screen.**
 ///
 /// The claim `SHELL_FRAMEWORK.md` §1 makes for the whole design — *"the
 /// shell is data … not code that has to be recompiled to change"* —

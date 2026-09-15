@@ -1,17 +1,10 @@
 //! # `panels::comments` — every annotation on this document, listed
 //!
-//! The comment list a reviewer works through. Salvaged from the old shell's
-//! `main.rs:7028-7060` (`fn comments_panel`), whose **exclusion reasoning is
-//! settled law** and is carried across below with its argument rather than as
-//! a code snippet.
+//! The comment list a reviewer works through. The classification lives in
+//! [`model`]; this file is the drawing, the disclosures and the actions the
+//! panel can raise.
 //!
-//! The classification lives in [`model`]; this file is the drawing, the
-//! disclosures and the one action the panel can raise.
-//!
-//! ## ★ What it deliberately excludes, decided by exclusion first
-//!
-//! Straight from the old shell, and the wording is kept because the wording is
-//! the decision:
+//! ## What it deliberately excludes, and why each exclusion is safe
 //!
 //! - **`/Widget`** — form fields have their own first-class surface (the Forms
 //!   panel). `Annotation::is_widget()` already exists as the exact predicate;
@@ -22,43 +15,33 @@
 //!   *"shall not appear alone but is associated with a markup annotation, its
 //!   parent annotation."*
 //! - **ce dimensions are NOT excluded by type**, and that is worth stating:
-//!   they are `/Line` annotations and so they appear here. The spec excludes
-//!   them conceptually because they have their own home, but excluding them by
-//!   subtype would also hide a genuine `/Line` markup an operator drew.
-//!   Showing them is the lesser wrong, and it is honest — they ARE annotations
-//!   on the document.
+//!   they are `/Line` annotations and so they appear here. They have their own
+//!   home, but excluding them by subtype would also hide a genuine `/Line`
+//!   markup an operator drew. Showing them is the lesser wrong, and it is
+//!   honest — they ARE annotations on the document.
 //!
-//! ### `/TrapNet`, and ★★★ the argument that came BACK on 2026-09-05
+//! ### `/TrapNet`, excluded twice over
 //!
-//! The old shell also excluded **`/TrapNet`**, and its reason was
-//! *delete-shaped*: core refuses a `/TrapNet` deletion by name, so listing one
-//! *"would put a row here whose only possible action is a refusal, which is the
-//! affordance R83 forbids."*
+//! Two independent arguments reach the same exclusion, and either alone would
+//! be enough:
 //!
-//! From 2026-08-14 this header said *"This build has no Delete, so that reason
-//! does not reach"*, and excluded `/TrapNet` on the surviving half of the
-//! argument instead: it is **prepress output state** — the trapping a RIP
-//! applied to the page — so it is not a comment, nobody wrote it, and there is
-//! nothing in it for a reviewer to work through. That is the same shape as the
-//! `/Widget` exclusion: not *"we cannot act on it"* but *"this surface is not
-//! about it."*
+//! - It is **prepress output state** — the trapping a RIP applied to the page.
+//!   Nobody wrote it, it is not a comment, and there is nothing in it for a
+//!   reviewer to work through. That is the same shape as the `/Widget`
+//!   exclusion: not *"we cannot act on it"* but *"this surface is not about
+//!   it."*
+//! - `pdfcer-core` refuses a `/TrapNet` deletion by name, and this panel has a
+//!   Delete, so a row for one would carry a control whose every press is a
+//!   refusal — the affordance R83 forbids.
 //!
-//! **The panel now HAS a Delete** (see below), so the old shell's reasoning is
-//! live again — and, exactly as the paragraph it replaces predicted, *"nothing
-//! needs to change: the row is already absent, for a reason that does not
-//! depend on the button."* Both arguments now hold, independently, for the
-//! same exclusion. Recorded rather than tidied because a prediction that came
-//! true is the cheapest evidence available that the reasoning was sound.
-//!
-//! What the departure buys instead is that **nothing is silently omitted**.
-//! Every exclusion is counted and disclosed by
+//! **Nothing is silently omitted.** Every exclusion is counted and disclosed by
 //! [`crate::text::panels::comments::comments_excluded`], so a reviewer looking
 //! at six rows on a drawing they know carries forty annotations is told the
-//! arithmetic and where each missing kind went. The old shell stated the rule
-//! only on the empty case; this states the numbers on every case.
+//! arithmetic and where each missing kind went. The numbers are stated on every
+//! case, not only on the empty one.
 //!
-//! ★ **A filter is a FOURTH kind of omission**, added 2026-09-05, and it is
-//! disclosed by the same rule — see [`filter`]'s header and
+//! **A filter is a FOURTH kind of omission**, and it is disclosed by the same
+//! rule — see [`filter`]'s header and
 //! [`crate::text::panels::comments::comments_filtered`]. It is the only one
 //! the operator caused, which makes stating it more important rather than
 //! less: an exclusion is a property of the document a reviewer learns once, a
@@ -71,7 +54,7 @@
 //! [`model`]'s header for what that means concretely, and for why there is no
 //! sort by date.
 //!
-//! ## ★ Read the SESSION, not the file on disk
+//! ## Read the SESSION, not the file on disk
 //!
 //! [`body`] hands [`model::collect`] `doc.session.view()` — the base revision
 //! with **every unsaved edit applied**, which is the same thing the canvas
@@ -83,22 +66,18 @@
 //!
 //! [`Action::GoToPage`], from a row's **Go to** control, exactly as
 //! `crate::panels::bookmarks` does; and [`Action::Annot`] carrying
-//! [`AnnotAction::SetNote`], [`AnnotAction::ClearNote`], [`AnnotAction::Delete`]
-//! (2026-09-05) and — since 2026-09-06 — [`AnnotAction::Reply`], which is the
-//! **write half of a surface that had been listening since the day it was
-//! built**: this panel's trace has printed `replies=` from the first frame it
-//! ever drew, and until `EditSession::add_reply` (`Pass 253.0`) there was no
-//! verb that could add to what it was counting. The body is handed `&OpenDoc` — a
-//! **shared** reference, so this is a compile-time fact and not a convention —
-//! it reads, and it pushes. It never touches the document.
+//! [`AnnotAction::SetNote`], [`AnnotAction::ClearNote`],
+//! [`AnnotAction::Delete`] and [`AnnotAction::Reply`]. The body is handed
+//! `&OpenDoc` — a **shared** reference, so this is a compile-time fact and not
+//! a convention — it reads, and it pushes. It never touches the document.
 //!
 //! ⚠ **One thing this panel does write directly, and it is not the document.**
 //! A row's **Go to** also opens that comment's canvas pop-up, through
 //! `crate::canvas::notepopup::open::set`, which is `egui::Memory` — interface
 //! state, per document, never saved.
 //!
-//! ★ Since 2026-09-06 it opens the **thread root's** window rather than the
-//! row's own, resolved by [`model::thread_root`]: the canvas draws no window
+//! It opens the **thread root's** window rather than the row's own, resolved
+//! by [`model::thread_root`]: the canvas draws no window
 //! for a reply, because `add_reply` places one at its parent's own `/Rect` and
 //! a bubble there would cover the comment it answers. See
 //! `canvas::notepopup::model::notes_on`'s exclusion table.
@@ -109,38 +88,24 @@
 //! rule is about the **document**: the thing it protects is the undo stack and
 //! the edit epoch, neither of which a floating window touches.
 //!
-//! ★★ Why it does it at all: jumping to page 14 and leaving the reviewer to
+//! Why it does it at all: jumping to page 14 and leaving the reviewer to
 //! find which of its six clouds the row meant is half a navigation. Acrobat's
 //! Comment pane opens the comment it takes you to, and that is the gesture
 //! being matched.
 //!
-//! ### ★★★ THERE IS A DELETE — 2026-09-05, and the paragraph it replaces was
-//! true when written
+//! ### The row deletes its own comment
 //!
-//! This header said, from 2026-08-14:
+//! Operator, `OPERATOR_REQUESTS.md` O130: *"the review features should look and
+//! act the same as they do in Acrobat Reader."* A reviewer's work list is where
+//! a comment is most naturally removed, and it is the only surface that can
+//! reach a **hidden** one at all.
 //!
-//! > **There is no Delete, and its absence is a decision rather than a gap.**
-//! > […] `crate::app::actions::Action` has no variant that could carry the
-//! > intent and `app/actions.rs` is not this work's to extend. […] What the
-//! > day it lands needs, so nobody re-derives it: one `Action` variant, one
-//! > dispatch arm calling `EditSession::delete_annotation`, and the three
-//! > disclosures `docs/core-api/03-capabilities.md` §3.4 requires.
-//!
-//! **Every one of those existed by the time anybody looked again.**
 //! `crate::app::actions::annot::AnnotAction::Delete { page, id }` is the
-//! variant, `crate::app::actions::apply` is the arm, and
-//! `crate::app::actions::annots::delete` is the body — already reporting the
+//! variant, `crate::app::actions::apply` is the dispatch arm, and
+//! `crate::app::actions::annots::delete` is the body, which reports the
 //! engine's collateral through `crate::text::markup::deleted_collateral`. The
-//! canvas Delete key and the Format tab have both been deleting annotations
-//! through it for weeks. **The reviewer's own work list was the last surface
-//! that could not**, which is precisely backwards.
-//!
-//! It took the operator's report of 2026-09-05 — *"the review features should
-//! look and act the same as they do in Acrobat Reader"* — to send somebody to
-//! re-derive the reason rather than re-read the sentence. ⇒ **The sixth
-//! recurrence in this project of a limitation outliving its cause.** Corrected
-//! in place and dated, here and in `crate::text::panels::comments`' header,
-//! rather than left as two answers.
+//! canvas Delete key and the Format tab reach the same verb, so the three
+//! surfaces cannot disagree about what a deletion does.
 //!
 //! #### What the Delete carries, and where each piece comes from
 //!
@@ -152,9 +117,8 @@
 //! - **"Delete is not redaction"**, in the tooltip, per §3.4 — an incremental
 //!   save leaves the previous revision in the file.
 //! - **The collateral is reported after the call, not predicted before it.**
-//!   The old shell computed a hover preview; this does not, and the reason is
-//!   §3.4's own: the preview *"is not a perfect oracle"* and the real call can
-//!   still refuse. `delete_annotation`'s report names what actually went — a
+//!   §3.4's own reason: a preview *"is not a perfect oracle"* and the real call
+//!   can still refuse. `delete_annotation`'s report names what actually went — a
 //!   `/Popup` removed, replies orphaned, group members promoted — and
 //!   `annots::delete` already surfaces it. One statement of record beats a
 //!   guess before and a fact after that can disagree.
@@ -174,16 +138,16 @@
 //!
 //! | Caption | The inference |
 //! |---|---|
-//! | `comment_row_hidden` | none — this one is a *document fact* the file states and the page therefore cannot show. §3.4.5: *"list it and mark it hidden."* |
+//! | `comment_row_hidden` | none — this one is a *document fact* the file states and the page therefore cannot show, so it is listed and marked hidden |
 //! | `comment_row_appearance_unresolved` | pdfcer chose to paint nothing, under a default core documents as **evidence tier (d), a reasoned guess** |
 //! | `comment_row_is_group_member` | pdfcer shows the raw `/Contents` where §12.5.6.2 says a reader should show the group primary's — so another viewer legitimately disagrees |
 //!
-//! The old shell's Forms panel highlighted a field's rectangle on the page on
-//! hover, and rule 4's fourth clause would permit the equivalent here (a hover
-//! highlight *"is the cursor"*). It is not built, for the same reason that one
-//! was not carried: the mechanism — a channel from a panel to the canvas
-//! overlay — does not exist in this build, and `crate::canvas` is not this
-//! module's to extend. Named rather than silently dropped, and named as a
+//! Highlighting the shape under the hovered row **would be permitted** — rule
+//! 4's fourth clause allows *"a snap indicator, a hover highlight, a
+//! rubber-band, a selection handle — these are the cursor"*. It is simply not
+//! built here, and not for want of a mechanism:
+//! `crate::panels::forms::spotlight` is a panel→canvas channel of exactly that
+//! shape and `crate::canvas::forms` draws what it carries. Named as a
 //! *permitted* affordance so nobody later reads its absence as a rule.
 //!
 //! ## The two layout rules, and which one applies
@@ -196,11 +160,10 @@
 //!    container edge.
 //!
 //! 2. **A fixed-size child inside a scroll area needs the container's width
-//!    stated.** ★ **This panel has no fixed-size child**, so
-//!    [`crate::panels::content_width`] is deliberately not called — and that
-//!    is stated here rather than left to look like an omission, because it is
-//!    the second layout rule and skipping it silently is exactly how the
-//!    Objects panel shipped clipped rows.
+//!    stated.** **This panel has no fixed-size child**, so
+//!    [`crate::panels::content_width`] is deliberately not called — stated here
+//!    rather than left to look like an omission, because skipping the second
+//!    layout rule silently is how a panel ships clipped rows.
 //!
 //!    Every child is a `Label`, which wraps to whatever width it is given, so
 //!    the clamping defect cannot arise: there is nothing whose *requested*
@@ -216,7 +179,7 @@
 //! ## Cost, stated rather than discovered
 //!
 //! [`body`] walks **every page's `/Annots`** every frame, and lays out every
-//! row it finds. Both are the old shell's behaviour and both are bounded —
+//! row it finds. Both are bounded —
 //! `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE` caps the walk, and the walk reads
 //! one array plus one dictionary per annotation rather than decomposing any
 //! content — so on the documents this project measures against
@@ -239,20 +202,20 @@
 //! correctness is entirely arithmetic: a screenshot of this panel cannot tell
 //! you that a widget was excluded, and the trace can.
 
-/// ★ **Narrowing and ordering the work list** — the filter, the sort, and the
-/// disclosure a filtered list owes. Added 2026-09-05 against Acrobat's Comment
-/// pane; its header carries the four things Acrobat offers that this cannot,
-/// and which engine gap each is filed under.
+/// **Narrowing and ordering the work list** — the filter, the sort, and the
+/// disclosure a filtered list owes. Its header carries the four things
+/// Acrobat's Comment pane offers that this cannot, and which engine gap each is
+/// filed under.
 pub mod filter;
 
 /// Turning a document into a comment list — the classification, testable
 /// without a `Ui`.
 pub mod model;
 
-/// ★★★ **A comment's review status** — `/State` and `/StateModel` (§12.5.6.3),
+/// **A comment's review status** — `/State` and `/StateModel` (§12.5.6.3),
 /// read into a per-reviewer history, shown on the row, filtered beside the
 /// sort, and recorded through
-/// `pdfcer_core::edit::EditSession::add_review_state`. Added 2026-09-06.
+/// `pdfcer_core::edit::EditSession::add_review_state`.
 ///
 /// Its header carries the two facts everything in it follows from: a status is
 /// **appended, not set** — the file holds a log rather than a field — and the
@@ -265,13 +228,11 @@ pub mod reviewstate;
 /// that keeps it honest.
 pub mod note;
 
-/// ★★★ **Everything on a row that WRITES** — *Add note*, *Reply*, and the one
-/// text box both of them open. Split out under **R2** on 2026-09-06, when the
-/// reply affordance took this file to 1,757 lines.
-///
-/// Its header carries the seam: this module is **the list**, that one is the
-/// only part of the panel that holds the operator's unfinished words and the
-/// only part whose output is a verb.
+/// **Everything on a row that WRITES** — *Add note*, *Reply*, and the one text
+/// box both of them open. Separate from this file under **R2**, and its header
+/// carries the seam: this module is **the list**, that one is the only part of
+/// the panel that holds the operator's unfinished words and the only part whose
+/// output is a verb.
 mod editor;
 
 use pdfcer_core::object::ObjId;
@@ -295,7 +256,7 @@ use self::note::NoteDraft;
 /// module's own reachability test can assert it, exactly as
 /// `crate::panels::forms` does.
 ///
-/// # ★ Why `markup.comments` and not a `view.panel_*` id
+/// # Why `markup.comments` and not a `view.panel_*` id
 ///
 /// `RIBBON_IA.md` names Comments **twice** and the two placements cannot both
 /// be honoured, because P1 gives a command one tab:
@@ -325,7 +286,7 @@ pub const COMMAND_ID: &str = "markup.comments";
 /// **The region the *Add note* / *Edit note* control publishes** — on the
 /// FIRST row that offers one, and only that row.
 ///
-/// # ★★ Why only the first, when every row draws the control
+/// # Why only the first, when every row draws the control
 ///
 /// A region name is a key. Publishing the same name from thirty rows would
 /// leave the harness clicking whichever one happened to be drawn last, which is
@@ -333,12 +294,10 @@ pub const COMMAND_ID: &str = "markup.comments";
 /// caption. The first row is the one deterministic choice available without
 /// inventing a per-row naming scheme that nothing would consume.
 ///
-/// ⇒ ★★★ This matters because of a finding this project has now made twice:
-/// **a gesture with no driver is a gesture R1 cannot reach**, and the gap
-/// leaves no failing test behind. The canvas context menus went the whole life
-/// of the project unopened by any check because `Driver` had no right-click.
-/// A panel control that published no rect would be the same hole in a quieter
-/// place.
+/// ⇒ **A control with no published rect is a control R1 cannot reach**, and
+/// the gap leaves no failing test behind — the harness simply never presses it,
+/// and nothing goes red to say so. Publishing this one is what keeps the
+/// panel's writing controls drivable.
 pub const REGION_EDIT: &str = "comments.note_edit"; // ui-text-exempt: trace region name, never displayed
 /// The region the open editor's text box publishes. Unique by construction —
 /// one draft, one editor, one box.
@@ -359,7 +318,7 @@ pub const REGION_REPLY: &str = "comments.reply"; // ui-text-exempt: trace region
 /// The region the open reply editor's *Post reply* publishes. Unique by
 /// construction — one draft, one editor, one commit.
 ///
-/// ★ A **separate** name from [`REGION_SAVE`], deliberately. The two controls
+/// A **separate** name from [`REGION_SAVE`], deliberately. The two controls
 /// occupy the same place on the row and reach different engine verbs, so one
 /// shared name would leave a driven check unable to tell *"the note editor is
 /// open"* from *"the reply editor is open"* — which is precisely the pair a
@@ -372,13 +331,9 @@ pub const REGION_POST: &str = "comments.reply_post"; // ui-text-exempt: trace re
 /// The one entry point. Shape and signature match every other panel body — see
 /// [`crate::panels::Panel::show`].
 ///
-/// ## ★ `state` carries one thing, and it is not a selection
+/// ## `state` carries one thing, and it is not a selection
 ///
-/// Until 2026-08-28 this paragraph read *"`state` is unused, and that is a
-/// property of the panel rather than an oversight: it is a pure function of the
-/// document."* That was true for as long as the panel could not write anything.
-///
-/// It now holds a [`note::NoteDraft`] — one annotation's `/Contents` while the
+/// It holds a [`note::NoteDraft`] — one annotation's `/Contents` while the
 /// operator is typing it — and **nothing else**. It is emphatically not a
 /// "selected comment": the draft names one annotation by `ObjId` for the
 /// duration of one edit, and it decides nothing about what the canvas outlines,
@@ -387,15 +342,13 @@ pub const REGION_POST: &str = "comments.reply_post"; // ui-text-exempt: trace re
 /// is what stops this panel growing a second, weaker selection that the canvas
 /// would then have to be kept in step with.
 ///
-/// # ★★★ THREADING DEPTH: the file nests, the panel does not — decided
-/// 2026-09-06
+/// # THREADING DEPTH: the file nests, the panel does not
 ///
-/// `EditSession::add_reply` permits a reply to a reply (its scope note 2:
-/// *"no cycle checking beyond the obvious … a reply-to-a-reply is wanted"*),
-/// so the moment this panel could author one the question became real: **does
-/// a reply to a reply draw indented under it, or flat?**
+/// `EditSession::add_reply` permits a reply to a reply — its scope note 2 wants
+/// one and does no cycle checking beyond the obvious — so **does a reply to a
+/// reply draw indented under it, or flat?**
 ///
-/// ## What was decided
+/// ## The answer, in each of the three places it shows
 ///
 /// | | |
 /// |---|---|
@@ -408,13 +361,12 @@ pub const REGION_POST: &str = "comments.reply_post"; // ui-text-exempt: trace re
 ///
 /// Three reasons, in the order they decided it:
 ///
-/// 1. **The read half was already flat and already shipped.** `replies_to`'s
-///    own docs settled this before any of it could be written:
-///    *"every reader in the class draws a comment thread as a flat
-///    chronological list under its root rather than as a nested tree, and a
-///    tree drawn in a 260 pt window would be four indents of two words each."*
-///    Nesting the panel while the pop-up stayed flat would give one document
-///    two shapes in one program, which is worse than either shape.
+/// 1. **The canvas pop-up is flat**, for the reason `replies_to` records:
+///    every reader in this class draws a comment thread as a flat chronological
+///    list under its root rather than as a nested tree, and a tree drawn in a
+///    260 pt window would be four indents of two words each. Nesting the panel
+///    while the pop-up stayed flat would give one document two shapes in one
+///    program, which is worse than either shape.
 /// 2. **This panel is a work list, not a conversation.** Its rows are headed by
 ///    subtype and page because a reviewer scanning forty of them is looking for
 ///    *the cloud on sheet three*, and its filter strip narrows by author and
@@ -429,18 +381,18 @@ pub const REGION_POST: &str = "comments.reply_post"; // ui-text-exempt: trace re
 ///    decisions in service of a visual that the surface it would appear on does
 ///    not want.
 ///
-/// ★★ **The cost is named rather than hidden**: a reader of this list cannot
+/// **The cost is named rather than hidden**: a reader of this list cannot
 /// tell, from the list alone, which comment a given reply answers. That is
 /// what [`t::comment_row_is_reply`] admits by saying *"a reply to another
 /// annotation on this document"* rather than naming one, and it is why *Go to*
 /// resolves through [`model::thread_root`] — the canvas window is where the
 /// conversation is legible, and this panel's job is to get the operator there.
 ///
-/// ⇒ If this argument grows past a paragraph — if, say, an operator asks to see
-/// who answered whom without opening each comment — it belongs in
-/// `MODES_AND_PANELS.md` as a surface-level decision rather than here.
+/// ⇒ If an operator asks to see who answered whom without opening each
+/// comment, that is a surface-level decision and belongs in
+/// `MODES_AND_PANELS.md` rather than here.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
-    // ★ FIRST, before anything is drawn: drop the operator's half-typed note if
+    // FIRST, before anything is drawn: drop the operator's half-typed note if
     // the document has moved under it. `NoteDraft`'s header carries the whole
     // argument — the short form is that a draft stamped at an older epoch
     // describes a document that no longer exists, and an editor showing words
@@ -452,13 +404,12 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // Asked ONCE per frame, never per row. `dimension_model` walks the catalog
     // to the `/PieceInfo` sidecar and deserializes it — cheap, and bounded by
     // the number of ce dimensions rather than by the document — but calling it
-    // per row would make the panel O(rows x sidecar), which is the shape of
-    // defect the old shell's hover-gated deletion preview was fixing.
+    // per row would make the panel O(rows x sidecar).
     let ce_dimensions = model::ce_dimension_annots(&doc.session);
     // Read the SESSION, not the file on disk — see the module header.
     let view = doc.session.view();
     let listing = model::collect(&view, &doc.pages, &ce_dimensions);
-    // ★ ONCE per frame, for `ce_dimensions`' reason exactly: a review status
+    // ONCE per frame, for `ce_dimensions`' reason exactly: a review status
     // lives on OTHER annotations (§12.5.6.3), so answering "what is this
     // comment's status" needs the whole document. Asked per row it would make
     // the panel quadratic in the annotation count. Read from the same session
@@ -491,7 +442,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         return;
     }
 
-    // ★ EVERY DISCLOSURE SITS ABOVE THE LIST, without exception.
+    // EVERY DISCLOSURE SITS ABOVE THE LIST, without exception.
     //
     // The same rule the Bookmarks truncation note, the Signatures caveat and
     // the Fonts coverage note follow — four panels, one reason: an operator
@@ -513,7 +464,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         );
     }
 
-    // ★★★ The filter strip, and then the rows it left. `crate::panels::comments::filter`
+    // The filter strip, and then the rows it left. `crate::panels::comments::filter`
     // carries the argument for what is offered and what is not; this is the
     // control strip and the **disclosure**, which is the half that makes
     // filtering safe on a surface whose founding rule is that nothing is
@@ -526,7 +477,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // in one press.
     let total = listing.rows.len();
     filter_strip(ui, &listing.rows, &mut state.comments_mut().filter);
-    // ★ The status chooser, drawn as its own strip rather than inside
+    // The status chooser, drawn as its own strip rather than inside
     // `filter_strip`, because its values come from the DOCUMENT's statuses
     // rather than from the rows — see `reviewstate::status_strip`. It writes
     // into the same `Filter`, so *Show all* lifts it and `is_narrowing` counts
@@ -537,13 +488,13 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // small fields; the alternative is threading a borrow through the whole
     // draw for nothing.
     //
-    // ★ Re-read rather than reusing `filter_now` from the top of the draw, and
+    // Re-read rather than reusing `filter_now` from the top of the draw, and
     // that is not redundancy: `filter_strip` may have CHANGED the filter on
     // this very frame, and a chooser whose effect waited for the next repaint
     // would read as a control that does not work. The trace's copy is the
     // pre-strip one deliberately — see [`trace`].
     let narrowing = state.comments_mut().filter.clone();
-    // ★★ TWO passes, because there are two questions. `filter::apply` answers
+    // TWO passes, because there are two questions. `filter::apply` answers
     // everything knowable from a row; `reviewstate::narrow` answers the one
     // thing that is not on the row at all — a status is on OTHER annotations
     // (§12.5.6.3). `Filter::status`' own doc carries why the state is in one
@@ -554,7 +505,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         narrowing.status.as_ref(),
     );
     if narrowing.is_narrowing() {
-        // ★ ABOVE the list, with every other disclosure and for their reason:
+        // ABOVE the list, with every other disclosure and for their reason:
         // an operator who scrolls a short list and stops has already drawn
         // their conclusion by the time a footnote would reach them.
         ui.label(
@@ -580,7 +531,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // [`REGION_EDIT`]: one name, one row, and the first row is the only
     // deterministic choice.
     let mut published = false;
-    // ★ The status a row asked to RECORD, and whether the Record-status region
+    // The status a row asked to RECORD, and whether the Record-status region
     // has been published this frame. Two more scalars for `RowSink`'s reason:
     // two rows cannot be pressed in one frame, and a `Vec` would invite a
     // future reader to queue two edits that would each bump the epoch under the
@@ -602,36 +553,21 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // the draw — see `CommentsUi::writing_controls_drawn`.
     let mut writing_controls_drawn: u32 = 0;
     let epoch = doc.edit_epoch;
-    // ★ Asked once per frame — see `RowSink::deletable`. A document-wide
+    // Asked once per frame — see `RowSink::deletable`. A document-wide
     // question deserves one answer.
     //
-    // ★★★ **TWO independent questions, and only one of them used to be asked.**
+    // **TWO independent questions, and neither answers the other.**
     //
     // `annotation_deletion_refusal` answers *"would `pdfcer-core` refuse this
     // document?"* — encrypted, certified. It says nothing at all about **what
-    // stance the operator is in**, and until 2026-09-05 nothing else did
-    // either: the Delete control and the note editor were drawn, live and
-    // effective, in **Read**.
+    // stance the operator is in**, so a panel that asked only it would draw a
+    // live Delete and a live note editor in **Read**, whose whole stated
+    // posture is *the document is not yours to alter*.
     //
-    // # How it was found, and why no test could have
-    //
-    // A smoke launch of the release binary, off screen, on the comment
-    // fixture, in Read mode — the default. Its trace read:
-    //
-    // ```text
-    // mode-changed to=read panels=4
-    // comments-panel listed=3 with_note=3 authors=3 replies=1
-    // ui-rect name=comments.note_edit rect=[[1086.0 347.0] - [1146.9 365.0]]
-    // ui-rect name=comments.delete    rect=[[1133.7 368.0] - [1239.0 386.0]]
-    // ```
-    //
-    // Three Delete buttons and an editor, in the mode whose whole stated
-    // posture is *the document is not yours to alter*. Every unit test passed;
-    // the gates were 29 of 29; the ribbon comparison exited 0. **R1 is the
-    // rule this exists to illustrate — a green suite is not a report of
-    // working software** — and the surrounding tests could not have caught it
-    // because none of them enters a mode: they call the panel with an
-    // `OpenDoc` and no stance at all.
+    // No test in this module can catch that, and that is a property of the
+    // tests rather than an accident: they call the panel with an `OpenDoc` and
+    // no stance at all, so a mode-dependent affordance is invisible to them.
+    // Only a driven run in a named mode reports it — R1.
     //
     // # Why `author_markup` rather than `authors_anything`
     //
@@ -653,7 +589,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // condition. The mode selector is the visible explanation, and it is the
     // same treatment every markup tool already gets in Read.
     let deletable = authoring && doc.session.annotation_deletion_refusal().is_none();
-    // ★★★ **The annotation the CANVAS has selected** — the other half of the
+    // **The annotation the CANVAS has selected** — the other half of the
     // interaction `pdfcer-core` describes, and the half this panel was missing:
     //
     // > draw the shape → **it is selected** → type the comment in the panel
@@ -664,7 +600,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // rows are headed by subtype and page, so two clouds on sheet 3 read
     // identically.
     //
-    // ★★ **This is not a second selection.** It is the canvas's own, read. The
+    // **This is not a second selection.** It is the canvas's own, read. The
     // panel decides nothing about it, writes nothing to it, and lists the same
     // rows in the same order whether it is set or not.
     // `crate::panels::ObjectTreeUi::focus`' docs draw that line, and this is it
@@ -680,7 +616,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     egui::ScrollArea::vertical()
         .id_salt("comment-rows")
         .show(ui, |ui| {
-            // ★ The FILTERED rows. `last` is derived from the same vector the
+            // The FILTERED rows. `last` is derived from the same vector the
             // loop walks, which is what stops a separator being drawn after
             // the final row when a filter has shortened the list — the kind of
             // off-by-one that looks like a rendering fault.
@@ -710,7 +646,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                             epoch,
                             is_selected,
                         );
-                        // ★ The review status, drawn INSIDE the same `push_id`
+                        // The review status, drawn INSIDE the same `push_id`
                         // so its chooser gets the row's own egui id — two rows
                         // of the same subtype on the same page would otherwise
                         // share one, which shows up as the wrong menu opening.
@@ -734,7 +670,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                         );
                     })
                     .response;
-                // ★ Scrolled to on the frame the selection MOVES, and not while
+                // Scrolled to on the frame the selection MOVES, and not while
                 // it stands.
                 //
                 // `scroll_to_me` every frame would pin the list under the
@@ -751,7 +687,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 }
             }
         });
-    // ★ Written back unconditionally, INCLUDING when nothing is selected — so
+    // Written back unconditionally, INCLUDING when nothing is selected — so
     // deselecting and re-selecting the same annotation scrolls to it again,
     // which is what an operator who has scrolled away and clicked the shape a
     // second time is asking for.
@@ -766,13 +702,13 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 
     if let Some((page, id)) = go {
         actions.push(Action::GoToPage(page));
-        // ★★ …and open that comment where it lives. See the module header on
+        // …and open that comment where it lives. See the module header on
         // why this is written directly rather than carried as an `Action`: an
         // `Action` drains after the frame, and the pop-up has to be open on
         // the frame the page arrives.
         //
-        // ★★★ **Resolved to the thread ROOT first**, added 2026-09-06 with the
-        // Reply control. `crate::canvas::notepopup` draws a window for a
+        // **Resolved to the thread ROOT first.**
+        // `crate::canvas::notepopup` draws a window for a
         // comment and lists that comment's replies inside it; it draws none for
         // a reply, because `add_reply` places a reply on its **parent's own
         // `/Rect`** and a bubble for it would sit on top of — and make
@@ -788,7 +724,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
             crate::canvas::notepopup::open::set(ui.ctx(), &doc.path, root, true);
         }
     }
-    // ★★ Raised as its own `Action` rather than through `AnnotAction`, and the
+    // Raised as its own `Action` rather than through `AnnotAction`, and the
     // seam is the one this feature keeps drawing: `AnnotAction`'s verbs all
     // change **the annotation named**, and this one changes nothing about it —
     // `add_review_state` *"returns a new `ObjId` rather than mutating the
@@ -801,7 +737,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         ));
     }
     if let Some(verb) = verb {
-        // ★ The draft closes here rather than in the row that raised the verb,
+        // The draft closes here rather than in the row that raised the verb,
         // and it closes for BOTH outcomes — a save the engine accepts and one
         // it refuses.
         //
@@ -833,7 +769,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 /// a `Vec` would invite a future reader to queue two navigations or two edits
 /// that would each bump the epoch under the other.
 struct RowSink<'a> {
-    /// ★ **What a Go to press asks for** — the page, and the annotation on it.
+    /// **What a Go to press asks for** — the page, and the annotation on it.
     ///
     /// The id travels beside the page because navigating is only half the
     /// gesture: `crate::canvas::notepopup` opens that comment's pop-up when
@@ -853,13 +789,13 @@ struct RowSink<'a> {
     /// rather than a second use of [`Self::published`], because the two
     /// controls are drawn under different conditions.
     ///
-    /// ★ A row whose note editor is **open** draws no *Add note* and therefore
+    /// A row whose note editor is **open** draws no *Add note* and therefore
     /// publishes no [`REGION_EDIT`]; sharing one flag would let that row's
     /// state decide which row a harness finds *Reply* on. Two names, two
     /// flags, each naming the first row that actually drew the control it
     /// names.
     reply_published: &'a mut bool,
-    /// ★★ **Whether `delete_annotation` would be refused right now**, asked
+    /// **Whether `delete_annotation` would be refused right now**, asked
     /// ONCE per frame in [`body`] and carried.
     ///
     /// R83: an affordance that cannot be honoured is not drawn. Asked once
@@ -900,7 +836,7 @@ fn row(
     // [`tests::the_page_index_travels_zero_based_and_prints_one_based`].
     let page_number = comment.page_index + 1;
 
-    // ★ THE HEADING SAYS WHAT THE ANNOTATION ACTUALLY IS.
+    // THE HEADING SAYS WHAT THE ANNOTATION ACTUALLY IS.
     //
     // A ce dimension is named as one — project rule 15, and the constructive
     // half of the exclusion argument in this module's header: the sidecar can
@@ -913,7 +849,7 @@ fn row(
     };
     // `.strong()` is unusable in this theme — see `DEFECTS.md` D11.
     //
-    // ★★★ The selected row says so **in words**, on the heading line.
+    // The selected row says so **in words**, on the heading line.
     //
     // Not a colour, not a tint, not a highlight: `DEFECTS.md` D2 is this
     // project's record of a theme change making text invisible against its own
@@ -1033,8 +969,7 @@ fn row(
     });
 }
 
-/// ★★★ **Delete this comment** — added 2026-09-05; see the module header on
-/// the paragraph that forbade it and had outlived its reason.
+/// **Delete this comment.**
 ///
 /// # Four reasons it is not drawn, and every one is R83 rather than R9
 ///
@@ -1049,17 +984,17 @@ fn row(
 /// | the row has **no object id** | a direct dictionary in `/Annots` is a malformed file (§12.5.2 Table 164 requires an indirect object) and there is nothing to name. The row already says so where its editor would be |
 /// | the document **refuses deletion** | encrypted, or a certification signature forbids the change. `EditSession::annotation_deletion_refusal`, asked once per frame — see [`RowSink::deletable`] |
 /// | it is a **ce dimension** | rule 15. `delete_annotation` would remove the `/Line` and leave the `/PieceInfo` sidecar describing a ce dimension that no longer exists. The Dimension groups panel owns that verb |
-/// | the annotation is **hidden** | ★ deliberately NOT a reason. A hidden annotation is exactly the one a reviewer cannot reach from the canvas, so this panel is the only place it can be removed — which is the whole argument for listing it in the first place |
+/// | the annotation is **hidden** | deliberately NOT a reason. A hidden annotation is exactly the one a reviewer cannot reach from the canvas, so this panel is the only place it can be removed — which is the whole argument for listing it in the first place |
 ///
-/// # ★ No confirmation, and no hover preview
+/// # No confirmation, and no hover preview
 ///
-/// The old shell computed the collateral on hover and showed it before the
-/// press. This does not, and §3.4 is the reason in its own words: the preview
-/// *"is not a perfect oracle"*. What is reported instead is what the engine
-/// **actually did** — `delete_annotation`'s report names the pop-up it
-/// removed, the replies it orphaned and the group members it promoted, and
-/// `crate::app::actions::annots::delete` already surfaces it. One statement of
-/// record beats a guess before and a fact after that can disagree with it.
+/// The collateral is reported **after** the call rather than predicted before
+/// it, because `docs/core-api/03-capabilities.md` §3.4 says a prediction *"is
+/// not a perfect oracle"* and the real call can still refuse.
+/// `delete_annotation`'s report names the pop-up it removed, the replies it
+/// orphaned and the group members it promoted, and
+/// `crate::app::actions::annots::delete` surfaces it. One statement of record
+/// beats a guess before and a fact after that can disagree with it.
 ///
 /// Undo is the safety net, and it is one press: the deletion is a single
 /// `CommandKind` on the same stack as every other edit.
@@ -1087,7 +1022,7 @@ fn delete_control(ui: &mut egui::Ui, comment: &CommentRow, sink: &mut RowSink<'_
 
 /// **The filter strip** — two choosers, a switch, an ordering and a way back.
 ///
-/// # ★★ Built from the UNFILTERED rows, always
+/// # Built from the UNFILTERED rows, always
 ///
 /// A chooser built from what survived the current filter would drop every
 /// other author from the menu the moment one was chosen, leaving no route from
@@ -1096,7 +1031,7 @@ fn delete_control(ui: &mut egui::Ui, comment: &CommentRow, sink: &mut RowSink<'_
 /// the operator works — which is also what makes them a map of the document
 /// rather than a map of the current view.
 ///
-/// # ★ Why `ComboBox` and not a row of toggles
+/// # Why `ComboBox` and not a row of toggles
 ///
 /// Because the number of authors and the number of subtypes are properties of
 /// the **document**, not of this build: a drawing set that went round six
@@ -1143,14 +1078,14 @@ fn filter_strip(ui: &mut egui::Ui, all: &[CommentRow], state: &mut filter::Filte
             let clear = ui.button(t::comment_filter_clear());
             crate::diag::ui_rect_visible(REGION_FILTER_CLEAR, clear.rect, ui.clip_rect());
             if clear.clicked() {
-                // ★ The ORDERING survives, and the narrowing does not. They
+                // The ORDERING survives, and the narrowing does not. They
                 // are different acts: *Show all* is the answer to "what am I
                 // missing", and an operator who asked for the list by author
                 // did not ask for that to be undone as well.
                 state.author = None;
                 state.subtype = None;
                 state.with_note_only = false;
-                // ★ …and the status, which is why `Filter` holds it. A
+                // …and the status, which is why `Filter` holds it. A
                 // narrowing the operator can set and cannot lift from the one
                 // control labelled *Show all* is the trap version of a filter.
                 state.status = None;
@@ -1205,11 +1140,8 @@ fn sort_label(sort: filter::Sort) -> &'static str {
 ///
 /// # Why this is more than a debug print
 ///
-/// `HANDOFF.md` §2: *"Verify by driving the binary, not by a passing test"* —
-/// and the eighth defect on its list was found **only** by printing what the
-/// running application had chosen, because *"2,450 hairlines and a wash are
-/// the same picture"*. This panel has the same property in a different
-/// direction: a screenshot of it cannot tell you that four widgets were
+/// R1 — a surface is verified by driving the binary, not by a passing test —
+/// and a screenshot of this one cannot tell you that four widgets were
 /// excluded, that two rows are hidden annotations, or that the `/Line` on
 /// page 3 was recognised as a ce dimension. Every one of those is arithmetic,
 /// and arithmetic is what a trace is for.
@@ -1220,22 +1152,18 @@ fn sort_label(sort: filter::Sort) -> &'static str {
 /// `suppressed`, `unresolved`, `replies` and `group_members` each decide a row
 /// caption. If a number here is wrong, something on screen is wrong with it.
 ///
-/// # ★★★ `listed` is the CENSUS, `shown` is what is on screen — 2026-09-05
+/// # `listed` is the CENSUS, `shown` is what is on screen
 ///
-/// Until the filter landed this morning the two were the same number and this
-/// comment said `listed` was *"the rows the panel drew"*. That sentence became
-/// false the moment [`filter::apply`] was inserted between [`model::collect`]
-/// and the draw, and it became false **silently**: a reader outside the
-/// process saw a census shrink and had no way to tell a filtered list from a
-/// document that had lost annotations.
+/// [`filter::apply`] sits between [`model::collect`] and the draw, so the two
+/// numbers differ whenever a filter is set. One field carrying both meanings
+/// would let a reader outside the process watch a census shrink with no way to
+/// tell a filtered list from a document that had lost annotations — exactly the
+/// omission this panel's founding discipline forbids, held on the diagnostic
+/// channel as well as on the screen, and the more load-bearing because the
+/// driven `save_copy_round_trip` and `undo_redo_round_trip` use this line as
+/// their **only** oracle for whether an annotation reached the document.
 ///
-/// That is exactly the omission this panel's founding discipline forbids —
-/// *"nothing is silently omitted"* — held on the diagnostic channel as well as
-/// on the screen, because two driven checks (`save_copy_round_trip` and
-/// `undo_redo_round_trip`) use this line as their **only** oracle for whether
-/// an annotation reached the document.
-///
-/// So the line now carries both, and they answer different questions:
+/// So the line carries both, and they answer different questions:
 ///
 /// | field | question | source |
 /// |---|---|---|
@@ -1243,9 +1171,8 @@ fn sort_label(sort: filter::Sort) -> &'static str {
 /// | `shown` | how many rows is the operator actually looking at | the same rows after [`filter::apply`] |
 /// | `filtered` | is the operator's filter narrowing the list right now | [`filter::Filter::is_narrowing`] |
 ///
-/// `listed` deliberately keeps its old meaning so no existing reader changes
-/// verdict; what is new is that `filtered=1` now tells one what it never
-/// could, and `shown` says by how much.
+/// `filtered=1` says the operator is narrowing the list, and `shown` says by
+/// how much.
 ///
 /// ⚠ **The filter is read one frame late**, and that is deliberate rather than
 /// overlooked: this runs *before* [`filter_strip`] draws, so a filter the
@@ -1287,7 +1214,7 @@ fn trace(doc: &OpenDoc, listing: &Listing, filter: &filter::Filter) {
             .filter(|r| matches!(r.note, Note::Description(_)))
             .count();
         format!(
-            // ★ `selected` is the oracle for the canvas→panel link, and it is
+            // `selected` is the oracle for the canvas→panel link, and it is
             // the ONLY one available from outside the process: the mark on the
             // row is a word inside a heading string, which a trace cannot see
             // and which a screenshot can only confirm if the reader already

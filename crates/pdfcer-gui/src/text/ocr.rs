@@ -297,6 +297,10 @@ pub fn skip_pages_with_text_tooltip() -> &'static str {
 /// quote — see the module header on what this surface is not entitled to
 /// claim — so it says *seconds* and says which page, which are both true and
 /// checkable.
+///
+/// ⚠ **The last clause is false.** The recogniser runs on a detached worker
+/// (`crate::ocr::job`) and the dialog stays live with a spinner, a page count,
+/// Stop and Cancel. `DEFECTS.md` D40.
 #[must_use]
 pub fn run_tooltip() -> &'static str {
     "Runs the recogniser over the pages you chose. It takes a few seconds per page, and the window will not respond while it does."

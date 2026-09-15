@@ -4,84 +4,102 @@
 # either forwarded into this build or refused here in writing.
 #
 # ═══════════════════════════════════════════════════════════════════════════
-# ★★★ WHY THIS GATE EXISTS: THE SAME MISTAKE, TWICE, THREE DAYS APART
+# THE PROPERTY ASSERTED
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# `pdfcer-core` declares STRIPPABLE CAPABILITIES as Cargo features, all of them
-# **default on**, and its own manifest states the rule that binds every consumer:
+# For every name in `pdfcer-core`'s `default = [ … ]` list, this crate declares
+# a feature of the same name forwarding `pdfcer-core/<name>`, AND carries that
+# name in its own `default` list — or names it in DELIBERATELY_NOT_FORWARDED
+# below with a reason.
 #
-#   > Cargo unifies features across the whole graph, so every intermediate crate
-#   > must (a) take `pdfcer-core` with `default-features = false` and (b)
-#   > re-export each capability it forwards.
+#   ENGINE  the engine's `crates/pdfcer-core/Cargo.toml`   `default = [ … ]`
+#   OURS    `crates/pdfcer-gui/Cargo.toml`                 `<name> = [ … ]`
 #
-# Clause (a) without clause (b) does not fail to compile. It does not fail a
-# test. It does not warn. It **removes a capability from the binary**, and the
-# only way to notice is a dependency query or a document that needs it.
-#
-# It has now happened twice:
-#
-#   1. **JPEG 2000, 2026-08.** The feature block was missing entirely,
-#      `pdfcer-core` was taken with `default-features = false`, and the GUI
-#      silently lost JPX decoding. `cargo tree -p pdfcer-gui -i hayro-jpeg2000`
-#      came back EMPTY. The fix added a `[features]` block AND a long comment
-#      warning the next reader, ending: *"forgetting to forward does not fail
-#      to compile."*
-#
-#   2. **SIGNING, 2026-09-05.** The engine shipped `pdfcer_core::sign` — 101
-#      public items, PKCS#12 import, CAdES `SignedData`, `EditSession::sign` —
-#      written in answer to *this shell's own* request of 2026-09-03, *"a
-#      document cannot be signed."* Its `signing` feature is default on. This
-#      manifest forwarded `jpx` and `ocrs` and not it, so the whole subsystem
-#      was absent from the binary for three days. Nothing failed. The comment
-#      from incident 1 was forty lines above the block that repeated it.
-#
-# ⇒ **A WARNING DOES NOT PROTECT A CODE PATH WRITTEN AFTER IT.** That sentence
-# is this project's most expensive recurring finding — the rotation-button gate
-# had its rule in its own module header sixty lines above the code that broke
-# it — and the remedy is always the same shape: replace the paragraph with a
-# mechanism that reads BOTH sides and fails when they disagree.
+# Both halves are demanded because both can fail alone. Declaring
+# `signing = ["pdfcer-core/signing"]` and leaving `signing` out of this crate's
+# `default` is the same regression one level down: the feature exists, nothing
+# turns it on, and an ordinary `cargo build` produces the lite build.
 #
 # ═══════════════════════════════════════════════════════════════════════════
-# WHAT IT READS
+# WHY A HUMAN CANNOT HOLD IT
 # ═══════════════════════════════════════════════════════════════════════════
 #
-#   ENGINE  D:/Dev/pdfcer/crates/pdfcer-core/Cargo.toml   `default = [ … ]`
-#   OURS    crates/pdfcer-gui/Cargo.toml                  `<name> = [ … ]` lines
+# `pdfcer-core` declares its strippable capabilities as Cargo features, all of
+# them default on, and its manifest states the rule that binds every consumer:
+# because Cargo unifies features across the whole graph, an intermediate crate
+# must (a) take `pdfcer-core` with `default-features = false` and (b) re-export
+# each capability it forwards.
 #
-# For each name in the engine's default list, this build must either
+# Clause (a) without clause (b) is the trap, and its shape is what makes it
+# unholdable. It does not fail to compile. It does not fail a test. It does not
+# warn. It REMOVES A CAPABILITY FROM THE BINARY, and the only way to notice is
+# a dependency query nobody runs or a document that happens to need the missing
+# thing. The absent half is invisible precisely because absence has no line of
+# code to review: a diff shows what was added, never what should have been.
 #
-#   * declare a feature of the same name that forwards `pdfcer-core/<name>`, or
-#   * name it in DELIBERATELY_NOT_FORWARDED below, with the reason.
+# Nor does a written warning help. A comment in a manifest protects the code
+# above it and nothing written afterwards — a paragraph explaining this exact
+# trap can sit forty lines above the feature block that falls into it, and the
+# person adding the block is looking at the block. That is this project's most
+# expensive recurring finding, and the remedy is always the same shape: replace
+# the paragraph with a mechanism that reads BOTH sides and fails when they
+# disagree.
 #
-# ★ It reads the ENGINE'S OWN LIST rather than a list kept here, which is the
-# whole point: a capability the engine adds tomorrow fails this gate the first
-# time it is run, without anybody having remembered to add it. A hard-coded list
-# on this side would be a fourth place to forget.
+# The list is read from the ENGINE rather than kept here for the same reason. A
+# capability the engine adds tomorrow fails this gate the first time it runs,
+# with nobody having remembered anything. A hard-coded list on this side would
+# be one more place to forget.
 #
-# ★★ It checks the DEFAULT list specifically, not every feature the engine
-# declares. A feature that is off by default is a capability the engine has
-# decided is opt-in, and not forwarding one is a decision rather than an
-# omission. A feature that is ON by default and missing here is a REGRESSION —
-# rule 1 of the engine's own convention: *"a build that omits nothing must
-# behave exactly as it did before the feature existed."*
+# Only the DEFAULT list is demanded, not every feature the engine declares. A
+# feature that is off by default is one the engine has decided is opt-in, and
+# not forwarding it is a decision. A feature that is ON by default and missing
+# here is a regression against the engine's own rule that a build which omits
+# nothing behaves exactly as it did before the feature existed.
 #
 # ═══════════════════════════════════════════════════════════════════════════
-# WHY IT ALSO CHECKS THAT `default` HERE LISTS THEM
+# WHAT IT PROVABLY CANNOT SEE
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# Declaring `signing = ["pdfcer-core/signing"]` and leaving it out of this
-# crate's own `default` is the same regression one level down: the feature
-# exists, nothing turns it on, and an ordinary `cargo build` produces the lite
-# build. Both halves are checked because both have to be right.
+#   * Clause (a). Nothing here checks that this crate actually takes
+#     `pdfcer-core` with `default-features = false`. The premise of the whole
+#     gate is assumed, not measured.
+#   * Whether the forwarded feature reaches the shipped binary. Cargo unifies
+#     across the graph and a third crate in the middle can still strip it.
+#     `cargo tree -i <backend-crate>` answers that; this cannot.
+#   * The LOCKED engine revision. It reads the engine checkout's WORKING TREE
+#     manifest, so a default feature added since the pin is demanded before it
+#     can be forwarded, and one deleted since the pin stops being demanded
+#     while the pinned build still carries it.
+#   * A relocated or renamed engine checkout. The path is a literal here rather
+#     than derived from `Cargo.lock` the way `tools/engine_path.py` derives it,
+#     so an engine that has moved reads as an engine that is absent, and the
+#     gate skips instead of failing.
+#   * Anything a line-wise grep cannot reach. `default = [` split across lines,
+#     a feature forwarded under a different name, a capability guarded by a
+#     `cfg` rather than a feature.
+#   * Whether a DELIBERATELY_NOT_FORWARDED reason is a good one. It checks only
+#     that the name is followed by an em dash and something.
 #
 # ═══════════════════════════════════════════════════════════════════════════
-# WHEN THE ENGINE IS NOT ON THIS MACHINE
+# THE EXIT CONTRACT, AND HOW TO FALSIFY IT
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# Exit 2 — SKIPPED — and say so. A gate that cannot read one of its two inputs
-# has learned nothing, and `run-all.sh` counts a skip separately from a pass for
-# exactly that reason. It does NOT fall back to a list kept here, because a
-# fallback list is the thing this gate exists to replace.
+#   0  every engine default capability is forwarded and on by default here
+#   1  one is not forwarded, or is forwarded and not on by default here, or the
+#      engine manifest exists and no `default = [...]` line could be read out
+#      of it — that last one is the gate failing to parse its own input, which
+#      must be loud rather than green, and is deliberately not a skip
+#   2  SKIPPED — an input is missing: no engine manifest on this machine, or no
+#      `crates/pdfcer-gui/Cargo.toml`. NOT a pass. A gate that cannot read one
+#      of its two sides has learned nothing, and `run-all.sh` prints skips in
+#      their own block and exits 3. It does NOT fall back to a list kept here,
+#      because a fallback list is the thing this gate exists to replace.
+#
+# To falsify: delete one forwarded feature line from
+# `crates/pdfcer-gui/Cargo.toml` — it must name that capability and exit 1.
+# Remove a name from this crate's own `default` list while leaving its feature
+# declared, and it must report that separately. Point `ENGINE_MANIFEST` at a
+# path that does not exist and it must print SKIPPED and exit 2.
 
 set -u
 
@@ -117,10 +135,9 @@ fi
 
 # The engine's `default = [ ... ]`, as bare names.
 #
-# ★ Anchored to the start of the line so a `default` mentioned inside a comment
-# or inside another feature's list cannot be picked up. The engine's manifest
-# carries several hundred lines of commentary about these features and half of
-# them contain the word.
+# Anchored to the start of the line so a `default` mentioned inside a comment or
+# inside another feature's list cannot be picked up. The engine's manifest
+# carries long commentary about these features, and much of it uses the word.
 engine_default="$(grep -m1 -E '^default[[:space:]]*=' "$ENGINE_MANIFEST" \
     | sed -E 's/^default[[:space:]]*=[[:space:]]*\[//; s/\].*$//' \
     | tr -d '" ' | tr ',' '\n' | grep -v '^$')"

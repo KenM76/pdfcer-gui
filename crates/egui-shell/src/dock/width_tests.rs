@@ -22,15 +22,15 @@
 //! whichever sibling crate is in the build**:
 //!
 //! ```text
-//! cargo test -p egui-shell --lib   → egui alone         → no fonts
-//! cargo test --workspace           → pdfcer-gui → eframe → egui/default_fonts
+//! cargo test -p egui-shell --lib   → egui alone               → no fonts
+//! cargo test --workspace           → an app crate → eframe    → egui/default_fonts
 //! ```
 //!
 //! `D:/dev/rag/rust/a_crate_tested_alone_and_in_a_workspace_gets_different_features_so_layout_tests_can_be_vacuous.md`
-//! records this crate's own ribbon suite passing 116 tests over a width
-//! layer that had never been shown a non-zero width — and two real
-//! defects living in the gap, one of them an arithmetic underflow
-//! reachable from day one. *"The suite was not weak. It was vacuous."*
+//! carries the finding: a whole width layer can be covered by a green
+//! suite that has never been shown a non-zero width, with real defects —
+//! an arithmetic underflow among them — living in the gap. Such a suite
+//! is not weak, it is vacuous.
 //!
 //! So every test here installs the crate's synthetic **proportional**
 //! face and asserts it took effect before asserting anything else. The
@@ -42,10 +42,10 @@
 //! `D:/dev/rag/egui/a_sibling_row_that_overflows_grows_the_parent_max_rect_so_available_width_is_not_the_window.md`
 //! — a child that lays out past its parent's `max_rect` **grows it**, so
 //! a later query for available space returns a rectangle extending past
-//! the window edge. Measured there, in the ribbon, hours before this
-//! module was written: a reservation taken from that rectangle landed
-//! **78 pt off screen**, correct arithmetic applied to a width the window
-//! never had. The entry's closing advice is what shapes the tests below:
+//! the window edge. Measured there, in the ribbon: a reservation taken
+//! from that rectangle lands **78 pt off screen** — correct arithmetic
+//! applied to a width the window never had. The entry's closing advice is
+//! what shapes the tests below:
 //!
 //! > A sweep across widths is **too coarse**. Binary-search the exact
 //! > width at which the layout's own estimate flips from "fits" to "does
@@ -58,9 +58,9 @@
 //! it lies inside the thing that is supposed to contain it. They are not
 //! pixel or legibility assertions — that is `tools/ui-verify`'s job
 //! against a real window, and it is why the rects are published in the
-//! first place. `MODES_AND_PANELS.md` is explicit that
-//! *"layout/clipping defects have exactly one oracle: a rendered
-//! screenshot"*, and nothing here claims otherwise.
+//! first place. `MODES_AND_PANELS.md` is explicit that *"Layout and
+//! clipping defects have exactly one oracle: a rendered screenshot"*, and
+//! nothing here claims otherwise.
 
 use egui::{Pos2, Rect, Vec2};
 
@@ -197,10 +197,9 @@ fn measured_tab_widths(ctx: &egui::Context, n: usize) -> Vec<f32> {
 /// a *different* flip point from the one the renderer uses, and the
 /// binary-searched assertion below would then be aimed a few points away
 /// from the boundary it exists to probe — passing, while testing an
-/// ordinary width. Found exactly that way: the first draft searched at
-/// 14 pt, the renderer draws at the style's button size, and the test
-/// reported "nothing overflowed" at a width where nothing was supposed
-/// to.
+/// ordinary width. A search at a hard-coded 14 pt against a renderer
+/// drawing at the style's button size reports "nothing overflowed" at a
+/// width where something must, and reports it in green.
 fn text_width(ctx: &egui::Context, text: &str) -> f32 {
     let font_id = egui::TextStyle::Button.resolve(&ctx.style_of(egui::Theme::Light));
     ctx.fonts_mut(|f| {
@@ -365,8 +364,8 @@ fn the_affordance_is_always_within_the_window() {
 /// ★ **Every panel stays reachable at every width**: a tab that is not
 /// drawn is in the menu, and the menu's affordance is drawn.
 ///
-/// This is the property the previous implementation's two-pane cap was a
-/// proxy for, asserted directly across the whole width range instead.
+/// A cap on tabs per stack is a proxy for this property. Here the
+/// property itself is asserted, across the whole width range.
 #[test]
 fn every_panel_is_reachable_at_every_dock_width() {
     let n = 9;
@@ -432,12 +431,11 @@ fn the_active_tab_is_drawn_whenever_any_tab_is() {
 
 /// ★ **A very wide hidden tab does not hold the dock open.**
 ///
-/// The field report: *"an inactive tab you cannot see holds the whole
-/// dock open; you must close it to narrow the dock."* Here one panel is
-/// given a preposterous label and left **inactive**, and the dock is
-/// still drawn at exactly the width the layout asked for. With no font
-/// installed this test cannot fail, because the preposterous label
-/// measures the same as every other one.
+/// Failure mode #3 is *"an inactive tab you cannot see holds the whole
+/// dock open"*. Here one panel is given a preposterous label and left
+/// **inactive**, and the dock is still drawn at exactly the width the
+/// layout asked for. With no font installed this test cannot fail,
+/// because the preposterous label measures the same as every other one.
 #[test]
 fn an_inactive_tab_with_a_huge_label_does_not_widen_the_dock() {
     let ctx = egui::Context::default();

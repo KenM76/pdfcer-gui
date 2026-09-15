@@ -3,13 +3,9 @@
 //!
 //! # The defect this exists to catch
 //!
-//! `SALVAGE.md` records the core team's `Pass 72.0` warning in the strongest
-//! terms any note in this project uses:
-//!
-//! > **A shell calling `redact::apply_redactions` directly and writing the
-//! > bytes ships an unverified redaction and will not know.** … `pdfcer`'s
-//! > `redact-apply` does exactly that at HEAD and exits `SUCCESS` on a file it
-//! > never verified.
+//! **A shell that calls `redact::apply_redactions` directly and writes the
+//! bytes ships an unverified redaction and will not know.** A caller can exit
+//! SUCCESS on a file it never verified.
 //!
 //! *"Will not know"* is the whole problem, and it is why this check exists in a
 //! harness rather than only in the crate's own test suite. A build that marked
@@ -26,9 +22,9 @@
 //!
 //! # ★ The falsification, and where it is
 //!
-//! `HANDOFF.md` §2's sharpest lesson is defect 8: *"a test that checks a
-//! relation rather than a magnitude is satisfied by any absurdity in the right
-//! direction."* An absence check is the extreme case — it passes on an empty
+//! A test that checks a relation rather than a magnitude is satisfied by any
+//! absurdity in the right direction. An absence check is the extreme case — it
+//! passes on an empty
 //! file, on a file that was never written, and on a grep looking for the wrong
 //! string.
 //!
@@ -78,44 +74,29 @@
 //! assertion. The second page is the negative control, and it is reached
 //! without typing anything: the mark covers page 1 only.
 //!
-//! **No keyboard is used anywhere in this check.** Synthetic keystrokes do not
-//! reach the target window from the session that writes them on this machine
-//! (`HANDOFF.md` §8 records the investigation and the failed reproduction), so
-//! the marking route this check drives is the one that needs no text entry:
-//! *Mark whole page*. The search-and-mark route — which needs a query typed
+//! **No keyboard is used anywhere in this check**, by choice rather than by
+//! limitation — [`crate::checks::add_text`] types real characters and asserts
+//! they land. The marking route driven here is the one that needs no text
+//! entry: *Mark whole page*. The search-and-mark route — which needs a query
+//! typed
 //! into a field — is therefore **not covered here**, and that is stated rather
 //! than left to be discovered. Its rule is unit-tested in
 //! `crates/pdfcer-gui/src/app/actions/apply.rs`; what is not verified by driving
 //! is the field itself.
 //!
-//! # ⬜ 2026-09-05 — THIS CHECK WAS **NOT RUN** AGAINST THE BUILD IT NOW
-//! DESCRIBES
+//! # Two gaps a reader should know about
 //!
-//! Stated at the top rather than in a footnote, because a check whose prose has
-//! been rewritten and whose region name has been changed reads exactly like a
-//! check that has been re-driven, and this one has not been. The session that
-//! rewrote it for `pdfcer-core` `Pass 250.2` was forbidden from launching the
-//! GUI — the operator may have been at his keyboard — so:
+//! * **A region name is shared between two crates and enforced by neither.**
+//!   `REGION_STAGING_NOTE` here must spell the same string the application
+//!   publishes. If the two disagree, `declared` returns `None`, phase E3
+//!   reports THE STAGING DISCLOSURE IS MISSING, and the message is about a
+//!   sentence that is on screen. Compare the two constants before believing
+//!   the application is at fault.
+//! * **The `Phase::Staged` surface is reached by nothing in this suite.** See
+//!   phase E4's own note: `redact-apply-cancel-staged` is published by the
+//!   application and is clicked by no check.
 //!
-//! * **no phase below has been observed against the staged build.** Phases A–D
-//!   and F–I are untouched by this pass and were last driven on 2026-09-04
-//!   against the collapsing variant; E3 and E4 assert a region that did not
-//!   exist until this pass, and their assertions have never fired in either
-//!   direction.
-//! * **the region rename is the specific risk.** `redact-apply-undo-note`
-//!   became `redact-apply-staging-note` in the application and here in the same
-//!   pass. If the two ever disagree, `declared` returns `None`, E3 reports THE
-//!   STAGING DISCLOSURE IS MISSING, and the message will be about a sentence
-//!   that is on screen. A reader who sees that failure should compare the two
-//!   constants before believing the application is at fault.
-//! * **the `Phase::Staged` surface is reached by nothing at all.** See phase
-//!   E4's own note: `redact-apply-cancel-staged` is published by the
-//!   application and is clicked by no check in this suite.
-//!
-//! ⇒ **The first job of the next session with the machine to itself is to run
-//! this check.** Everything below is a description of what it would assert.
-//!
-//! # What each phase would fail on
+//! # What each phase fails on
 //!
 //! | phase | fails when |
 //! |---|---|
@@ -125,7 +106,7 @@
 //! | D | the apply report never appears, or reports `verified=false` on a clean fixture |
 //! | E | **the confirm control is live before the acknowledgement is given** — the gate that stands between an operator and the one irreversible operation in the program |
 //! | E2 | *note only* — the *replace the original* choice is not drawn. A note rather than a failure because the application draws it only when the source is still a file on disk |
-//! | E3 | **the default destination is not on screen**, or **the staging disclosure is missing or sits below the confirm control**. ★★★ Rewritten 2026-09-05 for `Pass 250.2`: the default destination no longer removes anything at the click and no longer clears the undo log — it ARMS the next save, and the page does not change. That is the fact the sentence carries now, and it is the one thing an operator cannot work out by looking. Geometry is the one thing the headless suite cannot assert |
+//! | E3 | **the default destination is not on screen**, or **the staging disclosure is missing or sits below the confirm control**. The default destination removes nothing at the click and clears no undo log — it ARMS the next save, and the page does not change. That is the fact the sentence carries, and it is the one thing an operator cannot work out by looking. Geometry is the one thing the headless suite cannot assert |
 //! | E4 | switching to *a new file* leaves the button dead (the overwrite acknowledgement being demanded by a destination that overwrites nothing), or leaves the staging disclosure on screen (which claims nothing is written, on the destination that writes) |
 //! | F | no file was written |
 //! | G | **the source file changed** — a redaction that wrote over the document it came from |
@@ -194,8 +175,8 @@ const CONFIRM_REGION: &str = "redact-apply-confirm";
 /// choosing.
 const DESTINATION_REPLACE_REGION: &str = "redact-apply-destination-replace";
 
-/// The dialog's *this document* destination choice — **the default since
-/// 2026-09-04 (evening)**, and the one the operator asked for by name.
+/// The dialog's *this document* destination choice — **the default**, and the
+/// one the operator asked for by name.
 ///
 /// ★ Declared **unconditionally**, unlike its two siblings: every document can
 /// be redacted into, including one created in this session with no file to
@@ -203,20 +184,17 @@ const DESTINATION_REPLACE_REGION: &str = "redact-apply-destination-replace";
 /// SKIP — there is no innocent reading of it.
 const DESTINATION_INTO_DOCUMENT_REGION: &str = "redact-apply-destination-into-document";
 
-/// The dialog's *this document, **now*** destination choice — added 2026-09-08
-/// on the operator's report.
+/// The dialog's *this document, **now*** destination choice.
 ///
 /// # ★★★ Why its absence is a FAILURE and not a SKIP
 ///
-/// He reported the feature as *"regressed back to just giving me the 'don't
-/// apply yet' button"*. Nothing had regressed in code: the deferred destination
-/// became the default on 2026-09-04 because he asked for it, and `Pass 250.2`
-/// made it cost nothing on 2026-09-05 — at the price its own doc states, that
-/// **the page does not change**. He pressed the only button offered and watched
-/// nothing happen.
+/// The deferred destination is the default and, by its own doc's terms, **the
+/// page does not change** when it is chosen. Offer that alone and the operator
+/// presses the only button there is and watches nothing happen — which reads
+/// as the feature having regressed to *"just the 'don't apply yet' button"*.
 ///
-/// ⇒ This row is the other half. Its absence is exactly the state he reported,
-/// so there is no innocent reading of it — unconditional, like its *this
+/// ⇒ This row is the other half. Its absence is exactly that state, so there
+/// is no innocent reading of it — unconditional, like its *this
 /// document* sibling above, and for the same reason: every document can be
 /// redacted into, including one created in this session with no file to
 /// replace.
@@ -237,13 +215,11 @@ const DESTINATION_NEW_FILE_REGION: &str = "redact-apply-destination-new-file";
 /// cannot work out by looking — he presses a control about permanent removal
 /// and *the page does not change*.
 ///
-/// ★★ **Renamed from `redact-apply-undo-note` on 2026-09-05**, in the same
-/// commit as `crate::dialogs::redact`. The old name described the sentence that
-/// used to live at this region — *"this clears your undo history"* — and
-/// `pdfcer-core` `Pass 250.2` made that false. A region name that still said
-/// `undo` would have aimed this check at a sentence about undo and found one
-/// about staging: a check that passes while measuring something else, which is
-/// this harness's own stated worst outcome.
+/// ★★ The name says **staging**, and it has to: the sentence at this region is
+/// about the write being deferred, not about undo history. A region name that
+/// described a different sentence would aim this check at one thing and find
+/// another — a check that passes while measuring something else, which is this
+/// harness's own worst outcome.
 const STAGING_NOTE_REGION: &str = "redact-apply-staging-note";
 
 /// Every region name the redaction surfaces publish, for a SKIP reason.
@@ -362,8 +338,8 @@ fn digest(bytes: &[u8]) -> (usize, u64) {
 /// future writer compressed the *output*; keeping the input uncompressed is
 /// what stops it arising in the first place.
 ///
-/// ★ `pub(super)` since 2026-09-06, so `checks::signing` can arm a redaction on
-/// the same document rather than authoring a second one. That check needs a
+/// ★ `pub(super)` so `checks::signing` can arm a redaction on the same
+/// document rather than authoring a second one. That check needs a
 /// document whose whole-page redaction actually **verifies** — `four-pages.pdf`
 /// refuses with `VerificationFailed { survivors: ["SCALE", "REVISION"] }`, so a
 /// check that used it would sit in front of a refusal dialog with no
@@ -557,11 +533,9 @@ fn click_command(
     // same trace.
     //
     // ★ `declared_or_in_overflow` is the one statement of "where can a ribbon
-    // command be" and it already knew all three. This is the **second** copy of
-    // that lookup found and removed on 2026-08-27; `settings_headings` was the
-    // first, blind since the same ribbon change. A rule stated twice is a rule
-    // that drifts, and this is what the drift looks like: nothing failed, the
-    // checks simply stopped being able to begin.
+    // command be" and it knows all three places. A second copy of that lookup
+    // anywhere is a rule stated twice, and this is what its drift looks like:
+    // nothing fails, the checks simply stop being able to begin.
     let rect = crate::checks::driving::declared_or_in_overflow(session, driver, ui_rect, name)?
         .ok_or_else(|| {
             Error::new(format!(
@@ -864,8 +838,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
         // --- PHASE E2: ★ the destination choice is DRAWN ------------------
         //
-        // Added 2026-09-04 with the destination itself, and deliberately a
-        // **presence** assertion rather than a click: this check's own written
+        // Deliberately a **presence** assertion rather than a click: this
+        // check's own written
         // rule is that the safe default must be what an unattended run takes,
         // and clicking *replace* here would have the harness overwrite its own
         // fixture — which is a thing the feature is supposed to be able to do
@@ -904,10 +878,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // --- PHASE E3: ★★★ the DEFAULT destination, and the undo disclosure
         //                    that has to precede the button -----------------
         //
-        // Added 2026-09-04 (evening) with `Pass 250.1`. The default destination
-        // is no longer a file at all: it applies the removal INTO the open
-        // document and leaves the write to Save, which is what the operator
-        // asked for in O125. Two assertions, and neither is a note:
+        // The default destination is not a file at all: it applies the removal
+        // INTO the open document and leaves the write to Save, which is what
+        // `OPERATOR_REQUESTS.md` O125 asks for. Two assertions, and neither is
+        // a note:
         //
         // 1. **the choice is on screen.** Unlike the replace row, this region
         //    is declared unconditionally by the application — every document
@@ -916,15 +890,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         //
         // 2. ★★★ **the staging sentence is ABOVE the confirm control.**
         //
-        //    ★★★ REWRITTEN 2026-09-05 with `Pass 250.2`. This used to assert
-        //    the undo-loss sentence, because the default destination collapsed
-        //    the session and cleared the whole undo log, and the operator had
-        //    accepted that on condition he was told first. He is not told that
-        //    any more, because it is no longer true: the undo log survives.
-        //
-        //    What is asserted instead is the fact that replaced it, and it is
-        //    MORE surprising rather than less: the default destination removes
-        //    nothing at the click. The operator presses a control about
+        //    The sentence is about staging, not about undo: the undo log
+        //    survives the default destination. What it discloses is the more
+        //    surprising fact — the default destination removes nothing at the
+        //    click. The operator presses a control about
         //    permanent removal and the page does not change. Without the
         //    sentence his two readings are "it did not work" and "it worked and
         //    the marks are just still drawn", and the second one ships a marked
@@ -945,8 +914,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  apply into the open document, and let Save decide where it lands."
             )));
         }
-        // ★★★ AND THE APPLY-NOW ROW BESIDE IT — the operator's 2026-09-08
-        // report. See the constant: its absence IS the state he described.
+        // ★★★ AND THE APPLY-NOW ROW BESIDE IT. See the constant: its absence
+        // IS the state an operator reports as the feature having regressed.
         if declared(&trace, ui_rect, DESTINATION_INTO_DOCUMENT_NOW_REGION).is_none() {
             return Ok(Some(format!(
                 "★★★ THERE IS NO WAY TO APPLY THE REDACTION AND SEE IT. \
@@ -1031,8 +1000,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // `…::a_document_with_a_staged_redaction_has_unsaved_edits` and
         // `…::undoing_the_marks_under_an_armed_removal_refuses_the_save_by_name`.
         //
-        // ⬜ **And the second thing this check does not do, new 2026-09-05:**
-        // it never reaches `Phase::Staged`, so the *call the removal off*
+        // ⬜ **And the second thing this check does not do:** it never reaches
+        // `Phase::Staged`, so the *call the removal off*
         // control (`redact-apply-cancel-staged`) is drawn by no driven run.
         // Reaching it means confirming the default destination, closing the
         // window and reopening it — which this check cannot do without

@@ -1,19 +1,17 @@
-//! # `app::actions::disclosure` — the sentences one edit owed, kept until they are said
+//! The sentences one edit owed, kept until they are said.
 //!
-//! Split out of [`super`] under **R2** on 2026-08-18, when annotation selection
-//! needed room in the action vocabulary. The seam is the one R2 asks for —
-//! *do these two change for different reasons?* — and they do:
+//! The seam against [`super`] is the one **R2** asks for — *do these two change
+//! for different reasons?*:
 //!
 //! | file | subject | changes when |
 //! |---|---|---|
 //! | [`super`] | the **vocabulary**: one variant per operator intent | the set of things an operator can ask for changes |
 //! | this one | what an edit **reported about itself**, and how long it stays true | the disclosure contract changes |
 //!
-//! Nothing moved but the text: same types, same functions, same store, same
-//! epoch rule. The one thing worth re-reading before touching it is why a
-//! disclosure is keyed on the **epoch** and not merely stored — a sentence
-//! about an edit that has since been undone is worse than no sentence, and the
-//! key is what makes that unrepresentable rather than merely avoided.
+//! The thing to read before touching it is why a disclosure is keyed on the
+//! **epoch** rather than merely stored — a sentence about an edit that has
+//! since been undone is worse than no sentence, and the key is what makes that
+//! unrepresentable rather than merely avoided.
 
 use std::cell::RefCell;
 
@@ -22,8 +20,8 @@ use std::cell::RefCell;
 /// `pdfcer-core`'s vector verbs return `Result<Vec<String>, EditError>`, and the
 /// `Vec<String>` is the **disclosure list**: prose the surgery owes because it
 /// had to change an operator's *form* to express their request. Rule 4 says a
-/// disclosure belongs on an operator-visible surface, and until 2026-08-14 this
-/// list reached `PDFCER_DIAG` and nothing else — recorded, not disclosed.
+/// disclosure belongs on an operator-visible surface, so routing this list only
+/// to `PDFCER_DIAG` would record it without disclosing it.
 ///
 /// # Why this is shaped like [`crate::panels::forms::edit::FillDisclosure`]
 ///
@@ -35,7 +33,7 @@ use std::cell::RefCell;
 /// same kind of thing, and the second would be the one that forgot to retire
 /// itself.
 ///
-/// # ★ What it deliberately does NOT carry: the verb's name
+/// # What it deliberately does NOT carry: the verb's name
 ///
 /// A `FillDisclosure` carries the **field name**, because a fill raised from
 /// the Forms panel happens in a list of forty rows and the sentence is read
@@ -67,7 +65,7 @@ thread_local! {
     /// The most recent vector edit's disclosures, waiting to be read by the
     /// status bar.
     ///
-    /// # ★ Why a thread-local, and why that is sound rather than smuggled
+    /// # Why a thread-local, and why that is sound rather than smuggled
     ///
     /// The same answer `crate::panels::forms::edit`'s `LAST_FILL` gives, and
     /// for the same reason it is worth restating rather than cross-referencing
@@ -98,7 +96,7 @@ thread_local! {
 /// the last edit disclosed nothing, was on another document, or has since been
 /// undone or superseded.
 ///
-/// # ★ It cannot be live at the same time as a fill disclosure
+/// # It cannot be live at the same time as a fill disclosure
 ///
 /// Both are keyed on [`OpenDoc::edit_epoch`], and one edit bumps the epoch
 /// once. So the epoch on screen was produced by exactly one edit, which was
@@ -146,7 +144,7 @@ pub(crate) fn record_edit_disclosure(disclosure: Option<EditDisclosure>) {
 /// lifetime right without anything remembering to clear it: the sentence is
 /// visible from now until the next real edit moves the epoch past it, which is
 /// the same rule `vector_edit`'s own stamp follows and for the same reason its
-/// ★ comment gives.
+/// comment gives.
 pub(crate) fn record_note(epoch: u64, note: String) {
     record_notes(epoch, vec![note]);
 }
@@ -166,7 +164,7 @@ pub(crate) fn record_note(epoch: u64, note: String) {
 /// whichever ran last and silently dropped the other, and the one it dropped
 /// would have been chosen by statement order rather than by importance.
 ///
-/// ★ The order of `notes` is the reading order and the caller owns it. The
+/// The order of `notes` is the reading order and the caller owns it. The
 /// bar joins them with a single space behind one lead-in
 /// (`crate::text::status::edit_disclosure_line`), so the first sentence is the
 /// one an operator reads if they read only one.

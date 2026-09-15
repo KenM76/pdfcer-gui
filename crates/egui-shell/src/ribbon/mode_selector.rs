@@ -7,24 +7,17 @@
 //! [Open][Save][↶][↷]  File View Pages Edit Markup Measure Tools   ( Read ─ Review ─●─ Edit )  [⌃]
 //! ```
 //!
-//! The positions are **ordered by capability** — each is a superset of
-//! the one before — and the document is explicit about why that ordering
-//! is chosen over three toggle buttons or a dropdown:
+//! The positions are **ordered by capability** — each is a superset of the one
+//! before — rather than being three toggle buttons or a dropdown. The ordering
+//! is the information: it is what makes *slide left to calm the interface down*
+//! an obvious gesture rather than a learned one.
 //!
-//! > The ordering is the information, and it is what makes "slide left to
-//! > calm the interface down" an obvious gesture rather than a learned
-//! > one.
-//!
-//! And equally explicit about the trap that comes with saying "slider":
-//!
-//! > It must still render as a real segmented control with **all three
-//! > labels visible** — not a bare track with a knob, where the available
-//! > positions are invisible until you drag.
-//!
-//! That is the requirement this module is written against, and it is why
-//! there is no `egui::Slider` anywhere in it. Every position is a labelled,
-//! hit-testable, individually reported segment, and
-//! `every_mode_gets_its_own_labelled_segment` asserts it.
+//! The metaphor carries a trap, and `MODES_AND_PANELS.md` Part 1 closes it: the
+//! control must render as a real segmented control with **every label
+//! visible**, never as a bare track with a knob whose available positions are
+//! invisible until you drag. That is why there is no `egui::Slider` anywhere in
+//! this module. Every position is a labelled, hit-testable, individually
+//! reported segment, and `every_mode_gets_its_own_labelled_segment` asserts it.
 //!
 //! # Nothing here knows what "Read" means
 //!
@@ -38,9 +31,8 @@
 //!
 //! # Keyboard: a roving tab stop
 //!
-//! `MODES_AND_PANELS.md` Part 1, behavioural rule 6: *"the selector is a
-//! real focusable control with arrow-key movement — not a mouse-only
-//! affordance."*
+//! The selector is a real focusable control with arrow-key movement, not a
+//! mouse-only affordance — `MODES_AND_PANELS.md` Part 1, behavioural rule 6.
 //!
 //! Implemented as the standard roving-tab-stop pattern, which `egui` 0.35
 //! supports exactly and non-obviously:
@@ -223,13 +215,13 @@ pub(crate) fn measure_track(ui: &egui::Ui, modes: &[Mode]) -> (f32, f32) {
 
 /// Fit the track into the room the row actually has.
 ///
-/// # ★ Why this exists — the same failure mode as the overflow affordance
+/// # Why this exists — the same failure mode as the overflow affordance
 ///
-/// [`super`]'s module header states the rule this enforces: *"two things
-/// on this ribbon must never be squeezed out by content: the mode selector
-/// and the overflow affordance."* Laying the selector out first, from the
-/// right edge, achieves that against **content**. It does nothing about
-/// the case where the selector alone is wider than the row.
+/// Two things on this ribbon must never be squeezed out by content: the
+/// mode selector and the overflow affordance ([`super`]'s module header
+/// owns that rule). Laying the selector out first, from the right edge,
+/// achieves it against **content**. It does nothing about the case where
+/// the selector alone is wider than the row.
 ///
 /// `egui` answers `allocate_exact_size` on a right-to-left layout by
 /// extending **leftwards past the edge of the container**. So a track that
@@ -282,7 +274,7 @@ pub(crate) fn render(
     let font = TextStyle::Button.resolve(ui.style());
     let (segment_w, natural_total_w) = measure_track(ui, modes);
 
-    // ★ Fit the track to the row before allocating it. See `fit_track`:
+    // Fit the track to the row before allocating it. See `fit_track`:
     // an over-wide track is not clipped by `egui`, it is placed off the
     // left edge of the row, and a control that is off screen is a control
     // that is not there.
@@ -346,7 +338,7 @@ pub(crate) fn render(
         let is_selected = i == index;
         let cues = segment_cues(is_selected);
 
-        // ★ The roving tab stop. Only the selected segment is focusable;
+        // The roving tab stop. Only the selected segment is focusable;
         // the rest are clickable and skipped by Tab. See the module
         // header — `Sense::CLICK` without `FOCUSABLE` is the whole
         // mechanism and it is not obvious from `egui`'s documentation.
@@ -394,25 +386,21 @@ pub(crate) fn render(
             // outside the plate so it is never confused with the
             // selection border.
             //
-            // ★★★ `palette.accent`, spelled out — it was
-            // `ui.visuals().selection.stroke` until 2026-09-04, and that read
-            // would have silently inverted this ring.
+            // `palette.accent`, spelled out, and **not**
+            // `ui.visuals().selection.stroke`.
             //
-            // `visuals.selection` is `egui`'s SELECTED-WIDGET channel: the
-            // fill a selected control is painted with and the ink that reads
-            // ON that fill. Defect T2 (`REVIEW_TRIAGE.md` §2b) re-pointed it at
-            // the pair it is named for — `accent` and `on_accent` — because
-            // this theme had been handing it to the canvas, which made every
-            // bare `selectable_label(true, …)` in the application unreadable.
+            // `visuals.selection` is `egui`'s selected-widget channel: the
+            // fill a selected control is painted with, and the ink that has to
+            // read ON that fill. This theme points it at `accent` and
+            // `on_accent`, the pair it is named for. `on_accent` is therefore a
+            // *plate* colour — near-white under the light presets — while this
+            // ring is drawn OUTSIDE the plate, on the ribbon's own background.
+            // Reading the selection channel here would paint near-white on
+            // near-white: a luminance gap of 5 under Airy, and a focus ring
+            // nobody can see.
             //
-            // The moment it carries `on_accent`, reading it here is defect D2's
-            // exact shape a fourth time: `on_accent` is a *plate* colour,
-            // near-white under the light presets, and this ring is drawn
-            // OUTSIDE the plate, on the ribbon's own background. Near-white on
-            // near-white — luminance gap 5 under Airy. The ring's real role is
-            // "the accent, on chrome", which is `palette.accent` and always was;
-            // the old spelling merely reached it by an address that has now
-            // moved. Same colour, correct name.
+            // The role this ring plays is "the accent, on chrome", and the only
+            // colour that names that role is `palette.accent`.
             painter.rect_stroke(
                 rect.expand(1.0),
                 ctx.theme.metrics.corner_radius,
@@ -469,14 +457,13 @@ mod tests {
         ]
     }
 
-    /// **★ Arrow-key movement clamps at both ends rather than wrapping.**
+    /// **Arrow-key movement clamps at both ends rather than wrapping.**
     ///
-    /// The positions are ordered by capability. A wrap would turn one
-    /// Right press at the most capable stance into the least capable one
-    /// — in the control whose entire premise, per
-    /// `MODES_AND_PANELS.md` Part 1, is that *"the ordering is the
-    /// information"*. A slider does not wrap, and a slider is the
-    /// document's chosen metaphor.
+    /// The positions are ordered by capability. A wrap would turn one Right
+    /// press at the most capable stance into the least capable one — in the
+    /// control whose entire premise, per `MODES_AND_PANELS.md` Part 1, is
+    /// that the ordering is the information. A slider does not wrap, and a
+    /// slider is the chosen metaphor.
     #[test]
     fn arrow_movement_clamps_rather_than_wrapping() {
         assert_eq!(move_index(0, Move::Prev, 3), 0, "already at the first");
@@ -511,13 +498,13 @@ mod tests {
         }
     }
 
-    /// **★ Every mode gets its own labelled segment — no bare track.**
+    /// **Every mode gets its own labelled segment — no bare track.**
     ///
-    /// `MODES_AND_PANELS.md` Part 1 forbids *"a bare track with a knob,
-    /// where the available positions are invisible until you drag."* The
-    /// checkable form of that is: N modes produce N segments, each with a
-    /// non-empty label and a positive width, and the total is exactly the
-    /// sum. A knob-and-track implementation fails on the segment count.
+    /// `MODES_AND_PANELS.md` Part 1 forbids a bare track with a knob, whose
+    /// available positions are invisible until you drag. The checkable form
+    /// of that is: N modes produce N segments, each with a non-empty label
+    /// and a positive width, and the total is exactly the sum. A
+    /// knob-and-track implementation fails on the segment count.
     #[test]
     fn every_mode_gets_its_own_labelled_segment() {
         let modes = modes();
@@ -593,7 +580,7 @@ mod tests {
         assert_eq!(selected_index(&modes, None), 0);
     }
 
-    /// **★ A track that does not fit is compressed, never pushed off the
+    /// **A track that does not fit is compressed, never pushed off the
     /// edge.**
     ///
     /// `MODES_AND_PANELS.md` Part 1 requires every position to be visible

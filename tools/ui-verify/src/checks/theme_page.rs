@@ -1,11 +1,10 @@
 //! `every_theme_preset_keeps_the_page_white` — the harness's two theme blind
 //! spots, closed in one check.
 //!
-//! # Where this came from
+//! # The two gaps it closes
 //!
-//! `REVIEW_TRIAGE.md` row **PartC**, from the outside review of 2026-09-03:
-//! *"Two harness gaps: the **Airy** preset is never driven, and no check samples
-//! the **page canvas** under a theme — only the window body."*
+//! A suite that drives one preset never drives **Airy**, and a suite that
+//! samples the window body never samples the **page canvas** under a theme.
 //!
 //! Both are about the same three radio buttons that
 //! [`super::settings_theme`] already drives, which is why this began life
@@ -78,8 +77,7 @@ use crate::launch::{LaunchSpec, Session};
 /// restatement is the point rather than a duplication to be apologised for:
 /// `ui-verify` does not compile against `egui-shell`, so the *only* way this
 /// crate can know the set is to write it down — and writing it down is what
-/// makes an omission visible. Until 2026-09-04 the suite named exactly one of
-/// these three.
+/// makes an omission visible.
 ///
 /// A preset added to the shell and not added here ships undriven, which is the
 /// condition `Preset::ALL`'s own comment warns about in the other direction:
@@ -219,7 +217,7 @@ const MAX_PAGE_DRIFT: u16 = 6;
 const MIN_BAND_PTS: f32 = 16.0;
 
 // ===========================================================================
-// `every_theme_preset_keeps_the_page_white` — `REVIEW_TRIAGE.md` PartC
+// `every_theme_preset_keeps_the_page_white`
 // ===========================================================================
 
 /// ★★★ **The sheet stays white, under every preset the shell ships.**
@@ -237,15 +235,12 @@ const MIN_BAND_PTS: f32 = 16.0;
 /// chrome against light content, as CAD tools do it"*, and it keeps
 /// `label_backdrop` and `label_text` light-plated with a stated reason —
 /// *"because they sit over CONTENT, whose colour the document decides and the
-/// theme does not."* The outside review of the Board mock-up on 2026-09-04 made
-/// the same observation from the other side: *"the dark board keeps the PAGE
-/// WHITE. That is the single invariant a dark theme in this product must hold…
-/// It is also, precisely, the check the test review said nobody has written."*
+/// theme does not."* A dark board that keeps the page white is the single
+/// invariant a dark theme in this product must hold.
 ///
-/// So: a belief stated in three places and enforced in none. That is the exact
-/// shape of every defect this suite exists for — `REVIEW_TRIAGE.md` §7's own
-/// summary of the review is *"a rule cited in a comment near the code, and not
-/// enforced by a mechanism inside it."*
+/// Stated in three places and enforced in none is the exact shape of every
+/// defect this suite exists for: **a rule cited in a comment near the code, and
+/// not enforced by a mechanism inside it.**
 ///
 /// # What it measures, and why two things rather than one
 ///
@@ -284,13 +279,12 @@ const MIN_BAND_PTS: f32 = 16.0;
 ///
 /// # ★★ It drives all three presets, and Airy is the point
 ///
-/// [`SettingsThemeTakesEffect`] clicks Dark and nothing else. **Airy had never
-/// been clicked by anything in this repository** — and it is the preset most
-/// likely to be wrong, measured: the two contrast defects the 2026-09-04 review
-/// found had luminance gaps of 28.2 and 5.0 under Airy against 45 and 18 under
-/// the presets that were driven, because Airy's panel is pure white and a 27 %
-/// wash barely darkens it. The preset nothing drove is the preset most likely
-/// to fail.
+/// [`SettingsThemeTakesEffect`] clicks Dark and nothing else, so without this
+/// check **nothing in this repository clicks Airy** — and Airy is the preset
+/// most likely to be wrong, measured: two known contrast defects have luminance
+/// gaps of 28.2 and 5.0 under Airy against 45 and 18 under the presets that are
+/// driven, because Airy's panel is pure white and a 27 % wash barely darkens
+/// it. The preset nothing drives is the preset most likely to fail.
 ///
 /// Each preset must also measure **distinct from the others**
 /// ([`MIN_PRESET_DISTINCTION`]), which is a real assertion in its own right: a

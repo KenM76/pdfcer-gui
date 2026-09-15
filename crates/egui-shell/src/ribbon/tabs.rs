@@ -62,10 +62,10 @@
 //! no bold face involved, and with `default-features = false` this crate
 //! does not even have a bold face available to switch to.
 //!
-//! So a design that relied on `.strong()` for its redundant cue had, in
-//! fact, two colour cues and no others — which is precisely the failure
-//! R84 names, arrived at through a reasonable-sounding sentence about a
-//! toolkit behaving the way a word processor does.
+//! So a design that relies on `.strong()` for its redundant cue has, in
+//! fact, two colour cues and no others — precisely the failure R84 names,
+//! arrived at through a reasonable-sounding sentence about a toolkit
+//! behaving the way a word processor does.
 //!
 //! This module therefore uses **geometry** for its redundancy. [`TabCues`]
 //! is that redundancy, expressed as data so it can be asserted:
@@ -93,26 +93,15 @@
 //! [`super::strip`], which owns the whole tab-strip **row** and its
 //! reservation order.
 //!
-//! The split is not cosmetic. Until 2026-08-13 this module carried a
-//! `with_right_island` helper that laid the mode selector out from the
-//! right edge and handed the remainder to the tabs. It protected the
-//! *right* island and nothing else, and `egui` does not clip a `Ui`'s
-//! children to its `max_rect`, so the QAT and the tabs simply ran through
-//! the selector and off the window. Measured against the synthetic face of
-//! `super::width_tests`, with the two-control QAT and two tabs of the test
-//! manifest:
-//!
-//! ```text
-//! window  QAT             tabs                selector      verdict
-//!  500    0..166          188..265            322..500      correct
-//!  320    0..166          188..265            142..320      tabs UNDER the selector
-//!  180   -6..160          182..259              2..180      both tabs off screen
-//! ```
-//!
-//! That is `MODES_AND_PANELS.md` failure mode #8 one row up. Fixing it
-//! meant planning the row rather than nesting layouts in it, and a planner
-//! is not a thing a "which tabs are visible" module should contain — so
-//! the row moved out and this module kept the tabs.
+//! The split is not cosmetic. A module that answered *which tabs* and also
+//! placed the row would place it the only way one `Ui` allows: nest the
+//! islands and hope. A nested right-hand island protects the right-hand
+//! island and nothing else, and `egui` does not clip a `Ui`'s children to
+//! its `max_rect`, so the QAT and the tabs run through the mode selector
+//! and off the window — `MODES_AND_PANELS.md` failure mode #8, one row up.
+//! [`super::strip`]'s header carries the measurement of what that costs.
+//! Planning a row is not a thing a "which tabs are visible" module should
+//! contain, so the row lives there and the tabs live here.
 
 use egui::{RichText, Stroke, TextStyle, vec2};
 
@@ -175,7 +164,7 @@ pub fn tab_cues(active: bool) -> TabCues {
 /// The tabs to show this frame, in display order: the active mode's
 /// ordinary tabs, then every contextual tab whose condition holds.
 ///
-/// # The four rules, and why each is what it is
+/// # The rules, and why each is what it is
 ///
 /// - **A mode names its tabs, and the mode's order wins.** A mode is a
 ///   *workspace*, and a workspace that reordered itself to match the
@@ -192,20 +181,19 @@ pub fn tab_cues(active: bool) -> TabCues {
 ///   presence is decided by application state rather than by
 ///   configuration, which is exactly why [`Shell::contextual_tabs`] is a
 ///   separate field.
-/// - **★★★ A tab with nothing left to show is not shown.** The fifth rule,
-///   added with [`crate::manifest::Item`]'s `visible_when`, and it is the
-///   symmetric completion of the band's own — *a group with nothing left is
-///   not drawn at all*. Without it the two halves disagree: hide every item on
-///   a tab and the groups all vanish, leaving a tab an operator can click and
-///   an empty band beneath it.
+/// - **★★★ A tab with nothing left to show is not shown.** The rule that
+///   comes with [`crate::manifest::Item`]'s `visible_when`, and the symmetric
+///   completion of the band's own — *a group with nothing left is not drawn at
+///   all*. Without it the two halves disagree: hide every item on a tab and
+///   the groups all vanish, leaving a tab an operator can click and an empty
+///   band beneath it.
 ///
 ///   ★ It is also what makes a **generous tab list** safe, which is the point.
 ///   A mode can name a tab it only sometimes needs, hide the items that do not
 ///   apply, and the tab appears exactly when it has something to offer. That
 ///   turns `Mode::tabs` from *"which tabs exist here"* into *"which tabs may
 ///   appear here"*, and it is the mechanism by which a command can live on the
-///   tab it belongs on rather than the tab a mode happened to be granted —
-///   `RIBBON_IA.md` records three commands that moved for want of it.
+///   tab it belongs on rather than the tab a mode happened to be granted.
 ///
 ///   ★★ A tab whose items carry **no conditions at all** is never affected:
 ///   the question asked is *"is every item conditioned away?"*, and an
@@ -383,57 +371,55 @@ fn draw_tab(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, tab: &Tab, is_active: bool) ->
     // `selection.bg_fill` at `palette.selection_fill`, which is the
     // **canvas object-selection tint**: a deliberately translucent blue
     // (alpha 70/255) designed to sit *over page content* without hiding it.
-    // Used as a chrome plate it is a 27 % wash, and the label keeps its
-    // ordinary foreground — so the active tab rendered as pale blue-grey
-    // text on pale blue, while the inactive tab beside it stayed crisp.
-    // That is `DEFECTS.md` D2's failure — a label invisible in the default
-    // theme — in the one place D2's fix did not reach.
+    // Used as a chrome plate it is a 27 % wash, and the label would keep its
+    // ordinary foreground — pale blue-grey text on pale blue, beside an
+    // inactive tab that stayed crisp. That is `DEFECTS.md` D2's failure, a
+    // label invisible in the default theme, one step outside where D2's fix
+    // reaches.
     //
-    // The palette has the right pair and has had it all along:
-    // `accent` is *"the single accent — selection, focus, the active tab"*
-    // and `on_accent` is *"text and icons drawn ON accent"*. Two roles
-    // exist here on purpose, and the bug was borrowing a third from a
-    // different concept.
+    // The palette carries the right pair: `accent` is *"the single accent —
+    // selection, focus, the active tab"* and `on_accent` is *"text and icons
+    // drawn ON accent"*. Two roles exist here on purpose, and borrowing a
+    // third from a different concept is what produces the wash.
     //
-    // `super::mode_selector` already does exactly this and looks correct on
-    // screen — it paints `palette.accent` and picks `palette.on_accent` for
-    // its label. This is that, applied to the tab that sits beside it.
-    // Keeping `Button::selectable` rather than hand-painting preserves the
-    // inactive tab's *unplated* look, the truncation promise, the sizing
-    // and the `Response`; only the two colours are taken back.
+    // `super::mode_selector` does exactly this — it paints `palette.accent`
+    // and picks `palette.on_accent` for its label — and this module matches
+    // it, for the tab that sits beside it. Keeping `Button::selectable`
+    // rather than hand-painting preserves the inactive tab's *unplated* look,
+    // the truncation promise, the sizing and the `Response`; only the two
+    // colours are taken back.
     // ★ WEIGHT AND COLOUR ARE ONE DECISION, and `.strong()` is unreachable
-    // without the colour that makes it legible — 2026-08-17.
+    // without the colour that makes it legible.
     //
-    // This was two independent `if`s, one on `emphasised_text` and one on
-    // `filled`, and it was a latent repeat of `DEFECTS.md` **D11**: a tab with
-    // `emphasised_text` and not `filled` got a bare `.strong()`, which `egui`
+    // Written as two independent `if`s — one on `emphasised_text`, one on
+    // `filled` — this is a latent `DEFECTS.md` **D11**: a tab with
+    // `emphasised_text` and not `filled` gets a bare `.strong()`, which `egui`
     // resolves to `widgets.active.fg_stroke` — the foreground chosen for the
     // accent-FILLED state — on a background that is not the accent. Pale text
-    // on a pale plate, exactly the six labels D11 records.
+    // on a pale plate.
     //
-    // It was not reachable through this crate's own constructor, because
-    // `tab_cues` derives all four cues from one `active` flag. It was reachable
-    // by anyone building a `TabCues` by hand — every field is `pub`, and this
-    // module's own tests do it — so the guarantee rested on a coincidence
-    // between two lines rather than on anything structural.
+    // That state is not reachable through this crate's own constructor,
+    // because `tab_cues` derives all four cues from one `active` flag. It is
+    // reachable by anyone building a `TabCues` by hand — every field is `pub`,
+    // and this module's own tests do it — so a guarantee resting on two lines
+    // agreeing is not a guarantee.
     //
-    // Nesting is what makes it structural: the weight can now only be applied
+    // Nesting is what makes it structural: the weight can only be applied
     // inside the branch that has already stated the colour, so the two cannot
-    // be separated by an edit that only looks at one of them. Behaviour is
-    // unchanged for every caller that uses `tab_cues`.
+    // be separated by an edit that looks at only one of them.
     //
-    // Found by `tools/gates/check-strong-text.sh`, on the run that introduced
-    // it — which is the argument for that gate existing: D11 wrote the rule
-    // down on 2026-08-14 and it was broken again on 2026-08-17, in a different
-    // crate, by someone who had read it.
+    // `tools/gates/check-strong-text.sh` is the outer guard, and it is needed
+    // because D11's rule is easy to re-break in another crate by someone who
+    // has read it.
     let mut text = RichText::new(label);
     if cues.filled {
         text = text.color(ctx.theme.palette.on_accent);
         if cues.emphasised_text {
-            // R84's non-colour cue: weight survives greyscale and
-            // colour-vision deficiency, which the fill alone does not. Safe
-            // here and only here, because the line above has already said what
-            // colour the text is.
+            // A stronger ink on the accent plate. It is **not** a non-colour
+            // cue — `.strong()` in `egui` 0.35 changes the colour and not the
+            // face (see this module's header), and the underline and the
+            // stroke are what R84 counts. Safe here and only here, because
+            // the line above has already said what colour the text is.
             text = text.strong();
         }
     }
@@ -546,9 +532,8 @@ mod tests {
     /// ★ This is also the rule that makes a **generous tab list** safe, which
     /// is the point of having it: a mode can name a tab it only sometimes
     /// needs and the tab appears exactly when it has something to offer. It is
-    /// what would let a command live on the tab it belongs on rather than the
-    /// tab a mode happened to be granted — `RIBBON_IA.md` records three
-    /// commands that moved for want of exactly this.
+    /// what lets a command live on the tab it belongs on rather than on the tab
+    /// a mode happened to be granted.
     #[test]
     fn a_tab_with_every_item_conditioned_away_is_not_shown() {
         let shell = Shell::new()

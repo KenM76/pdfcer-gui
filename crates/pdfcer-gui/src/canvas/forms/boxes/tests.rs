@@ -2,20 +2,18 @@
 //! this canvas will draw a box for, where those boxes land in canvas space, and
 //! what the in-place editor looks like once one is opened.
 //!
-//! # Why this file exists separately from the module it tests
+//! # Why this file is separate from the module it tests
 //!
-//! Split out of `boxes.rs` on 2026-09-10 under **R2** (no source file over
-//! 1,500 lines). The file had reached 1,501 lines — one over — after a
-//! fixture-wide edit added `Page::resources_defaulted` to every hand-built
-//! page in the crate, and the seam this project takes first is always the one
-//! between a module and its tests: they have different readers, they change for
-//! different reasons, and the code half of this module is under 700 lines and
-//! is the part someone debugging a mis-placed widget box needs to hold in their
+//! **R2** caps a source file at 1,500 lines, and the seam this project takes
+//! first is always the one between a module and its tests: they have different
+//! readers and they change for different reasons. What stays in `boxes.rs` is
+//! the part someone debugging a mis-placed widget box needs to hold in their
 //! head.
 //!
-//! Nothing here changed in the move except indentation. `use super::*;` still
-//! reaches every item, and every test kept its name so `cargo test <name>` and
-//! every citation elsewhere in the repository still resolve.
+//! `use super::*;` reaches every item from here, so a test's **name** is the
+//! only handle anything outside needs: `cargo test <name>` and every citation
+//! elsewhere in the repository resolve against the name and not against the
+//! file it sits in.
 //!
 //! # What these tests are for
 //!
@@ -114,28 +112,20 @@ fn drawn_widget() -> Widget {
         rect: None,
         appearance_state: None,
         on_states: Vec::new(),
-        // ★ `rotation` arrived with the engine's `rotate_widget` Pass on
-        // 2026-08-30. `None` here means the file states none, which is what
-        // every fixture in this shell wants: a widget with no `/MK /R`.
+        // ★ `None` means the file states no `/MK /R`, which is what every
+        // fixture in this shell wants: an unrotated widget.
         rotation: None,
         has_off_appearance: false,
         page: None,
         caption: None,
-        // `Pass 146.0`'s three, in a test fixture: the file states no
-        // border and no unusual flags. `None` is the honest value for a
-        // synthetic widget — it means "this file says nothing", which is
-        // exactly true of one built in a test.
-        // ★ `background` arrived with the engine's field-shading Pass on
-        // 2026-09-04, alongside `border`. `None` is the honest value for a
-        // synthetic widget for the same reason the two below it are: it
-        // means "this file states no /MK /BG", which is exactly true of one
-        // built in a test.
+        // ★ The appearance group — `/MK /BG`, `/MK /BC`, `/MK /BW` and the
+        // annotation flags. `None` is the honest value for a synthetic
+        // widget: it means "this file states nothing", which is exactly true
+        // of one built in a test rather than read from a document.
         background: None,
-        // The widget states no /MK /BC. Arrived with the engine commit
-        // fad0d2d (2026-09-07), which added /BC beside /BG and fixed a
-        // read/write key mismatch between them. ★ /BG IS consumed, as of
-        // 2026-09-11 — it tints the in-place editor, see `editor_fill`. /BC
-        // is not, and that is the only half of this pair still outstanding.
+        // ★ /BG IS consumed — it tints the in-place editor, see
+        // `editor_fill`. /BC is read and not yet drawn, and that is the only
+        // half of this pair still outstanding.
         border_color: None,
         border: None,
         visibility: None,
@@ -359,8 +349,8 @@ fn a_button_with_no_on_state_is_not_offered() {
 /// key. This is that form, in this shell — [`drawn_widget`] omits `/P`, and
 /// the assertion is that the box is produced anyway.
 ///
-/// It is `HANDOFF.md` §2's lesson in a new place: **a test that cannot
-/// reach the case is satisfied by any implementation.**
+/// It is the general rule in a new place: **a test that cannot reach the
+/// case is satisfied by any implementation.**
 #[test]
 fn a_widget_with_no_p_entry_is_still_placed() {
     let field = text_field();
@@ -523,12 +513,12 @@ fn the_editor_text_size_is_clamped_at_both_ends() {
 /// ★★★ **A field's `/Q` reaches the box a click makes, and it reaches it
 /// per field.**
 ///
-/// The half of the quadding fix that lives in [`classify`]. Before
-/// 2026-09-04 the classification carried no alignment at all, so
-/// [`super::editor`] had nothing to read and every field — left, centred
-/// or right — was typed into left-aligned. The value is asserted for all
-/// three codes rather than for one, because a `field.quadding` that was
-/// hard-wired to `Left` would pass a single-value test perfectly.
+/// The half of the quadding contract that lives in [`classify`]. A
+/// classification that carries no alignment leaves [`super::editor`] nothing
+/// to read, and every field — left, centred or right — is then typed into
+/// left-aligned. The value is asserted for all three codes rather than for
+/// one, because a `field.quadding` hard-wired to `Left` passes a
+/// single-value test perfectly.
 #[test]
 fn a_fields_quadding_reaches_the_box_a_click_makes() {
     for want in [Quadding::Left, Quadding::Center, Quadding::Right] {
@@ -686,7 +676,7 @@ fn a_real_form_produces_boxes_inside_its_own_pages() {
 /// thing this feature adds. That is a fact about the fixtures rather than
 /// about the feature, and the honest response is to make the missing
 /// document rather than to declare the path verified because the tests are
-/// green — `HANDOFF.md` §2's whole subject.
+/// green.
 ///
 /// It is `#[ignore]` and writes outside the source tree, following
 /// `crate::shell::ron`'s generator precedent: a test that writes a file is
@@ -751,8 +741,8 @@ fn a_drawn_text_field_fixture() {
     std::fs::write(&rotated, turned).expect("the temp directory is writable");
     println!("wrote {}", rotated.display());
 
-    // Prove the point of the exercise: the field is now DRAWN, so the
-    // canvas will offer it. If this ever stops being true the generator is
+    // Prove the point of the exercise: the field is DRAWN, so the canvas
+    // will offer it. If this ever stops being true the generator is
     // producing a document that does not test what it exists to test.
     let view = session.view();
     let form = pdfcer_core::forms::parse_acroform(&view).expect("the form survived");
@@ -771,9 +761,10 @@ fn a_drawn_text_field_fixture() {
 /// SELECTED there**, which is the whole reason [`FieldTarget`] exists.
 ///
 /// A drop-down (`/Ch`) is `NotOffered` — this shell has no canvas gesture
-/// for one, and `classify` refuses it. Before selection existed, that
-/// refusal removed it from the only list the canvas hit-tested, so a field
-/// the operator could plainly see was not clickable at all.
+/// for one, and `classify` refuses it. Were selection taken from the same
+/// list, that refusal would also remove it from the only list the canvas
+/// hit-tests, and a field the operator can plainly see would not be
+/// clickable at all.
 ///
 /// The two assertions are deliberately opposite, because a test that only
 /// checked the target would pass against a change that made every widget

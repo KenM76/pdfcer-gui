@@ -1,8 +1,5 @@
 //! # `app::dispatch::text` — the caret, and the commands whose operand it is
 //!
-//! Split out of [`super`] under **R2** on 2026-08-28, when that file sat at
-//! exactly 1,500 lines and paragraph reflow needed an arm.
-//!
 //! ## What is here
 //!
 //! | id | what it does |
@@ -10,12 +7,11 @@
 //! | `edit.text`, `edit.add_text` | **arm** the caret |
 //! | `edit.reflow_block` | **act** on the paragraph the caret is in |
 //!
-//! ★ The arming pair came across with the reflow rather than being left behind,
-//! and that is the seam rather than a convenience: they are the only three
-//! commands in the build whose subject is a text caret, and a reader asking
-//! *"what can I do to page text"* now has one file to read. Leaving the pair in
-//! [`super`] would have satisfied R2 and left the subject in two places, which
-//! is the split that costs more than it saves.
+//! ★ The arming pair sits with the reflow rather than in [`super`], and that is
+//! the seam rather than a convenience: these are the commands whose subject is a
+//! text caret, so a reader asking *"what can I do to page text"* has one file to
+//! read. Splitting on size alone would leave one subject in two places, which
+//! costs more than it saves.
 //!
 //! ## ★★★ Why a command with no operand in its id needs a module of prose
 //!
@@ -29,8 +25,8 @@
 //! ```
 //!
 //! ⇒ Every link can fail, and **each failure means something different to the
-//! operator**. That is the whole content of this module: three refusals, each
-//! saying the thing that gets them unstuck, instead of one silence.
+//! operator**. That is the whole content of this module: a refusal per link,
+//! each saying the thing that gets them unstuck, instead of one silence.
 //!
 //! | what is missing | what they must do |
 //! |---|---|
@@ -54,9 +50,9 @@
 //!
 //! `edit.reflow_block` is registered `enabled_when("edit.content")` — a reflow
 //! rewrites the page's content stream, so a reading stance must never offer it.
-//! [`super`]'s `edit.text` arm re-checks `capabilities().edit_content` because
-//! that id is *also* reachable from the tool row; this one is reachable only
-//! from the Edit tab, so the registry's own gate is the single gate.
+//! [`arm`] re-checks `capabilities().edit_content` for `edit.text` because that
+//! id is *also* reachable from the tool row; the reflow is reachable only from
+//! the Edit tab, so the registry's own gate is the single gate.
 
 use crate::app::actions::Action;
 use crate::app::actions::text::TextAction;
@@ -64,8 +60,9 @@ use crate::app::state::Status;
 
 /// Whether this file owns `id`.
 ///
-/// ★ Three ids, and `edit.reflow_block` is the only one [`dispatch`] can refuse
-/// — the other two arm a tool, which cannot fail once the mode allows it.
+/// ★ `edit.reflow_block` is the only id here that can fail after the mode has
+/// allowed it — the arming pair can only be declined by the mode, and arming a
+/// tool cannot fail once it is.
 ///
 /// `pub(crate)` for [`super::routes::handles`]' reason: `shell::commands::reach`'s
 /// reachability checker must be able to evaluate every guard arm it finds.
@@ -75,12 +72,12 @@ pub(crate) fn handles(id: &str) -> bool {
     matches!(id, "edit.text" | "edit.add_text" | "edit.reflow_block")
 }
 
-/// Do whatever this build does about one of the three caret commands.
+/// Route one caret command.
 ///
 /// ★★ The mode check is here for the arming pair and NOT for the reflow, and
 /// the asymmetry is deliberate. `edit.text` is reachable from the tool row as
 /// well as the Edit tab — `view.tool_text`, the `T` chord — so it can be
-/// invoked in a stance whose ribbon never drew it, and [`super`]'s
+/// invoked in a stance whose ribbon never drew it, and [`super::navigate`]'s
 /// `view.tool_node` arm declines by name for exactly that reason. Reflow has no
 /// such second door: it exists on the Edit tab and in the canvas text menu,
 /// both of which are absent outside an editing stance.
@@ -107,13 +104,13 @@ fn arm(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id: &str) {
                 crate::canvas::textedit::TextEditKind::Edit
             };
             if app.capabilities().edit_content {
-                // ★ Both ids still arm the caret directly, and both are kept
-                // — two doors into one room. `edit.text` is the one an
-                // operator finds on the Edit tab; `view.tool_text` (T) is
-                // the one they find in the tool row. Since 2026-08-19 the
-                // CLICK decides edit-versus-add, so the `kind` here is a
-                // starting bias rather than a mode: `textedit::click` turns
-                // an `Edit` that lands on no run into an origin.
+                // ★ Both ids arm the caret directly — two doors into one
+                // room. `edit.text` is the one an operator finds on the Edit
+                // tab; `view.tool_text` (T) is the one they find in the tool
+                // row. **The CLICK decides edit-versus-add**, so the `kind`
+                // here is a starting bias rather than a mode:
+                // `textedit::click` turns an `Edit` that lands on no run
+                // into an origin.
                 let _ = crate::canvas::tool::arm_text_edit(ctx, kind);
             } else {
                 crate::diag::trace(|| {
@@ -136,18 +133,16 @@ fn arm(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id: &str) {
 /// document, the composite font. Those are about the page and the session; this
 /// one is about the caret, and they are deliberately not merged.
 ///
-/// ★ Reworded 2026-09-14: it used to call the engine's set *"the save and
-/// reopen refusal"*, singular, which had been one of several since
-/// `Pass 257.0` and stopped being the interesting one entirely once O198 showed
-/// the commonest refusal on a real CAD sheet is the composite-font one.
+/// ⚠ The engine's refusals are a **set**, not one: the commonest on a real CAD
+/// sheet is the composite-font one, not the save-and-reopen one.
 fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
     use crate::text::textedit::ReflowRefusal;
 
     let Status::Open(doc) = status else {
         // ★★ Unreachable in practice — the control is `enabled_when("doc.pages")`
-        // — and still not a bare `return` as of O127. A dispatch arm that can
-        // leave without a word is the shape this whole function exists against,
-        // and *"there is no document"* is a cause like any other.
+        // — and still not a bare `return`. A dispatch arm that can leave without
+        // a word is the shape this whole function exists against, and *"there is
+        // no document"* is a cause like any other.
         decline("no-document", ReflowRefusal::NeedsCaret);
         return;
     };
@@ -182,26 +177,20 @@ fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
 /// traces but does not tell the operator — the asymmetry that makes a feature
 /// look broken while the log says it declined politely.
 ///
-/// # ★★★ It writes to the DECLINE slot, and until O127 it wrote to the wrong one
+/// # ★★★ It writes to the DECLINE slot, and that is not interchangeable with
+/// the disclosure one
 ///
-/// This function used to call `crate::app::actions::record_note`, which the bar
-/// draws under **`⚑ About your last edit:`**. Every sentence it produced was
-/// correct, and every one of them arrived labelled as a footnote about an
-/// **earlier edit** — for a press that changed nothing. The operator's verdict
-/// was *"I haven't seen the reflow option actually work with anything when I
-/// press it."*
+/// `crate::app::actions::record_note` draws under **`⚑ About your last edit:`**.
+/// A correct sentence in that slot after a press that changed nothing is a small
+/// lie told confidently — Ken: *"I haven't seen the reflow option actually work
+/// with anything when I press it."* Nothing happens here, so the slot that says
+/// so is `⊗`, and [`crate::app::status::decline::record_reflow`] is the door to
+/// it.
 ///
-/// He was being answered. `app::status::decline`'s own header had already ruled
-/// on this exact swap for two other sentences: *"an operator who reads 'About
-/// your last edit' after a gesture that did nothing has been told a small lie
-/// confidently."* Nothing happened here either, so the slot that says so is
-/// `⊗`, and [`crate::app::status::decline::record_reflow`] is the door to it.
-///
-/// ⇒ The `epoch` parameter went with the swap. A disclosure is stamped with the
-/// edit it describes, so it can go stale and retire itself; a decline describes
-/// **no** edit and is retired by the operator's next command instead. Carrying
-/// an epoch here was the clearest possible sign the sentence was in the wrong
-/// place — it was being dated against an edit that had not happened.
+/// ⇒ **This function takes no `epoch`, and must not.** A disclosure is stamped
+/// with the edit it describes so it can go stale and retire itself; a decline
+/// describes **no** edit and is retired by the operator's next command instead.
+/// An epoch here would be dating a sentence against an edit that never happened.
 fn decline(reason: &str, why: crate::text::textedit::ReflowRefusal) {
     crate::app::status::decline::record_reflow(why);
     crate::diag::trace(|| {

@@ -1,7 +1,7 @@
 #![cfg(test)]
 //! Tests for [`super`] — the decisions, over values.
 //!
-//! # ★★ What is asserted here, and what deliberately is not
+//! # What is asserted here, and what deliberately is not
 //!
 //! Everything in this file runs without a registry and without starting a
 //! process. That is not a limitation of the tests, it is the property
@@ -81,7 +81,7 @@ const READER: &str = r"C:\Program Files\Adobe\Reader\AcroRd32.exe";
 const ELSEWHERE: &str = r"D:\Apps\Acrobat\Acrobat.exe";
 const RIVAL: &str = r"C:\Program Files\PDF Studio\PDFStudio.exe";
 
-/// **★★★ Nothing found and nothing configured ⇒ no button.**
+/// **Nothing found and nothing configured ⇒ no button.**
 ///
 /// R9, and the reason the whole capability is expressed as a `visible_when`
 /// rather than as an `enabled_when`: *an unavailable capability renders
@@ -109,7 +109,7 @@ fn a_machine_with_no_acrobat_offers_no_viewer_and_therefore_no_button() {
     );
 }
 
-/// **★★★ Pro beats Reader when both are installed.**
+/// **Pro beats Reader when both are installed.**
 ///
 /// `OPERATOR_REQUESTS.md` O122: *"acrobat reader or pro depending on what is
 /// installed"*, decided in favour of Pro because Pro is the superset and is
@@ -130,8 +130,8 @@ fn pro_beats_reader_when_both_are_installed() {
     assert_eq!(chosen.source, Source::AppPaths);
 }
 
-/// **★★ Edition outranks source: a Pro found through the `.pdf` handler beats
-/// a Reader found in `App Paths`.**
+/// **Edition outranks source: a Pro found through the `.pdf` handler beats a
+/// Reader found in `App Paths`.**
 ///
 /// The ordering that makes [`Source::rank`] a tie-break rather than the first
 /// sort key. Sorting by source first would answer *Reader*, on the reasoning
@@ -148,7 +148,7 @@ fn pro_beats_reader_even_when_reader_is_the_registered_handler() {
     assert_eq!(chosen.source, Source::PdfHandler);
 }
 
-/// **★★★ A configured path beats discovery, and does not fall back to it.**
+/// **A configured path beats discovery, and does not fall back to it.**
 ///
 /// The escape hatch of O122 point 4, and the two halves are equally
 /// load-bearing. Beating discovery is what makes the setting mean anything at
@@ -182,7 +182,7 @@ fn a_configured_path_beats_discovery_and_never_falls_back_to_it() {
     );
 }
 
-/// **★★ A registration whose file is gone is not offered.**
+/// **A registration whose file is gone is not offered.**
 ///
 /// An uninstall that leaves its `App Paths` key behind is ordinary. Offering
 /// the button anyway would produce a control that is present, enabled, and
@@ -203,7 +203,7 @@ fn a_stale_registration_is_not_offered() {
 /// A configured path is labelled by its file name, and an unrecognisable one
 /// is still honoured.
 ///
-/// ★ The deliberate asymmetry with discovery: [`super::discover::edition_of`]
+/// The deliberate asymmetry with discovery: [`super::discover::edition_of`]
 /// is a **filter** on what the registry offers and a **label** on what the
 /// operator typed. Somebody who points this setting at a renamed executable,
 /// a launcher script wrapper or a portable install has answered the question
@@ -223,7 +223,8 @@ fn a_configured_path_is_honoured_even_if_its_name_is_not_one_we_know() {
     );
 }
 
-/// **★★★ The three prompts, and the never-saved case refusing distinctly.**
+/// **Every document state gets its own prompt, and the never-saved case
+/// refuses distinctly.**
 ///
 /// O122 points 5 and 6, plus the case the operator did not name and the code
 /// must still answer. The order of the two questions is the content of
@@ -276,12 +277,12 @@ impl Launcher for Recorder {
     }
 }
 
-/// **★ The launch hands the viewer the document, and exactly that.**
+/// **The launch hands the viewer the document, and exactly that.**
 ///
 /// Thin, and worth having anyway: it is the assertion that the two paths are
-/// not transposed. A `launch(file, viewer)` compiles, runs, and fails only on
-/// a real machine, where it would try to start the operator's PDF as if it
-/// were a program.
+/// not transposed. Inside a [`Launcher`] both are paths, so an implementation
+/// that started the document and handed it the program compiles and runs, and
+/// fails only on a real machine — where it would try to execute a PDF.
 #[test]
 fn launching_passes_the_document_to_the_viewer() {
     let recorder = Recorder::default();

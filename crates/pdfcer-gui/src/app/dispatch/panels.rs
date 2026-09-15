@@ -1,16 +1,15 @@
-//! `app::dispatch::panels` — the four layout verbs that act on a panel.
+//! `app::dispatch::panels` — the layout verbs that act on a panel or on the
+//! chrome around it.
 //!
-//! Float it, dock it back, close it, and bring every floating one home.
-//! Split out of [`super`] under **R2** on 2026-09-04: `dispatch.rs` was at
-//! 1,460 lines and four arms carrying their own reasoning would not fit
-//! under the 1,500-line ceiling. The seam is a real one — these four are
-//! the only commands in the program whose operand is *a panel* rather than
-//! the document — so this is a module and not a spill file.
+//! Float a panel, dock it back, close it, bring every floating one home, and
+//! the two auto-hide toggles for the ribbon and the rail. The seam is the
+//! operand: these are the commands in the program whose subject is *the
+//! shell's arrangement* rather than the document.
 //!
 //! # ★★★ The operand problem, which is the whole reason this file has a
 //! shape at all
 //!
-//! Three of the four verbs act on **the panel the operator right-clicked**.
+//! Float, dock and close act on **the panel the operator right-clicked**.
 //! Nothing in [`super::PdfcerApp::dispatch_command`]'s signature carries
 //! that: it is handed a command id and the application, and a command id
 //! is a verb with no noun.
@@ -19,8 +18,8 @@
 //!
 //! | | Why not |
 //! |---|---|
-//! | Four commands per panel (`view.panel_float.layers`, …) | Twelve panels × three verbs is thirty-six registered commands whose only difference is a suffix, each needing a `CommandText`, a handler token that can never be reused, and a row in the reachability register. The registry would be mostly this. |
-//! | A `HandlerToken` that carries data | A token is an integer the operator's saved key bindings are written against (`shell::commands::catalog`'s per-tab hundreds). Making it a payload makes a keybinding file un-writable. |
+//! | A command per panel per verb (`view.panel_float.layers`, …) | `Panel::ALL` times the operand-taking verbs, in registered commands whose only difference is a suffix, each needing a `CommandText`, a handler token that can never be reused, and a row in the reachability register. The registry would be mostly this. |
+//! | A `HandlerToken` that carries data | A token is an integer the operator's saved key bindings are written against. Making it a payload makes a keybinding file un-writable. |
 //! | **Park the panel beside the dispatch** | What this does. |
 //!
 //! ⇒ [`crate::app::PdfcerApp::dock_menu_panel`] is set on the line before
@@ -48,11 +47,10 @@
 //! to `layout.ron` by an entirely separate debounce, and it survives
 //! closing every document.
 //!
-//! ⇒ These four mutate `self.dock` directly, exactly as
+//! ⇒ The panel verbs mutate `self.dock` directly, exactly as
 //! `view.reset_layout` and [`crate::app::PdfcerApp::toggle_panel`] already
-//! do. **No new `Action` variant was needed for any of this**, which is
-//! also why `app/actions/action.rs` did not have to be split — it is at
-//! 1,500 lines exactly, and adding a variant would have required it.
+//! do, and the auto-hide toggles write `Prefs`. **No `Action` variant
+//! belongs to any of this.**
 //!
 //! # The persistence, which is the part that is easy to leave out
 //!
@@ -73,7 +71,7 @@ use egui_shell::dock::PanelId;
 
 use crate::app::PdfcerApp;
 
-/// The four command ids this module claims.
+/// The command ids this module claims.
 ///
 /// ★★ A **free function** taking `id`, and that shape is required rather
 /// than preferred. `shell::commands::reach` parses `dispatch.rs`'s syntax
@@ -86,8 +84,8 @@ use crate::app::PdfcerApp;
 ///
 /// ⇒ So the guard is this, and the body calls the method. The pair is
 /// pinned by [`tests::the_guard_and_the_dispatcher_claim_the_same_ids`], so
-/// a fifth verb added to one and not the other fails a named test rather
-/// than becoming a control that traces `command-unimplemented`.
+/// a verb added to one and not the other fails a named test rather than
+/// becoming a control that traces `command-unimplemented`.
 #[must_use]
 pub(crate) fn claims(id: &str) -> bool {
     matches!(
@@ -105,10 +103,10 @@ impl PdfcerApp {
     /// Write the current arrangement to the active mode's workspace and
     /// mark it for the debounced save.
     ///
-    /// A method rather than four copies of two lines, because the two
+    /// A method rather than a copy of two lines per arm, because the two
     /// lines are not the interesting part — *remembering to call them at
     /// all* is, and a named verb is what a reviewer can check for at each
-    /// of four sites.
+    /// site that moves a panel.
     fn record_panel_layout(&mut self) {
         let layout = self.dock.layout().clone();
         self.modes.record_layout(&layout, &mut self.layout);
@@ -125,7 +123,7 @@ impl PdfcerApp {
         self.dock_menu_panel.take()
     }
 
-    /// Dispatch one of the four panel-layout commands.
+    /// Dispatch one of the panel-layout commands.
     ///
     /// Returns `false` when `id` is not one of them, so
     /// [`super::PdfcerApp::dispatch_command`] can fall through to its
@@ -204,8 +202,8 @@ impl PdfcerApp {
                 });
                 true
             }
-            // ★★★ **Dock all** — the recovery verb, and the only one of
-            // the four with no operand.
+            // ★★★ **Dock all** — the recovery verb, and it takes no
+            // operand.
             //
             // It takes none deliberately: the state it exists to recover
             // from is one where the operator cannot point at the window,
@@ -230,9 +228,9 @@ impl PdfcerApp {
                 });
                 true
             }
-            // ★★★ THE TWO AUTO-HIDE TOGGLES — 2026-09-05, his second and
-            // fifth asks. See `egui_shell::peek` for the interaction model and
-            // for the R128 bound that keeps it out of a feedback loop.
+            // ★★★ THE TWO AUTO-HIDE TOGGLES. See `egui_shell::peek` for the
+            // interaction model and for the R128 bound that keeps it out of a
+            // feedback loop.
             //
             // ★★ Each writes the PREFERENCE and lets the frame loop push it
             // into the shell, rather than calling `set_auto_hide` here. The two
@@ -276,9 +274,9 @@ impl PdfcerApp {
 mod tests {
     use egui_shell::dock::{Column, DockLayout, DockSide, PanelId, SideLayout, Stack};
 
-    /// The three panel ids this module's tests speak, as the application
-    /// spells them — so a rename of a panel's command id breaks these
-    /// rather than leaving them asserting about strings nothing uses.
+    /// The panel ids this module's tests speak, as the application spells
+    /// them — so a rename of a panel's command id breaks these rather than
+    /// leaving them asserting about strings nothing uses.
     fn layers() -> PanelId {
         PanelId::new(crate::panels::Panel::Layers.command_id())
     }
@@ -302,12 +300,11 @@ mod tests {
     /// ★★★ **The guard and the dispatcher claim exactly the same ids.**
     ///
     /// Two lists, one obligation. `claims` is what
-    /// `shell::commands::reach` reads out of `dispatch.rs` to decide that
-    /// these four commands are routed; `dispatch_panel_layout`'s `match` is
-    /// what actually routes them. A command in the first and not the second
-    /// is a control that presses and does nothing while the register calls
-    /// it reachable — which is `file.save_copy`'s defect exactly, and the
-    /// register exists to end it.
+    /// `shell::commands::reach` reads out of `dispatch.rs` to decide these
+    /// commands are routed; `dispatch_panel_layout`'s `match` is what
+    /// actually routes them. A command in the first and not the second is a
+    /// control that presses and does nothing while the register calls it
+    /// reachable.
     #[test]
     fn the_guard_and_the_dispatcher_claim_the_same_ids() {
         // Every id the guard claims must be one the dispatcher handles.
@@ -342,7 +339,7 @@ mod tests {
             let id = PanelId::new(panel.command_id());
             let mut layout = sample();
             // Mount it somewhere if the sample does not already hold it,
-            // so the sweep covers all twelve rather than the three the
+            // so the sweep covers every panel rather than the ones the
             // sample names.
             if !layout.contains(&id) {
                 layout.mount(DockSide::Left, 0, 0, id.clone());

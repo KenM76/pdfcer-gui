@@ -539,11 +539,14 @@ Acrobat has the same limitation and says nothing at all. The text is not missing
 and pdfcer is not failing — the *file* does not carry the information.
 
 **Recognise text** (File ▸ Recognise) reads such a page and builds a searchable
-layer for it. It works in all three modes, and it never changes the document you
-have open: it recognises, **shows you what it read**, and only then offers to
-write the result — always as a save to a new file you name, never over the file
-you opened. Every word an OCR layer holds is a guess, and the order of those
-steps is what lets you decline one you do not believe.
+layer for it. It works in all three modes.
+
+It recognises, **shows you what it read**, and only then writes the layer into
+the document you have open — as an ordinary edit. That means the title bar gains
+its modified marker and **Undo takes the whole run back in one step**; nothing is
+written to disk until you save, and you choose then whether that is over the
+original or to a new name. Every word an OCR layer holds is a guess, which is why
+you see the result before it is applied and why one undo is enough to drop it.
 
 ---
 

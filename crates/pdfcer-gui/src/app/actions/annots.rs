@@ -1,19 +1,18 @@
 //! # `app::actions::annots` — the verbs that change an annotation
 //!
-//! Split out of [`super::apply`] under **R2** on 2026-08-18, when annotation
-//! selection landed and took that file past 1,500 lines. The seam is the one
-//! [`super::pages`] already draws next door: *what class of thing does this
-//! verb act on?* — pages there, annotations here, page **content** in `apply`.
+//! Held here rather than in [`super::apply`] so that the funnel stays inside
+//! R2's 1,500-line ceiling. The seam is the one [`super::pages`] already draws
+//! next door: *what class of thing does this verb act on?* — pages there,
+//! annotations here, page **content** in `apply`.
 //!
-//! ## Why it is worth its own file today rather than when it is bigger
+//! ## The routing obligation every style verb here carries
 //!
-//! Because it is about to get bigger, and for a reason that is already
-//! scheduled. `EditSession::set_markup_style` shipped on 2026-08-18 —
-//! colour, interior, width, opacity and arrowheads on an existing annotation,
-//! keeping its object id — and the Format contextual tab is the surface for
-//! it. Every one of those becomes a verb in here.
+//! `EditSession::set_markup_style` restyles an annotation that already exists
+//! — colour, interior, width, opacity and arrowheads, keeping its object id —
+//! and the Format contextual tab is the surface for it. Every one of those
+//! properties becomes a verb in here.
 //!
-//! ★ And each of them will carry the same routing obligation `delete` does
+//! Each carries a routing obligation `delete` does
 //! not: a **ce dimension** is a `/Line` with `/IT /LineDimension`, it passes
 //! every "markup pdfcer can author" test, and restyling one through
 //! `set_markup_style` regenerates it as a bare line with its label and witness
@@ -36,8 +35,8 @@ use crate::app::state::OpenDoc;
 
 mod inknodes;
 /// **The text-annotation restyle verb** — `set_text_annot_style` and the
-/// stamp-label disclosure it owes. Split out 2026-09-10 under R2; its header
-/// says why this one verb is a module and its neighbours are arms.
+/// stamp-label disclosure it owes. Its header says why this one verb is a
+/// module and its neighbours are arms.
 mod textannotstyle;
 // pub(super) rather than private: the round-trip test that closes the
 // operator's "can't enter a size in the properties box" report lives beside
@@ -46,7 +45,7 @@ mod textannotstyle;
 // exercised with it.
 pub(super) use textannotstyle::set_text_annot_style;
 /// **The polygon/polyline node verbs** - `move_node`, `insert_node`, `remove_node`
-/// over `reshape_annotation`. Split out 2026-09-09 under R2.
+/// over `reshape_annotation`.
 mod vertexnodes;
 use vertexnodes::{insert_node, move_node, remove_node};
 
@@ -70,7 +69,7 @@ use vertexnodes::{insert_node, move_node, remove_node};
 /// has to: a reply may sit on a different page from the comment it replies to,
 /// so a page-scoped delete would miss it.
 ///
-/// # ★ This is not redaction
+/// # This is not redaction
 ///
 /// It removes an entry from `/Annots`. It does not touch page content, and an
 /// incremental save leaves the previous revision in the file.
@@ -78,8 +77,8 @@ use vertexnodes::{insert_node, move_node, remove_node};
 /// [`crate::text::markup::deleted_collateral`] observes it in the wording it
 /// chooses — never "removed".
 pub(super) fn delete(doc: &mut OpenDoc, page: usize, id: ObjId) {
-    // ★ A `/Redact` mark reaches this too (click the mark, press Delete —
-    // `OPERATOR_REQUESTS.md` O161, 2026-09-09) and the engine's
+    // A `/Redact` mark reaches this too (click the mark, press Delete —
+    // `OPERATOR_REQUESTS.md` O161) and the engine's
     // `delete_annotation` routes it to `delete_redaction_mark` itself
     // (`AnnotationDeletionRoute::RedactionMark`), so the panel's Remove and
     // the canvas's Delete share one verb without this function naming it. The
@@ -108,7 +107,7 @@ pub(super) fn delete(doc: &mut OpenDoc, page: usize, id: ObjId) {
 /// Reached from `canvas::annotdrag` on the release of a drag, and from nothing
 /// else.
 ///
-/// # ★★★ The disclosure is about the half the canvas cannot show
+/// # The disclosure is about the half the canvas cannot show
 ///
 /// A move writes `/Rect` *and* the absolute-coordinate geometry keys, and the
 /// canvas renders from the appearance stream, so the operator sees the same
@@ -121,11 +120,11 @@ pub(super) fn delete(doc: &mut OpenDoc, page: usize, id: ObjId) {
 /// decision is the shell's. This shell does not draw pop-ups at all, so one
 /// stranded across the sheet is invisible here and visible in Acrobat.
 ///
-/// ⇒ ★★ **That is Rule 4's surviving half exactly**: an inference or a
+/// **That is R8b rule 4's surviving half exactly**: an inference or a
 /// consequence the operator cannot see still owes an off-canvas report. Render
 /// normally; report separately. Both.
 ///
-/// # ★ What is deliberately NOT disclosed
+/// # What is deliberately NOT disclosed
 ///
 /// **`geometry_keys_moved` being empty**, which the engine warns about by name:
 /// a Text note, a Stamp or a Link has no geometry key because its `/Rect` *is*
@@ -162,18 +161,19 @@ pub(super) fn move_annot(doc: &mut OpenDoc, id: ObjId, dx: f64, dy: f64) {
 
 /// **Scale a markup annotation about an anchor.** `OPERATOR_REQUESTS.md` O51.
 ///
-/// ★★★ The disclosure is the operator's own ruling, carried through. He asked
+/// The disclosure is the operator's own ruling, carried through. He asked
 /// for Inkscape's toggles — *"default should be what it said, but there should
 /// be an option that they do scale with resize"* — and the sentence that
 /// belongs beside a default is the one that says the default fired.
 ///
-/// ★★ **`stroke_width: None` is the case that owes a sentence**, which is the
+/// **`stroke_width: None` is the case that owes a sentence**, which is the
 /// engine's own instruction: *"an operator who scaled a square 3× and expected
-/// a heavier border needs telling it stayed."* That is Rule 4's surviving half
+/// a heavier border needs telling it stayed."* That is R8b rule 4's surviving
+/// half
 /// — a line weight left alone is invisible on the canvas, because the shape
 /// grew around it and nothing says the border did not.
 ///
-/// ★ **`CarriedDistorted` is the other one**, and it is not a defect: neither
+/// **`CarriedDistorted` is the other one**, and it is not a defect: neither
 /// PDF nor SVG has a per-axis stroke width, so a non-uniform scale of an
 /// appearance pdfcer did not author produces an anisotropic border by
 /// arithmetic. The engine refuses that case unless it is allowed; where it
@@ -186,31 +186,28 @@ pub(super) fn resize(
     uniform: bool,
     modifiers: crate::canvas::scaling::Modifiers,
 ) {
-    // ★★★ **THE OPERATOR'S SWITCHES, and they replaced a derivation.**
+    // **THE OPERATOR'S SWITCHES, and the flag is never derived from the
+    // geometry.**
     //
-    // Until 2026-08-28 this read `with_scale_stroke_width(uniform)` — the flag
-    // taken from whether the drag was proportional rather than from anything
-    // anybody asked for. That was a **workaround for a refusal**: with a
-    // foreign appearance and a uniform scale the engine refuses unless either
-    // the stroke scales or distortion is allowed, and forcing the first made
-    // the common case work when no control existed.
+    // Deriving `scale_stroke_width` from whether the drag was proportional is
+    // a **workaround for a refusal**: with a foreign appearance and a uniform
+    // scale the engine refuses unless either the stroke scales or distortion
+    // is allowed, and forcing the first makes the common case work with no
+    // control. It also makes the operator's answer unreachable on exactly the
+    // resizes where they are most likely to have one, and
+    // `OPERATOR_REQUESTS.md` **O51** is a correction about precisely that
+    // shape of reasoning.
     //
-    // ⇒ It also made the operator's answer unreachable, on exactly the resizes
-    // where they were most likely to have one. `OPERATOR_REQUESTS.md` **O51**
-    // is a correction about precisely this shape of reasoning, so deriving the
-    // flag from geometry after building the control would be making the same
-    // mistake twice in one file.
-    //
-    // ★ What replaced the workaround is the worded decline below, not a
-    // different guess.
+    // What stands in its place is the worded decline below, not a different
+    // guess.
     //
     // The discriminator behind the DEFAULTS is unchanged and is the engine's,
     // promoted from this shell's own CAD argument: *is the property a length in
     // the space being transformed?* An inset is; a line weight is a drafting
     // convention. `canvas::scaling` carries the whole account.
-    // ★★★ A STAMP IS ARTWORK, AND SCALING ARTWORK IS THE RESIZE — 2026-09-09.
+    // A STAMP IS ARTWORK, AND SCALING ARTWORK IS THE RESIZE.
     //
-    // The operator, twice in one morning: *"there's still no way to edit the
+    // The operator: *"there's still no way to edit the
     // size of a placed stamp … on the canvas, or by entering a different size
     // in the properties box."* The engine's `resize_annotation` re-bakes the
     // appearances it knows how to author (shapes; `/FreeText`) and, for any
@@ -260,28 +257,26 @@ pub(super) fn resize(
         session
             .resize_annotation(id, anchor, sx, sy, &opts)
             .inspect_err(|error| {
-                // ★★★ **The refusal is caught here and worded**, rather than
+                // **The refusal is caught here and worded**, rather than
                 // being left to `vector_edit`'s generic arm, which traces the
-                // engine's reason and — since O116, 2026-09-04 — words only
-                // *"That change was refused, and the document is unchanged."*
-                // That floor ends the silence; it cannot name a remedy, and
-                // naming one is the whole value of catching the refusal here.
+                // engine's reason and, per O116, words only *"That change was
+                // refused, and the document is unchanged."* That floor ends
+                // the silence; it cannot name a remedy, and naming one is the
+                // whole value of catching the refusal here.
                 //
-                // A resize that silently did nothing is this project's founding
-                // failure: the operator drags a grip, lets go, the shape snaps
-                // back, and no surface anywhere says why. It is the same shape
-                // as the annotation drag that was consumed and discarded, and
-                // the same shape as the markup move that had no branch.
+                // A resize that silently does nothing is this project's
+                // founding failure: the operator drags a grip, lets go, the
+                // shape snaps back, and no surface anywhere says why.
                 //
-                // ★★ Recorded from INSIDE the closure because the condition is
+                // Recorded from INSIDE the closure because the condition is
                 // not knowable before the call — whether an appearance is
                 // pdfcer's own is a property of the file. `record_save_failure`
                 // is called from the apply phase for the identical reason;
                 // `record_flatten_certified` is not, because its refusal is a
                 // query.
                 //
-                // ★ Only this one variant. Every other `EditError` keeps
-                // today's trace-only behaviour, which is honest: wording a
+                // Only this one variant. Every other `EditError` stays
+                // trace-only, which is honest: wording a
                 // decline is catalog work per refusal, and a `format!` of an
                 // `EditError`'s `Display` would route diagnostic prose into the
                 // UI — the thing `check-ui-strings`' exclusion 3 names in as
@@ -293,12 +288,12 @@ pub(super) fn resize(
                 {
                     crate::app::status::decline::record_resize_not_rebuildable(*was_uniform);
                 }
-                // ★ And its sibling since `Pass 277.0` (2026-09-09): a `/Text`
-                // sticky or a `NoZoom` annotation has no size to scale. Worded
-                // because the Properties panel's geometry fields can raise this
-                // resize even though the sticky's canvas grips are move-only.
-                // `subtype == "Text"` is the engine's own test for which of its
-                // two `why` sentences it chose (`edit.rs`, `resize_annotation`).
+                // And its sibling: a `/Text` sticky or a `NoZoom` annotation
+                // has no size to scale. Worded because the Properties panel's
+                // geometry fields can raise this resize even though the
+                // sticky's canvas grips are move-only. `subtype == "Text"` is
+                // the engine's own test for which of `resize_annotation`'s two
+                // `why` sentences it chose.
                 if let pdfcer_core::edit::EditError::ResizeFixedSizeMarker { subtype, .. } = error {
                     crate::app::status::decline::record_resize_fixed_size_marker(subtype != "Text");
                 }
@@ -330,12 +325,12 @@ pub(super) fn resize(
     });
 }
 
-/// **Turn a markup annotation about a pivot.** `Pass 155.0`.
+/// **Turn a markup annotation about a pivot.**
 ///
 /// Reached from `canvas::rotating` on the release of a rotate-handle drag, and
 /// from nothing else.
 ///
-/// # ★★★ There is no options type, and its absence is the feature
+/// # There is no options type, and its absence is the feature
 ///
 /// [`resize`] one screen up takes `crate::canvas::scaling::Modifiers` — the
 /// operator's Tool-row switches — because a resize has a genuine question to
@@ -349,7 +344,7 @@ pub(super) fn resize(
 /// rotate and resize together, **rotate needs no confirmation step and no
 /// distortion warning.** Resize does."*
 ///
-/// # ★★ And unlike [`resize`], a FOREIGN appearance turns correctly
+/// # And unlike [`resize`], a FOREIGN appearance turns correctly
 ///
 /// `resize_annotation` has to refuse artwork pdfcer did not draw — §12.5.5's
 /// placement matrix scales it *after* stroking, and no scalar `/BS /W`
@@ -362,26 +357,22 @@ pub(super) fn resize(
 /// matrix a producer already wrote. Nothing is redrawn and nobody's artwork is
 /// replaced — it works on a stamp Acrobat made.
 ///
-/// # ★★★ The disclosure is about the box, not about the mark
+/// # There is no disclosure, and the reason is the outline
 ///
-/// **`/Rect` grows.** §12.5.2 requires it upright, and the upright box bounding
-/// a rotated rectangle is larger at any angle that is not a quarter turn. That
-/// is correct behaviour and it is *invisible as such*: this shell draws its
-/// selection outline **from `/Rect`**, so an operator turning a stamp 30°
-/// watches a dashed box swell around artwork that did not change size.
+/// **`/Rect` grows.** §12.5.2 requires it upright, and the upright box
+/// bounding a rotated rectangle is larger at any angle that is not a quarter
+/// turn. That is correct and normative.
 ///
-/// ⇒ **That was Rule 4's surviving half, and it stopped applying on
-/// 2026-09-07.** `canvas::annotquad` draws the outline at the mark's own angle
-/// (`OPERATOR_REQUESTS.md` O147), so the box hugs the artwork and no longer
-/// swells — the consequence had a subject and the subject is gone. The
-/// disclosure `text::rotating::rect_grew` used to return here is deleted, and
-/// the reason it must not be restored for the O145 growth defect is recorded at
-/// its old site.
+/// It owes the operator nothing because **it is invisible**:
+/// `canvas::annotquad` draws the selection outline at the mark's own angle
+/// (`OPERATOR_REQUESTS.md` O147), so the box hugs the artwork rather than
+/// swelling around it. R8b rule 4 asks for an off-canvas report of a
+/// consequence the operator cannot see; here there is no consequence to see.
+/// An outline drawn **from `/Rect`** instead would put one back, and
+/// `text::rotating`'s own header carries why the deleted `rect_grew` sentence
+/// must not be restored for the O145 growth defect.
 ///
-/// ⚠ **`/Rect` still grows.** That is correct and normative and is now simply
-/// invisible, which is the right place for a fact an operator cannot act on.
-///
-/// # ★ What is deliberately NOT disclosed
+/// # What is deliberately NOT disclosed
 ///
 /// **`rect_differences_untouched`** (`/RD`), for the reason [`move_annot`]
 /// already gives about the same key: at an angle that is not a quarter turn
@@ -397,24 +388,24 @@ pub(super) fn rotate(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degrees: f
         session
             .rotate_annotation(id, pivot, degrees)
             .inspect_err(|error| {
-                // ★★★ **The refusal is caught here and worded**, rather than
+                // **The refusal is caught here and worded**, rather than
                 // being left to `vector_edit`'s generic arm, which since O116
                 // words an un-categorised sentence naming no remedy.
-                // [`resize`]'s own comment is the
-                // argument and it applies unchanged: a grip that is dragged,
-                // released, and does nothing with no explanation is this
-                // project's founding defect.
+                // [`resize`]'s own comment is the argument and it applies
+                // unchanged: a grip that is dragged, released, and does
+                // nothing with no explanation is this project's founding
+                // defect.
                 //
-                // ★★ From INSIDE the closure, because none of these is knowable
+                // From INSIDE the closure, because none of these is knowable
                 // before the call — whether a document's certification forbids
                 // an annotation change is a census over its objects, and
                 // whether the routing sent the wrong kind here is a fact about
                 // the value the engine resolved.
                 //
-                // ★ **Every** `EditError` is worded, unlike [`resize`], which
+                // **Every** `EditError` is worded, unlike [`resize`], which
                 // words one variant and leaves the rest to the trace. The
-                // difference is that a resize genuinely has six refusal shapes
-                // with six remedies, and this verb has essentially none the
+                // difference is that a resize refuses in several shapes with
+                // distinct remedies, and this verb has essentially none the
                 // operator can act on — so a catch-all that says *the page is
                 // exactly as it was* is honest here where a catch-all there
                 // would have been a shrug.
@@ -424,7 +415,7 @@ pub(super) fn rotate(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degrees: f
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★★ It carries the ANGLE, the PIVOT and both rectangles,
+                    // It carries the ANGLE, the PIVOT and both rectangles,
                     // which is what a wrong build gets wrong. A line saying only
                     // "a rotation applied" would be identical for a build that
                     // turned the other way, pivoted about a corner instead of
@@ -450,15 +441,11 @@ pub(super) fn rotate(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degrees: f
                         outcome.to.ury - outcome.to.lly,
                     )
                 });
-                // ★★★ **NO DISCLOSURE, since 2026-09-07.** `rect_grew` used to
-                // return a sentence here explaining that the dashed box had
-                // swelled while the artwork had not. The outline is now drawn
-                // at the mark's own angle (`canvas::annotquad`,
-                // `OPERATOR_REQUESTS.md` O147), so it hugs the artwork and
-                // there is no swelling box to explain. The full account,
-                // including why it must not be restored for the O145 growth
-                // defect, is at the deleted function's site in
-                // `text::rotating`.
+                // **NO DISCLOSURE.** The outline is drawn at the mark's own
+                // angle (`canvas::annotquad`, `OPERATOR_REQUESTS.md` O147), so
+                // it hugs the artwork and there is no swelling box to explain.
+                // `text::rotating` carries why a `rect_grew` sentence must not
+                // be restored here for the O145 growth defect.
                 Vec::new()
             })
     });
@@ -466,21 +453,19 @@ pub(super) fn rotate(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degrees: f
 
 /// **The engine's rectangle rule as a stable single-word token**, for the trace.
 ///
-/// # ★★ Why not `{:?}`
+/// # Why not `{:?}`
 ///
 /// Because a `Debug` rendering is a formatting detail of somebody else's enum
 /// and a driven check that greps for `rect_derived=Artwork` would go quiet the
 /// day `RectDerivation` gains a field, gets renamed, or has its derive removed
 /// — quietly, and in the direction that reads as *the feature stopped
-/// happening*. This project has already shipped one check that reported the
-/// opposite of the truth while quoting the truth in its own message, from a
-/// `{:?}` on a tuple.
+/// happening*. A `{:?}` on a tuple is how a check comes to report the
+/// opposite of the truth while quoting the truth in its own message.
 ///
-/// ★ The **match is exhaustive with no wildcard**, so a fourth rule is a
-/// compile error here rather than an unnamed token in a log. `RectDerivation`
-/// is `#[non_exhaustive]`, which is why the last arm exists at all and why it
-/// says `other` — an honest *"this build does not know that one"* rather than a
-/// guess.
+/// `RectDerivation` is `#[non_exhaustive]`, so the match **must** carry a
+/// wildcard and a rule this build does not know cannot be a compile error
+/// here. The wildcard says `other` — an honest *"this build does not know
+/// that one"* rather than a guess at which rule ran.
 ///
 /// The tokens match what the engine's own CLI prints (`rect_derived=`), so a
 /// trace here and a `pdfcer` command line can be compared without a lookup
@@ -495,12 +480,12 @@ const fn rect_rule_token(rule: pdfcer_core::edit::RectDerivation) -> &'static st
     }
 }
 
-/// **Set a markup annotation's angle absolutely.** `Pass 155.2`.
+/// **Set a markup annotation's angle absolutely.**
 ///
 /// Reached from the Properties panel's typed Angle field, and from nothing
 /// else — the rotate grip is a drag and goes to [`rotate`], which is a delta.
 ///
-/// # ★★★ Why this is a second function rather than an argument on [`rotate`]
+/// # Why this is a second function rather than an argument on [`rotate`]
 ///
 /// Because they take different things and refuse for different reasons. A
 /// delta needs no starting angle and therefore cannot fail to read one; an
@@ -510,10 +495,10 @@ const fn rect_rule_token(rule: pdfcer_core::edit::RectDerivation) -> &'static st
 /// refusal would have to know which mode it was in to know what the sentence
 /// meant.
 ///
-/// # ★★ The disclosure is about the RECTANGLE RULE, not about the turn
+/// # The disclosure is about the RECTANGLE RULE, not about the turn
 ///
-/// `Pass 155.1` made `/Rect` a function of the artwork rather than of the
-/// previous rectangle, so a rotation composes — *N* turns totalling θ now draw
+/// `/Rect` is a function of the artwork rather than of the previous
+/// rectangle, so a rotation composes — *N* turns totalling θ draw
 /// the same size as one turn of θ. **With one exception the engine named and
 /// this shell must honour:** an annotation with **neither an appearance stream
 /// nor rotatable geometry** — a `/Square` or `/Circle` with no `/AP` — has
@@ -523,10 +508,9 @@ const fn rect_rule_token(rule: pdfcer_core::edit::RectDerivation) -> &'static st
 /// explicit that ignoring it *"re-introduces the operator's bug one level up,
 /// on exactly the annotations that cannot be fixed."*
 ///
-/// ⇒ [`crate::text::rotating::rect_still_grows`] is the sentence, and it fires
-/// **only** on that rule. It is a far better disclosure than the one it
-/// replaced: the old `rect_grew` fired on every non-quarter turn of everything,
-/// which trained the operator to ignore it.
+/// [`crate::text::rotating::rect_still_grows`] is the sentence, and it fires
+/// **only** on that rule. A disclosure that fired on every non-quarter turn of
+/// everything would train the operator to ignore it.
 pub(super) fn set_rotation(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degrees: f64) {
     super::apply::vector_edit(doc, "set-annotation-rotation", 0, 1, |session| {
         session
@@ -538,7 +522,7 @@ pub(super) fn set_rotation(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degr
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★★ `asked=` and `deg=` are BOTH carried and they are
+                    // `asked=` and `deg=` are BOTH carried and they are
                     // different numbers: the first is the absolute angle the
                     // operator typed, the second is the delta the engine worked
                     // out to get there. A build that passed the typed value
@@ -547,12 +531,12 @@ pub(super) fn set_rotation(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degr
                     // diverge only on the second, so a trace carrying one of
                     // the two could not see it.
                     //
-                    // ★ `rect_derived=` is `AnnotationRotate::rect_derived_from`
-                    // — which of the engine's three rules produced the new
-                    // rectangle. It is the field the whole of `Pass 155.1`
-                    // turns on and the one an operator report would need: two
-                    // of the three compose and one cannot, and nothing else on
-                    // this line distinguishes them.
+                    // `rect_derived=` is `AnnotationRotate::rect_derived_from`
+                    // — which of the engine's rules produced the new
+                    // rectangle, and the one field an operator report would
+                    // need: the artwork and geometry rules compose, the
+                    // previous-rect rule cannot, and nothing else on this line
+                    // distinguishes them.
                     format!(
                         "set-annotation-rotation-applied id={} asked={degrees:.2} deg={:.2} \
                          px={:.2} py={:.2} rect_derived={} to={:.1}x{:.1}",
@@ -572,12 +556,12 @@ pub(super) fn set_rotation(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degr
     });
 }
 
-/// **Turn a ce dimension about a pivot.** `Pass 159.0`.
+/// **Turn a ce dimension about a pivot.**
 ///
 /// Reached from `canvas::rotating` on the release of a rotate-handle drag over
 /// a selected ce dimension, and from nothing else.
 ///
-/// # ★★★ Why this is a second function rather than a branch in [`rotate`]
+/// # Why this is a second function rather than a branch in [`rotate`]
 ///
 /// Because `rotate_annotation` **refuses a ce dimension by name** and points
 /// here, with its reason attached: *"a ce dimension's orientation is part of
@@ -591,12 +575,12 @@ pub(super) fn set_rotation(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degr
 /// number is derived from — exactly where it was, so the dimension would draw
 /// at one angle and measure along another.
 ///
-/// ⇒ This is the same routing obligation this module's header records for
+/// This is the same routing obligation this module's header records for
 /// `set_markup_style`, and `canvas::selection::annot::AnnotKind` carries the
 /// distinction on the selected target precisely so the fork is a `match` the
 /// compiler checks.
 ///
-/// # ★★★ The measured value CANNOT change, and nothing says otherwise
+/// # The measured value CANNOT change, and nothing says otherwise
 ///
 /// A rotation preserves every distance, so the number is identical either side
 /// of it **by construction** rather than because pdfcer holds it. The engine
@@ -604,11 +588,11 @@ pub(super) fn set_rotation(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degr
 /// reporting *"5.000 m → 5.000 m"* would invite a reader to look for a change
 /// that cannot exist.
 ///
-/// ⇒ So there is no disclosure here saying the measurement is unchanged, and
+/// So there is no disclosure here saying the measurement is unchanged, and
 /// there must not be. A live readout that does not move during the drag is
 /// **correct, not a stale binding**.
 ///
-/// # ★★★ The one disclosure, commissioned by the engine by name
+/// # The one disclosure, commissioned by the engine by name
 ///
 /// A `Linear` dimension may be constrained to `Horizontal` or `Vertical`. Turn
 /// it 30° and that constraint can no longer describe what is drawn. Three
@@ -625,7 +609,7 @@ pub(super) fn set_rotation(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degr
 /// when the flag is set — a rotation by a whole number of turns leaves the
 /// constraint alone, because nothing moved.
 ///
-/// # ★ Scaling a dimension is not here, and will not be
+/// # Scaling a dimension is not here, and will not be
 ///
 /// Not unbuilt — **declined**, by the engine and by the operator, on the ground
 /// that it has no honest reading: either the displayed value stays fixed while
@@ -654,14 +638,14 @@ pub(super) fn rotate_dimension(
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //
-                    // ★ `relaxed=` is the field worth tracing and the one a
+                    // `relaxed=` is the field worth tracing and the one a
                     // wrong build gets wrong: a rotation that turned the
                     // geometry and left a `Horizontal` constraint behind
                     // produces a line and a constraint that disagree, which is
                     // invisible on the canvas and shows up the next time
                     // anything regenerates from the constraint.
                     //
-                    // ★ `annot=` is carried purely so a failed run ties back to
+                    // `annot=` is carried purely so a failed run ties back to
                     // the thing the operator had selected; the verb addressed
                     // the sidecar record, not the annotation.
                     format!(
@@ -685,15 +669,15 @@ pub(super) fn rotate_dimension(
 
 /// Which worded refusal an `EditError` from either rotation verb becomes.
 ///
-/// # ★★★ One function over the two verbs, and it is the compiler's job to keep
-/// it complete
+/// # One function over every rotation verb, and it is the compiler's job to
+/// keep it complete
 ///
-/// Both `rotate_annotation` and `rotate_dimension` refuse from the same short
-/// list, so a second copy of this mapping would be a second place for a variant
-/// to be forgotten — and a forgotten variant here is a grip that is dragged,
-/// released, and does nothing with no explanation.
+/// [`rotate`], [`set_rotation`] and [`rotate_dimension`] all refuse from the
+/// same short list, so a second copy of this mapping would be a second place
+/// for a variant to be forgotten — and a forgotten variant here is a grip that
+/// is dragged, released, and does nothing with no explanation.
 ///
-/// # ★★ Why the fallback is a sentence rather than the error's `Display`
+/// # Why the fallback is a sentence rather than the error's `Display`
 ///
 /// `tools/gates/check-ui-strings.sh`' exclusion 3 names the failure in as many
 /// words: a `format!` of an `EditError` routes **diagnostic prose into the UI**.
@@ -703,13 +687,13 @@ pub(super) fn rotate_dimension(
 fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::rotating::RotateRefusal {
     use crate::text::rotating::RotateRefusal;
     match error {
-        // ★ The routing backstop. Unreachable while `canvas::rotating`'s
+        // The routing backstop. Unreachable while `canvas::rotating`'s
         // `match` on `AnnotKind` holds and while `canvas::selection::annot`
         // keeps excluding `/Widget` — which is exactly why it is worded: if
         // this sentence ever appears, the routing has broken, and a broken
         // route with a sentence is a bug report rather than a dead handle.
         pdfcer_core::edit::EditError::AnnotationMoveWrongVerb { .. } => RotateRefusal::WrongVerb,
-        // ★ The one an operator meets on an ordinary file and cannot guess at:
+        // The one an operator meets on an ordinary file and cannot guess at:
         // a signed drawing looks exactly like an unsigned one on the canvas.
         pdfcer_core::edit::EditError::CertificationForbidsChange { .. } => RotateRefusal::Certified,
         _ => RotateRefusal::Other,
@@ -721,7 +705,7 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::rotating::R
 ///
 /// Reached from the Comments panel's editor and from nothing else.
 ///
-/// # ★★★ The three keys are not written as a group, and that is the contract
+/// # The three keys are not written as a group, and that is the contract
 ///
 /// `pdfcer-core` leaves an **omitted** key untouched rather than clearing it,
 /// and its reply to this shell called getting that wrong *"the easiest way to
@@ -738,7 +722,7 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::rotating::R
 /// supported choice and means *comment anonymously*. `crate::app::actions::apply`
 /// resolves which; this function only has to not invent one.
 ///
-/// # ★★ `/M` is always written, and it is a modification date
+/// # `/M` is always written, and it is a modification date
 ///
 /// §12.5.6.4 Table 170 defines `/M` as the date the annotation was **modified**,
 /// and this call modifies it — so leaving it alone would leave a comment whose
@@ -747,7 +731,7 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::rotating::R
 /// whole argument for UTC; `None` there means the system clock is before 1970,
 /// and omitting `/M` beats writing a comment dated 1969.
 ///
-/// # ★ TWO disclosures, and they are about opposite things
+/// # TWO disclosures, and they are about opposite things
 ///
 /// **The words that are gone.** A note that replaced another one usually
 /// leaves no trace on the canvas: the shape is unchanged, and a sticky's words
@@ -756,18 +740,16 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::rotating::R
 /// count — precisely so the operator can be offered it back, which is what
 /// `crate::text::markup::note_replaced` does.
 ///
-/// ★ *"usually"* is doing work there, and it is the one subtype that breaks
-/// the family: a `/FreeText`'s `/Contents` **is** its painted words, so on one
-/// the replaced text was on the canvas, and as of `pdfcer-core` `95a936e` the
-/// engine re-bakes the appearance in this same command so the page follows the
-/// edit.
+/// *"usually"* is doing work there, and it is the one subtype that breaks the
+/// family: a `/FreeText`'s `/Contents` **is** its painted words, so on one the
+/// replaced text is on the canvas, and the engine re-bakes the appearance in
+/// this same command so the page follows the edit.
 ///
 /// **The half that did not move.** Which is the second disclosure, and it fires
 /// on exactly one shape of outcome — a `/FreeText` whose appearance pdfcer did
 /// not author, which is preserved rather than replaced. See the call site below
 /// and `crate::text::textannot`'s edit-time banner, which carries the four-row
-/// table and the record of the disclosure that was deleted when the engine
-/// closed its cause.
+/// table.
 pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<&str>) {
     // Builders, not a struct literal: `MarkupNote` is `#[non_exhaustive]`,
     // which is what keeps a future field a non-breaking addition for us.
@@ -783,7 +765,7 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ `-applied`, per the convention `forms::import_data`
+                // `-applied`, per the convention `forms::import_data`
                 // records: the funnel writes its own bare-named line for the
                 // same edit and `.last()` would read that one instead.
                 //
@@ -792,14 +774,14 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
                 // whole `/T`-preservation contract above is invisible from a
                 // screenshot and from the saved page alike.
                 //
-                // ★ `rebaked` is the ONLY oracle for the half of this edit a
+                // `rebaked` is the ONLY oracle for the half of this edit a
                 // screenshot of the panel cannot see. The status line speaks
                 // for the `false`-on-a-`/FreeText` case alone (correctly — see
                 // below), so without this field a driven check could not tell
                 // a re-baked text box from a sticky note, which are the two
                 // outcomes that look identical from outside.
                 format!(
-                    // ★ `rich_dropped` is a COUNT of the keys the engine
+                    // `rich_dropped` is a COUNT of the keys the engine
                     // removed, not the keys themselves: the operator-facing
                     // sentence does not name them (they mean nothing to a
                     // reviewer) and a driven check only needs to know whether
@@ -815,30 +797,28 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
                     change.rich_text_dropped.len()
                 )
             });
-            // ★★★ The text box's disclosure goes FIRST, and the order is the
+            // The text box's disclosure goes FIRST, and the order is the
             // decision. `record_notes` documents the first sentence as the one
             // an operator reads if they read only one — and between "here are
             // the words you replaced" and "the page kept an appearance this
             // edit did not move", only the second is something they cannot
             // find out any other way.
             //
-            // ★★ **Two gates, both the ENGINE's own answer**, and neither is
+            // **Two gates, both the ENGINE's own answer**, and neither is
             // anything this shell inferred about the selection:
             //
             // 1. `MarkupNoteChange::subtype` — the raw `/Subtype`.
             // 2. `MarkupNoteChange::appearance_rebaked` — whether the picture
             //    moved with the words. `set_markup_note` re-bakes a
-            //    `/FreeText`'s `/AP` itself as of `pdfcer-core` `95a936e`,
-            //    which is why this is now a condition rather than a constant.
+            //    `/FreeText`'s `/AP` itself, which is why this is a condition
+            //    rather than a constant.
             //
             // `false` is **not a failure**: it is correct and final on a
             // sticky and on a stamp, and the sentence must not fire for them.
-            // The four-row table, the deleted before-the-write hint and the
-            // record of the morning this shell spent disclosing a defect the
-            // engine closed by the afternoon are all at
-            // `crate::text::textannot`'s edit-time banner.
+            // The four-row table is at `crate::text::textannot`'s edit-time
+            // banner.
             //
-            // ★★★ …and the rich-text drop goes LAST of the three, because it
+            // …and the rich-text drop goes LAST, because it
             // is the only one that is *good news*: the operator's document was
             // inconsistent before this edit and is consistent after it. The
             // first two are things they need in order to act — what the page
@@ -846,8 +826,8 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
             // statement that a problem they never knew about has been closed,
             // and it must not displace either of them from the truncated slot.
             //
-            // ⚠ It is disclosed rather than swallowed because **pdfcer removed
-            // a key the operator did not ask it to remove**, which is rule 4
+            // It is disclosed rather than swallowed because **pdfcer removed
+            // a key the operator did not ask it to remove**, which is R8b rule 4
             // in its narrowest form: nothing on the page changes, nothing in
             // the panel changes, and the only other way to find out is a diff
             // of the file.
@@ -874,7 +854,7 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
 /// Reached from the Comments panel's *Remove note* control and from nothing
 /// else.
 ///
-/// # ★★ It is not a delete, and the disclosure says so because nothing else can
+/// # It is not a delete, and the disclosure says so because nothing else can
 ///
 /// The markup stays on the page with its geometry untouched. A shape with a
 /// note and the same shape without one are **the same picture**, so an operator
@@ -882,7 +862,7 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
 /// it cost them. `crate::text::markup::note_removed` states both — the words
 /// that went, and the fact that the shape did not.
 ///
-/// # ★ Why a separate verb from writing an empty note
+/// # Why a separate verb from writing an empty note
 ///
 /// `pdfcer-core`'s reason, adopted rather than re-derived: *"an empty comment is
 /// a comment, and a reviewer deleting their remark is not the same as leaving a
@@ -911,21 +891,21 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
             // edit and leaves the copy they cannot, still on the page, saying
             // what it always said.
             //
-            // ★ On one it DID draw, `clear_markup_note` empties the painted
+            // On one it DID draw, `clear_markup_note` empties the painted
             // box in the same command — so `appearance_rebaked` is `true`,
             // nothing is left unsaid, and this stays quiet.
             //
-            // ★★ **And the rich-text drop applies here too**, which is easy to
+            // **And the rich-text drop applies here too**, which is easy to
             // miss because *removing* a note sounds like it could not leave a
             // stale copy behind. It could: `/RC` is a second copy of the same
             // comment, so clearing `/Contents` without it would leave the
             // pop-up — and, on a `/FreeText`, the page — still showing words
             // the operator has just deleted.
             //
-            // ⇒ Wired in both arms rather than only in the one the defect was
-            // reported against. A disclosure attached to one of two paths
-            // through the same engine report is how a surface comes to be
-            // right on Tuesday and wrong on Wednesday.
+            // Wired in both arms rather than in one of them. A disclosure
+            // attached to one of two paths through the same engine report is
+            // how a surface comes to be right on one route and wrong on the
+            // other.
             crate::text::textannot::note_clear_disclosure(
                 &change.subtype,
                 change.appearance_rebaked,
@@ -946,18 +926,16 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
     });
 }
 
-/// ★★★ **Answer a comment** — `EditSession::add_reply`, `pdfcer-core`
-/// `Pass 253.0`, §12.5.6.2 Table 170.
+/// **Answer a comment** — `EditSession::add_reply`, §12.5.6.2 Table 170.
 ///
-/// Reached from the Comments panel's editor when its draft is aimed at a reply,
-/// and from nothing else. This shell filed *"we can read a comment thread and
-/// cannot add to it"* on 2026-09-05 and carried it as an open gap until the
-/// verb landed; this is the write half of a surface that had been listening the
-/// whole time.
+/// Reached from the Comments panel's editor when its draft is aimed at a
+/// reply, and from nothing else — the write half of a surface that can
+/// otherwise only read a thread.
 ///
-/// # ★★★ `/M` is OURS, and a reply without one is a note from nowhen
+/// # `/M` is OURS, and a reply without one is a note from nowhen
 ///
-/// `pdfcer-core` reads no clock, by policy — determinism, and rule 4's refusal
+/// `pdfcer-core` reads no clock, by policy — determinism, and R8b rule 4's
+/// refusal
 /// to let a library invent a claim about when something happened
 /// (`crate::app::clock`'s header carries the whole argument). So the stamp is
 /// supplied here, from the crate's **one** wall-clock reader, exactly as
@@ -966,11 +944,11 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
 /// beside a parent that has one — which reads as a corrupted thread rather than
 /// as a missing key.
 ///
-/// ★ [`crate::app::clock::pdf_date_utc`] returns `None` before the Unix epoch,
+/// [`crate::app::clock::pdf_date_utc`] returns `None` before the Unix epoch,
 /// and in that case no `/M` is sent rather than a plausible one being invented.
 /// Absent is honest; wrong is not.
 ///
-/// # ★★ The author is the operator's, always, with no `keep_author` question
+/// # The author is the operator's, always, with no `keep_author` question
 ///
 /// `author` here is the same `Prefs::author_name` [`apply_action`] hands
 /// [`set_note`], filtered by the same rule at the same seam — one source, so
@@ -984,7 +962,7 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
 /// A blank preference means *comment anonymously*, which is a supported choice
 /// and not a missing value — so no `/T` is written, and no name is invented.
 ///
-/// # ★★★ The disclosure: the reply's OWN `/Popup`, which nothing here draws
+/// # The disclosure: the reply's OWN `/Popup`, which nothing here draws
 ///
 /// `add_reply` authors a `/Popup` companion for the reply (§12.5.6.14), and
 /// `ReplyAdded::reply_has_popup` reports it because this shell asked to be
@@ -1002,7 +980,7 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
 /// an independent note would make the parent unclickable the moment anybody
 /// answered it.
 ///
-/// ⇒ The window still **exists in the file**, and another reader will draw it.
+/// The window still **exists in the file**, and another reader will draw it.
 /// That is a fact about the document that no surface in this program can show,
 /// which is precisely the test for what belongs in a disclosure —
 /// [`crate::text::panels::comments::reply_posted`].
@@ -1021,7 +999,7 @@ pub(super) fn add_reply(doc: &mut OpenDoc, parent: ObjId, text: &str, author: Op
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ `-applied`, per the convention `set_note` records: the
+                // `-applied`, per the convention `set_note` records: the
                 // funnel writes its own bare-named line for the same edit and
                 // `.last()` would read that one instead.
                 //
@@ -1051,8 +1029,8 @@ pub(super) fn add_reply(doc: &mut OpenDoc, parent: ObjId, text: &str, author: Op
     });
 }
 
-/// ★★★ **Record a comment's pop-up state IN THE FILE** —
-/// `EditSession::set_annotation_open`, `pdfcer-core` `Pass 253.3`.
+/// **Record a comment's pop-up state IN THE FILE** —
+/// `EditSession::set_annotation_open`.
 ///
 /// Reached from the canvas pop-up's *Open by default* control and from nothing
 /// else. **Not** from opening or closing a bubble on screen: that stays with
@@ -1061,7 +1039,7 @@ pub(super) fn add_reply(doc: &mut OpenDoc, parent: ObjId, text: &str, author: Op
 /// argument for the split, and the short form is that a reviewer reading six
 /// comments must not end the session with six undo entries and a dirty file.
 ///
-/// # ★★ Both objects, and why one call rather than two
+/// # Both objects, and why one call rather than two
 ///
 /// Table 170 gives geometric markup **no `/Open` of its own**, so a `/Square`'s
 /// window state lives only on its `/Popup`; a `/Text` has one on itself and
@@ -1071,14 +1049,15 @@ pub(super) fn add_reply(doc: &mut OpenDoc, parent: ObjId, text: &str, author: Op
 /// `Ctrl+Z` between them and could leave the two disagreeing on exactly the
 /// subtype the operator uses most.
 ///
-/// # ★ The no-op case is disclosed rather than hidden
+/// # The no-op case is disclosed rather than hidden
 ///
 /// When the annotation takes no `/Open` of its own **and** has no `/Popup`,
 /// `set_annotation_open` succeeds, writes nothing and pushes **no undo entry**
 /// — reported as a no-op rather than refused, so that a caller acting over a
 /// mixed selection need not filter by subtype. The affordance is gated on
-/// [`crate::canvas::notepopup::model::can_record_open_state`] under R83 so this should
-/// not be reachable from the control; it is disclosed anyway, because *"the
+/// [`crate::canvas::notepopup::model::can_record_open_state`] under R83, so
+/// this should not be reachable from the control; it is disclosed anyway,
+/// because *"the
 /// button did nothing and said nothing"* is the one outcome an operator cannot
 /// tell from a bug.
 pub(super) fn set_open(doc: &mut OpenDoc, id: ObjId, open: bool) {
@@ -1087,7 +1066,7 @@ pub(super) fn set_open(doc: &mut OpenDoc, id: ObjId, open: bool) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // ★ `was` is the field worth tracing beside the request: it is
+                // `was` is the field worth tracing beside the request: it is
                 // the engine's answer to *"did the file already say this?"*,
                 // and `None` distinguishes an absent key from an explicit
                 // `false`. Nothing on screen can show that difference, and it
@@ -1115,17 +1094,16 @@ pub(super) fn set_open(doc: &mut OpenDoc, id: ObjId, open: bool) {
 }
 
 // ===========================================================================
-// The router — moved here from `apply` on 2026-09-05 under R2
+// The router
 // ===========================================================================
 
 /// **Route one annotation verb to its body.**
 ///
-/// Called from `apply`'s single `Action::Annot(_)` arm, which replaced eleven
-/// that each destructured one variant and called one function two lines long.
-/// The seam is `apply`'s own, stated in its header and drawn twice already:
-/// **that file routes by family, and the family module decides.**
+/// Called from `apply`'s single `Action::Annot(_)` arm. The seam is `apply`'s
+/// own, stated in its header: **that file routes by family, and the family
+/// module decides** — one arm there instead of one per variant here.
 ///
-/// # ★ Why the author name is a parameter and not a read
+/// # Why the author name is a parameter and not a read
 ///
 /// [`crate::app::actions::annot::AnnotAction::SetNote`] carries `keep_author`
 /// — a fact about the **document** the raising surface had in front of it —
@@ -1150,12 +1128,12 @@ pub(super) fn apply_action(
         // `move_annotation` finds the annotation by id, and the disclosure it
         // owes is about a pop-up rather than a sheet.
         A::Move { id, dx, dy } => move_annot(doc, id, dx, dy),
-        // ★ The one arm here whose body is in another family's module, and it is
-        // deliberate: `app::actions::reorder` owns the `/Annots` permutation and
-        // has since the tab-order panel needed it. A second implementation
-        // beside `reorder_annotations` — same engine verb, same three
+        // The one arm here whose body is in another family's module, and it
+        // is deliberate: `app::actions::reorder` owns the `/Annots`
+        // permutation, because the tab-order panel needs it too. A second
+        // implementation beside `reorder_annotations` — same engine verb, same
         // disclosures, different words — is precisely the drift that module's
-        // own header is now about.
+        // own header is about.
         A::Arrange { page, id, to } => crate::app::actions::reorder::arrange(doc, page, id, to),
         A::Resize {
             id,
@@ -1165,7 +1143,7 @@ pub(super) fn apply_action(
             uniform,
             modifiers,
         } => resize(doc, id, anchor, (sx, sy), uniform, modifiers),
-        // ★ Two rotation arms, not one with a kind flag: the engine refuses a
+        // Two rotation arms, not one with a kind flag: the engine refuses a
         // ce dimension from the annotation verb by name. See
         // [`rotate_dimension`].
         A::Rotate { id, pivot, degrees } => rotate(doc, id, pivot, degrees),
@@ -1190,7 +1168,7 @@ pub(super) fn apply_action(
             set_note(doc, id, &text, author);
         }
         A::ClearNote { id } => clear_note(doc, id),
-        // ★★★ A reply, and note what this arm does NOT do: it asks no
+        // A reply, and note what this arm does NOT do: it asks no
         // `keep_author` question. The author preference is filtered by the
         // same rule two lines up and handed straight in, because a reply is a
         // new annotation with no prior `/T` to preserve. Folding it into the
@@ -1204,28 +1182,28 @@ pub(super) fn apply_action(
                 Some(author_name).filter(|a| !a.is_empty()),
             );
         }
-        // ★★ The **document's** `/Open`, which is a different subject from
+        // The **document's** `/Open`, which is a different subject from
         // whether a bubble is showing on screen — `canvas::notepopup::open`
         // owns that and raises nothing. Reached only from an explicit control;
         // the variant's docs carry the undo argument.
         A::SetOpen { id, open } => set_open(doc, id, open),
-        // ★★★ The three node verbs — `Pass 255.0`, and the operator's *"I also
-        // can't edit or delete nodes of a markup shape once it is drawn."*
+        // The node verbs, and the operator's *"I also can't edit or delete
+        // nodes of a markup shape once it is drawn."*
         //
-        // Three arms and not one carrying a `VertexEdit`, matching the three
-        // variants: the shell's action bus does not carry the engine's enum, so
-        // a fourth `VertexEdit` variant arrives as a compile error in
-        // [`reshape`] rather than as a silent `..` here.
+        // One arm per variant rather than one carrying a `VertexEdit`: the
+        // shell's action bus does not carry the engine's enum, so a new
+        // `VertexEdit` variant arrives as a compile error in [`reshape`]
+        // rather than as a silent `..` here.
         A::MoveNode { id, index, dx, dy } => move_node(doc, id, index, dx, dy),
         A::InsertNode { id, after, at } => insert_node(doc, id, after, at),
         A::RemoveNode { id, index } => remove_node(doc, id, index),
-        // ★★★ The three ink point verbs — `Pass 278.0`, O158 — carry a `(stroke,
-        // point)` address and reach a different planner; [`inknodes::apply`]
-        // destructures them. One arm here so this file stays under R2.
+        // The ink point verbs — O158 — carry a `(stroke, point)` address and
+        // reach a different planner; [`inknodes::apply`] destructures them.
+        // One arm here so this file stays under R2.
         A::MoveInkPoint { .. } | A::InsertInkPoint { .. } | A::RemoveInkPoint { .. } => {
             inknodes::apply(doc, action);
         }
-        // ★★ **The only report a refused node edit produces.** The gesture
+        // **The only report a refused node edit produces.** The gesture
         // preflights through `reshape_annotation_preview`, so no verb is
         // reached, no funnel is entered and no `EditRefused` is recorded — if
         // this arm is removed the operator drags a corner of a triangle out of
@@ -1233,14 +1211,14 @@ pub(super) fn apply_action(
         // nothing anywhere saying why. That silence is the report this whole
         // feature answers.
         //
-        // ★ Recorded here rather than at the gesture because the decline store
+        // Recorded here rather than at the gesture because the decline store
         // is `pub(super)` inside `crate::app` and the canvas is outside that
         // boundary — the same crossing `DimensionAction::DeclineVertexEdit`
         // makes for the ce-dimension twin.
         A::DeclineNodeEdit { why } => {
             crate::app::status::decline::record_markup_node_refused(why);
         }
-        // ★★★ The SECOND style verb, and the one arm here that answers a
+        // The SECOND style verb, and the one arm here that answers a
         // different engine function from its neighbours. `set_markup_style`
         // reads through `spec_from_dict`, which has no `/Text` arm;
         // `set_text_annot_style` reads through `text_spec_from_dict`. Routing
@@ -1252,9 +1230,9 @@ pub(super) fn apply_action(
 
 #[cfg(test)]
 mod tests {
-    //! `OPERATOR_REQUESTS.md` O161 (2026-09-09): a redaction mark selected on
-    //! the canvas and deleted leaves through `delete_redaction_mark`, the
-    //! same verb the Redact panel's Remove uses.
+    //! `OPERATOR_REQUESTS.md` O161: a redaction mark selected on the canvas
+    //! and deleted leaves through `delete_redaction_mark`, the same verb the
+    //! Redact panel's Remove uses.
 
     use super::*;
     use crate::app::state::open_local_fixture;
@@ -1271,8 +1249,9 @@ mod tests {
             .collect()
     }
 
-    /// RED before the fix: the general `delete_annotation` refused a
-    /// `/Redact` by name and the mark stayed, with no sentence.
+    /// The general `delete_annotation` refuses a `/Redact` by name, so
+    /// routing this through it would leave the mark on the page with no
+    /// sentence.
     #[test]
     fn deleting_a_selected_redaction_mark_unmarks_it() {
         let mut doc = open_local_fixture("four-pages.pdf");

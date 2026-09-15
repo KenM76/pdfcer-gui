@@ -11,7 +11,7 @@ WHY THIS FILE EXISTS
 whose visible content is painted from inside a **form XObject** — the only
 container a PDF page has.
 
-★★★ THE REAL DRAWINGS CANNOT SERVE, AND THE MEASUREMENT IS WHY
+THE REAL DRAWINGS CANNOT SERVE, AND THE MEASUREMENT IS WHY
 ---------------------------------------------------------------------------
 
 Two candidates were driven first, and both failed for the same reason in two
@@ -34,16 +34,16 @@ PAGE object — 119703, 1528, 64850 — never a leaf:
     CURRENT ZOOM, and that sheet opens at fit — about 0.39x — so six screen
     pixels is roughly **fifteen points** of page.
 
-⇒ At that radius the big page objects win everywhere, because they are
+At that radius the big page objects win everywhere, because they are
 everywhere. The leaves whose centres do survive a 3 pt probe are 4 x 6 pt
 glyph strokes: one screen pixel and a half. So the feature is perfectly
 reachable by an operator who has zoomed in, and unreachable by a harness
 aiming at a page opened to fit — which makes the DOCUMENT the wrong
 instrument, not the feature wrong.
 
-★★ That is `HANDOFF.md` §2's fixture lesson arriving a third time: *a check
-that drives a document this project imagined tests the shape this project
-imagined.* The answer is a fixture with the shape the feature is about, and
+That is the fixture lesson again: *a check that drives a document this project
+imagined tests the shape this project imagined.* The answer is a fixture with
+the shape the feature is about, and
 to keep driving the real drawings for the features whose subject IS a real
 drawing.
 
@@ -77,7 +77,7 @@ Three strokes rather than one, and crossing rather than parallel:
     crossing strokes a build that entered the container and picked the wrong
     one is visible as a different ``first=leaf:N`` rather than as a pass.
 
-★ No text, no images, no annotations. Everything on this page exists to
+No text, no images, no annotations. Everything on this page exists to
 answer one question, and anything else on it would be a second reason a click
 could resolve somewhere unexpected.
 

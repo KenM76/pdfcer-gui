@@ -11,7 +11,7 @@
 //! | [`crate::canvas::pagedrop`] | resolves a gap between pages on the page view and draws the same caret |
 //! | [`crate::app::status`] | says, in page numbers, where the drop would land |
 //!
-//! ## ★ Why `egui::Memory` and not a field on `PdfcerApp`
+//! ## Why `egui::Memory` and not a field on `PdfcerApp`
 //!
 //! Because the drag has to **survive a document switch**, and switching
 //! documents calls `PanelsState::forget_document`, which is
@@ -21,29 +21,25 @@
 //! mean the spring-loaded tab that makes the feature possible also destroys the
 //! drag that needed it.
 //!
-//! `CONTINUE.md` §3.5 records the same conclusion arrived at from the other
-//! direction, about the markup pen: *"the text pen solved the same problem a
-//! different way — `canvas::textedit::pen` lives in `egui::Memory`, so a panel
-//! reaches it through `ui.ctx()` with no plumbing … **Move it, do not plumb
-//! it.**"* Four surfaces in three module trees is more plumbing than that
-//! sentence was written about, not less.
+//! `canvas::textedit::pen` reaches the same answer from the other direction:
+//! it lives in `egui::Memory` so that any surface can reach it through
+//! `ui.ctx()` with no plumbing. **Move it, do not plumb it.** Four surfaces in
+//! three module trees is more plumbing than that rule was written about, not
+//! less.
 //!
 //! The trade is stated plainly: memory-held state is reachable from anywhere,
 //! which is exactly its value and exactly its hazard. The mitigation is that
 //! **this module is the only code that names the key**. Nothing else calls
 //! `data_mut` for it, so "who can write this?" has a grep-able answer.
 //!
-//! ## ★ Why the operand set is captured at PRESS and not resolved at release
+//! ## Why the operand set is captured at PRESS and not resolved at release
 //!
 //! The opposite of what the Pages panel's own reorder does, and the difference
-//! is the document switch again. `PagesUi::drag`'s docs say why it holds only
-//! an origin:
-//!
-//! > It holds the **origin**, not the operand set. The operands are
-//! > `ops::operands(&selection, current, page_count)` — resolved at release
-//! > rather than captured at press, so a drag reflects the selection as it
-//! > stands. There is no way to change the selection mid-drag today, and
-//! > capturing it would be a second copy that could disagree the day there is.
+//! is the document switch again. `PagesUi::drag` holds only an **origin** and
+//! resolves its operands at release, through
+//! `ops::operands(&selection, current, page_count)`, so that a drag reflects
+//! the selection as it stands rather than a second copy of it that could
+//! disagree.
 //!
 //! That reasoning holds exactly as long as the selection is still there at
 //! release. A cross-document drag activates another document on the way, which
@@ -52,11 +48,11 @@
 //! therefore captured, and captured **with the slot it came from**, which is
 //! the pair that makes it meaningful later.
 //!
-//! ## ★ A drag between documents COPIES, and Shift makes it a move
+//! ## A drag between documents COPIES, and Shift makes it a move
 //!
 //! Stated here because this is the module every reader of the feature reaches
-//! first, and stated as a **default rather than a design**, which it was not
-//! when this header was first written.
+//! first, and stated as a **default rather than a rule**: the modifier below
+//! overrides it.
 //!
 //! The unmodified gesture copies. The argument is in
 //! [`crate::text::doctabs::drag_landing_other`] and it is about undo, not
@@ -77,17 +73,6 @@
 //! words. ⇒ **The disclosure is what makes the move offerable at all** — the
 //! undo argument above is still true of it, so the operator is told, before
 //! release and again after it.
-//!
-//! ⚠ This heading read *"A drag between documents is a COPY"* until
-//! 2026-09-14, and it was false **four hours and forty-four minutes after it
-//! was written**: `d829ae2` shipped the cross-document drag at 00:31 on
-//! 2026-08-20 with copy as the only behaviour, and `b28e320` added Shift at
-//! 05:15 the same morning. It then survived twenty-five days. Nothing a
-//! compiler or a gate can see was ever wrong — the modifier's own
-//! documentation sits further down this same file, on
-//! [`crate::pagedrag::wants_move`], and is correct and complete.
-//! ⇒ **A module header is a summary of code that keeps moving, and the
-//! commit that moves it edits the code, not the summary.**
 //!
 //! Within one document the drag is the reorder it always was, a reorder is one
 //! undoable command, and no modifier applies — there is nothing for it to
@@ -161,7 +146,7 @@ pub struct DropLanding {
 /// **Which document every surface is drawing this frame**, published once by
 /// the application.
 ///
-/// ## ★ Why this is in memory rather than a parameter
+/// ## Why this is in memory rather than a parameter
 ///
 /// Because three surfaces need it and none of them is given it: the Pages
 /// panel is handed a `&OpenDoc` and no idea which tab it belongs to, the
@@ -212,7 +197,7 @@ pub fn active(ctx: &egui::Context) -> Option<ActiveDocument> {
 /// after the last. `pdfcer_core::pageops::InsertPosition` counts pages, so the
 /// two ends have their own names.
 ///
-/// ★ `Start` and `End` rather than `Before(0)` and `Before(count)`, even
+/// `Start` and `End` rather than `Before(0)` and `Before(count)`, even
 /// though `InsertPosition::slot` clamps both to the same answer. The named
 /// variants say *"at the beginning"* and *"at the end"* — which is what the
 /// operator meant and what survives the document changing length between the
@@ -246,7 +231,7 @@ fn landing_key() -> egui::Id {
 
 /// **The PREVIOUS frame's answer**, which is the one the caption reads.
 ///
-/// ## ★ Why there are two slots and one rotation, rather than a shared flag
+/// ## Why there are two slots and one rotation, rather than a shared flag
 ///
 /// Two surfaces can resolve a landing — the Pages panel's grid and the page
 /// view — and only one of them can have the pointer inside it, so at most one
@@ -352,7 +337,7 @@ pub fn landing(ctx: &egui::Context) -> Option<DropLanding> {
 /// press, it is sampled at the drop, which is why Explorer's cursor badge
 /// changes under your hand mid-drag.
 ///
-/// ## ★ Why Shift, and not Ctrl
+/// ## Why Shift, and not Ctrl
 ///
 /// Because on this desktop Ctrl means *copy* and Shift means *move*, and has
 /// since the mid-nineties. `crate::text::doctabs::drag_landing_move` carries
@@ -380,7 +365,7 @@ pub fn wants_move(ctx: &egui::Context) -> bool {
 /// caller would mean writing it twice, once for the Pages panel's header and
 /// once for the status row.
 ///
-/// ★ R8b rule 4: this is **off-canvas disclosure**. The caret drawn into the
+/// R8b rule 4: this is **off-canvas disclosure**. The caret drawn into the
 /// page list and the page view is a *pre-commit affordance* — a cursor — which
 /// that rule explicitly welcomes. What it forbids is styling content that has
 /// already been applied, and nothing here does that: the moment the drop is
@@ -411,10 +396,11 @@ pub fn caption(ctx: &egui::Context) -> Option<String> {
             landing.page_count,
         ));
     }
-    // ★ The copy sentence AND the hint, from one catalogue function rather
+    // The copy sentence AND the hint, from one catalogue function rather
     // than joined here. How two operator-visible sentences meet is itself an
-    // operator-visible decision, and `R1` puts it in the catalogue with them —
-    // `check-ui-strings` caught the `format!("{} {}", …)` this replaced.
+    // operator-visible decision, so it belongs in the catalogue with them;
+    // joining them with a `format!` here would put a sentence of UI text in a
+    // module `check-ui-strings` does not read as one.
     Some(crate::text::doctabs::drag_landing_copy_with_hint(
         drag.pages.len(),
         landing.gap,
@@ -451,7 +437,7 @@ mod tests {
         assert!(!in_flight(&ctx), "ending it left it");
     }
 
-    /// ★ **Ending a drag clears the landing too.**
+    /// **Ending a drag clears the landing too.**
     ///
     /// The failure this closes is one `panels::pages` already names: a caret
     /// that survives the gesture that produced it is a caret nobody can get

@@ -6,21 +6,19 @@
 //!
 //! ## Why this is its own module rather than an arm in `super::export`
 //!
-//! **R2**, arithmetic: `super::export` measured 1,266 lines before this work,
-//! and the seam is real rather than a line count. Every other body in that file
-//! is an *export* in the ordinary sense — the same pages, expressed in another
-//! format, for a person or a downstream tool to read. This one **authors a new
-//! kind of document**: the bytes it writes are a PDF whose structure means
-//! something specific to a second application, and the reason it is hard is not
-//! the encoding but the naming.
+//! Every other body in `super::export` is an *export* in the ordinary sense —
+//! the same pages, expressed in another format, for a person or a downstream
+//! tool to read. This one **authors a new kind of document**: the bytes it
+//! writes are a PDF whose structure means something specific to a second
+//! application, and the reason it is hard is not the encoding but the naming.
 //!
-//! ## ★★ The three things this module is responsible for, and nothing else
+//! ## What this module is responsible for, and nothing else
 //!
 //! 1. **The suggestion.** Acrobat's own user-stamps folder, discovered rather
 //!    than hard-coded — see [`crate::stamps::folder`] for why `DC` is a version
 //!    that will one day be something else, and why `Preflight Acrobat
 //!    Continuous` sorts first among the folders beside it.
-//! 2. **Creating the folder the operator named.** ★ Non-obvious and load
+//! 2. **Creating the folder the operator named.** Non-obvious and load
 //!    bearing: `…\Adobe\Acrobat\DC\Stamps` **does not exist** until the day
 //!    somebody makes their first custom stamp in Acrobat. Refusing to write
 //!    there would make the feature fail for precisely the operator who has
@@ -49,16 +47,16 @@ use crate::text::stamps as t;
 /// texture to drop. It is a **read** of the session that happens to produce a
 /// file.
 ///
-/// # ★ The view is the SESSION's, not the loaded file's
+/// # The view is the session's, not the loaded file's
 ///
-/// Decision 018, and the same choice `extract` makes. An operator who rotates
+/// The same choice `extract` makes. An operator who rotates
 /// three sheets and then saves them as stamps must get the rotated sheets;
 /// writing the file as it was opened would be a silent, plausible-looking wrong
 /// answer, and this one would not surface until the stamp landed on somebody
 /// else's drawing.
 pub(super) fn collection(doc: &mut OpenDoc, plan: &Plan) {
-    // ⚠ Should be unreachable: the dialog greys Save on exactly these two
-    // conditions and explains both on hover. Kept because "the button was
+    // ⚠ Should be unreachable: the dialog greys Save on every `Blocker` and
+    // explains each on hover. Kept because "the button was
     // greyed" is a claim about a different module, and an action that trusts
     // its caller's UI is an action that writes an untitled collection the day
     // somebody adds a keyboard shortcut for it.
@@ -96,7 +94,7 @@ pub(super) fn collection(doc: &mut OpenDoc, plan: &Plan) {
         }
     };
 
-    // ★ See the module header, point 2. The failure is deliberately ignored:
+    // See the module header, point 2. The failure is deliberately ignored:
     // if the folder cannot be made, the write below fails with the operating
     // system's own sentence about the actual path, which is a better message
     // than anything this line could invent about a directory.
@@ -104,13 +102,13 @@ pub(super) fn collection(doc: &mut OpenDoc, plan: &Plan) {
         let _ = std::fs::create_dir_all(parent);
     }
 
-    // ★ The operator's settings travel whole, not a pre-built options struct.
-    // `crate::stamps::write` needs BOTH funnels — it opens a session and it
+    // The operator's settings travel whole, not a pre-built options struct.
+    // `crate::stamps::write` needs both funnels — it opens a session and it
     // serialises one — and handing it the settings is what lets it take both
-    // rather than one. See that function's doc comment for the finding.
+    // rather than one. See that function's doc comment.
     match crate::stamps::write::build_and_write(&doc.session.view(), plan, &doc.settings, &target) {
         Ok(written) => {
-            // ★ The receipt goes FIRST — `record_notes`' own rule: *"the first
+            // The receipt goes first — `record_notes`' own rule: *"the first
             // sentence is the one an operator reads if they read only one."*
             let mut notes = vec![t::saved(
                 written.stamps_named,

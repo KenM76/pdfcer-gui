@@ -1,6 +1,6 @@
 //! # `app::documents` — more than one document open at once
 //!
-//! The operator's request, 2026-08-19, verbatim:
+//! The operator's request, verbatim:
 //!
 //! > *"make it so we can open multiple PDFs at once and drag and drop pages
 //! > from one thumbnail image sidebar to another or onto the canvas to add
@@ -35,18 +35,16 @@
 //! ### ★ Why this and not `Vec<Status>` with an index
 //!
 //! Because the alternative costs a hundred edits to buy nothing. `self.status`
-//! is named in 105 places, and a large number of them are **split borrows** —
-//! `let Status::Open(doc) = &mut self.status` taken in the same expression as
-//! `&self.find`, `&mut self.dialogs`, `&self.commands`. Rust splits borrows of
-//! struct *fields*; it does not split the borrow a `fn active_mut(&mut self)`
-//! accessor takes. Replacing the field with a method would have turned every
-//! one of those sites into a borrow error to be worked around individually,
-//! and a borrow-checker workaround written a hundred times is a hundred
-//! chances to change behaviour by accident.
-//!
-//! It is also the shape [`crate::app::PdfcerApp`]'s own header predicted, in
-//! those words, before any of this was built: *"It will grow — settings, the
-//! command log, the dock layout, **the parked documents**"*.
+//! is named across the crate, and a large number of those sites are **split
+//! borrows** — `let Status::Open(doc) = &mut self.status` taken in the same
+//! expression as `&self.find`, `&mut self.dialogs`, `&self.commands`. Rust
+//! splits borrows of struct *fields*; it does not split the borrow a
+//! `fn active_mut(&mut self)` accessor takes. Replacing the field with a
+//! method turns every one of those sites into a borrow error to be worked
+//! around individually, and a borrow-checker workaround written a hundred
+//! times is a hundred chances to change behaviour by accident. Parking the
+//! other documents in a sibling field is also the growth
+//! [`crate::app::PdfcerApp`]'s own header describes.
 //!
 //! The one thing it costs is that the tab order is expressed in two fields
 //! rather than one, so every reordering operation goes through
@@ -111,11 +109,12 @@
 //!   a *new* document from the opening preferences, and applying it here would
 //!   throw away the operator's place every time they glanced at another sheet.
 //! - **The parked document's rasters.** A parked `OpenDoc` keeps its page
-//!   texture and its strip cache. That is memory spent deliberately:
-//!   `BENCHMARK.md` measures the benchmark CAD drawing at **877 ms** for one
-//!   full-page render, so dropping the texture on park would make every tab
-//!   switch a visible stall — which is the one thing a tab strip promises not
-//!   to be. If this ever needs bounding it should be bounded by a *count of
+//!   texture and its strip cache. That is memory spent deliberately: a
+//!   full-page render of the benchmark CAD drawing costs the better part of a
+//!   second (`BENCHMARK.md` carries the measurement), so dropping the texture
+//!   on park would make every tab switch a visible stall — which is the one
+//!   thing a tab strip promises not to be. If this ever needs bounding it
+//!   should be bounded by a *count of
 //!   parked documents that keep rasters*, not by dropping them all.
 //! - **The recent list, the dock arrangement and the mode**, for
 //!   [`PdfcerApp::close_document`]'s reasons, unchanged.
@@ -493,7 +492,7 @@ mod tests {
     /// **Nothing open is zero tabs, not one empty one.**
     ///
     /// The invariant §2 states. Every other function here asks
-    /// `document_count`, so this is the assertion the rest rest upon.
+    /// `document_count`, so this is the assertion the rest rest on.
     #[test]
     fn an_empty_application_has_no_tabs() {
         let app = PdfcerApp::new();

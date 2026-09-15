@@ -31,24 +31,21 @@
 //! # }
 //! ```
 //!
-//! **Forgetting the second one is a silent failure**, and it is precisely
-//! the class this project has already shipped once: three panels laid out,
-//! publishing correct rectangles, unreachable, with every gate green. The
-//! answer is [`super::DockFrameReport::floats_undrawn`] — a number an
-//! application asserts is zero — and its field documentation carries the
-//! whole argument.
+//! **Forgetting the second one is a silent failure**, and it is the
+//! unreachable-panel class in full: a panel laid out, publishing a correct
+//! rectangle, reachable by nothing, with every gate green. The answer is
+//! [`super::DockFrameReport::floats_undrawn`] — a number an application
+//! asserts is zero — and its field documentation carries the whole
+//! argument.
 //!
 //! ## ★★★ …and forgetting is not the only way a float window ends up blank
-//!
-//! **Added 2026-09-05, after a driven sweep reported *"a floated panel opens
-//! an OS window and draws nothing inside it"*.**
 //!
 //! [`super::DockFrameReport::floats_undrawn`] catches the application that
 //! never called [`super::Dock::show_floating`]. It cannot catch the case
 //! one step along: the call IS made, the window IS opened, the background
 //! IS painted, the header IS drawn — and `body` allocates nothing. Every
-//! number this module produced before that date reports that frame as a
-//! success, because every one of them is satisfied the moment the loop runs.
+//! count of *windows* reports that frame as a success, because every one of
+//! them is satisfied the moment the loop runs.
 //!
 //! ⚠ **A blank window is R9 broken at the scale of a whole window.** The
 //! rule — *an unavailable capability renders nothing* — is about a control
@@ -60,13 +57,11 @@
 //! field documentation carries what it can and cannot see, and two tests in
 //! this file falsify it in both directions.
 //!
-//! ★★ **The sweep's verdict was about the harness, not about this module.**
-//! The check asserted *"a `ui-rect` tagged with the float's viewport"*, and
-//! neither this module nor the panel it floated publishes one on the fixture
-//! it was given — so the oracle could not have succeeded against a working
-//! build either. The application publishes the tagged regions (see
-//! `crate::app::surfaces::floating_panels` in the consuming crate); this
-//! crate has no diagnostic channel and must not grow one, so what it can
+//! ★★ **This crate cannot answer the question with a diagnostic, and must
+//! not grow one.** An oracle that looks for a `ui-rect` tagged with the
+//! float's viewport is asking the *application* a question: the tagged
+//! regions are published by the consuming crate, inside its own `body`
+//! closure, from the id [`viewport_id`] hands back. What this crate can
 //! honestly offer is a **value in a report**, which is this field. The
 //! general lesson is in
 //! `D:/dev/rag/egui/a_float_windows_emptiness_is_not_observable_from_any_number_the_dock_already_publishes.md`.
@@ -74,33 +69,28 @@
 //! ## ★★ The one-dispatcher rule survives, and that is the finding this
 //! whole capability rests on
 //!
-//! `MODES_AND_PANELS.md` records it, and it is the reason tear-out is
-//! cheap here and expensive elsewhere:
-//!
-//! > I expected `Send + Sync + 'static` on the viewport callback to force
-//! > app state behind an `Arc<Mutex<…>>`, which would have been fatal.
-//! > `show_viewport_deferred` does carry that bound — but
-//! > **`show_viewport_immediate` does not.** It takes `FnMut` with no
-//! > lifetime bound, so it can be called from inside `App::ui` capturing
-//! > `&mut self`. A torn-out panel therefore keeps the identical
-//! > `panel_body(&mut self, panel, ui, actions)` signature as the docked
-//! > one.
+//! `MODES_AND_PANELS.md` §"Tear-out" records why tear-out is cheap here
+//! and expensive elsewhere. `show_viewport_deferred` carries
+//! `Send + Sync + 'static` on its callback, which would force application
+//! state behind an `Arc<Mutex<…>>`; **`show_viewport_immediate` does not**
+//! — it takes `FnMut` with no lifetime bound, so it can be called from
+//! inside `App::ui` capturing `&mut self`.
 //!
 //! ⇒ [`super::Dock::show_floating`] takes **the same `body` closure**
-//! `show` takes. There is no float-specific panel API, no second
-//! rendering path, and no duplicated open-state — which
-//! [`super::mod`]'s own header names as what a previous float-or-dock dual
-//! mode cost: *"two code paths for the same content, each duplicating
-//! open-state, position/size and focus handling."*
+//! `show` takes. There is no float-specific panel API, no second rendering
+//! path and no duplicated open-state, which is what a float-or-dock dual
+//! mode costs: two code paths for the same content, each duplicating
+//! open-state, position/size and focus handling.
 //!
 //! ## `FnMut`, and the crash that proves it must be
 //!
 //! `egui` may call a viewport callback **more than once per frame**,
 //! whenever anything inside asks for a re-run at a size it has just
-//! learned. `D:/dev/rag/egui/show_viewport_immediate_may_run_its_callback_twice_per_frame_so_a_fnonce_body_aborts.md`
-//! records this project taking a `FnOnce` and `expect`-ing on the second
-//! call — which turned an ordinary `egui` behaviour into a process abort
-//! that took the operator's open documents with it.
+//! learned. A `FnOnce` body therefore has to `expect` on the second call,
+//! which turns an ordinary `egui` behaviour into a process abort that takes
+//! the operator's open documents with it —
+//! `D:/dev/rag/egui/show_viewport_immediate_may_run_its_callback_twice_per_frame_so_a_fnonce_body_aborts.md`
+//! carries the finding.
 //!
 //! A panel body is already re-runnable within a frame: it draws from state
 //! it borrows rather than consumes, which is what immediate mode requires
@@ -112,7 +102,7 @@
 //!
 //! | | Why |
 //! |---|---|
-//! | **Paint its own background** | A viewport callback's `Ui` is the child window's ROOT and nothing has painted it. `D:/dev/rag/egui/a_viewport_callbacks_ui_is_the_child_windows_ROOT_so_nothing_paints_its_background.md` records eight dialogs shipping as dark text on near-black, invisible to every oracle except a screenshot. |
+//! | **Paint its own background** | A viewport callback's `Ui` is the child window's ROOT and nothing has painted it. Omit the fill and the window renders as dark text on near-black, invisible to every oracle except a screenshot. `D:/dev/rag/egui/a_viewport_callbacks_ui_is_the_child_windows_ROOT_so_nothing_paints_its_background.md` carries the finding. |
 //! | **Assert its position only on the frame it opens** | `show_viewport_immediate` diffs the builder against last frame's and turns each change into a `ViewportCommand`. A position clause that runs every frame re-asserts a position read back from the window one frame late, which is a `SetWindowPos` per frame and drags the window back toward where the program thinks it is. |
 //! | **Tag its rectangles with its own viewport** | A child viewport's `ui_rect`s are relative to *its* origin. Untagged, a harness reads them as the application window's and aims hundreds of points away. The shell has no diagnostic channel of its own, so the application does this **inside its own `body` closure** — it can recover the very same id from [`viewport_id`], which is public for exactly that. No new seam, and the `body` signature stays identical to the docked one, which is the property this whole capability rests on. |
 //!
@@ -142,11 +132,10 @@ use crate::theme::Theme;
 /// The padding between a floated panel's body and its window edge, in
 /// points.
 ///
-/// The same 12 pt `dialogs::host` settled on, and for the same reason
-/// stated there: the `Ui` a viewport callback receives is the window's
-/// root and nothing pads it, so without this every control in the panel
-/// touches the frame. A constant rather than a theme metric because it
-/// participates in nothing that could feed back into it.
+/// The `Ui` a viewport callback receives is the window's root and nothing
+/// pads it, so without this every control in the panel touches the frame.
+/// A constant rather than a theme metric because it participates in nothing
+/// that could feed back into it.
 pub const BODY_MARGIN_PTS: f32 = 10.0;
 
 /// The height of the strip above a floated panel's body.
@@ -313,8 +302,8 @@ impl Dock<'_> {
             // `SetWindowPos` every frame, fed by a value read back out of
             // the window one frame late — which drags the window toward
             // where the program thinks it is and fights the operator's
-            // drag. `dialogs::host` records the same finding and the hour
-            // spent hunting it.
+            // drag. The application's dialog host asserts position on the
+            // same terms, for the same reason.
             if opening {
                 builder = builder.with_position(position);
             }
@@ -337,10 +326,9 @@ impl Dock<'_> {
                 // is the child window's ROOT — the position
                 // `eframe::App::ui` occupies for the main window — and the
                 // application's `CentralPanel`, which is what fills the
-                // background in the main window, is not here. Eight
-                // dialogs shipped for an hour as dark text on near-black
-                // for exactly this, invisible to every oracle but a
-                // screenshot.
+                // background in the main window, is not here. Omitting this
+                // renders the window as dark text on near-black, invisible
+                // to every oracle but a screenshot.
                 let theme = Theme::of(ui.ctx());
                 ui.painter()
                     .rect_filled(ui.max_rect(), 0.0, theme.palette.panel);
@@ -378,11 +366,10 @@ impl Dock<'_> {
                     // built-in offer is **Dock**, not Close. The OS window
                     // already has a close button; it does not have a way
                     // back into the dock, and a float window with no route
-                    // home is the state `MODES_AND_PANELS.md` failure mode
-                    // #12 calls table stakes to avoid. This mirrors
-                    // `tabs.rs`'s built-in "Close": a consumer that has not
-                    // adopted the tab-menu seam still gets a usable
-                    // surface.
+                    // home is a surface the operator can see and cannot put
+                    // away. This mirrors `tabs.rs`'s built-in "Close": a
+                    // consumer that has not adopted the tab-menu seam still
+                    // gets a usable surface.
                     if self.draw_builtin_header(ui, header_rect, &f.panel, &theme) {
                         dock_back = true;
                     }
@@ -600,8 +587,9 @@ fn apply_float_intents(
             }
             // Every other intent is raised by the docked surfaces and
             // cannot reach here. Listed as a catch-all rather than
-            // enumerated, because the alternative is seven arms that all
-            // say `unreachable!()` and one of them being wrong one day.
+            // enumerated, because the alternative is an arm per docked
+            // intent all saying `unreachable!()`, and one of them being
+            // wrong one day.
             _ => {}
         }
     }
@@ -611,11 +599,11 @@ fn apply_float_intents(
 
 /// The viewport id for a panel's float window.
 ///
-/// Derived from the panel id rather than counted, for `dialogs::host`'s
-/// reason: `ViewportId` is what `egui` keys the OS window on, so two
-/// panels sharing one would be two panels in one window, and a counter
-/// would give a panel a different window depending on what else happened
-/// to be floating when it was floated.
+/// Derived from the panel id rather than counted: `ViewportId` is what
+/// `egui` keys the OS window on, so two panels sharing one would be two
+/// panels in one window, and a counter would give a panel a different
+/// window depending on what else happened to be floating when it was
+/// floated.
 ///
 /// Salted with a prefix so a panel called `"print"` cannot collide with an
 /// application dialog of the same name — the two id spaces are independent
@@ -719,9 +707,8 @@ mod tests {
     /// The geometry intent is raised every frame for every open float. If
     /// it reported a change every time, `layout_changed` would be true on
     /// every frame a panel was floating and the application would rewrite
-    /// `layout.ron` continuously — which is exactly the behaviour
-    /// `MODES_AND_PANELS.md` records as the benchmarked application's own
-    /// worst persistence defect.
+    /// `layout.ron` continuously — a save path driven by the frame rate
+    /// rather than by the operator.
     #[test]
     fn an_unmoved_float_window_does_not_mark_the_layout_dirty() {
         let mut l = sample();
@@ -806,8 +793,8 @@ mod tests {
     /// document that gives it nothing to list.
     ///
     /// ★★★ The sentence cannot be spelled as a sentence *here*; see the
-    /// comment at the allocation for the reason, which cost the first
-    /// version of this test a red run against a working dock.
+    /// comment at the allocation for the reason, which is what makes a
+    /// label-based spelling of this test fail against a working dock.
     #[test]
     fn a_float_window_whose_panel_allocates_anything_is_not_empty() {
         let ctx = egui::Context::default();
@@ -821,8 +808,8 @@ mod tests {
                 // does not silently acquire fonts" — so in every test in
                 // this crate a galley is EMPTY and `ui.label("anything")`
                 // returns a **zero-sized** rect. A test written with a label
-                // here would fail against a perfectly working dock, and,
-                // worse, the mirror test would pass for the wrong reason.
+                // here fails against a perfectly working dock, and, worse,
+                // the mirror test passes for the wrong reason.
                 //
                 // ⇒ The honest headless spelling of "the body drew" is an
                 // allocation with a size of its own. In the application,

@@ -1,7 +1,7 @@
 //! # `app::actions::chrome` — which piece of View ▸ Display an action is about
 //!
-//! One enum and its two methods, split out of [`super`] on 2026-08-19 when that
-//! file crossed R2's 1,500-line ceiling.
+//! One enum and its two methods, held here rather than in [`super`] so that
+//! the action vocabulary stays inside R2's 1,500-line ceiling.
 //!
 //! ## Why this is the seam
 //!
@@ -15,11 +15,10 @@
 //! for — *one subject per file* — and it is separable **without** the enum
 //! itself moving, which nothing could do.
 //!
-//! ## ★ Why it is here and not in `canvas`
+//! ## Why it is here and not in `canvas`
 //!
-//! Unchanged from where it was written, and worth keeping because it is the
-//! question a reader will ask first: it is the operand of an **action**, and
-//! `shell::commands` maps a command id to one. Putting it in `canvas` would
+//! It is the operand of an **action**, and `shell::commands` maps a command id
+//! to one. Putting it in `canvas` would
 //! make the shell's id map reach into the canvas to name a value, which is a
 //! dependency in the wrong direction for a type that is about *what the
 //! operator asked for* rather than about *what draws it*.
@@ -27,8 +26,9 @@
 /// Which piece of View ▸ Display chrome a [`Action::ToggleViewChrome`] is
 /// about.
 ///
-/// An enum rather than three action variants — see that variant's own docs —
-/// and it lives here rather than in `canvas` because it is the *operand of an
+/// An enum rather than one action variant per toggle — see that variant's own
+/// docs — and it lives here rather than in `canvas` because it is the *operand
+/// of an
 /// action*, and `shell::commands` (which maps ids to it) must not have to
 /// reach into the canvas to name one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -40,12 +40,6 @@ pub enum ViewChrome {
     /// `view.guides` — whether the operator's guides are shown and draggable.
     Guides,
     /// `view.show_points` — an object's anchors, without descending into it.
-    ///
-    /// ★ The fourth variant, and the enum's own docs predicted the shape of
-    /// what would go wrong if one were added carelessly: *"a fourth toggle
-    /// added to the enum with no registration would draw nothing and nothing
-    /// else in the suite would notice."* Both directions are asserted, so this
-    /// one could not be added that way.
     ShowPoints,
     /// `view.line_weights` — **are strokes drawn at the widths the file
     /// declares, or every one of them at one device pixel?**
@@ -54,25 +48,25 @@ pub enum ViewChrome {
     /// *"the button to show all lines without their thickness — thin lines or
     /// something like cad has … I do want that display option!"*
     ///
-    /// ★★★ **The fifth variant, and the only one that is not chrome DRAWN OVER
-    /// the page.** The other four add a mark the canvas paints on top of a
-    /// finished texture; this one changes what the texture *is*
-    /// ([`pdfcer_render::font::RenderOptions::stroke_display`], engine
-    /// `Pass 254.0`). It is in this enum anyway, and the reason is worth
-    /// stating rather than leaving to be re-litigated: what this enum models is
-    /// **View ▸ Display's independent toggles** — a set of switches an operator
-    /// flips while reading, each of which renders pressed and each of which is
-    /// dispatched by the same action. A fifth mechanism for the fifth switch
-    /// would have been a second `Action`, a second `selected:` publisher and a
-    /// second id mapping, to express the same gesture.
+    /// **The only variant that is not chrome DRAWN OVER the page.** The
+    /// others add a mark the canvas paints on top of a finished texture; this
+    /// one changes what the texture *is*
+    /// ([`pdfcer_render::font::RenderOptions::stroke_display`]). It is in this
+    /// enum anyway, and the reason is worth stating rather than leaving to be
+    /// re-litigated: what this enum models is **View ▸ Display's independent
+    /// toggles** — a set of switches an operator flips while reading, each of
+    /// which renders pressed and each of which is dispatched by the same
+    /// action. A separate mechanism for this one switch would have been a
+    /// second `Action`, a second `selected:` publisher and a second id
+    /// mapping, to express the same gesture.
     ///
-    /// ⚠ What it DOES need beyond the other four is a **stale raster**. See
+    /// What it DOES need beyond the others is a **stale raster**. See
     /// [`crate::viewer::ViewState::line_weights`]: the answer is part of
     /// [`crate::render::worker::RenderKey`], because a cache that served the
     /// texture drawn under the opposite answer would make this toggle look
     /// exactly as inert as the dead button it replaces.
     ///
-    /// ★ `true` (the default) is *faithful widths*. This is the one variant
+    /// `true` (the default) is *faithful widths*. This is the one variant
     /// whose "on" is the shipped behaviour rather than an addition — the
     /// operator's gesture is turning it **off**.
     LineWeights,
@@ -86,8 +80,8 @@ pub enum ViewChrome {
     /// looking before we added the view things that are off the page
     /// feature)."*
     ///
-    /// ★★★ **The sixth variant, and the only one whose "off" changes the
-    /// LAYOUT.** The other five add or remove a mark; this one decides how
+    /// **The only variant whose "off" changes the LAYOUT.** The others add
+    /// or remove a mark; this one decides how
     /// big the canvas is, because off-sheet material is only reachable if
     /// the pasteboard grows to hold it. The parenthesis in the request is
     /// the requirement that follows from that and it is the hard half: with
@@ -96,13 +90,13 @@ pub enum ViewChrome {
     /// [`crate::canvas::tier::overhang`] returns zero, so no band is
     /// measured, so no layout ever hears about it.
     ///
-    /// ⚠ Unlike the other five, this one has a **remembered answer per
+    /// Unlike the others, this one has a **remembered answer per
     /// ribbon mode** ([`crate::app::prefs::offpage`]): Read ships off,
     /// Review and Edit ship on, and the operator's own answer is kept for
     /// each. So the `ToggleViewChrome` arm persists for this variant and
     /// for no other, and a mode change re-seeds it.
     ///
-    /// ★ It needs **no** stale-raster handling, which is the way it differs
+    /// It needs **no** stale-raster handling, which is the way it differs
     /// from [`Self::LineWeights`] and the thing a reader will expect it to
     /// share. `canvas::tier::decide` recomputes the raster region every
     /// frame and `OpenDoc::region_for` feeds both the cache key and the
@@ -116,9 +110,9 @@ impl ViewChrome {
     ///
     /// Iterated by the tests that assert each has a command and each command
     /// has a `selected:` condition — the same both-directions check
-    /// `PageDisplay::ALL` exists for, and for the same reason: a fourth toggle
-    /// added to the enum with no registration would draw nothing and nothing
-    /// else in the suite would notice.
+    /// `PageDisplay::ALL` exists for, and for the same reason: a toggle added
+    /// to the enum with no registration would draw nothing, and nothing else
+    /// in the suite would notice.
     pub const ALL: &'static [ViewChrome] = &[
         ViewChrome::Rulers,
         ViewChrome::Grid,

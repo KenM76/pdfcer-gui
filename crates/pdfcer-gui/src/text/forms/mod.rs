@@ -16,8 +16,9 @@
 //!
 //! Carried across from the old shell's `ui_text.rs` **with its doc comments**,
 //! because the doc comment is usually the record of a defect the wording was
-//! changed to fix. `SALVAGE.md`'s procedure forbids re-deriving a decision
-//! already paid for, and this area has more of them per line than any other:
+//! changed to fix. ⚠ **Fresh words re-derive a decision already paid for and
+//! have none of the evidence that bought it**, and this area carries more such
+//! decisions per line than any other:
 //!
 //! - [`forms_no_acroform`] does not say "no fields found". It says a page can
 //!   *look* like a form without carrying one, because otherwise "no fields"
@@ -311,26 +312,22 @@ pub fn form_field_certification_disabled_tooltip() -> &'static str {
 /// Listed rather than hidden (R83): an operator scrolling past a signature
 /// field should see that pdfcer knows it is there.
 ///
-/// ★★★ **CORRECTED TWICE, AND THE SECOND CORRECTION IS THE INTERESTING ONE.**
+/// ★★★ **WHY THIS SENTENCE MAKES NO CAPABILITY CLAIM, HAVING TWICE BEEN
+/// CORRECTED FOR MAKING ONE.**
 ///
-/// **2026-09-05.** It read *"pdfcer does not create or verify signatures
-/// yet."* Half stayed true — pdfcer could not yet **sign** — and half became
-/// false the day `signature::verify_all_with_trust` was wired
-/// (`crate::panels::signatures`, engine v0.38.0 at `b01964f`). Because the two
-/// claims shared one sentence, the true half kept the false half looking true.
-/// The clauses were separated, *"and only the one that is still true is a
-/// refusal."*
+/// It read *"pdfcer does not create or verify signatures yet."* Two claims in
+/// one sentence, and when verification arrived
+/// (`signature::verify_all_with_trust`, reached from
+/// `crate::panels::signatures`) the half that stayed true kept the half that
+/// had gone false looking true.
 ///
-/// **2026-09-07.** ⇒ **The surviving half went false two days later, and this
-/// row went on saying it for three days.** `Pass 10.7`–`10.9` shipped signing;
-/// `crate::sign` calls `EditSession::sign` at `sign/mod.rs:1177`; `file.sign`
-/// has been a registered command since 2026-09-06. So a panel row was telling
-/// the operator *"pdfcer cannot sign a document"* while the ribbon two clicks
-/// away offered to do exactly that.
+/// ⚠ Splitting the conjoined claims did **not** save the row. The surviving
+/// half went false in its turn the moment the engine shipped signing —
+/// `crate::sign` reaches `EditSession::sign`, and `file.sign` is a registered
+/// command — so a panel row was telling the operator *"pdfcer cannot sign a
+/// document"* while the ribbon two clicks away offered to do exactly that.
 ///
-/// ★★★ **The lesson is NOT "split conjoined claims".** That was done, in this
-/// very doc comment, and it did not save this row — the corrected sentence
-/// went stale by the same mechanism eight days later. The lesson is that **a
+/// ★★★ **The lesson is NOT "split conjoined claims".** It is that **a
 /// hard-coded sentence must not make a capability claim at all.**
 ///
 /// R8: registering a command is the only way this GUI may learn that a
@@ -1002,10 +999,10 @@ pub fn forms_flatten_needs_redraw_note(count: usize) -> String {
 /// on the page from then on. So the sentence names both, in the order they
 /// apply.
 ///
-/// Recorded rather than quietly reworded because the first draft is the shape
-/// of mistake `HANDOFF.md` §2 exists for: it was plausible, it read well, no
-/// test could contradict it, and it was a promise to the operator that the
-/// engine would not keep.
+/// ★★ The rejected first draft is worth naming because of its SHAPE: it was
+/// plausible, it read well, no test could contradict it, and it was a promise
+/// to the operator that the engine would not keep. **A sentence no test can
+/// contradict is the one to check against the engine by hand.**
 #[must_use]
 pub fn forms_canvas_undrawn_note(count: usize) -> String {
     format!(
@@ -1085,12 +1082,12 @@ pub fn forms_fill_autosize_note(field: &str, size: f64) -> String {
 /// unreadable.
 ///
 /// ⚠⚠ **A point size cannot carry that.** *"pdfcer chose 6.0 pt"* reads as a
-/// decision whether it fitted or not, and [`forms_fill_autosize_note`] said
-/// exactly that and nothing else until 2026-09-07 — while
-/// `OPERATOR_REQUESTS.md` O86 told the operator, under a ✅, that *"pdfcer now
-/// tells you which way it decided … the box is too small for this text, which
-/// will overflow"*. True of the engine and the CLI. **False of this shell for
-/// three days.**
+/// decision whether it fitted or not, which is why this note exists beside
+/// [`forms_fill_autosize_note`] rather than inside it. `OPERATOR_REQUESTS.md`
+/// **O86** promises the operator that *"pdfcer now tells you which way it
+/// decided … the box is too small for this text, which will overflow"* — and
+/// ★ **a promise the engine and the CLI keep is not kept by this shell until
+/// this shell says the words.**
 ///
 /// ★ It names the **remedy**, because there is one and it is the operator's:
 /// make the box bigger, or put less in it. A disclosure with an available

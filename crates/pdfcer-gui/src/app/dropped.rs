@@ -2,15 +2,14 @@
 //!
 //! ## What this closes
 //!
-//! The operator, 2026-08-19: *"also can't drag and drop a jpg file onto a new
-//! pdf, and the insert image button doesn't insert it either."*
+//! The operator: *"also can't drag and drop a jpg file onto a new pdf, and the
+//! insert image button doesn't insert it either."*
 //!
-//! The second half turned out to be false — `insert_image_places_a_picture`
-//! drives that button end to end and passes, including on a real JPEG once the
-//! harness was made to feed it one. **The first half was entirely true**:
-//! nothing in this shell or in `egui-shell` read `dropped_files` at all, so a
-//! file dragged onto the window did nothing, silently, with no cursor feedback
-//! on the way in.
+//! Only the first half was true. The Insert-image button works —
+//! `insert_image_places_a_picture` drives it end to end on a real JPEG — and
+//! **nothing read `dropped_files` at all**, so a file dragged onto the window
+//! did nothing, silently, with no cursor feedback on the way in. This module is
+//! the reading.
 //!
 //! ## ★★ Why "does nothing" is worse here than almost anywhere else
 //!
@@ -20,10 +19,10 @@
 //! that this program does not accept drops — a conclusion they will not revisit,
 //! and one they reached about a program that opens documents for a living.
 //!
-//! It also cost more than the feature: the same report named the Insert-image
-//! button, which works. A drop that silently failed made a working button look
-//! broken, because both were tried in the same minute and only one of them told
-//! the operator anything.
+//! ⇒ It also costs more than the feature it is. The same report named the
+//! Insert-image button, which works: a drop that fails silently makes a working
+//! button look broken, because both get tried in the same minute and only one
+//! of them tells the operator anything.
 //!
 //! ## What a drop means, by what was dropped
 //!
@@ -50,23 +49,23 @@
 //! drop on the ribbon or on a dock panel would be missed, and the operator would
 //! learn that the program accepts drops *sometimes*, which is worse than never.
 //!
-//! ## ★★ What changed on 2026-08-31, and what deliberately did not
+//! ## ★★ This module is the FALLBACK, and it is handed its files
 //!
-//! `OPERATOR_REQUESTS.md` O67 asked for a drop onto the **thumbnails** to
+//! `OPERATOR_REQUESTS.md` O67 asks for a drop onto the **thumbnails** to
 //! import pages, which needs the one thing the paragraph above says does not
 //! exist: a position. [`crate::app::filedrag`] supplies it — from the
 //! operating system, because the toolkit discards it — and lets a surface
 //! **claim** a drop that landed on it.
 //!
-//! This module is what happens to a drop that **nobody claimed**, and it is
-//! unchanged in every respect except where the paths come from: it no longer
-//! reads `egui`'s input itself, it is handed the files. That inversion is the
-//! safety property. The fallback is unconditional, so a surface that forgets
-//! to claim costs a feature and never a file — the failure is *"it opened in a
-//! tab instead of inserting"*, which the operator can see and undo.
+//! ⇒ So this module answers a drop that **nobody claimed**, it runs at the END
+//! of the frame after every surface has had its chance, and it does not read
+//! `egui`'s input itself — it is handed the paths. Two readers of one
+//! `dropped_files` would each see it and each act.
 //!
-//! It now runs at the END of the frame, after every surface has had its
-//! chance, rather than at the top.
+//! ★ The fallback is unconditional, which is the safety property: a surface
+//! that forgets to claim costs a feature and never a file — the failure is
+//! *"it opened in a tab instead of inserting"*, which the operator can see and
+//! undo.
 //!
 //! ## What is deliberately NOT here
 //!

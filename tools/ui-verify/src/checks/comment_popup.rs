@@ -1,12 +1,11 @@
-//! `a_comment_can_be_read_on_the_page_in_read_mode` — **the operator's report
-//! of 2026-09-05, turned into a gate.**
+//! `a_comment_can_be_read_on_the_page_in_read_mode` — **the operator's report,
+//! turned into a gate.**
 //!
-//! ⬜ **NOT RUN. Written 2026-09-05 and never driven.** The operator was at his
-//! keyboard for the whole session and this harness takes the foreground of the
-//! entire desktop, so no window was launched. Nothing below has been observed
-//! working. ★ And a layout-and-clipping change like this one has **exactly one
-//! oracle — a rendered screenshot — and none was taken.** The unit tests behind
-//! it are green and that is a different claim.
+//! ⬜ **NOT RUN.** This harness takes the foreground of the entire desktop, so
+//! it cannot share a machine with anyone working. Nothing below has been
+//! observed working. ★ A layout-and-clipping claim has **exactly one oracle — a
+//! rendered screenshot** — and green unit tests behind it are a different
+//! claim entirely.
 //!
 //! # The report
 //!
@@ -30,13 +29,13 @@
 //! laid out perfectly and is off the edge of the canvas, or behind the docked
 //! panels, or under the page it belongs to.
 //!
-//! `REVIEW_TRIAGE.md` T4 records three panels shipping **unreachable in real
-//! builds with every gate green**, because every driven assertion about them
-//! proved *layout* rather than *visibility*. This check uses
-//! `crate::diag::ui_rect_visible`'s own contract to avoid repeating that: that
-//! function **publishes nothing at all** unless the rectangle is visible enough
-//! inside the clip it was given, so the mere presence of `notepopup.window` in
-//! the trace is a visibility claim rather than a layout one.
+//! ★★★ **A driven assertion that proves LAYOUT does not prove VISIBILITY**, and
+//! panels have shipped unreachable in real builds with every gate green on
+//! exactly that gap. This check leans on `crate::diag::ui_rect_visible`'s own
+//! contract instead: that function **publishes nothing at all** unless the
+//! rectangle is visible enough inside the clip it was given, so the mere
+//! presence of `notepopup.window` in the trace is a visibility claim rather
+//! than a layout one.
 //!
 //! # The fixture is PINNED, and `--pdf` is ignored
 //!
@@ -326,7 +325,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // …and it is VISIBLE, not merely laid out. `ui_rect_visible` publishes
     // nothing unless the rectangle is visible enough inside the canvas clip it
     // was handed, so the region's presence is the assertion. See the module
-    // header, and `REVIEW_TRIAGE.md` T4.
+    // header for why layout alone is not enough.
     if declared(&trace, ui_rect, POPUP_REGION).is_none() {
         return Ok(Some(format!(
             "a pop-up is open by the census (`{raw}`) and `{POPUP_REGION}` was never \

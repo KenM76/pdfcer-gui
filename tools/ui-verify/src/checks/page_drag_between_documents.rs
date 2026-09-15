@@ -29,7 +29,7 @@
 //! reason, and this check is the only thing in the workspace that can observe
 //! whether that decision actually holds.
 //!
-//! # ★ The assertion that says it is a COPY
+//! # The assertion that says it is a COPY
 //!
 //! `copied=1` on the release line, and the source document's page count
 //! **unchanged**. A cross-document drag does not remove the page from where it
@@ -84,19 +84,18 @@ const CTRL_O: u16 = 0x4F;
 /// and only advances on frames it actually draws; a machine that is
 /// rasterizing a dense CAD sheet at the same moment can drop several. Waiting
 /// exactly the threshold would make this check a stopwatch race against a
-/// renderer, which is the shape of flake `CONTINUE.md` §4.2 records — *"a full
-/// suite red is not a defect report until the member has been re-run alone"*.
+/// renderer, and that is the classic shape of a flake: **a full suite red is
+/// not a defect report until the member has been re-run alone.**
 const DWELL: Duration = Duration::from_millis(1_400);
 
 /// The trace line the source-side removal produces, on a move.
 /// `page-move-take-refused page=… n=… detail=…` — the engine declining the
 /// removal half of a move, with its own sentence.
 ///
-/// Distinct from [`TOOK`]'s `removed=0`, and the distinction is the whole of
-/// the 2026-08-20 repair: `removed=0` says *the source still has them*, which
-/// has two causes with opposite verdicts — a build that never attempted the
-/// delete (a defect) and an engine that refused it for a reason about the
-/// document (not one).
+/// Distinct from [`TOOK`]'s `removed=0`, and the distinction decides the
+/// verdict: `removed=0` says *the source still has them*, which has two causes
+/// pointing opposite ways — a build that never attempted the delete (a defect)
+/// and an engine that refused it for a reason about the document (not one).
 const TOOK_REFUSED: &str = "page-move-take-refused";
 const TOOK: &str = "page-move-took";
 
@@ -107,7 +106,7 @@ const TOOK: &str = "page-move-took";
 /// the end — and a copied file would drift on the twenty-odd things that are
 /// the same.
 ///
-/// ★ Both are registered, and the copy one is not redundant. The failure this
+/// Both are registered, and the copy one is not redundant. The failure this
 /// pair is really shaped to catch is a build where the modifier is read at the
 /// **press** instead of the release, or read from the wrong field, or ignored:
 /// such a build makes one of the two behave like the other, and only running
@@ -234,20 +233,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, take: bool) -> Result<Opt
 
     // --- 2: the Pages panel, showing the ACTIVE (second) document ----------
     //
-    // ★★★ OPEN IT IF IT IS NOT THERE, rather than requiring it to be.
+    // OPEN IT IF IT IS NOT THERE, rather than requiring it to be.
     //
-    // This used to refuse with "`pages_drag` opens it from the ribbon when it
-    // is closed; this check expects the mode's default arrangement to include
-    // it." The author knew the sibling did the work and chose to rely on a
-    // default instead — and the default does not hold: measured 2026-09-02,
-    // this check and its shift-drag twin SKIPPED the entire sweep on exactly
-    // that message.
+    // The mode's default arrangement is not a guarantee, and a check that
+    // refuses when the panel is closed reports nothing at all — it SKIPS its
+    // whole sweep on a message about furniture.
     //
-    // ★★ A precondition a check ASSUMES is a precondition that eventually
-    // stops being true, and the check then reports nothing rather than
-    // failing. Establishing it costs one call to a helper that is already
-    // `pub(crate)` for this purpose. The guard is "only if absent", because
-    // pressing a panel toggle that is already on CLOSES it.
+    // **A precondition a check ASSUMES is a precondition that eventually stops
+    // being true, and the check then reports nothing rather than failing.**
+    // Establishing it costs one call to a helper that is already `pub(crate)`
+    // for this purpose. The guard is "only if absent", because pressing a panel
+    // toggle that is already on CLOSES it.
     if declared(&session.trace()?, ui_rect, GRID).is_none() {
         crate::checks::pages_drag::open_pages_panel(&session, &driver, ui_rect)?;
         session.settle(24);
@@ -286,10 +282,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, take: bool) -> Result<Opt
 
     // --- 4: the gesture ----------------------------------------------------
     //
-    // ★ The landing point is computed from the tile rectangle the *second*
-    // document published, and that is a coordinate this check is knowingly
-    // holding across an act that moves it — the spring re-lays the whole grid
-    // for a different document.
+    // The landing point is computed from the GRID rectangle, and that is a
+    // coordinate this check knowingly holds across an act that moves things —
+    // the spring re-lays the whole grid for a different document. It survives
+    // by construction: the grid rect is the panel's area, and the panel does
+    // not resize when the active document changes. A point derived from a
+    // *tile* would not survive, because a tile is exactly what gets re-laid.
     //
     // `D:\dev\rag\egui\a_harness_may_hold_a_coordinate_only_until_it_performs_an_act_that_could_move_it.md`
     // is the rule, and it is honoured by NOT asserting on which tile the drop
@@ -300,29 +298,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, take: bool) -> Result<Opt
     let frame = session.frame()?;
     let start = frame.declared_center(from);
     let spring_at = frame.declared_center(tab0);
-    // ★★★ THE GRID'S CENTRE, not a point derived from a TILE — and the comment
-    // above already argued for this without doing it.
+    // THE GRID'S CENTRE, not a point derived from a TILE — step 4's note
+    // above carries the reason. A landing point computed from a tile of the
+    // *second* document lands where that document has no tile once the spring
+    // has re-laid the grid: no gap resolves, no cross-document insert is
+    // raised, and the trace reads `pages-drag-release gap=none`. That reports
+    // as "the application still believed both ends were the same document",
+    // which is a defect report about working code.
     //
-    // It said the only geometric claim made is "the pointer was inside the
-    // grid … because the grid rectangle is the panel's and not the document's".
-    // True — but `land_at` was `declared_at(from, …)`, computed from a **tile**
-    // of the *second* document, and a tile is exactly what the spring re-lays
-    // out. Measured 2026-09-02, the first time this check ever ran:
-    // `pages-drag-release gap=none`. The release landed where the other
-    // document has no tile, so no gap resolved and no cross-document insert was
-    // raised — reported as "the application still believed both ends were the
-    // same document", which is a defect report about working code.
-    //
-    // The grid rect survives the switch by construction: it is the panel's
-    // area, and the panel does not resize when the active document changes. So
-    // this is the coordinate the surrounding argument was always describing.
-    // ★★ NEAR THE TOP of the grid, not its centre. The centre was the first
-    // attempt and still resolved no gap: the target document here has ONE page,
-    // so its single tile sits at the top of a tall grid and the middle is empty
-    // space below it — where  deliberately raises nothing, because
-    // that is where an operator lets go when they mean "put it at the end" and
-    // miss. Every non-empty document has a first row at the top of its grid,
-    // whatever its page count, which is the property a release point needs.
+    // NEAR THE TOP of the grid, not its centre, because the centre resolves no
+    // gap either: the target document here has ONE page, so its single tile
+    // sits at the top of a tall grid and the middle is empty space below it —
+    // where the grid's tile hit test deliberately raises nothing, because that
+    // is where an operator lets go when they mean "put it at the end" and miss.
+    // Every non-empty document has a first row at the top of its grid, whatever
+    // its page count, which is the property a release point needs.
     let land_at = frame.declared_at(grid, 0.5, 0.12);
     report.note(format!(
         "dragging tile 0 from ({}, {}), resting {} ms on the first document's tab at \
@@ -358,7 +348,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, take: bool) -> Result<Opt
     };
     report.note(format!("the tab sprang open: `{}`", sprang.raw));
 
-    // --- 6: ★★ the drag SURVIVED the document switch -----------------------
+    // --- 6: the drag SURVIVED the document switch -----------------------
     let Some(release) = trace.last(RELEASE) else {
         return Ok(Some(format!(
             "the tab sprang open and no `{RELEASE}` line followed, so the drag did not survive \
@@ -398,7 +388,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, take: bool) -> Result<Opt
     }
     report.note(format!("came out of slot {from_slot}"));
 
-    // --- 7b: ★ the MODIFIER reached the application ------------------------
+    // --- 7b: the MODIFIER reached the application ------------------------
     //
     // Asserted before anything is asked about the source, so a build that
     // ignores Shift fails here — naming the modifier — rather than three steps
@@ -458,7 +448,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, take: bool) -> Result<Opt
         }
     }
 
-    // --- 9: ★★ the SOURCE, which is where copy and move differ -------------
+    // --- 9: the SOURCE, which is where copy and move differ -------------
     //
     // The whole point of the pair. A copy must leave it alone and a move must
     // take the pages out of it, and both assertions are made from the SAME
@@ -477,27 +467,24 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, take: bool) -> Result<Opt
             )));
         };
         if took.get("removed") == Some("0") {
-            // ★★ ASK WHY BEFORE ACCUSING, and the commonest why is the fixture.
+            // ASK WHY BEFORE ACCUSING, and the commonest why is the fixture.
             //
-            // This branch reported a FAILURE — *"the sheets are now in both
-            // documents"* — for any `removed=0`, and on 2026-08-20 it produced
-            // exactly that accusation about working code. The trace said:
+            // Failing on any `removed=0` — *"the sheets are now in both
+            // documents"* — accuses working code. A **one-page** source cannot
+            // be moved out of: removing its only sheet would leave a document
+            // with no pages, which the engine refuses by name and correctly —
             //
             //   page-move-take-refused page=0 n=1
             //     detail=removing 1 of 1 page(s) would leave the document with none
             //
-            // The source was a **one-page** document. Moving its only sheet out
-            // would leave a document with no pages, which the engine refuses by
-            // name and correctly. The shell had already noticed, worded it for
-            // the operator, and left the sheets where they were — the whole
-            // chain behaved.
+            // — and the shell notices, words it for the operator, and leaves
+            // the sheets where they were. The whole chain behaved.
             //
-            // That is this harness's own three-state discipline, arrived at
-            // again: *a fact about the fixture is not a fact about the build.*
-            // The refusal is quoted verbatim rather than paraphrased, for the
-            // reason `text_edit_real` records about the same repair — the
-            // engine's sentence IS the diagnosis, and a second account of it
-            // would drift.
+            // That is this harness's three-state discipline: *a fact about the
+            // fixture is not a fact about the build.* The refusal is quoted
+            // verbatim rather than paraphrased, for the reason `text_edit_real`
+            // records — the engine's sentence IS the diagnosis, and a second
+            // account of it would drift.
             if let Some(refused) = trace.last(TOOK_REFUSED) {
                 return Err(Error::new(format!(
                     "the source document refused to give up its pages: `{}`. If that says the \

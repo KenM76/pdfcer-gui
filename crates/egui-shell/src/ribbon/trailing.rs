@@ -35,8 +35,8 @@
 //! So the measurement functions are [`super::qat`]'s own — imported, not
 //! reimplemented. That is [`super::band::measure_item`]'s standing rule
 //! applied across a module boundary: **measure what the renderer draws.** Two
-//! measurement functions for one button shape is how the QAT once came out
-//! narrower than it drew and landed on top of the first tab.
+//! measurement functions for one button shape is how a region comes out
+//! narrower than it draws and lands on top of its neighbour.
 //!
 //! # ★ The one behavioural difference from the QAT: no trailing separator
 //!

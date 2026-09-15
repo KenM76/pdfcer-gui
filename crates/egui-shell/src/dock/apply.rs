@@ -2,24 +2,19 @@
 //!
 //! # Why this is a file of its own
 //!
-//! [`super::Dock::show`]'s three phases are **snapshot, draw, apply**, and
-//! its own documentation calls the third *"the one place the layout is
-//! mutable"*. A phase with that property is a subject, and a subject gets a
-//! file — the same reasoning [`super::plan`] is split on.
-//!
-//! Split out of [`super`] under **R2** on 2026-09-04, when the three float
-//! intents took `dock/mod.rs` past 1,500 lines. Nothing moved but the
-//! module boundary: [`apply`] is the same function it was, and it is
-//! `pub(super)` rather than public because it is `Dock::show`'s internals,
-//! not an API.
+//! [`super::Dock::show`]'s phases are **snapshot, draw, apply**, and the
+//! third is the one place the layout is mutable. A phase with that
+//! property is a subject, and a subject gets a file — the same reasoning
+//! [`super::plan`] is split on. [`apply`] is `pub(super)` rather than
+//! public because it is `Dock::show`'s internals, not an API.
 //!
 //! # ★★ The property every arm here depends on
 //!
 //! **"Did anything change" is decided ONCE, by comparing the whole layout
 //! against a clone taken before the loop.** No arm sets a flag. That is
-//! what stops a new intent — and three arrived the day this file was
-//! created — from forgetting to say it changed something, which would leave
-//! the application not persisting an edit the operator can see.
+//! what stops a newly added intent from forgetting to say it changed
+//! something, which would leave the application not persisting an edit the
+//! operator can see.
 //!
 //! [`super::floatwin::apply_float_intents`] is the float windows' half of
 //! the same phase and holds the same property by the same mechanism. The two
@@ -84,10 +79,10 @@ pub(super) fn apply(
                     report.closed = Some(panel.clone());
                 }
             }
-            // The three float arms are one line each on purpose: the rules
-            // live in `float.rs`, where they can be tested with no window
-            // open, and this function stays a router rather than growing a
-            // second place that knows what floating means.
+            // The float arms are one line each on purpose: the rules live
+            // in `float.rs`, where they can be tested with no window open,
+            // and this function stays a router rather than growing a second
+            // place that knows what floating means.
             Intent::Float(panel) => {
                 if layout.float(panel) {
                     report.floated = Some(panel.clone());

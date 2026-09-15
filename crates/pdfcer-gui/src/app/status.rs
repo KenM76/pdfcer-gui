@@ -35,7 +35,7 @@
 //! bar that anchored zoom differently from the ribbon would be a second
 //! zoom model. Recorded so the next reader knows the omission is a decision.
 //!
-//! ## ★ Beside the narrator: the two disclosure lines, which are not narration
+//! ## Beside the narrator: the two disclosure lines, which are not narration
 //!
 //! The left half carries four things, and only the first is the narrator.
 //! The others look similar and are governed by different rules, so the
@@ -78,7 +78,7 @@
 //! the status line is `app::status`'s to own, not this module's to invent"*.
 //! This module now owns it. The trace is unchanged.
 //!
-//! ### ★ Row four is the same surface and a DIFFERENT store
+//! ### Row four is the same surface and a DIFFERENT store
 //!
 //! The worded decline reuses this half of the bar, [`disclosure_line`], its
 //! own named region and the R128 fixed row — the *place* and the *discipline*.
@@ -112,7 +112,7 @@
 //! and `RibbonTab::groups()` remains the single source of truth for tab
 //! ownership because this surface is outside its domain.
 //!
-//! ## ★ The editable page box is the point of the exercise
+//! ## The editable page box is the point of the exercise
 //!
 //! `GUI_ROADMAP.md` 3.3 states the problem in one line: *"Reaching page 37
 //! of 42 currently means the thumbnail rail or 36 keystrokes."* Type `37`,
@@ -133,7 +133,7 @@
 //!    in the box with a note beside it. Wiping an operator's typing to
 //!    "helpfully" restore the current page destroys the evidence of what
 //!    they meant.
-//! 4. **★ It suppresses the unmodified keyboard bindings while focused, and
+//! 4. **It suppresses the unmodified keyboard bindings while focused, and
 //!    that is defect D1 from the other end.** `crate::app::keyboard` guards
 //!    those bindings with `ctx.text_edit_focused()` — *not*
 //!    `egui_wants_keyboard_input()`, which means "any widget has focus" and
@@ -150,7 +150,7 @@
 //!    present before asserting the fix — the shape the D1 post-mortem says
 //!    the original test was missing.
 //!
-//! ## ★ The bar has a FIXED height, and this is measured rather than tidy
+//! ## The bar has a FIXED height, and this is measured rather than tidy
 //!
 //! `D:/dev/rag/egui/bottom_panel_height_change_retriggers_fit_to_viewport_zoom.md`,
 //! pdfcer standing rule **R128**: *a panel whose size feeds a
@@ -184,49 +184,34 @@
 //!   change its own height, which is the one thing this surface may not do.
 //!   [`tests::the_bar_is_exactly_as_tall_open_as_closed`] pins it.
 //!
-//! ## ★ Two defects this surface surfaced, both since fixed
+//! ## Two rules the mirrors on this bar are held to
 //!
-//! Recorded because the *reasoning* is the durable part, not the bug.
+//! **A mirror behaves exactly as the control it mirrors.** The status bar is
+//! a *shortcut surface* for a tab command (P1a), so `Actual size` dispatches
+//! the tab command's own action and works nothing around locally: a mirror
+//! that behaved differently would be a second zoom model, which is worse than
+//! a shared defect. The action is `Action::ZoomTo`, not
+//! `Action::Fit(FitMode::None)` — which only stops the per-frame re-fit and
+//! leaves `zoom` wherever it was, so a control promising *"one PDF point per
+//! screen point"* would pin 73 % at 73 % — and deliberately not
+//! `ZoomBy(1.0 / zoom)`, which lands on the right number but routes a
+//! discrete command through the wheel path's 150 ms settle.
 //!
-//! **`Actual size` did not produce actual size.** It raised
-//! `Action::Fit(FitMode::None)`, which only stops the per-frame re-fit and
-//! leaves `zoom` wherever it was — so a control whose tooltip promises
-//! *"one PDF point per screen point"* pinned 73 % at 73 %. It was mirrored
-//! here **as-is on purpose** rather than worked around: the status bar is a
-//! *shortcut surface* for a tab command (P1a), and a mirror that behaved
-//! differently from the control it mirrors would be a second zoom model,
-//! which is worse than a shared defect. Fixed 2026-08-13 by
-//! `Action::ZoomTo`, dispatched from `view.zoom_actual` and from here —
-//! one change, both surfaces. Deliberately not `ZoomBy(1.0 / zoom)`, which
-//! lands on the right number but routes a discrete command through the
-//! wheel path's 150 ms settle.
+//! **A chord has exactly one owner.** `crate::app::keyboard` does not know
+//! what a manifest chord means: it spells the key, looks it up in the keymap,
+//! and returns a command id that goes through the same dispatcher a ribbon
+//! click reaches. That is what lets a tooltip here name its chord at all —
+//! two claimants on `Ctrl+0` means the Actual-size tooltip can honestly
+//! advertise none. `no_chord_has_two_owners` fails naming the chord and both
+//! claimants if a conflict appears.
 //!
-//! **`Ctrl+0` had two owners.** The manifest keymap bound it to
-//! `view.zoom_actual` while `crate::app::keyboard` bound it to
-//! `Fit(FitMode::Page)` and got there first, so this bar's Actual-size
-//! tooltip had to advertise no chord at all. Fixed 2026-08-13, and fixed
-//! *structurally*: `keyboard` no longer knows what a manifest chord means —
-//! it spells the key, looks it up in the keymap, and returns a command id
-//! that goes through the same dispatcher a ribbon click reaches. The
-//! tooltip names its chord again, and `no_chord_has_two_owners` fails
-//! naming the chord and both claimants if the conflict returns.
+//! ## The Find toggle, which §6 lists first
 //!
-//! ## ★ The Find toggle, which §6 lists first and which used to be absent
-//!
-//! It is drawn now. This section used to read:
-//!
-//! > **The Find toggle.** §6 lists it first, and it is absent. `Find` has no
-//! > entry in `crate::shell::commands` … There is no find panel, no search
-//! > over the page's text, and no action to raise. Under `PROJECT_PLAN.md`
-//! > §3's no-placeholders invariant an unavailable capability renders
-//! > **nothing** … It lands with the find panel.
-//!
-//! It has landed. `edit.find` is registered, `Ctrl+F` is bound to it in the
-//! manifest keymap and parsed by `crate::app::keyboard::parse_chord`, the
-//! dispatch arm toggles the bar, and `crate::find::bar` is the surface. So
-//! the control appears — and it appears **here** rather than on the ribbon
-//! because §6 puts it here, in the section headed *what deliberately does not
-//! go on the ribbon*.
+//! `edit.find` is registered, `Ctrl+F` is bound to it in the manifest keymap
+//! and parsed by `crate::app::keyboard::parse_chord`, the dispatch arm toggles
+//! the bar, and `crate::find::bar` is the surface. The control appears
+//! **here** rather than on the ribbon because §6 puts it here, in the section
+//! headed *what deliberately does not go on the ribbon*.
 //!
 //! Two details worth stating because both are decisions:
 //!
@@ -285,12 +270,11 @@
 //!   a parallel owner for four bytes of widget state would be a worse
 //!   structural change than using the store egui provides for exactly this.
 //!
-//! ## Where three subjects went, and the one question left behind
+//! ## Where three subjects live, and the one question left here
 //!
-//! This file has reached standing rule R2's 1,500-line ceiling three times,
-//! and each split took out a subject with **its own state, its own vocabulary
-//! and its own pure decision function** rather than a slice of whatever
-//! happened to be at the bottom of the file:
+//! Three subjects have modules of their own, and each was taken out along a
+//! seam rather than sliced off the bottom of the file: each has **its own
+//! state, its own vocabulary and its own pure decision function**.
 //!
 //! | module | answers | its own |
 //! |---|---|---|
@@ -308,26 +292,25 @@
 //! and D1 for the page box, the retirement rule and what is deliberately not
 //! worded for the decline, the prominence argument for the notes.
 
-/// Page navigation and the editable page-number box. See this module's
-/// header for the seam, and that one's for the control.
-// The four named zoom levels -- Actual size, Fit width, Fit height, Fit page.
-// Split out under R2 on 2026-08-24; see its header for the layout rule.
-/// ★★★ **What the file contradicted itself about** — the one reading of
+/// **What the file contradicted itself about** — the one reading of
 /// `Document::load_anomalies()` that both the bar's census line and the
-/// Document-properties list are drawn from. Added 2026-09-09 for engine
-/// `Pass 283.0`; see its header for why the derivation is shared and why it
-/// carries no `edit_epoch` key.
+/// Document-properties list are drawn from. See its header for why the
+/// derivation is shared and why it carries no `edit_epoch` key.
 pub(crate) mod anomalies;
 mod disclosure;
+// The four named zoom levels -- Actual size, Fit width, Fit height, Fit page.
+// See its header for the layout rule.
 mod fit;
 /// **What the bar can afford when the window is narrow** — the shed rule, and
-/// the reachability clause that makes shedding legitimate. Added 2026-08-26.
+/// the reachability clause that makes shedding legitimate.
 pub(super) mod fitting;
+/// Page navigation and the editable page-number box. See this module's
+/// header for the seam, and that one's for the control.
 mod page_box;
-/// ★★★ **How to get the application back** — the read-mode exit statement.
+/// **How to get the application back** — the read-mode exit statement.
 ///
-/// Added 2026-09-05 for `OPERATOR_REQUESTS.md` O115: *"I didn't see a way to
-/// get back out of read mode."* Read mode hides the ribbon, and the only
+/// `OPERATOR_REQUESTS.md` O115, the operator: *"I didn't see a way to get back
+/// out of read mode."* Read mode hides the ribbon, and the only
 /// control that turns it off is on the ribbon — so the mode hides its own exit.
 ///
 /// It is on **this** bar because this bar is the one piece of chrome §2 of
@@ -338,7 +321,7 @@ mod page_box;
 /// why two surfaces is not duplication here.
 mod readmode;
 /// **What is selected, said in words** — the readout that turns *"all I get is
-/// the page selected"* into a diagnosis. Added 2026-08-27; see its header.
+/// the page selected"* into a diagnosis. See its header.
 mod selected;
 
 /// The worded decline — a command that was invoked and did not run.
@@ -359,16 +342,16 @@ pub(super) mod decline;
 
 /// The narrator — the render-diagnostics disclosure and its one line.
 ///
-/// The third module split out of this file under R2, and the seam is the one
-/// this header draws in prose two sections above: the notes are **narration**
+/// Split out of this file along the seam this header draws in prose two
+/// sections above: the notes are **narration**
 /// (a census of what a raster contained, demoted behind a triangle because its
 /// prominence was wrong), and everything else on the left half is a fact about
 /// the operator's own document or gesture, which must not be demoted at all.
 /// The two change for different reasons and are argued from opposite
 /// premises.
 ///
-/// ★ It is `pub(crate)` rather than private since 2026-08-15, for exactly one
-/// export: [`notes::findings`], the ordered, filtered list of what a raster
+/// It is `pub(crate)` rather than private for exactly one export:
+/// [`notes::findings`], the ordered, filtered list of what a raster
 /// compromised on. The Render-diagnostics dialog
 /// (`crate::dialogs::diagnostics`) shows the same facts with room for more than
 /// one line, and the *editorial* rules behind that list — which counters are
@@ -385,21 +368,21 @@ use crate::canvas::pick::PickFilter;
 use crate::find::FindState;
 use crate::text::find as t_find;
 
-/// ★ The **Select** popup — what a click on the page may land on (O17).
+/// The **Select** popup — what a click on the page may land on (O17).
 ///
 /// The one control on this bar that is not a readout: everything else here
 /// reports what is true about the view, and this changes what the pointer
 /// does. Its header carries why that earns it both its own file and its own
 /// position at the left edge of the fixed cluster.
 pub(super) mod filter;
-/// ★ The **maximum-zoom** popup, behind the zoom readout — O24, and the
+/// The **maximum-zoom** popup, behind the zoom readout — O24, and the
 /// operator's *"put the max zoom setting on the bar at the bottom"*.
 ///
 /// Its header carries why the readout rather than a new control: the bar's
 /// height and right-hand cluster are fixed, and a label that turns out to be
 /// a button is already this surface's idiom.
 pub(super) mod maxzoom;
-/// ★ **Why zooming in stopped** — O186's fourth clause, the one sentence that
+/// **Why zooming in stopped** — O186's fourth clause, the one sentence that
 /// keeps the learned raster ceiling from being a control that silently stops
 /// responding.
 ///
@@ -416,7 +399,7 @@ pub(super) mod rasterstop;
 pub(super) mod zoom;
 
 // ---------------------------------------------------------------------------
-// Geometry — see the ★ R128 section of the module docs
+// Geometry — see the R128 section of the module docs
 // ---------------------------------------------------------------------------
 
 /// The exact outer height, in egui points, the status panel must be given.
@@ -434,10 +417,9 @@ pub(super) mod zoom;
 /// canvas that never change size.
 pub const HEIGHT_PTS: f32 = 30.0;
 
-/// ★★★ **The panel's height for a given theme** — use this, not
-/// [`HEIGHT_PTS`], and the difference is a defect that shipped.
+/// **The panel's height for a given theme** — use this, not [`HEIGHT_PTS`].
 ///
-/// # What was wrong with the constant
+/// # Why the constant is not enough on its own
 ///
 /// [`HEIGHT_PTS`] is `ROW_HEIGHT_PTS` (24) plus egui's frame margins — an
 /// arithmetic that is correct **only if the bar's controls are 24 points
@@ -449,24 +431,26 @@ pub const HEIGHT_PTS: f32 = 30.0;
 /// Measured, at both scales, on a real window:
 ///
 /// ```text
-/// ui_scale 1.00, 1600x1000 client:  status-bar  972.0 .. 1002.0   ★ 2 pt past the bottom
-/// ui_scale 1.80, 1100x800  client:  status-bar  416.4 ..  446.4   ★ 2 pt past 444.4
+/// ui_scale 1.00, 1600x1000 client:  status-bar  972.0 .. 1002.0   2 pt past the bottom
+/// ui_scale 1.80, 1100x800  client:  status-bar  416.4 ..  446.4   2 pt past 444.4
 /// ```
 ///
-/// So the bottom two points of two controls were clipped off the window, at
-/// every UI scale, since the theme's control height was raised.
+/// Size the panel from the constant and the bottom two points of two controls
+/// fall off the window, at every UI scale.
 ///
-/// ## ★★ Why no test saw it, which is the transferable part
+/// ## Why no unit test sees it, which is the transferable part
 ///
 /// [`tests::the_bar_is_exactly_as_tall_open_as_closed`] asserts exactly this
 /// property — *"the bar's content overflowed its allocated row"* — and it
-/// **passes**. It builds an `egui::Context::default()`, which carries egui's
-/// own default spacing and **not this application's theme**. In that context
-/// the controls really are under 24 points and the assertion is true.
+/// **passes either way**. It builds an `egui::Context::default()`, which
+/// carries egui's own default spacing and **not this application's theme**. In
+/// that context the controls really are under 24 points and the assertion is
+/// true.
 ///
 /// That is R1's founding shape verbatim: *the only test of that function builds
 /// a bare `egui::Context`, so the condition that breaks the real app cannot
-/// occur in the harness.* The bar was measured in a world with no theme in it.
+/// occur in the harness.* A bar measured in a world with no theme in it is not
+/// measured.
 ///
 /// # Why a function and not a bigger constant
 ///
@@ -476,7 +460,7 @@ pub const HEIGHT_PTS: f32 = 30.0;
 /// time a preset raised its control height. Taking it from `Metrics` means the
 /// two move together by construction.
 ///
-/// ★ **R128 is untouched.** The rule is that the bar's height must not depend
+/// **R128 is untouched.** The rule is that the bar's height must not depend
 /// on *what there is to show* — a disclosure opening, a document loading, a
 /// note appearing. It may depend on the theme, which changes only when the
 /// operator changes it, and which re-lays the whole application out anyway.
@@ -527,23 +511,16 @@ const _: () = assert!(
     "the panel height must leave room for its own inner margin"
 );
 
-/// The **floor** under the zoom readout's reserve — no longer the whole story.
+/// The **floor** under the zoom readout's reserve, and only the floor.
 ///
 /// `8%` and `800%` are different widths, and without a reserve the − button
-/// would step sideways every time the operator clicked +. This constant was
-/// once the entire answer, and its own doc comment said so: *"wide enough for
-/// four characters, which is the whole range [`crate::viewer::ZOOM_LADDER`]
-/// can produce."*
+/// would step sideways every time the operator clicked +. Four characters is
+/// **not** the width to reserve: O24 made the ceiling a preference,
+/// `MAX_MAX_ZOOM_PERCENT` is `1e12` and
+/// [`crate::text::status::zoom_percent`] formats with `{:.0}`, so the readout
+/// can be asked to draw `1000000000000%` — fourteen characters.
 ///
-/// ★★★ **That sentence stopped being true on 2026-08-22 and nothing
-/// re-read it.** O24 made the ceiling a preference. `MAX_MAX_ZOOM_PERCENT` is
-/// `1e12`, [`crate::text::status::zoom_percent`] formats with `{:.0}`, and so
-/// the readout can be asked to draw `1000000000000%` — **fourteen characters
-/// in a reserve sized for four.** The outside review of 2026-09-03 spotted the
-/// staleness and put the figure at seven; seven was the old ceiling's width,
-/// not this one's.
-///
-/// ★ Kept as a FLOOR rather than deleted, because it is still doing the
+/// Kept as a FLOOR rather than deleted, because it is still doing the
 /// original job at the bottom of the range: `10%` measures narrower than four
 /// characters, and letting the reserve shrink to it would move the − button
 /// the other way. The reserve is now `max(this, the measured width of the
@@ -586,8 +563,7 @@ pub(super) const REGION_EDIT_DISCLOSURE: &str = "status-group:edit-disclosure"; 
 
 /// See [`recovered_disclosure`].
 pub(super) const REGION_RECOVERED: &str = "status-group:recovered"; // ui-text-exempt: trace region name, never displayed
-/// ★★★ The *"this file contradicted itself and pdfcer decided"* line — engine
-/// `Pass 283.0`, decision 145.
+/// The *"this file contradicted itself and pdfcer decided"* line.
 ///
 /// The **third** region here that is about the FILE rather than about a gesture,
 /// and the one a driven check most needs by name: the engine's notice makes the
@@ -596,21 +572,21 @@ pub(super) const REGION_RECOVERED: &str = "status-group:recovered"; // ui-text-e
 /// shipping without the thing that makes it honest. Only a published rect can
 /// tell "on screen and legible" from "constructed".
 ///
-/// ⚠ Distinct from [`REGION_RECOVERED`] on purpose — the two conditions are
+/// Distinct from [`REGION_RECOVERED`] on purpose — the two conditions are
 /// disjoint and can be live together; see [`anomalies`]' header for the table.
 pub(super) const REGION_LOAD_ANOMALIES: &str = "status-group:load-anomalies"; // ui-text-exempt: trace region name, never displayed
 /// The blend-space disclosure's rect, for `ui-verify`.
 ///
-/// ★ A published region name is a cross-repo stability contract with the
+/// A published region name is a cross-repo stability contract with the
 /// harness: renaming it turns a check into a skip rather than a failure.
 pub(super) const REGION_BLEND_SPACE: &str = "status-group:blend-space"; // ui-text-exempt: trace region name, never displayed
 /// The "the picture is still being drawn" line (`OPERATOR_REQUESTS.md` O63).
 ///
-/// ★ The one region in this group naming a **state** rather than an event, so a
+/// The one region in this group naming a **state** rather than an event, so a
 /// check reading it is asking *"is the page behind right now"* and not *"did an
 /// edit disclose something"*.
 pub(super) const REGION_CATCHING_UP: &str = "status-group:catching-up"; // ui-text-exempt: trace region name, never displayed
-/// ★★★ The "line weights are off, so this is not what will print" line —
+/// The "line weights are off, so this is not what will print" line —
 /// `OPERATOR_REQUESTS.md` **O137**.
 ///
 /// The **second** state region, and the one a driven check must be able to find
@@ -656,7 +632,7 @@ const REGION_FILTER_EMPTY: &str = "status-group:filter-empty"; // ui-text-exempt
 
 /// Prefix for one row of the open filter popup: `status-filter-row:<index>`.
 ///
-/// ★ **Indexed, not named.** Labels are operator copy and get reworded; an
+/// **Indexed, not named.** Labels are operator copy and get reworded; an
 /// index is stable and a harness is choosing positionally anyway. The index is
 /// the position in [`PickClass::ALL`], which is also the display order.
 ///
@@ -704,18 +680,18 @@ pub fn show(
     status: &Status,
     find: &mut FindState,
     filter: &mut PickFilter,
-    // ★ The operator's configured maximum zoom, edited by the popup behind
+    // The operator's configured maximum zoom, edited by the popup behind
     // the zoom readout. Threaded like `filter`, and persisted by the caller
     // for the same reason — see `app::frame`'s status-bar block.
     max_zoom_percent: &mut f32,
     wheel_paging: &mut crate::app::prefs::WheelPaging,
     actions: &mut Vec<Action>,
 ) {
-    // ★ One allocated row, of a height that does not depend on what there is
+    // One allocated row, of a height that does not depend on what there is
     // to show. R128; see the module docs for the measurement.
     let row = Vec2::new(ui.available_width(), ROW_HEIGHT_PTS);
     let bar = ui.allocate_ui_with_layout(row, Layout::left_to_right(Align::Center), |ui| {
-        // ★ Claim the whole row even when nothing is drawn into it.
+        // Claim the whole row even when nothing is drawn into it.
         //
         // `allocate_ui_with_layout` advances its parent by the child's
         // *min_rect* — what the content actually used — not by the size that
@@ -727,13 +703,13 @@ pub fn show(
         // is the one that lives in the code being defended.
         ui.set_min_height(ROW_HEIGHT_PTS);
 
-        // ★★★ **FIRST of everything, and BEFORE the no-document guard: how to
+        // **FIRST of everything, and BEFORE the no-document guard: how to
         // get the application back.**
         //
         // Read mode hides the ribbon and the docks, and the only control that
         // turns it off lives on the ribbon — so from the moment it is on, this
         // bar is the only piece of chrome left that can say how to leave. The
-        // operator reported exactly that on 2026-09-05 (O115).
+        // operator reported exactly that (O115).
         //
         // Ahead of the page-drag caption, which the block below says outranks
         // the disclosures, which outrank the narrator. The rule that puts this
@@ -741,7 +717,7 @@ pub fn show(
         // interface outranks every sentence about the document**, because an
         // operator who cannot reach the interface cannot act on the others.
         //
-        // ★ Above the `Status::Open` guard, deliberately. Read mode is per
+        // Above the `Status::Open` guard, deliberately. Read mode is per
         // WINDOW rather than per document (`app::window` §3), so the last file
         // can be closed while it is on — and a bar that explained the way out
         // only when a document happened to be open would go silent in the state
@@ -757,7 +733,7 @@ pub fn show(
             return;
         };
 
-        // ★★ **First on the left while a page drag is in flight**, ahead of
+        // **First on the left while a page drag is in flight**, ahead of
         // everything else the bar has to say.
         //
         // Rule 4's disclosure half for the drag: the caret drawn into the page
@@ -769,7 +745,7 @@ pub fn show(
         // sentence more, not less, because *which document* is a fact no caret
         // can carry.
         //
-        // ★ It also has to be here rather than only in the Pages panel,
+        // It also has to be here rather than only in the Pages panel,
         // because the panel can be **closed**. A drop onto the page view is a
         // complete gesture on its own — press in one document's page list,
         // spring a tab, release on the sheet — and the operator can perform
@@ -789,7 +765,7 @@ pub fn show(
             ui.separator();
         }
 
-        // ★ …and the same treatment for a CANVAS drag being constrained.
+        // …and the same treatment for a CANVAS drag being constrained.
         //
         // `ui-conventions/drag-moves.md` D5's second clause: *the affordance
         // shows the constraint while it is active*, whose stated failure mode
@@ -811,7 +787,7 @@ pub fn show(
             ui.separator();
         }
 
-        // ★★★ FIRST on the left: what is selected.
+        // FIRST on the left: what is selected.
         //
         // Ahead of the narrator because it is the answer to a question the
         // operator is actively asking — *what did I just click?* — where the
@@ -823,7 +799,7 @@ pub fn show(
         // Left: the narrator, demoted behind a disclosure.
         notes::show(ui, doc);
 
-        // ★ …and beside it, what the last fill INFERRED — which is not
+        // …and beside it, what the last fill INFERRED — which is not
         // demoted, because it is not narration.
         //
         // Rule 4's surviving half: an inference the operator **cannot see**
@@ -833,20 +809,19 @@ pub fn show(
         // re-derivable from the saved document** — afterwards they look
         // exactly like the author's own decision.
         //
-        // The Forms panel shows them too, and that was enough while the
-        // panel was the only way to fill. It stopped being enough on
-        // 2026-08-14, when filling arrived on the canvas: a fill can now
-        // happen in **Read mode with the panel closed**, and the disclosure
-        // would be reachable only by an operator who thought to switch
-        // modes and open a panel to look for a message they were never told
-        // existed. That is a silent inference, which is the one thing rule
-        // 4 forbids outright.
+        // The Forms panel shows them too, and that is not enough now that
+        // filling also happens on the canvas: a fill can happen in **Read
+        // mode with the panel closed**, and the disclosure would then be
+        // reachable only by an operator who thought to switch modes and open
+        // a panel to look for a message they were never told existed. That is
+        // a silent inference, which is the one thing rule 4 forbids
+        // outright.
         //
         // It is keyed on `edit_epoch`, so it says nothing about a document
         // that has moved on — an undo or any later edit retires it without
         // anything having to remember to.
 
-        // ★ …and the same obligation for the verbs that move geometry.
+        // …and the same obligation for the verbs that move geometry.
         //
         // A move or a delete sometimes has to change how an object is
         // *written* in order to express what the operator asked for — an `re`
@@ -857,11 +832,10 @@ pub fn show(
         // something pdfcer decided that the saved document cannot afterwards be
         // asked about.
         //
-        // `pdfcer-core` has always returned these sentences and
-        // `crate::app::actions::vector_edit` has always traced them; until
-        // 2026-08-14 that was the whole of it, and that function's own header
-        // called it out — recorded, not disclosed. This is where they are
-        // disclosed.
+        // `pdfcer-core` returns these sentences and
+        // `crate::app::actions::vector_edit` traces them. Tracing is
+        // recording, not disclosing — that function's own header says so —
+        // and this is where they are disclosed.
         //
         // Keyed on `edit_epoch` exactly as its neighbour is, and for the same
         // reason: an undo or any later edit retires the sentence without
@@ -869,14 +843,14 @@ pub fn show(
         // one edit bumps the epoch once and records at most one of them.
         disclosure::all(ui, doc);
 
-        // ★ …and the opposite speech act, in the same place.
+        // …and the opposite speech act, in the same place.
         //
         // The three lines above all say *something happened*. This one says
         // *nothing happened*: a command was invoked and declined, because
         // there was nothing for it to act on. Today that is zoom-to-selection
-        // with no resolvable bounds and no canvas — `canvas::zoom` has
-        // returned those outcomes and traced them from the start, and
-        // `app::dispatch` dropped them on the floor until 2026-08-14.
+        // with no resolvable bounds and no canvas — `canvas::zoom` returns
+        // those outcomes and traces them, and this is where the dispatcher
+        // turns one into a sentence instead of dropping it.
         //
         // It is drawn here rather than folded into `edit_disclosure` because
         // it is a **different store**, not a different message: a decline
@@ -890,13 +864,13 @@ pub fn show(
         // line takes a fraction of what *remains*, so the left half converges
         // and the right-to-left cluster opposite is what yields — the same
         // behaviour the render-notes line has always had.
-        // ★ Before the decline note, because it outranks it: a decline
+        // Before the decline note, because it outranks it: a decline
         // explains why one gesture did nothing, while this explains why
         // EVERY gesture will. An operator reading the bar because the
         // canvas stopped responding needs the general answer first.
         filter::empty_note(ui, *filter);
 
-        // ★★ …and the same species of fact about one DIRECTION — O186.
+        // …and the same species of fact about one DIRECTION — O186.
         //
         // *"Why will every zoom-in gesture do nothing?"*, which is the empty
         // filter's question narrowed to one axis, and it belongs here for the
@@ -904,7 +878,7 @@ pub fn show(
         // single-gesture answer below. An operator reading this bar because a
         // control stopped responding wants them in that order.
         //
-        // ★ It is deliberately NOT part of `decline::show`. The clamped region
+        // It is deliberately NOT part of `decline::show`. The clamped region
         // zoom that module declines to word is a partial grant the zoom readout
         // already explains; this one the readout cannot explain, because the
         // number it shows did not move. That argument is in `rasterstop`'s
@@ -916,7 +890,7 @@ pub fn show(
 
         // Right: the controls that must never move.
         //
-        // ★ Laid out RIGHT-TO-LEFT, so the group added FIRST is drawn
+        // Laid out RIGHT-TO-LEFT, so the group added FIRST is drawn
         // RIGHTMOST. The reading order on screen is therefore the reverse of
         // the call order below:
         //
@@ -929,23 +903,23 @@ pub fn show(
         // narrower than its content). A right-to-left layout cannot get that
         // wrong; it simply runs out of room, and the notes on the left are
         // what yields.
-        // ★★★ **WHAT THE BAR CAN AFFORD** — added 2026-08-26, and it is the
-        // fix for a defect the paragraph above this block could not have
-        // prevented, because that paragraph is about *which layout* and this is
-        // about *how much*.
+        // **WHAT THE BAR CAN AFFORD** — the paragraph above is about *which
+        // layout*, and this is about *how much*, which no choice of layout
+        // settles.
         //
         // At `ui_scale = 1.80` in an 1100 x 800 window — 611 points wide — the
         // fixed cluster needs 666 points. A right-to-left layout does not clip
-        // to its parent; it runs past the left edge into negative coordinates.
-        // Find sat at x = -54 and the selection filter at x = -127, both
-        // unreachable, with the left-hand notes drawn underneath the fit group.
+        // to its parent; it runs past the left edge into negative coordinates,
+        // which puts Find at x = -54 and the selection filter at x = -127,
+        // both unreachable, with the left-hand notes drawn underneath the fit
+        // group.
         //
         // `fitting` decides, and its header carries the whole argument —
         // including the clause that makes shedding legitimate at all: nothing
         // it may drop is the operator's last route to that capability, checked
         // against the real command registry rather than asserted.
         //
-        // ★ The widths come from **last frame's measured rects**, remembered in
+        // The widths come from **last frame's measured rects**, remembered in
         // `egui::Memory`. See `fitting`'s header on why that beats a
         // `min_width()` per group: the alternative is a second implementation
         // of egui's layout, and it would drift silently in the direction of a
@@ -994,7 +968,7 @@ pub fn show(
                 measured.record(*group, before - ui.available_width());
             }
         });
-        // ★ Only the groups actually drawn are re-measured; a shed group keeps
+        // Only the groups actually drawn are re-measured; a shed group keeps
         // its last known width, which is what lets the bar put it back when the
         // window widens again. Clearing it instead would make a shed group
         // "unmeasured", and an unmeasured group is shown unconditionally — so
@@ -1012,14 +986,12 @@ pub fn show(
         crate::diag::trace_changed(STATUS_SLOT, || {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                // ★ `wheel=` carries the O30 preference, because a driven
+                // `wheel=` carries the O30 preference, because a driven
                 // check that TOGGLES a persisted setting has to be able to
-                // normalise it first. Without it, the second run of such a
+                // normalise it first. Without it the second run of such a
                 // check inherits the first run's choice and reports the
-                // default as broken — which is exactly what happened on
-                // 2026-08-24, and the RAG entry it repeated was already
-                // written. A setting a check can change is a setting the
-                // trace must state.
+                // default as broken. A setting a check can change is a
+                // setting the trace must state.
                 "status page={} pages={} zoom={} fit={:?} wheel={}",
                 doc.view.page_index,
                 doc.pages.len(),
@@ -1041,9 +1013,9 @@ pub fn show(
 
 /// The Find toggle, and the whole of what this bar knows about searching.
 ///
-/// A `selectable_label` showing whether the bar is open — see the star
-/// section of the module docs for why it shows state at all, and why it
-/// writes [`FindState`] instead of raising an [`Action`].
+/// A `selectable_label` showing whether the bar is open — see the module
+/// docs for why it shows state at all, and why it writes [`FindState`]
+/// instead of raising an [`Action`].
 ///
 /// Drawn only with a document open (the caller has already returned
 /// otherwise), because `crate::find::bar` draws nothing without one: a toggle
@@ -1166,13 +1138,13 @@ pub(super) mod test_support {
     /// it painted.
     ///
     /// `None` when no measurement happened at all — the closure never ran, or
-    /// it produced a non-finite height. That is `HANDOFF.md` §10's rule, and
-    /// it is not theoretical here: `cargo test -p egui-shell` and `cargo test
-    /// --workspace` compile `egui` with different features (no fonts vs
-    /// `default_fonts`), so a layout assertion can be entirely vacuous under
-    /// one of the two commands a developer runs. A helper that returned a bare
-    /// `f32` would hand a vacuous run the same `NAN == NAN`-adjacent silence a
-    /// real one gets.
+    /// it produced a non-finite height. **A measurement that did not happen
+    /// must not read as a measurement**, and that is not theoretical here:
+    /// `cargo test -p egui-shell` and `cargo test --workspace` compile `egui`
+    /// with different features (no fonts vs `default_fonts`), so a layout
+    /// assertion can be entirely vacuous under one of the two commands a
+    /// developer runs. A helper that returned a bare `f32` would hand a
+    /// vacuous run the same `NAN == NAN`-adjacent silence a real one gets.
     ///
     /// The shape count is the second half of the same discipline, and it is
     /// the half that matters for a *sentence*: a height comparison between two
@@ -1181,7 +1153,7 @@ pub(super) mod test_support {
     /// than merely reaching the data.
     ///
     /// Lives here rather than in `mod tests` because **three** R128 tests need
-    /// it now — the fill line, the edit line and [`super::decline`]'s — and the
+    /// it — the fill line, the edit line and [`super::decline`]'s — and the
     /// third is in a sibling module. `pub(super)` on a helper buried inside one
     /// test module would read as "the other module reaches into my tests"
     /// rather than as "this is the shared harness".

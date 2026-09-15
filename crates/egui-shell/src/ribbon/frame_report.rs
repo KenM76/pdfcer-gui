@@ -12,17 +12,17 @@
 //!   two reasons tells you neither.
 //! - **A verification harness.** `ui-verify` drives a live application and
 //!   needs to know whether a group is in the band or in the overflow menu
-//!   — and, since 2026-08-13, whether a *tab* is in the strip or in the
-//!   strip's own menu — before it can assert anything about it.
+//!   — and whether a *tab* is in the strip or in the strip's own menu —
+//!   before it can assert anything about it.
 //!
 //! Every field describes the frame that has just been drawn, not the state
 //! the next one will be drawn from; that is in [`super::RibbonState`].
 //!
-//! # ★ The distinction this file exists to keep: *drawn* is not *planned*
+//! # The distinction this file exists to keep: *drawn* is not *planned*
 //!
-//! There are two ways to count "how many things are in the menu", they are
-//! not the same number, and mixing them cost a defect that hid behind an
-//! arithmetic underflow.
+//! There are two ways to count "how many things are in the menu", and they
+//! are not the same number. Mixing them hides behind an arithmetic
+//! underflow.
 //!
 //! - **What the plan decided** — [`FrameReport::groups_overflowed`],
 //!   [`FrameReport::tabs_overflowed`]. True every frame, whether or not
@@ -33,9 +33,8 @@
 //!
 //! Code that treats the plan's number as a count of what was drawn
 //! subtracts one from the other and underflows the moment text has a
-//! width. That is not hypothetical; it is where
-//! [`FrameReport::groups_in_band`] came from. Both counts are therefore
-//! published, separately, with the difference written down here.
+//! width. That is what [`FrameReport::groups_in_band`] is for: both counts
+//! are published, separately, with the difference written down here.
 
 /// What one rendered frame contained. See this module's header.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -118,7 +117,7 @@ pub struct FrameReport {
     /// document and the top panel is only the strip.
     /// [`crate::peek::Show::Hidden`] is the resting state of that setting.
     ///
-    /// ★★ Published because the three are **indistinguishable from the other
+    /// Published because the three are **indistinguishable from the other
     /// counts on this report**. `groups_rendered` is the same for an inline
     /// band and an overlaid one, and zero for a hidden band and for a tab
     /// whose every group went into the overflow menu. A driven check that

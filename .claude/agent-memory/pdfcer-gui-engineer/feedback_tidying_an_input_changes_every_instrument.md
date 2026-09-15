@@ -1,9 +1,11 @@
 ---
 name: tidying-an-input-changes-every-instrument
-description: Two lessons from one afternoon — closing an exchange is part of doing the work, not a later sweep (open/ went 229→13 then back to 48 in three days); and the sweep that fixed it blinded a gate and killed 18 citations, because tidying an input is a change to every instrument that reads it
+description: Tidying an input is a change to every instrument that reads it — an archiving sweep blinded a gate and killed 18 citations, and a rename commit silently deleted every binary under evidence/, leaving the pixel oracle SKIPping green for twelve days
 metadata:
   type: feedback
 ---
+
+<!-- old-name-exempt-file: one finding here is the rename commit deleting every binary under evidence/, so the old name is quoted as evidence for what that commit did. -->
 
 **Closing an exchange is part of doing the work, not a tidy-up pass. Archive
 both files and write the `INDEX.md` row in the same sitting as the `done_*`, or
@@ -106,3 +108,51 @@ records and were true when written.
 Related: [[feedback_a_check_that_cannot_fail_is_not_evidence]],
 [[feedback_a_skip_is_not_red_so_a_check_can_stop_running_unnoticed]],
 [[feedback_an_unevidenced_excuse_is_worse_than_silence]].
+
+---
+
+## ★★★ The third instance, and it is the worst shape: **a text sweep does not carry binaries, and a binary is the one artefact class no gate resolves**
+
+2026-09-15, found while repairing dangling `evidence/` citations. `git log
+--diff-filter=D` says the **rename commit** — the one that made `pdfce` into
+`pdfcer` across the tree — **deleted every binary under `evidence/`**: the
+twelve-width Word-ribbon photo series, the app-icon review strip, the crosshair
+previews, the Inkscape observation, and `crop_settings.png`. Nineteen PNGs and
+the sweep traces, in a commit whose message is entirely about a string
+substitution. Almost certainly a copy step that carried text and not binaries.
+
+**Every citation to them stayed, and stayed wrong for twelve days.**
+
+★★★ **The one that mattered was an INPUT in a directory that is otherwise all
+outputs.** `evidence/` is where `ctx.out(...)` writes, where `make-icon.py`
+writes its strip, where a sweep drops traces — so the whole directory reads as
+disposable, and it was. But `crop_settings.png` is **read**:
+`profile.rs`'s `pdfcer-legacy` region set is seven headings expressed as
+*fractions of that exact 1860×1035 image*, and
+`tests/pixel_oracle_against_real_evidence.rs` is the harness's own proof that
+its legibility oracle works on a real antialiased screenshot rather than on
+synthetic images. Its missing-file path prints a reason and returns. **Green,
+for twelve days, over an oracle that could not run.**
+
+**How to apply:**
+
+- **Before any rename, move or bulk copy, list the binaries separately.**
+  `git diff --name-status A B | grep '^D'` after the fact is the audit; running
+  it *before* pushing the sweep is the check. Text diffs are reviewed by
+  reading; a deleted PNG is one line nobody looks at.
+- **Ask of every generated directory: does anything READ a file in here?**
+  The answer is usually no, which is exactly why the one yes is invisible.
+  `grep -rn '<dir>/' --include=*.rs` and then check each hit for
+  `ctx.out(` / `write` — an output citation is fine, a read is load-bearing.
+- **Restore rather than re-cite when the artefact is not regenerable by a
+  committed tool.** The Word series has `tools/word-ribbon-study.ps1` and the
+  icon strip has `make-icon.py`, so their citations were rewritten to name the
+  **instrument** — an instrument survives a file sweep and tells the reader how
+  to disagree with the number. `crop_settings.png` has no such tool (it is a
+  crop of the *old* GUI's dialog), so it was restored from history instead.
+  ⇒ **cite the instrument where one exists; keep the file only where none does.**
+- Filed as `DEFECTS.md` D54, whose repair is the missing gate: resolve every
+  `Calibration::Image` path declared in `profile.rs` against the working tree.
+
+Related: [[feedback_a_skip_is_not_red_so_a_check_can_stop_running_unnoticed]],
+[[feedback_a_gate_hit_inside_the_repo_is_not_a_mandate_to_sweep_outside_it]].

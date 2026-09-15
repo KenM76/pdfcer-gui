@@ -64,27 +64,23 @@ use crate::sys::vk;
 
 /// The mode the Bookmarks panel is **authored** in.
 ///
-/// ★★★ `review`, not `read`, since 2026-09-04 — and the change is a change of
-/// SUBJECT rather than of route.
+/// ★★★ `review`, and the choice is a claim about the PRODUCT rather than a
+/// convenient route to a panel.
 ///
-/// This said `read` for the whole of its life, with no argument beside it:
-/// Read is the mode the application starts in, so it was the cheapest way to
-/// reach a panel that is shown in all three. That made it an accident, not a
-/// decision — and it quietly asserted that **Read offers bookmark authoring**.
+/// ⚠ **The mode a check drives in is an assertion, whether or not anybody meant
+/// it as one.** Read is the mode the application starts in, so it is always the
+/// cheapest way to reach a panel that is shown in all three — and driving
+/// authoring there quietly asserts that the mode whose whole promise is that it
+/// changes nothing offers Add, Rename, Remove, Copy, Cut and a drag hint.
 ///
-/// It did, and an outside reviewer flagged it (`REVIEW_TRIAGE.md` A5): the mode
-/// whose whole promise is that it changes nothing was offering Add, Rename,
-/// Remove, Copy, Cut and a drag hint. `MODES_AND_PANELS.md`'s own panel table
-/// already draws that line by name, giving Read *"Comments (read)"* against
-/// Review's *"Comments (authoring)"*; Bookmarks was granted to Read with no
-/// authoring qualifier and nobody split the panel.
-///
-/// The authoring half is now gated on `Capabilities::authors_anything`, so
+/// `MODES_AND_PANELS.md`'s panel table draws the line by name, giving Read
+/// *"Comments (read)"* against Review's *"Comments (authoring)"*. The
+/// authoring half here is gated on `Capabilities::authors_anything`, so
 /// **Review is the lowest mode that has it** — which is also the right mode to
 /// test it in, because it proves the gate admits more than Edit. A bookmark is
 /// document *structure*, not page content, so Review must keep it.
 ///
-/// ⇒ The check now fails if authoring is missing from Review, and
+/// ⇒ This check fails if authoring is missing from Review, and
 /// `read_mode_offers_no_bookmark_authoring` is the other half of the pair.
 const MODE: &str = "review";
 /// The command that shows the panel.
@@ -134,29 +130,28 @@ impl Check for BookmarkCanBeWritten {
 
 #[allow(clippy::too_many_lines)]
 /// **Read mode offers no way to change the outline** — the other half of the
-/// pair, and the regression test for `REVIEW_TRIAGE.md` A5.
+/// pair.
 ///
 /// # The defect this detects
 ///
-/// An outside reviewer, 2026-09-03: *"Read mode offers 'Add a bookmark'."* It
-/// did — a title field, a parent line and an Add button, plus Rename, Remove,
-/// Copy, Cut and a drag hint, in the mode whose entire promise is that it
+/// A title field, a parent line and an Add button, plus Rename, Remove, Copy,
+/// Cut and a drag hint, drawn in the mode whose entire promise is that it
 /// cannot change the document.
 ///
 /// # ★★ Why this exists as well as its sibling, and not instead of it
 ///
-/// `BookmarkCanBeWritten` proves the authoring row is REACHABLE — in Review,
-/// since 2026-09-04. This one proves it is ABSENT in Read. Either alone is
+/// `BookmarkCanBeWritten` proves the authoring row is REACHABLE in Review.
+/// This one proves it is ABSENT in Read. Either alone is
 /// satisfiable by a build that is simply wrong in the other direction: a panel
 /// that never draws the row passes an absence test perfectly, and a panel that
 /// draws it everywhere passes a presence test perfectly. **The pair is the
 /// assertion**; neither half is.
 ///
-/// ★ It is also the shape this project keeps being caught by. The sibling said
-/// `MODE = "read"` for its whole life with no argument beside it — Read was
-/// merely the mode the application starts in — and that accident quietly
-/// asserted the defect was correct behaviour. An absence test written down
-/// beside it is what stops the next accident being read as a decision.
+/// ★ And it is what stops the sibling's choice of mode from being read as a
+/// decision when it was only ever the cheapest route. **A presence test
+/// standing alone turns whatever mode it happened to drive in into a
+/// specification**; the absence test beside it is what makes the pair say
+/// something the reader can check.
 pub struct ReadModeOffersNoBookmarkAuthoring;
 
 impl Check for ReadModeOffersNoBookmarkAuthoring {

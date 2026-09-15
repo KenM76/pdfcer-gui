@@ -9,19 +9,12 @@
 //! contradictions no fail-soft rule can repair — two tabs with one id, a
 //! command claimed by two tabs, a tab with no label to render.
 //!
-//! `SHELL_FRAMEWORK.md` §5 makes the point that matters about this
-//! arrangement:
-//!
-//! > The uniqueness test moves into `egui-shell` and now runs against the
-//! > **merged** manifest, so a customization that puts one command on two
-//! > tabs is rejected at load with a message naming the command — which is
-//! > more than the old compile-time test could do for a user-supplied
-//! > layout.
-//!
-//! The salvage source had this rule and enforced it at compile time,
-//! against the ribbon the developers wrote. That test could say nothing
-//! about the ribbon the operator ends up with, and the operator's is the
-//! one that gets used.
+//! The point that matters about running here rather than at compile time
+//! (`SHELL_FRAMEWORK.md` §5): a compile-time uniqueness test can only check
+//! the ribbon the developers wrote. This one runs against the **merged**
+//! manifest, so a customization that puts one command on two tabs is
+//! rejected at load with a message naming the command — and the merged
+//! manifest is the ribbon the operator actually gets.
 //!
 //! # Why every error names the thing that is wrong
 //!
@@ -319,10 +312,9 @@ impl Shell {
     ///
     /// # Why this rule exists and is worth enforcing mechanically
     ///
-    /// It is the salvage source's principle P1, and the reason is
-    /// navigational rather than aesthetic: if a command can be on two
-    /// tabs, then "where is Fit page?" has two answers, and an operator
-    /// who found it once on View has learned nothing about where anything
+    /// The reason is navigational rather than aesthetic: if a command can sit
+    /// on two tabs, then "where is that control?" has two answers, and an
+    /// operator who found it once has learned nothing about where anything
     /// else lives. One home per command is what makes the tab set a *map*
     /// instead of a menu that repeats itself.
     ///
@@ -359,9 +351,9 @@ impl Shell {
 
     /// [`Shell::validate`], plus: every referenced command is registered.
     ///
-    /// Walks every command reference in the manifest — tab groups, the
-    /// quick-access toolbar and the keymap — and refuses any id the
-    /// catalog does not know.
+    /// Walks every command reference in the manifest — see
+    /// [`Shell::command_references`] for the regions and the order — and
+    /// refuses any id the catalog does not know.
     ///
     /// # Why this is a separate call rather than part of `validate`
     ///
@@ -389,9 +381,14 @@ impl Shell {
     /// Every command id this manifest mentions, with where it was
     /// mentioned.
     ///
-    /// In document order: tabs (ordinary then contextual), then the
-    /// quick-access toolbar, then the keymap. The order is stable so a
-    /// failing validation names the same reference on every run.
+    /// Every region that can name a command is walked: tabs (ordinary then
+    /// contextual), the quick-access toolbar, the trailing controls, the rail,
+    /// and the keymap, in that order. The order is stable so a failing
+    /// validation names the same reference on every run.
+    ///
+    /// A region added to [`Shell`] and not walked here is a region in which a
+    /// typo produces a silently absent control instead of a start-up failure,
+    /// so extending this function is part of adding one.
     #[must_use]
     pub fn command_references(&self) -> Vec<(Site, String)> {
         let mut out = Vec::new();
@@ -415,7 +412,7 @@ impl Shell {
                 out.push((Site::Qat, id.clone()));
             }
         }
-        // ★ The trailing region is walked, so a typo in it is a start-up
+        // The trailing region is walked, so a typo in it is a start-up
         // failure exactly as a typo in the QAT is. It is deliberately NOT
         // treated as a place where an unregistered id means "this build does
         // not have that capability": conditional *presence* is expressed by
@@ -428,7 +425,7 @@ impl Shell {
                 }
             }
         }
-        // ★ The rail is walked for the trailing region's reason, verbatim: a
+        // The rail is walked for the trailing region's reason: a
         // typo in it is a start-up failure rather than a control that quietly
         // is not there. It matters more here than anywhere else on the
         // document, because the rail is PERMANENT chrome — a mis-typed id in a
@@ -497,12 +494,11 @@ mod tests {
             .expect("every id in the sketch is registered");
     }
 
-    /// **★ One command may appear on at most one tab, and the error names
-    /// it and both tabs.**
+    /// **One command may appear on at most one tab, and the error names it
+    /// and both tabs.**
     ///
-    /// The rule the salvage source enforced at compile time against the
-    /// ribbon its developers wrote. Here it runs against the merged
-    /// manifest, which is the one the operator ends up with.
+    /// Running against the merged manifest rather than at compile time is the
+    /// point: the merged manifest is the ribbon the operator ends up with.
     #[test]
     fn a_command_on_two_tabs_is_refused_and_all_three_names_appear() {
         let shell = sketch().with_tab(Tab::new("tools", "Tools").with_groups([
@@ -570,8 +566,8 @@ mod tests {
         shell.validate().expect("mirroring is explicitly permitted");
     }
 
-    /// **★ An unregistered command id fails validation and is named,
-    /// along with where it was referenced.**
+    /// **An unregistered command id fails validation and is named, along
+    /// with where it was referenced.**
     ///
     /// The site matters as much as the id. `view.fit_pge` appearing in the
     /// keymap and `view.fit_pge` appearing in a group are two different

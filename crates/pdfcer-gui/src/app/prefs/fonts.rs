@@ -1,26 +1,20 @@
 //! # `app::prefs::fonts` — where pdfcer looks for a font it has to embed
 //!
-//! One preference, and it is the input two commands have been waiting for.
+//! One preference — an ordered list of folders — and it is the input
+//! `tools.embed_fonts` cannot run without.
 //!
-//! ## ★★★ Why this exists, and why it is a PREFERENCE rather than a setting
+//! ## ★★★ Why embedding needs this, and why it is a PREFERENCE
 //!
-//! `tools.embed_fonts` and `tools.unembed_fonts` were registered, drawn on the
-//! Tools tab and inert for the life of the project. Their recorded reason
-//! quoted a premise that had expired — *"at S3 `Action` carries zoom and page
-//! navigation and nothing else"* — and the entries themselves flagged it. But
-//! re-deriving them on 2026-08-28 turned up a **second, unrecorded**
-//! dependency that is the real one for embedding:
+//! `pdfcer_core::font_embed_missing::EmbedRequest::supplied` is a `/BaseFont` →
+//! donor-file map **the shell resolves**; a selected font with no entry in it
+//! comes back as `EmbedBlocker::NoSourceFont`. The engine never searches a disk
+//! for a donor. So an Embed command has nothing to send until an operator has
+//! said where their fonts live, and this list is that answer.
 //!
-//! `EmbedRequest::supplied` is a `/BaseFont` → donor-file map *"the shell
-//! resolved for it"*, and `pdfcer`'s own note is blunt about the division of
-//! labour: **"THE SOURCE FONTS COME FROM `--font-dir`. pdfcer never goes
-//! looking."** So there is nothing for an Embed command to send until an
-//! operator has said where their fonts live.
-//!
-//! ★ That dependency was in neither register. It was found by asking what the
-//! verb's own request struct requires, which is a different question from
-//! *"does the verb exist"* — and the second question is the one the stale
-//! blockers had all been answering.
+//! ⇒ The general shape, because it recurs: a verb can exist, be registered and
+//! be drawn, and still be unreachable because its *request struct* requires an
+//! input nothing produces. "Does the verb exist" is a different question from
+//! "can this shell fill in what the verb asks for".
 //!
 //! ## ★★ It lives in `userdata/preferences.txt`, not in `settings.txt`
 //!
@@ -61,44 +55,38 @@ pub const MAX_FOLDERS: usize = 16;
 
 /// **The operating system's own font directories**, in search order.
 ///
-/// # ★★★ Why this function exists at all, when the module header says pdfcer
-/// # must not go looking
+/// # ★★★ Why searching them is allowed, when pdfcer must not go looking
 ///
-/// Because the header's argument was never against *using* system fonts. Read
-/// it again -- the objection is to pdfcer **deciding silently**:
+/// The rule the module header states is against pdfcer **deciding silently** —
+/// a program that searched `C:\Windows\Fonts` on its own would be answering a
+/// licensing question on the operator's behalf, in a file that outlives the
+/// decision. An explicit, persistent, **off-by-default** switch — the checkbox
+/// `OPERATOR_REQUESTS.md` **O50** asks for — is not a loophole in that rule: it
+/// is the operator making the decision once, visibly, somewhere they can find
+/// it again.
 ///
-/// > a program that searched `C:{BS}{BS}Windows{BS}{BS}Fonts` on its own would be answering it
-/// > silently on the operator's behalf, in a file that outlives the decision.
-///
-/// The operator asked for a checkbox (`OPERATOR_REQUESTS.md` **O50**), and a
-/// checkbox is not a loophole in that argument -- it is what the argument was
-/// asking for. An explicit, persistent, **off-by-default** switch is the
-/// operator making the licensing decision once, visibly, somewhere they can
-/// find it again.
-///
-/// => Recorded because the shape recurs: **when a capability is refused on the
-/// grounds that the program must not decide, the answer is usually a visible
-/// setting rather than a permanent no.**
+/// ⇒ The shape recurs: **when a capability is refused on the grounds that the
+/// program must not decide, the answer is usually a visible setting rather than
+/// a permanent no.**
 ///
 /// # ★★ TWO folders, and the second is the one that matters
 ///
 /// | | |
 /// |---|---|
-/// | `%WINDIR%{BS}{BS}Fonts` | the machine's fonts, installed for everybody |
-/// | `%LOCALAPPDATA%{BS}{BS}Microsoft{BS}{BS}Windows{BS}{BS}Fonts` | installed for **this user only** |
+/// | `%WINDIR%\Fonts` | the machine's fonts, installed for everybody |
+/// | `%LOCALAPPDATA%\Microsoft\Windows\Fonts` | installed for **this user only** |
 ///
-/// Windows has had the per-user location since 2018, and it is where a plain
-/// double-click on a `.ttf` now installs by default -- **without** an
-/// administrator prompt, which is exactly why it is the common case. A
-/// checkbox that searched only the machine folder would miss the font the
-/// operator installed themselves for this drawing, which is the font they are
-/// most likely to have ticked the box for.
+/// The per-user location is where a plain double-click on a `.ttf` installs by
+/// default — **without** an administrator prompt, which is exactly why it is the
+/// common case. A checkbox that searched only the machine folder would miss the
+/// font the operator installed themselves for this drawing, which is the font
+/// they are most likely to have ticked the box for.
 ///
 /// # ★ Read from the environment rather than hard-coded
 ///
-/// `%WINDIR%` is `C:{BS}{BS}Windows` on essentially every machine and is not
-/// guaranteed to be; a domain image can put it elsewhere. The cost of asking is
-/// one environment lookup, and the cost of assuming is a checkbox that silently
+/// `%WINDIR%` is `C:\Windows` on essentially every machine and is not guaranteed
+/// to be; a domain image can put it elsewhere. The cost of asking is one
+/// environment lookup, and the cost of assuming is a checkbox that silently
 /// finds nothing on somebody's machine.
 ///
 /// Returns only directories that **exist**, unlike [`add`] -- and the two
@@ -137,7 +125,7 @@ pub fn os_font_dirs() -> Vec<PathBuf> {
 /// order and the first match wins ([`add`]), so a face the operator put in a
 /// folder of their own beats the same-named face the machine happens to have --
 /// which is the only ordering that makes their list mean anything. A folder
-/// they curated for a job is a decision; `C:{BS}{BS}Windows{BS}{BS}Fonts` is whatever has
+/// they curated for a job is a decision; `C:\Windows\Fonts` is whatever has
 /// accumulated.
 #[must_use]
 pub fn search_path(configured: &[PathBuf], include_os: bool) -> Vec<PathBuf> {
@@ -146,7 +134,7 @@ pub fn search_path(configured: &[PathBuf], include_os: bool) -> Vec<PathBuf> {
         for dir in os_font_dirs() {
             // Through `add`, so the cap and the duplicate rule apply to the
             // combined list rather than only to the typed half -- an operator
-            // who has already added `C:{BS}{BS}Windows{BS}{BS}Fonts` by hand and then ticks
+            // who has already added `C:\Windows\Fonts` by hand and then ticks
             // the box does not get it twice.
             add(&mut out, &dir);
         }

@@ -14,21 +14,15 @@
 //! that it is **not** inheritable), §5 what is counted rather than listed. This
 //! file is the drawing, the disclosures and the one action the view can raise.
 //!
-//! ## ★★★ It WAS read-only, and the history is the point
+//! ## ★★★ The affordance exists because the verb exists, and not before
 //!
-//! This section used to be a prohibition. It said: no drag handles, no
-//! `Sense::drag`, no up/down buttons, not even disabled ones — because
-//! `pdfcer-core` had no verb that reordered a page's `/Annots`, and a handle
-//! that cannot commit *"would teach the operator a gesture, let them perform
-//! it, and then either do nothing or lie"*. It ended with a promise: **"when
-//! the engine verb lands, the affordance arrives with it."**
-//!
-//! `EditSession::reorder_annotations` shipped on 2026-09-02, hours after the
-//! request went out, and this is that promise being kept. The prohibition is
-//! **superseded, not abandoned**, and it is left described rather than deleted
-//! for two reasons: the reasoning is what should be applied to the *next* gap
-//! (R9 has not changed), and a section that vanished would leave a reader
-//! wondering whether anybody had thought about it.
+//! The drag is offered here only because `EditSession::reorder_annotations` can
+//! commit it. R9 is the rule, and it is the one to apply to the next gap in
+//! this view: an affordance that cannot commit teaches the operator a gesture,
+//! lets them perform it, and then either does nothing or lies. So for any
+//! reorder this engine has no verb for there is no handle, no `Sense::drag`, no
+//! up/down pair, not even a disabled one. The test is applied per capability,
+//! never once for the section as a whole.
 //!
 //! ## What the drag is, and what it deliberately is not
 //!
@@ -129,8 +123,9 @@
 //! draws, not only when the section is open, so the order is provable from a
 //! trace without anyone having to click anything.
 //!
-//! That is `HANDOFF.md` §2 applied to a surface whose correctness is entirely
-//! sequence and arithmetic: a screenshot of this list cannot tell you that the
+//! That is R1 — correctness is established by driving the binary, not by a
+//! passing test — applied to a surface whose correctness is entirely sequence
+//! and arithmetic: a screenshot of this list cannot tell you that the
 //! numbering skipped a widget the file lists, that a `/Tabs` came from an
 //! ancestor rather than the page, or that four annotations on the page are in
 //! the tab sequence and not in the list. Every one of those is in the trace.
@@ -213,15 +208,13 @@ pub(super) fn section(
     let listing = model::collect(view, &slots, form);
     trace(&listing);
 
-    // ★★★ NOTHING TO ORDER, SO NO SECTION — R9, added 2026-09-03 on an outside
-    // review.
+    // ★★★ NOTHING TO ORDER, SO NO SECTION — R9.
     //
-    // The reviewer's observation, on an ordinary CAD drawing: a *"Tab order"*
-    // heading in the Fill-form panel that opens onto nothing. It did. This
-    // header was drawn **unconditionally**, and the no-AcroForm path in
-    // `panels::forms` calls this function with `form = None` — so on every
-    // document with no form fields, which is nearly every drawing the operator
-    // opens, the panel offered a disclosure triangle whose whole content was an
+    // Drawn unconditionally, the header is a *"Tab order"* expander in the
+    // Fill-form panel that opens onto nothing: the no-AcroForm path in
+    // `panels::forms` calls this function with `form = None`, so on every
+    // document with no form fields — nearly every drawing this operator opens —
+    // the panel would offer a disclosure triangle whose whole content is an
     // explainer about reordering an empty list.
     //
     // ★ R9 in its exact words: an unavailable capability renders **nothing**.
@@ -229,43 +222,34 @@ pub(super) fn section(
     // claim that something is behind it, and this project's own no-placeholders
     // rule makes no distinction between an inert button and an inert expander.
     //
-    // ★★ The irony worth recording: the sibling branch that reaches this
-    // function already invokes R9 by name, three lines above the call, to
-    // explain why it skips *everything else* on the no-fields path — and then
-    // draws this. The rule was applied to the code the author was looking at
-    // and not to the one function it delegated to. **A rule cited at a call
-    // site is not enforced inside the callee.**
+    // ★★ The trap worth naming: the sibling branch that reaches this function
+    // invokes R9 by name, three lines above the call, to explain why it skips
+    // *everything else* on the no-fields path. **A rule cited at a call site is
+    // not enforced inside the callee** — it has to be applied again, here.
     //
     // The listing is empty rather than the form being `None`, deliberately: a
     // document can carry an `/AcroForm` whose fields are all unreachable, and
     // that is equally nothing to order. The condition is what the section would
     // SHOW, not what it was handed.
-    // ★★★ EVERY THING THIS SECTION CAN SHOW, and the first version of this
-    // guard MISSED ONE — caught by the driven sweep on 2026-09-04, hours after
-    // it shipped.
-    //
-    // The guard exists for R9: on a document with no form fields — nearly every
-    // drawing this operator opens — the Tab-order header used to render over an
-    // empty listing, which is a disclosure triangle onto nothing.
-    //
-    // It first tested `total_rows() == 0 && fields_without_widgets == 0`. Both
-    // terms are real and neither covers **unclaimed widgets**:
+    // ★★★ EVERYTHING THIS SECTION CAN SHOW has to be in the condition, and
+    // there are THREE sources, not two:
     //
     //   · `total_rows()`            sums `PageTabs::rows` — fields WITH widgets
     //   · `fields_without_widgets`  `/Fields` entries with no `/Widget` anywhere
-    //   · `PageTabs::unclaimed`     a `/Widget` no listed field owns  ← MISSED
+    //   · `PageTabs::unclaimed`     a `/Widget` no listed field owns
     //
-    // And unclaimed widgets are exactly what `register::rows` — called further
-    // down THIS function — exists to offer a Register control for. So on the
-    // one document shape that most needs it, a form's pages inserted into
-    // another document, the early return fired and **the Register rows were
-    // never drawn**. `adopt_widget_puts_a_form_control_back` reported it as
-    // *"2 unclaimed widget(s) are listed and no `adopt-row` line was traced"*.
+    // The third is the one a guard written for the header alone omits, and it
+    // is the expensive one: unclaimed widgets are exactly what `register::rows`
+    // — called further down THIS function — exists to offer a Register control
+    // for. Leave it out and the early return fires on the one document shape
+    // that most needs that control, a form's pages inserted into another
+    // document, and **the Register rows are never drawn**.
+    // `adopt_widget_puts_a_form_control_back` is the check that catches it, by
+    // pairing unclaimed widgets in the listing against traced `adopt-row`
+    // lines.
     //
-    // ★★ The lesson, and it is the reason for the length of this comment: an
-    // early return added to a function is a claim about **everything that
-    // function does**, not about the part that prompted it. I was thinking
-    // about the header and did not read as far as line 318. The condition now
+    // ★★ The rule behind that: an early return is a claim about **everything
+    // the function does**, not about the part that prompted it. The condition
     // names all three sources, and the doc comment on `Listing` is where the
     // list of them lives.
     //
@@ -295,10 +279,10 @@ pub(super) fn section(
             // what this list IS **and how to reorder it**, then how big it is,
             // then what is missing from it.
             //
-            // ★ The first of those used to end "and that it changes nothing".
-            // It now teaches the drag instead, which is the only thing that
-            // can: there is no handle, no grip glyph and no button, so a
-            // sentence is the entire discoverability surface for the gesture.
+            // ★ The first of those teaches the drag, because it is the only
+            // thing that can: there is no handle, no grip glyph and no button,
+            // so a sentence is the entire discoverability surface for the
+            // gesture.
             // Pinned by
             // `tests::the_explainer_teaches_the_drag_and_no_longer_claims_to_be_read_only`.
             ui.label(t::tab_order_explainer());
@@ -365,8 +349,8 @@ pub(super) fn section(
     crate::diag::ui_rect(REGION_HEADER, header.header_response.rect);
     // ★★★ WHETHER THE SECTION IS OPEN, as its own trace line.
     //
-    // Added 2026-09-02 after a driven check spent an afternoon unable to tell
-    // three states apart, all of which look like "no rows on screen":
+    // Without it a driven check cannot tell three states apart, all of which
+    // look like "no rows on screen":
     //
     //   * the section is collapsed (it ships that way, deliberately);
     //   * it is open and its rows are clipped by a short docked pane;
@@ -503,17 +487,17 @@ fn page_block(
         // ★★★ A PLAIN LABEL, THEN `ui.interact` OVER ITS RECT — and this is the
         // fix for a drag that did not start at all.
         //
-        // The first version was `Label::new(..).sense(Sense::drag())`, which is
-        // the obvious spelling and produced a row that sensed **nothing**: the
-        // driven check pressed on it, dragged 39 pt down and no
-        // `tab-order-drag-begin` was ever traced. Every unit test stayed green,
-        // because the permutation arithmetic is reached only by a gesture.
+        // `Label::new(..).sense(Sense::drag())` is the obvious spelling and
+        // produces a row that senses **nothing** inside a `ScrollArea`: a press
+        // and a 39 pt drag trace no `tab-order-drag-begin` at all, and every
+        // unit test stays green, because the permutation arithmetic is reached
+        // only by a gesture.
         //
-        // `crate::panels::pages` — the panel this is deliberately copying — has
-        // always used `ui.interact(rect, id, Sense::click_and_drag())` with a
-        // stable id, and that is the shape that works inside a `ScrollArea`.
-        // Copying a panel's *look* and not its *mechanism* is how this got
-        // written; the check is what caught it.
+        // `crate::panels::pages` — the panel this is deliberately copying — uses
+        // `ui.interact(rect, id, Sense::click_and_drag())` with a stable id,
+        // and that is the shape that works. Copying a panel's *look* without
+        // its *mechanism* is the failure this guards against, and only a driven
+        // check can see it.
         //
         // ★ `click_and_drag`, not `drag`: a row is also a click target for a
         // tooltip, and a `Sense::drag()`-only widget swallows the press without
@@ -528,28 +512,24 @@ fn page_block(
                 egui::Sense::click_and_drag(),
             )
             .on_hover_text(t::form_field_row_tooltip(&row.field));
-        // ★★★ `ui_rect_visible`, NOT `ui_rect`, and getting this wrong cost an
-        // afternoon of chasing a phantom.
+        // ★★★ `ui_rect_visible`, NOT `ui_rect`.
         //
         // These rows live in a `ScrollArea` inside a docked panel, at the
         // bottom of a section that itself sits below the fill list. On a real
         // document they are frequently **off the bottom of the window** —
-        // measured 2026-09-02: rows published at y = 1406 in a client area
-        // 1369 points tall.
+        // measured at y = 1406 in a client area 1369 points tall.
         //
         // Published unconditionally, that rectangle is a lie a driven check
-        // cannot detect. The harness read it, converted it to a screen point 37
-        // points below the window, and pressed there — so the row was never
-        // hovered, no drag began, and the check reported *"the row does not
-        // sense a drag"*: a confident, specific and entirely wrong defect report
-        // about working code.
+        // cannot detect: the harness reads it, converts it to a screen point 37
+        // points below the window, presses there, and reports that the row does
+        // not sense a drag — a confident, specific and entirely wrong defect
+        // report about working code.
         //
         // `ui_rect_visible` intersects with the clip rectangle and publishes
-        // NOTHING when the row is out of view, which turns that silent
-        // mis-aim into an honest "the row is not on screen". This panel already
-        // learnt the same lesson once — `register::rows` records a click on a
-        // published rectangle hitting nothing at all, 36 page-blocks down a
-        // scroll area — and the fill rows added on the same day got it right.
+        // NOTHING when the row is out of view, which turns that silent mis-aim
+        // into an honest "the row is not on screen". `register::rows` carries
+        // the same rule for the same reason, 36 page-blocks down a scroll
+        // area.
         crate::diag::ui_rect_visible(
             &format!("{}{}.{index}", drag::REGION_ROW_PREFIX, page.page_index),
             response.rect,
@@ -706,10 +686,10 @@ fn tabs_field(tabs: &TabsEntry) -> String {
 ///
 /// # Why this is more than a debug print
 ///
-/// `HANDOFF.md` §2: *"Verify by driving the binary, not by a passing test"* —
-/// and its eighth defect was found **only** by printing what the running
-/// application had chosen, because *"2,450 hairlines and a wash are the same
-/// picture"*. This view has that property in a sharper form than most: a
+/// R1: correctness is established by driving the binary, not by a passing
+/// test — and a picture of the result is not evidence when two very different
+/// results look alike, so what the running application chose has to be printed.
+/// This view has that property in a sharper form than most: a
 /// screenshot of a list of names in an order cannot tell you that the order is
 /// the one the file lists, that a widget the file lists was skipped, or that a
 /// `/Tabs` came from two levels up the page tree. Every one of those is text.
@@ -928,9 +908,7 @@ mod tests {
             // carried by colour alone, which is exactly what R84 forbids — and
             // `trim_start_matches` on a string that never had a glyph is a
             // no-op, so the assertions below would sail over a colour-only
-            // warning without noticing. Two of these sentences shipped without
-            // a `⚠` on their first draft, and it was a screenshot rather than
-            // this test that caught it.
+            // warning without noticing.
             assert!(
                 s.starts_with('⚠'),
                 "a warn-coloured sentence carries its warning in the colour \
@@ -980,31 +958,21 @@ mod tests {
         }
     }
 
-    /// **★★ The explainer must TEACH THE GESTURE, and must not still claim
-    /// the view is read-only.**
+    /// **★★ The explainer must TEACH THE GESTURE, and must not claim the
+    /// view is read-only.**
     ///
-    /// This test replaces `no_string_in_this_view_offers_a_reorder`, which
-    /// asserted that no string here mentioned dragging. That was the correct
-    /// tripwire while `EditSession::reorder_annotations` did not exist — the
-    /// failure mode then was somebody shipping a disabled drag handle "ready
-    /// for when the verb lands", which is the placeholder R9 forbids. The verb
-    /// shipped on 2026-09-02; the tripwire is now aimed at the wrong thing, and
-    /// keeping it would have forbidden the feature the operator asked for.
-    ///
-    /// What replaces it is the property the old assertion was protecting all
-    /// along, pointed the other way. **A drag with no visible handle is
-    /// undiscoverable.** There is no button, no grip dots, no "Move up" — the
-    /// only thing that can tell an operator this list is draggable is the
-    /// sentence above it. So the sentence is load bearing, and two things about
-    /// it are pinned:
+    /// **A drag with no visible handle is undiscoverable.** There is no button,
+    /// no grip dots, no "Move up" — the only thing that can tell an operator
+    /// this list is draggable is the sentence above it. So the sentence is load
+    /// bearing, and two things about it are pinned:
     ///
     /// 1. It says how (`drag`) AND what will be shown (`line`). The operator
-    ///    asked for "clear markers of where the field is going to move to"; a
+    ///    asked for *"clear markers of where the field is going to move to"*; a
     ///    caret nobody expects is not a clear marker.
-    /// 2. It no longer claims the view does not change the order. That
-    ///    sentence was true for the whole of this view's life and is now the
-    ///    exact opposite of the truth — the class of stale copy that survives
-    ///    longest, because nothing about it looks wrong.
+    /// 2. It does not claim the view leaves the order alone. Copy calling a
+    ///    view read-only while the view reorders is the class of stale string
+    ///    that survives longest, because nothing about it looks wrong — so the
+    ///    wordings are asserted against by name.
     #[test]
     fn the_explainer_teaches_the_drag_and_no_longer_claims_to_be_read_only() {
         let explainer = t::tab_order_explainer().to_lowercase();

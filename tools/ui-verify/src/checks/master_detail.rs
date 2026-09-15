@@ -19,18 +19,17 @@
 //! |---|---|---|
 //! | 1 | Objects' body and Properties' body are **both** on screen | one behind the other in a tabbed stack, which is what "one panel" would become if somebody merged the two stacks into one |
 //! | 2 | Objects sits **above** Properties, in the same x range | a side-by-side split, or the two in different columns |
-//! | 2b | the detail pane holds **no document metadata**, *and* the document's own properties are a mounted tab | the arrangement the operator reported on 2026-09-05 — and, through the second half, every build that "fixed" it by drawing nothing |
+//! | 2b | the detail pane holds **no document metadata**, *and* the document's own properties are a mounted tab | a build that draws the file's `/Info` form at the foot of this pane — and, through the second half, every build that "fixes" it by drawing nothing |
 //! | 3 | a **splitter** publishes between them | a fixed split — the thing part 3 says the pair must not be |
-//! | 4 | **no row is elided at the width the dock opens at** on this fixture | the row form that shipped until 2026-09-05, on which every row was elided |
+//! | 4 | **no row is elided at the width the dock opens at** on this fixture | a row form carrying the full object description, on which every row is elided |
 //!
 //! ## ★★★ Why 2b is here rather than in a check of its own
 //!
 //! Because it is a claim about **this pane**, and this is the check that
-//! already has the pane's rectangle in hand. The operator's report — *"the
-//! document properties are still always visible in the properties tab"* — is
-//! precisely a statement that something which is not the detail of the
-//! selection was drawn inside the detail half of this master–detail column, so
-//! the assertion belongs with the one that establishes the column exists.
+//! already has the pane's rectangle in hand. Document metadata shown in the
+//! properties tab is precisely something which is not the detail of the
+//! selection drawn inside the detail half of this master–detail column, so the
+//! assertion belongs with the one that establishes the column exists.
 //!
 //! ⚠ **And it is a PAIR, deliberately.** The obvious assertion — *the metadata
 //! region is not inside the Properties body* — passes on a build where the
@@ -41,54 +40,38 @@
 //! paired with the positive control that stops it being vacuous — is the one
 //! this suite keeps having to relearn.
 //!
-//! # ⚠ NOT RUN by the session that last edited this file — 2026-09-05
+//! # ★★★ Why assertion 4 is about the ROW and not about the dock's width
 //!
-//! ★ Twice over now. It was **passing** before the document-properties move and
-//! it has **not been re-run since**, for the same reason as before: the
-//! machine's pointer and keyboard belong to another track and a driven run
-//! cannot share them. Assertion 2b has therefore never executed once.
+//! The application's own `objects-rows` line on this fixture reads
+//! `pane=314.0 overflow=473.6` — the widest row wants **473.6 pt** where the
+//! pane offers **296 pt** of text room, and measured headlessly the
+//! *narrowest* row of this fixture wants **306.3 pt**. Every row is over, so
+//! no width fixes it: a dock wide enough is about 526 pt, half of an 1,100 pt
+//! window.
 //!
-//! The four original assertions are unchanged in substance; assertion 4's
-//! **failure message** was rewritten because it named two causes that turned
-//! out to be the wrong two. This check has **not been re-run against the fixed
-//! build**: the machine's pointer and keyboard were held by another track, and
-//! a driven run cannot share them. The headless half of the same question is
-//! `panels::objects::tests::every_object_row_of_the_a1_sheet_fits_the_measured_pane`,
-//! which passes.
+//! The pane is also not necessarily the default one. A trace reading
+//! `mode-changed from=Some("read") to=edit remembered=true` is a **restored
+//! workspace**, which never consults `EDIT_INSPECTOR_WIDTH` at all — so a
+//! failure message naming that constant names something the failing run never
+//! read.
 //!
-//! ## ★★★ What the first run actually found, and what its message got wrong
-//!
-//! It reported **`8 OF 8 OBJECT ROWS DO NOT FIT`** and offered two
-//! explanations: *"either the width regressed to 320 or the rows grew."*
-//! Neither was true.
-//!
-//! - The trace's own `objects-rows` line read `pane=314.0 overflow=473.6` —
-//!   the widest row wanted **473.6 pt** where the pane offered **296 pt** of
-//!   text room. Re-measured headlessly, the *narrowest* row of this fixture
-//!   wanted **306.3 pt**. Every row was over, so no width was going to fix it:
-//!   a dock wide enough is about 526 pt, half of an 1,100 pt window.
-//! - And the pane was **not the default**. The same trace reads
-//!   `mode-changed from=Some("read") to=edit remembered=true` — a **restored
-//!   workspace**, which never consults `EDIT_INSPECTOR_WIDTH` at all. So the
-//!   message's first candidate ("the width regressed to 320") named a constant
-//!   the failing run had not read.
-//!
-//! ⇒ The fix was in the **row**: `panels::objects` draws a headline (index,
-//! kind, the facts that identify the object, one disclosure mark) and hovers
-//! the full description. See that module's header §1b.
+//! ⇒ The row is where the answer lives: `panels::objects` draws a headline
+//! (index, kind, the facts that identify the object, one disclosure mark) and
+//! hovers the full description. See that module's header.
 //!
 //! ★ The lesson for this file, and it is the suite's own recurring one: **a
 //! failure message that lists candidate causes is a hypothesis, and it goes
-//! stale exactly like a comment.** The rewritten message below names the
-//! measurement (`overflow=` against `pane=`) instead of guessing, because the
-//! trace already carries the number that decides between the candidates.
+//! stale exactly like a comment.** The message below names the measurement
+//! (`overflow=` against `pane=`) instead of guessing, because the trace already
+//! carries the number that decides between the candidates. The headless half of
+//! the same question is
+//! `panels::objects::tests::every_object_row_of_the_a1_sheet_fits_the_measured_pane`.
 //!
 //! ★ Assertion 4 is the one that needed a channel built for it, and the channel
 //! is the application's own `objects-rows` line. That is the app marking its own
 //! homework, and it is published anyway because the harness cannot read the text
 //! a panel renders — there is no AccessKit reader, no OCR, no text extraction
-//! from a screenshot. `SHELL_LAYOUT_PROPOSAL.md` §2.5 states the gap in as many
-//! words.
+//! from a screenshot.
 //!
 //! ## ★★ So it is made non-circular the way `read_mode_chrome` is: a pixel
 //!
@@ -107,9 +90,9 @@
 //!
 //! `fixtures/a1-titleblock.pdf` — an A1 CAD sheet whose text objects carry
 //! subset-tagged font names (`AAAAAA+SpaceGrotesk-Bold`). Those are the rows
-//! that were being cut mid-character at 320 pt, and they are why
-//! `SHELL_LAYOUT_PROPOSAL.md` §2.5 says *"pin a fixture whose text objects carry
-//! subset-tagged names"*. On a document of short rows this check could not fail.
+//! that get cut mid-character at 320 pt, and they are why the fixture has to be
+//! one whose text objects carry subset-tagged names. On a document of short
+//! rows this check could not fail.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment, declared, list};
 use crate::checks::{Check, CheckContext};
@@ -215,7 +198,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ★ Pinned, and any `--pdf` is ignored: a document of short rows cannot
     // exhibit the defect, so a sweep's fixture would make this check unable to
-    // fail — the vacuity `SHELL_LAYOUT_PROPOSAL.md` §2.5 names.
+    // fail.
     let pdf = ctx.source_root.clone().unwrap_or_default().join(FIXTURE);
     let pdf = if pdf.exists() {
         pdf
@@ -249,7 +232,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let driver = Driver::new(session.window());
 
-    // ★★★ **RESET THE LAYOUT FIRST, AND ASSERT THE RESET LANDED — 2026-09-05.**
+    // ★★★ **RESET THE LAYOUT FIRST, AND ASSERT THE RESET LANDED.**
     //
     // The application persists its dock arrangement to `userdata/layout.ron`,
     // and `Session::launch` does not clear it. So without this the check
@@ -257,11 +240,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // so plainly: `mode-changed … remembered=true` — a restored workspace, which
     // never reads `EDIT_INSPECTOR_WIDTH` at all.
     //
-    // ⇒ This check's own header already spotted the symptom and corrected its
-    // *failure message* to warn about `remembered=true`. It did not make the
-    // check **hermetic**, so the warning was advice to a human reading a report
-    // rather than a property of the run. A measurement of an inherited width is
-    // a measurement of an earlier session's furniture.
+    // ⇒ A failure message that warns about `remembered=true` is advice to a
+    // human reading a report rather than a property of the run. Only the reset
+    // makes the check **hermetic**: a measurement of an inherited width is a
+    // measurement of an earlier session's furniture.
     //
     // ★★ It is the same defect that made `panels_float_close_and_dock` fail for
     // days — four sections relaunching the binary, each inheriting what the last
@@ -345,16 +327,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- 2b: ★★★ the detail pane is the detail of the SELECTION, and of
-    // nothing else — the operator, 2026-09-05 -------------------------------
+    // nothing else ---------------------------------------------------------
     //
-    // > *"the document properties are still always visible in the properties
-    // > tab. it needs to get out of there and be in its own document properties
-    // > tab."*
-    //
-    // The file's own `/Info` form was drawn at the foot of this pane on every
-    // frame, under everything, with no condition of any kind. It is
-    // `crate::panels::docprops` now. This asserts that it is no longer INSIDE
-    // the detail pane's rectangle.
+    // The file's own `/Info` form belongs to `crate::panels::docprops` and its
+    // own tab, not to the foot of this pane under everything else. This asserts
+    // that it is not INSIDE the detail pane's rectangle.
     //
     // ★★★ **The negative alone is vacuous, and the pairing is the point.**
     // `properties.info` is published through `ui_rect_visible`, so a panel that
@@ -475,16 +452,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         crate::geom::Pt::new(objects.max.x - EDGE_STRIP_PTS, objects.min.y),
         crate::geom::Pt::new(objects.max.x, objects.max.y),
     );
-    // ★★★ **`ink_run_into`, not `region_not_uniform` — changed 2026-09-05, the
-    // first time this assertion was ever REACHED.**
+    // ★★★ **`ink_run_into`, not `region_not_uniform`.**
     //
-    // Earlier assertions in this check failed for their own reasons and
-    // execution never got here. Making the check hermetic let it through, and
-    // it failed at once — on a strip that is 2,098 pixels of the panel's own
-    // plate, 8 of the pane's border column, and **six single antialiased
-    // pixels**. `region_not_uniform` passes only on
-    // `dominant_share > 0.999`, i.e. **two** stray pixels in 2,112: a floor no
-    // panel edge with type near it can ever meet.
+    // The strip this samples is 2,098 pixels of the panel's own plate, 8 of the
+    // pane's border column, and **six single antialiased pixels**.
+    // `region_not_uniform` passes only on `dominant_share > 0.999`, i.e. **two**
+    // stray pixels in 2,112: a floor no panel edge with type near it can ever
+    // meet.
     //
     // ⇒ The statistic was maximally sensitive to the one thing always present
     // (antialiasing) and said nothing about the thing it wanted (a run of glyph

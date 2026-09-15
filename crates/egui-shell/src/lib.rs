@@ -6,7 +6,7 @@
 //! application: the ribbon, the panel dock, the mode selector, the theme,
 //! the command registry, the layout that persists across sessions, and
 //! the diagnostic channel a verification harness drives. It is the part
-//! that is identical between a PDF editor, a CAD viewer and a log
+//! that is identical between a spreadsheet, a CAD viewer and a log
 //! browser, and it is the part that is normally written three times.
 //!
 //! This crate is that part, written once.
@@ -44,9 +44,9 @@
 //!
 //! ## The central design decision: the shell is data
 //!
-//! Two requirements arrived together on this project: *be reusable across
-//! projects*, and *be customizable at runtime by the operator*. Both are
-//! satisfied by the same decision, recorded in `SHELL_FRAMEWORK.md` §1:
+//! Two requirements bind this crate at once — *be reusable across
+//! projects* and *be customizable at runtime by the operator* — and one
+//! decision satisfies both, stated in `SHELL_FRAMEWORK.md` §1:
 //!
 //! > Tabs, groups, commands, panels, layouts, modes and key bindings are
 //! > a **serializable document** that the application *supplies* and the
@@ -63,28 +63,29 @@
 //!
 //! ## Module map
 //!
-//! | Module | Responsibility | Stage |
-//! |---|---|---|
-//! | [`theme`] | Token palette, three presets, the **rendered-pair contrast gate**, and the [`theme::Overlays`] extension point for application colour semantics. | S0 |
-//! | [`verify`] | The `key=value` diagnostic channel a verification harness reads. Off unless asked, never load-bearing. | S0 |
-//! | [`manifest`] | The serializable shell definition — tabs, groups, items, modes, keymap, QAT — with validation and the three-layer merge. | S2 |
-//! | [`commands`] | The command registry: id → label, tooltip, icon key, enable predicate, handler token. The thing a manifest may only *reference*. | S2 |
-//! | [`ribbon`] | Renders a [`manifest::Shell`]: QAT, tab strip, contextual tabs, the N-position mode selector, captioned group bands, overflow, `ui_rect` reporting and accessible names. **Reports intent; executes nothing.** | S2 |
-//! | [`dock`] | The panel host: columns per side, vertical stacks, tabbed groups, draggable splitters, and a tab-overflow menu whose space is reserved before any tab is measured. Panels are opaque string ids the application supplies. | S3 |
-//! | [`layout`] | Serialization and persistence of a [`dock::DockLayout`], **fail-soft per item**, plus named workspaces and scoped reset. | S3 |
-//! | [`menu`] | Context menus, keyed by an application-supplied context id: the same [`manifest::Item`]s a ribbon band holds, resolved through the same registry, with keymap-derived chord hints. **A menu with nothing to offer never opens.** | S4 |
+//! | Module | Responsibility |
+//! |---|---|
+//! | [`theme`] | Token palette, presets, the **rendered-pair contrast gate**, and the [`theme::Overlays`] extension point for application colour semantics. |
+//! | [`verify`] | The `key=value` diagnostic channel a verification harness reads. Off unless asked, never load-bearing. |
+//! | [`manifest`] | The serializable shell definition — tabs, groups, items, modes, keymap, QAT — with validation and the three-layer merge. |
+//! | [`commands`] | The command registry: id → label, tooltip, icon key, enable predicate, handler token. The thing a manifest may only *reference*. |
+//! | [`ribbon`] | Renders a [`manifest::Shell`]: QAT, tab strip, contextual tabs, the N-position mode selector, captioned group bands, overflow, `ui_rect` reporting and accessible names. **Reports intent; executes nothing.** |
+//! | [`dock`] | The panel host: columns per side, vertical stacks, tabbed groups, draggable splitters, and a tab-overflow menu whose space is reserved before any tab is measured. Panels are opaque string ids the application supplies. |
+//! | [`layout`] | Serialization and persistence of a [`dock::DockLayout`], **fail-soft per item**, plus named workspaces and scoped reset. |
+//! | [`menu`] | Context menus, keyed by an application-supplied context id: the same [`manifest::Item`]s a ribbon band holds, resolved through the same registry, with keymap-derived chord hints. **A menu with nothing to offer never opens.** |
+//! | [`peek`] | The three-state auto-hide machine shared by the ribbon's band and the dock's rail: a trigger that is never itself hidden, a body that overlays rather than displaces, and reveal that only the trigger can start. |
+//! | [`tabstrip`] | The document tab strip: a tab here names an *operand*, where a [`dock`] tab names a *panel*. |
 //!
-//! Modules named in `SHELL_FRAMEWORK.md` §3 that do **not** exist yet, so
-//! their absence is not mistaken for an oversight:
+//! There is deliberately **no `modes` module**. A mode is
+//! [`manifest::Mode`] — a manifest overlay naming the tabs it shows — plus
+//! a [`layout::Workspace`] holding the panel half, and [`ribbon`] draws
+//! the selector and honours the active mode's tab list. Binding the two is
+//! the application's, not a module's.
 //!
-//! | Module | Arrives at | Why not now |
-//! |---|---|---|
-//! | `modes` | S3b | A mode is a named workspace: a manifest overlay plus a dock layout. [`ribbon`] already renders the mode **selector** and honours a mode's tab list, because a ribbon cannot be drawn without knowing which tabs the mode contains; and [`layout::Workspace`] is already the *panel-layout* half. What arrives at S3b is the piece that binds one to the other. |
-//!
-//! The build order is deliberate and is stated in `SHELL_FRAMEWORK.md`
-//! §7: **`egui-shell` is built *as* its first consumer is built, not
-//! before it. A framework designed without a consumer gets the
-//! abstractions wrong.**
+//! The build order is deliberate, and `SHELL_FRAMEWORK.md` §11 states it
+//! as the condition of extraction: **`egui-shell` is built *as* its first
+//! consumer is built, not before it. A framework designed without a
+//! consumer gets the abstractions wrong.**
 //!
 //! ## What a consuming application does
 //!
@@ -107,16 +108,16 @@
 //! ## Testing posture
 //!
 //! Every invariant this crate asserts has a unit test, and every test is
-//! headless. That is not a claim that headless tests are sufficient —
-//! this project exists partly because two shipped defects were invisible
-//! to a green suite and obvious within thirty seconds of using the
-//! application. The response is not to write fewer unit tests; it is to
-//! make the unit tests measure **what will actually be rendered** rather
-//! than what was written down. [`theme::contrast`] is the worked example:
-//! it reads back the `egui::Style` the theme produces and measures the
-//! foreground/background pairs `egui` will paint, because the defect it
-//! exists to prevent was invisible to two adjacent tests that compared
-//! palette entries to each other.
+//! headless. Headless is not a claim of sufficiency: a green suite can
+//! sit over a defect that is obvious within thirty seconds of using the
+//! application. The answer is not fewer unit tests but tests that measure
+//! **what will actually be rendered** rather than what was written down.
+//! [`theme::contrast`] is the worked example: it reads back the
+//! `egui::Style` the theme produces and measures the
+//! foreground/background pairs `egui` will paint. Comparing palette
+//! entries to each other instead would pass on a palette that renders
+//! unreadable, because nothing in that comparison is what the screen
+//! receives.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]

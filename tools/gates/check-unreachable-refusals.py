@@ -3,6 +3,13 @@
 MUST BE WATCHED BY AN INSTRUMENT, NOT BY A READER.
 
 ===========================================================================
+THE PROPERTY ASSERTED
+===========================================================================
+
+Every paragraph in this shell that says an engine error "cannot happen" is
+still true of the engine revision this build is pinned to.
+
+===========================================================================
 ★★★ WHY THIS GATE EXISTS
 ===========================================================================
 
@@ -21,23 +28,21 @@ argues against:
 
 ⇒ So the sentences stay. **The defect is that nobody can tell they are dead.**
 
-### The three times this project has paid for it
+### The shapes this has taken, none of which a reader caught in time
 
-1. `ReflowRefusal::PageAlreadyEdited`'s own doc comment argued for a SHELL
-   forecast (`edit_epoch != 0`) that had been deleted nine days earlier. It
-   read as measured because it compiled.
-2. `ReflowRefusal::PageSetChanged` became unreachable at the engine's
-   `Pass 257.0` and was found months later by a reader looking for something
-   else.
-3. `PageAlreadyEdited` again, on 2026-09-14: `G015` deleted the engine guard
-   that was the sole producer of `ReflowApplyError::PageEditedThisSession`,
-   and **the engine's own commit message said so**. Without an instrument,
-   noticing that would have depended on somebody reading a commit message in
-   a repository this one is forbidden to write to.
+* **A shell paragraph arguing from a shell forecast that had already been
+  deleted.** It read as measured because it compiled. Nothing in a doc comment
+  is checked against the code beside it.
+* **A variant that became unreachable at an engine pass** and was found months
+  later, by a reader looking for something else entirely.
+* **The engine deleting the sole producer of a variant and SAYING SO in its own
+  commit message.** Without an instrument, noticing that depends on somebody
+  reading a commit message in a repository this one is forbidden to write to —
+  which is to say, on luck.
 
-Each time the sentence was quoted in reasoning about what the program does.
-★★ A retained sentence with no tripwire is not documentation — it is a claim
-about an engine that has moved.
+Each time the stale sentence was quoted in reasoning about what the program
+does. ★★ A retained sentence with no tripwire is not documentation — it is a
+claim about an engine that has moved.
 
 ===========================================================================
 WHAT IT ASSERTS
@@ -93,23 +98,47 @@ an unevidenced excuse, which is worse than silence.
 COMMENT STRIPPING, AND WHY IT IS THE WHOLE DESIGN
 ===========================================================================
 
-The engine documents its dead variants heavily — `PageEditedThisSession`'s own
-doc comment is forty lines, contains a doctest that CONSTRUCTS it, and names
-`ReflowDecline::RetryAfterSaveAndReopen` twice. If the gate counted raw grep
-hits it would:
+The engine documents its dead variants heavily, and the documentation outweighs
+the code by a wide margin. At the pinned revision, `reflow_apply.rs` mentions
+`PageEditedThisSession` on five lines: **three are `///` doc comments — one of
+them a doctest that CONSTRUCTS the variant — and only two are code**, the
+variant declaration and one match arm. Its own doc comment runs past forty
+lines.
+
+If the gate counted raw grep hits it would:
 
   * go red every time the engine rewords a paragraph (noise, and noise is how
     a gate gets restamped without being read), and
-  * count a doctest's `let e = ReflowApplyError::PageEditedThisSession;` as a
-    producer, which it is not — a doc example is not a path an operator
+  * count that doctest's `let e = ReflowApplyError::PageEditedThisSession;` as
+    a producer, which it is not — a doc example is not a path an operator
     reaches.
 
 ⇒ So a line contributes to the baseline only if the symbol survives **removal
 of `//`-comments**, string-literal-aware so that a `"file:///…"` in real code
-is not mistaken for the start of a comment. Block comments (`/* */`) are not
-handled; the engine does not use them, and a gate that pretends to parse more
-than it does is worse than one that says what it skips. See `SKIPPED
-CONSTRUCTS` at the bottom of this header.
+is not mistaken for the start of a comment. The whole baseline is currently 5
+code lines across 2 symbols, which is the number a clean run prints and the
+cheapest possible check that the stripping has not started eating real code.
+
+===========================================================================
+WHAT IT PROVABLY CANNOT SEE
+===========================================================================
+
+  * **Whether a new line is a producer.** By design — see "Weak, deliberately"
+    above. A drift is reported, never diagnosed.
+  * **An engine change that does not touch a line mentioning the symbol.** A
+    producer added through a `From` impl, a type alias, or a helper that
+    returns the variant under another name moves nothing this gate watches.
+  * **`/* … */` block comments**, which are not stripped. The engine uses none;
+    a gate that pretends to parse more than it does is worse than one that says
+    what it skips.
+  * **A `//` inside a raw string** (`r"…"`, `r#"…"#`). Raw strings are treated
+    as ordinary ones for the purpose of finding a comment start, so such a line
+    would be mis-stripped. No engine line carrying a watched symbol contains
+    one.
+  * **A symbol reachable only through a macro that pastes its name**, as it is
+    invisible to every other instrument in this directory.
+  * **Whether the shell paragraph is well written.** The gate watches the
+    engine; the sentence itself is a human's problem.
 
 ===========================================================================
 EXIT CODES — the project's three-state gate contract
@@ -136,16 +165,26 @@ the deliberate act a human performs **after** reading the diff and correcting
 the paragraph — never a thing to run to make a red build green.
 
 ===========================================================================
-SKIPPED CONSTRUCTS — stated rather than discovered
+HOW TO FALSIFY IT
 ===========================================================================
 
-  * `/* … */` block comments are not stripped. The engine uses none.
-  * Raw strings (`r"…"`, `r#"…"#`) are treated as ordinary strings for the
-    purpose of finding `//`; a `//` inside one would be mis-stripped. No
-    engine line carrying a watched symbol contains one, and the self-test
-    plants the case so the limitation is visible rather than believed.
-  * A symbol reachable only through a macro that pastes its name is invisible
-    here, as it is to every other instrument in this directory.
+`--self-test` exercises the pure helpers on synthetic input and touches
+neither the engine, git, nor the real baseline — a self-test that needed a
+checkout would be skipped on the machine where it matters. It asserts, in both
+directions:
+
+  * `strip_comment` removes a trailing and a doc comment, and does NOT remove
+    a `//` inside a string, a URL, an escaped quote, a lifetime or a char
+    literal;
+  * `normalise` erases indentation and wrapping but not code;
+  * a doc comment does not become a site, while a planted constructor in a new
+    file IS reported as arrived and nothing is falsely reported gone;
+  * a vanished symbol reports every baseline line as gone;
+  * ★ **a pure reword of the engine's prose is INVISIBLE** — the assertion
+    that keeps this gate from becoming noise, and noise is how a baseline gets
+    restamped unread;
+  * the marker regex parses a qualified path and REJECTS a bare word;
+  * the baseline round-trips through render and parse.
 """
 
 from __future__ import annotations

@@ -3,27 +3,17 @@
 //! The dispatch target for `tools.render_diagnostics`, on **Tools ▸
 //! Diagnostics**.
 //!
-//! ## ★ Why this exists, and why it is a dialog rather than a second status
-//! line
+//! ## Why it is a dialog rather than a second status line
 //!
-//! The command was registered, drawn with a glyph, given a group of its own
-//! and gated on `doc.open` — and had **no dispatch arm** until 2026-08-15,
-//! which `shell::commands::reach` called the least defensible entry on its
-//! whole list *because the work behind it was already done*: the renderer has
-//! been producing this report since S0 and the status bar has been showing a
-//! one-line summary of it since S2.
+//! The argument for the command, recorded in `shell::manifest::tools`' header,
+//! is about **placement** rather than capability: the renderer produces this
+//! report on every raster and the status bar already shows a one-line summary
+//! of it. The bar is the surface for controls an operator touches constantly,
+//! and a diagnostic readout is neither a control nor constant — it is a thing
+//! you go and look at when something is wrong, and it needs room to be more
+//! than one line.
 //!
-//! `shell::manifest::tools`' header is the only argument on record for the
-//! command, and it is an argument about **placement** rather than about
-//! capability:
-//!
-//! > It is currently a run of text in the status bar. That surface is for the
-//! > controls a user touches constantly, and a diagnostic readout is neither a
-//! > control nor constant — it is a thing you go and look at when something is
-//! > wrong. Moving it here also gives it room to be more than one line.
-//!
-//! Three requirements fall straight out of that sentence, and this file is
-//! them:
+//! Three requirements fall straight out of that, and this file is them:
 //!
 //! 1. **A thing you go and look at.** Opened deliberately, holding one
 //!    question's worth of answers, forgotten when closed — which is
@@ -32,25 +22,26 @@
 //!    for width with the Objects list; nobody wants a render census permanently
 //!    mounted.
 //! 2. **When something is wrong.** So it opens on demand and never on its own.
-//!    `view.app_initiative`'s specified default is **Never** — pdfcer may not
-//!    float a surface over the canvas unasked — and a diagnostic window that
-//!    appeared because a page happened to substitute a glyph would be the
-//!    clearest possible violation of it.
+//!    `MODES_AND_PANELS.md` is explicit that application initiative is
+//!    **never** — pdfcer opens no surface over the canvas unasked — and a
+//!    diagnostic window that appeared because a page happened to substitute a
+//!    glyph would be the clearest possible violation of it.
 //! 3. **Room to be more than one line.** The bar gets one elided line under
 //!    **R128**; this gets the findings one per row, plus the three
 //!    measurements of the render itself, plus the two counters the bar
 //!    deliberately excludes.
 //!
-//! ## ★ The status bar keeps its line, and that is not a duplicate
+//! ## The status bar keeps its line, and that is not a duplicate
 //!
 //! Both surfaces read the **same** derivation —
 //! [`crate::app::status::notes::findings`] — so they cannot disagree about what
 //! a raster compromised on. What differs is only the room: the bar answers *is
 //! anything worth looking at?* at a glance, this answers *what, exactly, and
-//! how expensive was it?*. `DEFECTS.md`'s "Not defects" table settled the
-//! prominence question already (*"Excellent information, wrong prominence"*) —
-//! the fix was to demote it, not to delete it, and demoting it is what makes a
-//! deliberate route to the full report worth having.
+//! how expensive was it?*. `DEFECTS.md`'s "Not defects" table settles the
+//! prominence question: the report is worth having and the status bar is the
+//! wrong place to press it on an operator, so it is demoted rather than
+//! deleted — which is exactly what makes a deliberate route to the full report
+//! worth building.
 //!
 //! ## What it shows that the bar cannot
 //!
@@ -61,11 +52,12 @@
 //! | the raster scale and pixel size | — | from `RenderKey` and the uploaded texture |
 //! | `tolerated` / `compat_skipped` | excluded on editorial grounds | shown, with a sentence saying they are not faults |
 //!
-//! The duration and the scale are drawn **together**, deliberately.
-//! `HANDOFF.md` §10: *"~99 % of render cost is resolution-independent on dense
-//! CAD. A small thumbnail is not a cheap thumbnail. A 1×1 point region costs
-//! 691 ms."* A duration on its own invites the operator to zoom out and expect
-//! relief that will not come.
+//! The duration and the scale are drawn **together**, deliberately. Render cost
+//! on a dense CAD page is very largely **resolution-independent** —
+//! `BENCHMARK.md` measures the floor as content-stream interpretation, nearly
+//! all of the time at fit-page zoom and still the majority of it at 2× — so a
+//! small raster is not a cheap raster. A duration shown on its own invites the
+//! operator to zoom out and expect relief that will not come.
 //!
 //! ## Document-scoped, and it closes with the document
 //!
@@ -99,7 +91,7 @@ const REGION_BODY: &str = "dialog:render-diagnostics"; // ui-text-exempt: trace 
 /// document's current texture on the frame it is drawn, so there is nothing for
 /// the operator to change and nothing for closing it to forget.
 ///
-/// ★ Reading live rather than snapshotting on open is a decision. A snapshot
+/// Reading live rather than snapshotting on open is a decision. A snapshot
 /// would freeze the report of whichever raster happened to be current when the
 /// command was pressed, and the operator's very next act while diagnosing is to
 /// change the zoom or the page — at which point a frozen window would be
@@ -127,11 +119,10 @@ impl DiagnosticsDialog {
 
     /// Draw one frame of the dialog. Returns `false` when it should close.
     pub(super) fn show(&mut self, ctx: &egui::Context, doc: &OpenDoc) -> bool {
-        // ★ ITS OWN OS WINDOW as of 2026-08-21, and this dialog is the one
-        // that most wanted it: it is read *while* zooming and panning the
-        // document it describes, so a window locked inside the application's
-        // frame necessarily covered the thing being diagnosed. Off on a second
-        // monitor is where it belongs.
+        // ITS OWN OS WINDOW, and this dialog is the one that most needs it:
+        // it is read *while* zooming and panning the document it describes, so
+        // a window locked inside the application's frame necessarily covers the
+        // thing being diagnosed. Off on a second monitor is where it belongs.
         let (frame, ()) = crate::dialogs::host::Host::new(
             "render-diagnostics", // ui-text-exempt: a viewport key, never displayed.
             t::title(),
@@ -147,7 +138,7 @@ impl DiagnosticsDialog {
         let theme = Theme::of(ui.ctx());
         crate::diag::ui_rect(REGION_BODY, ui.max_rect());
 
-        // ★ The one state that is not a report: a document is open and nothing
+        // The one state that is not a report: a document is open and nothing
         // has been rasterized. Reachable before the first render and after a
         // render failure, which is exactly when an operator is most likely to
         // reach for this command — so it says which of the two nothings this is

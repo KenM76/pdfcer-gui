@@ -2,7 +2,7 @@
 //! document's own state, and **refuses a signed document instead of offering a
 //! form**
 //!
-//! `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04. Two ribbon controls —
+//! `OPERATOR_REQUESTS.md` **O119**. Two ribbon controls —
 //! `file.encrypt` and `file.permissions` — in a new File ▸ Security group.
 //!
 //! # The defect this exists to catch, and why a unit test cannot
@@ -18,7 +18,7 @@
 //!    collapse groups, and a collapsed group publishes no rect until it is
 //!    opened. A build with a correct model and a Security group that never
 //!    renders passes every test in the crate.
-//! 2. **★★★ A signed document draws NO FORM.** This is O119's second
+//! 2. **A signed document draws NO FORM.** This is O119's second
 //!    disclosure and it is **R9** in its sharpest form: *the control is absent
 //!    or explained, never a button that fails on press.* The controls stay on
 //!    the ribbon — whether THIS document is signed is not known when the
@@ -30,12 +30,12 @@
 //!    is asserted headlessly, but *whether the button it gates is actually
 //!    published as a clickable rectangle* is a fact about drawing.
 //!
-//! # ★ The falsification, and where it is
+//! # The falsification, and where it is
 //!
-//! `HANDOFF.md` §2's defect 8 — *"a test that checks a relation rather than a
-//! magnitude is satisfied by any absurdity in the right direction"* — bites
-//! hardest on an **absence** assertion, and two of the three findings above are
-//! absences. An absence check passes on a window that never opened, on a build
+//! **A test that checks a relation rather than a magnitude is satisfied by any
+//! absurdity in the right direction.** That bites hardest on an **absence**
+//! assertion, and two of the three findings above are absences. An absence
+//! check passes on a window that never opened, on a build
 //! where the click missed, and on a region name that was never spelled the way
 //! the check spells it.
 //!
@@ -48,14 +48,14 @@
 //! | B | plain | `file.permissions` | `protect-dialog` | `protect-standing` — permissions on an unprotected file is refused, not a form of eight ticked boxes |
 //! | C | **signed** | `file.encrypt` | `protect-dialog`, `protect-signed-refusal` | `protect-standing`, `protect-advisory`, `protect-confirm` — **no form at all** |
 //!
-//! ★ Phase A's presences are exactly what phase C's absences deny, over the
+//! Phase A's presences are exactly what phase C's absences deny, over the
 //! same region names, in the same build, minutes apart. That is the pairing
 //! that stops phase C passing vacuously: a build in which `protect-standing`
 //! was never declared under ANY circumstances would fail phase A, so its
 //! absence in phase C is evidence about the signed document rather than about
 //! the spelling of a constant.
 //!
-//! ★★ And `protect-advisory` is asserted **present** in phase A on its own
+//! And `protect-advisory` is asserted **present** in phase A on its own
 //! account, not merely as a control. It is the rectangle carrying
 //! `EncryptionSettings::PERMISSIONS_DISCLOSURE` — O119's first disclosure, the
 //! engine's own sentence, the one this surface may not ship without. A build
@@ -79,14 +79,11 @@
 //! distinguishable here from one that never read it, which a region assertion
 //! alone cannot do.
 //!
-//! # ⚠ NOT RUN
+//! # NOT RUN
 //!
-//! **This check was written and NOT RUN.** The session that wrote it was
-//! instructed not to launch the GUI, because another agent held the desktop for
-//! a different driven investigation, and two pdfcer windows competing for the
-//! foreground makes every click after the first one a race. It is registered so
-//! that the next `ui-verify` run executes it; nothing in this file has been
-//! executed against a running binary.
+//! **Nothing in this file has been executed against a running binary.** It is
+//! registered so that the next `ui-verify` run executes it, and until one does
+//! every claim above is a claim about the code rather than about the program.
 
 use std::path::{Path, PathBuf};
 
@@ -249,7 +246,7 @@ fn click_tab(
 
 /// **Find one of the two Security controls and press it.**
 ///
-/// ★★★ Through [`declared_or_in_overflow`] rather than a bare rect lookup, and
+/// Through [`declared_or_in_overflow`] rather than a bare rect lookup, and
 /// this is the whole reason phase 1 of the module header's finding list is a
 /// finding at all. At the harness's 1,100 pt window the File band runs out of
 /// width, and a Security group added at the END of an already-full band is
@@ -266,7 +263,7 @@ fn click_tab(
 fn press(session: &Session, driver: &Driver, ui_rect: &str, id: &str) -> Result<()> {
     let name = format!("{ITEM_PREFIX}{id}");
     let found = declared_or_in_overflow(session, driver, ui_rect, &name)?;
-    // ★ The item list is read BEFORE the `ok_or_else` rather than inside it: a
+    // The item list is read BEFORE the `ok_or_else` rather than inside it: a
     // closure returning `Error` cannot carry a `?`, and the failure message is
     // worth more than the one allocation it costs on the happy path. Without
     // the list, "the control was not found" is indistinguishable from "the
@@ -302,7 +299,7 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
 
 /// Whether the application declared `name` at a usable rectangle.
 ///
-/// ★ A degenerate rect counts as **absent**, not present. A region declared at
+/// A degenerate rect counts as **absent**, not present. A region declared at
 /// zero area is not something an operator can see, so counting it as a presence
 /// would let a build satisfy phase A's instrument assertions with three
 /// invisible rectangles.
@@ -313,7 +310,7 @@ fn drawn(trace: &Trace, ui_rect: &str, name: &str) -> bool {
 /// Close the window, so the next phase's press is not declined by
 /// `DialogsState::open_protect`'s already-open guard.
 ///
-/// ★ That guard is deliberate and documented — a second press must not discard
+/// That guard is deliberate and documented — a second press must not discard
 /// a half-filled form — so this check has to close the window between phases
 /// rather than pressing twice and wondering why nothing changed. Escape is the
 /// host's own close, the same one the title-bar × reaches.
@@ -355,7 +352,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ))
     })?;
 
-    // ★ Two fixtures from the repository rather than one generated here, and
+    // Two fixtures from the repository rather than one generated here, and
     // that is the opposite of `checks::redaction`'s choice for a reason: that
     // check's verdict is a byte scan for strings it must have put there itself,
     // and this one's verdict is about SIGNATURES — which this harness cannot
@@ -400,7 +397,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 ));
             }
         }
-        // ★ THE VERDICT of phase A, and it is an absence paired with the three
+        // THE VERDICT of phase A, and it is an absence paired with the three
         // presences above. A blank form has no owner password in it, so
         // `ready_to_confirm` is false and the confirm control publishes no
         // rect — see `dialogs::protect::confirm_row`, which declares it only
@@ -437,7 +434,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
         // --- B: Permissions… on an unprotected document --------------------
         //
-        // ★★ The refusal that is NOT about signatures, and it is worth driving
+        // The refusal that is NOT about signatures, and it is worth driving
         // separately: an unprotected document does not permit everything, it
         // SAYS NOTHING — permissions live inside the `/Encrypt` dictionary — so
         // a window that drew eight ticked boxes here would be inventing a
@@ -479,7 +476,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  EXPLAINED, and an explanation needs a window."
             ));
         }
-        // ★★★ And the refusal is on screen, by name.
+        // And the refusal is on screen, by name.
         if !drawn(&trace, ui_rect, REGION_SIGNED) {
             findings.push(format!(
                 "PHASE C: no `{REGION_SIGNED}` region — the window opened on a signed document \
@@ -488,7 +485,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 list(&declared_names(&trace, ui_rect, "protect-"))
             ));
         }
-        // ★★★ THE VERDICT: no form. Three absences, each of which phase A
+        // THE VERDICT: no form. Three absences, each of which phase A
         // proved this build is capable of declaring.
         for (name, what) in [
             (REGION_STANDING, "the read-back section"),
@@ -551,7 +548,7 @@ fn shell_rect_count(session: &Session, ui_rect: &str, name: &str) -> Result<usiz
 /// **Resolve a fixture from this repository**, via
 /// [`crate::checks::driving::repo_fixture`].
 ///
-/// ★ The `&CheckContext` parameter is gone, and its absence is the point. It
+/// The `&CheckContext` parameter is gone, and its absence is the point. It
 /// existed because this function once resolved the path from `ctx.source_root`
 /// — the staleness root, which defaults to `crates` — and then kept the
 /// parameter alive with a `let _ = ctx;` after that was corrected. A parameter

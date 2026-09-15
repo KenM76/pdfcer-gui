@@ -45,30 +45,30 @@
 //! panel.
 
 // The Pages tab's arms, split out under R2. See its header for the seam.
-/// ★★ **Cut, copy and the two pastes** — four ids over three operand kinds.
-/// Split out on 2026-08-29 when `edit.paste_duplicate` pushed this file past
-/// R2's ceiling for the fourth time. Its header carries the three-rung fork
-/// that decides whether a `Ctrl+C` is about text, a form field or an object.
+/// ★★ **Cut, copy and the two pastes** — four ids over three operand kinds,
+/// which is what makes them one subject. Its header carries the three-rung
+/// fork that decides whether a `Ctrl+C` is about text, a form field or an
+/// object.
 pub(crate) mod clipboard;
 pub(crate) mod format;
 /// ★ `edit.insert_image`'s four steps — pick, read, import, refuse or open.
 ///
 /// A module rather than a match arm because it is a **sequence**, not a verb,
-/// and a ninety-line sequence inside a `match` is how this file crossed 1,500
-/// lines. Its header carries the two decisions worth questioning: why the
-/// import happens before the window, and why the refusal is passed through in
-/// the engine's own words.
+/// and a ninety-line sequence buried in a `match` reads as neither. Its header
+/// carries the two decisions worth questioning: why the import happens before
+/// the window, and why the refusal is passed through in the engine's own
+/// words.
 pub(crate) mod images;
 /// ★ Every `measure.*` command — the three tools, Finish, and the two windows.
 ///
 /// A module rather than four arms because three of them resolve the **active
-/// authoring group** the same way, and that resolution was written twice here
-/// before the move. Its header carries why the fallback is traced rather than
-/// silent.
+/// authoring group** the same way, and a resolution spelled once is a
+/// resolution that cannot disagree with itself. Its header carries why the
+/// fallback is traced rather than silent.
 mod measure;
 /// **View ▸ Navigate** — the four canvas tools and the Smart-select switch.
-/// Extracted 2026-08-31 under R2; see its header for what makes them one
-/// subject rather than five arms that happened to be adjacent.
+/// See its header for what makes them one subject rather than five arms that
+/// happen to be adjacent.
 pub(crate) mod navigate;
 /// ★★ **Cut, copy and paste of whole PAGES** — O59 item 2. Its header carries
 /// the decision that shapes it: these are named commands rather than `Ctrl+C`,
@@ -80,47 +80,41 @@ pub(crate) mod pages;
 /// onto the clipboard.
 ///
 /// A module rather than two arms because their bodies are longer than most
-/// whole tabs and their subject is its own; the third application of the seam
-/// [`images`] and [`pages`] were split along, on the day this file crossed
-/// R2's ceiling for the third time. Its header carries why both read the
-/// **same** extraction a canvas selection reads, and why neither raises an
-/// `Action`.
+/// whole tabs and their subject is its own — the same seam [`images`] and
+/// [`pages`] sit on. Its header carries why both read the **same** extraction
+/// a canvas selection reads, and why neither raises an `Action`.
 pub(crate) mod textcopy;
 /// ★ Every `view.zoom_*` command — the two framing verbs, actual size and the
 /// three fit modes.
 ///
 /// A module rather than six arms because the family carries the most
-/// reasoning per arm in the whole match, and because O29's third fit mode was
-/// the line that took this file past 1,500. Its header carries the seam and
-/// what deliberately did not move with it.
+/// reasoning per arm in the whole match — O29's third fit mode among them. Its
+/// header carries the seam and what deliberately stays behind.
 pub(crate) mod zoom;
 
 use super::PdfcerApp;
 /// The commands that perform nothing and point somewhere else — three of them,
-/// each raising `Action::Command` and doing no more. Split out under R2 when
-/// this file crossed 1,500 lines for the fourth time; see its header for why
+/// each raising `Action::Command` and doing no more; see its header for why
 /// the seam is a subject rather than a size.
-/// ★ The Tools ▸ Batch band — `OPERATOR_REQUESTS.md` O68. Its own module under
-/// R2, on the same argument as the six splits above it.
+/// ★ The Tools ▸ Batch band — `OPERATOR_REQUESTS.md` O68. Its own module on
+/// the same argument as the six modules above it.
 /// **The four commands whose subject is a mark's DEPTH** — Bring to front and
-/// its three siblings, 2026-09-06. Its own module for [`markupnodes`]' reason
-/// twice over: they share one preamble and one refusal, and this file had 23
-/// lines of R2's ceiling left when they were wired.
+/// its three siblings. Its own module for [`markupnodes`]' reason: they share
+/// one preamble and one refusal, and four arms that share both are one arm
+/// wearing four ids.
 pub(crate) mod arrange;
 pub(crate) mod batch;
 /// The File > Security band's commands — O119 plus signing; see its header.
 /// ★ **The File > Export band** — three exports and the three imports beside
-/// them. Split out under R2 on 2026-09-07 when `file.import_text` took this
-/// file past the ceiling; its header carries the seam, and the warning that had
-/// been read and not acted on.
+/// them. Its header carries the seam, and the warning that is easy to read and
+/// not act on.
 pub(crate) mod exchange;
 pub(crate) mod fonts;
 mod forms;
 /// **The three commands whose subject is a POINT on a markup shape** — end the
 /// run of points you are clicking out, add one to a drawn edge, take one away.
-/// `markup.finish` moved there from this file on 2026-09-06, when the two node
-/// verbs needed an arm and this file stood at exactly 1,500 lines; see its
-/// header for why the operand — *which* corner — is the seam.
+/// `markup.finish` belongs with them rather than here; see its header for why
+/// the operand — *which* corner — is the seam.
 pub(crate) mod markupnodes;
 /// **The four verbs whose subject is a PANEL** — float it, dock it back,
 /// close it, and bring every floating one home. Its header carries the
@@ -131,8 +125,8 @@ pub(crate) mod routes;
 pub(crate) mod security;
 pub(crate) mod settings;
 /// **The three commands whose subject is a text caret** — the two that arm it
-/// and the reflow that acts on the paragraph it is in. The arming pair moved
-/// there from this file on 2026-08-28 so the subject lives in one place.
+/// and the reflow that acts on the paragraph it is in. All three live there so
+/// the subject lives in one place.
 pub(crate) mod text;
 
 use super::actions::Action;
@@ -263,8 +257,9 @@ impl PdfcerApp {
             // between frames, as `file.open`'s does, and has its OWN
             // diagnostic seam so a harness can drive an insert without also
             // answering an open.
-            // ★★★ `pages.merge_into` — the audit's first pick, and shell work
-            // only since `merge_document` landed on 2026-08-18.
+            // ★★★ `pages.merge_into` — shell work only, because
+            // `EditSession::merge_document` does the whole of the document
+            // half: in-session, one undo entry, field collisions renamed.
             //
             // ★ It opens **no dialog**, where its neighbour below opens one.
             // That is the difference between the verbs rather than an economy:
@@ -324,7 +319,7 @@ impl PdfcerApp {
             // is unreachable from the ribbon — and the action handles it
             // anyway, because a customized keymap can reach any command from
             // any state.
-            // ★★ **One command, two operands, decided by where it was
+            // ★★ **One command, two operands, decided by where it is
             // invoked.**
             //
             // From the ribbon, the quick-access toolbar or `Ctrl+W` this means
@@ -332,8 +327,8 @@ impl PdfcerApp {
             // From a **document tab's context menu** it means the tab that was
             // right-clicked, which is what a tab menu means everywhere.
             //
-            // The alternative was a second command — `window.close_document` —
-            // and two of this project's own gates refused it in the same run:
+            // The alternative is a second command — `window.close_document` —
+            // and two of this project's own gates refuse it:
             // `no_two_commands_share_a_label` (it would carry `file.close`'s
             // label and tooltip, because it does `file.close`'s job) and
             // `every_menu_command_is_also_reachable_from_the_ribbon` (its only
@@ -362,10 +357,11 @@ impl PdfcerApp {
             "view.next_document" => self.cycle_document(true),
             "view.previous_document" => self.cycle_document(false),
             // ★ **Save a copy.** Registered, on the quick-access toolbar, bound
-            // to `Ctrl+S`, printing "(Ctrl+S)" in its own tooltip — and until
-            // 2026-08-14 it had **no arm**, so it traced `command-unimplemented`
-            // and nothing this shell could author could be written to disk at
-            // all. D1's shape, with the one verb that makes an editor an editor.
+            // to `Ctrl+S` and printing "(Ctrl+S)" in its own tooltip — which is
+            // exactly the shape that makes a missing arm invisible: every
+            // affordance says the verb works, and only the trace says
+            // `command-unimplemented`. D1's shape, on the one verb that makes an
+            // editor an editor.
             //
             // One line, because the rule lives in `crate::app::save`: what the
             // copy is called, which mode the bytes are written in and why it is
@@ -401,12 +397,10 @@ impl PdfcerApp {
             // `Action::SaveAs` for why the two are separate acts rather than
             // one act with a flag.
             "file.save_as" => actions.push(Action::SaveAs),
-            // ★ **Undo and redo.** Registered since the ribbon landed, on the
-            // quick-access toolbar in **every** mode, bound to `Ctrl+Z`,
-            // `Ctrl+Y` and `Ctrl+Shift+Z` — and until 2026-08-14 they had **no
-            // arm**, so every press traced `command-unimplemented` and did
-            // nothing. That is `file.save_copy`'s defect one arm above, at the
-            // other end of the same day: v0.1.0 shipped with dimensions, seven
+            // ★ **Undo and redo.** On the quick-access toolbar in **every**
+            // mode, bound to `Ctrl+Z`, `Ctrl+Y` and `Ctrl+Shift+Z` —
+            // `file.save_copy`'s shape one arm above, and the same class of
+            // defect if the arm goes missing: a build with dimensions, seven
             // markup kinds, text marks and form fills all reachable, and no way
             // to take any of them back.
             //
@@ -454,10 +448,10 @@ impl PdfcerApp {
             //
             // The only `open_*` on this list that can fail rather than decline:
             // `pdfcer-core` refuses a full rewrite by name for a hybrid file
-            // whose `/XRefStm` does not parse (narrowed from the whole hybrid
-            // class at `Pass 281.0`; this comment said the wide thing until
-            // 2026-09-11), and for one whose object numbering is too sparse for
-            // §7.5.4's single-section table. Both are facts about the file and
+            // whose `/XRefStm` does not parse — that narrow case, not the whole
+            // hybrid class — and for one whose object numbering is too sparse
+            // for §7.5.4's single-section table. Both are facts about the file
+            // and
             // both are recorded rather than swallowed — `app::save`'s header
             // states the rule this obeys: *"the honest response is to refuse and
             // say so, not to fall back to a full rewrite"*, read here in the
@@ -579,8 +573,8 @@ impl PdfcerApp {
                 ));
             }
             "edit.redact_apply" => self.dialogs.open_redact(&self.status),
-            // ★★★ The FOURTH marking route, 2026-09-11 — and the only one that
-            // begins with a question rather than with an operand.
+            // ★★★ The FOURTH marking route, and the only one that begins with
+            // a question rather than with an operand.
             //
             // `edit.redact_selection` above needs a selection, `edit.redact`
             // opens a panel over the current sheet, and `edit.redact_apply`
@@ -624,9 +618,9 @@ impl PdfcerApp {
             }
             // The zoom verbs, and the three fit modes, split out under R2 --
             // see `dispatch::zoom`'s header for the seam. `view.tool_hand`
-            // below is the third of the Phase 3 navigation verbs the two
-            // zoom-framing arms used to sit beside; each is one call because
-            // the rule each obeys lives in `canvas::zoom` or `canvas::tool`,
+            // below is the third of the Phase 3 navigation verbs, beside the
+            // two zoom-framing ones; each is one call because the rule each
+            // obeys lives in `canvas::zoom` or `canvas::tool`,
             // not here. This match is a routing table; the moment it starts
             // computing an anchor or deciding what a drag means, the same rule
             // exists in two places and one of them will be the one that gets
@@ -670,19 +664,17 @@ impl PdfcerApp {
             // ★★ **The clipboard family**, routed rather than inlined: four ids
             // (`edit.cut`, `edit.copy`, `edit.paste`, `edit.paste_duplicate`),
             // three operand kinds, and two chords that mean different things to
-            // the same field. Moved out of this file on 2026-08-29 under R2 when
-            // the fourth id arrived; `dispatch::clipboard`'s header carries the
-            // fork that decides which module answers.
+            // the same field. `dispatch::clipboard`'s header carries the fork
+            // that decides which module answers.
             id if clipboard::handles(id) => clipboard::dispatch(self, ctx, id, actions),
             id if pageclip::handles(id) => pageclip::dispatch(self, ctx, id, actions),
             // ★★ **The Navigate row — five controls, their own module.**
             //
-            // Moved out of this file on 2026-08-31 under R2, when
-            // `view.smart_select` (`OPERATOR_REQUESTS.md` O70) made it 1,506
-            // lines. The seam was already there: four of the five arm a tool
-            // and the fifth changes what the first one selects, which is one
-            // subject — *what a press on the page means* — and it is the row
-            // the ribbon draws them in.
+            // The seam is the subject rather than the size: four of the five
+            // arm a tool and the fifth (`view.smart_select`,
+            // `OPERATOR_REQUESTS.md` O70) changes what the first one selects,
+            // which is one question — *what a press on the page means* — and it
+            // is the row the ribbon draws them in.
             id if navigate::handles(id) => navigate::dispatch(self, ctx, id),
 
             // ★ **The markup shape tools — one arm for all four.**
@@ -765,10 +757,10 @@ impl PdfcerApp {
             }
             // ★ **Export to DXF.** The FIRST entry in `reach`'s scaffold list
             // and one of three whose recorded reason was *"No recorded reason
-            // anywhere. Scaffolded by omission, not by decision."* —
-            // `pdfcer-core`'s `export::dxf` had shipped the whole time, and the
-            // old shell has the feature, so `FEATURES.md`'s `gui` column made
-            // it a REGRESSION rather than a gap.
+            // anywhere. Scaffolded by omission, not by decision."* — while
+            // `pdfcer-core`'s `export::dxf` is complete and the feature exists
+            // in the shell being replaced, which is what `FEATURES.md`'s `gui`
+            // column makes a REGRESSION rather than a gap.
             //
             // Gated on `doc.pages` through the registry rather than on a
             // capability: an export reads the document and writes elsewhere, so
@@ -777,29 +769,26 @@ impl PdfcerApp {
             // File > Security: Encrypt…, Permissions…, Sign…. See that module.
             id if security::claims(id) => self.dispatch_security(id),
             // File > Export: the three exports and the three imports beside
-            // them. Split out under R2 on 2026-09-07; `dispatch::exchange`'s
-            // header carries the seam and the warning that was read and not
-            // acted on until the gate went red.
+            // them. `dispatch::exchange`'s header carries the seam and the
+            // warning that is easy to read and not act on.
             id if exchange::claims(id) => self.dispatch_exchange(id, actions),
             id if routes::handles(id) => routes::dispatch(id, actions),
             // ★★★ **`file.export_form_data` — registered, drawn on File ▸
             // Export, and inert for the whole life of the project.**
             //
-            // Its `SCAFFOLDED` reason said *"blocked on a writer that does not
-            // exist"* and cited a `FEATURES.md` row that was itself stale.
-            // Three writers exist and two have since `Pass 7.1`:
-            // `fdf::FormData::{to_fdf, to_xfdf}` and `formcsv::to_csv`. The
-            // **sixth** stale blocker this project has found, and the second in
-            // one evening — both citations of citations, and nothing had
-            // re-read either.
+            // A `SCAFFOLDED` reason of *"blocked on a writer that does not
+            // exist"*, resting on a `FEATURES.md` row, is false at both ends:
+            // three writers exist — `fdf::FormData::{to_fdf, to_xfdf}` and
+            // `formcsv::to_csv`. ★ **A blocker that cites a citation is a
+            // blocker nobody has checked**, and it is the commonest way a
+            // complete engine verb stays unreachable.
             //
             // ★ No dialog, unlike its DXF neighbour one line above: the format
             // is the extension the operator types in the save picker, which is
             // how every application on this desktop does it and is one modal
             // window rather than two. See `actions::export::form_data`.
             // ★★★ The SECOND-ROUTE arms live in `dispatch::routes` — three of
-            // them as of 2026-08-28, and they moved out under R2 when this file
-            // crossed 1,500 lines for the fourth time.
+            // them.
             //
             // The seam is a real subject rather than a size-driven cut, and it
             // is the property every member shares and no other arm here does:
@@ -810,21 +799,19 @@ impl PdfcerApp {
             id if fonts::handles(id) => {
                 fonts::dispatch(id, &mut self.dialogs, &self.status, &self.prefs);
             }
-            // ★★★ **`tools.merge_files`, wired 2026-08-31 — O68.** It was
-            // registered, drawn, enabled at startup, and had no arm at all:
-            // the operator pressed it and the program traced
-            // `command-unimplemented` and did nothing he could see. The engine
-            // verb (`pageops::merge`) had been complete and uncalled the whole
-            // time; the recorded blocker named a missing PANEL, which is the
-            // weak-blocker shape `reach::register` retired an entry for three
-            // days earlier, in the same const, ten lines below this one.
+            // ★★★ **`tools.merge_files` — O68**, and a worked example of the
+            // weak-blocker shape: the engine verb (`pageops::merge`) is
+            // complete, and the recorded blocker named a missing PANEL. A
+            // blocker that names a surface rather than a capability keeps a
+            // registered, drawn, enabled control tracing
+            // `command-unimplemented` while nothing is actually in the way.
             id if batch::handles(id) => batch::dispatch(self, id, actions),
-            // ★ **The keyboard reference.** Its scaffold entry did not merely
-            // say blocked — it carried the design, from `SALVAGE.md`: *"Fix
-            // `shortcuts_reference()` — it omits six live bindings
-            // (DEFECTS.md D5) — and derive it from the keyboard map so it
-            // cannot drift again."* Nothing was salvaged; the window holds no
-            // list.
+            // ★ **The keyboard reference**, and the design it obeys: *derive
+            // the list from the keyboard map so it cannot drift again*. The old
+            // shell's hand-maintained `shortcuts_reference()` omits six live
+            // bindings (`DEFECTS.md` D5), so nothing of it is salvaged and this
+            // window holds no hand-written list at all — see
+            // `crate::dialogs::shortcuts`.
             //
             // No document guard, unlike every other dialog on this tab: key
             // bindings exist whether or not a file is open, and refusing this
@@ -832,12 +819,11 @@ impl PdfcerApp {
             // likely to be looking for it.
             "file.shortcuts" => self.dialogs.open_shortcuts(),
             // The Format tab's arms — Delete, Properties and Select-the-form.
-            // Split out under R2 on 2026-08-27; see `dispatch::format`'s header
-            // for the seam.
-            // ★ `ctx` since 2026-09-15 — `format.select_text_line` reads a
-            // pick parked in frame memory by the right-click that opened the
-            // menu, which is an operand no ribbon control can ask for. Same
-            // shape as `measure` and `markupnodes` below.
+            // See `dispatch::format`'s header for the seam.
+            // ★ It takes `ctx` because `format.select_text_line` reads a pick
+            // parked in frame memory by the right-click that opened the menu,
+            // which is an operand no ribbon control can ask for. Same shape as
+            // `measure` and `markupnodes` below.
             id if format::handles(id) => format::dispatch(self, ctx, id, actions),
             id if measure::handles(id) => {
                 measure::dispatch(self, ctx, id, actions);
@@ -927,9 +913,8 @@ impl PdfcerApp {
                 }
             }
             // ★★★ **The three commands about a markup shape's POINTS**, in
-            // `dispatch::markupnodes` since 2026-09-06 — `markup.finish`, which
-            // used to be an arm right here, plus the two node verbs the
-            // right-click menu carries.
+            // `dispatch::markupnodes` — `markup.finish` plus the two node verbs
+            // the right-click menu carries.
             //
             // The route is one line; what is in that file is the *reasoning* —
             // in particular why the two node commands need no armed tool where
@@ -946,9 +931,9 @@ impl PdfcerApp {
             // cheaper of the two guarantees and costs nothing to state.
             id if markupnodes::claims(id) => markupnodes::dispatch(self, ctx, id, actions),
             // ★★★ **The four commands whose subject is a mark's DEPTH** — the
-            // ribbon's Arrange group. `/Annots` order is paint order, the engine
-            // has permuted it since 2026-09-02, and until today the only surface
-            // that could ask was the form-field tab-order panel.
+            // ribbon's Arrange group. `/Annots` order is paint order and the
+            // engine can permute it; before these four the only surface that
+            // could ask was the form-field tab-order panel.
             //
             // No `ctx`: nothing here is about a gesture in flight. It reads the
             // selection and raises one action, and the permutation itself is
@@ -1114,44 +1099,47 @@ impl PdfcerApp {
             id if crate::app::dispatch::pages::handles(id) => {
                 crate::app::dispatch::pages::dispatch(self, id, actions);
             }
-            // ★ **The three page commands that have no arm, and why each one
-            // is absent rather than forgotten.**
+            // ★ **`pages.split` has no arm, and is absent rather than
+            // forgotten.**
             //
-            // All three are registered, drawn on the Pages tab and reachable.
-            // None of them is in the page tile's context menu — which is the
-            // one place `RIBBON_IA.md` P3's "render nothing rather than a
-            // control that fails" rule would be breached by their absence, and
-            // `panels::pages`' own test records the exclusion as deliberate:
-            // they *"are document-level verbs that act on the whole file rather
-            // than on the sheets pointed at, and both open a dialog this build
-            // has not built."*
+            // It is registered, drawn on the Pages tab and reachable. It is not
+            // in the page tile's context menu — which is the one place
+            // `RIBBON_IA.md` P3's "render nothing rather than a control that
+            // fails" rule would be breached by its absence, and `panels::pages`'
+            // own test records the exclusion as deliberate: these *"are
+            // document-level verbs that act on the whole file rather than on the
+            // sheets pointed at, and both open a dialog this build has not
+            // built."*
             //
-            // | command | engine verb | what is missing |
-            // |---|---|---|
-            // | `pages.split` | `pdfcer_core::pageops::split` | a **boundary chooser**. `plan_split` takes a `SplitPlan` — every N pages, at bookmarks, at an explicit list — and a destination *directory* plus a name template. There is no honest default: splitting a 36-sheet drawing set into 36 files because nobody was asked is not a lesser version of the feature |
-            // | `pages.merge_into` | `EditSession::merge_document` | ★★ **NOT what this row used to say.** It read: *"`insert` returns the bytes of a NEW document rather than mutating the session … wiring it means replacing `OpenDoc::session` wholesale, which discards the command log."* That was true and stopped being true on 2026-08-18, when the engine answered the filed request with `merge_document` — in-session, one undo entry, field collisions renamed. What is left is a **file picker and an insertion point**, both of which `pages.insert_from_file` already has |
+            // What is missing is a **boundary chooser**.
+            // `pdfcer_core::pageops::split`'s `plan_split` takes a `SplitPlan` —
+            // every N pages, at bookmarks, at an explicit list — and a
+            // destination *directory* plus a name template. There is no honest
+            // default: splitting a 36-sheet drawing set into 36 files because
+            // nobody was asked is not a lesser version of the feature.
             //
-            // ★★★ `pages.insert_from_file` was a THIRD ROW of this table until
-            // 2026-08-28, claiming *"the same two things, for the same
-            // reason."* **It has had a dispatch arm since 2026-08-18** — in
-            // this same file, two hundred lines above. A table describing a
-            // command as unimplemented, in the file that implements it, is the
-            // clearest possible statement of why a reason is prose and prose is
-            // not checked by anything. Found in an audit of eleven blocker
-            // reasons, of which six were stale.
+            // ★★★ **`pages.merge_into` and `pages.insert_from_file` are NOT on
+            // this list**, and a reader who finds a document saying they are
+            // should believe this file: both have arms two hundred lines above.
+            // The claim that kept them here was that `insert` returns the bytes
+            // of a NEW document, so wiring it would mean replacing
+            // `OpenDoc::session` wholesale and discarding the command log —
+            // which `EditSession::merge_document` answers outright. A prose
+            // reason describing a command as unimplemented, in the file that
+            // implements it, is the clearest statement there is of why a blocker
+            // is prose and prose is checked by nothing.
             //
-            // They therefore fall through to `command-unimplemented`, which is
-            // the honest report and is what the trace has always said about
-            // them. Deliberately NOT given arms that trace a prettier decline:
-            // a command that says "not yet" is still a command that does
-            // nothing, and dressing it up would make the trace harder to grep
-            // for what is genuinely unwired.
-            // ★ The two text-copy verbs moved to `dispatch::textcopy` on
-            // 2026-08-20, when this file crossed R2's ceiling for the third
-            // time. The seam is the one `dispatch::images` and
-            // `dispatch::pages` were drawn along: a family whose bodies are
-            // longer than most whole tabs and whose subject — *read text out
-            // of this document and put it on the clipboard* — is its own.
+            // `pages.split` therefore falls through to
+            // `command-unimplemented`, which is the honest report.
+            // Deliberately NOT given an arm that traces a prettier decline: a
+            // command that says "not yet" is still a command that does nothing,
+            // and dressing it up would make the trace harder to grep for what is
+            // genuinely unwired.
+            // ★ The two text-copy verbs live in `dispatch::textcopy`, on the
+            // seam `dispatch::images` and `dispatch::pages` are drawn along: a
+            // family whose bodies are longer than most whole tabs and whose
+            // subject — *read text out of this document and put it on the
+            // clipboard* — is its own.
             // That module's header carries the argument, including why
             // neither of them raises an `Action`.
             id if textcopy::handles(id) => textcopy::dispatch(self, ctx, id),
@@ -1263,8 +1251,8 @@ impl PdfcerApp {
             // their left one."* Honouring that properly needs a **chooser**,
             // and this build has no modal, no popup and no split-button
             // affordance to put one in — see the note on
-            // `crate::text::commands::view_reset_layout`, which used to
-            // promise the choice in its tooltip and no longer does.
+            // `crate::text::commands::view_reset_layout`, whose tooltip
+            // deliberately promises no choice it cannot offer.
             //
             // Given one button and no chooser, `All` is the only scope whose
             // behaviour matches the words on it: a control named "Reset
@@ -1281,10 +1269,11 @@ impl PdfcerApp {
             // matching `ResetScope`. `ResetScope::ALL` already lists them
             // narrowest-first, in the order such a menu should offer them.
             // ★ **The two View ▸ Window verbs**, and the pair
-            // `RIBBON_IA.md` §3 named as *"the single most confusing thing in
+            // `RIBBON_IA.md` §3 names as *"the single most confusing thing in
             // the current ribbon"*: registered, glyphed, grouped, bound to
-            // `Ctrl+H` and `F11`, listed in the shortcuts reference, and with no
-            // arm at all until 2026-08-15. `file.save_copy`'s defect twice more.
+            // `Ctrl+H` and `F11`, and listed in the shortcuts reference — every
+            // affordance a working command has, which is `file.save_copy`'s
+            // shape twice more if either arm goes missing.
             //
             // Both are one line, because everything they decide lives in
             // `crate::app::window`: why `view.read_mode` is **not** a duplicate
@@ -1326,11 +1315,10 @@ impl PdfcerApp {
                     format!("fullscreen asked={asked}")
                 });
             }
-            // ★ **Render diagnostics** — the last of the four wired on
-            // 2026-08-15, and the one `shell::commands::reach` called the least
-            // defensible on its list, *because the work behind it was already
-            // done*: the renderer has produced this report since S0 and the
-            // status bar has shown a one-line summary of it since S2.
+            // ★ **Render diagnostics**, and the least defensible thing for
+            // `shell::commands::reach` to have carried as scaffolded, *because
+            // the work behind it is already done*: the renderer produces this
+            // report and the status bar already shows a one-line summary of it.
             //
             // A dialog, in the shape `file.print`, `file.ocr` and `file.about`
             // established, because `shell::manifest::tools`' argument for the
@@ -1346,7 +1334,7 @@ impl PdfcerApp {
             // control is gated on `doc.open` and a chord bound to the same id is
             // not.
             "tools.render_diagnostics" => self.dialogs.open_diagnostics(&self.status),
-            // ★★ **The four panel-layout verbs**, 2026-09-04.
+            // ★★ **The four panel-layout verbs.**
             //
             // A guard arm rather than four literals, and it sits ABOVE
             // `view.reset_layout` for no ordering reason at all — the two sets
@@ -1437,7 +1425,7 @@ impl PdfcerApp {
     /// (nothing picked, something picked, a pick left stale by an edit the
     /// panel has not yet reconciled). This method's whole job is to go and get
     /// the two facts, which is what keeps it a routing helper rather than a
-    /// second statement of a rule — `HANDOFF.md` §6.
+    /// second statement of a rule.
     ///
     /// # Why `Option` rather than an empty `Vec`
     ///

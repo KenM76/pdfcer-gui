@@ -21,7 +21,7 @@
 //! subject is a page set. If a third export lands, that is the moment to move
 //! it here.
 //!
-//! ## ★ The third export landed on 2026-09-04, and the trigger above FIRED
+//! ## The third export landed, and the trigger above FIRED
 //!
 //! [`image`] — `OPERATOR_REQUESTS.md` **O120**, PNG / JPEG / SVG — is the third,
 //! and it is written here rather than in a module of its own, which is the
@@ -42,7 +42,7 @@
 //! project uses everywhere else for a decision deferred on purpose. What must
 //! not happen is the sentence above being read as still-waiting: it is not.
 //!
-//! ## ★ Why an export is an `Action` at all
+//! ## Why an export is an `Action` at all
 //!
 //! `super::apply`'s header answers it for `SaveCopy` and the answer is the same
 //! here: **a native file dialog must not open inside a layout pass.** It is a
@@ -73,7 +73,7 @@ use crate::app::state::OpenDoc;
 ///   the other is a fact about the source PDF. Rolling them together would let
 ///   the second hide inside the first.
 ///
-/// ## ★ Why the geometry is fetched here and not carried in the action
+/// ## Why the geometry is fetched here and not carried in the action
 ///
 /// `PageObjects` is a decomposition of a whole page — every path, every text
 /// run, every image placement — and the shell already holds one, cached, keyed
@@ -105,7 +105,7 @@ pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export:
     };
     let (text, outcome) = dxf;
 
-    // ★ The picker AFTER the write, not before.
+    // The picker AFTER the write, not before.
     //
     // The write is pure and cannot fail — `write_dxf` returns no `Result`, and
     // its doc says why: *"the writer cannot fail on well-formed input, and
@@ -142,7 +142,7 @@ pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export:
                     outcome.unreadable_text
                 )
             });
-            // ★ Recorded through `record_note` rather than returned from a
+            // Recorded through `record_note` rather than returned from a
             // `vector_edit` closure, because there is no edit to ride in on —
             // the same case `canvas::interact` records for a caret that cannot
             // be placed. Stamped with the CURRENT epoch, so the sentences stand
@@ -171,29 +171,23 @@ pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export:
 
 /// **Write the form's values out as FDF, XFDF or CSV.**
 ///
-/// `file.export_form_data`, wired 2026-08-27 — a command that had been
-/// registered, drawn on File ▸ Export, and **inert for the whole life of the
-/// project**.
+/// `file.export_form_data`. This command was registered, drawn on
+/// File ▸ Export, and **inert**, behind a `SCAFFOLDED` reason claiming the
+/// writer did not exist and citing a `FEATURES.md` row saying the
+/// FDF/XFDF/CSV half was unbuilt.
 ///
-/// # ★★★ The recorded reason was false, and it is the sixth of these
+/// # The recorded reason was false, and it is the sixth of these
 ///
-/// Its `SCAFFOLDED` entry read:
-///
-/// > ~~Blocked on a writer that does not exist. `FEATURES.md`'s Forms row:
-/// > "fill ✅ …; create field, flatten and FDF/XFDF/CSV still ⬜" — and this
-/// > command IS the FDF/XFDF/CSV half.~~
-///
-/// Three writers exist and two of them have since `Pass 7.1`:
-/// `fdf::FormData::to_fdf`, `to_xfdf`, and `formcsv::to_csv`, reached through
-/// `EditSession::export_form_data`. The `FEATURES.md` row it cites was itself
-/// stale, so — like `edit.form_flatten` two hours earlier — the entry was a
+/// Three writers exist: `fdf::FormData::to_fdf`, `to_xfdf`, and
+/// `formcsv::to_csv`, reached through `EditSession::export_form_data`. The
+/// `FEATURES.md` row the entry cited was itself stale, so the reason was a
 /// **citation of a citation** and nothing had re-read either.
 ///
 /// ⇒ The rule now written on the allow-list's own assertion: *when you touch
 /// that list for any purpose, re-derive the reason of the entry beside the one
 /// you came for.* This one was found by doing exactly that.
 ///
-/// # ★★ The format is chosen by the EXTENSION, not by a third dialog
+/// # The format is chosen by the EXTENSION, not by a third dialog
 ///
 /// One picker, three formats, decided by what the operator types or picks in
 /// the *Save as type* box — which is how every application on this desktop
@@ -209,7 +203,7 @@ pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export:
 /// it is what Acrobat writes, and it is the only one of the three that a
 /// reader can import without being told what it is.
 ///
-/// # ★★★ The CSV disclosure is not optional, and it is about a spreadsheet
+/// # The CSV disclosure is not optional, and it is about a spreadsheet
 /// rather than about a PDF
 ///
 /// `formcsv::to_csv` **neutralises** values that would otherwise be executed as
@@ -229,7 +223,7 @@ pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export:
 /// disclosures ride `record_edit_disclosure` at the current epoch, so they
 /// stand until the next real edit moves past them.
 pub(super) fn form_data(doc: &mut OpenDoc) {
-    // ★ The data first, the picker second — `dxf`'s ordering and its reason:
+    // The data first, the picker second — `dxf`'s ordering and its reason:
     // the operator is never asked where to put a file that turns out to be
     // empty. A document with no `/AcroForm` has nothing to export, and that is
     // a decline with a sentence rather than a dialog followed by a zero-byte
@@ -269,7 +263,7 @@ pub(super) fn form_data(doc: &mut OpenDoc) {
         return;
     };
 
-    // ★ The document's own path as the FDF `/F` source, so a reader importing
+    // The document's own path as the FDF `/F` source, so a reader importing
     // the data knows which file it came from. `to_fdf`'s parameter is exactly
     // that, and passing `None` would produce a valid file that has forgotten
     // its subject.
@@ -287,7 +281,7 @@ pub(super) fn form_data(doc: &mut OpenDoc) {
         "csv" => {
             let export = pdfcer_core::formcsv::to_csv(&data);
             let mut notes = vec![crate::text::export_form::wrote_csv(data.fields.len())];
-            // ★★ The neutralisation disclosure — see the header. Reported only
+            // The neutralisation disclosure — see the header. Reported only
             // when it fired, because a form with no formula-shaped values owes
             // no sentence, and a bar that narrates non-events stops being read.
             if export.neutralised > 0 {
@@ -345,7 +339,7 @@ fn suggested_form_path(doc: &OpenDoc) -> std::path::PathBuf {
     let stem = path
         .file_stem()
         .map_or_else(|| "form".to_owned(), |s| s.to_string_lossy().into_owned());
-    // ★★★ `set_file_name`, NOT `set_extension` — see [`suggested_path`] below,
+    // `set_file_name`, NOT `set_extension` — see [`suggested_path`] below,
     // which carries the whole argument. `set_extension` replaces everything
     // after the LAST dot, so a `plan.rev2.pdf` loses its revision here too.
     path.set_file_name(format!("{stem}.fdf")); // ui-text-exempt: a file extension, never displayed as prose
@@ -364,45 +358,36 @@ fn suggested_path(doc: &OpenDoc) -> std::path::PathBuf {
     let stem = path
         .file_stem()
         .map_or_else(|| "export".to_owned(), |s| s.to_string_lossy().into_owned());
-    // ★★★ **THE COMMENT THAT USED TO BE HERE WAS WRONG, AND THE CODE IT
-    // DEFENDED SILENTLY OVERWROTE THE OPERATOR'S EXPORTS.**
+    // **NOT `set_extension`, AND THE DIFFERENCE IS DATA LOSS.**
     //
-    // It read: *"`set_extension` rather than pushing a string: a document
-    // called `plan.rev2.pdf` has a stem of `plan.rev2`, and appending would
-    // produce `plan.rev2.dxf` either way."*
-    //
-    // The first clause is true and the conclusion does not follow.
-    // `Path::set_extension` replaces everything after the **last** dot, and
-    // `plan.rev2` has one — so the call produced **`plan.dxf`**, not
-    // `plan.rev2.dxf`. The revision was dropped.
+    // The reasoning that makes `set_extension` look safe — *"a document called
+    // `plan.rev2.pdf` has a stem of `plan.rev2`, and appending would produce
+    // `plan.rev2.dxf` either way"* — is true in its first clause and does not
+    // reach its conclusion. `Path::set_extension` replaces everything after
+    // the **last** dot, and `plan.rev2` has one, so that call produces
+    // **`plan.dxf`** and the revision is dropped.
     //
     // ⇒ Why that is a data-loss defect rather than a cosmetic one:
-    // `plan.rev2.pdf` and `plan.rev3.pdf` both suggested `plan.dxf`, so
-    // exporting the second **overwrote the first**, in a save dialog whose only
-    // warning is the operating system's generic "a file with that name already
-    // exists". `.rev2` / `.rev3` is an ordinary CAD naming shape, and the two
-    // files that collide are the two the operator is most likely to want side
-    // by side.
+    // `plan.rev2.pdf` and `plan.rev3.pdf` would both suggest `plan.dxf`, so
+    // exporting the second **overwrites the first**, in a save dialog whose
+    // only warning is the operating system's generic "a file with that name
+    // already exists". `.rev2` / `.rev3` is an ordinary CAD naming shape, and
+    // the two files that collide are the two the operator is most likely to
+    // want side by side. **A claim in a comment is not a test** — the test is
+    // `imageexport::tests::a_dotted_document_name_keeps_its_revision`.
     //
-    // ★ Found on 2026-09-04 by the image export, which wrote the same helper,
-    // tested it against `plan.rev2.pdf` on its first run, and watched it fail.
-    // The DXF path had shipped for weeks with a comment asserting the
-    // behaviour it did not have — **a claim in a comment is not a test**, and
-    // this one was load-bearing enough that its author wrote it down to explain
-    // why the safer-looking alternative was unnecessary.
-    //
-    // `set_file_name` with the stem interpolated appends unconditionally, which
-    // is what the old comment believed `set_extension` did. A document with no
-    // extension at all still gains one, because the stem of `plan` is `plan`.
+    // `set_file_name` with the stem interpolated appends unconditionally. A
+    // document with no extension at all still gains one, because the stem of
+    // `plan` is `plan`.
     path.set_file_name(format!("{stem}.dxf")); // ui-text-exempt: a file extension, never displayed as prose
     path
 }
 
-/// ★★★ **Write one or more pages out as PNG, JPEG or SVG** —
+/// **Write one or more pages out as PNG, JPEG or SVG** —
 /// `OPERATOR_REQUESTS.md` **O120**, and the third member of this module's
 /// family.
 ///
-/// The operator, 2026-09-03, verbatim:
+/// The operator, verbatim:
 ///
 /// > *"can you add the ability to export page(es) to png, jpg, svg. note that
 /// > there had better be full support (including transparency where
@@ -414,7 +399,7 @@ fn suggested_path(doc: &OpenDoc) -> std::path::PathBuf {
 /// its two siblings is the whole of what the module is for — **it reads the
 /// open file and writes a different one.**
 ///
-/// # ★★★ The refusal comes FIRST, before the picker and before the render
+/// # The refusal comes FIRST, before the picker and before the render
 ///
 /// [`crate::app::actions::imageexport::ImagePlan::impossible`] is asked before
 /// anything else happens, and the reason is the engine's own instruction:
@@ -434,7 +419,7 @@ fn suggested_path(doc: &OpenDoc) -> std::path::PathBuf {
 /// right, and carries a white rectangle the operator meets when the drawing is
 /// already inside somebody else's document.
 ///
-/// # ★★ Why there is no call to `pdfcer_render::export::flatten_over`
+/// # Why there is no call to `pdfcer_render::export::flatten_over`
 ///
 /// The engine offers it, this function does not use it, and that is worth
 /// stating rather than leaving as an apparent omission.
@@ -448,7 +433,7 @@ fn suggested_path(doc: &OpenDoc) -> std::path::PathBuf {
 /// the one used. `flatten_over` earns its place in a caller holding a pixmap
 /// it did not render — a clipboard paste, a region grab — and this is not one.
 ///
-/// # ★ The order is REFUSE, ASK, RENDER — and it differs from [`dxf`]'s
+/// # The order is REFUSE, ASK, RENDER — and it differs from [`dxf`]'s
 ///
 /// [`dxf`] does the whole write before opening the picker, on the rule *"the
 /// operator is never asked where to put a file that turns out to be empty"*,
@@ -464,7 +449,7 @@ fn suggested_path(doc: &OpenDoc) -> std::path::PathBuf {
 /// range naming no page, and the transparent-JPEG refusal are all on screen
 /// before the button is pressable.
 ///
-/// # ★★ Rule 4 — the disclosure, off-canvas and afterwards
+/// # Rule 4 — the disclosure, off-canvas and afterwards
 ///
 /// Nothing is marked on the page or on the canvas. Every sentence goes to
 /// [`super::record_notes`], the same slot [`dxf`] and [`form_data`] use,
@@ -489,7 +474,7 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
     use crate::app::settings::SettingsExt;
     use crate::text::export_image as t;
 
-    // ★★★ First, before the picker and before the render. See the header.
+    // First, before the picker and before the render. See the header.
     if let Some(why) = plan.impossible() {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -518,7 +503,7 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         return;
     };
 
-    // ★ Through the settings funnel, never `RenderOptions::default()`.
+    // Through the settings funnel, never `RenderOptions::default()`.
     //
     // `crate::app::settings::SettingsExt` is the one place that turns the
     // operator's configuration into render options, and a `syn` check in that
@@ -528,7 +513,7 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
     // decide what the exported picture LOOKS like, so an export that skipped
     // the funnel would disagree with the canvas the operator was looking at.
     //
-    // ★★ The annotation stance and the layer overrides come from the DOCUMENT,
+    // The annotation stance and the layer overrides come from the DOCUMENT,
     // which is what makes this export *a picture of what you can see*. An
     // operator who has hidden a layer and turned annotations off is looking at
     // a drawing, and the file they asked for is a picture of that drawing
@@ -563,7 +548,7 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         let target = imageexport::output_path(&chosen, plan.format, page_index, multi);
         let number = page_index.saturating_add(1);
 
-        // ★★ A `match` on the format, NOT `if plan.format.is_vector()`.
+        // A `match` on the format, NOT `if plan.format.is_vector()`.
         //
         // It was the `if` until EMF arrived, and the `if` would have written
         // every EMF export as an SVG — a file with the right extension, the
@@ -583,7 +568,7 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         };
         let produced = match produced {
             Ok(produced) => produced,
-            // ★ One page's failure STOPS the run rather than skipping on.
+            // One page's failure STOPS the run rather than skipping on.
             //
             // The alternative — carry on and summarise at the end — leaves the
             // operator with a directory of files and a sentence about a gap
@@ -591,7 +576,7 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
             // and every file written before it is on disk and named in the same
             // disclosure.
             //
-            // ★★ The two failures are told APART, and that is not decoration.
+            // The two failures are told APART, and that is not decoration.
             // *"Could not be drawn"* is about the page and will happen again
             // whatever format is chosen; *"could not be written as this
             // format"* is about the encoder, and its commonest cause —
@@ -630,16 +615,16 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
                 "export-image page={page_index} format={} bytes={} dpi={} transparent={}",
-                // ★★ The TOKEN, not `{:?}`, and for the reason the window
+                // The TOKEN, not `{:?}`, and for the reason the window
                 // states beside its own trace: this line and
                 // `export-image-requested` describe ONE format, forty lines
-                // apart in one export, and until 2026-09-14 they spelled it
-                // `Emf` and `emf`. A check that cross-checks the plan against
-                // the file — the obvious next one to write here, and
+                // apart in one export, and `{:?}` would spell it `Emf`
+                // here and `emf` there. A check that cross-checks the plan
+                // against the file — the obvious next one to write here, and
                 // `export_image_emf` already reads a field from each — would
-                // have found them unequal and reported that the window asked
+                // read those two as unequal and report that the window asked
                 // for one format and the writer produced another. All three
-                // readers (this, the window, `preferences.txt`) now share one
+                // readers (this, the window, `preferences.txt`) share one
                 // vocabulary: `prefs::exporting::image_format_key`.
                 crate::app::prefs::exporting::image_format_key(plan.format),
                 produced.bytes.len(),
@@ -648,7 +633,7 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
             )
         });
 
-        // ★★ Only the FIRST page's fidelity notes are kept.
+        // Only the FIRST page's fidelity notes are kept.
         //
         // The alternative is fifty copies of *"text is written as outlines"* in
         // one status line, which is a disclosure nobody reads — and Rule 4's
@@ -688,7 +673,7 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         return;
     }
 
-    // ★ The lead-in goes FIRST — `record_notes`' own rule: *"the first sentence
+    // The lead-in goes FIRST — `record_notes`' own rule: *"the first sentence
     // is the one an operator reads if they read only one."* For a single file
     // that is the file's own line; for many it is the count and the range of
     // names, because fifty paths in a status bar is not a sentence.
@@ -717,7 +702,7 @@ struct Output {
     notes: Vec<String>,
 }
 
-/// ★★ Why a page's writer failed, kept apart because the two failures ask
+/// Why a page's writer failed, kept apart because the two failures ask
 /// different things of the operator.
 ///
 /// [`Self::Render`] is about the **page** — it will happen again whatever
@@ -745,7 +730,7 @@ enum Produced {
     /// Geometry — the line names the drawing operations, which is the only
     /// honest size measure a vector file has.
     Vector { ops: usize },
-    /// ★ Geometry **and** pictures, which is what a metafile always is.
+    /// Geometry **and** pictures, which is what a metafile always is.
     ///
     /// A separate variant rather than reusing [`Self::Vector`], because the
     /// receipt has a second number to give: `ops` is only the part that
@@ -774,7 +759,7 @@ fn raster_bytes(
     let pixmap = &rendered.pixmap;
     let (width, height) = (pixmap.width(), pixmap.height());
 
-    // ★★★ `Some(dpi)`, never `None`. The engine's note is unambiguous about
+    // `Some(dpi)`, never `None`. The engine's note is unambiguous about
     // what leaving it out costs: *"without `pHYs` Word places a 300 DPI page
     // four times too large."* That is not a metadata nicety — it is the
     // difference between a paste the size of the page and one four times it,
@@ -805,7 +790,7 @@ fn raster_bytes(
         // arriving, and because a PNG on disk under a wrong extension is a
         // file the operator can still open.
         //
-        // ★ Note that these arms cost nothing in safety: the caller's own
+        // Note that these arms cost nothing in safety: the caller's own
         // `match` is exhaustive, so a fifth format is a compile error THERE —
         // at the routing decision, which is where it can be answered — and
         // never silently lands here.
@@ -834,7 +819,7 @@ fn svg_bytes(
     options: &pdfcer_render::RenderOptions,
     plan: &crate::app::actions::imageexport::ImagePlan,
 ) -> Result<Output, Failed> {
-    // ★★ The BACKGROUND, not the backdrop. `export_svg_view`'s own doc: *"The
+    // The BACKGROUND, not the backdrop. `export_svg_view`'s own doc: *"The
     // backdrop field of `render` is ignored: an SVG's background is
     // `SvgOptions::background`."* Setting one and expecting the other is
     // precisely the shape of mistake that ships a window promising transparency
@@ -855,7 +840,7 @@ fn svg_bytes(
     } else {
         crate::text::export_image::flattened_to_white().to_owned()
     }];
-    // ★★★ Rule 4's content. `svg_fidelity` always leads with the fact nothing
+    // Rule 4's content. `svg_fidelity` always leads with the fact nothing
     // counts — that text is glyph outlines — and then names every counter the
     // recording had to raise. See `crate::text::export_image`.
     notes.extend(crate::text::export_image::svg_fidelity(
@@ -882,7 +867,7 @@ fn svg_bytes(
 /// cannot express. A `if metafile { … } else { … }` inside one function would
 /// be two functions sharing a brace.
 ///
-/// # ★★ The background follows [`svg_bytes`]'s rule, for the same reason
+/// # The background follows [`svg_bytes`]'s rule, for the same reason
 ///
 /// `EmfOptions::background` is `Option<Rgb>` exactly as `SvgOptions`' is, and
 /// `None` is the transparent state — the engine's CLI calls it *"EMF's
@@ -895,7 +880,7 @@ fn svg_bytes(
 /// is worth the second comment because the two option structs are the two
 /// places in this file where the backdrop is a decoy.
 ///
-/// # ★★★ Nothing here validates the metafile, and that is a decision
+/// # Nothing here validates the metafile, and that is a decision
 ///
 /// `pdfcer_render::emf::walk_records` exists precisely so a consumer can
 /// check a metafile's record structure before handing it to
@@ -906,7 +891,7 @@ fn svg_bytes(
 /// sentence nobody could act on would cost a second pass over the whole
 /// metafile on every export.
 ///
-/// ⚠ The **clipboard** path is the one that owes this check, because there
+/// The **clipboard** path is the one that owes this check, because there
 /// `SetEnhMetaFileBits` is handed a raw buffer and a bad one is a GDI failure
 /// rather than a refusal. See `crate::clipboard`, which is where that call
 /// will live when the placement half is buildable.
@@ -931,7 +916,7 @@ fn emf_bytes(
     } else {
         crate::text::export_image::flattened_to_white().to_owned()
     }];
-    // ★★★ Rule 4's content, through the shell's own `EmfCounts` rather than
+    // Rule 4's content, through the shell's own `EmfCounts` rather than
     // the engine's `EmfOutcome`. The reason is testability and it is argued in
     // full on `EmfCounts` itself: `EmfOutcome` is `#[non_exhaustive]` with no
     // `Default`, so no test in this crate could ever build one, and the
@@ -949,24 +934,19 @@ fn emf_bytes(
     })
 }
 
-/// ★★★ **Write the words on one or more pages out as a plain text file** — the
-/// operator's ask of 2026-09-04, and the fourth member of this module's family.
+/// **Write the words on one or more pages out as a plain text file** — the
+/// operator's ask, and the fourth member of this module's family.
 ///
 /// > *"also the engine can export PDFs as text. we should have export/import
 /// > for that."*
 ///
-/// Half of that sentence shipped. `super::exporttext`'s header carries the full
-/// finding on the other half.
+/// Both halves of that sentence ship. `super::exporttext`'s header carries the
+/// finding on which of the three senses of *"import text"* the other half is:
+/// `EditSession::place_text` and `blank_document` are wired as
+/// `file.import_text`, and `crate::app::actions::importtext` is the other end
+/// of the round trip.
 ///
-/// ✅ **THE OTHER HALF SHIPPED TOO — 2026-09-07.** This paragraph read
-/// ~~*"`pdfcer-core` has no route from a text file back into a PDF, in any of
-/// the three senses 'import text' could mean, and a request has been filed
-/// rather than a round trip faked. Nothing here mentions one."*~~ The request
-/// was answered: `EditSession::place_text` and `blank_document` (`Pass 252.0`)
-/// are wired as `file.import_text`, and `crate::app::actions::importtext` is
-/// the other end of the round trip.
-///
-/// # ★★ It writes the CLIPBOARD's own string
+/// # It writes the CLIPBOARD's own string
 ///
 /// At the plan's defaults, the bytes this writes are exactly what
 /// `file.copy_document_text` puts on the clipboard: the settings funnel's
@@ -977,7 +957,7 @@ fn emf_bytes(
 /// inside one program is worse than either**, because both of them look like
 /// text and nothing on screen would say which one you have.
 ///
-/// # ★★★ The order is EXTRACT, REFUSE, ASK, WRITE — and the refusal is the
+/// # The order is EXTRACT, REFUSE, ASK, WRITE — and the refusal is the
 /// whole feature
 ///
 /// [`dxf`]'s ordering, not [`image`]'s, and for [`dxf`]'s stated rule: *"the
@@ -1000,7 +980,7 @@ fn emf_bytes(
 /// measurement — and the thing that makes this one empty is a property of the
 /// document that no window could have known in advance.
 ///
-/// # ★ `extract_pages_view`, for every scope, including "every page"
+/// # `extract_pages_view`, for every scope, including "every page"
 ///
 /// One entry point rather than two. `resolve_pages` already turns *every page*
 /// into `0..count`, so branching to `extract_document_view` for that case would
@@ -1014,7 +994,7 @@ fn emf_bytes(
 /// document they are looking at, unsaved edits included (decision 018), which
 /// is the same rule the two clipboard verbs and the print preview follow.
 ///
-/// # ★★ Rule 4 — the disclosure, off-canvas and afterwards
+/// # Rule 4 — the disclosure, off-canvas and afterwards
 ///
 /// Nothing is marked on the page. Every sentence goes to [`super::record_notes`]
 /// at the current epoch, and the set is chosen so each one tells the operator
@@ -1047,7 +1027,7 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
         return;
     }
 
-    // ★ The funnel, never `ExtractOptions::default()` — `app::settings`'
+    // The funnel, never `ExtractOptions::default()` — `app::settings`'
     // `syn` check fails the build on a bare constructor outside that module,
     // and the reason binds here hardest of anywhere: the operator's word-gap
     // and `/ActualText` settings decide what the exported string SAYS, and a
@@ -1080,7 +1060,7 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
         .collect();
     let assembled = super::exporttext::assemble(&pages, plan.separator);
 
-    // ★★★ THE REFUSAL. Before the picker. See the header.
+    // THE REFUSAL. Before the picker. See the header.
     if assembled.characters == 0 {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -1128,7 +1108,7 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
                     plan.line_endings
                 )
             });
-            // ★ The receipt goes FIRST — `record_notes`' own rule: *"the first
+            // The receipt goes FIRST — `record_notes`' own rule: *"the first
             // sentence is the one an operator reads if they read only one."*
             let mut notes = vec![t::wrote(
                 &target.display().to_string(),
@@ -1163,7 +1143,7 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
 /// The four counters from `TextDiagnostics` that change what an operator
 /// should do next, worded — or nothing, when all four are zero.
 ///
-/// ★ A helper rather than three inline `if`s at two call sites, because **both**
+/// A helper rather than four inline `if`s at two call sites, because **both**
 /// the refusal path and the success path owe exactly this set. A document whose
 /// every page is Identity-H-without-`/ToUnicode` refuses with a zero character
 /// count that looks identical to a scan, and the counter is the only thing that
@@ -1194,13 +1174,12 @@ fn honesty_notes(diagnostics: &pdfcer_core::text_extract::TextDiagnostics) -> Ve
             diagnostics.codes_total,
         ));
     }
-    // ★ Added 2026-09-10 with engine `Pass 290.0`, and it makes this helper's
-    // header say "four" where it says "three" — read that header before adding
-    // a fifth. It earns its place on the same test the other three pass: a
-    // Type 3 font may omit its own `/Resources` and inherit the page's
-    // (§7.8.3), so a page pdfcer had to assume an empty set for is a candidate
-    // explanation for text that came out short. Without it, that export is
-    // indistinguishable from a scan.
+    // The fourth counter — read this helper's header before adding a fifth.
+    // It earns its place on the same test the other three pass: a Type 3 font
+    // may omit its own `/Resources` and inherit the page's (§7.8.3), so a page
+    // pdfcer had to assume an empty set for is a candidate explanation for text
+    // that came out short. Without it, that export is indistinguishable from a
+    // scan.
     if diagnostics.pages_resources_defaulted > 0 {
         notes.push(t::pages_resources_defaulted(
             usize::try_from(diagnostics.pages_resources_defaulted).unwrap_or(usize::MAX),
@@ -1230,7 +1209,7 @@ mod tests {
     /// if either site changes shape, this stops describing it and the comment
     /// below is the instruction to whoever notices.
     ///
-    /// ★ Not a seam worth extracting: a shared helper would be a third place
+    /// Not a seam worth extracting: a shared helper would be a third place
     /// the rule lives, and the rule is `format!("{stem}.{ext}")`.
     fn named(document: &str, extension: &str) -> PathBuf {
         let mut path = Path::new(document).to_path_buf();
@@ -1241,22 +1220,22 @@ mod tests {
         path
     }
 
-    /// ★★★ **A revision in the document's name survives the export, and until
-    /// 2026-09-04 it did not.**
+    /// **A revision in the document's name survives the export.**
     ///
     /// `Path::set_extension` replaces everything after the **last** dot, so
-    /// `plan.rev2` became `plan` and the suggested name was `plan.dxf`.
+    /// under that call `plan.rev2` becomes `plan` and the suggested name is
+    /// `plan.dxf`.
     ///
     /// ⇒ The consequence is data loss, not untidiness: `plan.rev2.pdf` and
-    /// `plan.rev3.pdf` both suggested `plan.dxf`, so exporting the second
-    /// **overwrote the first** — behind nothing but the operating system's
+    /// `plan.rev3.pdf` would both suggest `plan.dxf`, so exporting the second
+    /// **overwrites the first** — behind nothing but the operating system's
     /// generic "a file with that name already exists". `.rev2` / `.rev3` is an
-    /// ordinary CAD naming shape, and the two files that collided are the two
-    /// an operator is most likely to want side by side.
+    /// ordinary CAD naming shape, and the two files that collide are the two an
+    /// operator is most likely to want side by side.
     ///
-    /// ★★ The site carried a comment asserting the behaviour it did not have,
-    /// written to explain why the safer-looking alternative was unnecessary.
-    /// **A claim in a comment is not a test.** This is that comment, executed.
+    /// The reasoning that makes `set_extension` look safe reads as true until
+    /// the helper meets a stem with a dot in it. **A claim in a comment is not
+    /// a test.** This is that comment, executed.
     #[test]
     fn a_dotted_document_name_keeps_its_revision() {
         assert_eq!(
@@ -1274,7 +1253,7 @@ mod tests {
 
     /// The ordinary case, and the one a document with no extension produces.
     ///
-    /// ★ The old comment's one true claim was that a document called `plan`
+    /// The old comment's one true claim was that a document called `plan`
     /// with no extension *"would gain one only through this call"*. It still
     /// does: the stem of `plan` is `plan`, and the format string appends
     /// unconditionally.

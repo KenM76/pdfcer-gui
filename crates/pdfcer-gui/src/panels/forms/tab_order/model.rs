@@ -26,7 +26,7 @@
 //!
 //! ---
 //!
-//! ## ★ 1. The order is `/Annots` array order, which is also PAINT order
+//! ## 1. The order is `/Annots` array order, which is also PAINT order
 //!
 //! Not `/AcroForm` `/Fields` order. The two commonly differ, and they answer
 //! different questions: `/Fields` order is the document's declaration order,
@@ -45,14 +45,14 @@
 //! earlier in `/Annots` does not only move it earlier in the tab sequence, it
 //! also moves it **underneath** anything that now follows it.
 //!
-//! ## ★ 2. Why this walks `page_annotations` rather than `widget_rects`
+//! ## 2. Why this walks `page_annotations` rather than `widget_rects`
 //!
 //! `EditSession::widget_rects(page)` is the verb this shell asked for and got
 //! (engine `e8e9881`), it returns exactly this order, and the canvas hit test
 //! uses it. It is **not** the right source for a *list*, and the difference is
 //! not stylistic.
 //!
-//! Read against the engine (`edit.rs:15786-15809`), `widget_rects` is
+//! Read against the engine, `EditSession::widget_rects` is
 //! `annot::page_annotations` — the same walk this module uses — followed by
 //! `filter(subtype == b"Widget")` and then a `filter_map` that drops any
 //! annotation whose `/Rect` is absent **or** whose object identity is absent.
@@ -67,7 +67,7 @@
 //! ([`PageTabs::anonymous`]). The order is byte-identical because it is the same
 //! array read by the same function.
 //!
-//! ## ★ 3. `/P` is never consulted — which page a widget is on is answered by
+//! ## 3. `/P` is never consulted — which page a widget is on is answered by
 //! `/Annots`
 //!
 //! The correction `crate::canvas::forms::boxes::place` records, applied here
@@ -85,7 +85,7 @@
 //! [`tests::a_widget_with_no_p_entry_is_still_listed`] builds a form that omits
 //! it so that every other assertion doubles as proof the key is unread.
 //!
-//! ## ★ 4. `/Tabs` — what this reads, and the one place it departs from the
+//! ## 4. `/Tabs` — what this reads, and the one place it departs from the
 //! engine
 //!
 //! ### What the standard actually says
@@ -124,14 +124,10 @@
 //! | `/S` | the document's structure (tag) tree | no — derived, not stored |
 //! | anything else | unknown | unknown |
 //!
-//! ### ★ `/Tabs` is NOT an inheritable page attribute, and this is a
-//! correction
+//! ### `/Tabs` is NOT an inheritable page attribute
 //!
-//! Both `pdfcer-core` (`edit.rs:7508`, *"`/Tabs` is inheritable through the page
-//! tree (Table 30), so an absent entry on the page itself is not the answer —
-//! the ancestors are walked"*) and the brief that commissioned this view state
-//! that `/Tabs` is inheritable. **The primary source says otherwise, and it
-//! says so twice.**
+//! ⚠ It reads as one, it has been written down as one more than once, and the
+//! primary source denies it twice:
 //!
 //! 1. ISO 32000-2 Table 31 marks `Rotate` *"(Optional; inheritable)"* and marks
 //!    `Tabs` *"(Optional; PDF 1.5)"* — no inheritability marker. Verified by
@@ -152,11 +148,14 @@
 //! kind of true-but-useless statement this view exists to avoid; treating it as
 //! the page's own would be asserting an inheritance the standard denies.
 //!
-//! The engine is not wrong in *effect* for its own purpose — it uses the walk
-//! only to decide whether to warn an author that a newly created field has no
-//! tab position, and warning on an ancestor `/Tabs /S` is the cautious
-//! direction. It is wrong as a statement about the format, and this shell must
-//! not repeat it as one.
+//! `pdfcer-core` walks the ancestors too, in
+//! `page_uses_structure_tab_order`, and that is correct for what it feeds:
+//! `FieldAuthorDisclosures::structure_tab_order` warns an author that a newly
+//! created field may have no tab position, and warning on an ancestor
+//! `/Tabs /S` is the cautious direction. **A conservative walk is not an
+//! application of inheritance**, and the distinction is what the two ends of
+//! this seam have to keep saying the same way: a false sentence in a doc
+//! comment propagates outward as a fact about the format.
 //!
 //! ### And a page with no `/Tabs` at all gets no mode name
 //!
@@ -169,7 +168,7 @@
 //! `/Tabs`, the `/Annots` order is what viewers use, and the `/Annots` order is
 //! what is on screen.
 //!
-//! ## ★ 5. What cannot appear, counted rather than dropped
+//! ## 5. What cannot appear, counted rather than dropped
 //!
 //! Four things, and each is a different fact:
 //!
@@ -289,18 +288,12 @@ pub struct PageTabs {
     /// claims — **the ids themselves**, in `/Annots` order. See this module's
     /// §5.
     ///
-    /// # ★ Why this is a list of ids and was a bare count
+    /// # Why this is a list of ids and not a count
     ///
-    /// It was `usize` for the whole of its life, because the only thing anybody
-    /// could do with an unclaimed widget was be told about it. The sentence it
-    /// fed even said so, hedging at the end — *"if the form declares entries
-    /// pdfcer could not read, these may be theirs"* — which is a guess offered
-    /// because there was nothing better to offer.
-    ///
-    /// `EditSession::adopt_widget` shipped 2026-08-19 and **takes an `ObjId`**.
-    /// The moment a verb exists that can act on one of these, a count is the
-    /// wrong shape: it can be displayed and it cannot be pressed. Widening it
-    /// here rather than re-walking `/Annots` at the button keeps one walk as
+    /// `EditSession::adopt_widget` **takes an `ObjId`**. Because a verb exists
+    /// that can act on one of these, a count is the wrong shape: it can be
+    /// displayed and it cannot be pressed. Listing ids here rather than
+    /// re-walking `/Annots` at the button keeps one walk as
     /// the single answer to *"which widgets does this page list that no field
     /// owns"*, which is what stops the list and the action from ever
     /// disagreeing about the set.
@@ -316,7 +309,7 @@ pub struct PageTabs {
     /// **Every indirect entry of this page's `/Annots`, in array order** —
     /// the sequence a reorder is expressed over.
     ///
-    /// # ★★ Why the rows are not enough, which is the whole reason this exists
+    /// # Why the rows are not enough, which is the whole reason this exists
     ///
     /// [`Self::rows`] is **widgets a field claims**. `/Annots` holds more: the
     /// unclaimed widgets, the anonymous ones, and every `/Link`, `/Text` and
@@ -328,7 +321,7 @@ pub struct PageTabs {
     /// the entries a form panel does not care about would delete a page's
     /// links.
     ///
-    /// # ★ Entries with no id are absent from this list, deliberately
+    /// # Entries with no id are absent from this list, deliberately
     ///
     /// A `/Widget` written as a direct dictionary has nothing to name it by.
     /// The engine's contract is that such an entry is **pinned** — it keeps its
@@ -344,7 +337,7 @@ pub struct PageTabs {
 
 /// One `/Widget` this page lists that no field in the form claims.
 ///
-/// # ★ Why this is a struct and not the bare `ObjId`
+/// # Why this is a struct and not the bare `ObjId`
 ///
 /// Because two independent things are true of it and both are needed at the
 /// same moment: it is a **thing to register** (the id, which
@@ -383,15 +376,15 @@ impl PageTabs {
 pub struct TabRow {
     /// **The annotation's object id** — what a reorder is expressed in.
     ///
-    /// ★★★ Added 2026-09-02 with `OPERATOR_REQUESTS.md` O99, and the engine
-    /// asked for it by name: `EditSession::reorder_annotations` takes
+    /// The engine asks for it by name:
+    /// `EditSession::reorder_annotations` takes
     /// `&[ObjId]`, **not indices**, and its reply says why in one sentence —
     /// *"the index you hold is almost never a raw `/Annots` index:
     /// `page_annotations` skips null and non-dictionary entries, so the
     /// numberings diverge on exactly the malformed files where a guess costs
     /// most."*
     ///
-    /// ★★ [`Self::position`] is therefore **not** an address. It is a number an
+    /// [`Self::position`] is therefore **not** an address. It is a number an
     /// operator counts while tabbing, it is 1-based, it counts widgets only,
     /// and passing it to the engine would be wrong on three axes at once. This
     /// field is the address; that one is the label.
@@ -399,7 +392,7 @@ pub struct TabRow {
     /// **This row's index within [`PageTabs::annots`]** — the slot it occupies
     /// in the page's array of indirect annotations.
     ///
-    /// # ★★ Why a second number, when the row already has two
+    /// # Why a second number, when the row already has two
     ///
     /// Because [`Self::position`] is a **label** and this is an **address**,
     /// and they count different things. `position` is 1-based and counts
@@ -467,7 +460,7 @@ pub fn collect<G: ObjectGraph + ?Sized>(
     slots: &[PageSlot],
     form: Option<&AcroForm>,
 ) -> Listing {
-    // ★★ `Option`, and `None` is the case this view matters MOST in.
+    // `Option`, and `None` is the case this view matters MOST in.
     //
     // A document can carry `/Widget` annotations and **no `/AcroForm` at all**,
     // and pdfcer makes exactly that: `insert_pages` copies everything reachable
@@ -476,12 +469,10 @@ pub fn collect<G: ObjectGraph + ?Sized>(
     // CAD drawing and every widget that arrives is unclaimed, because there is
     // nothing in the target that could claim one.
     //
-    // Taking `&AcroForm` made that state unrepresentable here, so the panel
-    // returned early on it and this section — the one surface that lists those
-    // widgets and offers to register them — was unreachable in the only
-    // situation that produces them. Found by a driven run on 2026-08-19, and it
-    // is the second instance of that shape in one day: the Bookmarks panel had
-    // the same early return over an empty outline.
+    // Taking `&AcroForm` would make that state unrepresentable here: the panel
+    // would have to return early, and this section — the one surface that lists
+    // those widgets and offers to register them — would be unreachable in the
+    // only situation that produces them.
     //
     // With `None` the owner map is empty, every widget falls to `unclaimed`,
     // and the rest of this function is unchanged. That is the correct answer
@@ -522,7 +513,7 @@ pub fn collect<G: ObjectGraph + ?Sized>(
         // can be made for it. See the comment at the increment.
         let mut widget_ordinal = 0usize;
         for annot in page_annotations(graph, slot.id) {
-            // ★ FIRST, and for EVERY entry — before the widget test, before the
+            // FIRST, and for EVERY entry — before the widget test, before the
             // ownership test, before anything this panel cares about.
             //
             // This is the array a reorder is a permutation of, and it is the
@@ -553,24 +544,18 @@ pub fn collect<G: ObjectGraph + ?Sized>(
                 page.anonymous += 1;
                 continue;
             };
-            // ★ Counted here, BEFORE the ownership question — which is the
-            // fix for a numbering defect this widening exposed.
+            // Counted here, BEFORE the ownership question, because the number
+            // is *"among the widgets on this page"* and not among the claimed
+            // ones. `rows` holds only the widgets a field claims, so counting
+            // from `rows.len()` would let an unclaimed or anonymous widget
+            // between two rows fail to advance the count and number every row
+            // after it one too low.
             //
-            // The position used to be `rows.len() + 1`, and `rows` holds only
-            // the widgets a field claims. So an unclaimed or anonymous widget
-            // between two rows did not advance the count, and every row after
-            // it was numbered one too low — while the field's own doc comment
-            // said the number was *"among the widgets on this page"*, which is
-            // what it now is.
-            //
-            // Invisible while the other two were bare counts: an operator could
-            // read "3 widgets belong to no field" and had nothing to line the
-            // numbers up against. It stops being invisible the moment those
-            // widgets are listed with positions beside the rows, and two
-            // sequences interleaved on one page must agree or neither is worth
-            // printing. It also matters more than a display nicety, because the
-            // number is what an operator uses to *find* the box: they press Tab
-            // that many times and expect the focus ring to land on it.
+            // Two interleaved sequences printed on one page must agree or
+            // neither is worth printing. And the number is more than a display
+            // nicety: it is what an operator uses to *find* the box — they
+            // press Tab that many times and expect the focus ring to land on
+            // it.
             widget_ordinal += 1;
             let Some(&(field_index, widget_index)) = owner.get(&id) else {
                 page.unclaimed.push(Unclaimed {
@@ -581,7 +566,7 @@ pub fn collect<G: ObjectGraph + ?Sized>(
             };
             let field = &fields[field_index];
             page.rows.push(TabRow {
-                // ★ The address a reorder is expressed in — see the field.
+                // The address a reorder is expressed in — see the field.
                 id,
                 // The entry this loop pushed at the top of THIS iteration, so
                 // it is this annotation's slot by construction rather than by
@@ -673,9 +658,9 @@ mod tests {
     /// for these purposes, and it lets the `/Tabs` tests state a page tree in
     /// six lines instead of hand-assembling a PDF.
     ///
-    /// It is built by hand rather than from a fixture for the reason
-    /// `HANDOFF.md` §2 keeps making: **a test that cannot reach the case is
-    /// satisfied by any implementation.** Exactly one of the eleven form
+    /// It is built by hand rather than from a fixture because **a test that
+    /// cannot reach the case is satisfied by any implementation.** Exactly one
+    /// of the eleven form
     /// fixtures carries a `/Tabs` at all, none carries one on an ancestor, and
     /// none carries an unrecognised name — so inheritance, precedence and the
     /// catch-all would every one of them be untested against the corpus, and a
@@ -726,7 +711,7 @@ mod tests {
         (graph, slot)
     }
 
-    /// **★ Every `/Tabs` name the standard defines is decoded, and the
+    /// **Every `/Tabs` name the standard defines is decoded, and the
     /// sequence each implies is the one ISO 32000-2 states.**
     ///
     /// The `A` and `W` rows are the reason this test is worth writing rather
@@ -766,7 +751,7 @@ mod tests {
         );
     }
 
-    /// **★ A page with no `/Tabs` anywhere is ABSENT, and gets no mode name.**
+    /// **A page with no `/Tabs` anywhere is ABSENT, and gets no mode name.**
     ///
     /// The constraint this whole view is built around. `/Tabs` is Optional and
     /// most files omit it, so this is the common case — and the temptation is
@@ -783,7 +768,7 @@ mod tests {
         assert_eq!(TabsEntry::Absent.sequence(), Sequence::AnnotsOrder);
     }
 
-    /// **★ A `/Tabs` on an ancestor is reported as an ancestor's, never as the
+    /// **A `/Tabs` on an ancestor is reported as an ancestor's, never as the
     /// page's own.**
     ///
     /// The correction in this module's §4, pinned from both directions. ISO
@@ -861,7 +846,7 @@ mod tests {
         assert_eq!(page_tabs(&graph, &slot), TabsEntry::Absent);
     }
 
-    /// **★ `tagged-struct-tabs.pdf` really carries `/Tabs /S` on its page.**
+    /// **`tagged-struct-tabs.pdf` really carries `/Tabs /S` on its page.**
     ///
     /// The one fixture in the corpus with a `/Tabs`, and the case the brief
     /// named as the one most worth seeing. Its page dictionary is
@@ -899,7 +884,7 @@ mod tests {
         assert_eq!(l.pages.len(), 1);
     }
 
-    /// **★ Every form fixture in the corpus reports its pages as `/Tabs`-less.**
+    /// **Every form fixture in the corpus reports its pages as `/Tabs`-less.**
     ///
     /// The other direction, and the one that would go wrong silently: if
     /// [`page_tabs`] ever returned something for a page that declares nothing,
@@ -926,7 +911,7 @@ mod tests {
         }
     }
 
-    /// **★ A real form produces rows, numbered from one per page, naming
+    /// **A real form produces rows, numbered from one per page, naming
     /// fields the form really has.**
     ///
     /// The end-to-end shape of the read path. It asserts what a screenshot
@@ -962,7 +947,7 @@ mod tests {
         }
     }
 
-    /// **★ A field with several widgets appears once per widget, and each row
+    /// **A field with several widgets appears once per widget, and each row
     /// says which one it is.**
     ///
     /// This is **correct, not a duplicate**, and it is the single most likely
@@ -1050,7 +1035,7 @@ mod tests {
         }
     }
 
-    /// **★ A widget with no `/P` entry is still listed** — the defect no
+    /// **A widget with no `/P` entry is still listed** — the defect no
     /// fixture in the corpus can catch.
     ///
     /// `/P` is Optional (§12.5.2 Table 164) and frequently absent, and
@@ -1100,28 +1085,21 @@ mod tests {
                 rect: None,
                 appearance_state: None,
                 on_states: Vec::new(),
-                // ★ `rotation` arrived with the engine's `rotate_widget` Pass on
-                // 2026-08-30. `None` here means the file states none, which is what
-                // every fixture in this shell wants: a widget with no `/MK /R`.
+                // `None` means the file states no `/MK /R`, which is what every
+                // fixture in this shell wants.
                 rotation: None,
                 has_off_appearance: false,
-                // ★ THE POINT OF THIS FIXTURE.
+                // THE POINT OF THIS FIXTURE.
                 page: None,
                 caption: None,
-                // `Pass 146.0`'s three, in a test fixture: the file states no
-                // border and no unusual flags. `None` is the honest value for a
-                // synthetic widget — it means "this file says nothing", which is
-                // exactly true of one built in a test.
-                // ★ `background` arrived with the engine's field-shading Pass on
-                // 2026-09-04, alongside `border`. `None` is the honest value for a
-                // synthetic widget for the same reason the two below it are: it
-                // means "this file states no /MK /BG", which is exactly true of one
-                // built in a test.
+                // The appearance fields below are all `None`, and `None` is the
+                // honest value for a synthetic widget: it means "this file states
+                // nothing here", which is exactly true of one built in a test.
+                // Inventing a border, a shading colour or a flag would make the
+                // fixture assert against a file no producer wrote.
                 background: None,
-                // The widget states no /MK /BC. Arrived with the engine commit
-                // fad0d2d (2026-09-07), which added /BC beside /BG and fixed a
-                // read/write key mismatch between them. See ENGINE_BACKLOG.md:
-                // neither colour is consumed by this shell yet.
+                // The widget states no /MK /BC. See `ENGINE_BACKLOG.md`: neither
+                // this colour nor `background` is consumed by this shell yet.
                 border_color: None,
                 border: None,
                 visibility: None,
@@ -1188,11 +1166,11 @@ mod tests {
         assert_eq!(l.pages[0].anonymous, 0);
     }
 
-    /// **★ A widget no field claims is counted, and a non-widget annotation is
+    /// **A widget no field claims is counted, and a non-widget annotation is
     /// counted separately.**
     ///
     /// Two different facts that a single "not listed" number would blur. An
-    /// ★★ A document with WIDGETS and NO `/AcroForm` lists every one of
+    /// A document with WIDGETS and NO `/AcroForm` lists every one of
     /// them as unclaimed.
     ///
     /// The state pdfcer manufactures and could not display. `insert_pages`
@@ -1201,15 +1179,10 @@ mod tests {
     /// form's pages inserted into a CAD drawing arrive as boxes that draw like
     /// fields, swallow every keystroke, and belong to nothing at all.
     ///
-    /// Before 2026-08-19 this was not merely untested — it was
-    /// **unrepresentable**: `collect` took `&AcroForm`, so the panel had to
-    /// return before reaching it, and the one section that lists these widgets
-    /// and offers to register them sat behind a guard the state cannot pass.
-    ///
-    /// Asserted at the model rather than through the panel because the model is
-    /// where the `Option` now lives; the panel's half is covered by the driven
-    /// check that inserts a form's pages and registers one of the orphans,
-    /// which is what found this.
+    /// Asserted at the model rather than through the panel because the model
+    /// is where the `Option<&AcroForm>` lives; the panel's half is covered by
+    /// the driven check that inserts a form's pages and registers one of the
+    /// orphans.
     #[test]
     fn a_document_with_widgets_and_no_acroform_lists_them_all() {
         let page_id = ObjId::new(1, 0);

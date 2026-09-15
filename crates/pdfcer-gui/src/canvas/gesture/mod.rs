@@ -20,13 +20,10 @@
 //!
 //! ## ★ Invariant 2, and it lives entirely in this file
 //!
-//! `GUI_ROADMAP.md` Phase 1, the second of the three ways a selection model
-//! loses *"selection survives navigation"*:
-//!
-//! > **Selection cleared by a click that was really a drag.** A pan gesture
-//! > begins with a press on the canvas. If press-on-empty clears the
-//! > selection, every pan that starts on blank paper destroys it. The clear
-//! > must be driven by a *completed click* with no drag, not by a press.
+//! **A selection is cleared by a completed click with no drag, never by a
+//! press** — `GUI_ROADMAP.md`'s selection rule. A pan, a marquee and a move
+//! all begin with a press on the canvas, so a press that cleared would make
+//! every one of those gestures start by destroying its own operand.
 //!
 //! [`GestureState::update`] returns [`GestureOutcome::Idle`] on the press
 //! frame — always, unconditionally, whatever the press landed on. A press
@@ -51,22 +48,22 @@
 //! selection, or, once a move verb is wired, silently rewrite the page.
 //!
 //! So the canvas reads `..._by(PointerButton::Primary)` and this module never
-//! sees any other button. The right button is excluded for the same reason,
-//! before the context menus of Phase 1.1 give it a job.
+//! sees any other button. The right button is excluded for the same reason:
+//! it opens the canvas context menu, which `canvas::menus` reads from the
+//! `Response` directly and never through this machine.
 //!
 //! ## Marquee versus pan: settled by the button and the tool, not by a heuristic
 //!
-//! The old shell left this open (*"a drag starting on empty canvas is
-//! ambiguous between pan and marquee-select"*). It is not ambiguous here, and
-//! it was decided at S0 rather than now: `canvas/mod.rs` switches egui's
-//! button-agnostic drag-to-scroll **off** and implements panning against the
-//! scroll offset on the middle button, with the stated reason *"the left
-//! button is reserved for the selection marquee that arrives at S4"*. Left
-//! drags marquee; middle drags pan; neither can be mistaken for the other,
-//! and no distance threshold or modal state is involved.
+//! A drag starting on empty canvas would be ambiguous between pan and
+//! marquee-select if the two shared a button. They do not: `canvas/mod.rs`
+//! switches egui's button-agnostic drag-to-scroll **off** and pans against the
+//! scroll offset on the **middle** button, leaving the left button to the
+//! selection marquee. Left drags marquee; middle drags pan; neither can be
+//! mistaken for the other, and no distance threshold or modal state is
+//! involved.
 //!
-//! Phase 3.2 adds the hand tool and space-to-pan, which give the *primary*
-//! button a second meaning — and the resolution keeps the same shape. The hand
+//! The hand tool and space-to-pan give the *primary* button a second
+//! meaning — and the resolution keeps the same shape. The hand
 //! tool is not a third `DragKind`: when [`crate::canvas::tool::active`] says
 //! `Hand`, `canvas/mod.rs` hands this machine a **blank** [`PointerFrame`], so
 //! a pan is not a gesture this module can see, let alone one it could confuse
@@ -147,18 +144,15 @@ pub struct PointerFrame {
     /// gone down at `(713.3, 588.4)` — the shape began **94 points** along the
     /// drag from the corner the operator picked. The magnitude is
     /// `first-interval travel ÷ zoom`, so it is worst exactly where it is least
-    /// forgivable: on a large sheet zoomed out to see all of it. The old shell
-    /// measured the same thing from the other end (`main.rs:19716`) — a drag
-    /// that should have spanned 50.5 points produced 42.0 — and fixed it the
-    /// same way.
+    /// forgivable: on a large sheet zoomed out to see all of it.
     ///
     /// It is carried on the frame rather than read inside
     /// [`GestureState::update`] for the reason every other signal here is: this
     /// module is drivable with no window, and a hidden read of
     /// `egui::InputState` would take that away. `None` is the honest answer for
     /// a frame that has no press behind it, and [`GestureState::update`] falls
-    /// back to [`Self::pos`] — which is exactly the previous behaviour, so a
-    /// caller that does not supply it loses accuracy and never correctness.
+    /// back to [`Self::pos`], so a caller that does not supply it loses
+    /// accuracy and never correctness.
     ///
     /// All four drag kinds get the fix, not just the markup band: a marquee
     /// that starts late encloses less than the operator drew round, and a move
@@ -248,21 +242,22 @@ impl GestureState {
     /// state machine that silently dropped a gesture it had already started
     /// would be wrong regardless of whether anything could reach it.
     pub fn update(&mut self, frame: PointerFrame, press: PressMeaning) -> GestureOutcome {
-        // ★★★ **WHAT THE MACHINE SAW, AND WHAT IT HOLDS** — 2026-09-08, the
-        // second instrument `HANDOFF_20260908_RESIZE.md` asks for.
+        // ★★★ **WHAT THE MACHINE SAW, AND WHAT IT HOLDS.**
         //
-        // `canvas-press` (in `canvas::pressing`) proved a grip press is
-        // understood as `Resize`; `canvas-resize-arm` (in `canvas::interact`)
-        // proved the arm that acts on a `Resize` outcome never runs. This line
-        // is the link between them: the raw frame signals egui delivered, the
-        // meaning the press carried on THAT frame, and the kind the machine is
-        // holding. Every explanation for the gap is distinguishable here —
+        // The link between `canvas-press` (in `canvas::pressing`), which says
+        // how a press was understood, and `canvas-resize-arm` (in
+        // `canvas::interact`), which says whether the arm acting on that
+        // outcome ran: the raw frame signals egui delivered, the meaning the
+        // press carried on THAT frame, and the kind the machine is holding.
+        // A gesture that never arrives has three otherwise indistinguishable
+        // explanations, and they separate here —
         //
         //   * `started=0` on every frame — egui never called it a drag on THIS
         //     response; some other widget took the press.
         //   * `started=1 drag=none`       — the meaning went stale or forbidden
         //     between the hover and the press frame.
-        //   * `started=1 drag=Resize … held=none` afterwards — the latch itself.
+        //   * `started=1 drag=Resize … held=none` afterwards — the machine
+        //     dropped the gesture it had started.
         //
         // `trace_changed`, because this runs every frame the canvas is hovered;
         // the flags flip on exactly the frames that matter and nowhere else.
@@ -368,12 +363,11 @@ const GESTURE_SLOT: &str = "canvas-gesture"; // ui-text-exempt: trace slot name,
 
 #[cfg(test)]
 mod tests {
-    // ★ Imported in the TEST module only. The 2026-08-18 R2 split moved the
-    // outcome vocabulary — and with it every production reference to
-    // `MarkupKind` — into `outcome`, so a module-level import would be unused
-    // in the shipping build and clippy refuses it. The tests still name the
-    // kind because they assert on the outcome the machine reports, which is
-    // the surface, not the file it lives in.
+    // ★ Imported in the TEST module only: every production reference to
+    // `MarkupKind` is in `outcome`, so a module-level import would be unused in
+    // the shipping build and clippy refuses it. The tests still name the kind
+    // because they assert on the outcome the machine reports, which is the
+    // surface, not the file it lives in.
     use crate::canvas::markup::MarkupKind;
     use egui::{Rect, Vec2};
 
@@ -991,8 +985,9 @@ mod tests {
     ///
     /// The regression test for the 94-point offset measured on a real drag —
     /// see [`PointerFrame::press_origin`]. It is stated as a **magnitude**
-    /// against the press point rather than as "the band is on the page",
-    /// because the defective build put the band on the page too.
+    /// against the press point rather than as "the band is on the page": a band
+    /// anchored at the recognised frame is on the page too, just in the wrong
+    /// place.
     ///
     /// The fallback is asserted in the same test: a frame with no press origin
     /// behaves exactly as it did before the field existed, so supplying it is

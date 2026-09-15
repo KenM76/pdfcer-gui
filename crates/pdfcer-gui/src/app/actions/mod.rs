@@ -1,25 +1,23 @@
-//! ★ **This module's documentation lives in `OVERVIEW.md`** beside this file,
+//! **This module's documentation lives in `OVERVIEW.md`** beside this file,
 //! pulled in below with `include_str!`.
 //!
-//! It was moved there on 2026-08-19 when `Action` gained `MoveHandle` and the
-//! file crossed R2's 1,500-line ceiling. The gate's own message says *"split
-//! the module along its seams — one subject per file — rather than raising the
-//! limit"*, and this file has exactly one seam and it is not where the lines
-//! are: the whole body is **one enum**, which cannot be split without inventing
-//! a nested variant and rewriting every match arm in the crate. The bulk is
-//! prose, and prose has a file format.
+//! What is left in the `.rs` file is the declaration list, the re-exports and
+//! the disclosure wiring; the vocabulary itself is [`action`]. R2's gate says
+//! *"split the module along its seams — one subject per file — rather than
+//! raising the limit"*, and the seam that remains here is not one more `mod`:
+//! it is prose against code. The prose is the map of the whole `actions` tree,
+//! and prose has a file format.
 //!
 //! Nothing is lost and nothing is hidden. `include_str!` puts the text back
 //! into the rendered docs verbatim, the file sits in the same directory, and
-//! `cargo doc` and a reader browsing the source both see the same thing they
-//! did before. R5 asks that the documentation be *complete and adjacent*; it
-//! does not ask that it be in a `.rs` file.
+//! `cargo doc` and a reader browsing the source both see the same text. R5
+//! asks that the documentation be *complete and adjacent*; it does not ask
+//! that it be in a `.rs` file.
 #![doc = include_str!("OVERVIEW.md")]
 
+/// Turning a bookmark's destination into the moves that arrive at it.
 pub mod destination;
-/// ★★ **The verbs whose subject is a PREFERENCE rather than a document**
-/// — split out of [`action`] and [`apply`] under R2 on 2026-09-12, when
-/// **O187** gave the family its second member.
+/// **The verbs whose subject is a PREFERENCE rather than a document.**
 ///
 /// Its header carries the four properties every member shares, and the
 /// first of them is why the family exists at all: a preference needs **no
@@ -29,36 +27,31 @@ pub mod destination;
 /// — `find::bar` and `panels::pages::previews` both name
 /// [`prefs::PrefAction`] to build one.
 pub mod prefs;
-/// ★ **Reordering a page's annotations** — O99. Split out of [`forms`] on
-/// 2026-09-02 under R2; its header carries why the disclosures are the
-/// interesting part rather than the call.
+/// **Reordering a page's annotations** — O99. Its header carries why the
+/// disclosures are the interesting part rather than the call.
 pub(super) mod reorder;
-/// ★ **The three saves**, split out of [`apply`] on 2026-09-02 under R2. All
-/// three ask a signature question before the document guard and hand off to
+/// **The three saves.** All three ask a signature question before the document
+/// guard and hand off to
 /// `lifecycle`; its header carries why Save As asks the COPY question rather
 /// than the in-place one, which reads like a mistake and is not.
 mod saving;
-/// The sentences one edit owed, and the epoch rule that keeps them honest.
-/// Split out of this file under R2 when annotation selection needed the room;
-/// its own header carries the seam.
-/// The verbs that change an annotation — delete today, the Format tab's
-/// restyles next. Split out of `apply` under R2; its header carries the seam
-/// and the ce-dimension routing obligation every future verb here inherits.
-/// Turning a bookmark's destination into the moves that arrive at it.
 /// The verbs that move the operator rather than the document.
 mod view;
 
-/// ★★★ **Placing NEW page text, and the width question** —
+/// **Placing NEW page text, and the width question** —
 /// `OPERATOR_REQUESTS.md` **O127**, defect 2.
 ///
-/// Split out of [`apply`] under R2 on 2026-09-04, along [`funnel`]'s seam: that
-/// file routes, and this one **decides**. A PDF has no paragraph, so a
-/// multi-line add needs a width to wrap against — and once Enter makes a line
+/// Beside [`funnel`], along that file's seam: it routes, and this one
+/// **decides**. A PDF has no paragraph, so a multi-line add needs a width to
+/// wrap against — and once Enter makes a line
 /// break at a *clicked* caret, which has no extent, somebody has to answer
 /// where the second line ends. Its header carries the answer and, more
 /// importantly, why the answer is read off the operator's own sheet rather than
 /// invented.
 mod addtext;
+/// The verbs that change an annotation — delete today, the Format tab's
+/// restyles next. Its header carries the seam and the ce-dimension routing
+/// obligation every future verb here inherits.
 mod annots;
 /// What applying an [`Action`] does — the interpreter half of this module.
 ///
@@ -67,7 +60,7 @@ mod annots;
 /// inherent methods on [`crate::app::PdfcerApp`] rather than free functions, so
 /// they are reachable exactly where they were before the split.
 mod apply;
-/// ★★ The three verbs whose subject is a whole **file living inside the
+/// The three verbs whose subject is a whole **file living inside the
 /// document** — attach, remove, and save one out (ISO 32000-1 §7.11.4.1).
 ///
 /// Its header carries the property that makes them a family rather than a
@@ -82,12 +75,11 @@ mod apply;
 /// [`attachments::AttachmentAction`] and [`attachments::AttachmentRef`] to
 /// build one.
 pub mod attachments;
-/// ★ The three verbs whose subject is one entry in the document's outline —
+/// The three verbs whose subject is one entry in the document's outline —
 /// add, rename, and delete-with-its-subtree.
 ///
-/// Split out of [`action`] under R2 on 2026-08-28, the day `pdfcer-core`
-/// `Pass 156.0` turned a one-verb family into a three-verb one. Its header
-/// carries the property that makes them a family rather than a size-driven
+/// Its header carries the property that makes them a family rather than a
+/// size-driven
 /// cut — **every one of them addresses its operand by `ObjId`, never by a
 /// position in the tree**, because an outline is renumbered by every edit to
 /// it — and the §12.3.3 `/Count` table the engine sent this shell unprompted.
@@ -97,11 +89,11 @@ pub mod attachments;
 /// `panels::bookmarks::edit` both name [`bookmarks::BookmarkAction`] to build
 /// one.
 pub mod bookmarks;
-/// ★ `ViewChrome` — which piece of View ▸ Display an action is about.
+/// `ViewChrome` — which piece of View ▸ Display an action is about.
 ///
-/// Split out on 2026-08-19: it is not an action, it is the one *operand* in
-/// this vocabulary with a type of its own. Re-exported below, so no call site
-/// learns that it moved.
+/// Its own file because it is not an action: it is the one *operand* in this
+/// vocabulary with a type of its own. Re-exported below, so no call site has
+/// to name this module.
 mod chrome;
 /// **Placing one of the operator's OWN stamps** — O172's second half.
 ///
@@ -112,16 +104,16 @@ mod chrome;
 /// travel. Its header carries the argument in full.
 mod customstamp;
 /// Extracting pages into a new file — the one page verb that writes a file
-/// rather than changing the open document. Split out of `pages` under R2 on
-/// 2026-08-28; its header carries the seam.
+/// rather than changing the open document. Its header carries the seam
+/// against [`pages`].
 mod extract;
-/// ★ Combine several PDFs into a new file — `OPERATOR_REQUESTS.md` O68.
+/// Combine several PDFs into a new file — `OPERATOR_REQUESTS.md` O68.
 ///
 /// Beside [`extract`] rather than in `pages`, because the two share the
 /// property that decides where they live: both produce **new file bytes** and
 /// touch neither the session nor the undo log. See its header.
 pub(crate) mod merge;
-/// ★★★ Author an Acrobat **stamp collection** from this document's pages —
+/// Author an Acrobat **stamp collection** from this document's pages —
 /// `OPERATOR_REQUESTS.md` O169.
 ///
 /// Beside [`extract`] and [`merge`] for the property all three share: they
@@ -132,13 +124,12 @@ pub(crate) mod merge;
 /// `crate::stamps`, which needs no picker to test.
 mod stamps;
 /// Authoring the annotations that carry WORDS — the sticky note, the text box
-/// and the stamp. Split out of `apply` under R2 on 2026-08-28; its header
-/// carries the seam, which is *composes rather than routes*.
+/// and the stamp. Its header carries the seam, which is *composes rather
+/// than routes*.
 mod textannot;
 /// **Committing an edit to text that is already on the page** — the body of
-/// `Action::CommitTextEdit`, split out of `apply` on 2026-09-12 under R2. Its
-/// header carries why that arm had stopped routing and started computing, and
-/// why the two neighbouring commit verbs did not come with it.
+/// `Action::CommitTextEdit`. Its header carries why that body computes rather
+/// than routes, and why the two neighbouring commit verbs are not here.
 mod textcommit;
 
 /// **Pages dragged out of one open document and into another.**
@@ -148,50 +139,55 @@ mod textcommit;
 /// header carries the argument for the drop being a *copy* — it is about undo,
 /// not about caution.
 mod crossdoc;
-/// ★ Everything the **ce-dimension** feature asks the document to do — the
+/// Everything the **ce-dimension** feature asks the document to do — the
 /// groups, their scales, standards and style defaults, and the per-ce-dimension
 /// overrides.
 ///
 /// A sibling of [`annots`] and [`pages`], drawn along the same seam they are:
 /// *what class of thing does this verb act on?* Its own header carries the one
-/// fact a reader needs first — that four of its eight verbs regenerate every
-/// member of a group, on every page, and four touch exactly one annotation.
+/// fact a reader needs first — that some of its verbs regenerate every member
+/// of a group, on every page, and the rest touch exactly one annotation.
 ///
 /// `pub` rather than private, unlike [`apply`], because the surfaces that raise
 /// these verbs are outside `app`: `dialogs::scale`, `dialogs::dimension_groups`,
 /// `panels::dimension` and `canvas::measure` all name
 /// [`dimensions::DimensionAction`] to build one.
 pub mod dimensions;
+/// The sentences one edit owed, and the epoch rule that keeps them honest.
+/// Its own header carries the seam.
 pub mod disclosure;
-/// ★★ The four actions that replace the open document — Open, New, NewSized,
+/// The four actions that replace the open document — Open, New, NewSized,
 /// Close — and the two guards all four share.
 ///
-/// Split out of [`apply`] on 2026-08-19 along a seam that file had already
-/// described in prose. Its header carries the guard table, why the two guards
-/// are two predicates and not one, and the defect the second of them closed:
-/// until that day all four destroyed every edit made since the file was
-/// opened, silently, while `file.close`'s tooltip promised otherwise.
+/// Its header carries the guard table and why the two guards are two
+/// predicates rather than one. The second exists because without it all four
+/// destroy every edit made since the file was opened, silently, while
+/// `file.close`'s tooltip promises otherwise.
 mod document;
-/// ★ What leaves the document — DXF today, and the sixth sibling of [`apply`].
+/// What leaves the document — DXF today, and the sixth sibling of [`apply`].
 ///
 /// Its header carries the property that makes it a subject rather than a
 /// size-driven cut: **no verb in it changes the document at all**, so every
 /// rule the mutation funnel enforces is irrelevant to them and every rule about
 /// file handling applies instead.
 pub mod export;
-/// Registering a form control the document draws but no field claims — one
-/// verb, whose refusal and disclosure wording is the substantial part.
-/// The document-level font verbs - embedding the programs a document names but
+/// The document-level font verbs — embedding the programs a document names but
 /// does not carry. Its header carries the one thing a reader must not move:
 /// the shell owns the honesty of the donor match, and the engine will not
 /// check it.
 mod fonts;
+/// **Everything done to a form FIELD** — fill, place, author, rename, delete,
+/// and registering a control the document draws that no field claims. Its
+/// header carries the property that makes the family a family: every verb
+/// addresses a control by fully qualified name or by widget `ObjId`, never by
+/// a paint-order index.
 pub mod forms;
-/// ★ Stepping the command log, in both directions — `Direction`, its four
+/// Stepping the command log, in both directions — `Direction`, its four
 /// per-direction answers, and `history_step`.
 ///
-/// Split out of [`apply`] on 2026-08-19: that module answers *what does this
-/// verb do to the document*, and undo and redo describe **no edit at all** —
+/// A sibling of [`apply`] rather than an arm in it: that module answers *what
+/// does this verb do to the document*, and undo and redo describe **no edit at
+/// all** —
 /// they ask the session to replay one it has already recorded.
 mod history;
 pub use chrome::ViewChrome;
@@ -202,7 +198,7 @@ pub use chrome::ViewChrome;
 /// one's is *a page index is a position, not an identity*. See its header for
 /// the table of what each kind of page edit invalidates.
 pub mod pages;
-/// ★★★ **Changing the paper an open drawing sits on** — `set_media_boxes`, and
+/// **Changing the paper an open drawing sits on** — `set_media_boxes`, and
 /// the pre-commit survey that tells the operator whether he is about to crop
 /// his drawing or leave it alone.
 ///
@@ -215,27 +211,26 @@ pub mod pages;
 pub mod pagesize;
 
 pub use disclosure::{EditDisclosure, last_edit_disclosure};
-// ★ Crate-visible rather than `pub`, and re-exported here rather than reached
+// Crate-visible rather than `pub`, and re-exported here rather than reached
 // through `disclosure::` at every call site: the split was an R2 move and it
 // must not change what any caller can see or how they spell it. Widening these
 // to `pub` to make one `pub use` compile would have made a private recording
 // path part of the crate's surface as a side effect of a file split.
 pub(crate) use disclosure::{record_edit_disclosure, record_note, record_notes};
 
-/// The three arms that mark content for removal. Split out of `apply` under
-/// rule R2; its header carries the seam argument and names the one thing
-/// deliberately absent from it.
-/// ★ **The edit funnel** — `vector_edit`, the four-step protocol every verb
-/// that changes a document passes through. Split out of `apply` under R2; its
-/// header carries why a router and a protocol are two subjects.
+/// **The edit funnel** — `vector_edit`, the four-step protocol every verb that
+/// changes a document passes through. Its header carries why a router and a
+/// protocol are two subjects.
 mod funnel;
+/// The three arms that mark content for removal. Its header carries the seam
+/// argument and names the one thing deliberately absent from it.
 mod redact;
 pub mod redactimg;
-/// ★ **Redact what is selected on the page** — the third marking route, and the
+/// **Redact what is selected on the page** — the third marking route, and the
 /// first that does not go through text. Its header carries why the search box
 /// could not reach a vector title block, a stamp or a logo.
 mod redactsel;
-/// ★★ **Record a comment's review status** — `/State` and `/StateModel`,
+/// **Record a comment's review status** — `/State` and `/StateModel`,
 /// §12.5.6.3. Its own file rather than a place in [`annots`], because that
 /// module is *"what happens to a thing that already exists"* and this one adds
 /// a separate annotation and changes nothing about the comment it names.
@@ -246,8 +241,8 @@ mod redactsel;
 /// R2's ceiling.
 pub mod reviewstate;
 /// The one arm that signs a document — `Action::SignDocument`'s body, split
-/// out under R2 on the seam `saving`, `redact` and `destination` already
-/// occupy. `#[cfg]` for `crate::sign`'s reason: without the capability there is
+/// on the seam `saving`, `redact` and `destination` already occupy.
+/// `#[cfg]` for `crate::sign`'s reason: without the capability there is
 /// no verb for it to call.
 #[cfg(feature = "signing")]
 pub mod sign;
@@ -260,34 +255,6 @@ pub mod sign;
 // *where does an operator read one?*
 // ---------------------------------------------------------------------------
 
-/// **The action vocabulary**, one variant per operator intent.
-///
-/// Split out of this file on 2026-08-20, when it crossed rule R2's ceiling
-/// for the second time. The header above records the previous answer — the
-/// module's prose moved to `OVERVIEW.md`, because *"the bulk is prose, and
-/// prose has a file format"* — and this is the same reasoning applied one
-/// step further along. What is left here is the **module**: its declarations,
-/// its re-exports and the disclosure wiring. What moved is the **type**.
-///
-/// That the enum still cannot be split *internally* remains true and remains
-/// stated in the header. `action.rs` is now within a hundred lines of the
-/// ceiling itself, so the next family of variants to grow is the one that
-/// will have to become a sub-enum beside `PageAction` and `DimensionAction`.
-/// Measured on 2026-08-20, the candidate is **markup**: `CommitMarkup` (116
-/// lines), `PasteMarkup` (69 — deleted 2026-09-08), `CommitTextMarkup` (57), `BeginTextAnnot` (40),
-/// `SetMarkupStyle` (39), `CommitTextAnnot` (29) and `DeleteAnnotation` — some
-/// 370 lines, whose call sites are concentrated in `canvas::markup` and
-/// `app::actions::annots`. Written down here so the next person does not have
-/// to re-measure it under deadline.
-/// ★ **Everything that changes page geometry** — delete, the four move verbs,
-/// the Bézier handle and the transform. Split out of [`action`] under R2 on
-/// 2026-08-20; its header carries the one property every variant shares (they
-/// all address paint-order indices into one content stream) and the argument
-/// for why there are two verbs that both "move things".
-/// **Changing how EXISTING text looks** — size, colour, face, weight, slant.
-///
-/// `pub` because [`action::Action::TextStyle`] names its `StyleChange` and the
-/// Properties panel constructs one.
 /// **An instrument, not a feature** — how long the engine takes to accept one
 /// edit, measured rather than reasoned. `#[cfg(test)]` and `#[ignore]`d; it
 /// exists because `OPERATOR_REQUESTS.md` O63's whole design turns on whether
@@ -296,20 +263,30 @@ pub mod sign;
 /// was wrong.
 #[cfg(test)]
 mod latency;
+/// **Changing how EXISTING text looks** — size, colour, face, weight, slant.
+///
+/// `pub` because [`action::Action::TextStyle`] names its `StyleChange` and the
+/// Properties panel constructs one.
 pub mod textstyle;
 
+/// **Everything that changes page geometry** — delete, the four move verbs,
+/// the Bézier handle and the transform. Its header carries the one property
+/// every variant shares (they all address paint-order indices into one content
+/// stream) and the argument for why there are two verbs that both "move
+/// things".
 pub mod vector;
 
-// ★★★ O122 — the two halves of handing the document to Acrobat: the arm that
+// O122 — the two halves of handing the document to Acrobat: the arm that
 // raises the question, and the drain that saves, launches and then closes. Its
 // header carries the save→launch→close ordering and why the other order loses
 // the operator's document off their screen when a `spawn` fails.
 mod acrobat;
+/// **The action vocabulary**, one variant per operator intent — the type this
+/// module's `OVERVIEW.md` describes. It cannot be split internally: it is one
+/// enum, and a nested variant would rewrite every match arm in the crate. What
+/// grows out of it instead is a sub-enum per family, the shape `PageAction`,
+/// `DimensionAction` and `RedactAction` already have.
 mod action;
-/// The three verbs that exist only to move a native file picker out of the
-/// layout pass — DXF, form data and a compacted copy. Split out of [`action`]
-/// under R2 on 2026-08-28; its header carries the property they share and the
-/// reason a SAVE is filed with two exports.
 /// The verbs whose subject is a whole annotation — move, resize, remove. Its
 /// header carries what makes them a family: all three find their operand by
 /// stable object id, so none needs a page to locate one.
@@ -317,15 +294,16 @@ pub mod annot;
 /// The verbs that re-shape a page's own text. Its header carries the reason
 /// reflow is not like its neighbours: it re-emits the page's FIRST content
 /// stream and the commit sweep empties the rest, so it refuses a page carrying
-/// a non-empty extra stream. (Corrected 2026-09-14: this said "planned against
-/// the BASE document", which engine `Pass 257.0` made false on 2026-09-06.)
+/// a non-empty extra stream.
 pub mod text;
+/// The three verbs that exist only to move a native file picker out of the
+/// layout pass — DXF, form data and a compacted copy. Its header carries the
+/// property they share and the reason a SAVE is filed with two exports.
 pub mod write;
-/// ★★ The verbs whose subject is a **form XObject** — the shared drawing a CAD
+/// The verbs whose subject is a **form XObject** — the shared drawing a CAD
 /// producer invokes from every sheet (§8.10.1).
 ///
-/// One verb today, `unshare_form`, wired 2026-08-28 after `EDITABLE_SURFACES.md`
-/// found it implemented in the engine and called by nothing here. Its header
+/// One verb today, `unshare_form`. Its header
 /// carries the property that makes this a family rather than a stray: **the
 /// operand is a stream object paired with the page that invokes it**, a
 /// `(usize, ObjId)` whose halves are not independent, and no other family in
@@ -333,21 +311,20 @@ pub mod write;
 ///
 /// It also carries the one fact a reader must not get wrong — the granularity
 /// is **one page, not one invocation**, which is the engine's decision — and
-/// the reason every one of the verb's seven refusals is worded when its
-/// neighbours word one of six: after a refusal here the page looks exactly as
+/// the reason every one of the verb's refusals is worded rather than collapsed
+/// into a shrug: after a refusal here the page looks exactly as
 /// it does after a success, so silence reads as *"it worked"* and sends the
 /// operator on to edit content they still share.
 pub mod xobject;
 
 pub use action::Action;
-// ★ The redaction family's sub-enum, re-exported beside `Action` exactly as
+// The redaction family's sub-enum, re-exported beside `Action` exactly as
 // `VectorAction` is, so a call site writes `actions::RedactAction` rather than
-// reaching through the module that happens to hold the bodies. It moved out of
-// `Action` on 2026-09-06 under R2 — see its own header for why it went before
-// markup, which the written plan had nominated.
+// reaching through the module that happens to hold the bodies. See its own
+// header for why this family became a sub-enum before markup did.
 pub use redact::RedactAction;
 pub use vector::VectorAction;
-// ★★★ The third payload type, and the only one whose bodies live outside
+// The third payload type, and the only one whose bodies live outside
 // this module — `Action::DeclineOnCanvas`'s two-armed vocabulary, which is
 // declared beside the store it feeds because that is where the argument for
 // keeping it short belongs.
@@ -362,25 +339,22 @@ pub use vector::VectorAction;
 pub use crate::app::status::decline::CanvasDecline;
 
 // ---------------------------------------------------------------------------
-// ★ EVERYTHING BELOW THIS LINE IS TEST-ONLY, AND THAT IS A GATE REQUIREMENT
+// EVERYTHING BELOW THIS LINE IS TEST-ONLY, AND THAT IS A GATE REQUIREMENT
 //   RATHER THAN A HOUSE STYLE.
 //
 // `tools/gates/check-ui-strings.sh` truncates each file at its FIRST
 // column-0 `#[cfg(test)]` and scans nothing after it — its own header states
 // the limit in as many words ("any non-test code placed AFTER the test module
-// is invisible to the checker") and records the day a planted violation
-// failed to fire because of it.
+// is invisible to the checker").
 //
 // So a `#[cfg(test)]` item in the MIDDLE of a file silently disarms rule R1
-// for the rest of that file. `plant_edit_disclosure_for_test` was written
-// beside the store it plants into, next to `record_edit_disclosure` — which
-// would have put the attribute at line 244 of 1,253 and left this module's
-// entire `Action` enum, its doc comments and every `format!` in
-// `PdfcerApp::apply` unscanned. Measured, not assumed: a violation planted
-// after such a line passes the gate.
+// for the rest of that file: a violation planted after such a line passes the
+// gate, measured rather than assumed. `plant_edit_disclosure_for_test` belongs
+// beside the store it plants into, next to `record_edit_disclosure`, and
+// putting it there would leave everything below that point unscanned.
 //
 // Keeping the test-only helper here, below all real code, costs one level of
-// distance from the thing it plants into and buys back a thousand lines of
+// distance from the thing it plants into and buys back the rest of the file's
 // coverage.
 // ---------------------------------------------------------------------------
 
@@ -401,29 +375,27 @@ pub(crate) fn plant_edit_disclosure_for_test(disclosure: EditDisclosure) {
     record_edit_disclosure(Some(disclosure));
 }
 
-/// ★★★ **What an image export IS** — the format, the pages, the resolution and
+/// **What an image export IS** — the format, the pages, the resolution and
 /// whether transparency survives — decided as a value before anything is
 /// written, and with the one combination pdfcer refuses named as an enum rather
 /// than as a `bool`. `OPERATOR_REQUESTS.md` O120.
 pub mod imageexport;
 
-/// ★★★ **What a TEXT export is** — which pages, what goes between them, and how
-/// the bytes are encoded — plus the pure parts of making one, and the recorded
-/// finding that the **import** half the operator asked for in the same sentence
-/// does not exist in `pdfcer-core` at all.
+/// **What a TEXT export is** — which pages, what goes between them, and how
+/// the bytes are encoded — plus the pure parts of making one.
 ///
-/// Its header carries the three different features "import text" could mean and
-/// the reason none of the three is buildable today. Read it before adding an
-/// import control.
+/// Its header carries the several different features "import text" could mean,
+/// which matters because the operator asked for export and import in one
+/// sentence and only one of those meanings is [`importtext`].
 pub mod exporttext;
-/// ★ **A text file becomes pages** — `Action::ImportText`'s body, wired
-/// 2026-09-07 on `pdfcer-core` `Pass 252.0`. Mostly a disclosure: its header
-/// lists the six judgements `PlaceTextReport` carries about the operator's own
-/// file, and why the engine's ready-made sentences are not the ones printed.
+/// **A text file becomes pages** — `Action::ImportText`'s body, on
+/// `EditSession::place_text`. Mostly a disclosure: its header lists the
+/// judgements `PlaceTextReport` carries about the operator's own file, and why
+/// the engine's ready-made sentences are not the ones printed.
 pub mod importtext;
-/// ★ **The two actions that change what is SELECTED and nothing else.** Carved
-/// out under R2 on 2026-09-07; its header records why that is a real boundary
-/// rather than a size cut — every other `Action` variant asks the document to
+/// **The two actions that change what is SELECTED and nothing else.** Its
+/// header records why that is a real boundary rather than a size cut — every
+/// other `Action` variant asks the document to
 /// change, and these two touch only shell state.
 pub mod selecting;
 

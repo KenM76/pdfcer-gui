@@ -1225,20 +1225,6 @@ a_radius_ce_dimension_offers_a_leader_side
 a_radius_ce_dimension_offers_a_centre_mark
 ```
 
-### 15. Corrections owed to other records
-
-1. **`OPERATOR_REQUESTS.md`** claims `painting.rs:437-450` draws page-space
-   segments for the ce-dimension placement preview. The field is
-   `canvas/painting.rs`'s `dimension_preview`; that citation is stale.
-2. **`D:\Dev\pdfcer\docs\core-api\03-capabilities.md`** marks `gui [ ]` for the
-   ce-dimension style cascade and tolerance. Both are shipped and the engine's
-   own `FEATURES.md` says so. That tree is read-only from here: record the
-   correction and hand it over, do not edit it.
-3. **`OPERATOR_REQUESTS.md`'s O183 filing** needs no correction — it quotes the
-   operator and is right to — but the findings belong appended to it: item 1 is
-   half-true with a different defect underneath, and items 2, 4, 8a and 9 are
-   shipped.
-
 ---
 
 ## The Objects panel re-describes every object on every frame

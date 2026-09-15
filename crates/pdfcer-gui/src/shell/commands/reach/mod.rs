@@ -1,11 +1,10 @@
 //! # `shell::commands::reach` — the sixth obligation: a registered command
 //! must be **reachable**
 //!
-//! `HANDOFF.md` §5 lists five obligations that follow from registering a
-//! command, and every one of them fails loudly: a count assertion, a group
-//! assertion, a `PLANNED` disjointness test, a RON round-trip, a `KNOWN`
-//! lookup. **None of the five asks whether the command does anything**, and
-//! that is the gap this module closes.
+//! Registering a command creates five obligations, and every one of them fails
+//! loudly: a count assertion, a group assertion, a `PLANNED` disjointness
+//! test, a RON round-trip, a `KNOWN` lookup. **None of the five asks whether
+//! the command does anything**, and that is the gap this module closes.
 //!
 //! ## What went wrong, and how many surfaces agreed with it
 //!
@@ -65,8 +64,8 @@
 //!
 //! (The other hazards are real but were *not* the deciding ones, and it is
 //! worth saying which, so nobody re-opens this on the wrong grounds. Almost
-//! every arm is safe in a test, because of the invariant `HANDOFF.md` §6 puts
-//! first: **actions, not mutations.** `pages.delete` pushes
+//! every arm is safe in a test, because of this shell's first invariant:
+//! **actions, not mutations.** `pages.delete` pushes
 //! `Action::DeletePages` into a `Vec` the caller owns and deletes nothing;
 //! `file.ocr` sets a dialog-open flag and starts no recogniser. The genuinely
 //! effectful arms are the clipboard writes and the native picker, and of those
@@ -156,103 +155,78 @@
 //! three-state model exists because "found nothing" and "looked at nothing"
 //! print the same thing; here the second state cannot be reached.
 //!
-//! # What it found, and what has been closed since
+//! # What the register holds, and what empties it
 //!
-//! On the day this landed: **38 of the 101 registered commands had no dispatch
-//! arm.** Every one was drawn, enabled by its predicate and pressable, and every
-//! one traced `command-unimplemented`. All 38 were listed in [`SCAFFOLDED`] with
-//! the reason each was inert, and **11 carried a `★ P3` mark** — this module's
-//! judgement that the honest answer is *the control should not be drawn yet*
-//! (`RIBBON_IA.md` P3: "An unavailable capability renders nothing, not a
-//! disabled stub").
+//! [`SCAFFOLDED`] is the allow-list of registered commands with no dispatch
+//! arm, each carrying the reason it is inert. **It is empty**, and
+//! [`tests::the_p3_tension_is_counted`] pins both its length and the `★ P3`
+//! subset at zero. A `★ P3` mark is this module's judgement that the honest
+//! answer is *the control should not be drawn yet* — `RIBBON_IA.md` P3: "An
+//! unavailable capability renders nothing, not a disabled stub".
 //!
-//! **It is now 22 and 8.** Three of the eleven were wired the next day rather
-//! than argued for: `view.read_mode` and `view.fullscreen` (`app::window` — and
-//! `view.read_mode` was first established *not* to be a duplicate of
-//! `mode.read`, which would have made deletion the honest answer instead), and
-//! `tools.render_diagnostics` (`dialogs::diagnostics`, the readout moved off the
-//! status bar to a surface with room for it). A fourth, `view.show_points`, was
-//! investigated and **deliberately left here**: there is nothing for it to show,
-//! which is a better outcome than a toggle that toggles nothing.
+//! An entry leaves this list two ways, and only two: the command is **wired**,
+//! or the command is **unregistered**, which is R9's answer — a capability that
+//! is not built renders nothing — and is legitimate because of R8: *registering
+//! a command is the only way the GUI may learn that a capability exists.* An
+//! entry is never **reworded** when its reason expires;
+//! `no_scaffolded_entry_is_stale`'s middle assertion exists to force that,
+//! because a reason rewritten after a blocker clears gets none of the scrutiny
+//! the original had.
 //!
-//! ★ **35 → 33 on 2026-08-15**, and this pair is the clearest illustration of
-//! what this list is for. `edit.redact` and `edit.redact_apply` were registered,
-//! drawn on Edit ▸ Protect, and inert — and their entries said *why*: the
-//! true-removal proof lived only in the shell being replaced, so shipping the
-//! marking half without it would have been the worse half to ship first. That
-//! is a reason with an owner and an end condition, and the end condition
-//! arrived: `crate::redact` carries the proof, `crate::redact::sealed` asserts
-//! nothing can go round it, and both entries were **deleted rather than
-//! reworded** — which is what `no_scaffolded_entry_is_stale`'s middle assertion
-//! exists to force. Neither carried a `★ P3` mark, so that subset is unchanged
-//! at 8: they were controls with a stated blocker, not controls that should not
-//! have been drawn.
+//! ## The kinds of reason, because only one kind can be worked on
 //!
-//! Both figures are pinned by [`tests::the_p3_tension_is_counted`], for the
-//! reason `the_icon_coverage_split_adds_up_to_the_registry` exists: a count
-//! quoted in prose and pinned by nothing has drifted in this crate four times.
+//! * a **blocker** — something is missing and somebody can build it. It expires
+//!   when they do, and the entry is then deleted.
+//! * a **decision** — a deferral. It expires only when the person who made it
+//!   changes it. Whether a `★ P3` entry loses its control is a taxonomy
+//!   decision and the operator's; nothing here removes one.
+//! * **no reason at all**, which is not a deferral. An entry that admits it has
+//!   no recorded reason is the FIRST one to re-derive, not the last: somebody
+//!   has already established that nothing is defending it, and the confession
+//!   reads like the output of a search that already happened.
 //!
-//! Whether a `★ P3` entry loses its control is a **taxonomy decision and the
-//! operator's**; nothing here removes one. What this module can do is make the
-//! number impossible to lose track of, and make it go *down* rather than
-//! sideways — which is what it has now done three times.
+//! ⚠ A blocker can also be **correct for the wrong reason** — the id genuinely
+//! has no arm, and the recorded cause is not the real one. Nothing about such
+//! an entry looks wrong; the only thing that finds it is asking what the verb's
+//! own REQUEST STRUCT requires rather than whether the verb exists.
 //!
-//! ★ **33 → 31 on 2026-08-15**, and this pair is what the register looks like
-//! when a *deferral* rather than a blocker expires. `edit.text` and
-//! `edit.add_text` were registered, drawn on Edit ▸ Content, bound to `Ctrl+E`
-//! and `Ctrl+Shift+E`, and inert — and their entries said why in one word:
-//! **deferred**, by the operator, to Phase 5. Phase 5 is the defect that began
-//! the project (`DEFECTS.md` D4), and it landed: `canvas::textedit` arms a caret
-//! tool, collects a draft, and commits it through `EditSession::edit_text` and
-//! `EditSession::add_text` — with, in `canvas::textedit::disposition`, the
-//! follower disposition D4b records the old shell as never having chosen. Both
-//! entries were deleted rather than reworded. Neither carried a `★ P3` mark, so
-//! that subset is unchanged at 8.
+//! ★ The reliable half is identifiable in advance: **an entry whose truth
+//! condition is inside THIS repository is the strong kind** — nothing makes a
+//! missing window appear except somebody building it, so it cannot go stale by
+//! accident. An entry that cites another document or another repository can,
+//! and does. A reason that is a citation of a citation, with nothing re-reading
+//! either, is the commonest way this list goes false.
 //!
-//! ★ **30 → 29, then 29 → 22, both on 2026-08-17.** The second is the largest
-//! single drop this list has had, and it is a **deletion of controls** rather
-//! than a wiring of them — which is the outcome `manifest::DIRECTED`'s own doc
-//! comment said to expect if its argument turned out to be wrong.
+//! ⇒ **Re-derive the list on a schedule, not on a collision**, and when you
+//! touch it for any purpose re-derive the reason of the entry beside the one
+//! you came for. This assertion cannot help: it asks whether an id has an arm,
+//! and an entry whose id has no arm and whose reason is nonsense is
+//! indistinguishable from a correct one. A reason is prose; a reader is the
+//! only instrument.
 //!
-//! Seven `view.*` settings were registered, drawn, and inert. Checked against
-//! the engine: there is no tiled-progressive path in this shell, `RenderOptions`
-//! has neither a thin-lines nor an antialiasing field, and the dock has no
-//! floating mode — so four named capabilities that do not exist. `app_initiative`
-//! is the fifth and the instructive one: its specified default is **Never**,
-//! nothing in this build floats a surface unasked, so the control existed to
-//! switch off a behaviour pdfcer does not have. The remaining two were real and
-//! became **settings** in the Settings window, which is not a command surface.
+//! ## ★★★ The honest verdict on this list
 //!
-//! All seven were unregistered, not hidden. R8: *registering a command is the
-//! only way the GUI may learn that a capability exists.* `crate::app::prefs`'
-//! header carries the evidence per verdict.
+//! It forces an explanation for every dead control. It has never forced a fix.
+//! An entry can sit for weeks with a reason that is true about one thing and
+//! false about the requirement, nine lines above the note naming that exact
+//! failure mode, and survive an audit that re-derives its neighbours — and then
+//! be found by the operator pressing the button.
 //!
-//! ★ **31 → 30 on 2026-08-17** — one entry with the longest reach on the list.
-//! `file.settings` was drawn on File ▸ pdfcer and inert, and its blast radius
-//! was far wider than one control: it was the surface through which **thirteen
-//! engine settings** and the **three shipped themes** were chosen, which is why
-//! `DEFECTS.md` D10 named this entry as what stopped its second half being
-//! fixable. Its removal changed more code outside this module than any other
-//! entry's, because a dialog that lets an operator *choose* a setting is
-//! worthless unless something *reads* it — nine of the thirteen were being
-//! discarded at call sites building their own option structs, so
-//! `crate::app::settings` landed with it. No `★ P3` mark; that subset stays 8.
+//! ⇒ The replacement is not a better list. It is a **driven check that presses
+//! every registered id and fails on `command-unimplemented`** — a claim about
+//! the running program, which no paragraph can satisfy. See `tools/ui-verify`.
 //!
-//! The instructive part is the contrast with the pair above. `edit.redact`'s
-//! reason was a *blocker* — a proof that lived elsewhere — and blockers expire
-//! when someone builds the missing thing. These two's reason was a *decision*,
-//! and a decision expires when the person who made it changes it. Both are
-//! legitimate entries; only the first kind can be worked on by whoever is
-//! reading this list.
+//! ★★ The empty list is **kept rather than deleted**, exactly as
+//! [`UNREACHED_ARMS`] is kept at zero and for the same reason: an empty
+//! allow-list is still a gate. A new entry cannot be added quietly — it has to
+//! be written here with a reason, and the count assertion is what makes adding
+//! one a visible act.
 //!
-//! ★ **And it found the mirror defect, which nobody was looking for.** Four
-//! literal arms — `view.zoom_in`, `view.zoom_out`, `view.next_page` and
-//! `view.prev_page` — named commands that are **not registered at all**, so no
-//! token could reach them and no operator ever had. All four were **deleted** on
-//! 2026-08-15, after each verb was checked to have two live routes that are not
-//! the dispatcher. [`UNREACHED_ARMS`] is therefore empty and is kept as a gate:
-//! it exists because the first planted violation of this check was one of those
-//! arms and the check said nothing.
+//! ★ **And the mirror defect, which the same reader finds.** A literal arm can
+//! name a command that is **not registered at all**, so no token can reach it
+//! and no operator ever could. [`UNREACHED_ARMS`] is the allow-list for those.
+//! It is empty and is kept as a gate: the first planted violation of this check
+//! was one of those arms and the check said nothing.
 //!
 //! The gate discipline is kept in full. [`tests`] contains a self-test that
 //! plants a violation in a fixture and proves the reader reports it, another
@@ -262,8 +236,8 @@
 //! is not evidence of anything.
 
 /// ★ Which `handles`-style module claims an id — six guards and the
-/// paragraph each carries. Split out on 2026-08-29 under R2; its header
-/// records the recurring lesson the six of them are evidence for.
+/// paragraph each carries. Split out under R2; its header records the
+/// recurring lesson the six of them are evidence for.
 mod guards;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -279,8 +253,8 @@ use std::collections::{BTreeMap, BTreeSet};
 /// nothing and says so quietly does not exist.
 /// ★ The register — every registered command with no dispatch arm, and why.
 ///
-/// Split out on 2026-08-17 at rule R2's ceiling, and the seam is a real one:
-/// this file is the **check** and that one is the **data**. See its header for
+/// Split out at rule R2's ceiling, and the seam is a real one: this file is
+/// the **check** and that one is the **data**. See its header for
 /// why the data half is the one that grows, and why trimming a reason to fit is
 /// the worst available response.
 pub mod register;
@@ -293,16 +267,16 @@ const DISPATCH_SRC: &str = include_str!("../../../app/dispatch.rs");
 ///
 /// # Why there are two, and why the checker had to learn about it
 ///
-/// `app::dispatch` grew past R2's 1,500-line limit on 2026-08-18 and the Pages
-/// tab's arms moved to `app::dispatch::pages`, behind a guard arm
-/// (`id if pages::handles(id)`). The parent file no longer *contains* those
-/// six commands anywhere a `syn` walk of it can see.
+/// `app::dispatch` reaches R2's 1,500-line limit, so the Pages tab's arms live
+/// in `app::dispatch::pages`, behind a guard arm (`id if pages::handles(id)`).
+/// The parent file does not *contain* those six commands anywhere a `syn` walk
+/// of it can see.
 ///
-/// This checker noticed immediately and correctly — it reported
-/// `pages.delete`, `pages.extract`, `pages.move_up`, `pages.move_down` and
-/// both rotates as unreachable — which is exactly the behaviour its header
-/// argues for over a `bash` grep: **it fails closed.** A grep would have found
-/// the string `"pages.delete"` in either file and said nothing.
+/// A checker that reads only the parent reports `pages.delete`,
+/// `pages.extract`, `pages.move_up`, `pages.move_down` and both rotates as
+/// unreachable — which is exactly the behaviour this module's header argues
+/// for over a `bash` grep: **it fails closed.** A grep would find the string
+/// `"pages.delete"` in either file and say nothing.
 ///
 /// The lesson worth keeping is that a checker which reads ONE file is a
 /// checker with a shelf life: R2 guarantees that any file it reads will
@@ -312,21 +286,19 @@ const DISPATCH_SRC: &str = include_str!("../../../app/dispatch.rs");
 /// control.
 const DISPATCH_PAGES_SRC: &str = include_str!("../../../app/dispatch/pages.rs");
 
-/// The measure dispatcher, split out of `dispatch.rs` on 2026-08-19.
+/// The measure dispatcher, split out of `dispatch.rs`.
 ///
-/// ★ **The second time, and [`DISPATCH_PAGES_SRC`]'s own doc predicted it**:
-/// *"a checker which reads ONE file is a checker with a shelf life: R2
-/// guarantees that any file it reads will eventually be split, so 'where is the
-/// routing table?' is a question with a growing answer."*
+/// ★ **The second source [`DISPATCH_PAGES_SRC`]'s own doc predicts**: a checker
+/// which reads ONE file is a checker with a shelf life, because R2 guarantees
+/// that any file it reads will eventually be split.
 ///
-/// It failed closed again, and by name — six `measure.*` ids reported
-/// unreachable the moment the arms moved — which is the behaviour that
-/// paragraph argues for over a `bash` grep. A grep would have found the string
-/// `"measure.set_scale"` in either file and said nothing.
+/// It fails closed again, and by name — six `measure.*` ids reported
+/// unreachable the moment the arms move — which is the behaviour that
+/// paragraph argues for over a `bash` grep. A grep would find the string
+/// `"measure.set_scale"` in either file and say nothing.
 ///
-/// The prediction being right twice is worth more than the entry: **the next
-/// split will need a line here too**, and the failure that costs nothing to fix
-/// is this one rather than an operator pressing a dead control.
+/// ⇒ **The next split will need a line here too**, and the failure that costs
+/// nothing to fix is this one rather than an operator pressing a dead control.
 const DISPATCH_MEASURE_SRC: &str = include_str!("../../../app/dispatch/measure.rs");
 
 /// This module's parent, read for the `&'static str` constants that arm
@@ -851,7 +823,7 @@ mod tests {
     /// assert in both directions that every kind has a registered command.
     ///
     /// ★★★ **CONDITIONAL arms are exempt, and `UNREACHED_ARMS` is the wrong
-    /// place for them** — added 2026-09-06 with `file.sign`.
+    /// place for them.**
     ///
     /// An arm carrying `#[cfg(feature = "…")]` names a command that is
     /// registered in some builds and not in others, and this reader parses
@@ -1191,216 +1163,60 @@ pub const FX_CONST: &str = "fx.constant";
             .count();
         // ★ The literal, and it is the ONLY copy of this number.
         //
-        // Its message used to end *"this module's header quotes the figure, so
-        // move both together"*. The header does not quote it, and a message
-        // that sends a reader off to update prose is the shape this project has
-        // now corrected five times — the gate runner's header, `README.md`'s
-        // test count, `catalog.rs`'s icon split, the print dialog's paper
-        // sentence, and this. **When prose and a measurement disagree, delete
-        // the prose's copy rather than correcting it**; where the prose is
-        // already gone, stop telling people to update it.
+        // A failure message that sends a reader off to update prose is the
+        // shape this project has corrected repeatedly — a gate runner's header,
+        // `README.md`'s test count, `catalog.rs`'s icon split, the print
+        // dialog's paper sentence. **When prose and a measurement disagree,
+        // delete the prose's copy rather than correcting it**; where the prose
+        // is already gone, stop telling people to update it.
         //
         // Failing here means the allow-list changed, and the two directions
         // mean opposite things. An entry ADDED is a command drawn and left
-        // unwired. An entry REMOVED is work that landed —
-        // `pages.insert_from_file` on 2026-08-18, `measure.manage_groups`
-        // the same day, and `edit.insert_image` on 2026-08-19 — the last of
-        // which is the more interesting removal, because its recorded reason
-        // was *"No recorded reason for the missing arm"* while the engine verb
-        // it needed had shipped long before. An entry with no reason is not a
-        // blocker; it is an entry nobody has looked at.
-        // ★ 14 -> 13 on 2026-08-26, and this one is worth naming beside the two
-        // above: `edit.form_create_field` left the list because it was WIRED,
-        // and its recorded reason had been a "structural certification gate"
-        // that turned out not to exist. Probing the engine took two minutes;
-        // the entry had sat there since 2026-08-17. Fourth stale blocker in
-        // this project — a backlog row is a record, not evidence.
-        // ★★ 13 -> 12 on 2026-08-27: `edit.form_flatten` left the list because
-        // it was WIRED, and it is the **fifth** stale blocker this project has
-        // found — the fourth was its neighbour `edit.form_create_field`, a day
-        // earlier, and the pattern is now unmistakable.
+        // unwired. An entry REMOVED is work that landed.
         //
-        // Its recorded reason had two halves and both were false. *"Unbuilt"*
-        // cited a `FEATURES.md` row that was itself stale; *"irreversible"* was
-        // contradicted by the shell's own tooltip copy, which had argued at
-        // length that flatten appends an overlay and is one `Ctrl+Z`. So the
-        // entry was a citation of a citation, and nothing re-read either.
+        // ★★★ THE LIST IS EMPTY, AND AN EMPTY LIST IS STILL A GATE. A new entry
+        // cannot be added quietly: it has to be written in `register.rs` with a
+        // reason, and this assertion is what makes adding one a visible act.
         //
-        // ⇒ **This assertion cannot catch that**, and it is worth being exact
-        // about why: it asks whether an id has an arm. An entry whose id has no
-        // arm and whose *reason* is nonsense is indistinguishable from a
-        // correct one, and there is no mechanism that could tell them apart —
-        // a reason is prose. A reader is the only instrument, and the practical
-        // rule that comes out of five occurrences is: **when you touch this
-        // list for any purpose, re-derive the reason of the entry beside the
-        // one you came for.**
-        // ★★★ 12 -> 11 the same evening: `file.export_form_data` was WIRED, and
-        // it is the **sixth** stale blocker and the **second in one evening**.
+        // ⚠ What this assertion CANNOT do, stated because the whole value of
+        // the list depends on somebody knowing it: it asks whether an id has an
+        // arm. An entry whose id has no arm and whose *reason* is nonsense is
+        // indistinguishable from a correct one, and no mechanism can tell them
+        // apart — a reason is prose. The header above carries the failure modes
+        // a reader has to look for, and the practical rule that comes out of
+        // them: **when you touch this list for any purpose, re-derive the
+        // reason of the entry beside the one you came for**, and re-derive the
+        // whole list on a schedule rather than on a collision.
         //
-        // Its reason said the writer did not exist. Three do, and two since
-        // `Pass 7.1`. Like `edit.form_flatten` two hours earlier it was a
-        // citation of a `FEATURES.md` row that was itself stale — a citation of
-        // a citation, with nothing re-reading either.
-        //
-        // ⇒ The rule written on this assertion when the fifth was found has now
-        // paid for itself twice on the day it was written: **when you touch
-        // this list for any purpose, re-derive the reason of the entry beside
-        // the one you came for.** Both of tonight's were found by doing exactly
-        // that, and neither could have been found by any test — this one counts
-        // entries, and an entry whose id has no arm and whose reason is nonsense
-        // is indistinguishable from a correct one.
-        // ★★★ 11 -> 10 on 2026-08-28, and this one came out of an **audit
-        // rather than an accident**, which is the difference worth recording.
-        //
-        // The habit written here two days ago — *re-derive the reason of the
-        // entry beside the one you came for* — found the fifth and sixth stale
-        // blockers within two hours. So the whole list was then re-derived from
-        // primary sources, deliberately, and the result is the argument for
-        // making that a scheduled act rather than an opportunistic one:
-        //
-        // | verdict | count |
-        // |---|---:|
-        // | still true | 5 |
-        // | **stale — the blocker is gone** | **4** |
-        // | partly stale | 2 |
-        //
-        // Six of eleven wrong, on a list whose entire purpose is to explain why
-        // a drawn control does nothing. Two were **citations of citations**;
-        // one was a **dangling back-reference** to an entry that had itself been
-        // deleted; one contradicted its own file twelve lines away.
-        //
-        // ⇒ The audit also found four stale claims OUTSIDE this list, including
-        // a table in `app::dispatch` describing `pages.insert_from_file` as
-        // unimplemented two hundred lines above its own dispatch arm.
-        //
-        // ★ None of it is catchable here. This assertion counts entries; a
-        // reason is prose. **Re-derive the list on a schedule, not on a
-        // collision.**
-        // ★ 10 -> 9 the same night: `pages.merge_into` WIRED. Its first reason
-        // was right and was answered by the engine; its **replacement** reason
-        // had the destination backwards. A reason rewritten after a blocker
-        // clears gets none of the scrutiny the original had.
-        // ★ 9 -> 8: `view.show_points` WIRED. The audit's second stale entry to
-        // be retired, and the one whose dead sentence had three copies in two
-        // files — one of them twelve lines from its own contradiction.
-        // ★ 8 -> 7: `tools.font_folders` WIRED. The third stale entry the audit
-        // retired, and the only one whose reason went false without any event
-        // — it named a missing HOST, and another host was always available.
-        // ★ 7 -> 6: `tools.embed_fonts` WIRED, and it is the fourth entry the
-        // audit retired. Its recorded reason was a premise the entry itself
-        // flagged as expired, and the entry was RIGHT to be there anyway - a
-        // real dependency existed and neither register named it. pdfcer
-        // *"never goes looking"* for a donor font, so the command was blocked
-        // on a font-folder preference that did not exist until the same day.
-        //
-        // ★★ **A blocker can be correct for the wrong reason**, which is the
-        // fifth distinct failure mode this list has produced. It is the least
-        // visible of them: nothing about such an entry looks wrong, the id has
-        // no arm, the reason is prose, and the only thing that finds it is
-        // asking what the verb's own REQUEST STRUCT requires rather than
-        // whether the verb exists.
-        // ★★★ 6 -> 5: `tools.unembed_fonts` WIRED, and it is the ONE entry in
-        // this whole audit whose recorded reason was TRUE and stayed true until
-        // the work was done.
-        //
-        // It said the confirmation window did not exist, because three of
-        // unembedding's four consequences are invisible on the canvas. It did
-        // not exist. It does now, and it discloses a FOURTH that was in no
-        // register: this shell saves incrementally, so removing a font program
-        // does not make the file smaller and never has.
-        //
-        // => **A blocker whose truth condition is inside this repository is the
-        // strong kind.** Nothing makes a window appear except somebody building
-        // it, so this entry could not have gone stale by accident - unlike the
-        // one that named a missing HOST, the two that cited other citations,
-        // and the one that quoted an expired premise.
-        //
-        // That distinction is what stops the audit's headline - six of eleven
-        // wrong - from being read as "the register is noise". It is not noise.
-        // It is unevenly reliable, and the reliable half is identifiable in
-        // advance: an entry that names something absent from THIS repo can be
-        // checked by looking, and an entry that cites another document or
-        // another repository cannot.
-        // ★★★ 5 -> 4: `edit.objects` WIRED, and it is the entry that took the
-        // least work of all of them — one minute, spent reading the command's
-        // own tooltip, which describes the Select tool clause by clause.
-        //
-        // ⇒ **A sixth failure mode, and it is about how an entry READS rather
-        // than about what it says.** That one admitted it had no reason: *"NO
-        // RECORDED REASON ANYWHERE … inferring a deferral is not the same as
-        // recording one."* Honest, correct, and it sat unchallenged through
-        // three sessions — because an entry confessing to having no reason
-        // looks like the output of a search that already happened. It is
-        // indistinguishable from *"somebody deferred this deliberately and
-        // forgot to say why"*, and only the first invites a re-derivation.
-        //
-        // ★ So the rule the audit ends with is not *"re-derive the entry beside
-        // the one you came for"* alone. It is that an entry saying **"no reason
-        // recorded"** is the FIRST one to re-derive, not the last — it is the
-        // one where somebody has already established that nothing is defending
-        // the deferral.
-        // ★★★ **4 → 0 on 2026-08-31, and the list is EMPTY** —
-        // `OPERATOR_REQUESTS.md` O68. Ken: *"the Merge files and Split files
-        // buttons don't do anything."*
-        //
-        // All four entries went in one commit, two ways:
-        //
-        // | id | why it left |
-        // |---|---|
-        // | `tools.merge_files` | **wired** — `pageops::merge` was complete and uncalled, and its blocker named a missing PANEL |
-        // | `tools.split_files` | **unregistered** — its blocker names a missing capability, and R9 says a capability that is not built renders nothing |
-        // | `pages.split` | **unregistered** — the same dialog, the same blocker |
-        // | `view.sidebar` | **unregistered** — there was never anything behind it; this build has a dock, not a rail |
-        //
-        // ★★ Kept rather than deleted, exactly as `UNREACHED_ARMS` is kept at
-        // zero and for the same reason: an empty allow-list is still a gate. A
-        // fifth entry cannot be added quietly — it has to be written here with
-        // a reason, and this assertion is what makes adding one a visible act.
-        //
-        // ★★★ **And the honest verdict on this list, now that it has been
-        // emptied once.** It forced an explanation for every dead control and
-        // it never once forced a fix. `tools.merge_files` sat here for weeks
-        // with a reason that was true about the batch pane and false about the
-        // requirement, nine lines above the note that names that exact failure
-        // mode, and survived an audit that re-derived six of its eleven
-        // neighbours. The operator found it by pressing the button.
-        //
-        // ⇒ The replacement is not a better list. It is a **driven check that
-        // presses every registered id and fails on `command-unimplemented`** —
-        // a claim about the running program, which no paragraph can satisfy.
-        // See `tools/ui-verify`.
+        // ⇒ The instrument that does not have this hole is a **driven check
+        // that presses every registered id and fails on
+        // `command-unimplemented`**. See `tools/ui-verify`.
         assert_eq!(
             total, 0,
             "the allow-list holds {total} entries — a command was scaffolded or wired"
         );
         assert_eq!(
             // Same rule as the total above: one copy of the number, here.
-            // It went from 8 to 7 when `pages.insert_from_file` was wired on
-            // 2026-08-18 — a P3 breach retired, which is the direction this
-            // count exists to make visible.
-            // ★ 5 -> 4: `pages.merge_into` was a P3 breach — a control drawn on
-            // the Pages tab that did nothing — and it is not one any more. This
-            // is the direction this count exists to make visible, and it is the
-            // third retirement it has recorded.
-            // ★★ 3 -> 2: `edit.objects` was the plainest P3 breach in the
-            // build — the **third of three** commands in Edit ▸ Content, beside
-            // two that work. `RIBBON_IA.md` groups those three so the answer to
-            // *"what can I change on this page?"* is one group; a group of
-            // three where one does nothing reads as a broken program rather
-            // than as a missing feature, which is precisely the cost P3 names.
-            // ★★★ 2 -> 0 on 2026-08-31 (O68). `pages.split` and
-            // `view.sidebar` were the last two P3 breaches on record, and both
-            // are now UNREGISTERED rather than fixed — which is R9's answer and
-            // is the direction this count exists to make visible.
+            //
+            // A `★ P3` entry is a control drawn on the ribbon that does
+            // nothing. The count exists to make the direction visible: it goes
+            // down when such a control is wired, and it goes down when the
+            // command is UNREGISTERED instead, which is R9's answer.
+            //
+            // ★ Why P3 is a cost and not a cosmetic. `RIBBON_IA.md` groups the
+            // commands of Edit ▸ Content so the answer to *"what can I change
+            // on this page?"* is one group; a group of three where one does
+            // nothing reads as a broken program rather than as a missing
+            // feature, which is precisely what P3 names.
             //
             // ★★ A caution for whoever reads a zero here. This census counts
             // `reason.contains("★ P3")`, i.e. **self-assigned prose**, and it
-            // never saw the two worst breaches in the build: `tools.merge_files`
-            // and `tools.split_files` were enabled at application startup with
-            // no document, drawn on the ribbon, and inert — which is the most
-            // severe form of P3 available — and neither carried the mark. The
-            // census reported the state of the ANNOTATIONS, not the state of
-            // the ribbon. Zero here means the list is empty, and nothing more.
+            // has never seen the worst breaches in this build: a command can be
+            // enabled at application startup with no document, drawn on the
+            // ribbon, and inert — the most severe form of P3 available — and
+            // carry no mark at all. The census reports the state of the
+            // ANNOTATIONS, not the state of the ribbon. Zero here means the
+            // list is empty, and nothing more.
             p3,
             0,
             "{p3} entries are marked as breaching P3 by being drawn at all; the \
@@ -1408,12 +1224,11 @@ pub const FX_CONST: &str = "fx.constant";
         );
         assert!(p3 <= total, "the P3 subset must be a subset");
         // ★ …and the mirror list's length, pinned for the same reason and in
-        // the same place. It is **zero**: the four arms it used to tolerate
-        // were deleted on 2026-08-15 after each verb was shown to have two
-        // live routes that are not the dispatcher. A fifth dead arm is still
-        // possible and still has to be argued — this assertion is what makes
-        // adding one a visible act rather than a quiet one, and what stops the
-        // header above going stale about it.
+        // the same place. It is **zero**: an arm is tolerated only when its
+        // verb has two live routes that are not the dispatcher, and none does.
+        // A dead arm is still possible and still has to be argued — this
+        // assertion is what makes adding one a visible act rather than a quiet
+        // one, and what stops the header above going stale about it.
         assert_eq!(
             UNREACHED_ARMS.len(),
             0,

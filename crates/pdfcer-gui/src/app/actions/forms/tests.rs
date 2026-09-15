@@ -9,7 +9,7 @@
 //! `app::actions::textstyle::tests` is the established precedent in this crate
 //! for the same cut.
 //!
-//! # ⚠⚠⚠ Two mistakes were made moving them here, and both are worth keeping
+//! # Two mistakes were made moving them here, and both are worth keeping
 //!
 //! **1. Three tests were appended inside a function and ran zero times.**
 //! The `disclosure_store` tests below were first added to the END of `forms.rs`
@@ -35,13 +35,13 @@
 //! move_widget` — which is the good case. The bad case is a cut that still
 //! compiles.
 //!
-//! ★ Both are the same shape as everything the 2026-09-07 reply triage spent
+//! Both are the same shape as everything the 2026-09-07 reply triage spent
 //! the night correcting: a green build reporting on work it did not do —
 //! committed here by the session doing the correcting.
 
 #![cfg(test)]
 //
-// ★ The INNER `#![cfg(test)]` is load-bearing for the gates, not decoration.
+// The INNER `#![cfg(test)]` is load-bearing for the gates, not decoration.
 // `check-ui-strings` and `check-theme-colors` both recognise it as the marker
 // that a whole file is absent from the shipped binary — chosen over a filename
 // because the property that earns the exemption is *not in the release build*,
@@ -53,7 +53,7 @@ use pdfcer_core::edit::EditError as E;
 
 /// The two the operator can fix are worded; the ones they cannot are not.
 ///
-/// ★ The negative half is the half worth asserting. `WidgetAlreadyOwned`
+/// The negative half is the half worth asserting. `WidgetAlreadyOwned`
 /// cannot happen from this surface — the ids come from exactly the widgets
 /// no field claimed, on the same `/Annots` walk — so if it ever *did*, a
 /// sentence telling the operator to type a different name would be actively
@@ -103,7 +103,7 @@ fn neither_refusal_promises_a_recovery() {
 /// A registration with no field type says so, and one with a type does not
 /// mention it.
 ///
-/// ★ The `field_type: None` case is the fuzzy-never-sneaky half of this
+/// The `field_type: None` case is the fuzzy-never-sneaky half of this
 /// verb: the registration **succeeded**, the operator will be told so, and
 /// the box is *still* not fillable because a top-level field with no `/FT`
 /// has nothing left to inherit from. That is an inference-shaped absence the
@@ -138,7 +138,7 @@ fn a_document_gaining_its_first_form_is_told() {
 // that neither the string tests nor the engine tests could see
 // ===========================================================================
 
-/// ★★★ **A rename records the retargeting sentence where the status bar reads
+/// **A rename records the retargeting sentence where the status bar reads
 /// it.**
 ///
 /// # The gap this closes, named because it took three tests to corner
@@ -183,7 +183,7 @@ fn a_rename_puts_the_retargeting_sentence_in_the_disclosure_store() {
         recorded.notes
     );
 
-    // ★ And the ordinary sentence is still first. The retargeting line is
+    // And the ordinary sentence is still first. The retargeting line is
     // additional, not a replacement: an operator who renamed a field wants to
     // be told the rename happened before being told what else moved.
     assert!(
@@ -193,7 +193,7 @@ fn a_rename_puts_the_retargeting_sentence_in_the_disclosure_store() {
     );
 }
 
-/// ★★★ **A rename that collides with an existing name says so, instead of the
+/// **A rename that collides with an existing name says so, instead of the
 /// funnel floor's generic shrug.**
 ///
 /// # What this is really asserting, because it is not the engine's rule
@@ -204,12 +204,12 @@ fn a_rename_puts_the_retargeting_sentence_in_the_disclosure_store() {
 /// 2026-09-12 it did not: `forms::rename` mapped only `Ok`, so every failure
 /// reached `decline::floor` and came out as *"That change was refused"*.
 ///
-/// ★★ That is the shape worth the paragraph. The bar was never blank. There
+/// That is the shape worth the paragraph. The bar was never blank. There
 /// was always a sentence, it was always true, and it answered nothing — so no
 /// report, no gate and no test had anything to catch. A missing answer dressed
 /// as a present one is invisible in a way a missing sentence is not.
 ///
-/// ★ And this is the refusal that matters, measured rather than guessed. The
+/// And this is the refusal that matters, measured rather than guessed. The
 /// Properties panel greys Rename on
 /// `!typed.is_empty() && !typed.contains('.')`, which pre-empts every refusal
 /// derivable from the typed string. A collision needs the field tree, so it is
@@ -241,14 +241,14 @@ fn renaming_onto_a_name_that_is_taken_says_so() {
     );
 }
 
-/// ★★ **And the dotted name — asserted even though the panel will not let it
+/// **And the dotted name — asserted even though the panel will not let it
 /// through, which is the unusual part and needs its reason stated.**
 ///
 /// `panels::properties::formfield` greys Rename while the typed text contains
 /// a period, so an operator cannot provoke this from that control. The
 /// assertion is here anyway, and NOT because more coverage is better:
 ///
-/// ★★★ **the gate is a shell-side model of an engine rule, and this project
+/// **the gate is a shell-side model of an engine rule, and this project
 /// deleted another one of those the same day for drifting.**
 /// `group_is_a_field` modelled a document-dependent rule and went wrong; this
 /// gate models a pure string rule and cannot. But *"cannot drift"* is an
@@ -311,7 +311,7 @@ fn an_unowned_widget_adopts_under_an_ordinary_name() {
     );
 }
 
-/// ★★★ **The dotted name is refused with a sentence, on the one surface that
+/// **The dotted name is refused with a sentence, on the one surface that
 /// can provoke it.**
 ///
 /// This is what consuming the 2026-09-12 delivery means. The engine shipped
@@ -319,14 +319,14 @@ fn an_unowned_widget_adopts_under_an_ordinary_name() {
 /// `correctable` arm; so the delivery is consumed when the **chain** is proven,
 /// not when the arm exists.
 ///
-/// ★★ And it is a different test from the rename one above, which is green and
+/// And it is a different test from the rename one above, which is green and
 /// proves nothing about this. That drives `rename_field`, which has refused
 /// dotted names for weeks, from a surface whose button is greyed while a period
 /// is typed. This one drives `adopt_widget`, which had no test at all.
 /// ⇒ *a green test naming the variant is not evidence about the route that can
 /// actually raise it.*
 ///
-/// ⚠ **Corrected 2026-09-12.** This doc said `adopt_widget` was reached from
+/// **Corrected 2026-09-12.** This doc said `adopt_widget` was reached from
 /// `panels::forms::tab_order::register`'s name box as *free text gated only on
 /// non-empty* — the one route `correctable`'s table marked reachable. Measured
 /// the next morning and it is wrong: the engine's guard is inside `adopt_plan`,
@@ -335,7 +335,7 @@ fn an_unowned_widget_adopts_under_an_ordinary_name() {
 /// place and the grey is asserted by
 /// `panels::forms::tab_order::register::tests::a_dotted_name_greys_the_register_button_and_the_hover_names_the_rule`.
 ///
-/// ★★★ **This test is kept, and its value went UP rather than down.** It is no
+/// **This test is kept, and its value went UP rather than down.** It is no
 /// longer a test of a route an operator can walk; it is the measurement that
 /// the floor still holds when the gate in front of it does not. Every reason
 /// this arm is now unreachable is a claim about a gate — two shell-side
@@ -346,7 +346,7 @@ fn an_unowned_widget_adopts_under_an_ordinary_name() {
 /// somewhere instead of being read out of the engine's error, and a re-derived
 /// name is the defect this project deleted `group_is_a_field` for.
 ///
-/// ★★★ **The `expect` is deliberately not the assertion that carries this, and
+/// **The `expect` is deliberately not the assertion that carries this, and
 /// an `is_some()` in its place would be a check that cannot fail.** Measured,
 /// by neutering `correctable`'s `DottedPartialName` arm and re-running: the
 /// `expect` passed anyway and the equality went red with `left: EditRefused`.
@@ -379,7 +379,7 @@ fn adopting_under_a_dotted_name_is_refused_and_worded() {
 
 /// The fixture's single unclaimed `/Widget`, by object id.
 ///
-/// ★★ Read through [`crate::panels::forms::tab_order::model::collect`] rather
+/// Read through [`crate::panels::forms::tab_order::model::collect`] rather
 /// than as a typed `ObjId`, and that is not fastidiousness about magic numbers:
 /// **it is the derivation the panel row the operator presses uses**, so the two
 /// tests above drive the id the surface would hand to
@@ -406,7 +406,7 @@ fn only_widget(doc: &OpenDoc) -> ObjId {
     found[0].id
 }
 
-/// ★★★ **A delete records the orphan warning**, which is the half that matters
+/// **A delete records the orphan warning**, which is the half that matters
 /// most — pdfcer knows it degraded the document and nothing in the saved file
 /// records that it knew.
 #[test]
@@ -430,7 +430,7 @@ fn a_delete_puts_the_orphan_warning_in_the_disclosure_store() {
     );
 }
 
-/// ★★ **The control, and it is the assertion that makes the two above mean
+/// **The control, and it is the assertion that makes the two above mean
 /// something.**
 ///
 /// Renaming the button field — which nothing names — must record the rename's
@@ -461,7 +461,7 @@ fn renaming_a_field_nothing_names_records_no_second_sentence() {
     );
 }
 #[cfg(test)]
-/// ★★★ **The dotted-name refusal is the ENGINE's, and this module asserts that
+/// **The dotted-name refusal is the ENGINE's, and this module asserts that
 /// the shell reads it rather than re-deriving it.**
 ///
 /// The loss that started all this was measured with `pdfcer` before any of it
@@ -475,7 +475,7 @@ fn renaming_a_field_nothing_names_records_no_second_sentence() {
 /// deleted and `actions::forms::correctable` gained an arm that reads the
 /// engine's variant and carries the field name the engine resolved.
 ///
-/// # ★★★ TWO OF THE THREE TESTS THAT STOOD HERE COULD NOT HAVE FAILED
+/// # TWO OF THE THREE TESTS THAT STOOD HERE COULD NOT HAVE FAILED
 ///
 /// They are gone with the function, and the reason they are worth a paragraph
 /// is that **the deletion is not what exposed them** — nothing did, and nothing
@@ -512,7 +512,7 @@ mod dotted_names {
     /// reaching the operator is the **engine's**, carrying the name the engine
     /// resolved, rather than a second predicate this shell evaluates first.
     ///
-    /// ★★ Rewritten 2026-09-11, and the old subject is worth one line because
+    /// Rewritten 2026-09-11, and the old subject is worth one line because
     /// the assertion inverted. It used to require that `author` consult a
     /// shell-side guard **before writing anything**. It now requires that it
     /// consult **nothing** before calling the verb, and word what comes back.
@@ -522,7 +522,7 @@ mod dotted_names {
     /// so it falsely refused the mixed node. A test guarding a guard is only as
     /// right as the guard.
     ///
-    /// # ★★★ THIS TEST PASSED BY READING ITS OWN ASSERTION STRING
+    /// # THIS TEST PASSED BY READING ITS OWN ASSERTION STRING
     ///
     /// It read `include_str!("forms.rs")` and asserted that file contained
     /// `"if let Some(victim) = group_is_a_field(doc, draft.name.trim())"`.
@@ -537,7 +537,7 @@ mod dotted_names {
     /// would have gone on passing if `author` had never called the guard, if
     /// the guard had been deleted, or if `author.rs` had been emptied.
     ///
-    /// ★★ It was exposed by an unrelated refactor — moving the test modules out
+    /// It was exposed by an unrelated refactor — moving the test modules out
     /// of `forms.rs` on 2026-09-08 took the literal out of the scanned file and
     /// the test went red immediately. **Nothing was looking for this**; a
     /// source-scanning check that happens to live in the file it scans is
@@ -549,7 +549,7 @@ mod dotted_names {
     /// doc comment into the scanned file could not satisfy it either.
     /// Everything in `src` that is not a full-line comment.
     ///
-    /// ★★★ Why a source-scanning assertion needs this, added 2026-09-12.
+    /// Why a source-scanning assertion needs this, added 2026-09-12.
     ///
     /// The check below went red because `author`'s doc comment — moved into
     /// `author.rs` that day, see `tools/gates/check-orphan-docs.py` — *names*
@@ -564,7 +564,7 @@ mod dotted_names {
     /// a real file and a real symbol and sends the reader hunting for something
     /// that was correctly removed.
     ///
-    /// ⚠ Full-line comments only. A trailing `// …` after code, and a `/* */`
+    /// Full-line comments only. A trailing `// …` after code, and a `/* */`
     /// block, are both left in — neither occurs in this crate's style, and a
     /// stripper that tried to handle them would need to respect string literals
     /// and would become the second parser this project maintains. If that ever
@@ -578,7 +578,7 @@ mod dotted_names {
 
     #[test]
     fn author_words_the_engines_refusal_rather_than_pre_empting_it() {
-        // ⚠ `../` — this file moved into `forms/` on 2026-09-08 and
+        // `../` — this file moved into `forms/` on 2026-09-08 and
         // `include_str!` is relative to the file that writes it.
         let src = code_only(include_str!("../forms/author.rs"));
         assert!(
@@ -609,7 +609,7 @@ mod dotted_names {
 
 #[cfg(test)]
 mod authoring_is_available {
-    /// ★★★ **Field authoring is NOT blocked, and this is the test that settled
+    /// **Field authoring is NOT blocked, and this is the test that settled
     /// it.**
     ///
     /// `shell::commands::reach::register` recorded `edit.form_create_field` as
@@ -620,7 +620,7 @@ mod authoring_is_available {
     /// will not default one silently. It is a field of the dialog the command
     /// needs anyway.
     ///
-    /// ★★ This is the **fourth** blocker recorded in this project that turned
+    /// This is the **fourth** blocker recorded in this project that turned
     /// out to be stale, which is why the standing rule is *a backlog row is a
     /// record, not evidence* and why the first move was to probe the engine
     /// rather than to re-read the note.

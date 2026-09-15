@@ -12,12 +12,12 @@
 //!
 //! Because the operator asked to *"open multiple PDFs at once"*, and every
 //! application that does answers with tabs — Acrobat, Bluebeam, PDF-XChange,
-//! Foxit, Illustrator, VS Code, every browser. `CONTINUE.md` §1b makes that
-//! convergence the specification rather than a starting point for a better
-//! idea:
+//! Foxit, Illustrator, VS Code, every browser.
 //!
-//! > **What do Illustrator, Inkscape, Acrobat, Word and the OLD shell do?** If
-//! > they agree, that is the answer. The convergence is the specification.
+//! ★★ **Where the applications an operator already uses agree, their agreement
+//! is the specification** — not a starting point for a better idea. It is the
+//! standing rule for every interaction decision in this shell, and it is what
+//! settles this one.
 //!
 //! They agree, so this is a tab strip: labels left to right, the active one
 //! emphasised, a ✕ on each, middle-click to close, Ctrl+Tab to cycle, an
@@ -29,9 +29,11 @@
 //! Chrome, VS Code and Acrobat all show the strip with a single tab. Hiding it
 //! below two documents would save 26 points of a CAD sheet and cost the
 //! feature its discoverability — an operator who has never seen a tab has no
-//! reason to believe a second document is possible, which is the state this
-//! project has already paid for once with text editing (`CONTINUE.md` §4.1:
-//! *"it works and nobody can find it" is never a documentation problem*).
+//! reason to believe a second document is possible.
+//!
+//! ★ **"It works and nobody can find it" is never a documentation problem.** A
+//! capability with no visible entry point has not shipped, whatever the tests
+//! say; the fix belongs in the chrome, not in the manual.
 //!
 //! Its height is a **constant** ([`egui_shell::tabstrip::STRIP_HEIGHT`]) in an
 //! `exact_size` panel, for R128's reason: a chrome surface whose height varies
@@ -312,11 +314,9 @@ impl PdfcerApp {
     /// while a page drag is in flight.
     ///
     /// Gated on the drag, deliberately and not defensively. Spring-loading a
-    /// tab under an ordinary pointer would make the strip change documents
-    /// because the operator paused on their way to the ribbon, which is the
-    /// application taking initiative the operator did not ask for — the
-    /// behaviour `view.app_initiative` was retired for *specifying* rather
-    /// than for doing.
+    /// tab under an ordinary pointer would change documents because the
+    /// operator paused on their way to the ribbon — the application taking an
+    /// initiative the operator did not ask for, which this shell does not do.
     fn spring_loaded_hover(&mut self, ctx: &egui::Context, hovered: Option<usize>) {
         if !crate::pagedrag::in_flight(ctx) {
             ctx.data_mut(|d| d.remove_temp::<Spring>(spring_id()));
@@ -330,12 +330,13 @@ impl PdfcerApp {
 
         // ★ A diagnostic at the ENTRY of each gate, naming it.
         //
-        // `CONTINUE.md` §7: *an instrument that can only return one answer
-        // cannot detect the thing it was added to detect*. `doc-tab-spring` is
-        // emitted only when the spring FIRES, so its absence used to have three
-        // indistinguishable meanings — no drag, no hover, or a hover that never
+        // ★★ **An instrument that can only return one answer cannot detect the
+        // thing it was added to detect.** `doc-tab-spring` is emitted only when
+        // the spring FIRES, so on its own its absence has three
+        // indistinguishable meanings: no drag, no hover, or a hover that never
         // reached the dwell. This line separates the second from the third,
-        // which is the pair that actually cost a driven run.
+        // which is the pair a driven run has to tell apart to diagnose a
+        // spring that never sprang.
         //
         // De-duplicated on the slot, so resting on a tab costs one line rather
         // than one per frame.

@@ -1,7 +1,7 @@
 //! **The wobble probe** — which widget in a side's body ran past the window's
 //! edge, published by egui id so two frames can be compared.
 //!
-//! # The mechanism this instrument exists to attribute (2026-09-09)
+//! # The mechanism this instrument exists to attribute
 //!
 //! `egui::Panel::show` (0.35, `containers/panel.rs`, the block after the
 //! frame's `show`) takes the panel's rect back from the frame's response —
@@ -11,17 +11,18 @@
 //! `rect.min.x = rect.max.x - size`. So a body whose union reaches
 //! `1400.4` on a `1400`-wide window becomes `[1080.4, 1400.4]` — width
 //! exactly 320, translated +0.4 — and the central panel beside it, cut at
-//! `visible_outer_rect.min.x`, is 0.4 narrower on that frame. That is the
-//! whole of the "central-panel width jitter" `RESUME.md` has chased for two
-//! days: not egui rounding, not the window, but **one widget overflowing its
-//! pane by a sub-pixel amount on isolated frames**, amplified into a panel
-//! translation by egui's exact-size clamp.
+//! `visible_outer_rect.min.x`, is 0.4 narrower on that frame. A central
+//! panel that visibly jitters in width is therefore not egui rounding and
+//! not the window: it is **one widget overflowing its pane by a sub-pixel
+//! amount on isolated frames**, amplified into a panel translation by
+//! egui's exact-size clamp.
 //!
-//! `dock.<side>.body_min` (published at the end of the side's closure)
-//! measured exactly that union — `max.x = 1400.4`, left edge unchanged — on
-//! the wobble frame, while every rect this crate names stayed put. So the
-//! culprit is a widget the dock does not name: something inside a panel
-//! body, drawn by the application or by egui itself.
+//! `dock.<side>.body_min`, published at the end of the side's closure, is
+//! that union, and it moves on a wobble frame while every rect this crate
+//! names stays put. The culprit is therefore always a widget the dock does
+//! not name: something inside a panel body, drawn by the application or by
+//! egui itself — which is why the probe enumerates egui's own widget
+//! registry rather than the dock's.
 //!
 //! # What this module does
 //!
@@ -43,27 +44,28 @@
 //!
 //! # Why it also publishes `.frame`
 //!
-//! `dock/mod.rs` sits at R2's 1,500-line ceiling, so the `.frame` report —
-//! the rect egui ALLOCATED for the side, the thing that visibly wobbles —
-//! moved here beside the probe that explains it. They are read together.
+//! `.frame` is the rect egui ALLOCATED for the side — the thing that
+//! visibly wobbles — and it is published here rather than in `dock/mod.rs`
+//! because it is unreadable without the offender list beside it. The two
+//! are one measurement.
 //!
-//! # What it found, on its first read — and why it stays
+//! # The overflow this was built to catch, and why the module stays
 //!
-//! Five widgets, one leaf: the Comments list's vertical scroll bar, at
-//! `[1390.0, 292.7]–[1400.4, 866.0]`, decaying to `1400.1` on the next
-//! frame and `1400.0` on the one after. Reproduced with nothing but egui
-//! in `scroll_fade_repro.rs`: a solid-style `ScrollArea` fading its bar
-//! in rounds its content rect to whole pixels, adopts that rounded width
-//! as the inner width (`auto_shrink`), and adds the *fractional* animated
-//! bar use back — overshooting its pane by the rounding residue on the
-//! frames where the fade is mid-way. `D:/dev/rag/egui/` has the entry.
+//! egui's own solid-style `ScrollArea` overflows its pane while its bar
+//! fades in: it rounds the content rect to whole pixels, adopts that
+//! rounded width as the inner width (`auto_shrink`), then adds the
+//! *fractional* animated bar width back, so the union overshoots by the
+//! rounding residue on the frames where the fade is mid-way and decays
+//! back over the next two. `scroll_fade_repro.rs` reproduces it with
+//! nothing but egui, and `D:/dev/rag/egui/` carries the entry.
 //!
-//! The fix is in `Dock::draw_stack`: a body is drawn in a child ui whose
-//! union is never merged into the side, so nothing a body does can move
-//! the side's frame. This module stays as the **tripwire** for that
-//! promise — it costs one comparison per side per frame and publishes
-//! nothing until something gets past the guard, at which point it names
-//! the widget rather than leaving the next reader a wobble to hunt.
+//! `Dock::draw_stack` closes that path for every body: a body is drawn in
+//! a child ui whose union is never merged into the side, so nothing a body
+//! does can move the side's frame. This module stays as the **tripwire**
+//! for that promise — it costs one comparison per side per frame and
+//! publishes nothing until something gets past the guard, at which point
+//! it names the widget rather than leaving the next reader a wobble to
+//! hunt.
 
 use egui::Rect;
 
@@ -73,8 +75,9 @@ use super::report;
 
 /// How far past the parent's edge counts as an overflow, in points.
 ///
-/// The measured wobble is 0.3–0.4 pt, a 1/32-grid multiple; `0.05` is
-/// well under it and well over f32 noise at coordinates near 1400.
+/// The overflow this catches measures 0.3–0.4 pt, a 1/32-grid multiple;
+/// `0.05` is well under it and well over f32 noise at coordinates near
+/// 1400.
 const OVERFLOW_TOLERANCE_PT: f32 = 0.05;
 
 /// Publish the side's allocated frame rect, and — on a frame where it
@@ -150,10 +153,10 @@ mod tests {
 
     /// ★★★ **The regression guard for the wobble.** A body that allocates
     /// 0.4 pt past its compartment — what egui's own solid scroll bar does on
-    /// a fade-in frame — must not move the side's frame by one point of a
-    /// point. Written against the unfixed `draw_stack` first: it reported
-    /// `dock.right.frame` at `[1080.4 .. 1400.4]` (falsified 2026-09-09),
-    /// exactly the driven trace's line.
+    /// a fade-in frame — must not move the side's frame by a fraction of a
+    /// point. Without `draw_stack`'s child ui this reports
+    /// `dock.right.frame` at `[1080.4 .. 1400.4]` instead of
+    /// `[1080.0 .. 1400.0]`.
     ///
     /// Two assertions, and the second is not implied by the first: the frame
     /// staying put says the guard held; no `overflow.*` region says the

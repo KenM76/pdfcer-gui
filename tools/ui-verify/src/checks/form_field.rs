@@ -1,8 +1,7 @@
 //! `form_field` — **place a form field on the page, then click an existing one
 //! and get its properties.**
 //!
-//! The driven assertion for the operator's request of 2026-08-26, in both its
-//! halves:
+//! The driven assertion for the operator's request, in both its halves:
 //!
 //! > *"when I click one I should be able to click on the canvas to place the
 //! > position or drag a box for size then a pop up lets me set the details for
@@ -45,9 +44,9 @@
 //! ambiguous. The second must land on a widget whose canvas rect the
 //! application itself published in a `form-box` line, so the check aims at
 //! where the program says the box is rather than at where the fixture author
-//! thought it would be. That is the `HANDOFF.md` §2 defect-8 rule: a click that
-//! hits the field next to the one it aimed at is the same screenshot as a click
-//! that worked.
+//! thought it would be. ★★ **A click that hits the field next to the one it
+//! aimed at produces the same screenshot as a click that worked**, so the only
+//! safe target is a rect the application itself published this frame.
 //!
 //! # Phases
 //!
@@ -79,11 +78,11 @@ use crate::trace::Trace;
 /// run without it.** Edit mode's default dock puts Properties in a TABBED stack
 /// with Comments, Forms, Redact, Dimension groups and Attachments
 /// (`app::modes::defaults`), and a tabbed stack draws only its **active** tab.
-/// On 2026-08-29's sweep the active tab of that stack was not Properties, so
-/// `panels::properties::formfield::section` never ran on a single frame, no
-/// `properties.form_field` region was ever declared, and phase D would have
-/// reported a properties pane that "did not draw" about a pane that was never
-/// asked to draw. `file.properties` is `show_panel`, not a toggle — it mounts
+/// ★★ If Properties is not the active tab then
+/// `panels::properties::formfield::section` never runs on a single frame, no
+/// `properties.form_field` region is ever declared, and phase D reports a
+/// properties pane that "did not draw" about a pane that was never asked to
+/// draw. `file.properties` is `show_panel`, not a toggle — it mounts
 /// the panel and brings it to the front of whatever stack holds it, from any
 /// mode (`app::tests` asserts exactly that), so ringing it is idempotent.
 ///
@@ -140,38 +139,30 @@ const PROPERTIES_REGION: &str = "properties.form_field";
 /// makes it need fewer notches, not none, and on the display this is driven on
 /// it needs them all. The measurement below says why the room cannot be had.
 ///
-/// # ★★★ IT ASKED FOR A WINDOW THAT DOES NOT FIT ON THE DESKTOP — 2026-09-06
+/// # ★★★ A viewport is a request; a PLACED window is an arithmetic obligation
 ///
-/// This read `0,0,1400,1300` for a week and **that is why the check failed**,
-/// though nothing about the failure said so.
-///
-/// Two facts multiply. `PDFCER_DIAG_VIEWPORT`'s position is overruled:
+/// `PDFCER_DIAG_VIEWPORT` states a size, not a position:
 /// `launch::Session::place` moves **every** launched window to desktop
 /// `(780, 40)`, deliberately, to clear the top-left corner where the Windows
-/// on-screen keyboard docks. And `SAFE_ORIGIN_X`'s own doc does the arithmetic
-/// for the window it was written for — *"a 1100 px client still ends at 1880 on
-/// a 1920-wide desktop"*. This check asked for **1400**: 780 + 1400 = 2180, so
-/// **260 px of the window hung off the right edge of a 1920 px screen**, and
-/// the Properties panel is the thing that lives at that edge. Vertically:
-/// 40 + 1080 = 1120 against a 1080 px screen, so the bottom 40 px went too.
+/// on-screen keyboard docks. So the real constraint is
+/// `SAFE_ORIGIN + size ≤ desktop`, and asking for more does not fail — it hangs
+/// the far edge of the window off the screen, which is precisely where the
+/// Properties panel lives.
 ///
-/// The consequence is invisible and total. `SetCursorPos` **clamps** an
-/// off-desktop coordinate, so the wheel aimed at the pane's centre (screen
-/// x 2011) landed at x 1919 — still over the panel, so it scrolled, and the
-/// step looked healthy — while the click aimed at the Required checkbox
-/// (screen y 1114) landed at y 1079, **six points above the box**, and the
-/// check reported that ticking Required reached nothing. An accusation against
-/// the application for a pixel the harness could not deliver.
+/// ★★★ **The consequence is invisible and total.** `SetCursorPos` **clamps** an
+/// off-desktop coordinate rather than refusing it, so a wheel aimed past the
+/// right edge still lands over the panel and scrolls, and the step looks
+/// healthy — while a click aimed past the bottom edge lands a few points above
+/// its target and the check reports that the control reached nothing. That is
+/// an accusation against the application for a pixel the harness could not
+/// deliver. `Driver::confirm_uncovered` refuses such a click by name rather
+/// than clamping it, so the next check to overreach is told.
 ///
-/// ⇒ **A viewport is a request, and a placed window is an arithmetic
-/// obligation: `SAFE_ORIGIN + size` must fit the desktop.** 780 + 1120 = 1900
-/// and 40 + 1000 = 1040 both do, on the 1920 × 1080 this is driven on.
-/// `Driver::confirm_uncovered` now refuses such a click by name rather than
-/// clamping it, so the next check to overreach is told; this constant is what
-/// keeps this one inside the screen. 780 + 1100 + 16 px of border = 1896, and
-/// 40 + 980 + 39 px of title bar = 1059 — both inside 1920 × 1080 with room to
-/// spare, which is deliberate: a margin of one pixel is a margin that a theme
-/// change takes away.
+/// This constant is what keeps this one inside the screen:
+/// 780 + 1100 + 16 px of border = 1896, and 40 + 980 + 39 px of title bar =
+/// 1059 — both inside the 1920 × 1080 this is driven on, with room to
+/// spare. **A margin of one pixel is a margin that a theme change takes
+/// away.**
 ///
 /// # ★★ And the height it CAN get is still not enough, which is the real point
 ///
@@ -191,19 +182,17 @@ const VIEWPORT: &str = "0,0,1100,980";
 /// See [`scroll_to`] for the three content rects that were tried first and how
 /// each of them failed.
 const PANE_REGION: &str = "dock.body.file.properties";
-/// The editable-properties section, added with `EditSession::edit_field` on
-/// 2026-08-27.
+/// The editable-properties section, reached through `EditSession::edit_field`.
 ///
-/// ★★★ Its own region, distinct from [`PROPERTIES_REGION`], and that is the
-/// whole point of adding it. The section above it — the read-only facts, the
-/// rename box, the delete buttons — drew perfectly well for a day while the
-/// panel told the operator that required, read-only and the tooltip *"can only
-/// be set when a field is placed. To change one, delete this field and place a
-/// new one."* A check asserting only `properties.form_field` passed on that
-/// build, correctly, because what it asserts was true.
+/// ★★★ Its own region, distinct from [`PROPERTIES_REGION`], and the separation
+/// is the point. The section above it — the read-only facts, the rename box,
+/// the delete buttons — draws perfectly well on a build whose pane is entirely
+/// READ-ONLY, so a check asserting only `properties.form_field` passes there,
+/// correctly, because what it asserts is true.
 ///
-/// So the two are separate names for the two separate claims: *"clicking a
-/// field describes it"* and *"clicking a field lets you change it"*.
+/// The two regions are therefore two separate claims: *"clicking a field
+/// describes it"* and *"clicking a field lets you change it"*. Only the second
+/// distinguishes an editor from a viewer.
 const EDITABLE_REGION: &str = "properties.field_edit";
 /// The Required checkbox — the single control an operator reaches for first,
 /// and the one O39's row named by name.
@@ -327,19 +316,11 @@ fn placed_boxes(trace: &Trace) -> Vec<PlacedBox> {
         .collect()
 }
 
-// ★★★ `scroll_to` was HERE until 2026-08-28 and now lives in
-// `checks::driving`. It was written in this file because two copies of one loop
-// in one check forced the extraction; a THIRD caller — the Settings dialog's
-// heading sweep — is what moved it to where the shared helpers live.
-//
-// That check's own note had said the fix for its coverage gap was *"a real
-// piece of work"*, and it was, until this existed. The gap it named — five of
-// seven groups never measured — closed for the cost of an import.
-//
-// `driving`'s existing occupants make the same argument at length:
-// *"a rule stated twice is a rule that drifts"*, and this file's own header
-// records what that drift looked like when `declared_or_in_overflow` gained a
-// third case and a hand-rolled copy did not.
+// ★★★ The scroll-until-visible loop lives in `checks::driving` as `scroll_to`,
+// not here, and every caller in this file uses it. **A rule stated twice is a
+// rule that drifts**: a hand-rolled copy keeps whatever mistake it was born
+// with while the shared helper is corrected, and a check that scrolls at the
+// wrong anchor reports missing controls that are one notch away.
 
 /// Run the four phases.
 #[allow(
@@ -663,34 +644,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // reporting "the controls are missing" about controls that are present and
     // one notch away.
     //
-    // ★★★ IT SCROLLS AT THE DOCK PANE, NOT AT THE SECTION — and this loop
-    // aimed at the section until it was first driven to a verdict on
-    // 2026-09-06, which is the whole of why it failed.
+    // ★★★ IT SCROLLS AT THE DOCK PANE, NOT AT THE SECTION. **Content rects are
+    // not scroll anchors** — `reaching::scroll_to`'s doc carries the same rule
+    // with the three anchors that fail it.
     //
-    // The note this replaces said the anchor was safe because
-    // `properties.form_field`'s rect *"is the panel's own `max_rect` and is
-    // therefore always inside the panel by construction"*. **Both halves were
-    // wrong, and the trace settles it in two lines:**
+    // A section publishes `ui.min_rect()`: what it TOOK, not what it was
+    // allowed. On the shipped layout the form-field section takes ~1,100 points
+    // inside a ~400-point dock slot, so its centre lies well BELOW the bottom of
+    // the window's client area. A wheel aimed there goes outside the window
+    // entirely, nothing moves — the panel's rects are byte-identical before and
+    // after — and the check reports the controls missing.
     //
-    // ```text
-    // ui-rect name=dock.body.file.properties rect=[[1046.0 641.8] - [1400.0 1046.0]]
-    // ui-rect name=properties.form_field     rect=[[1046.0 642.0] - [1386.0 1750.0]]
-    // ```
-    //
-    // The section is published from `ui.min_rect()` — what it TOOK, not what it
-    // was allowed — and it took 1,108 points in a 404-point slot. Its centre is
-    // y≈1196, which is **150 points below the bottom of a window whose client
-    // area ends at 1046**. Every one of the six notches went outside the window
-    // and nothing moved; the panel's own rects are byte-identical before and
-    // after. The check then reported the controls missing.
-    //
-    // ⇒ `reaching::scroll_to`'s doc already carries this exact anchor in its
-    // table of three that failed, third row, with this exact reasoning —
-    // *"content rects are not scroll anchors"*. This loop was a hand-rolled
-    // fourth copy that predated the helper and kept the mistake the helper was
-    // extracted to fix. **Phase F below has been calling `scroll_to` with
-    // [`PANE_REGION`] all along**, so one file held both the wrong anchor and
-    // the right one, twenty lines apart.
+    // [`PANE_REGION`] is the dock's own body rect, which is the visible slot by
+    // construction and therefore always inside the window.
     //
     // ★★ And the OTHER remedy in this check does not work either, which is why
     // this one has to. [`VIEWPORT`] asks for a window big enough to hold the
@@ -765,10 +731,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The same argument `restyle_text` makes for pressing Bold rather than
     // scrubbing the size.
     //
-    // ★ It also toggles a real flag on a real field and leaves it toggled. That
-    // is a side effect on the fixture in `--out`, not on the operator's file —
-    // which is why the suite is driven against a copy of the exe and a fixture,
-    // and why `CONTINUE.md` says never to drive the published build.
+    // ★ It also toggles a real flag on a real field and leaves it toggled.
+    // That is a side effect on the fixture in `--out`, not on the operator's
+    // file — ⚠ which is why the suite must always be driven against a COPY of
+    // the exe and a COPY of the document, never the published build.
     let before = trace.events(EDIT_APPLIED).count();
     driver.click_at(session.frame()?.declared_center(required))?;
     session.settle(24);
@@ -951,26 +917,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         line.unwrap_or_default()
     ));
 
-    // ★★★ THE DEFAULT VALUE BOX IS ASSERTED LAST, AND THE ORDER IS THE
-    // FINDING — 2026-09-08.
+    // ★★★ THE DEFAULT VALUE BOX IS ASSERTED LAST, AND THE ORDER IS THE POINT.
     //
-    // It was originally placed beside the Required assertion, where it read
-    // naturally: both are controls in one section, checked as the section is
-    // reached. **It broke the next phase.**
+    // Reaching this box takes five more scroll notches than reaching Required —
+    // max-length and comb sit between them — and the phase that presses
+    // Required needs Required to still be on screen.
     //
-    // Reaching this box takes five more scroll notches than reaching
-    // Required — max-length and comb sit between them — and the phase after
-    // Required CLICKS the Required checkbox. Scrolling to prove one control
-    // exists moved another control the check was about to press off-screen,
-    // and the run reported *"REQUIRED WAS TICKED AND NOTHING REACHED THE
-    // DOCUMENT"* — a confident, detailed, entirely wrong defect report about
-    // the application.
-    //
-    // ⇒ **A read-only assertion that SCROLLS is not read-only.** Anything
-    // that moves the pane belongs after every phase that depends on where
-    // the pane is, and this project has the same lesson recorded for dock
-    // widths in `D:/dev/rag/egui/`.
-    // ★★★ THE DEFAULT VALUE BOX — `/DV`, wired 2026-09-08.
+    // ⇒ **A read-only assertion that SCROLLS is not read-only.** Anything that
+    // moves the pane belongs after every phase that depends on where the pane
+    // is; placed beside the control it reads about, it silently pushes the next
+    // phase's target off-screen and that phase then reports a confident,
+    // detailed, entirely wrong defect against the application.
+    // ★★★ THE DEFAULT VALUE BOX — `/DV`, the value a Reset button restores.
     //
     // Asserted from the same trace the Required row came from, because the two
     // are drawn by the same call: if `fieldedit::section` ran far enough to

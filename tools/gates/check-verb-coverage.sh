@@ -4,83 +4,94 @@
 # WRITTEN REASON.
 #
 # ---------------------------------------------------------------------------
-# ★★★ WHY THIS GATE EXISTS, and the two days that bought it
+# THE PROPERTY ASSERTED
 # ---------------------------------------------------------------------------
 #
-# `pdfcer-core` shipped `EditSession::set_button_action` on 2026-08-30, in
-# answer to this shell's own request. The reply was read the same night and
-# answered point by point. It even said, in as many words:
+# Every `pub fn` declared on `impl EditSession` in the engine revision
+# `Cargo.lock` pins, whose name appears nowhere under `crates/pdfcer-gui/src`,
+# is named in backticks inside a table row of `EDITABLE_SURFACES.md`.
 #
-#     "Please check your own copy. If your surface tells the operator that
-#      pdfcer never authors an action, it is now saying something untrue in the
-#      direction that matters."
+# `tools/verb-coverage.py` supplies the list of uncalled verbs; this gate is
+# the wrapper that turns "uncalled" into "unaccounted for". The rule is
+# deliberately weak in one direction and strong in the other:
 #
-# The verb was consumed on 2026-09-01 — two days later — and only because
-# `tools/verb-coverage.py` happened to be run for an unrelated reason. In the
-# meantime the Button tool stayed greyed and the placement dialog kept telling
-# the operator that pdfcer "cannot give a button something to do yet", which was
-# false, on a capability two open operator rows were waiting for.
+#   * Weak: it does not judge the reason. A row saying "not built" passes.
+#     This gate cannot read English and must not pretend to.
+#   * Strong: a verb the engine exports and nothing here names fails the build
+#     on the first `cargo update` that brings it. Somebody has to look at it
+#     and write a sentence — which is the entire mechanism.
 #
-# ⇒ The instrument existed. Nobody ran it. **A tool that must be remembered is
-#   a tool that will be forgotten**, and the fix for that is never a note — it
-#   is a gate that fails.
-#
-# This is the third time the same shape has been recorded here:
-#
-#   * `EDITABLE_SURFACES.md` §"The sweep found..." — three of the first four
-#     gaps were capabilities the engine shipped BECAUSE this shell asked, and
-#     then never consumed. "A reply arriving is not a capability landing."
-#   * `check-string-gaps.sh` — a catalogued string that reaches no rectangle.
-#   * This.
+# So the failure it reports is not "you have a gap". It is "a capability
+# landed and nobody has said anything about it", which is a different and much
+# more actionable statement.
 #
 # ---------------------------------------------------------------------------
-# WHAT IT ASSERTS
+# WHY A HUMAN CANNOT HOLD IT
 # ---------------------------------------------------------------------------
 #
-# `tools/verb-coverage.py` parses `impl EditSession` out of the LOCKED engine
-# revision, takes every `pub fn`, and greps `crates/pdfcer-gui/src` for each
-# name. The verbs it reports as named nowhere are the input to this gate.
+# The engine is a separate repository. A capability starts existing in a
+# commit this tree never reads; it arrives here as a changed hash in
+# `Cargo.lock` and nothing else. There is no diff, no review, no moment at
+# which a person is looking at the new verb.
 #
-#     For every such verb, `EDITABLE_SURFACES.md` must mention it by name,
-#     in backticks.
+# The case that gets missed longest is the one that feels most finished: a
+# verb the engine shipped BECAUSE this shell asked for it. The request was
+# answered, the reply was read, the answer was satisfying — and the wiring is
+# a separate act that nothing prompts. Meanwhile the surface goes on telling
+# the operator the capability does not exist, which is the direction of
+# falsehood that costs something. A reply arriving is not a capability
+# landing.
 #
-# That is the whole rule, and it is deliberately weak in one direction and
-# strong in the other:
-#
-#   * **Weak**: it does not judge the reason. A register entry saying "not
-#     built" passes. This gate cannot read English and must not pretend to.
-#   * **Strong**: a verb that appears in the engine and is mentioned NOWHERE
-#     fails the build, on the first `cargo update` that brings it. Somebody has
-#     to look at it and write a sentence — which is the entire mechanism, and
-#     is exactly what did not happen on 2026-08-30.
-#
-# ★★ The failure is therefore not "you have a gap". It is **"a capability
-# landed and nobody has said anything about it"**, which is a different and
-# much more actionable statement.
-#
-# ---------------------------------------------------------------------------
-# WHY IT IS KEYED ON THE ENGINE AND NOT ON OUR OWN DOCUMENTS
-# ---------------------------------------------------------------------------
-#
-# `OPERATOR_REQUESTS.md` says what the operator asked for. `FEATURES.md` says
-# what the shell does. `GUI_ROADMAP.md` says what is planned. **None of the
-# three is keyed on the engine's verb list**, so none of them can answer "is
-# there something `pdfcer-core` implements that nothing here calls?" — the
-# question this gate exists for. A completeness question needs an instrument
-# whose key is the OTHER side's API; a document structurally cannot answer it.
+# No document in this repository can close that gap, because none of them is
+# KEYED ON THE ENGINE'S VERB LIST. `OPERATOR_REQUESTS.md` is keyed on what was
+# asked for, `FEATURES.md` on what the shell does, `GUI_ROADMAP.md` on what is
+# planned. A completeness question about the other side's API needs an
+# instrument whose key is that API; a document structurally cannot answer it.
+# And an instrument that must be REMEMBERED is an instrument that will be
+# forgotten, which is why this one is a gate rather than a tool.
 #
 # ---------------------------------------------------------------------------
-# EXIT CODES
+# WHAT IT PROVABLY CANNOT SEE
 # ---------------------------------------------------------------------------
-#   0  every uncalled verb is named in the register (or the instrument could
-#      not run, which SKIPs — see below)
+#
+#   * Whether a reason is true, or good, or still current. It checks that the
+#     verb is named in a row, nothing more.
+#   * Whether a verb the shell NAMES is actually reachable. The underlying
+#     measurement is a grep: an identifier inside a dead branch, a test, or a
+#     comment counts as called. A hit is weak evidence; only a miss is strong,
+#     and this gate fails only on misses.
+#   * Any verb outside `impl EditSession` — free functions, other types, other
+#     engine crates. The parse has one shape and does not grow by itself.
+#   * The engine's WORKING TREE. Its oracle is the locked revision, because
+#     that is the API this shell could actually be compiled against. Verbs the
+#     worktree has and the lock does not are reported by the instrument as
+#     COMING and are not demanded here.
+#   * A verb named in a register row that discharges some OTHER verb. The
+#     match is row-level, not first-cell, so a reason cell mentioning a verb
+#     in passing accounts for it.
+#
+# ---------------------------------------------------------------------------
+# THE EXIT CONTRACT, AND HOW TO FALSIFY IT
+# ---------------------------------------------------------------------------
+#
+#   0  every uncalled verb is named in a register row
 #   1  at least one uncalled verb is named nowhere
 #
-# ★ SKIPs rather than fails when the engine checkout is unreadable or python is
-# absent, and says so loudly. The standing rule is that a check which cannot
-# fail is not evidence — so a gate that silently passed when it could not
-# measure would be worse than no gate. The word SKIP in the output is the
-# signal; `run-all.sh` counts them separately from passes.
+# There is no exit 2. Every "nothing was measured" branch below prints the
+# word SKIP and then exits 0 — missing register, missing instrument, dead
+# instrument, no summary. `run-all.sh` classifies purely by exit code (0 pass,
+# 2 skip, anything else fail), so each of those lands in the PASSED column and
+# the word SKIP survives only in the scrollback. That is a defect in this
+# gate, not a decision: the standing rule is that a check which cannot fail is
+# not evidence, and an unmeasured run counted as a pass is exactly that.
+# Correcting it means changing those `exit 0`s to `exit 2`, which is a code
+# change and not something a comment can do.
+#
+# To falsify: copy `EDITABLE_SURFACES.md`, delete one verb's table row, point
+# `PDFCER_EDITABLE_SURFACES` at the copy — it must name that verb and exit 1.
+# Point the variable at an empty file and it must name every uncalled verb.
+# The override exists so that falsifying the gate never needs a `git checkout`
+# in a tree where other work is uncommitted.
 # ===========================================================================
 set -u
 
@@ -110,9 +121,14 @@ fi
 # whether the measurement was against the LOCKED revision or a working tree.
 #
 # Piped through `tr -d` because the instrument is python on Windows and prints
-# CRLF. Without it every pattern below becomes `verb<CR>`, matches nothing, and
-# the gate reports EVERY verb as unexplained — which it did on its first run,
-# convincingly enough to be believed for a minute.
+# CRLF. Without it every pattern below becomes `verb<CR>`, which matches
+# nothing, and the gate reports EVERY verb as unexplained — a total failure
+# that is indistinguishable, on screen, from a total finding.
+#
+# `STATUS` is read after that pipeline with no `pipefail` in force, so it holds
+# `tr`'s status and not python's. `tr` succeeds on anything it is handed, so
+# the branch below that tests `STATUS` cannot fire; a dead instrument is caught
+# one branch later, by the empty summary.
 SUMMARY_FILE="$(mktemp)"
 MISSING="$(python "$INSTRUMENT" 2>"$SUMMARY_FILE" | tr -d '\r')"
 STATUS=$?
@@ -133,8 +149,8 @@ fi
 echo "$SUMMARY" | tail -1
 
 # Written to a file rather than accumulated in a variable. A shell string is a
-# perfectly good list until somebody's line endings are not what they look like,
-# and this gate has already spent one debugging session on exactly that.
+# perfectly good list until the line endings are not what they look like, and
+# an emptiness test cannot tell a list of one blank entry from no list at all.
 UNEXPLAINED_FILE="$(mktemp)"
 COUNT=0
 while IFS= read -r verb; do
@@ -142,27 +158,18 @@ while IFS= read -r verb; do
   COUNT=$((COUNT + 1))
   # Fixed-string, backticked, AND ONLY INSIDE A TABLE ROW.
   #
-  # ★★★ **The row restriction was added 2026-09-05, after prose switched this
-  # gate off by accident.**
+  # Prose ABOUT a verb is indistinguishable from prose ACCOUNTING FOR a verb,
+  # to an instrument that cannot read English — and that blindness runs in both
+  # directions. A paragraph naming, in backticks, the verbs it is declaring OUT
+  # of scope silences a whole-file search exactly as well as a row discharging
+  # them does: the sentence that admits the gap is the sentence that hides it.
   #
-  # It used to search the whole file. A session writing the register's rows
-  # opened its section with a paragraph naming, in backticks, the five verbs
-  # that were **deliberately out of scope** — saying plainly that they were NOT
-  # accounted for. This gate read those backticks, and went from naming five
-  # unexplained verbs to `PASS: all 41`, on a change that wired nothing.
-  #
-  # ⇒ **Prose ABOUT a verb is indistinguishable from prose ACCOUNTING FOR a
-  # verb**, to an instrument that cannot read English. The header of this file
-  # already calls that inability a deliberate weakness; what nobody had written
-  # down is that the weakness runs in **both directions** — it can hide a gap
-  # just as easily as it can report one.
-  #
-  # A row is the unit the register actually uses to discharge a verb: `| verb |
-  # pass | status |`. Restricting the match to lines beginning with `|` means an
-  # explanation must be *entered in the table* to count, and a sentence in an
+  # A row is the unit the register uses to discharge a verb: `| verb | pass |
+  # status |`. Restricting the match to lines beginning with `|` means an
+  # explanation must be ENTERED IN THE TABLE to count, and a sentence in an
   # introduction — however emphatic — cannot silence anything.
   #
-  # ⚠ Still fixed-string and still row-level, not first-cell. The register has a
+  # Still fixed-string and still row-level, not first-cell. The register has a
   # legitimate table of ALTERNATE SPELLINGS whose reason cell names the verb the
   # shell calls instead, and a first-cell rule would reject those.
   if ! grep '^|' "$REGISTER" | grep -qF -- "\`${verb}\`"; then

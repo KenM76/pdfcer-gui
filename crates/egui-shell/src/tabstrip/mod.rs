@@ -18,9 +18,9 @@
 //! | how many | a handful, chosen deliberately | as many as the operator opened, chosen by accident |
 //!
 //! What they *do* share is the thing that is hard: the **overflow
-//! reservation**. `MODES_AND_PANELS.md` Part 2 failure mode #8 — *"past ~6
-//! tabs the overflow button itself gets hidden, leaving no route to the hidden
-//! tabs"* — applies to a strip of twelve open drawings at least as much as to
+//! reservation**. `MODES_AND_PANELS.md` Part 2 failure mode #8 — *"past a
+//! handful of tabs the overflow button itself gets hidden, leaving no route to
+//! the hidden tabs"* — applies to a strip of twelve open drawings as much as to
 //! a stack of panels. So the arithmetic is [`crate::dock::plan`]'s, unchanged
 //! and un-copied. A second implementation of a reservation rule is how one of
 //! them comes to be subtly wrong.
@@ -199,8 +199,8 @@ pub struct TabStrip {
     /// tab's position from an index and a width can be wrong in the same
     /// direction as the code under test — `D:\dev\rag\egui\a_ui_rect_change_log_produces_confident_wrong_failures_in_BOTH_directions.md`
     /// and the *"do not compute a coordinate the application could publish"*
-    /// rule that came out of 2026-08-19. Hidden tabs are absent from this
-    /// list, which is itself the fact a check about overflow wants.
+    /// rule. Hidden tabs are absent from this list, which is itself the fact a
+    /// check about overflow wants.
     pub drawn: Vec<(usize, Rect)>,
     /// How many tabs did not fit and are reachable only through the overflow
     /// menu.
@@ -255,6 +255,10 @@ pub struct TabStrip {
 ///
 /// Step 3 before step 4 is what makes it impossible for the number of tabs to
 /// eat the route to the tabs.
+///
+/// A seventh step is this module's own and has no counterpart there: the
+/// reorder caret, resolved and painted after everything else, because the
+/// boundary it marks does not exist until the tabs are laid out.
 #[must_use]
 pub fn strip(ui: &mut egui::Ui, theme: &Theme, tabs: &[TabItem], active: usize) -> TabStrip {
     let mut out = TabStrip::default();
@@ -311,15 +315,10 @@ pub fn strip(ui: &mut egui::Ui, theme: &Theme, tabs: &[TabItem], active: usize) 
     // spring-loaded target exists for, and it fails silently: the tab is
     // visibly under the pointer and nothing happens.
     //
-    // Measured, 2026-08-20: `a_page_dragged_between_documents_is_copied` drove
-    // this, the trace carried `page-drag-start` and no spring, and the drop
-    // landed back in the source document.
-    //
     // A rectangle and a pointer position are facts that do not care who owns the
-    // interaction, which is what makes them the right instrument here. It is the
-    // same reason `pdfcer`'s own page grid resolves its drop target from
-    // `pointer_latest_pos()` against a tile rect rather than from the tile's
-    // response.
+    // interaction, which is what makes them the right instrument here — the same
+    // reason a drop target is resolved from `pointer_latest_pos()` against a
+    // tile rect rather than from the tile's own response.
     //
     // Resolved over `out.drawn` — the tabs actually laid out this frame — so a
     // tab behind the overflow affordance cannot be hovered, which is correct:
@@ -469,8 +468,7 @@ fn draw_tab(
     // discipline the overflow affordance gets one level up, applied inside the
     // tab.
     // ★★★ THE SELECTED TAB'S PLATE, PAINTED ACROSS THE WHOLE RECT AND BEFORE
-    // IT IS SPLIT — 2026-09-03. Two contrast defects converge here and one
-    // paint closes both.
+    // IT IS SPLIT. Two contrast failures meet here and one paint closes both.
     //
     // (1) The label button below is `.selected(selected)` with no `.fill()`,
     //     and `egui::Style::button_style` overwrites the fill from
@@ -493,8 +491,9 @@ fn draw_tab(
     // for. The ✕'s own colour choice below then becomes correct rather than
     // being worked around, which is why it is left untouched.
     //
-    // ★ Before the split, deliberately: after it, there are two rects and the
-    // gap between them is the one the ✕ sits in.
+    // ★ Before the split, deliberately: after it there are two rects, and the
+    // one the ✕ sits in is drawn frameless, so a plate painted per-rect would
+    // miss precisely the control that needs it most.
     if selected {
         ui.painter()
             .rect_filled(rect, theme.metrics.corner_radius, theme.palette.accent);
@@ -513,10 +512,16 @@ fn draw_tab(
         egui::pos2(close_rect.left(), rect.bottom()),
     );
 
-    // R84 — a selected tab is never distinguished by colour alone. Weight is
-    // the cue that survives greyscale and colour-vision deficiency, and this
-    // project has found colour-fill-only selection to be a recurring blind
-    // spot.
+    // R84 — a selected tab is never distinguished by colour alone, because
+    // colour-fill-only selection is a recurring blind spot.
+    //
+    // ★ `.strong()` is **not** the second cue: in `egui` 0.35 it resolves to a
+    // colour and not to a heavier face, so it sharpens the label against the
+    // plate rather than adding a cue that survives greyscale. It is safe here
+    // only because the colour is stated on the next line instead of inherited
+    // from the accent-filled widget state — see `crate::ribbon::tabs`' header
+    // for the walk through the toolkit, and `DEFECTS.md` D11 for what a bare
+    // `.strong()` costs.
     let text = if selected {
         RichText::new(&tab.label)
             .strong()
@@ -625,7 +630,9 @@ fn draw_tab(
 
 /// The "⏷ N more" affordance and the menu behind it.
 ///
-/// A plain menu of every hidden tab. Unlike the dock's, it offers only
+/// A plain menu of the open tabs, shown only once some of them do not fit —
+/// see the loop below on why it lists every tab rather than only the hidden
+/// ones. Unlike the dock's, it offers only
 /// activation: closing a document you cannot see is not a gesture any
 /// application offers, and offering it here would be inventing one.
 fn draw_overflow(

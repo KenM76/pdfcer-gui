@@ -4,43 +4,27 @@
 //! **fact record** ([`ObjectSummary`]) that every surface which has to say
 //! *"what is this thing?"* reads.
 //!
-//! Salvaged from the old shell's `object_summary.rs` (520 code lines, 276
-//! test lines) per `SALVAGE.md`'s Class A row. Its original charter,
-//! `docs/ui_specs/pass-17-dock-and-layer-tree.md` §C.6, asked for exactly
-//! one such function:
-//!
-//! > a `describe_object(obj: &VectorObject) -> ObjectSummary` … computed
-//! > once and consumed by both the tree row label and the Properties tab,
-//! > so a Path's fill colour is never described one way in the tree and a
-//! > different way in Properties.
-//!
 //! ## Its consumers, and why "one description path" is the whole point
 //!
-//! In the old shell three surfaces read this record and were required never
-//! to disagree: the Objects panel row label, the status-bar selection
-//! readout (the one visible with the dock *closed*, which is the state the
-//! operator's confusion actually happens in) and the canvas selection
-//! overlay's per-kind treatment.
-//!
-//! At stage **S3** two of those three exist, and they are both in this
-//! module tree:
+//! Four surfaces have to say what a selected object is, and none of them may
+//! disagree with another: a Path's fill colour must never be described one way
+//! in a tree row and a different way in Properties.
 //!
 //! | Consumer | Where | State |
 //! |---|---|---|
 //! | Objects panel row label | [`crate::panels::objects`] | live |
 //! | Properties panel | [`crate::panels::properties`] | live |
-//! | Status-bar selection readout | `app/status.rs` | S4 — the status bar lands with the selection model |
-//! | Canvas selection overlay | `canvas/overlay.rs` | S4 — there is no selection to outline yet |
+//! | Status-bar selection readout | `app/status.rs` | arrives with the selection model |
+//! | Canvas selection overlay | `canvas/overlay.rs` | arrives with the selection model |
 //!
 //! Two consumers is already enough for the rule to bite: the Objects panel
 //! says *"Path · blue · 4 nodes"* in a row, and the Properties panel says
 //! the same three facts in a list, and they are the same three field reads
 //! rather than two pieces of code that happen to agree today.
 //!
-//! The old `object_provider.rs`'s own module docs cite decision 011 on this
-//! exact failure shape — *"two decompositions quietly diverge"* — and two
-//! *descriptions* of one decomposition is that defect one layer up. This
-//! module is the structural answer to it.
+//! Decision 011 names this exact failure shape — *"two decompositions quietly
+//! diverge"* — and two *descriptions* of one decomposition is that defect one
+//! layer up. This module is the structural answer to it.
 //!
 //! ## Why a fact record and not a `String`
 //!
@@ -60,15 +44,13 @@
 //! > report after the command, a properties field. … **No badge, tint, red
 //! > flag, dashed outline or "provisional" layer drawn into the page view.**
 //!
-//! [`ObjectNote`] is that disclosure, and a panel is its correct home. Note
-//! that [`ObjectSummary::bounds_are_approximate`] survives the salvage
-//! *renamed in meaning*: in the old shell it drove a **dashed outline on the
-//! canvas**. Under rule 4 as it now stands, a dashed outline around content
-//! that is merely *described* imprecisely would be pdfcer marking its own
-//! uncertainty on the page — the exact thing the rule forbids. Here the same
-//! question drives a **sentence in a panel**. The predicate is kept because
-//! the question ("is this box an approximation?") is still the right one to
-//! ask once; where the answer is *shown* changed.
+//! [`ObjectNote`] is that disclosure, and a panel is its correct home.
+//! [`ObjectSummary::bounds_are_approximate`] therefore drives **a sentence in
+//! a panel** and never a dashed outline on the canvas: a dashed outline around
+//! content that is merely *described* imprecisely would be pdfcer marking its
+//! own uncertainty on the page, which is precisely what rule 4 forbids. The
+//! predicate earns its place because the question — *is this box an
+//! approximation?* — is the right one to ask once, in one place.
 //!
 //! A pre-commit affordance — a selection handle, a hover highlight, a
 //! rubber band — is explicitly still welcome; those are the cursor, not the
@@ -114,8 +96,8 @@
 //! |---|---|
 //! | [`ObjectNote::ApproximateTextBounds`] | `TextObject`'s bbox is never measured glyph ink, so it can enclose paper the operator can see is empty (a font's designed ascent sits above most lowercase letters) and, in the `EmBox` fallback, can miss visible glyphs entirely. `approximate` is always `true`, so this note is on every text object; its payload says which construction produced the box, and therefore which of four sentences explains it. |
 //! | [`ObjectNote::PaintsNothing`] | An `n`-op path (a clip, or a discarded construction) is a real, selectable object that paints no pixels at all (`PaintStyle::is_invisible`). |
-//! | [`ObjectNote::DegenerateBounds`] | A horizontal or vertical rule has a bbox of zero height or width. It is selectable and correct — and a zero-extent outline rect strokes **nothing**, so before this was disclosed the operator saw a click that appeared to do nothing at all. |
-//! | [`ObjectNote::NoBounds`] | The object has no finite geometry, so no outline can be drawn anywhere. Rare, and previously indistinguishable from a dead click. |
+//! | [`ObjectNote::DegenerateBounds`] | A horizontal or vertical rule has a bbox of zero height or width. It is selectable and correct — and a zero-extent outline rect strokes **nothing**, so without the note the operator sees a click that appears to do nothing at all. |
+//! | [`ObjectNote::NoBounds`] | The object has no finite geometry, so no outline can be drawn anywhere. Rare, and without the note indistinguishable from a dead click. |
 //! | [`ObjectNote::FormNotDecomposed`] | A form XObject is ONE opaque object: its outline covers the whole nested drawing, and its children are not individually listed or clickable. |
 //!
 //! What is deliberately **not** here: a same-colour ("white on white")
@@ -125,28 +107,19 @@
 //! rather than a guess to make. The readout states the object's own colour
 //! verbatim instead and lets the operator draw the conclusion.
 //!
-//! ## What changed at salvage
+//! ## Three standing constraints on this file
 //!
-//! 1. **`use eframe::egui` is gone** — this module never needed egui at all,
-//!    and now that is visible rather than incidental.
-//! 2. **`ObjectNote::ALL` and `ObjectKind::ALL` lost their
-//!    `#[allow(dead_code)]`.** This crate is a library, so a `pub` const is
-//!    never dead; the allow was an artefact of the old binary crate and
-//!    carrying it would have been carrying a lie.
-//! 3. **"pixel dimensions" became "pixel size" / "sample count"**, in the
-//!    doc comments and in one test name. Project rule 15 forbids a bare
-//!    "dimension": **ce dimensions** are the ones pdfcer authors, **pdf
-//!    dimensions** are CAD content it reads, and an image's sample count is
-//!    neither. The word was ambiguous here in a file that will sit beside
-//!    ce-dimension code, so it is gone.
-//! 4. **The consumer list in the header is now accurate for S3** rather than
-//!    naming two surfaces that do not exist yet. The old header's claim that
-//!    three consumers exist was true of the old shell; repeating it here
-//!    would have been the module-doc-describes-a-different-program defect
-//!    that `panels_structure.rs`'s own header records happening twice.
-//!
-//! Nothing else moved. No arithmetic, no classification rule and no note
-//! ordering changed, and every one of the original tests is below.
+//! 1. **It does not use egui.** Classification, measurement and counting need
+//!    no frame, and keeping the dependency out is what lets the tests below
+//!    run without one.
+//! 2. **`ObjectNote::ALL` and `ObjectKind::ALL` carry no `#[allow(dead_code)]`.**
+//!    This crate is a library, so a `pub` const is never dead, and an allow
+//!    that suppresses nothing is a lie about the code it sits on.
+//! 3. **Never write a bare "dimension" here.** Project rule 15 reserves the
+//!    word: **ce dimensions** are the ones pdfcer authors and **pdf
+//!    dimensions** are CAD content it reads. An image's sample count is
+//!    neither, so it is a "pixel size" or a "sample count", in prose and in
+//!    test names alike.
 
 use pdfcer_core::vector::{
     Bounds, ImageSource, PaintStyle, Rgb, TextBoundsBasis, TextFont, TextPreview, VectorObject,
@@ -372,11 +345,11 @@ impl ObjectSummary {
     /// definition, and italic overhang leans past the advance. The claim
     /// narrowed; it did not become false.
     ///
-    /// **This used to drive a dashed outline on the canvas.** It no longer
-    /// does, and the change is rule 4's, not a redesign: styling content
-    /// pdfcer is unsure about is content marking, and content marking is
-    /// forbidden. The predicate survives because the question is still worth
-    /// asking once — the *answer* is now a sentence in a panel.
+    /// **This drives a sentence in a panel, never a dashed outline on the
+    /// canvas.** Styling content pdfcer is unsure about is content marking,
+    /// and rule 4 forbids content marking. The predicate earns its place
+    /// because the question is worth asking once, in one place; where the
+    /// answer is shown is not this module's choice to make.
     #[must_use]
     pub fn bounds_are_approximate(&self) -> bool {
         self.notes
@@ -537,6 +510,9 @@ fn decode_note(preview: &TextPreview) -> Option<ObjectNote> {
 /// neither — so reporting `fill_color` unconditionally would print a colour
 /// that appears nowhere on the page. Centralising the resolution here is
 /// what stops the Objects row and the Properties panel from drifting apart.
+/// ⚠ A path that both fills and strokes reports only its fill: the
+/// both-present case needs two fields rather than a different winner.
+/// `DEFECTS.md` D45.
 fn visible_colour(style: PaintStyle, fill: Rgb, stroke: Rgb) -> Option<Rgb> {
     if style.fill.is_some() {
         Some(fill)
@@ -575,11 +551,10 @@ fn degeneracy_note(bounds: Bounds) -> Option<ObjectNote> {
 /// "3 objects selected (2 paths, 1 text)" tells the operator whether their
 /// marquee caught what they meant, which a per-object dump would bury.
 ///
-/// At S3 there is no marquee and no selection, so its live consumer is the
-/// Objects panel's own header line, which answers the same question about
-/// the whole page: *what is this page made of?* The selection form arrives
-/// at S4 with nothing here needing to change — [`census`] takes kinds, not a
-/// selection, precisely so the input can be either.
+/// Its other consumer is the Objects panel's own header line, which answers
+/// the same question about the whole page: *what is this page made of?*
+/// [`census`] takes kinds rather than a selection precisely so the input can
+/// be either, and neither consumer needs the other's shape.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct SelectionCensus {
     /// Total objects counted.

@@ -6,24 +6,17 @@
 //! [`super::plan`] makes against [`super::mod`]: a rule you can test with
 //! no window open is worth more than a rule you can only watch.
 //!
-//! ## What was already here, and what this adds
+//! ## The gesture is a command, not a drag
 //!
-//! `MODES_AND_PANELS.md` capability **(e)** — *"tear out to a floating OS
-//! window, re-dock"* — was assessed as *achievable with work* and
-//! scheduled **post-fold-in**, last on the recommended order, with one
-//! specific instruction about how to start:
+//! `MODES_AND_PANELS.md`'s tear-out section states the reasoning:
+//! starting from a stationary command rather than a drag captures most of
+//! the value at a fraction of the cost, dodges the focus-gated `StartDrag`
+//! primitive, and sidesteps failure mode #1 (ambiguous drag handle), the
+//! most-reported docking complaint in the benchmarked product.
 //!
-//! > (e) tear-out last, **starting with a stationary "Float this panel…"
-//! > command rather than drag-to-tear**. It captures most of the value at
-//! > a quarter of the cost and dodges the focus-gated `StartDrag`
-//! > primitive entirely — and it sidesteps failure mode #1 (ambiguous
-//! > drag handle), which is the most-reported docking complaint in the
-//! > product being used as the benchmark.
-//!
-//! That is exactly what this is. **The gesture is a command, not a drag.**
-//! A drag-to-tear gesture can be added later on top of this model without
+//! A drag-to-tear gesture can be layered on top of this model without
 //! changing a byte of it, because the model's question is *"where is this
-//! panel and where did it come from"* and a drag is only one way of
+//! panel and where did it come from"* and a drag is only one more way of
 //! answering it.
 //!
 //! [`super::tab_menu`]'s own header names `"Float this panel"` as the
@@ -57,9 +50,9 @@
 //! identity for a stack, and it cannot be, because
 //! [`super::DockLayout`] has no stable identity for a stack — a column is
 //! whatever index it currently occupies, which is the same property that
-//! made `egui_tiles`' arena handles unusable for persistence (the
-//! decision is recorded in `MODES_AND_PANELS.md` §"the dock was built
-//! **without** `egui_tiles`").
+//! makes an arena handle unusable for persistence —
+//! `MODES_AND_PANELS.md` §"It is built on `egui` directly, not on
+//! `egui_tiles`" carries that argument in full.
 //!
 //! An address can therefore go stale: the operator floats the Layers
 //! panel out of `left[1][0]`, then closes every other panel in column 1,
@@ -74,14 +67,14 @@
 //! place as the arrangement allows, and the operator gets their panel
 //! back **with its compartment**.
 //!
-//! ★★★ The first draft delegated to [`super::DockLayout::mount`] and its
-//! permissive clamp instead, which reads correct and is not:
-//! **floating a panel that was alone in its stack prunes that stack**, so
-//! the home is out of range one frame later with nothing having moved on,
-//! and the clamp silently merged the panel into its neighbour. The test
-//! that caught it is `float_then_dock_puts_the_panel_back_where_it_was`,
-//! and the general lesson is that *a tolerant fallback hides the case it
-//! was not written for*.
+//! ★★★ Delegating to [`super::DockLayout::mount`] and its permissive
+//! clamp instead reads correct and is not: **floating a panel that was
+//! alone in its stack prunes that stack**, so the home is out of range one
+//! frame later with nothing having moved on, and the clamp merges the
+//! panel into its neighbour without saying so.
+//! [`tests::float_then_dock_puts_the_panel_back_where_it_was`] is the
+//! guard, and the general rule is that *a tolerant fallback hides the case
+//! it was not written for*.
 //!
 //! Refusing — a `Result` — was never the alternative. It would push a
 //! decision into every caller that none of them can make better than this
@@ -179,12 +172,10 @@ pub const DEFAULT_SIZE_PTS: [f32; 2] = [320.0, 480.0];
 
 /// The smallest a float window may be remembered at.
 ///
-/// A floor, not a preference, and the argument is `dialogs::host`'s
-/// verbatim: *"a resizable window with no floor can be dragged down to a
-/// title bar and a scrollbar, which is a state with no way back"* — here
-/// the way back exists (dock it), but the operator has to be able to
-/// **read the control that offers it**, and a 40 pt window cannot show
-/// one.
+/// A floor, not a preference. A resizable window with no floor can be
+/// dragged down to a title bar and a scrollbar; here the way back exists
+/// (dock it), but the operator has to be able to **read the control that
+/// offers it**, and a 40 pt window cannot show one.
 pub const MIN_SIZE_PTS: [f32; 2] = [200.0, 140.0];
 
 /// The largest a float window may be remembered at.
@@ -260,8 +251,8 @@ pub struct DockHome {
     /// Honoured by [`DockLayout::dock_back`], clamped to the stack's
     /// current length. It is what stops floating the *first* of three
     /// tabbed panels and docking it back from silently reordering the
-    /// other two — see that method's docs for the draft that appended
-    /// instead and why it was wrong.
+    /// other two — see that method's docs for why appending is not good
+    /// enough.
     pub tab: usize,
 }
 
@@ -382,22 +373,21 @@ impl DockLayout {
     ///
     /// # ★★★ Why this does not simply call [`DockLayout::mount`]
     ///
-    /// It did, for about ten minutes, and
-    /// [`tests::float_then_dock_puts_the_panel_back_where_it_was`] caught
-    /// it. The failure is worth writing down because it looks exactly like
-    /// the case the permissive clamp was designed for and is the opposite
-    /// of it.
+    /// The case here looks exactly like the one the permissive clamp was
+    /// designed for and is the opposite of it.
     ///
     /// [`DockLayout::mount`] clamps an out-of-range address into the
-    /// nearest existing container — *"somewhere sensible after the
-    /// operator's own arrangement has moved on"*, which is right when the
+    /// nearest existing container — *somewhere sensible after the
+    /// operator's own arrangement has moved on*, which is right when the
     /// arrangement really has moved on. But **floating a panel that was
     /// alone in its stack prunes that stack**, so the home address is out
     /// of range *because of the float itself*, on the very next frame,
-    /// with nothing having moved on at all. Clamping then dropped the
-    /// panel into its neighbouring stack — and a round trip that silently
-    /// merges two compartments into one is a command that edited an
+    /// with nothing having moved on at all. Clamping then drops the panel
+    /// into its neighbouring stack — and a round trip that merges two
+    /// compartments into one without saying so is a command that edited an
     /// arrangement nobody asked it to touch.
+    /// [`tests::float_then_dock_puts_the_panel_back_where_it_was`] is the
+    /// guard.
     ///
     /// ⇒ So this **rebuilds** the address rather than clamping into it:
     /// a missing column at `home.column` is inserted, a missing stack at
@@ -410,14 +400,15 @@ impl DockLayout {
     ///
     /// # ★★ The tab index IS honoured
     ///
-    /// An earlier draft appended, on the reasoning that a recorded tab
-    /// index describes a stack that has since changed. That reasoning is
-    /// true and the conclusion was still wrong: float the *first* of three
-    /// tabbed panels and append it back, and the operator's tab order is
-    /// silently reversed by a command that promised to put something back.
-    /// Inserting at `home.tab`, clamped to the stack's current length,
-    /// restores the order when the stack is unchanged (the common case)
-    /// and degrades to appending when it is not.
+    /// Appending is the tempting alternative, on the reasoning that a
+    /// recorded tab index describes a stack that has since changed. The
+    /// reasoning is true and the conclusion does not follow: float the
+    /// *first* of three tabbed panels and append it back, and the
+    /// operator's tab order has been reordered by a command that promised
+    /// to put something back. Inserting at `home.tab`, clamped to the
+    /// stack's current length, restores the order when the stack is
+    /// unchanged (the common case) and degrades to appending when it is
+    /// not.
     ///
     /// # ★ It activates the panel afterwards
     ///
@@ -815,7 +806,9 @@ mod tests {
     /// The operator floats a panel out of the second column, then closes
     /// everything else in that column so it is pruned, then docks the
     /// float back. The recorded address names a column that no longer
-    /// exists; `mount`'s clamp is what makes this land rather than refuse.
+    /// exists, and [`DockLayout::dock_back`] rebuilds it rather than
+    /// refusing — it inserts the missing column and stack and clamps only
+    /// what is genuinely past the end.
     #[test]
     fn a_home_that_no_longer_exists_still_docks_the_panel() {
         let mut l = sample();

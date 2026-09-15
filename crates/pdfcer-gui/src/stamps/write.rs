@@ -12,7 +12,7 @@
 //! session.to_full_bytes(options)                   →  the file
 //! ```
 //!
-//! ## ★★ Why it extracts instead of editing the open document
+//! ## Why it extracts instead of editing the open document
 //!
 //! Because the open document must survive the operation completely untouched.
 //! `Save as stamp collection…` is a **Read-mode-legal act** by the operator's
@@ -22,13 +22,13 @@
 //! and returns bytes; nothing upstream of it can be changed by anything
 //! downstream of it.
 //!
-//! ★ The view is the **session's**, not the loaded file's, which carries his
+//! The view is the **session's**, not the loaded file's, which carries his
 //! unsaved edits into the collection. `app::actions::extract` makes the same
 //! choice for the same reason (decision 018), and the alternative — silently
 //! writing the file as it was opened — is the kind of wrong answer that looks
 //! completely right.
 //!
-//! ## ★★ Why it reopens the bytes rather than reusing a session
+//! ## Why it reopens the bytes rather than reusing a session
 //!
 //! `name_stamp_pages` names `stamps[i]` to **page `i` of the session it is
 //! given**. Handing it the operator's session would name his drawing's pages.
@@ -85,7 +85,7 @@ pub struct Written {
     pub skipped: Vec<String>,
     /// How many pages the extraction actually carried.
     ///
-    /// ★ Kept separately from `stamps_named` because they answer different
+    /// Kept separately from `stamps_named` because they answer different
     /// questions and a build where they disagree is precisely the build that
     /// names the wrong artwork. The caller asserts they match; the trace
     /// prints both so a driven check can see the disagreement rather than
@@ -95,9 +95,9 @@ pub struct Written {
 
 /// Why a collection could not be written.
 ///
-/// Four variants because there are four genuinely different sentences to say,
-/// and collapsing them would hand the operator the shrug this project's text
-/// conventions forbid.
+/// One variant per stage, because each stage fails for a different reason and
+/// there is a different sentence to say about each. Collapsing them would hand
+/// the operator the shrug this project's text conventions forbid.
 #[derive(Debug, Clone)]
 pub enum WriteFailure {
     /// `pageops::extract` refused. His document's pages could not be carried.
@@ -122,7 +122,7 @@ pub enum WriteFailure {
 impl WriteFailure {
     /// The engine's own words for what went wrong.
     ///
-    /// ★ Returned rather than re-worded. `crate::text` owns the *frame* —
+    /// Returned rather than re-worded. `crate::text` owns the *frame* —
     /// which of the four things failed — and the engine owns the detail, for
     /// the same reason `app::save`'s refusals quote rather than paraphrase: a
     /// sentence this shell invents about a failure it did not diagnose is a
@@ -158,17 +158,16 @@ impl WriteFailure {
 /// `view` is the source document — the operator's open session's view, so his
 /// unsaved edits are carried.
 ///
-/// # ★★ Why this takes `Settings` and not a `SaveOptions`
+/// # Why this takes `Settings` and not a `SaveOptions`
 ///
 /// It takes **both** funnels, and it has to, because this function does two
 /// things the operator has a persisted preference about: it opens an editing
-/// session, and it serialises one. An earlier draft took a ready-made
-/// `SaveOptions` — which honoured the write funnel and quietly bypassed the
-/// session one, calling `EditSession::new` directly. `app::settings`' `syn`
-/// check caught it on the first run, which is the whole reason
-/// `EditSession::new` is on its forbidden list: **a guard shaped around one
-/// delivery mechanism cannot see a second one**, and the second mechanism here
-/// is `set_quad_point_order`, delivered by a setter rather than by a field.
+/// session, and it serialises one. A ready-made `SaveOptions` honours the write
+/// funnel only, and reaching for `EditSession::new` to get a session bypasses
+/// the other — which is why `EditSession::new` is on `app::settings`' forbidden
+/// list. **A guard shaped around one delivery mechanism cannot see a second
+/// one**, and the second mechanism here is `set_quad_point_order`, delivered by
+/// a setter rather than by a field.
 ///
 /// ⚠ It is true that this particular session authors no annotation, so
 /// `quad_point_order` changes nothing about the bytes it writes today. That is
@@ -196,7 +195,7 @@ pub fn build(
     // 2 — reopen them, because the names must be positional against THESE
     //     pages and no others. See the module header.
     let doc = Document::from_bytes(extracted).map_err(|e| WriteFailure::Reopen(e.to_string()))?;
-    // ★ The session funnel, never `EditSession::new`. See the doc comment.
+    // The session funnel, never `EditSession::new`. See the doc comment.
     let mut session = settings.open_session(doc);
 
     // 3 — the category. This is an ordinary /Info edit and the engine says so:
@@ -215,7 +214,7 @@ pub fn build(
     //     ship the operator a file with a history it does not have, and a
     //     stamp collection is one of the few files where small and plain is
     //     worth something — Acrobat reparses the whole folder on startup.
-    // ★ And the save funnel for the serialisation, so a stamp collection and
+    // And the save funnel for the serialisation, so a stamp collection and
     //   `Save a copy` never disagree about line endings in the xref table.
     let (bytes, _save) = session
         .to_full_bytes(&settings.save_options())
@@ -231,10 +230,10 @@ pub fn build(
 
 /// Build the collection and put it on disk, reporting on the trace.
 ///
-/// Split from [`build`] on `app::actions::extract`'s reasoning: the half that
-/// touches the filesystem and the half that does the work are separable in the
-/// reading as well as in the testing, and only one of them needs a temporary
-/// directory to exercise.
+/// Kept separate from [`build`] on `app::actions::extract`'s rule: the half
+/// that touches the filesystem and the half that does the work are separable in
+/// the reading as well as in the testing, and only one of them needs a
+/// temporary directory to exercise.
 ///
 /// # Errors
 ///
@@ -257,10 +256,11 @@ pub fn build_and_write(
 
     match std::fs::write(target, &written.bytes) {
         Ok(()) => {
-            // ★ `stamps=` beside `pages=` on HANDOFF.md §2's ink-trail advice.
-            // A build that named the wrong pages writes a perfectly good PDF
-            // of the right size with the right stamp count; these two fields
-            // disagreeing is the only thing in the line that would show it.
+            // `stamps=` sits beside `pages=` so the trace carries both halves
+            // of the one invariant. A build that named the wrong pages writes
+            // a perfectly good PDF of the right size with the right stamp
+            // count; these two fields disagreeing is the only thing in the
+            // line that would show it.
             // `skipped=` is expected to be 0 forever, which is exactly why it
             // is printed — a number that is always zero is a tripwire.
             let (stamps, pages, skipped, bytes) = (

@@ -24,9 +24,9 @@
 //! them. A surface that recognised a page and dropped the finished file in
 //! front of the operator would be technically disclosive — the report would be
 //! *somewhere* — while being, in practice, a program that silently inserted
-//! several hundred unreviewed inferences into a document. `DEFECTS.md` and
-//! `HANDOFF.md` both record that this project's characteristic failure is a
-//! surface that is *correct* and *unreadable at the moment it matters*.
+//! several hundred unreviewed inferences into a document. This project's
+//! characteristic failure is a surface that is *correct* and *unreadable at the
+//! moment it matters* (`DEFECTS.md`).
 //!
 //! So the order is: recognise, **show what was inferred**, and only then offer
 //! to write it. The operator reads the disclosure while holding the one thing
@@ -35,26 +35,19 @@
 //!
 //! ## ★ Why the write is a Save-as, in every mode
 //!
-//! The operator's standing rule, 2026-08-14: *"Read may produce a new
-//! document; it may not modify this one"*, with the enforcement at the **save**
-//! rather than at the operation.
+//! The standing rule is *Read may produce a new document; it may not modify
+//! this one*, with the enforcement at the **save** rather than at the
+//! operation.
 //!
-//! `HANDOFF.md` §3 records that rule as currently **vacuous**, on the grounds
-//! that `file.save_copy` never overwrites the original. That was true and it
-//! understated the position: when this dialog was built, `file.save_copy` had
-//! **no dispatch arm at all** (`app/dispatch.rs` fell through to
-//! `command-unimplemented`), so **this shell could not write a file of any
-//! kind.**
+//! ★ The rule is **vacuous** in this shell, and that is worth saying rather
+//! than leaving as an apparent guarantee: `file.save_copy` asks for a
+//! destination too, and `crate::app::save::suggested_path` guarantees the
+//! *suggestion* is never the file that was opened, exactly as
+//! [`suggested_path`] below does here. The two surfaces share one picker,
+//! `crate::app::files::pick_save_path`, and the only thing that differs between
+//! them is the dialog's title.
 //!
-//! ★ **`file.save_copy` was wired on 2026-08-14** and the rule stays vacuous
-//! for the reason it always was: that command asks for a destination too, and
-//! `crate::app::save::suggested_path` guarantees the *suggestion* is never the
-//! file that was opened, exactly as [`suggested_path`] below does here. The two
-//! surfaces now share one picker, `crate::app::files::pick_save_path`, and the
-//! only thing that differs between them is the dialog's title.
-//!
-//! This dialog was nevertheless the first write to disk pdfcer-gui performed, and
-//! therefore the first place the rule could bite. It bites here in the only way that is
+//! It bites here in the only way that is
 //! honest: the destination is a path the operator names, so the rule holds in
 //! Read **and** in Edit **and** in Review by construction rather than by a mode
 //! check. Nothing here consults the mode, and nothing here should — the rule is
@@ -135,16 +128,15 @@ const REGION_SKIP: &str = "ocr-skip"; // ui-text-exempt: trace region name, neve
 /// evidence that the run could not have been started rather than that the
 /// harness missed it.
 ///
-/// ★ There is no region for a save control any more, and its removal is the
-/// change: recognition became an edit to the open session on 2026-08-27, so
-/// there is no transaction to complete and nothing for a second button to do.
+/// ★ There is deliberately no region for a save control. Recognition is an edit
+/// to the open session, so there is no transaction to complete and nothing for
+/// a second button to do.
 const REGION_RUN: &str = "ocr-run"; // ui-text-exempt: trace region name, never displayed
 /// The live progress line, drawn once a page has finished.
 ///
 /// ★ Published so a driven check can assert the operator can SEE the run
-/// moving. The whole request was *"so that the user can see that it is doing
-/// something and hasn't frozen"*, and a feature whose entire purpose is to be
-/// visible needs an oracle that is about visibility.
+/// moving. A feature whose entire purpose is to show that the program has
+/// not frozen needs an oracle that is about visibility.
 const REGION_PROGRESS: &str = "ocr-progress"; // ui-text-exempt: trace region name
 /// The control that finishes the page in hand and keeps everything.
 const REGION_STOP: &str = "ocr-stop"; // ui-text-exempt: trace region name
@@ -165,11 +157,9 @@ enum Phase {
     Working(Job),
     /// ★★ Recognition finished and **the words are in the open document.**
     ///
-    /// This used to mean *"a complete PDF is sitting in memory and the operator
-    /// must now choose a file for it"*, and it carried the bytes. Since the
-    /// engine's `EditSession::add_ocr_layer` (Pass 135.0, 2026-08-27) the layer
-    /// goes straight into the session as one undoable edit, so what is left to
-    /// report is the outcome — not a transaction to complete.
+    /// `EditSession::add_ocr_layer` puts the layer straight into the session as
+    /// one undoable edit, so this phase carries no bytes and there is no
+    /// transaction to complete — what is left to report is the outcome.
     ///
     /// It carries the run's counts rather than the words, which have already
     /// been handed to the session by the time this phase is entered.
@@ -218,15 +208,10 @@ pub struct OcrDialog {
     page_index: usize,
     /// ★★★ **Which pages to recognise.**
     ///
-    /// The operator, 2026-08-26: *"how do I OCR more than one page? Why does
-    /// the tool stop at one? […] Where is the option to select more than one
-    /// page?"*
-    ///
-    /// There was none. The dialog recognised [`Self::page_index`] and nothing
-    /// else, and no engine limitation required that — `add_ocr_layer`'s output
-    /// is a complete PDF that can be fed back in, so pages chain. Measured
-    /// before this was built, because a wrong answer would have corrupted a
-    /// file.
+    /// Recognising only [`Self::page_index`] is not an engine limitation:
+    /// `add_ocr_layer`'s output is a complete PDF that can be fed back in, so
+    /// pages chain. That was measured before this was built, because a wrong
+    /// answer would have corrupted a file.
     scope: Scope,
     /// ★★★ **The rail's page selection, captured when the dialog opened** —
     /// `OPERATOR_REQUESTS.md` O79.
@@ -426,15 +411,15 @@ impl OcrDialog {
     ) -> bool {
         self.poll_worker(actions);
 
-        // ★ ITS OWN OS WINDOW as of 2026-08-21. OCR is the longest-running
-        // thing in this program — a job an operator starts and then goes back
-        // to work while it runs — and a progress window locked inside the
-        // application frame is a window that has to be closed to keep working.
+        // ★ ITS OWN OS WINDOW. OCR is the longest-running thing in this program
+        // — a job an operator starts and then goes back to work while it runs —
+        // and a progress window locked inside the application frame is a window
+        // that has to be closed to keep working.
         //
-        // ★ The dialog region is published from INSIDE the callback now. It
-        // used to come from the `egui::Window` response rect, which no longer
-        // exists; `ui.max_rect()` is the same rectangle in the coordinates the
-        // harness converts, and `dialogs::host` tags it with this viewport.
+        // ★ The dialog region is published from INSIDE the callback, because
+        // there is no `egui::Window` response rect to take it from;
+        // `ui.max_rect()` is the same rectangle in the coordinates the harness
+        // converts, and `dialogs::host` tags it with this viewport.
         let (frame, ()) = crate::dialogs::host::Host::new(
             "ocr", // ui-text-exempt: a viewport key, never displayed.
             t::title(),
@@ -466,7 +451,7 @@ impl OcrDialog {
         let Some(outcome) = job.poll() else {
             return;
         };
-        // ★★★ Three endings, and the shell must keep them apart — 2026-09-01.
+        // ★★★ Three endings, and the shell must keep them apart.
         //
         // `Complete` is the run finishing on its own. `Stopped` is the operator
         // asking for what had been done so far, which is a SUCCESS with a
@@ -500,8 +485,8 @@ impl OcrDialog {
                     format!(
                         // ui-text-exempt: diagnostic trace, never displayed.
                         //
-                        // ★ `recognised=` beside the page counts, on
-                        // `HANDOFF.md` §2's own advice about the ink trail: a
+                        // ★ `recognised=` beside the page counts, because a
+                        // count of pages alone is not an ink trail: a
                         // build whose placement silently dropped every word
                         // would emit an otherwise identical line, and the pair
                         // is what makes the numbers comparable from a trace
@@ -597,9 +582,9 @@ impl OcrDialog {
                 ui.ctx().request_repaint();
                 ui.horizontal(|ui| {
                     // ★★★ **A BARE `ui.spinner()` IS INVISIBLE IN ALL THREE
-                    // PRESETS — A15f, found 2026-09-04 by the widened contrast
-                    // gate, and it is the funniest defect in the tree because
-                    // this control exists to prove the program has not frozen.**
+                    // PRESETS — A15f, which the widened contrast gate catches,
+                    // and it is the funniest defect in the tree because this
+                    // control exists to prove the program has not frozen.**
                     //
                     // `egui::Spinner` resolves its own colour from
                     // `visuals.strong_text_color()` (egui-0.35
@@ -632,9 +617,9 @@ impl OcrDialog {
                     );
                     ui.label(t::working());
                 });
-                // ★★★ **WHAT IT IS DOING** — the operator's own ask, 2026-09-01:
-                // *"so that the user can see that it is doing something and
-                // hasn't frozen on large documents."*
+                // ★★★ **WHAT IT IS DOING** — so the operator can see that the
+                // program is doing something and has not frozen on a large
+                // document.
                 //
                 // Drawn only once a page has finished. Before that the tally is
                 // all zeros, and "Page 0 of 36 — 0 words" beside a spinner says
@@ -694,7 +679,7 @@ impl OcrDialog {
                 // looks — a second, differently-worded copy on this window
                 // would be two accounts of one run that could drift.
                 ui.label(t::pages_outcome(*written, *skipped));
-                // ★★★ THE CAVEAT, before the reassurance — 2026-09-01.
+                // ★★★ THE CAVEAT, before the reassurance.
                 //
                 // A stopped run is a success and an incomplete one, and the
                 // order these two sentences appear in decides which the
@@ -789,11 +774,7 @@ impl OcrDialog {
         }
     }
 
-    /// ★★★ **Which pages — the control the operator said was missing.**
-    ///
-    /// > *"Where is the option to select more than one page? How did we end up
-    /// > with the most useless and un-userfriendly of options for the OCR?"*
-    /// > — 2026-08-26
+    /// ★★★ **Which pages.**
     ///
     /// # Why radios and not a dropdown
     ///
@@ -871,11 +852,11 @@ impl OcrDialog {
         // confirmed to have been understood, and it is off in a status line
         // rather than in the field, per rule 4's disclosure clause.
         //
-        // ★ Traced on CHANGE, not every frame. The first version emitted a line
-        // per frame for as long as the dialog was open — 90 of the 400 lines in
-        // a driven capture, all identical — which is not a diagnostic, it is a
-        // haystack. `HANDOFF.md` §2's rule about the ink trail cuts both ways:
-        // a line nobody can find is the same as a line nobody wrote.
+        // ★ Traced on CHANGE, not every frame. A line per frame for as long as
+        // the dialog is open is 90 of the 400 lines in a driven capture, all
+        // identical — which is not a diagnostic, it is a haystack. The ink-trail
+        // rule cuts both ways: a line nobody can find is the same as a line
+        // nobody wrote.
         let resolved = self
             .scope
             .pages(self.page_index, count, &self.range, &self.picked)
@@ -903,36 +884,17 @@ impl OcrDialog {
         if !ocr::engine_compiled_in() {
             return Some(Refusal::EngineAbsent);
         }
-        // ★★★ Refused, not disclosed — and the comparison is against
-        // `saved_epoch`, not against zero. 2026-08-26.
+        // ★★ **There is no unsaved-edits guard, and its absence is the design.**
         //
-        // `add_ocr_layer` reads the session's **base** revision, so a recognised
-        // copy taken over unsaved edits would silently omit them. That refusal
-        // is right and stays.
+        // `EditSession::add_ocr_layer` plans against the **session graph**, so a
+        // recognised copy taken over unsaved edits carries those edits. The
+        // divergence a guard would police does not exist, and a guard spelled
+        // against `edit_epoch` could not have policed it anyway: that counter
+        // never comes back down, not even after a successful save, so it asks
+        // *has anything ever been edited* and would kill OCR for the rest of a
+        // session on the first edit.
         //
-        // What was wrong was the question. `edit_epoch != 0` asks *has anything
-        // ever been edited*, and `edit_epoch` never comes back down — so OCR
-        // died for the rest of the session the first time anyone edited and
-        // saved anything, and said **"unsaved edits"** on the way out, which by
-        // then was false. The operator met it and asked *"how did we end up with
-        // the most useless and un-userfriendly of options for the OCR?"*
-        //
-        // ★★★ **AND THE GUARD IS GONE ENTIRELY, as of 2026-08-27.**
-        //
-        // It was correct and it was unfixable. `ocr::layer::add_ocr_layer` read
-        // the document's **base** revision, so a recognised copy taken after an
-        // edit silently omitted that edit — and silent omission is worse than a
-        // refusal, so refusing was right. But a session never becomes clean
-        // again, not even after a successful save, so this killed OCR for the
-        // rest of the session the first time anything was edited and told the
-        // operator something inaccurate on the way out.
-        //
-        // No guard could have fixed that, because the guard was not the
-        // problem. `EditSession::add_ocr_layer` (engine Pass 135.0) plans
-        // against the **session graph**, so the divergence the guard existed to
-        // police no longer exists, and the guard has nothing left to guard.
-        //
-        // What remains here is the pair that is still real: a build with no
+        // What is left is the pair that is still real — a build with no
         // recogniser, and a build that cannot find its models.
         match ocr::resolve_models(ocr::exe_dir().as_deref(), user_data_dir().as_deref()) {
             Ok(_) => None,
@@ -1114,21 +1076,21 @@ pub(super) fn open_for(status: &Status, picked: Vec<usize>) -> Option<OcrDialog>
 
 #[cfg(test)]
 mod tests {
-    /// ★★★ **An edited, unsaved document may now be recognised** — the last
-    /// act of the operator's OCR complaint.
+    /// ★★★ **An edited, unsaved document may be recognised**, and the
+    /// absence of a guard against it is the thing pinned here.
     ///
-    /// # What this used to assert, and why the reversal is not a relaxation
+    /// # Why refusing would be the defect, not the safeguard
     ///
-    /// It asserted the opposite: that a document with unsaved edits was
-    /// refused. That was correct at the time and for a real reason —
-    /// `ocr::layer::add_ocr_layer` read the document's **base** revision, so a
-    /// recognised copy taken after an edit silently omitted it.
+    /// A recognise path that reads the document's **base** revision —
+    /// `ocr::layer::add_ocr_layer` does — produces a recognised copy that
+    /// silently omits every edit made since, so refusing an edited document
+    /// looks like the safe answer.
     ///
-    /// But the base never becomes current, not even after a save, so the
-    /// refusal was permanent from the first edit onward and the operator was
-    /// stuck in it. `EditSession::add_ocr_layer` (engine Pass 135.0) plans
-    /// against the **session graph** instead, which removes the divergence
-    /// rather than policing it.
+    /// It is not: the base never becomes current, not even after a save, so
+    /// such a refusal is permanent from the first edit onward and the operator
+    /// is stuck in it. `EditSession::add_ocr_layer` plans against the
+    /// **session graph** instead, which removes the divergence rather than
+    /// policing it.
     ///
     /// ★ So this test now pins the *absence* of the guard, and it is worth
     /// having as a test rather than as a deletion: the trap was re-introduced

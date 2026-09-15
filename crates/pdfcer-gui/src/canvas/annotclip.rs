@@ -1,149 +1,76 @@
 //! # `canvas::annotclip` — **the annotation half of the canvas clipboard**
 //!
-//! Split out of [`crate::canvas::clipboard`] on **2026-09-05**, when that file
-//! reached 1,462 lines against R2's 1,500 ceiling and the lossless annotation
-//! route was about to be added to it. The seam is **annotation versus
-//! content**, not copy versus paste, and it is a real subject boundary rather
-//! than a size-driven cut:
+//! The seam against [`crate::canvas::clipboard`] is **annotation versus
+//! content**, not copy versus paste:
 //!
 //! * `canvas::clipboard` owns the **clipboard as a thing** — what it can hold,
 //!   who owns `Ctrl+C`, where a paste lands, which refusals exist, and the
 //!   routing between the four operand families.
 //! * this module owns **what an annotation costs to carry**: which of the
-//!   engine's carriers it lands on and what each carrier drops. (Until
-//!   2026-09-08 it also owned a spec-plus-options path that existed because
-//!   one carrier dropped things the other did not — see the next section.)
-//!
-//! ## ★★★ 2026-09-08 — THE SPEC ROUTE IS DELETED, AND WHY THE HISTORY STAYS
-//!
-//! Everything below the rule was written while `pdfcer-core`'s markup carrier
-//! was lossy, and it is kept because the *finding* — a "lossless" clipboard
-//! that was lossy for exactly the annotations this shell could already copy —
-//! is the kind that recurs. What is no longer true:
-//!
-//! * `Plan::spec_is_more_faithful`, `carried_options`, `translated`,
-//!   `clipboard::copy_as_spec`, `Clipped::Markup` and `Action::PasteMarkup`
-//!   **are gone** — 804 lines. `Pass 270.0` gave `ClipAnnotation::Markup` a
-//!   `MarkupCarry` (border dash, `/CA`, `/Contents`, `/T`) and the engine's
-//!   paste applies it through `add_markup_with`, so the clip carries what the
-//!   spec route carried and the fork had nothing left to choose between.
-//!   `the_engine_models_a_square_and_carries_a_sticky_note_whole` asserts
-//!   `(thin, whole) == (0, 1)` for a `/Square` — the flip its own message
-//!   predicted — and `a_modelled_markup_keeps_what_a_spec_cannot_say` asserts
-//!   the four keys on the payload.
-//! * There is **one route** now, for a copy and for a duplicate alike: the
-//!   engine's clip, whatever carrier it chose. [`Plan::of`] still reads the
-//!   carrier off the payload, because [`Plan::thin`] and [`Plan::refused`]
-//!   still have to be disclosed, and `thin` keeps its field for the reason its
-//!   own doc gives.
-//! * Deleted a day after the discovery rather than in the same commit,
-//!   deliberately: removing a faithful-copy path in the same breath as finding
-//!   it redundant is how a subtle loss ships. The `debug_assert` that stood
-//!   guard for that day is gone with the predicate it guarded.
-//!
-//! ---
+//!   engine's carriers it lands on and what each carrier drops.
 //!
 //! A reader asking *"why did my sticky note's author survive and my cloud's
 //! not?"* finds the whole answer here, in one file, rather than interleaved
 //! with the paste offset and the OS-clipboard marker.
 //!
-//! ## ★★ 2026-09-06 — [`duplicate`] lives here, and the reason is the finding
-//! below
+//! ## ★★ [`duplicate`] lives here, and the carrier question is why
 //!
 //! `edit.duplicate` (`Ctrl+D`) puts a second copy of the selected comment on
 //! the page **without touching the clipboard**, which is the whole point of it:
-//! `Ctrl+C`/`Ctrl+V` already produced a second comment and destroyed whatever
-//! the operator was carrying, once per mark on a row of revision marks.
+//! doing the same with `Ctrl+C`/`Ctrl+V` destroys whatever the operator was
+//! carrying, once per mark on a row of revision marks.
 //!
 //! It is in *this* module rather than beside the dispatcher because a duplicate
 //! faces the identical carrier question a copy does, and the obvious
 //! implementation — straight onto `paste_objects` with a translate matrix —
-//! gets it wrong in the same invisible way: it would hand back an **anonymous,
+//! gets it wrong in the same invisible way: it hands back an **anonymous,
 //! undated, opaque** copy of a signed revision cloud, which looks correct on
 //! the page. So it runs the same `copy_selection` and asks the same
-//! [`Plan::of`] — and, while the fork existed, took the same fork. **No subtype
-//! list, in either verb.**
+//! [`Plan::of`]. **No subtype list, in either verb.**
 //!
-//! ---
+//! ## ★★★ THE RULE THIS MODULE EXISTS TO HOLD
 //!
-//! ## ★★★ THE FINDING THIS MODULE EXISTS TO RECORD
+//! **Which carrier an annotation lands on is the engine's answer to read, never
+//! this shell's to predict.**
 //!
-//! **`pdfcer-core`'s "lossless" annotation clipboard is lossy for exactly the
-//! annotations this shell could already copy, and lossless for exactly the
-//! ones it could not.** Measured 2026-09-05 against engine **v0.38.0
-//! (`b01964f`)**, from source, not from a changelog.
+//! `EditSession::copy_selection` classifies every annotation it is asked for
+//! through `clip_annotation`, whose last act is to try
+//! `annot_author::spec_from_dict` and fall back to `clip_raw_annotation` when
+//! that refuses. So the model carrier — `ClipAnnotation::Markup` — claims
+//! `/Square`, `/Circle`, `/Line`, `/Ink`, `/Polygon`, `/PolyLine`, `/Cloud` and
+//! text markup, which is **every kind this shell authors**, and the raw carrier
+//! gets exactly the kinds this shell cannot author: sticky notes, stamps, text
+//! boxes, links, file attachments.
 //!
-//! `EditSession::copy_selection` (`edit.rs:10456`) classifies every annotation
-//! it is asked for through `clip_annotation` (`edit.rs:10599`), and the last
-//! thing that function does is:
+//! That split is not stable and has already inverted once in the direction that
+//! matters to an operator. A `MarkupSpec` describes a *shape*, so while the
+//! model carrier held nothing else, a copied revision cloud arrived anonymous,
+//! undated and opaque — `/CA`, `/T`, `/M` and `/Contents` dropped — while the
+//! kinds the shell could *not* author round-tripped byte for byte. The engine's
+//! `ClipAnnotation::Markup` now carries a `MarkupCarry` beside the spec (border
+//! dash, `/CA`, `/Contents`, `/T`) and its paste applies it through
+//! `add_markup_with`, so both carriers are faithful today.
 //!
-//! ```text
-//! match crate::annot_author::spec_from_dict(&self.graph(), &dict) {
-//!     Ok(spec) => Ok(ClipAnnotation::Markup(Box::new(spec))),
-//!     Err(_)   => self.clip_raw_annotation(annot, id, &dict),
-//! }
-//! ```
-//!
-//! — and on the way back out, `paste_clip_annotations` (`edit.rs:10901`)
-//! plants a `ClipAnnotation::Markup` with **`add_markup`**, not
-//! `add_markup_with`. `add_markup` takes no
-//! [`MarkupOptions`](pdfcer_core::edit::MarkupOptions), so `/CA`, `/T`, `/M`
-//! and `/Contents` are **dropped on the floor** — the same four keys this
-//! shell added `carried_options` for on 2026-08-28, and the same four the
-//! engine's own `RawAnnotation` doc comment lists as the model route's cost:
-//!
-//! > *"Everything a `MarkupSpec` does not model, on the kinds it does: `/CA`
-//! > opacity, `/T` the author, `/Contents` the note text, `/M` the date,
-//! > `/Popup`, `/RC`. That loss was reported by the consuming shell, not found
-//! > here."* — `vector/clip.rs:215`
-//!
-//! `Pass 170.0` added the raw carrier to answer that paragraph, and the raw
-//! carrier **does** copy all of it exactly. But `clip_annotation` still tries
-//! the model first, so a `/Square`, `/Circle`, `/Line`, `/Ink`, `/Polygon`,
-//! `/PolyLine`, `/Cloud` or text markup — every kind `spec_from_dict` reads,
-//! which is every kind this shell authors — never reaches it.
-//!
-//! ⇒ **So a naive "move to `copy_annotations`" would have been a regression.**
-//! It would have unlocked sticky notes, stamps, text boxes, links and file
-//! attachments, and in the same commit silently made every copied revision
-//! cloud anonymous, undated and opaque. That is the audit
-//! `HANDOFF.md` predicts of every second route onto a capability, arriving on
-//! schedule.
-//!
-//! ## ★★★ How the fork is decided, and why it is NOT a subtype list
-//!
-//! The obvious repair is a hand-written list — *"`/Square`, `/Circle`, `/Line`
-//! … take the old path; everything else takes the new one"*. **That is the
-//! defect this whole exercise is about**, one layer down: the moment
-//! `pdfcer-core` teaches `spec_from_dict` a ninth subtype, or moves an eighth
-//! onto the raw carrier, the list is wrong and nothing goes red.
-//!
-//! So the fork reads **the engine's own answer**. The copy runs
-//! `copy_selection` first, unconditionally, and then asks the returned
-//! [`ObjectClip`](pdfcer_core::vector::ObjectClip) which carrier each
-//! annotation landed on — see [`Plan::of`]. A `ClipAnnotation::Markup` is the
-//! engine saying *"I modelled this one"*, which is precisely the condition
-//! under which the shell's spec-plus-options path *was* more faithful than the
-//! engine's own (until `Pass 270.0`). A `Raw`, a `Dimension` or anything a future Pass adds is the
-//! engine saying *"I carried this one whole"*, and the clip wins.
+//! ⇒ **The hand-written repair is the trap.** A list — *"`/Square`, `/Circle`,
+//! `/Line` … take one path, everything else the other"* — is wrong the moment
+//! `spec_from_dict` learns a ninth subtype or gives up an eighth, and nothing
+//! goes red. Instead the copy runs `copy_selection` first, unconditionally, and
+//! asks the returned [`ObjectClip`](pdfcer_core::vector::ObjectClip) which
+//! carrier each annotation landed on — see [`Plan::of`], whose wildcard arm is
+//! what makes a carrier this build has never heard of the safe case.
 //!
 //! The classification therefore tracks the engine automatically, in both
 //! directions, and the only thing this file hard-codes about subtypes is
 //! nothing at all.
 //!
-//! ## What each route can carry — measured, not assumed
+//! ## What each route can carry
 //!
 //! | route | reached when | carries | drops |
 //! |---|---|---|---|
-//! | the clip, `Raw` carrier | `spec_from_dict` refuses the dictionary | the whole dictionary, its baked `/AP` and the object closure it reaches | `/P`, `/Parent`, `/StructParent`, `/NM`, `/Popup`, `/IRT` — all six name something in the *source* document (`edit.rs:10672`) |
+//! | the clip, `Markup` carrier | `spec_from_dict` reads the dictionary | the modelled geometry, colours and widths, plus `MarkupCarry`'s border dash, `/CA`, `/Contents` and `/T` | `/M` — and a paste authors a fresh mark, so a new date is the right answer |
+//! | the clip, `Raw` carrier | `spec_from_dict` refuses the dictionary | the whole dictionary, its baked `/AP` and the object closure it reaches | `EditSession::CLIP_STRIPPED_ANNOT_KEYS`: `/P`, `/Parent`, `/StructParent`, `/NM`, `/Popup`, `/IRT` — all six name something in the *source* document |
 //! | the clip, `Dimension` carrier | it is a **ce dimension** | the group by name, its scale, format, standard, the per-object style and the text override | nothing this shell can author |
-//! | ~~the shell's spec + options~~ **deleted 2026-09-08** | ~~the engine modelled it as a `MarkupSpec`~~ | ~~the geometry, colours, widths, and `/CA`, `/T`, `/M`, `/Contents` via `carried_options`~~ — the `Markup` carrier's `MarkupCarry` holds these now | — |
 //! | refused | `/Widget`, `/Popup`, `/Redact` | — | the whole annotation, **by name** |
-//!
-//! ★ The struck-through row was the one hand-written enumeration left, bounded
-//! by what `MarkupOptions` could express. The day the engine's
-//! `paste_clip_annotations` called `add_markup_with` arrived on 2026-09-08 and
-//! the route was deleted, as this paragraph said it would be.
 //!
 //! ## ★★ Two address spaces, and this module resolves one of them
 //!
@@ -250,34 +177,32 @@ pub struct Plan {
     /// Annotations the engine carried **whole** — a raw dictionary with its
     /// baked appearance, or a ce dimension with its group.
     pub whole: usize,
-    /// ★★★ **ALWAYS ZERO SINCE 2026-09-08 — the loss this counted is fixed,
-    /// and the field is kept as a tripwire rather than deleted.**
+    /// **Annotations the engine carried with a known loss. Always zero against
+    /// the current engine, and kept wired rather than deleted.**
     ///
-    /// It counted annotations the engine carried as a bare `MarkupSpec`, which
-    /// describes the SHAPE and therefore could not express `/CA`, `/T`, `/M`
-    /// or `/Contents`. `Pass 270.0` gave `ClipAnnotation::Markup` a second
-    /// field — `MarkupCarry` — carrying **the border dash, `/CA`, `/Contents`
-    /// and `/T`**, which is three of the four this sentence named and the
-    /// dash besides. `FEATURES.md`: *"A pasted markup is the mark that was
-    /// copied."*
+    /// It counts annotations carried as a bare `MarkupSpec`, which describes
+    /// the SHAPE alone and so cannot express `/CA`, `/T`, `/M` or `/Contents`.
+    /// No current carrier is in that state: `ClipAnnotation::Markup` carries a
+    /// `MarkupCarry` beside the spec holding the border dash, `/CA`,
+    /// `/Contents` and `/T`, so [`Plan::of`] has no arm that sets this.
+    /// `FEATURES.md`: *"A pasted markup is the mark that was copied."*
     ///
-    /// ⚠ The fourth, `/M`, is not carried and is not a loss: a paste **authors
-    /// a fresh mark**, so a new modification date is the correct answer rather
-    /// than a dropped one. This shell stamps `/M` itself
-    /// (`app::clock::pdf_date_utc`) everywhere it authors.
+    /// ⚠ `/M` is not carried and is not a loss: a paste **authors a fresh
+    /// mark**, so a new modification date is the correct answer rather than a
+    /// dropped one. This shell stamps `/M` itself (`app::clock::pdf_date_utc`)
+    /// everywhere it authors.
     ///
     /// # Why the field survives its own subject
     ///
-    /// Because `ClipAnnotation` is `#[non_exhaustive]` and the day a future
-    /// carrier arrives that *does* lose something, the disclosure, the status
-    /// wording and the test that reads them must already exist. Deleting the
-    /// field would delete the route as well as the count.
+    /// `ClipAnnotation` is `#[non_exhaustive]`, so a future carrier that *does*
+    /// lose something is a live possibility, and on the day it arrives the
+    /// count, the disclosure and the status wording must already exist and
+    /// already agree. Deleting the field would delete the route as well as the
+    /// count, and the route is the expensive half.
     ///
-    /// ⇒ [`Plan::of`] can no longer set it, and
-    /// [`tests::a_carried_markup_is_no_longer_reported_as_a_loss`] asserts
-    /// that against a real clip. If a later engine reintroduces a lossy
-    /// markup carrier, that is where it must be wired back in — deliberately,
-    /// with the sentence re-checked against what is actually lost.
+    /// ⇒ If a lossy markup carrier reappears, this is where it is wired back in
+    /// — deliberately, with the sentence re-checked against what is actually
+    /// lost rather than against what this comment says was lost once.
     pub thin: usize,
     /// The `/Subtype`s the engine refuses to put on a clipboard at all,
     /// verbatim from `ClipAnnotation::Unsupported`.
@@ -305,15 +230,12 @@ impl Plan {
     /// as `thin` — would put a false warning on the status row for every
     /// annotation of a kind a newer engine handles better.
     ///
-    /// ★★★ **And that argument came true on its own author, 2026-09-08.**
-    /// `ClipAnnotation::Markup` grew a second field (`MarkupCarry`,
-    /// `Pass 270.0`) carrying the dash, `/CA`, `/Contents` and `/T` — the very
-    /// properties [`Self::thin`] existed to warn were being dropped. The
-    /// **compile error was the notification**, and the tempting fix was to
-    /// write `Markup(_, _)` and move on, which compiles, keeps the count, and
-    /// leaves this shell warning the operator about a loss that no longer
-    /// happens. ⇒ The markup arm is gone; a carried markup is `whole`, through
-    /// the same wildcard that already had the right answer for it.
+    /// ★★★ **When an engine bump makes an arm here stop compiling, the compile
+    /// error is a notification, not a chore.** The tempting repair — widening
+    /// the pattern to swallow the new field and keep the old count — compiles,
+    /// and leaves this shell warning the operator about a loss that is no
+    /// longer happening. Re-check what the carrier now carries, then decide
+    /// which count it belongs in.
     #[must_use]
     pub fn of(clip: &ObjectClip) -> Self {
         let mut plan = Self::default();
@@ -354,20 +276,18 @@ impl Plan {
 /// one pasting at `(0, 0)` — the bottom-left corner of the sheet — reads as
 /// data loss.
 ///
-/// ★ Read from the raw dictionary rather than from the `MarkupSpec`, and the
-/// reason is the same one the deleted `carried_options` gave: the spec is a
+/// ★ Read from the raw dictionary rather than from a `MarkupSpec`: a spec is a
 /// *translation* of the annotation, and every kind translates its geometry
 /// differently — an ink stroke into a point list, a line into two ends, a
 /// square into corners. `/Rect` is the one place every annotation states its
 /// extent in the same terms (§12.5.2), so reading it needs no per-kind match
 /// and therefore cannot silently omit a kind.
 ///
-/// ★★ Used only by the **spec** route. A clip carries its own
-/// `ObjectClip::bbox`, unioned by the engine over both content items and
-/// annotation rects, and that is what the clip route anchors on — one number
-/// from the payload rather than a second reading of the document, which is
-/// what makes a clip pasted after the source document was closed still land
-/// where the operator pointed.
+/// ★★ Not used by the clip route, which anchors on the clip's own
+/// `ObjectClip::bbox` — unioned by the engine over both content items and
+/// annotation rects. One number from the payload rather than a second reading
+/// of the document is what makes a clip pasted after the source document was
+/// closed still land where the operator pointed.
 pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
     use pdfcer_core::object::Object;
     let Object::Array(values) = dict.get(b"Rect")? else {
@@ -388,7 +308,7 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
 }
 
 // ===========================================================================
-// ★★★ DUPLICATE — `edit.duplicate`, Ctrl+D, 2026-09-06
+// ★★★ DUPLICATE — `edit.duplicate`, Ctrl+D
 // ===========================================================================
 
 /// **Place a second copy of the selected annotation on the same page**, offset
@@ -399,13 +319,13 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
 ///
 /// Because the two are different acts and the difference is the clipboard.
 ///
-/// Before this existed, the only route to a second revision cloud was `Ctrl+C`
-/// then `Ctrl+V` — which works, and **destroys whatever the operator had
-/// copied**. An operator laying out a row of identical revision marks is very
-/// often carrying something else on the clipboard (a title-block string, a part
-/// number, a cell from a spreadsheet), and every duplicate cost them that. Every
-/// application in this class separates the two for exactly that reason, and
-/// Acrobat has had `Ctrl+D` on a comment for as long as it has had comments.
+/// Reaching a second revision cloud through `Ctrl+C` then `Ctrl+V` works, and
+/// **destroys whatever the operator had copied**. An operator laying out a row
+/// of identical revision marks is very often carrying something else on the
+/// clipboard (a title-block string, a part number, a cell from a spreadsheet),
+/// and every duplicate would cost them that. Every application in this class
+/// separates the two for exactly that reason, and Acrobat has had `Ctrl+D` on a
+/// comment for as long as it has had comments.
 ///
 /// `mockups/app.html`'s approved canvas context menu already draws
 /// *"Duplicate — Ctrl+D"*; this is the verb behind that line.
@@ -432,17 +352,15 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
 /// This runs the same `copy_selection` the copy runs and asks [`Plan::of`]
 /// which carrier each annotation landed on, so a refusal is disclosed by name
 /// exactly as a copy's is. It does **not** re-implement the classification,
-/// and it does not hard-code a subtype list. (Until 2026-09-08 it then took
-/// the fork `Plan::spec_is_more_faithful` drew; the fork is gone — module
-/// header — and the clip is the only route.)
+/// and it does not hard-code a subtype list.
 ///
 /// ⇒ That is the whole reason this function lives in this module rather than
-/// beside the dispatcher. The module header's finding — *"the engine's
-/// 'lossless' annotation clipboard is lossy for exactly the annotations this
-/// shell could already copy"* — applies to a duplicate identically. A duplicate
-/// written the obvious way, straight onto `paste_objects`, would have produced
-/// an **anonymous, undated, opaque** copy of a signed revision cloud, silently,
-/// and it would have looked right on the page.
+/// beside the dispatcher. The module header's rule — which carrier an
+/// annotation lands on is the engine's answer to read, never this shell's to
+/// predict — applies to a duplicate identically. A duplicate written the
+/// obvious way, straight onto `paste_objects` with a translate matrix, is one
+/// engine change away from an **anonymous, undated, opaque** copy of a signed
+/// revision cloud, silently, and it would look right on the page.
 ///
 /// # ★ The clip is assembled before the refusal check, and that is the point
 ///
@@ -581,25 +499,23 @@ mod tests {
 
     /// ★★★ **The engine's own carrier choice, asserted rather than assumed.**
     ///
-    /// This is the test that pins the module header's central finding, and it
-    /// is written against `pdfcer-core`'s behaviour rather than against a
-    /// sentence about it, because a sentence about another crate is a claim
-    /// with a shelf life measured in hours (`RESUME.md`, six recurrences).
+    /// This is the test that pins the module header's rule, and it is written
+    /// against `pdfcer-core`'s behaviour rather than against a sentence about
+    /// it, because a sentence about another crate is a claim with a shelf life
+    /// measured in hours (`RESUME.md`).
     ///
     /// Three annotations, three questions:
     ///
     /// | `/Annots` index | subtype | expected carrier |
     /// |---|---|---|
-    /// | 0 | `/Square` | `Markup` — pdfcer models it, so the clip is **thin** |
+    /// | 0 | `/Square` | `Markup` — modelled, and carried **whole** because the carrier holds `MarkupCarry` |
     /// | 1 | `/Text` | not modelled, so the clip carries it **whole** |
     /// | 2 | `/FreeText` | not modelled, so the clip carries it **whole** |
     ///
-    /// ★ When this test goes red because any index became `thin`, a lossy
-    /// markup carrier is back and the disclosure on [`Plan::thin`] has a
-    /// subject again — which is exactly the moment this project has
-    /// historically failed to notice. The other direction already happened:
-    /// index 0 became `whole` on 2026-09-08 and the spec route was deleted,
-    /// as the previous wording of this paragraph said it would be.
+    /// ★ Every index must read `whole`. One reading `thin` means a lossy
+    /// carrier is back and the disclosure on [`Plan::thin`] has a subject
+    /// again — the moment this project most needs to notice and is worst at
+    /// noticing.
     #[test]
     fn the_engine_models_a_square_and_carries_a_sticky_note_whole() {
         let doc = crate::app::state::open_local_fixture(FIXTURE);
@@ -609,21 +525,10 @@ mod tests {
                 .copy_annotations(0, &[0])
                 .expect("the square copies"),
         );
-        // ★★★ THIS ASSERTION WAS `(1, 0)` UNTIL 2026-09-08, AND ITS OWN
-        // MESSAGE PREDICTED THE FLIP:
-        //
-        //   > "If this is now (0, 1) the engine moved it to the raw carrier
-        //   >  and canvas::annotclip's spec route is obsolete."
-        //
-        // It fired on the pin bump to `Pass 270.0`, which gave the markup
-        // carrier a second field (`MarkupCarry`) holding the dash, `/CA`,
-        // `/Contents` and `/T` — the four keys `thin` existed to warn about.
-        // The prediction was right on both halves: the count flipped, and the
-        // spec route is obsolete.
-        //
-        // ⇒ Kept pointing the other way rather than deleted, because the fact
-        // it holds is still load-bearing: a /Square must be counted as CARRIED
-        // WHOLE. If it ever reads (1, 0) again, a lossy carrier is back.
+        // ★★★ A `/Square` is the kind this shell authors most and the kind the
+        // model carrier claims, so it is the one whose carrier choice decides
+        // whether an operator's revision cloud copies faithfully. It must be
+        // counted CARRIED WHOLE; `(1, 0)` means a lossy carrier is back.
         assert_eq!(
             (square.thin, square.whole),
             (0, 1),
@@ -632,8 +537,9 @@ mod tests {
              being told a copy loses four keys, and one of those two claims is now false."
         );
 
-        // ★★ And the loss really is gone, asserted on the CLIP rather than
-        // inferred from the count. `Plan` is a census; this is the payload.
+        // ★★ The count alone is not evidence: `Plan` is a census, and a
+        // carrier that dropped these keys would still be counted whole. So the
+        // properties are asserted on the PAYLOAD as well.
         let clip = doc
             .session
             .copy_annotations(0, &[0])
@@ -667,20 +573,19 @@ mod tests {
     /// ★★★ **The lossless route is lossless — asserted key by key against the
     /// SOURCE dictionary, not against a list written here.**
     ///
-    /// The prompt for this work named the vacuous shape precisely: *"a fixture
-    /// annotation carrying only the keys a `MarkupSpec` can already express
-    /// makes 'the copy is lossless' pass under a plant that still re-authors
-    /// from the spec."* So the subject is the `/Text` sticky note, which
-    /// carries `/CA 0.4`, `/T`, `/M`, `/Contents`, `/Name`, `/C` **and a baked
-    /// `/AP`** — none of which any authoring verb in `pdfcer-core` would
-    /// reproduce — and the assertion iterates the source dictionary rather
-    /// than an expected list.
+    /// The vacuous shape to avoid: a fixture annotation carrying only the keys
+    /// a `MarkupSpec` can already express makes *"the copy is lossless"* pass
+    /// under a plant that still re-authors from the spec. So the subject is the
+    /// `/Text` sticky note, which carries `/CA 0.4`, `/T`, `/M`, `/Contents`,
+    /// `/Name`, `/C` **and a baked `/AP`** — none of which any authoring verb
+    /// in `pdfcer-core` would reproduce — and the assertion iterates the source
+    /// dictionary rather than an expected list.
     ///
     /// # Why the six exceptions are the engine's list and not ours
     ///
-    /// `EditSession::CLIP_STRIPPED_ANNOT_KEYS` (`edit.rs:10672`) drops `/P`,
-    /// `/Parent`, `/StructParent`, `/NM`, `/Popup` and `/IRT`, each because it
-    /// names something that exists only in the source document. This fixture
+    /// `EditSession::CLIP_STRIPPED_ANNOT_KEYS` drops `/P`, `/Parent`,
+    /// `/StructParent`, `/NM`, `/Popup` and `/IRT`, each because it names
+    /// something that exists only in the source document. This fixture
     /// deliberately carries **none** of the six except `/P`, so the exception
     /// list needed here is one key long — which is the difference between an
     /// assertion and a hand-maintained allow-list, and is why the generator
@@ -775,11 +680,9 @@ mod tests {
     ///
     /// The `/Text` sticky note at index 1 is not modelled by `spec_from_dict`,
     /// so the engine carries its whole dictionary and baked `/AP`, and the
-    /// duplicate must travel as that clip. Written when a spec route existed
-    /// beside the clip and was **falsified** by making [`duplicate`] always
-    /// take it (red: `PasteMarkup` where `PasteObjects` was required). The
-    /// spec route is gone (2026-09-08); the assertion stays because a future
-    /// second route would have to pass it too.
+    /// duplicate must travel as that clip. The assertion is on the *action
+    /// kind*, so any second route added beside the clip — one that re-authors
+    /// from a spec, say — has to pass it too.
     #[test]
     fn duplicating_an_unmodelled_annotation_takes_the_whole_carrier() {
         let doc = with_annot_selected(1);

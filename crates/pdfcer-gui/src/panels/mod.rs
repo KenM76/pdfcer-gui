@@ -13,7 +13,7 @@
 //! | [`fonts`] | `file.fonts` | `panels_structure.rs` |
 //! | [`objects`] | `view.panel_objects` | `main.rs` + `object_provider.rs` + `object_summary.rs` |
 //! | [`properties`] | `file.properties` | **new** — `RIBBON_IA.md` §5.8 |
-//! | [`docprops`] | `file.document_properties` — **new 2026-09-05**; see that variant | **new** — was the last section of [`properties`] |
+//! | [`docprops`] | `file.document_properties` — see that variant | **new** — `RIBBON_IA.md` §5.1's File ▸ Document band |
 //! | [`forms`] | `view.panel_forms` — moved off Edit so Read can reach it | `panels_forms.rs` |
 //! | [`pages`] | `view.panel_pages` — **not registered; see that module** | `main.rs::thumbnail_rail` + `raster::ThumbnailCache` |
 //! | [`comments`] | `markup.comments` — **not** a `view.panel_*` id; see that variant | `main.rs::comments_panel` |
@@ -158,9 +158,9 @@ pub mod attachments;
 pub mod bookmarks;
 pub mod comments;
 pub mod dimension_groups;
-/// ★★★ **The document's own properties**, a panel since 2026-09-05 — the
-/// operator: *"it needs to get out of there and be in its own document
-/// properties tab."* Was `properties::info`; its header carries the move.
+/// ★★★ **The document's own properties**, a panel of its own rather than a
+/// permanently-drawn section of [`properties`]. Its header carries the
+/// argument.
 pub mod docprops;
 pub mod fonts;
 pub mod forms;
@@ -197,22 +197,21 @@ pub enum Panel {
     Objects,
     /// The read-only facts about one object — **and about nothing else**.
     ///
-    /// ★★ Since 2026-09-05 that clause is the variant's whole scope, where
-    /// before it was half of it. `file.properties`' tooltip commissioned two
-    /// subjects in one sentence — *"The document's own title, author, subject
-    /// and keywords, and the properties of whatever is selected on the page"* —
-    /// and the panel drew both, the second permanently. The operator ruled
-    /// otherwise; the document half is [`Self::DocumentProperties`].
+    /// ★★ That clause is the variant's WHOLE scope. A panel commissioned for
+    /// two subjects in one sentence — the document's own title, author,
+    /// subject and keywords, and the properties of whatever is selected on the
+    /// page — draws the first permanently, because it is true of no selection.
+    /// The document half is [`Self::DocumentProperties`].
     Properties,
     /// **The document's own title, author, subject and keywords**, and the
     /// facts pdfcer read about the file — `file.document_properties`.
     ///
-    /// ★★★ **The operator, 2026-09-05:** *"the document properties are still
-    /// always visible in the properties tab. it needs to get out of there and
-    /// be in its own document properties tab."*
+    /// ★★★ **Its own tab, and never a section of [`Self::Properties`]**: a
+    /// block with no selection to be scoped to is on screen in the Properties
+    /// panel every frame, under everything else.
     ///
     /// It is the seventh panel whose command is not on View ▸ Panels, and the
-    /// placement needed no argument of its own: `RIBBON_IA.md` §5.1's **File ▸
+    /// placement needs no argument of its own: `RIBBON_IA.md` §5.1's **File ▸
     /// Document** band is *"inspection of what is inside the file"* and already
     /// holds Properties and Fonts. A document's title is inside the file.
     ///
@@ -382,12 +381,10 @@ impl Panel {
     /// - **Fonts is `file.fonts`.** §7's migration map moves it from View ▸
     ///   Panels to File ▸ Document, because the Fonts panel answers "what is
     ///   inside this file", not "what is on my screen".
-    /// - **Properties is `file.properties`.** ★★ Its tooltip used to commission
-    ///   both halves of one panel — *"The document's own title, author, subject
-    ///   and keywords, and the properties of whatever is selected on the
-    ///   page."* Since 2026-09-05 those are two panels and two commands, on the
-    ///   operator's instruction, and the tooltip says only what its own panel
-    ///   does. See [`Self::DocumentProperties`].
+    /// - **Properties is `file.properties`.** ★★ The document's own title,
+    ///   author, subject and keywords are a second panel and a second command,
+    ///   so this tooltip says only what its own panel does. See
+    ///   [`Self::DocumentProperties`].
     /// - **Document properties is `file.document_properties`**, beside it in
     ///   File ▸ Document for the reason Fonts is there: it answers *"what is
     ///   inside this file"*.
@@ -415,14 +412,12 @@ impl Panel {
             // See the variant for why it is a NEW id rather than a second
             // meaning for the one above it.
             Self::DocumentProperties => "file.document_properties",
-            // ★ **On View ▸ Panels since 2026-08-14**, and it was on Edit
-            // before that. `RIBBON_IA.md`'s placement was the Edit tab, on
-            // the argument that a form panel answers "what can I fill in
-            // this file", which is an edit of the document rather than of
-            // the view. That argument survives — filling still writes — but
-            // it was answering the wrong question. The operator's question
-            // was *which modes may fill*, and the answer is all three,
-            // because Acrobat Reader fills forms in its default view.
+            // ★ **On View ▸ Panels**, not on Edit. A form panel does answer
+            // "what can I fill in this file", which is an edit of the
+            // document rather than of the view — and that is the wrong
+            // question. The question is *which modes may fill*, and the
+            // answer is all three, because Acrobat Reader fills forms in its
+            // default view.
             //
             // Read is shown `file` and `view` alone, so the tab followed
             // the mode. `crate::app::modes` carries the amended taxonomy;
@@ -500,9 +495,8 @@ impl Panel {
             // ★ **The fifth panel whose command is not on View ▸ Panels.** It
             // stays where `RIBBON_IA.md` put the control — Measure ▸ Scale —
             // and the variant's own doc carries the argument. The command has
-            // been registered and drawn since the Measure tab was built; what
-            // changed on 2026-08-19 is that pressing it toggles a panel rather
-            // than opening a window.
+            // been registered and drawn since the Measure tab was built, and
+            // pressing it toggles a panel rather than opening a window.
             Self::DimensionGroups => "measure.manage_groups",
         }
     }
@@ -738,9 +732,8 @@ pub struct PanelsState {
     /// second file would be written into **that** file's metadata by the next
     /// focus change, silently, in a field nobody looks at twice.
     ///
-    /// ★★ Named `properties` until 2026-09-05, when the section became
-    /// [`Panel::DocumentProperties`]. Renamed with it rather than left: a field
-    /// named after the panel that no longer draws it is how the next reader
+    /// ★★ Named after [`Panel::DocumentProperties`] and never `properties`: a
+    /// field named after a panel that does not draw it is how the next reader
     /// looks in the wrong place, and this struct already holds a `geometry`, a
     /// `text_style` and a `text_object` that ARE the Properties panel's.
     docprops: docprops::InfoDrafts,
@@ -911,38 +904,25 @@ pub struct ObjectTreeUi {
     pub(crate) objects_expanded: std::collections::BTreeSet<usize>,
     /// Which part rows are expanded, by `(object, part)`.
     pub(crate) parts_expanded: std::collections::BTreeSet<(usize, usize)>,
-    /// The object the Properties panel describes, by paint-order index.
+    /// One paint-order index, **retired**: nothing in production writes or
+    /// reads it.
     ///
-    /// **Not a selection**, and the distinction is load-bearing enough to
-    /// have its own name. A selection is document-scoped, multi-valued,
+    /// **It is not a selection**, and the distinction is load-bearing enough
+    /// to have its own name. A selection is document-scoped, multi-valued,
     /// survives a page change, drives the contextual Format tab, and is what
-    /// an edit acts on. This is one `usize` that says which Objects row the
-    /// operator last clicked, so a second panel can describe it.
+    /// an edit acts on. This is one `usize` naming a row, page-scoped and
+    /// cleared by [`PanelsState::sync`] on any page or revision change.
     ///
-    /// # ★ This field is DELETED when the selection model lands, not grown
+    /// # ★ A panel-local focus is DELETED, never grown
     ///
-    /// The distinction is what stops a shell acquiring two selections. When
-    /// the real one exists, [`properties`] reads *it*, the Objects row click
-    /// becomes a selection gesture, and this field goes. Growing it instead —
-    /// making it a `Vec`, letting it survive a page change, letting an edit
-    /// act on it — would produce a second, weaker selection that the canvas
-    /// and the panel would have to keep in step, and the drift between them
-    /// would be invisible until an edit acted on the wrong object.
-    ///
-    /// **The S4 status, stated rather than assumed.** The canvas's selection
-    /// model is being built in this stage, and this field has deliberately
-    /// **not** been extended to meet it half way: it is still one `usize`,
-    /// still page-scoped, still cleared by [`PanelsState::sync`] on any page
-    /// or revision change, and still read by exactly one panel.
-    ///
-    /// ★★★ **RETIRED 2026-08-26. Nothing in production writes or reads it.**
-    ///
-    /// This field's own docs used to end: *"It is deleted in the commit that
-    /// makes [`properties`] read the canvas's selection, and not before —
-    /// deleting it earlier would leave the Properties panel with nothing to
-    /// describe."* That commit has happened. The Properties panel reads
-    /// `OpenDoc::selection`, the Objects panel's row highlight reads the same,
-    /// and a row click raises `Action::SelectObject` rather than writing here.
+    /// The distinction is what stops a shell acquiring two selections.
+    /// [`properties`] reads `OpenDoc::selection`, the Objects panel's row
+    /// highlight reads the same, and a row click raises `Action::SelectObject`
+    /// rather than writing here. Growing this instead — making it a `Vec`,
+    /// letting it survive a page change, letting an edit act on it — produces
+    /// a second, weaker selection that the canvas and the panel have to keep
+    /// in step, and the drift between them is invisible until an edit acts on
+    /// the wrong object.
     ///
     /// # Why the field is still declared
     ///
@@ -963,19 +943,15 @@ pub struct ObjectTreeUi {
 }
 
 impl ObjectTreeUi {
-    /// Which object the Properties panel is describing.
+    /// The retired paint-order focus index. See the field for why it is still
+    /// declared.
     #[must_use]
     pub fn focus(&self) -> Option<usize> {
         self.focus
     }
 
-    /// Point the Properties panel at an object.
-    ///
-    /// Clicking the already-focused row clears the focus, so a row click is
-    /// its own undo. That is a deliberate consequence of there being no
-    /// Escape ladder yet: with no selection model there is no other way back
-    /// to "nothing focused", and a panel an operator cannot get out of is
-    /// worse than one they cannot get into.
+    /// Set the retired focus index, **toggling**: setting the index already
+    /// there clears it, so a row click would be its own undo.
     pub fn set_focus(&mut self, index: usize) {
         self.focus = if self.focus == Some(index) {
             None
@@ -1042,8 +1018,8 @@ impl PanelsState {
     /// ★★★ **The page-preview tick and its time limit are carried across the
     /// reset**, and the body says at length why. In one sentence: they are
     /// preferences read from `preferences.txt` at construction, this function
-    /// runs after construction on every launch that opens a file, and for a
-    /// few hours on 2026-09-12 that made O187 do nothing at all.
+    /// runs after construction on every launch that opens a file, and a reset
+    /// over them makes `OPERATOR_REQUESTS.md` O187 do nothing at all.
     ///
     /// ★★ **One thing this struct's reset cannot reach**, and it is named here
     /// rather than left to be discovered: `properties::refusedchar` keeps the
@@ -1059,17 +1035,16 @@ impl PanelsState {
         // and this is the whole of O187 working or not working.
         //
         // They are seeded once, in `PdfcerApp::new`, from `preferences.txt`.
-        // This function then ran `*self = Self::default()` over them the
-        // moment a document opened — which is every launch pdfcer has ever
-        // had, because the shell is started on a file. The operator cleared
-        // the tick, the file was written correctly, the next launch read it
-        // correctly, and the answer was thrown away before the panel drew.
+        // A `*self = Self::default()` over them runs the moment a document
+        // opens — which is every launch, because the shell is started on a
+        // file. The operator clears the tick, the file is written correctly,
+        // the next launch reads it correctly, and the answer is thrown away
+        // before the panel draws.
         //
-        // ⚠ Measured by driving the binary on 2026-09-12, hours after O187
-        // shipped with 3,376 unit tests and 41 gates green. Nothing that
-        // calls the verb can see this: every one of those tests constructs a
-        // `ThumbnailCache` directly, and the defect lives in the frame
-        // BETWEEN the seed and the first draw.
+        // ⚠ Only driving the binary can see this. Every unit test of the
+        // feature constructs a `ThumbnailCache` directly, so the whole suite
+        // and every gate stay green: the defect lives in the frame BETWEEN
+        // the seed and the first draw.
         //
         // ★★ Why a carry rather than a reseed at the call site: this
         // function is also called from `Panel::show` EVERY FRAME while
@@ -1159,8 +1134,9 @@ impl PanelsState {
     /// handed `&mut PanelsState` and reaches its own state through an
     /// accessor, so the field stays private and no other panel can write it.
     ///
-    /// ★ Was `properties_mut` until 2026-09-05. Renamed with the panel, and the
-    /// rename is what makes the compiler point at every caller — there was one.
+    /// ★ Named after [`Panel::DocumentProperties`] and not after Properties:
+    /// an accessor named for the panel that does not own the state is how a
+    /// caller writes the wrong drafts.
     pub fn docprops_mut(&mut self) -> &mut docprops::InfoDrafts {
         &mut self.docprops
     }
@@ -1376,21 +1352,15 @@ pub const ELLIPSIS: char = '\u{2026}';
 /// not. The caller draws whichever it got and attaches the **full** text on
 /// hover in the `Some` case.
 ///
-/// # ★★★ This reverses a recorded ruling, and the operator reversed it
+/// # ★★★ Shortening is not the clipping that is ruled out
 ///
-/// `REVIEW_TRIAGE.md` §4 lists *"A7 — Objects rows should ellipsize"* under
-/// *already decided against*, citing `SALVAGE.md:44` — *"Row text must not
-/// clip; the old panel truncated with no horizontal scroll."* That ruling was
-/// right about the OLD behaviour and it is being overturned on the operator's
-/// own instruction, not quietly.
-///
-/// ★ And the requirement `SALVAGE.md` states is still met, by a different
-/// route. What it forbade was **silent** loss: the old panel cut a row at the
-/// pane's edge with no bar, no mark and no recovery. This shortens the row, says
-/// so with a character the eye reads as *there is more*, and puts the whole
-/// string one hover away. The thing that must not happen — an operator seeing
-/// `AAAAAA+SpaceGrotesk-Bold 1` and having no idea a `2` was cut off — cannot
-/// happen either way round.
+/// The standing requirement is that **row text must not clip**: a panel that
+/// cuts a row at the pane's edge with no bar, no mark and no recovery loses
+/// text **silently**, and silence is what is forbidden. This shortens the row,
+/// says so with a character the eye reads as *there is more*, and puts the
+/// whole string one hover away. The thing that must not happen — an operator
+/// seeing `AAAAAA+SpaceGrotesk-Bold 1` and having no idea a `2` was cut off —
+/// cannot happen.
 ///
 /// # ★★ Why a `measure` closure rather than a `&Ui`
 ///

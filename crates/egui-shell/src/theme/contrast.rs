@@ -45,14 +45,14 @@
 //! pairs to check would have needed somebody to think of the missing one
 //! — which is precisely what did not happen.
 //!
-//! # ★★★ THE WIDENING, 2026-09-04 — and why ten pairs was not enough
+//! # ★★★ Why ten pairs is not enough
 //!
-//! Until this date [`pairs`] enumerated **ten**: `egui`'s five widget
-//! states × two background fills, foreground always `fg_stroke.color`.
-//! That is a good matrix — it is `egui`'s own, rather than a list somebody
-//! maintained — and **it was green through three separately shipped
-//! contrast defects**, because none of the three lived inside it.
-//! `REVIEW_TRIAGE.md` row **A15e** is the finding; these are its subjects:
+//! The obvious matrix is **ten**: `egui`'s five widget states × two
+//! background fills, foreground always `fg_stroke.color`. That is a good
+//! matrix — it is `egui`'s own, rather than a list somebody maintains —
+//! and it stays **green through three separately shipped contrast
+//! defects**, because none of the three lives inside it. Its blind spots,
+//! and what covers each:
 //!
 //! 1. **A plate colour supplied by the CALLER**, through
 //!    `RichText::color(...)`. It is not in the `Style` at all, so no
@@ -66,12 +66,12 @@
 //!    so the thing behind it is whatever that other widget painted.
 //!    **Also still out of scope**, and for a stronger reason: the
 //!    background is not a colour anywhere in the process, it is a
-//!    consequence of a layout. `REVIEW_TRIAGE.md` A15b (`tabstrip/mod.rs`,
-//!    the document tab's close ✕) was fixed by making the enclosing widget
-//!    paint its plate across the *whole* rect before the split, which
-//!    converts the geometric case into an ordinary stated-plate case that
-//!    gate 1 can see. That is the general move: **give the geometry a
-//!    stated plate, and the structural gate gets its subject back.**
+//!    consequence of a layout. `tabstrip/mod.rs`'s close ✕ answers it by
+//!    making the enclosing widget paint its plate across the *whole* rect
+//!    before the split, which converts the geometric case into an ordinary
+//!    stated-plate case that gate 1 can see. That is the general move:
+//!    **give the geometry a stated plate, and the structural gate gets its
+//!    subject back.**
 //! 3. **`visuals.selection`** — which `egui` substitutes for a selected
 //!    widget's fill AND its text at paint time
 //!    (`egui-0.35.0/src/widget_style.rs:151-154`), and which this theme
@@ -692,7 +692,7 @@ impl std::fmt::Display for ContrastFailure {
 /// An allow-list entry outliving its subject is a defect this project has
 /// paid for twice in one week: a gate exemption whose premise expired
 /// within a day, and `check-strong-text.sh` blessing a site on a sentence
-/// that had stopped being true (`REVIEW_TRIAGE.md` T1). A blessing left
+/// that had stopped being true. A blessing left
 /// behind reads as a decision somebody made, and becomes a precedent for a
 /// state nobody argued for.
 ///

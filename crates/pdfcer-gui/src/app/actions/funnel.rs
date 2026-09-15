@@ -8,29 +8,15 @@
 //!
 //! ## Why it is its own file
 //!
-//! R2, and the seam is real rather than convenient. `super::apply` answers
-//! *"which module handles this action?"* — it is a router, and it grows when a
-//! verb is added. This answers *"what happens around any edit?"* — it is a
-//! protocol, and it grows when the protocol changes, which is roughly never.
+//! [`super::apply`] answers *"which module handles this action?"* — it is a
+//! router, and it grows when a verb is added. This answers *"what happens
+//! around any edit?"* — it is a protocol, and it grows when the protocol
+//! changes, which is roughly never. Two subjects, two rates of change, so two
+//! files.
 //!
-//! Two subjects, two rates of change. `apply.rs` crossed 1,500 lines on
-//! 2026-08-30 when the third redaction-marking route arrived, and the honest
-//! response was not to shorten a comment: it was to notice that the file held a
-//! router *and* the thing every router arm calls.
-//!
-//! ## ★ Nothing moved but its address
-//!
-//! The function, its documentation and its generic bound are unchanged. It is
-//! still `pub(super)`, so every call site still says `super::apply::vector_edit`
-//! — no, it says `apply::vector_edit` from a sibling and that path still
-//! resolves, because `apply` re-exports it. Callers did not learn this file
-//! exists.
+//! [`vector_edit`] stays `pub(super)` and `apply` re-exports it, so a sibling
+//! still reaches it as `apply::vector_edit`.
 
-// ★ Listed rather than glob-imported from `super::apply`, and the difference is
-// worth knowing: a `use` is a PRIVATE import, so `use super::apply::*` brings
-// across that module's public items and none of the names it imported for
-// itself. `canvas::present` could use a glob because it moved to a CHILD of the
-// module it left; this moved to a SIBLING.
 use std::sync::Arc;
 
 use pdfcer_core::edit::EditSession;
@@ -38,7 +24,7 @@ use pdfcer_core::edit::EditSession;
 use super::{EditDisclosure, record_edit_disclosure};
 use crate::app::state::OpenDoc;
 
-/// ★★★ **How much of the document this edit could have changed** —
+/// **How much of the document this edit could have changed** —
 /// `OPERATOR_REQUESTS.md` O74.
 ///
 /// The whole design is in which of these two is the *default*. See
@@ -54,7 +40,7 @@ pub(super) enum EditScope {
     /// **Only this page's CONTENT changed**, and the caller has established it
     /// as a property of the verb rather than as an observation.
     ///
-    /// ★ Note the word *content*. A verb may narrow to a page and still be
+    /// Note the word *content*. A verb may narrow to a page and still be
     /// caught by the `bump_all` that `pages::resync` raises when the page
     /// SET moved — the two are independent, and the resync runs after this, so
     /// a narrowed verb that unexpectedly renumbered is still covered.
@@ -63,7 +49,7 @@ pub(super) enum EditScope {
 
 /// The document-scoped funnel, and the one ~78 call sites use.
 ///
-/// ★ `page` here is **for the trace only** and always has been: a third of the
+/// `page` here is **for the trace only**: a third of the
 /// call sites pass a literal `0` because their verb has no page (a bookmark, a
 /// font, a metadata field). It is therefore **not** a safe narrowing signal,
 /// which is exactly why [`EditScope::Page`] has to be passed deliberately
@@ -88,7 +74,7 @@ pub(super) fn vector_edit<E: std::fmt::Display>(
 /// deliberately — see [`vector_edit`]'s note on why `page` cannot be trusted
 /// as a narrowing signal.
 ///
-/// # ★ What a caller is asserting by using this
+/// # What a caller is asserting by using this
 ///
 /// Not *"it only touched that page this time"*. **Every** call of this verb, on
 /// every document, with every operand, changes nothing a rasteriser would draw
@@ -120,7 +106,7 @@ fn vector_edit_scoped<E: std::fmt::Display>(
         });
         return;
     };
-    // ★★★ The floor under the refusal below, taken **before** the verb runs so
+    // The floor under the refusal below, taken **before** the verb runs so
     // that the arm can tell the verb's own sentence from a stale one left by an
     // earlier gesture. See `decline::BeforeTheVerb`, which carries the whole
     // argument for why this is a take rather than a comparison, and why it is
@@ -133,12 +119,12 @@ fn vector_edit_scoped<E: std::fmt::Display>(
             // own during the call, that stands.
             floor.granted();
             doc.edit_epoch = doc.edit_epoch.wrapping_add(1);
-            // ★★★ …and the per-page answer beside it (O74). `edit_epoch`
+            // …and the per-page answer beside it (O74). `edit_epoch`
             // above keeps its exact meaning and every one of its readers is
             // untouched; this is the finer number the three per-page caches
             // read instead of throwing all of their entries away.
             //
-            // ★ Note the ordering with `pages::resync` below: a narrowed verb
+            // Note the ordering with `pages::resync` below: a narrowed verb
             // that unexpectedly moved the page SET is still caught, because
             // resync raises its own `bump_all` on `renumbered`. So the failure
             // mode of narrowing a verb wrongly is bounded — it can be wrong
@@ -147,39 +133,39 @@ fn vector_edit_scoped<E: std::fmt::Display>(
                 EditScope::Document => doc.page_epochs.bump_all(),
                 EditScope::Page(p) => doc.page_epochs.bump(p),
             }
-            // ★★ Stamped in the SAME statement group as the bump, because the
+            // Stamped in the SAME statement group as the bump, because the
             // two are one fact — *the document changed, at this moment* — and a
             // second place that set one without the other would produce a
             // "catching up" line measured from the wrong edit. `OPERATOR_REQUESTS.md`
             // O63; see `OpenDoc::page_is_catching_up`.
             doc.last_edit_at = Some(std::time::Instant::now());
-            // ★ The texture is NOT dropped here — the fix for 2026-08-18's
-            // *"the page goes blank and flashes after every change."*
+            // The texture is NOT dropped here. Dropping it is what the
+            // operator reported as *"the page goes blank and flashes after
+            // every change."*
             //
-            // `doc.page_texture = None` did two jobs: it made `render::settle`
-            // notice the edit, and it took the picture off the screen. Only the
-            // first was wanted; the second put an empty page in front of the
+            // `doc.page_texture = None` does two jobs: it makes `render::settle`
+            // notice the edit, and it takes the picture off the screen. Only the
+            // first is wanted; the second puts an empty page in front of the
             // operator between every edit and its raster.
             //
-            // `OpenDoc::page_texture_epoch` now carries the third term the
-            // strip cache always had, so settle gets its "no" from the epoch
-            // and the stale raster stays up until the new one lands — which
-            // `OpenDoc::rasterize`'s docs already promised for a slow render.
+            // `OpenDoc::page_texture_epoch` carries the third term the strip
+            // cache always had, so settle gets its "no" from the epoch and the
+            // stale raster stays up until the new one lands — which
+            // `OpenDoc::rasterize`'s docs already promise for a slow render.
             //
             // A page-SET change is different: there the stale raster is a
             // picture of another sheet, and `pages::resync` drops it on exactly
             // that condition.
-            // ★ **Step 5, added when the page verbs landed** — see
-            // `super::pages`' header, which carries the whole argument and the
-            // table of what each kind of edit invalidates.
+            // **Step 5, for the page verbs** — see `super::pages`' header,
+            // which carries the whole argument and the table of what each kind
+            // of edit invalidates.
             //
             // Here rather than in the four page arms, because `Action::Undo`
             // and `Action::Redo` come through this same function and run those
             // same engine commands **backwards**: an undone page delete puts
-            // sheets back, and an arm-side resync could not see it. This is the
-            // one place every document change already passes through, which is
-            // `HANDOFF.md` §6's rule applied to a consequence rather than to a
-            // dispatch.
+            // sheets back, and an arm-side resync could not see it. A
+            // consequence every document change must have belongs at the one
+            // place every document change already passes through — here.
             //
             // It is self-describing rather than told — it compares the page
             // vector it has against the one the session now reports — so an
@@ -199,7 +185,7 @@ fn vector_edit_scoped<E: std::fmt::Display>(
                     }
                 )
             });
-            // ★ Surfaced as well as traced — see this function's "The
+            // Surfaced as well as traced — see this function's "The
             // disclosures" section. Stamped with the epoch bumped above: the
             // revision on screen from now until the next edit, so an undo
             // retires the sentence by moving past it.
@@ -223,10 +209,9 @@ fn vector_edit_scoped<E: std::fmt::Display>(
             });
         }
         // A refusal is the engine's, and it is structured. Reporting it and
-        // leaving the document alone is still the whole response here — and
-        // as of 2026-08-14 that is a *scope* statement rather than the "there
-        // is nowhere to say it" this comment used to make. There is now
-        // somewhere: `app::status` draws the `Ok` arm's disclosure list.
+        // leaving the document alone is the whole response here. That is a
+        // *scope* statement, not an absence of anywhere to speak:
+        // `app::status` draws the `Ok` arm's disclosure list.
         //
         // A refusal is deliberately not routed to it, because the two are
         // different acts. A disclosure is **after the fact** — the edit
@@ -235,18 +220,15 @@ fn vector_edit_scoped<E: std::fmt::Display>(
         // arrive while the operator still believes it did. Sharing one slot
         // would mean an undone gesture and a completed one wearing the same
         // wording in the same place, which is worse than the trace-only state
-        // it replaced. That is `FEATURES.md`'s "Worded decline" row, which
-        // wants its own decision about wording and placement; this arm is
-        // where it lands when it is taken.
+        // it replaced. That is `FEATURES.md`'s "Worded decline" row, and this
+        // arm is where its decision about wording and placement lands.
         //
-        // ★★★ **TAKEN, 2026-09-04 — `OPERATOR_REQUESTS.md` O116.** The
-        // paragraph above stood, correct and unfinished, while the silence it
-        // described became reachable on an ordinary CAD drawing: the operator
-        // arms Edit ▸ Edit text, places a caret, types, commits, the engine
-        // refuses a symbolic font it cannot re-encode, and **nothing appears**.
-        // That is this project's founding defect class, and the decision the
-        // paragraph deferred is now made — the decline channel, `⊗`, one
-        // sentence, no cause named.
+        // **The decline channel** — `OPERATOR_REQUESTS.md` O116 — is that
+        // decision: `⊗`, one sentence, no cause named. Without it the reachable
+        // state on an ordinary CAD drawing is silence: the operator arms
+        // Edit ▸ Edit text, places a caret, types, commits, the engine refuses
+        // a symbolic font it cannot re-encode, and **nothing appears**. That is
+        // this project's founding defect class.
         //
         // Three things about `floor.refused()` rather than a bare record, each
         // argued at length on `decline::BeforeTheVerb`:

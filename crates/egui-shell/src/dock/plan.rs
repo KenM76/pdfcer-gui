@@ -4,17 +4,17 @@
 //! # Why this is a separate module with no `Ui` in its signatures
 //!
 //! Everything in this file is a pure function over `f32` and `usize`.
-//! That is not tidiness; it is the only way three of the twelve failure
-//! modes in `MODES_AND_PANELS.md` Part 2 can be *tested* at all, because
-//! each of them is a statement about a number that was computed, not
-//! about a pixel that was painted:
+//! That is not tidiness; it is the only way the failure modes below can be
+//! *tested* at all, because each of them is a statement about a number
+//! that was computed, not about a pixel that was painted. The numbers are
+//! `MODES_AND_PANELS.md` Part 2's:
 //!
 //! | # | Failure | The function that makes it impossible |
 //! |---|---|---|
 //! | 3 | **Widest hidden tab dictates minimum width** — an inactive tab you cannot see holds the whole dock open. | [`MIN_COLUMN_WIDTH`] is a *constant*. No function here ever consults a tab label when computing a minimum. |
 //! | 6 | **Layout not stable under window resize** — un-maximise and re-maximise loses panel proportions. | `resolve_spans` is a pure function of `(shares, total)`. It has no memory, writes nothing back, and is therefore idempotent under any sequence of totals. |
-//! | 7 | **Coupled splitters** — dragging one divider resized every column. | `drag_boundary` touches exactly two entries of its slice, by construction. |
-//! | 8 | **Tab overflow has no escape** — past ~6 tabs the overflow *button itself* gets hidden. | `plan_tabs` subtracts the reservation **before** the first tab is measured against the remainder. |
+//! | 7 | **Coupled splitters** — dragging one divider resizes every column. | `drag_boundary` touches exactly two entries of its slice, by construction. |
+//! | 8 | **Tab overflow has no escape** — past a handful of tabs the overflow *button itself* gets hidden. | `plan_tabs` subtracts the reservation **before** the first tab is measured against the remainder. |
 //!
 //! ## The ordering trap that #8 actually is
 //!
@@ -72,11 +72,11 @@
 //! > Size a container to its **active** child; let inactive children
 //! > scroll.
 //!
-//! The observed defect in the benchmarked application is a *hidden* tab
-//! whose label is wide enough to hold the whole dock open — you cannot
-//! see it, you cannot narrow the dock, and the only cure is to close a
-//! panel you did not know was there. That can only happen if some
-//! minimum-width computation walks the tab list. Nothing here does, and
+//! The defect it names is a *hidden* tab whose label is wide enough to
+//! hold the whole dock open — you cannot see it, you cannot narrow the
+//! dock, and the only cure is to close a panel you did not know was there.
+//! That can only happen if some minimum-width computation walks the tab
+//! list. Nothing here does, and
 //! `the_minimum_column_width_ignores_tab_labels_entirely` is the test
 //! that keeps it that way.
 //!
@@ -124,9 +124,9 @@ pub const MIN_SIDE_WIDTH: f32 = 160.0;
 /// screen to one dock. Clamping at draw time keeps the window usable;
 /// *not* writing the clamped value back means re-maximising restores the
 /// operator's 900 exactly, rather than leaving them permanently with the
-/// 576 that the small window happened to allow. A dock that silently
-/// loses its width every time you un-maximise is the reported defect;
-/// this is the two-line answer to it.
+/// 576 that the small window happened to allow. A dock that loses its
+/// width every time you un-maximise is failure mode #6; this is the
+/// two-line answer to it.
 pub const MAX_SIDE_FRACTION: f32 = 0.45;
 
 /// The thickness of a draggable splitter, in points, and therefore the
@@ -147,11 +147,11 @@ pub const MIN_TAB_WIDTH: f32 = 44.0;
 
 /// The widest a single tab may be, however long its label.
 ///
-/// Without a cap, one panel named "Digital signature validation report"
-/// consumes an entire tab bar and pushes every sibling into the overflow
-/// menu — the operator loses four reachable tabs to one unabbreviated
-/// title. Beyond this width the label truncates with an ellipsis and the
-/// full text stays available as the tab's tooltip and accessible name.
+/// Without a cap, one panel with a long descriptive name consumes an
+/// entire tab bar and pushes every sibling into the overflow menu — a
+/// stack's worth of reachable tabs traded for one unabbreviated title.
+/// Beyond this width the label truncates with an ellipsis and the full
+/// text stays available as the tab's tooltip and accessible name.
 pub const MAX_TAB_WIDTH: f32 = 160.0;
 
 /// Horizontal padding inside a tab, total across both sides.
@@ -397,8 +397,8 @@ pub(crate) fn tab_width(label_width: f32) -> f32 {
 ///
 /// ★ The chevron is `⏷` U+23F7 and **must stay in step with the ribbon's**
 /// — see `crate::ribbon::plan::overflow_label`, which carries the account
-/// of why `⌄` U+2304 was tofu in every shipped build and which near misses
-/// are also missing from the font. "Identical in wording" is the promise
+/// of why `⌄` U+2304 renders as tofu in the pinned font and which near
+/// misses are also missing from it. "Identical in wording" is the promise
 /// above, and identical *codepoints* is what keeps it.
 #[must_use]
 pub(crate) fn overflow_label(hidden: usize) -> String {
@@ -425,11 +425,10 @@ pub(crate) fn overflow_label(hidden: usize) -> String {
 /// which is failure mode #8 with the control present but partly
 /// unclickable.
 ///
-/// The identical mistake was made, found and fixed in
-/// [`crate::ribbon::plan::overflow_width`]; it is repeated here as a
-/// worked warning rather than left as a cross-reference, because the next
-/// person to write a third overflow control will read this file, not that
-/// one.
+/// [`crate::ribbon::plan::overflow_width`] reserves on the same terms for
+/// the same reason. The argument is written out here rather than left as a
+/// cross-reference, because the next person to write a third overflow
+/// control will read this file, not that one.
 ///
 /// So the reservation is `max` over every label the control can ever
 /// display: `1..=total`. That makes *"the drawn control never exceeds its
@@ -720,13 +719,12 @@ mod tests {
     /// ★ **Failure mode #6, asserted directly: resolving is idempotent
     /// under a round trip through a narrow window.**
     ///
-    /// The observed defect in the benchmarked application is that
-    /// un-maximising and re-maximising loses the panel proportions. That
-    /// can only happen if some pass writes a *computed* size back into
-    /// the model. This test states the property that forbids it: the
-    /// shares are the input, they are never an output, and therefore the
-    /// spans at 900 are the same whether or not the window visited 200
-    /// first.
+    /// The defect it names is that un-maximising and re-maximising loses
+    /// the panel proportions. That can only happen if some pass writes a
+    /// *computed* size back into the model. This test states the property
+    /// that forbids it: the shares are the input, they are never an
+    /// output, and therefore the spans at 900 are the same whether or not
+    /// the window visited 200 first.
     #[test]
     fn resolving_is_idempotent_under_a_round_trip_through_a_narrow_window() {
         let shares = [3.0_f32, 1.0, 2.0];
@@ -764,7 +762,7 @@ mod tests {
     /// ★ **Failure mode #7, asserted directly: a splitter affects its two
     /// neighbours only.**
     ///
-    /// The observed defect is that dragging one divider resized every
+    /// The defect it names is that dragging one divider resizes every
     /// column. Four columns, drag the first boundary, and columns three
     /// and four must be **bit-identical** — not "close", identical, because
     /// the function is required not to touch them at all.
@@ -882,7 +880,7 @@ mod tests {
     /// This is the invariant that stops the overflow control from being
     /// drawn past the right edge — present, but partly or wholly
     /// unclickable, which is exactly what "the overflow button itself
-    /// gets hidden" means in the field report.
+    /// gets hidden" means.
     #[test]
     fn the_visible_tabs_never_encroach_on_the_reservation() {
         let widths = [90.0_f32, 70.0, 130.0, 55.0, 160.0, 44.0, 120.0];
@@ -974,11 +972,10 @@ mod tests {
     /// the affordance alone — the affordance is never what is squeezed
     /// out.**
     ///
-    /// This is the precise field report behind failure mode #8: *"past ~6
-    /// tabs the overflow button itself gets hidden, leaving no route to
-    /// the hidden tabs."* Here the route survives and the tabs are what
-    /// give way, which is the reverse of the defect and the whole reason
-    /// the reservation is the first subtraction.
+    /// Failure mode #8 is the overflow button itself getting hidden,
+    /// leaving no route to the hidden tabs. Here the route survives and
+    /// the tabs are what give way, which is the reverse of it and the
+    /// whole reason the reservation is the first subtraction.
     #[test]
     fn a_bar_narrower_than_its_reservation_keeps_the_affordance_and_drops_the_tabs() {
         let widths = [100.0_f32; 8];
@@ -1057,7 +1054,7 @@ mod tests {
     /// ★ **Failure mode #3: no minimum in this module is a function of a
     /// tab label.**
     ///
-    /// The observed defect is an invisible, inactive tab whose width
+    /// The defect it names is an invisible, inactive tab whose width
     /// holds the whole dock open — you cannot see it and you cannot
     /// narrow the dock until you close it. It can only arise if a
     /// minimum-size computation walks the tab list. This test states the
@@ -1083,10 +1080,10 @@ mod tests {
 
     /// ★ **Failure mode #4, budgeted and tested at 1280 points wide.**
     ///
-    /// The field report is minimum widths of 450–500 px, *"up to a third
-    /// of my screen width"*, for a single dock. Both of this shell's
-    /// docks at their minimum must leave the application the majority of
-    /// a 1280-point window — the width the design rule names.
+    /// Failure mode #4 is a single dock whose minimum consumes a third of
+    /// the screen. Both of this shell's docks at their minimum must leave
+    /// the application the majority of a 1280-point window — the width the
+    /// design rule names.
     #[test]
     fn both_docks_at_their_minimum_leave_most_of_a_1280_point_window() {
         let both = MIN_SIDE_WIDTH * 2.0;

@@ -1,11 +1,10 @@
 //! # `canvas::markup::text` — underline, strikeout and squiggly: markup whose
 //! operand is a **selection**, not a drag
 //!
-//! The three kinds `FEATURES.md` has carried as `⬜ engine-ready` for the whole
-//! project, behind one blocker stated in the operator's own terms — *"they mark
-//! **text** and there is no text-selection gesture yet."* That gesture landed on
-//! 2026-08-14 ([`crate::canvas::textsel`]), so this is that work's first payoff
-//! rather than a new subsystem.
+//! Three kinds whose one blocker the operator stated in his own terms — *"they
+//! mark **text** and there is no text-selection gesture yet."* The gesture is
+//! [`crate::canvas::textsel`], and this module is what it buys: no new
+//! subsystem, one rule applied to a selection that already exists.
 //!
 //! ---
 //!
@@ -20,9 +19,10 @@
 //! | **(b)** | arm Underline, then sweep, and the sweep both selects and marks | a tool variant, a gesture, a second mode of `textsel`, a second place a text range is resolved |
 //!
 //! **Shipped: (a), and it came from Acrobat**, which is the reference
-//! application that decides this one under `HANDOFF.md` §3.4 — *"make your best
-//! educated guesses to match what inkscape, acrobat, and SolidWorks do"* — for
-//! the reason `textsel`'s own table gives: **Acrobat wins ties about reading and
+//! application that decides this one under the standing instruction — *"make
+//! your best educated guesses to match what inkscape, acrobat, and SolidWorks
+//! do"* — for the reason `textsel`'s own table gives: **Acrobat wins ties about
+//! reading and
 //! about marking up what has been read, because Acrobat is what pdfcer
 //! replaces.** Inkscape and SolidWorks have no vote here at all: neither has PDF
 //! text markup, and neither has anything shaped like it (Inkscape's text tool
@@ -59,22 +59,16 @@
 //!    would be.
 //!
 //! What is deliberately **not** claimed: that (b) is wrong. It is the tool half
-//! of Acrobat's answer and it is a reasonable thing to add later. What would
-//! make it affordable is the `CanvasTool::Text` variant `textsel` §3 already
-//! specifies for a different reason; until that exists, (b) is three new states
-//! in the tool enum to reach one gesture.
+//! of Acrobat's answer and it is a reasonable thing to add later.
 //!
-//! ★ **That variant now exists** ([`crate::canvas::tool::CanvasTool::Text`],
-//! 2026-08-14), so the sentence above has come due and the answer is still (a).
-//! The tool made (b) *cheaper* and did not make it right: (b)'s cost was never
-//! mainly the tool enum, it was objection 1 — a marking sweep is a **second
-//! text-range resolver** beside `drag` and `click`, and the moment it exists the
-//! wash the operator sees and the `/QuadPoints` written to the file come from
-//! two functions that can disagree. That objection is untouched.
-//!
-//! What the tool did do is remove the *reason a reader might have wanted* (b):
-//! model (a) was unreachable in Edit, and (b) would have been a way to reach it
-//! there. It is reachable now, by the route that costs no second derivation.
+//! ★ **[`crate::canvas::tool::CanvasTool::Text`] makes (b) cheap and does not
+//! make it right.** (b)'s cost was never mainly the tool enum; it is objection 1
+//! — a marking sweep is a **second text-range resolver** beside `drag` and
+//! `click`, and the moment it exists the wash the operator sees and the
+//! `/QuadPoints` written to the file come from two functions that can disagree.
+//! That objection is untouched by the variant's existence. What the variant does
+//! settle is reachability: model (a) works in Edit, by the route that costs no
+//! second derivation.
 //!
 //! ### 1.1 ★ The route is the ribbon, and Acrobat's is a menu on the selection
 //!
@@ -115,32 +109,21 @@
 //! |---|:-:|:-:|:-:|
 //! | `read` | ✓ | ✗ | **no** — nothing to mark *with* |
 //! | `review` | ✓ | ✓ | **YES** |
-//! | `edit` | ✓ **with the text tool armed** | ✓ | **YES**, since 2026-08-14 |
+//! | `edit` | ✓ **with the text tool armed** | ✓ | **YES** |
 //!
-//! ★ **The Edit row changed, and this section is now the record of how.** It
-//! read *"`edit` | ✗ | ✓ | **no** — nothing to mark"*, and the paragraph under
-//! it said the three controls were drawn there and **permanently greyed**. That
-//! was true, it was a `RIBBON_IA.md` **P3** violation, and it is closed — by
-//! exactly the fix this file predicted, in exactly the place it predicted, with
-//! **no change to this file's rules**. The prediction is kept below rather than
-//! deleted, because a fix that lands where its own design note said it would is
-//! the strongest evidence a note is worth writing.
-//!
-//! > **Edit** shows the Markup tab, so the three controls are drawn there and
-//! > are **permanently greyed**, because Edit's primary button is the content
-//! > marquee and `textsel::takes_the_press` therefore refuses it a text
-//! > selection. That is an inversion — an editor may not mark text a reviewer
-//! > may — and it is the *same* inversion `textsel` §3 already records as a
-//! > known gap with a known fix: a `CanvasTool::Text` armed by a `view.tool_*`
-//! > command, at which point `takes_the_press` gains one disjunct and these
-//! > three controls come alive in Edit with **no change to this file**.
-//!
-//! What actually landed: [`crate::canvas::tool::CanvasTool::Text`], armed by
-//! **`view.tool_text`** in View ▸ Navigate beside the hand tool. An editor arms
+//! ★ **The Edit row is the one that costs a tool.** Edit's primary button is
+//! the content marquee, so `textsel::takes_the_press` refuses Edit a text
+//! selection unless [`crate::canvas::tool::CanvasTool::Text`] is armed — by
+//! **`view.tool_text`**, in View ▸ Navigate beside the hand tool. An editor arms
 //! it, sweeps a range, and presses Underline; `selection.text` is published from
-//! the same live selection it always was, and the controls enable. The rule
-//! `mark` implements is untouched, and so is every test below it — which is what
-//! *"no change to this file"* was claiming.
+//! the same live selection every other mode publishes, and the controls enable.
+//!
+//! Without that route the three controls would be drawn on Edit's Markup tab and
+//! **permanently greyed**, which is a `RIBBON_IA.md` **P3** violation and an
+//! inversion besides — an editor may not mark text a reviewer may. The rule
+//! [`mark`] implements does not know about any of this, and that is the property
+//! to preserve: reachability is decided in `textsel` and in the tool enum, never
+//! here.
 //!
 //! **What the two remaining zeros are, and why neither is a defect:**
 //!
@@ -165,13 +148,14 @@
 //!
 //! `RIBBON_IA.md` P3 forbids a control that is *always live and does nothing*,
 //! and reserves greying for *temporarily unavailable, explained on hover*. Every
-//! greyed state these three controls can now reach is temporary in that sense:
-//! sweep some text and it ends. The paragraph that used to stand here argued
-//! that Edit's unavailability was *"longer-lived than 'temporary' usually
-//! means"* and that the alternative was a mechanism invented to hide a gap — a
-//! defensible reading of a bad situation, and it is worth noticing that the
-//! situation, not the reading, is what was wrong. **A rule being uncomfortable
-//! to satisfy is evidence about the feature, not about the rule.**
+//! greyed state these three controls can reach is temporary in that sense: sweep
+//! some text and it ends.
+//!
+//! ★ The rule is worth stating as a rule, because the tempting move when P3 is
+//! uncomfortable is to argue the greying is *nearly* temporary, or to invent a
+//! hiding mechanism. **A rule being uncomfortable to satisfy is evidence about
+//! the feature, not about the rule** — here it was evidence that Edit needed a
+//! route to a text selection.
 //!
 //! ---
 //!
@@ -277,9 +261,8 @@ use crate::canvas::textsel::TextSelection;
 pub enum TextMarkKind {
     /// ★★★ `/Highlight` — a translucent wash over each quad.
     ///
-    /// **Added 2026-08-28** (`OPERATOR_REQUESTS.md` **O54**), and it is the one
-    /// kind in this enum that is *also* a [`super::MarkupKind`] — the armed
-    /// tool that draws an area highlight by dragging a box.
+    /// The one kind in this enum that is *also* a [`super::MarkupKind`] — the
+    /// armed tool that draws an area highlight by dragging a box.
     ///
     /// ★★ That is not a duplication, and the reason is what these two enums
     /// actually encode: **not identity, but GEOMETRY.** `MarkupKind` is *"kinds
@@ -349,22 +332,12 @@ impl TextMarkKind {
         }
     }
 
-    /// ★★★ **EACH OF THE FOUR TAKES ITS OWN PEN**, and until 2026-09-06 three
-    /// of them shared one.
+    /// ★★★ **EACH OF THE FOUR TAKES ITS OWN PEN.**
     ///
-    /// ### What this said before, and why it was right at the time
-    ///
-    /// > **All three take the INK, and none of them takes the highlighter.**
-    /// > … the answer is not a judgement call: **Underline, StrikeOut and
-    /// > Squiggly are lines**, so they are the biro. `Highlight` is the wash …
-    /// > So the two modules partition [`super::pen::Pen`] exactly, with no kind
-    /// > reaching both colours and no kind reaching neither.
-    ///
-    /// That reasoning is sound and it is the reason there were exactly two pens:
-    /// given two instruments, a line belongs to the biro. It answers *"which of
-    /// these two?"* correctly. The operator's ask of 2026-09-06 changed the
-    /// question to *"which colour does Adobe use?"*, and Adobe's answer is not a
-    /// choice between two:
+    /// A two-instrument partition — lines take the biro, the wash takes the
+    /// marker — answers *"which of these two?"* correctly and is still the
+    /// intuition a reader arrives with. It cannot answer the question the
+    /// operator actually asked, which is *"which colour does Adobe use?"*:
     ///
     /// | kind | Acrobat key | measured |
     /// |---|---|---|
@@ -374,59 +347,45 @@ impl TextMarkKind {
     /// | Squiggly | `cSquiggly` | `#DB3425`, the shape red |
     ///
     /// ⇒ Four kinds, four keys, three distinct colours. A partition into "biro"
-    /// and "marker" cannot express that, so the pen grew a slot per key and this
-    /// function became a routing table rather than a two-arm decision. See
+    /// and "marker" cannot express that, so the pen carries a slot per key and
+    /// this function is a routing table rather than a two-arm decision. See
     /// [`super::palette`] for where those four readings come from and
     /// [`super::pen::PenSlot`] for the slots.
     ///
-    /// ★ The old sentence's *"no kind reaching both colours and no kind reaching
-    /// neither"* survives, strengthened: it is now
-    /// `pen::tests::every_kind_takes_the_slot_it_is_documented_to_take` on one
-    /// side and [`tests::each_text_kind_takes_its_own_pen`] on this one, and both
-    /// sweep their enum's full list rather than a hand-written subset.
+    /// ★ The property a partition gave for free — **no kind reaching two
+    /// colours and no kind reaching none** — is asserted instead, from both
+    /// sides: `pen::tests::every_kind_takes_the_slot_it_is_documented_to_take`
+    /// and [`tests::each_text_kind_takes_its_own_pen`], each sweeping its enum's
+    /// full list rather than a hand-written subset.
     ///
-    /// # ★ Why this used to be a hard-coded triple, and why that stopped being
-    /// right
+    /// # ★ Why this is a routing table and NOT a hard-coded triple
     ///
-    /// Until 2026-08-17 this was `fn rgb(self) -> (f64, f64, f64)` returning
-    /// `(0.85, 0.16, 0.16)` for all three, under a doc comment that said:
+    /// A constant here — `fn rgb(self) -> (f64, f64, f64)` returning one red for
+    /// every line kind — compiles, and a test that asserts the constant against
+    /// the constant passes, and the pen control in Markup ▸ Style goes on
+    /// working perfectly for every kind that reaches [`super::spec`]. Nothing is
+    /// red anywhere. What the operator sees is the inconsistency: set the pen to
+    /// blue, draw a rectangle, get blue; underline a word, get red.
     ///
-    /// > there is no pen control in this shell yet, so the default is stated
-    /// > once, in the one place a spec is built, and **a real pen replaces
-    /// > exactly this function**.
-    ///
-    /// That was correct when written. The real pen arrived in `4035b64` — two
-    /// swatches and a width in Markup ▸ Style — and **did not replace this
-    /// function**, because nothing connected the two: the constant compiled, the
-    /// tests asserted the constant, and the swatch worked perfectly on every
-    /// kind that went through [`super::spec`]. The observable result was a
-    /// shipped inconsistency in the commit that answered *"I can't change a
-    /// markup's colour"* — set the pen to blue, draw a rectangle, get blue;
-    /// underline a word, get red.
-    ///
-    /// The generalisable part is not "remember to update duplicates". It is
-    /// that **a doc comment naming its own seam is an asset only if something
-    /// checks the seam when it is filled.** `NO_SURFACE.md` §1 praised exactly
-    /// this style of comment for predicting `super::spec`'s refactor — and the
-    /// same sweep listed this line as *"Underline / StrikeOut / Squiggly colour
-    /// — surface: none"* without noticing that it was no longer a missing
-    /// control but a **stale duplicate of one that now existed**. A prose seam
-    /// marker is a note to a human; the thing that would have caught this is a
-    /// test asserting the two paths agree, which is now
+    /// The generalisable part is not "remember to update duplicates". It is that
+    /// **a doc comment naming its own seam is an asset only if something checks
+    /// the seam when it is filled.** A prose seam marker is a note to a human,
+    /// and a sweep reading it will record *"no surface"* long after the surface
+    /// exists. What catches it is a test asserting the two paths agree, which is
     /// `tests::the_ink_reaches_every_text_kind`.
     ///
-    /// # ★★ The one argument from the old version that is NOT superseded
+    /// # ★★ The constraint the measurement has to pass
     ///
     /// *"A line must be seen against the text it marks; a yellow underline under
-    /// black glyphs on white paper is very nearly invisible."* Still true, and it
-    /// is now a **check on the measurement rather than a reason for a value**:
-    /// Acrobat's underline blue and strikeout red both pass it comfortably, which
-    /// is one more piece of evidence that the registry readings are a designed
-    /// set rather than an accident of this machine's history.
+    /// black glyphs on white paper is very nearly invisible."* That is a **check
+    /// on the measurement rather than a reason for a value**: Acrobat's
+    /// underline blue and strikeout red both pass it comfortably, which is
+    /// evidence that the registry readings are a designed set rather than an
+    /// accident of this machine.
     ///
-    /// # Why an operator's Highlight still comes out of one swatch
+    /// # Why an operator's Highlight comes out of one swatch
     ///
-    /// Unchanged, and it is the reason [`Self::Highlight`] and
+    /// It is the reason [`Self::Highlight`] and
     /// [`super::MarkupKind::Highlight`] both route to
     /// [`super::pen::PenSlot::Highlighter`]: a highlight is a wash whichever
     /// gesture drew it, so a text-following one and an area one must come out of
@@ -526,8 +485,7 @@ pub fn spec(kind: TextMarkKind, quads: Vec<Quad>, pen: super::pen::Pen) -> Marku
 /// Everything the command means is here: which selection is eligible, what a
 /// stale one does, and what travels to the apply arm. `app::dispatch` calls this
 /// and either pushes the `Ok` or traces the `Err`; it decides nothing, which is
-/// the choke-point rule (`HANDOFF.md` §6) applied to a verb whose operand is not
-/// the pointer.
+/// the choke-point rule applied to a verb whose operand is not the pointer.
 ///
 /// # Why the quads travel rather than the selection
 ///
@@ -800,39 +758,29 @@ mod tests {
         assert_eq!(authored, quads, "the boxes must arrive as they left");
     }
 
-    /// ★★ **The operator's pen reaches every text kind** — the test that would
-    /// have caught the defect [`TextMarkKind::rgb`] was changed to fix.
+    /// ★★ **The operator's pen reaches every text kind.**
     ///
-    /// # What was here before, and why it passed through the whole bug
+    /// # It asserts a RELATION, never a magnitude
     ///
-    /// This test used to be `the_pen_is_the_visible_one`, and it asserted the
-    /// literal triple `(0.85, 0.16, 0.16)` against a function that returned the
-    /// literal triple `(0.85, 0.16, 0.16)`. It was green for the entire life of
-    /// the defect and would have stayed green forever, because **it and the code
-    /// it tested were two copies of the same constant** — a test that restates
-    /// its subject can only fail if someone edits one copy, which is the one
-    /// thing nobody did.
+    /// A test that pins the literal triple [`TextMarkKind::rgb`] returns is two
+    /// copies of one constant, and two copies of one constant can only disagree
+    /// if somebody edits one of them — so such a test stays green through the
+    /// entire life of a defect in which the pen never reaches the spec at all.
     ///
-    /// So the assertion is a **relation, not a magnitude**: whatever colour the
-    /// kind's own slot holds, that is the colour the spec authors. Driven with a
-    /// pen whose eight slots are eight distinguishable values, so a kind that
-    /// took a neighbour's pen names itself — the stronger form of the 2026-08-17
-    /// version, which planted one ink and could not have caught a kind taking
-    /// the wrong *line* colour because there was only one.
+    /// So: whatever colour the kind's own slot holds, that is the colour the
+    /// spec authors. Driven with a pen whose eight slots are eight
+    /// distinguishable values, so a kind that takes a neighbour's pen names
+    /// itself. A planted pen with one ink could not catch a kind taking the
+    /// wrong *line* colour, because there would be only one line colour to take.
     ///
-    /// # ★ What it no longer asserts, and why the deletion is deliberate
+    /// # ★ What it deliberately does NOT assert
     ///
-    /// The old second half read *"the default is colour-preserving: an operator
-    /// who never touches the swatch gets exactly what every earlier build
-    /// authored"*, pinning `(0.85, 0.16, 0.16)`. **That is now false on
-    /// purpose** — the operator asked for Adobe's defaults and got them, so a
-    /// text mark authored today is a different colour from one authored on
-    /// 2026-09-05. `Pen::default`'s own doc comment carries the argument for
-    /// departing from the "omits nothing" rule, and
-    /// `pen::tests::every_slot_ships_at_the_acrobat_value_it_was_measured_from`
-    /// is what pins the new values against the registry keys they came from.
-    /// Asserting them a second time here would be the two-copies-of-one-constant
-    /// mistake this test's own history is about.
+    /// The shipped default values. Those are Acrobat's, pinned against the
+    /// registry keys they were read from by
+    /// `pen::tests::every_slot_ships_at_the_acrobat_value_it_was_measured_from`;
+    /// `Pen::default`'s own doc comment carries the argument for departing from
+    /// the "omits nothing" rule. Asserting them a second time here would be
+    /// exactly the two-copies-of-one-constant mistake above.
     #[test]
     fn the_operators_pen_reaches_every_text_kind() {
         let chosen = planted_pen();

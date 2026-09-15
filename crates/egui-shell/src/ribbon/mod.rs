@@ -4,7 +4,7 @@
 //! This file is the module **root**: what the ribbon is made of, which
 //! file holds which decision, and the one rule that ties them together.
 //! The reasoning for each part lives with that part — see the map below —
-//! because a header that explained twelve files would be the file nobody
+//! because a header that explained every file below would be the file nobody
 //! updates when one of them changes.
 //!
 //! # What is drawn, top to bottom
@@ -13,7 +13,7 @@
 //! ┌──────────────────────────────────────────────────────────────────────┐
 //! │ [QAT…] │ File View Pages ⏷ 2 more         ( Read │ Review │ Edit )   │  ← tab-strip row
 //! ├──────────────────────────────────────────────────────────────────────┤
-//! │  [ ][ ][ ]  │  [ ][ ]   │  [ ][ ][ ]                        ⏷ 2 more  │  ← band
+//! │  [ ][ ][ ]  │  [ ][ ]   │  [ ][ ][ ]                               ›  │  ← band
 //! │  Page display│  Render   │  Window                                    │
 //! └──────────────────────────────────────────────────────────────────────┘
 //! ```
@@ -53,7 +53,7 @@
 //!   (everything else). That boundary is not organisational, it is what
 //!   makes the overflow invariant testable without a window.
 //!
-//! # ★ Layout order is the enforcement mechanism
+//! # Layout order is the enforcement mechanism
 //!
 //! This is the one rule that spans every file above, and it is why the
 //! ribbon is split the way it is.
@@ -72,9 +72,9 @@
 //! The alternative spelling ("draw the content, then draw the control in
 //! what is left") is the obvious immediate-mode one, reads correctly, and
 //! is the source of `MODES_AND_PANELS.md` Part 2's failure mode #8:
-//! *"past ~6 tabs the overflow button itself gets hidden, leaving no route
-//! to the hidden tabs."* Reserving first makes the failure unreachable
-//! rather than merely unlikely.
+//! *"past a handful of tabs the overflow button itself gets hidden, leaving
+//! no route to the hidden tabs."* Reserving first makes the failure
+//! unreachable rather than merely unlikely.
 //!
 //! It is not sufficient on its own, and that is worth knowing before
 //! editing any of this: **`egui` does not clip a `Ui`'s children to its
@@ -106,8 +106,8 @@ pub mod ctx;
 pub mod frame_report;
 pub mod mode_selector;
 // The four width primitives every ribbon row plans with -- button padding,
-// the truncation floor, a separator's cost and text measurement. Split from
-// `band` under R2 on 2026-09-04; see that module's header for the seam.
+// the truncation floor, a separator's cost and text measurement. See that
+// module's header for why they belong to no one row.
 pub(crate) mod measure;
 pub(crate) mod overflow;
 pub mod plan;
@@ -127,12 +127,12 @@ pub mod tabs;
 // machine. See `crate::manifest::Trailing`.
 pub mod trailing;
 
-// Test-only, and separate files rather than one `mod tests` for three
-// reasons: R2 caps a source file at 1,500 lines; the width tests need a
-// fixture (a synthetic font) whose construction has nothing to do with the
-// ribbon and should not be read as if it did; and structural tests and
-// geometric tests are different kinds of claim that should not be filed
-// together. `height_tests` splits off the *vertical* geometry — how many
+// Test-only, and separate files rather than one `mod tests` for two reasons:
+// the width tests need a fixture (a synthetic font) whose construction has
+// nothing to do with the ribbon and should not be read as if it did; and
+// structural tests and geometric tests are different kinds of claim that
+// should not be filed together. `height_tests` splits off the *vertical*
+// geometry — how many
 // rows a group uses and whether the band is the same height on two tabs
 // (R128) — from `width_tests`' horizontal one, and borrows that file's
 // synthetic-face harness rather than standing up a second one. See each
@@ -149,7 +149,6 @@ mod width_tests;
 #[cfg(test)]
 mod scroll_tests;
 // Rendered geometry for the three item sizes and the visible_when filter.
-// Separate from `width_tests` only because that file is at the R2 limit.
 #[cfg(test)]
 mod sizing_tests;
 

@@ -3,57 +3,69 @@ r"""check-completeness-tests.py — a completeness test may not carry its own co
 of the set it is checking.
 
 ===========================================================================
-WHY THIS EXISTS, AND WHY IT TOOK FIVE RECURRENCES TO BUILD
+THE PROPERTY ASSERTED
 ===========================================================================
 
-A test called `every_unit_is_named_distinctly` makes a promise in its name: that
-if a unit ever arrives without a distinct label, this will go red. On 2026-09-13
-the engine shipped three new units — kilometres, yards, miles — and that test
-stayed green, silent, and useless, because it iterated a HAND-WRITTEN array of
-the six variants that existed when it was written.
-
-What actually caught the three unlabelled units was an exhaustive `match` in the
-function above it. The compiler, not the test. The test whose entire job was to
-notice noticed nothing, and would have gone on not noticing for ever, because a
-private copy of a set does not grow when the set does.
+A test named `every_unit_is_named_distinctly` makes a promise in its name: that
+when a unit arrives without a distinct label, this goes red. If the test body
+iterates a HAND-WRITTEN array of the variants that existed when it was written,
+it cannot keep that promise.
 
 ⇒ **A completeness test that carries its own copy of the set is testing the
-copy.** It is invisible for exactly as long as the set is stable, which is
-exactly as long as nobody needs it.
-
-That lesson had been written into agent memory FIVE times, under five different
-incidents, and the instrument was never built — the sixth recurrence is what
-finally paid for this file. A lesson in a docstring is not an instrument.
+copy.** The shape to recognise: the set grows, the private array does not, and
+the test stays green while the thing it was written to notice happens. It is
+invisible for exactly as long as the set is stable, which is exactly as long as
+nobody needs it. When such a set does grow, what catches it is an exhaustive
+`match` somewhere else — the compiler, not the test whose entire job was to
+notice.
 
 ===========================================================================
 THE PREDICATE, AND WHY IT IS NARROW ON PURPOSE
 ===========================================================================
 
-The first draft flagged any literal array inside a completeness-named test and
-returned 53 hits on a clean tree. Most were test INPUTS — a list of widths, a
-pair of drag corners — and a gate that fires on those teaches people to write
-exemptions, which is how a gate becomes scenery.
+Two cuts were measured before this one, and both were wrong in a way worth
+recording, because the obvious "simplification" is to go back to either:
+
+  * **Any literal array inside a completeness-named test** returns 53 hits on a
+    clean tree. Most are test INPUTS — a list of widths, a pair of drag corners.
+    A gate that fires on those teaches people to write exemptions, which is how
+    a gate becomes scenery.
+  * **Two or more `Type::Variant` elements** admits an ordinary pair of cases,
+    which is not a copy of a set. Hence `MIN_VARIANTS = 3`.
 
 So the predicate is: a literal array, inside a function whose name begins
 `every_` / `all_` / `each_` or contains `_complete` / `_exhaustive`, in which
 **three or more elements are `Type::Variant` paths sharing one `Type`**. That is
 not a list of inputs. That is a second, private copy of an enumeration.
 
-It returns 29 on the tree it was written against — a number small enough to work
-down and large enough to prove the gate is aimed at something.
+WHAT IT PROVABLY CANNOT SEE
+---------------------------
 
-★ FOREIGN vs LOCAL is the severity axis. A hand-copied LOCAL enum is bad: the
-copy and the enum sit in the same repository, so at least one commit touches
-both neighbourhoods. A hand-copied FOREIGN enum — `pdfcer_core::EditError`,
-`Object`, `RecompressReason` — is worse by a category, because the set grows in
-a repository this one does not build, on a branch pin that moves without a
-`cargo update`, and NOTHING on this side changes on the day it happens. **Nine
-of the twenty-nine are foreign** — and that nine is measured, not counted by
-eye: three of the sites enumerate `E`, `D` and `R`, which are import aliases
-rather than type names, and a first pass that grepped the repository for
-`enum X` called all three foreign when one of them is ours. The gate resolves
-the `use` statement now, because a severity count wrong by one in the direction
-of alarm devalues the other nine.
+It is a line-oriented regex over brace- and bracket-matched text, not a parser.
+So: a set copied into a `const` outside the function; a set copied as bare
+variant names under a `use Type::*;`; a set built by a helper the test calls;
+and any completeness test whose name does not carry one of the prefixes above.
+The name is the hook, and a test that makes no promise in its name is out of
+scope by design — nothing here objects to a hand-written array in a test called
+`two_widths_wrap_the_same_way`.
+
+FOREIGN vs LOCAL IS THE SEVERITY AXIS
+-------------------------------------
+
+A hand-copied LOCAL enum is bad: the copy and the enum sit in the same
+repository, so at least one commit touches both neighbourhoods. A hand-copied
+FOREIGN enum — `pdfcer_core::EditError`, `Object`, `RecompressReason` — is worse
+by a category, because the set grows in a repository this one does not build, on
+a branch pin that moves without a `cargo update`, and NOTHING on this side
+changes on the day it happens.
+
+Origin is decided by resolving the file's own `use` statement, NOT by grepping
+the repository for `enum X`. The grep is wrong in both directions: an import
+ALIAS (`E`, `D`, `R`) is not a type name and so is never found as a declaration,
+and a type this repository declares may still be imported here from somewhere
+else. A severity count wrong by one in the direction of alarm devalues every
+other entry, so the import — a statement about THIS use of the name — wins over
+the declaration set, which is only a statement about the repository.
 
 ===========================================================================
 THE SNAPSHOT, AND THE HONEST NAME FOR IT
@@ -62,8 +74,9 @@ THE SNAPSHOT, AND THE HONEST NAME FOR IT
 `completeness-snapshot.txt` lists every site that existed when the gate was
 adopted. It is **a debt register, not an exemption list**, and the distinction
 is written here because it is the one that erodes: an exemption says "this is
-fine"; a debt entry says "this is wrong and has not been fixed yet". Every run
-prints the outstanding count so the number is in front of whoever reads it.
+fine"; a debt entry says "this is wrong and has not been fixed yet". Every clean
+run prints the outstanding count, and how many of those copy a foreign type, so
+the number is in front of whoever reads it rather than filed away.
 
 Two failures, both red:
 
@@ -71,27 +84,33 @@ Two failures, both red:
      point: the debt may shrink, never grow.
   2. A snapshot line matching NOTHING — the site was fixed, renamed or deleted
      and the register was not updated. A stale entry is how a register stops
-     describing the tree; `check-strong-text.sh` carried a carve-out whose
-     premise had quietly stopped being true, and that is the lesson taken
-     literally.
+     describing the tree: a carve-out whose premise has quietly stopped being
+     true is a hole nobody knows is open.
 
 A site is identified by `path::fn`, never by line number, because line numbers
 churn on every edit above them and a register that goes stale on unrelated work
 is a register people delete.
 
+`--write-snapshot` regenerates the register from the tree. It is the deliberate
+act performed AFTER reading a new site and deciding it is debt — never a way to
+make a red build green. It only rewrites when the run would otherwise fail.
+
 ===========================================================================
-EXIT CODES
+EXIT CODES — the project's three-state gate contract
 ===========================================================================
 
   0  clean   — the set of sites equals the register.
   1  FAIL    — a new site, or a stale register line.
   2  SKIPPED — no `crates/` tree to scan (partial checkout).
 
-`--self-test` plants six cases, and THREE of them must come back clean: a
-registered site, a list that really is inputs, and a hand-copied enum inside a
-test whose name makes no completeness promise. A gate that answered 1
-unconditionally would pass three of six; the quiet cases are what make the
-loud ones mean anything.
+HOW TO FALSIFY IT
+-----------------
+
+`--self-test` plants six cases against a synthetic tree, and THREE of them must
+come back clean: a registered site, a list that really is inputs, and a
+hand-copied enum inside a test whose name makes no completeness promise. A gate
+that answered 1 unconditionally would still pass three of six; the quiet cases
+are what make the loud ones mean anything.
 """
 
 import io
@@ -231,9 +250,9 @@ def _body_hit(lines, i, fn_name):
 def origins(root):
     """Every enum name DECLARED in this repository.
 
-    Anything enumerated by hand that is not in this set comes from another
-    crate — which is the severe case, because that set grows on a branch pin
-    that moves without a `cargo update` and nothing on this side is touched.
+    The FALLBACK oracle for origin, used only when the file carries no `use`
+    for the name — see [`origin_of`], which prefers the import. A name absent
+    from this set comes from another crate, which is the severe case.
     """
     names = set()
     for top in ("crates", "tools"):

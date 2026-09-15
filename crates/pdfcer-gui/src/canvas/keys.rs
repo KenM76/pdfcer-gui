@@ -24,12 +24,12 @@
 //! Edit both offer the measure tools, and in neither of them should Tab stop
 //! moving focus when the operator is not measuring.
 //!
-//! ## ★ Six claimants for Escape, one press, one effect
+//! ## ★ Many claimants for Escape, one press, one effect
 //!
 //! Decision 025's L1 is that Escape ascends **exactly one rung** rather than
 //! collapsing the ladder, and the same discipline governs everything else that
-//! would like the key. By Phase 6 there are six claimants, and the precedence
-//! is *"retire the most transient thing first"*:
+//! would like the key. They are ordered *"retire the most transient thing
+//! first"*, and rung 3 has two occupants that cannot both be present:
 //!
 //! | # | claimant | who decides | how it says it took the key |
 //! |---|---|---|---|
@@ -44,23 +44,15 @@
 //!
 //! ### ★ Why the text selection shares rung 5 rather than taking a sixth
 //!
-//! The original argument was that it is not a precedence decision at all:
+//! The two occupants of rung 5 can both be present. In **Edit**, an operator
+//! can marquee some objects with the select tool, arm the text tool, sweep a
+//! line, and hold both selections at once —
+//! [`crate::canvas::textsel::takes_the_press`] gives a press its text meaning
+//! on a disjunction, not on the single `Capabilities::edit_content` flag that
+//! once made the two mutually exclusive by construction. `canvas::textsel` §3
+//! records that exclusivity as a matter of **precedence** now.
 //!
-//! > **The two occupants of rung 5 can never both be present.**
-//! > `canvas::textsel::takes_the_press` gives a press its text meaning exactly
-//! > when `Capabilities::edit_content` is absent, and the content selection is
-//! > reachable exactly when it is present — one flag, two mutually exclusive
-//! > branches […] there is no frame in which both could claim the key.
-//!
-//! ★ **That is no longer true, and the rung is right anyway.** Since
-//! [`crate::canvas::tool::CanvasTool::Text`] landed (2026-08-14) an operator in
-//! **Edit** can marquee some objects with the select tool, arm the text tool,
-//! sweep a line, and hold both selections at once — `takes_the_press` gained a
-//! disjunct, so the two are no longer decided by one flag in opposite senses.
-//! `canvas::textsel` §3 records that move from exclusivity-by-construction to
-//! exclusivity-by-precedence in full.
-//!
-//! So there **is** an ordering now, and it is the one the code already had:
+//! The ordering within the rung is therefore real, and it is
 //! **the text selection first.** Three reasons, in weight order:
 //!
 //! 1. **It is the more transient**, which is this table's own rule. A text range
@@ -77,8 +69,8 @@
 //!    ladder loses the sub-path or node they had descended into. Given a
 //!    choice, spend the press on the cheaper loss.
 //!
-//! A sixth rung is **still** not the answer, and now for a different reason than
-//! before. It would put a *precedence* between two things that are the same act
+//! A rung of its own is not the answer. It would put a *precedence* between two
+//! things that are the same act
 //! — "clear what is selected" — expressed twice because this shell has two kinds
 //! of selectable thing; and it would make a mode in which only one of them can
 //! exist (Read, Review) look as though it had two rungs to climb. The rung is
@@ -112,11 +104,11 @@
 //! delivered by the key they pressed to clear something. One press, one effect
 //! is satisfied; *one press, one **expected** effect* is not.
 //!
-//! **What the reference applications do**, under `HANDOFF.md` §3's standing
-//! instruction: Inkscape's Escape in the text tool deselects and **stays in the
-//! tool**; Acrobat's Escape changes no tool; only SolidWorks exits the active
-//! command. Two of three keep the tool, which is what ships — and it is also the
-//! answer that needs no code.
+//! **What the reference applications do**, under the standing instruction to
+//! match Inkscape, Acrobat and SolidWorks: Inkscape's Escape in the text tool
+//! deselects and **stays in the tool**; Acrobat's Escape changes no tool; only
+//! SolidWorks exits the active command. Two of three keep the tool, which is
+//! what ships — and it is also the answer that needs no code.
 //!
 //! The route out is the control that armed it: `view.tool_text` is a toggle, so
 //! pressing it again returns to the select tool
@@ -134,8 +126,8 @@
 //! would put the tool down *and* silently discard that pick: two effects from
 //! one press, which is exactly what decision 025's L1 forbids.
 //!
-//! ★ **The same argument admitted a second occupant to 3a on 2026-08-14**, and
-//! the fact that it needed no new reasoning is the point. PolyLine and Polygon
+//! ★ **The same argument admits a second occupant to 3a**, and the fact that
+//! it needs no new reasoning is the point. PolyLine and Polygon
 //! are also gestured by clicks
 //! ([`crate::canvas::markup::vertex`]), so a run of three vertices with the
 //! fourth not yet placed is in exactly the position a half-taken linear pick is.
@@ -265,7 +257,7 @@ use crate::canvas::zoom;
 /// not a consequence of this one. What the move already bought is the ribbon's
 /// Delete: `PdfcerApp::dispatch_token` can now read the selection, so
 /// `format.delete` raises the same action this does, from the same rule
-/// ([`SelectionState::deletable_objects_on`]).
+/// ([`crate::canvas::deleting::subject`]).
 ///
 /// Backspace is bound alongside Delete because a laptop keyboard without a
 /// dedicated Delete key is the common case, and every editor accepts both.
@@ -320,12 +312,11 @@ pub(super) struct Keys<'a> {
     /// The caller is `canvas::interact`, and that function opens by moving the
     /// selection off the document (`std::mem::take(&mut doc.selection)`), so a
     /// query that reads `doc.selection` sees an empty one and answers `false`
-    /// for every document there is. That is precisely what this field carried
-    /// from 2026-08-28 to 2026-08-29: the gate below was written, reviewed and
-    /// unit-tested, and the flag feeding it was a constant `false` in the
-    /// running program. See `annotdelete::refuses_selected`'s header for what
-    /// that looked like from a chair, and note that no unit test in this file
-    /// could have caught it — every one of them sets this field by hand.
+    /// for every document there is. A gate fed by that answer is written,
+    /// reviewed and unit-tested while the flag feeding it is a constant `false`
+    /// in the running program. See `annotdelete::refuses_selected`'s header for
+    /// what that looks like from a chair, and note that no unit test in this
+    /// file can catch it — every one of them sets this field by hand.
     ///
     /// # Why the ANSWER arrives here and not the document
     ///
@@ -342,20 +333,20 @@ pub(super) struct Keys<'a> {
     ///
     /// # ★★ What it costs to get wrong, which is why the ladder consults it
     ///
-    /// Before 2026-08-29 this rung asked `annot.target.locked` and nothing else
-    /// — one of the **three** things that refuse a delete. `/Encrypt` and a
-    /// certification signature were not asked, so on a certified drawing the key
-    /// raised the action, `delete_annotation` refused into
+    /// `annot.target.locked` is one of the **three** things that refuse a
+    /// delete. A rung that asks it and nothing else has not asked about
+    /// `/Encrypt` or a certification signature, so on a certified drawing the
+    /// key raises the action, `delete_annotation` refuses into
     /// `actions::apply::vector_edit`'s `Err` arm — a trace line and nothing to
-    /// the operator — **and `actions::annots::delete` then cleared the selection
+    /// the operator — **and `actions::annots::delete` clears the selection
     /// anyway**, unconditionally, because it clears after the funnel rather than
     /// on success.
     ///
-    /// ⇒ The operator pressed Delete, the comment stayed, the selection vanished
-    /// with the Properties panel's explanation inside it, and nothing was said.
+    /// ⇒ The operator presses Delete, the comment stays, the selection vanishes
+    /// with the Properties panel's explanation inside it, and nothing is said.
     /// A silence that also destroys the sentence explaining it is the worst
-    /// shape this refusal could have taken, and it is what makes this a rung
-    /// rather than a nicety.
+    /// shape this refusal can take, and it is what makes this a rung rather
+    /// than a nicety.
     ///
     /// ★ `bool` rather than the `Refusal` itself: this rung only decides whether
     /// to proceed. **The wording is not this file's** — it is already on screen
@@ -376,28 +367,29 @@ pub(super) struct Keys<'a> {
     /// §12.5.3 Table 165's per-annotation `Locked` bit, which no form field
     /// has.
     ///
-    /// # ★★★ What its absence cost, and it is the day-before defect one rung up
+    /// # ★★★ What its absence costs, and it is the same defect one rung up
     ///
-    /// Rung 0 was added on 2026-08-28 with **no gate at all** — `caps.edit_content
-    /// && selected_field`, push `DeleteWidget`, `return` — and it returns six
-    /// lines above the annotation branch that *does* ask one. So the R83 work
-    /// that closed the annotation rung on 2026-08-29 walked straight past the
-    /// form rung sitting above it.
+    /// Rung 0 sits **above** the annotation branch that asks its own gate, and
+    /// it returns six lines before reaching it. A rung 0 written as
+    /// `caps.edit_content && selected_field`, push `DeleteWidget`, `return` is
+    /// therefore covered by nothing — and a review of the branch below reads
+    /// straight past it, because a rung that asks nothing looks like a rung
+    /// with nothing to ask.
     ///
-    /// On an ordinary certified fillable form the key raised `DeleteWidget`,
-    /// `delete_widget` refused into `actions::apply::vector_edit`'s `Err` arm —
-    /// a trace line and nothing to the operator — **and
-    /// `actions::forms::delete_widget` had already cleared
+    /// Ungated, on an ordinary certified fillable form the key raises
+    /// `DeleteWidget`, `delete_widget` refuses into
+    /// `actions::apply::vector_edit`'s `Err` arm — a trace line and nothing to
+    /// the operator — **and `actions::forms::delete_widget` has already cleared
     /// `doc.selected_field` before the call**, so the Properties panel's
-    /// sentence explaining the refusal went blank on the same frame. The box
-    /// stayed, the selection vanished, nothing was said.
+    /// sentence explaining the refusal goes blank on the same frame. The box
+    /// stays, the selection vanishes, nothing is said.
     ///
     /// ★ `bool` rather than the refusal, for [`Self::annot_delete_refused`]'s
     /// reason verbatim: this rung decides only whether to proceed, and the
     /// wording is already on screen in
     /// `panels::properties::formfield`'s delete row, drawn from the moment the
     /// field was selected — which is the R83 half a keystroke cannot provide,
-    /// and which now survives the press.
+    /// and which survives the press.
     pub field_delete_refused: bool,
     /// Whether Escape was already spent by a drag this frame.
     pub escape_consumed: bool,
@@ -405,9 +397,9 @@ pub(super) struct Keys<'a> {
     ///
     /// # Why this field exists at all
     ///
-    /// Until 2026-09-05 Delete acted at the Object rung only and needed nothing
-    /// but the selection: an entry already holds a resolved `TargetId`, and the
-    /// operand list is a filter over four integers. The Part and Node rungs are
+    /// Delete at the Object rung alone needs nothing but the selection: an
+    /// entry already holds a resolved `TargetId`, and the operand list is a
+    /// filter over four integers. The Part and Node rungs are
     /// different in kind — a subpath and a text run wear the *same*
     /// `subpath: Some(n)` field on a [`crate::canvas::selection::Selection`] and
     /// reach **different engine verbs** (`delete_subpath` and
@@ -449,7 +441,7 @@ pub(super) struct Keys<'a> {
     /// | cause | `model_attempted` | what it means |
     /// |---|---|---|
     /// | the page would not decompose | `true` | a real limit; `Refusal::NoObjectModel` is the correct answer and the operator is owed a sentence |
-    /// | **nobody asked for it** | `false` | the 2026-09-05 defect, four times over: a working verb reachable by nothing, and a key that silently does nothing |
+    /// | **nobody asked for it** | `false` | a working verb reachable by nothing, and a key that silently does nothing |
     ///
     /// Carried so the second can be made **loud** rather than being reported
     /// in the first's words. See the `debug_assert` at the decline site below,
@@ -731,13 +723,14 @@ pub(super) fn canvas_keys(
         });
     }
 
-    // ★★★ …and ANY OTHER ARMED TOOL, last on this rung — 2026-08-20, on the
-    // operator: *"Escape should get me out of a tool."*
+    // ★★★ …and ANY OTHER ARMED TOOL, last on this rung — on the operator:
+    // *"Escape should get me out of a tool."*
     //
-    // The two calls above covered a pen and a measure tool. They left the
-    // caret, the node tool, the text tool and the hand, so the answer to *"how
-    // do I stop doing this?"* depended on which tool had been picked. The
-    // convention has no exceptions: Escape returns you to the pointer.
+    // The two calls above cover a pen and a measure tool. They leave the caret,
+    // the node tool, the text tool and the hand, so without this call the
+    // answer to *"how do I stop doing this?"* depends on which tool happens to
+    // be armed. The convention has no exceptions: Escape returns you to the
+    // pointer.
     //
     // Below the two specific calls rather than replacing them, because they
     // trace distinct outcomes that driven checks read — and a general disarm
@@ -832,7 +825,7 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // ★★★ **A CANVAS DRAFT TAKES DELETE AND BACKSPACE**, 2026-08-20.
+    // ★★★ **A CANVAS DRAFT TAKES DELETE AND BACKSPACE.**
     //
     // Above every rung below it, and it has to be: with a caret on the page the
     // operator is typing, and Delete means "eat the character in front of me".
@@ -863,21 +856,20 @@ pub(super) fn canvas_keys(
     //
     // # Why it is above, and what being below it cost
     //
-    // The gate below is `!caps.edit_content`, and it used to be the only one.
-    // With the annotation branch beneath it, **Review** — `edit_content:
-    // false`, `author_markup: true` — returned before ever reaching it. Review
-    // is the markup stance: it is the mode an operator is in *because* they
-    // are working on stamps and dimensions, and it was the one mode where
-    // Delete could not remove one.
+    // The gate below is `!caps.edit_content`. With the annotation branch
+    // beneath that gate rather than above it, **Review** — `edit_content:
+    // false`, `author_markup: true` — returns before ever reaching the
+    // annotation verb. Review is the markup stance: it is the mode an operator
+    // is in *because* they are working on stamps and dimensions, so it would be
+    // the one mode where Delete cannot remove one.
     //
-    // That is the second predicate in this feature that was answering a
-    // question wider than the one it was written for, and both were invisible
-    // in the same way: the mechanism below worked perfectly and never ran.
-    // **One predicate per capability** — `author_markup` guards the annotation
-    // verb, `edit_content` guards the content verb, and neither stands in for
-    // the other.
+    // That is a predicate answering a question wider than the one it is written
+    // for, and the failure is invisible in the worst way: the mechanism below
+    // works perfectly and never runs. **One predicate per capability** —
+    // `author_markup` guards the annotation verb, `edit_content` guards the
+    // content verb, and neither stands in for the other.
     //
-    // The `caps` check is belt and braces here for the reason the old comment
+    // The `caps` check is belt and braces here for the reason the comment
     // below gives about its own: entering a mode without `author_markup`
     // already clears the annotation selection (`app::gating`), so this is
     // unreachable in practice. It is written anyway, because *"Delete is safe
@@ -918,10 +910,9 @@ pub(super) fn canvas_keys(
         // [`Keys::field_delete_refused`] because this function takes no
         // `&OpenDoc` and must not start.
         //
-        // This rung had NO gate between 2026-08-28 and 2026-08-29 — it pushed
-        // the action on `caps.edit_content` alone and returned six lines above
-        // the annotation branch that does ask one. The R83 pass that closed
-        // the annotation rung read this one and did not see it, because a rung
+        // Ungated, this rung pushes the action on `caps.edit_content` alone
+        // and returns six lines above the annotation branch that does ask one,
+        // so a review of that branch reads straight past this one — a rung
         // that asks nothing looks like a rung with nothing to ask.
         //
         // ★★ Declines to the TRACE, not to `app::status::decline`, and that is
@@ -1021,8 +1012,8 @@ pub(super) fn canvas_keys(
     // one, so `deletable_objects_on` would return an empty list two lines
     // below and refuse anyway. It is written explicitly regardless: *"a test
     // that checks a relation rather than a magnitude is satisfied by any
-    // absurdity in the right direction"* (`HANDOFF.md` §2), and "Delete is
-    // safe because nothing can be selected" is exactly that shape of argument
+    // absurdity in the right direction"*, and "Delete is safe because nothing
+    // can be selected" is exactly that shape of argument
     // — it holds only for as long as the other half does, and the other half
     // is in a different file.
     if !caps.edit_content {
@@ -1033,32 +1024,32 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // ★★★ **DELETE REACHES THE RUNG THE OPERATOR IS ON**, 2026-09-05.
+    // ★★★ **DELETE REACHES THE RUNG THE OPERATOR IS ON.**
     //
-    // What stood here decided the whole question itself: `deletable_objects_on`
-    // (Object rung only), a leaf fallback, and — for every deeper rung —
+    // A ladder that answered the question here — `deletable_objects_on` (Object
+    // rung only), a leaf fallback, and for every deeper rung
     //
     //     canvas-delete-declined level=Part reason=no-verb-for-rung
     //
-    // and nothing else. No sentence, no sound, nothing on screen. The refusal
-    // was honest when it was written and stopped being honest the moment the
-    // engine shipped `delete_subpath`, `delete_text_run` and `delete_node`,
-    // whose MOVE twins this shell had wired: on a CAD export a line could be
-    // entered, selected and **dragged**, and could not be removed.
+    // and nothing else — gives no sentence, no sound, nothing on screen. That
+    // answer is dishonest the moment the engine carries `delete_subpath`,
+    // `delete_text_run` and `delete_node`, whose MOVE twins this shell has
+    // wired: on a CAD export a line can be entered, selected and **dragged**,
+    // and still not be removed.
     //
-    // ★★ The decision moved to [`crate::canvas::deleting::subject`] and did not
-    // merely move — it is now asked by the ribbon's `format.delete` as well, so
-    // Delete-the-key and Delete-the-command cannot act on different things.
-    // That divergence is not hypothetical: it happened once already over form
-    // fields (`app::dispatch::format`'s own arm records it), and it is what
-    // `app::keyboard`'s header calls the defect the single dispatcher exists to
-    // make impossible. A destructive rule stated in two places is a rule that
-    // drifts, and the drift here removes a drawing view instead of a line.
+    // ★★ The decision lives in [`crate::canvas::deleting::subject`], which the
+    // ribbon's `format.delete` asks as well, so Delete-the-key and
+    // Delete-the-command cannot act on different things. That divergence is not
+    // hypothetical — `app::dispatch::format`'s own arm carries the form-field
+    // case — and it is what `app::keyboard`'s header calls the defect the single
+    // dispatcher exists to make impossible. A destructive rule stated in two
+    // places is a rule that drifts, and the drift here removes a drawing view
+    // instead of a line.
     //
-    // ★ `deletable_objects_on` is NOT deleted. It is still the answer to *"what
-    // may a Delete act on at the Object rung"* and `app::conditions` and the
-    // tests read it; what changed is that this ladder no longer treats its
-    // empty answer as the end of the question.
+    // ★ `deletable_objects_on` is still live and still the answer to *"what may
+    // a Delete act on at the Object rung"* — `app::conditions` and the tests
+    // read it. What this ladder does not do is treat its empty answer as the
+    // end of the question.
     match crate::canvas::deleting::subject(selection, page_index, targets) {
         // The selection is NOT cleared on any of these arms. The delete is an
         // action, applied after this frame; the epoch it bumps makes

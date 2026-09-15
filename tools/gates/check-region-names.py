@@ -17,11 +17,10 @@ cannot drift:
     /// The region the JPEG quality field publishes.
     pub const REGION_QUALITY: &str = "export-image.quality";
 
-★★★ NOTHING IN THE TOOLCHAIN CAN SEE A DECLARATION NOTHING USES. The constant
-is `pub`, and `pub` suppresses `dead_code` — that is the whole of the reason.
-`rustc` is happy, `cargo clippy -D warnings` is happy, every gate in this folder
-was happy, and the crate shipped four releases with **three** such names in one
-window.
+★★★ NOTHING ELSE IN THE TOOLCHAIN CAN SEE A DECLARATION NOTHING USES. The
+constant is `pub`, and `pub` suppresses `dead_code` — that is the whole of the
+reason. `rustc` is happy, `cargo clippy -D warnings` is happy, and every other
+gate in this folder is happy.
 
 ★★ AND THE SYMPTOM IS A FALSE DEFECT REPORT, WHICH IS WORSE THAN SILENCE. A
 driven check that looks for `export-image.pages.typed`, finds no rectangle and
@@ -32,23 +31,20 @@ absence reported by a check is first a question about the check.* This gate is
 the answer to that question, asked once and for all in the build rather than
 once per investigation.
 
----------------------------------------------------------------------------
-What was actually found, on 2026-09-13
----------------------------------------------------------------------------
+The three shapes an unpublished name takes, because they are what a reader has
+to recognise:
 
-`dialogs/export_image.rs` declared five region names and one `region_for_*`
-helper. Three of the six were published by nothing:
+  * the widget's `Response` is discarded — `ui.add(..)` with no binding, so
+    there is no rectangle to hand to `ui_rect`;
+  * a GROUP publishes no union — the members are drawn, but nothing brackets
+    `ui.cursor()` before and after them;
+  * a `region_for_*` helper is written and never called — the group has a
+    rectangle and its members do not, which is exactly the case a check
+    asserting *which radio is selected* cannot express.
 
-  * `REGION_QUALITY` — `quality_group` called `ui.add(..)` and discarded the
-    response, so there was no rectangle to publish.
-  * `REGION_PAGES` — `pages_group` published no union at all.
-  * `region_for_scope` — never called; the three page-scope radios had no
-    individual rectangles, which is exactly what O196 needs to assert *which
-    radio is selected when the window opens*.
-
-The file's sibling twenty lines above, `format_group`, did all of this
-correctly, and its doc comment explained why. ⇒ *a correct example in the same
-file is not a mechanism.*
+⇒ *a correct example in the same file is not a mechanism.* Every occurrence of
+all three has had a healthy sibling twenty lines above it whose doc comment
+explained the right way to do it.
 
 ===========================================================================
 THE RULE, AND WHY IT IS THE WEAK ONE

@@ -8,20 +8,18 @@
 //! > it prompts, but also have a save all button that saves all changed
 //! > documents."*
 //!
-//! ## ★★★ What was there before: nothing
+//! ## What this module owns, and what it borrows
 //!
-//! `crate::dialogs::unsaved` has asked about **one** document since it was
-//! written — the tab being closed — and asked it well: it focuses the tab first,
-//! it counts edits from the last *save* rather than from zero, and it refuses to
-//! proceed on a save that did not happen.
+//! `crate::dialogs::unsaved` owns the **question** and asks it about one
+//! document: it focuses that tab first, counts edits from the last *save* rather
+//! than from zero, and refuses to proceed on a save that did not happen. This
+//! module owns the **cycle** that puts that question to every dirty document in
+//! turn, and the reading of `eframe`'s close request that starts it.
 //!
-//! None of that was reachable from the **window's ✕**. `eframe`'s close request
-//! was never read, so pressing it, or `Alt+F4`, ended the process with every
-//! unsaved document still unsaved. The one thing on the exit path was
-//! `App::on_exit`, which flushes a layout debounce.
-//!
-//! ⇒ The gap was not "the prompt is wrong", it was "there is no prompt", and it
-//! was reachable in one keystroke.
+//! ⚠ Nothing else on the exit path asks anything. `App::on_exit` flushes a
+//! layout debounce and that is all it does, so a close request that reaches the
+//! viewport unheld ends the process with every unsaved document still unsaved —
+//! from the window's ✕ or from `Alt+F4`, in one keystroke.
 //!
 //! ## The cycle, and why it is derived rather than remembered
 //!
@@ -122,11 +120,12 @@ pub fn dirty_count(count: usize, dirty: impl Fn(usize) -> bool) -> usize {
 
 /// Whether one slot has work that would be lost.
 ///
-/// ★★ `save::has_unsaved_edits`, which is the **one** predicate — the same one
-/// `dialogs::unsaved::ask_for` consults before deciding whether to ask at all.
-/// Its own header records that there were once three expressions of this
-/// question in three places and that they disagreed; a fourth here would be the
-/// same defect wearing this module's name.
+/// ★★ Delegates to `save::has_unsaved_edits`, which is the **one** expression
+/// of this question — the same one `dialogs::unsaved::ask_for` consults before
+/// deciding whether to ask at all. A second expression of *"is this document
+/// dirty"* anywhere in the crate is a defect by construction: the two eventually
+/// disagree, and the shape of the disagreement is a modal that does not appear
+/// or one that appears over a clean file.
 pub fn is_dirty(status: &Status) -> bool {
     match status {
         Status::Open(doc) => crate::app::save::has_unsaved_edits(doc),
@@ -134,12 +133,11 @@ pub fn is_dirty(status: &Status) -> bool {
     }
 }
 
-/// The cycle's three verbs, on the application that runs them.
+/// The cycle's verbs, on the application that runs them.
 ///
-/// ★ Here rather than in [`crate::app::lifecycle`] — where they were first
-/// written — because that file reached the 1,500-line R2 ceiling and because
-/// this is the module that owns the subject. Everything above is the *rule*;
-/// everything below is the application applying it.
+/// Everything above this point is the *rule*, expressed over a slot count and a
+/// dirty predicate so it can be tested without an application; everything below
+/// is the application applying it.
 impl crate::app::PdfcerApp {
     /// **One frame of the quit cycle** — `OPERATOR_REQUESTS.md` O102.
     ///
@@ -147,7 +145,7 @@ impl crate::app::PdfcerApp {
     /// [`crate::app::quitting`] for why the cycle is derived from the document
     /// set rather than remembered as a queue.
     ///
-    /// # The five states, and the order they are checked in
+    /// # The states, and the order they are checked in
     ///
     /// 1. **Cancelled** — the operator answered Cancel, so stand down and stay
     ///    open. Checked first, because every state below would otherwise act on

@@ -340,6 +340,9 @@ impl Session {
         }
 
         if session.window.is_none() {
+            // DEFECTS.md D46: this sentence names a cause the function never
+            // measured. The same branch is reached by a binary that crashed at
+            // start-up, and the outcome is classified SKIPPED either way.
             return Err(Error::new(format!(
                 "no window appeared for pid {pid} within {:?}. On a platform that cannot \
                  enumerate windows this is always the outcome, and the check is correctly \

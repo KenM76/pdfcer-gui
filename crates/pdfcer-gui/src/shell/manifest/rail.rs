@@ -19,7 +19,7 @@
 //!
 //! | group | fold | why |
 //! |---|---|---|
-//! | the five **panel tabs** | [`RailFold::Never`] | *"all five panels one click away"* is the rail's entire argument for existing |
+//! | the **panel tabs** | [`RailFold::Never`] | *"every panel one click away"* is the rail's entire argument for existing |
 //! | **navigate** | [`RailFold::PinArmed`] | four mutually exclusive modal tools **and the smart selector**; at the floor the strip must still say which TOOL you are holding, which is why the pin never goes to the toggle |
 //! | **select** | [`RailFold::Whole`] | the specialist gestures; nothing in it is reached by habit |
 //! | **rotate** | [`RailFold::Whole`] | O126, and see the ⚠ below about Read |
@@ -62,21 +62,15 @@
 //! would have to run the code to discover that. (2) is what ships, and it is
 //! possible only because of the second finding below.
 //!
-//! ## ★★★ `edit.select_all` — the objection was re-checked and it has lapsed
+//! ## ★★★ Every rail row needs an icon, and that is what admits `edit.select_all`
 //!
-//! The mockup's legend says a command with no icon cannot live in an icon
-//! rail, and names `edit.select_all` as disqualified on exactly that ground:
-//! *"the rail's rows are a picture with an optional word under it — at the
-//! Tight rung and below there is no word left, and a row with neither is a
-//! blank."* The reasoning is sound and the premise is stale. **`select-all`
-//! was adopted as a glyph on 2026-09-04**, hours before this file was written,
-//! after Ken pointed out that the refusal had never been his: *"add a
-//! select-all glyph. I didn't refuse that."*
-//!
-//! So the objection is discharged by the fact rather than argued away, and
-//! `edit.select_all` goes in the `select` group — which is also where it
-//! belongs by meaning: he asked for *"some other related selection controls"*,
-//! and Select all is one.
+//! A rail row is a picture with an *optional* word under it: at `Rung::Tight`
+//! and below there is no word left, so a command with no icon would draw a
+//! blank rectangle. `edit.select_all` has its own glyph, so it qualifies, and
+//! it belongs in `select` by meaning — he asked for *"some other related
+//! selection controls"*, and Select all is one. The rule is enforced in both
+//! directions by the icon test below: removing an icon from a rail command
+//! turns its row into a blank, and nothing else in the build would notice.
 //!
 //! ⇒ The lasso's seam is therefore a **one-line** change in a group that is
 //! already on screen: add `Item::command("edit.lasso")` beside Select all when
@@ -96,13 +90,14 @@ use crate::text::ribbon as t;
 pub fn groups() -> Vec<RailGroup> {
     vec![
         // -------------------------------------------------------------------
-        // GROUP 1 — THE FIVE PANEL TABS. The floor.
+        // GROUP 1 — THE PANEL TABS. The floor.
         //
         // ★★ `RailFold::Never`, and it is the load-bearing choice on this
         // strip. O123 part 5 put Pages, Bookmarks, Layers, Signatures and
-        // Fonts into ONE dock; the rail is what makes all five simultaneously
-        // one click away, which a 280 pt horizontal tab bar cannot do — three
-        // fit and two go behind a chevron. A rail that folded these would be
+        // Fonts into ONE dock, and Comments joined them here; the rail is what
+        // makes every one of them simultaneously one click away, which a 280 pt
+        // horizontal tab bar cannot do — three fit and the rest go behind a
+        // chevron. A rail that folded these would be
         // strictly worse than the tab stack it replaced, and at that point the
         // honest move is to switch arrangements rather than keep shrinking.
         //
@@ -120,27 +115,21 @@ pub fn groups() -> Vec<RailGroup> {
                 Item::command("view.panel_bookmarks"),
                 Item::command("view.panel_layers"),
                 Item::command("view.panel_signatures"),
-                // ★★★ **COMMENTS, and this is the fix for his report of
-                // 2026-09-05:**
+                // ★★★ **COMMENTS — this row is Read's only route to the
+                // comment list.**
                 //
-                // > *"I could add a yellow sticky note but even in read mode I
-                // > don't think I could figure out how to read it."*
-                //
-                // He was right, and it was an **absence** rather than a
-                // discoverability problem. The Comments panel's only command
-                // is `markup.comments`, which lives on the **Markup** tab, and
-                // the mode table shows Read `["file", "view"]` alone — **so in
-                // Read there was no route to the comment list at all**, and
-                // none to reopen it with after closing it.
-                //
-                // ⇒ That is the posture exactly backwards. Acrobat *Reader* is
-                // a read-only product and reading comments is its entire
+                // The Comments panel's single command is `markup.comments`,
+                // which lives on the **Markup** tab, and Read's mode table is
+                // `["file", "view"]` alone. Without this row a reader can
+                // neither open the comment list nor reopen it after closing
+                // it. That posture is backwards: Acrobat *Reader* is a
+                // read-only product and reading comments is its entire
                 // purpose. Read's stance is about **authorship**, not about
-                // information: a mode that may not write a comment may
+                // information — a mode that may not write a comment may
                 // certainly read one somebody else wrote.
                 //
-                // ★★★ **On the RAIL and not on View ▸ Panels, and the reason
-                // is a rule, not a preference.** `RIBBON_IA.md` P1 —
+                // ⚠⚠ **It is on the RAIL and not on View ▸ Panels, and that
+                // is forced, not preferred.** `RIBBON_IA.md` P1 —
                 // *one command appears on at most one tab* — is enforced by
                 // `Shell::validate`, so adding this id to the View tab beside
                 // the other panel toggles is a **validation failure**, not a
@@ -148,10 +137,9 @@ pub fn groups() -> Vec<RailGroup> {
                 // does not merely lose the item: `Capabilities::for_mode`
                 // falls back to `FULL` when the shell is absent, so the whole
                 // build silently gains every authoring capability in every
-                // mode. Tried on 2026-09-05; eight mode-gating tests went red
-                // at once and named it, including *"the pen is never picked up
-                // in Read"*. **The failure was not local to the thing being
-                // added, which is why it is written down here.**
+                // mode. **The failure is not local to the item being added**,
+                // which is why the trap is written here rather than left to be
+                // met.
                 //
                 // The rail is not a tab, so P1 does not reach it — the same
                 // permission the four toggles above rely on, recorded at the
@@ -159,20 +147,12 @@ pub fn groups() -> Vec<RailGroup> {
                 // second place to hunt.* And unlike a tab, the rail is present
                 // in every mode, which is precisely the property this needs.
                 //
-                // ⬜ **The tidier fix is a RENAME** — `markup.comments` →
-                // `view.panel_comments`, so the panel's id matches its family
-                // and the toggle can sit with the others. `app::modes::defaults`
-                // records that `view.panel_comments` was in fact the original
-                // spelling, discarded on 2026-08-14 as *"an id no code has ever
-                // resolved"* when §7's migration map sent the control to
-                // Markup. That map is what made Read unreachable, so §5.2's
-                // placement was right all along. The rename touches
-                // `Panel::command_id`, the dispatch arm, the catalog, the
-                // token block, the ladder and the mock, and it was NOT done
-                // today because a concurrent track is building the note popup
-                // on top of the current id. **This entry is not a workaround
-                // for that rename — the rail placement is wanted either way;
-                // the rename would only move the second, tab-side control.**
+                // ⬜ A rename to `view.panel_comments` would let the id match
+                // its family and put the tab-side toggle with the other panel
+                // toggles. It touches `Panel::command_id`, the dispatch arm,
+                // the catalog, the token block, the ladder and the mock. The
+                // rail placement here is wanted either way; the rename would
+                // move only the second, tab-side control.
                 Item::command("markup.comments"),
                 // ★ `file.fonts`, NOT `view.panel_fonts` — the Fonts panel's command
                 // is registered on the File tab and there is no second id for
@@ -199,30 +179,22 @@ pub fn groups() -> Vec<RailGroup> {
         // for the mode would be wrong on screen for the whole session rather
         // than for one click.
         //
-        // ★★★ `view.smart_select` IS HERE, and this paragraph used to say the
-        // opposite. **Corrected 2026-09-05 on the operator's instruction**,
-        // verbatim: *"our smart selector should be visible with the other
-        // navigate controls in our left rail."*
+        // ★★★ `view.smart_select` IS a member of this group, on the
+        // operator's instruction: *"our smart selector should be visible with
+        // the other navigate controls in our left rail."*
         //
-        // What it used to say, so the record shows what changed and why:
-        //
-        // > *"`view.smart_select` is deliberately absent. It is a TOGGLE that
-        // > changes what the arrow selects, not a tool you can be holding, so
-        // > it has no armed state for `PinArmed` to pin and it would be the
-        // > one row in this group that does not answer 'what does a drag
-        // > do?'."*
-        //
-        // ⇒ **That argument was right about the PIN and wrong about the
-        // MEMBERSHIP, and it conflated the two.** Being unpinnable at the
-        // floor of the ladder is not a reason to be absent from the strip at
-        // every rung above it — by that reasoning `edit.select_all` could not
-        // be in the rail either, and it is. `super::view`'s Navigate group has
-        // carried this exact toggle beside these exact four tools since O70,
-        // with its own paragraph arguing the placement: *"it changes what the
-        // arrow at the head of this row selects when you click with it… this
-        // changes what a gesture MEANS."* The rail mirrors that group row for
-        // row; leaving one member out made the two surfaces disagree, which is
-        // the thing the order note above this list exists to prevent.
+        // ⚠ **Unpinnable is not the same as absent, and the two are easy to
+        // conflate.** It is a TOGGLE that changes what the arrow selects
+        // rather than a tool you can be holding, so it has no armed state
+        // worth pinning at the floor of the ladder — but that is a fact about
+        // the PIN, not about MEMBERSHIP. Read as membership it would exclude
+        // `edit.select_all` too, and that is in the rail. `super::view`'s
+        // Navigate group carries this exact toggle beside these exact four
+        // tools, arguing the placement: *"it changes what the arrow at the
+        // head of this row selects when you click with it… this changes what
+        // a gesture MEANS."* The rail mirrors that group row for row; leaving
+        // one member out would make the two surfaces disagree, which is the
+        // thing the order note above this list exists to prevent.
         //
         // ★★ **WHAT HAPPENS AT THE FOLD, stated rather than discovered.**
         // [`RailFold::PinArmed`] pins the row whose `selected:<id>` condition
@@ -230,9 +202,9 @@ pub fn groups() -> Vec<RailGroup> {
         // armed` sets `selected:view.smart_select` whenever the preference is
         // on, so at `Rung::Cramped` with the arrow armed and smart select on
         // there are two candidates — and the tool wins, because it is listed
-        // first. **That is the decision, and it is the one the old comment's
-        // sound half implies:** the pinned row answers *"what does a drag
-        // do?"*, a toggle cannot answer that, so a toggle never takes the pin.
+        // first. **That is the decision:** the pinned row answers *"what does
+        // a drag do?"*, a toggle cannot answer that, so a toggle never takes
+        // the pin.
         // The smart selector then joins `folded` with the rest of the group
         // and is one click away behind the chevron — it does not vanish, and
         // its state is still legible on View ▸ Navigate, which is on screen in
@@ -351,9 +323,8 @@ mod tests {
     ///
     /// The rail's row is a picture with an *optional* word under it, and at
     /// `Rung::Tight` and below there is no word left. A command with no icon
-    /// would draw a blank rectangle there — which is the mockup legend's own
-    /// objection, and the reason `edit.select_all` could not be in the rail
-    /// until 2026-09-04.
+    /// would draw a blank rectangle there, so an iconless command cannot be a
+    /// rail row at all.
     ///
     /// ⚠ This test is what stops that objection from lapsing in the other
     /// direction: an icon *removed* from any rail command turns a row into a

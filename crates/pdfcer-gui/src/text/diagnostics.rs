@@ -3,9 +3,9 @@
 //! The copy for `tools.render_diagnostics`, on **Tools ▸ Diagnostics**, drawn
 //! by [`crate::dialogs::diagnostics`].
 //!
-//! ## ★ What is deliberately NOT here: the findings themselves
+//! ## What is deliberately NOT here: the findings themselves
 //!
-//! The nine sentences that name what the renderer substituted or skipped —
+//! The sentences that name what the renderer substituted or skipped —
 //! *"3 glyphs drawn with a bundled substitute face"*, *"1 content stream
 //! missing from the file"* — live in [`crate::text::status`] and are used from
 //! there unchanged. They were written for the status bar's disclosure and they
@@ -20,11 +20,10 @@
 //!
 //! ## Why the measurements are worded as a pair
 //!
-//! `HANDOFF.md` §10 records the fact that makes a bare duration misleading on
-//! this project's own documents:
-//!
-//! > **~99 % of render cost is resolution-independent** on dense CAD. A small
-//! > thumbnail is not a cheap thumbnail. A 1×1 *point* region costs 691 ms.
+//! One measured fact makes a bare duration misleading on this project's own
+//! documents: on dense CAD roughly 99 % of render cost is
+//! resolution-independent. A small thumbnail is not a cheap thumbnail — a 1×1
+//! *point* region of such a sheet still costs about 691 ms.
 //!
 //! An operator reading "1,240 ms" alone will reach for the zoom, and on a CAD
 //! sheet that will not help. So the scale and the pixel size are shown beside
@@ -194,22 +193,21 @@ pub fn nothing_drawn() -> &'static str {
 ///
 /// [`crate::app::status::notes`]' editorial rule excludes `tolerated` and
 /// `compat_skipped` from the one-line summary because both count divergences
-/// that leave the picture correct, and *"listing them would put two numbers
-/// that mean 'nothing is wrong' in front of the six that mean something is"*.
+/// that leave the picture correct: listing them there would put two numbers
+/// meaning *"nothing is wrong"* among the ones that mean something is.
 ///
-/// ★ The dialog is the surface that argument does **not** apply to. It has
-/// room, it is a place an operator goes deliberately when something looks
-/// wrong, and the numbers are exactly what someone diagnosing a file wants. So
-/// they are shown here and nowhere else — with a sentence saying why they are
-/// not faults, because a bare count of "tolerated" oddities beside a list of
-/// real findings would otherwise read as nine problems instead of seven.
+/// The dialog is the surface that argument does **not** apply to. It has room,
+/// it is a place an operator goes deliberately when something looks wrong, and
+/// the numbers are exactly what someone diagnosing a file wants. So they are
+/// shown here and nowhere else — with a sentence saying why they are not
+/// faults, because a bare count of "tolerated" oddities beside a list of real
+/// findings inflates the apparent number of problems.
 ///
-/// ★ **Written out in full for each count rather than with `(s)`.** The first
-/// draft read *"0 structural oddity/oddities … and 0 section(s)"*, which was
-/// seen in the running window and is the shape every `diagnostics_*` entry in
-/// [`crate::text::status`] already refuses: each of those spells the singular
-/// and the plural. A slash or a parenthesised `s` is a catalog telling the
-/// operator that nobody read the sentence they are reading.
+/// **Written out in full for each count rather than with `(s)`.** Every
+/// `diagnostics_*` entry in [`crate::text::status`] spells the singular and
+/// the plural, and this line keeps that convention: a slash or a
+/// parenthesised `s` is a catalog telling the operator that nobody read the
+/// sentence they are reading.
 ///
 /// The **both-zero** case gets a sentence of its own for the same reason
 /// [`crate::text::status::diagnostics_clean`] exists: "0 and 0" is a true
@@ -287,13 +285,12 @@ mod tests {
 
     /// **No `(s)` and no `oddity/oddities`**, in any of the four cases.
     ///
-    /// The defect this pins was in the shipped window for one run before it was
-    /// read: *"0 structural oddity/oddities … and 0 section(s)"*. Every
-    /// `diagnostics_*` entry in [`crate::text::status`] already spells both
-    /// forms, so this is the catalog's own convention being kept rather than a
-    /// new rule — and the assertion is on the *characters*, because that is
-    /// what an operator sees and what a later "just make it shorter" edit would
-    /// reintroduce.
+    /// The shape being refused is *"0 structural oddity/oddities … and 0
+    /// section(s)"*. Every `diagnostics_*` entry in [`crate::text::status`]
+    /// spells both forms, so this is the catalog's own convention being kept
+    /// rather than a new rule — and the assertion is on the *characters*,
+    /// because that is what an operator sees and what a later "just make it
+    /// shorter" edit would reintroduce.
     #[test]
     fn the_absorbed_line_is_never_written_with_a_slash_or_a_parenthesised_s() {
         for (t, c) in [(0, 0), (1, 0), (0, 1), (3, 5)] {
@@ -363,7 +360,7 @@ mod tests {
     /// a page Settings cannot affect is the prose form of a disabled button,
     /// and it costs more than a disabled button because he goes and looks.
     ///
-    /// ★ Asserted BOTH ways. The positive half alone would pass a catalog that
+    /// Asserted BOTH ways. The positive half alone would pass a catalog that
     /// named the setting in all three; the negative half alone would pass one
     /// that named it in none.
     #[test]

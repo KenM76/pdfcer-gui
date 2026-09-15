@@ -1,19 +1,6 @@
 //! **Selecting a form field, rather than filling it** — the Edit-mode half of
 //! [`super`].
 //!
-//! # Why this is a separate file
-//!
-//! Split out of `canvas/forms.rs` on 2026-09-11 under **R2** (no source file
-//! over 1,500 lines), when the `/MK` `/BG` editor tint pushed the parent to
-//! 1,550. ★ The seam was not invented for the occasion: `forms.rs` had
-//! carried a banner comment reading *"Selecting a field, rather than filling
-//! it"* since the selection surface was written, and this file is exactly what
-//! was under it. Nothing changed in the move except three `fn` becoming
-//! `pub(super) fn` so the parent can still call them, and
-//! `right_click_hits_a_field` staying `pub` and being re-exported by the
-//! parent so `canvas::forms::right_click_hits_a_field` still resolves for
-//! `canvas::rightclick`.
-//!
 //! # The two surfaces, and why they are genuinely different subjects
 //!
 //! The parent module fills a field: a click opens a live `egui` text box over
@@ -36,6 +23,13 @@
 //! document and is applied by the action queue at the end of the frame, which
 //! is why a hit test rather than a state read is the right question to ask
 //! during one (see `canvas::rightclick`'s table).
+//!
+//! # Visibility contract
+//!
+//! Everything here is `pub(super)` except [`right_click_hits_a_field`], which
+//! is `pub` and re-exported by the parent so that
+//! `canvas::forms::right_click_hits_a_field` resolves for `canvas::rightclick`.
+//! Narrowing it breaks that caller.
 
 use super::*;
 
@@ -203,8 +197,8 @@ pub(super) fn select_cursor(
 
 /// **Paint the selected form field: its outline and its eight grips.**
 ///
-/// `OPERATOR_REQUESTS.md` **O53**. Nothing drew this before 2026-08-28, so a
-/// selected field looked exactly like an unselected one.
+/// `OPERATOR_REQUESTS.md` **O53**: a selected field must be visibly distinct
+/// from an unselected one.
 ///
 /// ★★★ It is drawn **here** rather than in `canvas::overlay::draw_selection`,
 /// and the reason is that a form field is not in `SelectionState` at all:
@@ -250,12 +244,12 @@ pub(super) fn selection_overlay(
     // somebody had changed it. (`visuals` is still the caller's, and
     // `draw_grips` below still needs it for `window_fill`.)
     //
-    // ★★★ It was `visuals.selection.stroke.color` until 2026-09-04 —
-    // `REVIEW_TRIAGE.md` T2. That is `egui`'s SELECTED-WIDGET channel, not a
-    // canvas role; while the theme pointed it here, every selected chrome
-    // control in the application was painted with this outline's colour. The
-    // value is identical, the address is not, and
-    // `tools/gates/check-selection-channel.sh` keeps the old one unreachable.
+    // ★★★ Never `visuals.selection.stroke.color`, however identical the value
+    // looks. That is `egui`'s SELECTED-WIDGET channel, not a canvas role:
+    // pointing the canvas at it makes every selected chrome control in the
+    // application share this outline's colour, so a theme that wanted one
+    // changed cannot change it without the other.
+    // `tools/gates/check-selection-channel.sh` keeps that address out.
     let stroke = egui::Stroke::new(1.5, egui_shell::theme::Theme::canvas_selection_ink(ctx));
     painter.rect_stroke(
         screen,

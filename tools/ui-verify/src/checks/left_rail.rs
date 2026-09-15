@@ -10,46 +10,55 @@
 //! > *"also add rotate pages to that area, and those should be available in
 //! > every mode including read."*
 //!
-//! # ★★★ Why this check has to exist, and why it is THIS check
+//! # Why this check has to exist, and why it is THIS check
 //!
-//! **The rail is the feature that shipped the 2026-08-10 defect.** Bookmarks,
-//! Layers and Signatures went out **unreachable**, each with a rail entry, each
-//! publishing a perfectly healthy rectangle, and **every gate green** — because
-//! the dock's rect channel published *layout* and every check that read it was
-//! treating the answer as *visibility*. `SHELL_LAYOUT_PROPOSAL.md` §5 made
-//! converting that channel a **precondition** for scheduling the rail at all,
-//! on exactly the ground that no driven check could otherwise tell a working
-//! rail from that defect. The channel was converted on 2026-09-04.
+//! **The rail is the surface that hides an unreachable panel.** Bookmarks,
+//! Layers and Signatures can ship **unreachable** — each with a rail entry,
+//! each publishing a perfectly healthy rectangle, and **every gate green** —
+//! whenever the dock's rect channel publishes *layout* while the checks reading
+//! it treat the answer as *visibility*. Converting that channel to visibility
+//! was a **precondition** for scheduling the rail at all, on exactly the ground
+//! that no driven check can otherwise tell a working rail from that defect.
 //!
-//! ⇒ So every region this check reads comes through
+//! So every region this check reads comes through
 //! `crate::diag::ui_rect_visible`, and a `declared` here is a claim about
 //! **reachability**, not about layout. That is what makes the check worth
 //! running rather than a re-statement of the unit tests.
 //!
 //! # The five assertions, and why none is redundant
 //!
-//! | # | assertion | the build it fails on |
-//! |---|---|---|
-//! | 1 | `dock.left.toolrail` is on screen in **every** mode | a rail reserved but not drawn; a rail that only exists in Edit |
-//! | 2 | all five panel-tab rows are reachable in **every** mode | the 2026-08-10 defect, restored — and the one thing the fold ladder may never do |
-//! | 3 | the rail's **x-extent is the same in all three modes**, and is `WIDTH_PTS` | a rail sized from its widest word: the R128 fit-zoom loop, which a unit test can only assert about a number the renderer might not use |
-//! | 4 | `pages.rotate_*` are reachable **in Read** | a build that quietly mode-gated them back, which is a silent reversal of an operator decision |
-//! | 5 | `view.tool_node` is **absent in Read** and present in Edit | an authoring control sitting on a mode whose own dispatch refuses it — shipped once already, fixed 2026-09-04 |
+//! Each names the build it fails on — that is what makes it an assertion
+//! rather than a description.
 //!
-//! ★ Assertion 3 is the one that cannot be had any other way. The unit test
+//! 1. `dock.left.toolrail` is on screen in **every** mode. Fails on a rail
+//!    reserved but not drawn, and on a rail that only exists in Edit.
+//! 2. The panel-tab rows in [`TABS`] are reachable in **every** mode. Fails on
+//!    an unreachable panel tab — the one thing the fold ladder may never
+//!    produce.
+//! 3. The rail's **x-extent is the same in all three modes**, and is
+//!    `WIDTH_PTS`. Fails on a rail sized from its widest word: the R128
+//!    fit-zoom loop, which a unit test can only assert about a number the
+//!    renderer might not use.
+//! 4. `pages.rotate_*` are reachable **in Read**. Fails on a build that
+//!    quietly mode-gated them back, which is a silent reversal of an operator
+//!    decision.
+//! 5. `view.tool_node` is **absent in Read** and present in Edit. Fails on an
+//!    authoring control sitting on a mode whose own dispatch refuses it.
+//!
+//! Assertion 3 is the one that cannot be had any other way. The unit test
 //! `the_width_is_constant_at_every_rung_and_every_budget` asserts that the
 //! **planner** reports a constant; it cannot assert that the **renderer** used
 //! it. Only a rect from a running build can, and only by comparing across
 //! modes whose contents differ — which is why this check switches modes rather
 //! than measuring once.
 //!
-//! # ⚠ NOT RUN
+//! # NOT RUN
 //!
-//! **This check was written and has not been executed.** The operator is at his
-//! keyboard and a watchdog kills GUI processes on sight, so `ui-verify` was not
-//! launched. His standing instruction is that missing driven verification must
-//! not stop the work or the release; it must be *named*. It is named here and
-//! in the report.
+//! **Nothing in this file has been executed against a running binary.** The
+//! operator's standing instruction is that missing driven verification must not
+//! stop the work or the release — it must be *named*. It is named here and in
+//! the report, and until a run happens every claim above is a claim about the
+//! code rather than about the program.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment, declared, list};
 use crate::checks::{Check, CheckContext};
@@ -64,14 +73,19 @@ const FIXTURE: &str = "fixtures/a1-titleblock.pdf";
 
 /// The strip the dock reserves. Published by `egui_shell::dock::rail::draw`.
 ///
-/// ★ `toolrail`, **not** `dock.left.rail` — that name belongs to the sliver a
+/// `toolrail`, **not** `dock.left.rail` — that name belongs to the sliver a
 /// *collapsed* side leaves behind, which is a different surface. Reading the
 /// wrong one is the failure
 /// `two_trace_lines_sharing_an_event_name_make_a_check_read_the_wrong_one`
 /// records.
 const STRIP: &str = "dock.left.toolrail";
 
-/// The five panel tabs, as `crate::app::rail::region("tabs", id)` names them.
+/// The panel tabs this check covers, as `crate::app::rail::region("tabs", id)`
+/// names them.
+///
+/// **Not the whole group.** The rail's `RailFold::Never` group also holds
+/// `rail.tabs.markup.comments`, and it is absent here, so the Comments tab's
+/// reachability is asserted in no mode. `DEFECTS.md` D30.
 const TABS: [&str; 5] = [
     "rail.tabs.view.panel_pages",
     "rail.tabs.view.panel_bookmarks",
@@ -191,7 +205,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let driver = Driver::new(session.window());
 
-    // ★★ The modes are visited in capability order and the trace is read after
+    // The modes are visited in capability order and the trace is read after
     // EACH, not once at the end. `declared` is retirement-aware — a region that
     // stopped being drawn is not declared — but the channel is a change log, so
     // a single read at the end could not say *which mode* a region was
@@ -220,7 +234,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 1 & 2: the tabs are reachable in every mode -------------------------
     //
-    // ⚠ This is the 2026-08-10 assertion, and it is the reason the whole
+    // This is the unreachable-panel assertion, and it is the reason the whole
     // feature waited for the visibility channel. A `rail.tabs.*` rect that is
     // published but 90 % outside its clip does NOT appear here.
     for sweep in &sweeps {
@@ -249,7 +263,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: the width is the same constant in every mode ---------------------
     //
-    // ★ The assertion the unit tests cannot make. They pin what the planner
+    // The assertion the unit tests cannot make. They pin what the planner
     // REPORTS; this pins what the dock DREW, across three modes whose rail
     // contents differ — which is precisely the input a content-derived width
     // would react to.

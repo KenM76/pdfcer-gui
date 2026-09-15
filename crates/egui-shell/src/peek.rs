@@ -2,13 +2,13 @@
 //!
 //! One three-state machine, shared by the ribbon's band and by the dock's left
 //! rail, because the operator asked for the same behaviour on both in one
-//! sentence (2026-09-05):
+//! sentence:
 //!
 //! > *"we should also add the capability to auto hide the ribbon until we hover
 //! > over top of it… left rail should also have the option to auto hide as
 //! > well."*
 //!
-//! ## ★★★ THE CONVENTION, AND WHERE IT COMES FROM
+//! ## The convention, and where it comes from
 //!
 //! This is a solved interaction in the product class and the model here is
 //! taken from it rather than invented. **Microsoft Office's *Show Tabs*** —
@@ -30,20 +30,19 @@
 //! | The body **overlays**, it does not displace | A canvas that resizes on hover is nauseating, and every coordinate under the pointer moves as the pointer approaches. The whole point of hiding chrome is to give the document the room; giving it the room and then taking it back at 60 Hz is worse than not hiding at all. |
 //! | Reveal can only be **started** by the trigger | See R128 below. |
 //!
-//! ## ⚠⚠ R128 — the feedback loop this shape invites, and the bound that closes it
+//! ## R128 — the feedback loop this shape invites, and the bound that closes it
 //!
-//! `D:/dev/rag/egui/a_surface_may_not_change_size_in_response_to_a_gesture_aimed_at_it.md`
-//! records the incident: a caption drawn above a drop target moved the target
-//! under the pointer, the size depended on the wording, the wording depended on
-//! the pointer, and it presented as a hit-testing bug. The rule it produced —
-//! **a surface may not change size in response to a gesture aimed at it** — is
-//! exactly what an auto-hiding ribbon is in danger of violating: a surface whose
-//! visibility depends on the pointer, whose position depends on the layout,
-//! which depends on the surface.
+//! **A surface may not change size in response to a gesture aimed at it.** The
+//! rule is recorded at
+//! `D:/dev/rag/egui/a_surface_may_not_change_size_in_response_to_a_gesture_aimed_at_it.md`,
+//! and an auto-hiding ribbon is in constant danger of violating it: a surface
+//! whose visibility depends on the pointer, whose position depends on the
+//! layout, which depends on the surface. The symptom does not present as a
+//! layout fault — it presents as hit testing that misses.
 //!
-//! The RAG entry is also explicit that the fix is **a direction bound, not a
-//! guard** (*"R128 needs a DIRECTION bound not a guard"*), because a
-//! "don't ask twice" latch merely halves the oscillation's frequency.
+//! The fix must be **a direction bound, not a guard**. A "don't ask twice"
+//! latch leaves the cycle in place and merely halves the oscillation's
+//! frequency.
 //!
 //! This module's bound, stated as an invariant rather than as prose:
 //!
@@ -69,13 +68,12 @@
 //! And the **floor**: [`Peek::resolve`] refuses a trigger thinner than
 //! [`Peek::MIN_TRIGGER_PTS`] in either axis by reporting the surface *shown*
 //! rather than hidden. A trigger too small to hit is how a surface becomes
-//! unreachable, and this project has shipped three unreachable panels with
-//! every gate green (`SHELL_LAYOUT_PROPOSAL.md` §5). Failing **open** is the
-//! only safe direction: the worst case is chrome the operator wanted hidden,
-//! which is visible and one setting away, rather than chrome they cannot get
-//! back.
+//! unreachable while every mechanical check still passes, so failing **open**
+//! is the only safe direction: the worst case is chrome the operator wanted
+//! hidden, which is visible and one setting away, rather than chrome they
+//! cannot get back.
 //!
-//! ## ★★ The keyboard is not a pointer, and it holds the surface open
+//! ## The keyboard is not a pointer, and it holds the surface open
 //!
 //! [`Peek::resolve`] is also handed whether anything inside the overlay has
 //! keyboard focus. Without that clause a keyboard user tabbing into a revealed
@@ -251,7 +249,7 @@ impl Peek {
             return Show::Inline;
         }
 
-        // ★ THE FLOOR. A trigger too small to hit makes the surface
+        // The floor. A trigger too small to hit makes the surface
         // unreachable, so the surface stops hiding rather than becoming
         // unreachable. Checked before anything else, because every clause
         // below assumes the operator has a way in.
@@ -264,10 +262,10 @@ impl Peek {
             return Show::Inline;
         }
 
-        // ★★★ THE DIRECTION BOUND, in one expression. `in(trigger)` is the
-        // only disjunct that can be true on a frame where `self.revealed` is
-        // false, so a reveal can only ever be STARTED by the trigger — which
-        // no overlay can move.
+        // The direction bound, in one expression. `in(trigger)` is the only
+        // disjunct that can be true on a frame where `self.revealed` is false,
+        // so a reveal can only ever be *started* by the trigger — which no
+        // overlay can move.
         let in_trigger = pointer.is_some_and(|p| trigger.expand(Self::GRACE_PTS).contains(p));
         let in_overlay = self.revealed
             && self
@@ -365,7 +363,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **THE DIRECTION BOUND.** The overlay's rectangle can never *start* a
+    /// **The direction bound.** The overlay's rectangle can never *start* a
     /// reveal — only keep one alive.
     ///
     /// Planted state rather than a default one: `overlay` is written by hand to
@@ -390,7 +388,7 @@ mod tests {
         assert_eq!(peek.overlay(), None, "and the stale rectangle is dropped");
     }
 
-    /// ★★ The state cannot oscillate with the pointer held still.
+    /// The state cannot oscillate with the pointer held still.
     ///
     /// Swept over a grid of pointer positions covering the strip, the band and
     /// the document, forty frames each. Two consecutive frames with the same
@@ -420,8 +418,8 @@ mod tests {
         }
     }
 
-    /// ★★★ **THE FLOOR fails OPEN.** A trigger too small to hit does not hide
-    /// the surface; it stops the surface hiding.
+    /// **The floor fails open.** A trigger too small to hit does not hide the
+    /// surface; it stops the surface hiding.
     ///
     /// Walked across the whole width series rather than at the two endpoints,
     /// because a floor asserted only at 0 and at 8 would pass for an

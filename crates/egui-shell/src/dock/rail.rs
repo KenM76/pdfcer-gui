@@ -12,10 +12,10 @@
 //! > *"also add rotate pages to that area, and those should be available in
 //! > every mode including read."*
 //!
-//! `mockups/pdfcer-shell.html` draws the result and he approved it. This
-//! module is that drawing made buildable: **the geometry and the fold ladder**.
-//! What goes in the strip is [`crate::manifest::Rail`] — data — and what a row
-//! looks like is the application's, drawn through a handler.
+//! The approved mockup draws the result. This module is that drawing made
+//! buildable: **the geometry and the fold ladder**. What goes in the strip is
+//! [`crate::manifest::Rail`] — data — and what a row looks like is the
+//! application's, drawn through a handler.
 //!
 //! ## ★★★ The width is a CONSTANT, and that is the whole safety argument
 //!
@@ -34,9 +34,9 @@
 //! ⚠ **A rail sized from its widest word is exactly that loop.** `Signatures`
 //! is a wider word than `Sigs`; a font change, a theme change or a
 //! localization would move the rail's width, which moves the canvas, which
-//! re-fits the zoom. So the constant is load-bearing and a "helpful" change to
-//! `WIDTH_PTS.max(widest_label)` re-opens a defect this project has already
-//! paid for twice. The label is what gives way instead — see [`Rung::Tight`].
+//! re-fits the zoom. So the constant is load-bearing, and a "helpful" change
+//! to `WIDTH_PTS.max(widest_label)` re-opens R128 on this surface. The label
+//! is what gives way instead — see [`Rung::Tight`].
 //!
 //! ## The fold ladder, and why it is this order
 //!
@@ -59,21 +59,21 @@
 //!
 //! ## ★★ Two things never fold, and each has a reason that is not symmetry
 //!
-//! * **A [`RailFold::Never`] group.** For pdfcer that is the five panel tabs,
-//!   and *"all five panels one click away"* is the rail's entire argument for
-//!   existing. A rail that folds them is strictly worse than the horizontal
-//!   tab stack it replaced.
-//! * **The chevron.** Inkscape failure mode #8 — past about six tabs the
-//!   overflow button itself gets hidden — is this control eating itself.
-//!   Everything the rail dropped is behind it, so it is the one row that must
-//!   survive. [`RailRow::Chevron`] is appended after the ladder has run and is
-//!   never a candidate for folding.
+//! * **A [`RailFold::Never`] group.** An application marks its panel switches
+//!   this way, because *"every panel one click away"* is the rail's entire
+//!   argument for existing. A rail that folds them is strictly worse than the
+//!   horizontal tab stack it replaces.
+//! * **The chevron.** `MODES_AND_PANELS.md` failure mode #8 — the overflow
+//!   control itself getting hidden — is this control eating itself. Everything
+//!   the rail dropped is behind it, so it is the one row that must survive.
+//!   [`RailRow::Chevron`] is appended after the ladder has run and is never a
+//!   candidate for folding.
 //!
 //! ## ★ R7 — this module does not know what is in the rail
 //!
-//! `tools/gates/check-shell-purity.sh` forbids `egui-shell` naming anything
-//! from `pdfcer-*`. Everything here is a command id, a rectangle, a row height
-//! and a closure. The planner cannot tell a page thumbnail from a hand tool,
+//! `tools/gates/check-shell-purity.sh` forbids this crate depending on the
+//! application's. Everything here is a command id, a rectangle, a row height
+//! and a closure. The planner cannot tell one kind of control from another,
 //! and [`draw`] reserves a strip and hands over a `Ui` exactly as
 //! [`super::banner`] does.
 //!
@@ -81,11 +81,10 @@
 //!
 //! [`plan`] is pure: manifest data plus a [`ConditionSet`] plus a height, in;
 //! a list of rows, out. No `Ui`, no fonts, no frame. That is what makes the
-//! ladder testable at all — and this feature is the one that shipped the
-//! 2026-08-10 defect where Bookmarks, Layers and Signatures were laid out,
-//! published healthy rectangles, and could not be reached. The lesson recorded
-//! from that (`crate::dock::report`'s header) is that a rect proves layout and
-//! not visibility; the response here is that **which rows exist at which
+//! ladder testable at all, and a strip of switches is exactly the surface on
+//! which panels get laid out, publish healthy rectangles and stay unreachable.
+//! `crate::dock::report`'s header carries the rule: a rect proves layout and
+//! not visibility. The response here is that **which rows exist at which
 //! budget is decided by a function a test can call**, and separately that the
 //! application publishes its rows through `ui_rect_visible`.
 
@@ -112,19 +111,18 @@ pub type RailHandler<'a> = dyn FnMut(&mut egui::Ui) + 'a;
 ///
 /// ★★★ R7, in one line: the dock cannot answer this itself. It is handed
 /// opaque [`PanelId`]s and a [`crate::manifest::Rail`] of opaque command ids,
-/// and **the map between them is application knowledge** — in `pdfcer-gui` the
-/// Fonts panel's id is `file.fonts` and the Comments panel's is
-/// `markup.comments`, neither of which a `view.panel_*` pattern would find. A
-/// shell that guessed at that mapping by string shape would suppress a tab
-/// strip over a panel the rail cannot reach, which is the unreachable-panel
-/// defect.
+/// and **the map between them is application knowledge** — an application is
+/// free to name a panel's switch `file.fonts` or `markup.comments`, neither of
+/// which a `view.panel_*` pattern would find. A shell that guessed at that
+/// mapping by string shape would suppress a tab strip over a panel the rail
+/// cannot reach, which is the unreachable-panel defect.
 pub type RailReach<'a> = dyn FnMut(&super::PanelId) -> bool + 'a;
 
 /// **The rail's width, in points. A constant at every rung.**
 ///
-/// 52 pt, which is `mockups/pdfcer-shell.html`'s own value and wide enough for
-/// a 16 pt glyph with a short word under it. See the module header for why
-/// this may not become a function of the content.
+/// 52 pt, which is the approved mockup's own value and wide enough for a
+/// 16 pt glyph with a short word under it. See the module header for why this
+/// may not become a function of the content.
 pub const WIDTH_PTS: f32 = 52.0;
 
 /// Height of one entry drawn with its word under it.
@@ -297,10 +295,10 @@ impl RailPlan {
 /// reason: a hidden item that was counted would make the rail fold a group to
 /// make room for a control nobody can see.
 ///
-/// This is where **mode gating** lands. `pdfcer-gui` marks the Points tool
-/// `visible_when("mode.edit_content")`, so in Read it is not in this list, is
-/// not measured, and is not folded — it is simply absent, which is R9: *an
-/// unavailable capability renders nothing.*
+/// This is where **mode gating** lands. An entry marked
+/// `visible_when("mode.edit_content")` is, in a mode that does not set that
+/// condition, not in this list, not measured and not folded — it is simply
+/// absent, which is R9: *an unavailable capability renders nothing.*
 fn visible_ids(items: &[Item], conditions: &ConditionSet) -> Vec<String> {
     items
         .iter()
@@ -336,9 +334,8 @@ pub fn build(rail: &Rail, conditions: &ConditionSet, rung: Rung) -> RailPlan {
         if ids.is_empty() {
             // ★ R9 in the layout: a group whose every member is hidden by the
             // mode draws no caption and no rule. An empty captioned run is a
-            // heading offering nothing — the same call `pdfcer-gui` made for
-            // Edit ▸ Clipboard, and the same one `SideLayout::is_empty` makes
-            // for a side with no columns.
+            // heading offering nothing — the same call `SideLayout::is_empty`
+            // makes for a side with no columns.
             continue;
         }
 
@@ -398,8 +395,7 @@ pub fn build(rail: &Rail, conditions: &ConditionSet, rung: Rung) -> RailPlan {
 
     // ★ The chevron is appended AFTER the ladder has run and is drawn only
     // when it holds something. A chevron over an empty overflow is the dead
-    // control R9 forbids — an error `mockups/pdfcer-shell.html` avoids and
-    // this build does not re-introduce.
+    // control R9 forbids.
     if !folded.is_empty() {
         rows.push(RailRow::Chevron {
             folded: folded.len(),
@@ -428,8 +424,8 @@ pub fn build(rail: &Rail, conditions: &ConditionSet, rung: Rung) -> RailPlan {
 /// past the floor; it **scrolls**, which is `RIBBON_SCALING.md` §3.3's third
 /// rung, and the application wraps the rows in a `ScrollArea` to honour it.
 /// The alternative — dropping rows until they fit — is the unreachable-control
-/// defect, and it is the one this project already shipped on this exact
-/// surface.
+/// defect, on the one surface whose whole promise is that every control is one
+/// click away.
 #[must_use]
 pub fn plan(rail: &Rail, conditions: &ConditionSet, height_budget: f32) -> RailPlan {
     for rung in Rung::LADDER {
@@ -445,9 +441,9 @@ pub fn plan(rail: &Rail, conditions: &ConditionSet, height_budget: f32) -> RailP
 ///
 /// Returns `0.0` when reserving the strip would leave the panel body below
 /// [`super::plan::MIN_COLUMN_WIDTH`] — **absent rather than squeezed**, which
-/// is [`super::banner::resolve_height`]'s rule and reasoning verbatim: a strip
-/// that publishes a rectangle beside a panel too narrow to read is the shape
-/// that let three panels ship unreachable with every gate green.
+/// is [`super::banner::resolve_height`]'s rule and its reasoning: a strip that
+/// publishes a rectangle beside a panel too narrow to read is a surface that
+/// passes every gate and reaches nobody.
 #[must_use]
 pub fn resolve_width(side_width: f32) -> f32 {
     if !side_width.is_finite() {
@@ -521,9 +517,9 @@ impl<'a> super::Dock<'a> {
 /// legend draws the distinction explicitly — *"This one replaces the dock's
 /// arrangement while the dock is open. VS Code's activity bar, not its
 /// collapsed sidebar."* Two surfaces sharing one trace name is how a driven
-/// check reads the wrong one, which
+/// check reads the wrong one —
 /// `D:/dev/rag/egui/two_trace_lines_sharing_an_event_name_make_a_check_read_the_wrong_one.md`
-/// records costing a day.
+/// carries the finding.
 pub(super) fn draw(
     ui: &mut egui::Ui,
     ctx: &mut Ctx<'_>,
@@ -543,9 +539,9 @@ pub(super) fn draw(
         return area;
     }
 
-    // ★★★ AUTO-HIDE — the operator's fifth ask of 2026-09-05, *"left rail
-    // should also have the option to auto hide as well"*. Same model as the
-    // ribbon's; see [`crate::peek`].
+    // ★★★ AUTO-HIDE — the operator's ask, *"left rail should also have the
+    // option to auto hide as well"*. Same model as the ribbon's; see
+    // [`crate::peek`].
     //
     // The reservation is decided FIRST and from the SETTING alone, so the
     // strip's own geometry never depends on whether it is revealed: hiding
@@ -672,8 +668,9 @@ mod tests {
     use super::*;
     use crate::manifest::RailGroup;
 
-    /// The rail the mockup draws, minus the lasso — which does not exist. See
-    /// the report and `pdfcer-gui`'s own rail module on that choice.
+    /// The rail the approved mockup draws, minus the lasso tool, which is not
+    /// built. A fixture may not name a command an application does not
+    /// register.
     fn pdfcer_rail() -> Rail {
         [
             RailGroup::new(

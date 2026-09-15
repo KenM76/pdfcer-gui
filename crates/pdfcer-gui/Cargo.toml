@@ -42,50 +42,32 @@ path = "src/main.rs"
 # ---------------------------------------------------------------------------
 # FORWARDED STRIPPABLE CAPABILITIES
 #
-# Carried across from the old crate's manifest VERBATIM in intent, because
-# the reason it exists is a live regression that lasted one commit: the
-# feature block was missing, `pdfcer-core` was taken with
-# `default-features = false`, and the GUI silently lost JPEG 2000 decoding
-# entirely. `cargo tree -p pdfcer-gui -i hayro-jpeg2000` came back EMPTY.
-# Nothing failed to compile; the shell simply stopped being able to decode
-# a codec it had shipped with all along.
+# Cargo unifies features across the whole graph, so an intermediate crate
+# that takes `pdfcer-core` with `default-features = false` must re-export
+# every capability it wants to keep. That is the rule from `pdfcer-core`'s
+# own manifest and it binds here.
 #
-# That is the failure mode to remember: forgetting to forward does not
-# break the build, it REMOVES A CAPABILITY, and only a dependency query or
-# a real JPX document reveals it.
-#
-# The rule from `pdfcer-core`'s own manifest, restated because it binds
-# here: Cargo unifies features across the whole graph, so every
-# intermediate crate must (a) take `pdfcer-core` with
-# `default-features = false` and (b) re-export each capability it forwards.
+# **The failure mode is silent.** A capability that is not forwarded does
+# not break the build — it is simply absent from the binary. Nothing fails
+# to compile, no test goes red, and only a dependency query
+# (`cargo tree -p pdfcer-gui -i <crate>`) or a document that needs the
+# capability reveals it. `tools/gates/check-forwarded-features.sh` is the
+# instrument that makes the absence loud: it reads the engine's own
+# `default = [...]` list out of `D:\Dev\pdfcer`'s manifest and fails the
+# build when a name in it is neither forwarded from here nor named in that
+# gate's DELIBERATELY-NOT-FORWARDED list with a reason.
 default = ["jpx", "ocrs", "signing"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 
 # ---------------------------------------------------------------------------
 # `signing` — the PRIVATE-KEY side, and only the private-key side.
 #
-# ★★★ THIS FLAG'S ABSENCE WAS THE JPX INCIDENT REPEATING, WORD FOR WORD.
+# Forwarding it is what puts `pdfcer_core::sign` — PKCS#12 identity loading,
+# CAdES `SignedData` (PAdES B-B) and `EditSession::sign` — in the binary at
+# all. Drop the forward and the whole subsystem vanishes without a compile
+# error, which is the silent failure the block above describes.
 #
-# `pdfcer-core` shipped `pdfcer_core::sign` — 101 public items across
-# `Pass 10.7`/`10.8`/`10.9`, PKCS#12 identity loading, CAdES `SignedData`
-# (PAdES B-B) and `EditSession::sign` — on 2026-09-05, in answer to *this
-# shell's own* request of 2026-09-03 (*"a document cannot be signed"*). Its
-# module header names us. And because this manifest took `pdfcer-core` with
-# `default-features = false` and forwarded only `jpx` and `ocrs`, the
-# engine's default-on `signing` feature was stripped: the entire subsystem
-# was **not in the binary**, nothing failed to compile, and no test went red.
-# That is verbatim the failure the comment forty lines above this one
-# records about JPEG 2000 — *"forgetting to forward does not fail to
-# compile"* — and it happened again, to a capability the operator had asked
-# for by name, three days after the warning was written down.
-#
-# ⇒ The warning above did not protect the code path written after it. What
-# protects this one is `tools/gates/check-forwarded-features.sh`: it reads
-# the engine's own `default = [...]` list out of `D:\Dev\pdfcer`'s manifest
-# and fails the build when a name in it is not forwarded from here or
-# named in that gate's own DELIBERATELY-NOT-FORWARDED list with a reason.
-#
-# WHAT IS AND IS NOT GATED, from `pdfcer-core`'s manifest verbatim:
+# WHAT IS AND IS NOT GATED, from `pdfcer-core`'s manifest:
 #
 #   NOT gated  VERIFICATION — `signature`, `signature_verify`, `cms`, the
 #              trust-path arithmetic. It handles no secret and is in every
@@ -107,7 +89,7 @@ jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 # advisory names a PKCS#1 v1.5 *decryption* de-padding oracle, which signing
 # never executes).
 #
-# ★★ WHAT THE OFF BUILD MUST LOOK LIKE HERE, and it is R8, not taste. The
+# WHAT THE OFF BUILD MUST LOOK LIKE HERE, and it is R8, not taste. The
 # gated-out path in this shell refuses by ABSENCE: `commands::sign` is
 # registered only under `#[cfg(feature = "signing")]`, and the manifest item
 # naming it is dropped by the ordinary `CapabilityAbsent` mechanism that
@@ -127,7 +109,7 @@ signing = ["pdfcer-core/signing"]
 # ---------------------------------------------------------------------------
 # `ocrs` — the OCR RECOGNISER, and only the recogniser.
 #
-# ★ WHAT THIS FLAG ACTUALLY BUYS, because the split is easy to get backwards.
+# WHAT THIS FLAG ACTUALLY BUYS, because the split is easy to get backwards.
 #
 # `pdfcer-core` gates a smaller thing than its name suggests. Its own manifest
 # spells the boundary out:
@@ -159,8 +141,8 @@ signing = ["pdfcer-core/signing"]
 # `pdfcer-core`'s own manifest, and every one of them already in
 # `D:\Dev\pdfcer`'s lockfile. So this does not add a dependency the workspace
 # root's rule would call an operator decision; it adopts crates pdfcer already
-# ships. The MODEL WEIGHTS are the separate question, they are CC-BY-SA-4.0,
-# and the operator answered it on 2026-08-14 — see `about.hbs`,
+# ships. The MODEL WEIGHTS are the separate question and are CC-BY-SA-4.0;
+# the attribution that answer requires lives in `about.hbs`,
 # `crates/pdfcer-gui/src/text/about.rs` and `tools/package-portable.py`.
 #
 # NO NETWORK, structurally: `ocrs`'s model downloader lives in the separate
@@ -187,14 +169,14 @@ native-window = { path = "../native-window" }
 # Word paste is editable — and that crate places bytes without knowing what a
 # PDF is.
 #
-# ★ A SECOND `native-*` crate rather than a module in `native-window`, for the
+# A SECOND `native-*` crate rather than a module in `native-window`, for the
 # reason that crate's own header gives about itself: it is about *windows*, and
 # a clipboard concern in there makes the name a description of history rather
 # than of contents. Both exist for the identical structural reason — this
 # crate's `#![forbid(unsafe_code)]` is a claim worth keeping and `forbid`
 # cannot be relaxed from the inside.
 #
-# ★★ NO NEW LICENCE EXPOSURE AND NO NEW ROW IN `THIRD_PARTY_LICENSES.md`. It is
+# NO NEW LICENCE EXPOSURE AND NO NEW ROW IN `THIRD_PARTY_LICENSES.md`. It is
 # a first-party workspace member with an EMPTY `[dependencies]` block, so
 # `cargo-about` — which generates that file from the shipping graph — has
 # nothing to add. `clipboard-win` and `windows` were the obvious alternatives
@@ -246,55 +228,10 @@ egui.workspace = true
 # failure mode for a version skew that would otherwise be invisible.
 raw-window-handle = "0.6.2"
 
-# ---------------------------------------------------------------------------
-# DEPENDENCIES ON THE READ-ONLY ENGINE (PROJECT_PLAN.md §2)
-# ---------------------------------------------------------------------------
-#
-# ★ CORRECTED 2026-08-17. This block was headed "PATH DEPENDENCIES" and
-# argued at length for relative paths into `D:\Dev\pdfcer`, above lines that
-# have been **git revision pins** since 2026-08-14. The argument it made —
-# "this crate always builds against the live engine" — stopped being true
-# on that day and the prose did not move with the code. It is corrected
-# rather than deleted, because the trade it describes is real and a future
-# reader deciding whether to go back to paths needs both halves of it.
-#
-# What paths bought, and what the pin costs:
-#
-#   * A path build ALWAYS compiled against `D:\Dev\pdfcer`'s working tree,
-#     so an engine change that broke this shell was a compile error the
-#     same afternoon rather than a surprise at fold-in.
-#   * A pinned build does not follow that tree AT ALL. It fetches the
-#     named commit from GitHub. So the engine can move — locally, or on
-#     `main` — and this shell keeps building happily against whatever it
-#     was pinned to, INCLUDING PAST A RENDERING FIX IT NEEDS.
-#
-# That is not hypothetical: on 2026-08-17 `D:\Dev\pdfcer` was seven commits
-# ahead of this pin and one of them was `1e7a0be`, which made images in
-# `Separation`, `DeviceN`, `Lab`, `CalGray` and `CalRGB` decode at all
-# instead of being dropped from the raster. Eighteen pictures on the
-# operator's own file. The old shell — which still uses `.workspace = true`
-# and therefore builds the LOCAL engine — rendered that file correctly
-# while this one did not, which is the reverse of what anybody expects.
-#
-# The pin stays, because the reason for it also stands: source cloned from
-# GitHub must build for someone who does not happen to have `pdfcer`
-# checked out as a sibling directory, and `main` moves, so a shell built
-# against whatever the engine was that morning is a build nobody can
-# reproduce. **The obligation the pin creates is that bumping it is a
-# scheduled act, not something to be remembered** — see `HANDOFF.md` §7.
-#
-# `D:\Dev\pdfcer` is READ-ONLY for this project (PROJECT_PLAN.md §6.1).
-# Anything the engine needs to grow is a written hand-off to
-# `pdfcer-engineer` and lands there as its own Pass.
-#
-# `default-features = false` on both is MANDATORY, not tidiness — see the
-# `[features]` block above. The `jpx` capability is re-enabled through this
-# crate's own default feature, so a plain `cargo build` is byte-identical
-# in capability to the old crate's.
 # egui-shell — the reusable application shell (manifest, ribbon, theme,
-# command registry). Added at S2. It knows nothing about PDF and must never
-# learn: `tools/gates/check-shell-purity.sh` enforces that from the other
-# side, and this dependency is deliberately one-directional.
+# command registry). It knows nothing about PDF and must never learn:
+# `tools/gates/check-shell-purity.sh` enforces that from the other side, and
+# this dependency is deliberately one-directional.
 egui-shell.workspace = true
 
 # rfd: native file-open/save dialogs, no C dependency (docs/PRIOR_ART.md). MIT.
@@ -304,136 +241,75 @@ egui-shell.workspace = true
 # pdfcer's lockfile and already licence-vetted. That is what the workspace
 # root's rule asks for: a crate this workspace adds which is NOT already in
 # pdfcer's lockfile is an operator decision, and this one is not that.
-#
-# It replaces an interim Windows-only picker that shelled out to
-# `powershell.exe`, written when this crate's manifest was not the file it
-# was safe to edit. That shim worked and was verified live, but it was
-# Windows-only, unparented to the pdfcer window, and cost a process launch —
-# and at fold-in it would have been deleted in favour of exactly this line.
 rfd = "0.17.2"
 
-# ★★ BACK TO PATHS — operator instruction, 2026-08-17.
+# ---------------------------------------------------------------------------
+# DEPENDENCIES ON THE READ-ONLY ENGINE (PROJECT_PLAN.md §2)
+#
+# The form is `git = "file://…"` + `branch`, and it is a decision.
+# ---------------------------------------------------------------------------
 #
 # > *"let's point back to using the commits from D:\Dev\pdfcer."*
+#   — the operator
 #
-# This is a deliberate reversal of the 2026-08-14 pin, and both halves of
-# the trade are kept below rather than the losing one being deleted,
-# because this has now been decided in both directions and will be again.
+# Three forms are possible and only one of them works here. Read this before
+# "simplifying" it to `path = ` or re-pointing it at GitHub.
 #
-# WHY IT WAS PINNED (2026-08-14), and what that bought:
+# A REMOTE PIN (`git = "https://github.com/…", rev = "…"`) fetches a named
+# commit. Nothing makes its staleness visible: no compile error, no warning,
+# no test, so the shell goes on building against a revision the engine left
+# behind — including past a rendering fix it needs. Worse, a pin to a remote
+# is only as current as the last PUSH, and pushing is not this project's act,
+# so the commits this shell needs can be unreachable from the place it
+# fetches from. Measured once at eight commits behind, all eight unpushed,
+# one of them the fix that made `Separation`, `DeviceN`, `Lab`, `CalGray`
+# and `CalRGB` images decode at all instead of being dropped from the
+# raster — eighteen pictures on the operator's own file.
 #
-#   A commit rather than a branch, because `main` moves and a shell built
-#   against whatever the engine happened to be that morning is a build
-#   nobody can reproduce. It also made source cloned from GitHub build for
-#   someone who does not happen to have `pdfcer` checked out as a sibling
-#   directory. Bumping was then a deliberate act with a diff.
+# A BARE PATH (`path = "../../../pdfcer/crates/…"`) compiles the engine's
+# WORKING TREE, and another session edits that tree live. A path build is
+# therefore hostage to somebody else's save-point: it fails to compile on
+# half-written code, and — worse — SUCCEEDS on a half-finished edit, giving
+# a binary no commit describes and `BUILD-INFO.txt` no revision to name.
 #
-# WHY THAT FAILED IN PRACTICE, measured 2026-08-17:
-#
-#   Nothing makes a pin's staleness visible. There is no compile error, no
-#   warning and no test — the shell goes on building happily against a
-#   revision the repository left behind. It measured **eight commits
-#   behind** on 2026-08-17, and one of the eight (`1e7a0be`) was the fix
-#   that made `Separation`, `DeviceN`, `Lab`, `CalGray` and `CalRGB`
-#   IMAGES decode instead of being dropped from the raster entirely —
-#   eighteen pictures on the operator's own file.
-#
-#   Worse, the eight were **unpushed**: `origin/main` was still at the
-#   pinned commit. So the pin could not have been bumped even by someone
-#   who noticed, because the commits this shell needed did not exist at
-#   the place it fetches from. A pin to a remote is only as current as the
-#   last push, and pushing is not this project's act.
-#
-#   Net effect: the OLD shell in `D:\Dev\pdfcer` — which uses
-#   `.workspace = true` and therefore builds the local crates — rendered
-#   the operator's file correctly while this one did not. That is the
-#   reverse of what anybody expects of a rebuild, and it was caused
-#   entirely by the dependency form.
-#
-# WHAT PATHS COST, so it is on the record and not rediscovered:
-#
-#   1. **Source cloned from GitHub will not build** without `pdfcer`
-#      checked out as a sibling directory. The compiled binary is
-#      unaffected — Rust links the engine statically, so a packaged build
-#      has always been self-contained and still is.
-#   2. **A build is only as reproducible as the engine tree was clean.**
-#      `BUILD-INFO.txt` records the engine's HEAD *and whether its tree was
-#      dirty*, because a path build against three uncommitted files is a
-#      binary no commit describes. That is not hypothetical: the engine
-#      tree had three modified source files at the moment this change was
-#      made, with another session working in it live.
-#
-# `../../../pdfcer/…` resolves from `D:\Dev\pdfcer-gui\crates\pdfcer-gui\`:
-# crates/pdfcer-gui -> crates -> pdfcer-gui -> Dev, then down into
-# `pdfcer/crates/…`. Verified to resolve, not assumed.
-#
-# ★★★ …AND THE FORM IS `file://` + BRANCH, NOT A BARE PATH. Read this
-# before "simplifying" it to `path = `.
-#
-# A bare path dependency compiles the engine's WORKING TREE, and that tree
-# has another session editing it live. The first attempt at this change did
-# exactly that and **failed to compile** — `redact.rs` was mid-rewrite:
-#
-#     redact.rs:1776  no variant `Quadding::LeftJustified`
-#     redact.rs:1781  no function `Object::as_bool`
-#
-# Half-written new code, three modified files, entirely reasonable for a
-# repository somebody is working in. But it means a path build is hostage
-# to another session's save-point, and it would have been worse if it had
-# compiled: a binary built from somebody's uncommitted half-finished edit,
-# with no commit to name in `BUILD-INFO.txt` and no way to reproduce it.
-#
-# `file://` + `branch` takes the same repository's **committed history**
-# instead. Cargo clones it into `~/.cargo/git/`, so:
+# `file://` + `branch` takes the same repository's **committed history**.
+# Cargo clones it into `~/.cargo/git/`, so:
 #
 #   * the working tree's cleanliness is irrelevant — a build always comes
 #     from a real commit and `BUILD-INFO.txt` can name it;
-#   * unpushed commits ARE reachable, which is the whole reason the GitHub
-#     pin failed (see above — the eight commits this shell needed had never
-#     been pushed);
+#   * unpushed commits ARE reachable, which is what a remote pin cannot do;
 #   * `Cargo.lock` still records an exact revision, so a build is
 #     reproducible and picking up new engine commits is a deliberate
 #     `cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print`, not
 #     something that happens silently under a rebuild.
 #
-# That last property is what the 2026-08-14 pin was actually protecting and
-# it is kept. What is dropped is only the pin's dependence on a REMOTE,
-# which is the part that broke.
+# The corollary binds anything that tests this arrangement: the condition
+# that governs a `git` dependency is `git cat-file -e main:<path>`, never
+# whether the path exists on disk. A staged-but-uncommitted rename makes a
+# crate exist on disk and in no commit, which is an unresolvable dependency
+# and an on-disk check reports as fine.
+#
+# WHAT `file://` COSTS, so it is on the record:
+#
+#   1. **Source cloned from GitHub will not build** without `pdfcer`
+#      checked out at `D:\Dev\pdfcer`. The compiled binary is unaffected —
+#      Rust links the engine statically, so a packaged build is
+#      self-contained.
+#   2. `BUILD-INFO.txt` records the engine's HEAD and whether its tree was
+#      dirty, because the dirty flag is the only thing that distinguishes a
+#      reproducible build from one that merely looks like one.
 #
 # `D:\Dev\pdfcer` remains READ-ONLY to this project (PROJECT_PLAN.md §6.1).
 # Cargo reads that repository and clones from it; it writes nothing there,
-# and builds into THIS workspace's `target/`. Do not `cd` into it to build
-# — that is the one way this arrangement can breach the rule, and it has
-# happened once already (HANDOFF.md §4).
-
-# ═══════════════════════════════════════════════════════════════════════════
-# THE ENGINE'S RENAME LANDED — 2026-09-03, and the shim is gone
-# ═══════════════════════════════════════════════════════════════════════════
+# and builds into THIS workspace's `target/`. Do not `cd` into it to build —
+# that is the one way this arrangement can breach the rule. Anything the
+# engine needs to grow is a written hand-off to `pdfcer-engineer`.
 #
-# This project renamed to `pdfcer` on 2026-09-03, hours BEFORE the engine did.
-# In the gap these three lines carried `package = "pdfce-*"` keys — old-name-exempt:
-# a paragraph explaining a rename must be able to spell the name it renamed —
-# so that every
-# `use pdfcer_core::…` in this source tree could be the final spelling while
-# resolving to the crate that existed that morning.
-#
-# The engine's `Pass 247.1` (`4db298d`, engine `v0.28.0`) renamed
-# `pdfce-core` / `pdfce-render` / `pdfce-print` — old-name-exempt: same reason —
-# and the repository moved to
-# `D:\Dev\pdfcer`, so the bridge was removed the same day and its tripwire
-# gate — `tools/gates/check-engine-rename-shim.sh` — was deleted with it, which
-# is what that gate's own header instructed.
-#
-# ★ Kept from that episode, because it cost an hour: the tripwire's first two
-# revisions both tested a PROXY for the real condition. It asked whether
-# `D:\Dev\pdfcer/crates/pdfcer-core` existed ON DISK. This manifest does not
-# build against the engine's disk — the `git` + `branch` form below resolves
-# **committed history only**, deliberately (see the block above). For roughly
-# an hour on 2026-09-03 the engine's tree held 795 staged-but-uncommitted
-# renames, so the crate existed on disk, existed in no commit, and switching
-# these lines would have produced an unresolvable dependency. The condition
-# that governs a `git` dependency is `git cat-file -e main:<path>`, never `-d`.
-# ═══════════════════════════════════════════════════════════════════════════
+# `default-features = false` on the two lines below is MANDATORY, not
+# tidiness — see the `[features]` block above. The `jpx` capability is
+# re-enabled through this crate's own default feature, so a plain
+# `cargo build` is byte-identical in capability to the old crate's.
+# ---------------------------------------------------------------------------
 pdfcer-core = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
 pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
 
@@ -443,12 +319,11 @@ pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-featur
 # asymmetry is not an oversight: `pdfcer-print` declares no features at all,
 # so the flag would be a claim about a feature set that does not exist.
 #
-# Until this line existed the print dialog opened, said in one sentence that
-# this build cannot spool, and **omitted the commit button rather than greying
-# it** — the no-inert-controls rule. That sentence is deliberately distinct
-# from "no printers found": `pdfcer-print` is explicit that a build which
-# cannot ask and a machine with nothing to ask about must never collapse into
-# one message.
+# Without this dependency the print dialog can only say that the build cannot
+# spool, and it **omits the commit button rather than greying it** — the
+# no-inert-controls rule. That sentence stays distinct from "no printers
+# found": a build that cannot ask and a machine with nothing to ask about
+# must never collapse into one message.
 pdfcer-print = { git = "file:///D:/Dev/pdfcer", branch = "main" }
 
 [build-dependencies]
@@ -509,7 +384,7 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 # `shell::commands::reach`, which proves that every registered command is
 # reachable by some arm of `app::dispatch`'s `match`.
 #
-# ★ WHY A PARSER RATHER THAN A GREP, which is the obvious cheaper answer and
+# WHY A PARSER RATHER THAN A GREP, which is the obvious cheaper answer and
 # is the one this project would normally take (`tools/gates/*.sh` are greps).
 #
 # The thing being read is a `match`, and a `match` is not a regular language.
@@ -528,7 +403,7 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 # full argument, including why the GUARD arms are not parsed at all but
 # CALLED.
 #
-# ★ WHY THIS IS NOT AN OPERATOR DECISION. The workspace root's rule is that
+# WHY THIS IS NOT AN OPERATOR DECISION. The workspace root's rule is that
 # "a dependency this workspace adds that is NOT already in pdfcer's lockfile is
 # an operator decision". `syn 2.0.119` is in `D:\Dev\pdfcer\Cargo.lock` with the
 # identical checksum (872831b6…) and is already in this workspace's own lock as
@@ -541,9 +416,9 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 # `tools/gates/check-shipped-assets.py` checks — is generated from the SHIPPING
 # graph. Nothing about the notice, the packaging or the binary changes.
 #
-# ★ A SECOND test module reads Rust with it as of 2026-08-15: `redact::sealed`,
-# which proves that `pdfcer_core::redact::apply_redactions` is CALLED in exactly
-# one file of this crate. That is the same argument one question further on. The
+# A SECOND test module reads Rust with it: `redact::sealed`, which proves that
+# `pdfcer_core::redact::apply_redactions` is CALLED in exactly one file of this
+# crate. That is the same argument one question further on. The
 # thing that must not be miscounted there is a *call*, and this very sentence —
 # like a dozen doc comments in `redact/` — contains the identifier while calling
 # nothing. A grep would count every one of them and report a monopoly that had

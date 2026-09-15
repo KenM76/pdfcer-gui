@@ -140,9 +140,9 @@
 //! A directory left behind by a killed run is removed when the next run creates
 //! the same sandbox. That recovery assumes the project's standing **one driven
 //! run at a time** rule, which is not this module's to enforce and is already
-//! mandatory for a much harder reason: the harness moves the real pointer, and
-//! three concurrent runners on 2026-09-06 produced an entire sweep of worthless
-//! verdicts.
+//! mandatory for a much harder reason: the harness moves the real pointer, so
+//! concurrent runners fight over it and every verdict in the sweep is
+//! worthless.
 //!
 //! # Proving it works
 //!
@@ -158,8 +158,11 @@
 //!           --check a_link_goes_to_the_page_it_names
 //! ```
 //!
-//! and then the same pair with `--shared-profile`, which restores the old
-//! behaviour. The evidence is in `evidence/ui-verify-20260906-isolation.txt`.
+//! and then the same pair with `--shared-profile`, which restores the
+//! unsandboxed behaviour. Sandboxed, both checks pass in either order;
+//! `--shared-profile` makes the second one's verdict depend on what the first
+//! one left in `userdata/`. If that difference ever stops appearing, the
+//! isolation has been lost and this module is no longer doing its job.
 
 use std::path::{Path, PathBuf};
 

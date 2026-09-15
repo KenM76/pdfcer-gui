@@ -200,8 +200,8 @@ const REGION_OPTIONS: &str = "find-options"; // ui-text-exempt: trace region nam
 /// rather than on a screenshot. That matters more here than for the other
 /// regions: the offer is one line of muted text and a small button on a
 /// floating box over a drawing sheet, which is exactly the kind of thing a
-/// pixel oracle cannot distinguish from the frame before it — `HANDOFF.md` §2's
-/// defect 8, again. A declared rect is a claim the application makes about
+/// pixel oracle cannot distinguish from the frame before it. A declared rect is
+/// a claim the application makes about
 /// itself, and the absence of one is the harness's evidence that the offer was
 /// not drawn.
 const REGION_OCR_OFFER: &str = "find-ocr-offer"; // ui-text-exempt: trace region name, never displayed
@@ -474,7 +474,7 @@ fn body(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec<
             // is deliberate: they are read by a harness, and a Debug tuple
             // in a field a machine parses has already produced one driven
             // check that reported the opposite of the truth while quoting
-            // the truth in its own message. O180, 2026-09-12.
+            // the truth in its own message. `OPERATOR_REQUESTS.md` O180.
             //
             // `edge_blanks` is the DISCLOSURE's own condition rather than
             // whether trimming changed anything, so a harness can assert
@@ -588,8 +588,8 @@ fn enter_intent(readout: Readout, shift: bool) -> Option<FindRequest> {
 /// answer is **not computed unless it is needed** — the short-circuit is the
 /// affordability argument, and passing an already-evaluated `bool` would make
 /// the call site pay for a page extraction on every frame the bar is open while
-/// this function still looked correct. That is the shape of `HANDOFF.md` §2's
-/// defect 9: right work, wrong moment, invisible to every test.
+/// this function still looked correct. That is the shape of the defect: right
+/// work, wrong moment, invisible to every test.
 ///
 /// # The rule, and the trap inside it
 ///
@@ -683,7 +683,7 @@ fn ocr_offer(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
 /// Named here rather than typed inline so that
 /// [`tests::the_offer_raises_the_registered_recognise_command`] can assert it
 /// against the registry — an id that is merely spelled at a call site is an id
-/// that goes stale silently, which is `HANDOFF.md` §5's whole subject.
+/// that goes stale silently.
 const OCR_COMMAND: &str = "file.ocr"; // ui-text-exempt: a command id, never displayed
 
 // ---------------------------------------------------------------------------
@@ -985,11 +985,11 @@ fn unsearchable_note(ui: &mut egui::Ui, fonts: u64) {
 /// in front of the operator is searchable, and the document still contains
 /// something no search will ever reach.
 /// ★★★ **The blank at the end of the query, said out loud** —
-/// `OPERATOR_REQUESTS.md` **O180**, 2026-09-12.
+/// `OPERATOR_REQUESTS.md` **O180**.
 ///
-/// Ken: *“trailing spaces/tabs/etc stops a search from finding text on the
-/// page that doesn't have these symbols … copy pasting from excel seems to
-/// give a trailing space that I have to remove to search.”*
+/// A trailing space, tab or newline on the query stops a search from finding
+/// text on the page that does not carry one, and text pasted out of a
+/// spreadsheet routinely carries one.
 ///
 /// # Why a row exists at all, when the setting already fixes it
 ///

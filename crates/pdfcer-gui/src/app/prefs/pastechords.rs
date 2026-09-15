@@ -53,7 +53,7 @@
 /// two entries of the shell's keymap. That is the mechanism the framework
 /// already has: `SHELL_FRAMEWORK.md`'s central claim is that the keymap is a
 /// **manifest**, not code — so an operator preference about keys is a data edit
-/// rather than a branch, and this preference is its first real customer.
+/// rather than a branch anywhere in the dispatcher.
 ///
 /// # ★ Both chords always exist, whichever way round they are
 ///
@@ -65,7 +65,7 @@
 pub enum PasteChords {
     /// `Ctrl+V` pastes a **new** field; `Ctrl+Shift+V` pastes a **duplicate**.
     ///
-    /// The default, and the operator's original ruling of 2026-08-29.
+    /// The default, and the operator's own ruling.
     #[default]
     PdfcerOrder,
     /// `Ctrl+V` pastes a **duplicate**; `Ctrl+Shift+V` pastes a **new** field.
@@ -105,8 +105,8 @@ impl PasteChords {
     /// ⇒ So the seam is deliberate and is the same shape as
     /// `PDFCER_DIAG_FORM_ACCEPT`: it changes no behaviour a keyless run can
     /// observe, it is read exactly once at start-up, and it never writes
-    /// anything. `RAG: a_driven_check_that_mutates_persisted_state_must_normalise_at_the_start`
-    /// is the entry this avoids needing.
+    /// anything. `D:/dev/rag/egui/` carries the lesson this avoids needing —
+    /// `a_driven_check_that_mutates_persisted_state_must_normalise_at_the_start`.
     ///
     /// ★ An unrecognised value is ignored rather than refused. The variable is
     /// a harness affordance, and a typo in it should degrade to "the operator's
@@ -175,8 +175,8 @@ mod tests {
     /// The failure this forbids is a build where both commands end up on the
     /// same chord — one silently unreachable from the keyboard, with the
     /// ribbon still showing both and the shortcuts dialog still listing a key
-    /// that reaches the other one. That is invisible until an operator presses
-    /// it, which is the whole class this project keeps meeting.
+    /// that reaches the other one. Nothing on screen shows it; it is invisible
+    /// until an operator presses the chord and gets the wrong paste.
     #[test]
     fn every_order_binds_the_two_commands_to_two_different_chords() {
         for order in PasteChords::ALL {
@@ -223,8 +223,9 @@ mod tests {
 
     /// The default is the operator's own ruling, not Acrobat's.
     ///
-    /// He chose the split before the divergence was found, was told about it,
-    /// and asked for an option rather than a swap — so the default stays his.
+    /// The preference exists to **offer** Acrobat's order, never to impose it:
+    /// a build that shipped with `AcrobatOrder` as the default would change what
+    /// `Ctrl+V` does on an upgrade for everyone who never opens settings.
     #[test]
     fn the_default_is_the_operators_ruling() {
         assert_eq!(PasteChords::default(), PasteChords::PdfcerOrder);

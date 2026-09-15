@@ -1,19 +1,15 @@
 //! # `dialogs::shortcuts` — every keyboard chord, derived from the keymap that
 //! dispatches them
 //!
-//! ## The gap this closes, and the instruction it followed
+//! ## This window has **no list in it**
 //!
-//! `file.shortcuts` was registered, drawn on File ▸ pdfcer, and inert. Its
-//! scaffold entry did not merely say *blocked* — it carried the design, from
-//! `SALVAGE.md`'s row for the old shell's 7,912-line `ui_text.rs`:
+//! Nothing in this module holds the reference. Every row is derived, on the
+//! frame that draws it, from the keymap and the registry. That is the whole
+//! design, and it is why the old shell's hand-written `shortcuts_reference()`
+//! is not carried across at all rather than carried across and corrected: a
+//! correct copy is still a copy.
 //!
-//! > Fix `shortcuts_reference()` — it **omits six live bindings**
-//! > (`DEFECTS.md` D5) — and **derive it from the keyboard map so it cannot
-//! > drift again.** Salvaging it unfixed would import D5.
-//!
-//! So nothing was salvaged. This window has **no list in it**.
-//!
-//! ## ★ D5 is not fixed here; it is made unrepresentable
+//! ## D5 is not fixed here; it is made unrepresentable
 //!
 //! `DEFECTS.md` D5 is a *hand-maintained reference* disagreeing with the actual
 //! bindings, and the reason it happened is the reason it would happen again:
@@ -26,11 +22,12 @@
 //! is wrong is not a thing this window can produce. There is no second copy to
 //! drift.
 //!
-//! That is the difference between fixing a defect and closing the class of it,
-//! and it is the same move `canvas::snap`'s tolerance and
-//! `dialogs::scale`'s unit list both made after their own copies drifted.
+//! That is the difference between fixing a defect and closing the class of it.
+//! [`crate::canvas::snap`]'s tolerance and [`super::scale`]'s unit list are the
+//! same move against the same hazard: one statement of a fact, derived wherever
+//! it is needed.
 //!
-//! ## ★ An unregistered command is DROPPED, not shown greyed — R8
+//! ## An unregistered command is DROPPED, not shown greyed — R8
 //!
 //! A chord whose command is not in the registry names a capability this build
 //! does not have — the strippable-capability convention, where a feature's
@@ -67,7 +64,7 @@ pub const REGION_LIST: &str = "shortcuts.list"; // ui-text-exempt: trace region 
 
 /// The Shortcuts window's live state.
 ///
-/// ★ **It holds nothing.** Every row is derived from the keymap and the
+/// **It holds nothing.** Every row is derived from the keymap and the
 /// registry on each frame, which is the whole point — see the module header.
 /// A cached list would be a second copy, and a second copy is D5.
 ///
@@ -90,21 +87,18 @@ impl ShortcutsDialog {
         keymap: Option<&Keymap>,
         registry: &CommandRegistry,
     ) -> bool {
-        // ★ ITS OWN OS WINDOW as of 2026-08-21. A shortcut list is read
-        // *while working*, which is the one thing a window trapped inside the
-        // application frame makes impossible: it covers the surface whose
-        // shortcuts are being looked up.
+        // ITS OWN OS WINDOW. A shortcut list is read *while working*, which
+        // is the one thing a window trapped inside the application frame makes
+        // impossible: it covers the surface whose shortcuts are being looked
+        // up.
         //
-        // ★★ THE HEIGHT NOTE THAT STOOD HERE IS ANSWERED BY CONSTRUCTION NOW,
-        // and it is worth saying why rather than deleting it. It read: *"a
-        // window with no declared height sizes itself to its content, and this
-        // body is a vertical `ScrollArea` … the scroll area asks for its full
-        // content height, the window grows to fit, the scroll area gets more
-        // room and asks for more."* That loop needs a container whose size is
-        // decided by its content. An **OS window always has a finite size** —
-        // the platform gives it one — so the scroll area is bounded on every
-        // frame and the loop has nowhere to start. The declared size below is
-        // an opening bid, not a fix.
+        // It is also what bounds the body's vertical `ScrollArea`. A scroll
+        // area inside a container whose size is decided by its content has no
+        // fixed height to fill, so it asks for its full content height, the
+        // container grows to fit, and it asks for more. An **OS window always
+        // has a finite size** — the platform gives it one — so the scroll area
+        // is bounded on every frame and that loop has nowhere to start. The
+        // declared size below is an opening bid, not a fix.
         let (frame, ()) = crate::dialogs::host::Host::new(
             "shortcuts", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
@@ -121,7 +115,7 @@ impl ShortcutsDialog {
 
 /// One command, and every chord bound to it.
 ///
-/// ★ **Chords are plural**, and that is not a nicety: `edit.redo` is bound to
+/// **Chords are plural**, and that is not a nicety: `edit.redo` is bound to
 /// both `Ctrl+Y` and `Ctrl+Shift+Z`, deliberately, and a reference showing one
 /// of them would be a reference that is *incomplete in exactly the way D5 was*
 /// — quietly, on the binding an operator's other application taught them.
@@ -173,26 +167,21 @@ fn body(ui: &mut Ui, keymap: Option<&Keymap>, registry: &CommandRegistry) {
                         ui.end_row();
                     }
                 });
-            // ★★ Published AFTER the grid, which is the fix for a region that
-            // always reported zero height.
+            // Published AFTER the grid, so `ui.min_rect()` covers what was
+            // laid out.
             //
-            // It used to be the first statement in this closure, over
-            // `ui.min_rect()` — and at that moment nothing had been laid out,
-            // so the rect was empty. A driven check asserting the list had
-            // drawn read `0.0 pt high with 20 commands folded into it` and
-            // reported the window as a title over an empty band. The window was
-            // fine; the instrumentation was measuring a `Ui` before its
-            // contents existed.
-            //
-            // Worth stating as a rule rather than a fix: **a region published
-            // at the top of a closure describes the closure's starting point,
-            // not its content.** A region that can only ever report zero cannot
-            // detect the thing it was added to detect, and it is worse than no
-            // region at all, because it produces a confident false failure.
+            // **A region published at the top of a closure describes the
+            // closure's starting point, not its content.** Over a `Ui` whose
+            // contents do not exist yet the rect is empty, so the region
+            // reports zero height however many rows follow it, and a driven
+            // check reads a correctly drawn window as a title over an empty
+            // band. A region that can only ever report zero cannot detect the
+            // thing it was added to detect, and is worse than no region at all,
+            // because it produces a confident false failure.
             crate::diag::ui_rect(REGION_LIST, ui.min_rect());
         });
 
-    // ★ Traced so a driven check can assert the two numbers rather than the
+    // Traced so a driven check can assert the two numbers rather than the
     // pixels — and the SECOND one is the assertion worth having.
     //
     // `dropped` counts chords naming a command this build did not register. On
@@ -209,7 +198,7 @@ fn body(ui: &mut Ui, keymap: Option<&Keymap>, registry: &CommandRegistry) {
     ui.add_space(4.0);
     ui.weak(t::derived_note(rows.len()));
     if dropped > 0 {
-        // ★ Disclosed, not absorbed. See the module header — a stripped build
+        // Disclosed, not absorbed. See the module header — a stripped build
         // genuinely has fewer shortcuts, and an operator comparing two
         // installations is entitled to know which.
         ui.weak(t::dropped_note(dropped));
@@ -218,7 +207,7 @@ fn body(ui: &mut Ui, keymap: Option<&Keymap>, registry: &CommandRegistry) {
 
 /// Fold the keymap into one row per command, and count the chords dropped.
 ///
-/// ## ★ Grouped by command, not by chord
+/// ## Grouped by command, not by chord
 ///
 /// A keymap is `chord → id`, and rendering it directly would give `Ctrl+Y` and
 /// `Ctrl+Shift+Z` two rows saying the same thing — which reads as two features
@@ -289,13 +278,13 @@ mod tests {
         )
     }
 
-    /// ★ **Every bound chord is listed.** This is D5, asserted.
+    /// **Every bound chord is listed.** `DEFECTS.md` D5, asserted.
     ///
-    /// The defect was a hand-maintained reference omitting six live bindings.
-    /// The listing is now a fold over the bindings, so the property is
-    /// structural — and this test is what says so out loud, because a future
-    /// reader looking at a window full of shortcuts has no way to tell a
-    /// derived list from a copied one.
+    /// D5 is a hand-maintained reference disagreeing with the keymap that
+    /// dispatches. The listing here is a fold over the bindings, so the
+    /// property is structural — and this test is what says so out loud,
+    /// because a reader looking at a window full of shortcuts has no way to
+    /// tell a derived list from a copied one.
     #[test]
     fn every_bound_chord_appears() {
         let map = keymap(&[
@@ -325,11 +314,11 @@ mod tests {
         assert_eq!(dropped, 0);
     }
 
-    /// ★ **Two chords on one command are ONE row.**
+    /// **Two chords on one command are ONE row.**
     ///
     /// `edit.redo` really is bound twice, deliberately, and a reference showing
     /// one of them would be incomplete in exactly D5's way — quietly, on the
-    /// binding the operator's other application taught them.
+    /// binding an operator's other application taught them.
     #[test]
     fn a_command_with_two_chords_is_one_row_naming_both() {
         let map = keymap(&[("Ctrl+Y", "edit.redo"), ("Ctrl+Shift+Z", "edit.redo")]);
@@ -347,7 +336,7 @@ mod tests {
         assert!(rows[0].chords.iter().any(|c| c == "Ctrl+Shift+Z"));
     }
 
-    /// ★ **A chord for an unregistered command is dropped AND counted.**
+    /// **A chord for an unregistered command is dropped AND counted.**
     ///
     /// R8: a command that is not registered is a capability this build does not
     /// have, so listing its key would promise a keystroke that does nothing.

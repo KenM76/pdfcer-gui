@@ -12,18 +12,18 @@
 //!    tests and **not one of them can see the chain joined**: the parser's
 //!    tests build strings, the control's tests build a `Prefs`, and the frame
 //!    hook has no test at all because it needs a live `egui::Context` inside a
-//!    real window. This is `HANDOFF.md` §10's *"an `Options` flag that
-//!    defaults off will silently neuter a correct decision function"* wearing
-//!    a different hat — every part correct, the join unobserved.
+//!    real window. ★★ It is the same shape as a flag defaulting off in front
+//!    of a correct decision function: every part right, the **join**
+//!    unobserved, and no unit test positioned to see it.
 //!
 //! 2. **Something is clipped at a large scale.** This is the one that needs
 //!    pixels and the reason this check exists at all. `MODES_AND_PANELS.md`
 //!    states the rule twice over: *layout and clipping defects have exactly
-//!    one oracle, a rendered screenshot.* This project has already shipped
-//!    **a control laid out below the bottom of its own pane** (the redaction
-//!    apply button, `HANDOFF.md` §2 defect 11) and **a two-row ribbon one gap
-//!    short** (§10) — both with every unit test green. Doubling every control
-//!    in the window is the cheapest possible search for the next one.
+//!    one oracle, a rendered screenshot.* A control laid out below the bottom
+//!    of its own pane, and a two-row ribbon one gap short of fitting, are both
+//!    states this shell can reach with **every unit test green**. Doubling
+//!    every control in the window is the cheapest possible search for the
+//!    next one.
 //!
 //! 3. **The scale is applied to the page as well as the chrome.** It must not
 //!    be. `set_zoom_factor` moves `pixels_per_point`, which the canvas already
@@ -265,23 +265,22 @@ fn measure(
     // ★★★ **The client area in points is READ from the application, never
     // derived from the OS window and the scale this check asked for.**
     //
-    // The derivation this replaced was `client_px / (os_dpi_ratio ×
-    // requested_scale)`, and it is worth stating exactly what was wrong with
-    // it, because it looked like careful arithmetic and read like a
-    // measurement:
+    // ⚠ The tempting derivation is `client_px / (os_dpi_ratio ×
+    // requested_scale)`. It looks like careful arithmetic and reads like a
+    // measurement, and it is neither:
     //
-    // * It divided by the scale under test. Assertion 0 then compared the two
-    //   runs and found them to differ by that scale — a conclusion the
-    //   arithmetic had already reached before any pixel was measured.
+    // * It divides by the scale under test, so assertion 0 finds the two runs
+    //   differing by that scale — a conclusion the arithmetic reached before
+    //   any pixel was measured.
     // * `WindowFrame` comes from `find_window_for_pid`, which returns the
-    //   **front-most** window of the process. On 2026-09-11 that was the O173
-    //   default-app offer, not the main window, so the numbers were the
-    //   dialog's. The check reported the UI-scale preference as never reaching
-    //   `Context::set_zoom_factor`. It had reached it. See
-    //   `sandbox::write_prefs` for how the offer got there.
-    // * Its report line hard-coded *"the OS window is 1100x800 px at both
-    //   scales"* — a premise it never measured and which is false whenever
-    //   eframe sizes the window in points.
+    //   **front-most** window of the process. Let any modal open in front of
+    //   the main window — the O173 default-app offer is the one that can —
+    //   and the numbers are the dialog's, so the check reports the UI-scale
+    //   preference as never reaching `Context::set_zoom_factor` when it has.
+    //   See `sandbox::write_prefs` for the seed that keeps the offer away.
+    // * A report line naming a fixed pixel size ("the OS window is 1100x800
+    //   px at both scales") states a premise it never measured, and one that
+    //   is false whenever eframe sizes the window in points.
     //
     // `window-inner` (published by `app::frame` step 0b¹) carries the root
     // viewport's `screen_rect` in points and the `pixels_per_point` egui is
@@ -410,14 +409,13 @@ fn write_preference(exe: &Path, scale: f32) -> Result<()> {
     // produces, so this isolates the variable under test from anything a
     // previous check happened to leave behind.
     //
-    // ⚠ **With exactly one exception, and it was a recorded defect.** Until
-    // 2026-09-11 this function wrote the file directly, which silently
-    // destroyed the sandbox's `ask_default_app = false` seed and let the O173
-    // startup offer open in front of both launches. `find_window_for_pid`
-    // returns the front-most window, so this check then measured the OFFER's
-    // client area and reported that the UI-scale preference never reached
-    // `Context::set_zoom_factor`. It had. `sandbox::write_prefs` carries the
-    // suppression as a header so no caller can drop it by accident.
+    // ⚠ **Never `fs::write` here.** Writing the file directly destroys the
+    // sandbox's `ask_default_app = false` seed, which lets the O173 startup
+    // offer open in front of both launches; `find_window_for_pid` returns the
+    // front-most window, so this check then measures the OFFER's client area
+    // and reports that the UI-scale preference never reached
+    // `Context::set_zoom_factor` when it did. `sandbox::write_prefs` carries
+    // the suppression as a header so no caller can drop it by accident.
     crate::sandbox::write_prefs(&dir, &format!("ui_scale = {scale:.2}\n")).map_err(|e| {
         Error::new(format!(
             "could not write the preferences in {}: {e}",
@@ -433,8 +431,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // A guard rather than a line at the end, because there are eleven returns
     // below — three SKIPs and eight FAILs — and the one that gets forgotten is
-    // the one that leaves the whole suite measuring a 611 pt window. See
-    // `write_preference` for what that cost when it was not restored at all.
+    // the one that leaves the whole suite measuring a 611 pt window — every
+    // later check then failing for a reason that is not theirs.
     //
     // Failure to restore is REPORTED and does not change the verdict: the
     // check's own assertions are about the application, and a harness that
@@ -547,10 +545,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // reported below as corroboration and no more: whether it shrinks by the
     // scale factor depends on whether eframe sized the OS window in points (in
     // which case the pixel size grows instead and the point size is constant),
-    // and a check must not encode a guess about which. That guess is precisely
-    // what this assertion used to be.
+    // and a check must not encode a guess about which. Encoding that guess is
+    // exactly how an assertion comes to pass or fail on the windowing
+    // backend's sizing convention rather than on the preference.
     //
-    // `ui-scale-initial` is still read, as corroboration and for the report.
+    // `ui-scale-initial` is read as corroboration and for the report.
     let ppp_ratio = big.ppp / base.ppp;
     let client_ratio = base.client.width() / big.client.width();
     report.note(format!(

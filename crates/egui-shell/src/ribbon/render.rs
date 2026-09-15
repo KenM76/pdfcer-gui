@@ -230,11 +230,10 @@ impl<'a> Ribbon<'a> {
         let mut band_outcome = band::BandOutcome::default();
         let mut strip_outcome = strip::StripOutcome::default();
 
-        // ★★★ AUTO-HIDE. Office's *Show Tabs*, and the whole of the operator's
-        // second ask of 2026-09-05. See [`crate::peek`] for the model, for
-        // which product it was taken from, and for the R128 direction bound
-        // that stops "visible because the pointer is here" from becoming a
-        // loop.
+        // ★★★ AUTO-HIDE. Office's *Show Tabs*, and an explicit operator
+        // request. See [`crate::peek`] for the model, for which product it was
+        // taken from, and for the R128 direction bound that stops "visible
+        // because the pointer is here" from becoming a loop.
         //
         // The state is moved OUT of `state` for the duration of the frame
         // rather than borrowed, because `Ctx` already holds borrows that live

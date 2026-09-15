@@ -1,29 +1,28 @@
 //! # `app::window` — the two verbs in View ▸ Window that change the *shape of
 //! the application* rather than anything about the document
 //!
-//! `view.read_mode` (`Ctrl+H`) and `view.fullscreen` (`F11`). Both were
-//! registered, drawn with a glyph, given a group of their own and bound to a
-//! chord on the day the View tab was built, and both had **no dispatch arm**
-//! until 2026-08-15 — five surfaces promising a behaviour that did not exist.
-//! `RIBBON_IA.md` §3 named them together as the defect being fixed:
+//! `view.read_mode` (`Ctrl+H`) and `view.fullscreen` (`F11`). Five surfaces
+//! register, draw, group and bind them, and without this module every one of
+//! those surfaces promises a behaviour that does not exist. `RIBBON_IA.md` §3
+//! names the state that produces:
 //!
 //! > Read mode and full screen have **no ribbon control at all** — they are
 //! > keyboard-only (Ctrl+H, F11) on a tab literally named View. This is the
 //! > single most confusing thing in the current ribbon.
 //!
-//! They got controls; this file is the behaviour arriving behind them. It
-//! exists as a module rather than as two `match` limbs because
+//! They have controls; this file is the behaviour behind them. It exists as a
+//! module rather than as two `match` limbs because
 //! `app::dispatch`'s header states the rule the limbs have to keep — *"the arms
 //! route; they do not compute"* — and every decision below (what read mode
 //! hides, what it deliberately keeps, how the two states are stored, which one
 //! is allowed a shadow copy and which is not) is a rule rather than a route.
 //!
-//! # ★ 1. `view.read_mode` is NOT `mode.read`, and the difference decides
+//! # 1. `view.read_mode` is NOT `mode.read`, and the difference decides
 //! whether this file should exist at all
 //!
-//! This was the open question when the arm was written, and it is worth
-//! recording in full because the honest answer to it could have been *delete
-//! the command*. This shell has a **Read mode in the mode selector**
+//! The question to settle before any of the rest, because the honest answer to
+//! it could have been *delete the command*. This shell has a **Read mode in
+//! the mode selector**
 //! (`mode.read`, `Ctrl+1`), and a command called `view.read_mode` sitting one
 //! tab over is exactly the shape of a duplicate that should be removed rather
 //! than wired twice.
@@ -53,7 +52,7 @@
 //! the other: an operator can be in Review with the chrome hidden, and that is
 //! a meaningful state rather than a contradiction.
 //!
-//! # ★ 2. What read mode hides, and the one thing it deliberately does not
+//! # 2. What read mode hides, and the one thing it deliberately does not
 //!
 //! [`crate::text::commands::view_read_mode`] is the promise the operator is
 //! shown, and it is the specification this keeps:
@@ -86,32 +85,24 @@
 //! window title, and [`crate::app::status::readmode`] puts it on the status bar
 //! — the one piece of chrome §2 above deliberately keeps.
 //!
-//! ### ★★★ The paragraph this replaces was wrong, and the operator fell
-//! straight through the hole — corrected 2026-09-05
+//! ### Why the chord is stated permanently, and not left to a tooltip
 //!
-//! It read, in full:
-//!
-//! > *`Ctrl+H` again, and the tooltip on the control states the chord* before
-//! > *the operator presses it — which is the one moment they can still see the
-//! > control. That is Acrobat's contract too.*
-//!
-//! His report:
+//! The operator:
 //!
 //! > *"I didn't see a way to get back out of read mode. if there is a shortcut
 //! > for this it should have a note what the key combo is in the top bar that
 //! > holds the window controls."*
 //!
-//! **Both halves of the old sentence are still true and the conclusion did not
-//! follow.** Acrobat really does put the chord on the control's tooltip, and
-//! the tooltip really is shown before the press. What the argument assumed,
-//! without ever saying so, is that the operator **arrived here by pressing that
-//! control** and therefore hovered it. `Ctrl+H` is a *bound chord*: it can be
-//! pressed from memory, or hit by accident reaching for `Ctrl+G`, having never
-//! pointed at anything. And even the operator who does use the control has not
-//! necessarily rested the pointer on it long enough for a tooltip to appear —
-//! a click is not a hover.
+//! The tempting argument is that Acrobat puts the chord on the control's
+//! tooltip and the tooltip is shown before the press. **Both halves are true
+//! and the conclusion does not follow.** It assumes the operator **arrived
+//! here by pressing that control** and therefore hovered it. `Ctrl+H` is a
+//! *bound chord*: it can be pressed from memory, or hit by accident reaching
+//! for `Ctrl+G`, having never pointed at anything. And even the operator who
+//! does use the control has not necessarily rested the pointer on it long
+//! enough for a tooltip to appear — a click is not a hover.
 //!
-//! ⇒ ★★ **A tooltip is not a disclosure. It is a disclosure available to
+//! ⇒ **A tooltip is not a disclosure. It is a disclosure available to
 //! somebody who already knows where to point.** The whole of what this mode
 //! does is remove the thing they would point at, so the one surface the old
 //! argument relied on is the surface the mode deletes. That is not a
@@ -137,7 +128,7 @@
 //! ([`exit_chord`]), so they cannot disagree with each other, and that value is
 //! read from the keymap that dispatches, so neither can disagree with the key.
 //!
-//! ### ★ Full screen was checked and is NOT the same trap
+//! ### Full screen is NOT the same trap
 //!
 //! `view.fullscreen` hides no chrome of ours: the ribbon stays drawn, its
 //! control stays on View ▸ Window, and `app::conditions` renders it *pressed*.
@@ -164,7 +155,7 @@
 //! as a ruling about Escape's ladder, in `canvas::keys`, and not as a fifth
 //! claimant added here.
 //!
-//! # ★ 3. Where each state lives, and why they are stored differently
+//! # 3. Where each state lives, and why they are stored differently
 //!
 //! | | stored in | read by |
 //! |---|---|---|
@@ -205,8 +196,8 @@
 //!
 //! # 4. Why neither verb raises an `Action`
 //!
-//! `HANDOFF.md` §6's funnel is for work that touches a **document** or that
-//! must not happen part-way through laying out a frame. Neither applies:
+//! The action funnel is for work that touches a **document** or that must not
+//! happen part-way through laying out a frame. Neither applies:
 //! nothing here changes a byte of the file, so there is nothing for the undo
 //! log to hold and nothing to order against. That is `file.print`'s and
 //! `edit.find`'s reasoning, unchanged — a toggle that only decides what is
@@ -229,7 +220,7 @@ const READ_MODE_ID: &str = "pdfcer-read-mode"; // ui-text-exempt: widget id, nev
 
 /// The command id whose chord the two exit statements name.
 ///
-/// ★ **Spelled once in this crate for this purpose.** The failure this guards
+/// **Spelled once in this crate for this purpose.** The failure this guards
 /// against is not a compile error: a second literal `"view.read_mode"` at the
 /// title site and a third at the status-bar site would each keep working while
 /// slowly meaning different things, and the day one of them was renamed the
@@ -240,8 +231,8 @@ const READ_MODE_COMMAND: &str = "view.read_mode"; // ui-text-exempt: command id,
 
 /// The full-screen command id, named here for the same reason as its sibling.
 ///
-/// Used only for the combined state — see the module header's *Full screen was
-/// checked* section.
+/// Used only for the combined state — see the module header's *Full screen is
+/// NOT the same trap* section.
 const FULLSCREEN_COMMAND: &str = "view.fullscreen"; // ui-text-exempt: command id, never displayed
 
 /// `egui::Memory` key for **the chord that turns read mode off**, as the live
@@ -253,7 +244,7 @@ const FULLSCREEN_CHORD_ID: &str = "pdfcer-fullscreen-chord"; // ui-text-exempt: 
 
 /// The chord a keymap binds to a command, choosing exactly as a menu chooses.
 ///
-/// # ★★★ Why this is derived and never written down
+/// # Why this is derived and never written down
 ///
 /// The statement on the title bar and the statement on the status bar are
 /// **claim-bearing**: they tell an operator which key to press to get their
@@ -279,7 +270,7 @@ const FULLSCREEN_CHORD_ID: &str = "pdfcer-fullscreen-chord"; // ui-text-exempt: 
 /// asked once a frame. This is the same rule — `egui_shell::menu::shortcut::prefer`,
 /// literally the same function — applied by a scan with one allocation.
 ///
-/// ★ Sharing `prefer` is not tidiness either. A command bound twice would
+/// Sharing `prefer` is not tidiness either. A command bound twice would
 /// otherwise be advertised as one chord in a context menu and a *different*
 /// chord in the title, both true, and an operator comparing the two would have
 /// no way to know that either was.
@@ -313,7 +304,7 @@ pub fn chord_for<'a>(
 /// is threading `&Shell` through two call chains that have no other use for it,
 /// one of which (`app::status::show`) already takes seven parameters.
 ///
-/// ★ The **shell** is the argument rather than the chord, so the resolution
+/// The **shell** is the argument rather than the chord, so the resolution
 /// happens once and both readers get the identical `String`. Handing each
 /// surface the keymap instead would put two resolutions in the program, and two
 /// resolutions can drift the moment one of them acquires a fallback.
@@ -335,7 +326,7 @@ pub fn publish_exit_chord(ctx: &egui::Context, shell: Option<&egui_shell::manife
 /// is the only honest option: a sentence naming a chord that is not bound is
 /// the exact failure this whole mechanism exists to prevent.
 ///
-/// ★ It is deliberately **not** defaulted to `Ctrl+H`. A default here would be
+/// It is deliberately **not** defaulted to `Ctrl+H`. A default here would be
 /// a second spelling of the binding wearing a fallback's clothes, and it would
 /// be wrong in precisely the case it was reached for.
 #[must_use]
@@ -417,7 +408,7 @@ const PENDING_FULLSCREEN: &str = "pdfcer.window.fullscreen-asked"; // ui-text-ex
 /// How many frames a full-screen request is believed over the viewport's own
 /// report before the report wins again.
 ///
-/// ★ Bounded rather than latched, and the bound is the whole safety property. A
+/// Bounded rather than latched, and the bound is the whole safety property. A
 /// request the platform silently refuses — a window manager that does not do
 /// full screen, a compositor that declines — would otherwise leave this shell
 /// permanently convinced of a state the window is not in, and every subsequent
@@ -433,30 +424,26 @@ const PENDING_FRAMES: u64 = 4;
 /// request this shell has made and not yet seen confirmed, and `now` is the
 /// current frame.
 ///
-/// # ★★★ THIS IS A DEFECT FIX, AND IT LEFT THE OPERATOR'S DISPLAY FILLED
+/// # Why the viewport's own report cannot simply be negated
 ///
-/// It was one line — `!current.unwrap_or(false)` — reading `ViewportInfo`
-/// directly. The docs immediately below it already stated the reason it could
-/// not work, and stated it as a *labelling* concern rather than as a bug:
+/// The obvious body is one line — `!current.unwrap_or(false)` — reading
+/// `ViewportInfo` directly, and [`toggle_fullscreen`]'s own docs state why it
+/// cannot work:
 ///
 /// > *"the command is queued and answered by the backend, so
 /// > `ViewportInfo::fullscreen` still reports the old value on this frame."*
 ///
-/// If the report lags the request, then a **second press before the backend has
-/// caught up reads the pre-first-press state and asks for the same thing
-/// again**. Full screen turns on and will not turn off.
+/// If the report lags the request, then a **second press before the backend
+/// has caught up reads the pre-first-press state and asks for the same thing
+/// again**. Full screen turns on and will not turn off, and what the operator
+/// has is a program covering their screen that will not give it back except by
+/// being closed — which is what `read_mode_hides_the_chrome`'s failure branch
+/// says: *"the display has been left filled; close the window to recover it"*.
 ///
-/// Found by driving, and it is not rare: `read_mode_hides_the_chrome` reported
-/// it on **two of three runs**, and the run it passed on was the one with more
-/// frames between the presses. It was written off as harness flakiness after
-/// the first — which is exactly the reading `D:/dev/rag/egui/`'s chord-matcher
-/// finding warns about, where the same conclusion cost that project its whole
-/// keyboard surface for months. **Three failures in three runs is an
-/// intermittent, and an intermittent is a defect with a timing dependency.**
-///
-/// The failure branch of that check says *"the display has been left filled;
-/// close the window to recover it"*, which is what an operator gets: a program
-/// covering their screen that will not give it back except by being closed.
+/// The dependency is on timing, so it presents as an intermittent: a run with
+/// more frames between the two presses passes. **An intermittent is a defect
+/// with a timing dependency, not harness flakiness** — the reading
+/// `D:/dev/rag/egui/`'s chord-matcher finding warns about by name.
 ///
 /// # The rule
 ///
@@ -494,8 +481,8 @@ pub fn next_fullscreen(reported: Option<bool>, pending: Option<(u64, bool)>, now
 /// `asked=` rather than `on=` — a reader of a trace from a machine they cannot
 /// see should not be told a window is full screen on the strength of a request.
 ///
-/// ★ And it is why the request is **remembered**: see [`next_fullscreen`] for
-/// the defect that reading the lagging report alone produced.
+/// And it is why the request is **remembered**: see [`next_fullscreen`] for
+/// what reading the lagging report alone produces.
 pub fn toggle_fullscreen(ctx: &egui::Context) -> bool {
     let id = egui::Id::new(PENDING_FULLSCREEN);
     let now = ctx.cumulative_pass_nr();
@@ -505,10 +492,10 @@ pub fn toggle_fullscreen(ctx: &egui::Context) -> bool {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // ★ It carries BOTH the report and the outstanding request, because the
-        // whole defect was the two disagreeing. A line saying only `asked=true`
-        // is identical for the build that worked and the build that asked for
-        // the same thing twice.
+        // It carries BOTH the report and the outstanding request, because the
+        // failure is the two disagreeing. A line saying only `asked=true` is
+        // identical for the build that works and the build that asks for the
+        // same thing twice.
         format!("fullscreen-toggle reported={reported:?} pending={pending:?} asked={next}")
     });
     ctx.data_mut(|d| d.insert_temp(id, (now, next)));
@@ -577,20 +564,21 @@ mod tests {
         assert!(!next_fullscreen(Some(true), None, 0));
     }
 
-    /// ★★★ **A second press while the report still lags turns full screen
-    /// OFF**, which is the defect this function was rewritten for.
+    /// **A second press while the report still lags turns full screen OFF**,
+    /// which is the whole reason [`next_fullscreen`] takes three arguments.
     ///
     /// The sequence, exactly as the driven check performs it:
     ///
     /// 1. frame 10, windowed, nothing outstanding → ask for `true`;
     /// 2. frame 11, **the report still says `false`** because the backend has
-    ///    not answered yet — and the old implementation read that and asked for
-    ///    `true` again, so full screen turned on and would not turn off.
+    ///    not answered yet — an implementation that reads only the report asks
+    ///    for `true` again, so full screen turns on and will not turn off.
     ///
-    /// `read_mode_hides_the_chrome` reported this on **two of three runs**, and
-    /// its failure branch says *"the display has been left filled; close the
-    /// window to recover it"* — which is what an operator gets. It was written
-    /// off as harness flakiness after the first, which is the reading
+    /// `read_mode_hides_the_chrome` is where that shows up, and its failure
+    /// branch says *"the display has been left filled; close the window to
+    /// recover it"* — which is what an operator gets. It fails intermittently,
+    /// because the dependency is on how many frames fall between the presses;
+    /// reading an intermittent as harness flakiness is the mistake
     /// `D:/dev/rag/egui/`'s chord-matcher finding warns about by name.
     #[test]
     fn a_second_press_before_the_backend_answers_still_toggles_off() {
@@ -625,7 +613,7 @@ mod tests {
         );
     }
 
-    /// ★ **A request the platform never answers expires**, so a shell cannot be
+    /// **A request the platform never answers expires**, so a shell cannot be
     /// left permanently convinced of a state its window is not in.
     ///
     /// Bounded rather than latched, and the bound is the safety property: a
@@ -641,7 +629,7 @@ mod tests {
         );
     }
 
-    /// ★★★ **The chord the operator is told to press is the chord the manifest
+    /// **The chord the operator is told to press is the chord the manifest
     /// binds** — asserted against the real manifest, not against a literal.
     ///
     /// The vacuous shape this refuses: `assert_eq!(chord, "Ctrl+H")`. That test

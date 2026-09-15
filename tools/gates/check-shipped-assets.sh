@@ -1,44 +1,77 @@
 #!/usr/bin/env bash
 #
-# check-shipped-assets.sh — wrapper around `check-shipped-assets.py`.
+# check-shipped-assets.sh — reach the Python gate, or skip loudly.
 #
 # ===========================================================================
-# WHY A WRAPPER AT ALL
+# THE PROPERTY ASSERTED
 # ===========================================================================
 #
+# `check-shipped-assets.py` is either executed, or its non-execution is
+# reported as a skip. The licence property itself — that every non-Cargo file
+# this project redistributes has its licence recorded, and that the record
+# reaches the person handed the binary — is asserted by that file. Read its
+# header for what it checks and what it cannot see. This wrapper asserts only
+# that `bash <gate>` reaches it.
+#
+# The gate is Python because its central check reads `PAYLOAD_DOCS` and
+# `PAYLOAD_ASSET_DIRS` out of `tools/package-portable.py` by importing the
+# module and reading the actual list objects. Reading a Python list with a
+# grep is the silently-rotting pattern every gate here exists to avoid.
 # `run-all.sh` invokes every gate as `bash <gate>`, and that uniformity is
-# worth keeping: a runner with one special case acquires a second one. The
-# gate itself is Python — its own header argues why, in short because its
-# central check reads `PAYLOAD_DOCS` and `PAYLOAD_ASSET_DIRS` **out of
-# `tools/package-portable.py` by importing it**, and reading a Python list
-# with a grep is the silently-rotting pattern every gate here exists to avoid.
-#
-# So this file's whole job is: find an interpreter, or say so honestly.
+# worth keeping — a runner with one special case acquires a second — so the
+# wrapper absorbs the difference instead.
 #
 # ===========================================================================
-# "PYTHON IS NOT ON PATH" IS NOT "THE ASSETS ARE FINE"
+# WHY A HUMAN CANNOT HOLD IT
 # ===========================================================================
 #
-# The lesson is already written down in `run-all.sh`, against `cargo`:
+# An absent interpreter looks like nothing at all. The failure is not that
+# somebody forgets to check the licences; it is that a shell spawned by
+# another program has a different `PATH` from the one a person typed in, and
+# nothing in a green run distinguishes "ran and found nothing wrong" from
+# "never ran". `tools/package-portable.py` invokes `run-all.sh` through
+# `subprocess`, and the bash it spawns is neither a login nor an interactive
+# shell, so a tool installed into a profile-appended directory is not on its
+# `PATH` — `cargo` is already known to be reached that way and missing here.
+# A skip reason is read precisely by somebody who cannot see the machine, so
+# it has to name the actual fact: which interpreters were tried, and what was
+# therefore not checked.
 #
-#   > A skip reason is read precisely when someone cannot see the machine. It
-#   > has to name the actual fact.
+# A gate that exited 0 because it could not run would be the worst available
+# outcome — a licence obligation reported as discharged by a check that never
+# happened.
 #
-# `tools/package-portable.py` runs `run-all.sh` through `subprocess`, and the
-# bash it spawns is neither a login nor an interactive shell — it has already
-# been observed not to inherit `~/.cargo/bin`. There is no reason to assume
-# Python fares better, and a gate that exited 0 because it could not run would
-# be the worst available outcome: a licence obligation reported as discharged
-# by a check that never happened.
+# ===========================================================================
+# WHAT IT PROVABLY CANNOT SEE
+# ===========================================================================
 #
-# Hence exit 2 (SKIPPED), which `run-all.sh` renders in its own block and
-# which makes the whole run exit 3 rather than 0.
+#   - Anything about the assets. This file reads no asset, no licence and no
+#     manifest; every such judgement belongs to the Python gate.
+#   - Whether the interpreter it found is new enough, or is the same one the
+#     packager will use. First match on `PATH` wins.
+#   - Whether `check-shipped-assets.py` is the gate it expects. Only that a
+#     file of that name sits beside this one.
+#   - Its own absence. A gate dropped from `run-all.sh`'s dispatch list is not
+#     skipped, it is unmentioned, and nothing here can notice that.
 #
-# Three spellings are tried because Windows ships the `py` launcher, some
-# environments have only `python3`, and Git Bash usually has `python`.
+# ===========================================================================
+# THE EXIT CONTRACT, AND HOW TO FALSIFY IT
+# ===========================================================================
 #
-# EXIT CODES — passed through from the Python gate, plus:
-#   2  SKIPPED — no Python interpreter was found. NOT a pass.
+#   0  passed through from the Python gate — every licence check held.
+#   1  passed through — at least one check failed.
+#   2  SKIPPED. The gate file is missing, no interpreter was found, or the
+#      Python gate skipped itself. NOT a pass: `run-all.sh` renders skips in
+#      their own block and exits 3, so a run containing one cannot be read as
+#      green.
+#
+# Three interpreter spellings are tried because Windows ships the `py`
+# launcher, some environments carry only `python3`, and Git Bash usually has
+# `python`.
+#
+# To falsify: run it with `PATH=/nonexistent` — it must print the SKIPPED
+# lines and exit 2, never 0. Rename `check-shipped-assets.py` and it must exit
+# 2 rather than reporting success for a gate that no longer exists.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

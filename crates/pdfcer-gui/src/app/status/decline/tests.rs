@@ -1,23 +1,22 @@
 //! # `app::status::decline::tests` — the worded decline's rules, asserted
 //! headlessly
 //!
-//! ★★ In its own file for R2 (no `.rs` over 1,500 lines) and for nothing else:
-//! [`super`] is one subject — a store, a retirement rule and one line in the
-//! status bar — and splitting the *code* along a seam it does not have would
-//! have been churn. A test module is the one part of a single-subject file that
-//! can leave without taking a seam with it, and `crate::app::actions::forms`
-//! and its `forms/` directory are the same arrangement in this crate already.
+//! In its own file because [`super`] is one subject — a store, a retirement
+//! rule and one line in the status bar — and splitting the *code* along a seam
+//! it does not have would be churn. A test module is the one part of a
+//! single-subject file that can leave without taking a seam with it, and
+//! `crate::app::actions::forms` and its `forms/` directory are the same
+//! arrangement in this crate already.
 //!
 //! Everything here reads [`super`]'s private items through `use super::*`,
-//! which is exactly what it did as an inline module; nothing changed about
-//! what these tests can see.
+//! exactly as an inline module does; the split changes nothing about what
+//! these tests can see.
 
-// ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
+// The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
 // file** rather than from its name, and without it every assertion message here
-// is reported as operator-facing copy — twelve of them, on the first run of
-// this split, and 28 the last time a test module was split under R2. The noise
-// is the actual hazard: it trains people to ignore the report.
+// is reported as operator-facing copy — dozens of lines of it. The noise is the
+// actual hazard: it trains people to ignore the report.
 #![cfg(test)]
 
 use super::*;
@@ -29,7 +28,7 @@ use egui::Context;
 // The retirement rule — pure, so every property is pinned without a window
 // =======================================================================
 
-/// ★ **A decline is retired by the state that produced it stopping being
+/// **A decline is retired by the state that produced it stopping being
 /// true**, and by nothing else.
 ///
 /// The full matrix, both directions on every variant. The "still true"
@@ -57,7 +56,7 @@ fn a_decline_lives_exactly_as_long_as_its_reason() {
     assert!(!Declined::CanvasNotDrawn.still_true(false, true, empty, false));
     assert!(!Declined::CanvasNotDrawn.still_true(true, true, empty, false));
 
-    // ★ A failed save survives every combination of the two facts, because
+    // A failed save survives every combination of the two facts, because
     // neither is about it: a folder that could not be written to does not
     // become writable because the operator selected something or because a
     // page finished drawing. It is retired by `retire` — the operator's
@@ -74,7 +73,7 @@ fn a_decline_lives_exactly_as_long_as_its_reason() {
         }
     }
 
-    // ★★★ An engine refusal survives every combination too — and for a
+    // An engine refusal survives every combination too — and for a
     // DIFFERENT reason from the one above, which is why it is asserted
     // separately rather than folded into the same loop.
     //
@@ -108,7 +107,7 @@ fn a_decline_lives_exactly_as_long_as_its_reason() {
     }
 }
 
-/// ★ **Each history decline is retired by ITS OWN stack filling, and by
+/// **Each history decline is retired by ITS OWN stack filling, and by
 /// the other's it is not.**
 ///
 /// The cross terms are the reason this is a separate test rather than four
@@ -164,7 +163,7 @@ fn a_history_decline_is_retired_by_its_own_stack() {
     }
 }
 
-/// ★ **Undo's and redo's declines are two sentences, recorded by name.**
+/// **Undo's and redo's declines are two sentences, recorded by name.**
 ///
 /// [`record_history_empty`] takes the value rather than a `bool`, and the
 /// property that buys is asserted here: pressing `Ctrl+Y` with an empty
@@ -194,7 +193,7 @@ fn the_two_history_declines_do_not_share_a_slot_or_a_sentence() {
     retire();
 }
 
-/// ★ **A failed save is recorded, survives a frame, and is retired by the
+/// **A failed save is recorded, survives a frame, and is retired by the
 /// operator's next command — so two failed saves are two events.**
 ///
 /// The store half of [`Declined::SaveFailed`], and the ordering is the
@@ -234,7 +233,7 @@ fn a_failed_save_is_recorded_and_retired_by_the_next_command() {
     retire();
 }
 
-/// ★ **A clamped framing zoom is not a decline.**
+/// **A clamped framing zoom is not a decline.**
 ///
 /// The one case this module is deliberately blind to. A region zoom past
 /// the page's raster ceiling still zooms, still centres what was asked
@@ -292,12 +291,12 @@ fn no_two_declines_share_a_sentence() {
         Declined::NothingToFrame,
         Declined::CanvasNotDrawn,
         Declined::SaveFailed,
-        // ★ The un-categorised engine refusal is the one most at risk of
+        // The un-categorised engine refusal is the one most at risk of
         // being written as a paraphrase of a neighbour, because it is the one
         // with the least to say — and a decline that reads like another
         // decline tells the operator the wrong thing happened.
         Declined::EditRefused,
-        // ★★ Five and six, 2026-09-15 (`OPERATOR_REQUESTS.md` O188). Not a
+        // The fifth and sixth entries (`OPERATOR_REQUESTS.md` O188). Not a
         // formality for these: their sentences are fetched by calls into
         // `text::arrange`, two modules away from every other entry here, so
         // nothing but this loop would notice one paraphrasing a neighbour. And
@@ -305,7 +304,7 @@ fn no_two_declines_share_a_sentence() {
         // all three answer *the thing you just tried did not happen*, and only
         // two of them are allowed to say why.
         //
-        // ★★★ **The pair is nearest of all to EACH OTHER**, and that is the
+        // **The pair is nearest of all to EACH OTHER**, and that is the
         // comparison this loop was extended for. They are two refusals of one
         // gesture, differing only in which line the file failed to state a
         // position for, and they end with the identical remedy clause. A later
@@ -327,7 +326,7 @@ fn no_two_declines_share_a_sentence() {
 // The store — recorded, retired, and repeatable
 // =======================================================================
 
-/// ★ **Two presses are two events**, and the second one registers.
+/// **Two presses are two events**, and the second one registers.
 ///
 /// This is the property an edit-epoch key **cannot** express, and the
 /// reason this module has a store of its own: a decline changes no
@@ -385,7 +384,7 @@ fn a_successful_zoom_takes_the_sentence_down_itself() {
 // The wiring — through the real dispatcher
 // =======================================================================
 
-/// ★ **The dispatcher words the decline, and the next command retires
+/// **The dispatcher words the decline, and the next command retires
 /// it.**
 ///
 /// Driven through `PdfcerApp::dispatch_command`, which is the same entry
@@ -406,13 +405,11 @@ fn a_successful_zoom_takes_the_sentence_down_itself() {
 ///    ordinary, unrelated verb — because the rule is "the operator's next
 ///    act", not "an act about zooming".
 ///
-///    ★ It was `view.zoom_in` until 2026-08-15, when that arm was deleted
-///    as one of the four `shell::commands::reach::UNREACHED_ARMS` — an arm
-///    for an id no token names. The assertion would still have passed,
-///    because `retire()` runs *above* the `match` and an unimplemented id
-///    reaches the catch-all — which is exactly why it was changed: a test
-///    whose subject is "any other **command**" must name one that exists,
-///    or it is quietly asserting something weaker than it says.
+///    `view.zoom_actual` rather than an id no token names: `retire()` runs
+///    *above* the `match`, so an unimplemented id reaches the catch-all and
+///    the assertion passes either way. A test whose subject is "any other
+///    **command**" must name one that exists, or it quietly asserts
+///    something weaker than it says.
 #[test]
 fn the_dispatcher_words_a_decline_and_the_next_command_retires_it() {
     let ctx = Context::default();
@@ -448,7 +445,7 @@ fn the_dispatcher_words_a_decline_and_the_next_command_retires_it() {
 // R128 — the height that must not move
 // =======================================================================
 
-/// ★ **A worded decline does not change the bar's height** — R128 for the
+/// **A worded decline does not change the bar's height** — R128 for the
 /// sentence a refused command puts there.
 ///
 /// # Why this needs its own test beside the edit-disclosure one
@@ -466,11 +463,11 @@ fn the_dispatcher_words_a_decline_and_the_next_command_retires_it() {
 ///
 /// # The three assertions, and why none of them is the obvious one
 ///
-/// 1. **A measurement happened at all** (`Some(_)`, never `None`) —
-///    `HANDOFF.md` §10's rule. `cargo test -p egui-shell` and `cargo test
-///    --workspace` compile `egui` with different features (no fonts vs
-///    `default_fonts`), so a layout assertion can be entirely vacuous
-///    under one of the two commands a developer runs.
+/// 1. **A measurement happened at all** (`Some(_)`, never `None`) — assert
+///    that the measurement HAPPENED, not only its value. `cargo test -p
+///    egui-shell` and `cargo test --workspace` compile `egui` with different
+///    features (no fonts vs `default_fonts`), so a layout assertion can be
+///    entirely vacuous under one of the two commands a developer runs.
 /// 2. **The sentence reached the painter** — more shapes with the decline
 ///    live than without it. Without this, assertion 3 is satisfied just as
 ///    well by a [`show`] that returned early and drew nothing, which is
@@ -538,22 +535,21 @@ fn a_worded_decline_does_not_change_the_bar_height() {
 }
 
 // =======================================================================
-// The clipboard's mode refusal — 2026-09-05, the driven sweep's finding A1
+// The clipboard's mode refusal
 // =======================================================================
 
-/// ★★★ **A cut or a paste the mode does not do reaches the `⊗` slot**, and
+/// **A cut or a paste the mode does not do reaches the `⊗` slot**, and
 /// the operator's next command takes it down.
 ///
-/// Both halves matter and the first is the one that closes the defect. Once
-/// `app::modes::capability::offers_command` stopped refusing the clipboard
-/// chords by tab, `app::dispatch::clipboard`'s two mode gates became the
-/// path an operator in Read or Review actually walks — and until this
-/// landed they were a bare `return` with a trace line. A chord refused at
-/// the gate at least traced `chord-not-offered`; a chord that reaches a
-/// dispatcher and returns traced nothing on any surface, which would have
-/// made the fix a quieter defect rather than a fix.
+/// Both halves matter and the first is the one that closes the defect.
+/// `app::modes::capability::offers_command` does not refuse the clipboard
+/// chords by tab, so `app::dispatch::clipboard`'s two mode gates are the path
+/// an operator in Read or Review actually walks. A chord refused at the gate
+/// at least traces `chord-not-offered`; a gate that is a bare `return` traces
+/// nothing on any surface, which is a quieter defect than the one it
+/// replaces.
 ///
-/// ★ Recorded through [`record_mode_refusal`] rather than by writing `LAST`
+/// Recorded through [`record_mode_refusal`] rather than by writing `LAST`
 /// directly, so this exercises the same function the dispatcher calls.
 #[test]
 fn a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired() {
@@ -566,7 +562,7 @@ fn a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired() {
         "a paste the mode does not do must be recorded, not merely traced"
     );
 
-    // ★ The store is a slot, not a queue: the operator who presses again
+    // The store is a slot, not a queue: the operator who presses again
     // before moving the selector must get the second press's sentence, and
     // an operand that changed under them must change the sentence with it.
     record_mode_refusal(ModeRefusal::PasteMarkup);
@@ -583,7 +579,7 @@ fn a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired() {
     assert_eq!(LAST.with_borrow(Clone::clone), None);
 }
 
-/// ★★ **The six mode refusals are six sentences, and none of them is any
+/// **The six mode refusals are six sentences, and none of them is any
 /// other decline's.**
 ///
 /// `no_two_declines_share_a_sentence` above makes this claim for four
@@ -624,17 +620,16 @@ fn a_mode_refusal_reads_like_no_other_decline() {
     }
 }
 
-/// ★★★ **The paste's mode gate reaches the bar, through the real
+/// **The paste's mode gate reaches the bar, through the real
 /// dispatcher** — the call site, not the recorder.
 ///
 /// `a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired` above
 /// proves the store works; it would pass unchanged on a build where
-/// `app::dispatch::clipboard` never called it, which is precisely the state
-/// that shipped until 2026-09-05. This drives `dispatch_command` for real,
-/// so deleting the `record_mode_refusal` call in that module fails **here**
-/// and names it.
+/// `app::dispatch::clipboard` never called it, which is a shippable state.
+/// This drives `dispatch_command` for real, so deleting the
+/// `record_mode_refusal` call in that module fails **here** and names it.
 ///
-/// ★ Read with an empty clipboard is the operand, and it is the cheapest
+/// Read with an empty clipboard is the operand, and it is the cheapest
 /// honest one: `dispatch::clipboard`'s paste gate sends an empty clipboard
 /// down the **markup** branch on purpose — *"the refusal an operator gets in
 /// Read is the mode's rather than 'nothing has been copied', which would be
@@ -642,7 +637,7 @@ fn a_mode_refusal_reads_like_no_other_decline() {
 /// and asserting the variant rather than merely `is_some()` is what catches a
 /// gate that refused for the wrong reason.
 ///
-/// ⚠ It does **not** cover the content branch, which needs a real clip on a
+/// It does **not** cover the content branch, which needs a real clip on a
 /// real OS clipboard. `a_paste_review_may_not_do_says_so` owns that, drives
 /// it in Review, and has not been run — said here so the gap is stated rather
 /// than implied by this test's confidence.
@@ -671,7 +666,7 @@ fn a_paste_the_mode_refuses_reaches_the_bar_through_the_dispatcher() {
 // O172 — the operator's own stamps, and the gap this file had all along
 // =======================================================================
 
-/// ★★★ **A compile-time tripwire: a new `Declined` variant cannot be added
+/// **A compile-time tripwire: a new `Declined` variant cannot be added
 /// without somebody reading this file.**
 ///
 /// # The gap it closes, which is this project's most-repeated defect shape
@@ -679,11 +674,10 @@ fn a_paste_the_mode_refuses_reaches_the_bar_through_the_dispatcher() {
 /// Two tests above — [`no_two_declines_share_a_sentence`] and
 /// [`a_mode_refusal_reads_like_no_other_decline`] — assert that declines do not
 /// read alike, and both do it against a **hand-written list**. Between them
-/// they name **five** of the enum's **thirty-two** variants (measured
-/// 2026-09-15). The other twenty-seven are invisible to the checks built to
-/// find exactly this, and the count still adds up: the tests pass, the suite
-/// grows, and a new decline that paraphrases an old one ships without a single
-/// thing going red.
+/// they name **six** of the enum's **thirty-three** variants. The other
+/// twenty-seven are invisible to the checks built to find exactly this, and
+/// the count still adds up: the tests pass, the suite grows, and a new decline
+/// that paraphrases an old one ships without a single thing going red.
 ///
 /// This function has no assertions and never runs. Its `match` has **no `_`
 /// arm**, so the compiler refuses the build the moment a variant is added, and
@@ -695,31 +689,24 @@ fn a_paste_the_mode_refuses_reaches_the_bar_through_the_dispatcher() {
 ///    a representative payload if it carries one.
 /// 2. Add its arm here.
 ///
-/// # ⚠ What this is NOT
+/// # What this is NOT
 ///
 /// It is not the census. The honest state, written down rather than implied:
-/// **five of thirty-two variants are compared for a distinct sentence**, plus
-/// the six clipboard-mode refusals against those five. Building the full
+/// **six of thirty-three variants are compared for a distinct sentence**, plus
+/// the six clipboard-mode refusals against those six. Building the full
 /// pairwise census needs one representative of each of the eight payload enums
 /// and would very likely surface a genuine collision or two — which is worth
-/// doing and is not worth doing inside O172's commit, because a collision is a
-/// **wording decision** and this file is not where wording decisions are made.
-/// Filed as its own job rather than left as an intention.
+/// doing, and is not done here because a collision is a **wording decision**
+/// and this file is not where wording decisions are made.
 ///
-/// # ★★★ Both of those counts were STALE when they were read, 2026-09-15
+/// # The counts above are a measurement, and measurements drift
 ///
-/// They said *four of twenty-nine* and *the other twenty-five* while the enum
-/// held **thirty-one** — so the paragraph written to stop a count drifting had
-/// itself drifted, in the two numbers that are the whole reason it is a
-/// measurement rather than a mood. Nothing could have caught it: prose has no
-/// compiler, and the tripwire below guards the **match**, not the sentence
-/// describing the match.
-///
-/// ⇒ Dated above, and the command that measures them is here so the next
-/// reader re-measures instead of trusting:
+/// Prose has no compiler, and the tripwire below guards the **match**, not the
+/// sentence describing the match — so a count in this paragraph can be wrong
+/// with nothing going red. Re-measure instead of trusting it:
 ///
 /// ```text
-/// awk 'NR>152' app/status/decline.rs \
+/// awk '/^pub\(crate\) enum Declined \{/,/^\}/' app/status/decline.rs \
 ///   | grep -cE '^    [A-Z][A-Za-z]*(\(|,| \{)'
 /// ```
 #[allow(dead_code)]
@@ -754,26 +741,19 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::EnterCannotSplit
         | Declined::ClipboardMode(_)
         | Declined::EditText(_)
-        // ★ These two are STRUCT variants, and they are why this tripwire
-        // earned its place before it had ever fired in anger: the first draft
-        // of the list above was built by a regular expression over the enum,
-        // and the regular expression matched `Name(` and `Name,` and missed
-        // both of these. The compiler found them in the first build. A
-        // hand-written list is wrong the day it is written, not later.
+        // These two are STRUCT variants, and they are why a compiler check
+        // beats a generated one: a regular expression over the enum that
+        // matches `Name(` and `Name,` misses both of them, and the compiler
+        // does not. A hand-written list is wrong the day it is written, not
+        // later.
         | Declined::ResizeNotRebuildable { .. }
         | Declined::ResizeFixedSizeMarker { .. }
-        // ★★★ The day this tripwire paid for itself, 2026-09-15. O188 added
-        // `TextRunCannotMoveAlone` in another file and the build broke HERE,
-        // which is the only place that would have made the author add it to
-        // the list above as well. Nothing else in the suite would have gone
-        // red, and the count would still have added up.
-        //
-        // ★★★ **And then it paid twice in one day.** Hours later the engine
-        // shipped the verb that made that variant's sentence false, it was
-        // replaced by the two below, and the build broke here a second time —
-        // which is what sent the author to the sentence-uniqueness loop above
-        // to add BOTH. A rename that the compiler waves through is how a
-        // completeness test quietly stops being complete.
+        // A variant added in another file breaks the build HERE, and here is
+        // the only place that makes the author add it to the uniqueness loop
+        // above as well. Nothing else in the suite goes red for it, and the
+        // count still adds up — which is also what happens when a variant is
+        // REPLACED rather than added. A rename the compiler waves through is
+        // how a completeness test quietly stops being complete.
         | Declined::TextRunHasNoPositionOfItsOwn
         | Declined::TextRunWouldDragTheNextLine => {}
     }
@@ -782,14 +762,14 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
 /// **The two custom-stamp declines are two sentences, and neither is the
 /// engine floor's** — `OPERATOR_REQUESTS.md` O172.
 ///
-/// ★ The comparison against [`Declined::EditRefused`] is the one that matters,
-/// because that floor is precisely what these two replace. Before this route
-/// existed, a stamp whose collection had moved reached the operator as *"that
-/// change was refused"* — true, and useless. If a later edit paraphrased the
-/// floor here, the feature would have been quietly undone while reading as
-/// though it were still there.
+/// The comparison against [`Declined::EditRefused`] is the one that matters,
+/// because that floor is what these two stand in front of: without them a
+/// stamp whose collection has moved reaches the operator as *"that change was
+/// refused"* — true, and useless. An edit that paraphrased the floor here
+/// would undo the feature while leaving it reading as though it were still
+/// there.
 ///
-/// ★ And against each other, because they are the pair most at risk: both are
+/// And against each other, because they are the pair most at risk: both are
 /// about a stamp that is not where it was, both end by telling him to reopen
 /// the window, and the whole reason there are two is that one means the FILE is
 /// gone and the other means the file was REWRITTEN.
@@ -822,7 +802,7 @@ fn the_custom_stamp_declines_say_two_different_things() {
 /// where `record_note` puts things, and where these two lived for an afternoon
 /// — would be a confident small lie.
 ///
-/// ★ Asserted on the CHANNEL rather than on the words. Checking that the string
+/// Asserted on the CHANNEL rather than on the words. Checking that the string
 /// avoids the phrase "last edit" would pass on a rewrite that said "your stamp
 /// was added but"; checking that the decline slot holds it proves it renders
 /// under `⊗`, which is the thing that is actually true.

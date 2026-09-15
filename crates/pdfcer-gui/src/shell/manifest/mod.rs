@@ -275,7 +275,7 @@ pub fn built_in() -> Shell {
         // THE LEFT RAIL — `OPERATOR_REQUESTS.md` O123 part 7 and O126.
         //
         // The permanent vertical strip down the left dock's outer edge: the
-        // five panel tabs, the navigate selectors, the selection controls and
+        // panel tabs, the navigate selectors, the selection controls and
         // rotate. `rail::groups` carries the list and the whole argument,
         // including the two things that differ deliberately from the approved
         // mockup (the lasso, and `edit.select_all`) and the ⚠ that putting
@@ -583,7 +583,7 @@ pub fn built_in() -> Shell {
     shell.menus = Some(super::menus::built_in());
 
     // -------------------------------------------------------------------
-    // THE COLLAPSE LADDER — S3 of `RIBBON_SCALING.md`.
+    // THE COLLAPSE LADDER — `RIBBON_SCALING.md` §3.2.
     //
     // Applied last, over the finished tab list, because a collapse
     // priority is a RANKING OF GROUPS AGAINST EACH OTHER and the only way

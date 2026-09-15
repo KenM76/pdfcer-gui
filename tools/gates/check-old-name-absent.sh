@@ -3,7 +3,7 @@
 # check-old-name-absent.sh — no `pdfce` survives except where it must.
 #
 # ═══════════════════════════════════════════════════════════════════════════
-# ★★★ WHY A GREP FOR THE OLD NAME CANNOT ANSWER THIS QUESTION
+# WHY A GREP FOR THE OLD NAME CANNOT ANSWER THIS QUESTION
 # ═══════════════════════════════════════════════════════════════════════════
 #
 # **`pdfcer` contains `pdfce`.** That one fact is what makes this rename unlike
@@ -15,7 +15,7 @@
 # — and the same hazard applies to the two other case forms, `PDFCE` (the
 # environment variables) and `Pdfce` (Rust type names).
 #
-# ⇒ This gate exists because the question is easy to ask WRONG and the wrong
+# This gate exists because the question is easy to ask WRONG and the wrong
 # answer is reassuring. It is the third instrument in this project written for a
 # question whose naive form returns a comfortable lie; `verb-coverage.py` and
 # `security-coverage.py` are the other two.
@@ -30,24 +30,24 @@
 #      correct exactly as written and BREAKS if it is renamed.
 #
 #   2. `pdfce_FeatureRequests` — the request-channel folder shared with the
-#      engine. Its note of 2026-09-03 says it stays "unchanged until you say
+#      engine. Its note says it stays "unchanged until you say
 #      otherwise", and both sides read it every session. Renaming one side of a
 #      shared folder is how a channel goes silent.
 #
-#   3. RETIRED 2026-09-03. `package = "pdfce-core"` and its two siblings, plus
-#      the one `is_pdfce_choice` call, were the temporary bridge to an engine
-#      that had not renamed yet. The engine's `Pass 247.1` landed the same day
-#      (`4db298d`, engine v0.28.0); the manifest now names `pdfcer-*` against
-#      `file:///D:/Dev/pdfcer` directly and the call site is
-#      `is_pdfcer_choice`. Both substrings are OUT of the allow-list below, so
-#      either one coming back is now a failure rather than an exemption.
+#   3. NOT exempt, and named here so that it stays that way: a
+#      `package = "pdfce-core"` shim and an `is_pdfce_choice` call site are
+#      what a bridge to a not-yet-renamed engine looks like. The manifest
+#      names `pdfcer-*` against `file:///D:/Dev/pdfcer` directly and the call
+#      site is `is_pdfcer_choice`, so both substrings are OUT of the
+#      allow-list below and either one coming back is a failure rather than an
+#      exemption.
 #
 #   4. `Cargo.lock` — Cargo's own record of what RESOLVED. It is generated
 #      rather than authored, and rewriting it would make it disagree with what
-#      Cargo actually fetched. ★ Since the engine's rename the lock no longer
-#      NEEDS this exemption for the engine crates — it names `pdfcer-*` — but it
-#      is kept because the lock also records transitive crates.io packages this
-#      project does not author and cannot rename.
+#      Cargo actually fetched. The lock does not need this exemption for the
+#      engine crates — it names `pdfcer-*` — but it is kept because the lock
+#      also records transitive crates.io packages this project does not author
+#      and cannot rename.
 #
 #   5. Any line carrying `old-name-exempt:` with a reason, or any FILE that
 #      carries `old-name-exempt-file:` with one.
@@ -56,12 +56,12 @@
 #      comment both do — and a blanket file exemption would take the whole
 #      file out of scope for the sake of one sentence.
 #
-#      ★ The marker is the idiom this project already uses for deliberate
+#      The marker is the idiom this project already uses for deliberate
 #      exceptions (`ui-text-exempt:`, `string-gap-exempt:`): the exception
 #      lives at the point of use, carries its reason, and is visible to the
 #      next reader of that line rather than buried in a list somewhere else.
 #
-# ★ Anything else is a miss, and the message names the file and the line.
+# Anything else is a miss, and the message names the file and the line.
 #
 # ═══════════════════════════════════════════════════════════════════════════
 # WHAT IT DOES NOT SCAN
@@ -73,7 +73,7 @@
 # name would be falsifying the record — and this gate reads the working tree,
 # which is the only thing a rename can legitimately touch.
 #
-# ★★★ `evidence/` — added 2026-09-06, and it is the SAME argument one step out.
+# `evidence/` is the SAME argument one step out.
 #
 # Those files are VERBATIM CAPTURES of what the program printed on a run: diag
 # traces, harness output, gate transcripts. They are the record this project
@@ -84,25 +84,22 @@
 # them prose about the project, none of them editable without lying about what
 # the program said.
 #
-# ⚠ **And the way this was found is worth more than the fix.** The gate uses
-# `git grep`, which scans TRACKED files. The same tree therefore gave two
-# different verdicts twenty minutes apart — clean while the evidence file was
-# untracked, red the moment a commit added it — and the red one arrived inside
-# `package-portable.py`'s pre-flight, after the release had been declared ready.
-# A gate whose input set changes at `git add` time cannot be trusted to have
-# measured what a commit will contain. That is the general lesson; excluding
-# `evidence/` is only this instance of it.
+# **The way that exclusion is reached matters more than the exclusion.** Plain
+# `git grep` scans TRACKED files, so one tree gives two different verdicts
+# minutes apart — clean while a file is untracked, red the moment a commit adds
+# it — and the red one arrives inside `package-portable.py`'s pre-flight, after
+# a release has been declared ready. A gate whose input set changes at
+# `git add` time cannot be trusted to have measured what a commit will contain.
+# That is the general lesson; excluding `evidence/` is only one instance of it.
 #
-# ★★★ **REPAIRED 2026-09-13, and the repair is `--untracked`.** The paragraph
-# above described this disease and did not cure it, and it recurred within the
-# day: a release pre-flight declared 41 of 41 gates green, the commit added
-# `DESIGNS.md` and `DOC_DRIFT.md`, and the SAME TREE went red inside
-# `package-portable.py` thirty minutes later — on two lines that had been sitting
-# in those files the whole time. Both `git grep` calls now pass `--untracked`, so
-# the scan covers every file that is not ignored and the verdict no longer
-# changes at `git add` time.
+# **Both `git grep` calls pass `--untracked`**, so the scan covers every file
+# that is not ignored and the verdict does not change at `git add` time. Naming
+# the disease in a paragraph does not cure it: without the flag, a pre-flight
+# declares every gate green, a commit adds two documents, and the SAME TREE
+# goes red half an hour later on lines that were sitting in those files the
+# whole time.
 #
-# ⚠ The general shape, and it is worth more than this gate: **a check whose
+# The general shape, and it is worth more than this gate: **a check whose
 # INPUT SET is derived from git state measures the index, not the working tree.**
 # Every gate in this directory that reaches for `git grep` or `git ls-files` has
 # the same hole, and the symptom is always the same — green before the commit,
@@ -110,28 +107,27 @@
 # release pre-flight is being asked a question about what the commit WILL
 # contain, and the index is the wrong place to look for that answer.
 #
-# ★ A per-line `old-name-exempt:` marker was the obvious alternative and is
+# A per-line `old-name-exempt:` marker is the obvious alternative and is
 # wrong here: these files are REGENERATED by every run, so the markers would be
 # destroyed and the gate would go red again on the next capture — a fix that
 # un-fixes itself is worse than none.
 
 set -uo pipefail
 
-# ★★★ `LC_ALL=C`, and its absence made this gate REPORT CLEAN WHILE BROKEN.
+# `LC_ALL=C`, and its absence makes this gate REPORT CLEAN WHILE BROKEN.
 #
 # On this machine GNU grep refuses `-P` outside a unibyte or UTF-8 locale:
 #
 #     grep: -P supports only unibyte and UTF-8 locales
 #
-# It writes that to stderr, exits non-zero, produces NO output — and the
-# `|| true` below turned that into an empty `HITS`, which reads exactly like
-# "nothing survived". The gate printed `clean` on its very first run while
-# having examined nothing at all.
+# It writes that to stderr, exits non-zero and produces NO output — and an
+# unguarded `|| true` below turns that into an empty `HITS`, which reads
+# exactly like "nothing survived". The gate then prints `clean` while having
+# examined nothing at all.
 #
-# ⇒ A check that cannot fail is not evidence, and this one was written FOR that
-# class. The failure arriving inside its own author is the argument for the
-# falsification below: every gate here is proved able to go red before it is
-# believed, and this one now is.
+# **A check that cannot fail is not evidence**, and this gate was written for
+# exactly that class of question, so it has to be held to it: every gate here
+# is proved able to go red before it is believed.
 export LC_ALL=C
 
 # The three case forms, each with the lookahead that makes the question honest.
@@ -140,22 +136,21 @@ PATTERN='pdfce(?!r)|PDFCE(?!R)|Pdfce(?!r)'
 # Lines that are allowed to carry a surviving occurrence. Anchored on the
 # substrings above rather than on filenames, so moving a file cannot silently
 # widen the exemption.
-# ★ `engine-api-snapshot.txt` is the API-drift gate's GENERATED record of the
+# `engine-api-snapshot.txt` is the API-drift gate's GENERATED record of the
 # ENGINE's public names (`--update` rewrites it), exempt for `Cargo.lock`'s
-# reason: it records what another crate calls things. 2026-09-09: the engine
-# shipped a field literally named `appearance_was_pdfces`; a per-line marker
-# would be destroyed by the next `--update`. (old-name-exempt: names the field)
+# reason: it records what another crate calls things. The engine ships a field
+# literally named `appearance_was_pdfces`, and a per-line marker on it would be
+# destroyed by the next `--update`. (old-name-exempt: names the field)
 ALLOWED='Dev\\pdfce\\crates\\pdfce-gui|pdfce_FeatureRequests|^Cargo\.lock:|^tools/gates/engine-api-snapshot\.txt:|old-name-exempt:'
 
-# ★★★ THE SCAN'S OWN EXIT STATUS IS CHECKED, and that is the whole lesson of
-# this gate's first run.
+# THE SCAN'S OWN EXIT STATUS IS CHECKED.
 #
 # `git grep` exits 0 when it matched, 1 when it did not, and >1 on an ERROR.
-# Collapsing the last two — which `|| true` does, and which the first version of
-# this file did — makes a broken scan indistinguishable from a clean tree. It
-# printed `clean` while having examined nothing.
+# Collapsing the last two — which `|| true` does — makes a broken scan
+# indistinguishable from a clean tree: it prints `clean` while having examined
+# nothing.
 #
-# ★ The ALLOWED filter uses `grep -E`, not `-P`: it is a plain alternation with
+# The ALLOWED filter uses `grep -E`, not `-P`: it is a plain alternation with
 # no lookahead, and plain `grep -P` is unavailable on this machine ("supports
 # only unibyte and UTF-8 locales"). Only the PATTERN needs PCRE, and `git grep`
 # carries its own PCRE, which works.
@@ -170,7 +165,7 @@ if [[ "$STATUS" -gt 1 ]]; then
     exit 1
 fi
 
-# ★★ A FILE may exempt ITSELF, by carrying `old-name-exempt-file:` and a reason
+# A FILE may exempt ITSELF, by carrying `old-name-exempt-file:` and a reason
 # in its own text. Two memory files and this gate's siblings are *about* the
 # rename, so their subject is the old name and marking 25 individual lines would
 # bury the prose in machinery.

@@ -6,7 +6,7 @@
 //! A ribbon is mostly icons. An icon-only button has no text for an
 //! assistive technology to read, so unless something else is published,
 //! the control announces as *"button"* — which is true, useless, and
-//! indistinguishable from the eleven other buttons beside it.
+//! indistinguishable from every other button beside it.
 //!
 //! The information already exists: the control has a **tooltip**, written
 //! by the application for exactly the purpose of saying what the glyph
@@ -29,7 +29,7 @@
 //! There is no case in which the accessible name is empty, which
 //! `an_accessible_name_is_never_empty` pins.
 //!
-//! # ★ A known ceiling: `egui` 0.35 has no tab `WidgetType`
+//! # A known ceiling: `egui` 0.35 has no tab `WidgetType`
 //!
 //! `egui::WidgetType` in 0.35 is:
 //!
@@ -183,7 +183,7 @@ mod tests {
         }
     }
 
-    /// **★ An icon-only control announces its tooltip.**
+    /// **An icon-only control announces its tooltip.**
     ///
     /// The whole point of the module. Without this, every icon in the
     /// ribbon announces as "button" and the ribbon is unusable by anyone

@@ -1,55 +1,29 @@
 //! The band — the row of captioned groups beneath the active tab.
 //!
-//! # ★ The one closure every group goes through
+//! # One closure draws every group
 //!
-//! This module's central design decision is that `captioned_group` is
-//! the **only** function in this crate that draws a ribbon group, and
-//! that it emits the caption itself, after the body, with no branch that
-//! can skip it.
-//!
-//! That is not defensive style. It is a fix for a defect that actually
-//! shipped, recorded in the salvage source's own doc comment
-//! (`D:\Dev\pdfce\crates\pdfce-gui\src\ribbon_ui.rs`):
-//!
-//! > Two sites previously bypassed the predicate and therefore drew no
-//! > caption at all: `LayoutReset` used a bare `tab.shows(..)`, and
-//! > `Show` and `Panels` shared one `shows(A) || shows(B)` block. Both
-//! > were visible in the 2026-08-08 capture as unlabelled floating
-//! > controls.
-//!
-//! Two caption-less groups shipped. They were found by a **screenshot**,
-//! not by a test, and the reason is instructive: nothing was wrong. Each
-//! site compiled, each drew its controls, each passed every test the
-//! project had. The rule "a group has a caption" lived in a convention
-//! that two call sites happened not to follow.
-//!
-//! The predecessor's fix was to make the caption a *consequence of
-//! drawing the group* rather than a separate statement — the body is
-//! handed in as a closure, so there is no code path that shows a group
-//! without captioning it. That shape is carried across here, and
-//! strengthened in three ways:
+//! [`captioned_group`] is the only function in this crate that draws a ribbon
+//! group, and it emits the caption itself, after the body, with no branch that
+//! can skip it. The body is handed in as a closure, so a caption is a
+//! *consequence of drawing a group* rather than a convention a call site can
+//! forget. Three things strengthen that:
 //!
 //! 1. **The caption is never empty.** The manifest's caption is
 //!    `Option<String>` because a *layer* may omit it (see
-//!    [`crate::manifest`]); `caption_text` falls back to the group's
-//!    **id**, which is never empty in a well-formed manifest. So even an
-//!    unvalidated manifest cannot produce a bare band — it produces an
-//!    ugly caption that names the group that needs fixing.
-//! 2. **Overflowed groups go through the same closure.** A group that
-//!    moved into the "⏷ N more" menu is still a group and still gets its
-//!    caption. Routing the menu through a second, simpler drawing path is
-//!    exactly how the two shipped defects happened.
-//! 3. **The counts are returned and asserted.** `BandOutcome` carries
-//!    `groups_rendered` and `captions_emitted`; they are `debug_assert`ed
-//!    equal at the end of every band, and
-//!    `every_rendered_group_emits_a_caption` asserts it in release too,
-//!    against a manifest that deliberately includes a caption-less group.
+//!    [`crate::manifest`]); `caption_text` falls back to the group's **id**,
+//!    so an unvalidated manifest gets an ugly caption naming the group that
+//!    needs fixing rather than a bare band.
+//! 2. **A collapsed group's popup goes through the same closure.** A second,
+//!    simpler drawing path for a popup is how a group ends up unlabelled.
+//! 3. **The counts are returned and asserted.** [`BandOutcome`] carries
+//!    `groups_rendered` and `captions_emitted`, `debug_assert`ed equal at the
+//!    end of every band and asserted in release by
+//!    `every_rendered_group_emits_a_caption`.
 //!
-//! # ★ Two rows, and a height that does not depend on the tab
+//! # A height that does not depend on the tab
 //!
-//! A band is **[`plan::GROUP_ROWS`] control rows tall on every tab**, and a
-//! group whose controls are wider than [`plan::GROUP_WRAP_WIDTH`] wraps onto
-//! the second row rather than running on. Both halves are
+//! The band is [`plan::GROUP_ROWS`] control rows tall on every tab and a group
+//! wider than [`plan::GROUP_WRAP_WIDTH`] wraps rather than running on. Both are
 //! `mockups/ribbon.html`'s:
 //!
 //! ```css
@@ -59,116 +33,69 @@
 //! .gcmds { display:flex; flex-wrap:wrap; gap:5px; align-items:flex-start; max-width:440px }
 //! ```
 //!
-//! Three properties, and this module now has all three. `.gcmds` **wraps**
-//! ([`plan::wrap_group`] decides where). The band has a **fixed height**
-//! ([`band_height`]) rather than being as tall as its content. The group is a
-//! **column with the caption pinned to the bottom** — `justify-content:
-//! space-between` — which is what [`captioned_group`]'s `rows_height`
-//! argument buys: every caption in the band sits on one baseline, whether
-//! the group above it used one row or two.
+//! The group is a column with its caption pinned to the bottom —
+//! `justify-content: space-between` — which is what [`captioned_group`]'s
+//! `box_` argument buys: every caption sits on one baseline whatever its
+//! group's row count.
 //!
-//! # ★ The two paddings, and the one that was free
+//! **Why the height is fixed:** `PROJECT_PLAN.md`'s **R128**. A content-driven
+//! height adjacent to a fit-to-viewport zoom is a feedback loop — measured at
+//! 230 % → 224 % → 215 % zoom drift — and the ribbon sits directly above the
+//! canvas, so a band that were one row tall on File and two on Markup would
+//! move the canvas on every tab click. The height therefore comes from the
+//! theme and the font and nothing else: not from how many rows the widest
+//! group needed, not from how many groups fitted, not from whether an
+//! affordance is showing. [`render_band`] reserves it before it draws, even
+//! when no group is on screen at all;
+//! `the_band_is_the_same_height_on_every_tab` asserts it.
 //!
-//! Both are in the CSS above and neither was drawn until 2026-08-14. They are
-//! not the same kind of change and it is worth being explicit about which is
-//! which, because one of them cost nothing and the other one moves the
-//! canvas.
+//! A [`crate::theme::Preset`] change *does* move the band, through
+//! `control_height` — global and one-off, not something a tab click can cause,
+//! which is the distinction R128 is about.
 //!
-//! **`.group { padding: 0 13px }` — free.** [`plan::GROUP_PADDING`] has
-//! budgeted 6 pt per side in [`plan::group_width`] since the day the planner
-//! was written, and its own doc comment recorded that the renderer never drew
-//! it. The band was therefore reserving the space and then spending it as an
-//! accidental margin *outside* the group boundary: measured in the running
-//! application at 1,100 pt, the Markup tab's Text-markup group box began at
-//! x = 322.5 and its first control began at 322.5 as well. Controls sat flush
-//! against the group edge and against the rule dividing them from the next
-//! group. [`captioned_group`] now insets its body by that same constant, so
-//! **no group's planned width changed and no group moved into the overflow
-//! menu** — the arithmetic was always right and only the ink was wrong. See
-//! [`plan::GROUP_PADDING`] for why 6 pt is the mockup's 13 px rather than a
+//! **The two paddings.** `.group { padding: 0 13px }` is free:
+//! [`plan::GROUP_PADDING`] is already budgeted by [`plan::group_width`] and
+//! [`captioned_group`] insets its body by that same constant, so the ink
+//! matches the arithmetic. (6 pt is the mockup's 13 px rather than a
 //! disagreement with it: the mockup's divider is a zero-width `border-right`
 //! and this build's is a real `ui.separator()`, so 6 + 14 + 6 lands on the
-//! mockup's 26 px from the other direction.
+//! mockup's 26 px from the other direction.) `.band { padding: … 4px }` is not
+//! free and R128 governs it: [`BAND_PADDING_BOTTOM`] is added to
+//! [`band_height`]'s **derivation** rather than falling out of what a group
+//! drew.
 //!
-//! **`.band { padding: … 4px }` — not free, and R128 governs it.**
-//! [`BAND_PADDING_BOTTOM`] is a real four points of extra ribbon, and the
-//! ribbon sits directly above the canvas, so it is added to [`band_height`]'s
-//! **derivation** rather than being allowed to fall out of what a group drew.
-//! The height stays a function of the theme, the font and two constants; it
-//! is still identical on every tab, still identical when every group is in
-//! the overflow menu, and `the_band_is_the_same_height_on_every_tab` and
-//! `the_band_keeps_its_height_at_widths_where_every_group_overflows` still
-//! say so.
+//! # Why the caption is beneath the controls, centred
 //!
-//! ## Why the height is fixed, which is the part that is not taste
+//! An inline caption —
 //!
-//! `PROJECT_PLAN.md`'s **R128**. A content-driven height adjacent to a
-//! fit-to-viewport zoom is a feedback loop — measured at 230 % → 224 % →
-//! 215 % zoom drift — and the ribbon sits in the top panel directly above
-//! the canvas. A band that were one row tall on File and two on Markup
-//! would therefore change the canvas's rectangle on **every tab click**,
-//! and a fit-to-page zoom would chase it.
+//! ```text
+//! File [Open…] [Save a copy…] Document [Properties] Clipboard [Copy…] …
+//! ```
 //!
-//! So the height is computed from the theme and the font and **nothing
-//! else**: not from how many rows this tab's widest group happened to need,
-//! not from how many groups fitted, not from whether the overflow
-//! affordance is showing. [`render_band`] reserves it before it draws, and
-//! reserves it even when the plan puts *every* group in the menu — which is
-//! the case a height derived from drawn content would silently get wrong.
-//! `the_band_is_the_same_height_on_every_tab` asserts it, and asserts that
-//! the measurement happened rather than that it was vacuously absent.
+//! — is a toolbar with extra words in it: the captions read as more small
+//! controls and the grouping is invisible. A labelled block of related controls
+//! is the one structural cue a ribbon has.
 //!
-//! Note what is *not* claimed: a [`crate::theme::Preset`] change does move
-//! the band, through `control_height`. That is a deliberate, global, one-off
-//! event and not something a tab click can cause, which is the distinction
-//! R128 is actually about.
-//!
-//! # Why the caption is *beneath* the controls, centred
-//!
-//! Also carried from the salvage source, whose comment records what the
-//! alternative looked like when captured from the running application:
-//!
-//! > ```text
-//! > File [Open…] [Save a copy…] Document [Properties] Clipboard [Copy…] …
-//! > ```
-//! >
-//! > — a ~26 px strip in which the captions read as just more small
-//! > controls and **the grouping is invisible**.
-//!
-//! An inline caption is not a smaller version of a ribbon; it is a
-//! toolbar with some extra words in it. The one structural cue a ribbon
-//! has is a labelled block of related controls, and putting the label
-//! beside the block instead of under it removes that cue entirely.
-//!
-//! Centring needs the row's measured width, which in immediate mode
-//! exists only *after* the row is emitted — hence measure-then-allocate
-//! rather than a `vertical_centered` wrapper, which would justify to the
-//! whole remaining band and scatter the captions across the window.
+//! Centring needs the row's measured width, which in immediate mode exists only
+//! *after* the row is emitted — hence measure-then-allocate rather than a
+//! `vertical_centered` wrapper, which would justify to the whole remaining band
+//! and scatter the captions across the window.
 //!
 //! # Overflow
 //!
-//! The arithmetic lives in [`super::plan`], which explains at length why
-//! it is a separate pure module. What happens here is the second half of
-//! the enforcement: the overflow control's rectangle is computed **from
-//! the band's right edge, before any group is drawn**, and the groups are
-//! given a child `Ui` whose `max_rect` stops where that reservation
-//! begins. Nothing the group loop does can reach it, because the group
-//! loop is not laying out in that space.
+//! The arithmetic is [`super::plan`]'s. The enforcement is here: the
+//! affordance's rectangle is computed **from the band's right edge, before any
+//! group is drawn**, and the groups get a child `Ui` whose `max_rect` stops
+//! where that reservation begins.
 //!
-//! ## ★ "The band's right edge" is not `available_rect_before_wrap()`
+//! ## "The band's right edge" is not `available_rect_before_wrap()`
 //!
-//! That sentence hid a defect for the whole of this module's life, and it
-//! is worth spelling out because the wrong version reads perfectly.
-//!
-//! `egui`'s `Region::expand_to_include_rect` grows a `Ui`'s **`max_rect`**,
-//! not only its `min_rect`, whenever a child widget lays out beyond it.
-//! The ribbon draws the tab-strip row *before* the band, in the same
-//! vertical `Ui`. When the QAT, the tabs and the mode selector do not fit
-//! — which is the entire situation the overflow machinery exists for —
-//! that row overflows, the enclosing vertical `Ui`'s `max_rect` silently
-//! grows to contain it, and the band that is drawn next asks
-//! `available_rect_before_wrap()` and is told it has a width the window
-//! never had. Observed, at a 180 pt viewport with real font metrics:
+//! `egui`'s `Region::expand_to_include_rect` grows a `Ui`'s **`max_rect`**, not
+//! only its `min_rect`, whenever a child lays out beyond it. The ribbon draws
+//! the tab-strip row *before* the band in the same vertical `Ui`, so when that
+//! row overflows — the entire situation this machinery exists for — the
+//! enclosing `max_rect` silently grows and the band is told it has a width the
+//! window never had. At a 180 pt viewport with real font metrics:
 //!
 //! ```text
 //! screen   [   0.0 ..  180.0 ]
@@ -176,30 +103,24 @@
 //! overflow [ 192.7 ..  258.1 ]   ← reserved from a right edge off-screen
 //! ```
 //!
-//! The reservation arithmetic was correct and the affordance was still
-//! unreachable: failure mode #8, arrived at through a `Ui` that lied about
-//! its width rather than through an ordering mistake. With no font data
-//! installed the row always fitted, so no test could see it.
+//! Correct reservation arithmetic, unreachable affordance: failure mode #8
+//! through a `Ui` that lies about its width. With no font data installed the
+//! row always fits, so no unit test sees it.
 //!
-//! The fix is [`entitled_bounds`]: the band lays out inside the rectangle the
-//! ribbon was **handed**, intersected with what is actually on screen
-//! (`clip_rect`), and never inside whatever a sibling's overflow grew the
-//! parent to. `render_band` takes that rectangle as an argument rather
-//! than deriving it, because the only `Ui` that knows it is the one the
-//! application passed to [`super::Ribbon::render`], before anything was
-//! drawn into it.
+//! [`entitled_bounds`] is the answer — the band lays out inside the rectangle
+//! the ribbon was **handed**, intersected with `clip_rect`, never inside
+//! whatever a sibling grew the parent to. `render_band` takes that rectangle as
+//! an argument because the only `Ui` that knows it is the one handed to
+//! [`super::Ribbon::render`] before anything was drawn into it.
 //!
 //! ## When the band is narrower than the affordance itself
 //!
-//! Something has to give, and #8 dictates what: not the affordance. The
-//! rectangle is clamped into the band (`left = max(band.left, band.right −
-//! reserved)`), so the control is always fully on screen and always
-//! hit-testable; what gives instead is its **label**, which truncates.
-//! And it is disclosed — `ribbon-overflow-affordance-clamped` — because a
-//! control silently rendering at less than the size it asked for is
-//! exactly the kind of degradation that is invisible until somebody
-//! screenshots it.
-
+//! Something gives, and #8 dictates what: not the affordance. The rectangle is
+//! clamped into the band (`left = max(band.left, band.right − reserved)`), so
+//! the control is always fully on screen and hit-testable; what gives is its
+//! **label**, which truncates. Disclosed as
+//! `ribbon-overflow-affordance-clamped`, because a control silently rendering
+//! smaller than it asked for is invisible until somebody screenshots it.
 use egui::{Align, Layout, Rect, RichText, TextStyle, UiBuilder, pos2, vec2};
 
 use crate::manifest::{Group, Item, ItemSize};

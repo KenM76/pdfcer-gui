@@ -18,9 +18,8 @@
 //! instant the selection does. Nothing here is keyed on a property of the
 //! **content** — not "this text was OCRed", not "this bound is approximate",
 //! not "this font was substituted". Those are inferences, they owe an
-//! off-canvas report, and `panels`' own header records where the old shell's
-//! dashed-outline version of one of them used to live and where its
-//! replacement now is (a sentence in the Properties panel).
+//! off-canvas report, and `panels`' own header records where that report goes:
+//! a sentence in the Properties panel, never a dashed outline on the page.
 //!
 //! The one-line test, from the same source: *would a screenshot of the
 //! editing canvas differ from a screenshot of the same document saved and
@@ -36,24 +35,22 @@
 //! measured once in this project: a control that was present, opaque,
 //! correctly sized and invisible in a capture.
 //!
-//! ★★★ **They used to be read from `visuals.selection.stroke` and
-//! `visuals.selection.bg_fill`, and that was the wrong address** —
-//! `REVIEW_TRIAGE.md` defect **T2**, fixed 2026-09-04. `egui::Visuals::selection`
-//! is `egui`'s channel for styling **selected widgets**, not a canvas role, and
-//! for as long as this theme handed it to the canvas every selected chrome
-//! control in the application — nineteen `selectable_label` and
-//! `Button::selected` sites — was painted with the colours on this page.
-//! Measured luminance gap in the Dark preset: **72.5**, against a floor of 90.
+//! ★★★ **Never `visuals.selection.stroke` or `visuals.selection.bg_fill`.**
+//! `egui::Visuals::selection` is `egui`'s channel for styling **selected
+//! widgets**, not a canvas role. Point it at the canvas and every selected
+//! chrome control in the application — nineteen `selectable_label` and
+//! `Button::selected` sites — is painted with the colours on this page: a
+//! measured luminance gap of **72.5** in the Dark preset, against a floor of 90.
 //!
-//! The values are unchanged; only their address is. That is the whole lesson
-//! and it is this project's standing one: *a correctly-sourced value used for
-//! the wrong role passes every gate — expose the pair behind a purpose-named
-//! function.* `tools/gates/check-selection-channel.sh` now fails the build for
-//! any file outside the theme module that reads the widget channel.
+//! The two addresses carry the same values; only the role name differs, and that
+//! is the point. The standing lesson is *a correctly-sourced value used for the
+//! wrong role passes every gate — expose the pair behind a purpose-named
+//! function.* `tools/gates/check-selection-channel.sh` fails the build for any
+//! file outside the theme module that reads the widget channel.
 //!
 //! ## Why the outline is grown before it is drawn
 //!
-//! [`visible_outline_rect`], salvaged with its reasoning. A horizontal rule
+//! [`visible_outline_rect`], and the reason is legibility. A horizontal rule
 //! has a real, finite page bbox that is **exactly zero high**; it hit-tests,
 //! selects and lists correctly, and its outline puts nothing on the screen.
 //! The operator's click was right, the selection state was right, and the
@@ -66,12 +63,11 @@ use crate::canvas::handles;
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::selection::SelectionState;
 
-/// The anchor marks and the Bézier handles — split out under R2 on 2026-08-31.
+/// The anchor marks and the Bézier handles.
 ///
-/// ★ Re-exported below rather than left behind a module path, so every
-/// existing `overlay::ANCHOR_PX` / `overlay::draw_anchors` call site keeps its
-/// spelling. Nothing moved but its address, which is the property that makes
-/// an R2 split reviewable.
+/// ★ Re-exported below rather than left behind a module path, so every call site
+/// writes `overlay::ANCHOR_PX` / `overlay::draw_anchors` and nothing outside
+/// `canvas/` learns that the anchors have a file of their own.
 pub mod anchors;
 
 pub use anchors::{
@@ -86,10 +82,10 @@ pub use anchors::{
 /// extent so a hairline is still grabbable, and a check aiming at the un-widened
 /// rect would miss the grips on exactly the objects that needed the widening.
 ///
-/// ★★ It stayed in the parent when the anchors were split out on 2026-08-31,
-/// because it names the OUTLINE and the grips — `overlay`'s subject — and not
-/// the points. Three call sites publish it: the annotation branch, the content
-/// grip box, and `canvas::forms`' widget box.
+/// ★★ It lives in the parent rather than in [`anchors`] because it names the
+/// OUTLINE and the grips — `overlay`'s subject — and not the points. Three call
+/// sites publish it: the annotation branch, the content grip box, and
+/// `canvas::forms`' widget box.
 pub const SELECTION_OUTLINE_REGION: &str = "canvas.selection-outline"; // ui-text-exempt: trace region name, never displayed
 
 /// The minimum on-screen extent, in egui logical points, that a selection
@@ -181,34 +177,27 @@ pub fn grip_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rec
 /// returned, and the rect published for a driven check to aim at is the
 /// content one. Widening it would change what those two mean.
 ///
-/// ⚠ **This paragraph said "the published `canvas-grip-box` rect" until
-/// 2026-09-08, and there is no such region.** The grip box goes out under
-/// [`SELECTION_OUTLINE_REGION`], deliberately, per the note at that call site.
-/// The name was invented while the sentence was being written and would have
-/// sent the next reader hunting a trace line that has never existed — found
-/// the same hour, by a driven run that went looking for it.
+/// ⚠ There is no `canvas-grip-box` trace region. The grip box is published
+/// under [`SELECTION_OUTLINE_REGION`], deliberately, for the reason recorded at
+/// that call site.
 ///
 /// This answers a different question — *"what rectangle is the operator
 /// dragging?"* — and for a markup annotation that is its `/Rect`, which lives
 /// on [`crate::canvas::selection::AnnotSelection`] and not in
 /// `SelectionState::outlines`.
 ///
-/// # ★★ The defect it closes, `OPERATOR_REQUESTS.md` O154
+/// # ★★ What it prevents — `OPERATOR_REQUESTS.md` O154
 ///
 /// > *"the Markup Items don't have a live preview — the bounding box stays the
 /// > same size when I drag the handles."*
 ///
-/// It was exactly that: [`draw_resize_ghost`] iterated `selection.outlines()`,
-/// which is **empty** when only an annotation is selected, so the loop drew
-/// nothing — and one level up, the `grip_box` guard beside it answered `None`
-/// for the same reason, so the ghost was not even reached.
-///
-/// ⇒ **`draw_move_ghost` already had the annotation arm and its sibling did
-/// not.** Two functions split apart for a good reason (a move is one
-/// displacement, a resize is a map) and only one of them was taught the second
-/// kind of selection. The operator's own reading of it is the right one: this
-/// is not a per-kind cost that a canvas has to pay, it is one of the two
-/// siblings having been left behind.
+/// `selection.outlines()` is **empty** behind an annotation selection, so a
+/// ghost measured against `grip_box` draws nothing at all and the `None` that
+/// guard returns stops the ghost being reached in the first place. Every ghost
+/// therefore measures against **this** function. The ghosts are separate
+/// functions for a good reason — a move is one displacement, a resize is a map
+/// — and that split is exactly what lets one of them quietly miss a kind of
+/// selection the other handles, so the box they share is stated once, here.
 #[must_use]
 pub fn ghost_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rect> {
     if let Some(annot) = selection.annot() {
@@ -236,21 +225,18 @@ const GHOST_ALPHA: u8 = 150;
 
 /// Paint the selection: one outline per entry, plus the grips.
 ///
-/// # The move ghost lives next door, and why it came back
+/// # The ghosts live next door
 ///
-/// A first draft of this function drew a translucent copy of the outline
-/// offset by an in-flight move drag, and it was removed before it shipped:
-/// `pdfcer-core` has no resize verb, the move drag was not wired to one either,
-/// and *"a pre-commit affordance that describes something which does not
-/// happen is not an affordance, it is a lie with a low alpha. It returns in
-/// the same change as the verb."*
+/// [`draw_move_ghost`], [`draw_resize_ghost`] and [`draw_rotate_ghost`] are
+/// separate functions, and each is offered only once the matching eligibility
+/// check — [`crate::canvas::moving::eligible`] for a move,
+/// `canvas::resizing::action` for a grip drag — has established that the
+/// release will reach a real verb on real operands.
 ///
-/// This is that change. [`draw_move_ghost`] is the ghost, and the condition
-/// under which it may be drawn is exactly the one that note demanded: only
-/// when [`crate::canvas::moving::eligible`] has already established that the
-/// release will reach a real verb on real operands. **Resize is still not
-/// wired**, and the grips still commit nothing — there is no scale verb — so
-/// no ghost is offered for a grip drag either.
+/// ★★★ That condition is the rule, and it outlives any one gesture: **a
+/// pre-commit affordance that describes something which does not happen is not
+/// an affordance, it is a lie at a low alpha.** A ghost ships in the same change
+/// as the verb it previews, never ahead of it.
 pub fn draw_selection(
     painter: &Painter,
     visuals: &Visuals,
@@ -276,23 +262,11 @@ pub fn draw_selection(
     // finds interesting. What is selected is said in words, off-canvas, where
     // rule 4 puts every other disclosure.
     //
-    // No grips. Grips promise a resize, and `set_markup_style` deliberately
-    // does **not** include move or resize — the engine left them out of the
-    // first slice by name. Drawing eight handles around a stamp that cannot be
-    // resized is the "visible control, silently inert" failure this project
-    // keeps finding, in its most literal form.
     // ★★★ The grips around a selected annotation, painted here so the predicate
     // that paints them is the one that hit-tests them (H7).
     //
-    // ★★★ **`offer` IS THAT PREDICATE, AND IT IS NOW PASSED IN RATHER THAN
-    // RE-DERIVED HERE — 2026-08-28.**
-    //
-    // Until this change the condition below was written out locally: *"draw the
-    // eight if the kind is `Markup` and it is not locked"*, which happened to
-    // agree with what `pressing::grabbable` decided, in a second place, in
-    // different words. That was survivable while every annotation offered the
-    // same set. It stopped being survivable the moment three annotation kinds
-    // offered three different sets:
+    // ★★★ **`offer` IS THAT PREDICATE, AND IT IS PASSED IN RATHER THAN
+    // RE-DERIVED HERE.** Three annotation kinds offer three different sets:
     //
     // | selected | painted | hit-tested |
     // |---|---|---|
@@ -300,14 +274,12 @@ pub fn draw_selection(
     // | ce dimension | the circle **only** | `GripSet::rotate_only()` |
     // | form field | eight squares only | `GripSet::scale_only()` |
     //
-    // A local re-derivation of that table would be a second copy of it, and the
-    // day the two copies disagree the symptom is either a handle nobody can
-    // grab or — worse — an invisible target that steals the press aimed at what
-    // is under it. `handles::GripSet`'s own header records the 2026-08-20
-    // incident that made this rule: a dimension's vertex handles were painted
-    // from the selection and hit-tested behind a capability the mode did not
-    // have, so they were visible and untouchable in the very mode that authors
-    // dimensions.
+    // Spelling that table out locally would be a second copy of it, and the day
+    // two copies disagree the symptom is either a handle nobody can grab or —
+    // worse — an invisible target that steals the press aimed at what is under
+    // it. A handle painted from the selection but hit-tested behind a
+    // capability the mode does not have is visible and untouchable in exactly
+    // the mode that needs it.
     //
     // ⇒ One value, one decision, two consumers. `canvas::painting` asks
     // `pressing::grabbable` once and hands the answer to both.
@@ -315,7 +287,7 @@ pub fn draw_selection(
         let screen =
             visible_outline_rect(mapping.rect_to_screen(annot.outline), MIN_OUTLINE_EXTENT_PX);
         // ★★★ **THE OUTLINE IS DRAWN AT THE MARK'S OWN ANGLE** —
-        // `OPERATOR_REQUESTS.md` O147, 2026-09-07: *"the box outlined when an
+        // `OPERATOR_REQUESTS.md` O147: *"the box outlined when an
         // object is selected should be in the same angled orientation as the
         // object."*
         //
@@ -323,10 +295,10 @@ pub fn draw_selection(
         // line below this is the code it has always been for the overwhelming
         // majority of selections. When it is `Some`, `/Rect` is **not** where
         // the mark is: §12.5.2 requires that rectangle upright, so it bounds a
-        // turned mark rather than describing it, and an operator who turned a
-        // stamp 30° was watching a box swell around artwork that had not
-        // changed size. This shell used to *explain* that in a sentence. He did
-        // not want it explained.
+        // turned mark rather than describing it, so an upright outline swells
+        // around artwork that has not changed size. The outline follows the
+        // mark instead; the discrepancy is not something to explain in words,
+        // it is something not to draw.
         //
         // ★★ The published region stays the UPRIGHT bound, deliberately. Every
         // driven check that aims at this selection derives grips and offsets
@@ -423,9 +395,9 @@ pub fn draw_selection(
     if let Some(box_) = grip_box(mapping, selection) {
         // ★★ Published so a driven check can AIM AT A GRIP.
         //
-        // Added 2026-08-19 with the resize commit, and it is the difference
-        // between a check that measures the feature and one that measures the
-        // harness's guesswork: a grip sits at a corner of this box, and the
+        // It is the difference between a check that measures the feature and
+        // one that measures the harness's guesswork: a grip sits at a corner
+        // of this box, and the
         // box's extent is a fact only the application knows. A check that
         // guessed "a few pixels down and right of where I clicked" would land
         // inside the object on any shape larger than a grip — which is a MOVE
@@ -439,17 +411,14 @@ pub fn draw_selection(
         crate::diag::ui_rect(SELECTION_OUTLINE_REGION, box_);
         // ★★ The SAME `offer` the hit test was given, which for page content is
         // `GripSet::all()` at the Object rung and `GripSet::default()` at every
-        // inner one — the identical condition this line used to spell out as
-        // `selection.level() == SelectionLevel::Object`.
-        //
-        // Converted on 2026-08-28 with the annotation branch above, and for the
-        // stronger version of the same reason: two spellings of one predicate
-        // are one refactor away from disagreeing, and when they disagree a
-        // handle is either painted and not hit-tested — the "visible control,
-        // silently inert" failure — or hit-tested and not painted, which is
-        // worse, because it is an invisible target that steals the press aimed
-        // at the anchor underneath it. That second case is the defect that made
-        // this rule necessary in the first place.
+        // inner one. Deliberately NOT re-spelled here as
+        // `selection.level() == SelectionLevel::Object`, for the reason the
+        // annotation branch above gives: two spellings of one predicate are one
+        // refactor away from disagreeing, and when they disagree a handle is
+        // either painted and not hit-tested — the "visible control, silently
+        // inert" failure — or hit-tested and not painted, which is worse,
+        // because it is an invisible target that steals the press aimed at the
+        // anchor underneath it.
         draw_grips(painter, visuals, box_, grab.offer);
     }
 }
@@ -472,10 +441,10 @@ pub fn draw_selection(
 /// * a handle hit-tested and **not** painted is worse — an invisible target
 ///   that steals the press aimed at whatever is under it.
 ///
-/// Since 2026-08-28 the two flags genuinely differ per selection — a ce
-/// dimension turns and does not scale, a form field's box scales and does not
-/// turn — so this function can no longer treat *"there is a box"* as *"there
-/// are nine handles"*. It draws exactly what it was told.
+/// The two flags genuinely differ per selection — a ce dimension turns and does
+/// not scale, a form field's box scales and does not turn — so this function
+/// must never read *"there is a box"* as *"there are nine handles"*. It draws
+/// exactly what it was told.
 pub fn draw_grips(
     painter: &Painter,
     visuals: &Visuals,
@@ -579,6 +548,28 @@ pub fn draw_grips_in(
 /// no.
 pub const ROTATE_HANDLE_REGION: &str = "canvas.rotate-handle"; // ui-text-exempt: trace region name, never displayed
 
+/// Paint the **annotation move ghost**: one rectangle, where the markup would
+/// land.
+///
+/// ★★ Its own function beside [`draw_move_ghost`] rather than a case of it, and
+/// the reason is what the two iterate. That one walks
+/// `SelectionState::outlines()` -- the CONTENT selection's rectangles -- which
+/// is empty for an annotation selection by construction, because the two
+/// selections are mutually exclusive and live in different fields. Handing an
+/// annotation drag to it would draw nothing at all, silently, which is the
+/// "the gesture does nothing" symptom in the place hardest to notice: the drag
+/// would still commit on release.
+///
+/// ★ It takes the rectangle already computed rather than a delta plus the
+/// selection, because `annotdrag` has to decide the same rectangle to know
+/// whether a drag is eligible at all. One computation, one answer, and the
+/// preview cannot promise a landing spot the commit disagrees with.
+pub fn draw_annot_ghost(painter: &Painter, mapping: &PageMapping, rect: egui::Rect) {
+    let stroke = Stroke::new(1.5, ghost(ink(painter)));
+    let screen = visible_outline_rect(mapping.rect_to_screen(rect), MIN_OUTLINE_EXTENT_PX);
+    painter.rect_stroke(screen, CornerRadius::ZERO, stroke, StrokeKind::Middle);
+}
+
 /// Paint the **move ghost**: the selection's outlines, displaced by an
 /// in-flight drag.
 ///
@@ -614,42 +605,20 @@ pub const ROTATE_HANDLE_REGION: &str = "canvas.rotate-handle"; // ui-text-exempt
 /// release: the ghost exists only while the pointer is down. The one-line test
 /// in this module's header still answers no — with nothing being dragged, this
 /// paints nothing at all.
-/// Paint the **annotation move ghost**: one rectangle, where the markup would
-/// land.
-///
-/// ★★ Its own function beside [`draw_move_ghost`] rather than a case of it, and
-/// the reason is what the two iterate. That one walks
-/// `SelectionState::outlines()` -- the CONTENT selection's rectangles -- which
-/// is empty for an annotation selection by construction, because the two
-/// selections are mutually exclusive and live in different fields. Handing an
-/// annotation drag to it would draw nothing at all, silently, which is the
-/// "the gesture does nothing" symptom in the place hardest to notice: the drag
-/// would still commit on release.
-///
-/// ★ It takes the rectangle already computed rather than a delta plus the
-/// selection, because `annotdrag` has to decide the same rectangle to know
-/// whether a drag is eligible at all. One computation, one answer, and the
-/// preview cannot promise a landing spot the commit disagrees with.
-pub fn draw_annot_ghost(painter: &Painter, mapping: &PageMapping, rect: egui::Rect) {
-    let stroke = Stroke::new(1.5, ghost(ink(painter)));
-    let screen = visible_outline_rect(mapping.rect_to_screen(rect), MIN_OUTLINE_EXTENT_PX);
-    painter.rect_stroke(screen, CornerRadius::ZERO, stroke, StrokeKind::Middle);
-}
-
 pub fn draw_move_ghost(
     painter: &Painter,
     mapping: &PageMapping,
     selection: &SelectionState,
     delta: egui::Vec2,
     // ★★★ The same flag `draw_selection` takes, for the same reason and then
-    // some — O69. `MovePreview` returns a ghost for `MoveSubject::Node` and
-    // `Nodes` too, so while DRAGGING a point the operator was getting the
-    // subpath's box *and* a translated copy of it. That is O63's complaint
-    // word for word — *"it just had a perimeter box around it"* — surviving in
-    // the one gesture O63 was about.
+    // some — `OPERATOR_REQUESTS.md` O69. `MovePreview` returns a ghost for
+    // `MoveSubject::Node` and `Nodes` as well, so without this gate dragging a
+    // point draws the subpath's box *and* a translated copy of it: O63's
+    // complaint word for word — *"it just had a perimeter box around it"* — in
+    // the one gesture O63 is about.
     //
-    // Nothing is lost by removing it: O63's shape preview already draws the
-    // real geometry moving, which is what he asked to see instead.
+    // Nothing is lost by withholding it, because O63's shape preview already
+    // draws the real geometry moving, which is what he asked to see instead.
     outline: bool,
 ) {
     if !outline {
@@ -683,7 +652,7 @@ pub fn draw_move_ghost(
 /// function that module's own test pins against the measured bearing. The
 /// commit negates once, at the page crossing; see `rotating::drag`.
 ///
-/// # ★★★ An ANNOTATION's ghost is drawn by this same function — 2026-08-28
+/// # ★★★ An ANNOTATION's ghost is drawn by this same function
 ///
 /// …unlike the **move** ghost, which `canvas::painting` carries in a separate
 /// `annot_ghost` slot. The asymmetry is deliberate and is about the arithmetic
@@ -767,14 +736,14 @@ pub fn draw_resize_ghost(
     (sx, sy): (f32, f32),
 ) {
     let stroke = Stroke::new(1.5, ghost(ink(painter)));
-    // ★★★ **The annotation arm, added 2026-09-08 for O154** — and it is the
-    // arm [`draw_move_ghost`] has had all along.
+    // ★★★ **The annotation arm** — the same arm [`draw_move_ghost`] carries.
     //
     // `selection.outlines()` holds **page-content** entries. A markup
-    // annotation's box lives on `AnnotSelection` instead, so the loop below
-    // iterated nothing and a stamp being resized previewed no change at all.
-    // The operator reported it as *"the bounding box stays the same size when
-    // I drag the handles"*, and reasonably read it as the resize not working.
+    // annotation's box lives on `AnnotSelection` instead, so without this the
+    // loop below iterates nothing and a stamp being resized previews no change
+    // at all — *"the bounding box stays the same size when I drag the
+    // handles"* (`OPERATOR_REQUESTS.md` O154), which reads as the resize not
+    // working rather than as a missing preview.
     //
     // ⚠ Written as a slice built once rather than as an early `return` with a
     // duplicated body: the scaling arithmetic below is the part that must not
@@ -866,21 +835,21 @@ const HIT_ALPHA: u8 = 40;
 /// glance. Acrobat and every browser use a second hue for this; pdfcer cannot,
 /// and this is the honest substitute.
 ///
-/// ### ★ Why it is 96 and not 168, which is what it was
+/// ### ★ Why 96, and the ceiling above it
 ///
-/// **Measured on a screenshot of the running binary.** The first value was
-/// chosen for contrast against neighbouring hits and produced a solid block
-/// over the current one: on `reflow.pdf`, searching `the`, the word `The` at
-/// the head of the paragraph was completely covered by its own highlight. A
-/// highlight that hides the text it is highlighting has defeated its purpose —
-/// the operator's next act is to *read* the hit and decide whether it is the
-/// one they wanted.
+/// **Measured on a screenshot of the running binary**, on `reflow.pdf`
+/// searching `the`. Past roughly this value the wash becomes a solid block and
+/// covers the word it marks — on that file the word `The` at the head of the
+/// paragraph disappeared entirely under its own highlight. A highlight that
+/// hides the text it is highlighting has defeated its purpose, because the
+/// operator's next act is to *read* the hit and decide whether it is the one
+/// they wanted.
 ///
-/// That is exactly the failure a passing test could not have caught, and the
-/// reason this project's founding rule is to drive the binary: both alphas
-/// were within their asserted bounds, the hue assertion passed, and the
-/// picture was wrong. The stroke went from 1.5 pt to 2.0 pt in the same change
-/// to carry the emphasis the alpha gave up.
+/// ⚠ That ceiling is invisible to a unit test: an over-opaque wash is inside
+/// every asserted bound and passes every hue assertion, and the picture is
+/// still wrong. It is why the alpha carries only half the emphasis and the
+/// 2.0 pt stroke carries the other half — two weak signals that survive a
+/// dense drawing beat one strong signal that swallows its subject.
 const CURRENT_ALPHA: u8 = 96;
 
 /// Paint the search hits on the page currently shown.
@@ -936,11 +905,8 @@ pub fn draw_find_hits(
 
 /// How opaque the **text selection** wash is, out of 255.
 ///
-/// ★ **The number this project already paid for once.** `HANDOFF.md` §2's
-/// defect 3 is *"Find's current-hit highlight completely covered the word it
-/// highlighted"*, found by driving the binary and fixed by taking
-/// [`CURRENT_ALPHA`] from 168 to 96 — with the lesson recorded there as
-/// *"the operator's next act after finding a hit is to READ it"*.
+/// ★ **A wash must never hide its own subject.** [`CURRENT_ALPHA`] carries the
+/// measured ceiling for that rule and the argument behind it; read it first.
 ///
 /// It applies here with more force. A find hit is something the operator is
 /// deciding about; a text selection is something they are **about to copy**,
@@ -1004,20 +970,17 @@ pub fn draw_text_selection(painter: &Painter, mapping: &PageMapping, boxes: &[Re
 /// A themed colour at a chosen alpha.
 ///
 /// Read back through `to_srgba_unmultiplied`, for the reason [`ghost`]
-/// documents at length and [`wash`] pre-dates:
-/// [`Color32`] stores **premultiplied** components, so the plain accessors
-/// return a hue already darkened by whatever alpha the source carried, and
-/// re-premultiplying that darkens it a second time.
+/// documents at length: [`Color32`] stores **premultiplied** components, so the
+/// plain accessors return a hue already darkened by whatever alpha the source
+/// carried, and re-premultiplying that darkens it a second time.
 ///
-/// `pub(super)` rather than private since the rulers landed: [`super::rulers`]
-/// needs the theme's hairline at two grid alphas and [`super::guides`] needs
-/// the selection hue at two guide alphas, and every one of those is the same
-/// premultiplication trap. Four more spellings of it would be four more
-/// chances to reach for `.r()` and produce a colour that is subtly wrong in
-/// exactly the theme nobody tests in — which is the failure `wash`'s and
-/// `ghost`'s own docs were written after. The *alphas* stay with the surfaces
-/// that chose them, because each is an argument about legibility over
-/// linework and belongs beside that argument.
+/// `pub(super)` rather than private because [`super::rulers`] needs the theme's
+/// hairline at two grid alphas and [`super::guides`] needs the selection hue at
+/// two guide alphas, and every one of those is the same premultiplication trap.
+/// Four more spellings of it would be four more chances to reach for `.r()` and
+/// produce a colour that is subtly wrong in exactly the theme nobody tests in.
+/// The *alphas* stay with the surfaces that chose them, because each is an
+/// argument about legibility over linework and belongs beside that argument.
 pub(super) fn at_alpha(base: Color32, alpha: u8) -> Color32 {
     let [r, g, b, _] = base.to_srgba_unmultiplied();
     // NOT A THEME COLOUR: arithmetic on the theme's own colour, not a choice
@@ -1132,22 +1095,22 @@ const FIELD_WASH_ALPHA: u8 = 28;
 ///
 /// # ★★★ Why this is a call and not `visuals.selection.stroke.color`
 ///
-/// It used to be exactly that, everywhere in this file, and that address was
-/// wrong — `REVIEW_TRIAGE.md` defect **T2**. `egui::Visuals::selection` is
+/// That address is the wrong one for a canvas. `egui::Visuals::selection` is
 /// `egui`'s styling channel for **selected widgets**: `Style::button_style`
 /// takes both fills *and the text colour* from it for anything drawn with
-/// `Button::selected(true)` or `ui.selectable_label(true, …)`. While the theme
-/// pointed that channel at this canvas, the canvas won, and every selected
-/// chrome control in the application was painted with canvas ink — accent text
-/// on a 27 % wash, a luminance gap of 72.5 in the Dark preset against the
-/// project's own readable floor of 90.
+/// `Button::selected(true)` or `ui.selectable_label(true, …)`. Point that
+/// channel at this canvas and the canvas wins — every selected chrome control
+/// in the application is then painted with canvas ink, which measures as accent
+/// text on a 27 % wash: a luminance gap of **72.5** in the Dark preset against
+/// this project's readable floor of 90.
 ///
-/// Nothing about the *picture* changed when it was fixed:
+/// ⚠ Reaching for it changes no *picture*, which is what makes it dangerous.
 /// [`egui_shell::theme::Theme::canvas_selection_ink`] returns `palette.accent`,
-/// which is bit-for-bit what that channel used to carry. What changed is that
-/// the colour now arrives under a name that says which role it is, so
-/// re-tuning chrome can no longer silently re-tune the page overlay.
-/// `tools/gates/check-selection-channel.sh` keeps the old address unreachable.
+/// bit-for-bit what that channel carries. The accessor's whole value is that
+/// the colour arrives under a name saying **which role** it is, so re-tuning
+/// chrome cannot silently re-tune the page overlay.
+/// `tools/gates/check-selection-channel.sh` keeps the widget channel
+/// unreachable from here.
 ///
 /// ★ Takes the [`Painter`] rather than a `&Context` because every drawing
 /// function in this module already holds one and `Painter::ctx` is free. That
@@ -1161,9 +1124,9 @@ fn ink(painter: &Painter) -> Color32 {
 /// theme's content-area selection fill, 27 % alpha by design so the operator
 /// can still see what they are picking.
 ///
-/// See [`ink`] for the whole argument. This is the other half of the pair that
-/// used to be read from `visuals.selection.bg_fill`, and it returns
-/// `palette.selection_fill` — again, the identical value.
+/// See [`ink`] for the whole argument: this is the other half of the same pair,
+/// and the widget channel's `bg_fill` is off limits here for the same reason.
+/// It returns `palette.selection_fill`.
 fn fill(painter: &Painter) -> Color32 {
     egui_shell::theme::Theme::canvas_selection_fill(painter.ctx())
 }
@@ -1188,9 +1151,9 @@ fn wash(base: Color32) -> Color32 {
     // NOT A THEME COLOUR: arithmetic on the theme's own colour, not a choice
     // of one. The hue arrives from [`fill`] — the theme's content-area
     // selection role — and only the alpha is set here, so a restyle still
-    // reaches this band — naming a role
-    // for it would freeze the wash to one palette entry and break the
-    // "the band is the selection colour" relationship it exists to keep.
+    // reaches this band. Naming a role for the washed colour instead would
+    // freeze it to one palette entry and break the "the band is the selection
+    // colour" relationship it exists to keep.
     Color32::from_rgba_unmultiplied(base.r(), base.g(), base.b(), 48)
 }
 

@@ -3,7 +3,7 @@
 //! Two: embedding the font programs a document references but does not carry,
 //! and removing the ones it does.
 //!
-//! ## ★★ Why this is its own module rather than an arm in `apply`
+//! ## Why this is its own module rather than an arm in `apply`
 //!
 //! Not size — `apply.rs` had room. It is that a font edit is the one mutation
 //! in this shell whose **operand was resolved outside the engine**: the donor
@@ -12,14 +12,16 @@
 //! document already contained.
 //!
 //! That has a consequence worth keeping next to the code: the shell is
-//! responsible for the honesty of the match, and `pdfcer-core` is explicit that
-//! it will not check. `SuppliedFont::matched` is *"the inference rule 4
-//! governs"*, and the engine's symbolic guard turns on it — so a shell that
-//! reported every donor as `Exact` would disable a correctness check in the
-//! engine from the outside. `dialogs::embed` carries that mapping and this
-//! module carries the reason it must not be moved.
+//! responsible for the honesty of the match, and nothing in `pdfcer-core`
+//! re-derives it. `SuppliedFont::matched` is the shell's own statement of how
+//! it reached the donor, and the engine's symbolic guard turns on exactly that
+//! value — `FontMatch::is_substitute`, which refuses an inferred donor for a
+//! symbolic face. A shell that reported every donor as `Exact` would therefore
+//! disable a correctness check inside the engine from the outside.
+//! `dialogs::embed` carries that mapping and this module carries the reason it
+//! must not be moved.
 //!
-//! ## ★ The plan comes back from the commit, and it is the reported one
+//! ## The plan comes back from the commit, and it is the reported one
 //!
 //! `embed_fonts` returns the `EmbedPlan` it acted on rather than a count, and
 //! the disclosure is built from *that* value, never from the one the dialog
@@ -31,11 +33,10 @@ use crate::app::state::OpenDoc;
 
 /// **Embed every font the request names, as one undoable command.**
 ///
-/// ★ No pre-flight refusal check here. `embed_fonts` runs `embed_refusal`
-/// itself *"before any mutation"* and returns the refusal as an `Err`, so
-/// calling it first would be a second implementation of a guard the engine
-/// already owns — the failure `dispatch::routes`' header names in a different
-/// register.
+/// No pre-flight refusal check here. `embed_fonts` runs `embed_refusal` itself
+/// before any mutation and returns the refusal as an `Err`, so calling it first
+/// would be a second implementation of a guard the engine already owns — the
+/// failure `dispatch::routes`' header names in a different register.
 pub(super) fn embed(doc: &mut OpenDoc, request: &pdfcer_core::font_embed_missing::EmbedRequest) {
     let supplied = request.supplied.len();
     super::apply::vector_edit(doc, "embed-fonts", 0, supplied, |session| {
@@ -69,10 +70,10 @@ pub(super) fn embed(doc: &mut OpenDoc, request: &pdfcer_core::font_embed_missing
 /// **Remove every embedded font program the request names, as one undoable
 /// command.**
 ///
-/// ★ No pre-flight refusal check, for [`embed`]'s reason: `unembed_fonts` runs
+/// No pre-flight refusal check, for [`embed`]'s reason: `unembed_fonts` runs
 /// `unembed_refusal` itself before mutating.
 ///
-/// ★★ And **no PDF/A gate here either**, deliberately. The engine leaves PDF/A
+/// And **no PDF/A gate here either**, deliberately. The engine leaves PDF/A
 /// out of its refusal and says why: *"unembedding genuinely breaks that
 /// conformance … but it is a consequence the operator may knowingly accept, not
 /// a structural impossibility. The core reports it and **the shells gate on

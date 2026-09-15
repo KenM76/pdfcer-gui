@@ -1,15 +1,15 @@
 //! The per-frame render context every ribbon surface is handed.
 //!
-//! # Why a context struct rather than eight parameters
+//! # Why a context struct rather than a parameter list
 //!
 //! The tab strip, the band, the mode selector and the QAT all need the
-//! same six things: the registry, the conditions, the theme, the rect
+//! same things: the registry, the conditions, the theme, the rect
 //! reporter, the icon painter and somewhere to collect the tokens the
 //! operator invoked. Threading those through as parameters means every
-//! new capability is a signature change in five files, and — worse —
-//! makes it possible for one surface to be handed a *different* condition
-//! set than another, which would produce a ribbon whose tabs and whose
-//! controls disagreed about what is enabled.
+//! new capability is a signature change in every file that renders a
+//! ribbon surface, and — worse — makes it possible for one surface to be
+//! handed a *different* condition set than another, which would produce a
+//! ribbon whose tabs and whose controls disagreed about what is enabled.
 //!
 //! One value, constructed once per frame, removes both.
 //!
@@ -185,10 +185,11 @@ impl Ctx<'_> {
     ///
     /// Derived rather than auto-generated so that ids are **stable across
     /// frames even as the layout changes**. `egui` keeps focus, hover and
-    /// popup state per id; an auto-generated id shifts when a group moves
-    /// into the overflow menu, and the symptom is a control that loses
-    /// keyboard focus when the window is resized — which reads as a
-    /// focus bug rather than as an id bug and is very hard to attribute.
+    /// popup state per id; an auto-generated id shifts when a group is
+    /// collapsed or scrolled out of the band, and the symptom is a control
+    /// that loses keyboard focus when the window is resized — which reads
+    /// as a focus bug rather than as an id bug and is very hard to
+    /// attribute.
     pub(crate) fn id(&self, kind: &str, key: &str) -> egui::Id {
         self.base_id.with(kind).with(key)
     }
@@ -239,11 +240,11 @@ mod tests {
     use super::*;
     use crate::commands::Enable;
 
-    /// **★ The local condition evaluator agrees with
+    /// **The local condition evaluator agrees with
     /// [`crate::commands::Enable::When`], case for case.**
     ///
-    /// There are now two implementations of one rule: the canonical one
-    /// in `commands`, and this allocation-free copy used for contextual
+    /// There are two implementations of one rule: the canonical one in
+    /// `commands`, and this allocation-free copy used for contextual
     /// tab visibility. That is a drift hazard with a nasty failure mode —
     /// a `Format` tab that appears under conditions its author's enable
     /// predicate would have refused, so the tab is present and every

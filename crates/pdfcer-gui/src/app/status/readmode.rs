@@ -4,95 +4,80 @@
 //! One sentence, drawn only while `view.read_mode` is on, at the left end of
 //! the status bar and ahead of everything else the bar has to say.
 //!
-//! # ★★★ The report, and why the status bar of all places
+//! # The report, and why the status bar of all places
 //!
-//! The operator, 2026-09-05:
+//! The operator:
 //!
 //! > *"I didn't see a way to get back out of read mode. if there is a shortcut
 //! > for this it should have a note what the key combo is in the top bar that
 //! > holds the window controls."*
 //!
 //! He named the title bar, and the title carries it too — see
-//! [`crate::text::doctabs::window_title`]. This module is the **second**
-//! surface, and two surfaces for one fact is normally a smell, so the argument
-//! has to be made rather than assumed.
+//! [`crate::text::doctabs::window_title`]. This is the **second** surface, and
+//! two surfaces for one fact needs an argument: **read mode composes with full
+//! screen**, and with both on there is no ribbon *and no title bar*, so a
+//! title-only hint would be missing in exactly the state with the least chrome
+//! left. The status bar is the one piece of chrome [`crate::app::window`]
+//! deliberately keeps through both. In the other direction the title is legible
+//! from the taskbar and from Alt-Tab, which this bar is not, and on a maximised
+//! window whose bottom edge nobody is looking at. **Neither surface alone covers
+//! the state space, and each is the other's blind spot.**
 //!
-//! It is made in [`crate::app::window`]'s header and it is compositional:
-//! **read mode composes with full screen.** With both on there is no ribbon
-//! *and no title bar*, so a title-only hint would be missing in exactly the
-//! state that has the least chrome left. The status bar is the one piece of
-//! chrome `app::window` §2 deliberately keeps, and it survives both. In the
-//! other direction the title is legible from the taskbar and from Alt-Tab,
-//! which this bar is not, and it is legible on a maximised window whose bottom
-//! edge the operator is not looking at. **Neither surface alone covers the
-//! state space, and each is the other's blind spot** — the same two-channel
-//! reasoning `ui-verify`'s `read_mode_hides_the_chrome` uses for the rect and
-//! the pixels.
-//!
-//! # ★★ It is FIRST on the left, ahead of the page-drag caption
+//! # It is FIRST on the left, ahead of the page-drag caption
 //!
 //! `app::status`' header ranks the left half: the transient caption about a
-//! gesture in progress outranks the disclosures about gestures already
-//! finished, which outrank the narrator. This line outranks all three, and the
-//! rule that puts it there is worth stating because it generalises:
+//! gesture in progress outranks disclosures about finished gestures, which
+//! outrank the narrator. This line outranks all three:
 //!
 //! > **A sentence about how to reach the interface outranks every sentence
 //! > about the document**, because an operator who cannot reach the interface
 //! > cannot act on any of the others.
 //!
-//! # ★ It is never shed, and it never sheds anything else
-//!
-//! Two separate properties, and the bar's own machinery gives each:
+//! # It is never shed, and it never sheds anything else
 //!
 //! * **Never shed.** `fitting::SHED_ORDER` governs the fixed cluster on the
-//!   *right*. This is a left-hand line, so no width pressure can remove it —
-//!   which matters, because `fitting`'s reachability clause (*nothing it may
-//!   drop is the operator's last route to that capability*) would forbid
-//!   dropping this one anyway, and a rule enforced by construction beats a rule
-//!   enforced by a list.
-//! * **Sheds nothing.** It takes a bounded fraction of the width and elides,
-//!   with the whole sentence on hover, exactly as the render notes do. An
-//!   unbounded label here would push the page box and the zoom stepper off the
-//!   right-hand end — which is defect O44's shape, and the shed mechanism
-//!   exists because it has happened.
+//!   *right*, so no width pressure can remove a left-hand line. `fitting`'s
+//!   reachability clause — *nothing it may drop is the operator's last route to
+//!   that capability* — would forbid dropping this one anyway, and a rule
+//!   enforced by construction beats a rule enforced by a list.
+//! * **Sheds nothing.** It takes a bounded fraction of the width and elides with
+//!   the whole sentence on hover, as the render notes do. An unbounded label here
+//!   would push the page box and the zoom stepper off the right-hand end.
 //!
-//! [`EXIT_WIDTH_FRACTION`] is wider than the notes' 0.45 and the reason is the
-//! ranking above: this is the sentence somebody is *hunting for*, where the
-//! notes are volunteered.
+//! [`EXIT_WIDTH_FRACTION`] is wider than the notes' fraction for the reason the
+//! ranking gives: this is the sentence somebody is *hunting for*, where the notes
+//! are volunteered.
 //!
-//! # ★ R128 — it cannot change the bar's height
+//! # R128 — it cannot change the bar's height
 //!
 //! One label, on the row [`super::show`] has already allocated, of
-//! [`super::ROW_HEIGHT_PTS`]. Nothing here wraps and nothing adds a line. The
-//! measured failure R128 names — a status bar that grew by one line, a
-//! fit-to-viewport zoom that recomputed from the smaller canvas, and a page
-//! that visibly shrank across three frames — would arrive here the moment this
-//! sentence were allowed to wrap.
+//! [`super::ROW_HEIGHT_PTS`]. Nothing here wraps and nothing adds a line. Let
+//! this sentence wrap and R128 arrives directly: the bar grows by a line, a
+//! fit-to-viewport zoom recomputes from the smaller canvas, and the page shrinks
+//! frame after frame.
 //!
-//! # ★★ The two shapes: a statement, and (rarely) a control
+//! # The two shapes: a statement, and (rarely) a control
 //!
 //! | the keymap binds `view.read_mode` to… | what is drawn |
 //! |---|---|
 //! | a chord | **a statement** naming it. R9: this is not a placeholder and not a greyed control; it is a fact |
 //! | nothing | **a button** that leaves read mode |
 //!
-//! The second row is not hedging. A build whose manifest binds no chord to
-//! `view.read_mode` is legal — `SHELL_FRAMEWORK.md` §5 lets an operator rebind
-//! keys and R8 lets a stripped build drop commands — and in that build the
-//! ribbon control is hidden, the chord does not exist, and **there is no way
-//! back at all short of restarting the application.** A statement has nothing
-//! true to say there; the choice is between a control and a trap.
+//! ★ The second row is not hedging. A build whose manifest binds no chord to
+//! `view.read_mode` is legal — the manifest's operator layer may rebind keys, and
+//! R8 lets a stripped build drop commands — and in that build the ribbon control
+//! is hidden, the chord does not exist, and **there is no way back at all short
+//! of restarting the application.** A statement has nothing true to say there;
+//! the choice is between a control and a trap.
 //!
-//! With a chord bound, the statement is the better surface and the button would
-//! be the worse one: a statement teaches the keyboard and leaves the bar a
-//! readout, while a button invites the operator to keep coming back to the
-//! mouse for something they now know a key for.
+//! With a chord bound the statement is the better surface: it teaches the
+//! keyboard and leaves the bar a readout, where a button invites the operator
+//! back to the mouse for something they now know a key for.
 //!
-//! ★ The button writes `egui::Memory` directly rather than raising an
-//! [`crate::app::actions::Action`], which is the same licence the Find toggle
-//! twenty lines away takes and for the identical reason `app::window`'s §4
-//! gives: nothing here touches a document, so there is nothing for the undo log
-//! to hold and nothing to order against.
+//! The button writes `egui::Memory` directly rather than raising an
+//! [`crate::app::actions::Action`], on the same licence the Find toggle takes:
+//! nothing here touches a document, so there is nothing for the undo log to hold
+//! and nothing to order against.
 
 use egui::{Align, Layout, Vec2};
 

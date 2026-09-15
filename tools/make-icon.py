@@ -90,8 +90,8 @@ USAGE
     python tools/make-icon.py
 
 Writes `crates/pdfcer-gui/assets/pdfcer-gui.ico`, the raw window icon beside it,
-and, for review,
-`evidence/app-icon.png` — a strip of every size at 1:1 so the small ones can be
+and, for review, the uncommitted strip
+`evidence/app-icon.png` — every size at 1:1 so the small ones can be
 checked rather than assumed. **Look at the strip.** An icon that is fine at
 256 px and mud at 16 px is the normal failure, and it is invisible from the
 source.

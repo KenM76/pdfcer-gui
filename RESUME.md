@@ -94,10 +94,15 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   `target/scratch/drive/`, so a harness-only rebuild may resume; re-derive chunk
   boundaries from `target/scratch/checks.txt`, never a fresh `--list`, which
   renumbers.
-- **`build.rs` declares `rerun-if-changed` on `src`, `Cargo.toml`,
-  `../../Cargo.lock` and the two icon assets — not on `.git/HEAD`.** The rebuild
-  between the release commit and packaging is a no-op that ships the pre-commit,
-  dirty stamp; `touch crates/pdfcer-gui/build.rs` forces it. A sweep therefore
+- **A commit does not invalidate the build stamp, and the inputs `build.rs`
+  declares are why.** It declares `src`, `Cargo.toml`, `../../Cargo.lock`, the
+  two icon assets, and `.git/HEAD`, `.git/refs/tags`, `.git/packed-refs`. A
+  commit rewrites **`.git/refs/heads/<branch>`** and `.git/logs/HEAD`, and
+  neither is declared; `.git/HEAD` itself holds `ref: refs/heads/main` and is
+  not touched by a commit at all (measured: its mtime was twelve days older than
+  HEAD's commit time). So the rebuild between the release commit and packaging
+  is a no-op that ships the pre-commit, dirty stamp; `touch
+  crates/pdfcer-gui/build.rs` forces it. A sweep therefore
   never drives the binary that ships — committing relinks it — so the honest
   claim is *against these sources, from this commit's tree*.
 - **A symbol that stops being PRODUCED is invisible to every signature-based

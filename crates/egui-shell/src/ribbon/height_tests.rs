@@ -1,32 +1,25 @@
 //! Layout tests for the band's **rows** and its **constant height**.
 //!
-//! ★ It said *"two rows"* until 2026-09-05, when `plan::GROUP_ROWS` became
-//! **three** to match `mockups/pdfcer-shell.html`'s own arithmetic
-//! (`.rb { height: 22px }` + `.grp .col { gap: 1px }` = the theme's 68 pt row
-//! area). Nothing about the CLAIMS below moved: the band is still one height on
-//! every tab, the captions still share one baseline, and the padding is still
-//! asserted against drawn rectangles. Only the row count did, and the
-//! precondition guards in three of these tests now read `plan::GROUP_ROWS`
-//! rather than a literal `2`, so the next change to it fails them loudly
-//! instead of leaving them comparing two identical one-row bands.
+//! The band's row count is [`super::plan::GROUP_ROWS`], which matches
+//! `mockups/pdfcer-shell.html`'s own arithmetic (`.rb { height: 22px }` +
+//! `.grp .col { gap: 1px }` = the theme's 68 pt row area). **Every
+//! precondition guard here reads that constant rather than a literal**, so a
+//! change to it fails them loudly instead of leaving them comparing two
+//! identical one-row bands.
 //!
 //! # Why this is a file of its own
 //!
-//! Three reasons, and they are the same three [`super`]'s module list gives
-//! for [`super::width_tests`] existing separately from [`super::tests`].
+//! Two reasons, and they are the two [`super`]'s module list gives for
+//! [`super::width_tests`] existing separately from [`super::tests`].
 //!
-//! 1. **R2 caps a source file at 1,500 lines.** These tests arrived into a
-//!    `width_tests.rs` that was already at 1,412 and would have pushed it to
-//!    1,757.
-//! 2. **They are a different claim.** `width_tests` asks *"is the overflow
+//! 1. **It is a different claim.** `width_tests` asks *"is the overflow
 //!    affordance reachable"* — a horizontal question about failure mode #8.
 //!    Everything here is vertical: how many rows a group uses, how tall the
 //!    band is, and whether that height is the same on two different tabs.
-//! 3. **They have a different reason to exist.** `width_tests` is a
-//!    regression file: every test in it pins a defect that shipped. This one
-//!    pins `PROJECT_PLAN.md`'s **R128** — a rule, in front of a change that
-//!    could break it — which is a claim about the future rather than about
-//!    the past.
+//! 2. **It has a different reason to exist.** `width_tests` is a regression
+//!    file: every test in it pins a defect that shipped. This one pins
+//!    `PROJECT_PLAN.md`'s **R128** — a rule, held in front of a change that
+//!    could break it.
 //!
 //! # The harness is [`super::width_tests`]', deliberately
 //!
@@ -50,7 +43,7 @@
 //! | [`a_group_is_inset_by_the_padding_the_plan_budgets_for_it`] | The mockup's `.group { padding: 0 13px }` — **drawn**, not merely reserved. |
 //! | [`the_band_leaves_clear_space_beneath_its_captions`] | The mockup's `.band { padding: … 4px }`. |
 //!
-//! # ★ Why the last two are here at all
+//! # Why the last two are here at all
 //!
 //! Both pin a defect of the same *shape*, and it is a shape that no test in
 //! this crate could previously see: **the plan reserved space the renderer
@@ -80,7 +73,7 @@ use super::width_tests::{SLACK, render_shell_with};
 /// [`super::width_tests`]' context, **with a [`crate::theme::Theme`]
 /// applied**.
 ///
-/// # ★ Why the theme has to be applied here and is not next door
+/// # Why the theme has to be applied here and is not next door
 ///
 /// `Theme::apply` writes `spacing.interact_size.y = control_height`, which
 /// is what makes a band control exactly as tall as the metric
@@ -95,8 +88,8 @@ use super::width_tests::{SLACK, render_shell_with};
 /// these tests passed; the running binary's own trace showed a two-row group
 /// at 68 pt beside a one-row group at 64.
 ///
-/// `HANDOFF.md` §10: *a fixture can flatter the thing it measures, and the
-/// numbers will look fine.* The theme is applied so this fixture cannot.
+/// **A fixture can flatter the thing it measures, and the numbers will still
+/// look fine.** The theme is applied so this one cannot.
 /// [`the_fixture_is_themed_like_the_running_application`] asserts it took.
 fn context() -> egui::Context {
     let ctx = super::width_tests::context();
@@ -104,7 +97,7 @@ fn context() -> egui::Context {
     ctx
 }
 
-/// **★ The guard on every measurement below: this context is spaced the way
+/// **The guard on every measurement below: this context is spaced the way
 /// the application is.**
 ///
 /// Asserted rather than assumed, because the failure it prevents is silent —
@@ -212,7 +205,7 @@ fn row_tops(rects: &[Rect]) -> Vec<f32> {
     tops
 }
 
-/// **★ R128: two different tabs produce the same band height.**
+/// **R128: two different tabs produce the same band height.**
 ///
 /// `PROJECT_PLAN.md`'s rule and this project's most-repeated bug — a
 /// content-driven height beside a fit-to-viewport zoom is a feedback loop,
@@ -229,19 +222,21 @@ fn row_tops(rects: &[Rect]) -> Vec<f32> {
 ///
 /// # Why the vacuity guards are as long as the assertion
 ///
-/// `HANDOFF.md` §10: **`cargo test -p egui-shell` and `cargo test
-/// --workspace` compile with different `egui` features**, and a layout test
-/// can be entirely vacuous under one of them. Two things could go quiet
+/// **`cargo test -p egui-shell` and `cargo test --workspace` compile with
+/// different `egui` features** — Cargo unifies features across the graph, so
+/// the workspace run gets capabilities the single-crate run does not — and a
+/// layout test can be entirely vacuous under one of them. Two things could go
+/// quiet
 /// here — a `None` ribbon height (the measuring closure never ran) and a
 /// band that never wrapped (both tabs the SAME row count, so "the same
 /// height" is true and says nothing). Both are asserted as facts before the
 /// equality is asserted at all.
 ///
-/// ★ The second guard used to read *"the narrow tab's group must stay on one
-/// row"*, which is a fact about the fixture and not about the rule. It went
-/// red on 2026-09-05 against a build that wraps more eagerly and still holds
-/// the band's height fixed — i.e. it accused a correct change. It now asserts
-/// the two row counts DIFFER, which is the actual precondition.
+/// The second guard asserts the two row counts **differ**, not that the
+/// narrow tab holds one row. One row is a fact about the fixture; differing
+/// row counts is the actual precondition, and a guard written the other way
+/// accuses any build that learns to wrap more eagerly while still holding the
+/// band's height fixed.
 #[test]
 fn the_band_is_the_same_height_on_every_tab() {
     let ctx = context();
@@ -287,16 +282,13 @@ fn the_band_is_the_same_height_on_every_tab() {
          comparing two one-row bands and would pass against the very layout it \
          exists to refuse"
     );
-    // ★★★ **`== 1` until 2026-09-05, and the literal was the fixture rather
-    // than the rule.** This test's claim is that the band's height does not
-    // follow its content, so its precondition is that the two tabs' content
-    // DIFFERS in row count — not that the narrow one happens to be one row.
-    // When `band::measure_group_rows` started asking every group for the
-    // band's full row ceiling (see the note at that call site, and the driven
-    // measurement that prompted it), the narrow tab's two controls stacked into
-    // two rows: still different from the wide tab's three, still exactly the
-    // difference the fixed height has to absorb, and the assertion went red on
-    // a build that had got *better* at the thing it guards.
+    // **Asserted as a difference, never as a literal.** This test's claim is
+    // that the band's height does not follow its content, so its precondition
+    // is that the two tabs' content DIFFERS in row count — not that the narrow
+    // one happens to hold any particular number. `band::measure_group_rows`
+    // asks every group for the band's full row ceiling, so the narrow tab's
+    // row count moves with that ceiling; a literal here would go red on a
+    // build that had got *better* at the thing this test guards.
     let narrow_rows = row_tops(&narrow.all("ribbon.item.")).len();
     let wide_rows = row_tops(&wide.all("ribbon.item.")).len();
     assert!(
@@ -330,7 +322,7 @@ fn the_band_is_the_same_height_on_every_tab() {
     );
 }
 
-/// **★ R128 holds at every width, including the ones where a tab shows no
+/// **R128 holds at every width, including the ones where a tab shows no
 /// group at all.**
 ///
 /// The case a height derived from drawn content gets silently wrong: below
@@ -375,20 +367,19 @@ fn the_band_keeps_its_height_at_widths_where_every_group_overflows() {
     );
 }
 
-/// **★ A group wider than the cap really is drawn on two rows, and costs
+/// **A group wider than the cap really is drawn on two rows, and costs
 /// the band less for it.**
 ///
-/// [`super::plan`]'s own tests prove the arithmetic; this proves the
-/// renderer obeys it, which is a different claim and the one that could not
-/// hold before this change — `captioned_group` emitted a single
-/// `ui.horizontal`, so no manifest could ever produce a second row however
-/// wide it got.
+/// [`super::plan`]'s own tests prove the arithmetic; this proves the renderer
+/// obeys it, which is a different claim. A `captioned_group` that emitted a
+/// single `ui.horizontal` would satisfy the plan's tests and never produce a
+/// second row however wide the manifest got.
 ///
 /// The width claim is stated against the **items**, not against a constant:
 /// the group's rect must be narrower than laying its eight controls end to
 /// end would be. That is checkable without knowing a single measurement,
-/// and it is the property that lets a fifth group fit where three used to be
-/// pushed behind the affordance.
+/// and it is the property that lets a fifth group fit on a width that would
+/// otherwise push it behind the overflow affordance.
 #[test]
 fn a_group_wider_than_the_cap_is_drawn_on_two_rows() {
     let ctx = context();
@@ -442,7 +433,7 @@ fn a_group_wider_than_the_cap_is_drawn_on_two_rows() {
     }
 }
 
-/// **★ Every caption in a band sits on one baseline**, whether the group
+/// **Every caption in a band sits on one baseline**, whether the group
 /// above it used one row or two.
 ///
 /// The mockup's `justify-content: space-between`, and the half of "staged
@@ -533,23 +524,20 @@ fn two_padded_groups() -> Shell {
         ]))
 }
 
-/// **★ A group's controls are inset from its own box by exactly the padding
+/// **A group's controls are inset from its own box by exactly the padding
 /// the planner budgets — the mockup's `.group { padding: 0 13px }`.**
 ///
-/// # The defect, measured
+/// # The failure this refuses, and why nothing else catches it
 ///
-/// [`super::plan::GROUP_PADDING`] has added 2 × 6 pt to every group's planned
-/// width since the planner was written, and until 2026-08-14 the renderer drew
-/// none of it: `captioned_group` laid the group out as a bare `ui.vertical`
-/// with no horizontal inset. Measured in the running application at 1,100 pt
-/// on the Markup tab, the Text-markup group box began at **x = 322.5 and its
-/// first control began at x = 322.5** — a zero-point inset. Controls sat flush
-/// against the group boundary and against the rule dividing them from the next
-/// group, which is most of what the operator meant by *"cluttered"*.
-///
-/// Nothing failed. The plan was right, the width fitted, every test passed,
-/// and the space was spent as an accidental margin on the outside of the box
-/// instead of as padding on the inside.
+/// [`super::plan::GROUP_PADDING`] adds 2 × 6 pt to every group's planned
+/// width. A renderer that lays the group out as a bare `ui.vertical` with no
+/// horizontal inset spends that budget as an accidental margin on the OUTSIDE
+/// of the box instead of as padding on the inside, and **nothing fails**: the
+/// plan is right, the width fits, every other test passes. Measured in the
+/// running application at 1,100 pt, a group box and its first control both
+/// began at **x = 322.5** — a zero-point inset, controls flush against the
+/// group boundary and against the rule dividing them from the next group.
+/// That is most of what the operator meant by *"cluttered"*.
 ///
 /// # What is asserted, and why the second assertion is the interesting one
 ///
@@ -684,14 +672,14 @@ fn separator_width(ctx: &egui::Context) -> f32 {
     seen.expect("the closure never ran, so no separator width was measured")
 }
 
-/// **★ The band stops a clear [`super::band::BAND_PADDING_BOTTOM`] below its
+/// **The band stops a clear [`super::band::BAND_PADDING_BOTTOM`] below its
 /// lowest caption — the mockup's `.band { padding: 8px 10px 4px }`.**
 ///
-/// # The defect, measured
+/// # The failure this refuses
 ///
-/// Before 2026-08-14 the band's reserved height was exactly the rows, the gap
-/// and one line of caption, so the ribbon ended on the caption's own baseline.
-/// In the running application at 1,100 pt the captions ended at y = 103 and
+/// A band whose reserved height is exactly the rows, the gap and one line of
+/// caption ends on the caption's own baseline. Measured in the running
+/// application at 1,100 pt in that state, the captions ended at y = 103 and
 /// the dock's tab bar began at y = 105.3: a 10 pt line of `weak()`, `small()`
 /// text separated from the panel header beneath it by less than its own
 /// leading. The caption is the one piece of text that says what a block of
@@ -782,16 +770,14 @@ fn the_band_leaves_clear_space_beneath_its_captions() {
 }
 
 // ===========================================================================
-// ★★★ THE MOCKUP'S VERTICAL RHYTHM — 2026-09-04
+// THE MOCKUP'S VERTICAL RHYTHM
 //
-// Three tests added when `mockups/pdfcer-shell.html` was adopted as the
-// band's specification rather than as a sketch of it. The operator's words
-// were *"I want everything to look exactly like that including sizing"*, and
-// his fourth complaint was the one these are about: *"the mock's band is
-// visibly taller with more generous rows and the group caption sitting
-// lower."*
+// `mockups/pdfcer-shell.html` is the band's SPECIFICATION, not a sketch of it.
+// The operator: *"I want everything to look exactly like that including
+// sizing"*, and *"the mock's band is visibly taller with more generous rows
+// and the group caption sitting lower."*
 //
-// ★ None of them asserts a total height against a literal, and that is
+// None of them asserts a total height against a literal, and that is
 // deliberate. A literal would pin the number and say nothing about where it
 // comes from, so the next font change would fail a test that reads as
 // arbitrary. Each of these pins a **relationship** the mockup states:
@@ -799,7 +785,7 @@ fn the_band_leaves_clear_space_beneath_its_captions() {
 // drawn at the size the height was predicted from.
 // ===========================================================================
 
-/// ★★★ **Every preset reserves enough row area for its own two rows.**
+/// **Every preset reserves enough row area for its own two rows.**
 ///
 /// The one invariant that makes [`crate::theme::Metrics::ribbon_rows`] safe as
 /// a stated number rather than a derived one, and the reason the ribbon
@@ -818,7 +804,7 @@ fn the_band_leaves_clear_space_beneath_its_captions() {
 /// 28 pt and its `gutter` 8, so two of its rows cost 72 — **more than the
 /// mockup's whole area.**
 ///
-/// ★ Asserted over `Preset::ALL` rather than over the three by name, so a
+/// Asserted over `Preset::ALL` rather than over the three by name, so a
 /// preset added later cannot ship unmeasured. That is the same discipline
 /// `Preset::ALL`'s own doc comment asks for.
 #[test]
@@ -848,9 +834,8 @@ fn every_preset_reserves_room_for_its_own_rows() {
             m.ribbon_rows
         );
 
-        // (b) ★★★ THE HALF THAT CAN ACTUALLY FAIL, and the reason this test
-        //     survived the 2026-09-05 row-count change rather than going with
-        //     the invariant it used to state.
+        // (b) THE HALF THAT CAN ACTUALLY FAIL, and the reason this test is
+        //     written against the constant rather than against a row count.
         //
         //     `band_row_height` floors the control at `icon_pts`, because a
         //     control that cannot show its icon is not a smaller control, it is
@@ -874,7 +859,7 @@ fn every_preset_reserves_room_for_its_own_rows() {
     }
 }
 
-/// ★★ **…and the re-wrap rung survives the budget**, which is the half that
+/// **…and the re-wrap rung survives the budget**, which is the half that
 /// could have been broken silently.
 ///
 /// `RIBBON_SCALING.md`'s ladder is re-wrap → collapse → scroll, and rung one
@@ -911,7 +896,7 @@ fn every_preset_can_still_re_wrap_a_group() {
     }
 }
 
-/// ★ **The band draws clear space above its first control** — the mockup's
+/// **The band draws clear space above its first control** — the mockup's
 /// `.ribbon { padding: 6px 8px 0 }`, the first figure.
 ///
 /// The exact mirror of [`the_band_leaves_clear_space_beneath_its_captions`],
@@ -979,10 +964,10 @@ fn the_band_draws_clear_space_above_its_first_control() {
 }
 
 // =====================================================================
-// AUTO-HIDE — 2026-09-05. The operator: *"we should also add the capability
-// to auto hide the ribbon until we hover over top of it."*
+// AUTO-HIDE. The operator: *"we should also add the capability to auto hide
+// the ribbon until we hover over top of it."*
 //
-// ★★★ These belong in this file rather than beside `peek`'s own tests, and
+// These belong in this file rather than beside `peek`'s own tests, and
 // the reason is the file's own subject. `peek` is arithmetic over rectangles
 // and is tested exhaustively there; what CANNOT be asserted there is the one
 // property the operator will actually feel, which is **vertical and belongs
@@ -1045,7 +1030,7 @@ fn render_auto_hidden(
     (height, state.last_frame().band_show, rects)
 }
 
-/// ★★★ **THE CANVAS DOES NOT MOVE.** An auto-hidden ribbon takes the same room
+/// **THE CANVAS DOES NOT MOVE.** An auto-hidden ribbon takes the same room
 /// whether its band is showing or not.
 ///
 /// This is the property that decides whether the setting is usable. The band is
@@ -1056,7 +1041,7 @@ fn render_auto_hidden(
 /// pass, and the operator's drawing would jump by ninety points every time the
 /// pointer crossed the tab row.
 ///
-/// ⚠ Both states are DRIVEN rather than assumed. An absence test that never
+/// Both states are DRIVEN rather than assumed. An absence test that never
 /// reached the revealed state would be satisfied by a build that never reveals
 /// anything, which is the vacuous shape this project has shipped twice; so the
 /// second reading asserts `Show::Overlay` before comparing, and says so if the
@@ -1124,7 +1109,7 @@ fn an_auto_hidden_ribbon_takes_the_same_room_whether_its_band_shows_or_not() {
     );
 }
 
-/// ★★ **The tab strip is the same height either way**, which is what makes it
+/// **The tab strip is the same height either way**, which is what makes it
 /// a legal trigger.
 ///
 /// `peek`'s direction bound rests on the trigger being independent of the

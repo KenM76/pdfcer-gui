@@ -5,35 +5,28 @@
 //! test that pins this catalog against the shipped
 //! `THIRD_PARTY_LICENSES.md`.
 //!
-//! ## ★ Why an attribution surface exists at all, when `LICENSE` already ships
+//! ## Why an attribution surface exists at all, when `LICENSE` already ships
 //!
-//! Until 2026-08-14 this repository had no attribution surface of any kind:
-//! no `PROVENANCE.md`, no `cargo-about`, no third-party licence text anywhere
-//! in the program. That was **fine**, and it is worth saying why, because the
-//! reason is exactly what stopped being true.
+//! Permissively-licensed *code* does not need one. MIT and Apache-2.0 notices
+//! are satisfied by the `LICENSE` file in the package and by the licence
+//! metadata in `Cargo.toml`, which a reader of the source tree can check:
+//! nobody is handed a file whose licence obliges pdfcer to *tell them*
+//! something they could not already look up.
 //!
-//! pdfcer-gui shipped only permissively-licensed *code*. MIT and Apache-2.0
-//! notices are satisfied by the `LICENSE` file in the package and by the
-//! licence metadata in `Cargo.toml`, which a reader of the source tree can
-//! check. Nobody was handed a file whose licence obliged pdfcer to *tell them*
-//! anything they could not already look up.
+//! Redistributed **assets** are the case that breaks it. The `ocrs` OCR model
+//! weights — the operator's ruling was *"yes ship that model in the mit repo
+//! with proper credit"* — are **CC-BY-SA-4.0**, and that licence's **BY**
+//! clause requires attribution to reach the **recipient of the work**, not
+//! merely a reader of the repository it was built from. A `PROVENANCE.md` in a
+//! source tree discharges nothing for someone who was handed
+//! `pdfcer-gui.exe` in a folder.
 //!
-//! The operator decided on 2026-08-14 to ship the `ocrs` OCR model weights —
-//! *"yes ship that model in the mit repo with proper credit"* — and those are
-//! **CC-BY-SA-4.0**. That licence's **BY** clause requires attribution to
-//! reach the **recipient of the work**, not merely a reader of the repository
-//! it was built from. A `PROVENANCE.md` in a source tree discharges nothing
-//! for someone who was handed `pdfcer-gui.exe` in a folder.
-//!
-//! Auditing what pdfcer already ships, in the course of building the surface
-//! that will carry the model's notice, turned up **three third-party works
-//! that are redistributed today** and were carrying no notice either — the
-//! bundled substitute faces and the two Adobe data tables below. They arrive
-//! through the engine (`pdfcer-core` and `pdfcer-render` are path dependencies
-//! and Rust links them statically), so they are inside `pdfcer-gui.exe`
-//! whether or not anyone here thought about them. They are the reason this
-//! catalog is **not empty before OCR lands**, and a surface that would have
-//! been empty until its first entry is a surface nobody would have trusted.
+//! The same obligation already runs on three works this program redistributes
+//! today: the bundled substitute faces and the two Adobe data tables below.
+//! They arrive through the engine (`pdfcer-core` and `pdfcer-render` are path
+//! dependencies and Rust links them statically), so they are inside
+//! `pdfcer-gui.exe` whether or not anyone here thought about them — which is
+//! why an attribution catalog cannot be deferred until an OCR build.
 //!
 //! ## The two surfaces, and why neither replaces the other
 //!
@@ -136,20 +129,20 @@ pub fn product() -> &'static str {
 
 /// The version line, when this build **is** a released version.
 ///
-/// # ★★★ Where `version` comes from, and why it is not the crate manifest
+/// # Where `version` comes from, and why it is not the crate manifest
 ///
 /// From the **git tag**, through `PDFCER_RELEASE_VERSION` — see
 /// `crates/pdfcer-gui/build.rs`'s `release()`, which derives it, and
 /// [`crate::dialogs::about::version_label`], which decides between this
 /// function and the two below.
 ///
-/// It used to come from `CARGO_PKG_VERSION`, and that was **wrong rather than
-/// stale**. `Cargo.toml` says `0.1.0` on purpose: the crate is versioned by the
-/// pdfcer workspace it folds into, not by this staging one, and O109 and O110
-/// both record the decision not to bump it. The consequence went unnoticed for
-/// five releases — the About window's headline read *"Version 0.1.0"* in the
-/// build published as **v0.5.0** (review row A11). Two numbers that are not the
-/// same number were being shown as if they were.
+/// **`CARGO_PKG_VERSION` is not the release version and must never be
+/// substituted for it.** `Cargo.toml` says `0.1.0` on purpose: the crate is
+/// versioned by the pdfcer workspace it folds into, not by this staging one,
+/// and `OPERATOR_REQUESTS.md` O109 and O110 both record the decision not to
+/// bump it. Reading the manifest here therefore shows an operator a number
+/// that has nothing to do with the build they were handed, and the two are
+/// indistinguishable on screen.
 ///
 /// The word in front is the part that is copy. Nothing here is ever
 /// hand-written: a version literal in this file would be a second place to
@@ -161,7 +154,7 @@ pub fn version_line(version: &str) -> String {
 
 /// The version line when the build is **past** a release rather than at one.
 ///
-/// # ★★ Why a development build is not allowed to name a release bare
+/// # Why a development build is not allowed to name a release bare
 ///
 /// `Version 0.5.0` on a build twenty-three commits past `v0.5.0` is the same
 /// class of untruth this whole row is about, one step smaller: an operator
@@ -191,7 +184,7 @@ pub fn version_line_after(version: &str, commits: u32, modified: bool) -> String
 
 /// What the headline says when there is **no** release version to show.
 ///
-/// # ★★★ Why this says something rather than showing nothing
+/// # Why this says something rather than showing nothing
 ///
 /// The no-placeholders rule (R9) forbids rendering a stub, and it would be
 /// satisfied by drawing no line at all. This says a sentence instead, for the
@@ -222,9 +215,9 @@ pub fn version_unreleased() -> &'static str {
 
 /// Heading for the block naming when this was built and what is inside it.
 ///
-/// The operator asked for this on 2026-08-18: *"when I go to about pdfcer in
-/// pdfcer-gui, can you include the date and time of the build. Also the date and
-/// time of the builds of the used pdfcer and iccce"*.
+/// The operator asked for this: *"when I go to about pdfcer in pdfcer-gui, can
+/// you include the date and time of the build. Also the date and time of the
+/// builds of the used pdfcer and iccce"*.
 #[must_use]
 pub fn build_heading() -> &'static str {
     "Build"
@@ -243,7 +236,7 @@ pub fn build_line(stamp: &str, rev: &str) -> String {
 
 /// The line for a component compiled INTO this program.
 ///
-/// ★ The wording distinguishes **committed** from **built**, and the
+/// The wording distinguishes **committed** from **built**, and the
 /// distinction is the whole reason this is not simply three build times.
 /// `pdfcer-core` and its siblings have no build of their own — they were
 /// compiled by the same `cargo build` that produced everything else here, so
@@ -263,7 +256,7 @@ pub fn component_line(name: &str, version: &str, rev: &str, committed: &str) -> 
 
 /// The line for a component that is **not part of this build**.
 ///
-/// ★ Reported rather than omitted, and the judgement is worth writing down
+/// Reported rather than omitted, and the judgement is worth writing down
 /// because it looks like a breach of the no-placeholders rule and is not. That
 /// rule governs **controls**: an unavailable capability must offer no button,
 /// because a button that does nothing is a lie about what the program can do.
@@ -346,18 +339,16 @@ pub fn close() -> &'static str {
 ///   be invisible — the crate list runs to well over a hundred entries and
 ///   nobody re-reads it.
 /// - **The pdfcer icon set** (`crates/pdfcer-gui/src/icons/assets/`). It is the
-///   operator's own art under the project's own MIT licence, confirmed by him
-///   on 2026-08-02; the `LICENSE` file already covers it and there is no
-///   third-party grant to reproduce. Listing it under a heading that says
-///   "third-party" would make this dialog say something untrue. See that
-///   directory's `PROVENANCE.md`.
+///   operator's own art under the project's own MIT licence, confirmed by him;
+///   the `LICENSE` file already covers it and there is no third-party grant to
+///   reproduce. Listing it under a heading that says "third-party" would make
+///   this dialog say something untrue. See that directory's `PROVENANCE.md`.
 ///
-/// ★ **The `ocrs` OCR model weights were listed here as absent until
-/// 2026-08-14, and are now the fourth entry below.** They are the reason this
-/// whole surface exists, and the note that stood here said *"do not add the
-/// entry before the files are actually in the package: an attribution for
-/// something that is not there is a false statement in the other direction."*
-/// They are in the package now —
+/// **An entry may not be added before the files are actually in the package.**
+/// An attribution for something that is not shipped is a false statement in
+/// the other direction, and it is the failure mode this list is most exposed
+/// to, because the notice is easy to write and the packaging is not. The
+/// `ocrs` weights satisfy it two ways at once:
 /// `tools/package-portable.py`'s `PAYLOAD_ASSET_DIRS` copies them to
 /// `models/ocrs/` beside the executable, and
 /// `tools/gates/check-shipped-assets.py` declares them `how="copied"`, which
@@ -370,7 +361,7 @@ pub fn close() -> &'static str {
 /// way, and the recipient is the same person — which is exactly why this
 /// dialog says *what* each work is rather than *how it got here*.
 ///
-/// # ★ The engineering constraint that travels with those weights
+/// # The engineering constraint that travels with those weights
 ///
 /// Written here rather than only in the engine's provenance note, because
 /// this is the file someone will have open when the idea occurs to them.
@@ -444,9 +435,9 @@ pub fn attributions() -> &'static [Attribution] {
         // suffix rather than a version, the Hugging Face and S3 copies are not
         // byte-identical to each other, and the hash is therefore the identity.
         //
-        // ★ The FIRST entry in this catalog whose licence requires a LINK
-        // rather than a reproduction, which is what `licence_url` was added
-        // for — see its own documentation, written before this entry existed.
+        // The only entry whose licence requires a LINK rather than a
+        // reproduction, which is what `licence_url` exists for — see its own
+        // documentation.
         //
         // Covers the asset directory `crates/pdfcer-core/assets/models/ocrs` in
         // the engine tree; shipped in the portable folder as `models/ocrs/`.
@@ -466,7 +457,7 @@ pub fn attributions() -> &'static [Attribution] {
 
 #[cfg(test)]
 mod tests {
-    /// ★ **The build stamp is present and is not a placeholder.**
+    /// **The build stamp is present and is not a placeholder.**
     ///
     /// `build.rs` sets `PDFCER_BUILD_TIME` from `PDFCER_BUILD_STAMP` when the
     /// packager supplies one and from a computed UTC clock otherwise. Both
@@ -485,7 +476,7 @@ mod tests {
         assert!(!rev.trim().is_empty(), "build.rs set no revision");
     }
 
-    /// ★ The engine is REALLY named, because this is the row that identifies
+    /// The engine is REALLY named, because this is the row that identifies
     /// which pdfcer is inside a given executable.
     ///
     /// A `Cargo.lock` this build script could not read would leave the version
@@ -578,7 +569,7 @@ mod tests {
         }
     }
 
-    /// ★ The dialog and the shipped notice file cannot disagree.
+    /// The dialog and the shipped notice file cannot disagree.
     ///
     /// This is the property that makes two surfaces safe rather than twice
     /// the maintenance. The dialog names a work and its licence; the file
@@ -586,9 +577,9 @@ mod tests {
     /// absent from the file, the operator is told about terms they have no
     /// way to read — which is a worse state than either surface alone.
     ///
-    /// It fails LOUDLY, which is the point. `HANDOFF.md` §10 records that the
-    /// RON regeneration rots precisely because nothing fails until somebody
-    /// else runs a round-trip; this assertion runs in every `cargo test`.
+    /// It fails LOUDLY, which is the point. A generated artefact whose only
+    /// check is somebody else running a round-trip rots unnoticed; this
+    /// assertion runs in every `cargo test`.
     #[test]
     fn the_shipped_notice_carries_every_attribution_this_dialog_makes() {
         let notice = notice();

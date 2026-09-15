@@ -4,26 +4,26 @@
 //! selected and — when it matters — how many other things were under the same
 //! click.
 //!
-//! ## ★★★ The defect this exists for
+//! ## The state this exists to make legible
 //!
-//! The operator, 2026-08-26:
+//! The operator:
 //!
 //! > *"when I click on one of the objects all I get is the page selected."*
 //!
-//! He was reporting the truth, precisely. His file wraps the whole visible body
-//! of the sheet in a page-sized form XObject, the engine does not enter one, and
-//! its bounding box therefore wins every click at every point. He was selecting
-//! a page-sized object.
+//! That report is precise. A file that wraps the whole visible body of the
+//! sheet in a page-sized form XObject gives that form a bounding box which
+//! wins every click at every point, and the engine does not enter one — so
+//! what is selected really is a page-sized object.
 //!
-//! **Nothing on screen said so.** The selection outline is drawn round the
-//! page edge, which looks exactly like *"the page is selected"* — a state this
-//! program does not have. There was no surface anywhere that would have told
-//! him *"you have selected a Form containing 214 objects"*, which is a
-//! diagnosis, from which the next question follows on its own.
+//! Without this line **nothing on screen says so**. The selection outline is
+//! drawn round the page edge, which looks exactly like *"the page is
+//! selected"* — a state this program does not have. No other surface says
+//! *"you have selected a Form containing 214 objects"*, which is a diagnosis,
+//! and from a diagnosis the next question follows on its own.
 //!
-//! ★ This line does not fix the selecting. It makes the selecting **legible**,
+//! This line does not fix the selecting. It makes the selecting **legible**,
 //! which is what turns an unexplainable interface into a solvable one — and it
-//! is the surface every future refusal sentence will be printed on.
+//! is the surface every refusal sentence is printed on.
 //!
 //! ## Why the left, and why it is the thing that yields
 //!
@@ -47,12 +47,12 @@
 //! | one object, more underneath | `… · 1 of 5 here` |
 //! | several objects | `3 objects selected` |
 //!
-//! ★★ **Nothing when nothing is selected**, rather than *"Nothing selected"*.
+//! **Nothing when nothing is selected**, rather than *"Nothing selected"*.
 //! A status bar that narrates the absence of a thing spends a permanent line on
-//! the most common state in the program. `HOW_IT_SHOULD_WORK.md` §8.2 argues for
-//! a tutorial string there and it may well be right — but that is a decision
-//! about teaching, and this line is a decision about reporting. They should not
-//! be made at once and they should not be made by the same code.
+//! the most common state in the program. A tutorial string there may well be
+//! worth having, but that would be a decision about **teaching** and this line
+//! is a decision about **reporting**. They should not be made at once and they
+//! should not be made by the same code.
 
 use egui::Ui;
 
@@ -65,7 +65,7 @@ pub const REGION: &str = "status-group:selected"; // ui-text-exempt: trace regio
 /// `status-rung kind=text|path part=N of=M` — the rung clause this bar
 /// appended, stated on the channel a harness can read.
 ///
-/// # ★★★ Why a label's own words need a trace line at all
+/// # Why a label's own words need a trace line at all
 ///
 /// [`crate::diag::ui_rect`] publishes WHERE this label was drawn and never
 /// WHAT it says. That is the right division for a layout oracle and it is
@@ -79,25 +79,24 @@ pub const REGION: &str = "status-group:selected"; // ui-text-exempt: trace regio
 /// frame has measured that the sentence exists and that the bar drew it.
 /// Neither half alone says that, which is why a check should assert both.
 ///
-/// ⚠ **"From the same arm" is load-bearing, and it was not true for the
-/// first four hours this constant existed.** The emission sat ABOVE the
-/// `match`, keyed on the same `PartKind` the arms are keyed on, which reads
-/// as equivalent and is not: falsification recipe (4) of the driven check —
-/// replace both arms with `(line, None)` — left the trace firing and the
-/// check PASSING on a build that disclosed nothing. It now goes through
+/// **"From the same arm" is load-bearing.** An emission placed ABOVE the
+/// `match` and keyed on the same `PartKind` the arms are keyed on reads as
+/// equivalent and is not: falsification recipe (4) of the driven check —
+/// replace both arms with `(line, None)` — leaves such a trace firing and
+/// the check PASSING on a build that discloses nothing. It goes through
 /// [`trace_rung`], called from the two producing arms and from nowhere else.
 ///
-/// ★ It is a trace of the DECISION, not a transcription of the string.
+/// It is a trace of the DECISION, not a transcription of the string.
 /// Echoing the rendered text would make every wording change a harness
 /// change and would tempt a check into asserting English; `kind`, `part`
 /// and `of` are the three facts the clause is computed from, and a build
 /// that gets any of them wrong gets the sentence wrong too.
 ///
-/// ★★ Routed through [`crate::diag::trace_changed`] rather than
+/// Routed through [`crate::diag::trace_changed`] rather than
 /// [`crate::diag::trace`], because this is drawn sixty times a second and
 /// a selection that is sitting still would otherwise bury the channel —
-/// the lesson `canvas-pointer` taught when a stationary pointer emitted
-/// fifty identical lines in nine seconds. The de-duplication is on the
+/// on `canvas-pointer` a stationary pointer writes fifty identical lines in
+/// nine seconds. The de-duplication is on the
 /// rendered line, so a harness must not assume one press produces one line:
 /// an EARLIER gesture that produced the identical clause suppresses the
 /// later one. A check wanting a before/after verdict asserts that the
@@ -112,7 +111,7 @@ const RUNG_SLOT: &str = "status-rung"; // ui-text-exempt: trace slot name, never
 /// [`crate::canvas::depth`] for why those two live apart.
 pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
     let page = doc.view.page_index;
-    // ★★★ `targets_on`, NOT `object_indices_on`.
+    // `targets_on`, NOT `object_indices_on`.
     //
     // This is a **readout**, and a readout must describe what the operator can
     // see. `object_indices_on` answers about the page's own paint order only —
@@ -126,7 +125,7 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
     // showed something to be puzzled by.
     let targets = doc.selection.targets_on(page);
     let Some(&first) = targets.first() else {
-        // ★★★ **NOTHING SELECTED, BUT STILL INSIDE SOMETHING** —
+        // **NOTHING SELECTED, BUT STILL INSIDE SOMETHING** —
         // `OPERATOR_REQUESTS.md` O70, and it is the state that needs saying
         // most.
         //
@@ -152,7 +151,7 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
     let text = if targets.len() > 1 {
         t::selection_many(targets.len())
     } else {
-        // ★ The kind and the size come from the DECOMPOSITION, not from the
+        // The kind and the size come from the DECOMPOSITION, not from the
         // selection: a selection is four integers and knows nothing about what
         // it names. `page_objects` is the cache the canvas and the Objects
         // panel already read, so this adds no work on a frame that has drawn
@@ -199,7 +198,7 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
         described.unwrap_or_else(|| t::selection_many(1))
     };
 
-    // ★★ The stack count, appended rather than separate, because it is a fact
+    // The stack count, appended rather than separate, because it is a fact
     // about the SAME selection: *"this one, and there were four others."* A
     // second label would read as a second subject.
     //
@@ -208,15 +207,15 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
     // that did not come from a click at all, which is what stops this claiming
     // a stack the operator is not pointing at.
     //
-    // ★ It is keyed on the `TargetId`, so a depth measured for `leaves[7]` is
-    // never claimed by a selection of `objects[7]`. That collision did not
-    // exist while a page had one index space; it does now.
+    // It is keyed on the `TargetId`, so a depth measured for `leaves[7]` is
+    // never claimed by a selection of `objects[7]`. A page has two index
+    // spaces, so a bare integer key would let one answer the other.
     let text = match crate::canvas::depth::taken(ui.ctx(), page, first) {
         Some(depth) => t::selection_with_depth(&text, depth.taken + 1, depth.of),
         None => text,
     };
 
-    // ★★★ **The rung, said in words** — 2026-09-15, O188(A).
+    // **The rung, said in words** — `OPERATOR_REQUESTS.md` O188(A).
     //
     // Appended before the layer clause and after the depth clause, which is
     // the order the three facts narrow in: *what it is* (kind and size),
@@ -229,7 +228,7 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
 
     let response = ui.label(text);
     crate::diag::ui_rect(REGION, response.rect);
-    // ★ The hover carries the verbs, not the readout. `disclosure`'s rule:
+    // The hover carries the verbs, not the readout. `disclosure`'s rule:
     // eliding defers rather than loses — the bar has room for *1 line of
     // 27* and not for the sentence that says what Delete will do with it.
     if let Some(hint) = hint {
@@ -237,7 +236,7 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
     }
 }
 
-/// ★★★ **Is the selection narrower than the object it names, and by how
+/// **Is the selection narrower than the object it names, and by how
 /// much?**
 ///
 /// Returns the line with a rung clause appended, and the hover that belongs
@@ -252,7 +251,7 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
 /// level is asked first and the index is read only once the level has said
 /// there is one.
 ///
-/// # ★★ A leaf produces no clause, and that is not a hole
+/// # A leaf produces no clause, and that is not a hole
 ///
 /// The Part rung is unreachable inside a form XObject: `part_hits_of`
 /// matches on a page-object index and returns nothing for a leaf, so the
@@ -262,7 +261,7 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
 /// goes quiet rather than printing a total it computed from the wrong index
 /// space.
 ///
-/// # ★ The total is re-read every frame
+/// # The total is re-read every frame
 ///
 /// From the same `page_objects` cache the outline was drawn from, keyed on
 /// `(page, edit_epoch)`. A reflow that changes how many runs the object has
@@ -306,24 +305,23 @@ fn with_part(
     let kind = provider.part_kind(index);
     drop(provider);
 
-    // ★★★ **The trace is emitted from INSIDE the producing arms, and that
+    // **The trace is emitted from INSIDE the producing arms, and that
     // placement is the whole of its value.**
     //
-    // It sat above this `match` for four hours on 2026-09-15, keyed on `kind`,
-    // and the driven check that reads it PASSED on a build whose arms had been
-    // replaced with `(line, None)` — i.e. on a build where the operator stands
-    // on one line of six and the status bar says nothing about it, which is
-    // exactly the defect the line exists to report. Everything the trace said
-    // was true; it was a statement about the four early returns above rather
-    // than about the clause, and an assertion both outcomes satisfy measures
-    // neither.
+    // Keyed on `kind` above this `match`, it would still fire on a build whose
+    // arms had been replaced with `(line, None)` — a build where the operator
+    // stands on one line of six and the status bar says nothing about it,
+    // which is exactly what the line exists to report. Everything such a trace
+    // says is true; it is a statement about the four early returns above
+    // rather than about the clause, and an assertion both outcomes satisfy
+    // measures neither.
     //
-    // ⇒ The emission and the sentence are now produced by the same arm, so
-    // there is no edit that removes the clause and leaves the trace. See
+    // ⇒ The emission and the sentence are produced by the same arm, so there
+    // is no edit that removes the clause and leaves the trace. See
     // [`RUNG_SLOT`] for why a rect cannot make this claim and why the fields
     // are the DECISION rather than the sentence.
     //
-    // ⚠ The `None` arm is deliberately silent rather than tracing
+    // The `None` arm is deliberately silent rather than tracing
     // `kind=none`. A part selection whose object reports no part kind produces
     // no clause BY DESIGN, and a trace line there would make the absence of a
     // clause indistinguishable from the presence of one to any check that only
@@ -363,7 +361,7 @@ const RUNG_PATH: &str = "path";
 /// call site added anywhere would be visible here, and a reader who wants to
 /// know what can emit this line has one place to look.
 ///
-/// ★★ Routed through [`crate::diag::trace_changed`] because the status bar is
+/// Routed through [`crate::diag::trace_changed`] because the status bar is
 /// built sixty times a second and an unconditional trace would write fifty
 /// identical lines in nine seconds — the `canvas-pointer` lesson. The
 /// de-duplication is keyed on the RENDERED line, which has one consequence a
@@ -379,37 +377,37 @@ fn trace_rung(kind: &str, part: usize, of: usize) {
     });
 }
 
-/// ★★★ **Which layer the selection is on, appended to the line that already
+/// **Which layer the selection is on, appended to the line that already
 /// names it.**
 ///
 /// # Why this is on the status bar and not only in the Layers panel
 ///
-/// **The canvas is the primary surface, never a panel.** `pdfcer-core` can now
-/// answer *"which layer is this object on"* (`Pass 250.0`,
-/// `VectorObject::oc()`), so clicking the object has to be able to *reach*
-/// that answer. A capability whose only route is a panel is a capability the
-/// operator must already know exists before they can use it — and this one was
-/// asked for as *"selecting an object highlights that layer"*, which is a
-/// sentence about **clicking**, not about a panel.
+/// **The canvas is the primary surface, never a panel.** `pdfcer-core`
+/// answers *"which layer is this object on"* through `VectorObject::oc()`, so
+/// clicking the object has to be able to *reach* that answer. A capability
+/// whose only route is a panel is a capability the operator must already know
+/// exists before they can use it — and this one is asked for as *"selecting
+/// an object highlights that layer"*, which is a sentence about **clicking**,
+/// not about a panel.
 ///
 /// The panel is the supplement: it is where the answer can be acted on, by
 /// switching the layer off. This is where it can be *seen*, with nothing open.
 ///
-/// # ★★★ Rule 4: nothing is drawn on the drawing
+/// # Rule 4: nothing is drawn on the drawing
 ///
 /// No badge, tint, dashed outline or provisional layer is painted over the
 /// selected content to express its membership. The selection handles are the
 /// cursor and are untouched. **Render normally; report separately. Both.**
 ///
-/// # ★★ Silent on a document with no optional content, which is nearly all of
+/// # Silent on a document with no optional content, which is nearly all of
 /// them
 ///
-/// The engine measured **0.6 %** of a 500-file corpus carrying optional
+/// The engine measures **0.6 %** of a 500-file corpus as carrying optional
 /// content at all. On the other 99.4 % *"which layer"* is not a question the
 /// operator has, and `not on a layer` after every single click would be a
-/// permanent line about a feature the document does not use — the same defect
-/// as narrating "Nothing selected", which this module's header already
-/// refuses.
+/// permanent line about a feature the document does not use — the same fault
+/// as narrating "Nothing selected", which this module's header refuses for
+/// the same reason.
 ///
 /// So the clause appears only once `read_layers` says the document declares
 /// groups. That read walks `/OCProperties` and its `/OCGs` array — a handful
@@ -423,7 +421,7 @@ fn with_layer(doc: &OpenDoc, line: &str) -> String {
         return line.to_owned();
     }
     let membership = crate::panels::layers::highlight::resolve(doc);
-    // ★ The name comes from the panel's own `row_name`, through
+    // The name comes from the panel's own `row_name`, through
     // `layer_name_for`. One spelling of what a layer is called: a bar that
     // read `/Name` itself would print an empty string where the panel prints
     // its placeholder, for the same layer, on two surfaces visible at once.
@@ -435,14 +433,14 @@ fn with_layer(doc: &OpenDoc, line: &str) -> String {
         return line.to_owned();
     };
     crate::diag::trace(|| {
-        // ★★★ Published for the driven check, and it carries the ANSWER rather
+        // Published for the driven check, and it carries the ANSWER rather
         // than merely that an answer happened. A trace saying "a layer clause
         // was drawn" would pass under a build that always names the same
-        // layer — precisely the vacuous shape a fixture whose objects all sit
-        // on one layer would hide, which is why the check's fixture carries
-        // two layers and an object on neither.
+        // layer — the vacuous shape a fixture whose objects all sit on one
+        // layer hides, which is why the check's fixture carries two layers and
+        // an object on neither.
         //
-        // ★ `kind`/`reason` rather than `{:?}`: see `Membership::kind`. The
+        // `kind`/`reason` rather than `{:?}`: see `Membership::kind`. The
         // NAME is quoted last, because it is the one field that may contain a
         // space and a `key=value` parser must not have to cope with one in the
         // middle of a line.

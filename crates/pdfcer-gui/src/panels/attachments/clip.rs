@@ -1,11 +1,9 @@
 //! # `panels::attachments::clip` — **copy, cut and paste an embedded file**
 //!
-//! Found by `tools/gates/check-verb-coverage.sh` on its first honest run,
-//! 2026-09-01: `copy_attachment`, `cut_attachment` and `paste_attachment`
-//! shipped in `pdfcer-core` `Pass 173.0` and this shell named **none** of them.
-//! So an attachment could not be moved from one open document to another, which
-//! is an odd thing to be missing now that pdfcer is multi-document — and nothing
-//! anywhere had written a sentence about it either way.
+//! The three controls that let an attachment move from one open document to
+//! another. `tools/gates/check-verb-coverage.sh` asserts that this shell names
+//! `copy_attachment`, `cut_attachment` and `paste_attachment`, because an
+//! engine verb no surface reaches is a capability the operator does not have.
 //!
 //! ## Why the controls are in this panel and not on the ribbon
 //!
@@ -19,7 +17,7 @@
 //! the kind of thing this project's standing rule about conventional
 //! interactions forbids inventing.
 //!
-//! ## ★★★ The question that MUST be asked before the press
+//! ## The question that MUST be asked before the press
 //!
 //! **Does the destination already have a file of that name?**
 //!
@@ -29,16 +27,16 @@
 //! existing entry is dropped from the tree and the new one takes its key.
 //!
 //! The old bytes survive in the earlier revision until a full rewrite, so it is
-//! recoverable — and **nothing on screen would say it had happened**. That is
-//! the third of the engine's *"produces a document that looks right and is
-//! not"* shapes, and it gets the bookmark paste's treatment: asked beside the
-//! button, while the operator can still choose.
+//! recoverable — and **nothing on screen would say it had happened**. A write
+//! that produces a document which looks right and is not is the worst shape a
+//! silent edit can take, so it gets the bookmark paste's treatment: said beside
+//! the button, while the operator can still choose.
 //!
-//! ★ A **statement**, not a confirmation. One paste is one `EditSession`
-//! command and therefore one `Ctrl+Z`, which satisfies `HANDOFF.md`'s *confirmed
-//! or clearly undoable*. What it must not be is silent.
+//! A **statement**, not a confirmation. One paste is one `EditSession` command
+//! and therefore one `Ctrl+Z`, which is enough for the rule that a destructive
+//! verb be *confirmed or clearly undoable*. What it must not be is silent.
 //!
-//! ## ★★ What CANNOT be asked in advance, and is filed
+//! ## What CANNOT be asked in advance, and is filed
 //!
 //! A document whose `/EmbeddedFiles` root holds `/Kids` rather than `/Names`
 //! refuses the attach entirely (`AttachmentTreeUnsupported`), and rightly:
@@ -76,16 +74,16 @@ const REGION_CUT: &str = "attachments.cut"; // ui-text-exempt: a trace region na
 const REGION_PASTE: &str = "attachments.paste"; // ui-text-exempt: a trace region name, never displayed
 /// The replacement warning's rectangle, drawn when a file of that name is here.
 ///
-/// ★★★ **Paired with [`REGION_FRESH`], and the pairing is not decoration.**
+/// **Paired with [`REGION_FRESH`], and the pairing is not decoration.**
 ///
 /// `crate::diag::ui_rect` is a **change log**: a region that stops being drawn
 /// does not un-declare itself, so a harness cannot learn "this warning is not
 /// showing" from the absence of the name. That is written up in
-/// `D:/dev/rag/egui/a_change_log_ui_rect_trace_cannot_report_that_a_widget_stopped_being_drawn.md`
-/// and this feature reproduced it within the hour: a driven check asserted the
-/// warning was absent in the second document, and read the declaration this
-/// panel had legitimately made in the FIRST one — where a file of that name
-/// really was present — several frames earlier.
+/// `D:/dev/rag/egui/a_change_log_ui_rect_trace_cannot_report_that_a_widget_stopped_being_drawn.md`.
+/// It bites this control in particular: a check that asserts the warning is
+/// absent in one document will read the declaration this panel legitimately
+/// made frames earlier against **another** document that really did hold a file
+/// of that name.
 ///
 /// ⇒ So the control declares **one of two names**, always exactly one, and a
 /// reader takes whichever came last. An absence assertion becomes a presence
@@ -93,7 +91,7 @@ const REGION_PASTE: &str = "attachments.paste"; // ui-text-exempt: a trace regio
 const REGION_REPLACES: &str = "attachments.paste.replaces"; // ui-text-exempt: a trace region name
 /// The paste's "nothing will be displaced" state. See [`REGION_REPLACES`].
 ///
-/// ★ It has **no visible text** — there is nothing to say, and a line reading
+/// It has **no visible text** — there is nothing to say, and a line reading
 /// *"this will not replace anything"* on every paste is the noise that trains
 /// an operator to stop reading the one that matters. It publishes the button's
 /// own rectangle under a second name, which costs a trace line and no pixels.
@@ -108,7 +106,7 @@ const REGION_FRESH: &str = "attachments.paste.fresh"; // ui-text-exempt: a trace
 /// portfolio folder prefixes, so it is the right thing to address the document
 /// with and the wrong thing to show a person.
 ///
-/// ★ Cut is offered only where Remove is — a document-level attachment. A
+/// Cut is offered only where Remove is — a document-level attachment. A
 /// page-level one is removed by deleting its note, and `detach_file` answers
 /// `AttachmentNotFound` for it by name. Offering a Cut that could only refuse
 /// would be an affordance for an act this code cannot perform.
@@ -137,12 +135,11 @@ pub(super) fn row_controls(
             published.cut = true;
         }
         if cut.clicked() {
-            // ★★★ COPY FIRST, and only then raise the delete. `cut_objects`'
-            // doc comment makes the argument and it applies unchanged: *"a
-            // selection that cannot be copied is refused with nothing deleted.
-            // Reversed, a cut whose copy half failed would take the objects
-            // away with nothing on the clipboard — the one outcome the operator
-            // cannot recover from by pasting."*
+            // COPY FIRST, and only then raise the delete — the rule
+            // `cut_objects` states, unchanged here. A cut whose copy half fails
+            // is refused with nothing removed; reversed, it would take the
+            // attachment away with nothing on the clipboard, which is the one
+            // outcome the operator cannot recover from by pasting.
             if take(ui.ctx(), doc, key, name) {
                 actions.push(Action::Attachment(AttachmentAction::Detach {
                     key: key.to_vec(),
@@ -155,7 +152,7 @@ pub(super) fn row_controls(
 
 /// Read one attachment and park it on the clipboard. `true` if it went.
 ///
-/// # ★★ Why this is here and not an `Action`, unlike almost everything else
+/// # Why this is here and not an `Action`, unlike almost everything else
 ///
 /// `copy_attachment` is `&self` and commits nothing, and the panel already
 /// holds `&OpenDoc`. Routing it through the queue would gain nothing and cost
@@ -167,7 +164,7 @@ pub(super) fn row_controls(
 /// ⇒ So Copy and Cut are widget-layer, exactly as `canvas::clipboard::copy` and
 /// `canvas::fieldclip::copy` are, and only the delete crosses into the queue.
 ///
-/// ★★★ **And that is why `EditSession::cut_attachment` is never called.** It
+/// **And that is why `EditSession::cut_attachment` is never called.** It
 /// exists, it works, and it folds its two commands into one undo entry with a
 /// private method — which a shell cannot reach. Here it does not matter: the
 /// copy half commits nothing, so copy-then-`Detach` is already **one** command
@@ -204,7 +201,7 @@ pub(super) fn paste_control(ui: &mut Ui, existing: &[String], actions: &mut Vec<
         return;
     };
 
-    // ★★★ The question, asked BEFORE the button rather than after the press.
+    // The question, asked BEFORE the button rather than after the press.
     // Drawn above it, so it is read on the way to the control rather than after
     // the eye has already moved past.
     let replacing = existing.iter().any(|n| n == &clip.name);
@@ -220,7 +217,7 @@ pub(super) fn paste_control(ui: &mut Ui, existing: &[String], actions: &mut Vec<
         .button(t::paste_button())
         .on_hover_text(t::paste_tooltip(&clip.name));
     crate::diag::ui_rect_visible(REGION_PASTE, paste.rect, ui.clip_rect());
-    // ★ One of the two, every frame. See `REGION_REPLACES`: this is what makes
+    // One of the two, every frame. See `REGION_REPLACES`: this is what makes
     // "no file will be displaced" a statement a change-log trace can carry.
     crate::diag::ui_rect_visible(
         if replacing {
@@ -233,7 +230,7 @@ pub(super) fn paste_control(ui: &mut Ui, existing: &[String], actions: &mut Vec<
     );
     if paste.clicked() {
         actions.push(Action::Attachment(AttachmentAction::Paste {
-            // ★ The clip travels with the action rather than being re-read at
+            // The clip travels with the action rather than being re-read at
             // apply time, for `FormEdit::Recompute`'s reason: what the operator
             // consented to is what was on screen when they pressed, and an
             // action is a complete statement of an intent. Re-reading would
@@ -263,7 +260,7 @@ pub(crate) fn put(ctx: &egui::Context, clip: pdfcer_core::attachments::Attachmen
 
 #[cfg(test)]
 mod tests {
-    /// ★ The four regions are named apart, so a driven check aiming at one
+    /// The five regions are named apart, so a driven check aiming at one
     /// cannot match another by prefix.
     ///
     /// `attachments.paste` and `attachments.paste.replaces` deliberately share

@@ -25,12 +25,12 @@
 //! > holds four things that are stated in page indices.
 //!
 //! Those four are the flattened page vector, every cached raster, the canvas's
-//! object selection, and the Pages panel's own picks. `HANDOFF.md` §10 states
-//! the general rule — *"Selection is an identity — page, object, subpath, node
-//! — not a position"* — and `crate::canvas::interact`'s header states the
-//! measured half of it: *"`move_*` renumbers nothing … the `delete_*` family is
-//! the one that renumbers."* A page delete is that sentence one structure up,
-//! and a page **reorder** is a third case neither of them names.
+//! object selection, and the Pages panel's own picks. The general rule is that
+//! a selection is an identity — page, object, subpath, node — not a position,
+//! and `crate::canvas::interact`'s header states the measured half of it:
+//! *"`move_*` renumbers nothing … the `delete_*` family is the one that
+//! renumbers."* A page delete is that sentence one structure up, and a page
+//! **reorder** is a third case neither of them names.
 //!
 //! ## ★★ The table this whole file exists to implement
 //!
@@ -49,9 +49,9 @@
 //!
 //! ## ★ [`resync`] is called from `vector_edit`, not from these four arms
 //!
-//! That placement is the one design decision in this file worth arguing, and
-//! it is `HANDOFF.md` §6's one-choke-point rule applied to a *consequence*
-//! rather than to a dispatch.
+//! That placement is the one design decision in this file worth arguing: it is
+//! the one-choke-point rule applied to a *consequence* rather than to a
+//! dispatch.
 //!
 //! The naive arrangement is for each page arm to do its own tidying after its
 //! own `vector_edit` call. It is wrong for a reason that is invisible until
@@ -255,9 +255,9 @@ pub enum PageAction {
     ///
     /// # ★ This is the one action in the enum that renumbers pages
     ///
-    /// `HANDOFF.md` §10 states the rule for objects — *"Selection is an
-    /// identity — page, object, subpath, node — not a position"* — and this is
-    /// its page-level instance. After the removal, every index above the lowest
+    /// A selection is an identity — page, object, subpath, node — not a
+    /// position, and this is that rule's page-level instance. After the
+    /// removal, every index above the lowest
     /// deleted page names a **different sheet**. Both selections in the
     /// application are therefore invalid, in different ways, and the apply arm
     /// deals with both:
@@ -432,49 +432,31 @@ pub(super) fn resync(doc: &mut OpenDoc) {
     let structure_changed = now != before;
 
     // ★★★ **THE PAGE VECTOR IS REPLACED ON EVERY EDIT, NOT ONLY A STRUCTURAL
-    // ONE.** 2026-08-20, and the line this replaces was a real defect.
+    // ONE.**
     //
-    // It read:
+    // An early return on `now == before` is the tempting shape and it is
+    // wrong: `page_tree::Page` is not an id, it is a RESOLVED page, with its
+    // `/Contents` and its `/Resources` in it. An edit that rewrites the page
+    // dictionary without changing the page's object id compares equal and
+    // leaves `doc.pages` describing the document as it was.
     //
-    // ```text
-    // if now == before {
-    //     // The overwhelmingly common case: a markup, a move, a form fill. The
-    //     // page vector already describes the document …
-    //     return;
-    // }
-    // ```
+    // `EditSession::add_image` is the verb that shows it: it turns `/Contents`
+    // from a stream into an array and adds an `/XObject` to `/Resources`, and
+    // the page's id does not move. Skip the replacement and the canvas and the
+    // Objects panel go on reading a `Page` whose `/Contents` names the old
+    // stream alone — an inserted image that appears on neither, while the
+    // bytes on disk are right, so saving and reopening shows it.
     //
-    // **"The page vector already describes the document" is false**, and the
-    // comparison cannot see that it is false. `page_tree::Page` is not an id —
-    // it is a RESOLVED page: its `/Contents` and its `/Resources` are in it. An
-    // edit that rewrites the page dictionary without changing the page's object
-    // id passes `now == before` and leaves `doc.pages` describing the document
-    // as it was.
-    //
-    // The operator, 2026-08-20:
-    //
-    // > *"I tried a new document and inserted an image. Nothing appeared on
-    // > screen or in the tree, but after saving and reopening the image was
-    // > there."*
-    //
-    // Exactly that. `EditSession::add_image` turns `/Contents` from a stream
-    // into an array and adds an `/XObject` to `/Resources`; the page's id does
-    // not move; the early return fires; the canvas and the Objects panel both
-    // go on reading a `Page` whose `/Contents` names the old stream alone. The
-    // bytes on disk were right the whole time, which is why saving and
-    // reopening showed it.
-    //
-    // # Why the other edits looked fine
+    // # Why the other edits would look fine anyway
     //
     // * A **markup** is an annotation. `/Annots` is read from the session, not
     //   from this vector.
     // * A **move** rewrites a content stream **in place** — same stream object
-    //   — so the stale `Page`'s `/Contents` reference still resolves to the
+    //   — so a stale `Page`'s `/Contents` reference still resolves to the
     //   right object and re-reading it gets the new bytes.
     //
-    // `add_image` is the first verb that changes what `/Contents` *is*. So the
-    // early return had been wrong since it was written and had never been
-    // reachable in a way anyone could see.
+    // `add_image` is the first verb that changes what `/Contents` *is*, which
+    // is why the class of defect is invisible until one exists.
     //
     // # What it costs to replace it every time: nothing
     //
@@ -509,17 +491,12 @@ pub(super) fn resync(doc: &mut OpenDoc) {
     doc.strip_rasters.clear();
 
     // ★ …and the CURRENT page's raster, for the same reason and only for that
-    // reason — 2026-08-18.
+    // reason.
     //
-    // This line used to be absent, with a comment saying `page_texture` was
-    // *"dropped by `vector_edit` itself, which is why it is not touched
-    // here"*. That was true and it was also what made every ordinary edit
-    // blank the page: `vector_edit` dropped the texture on **every** edit in
-    // order to trigger a re-render, so the one case that genuinely needed it
-    // never had to ask.
-    //
-    // Now `vector_edit` keeps the raster and signals staleness through
-    // `page_texture_epoch`, so the drop belongs where its REASON is. The
+    // `vector_edit` keeps the raster and signals staleness through
+    // `page_texture_epoch`, so the drop belongs where its REASON is — dropping
+    // it there instead, on every edit, blanks the page on every ordinary one.
+    // The
     // distinction is the whole of it: after a content edit the old raster is
     // an older picture of the same sheet, and showing it for two frames is
     // right. After a delete or a reorder it is a picture of a **different
@@ -678,8 +655,7 @@ fn delete_disclosures(
 /// **Merge a whole document into this one**, with its form, its bookmarks and
 /// its named destinations.
 ///
-/// `pages.merge_into`, wired 2026-08-28 — the audit's first pick, and shell
-/// work only since `Pass` `merge_document` landed on 2026-08-18.
+/// Raised by `pages.merge_into` on the Pages tab.
 ///
 /// # ★★★ It is not [`insert_from_file`] with "all pages" ticked
 ///
@@ -787,9 +763,9 @@ pub(super) fn insert_from_file(
 
 /// **The half of an insert that does not care where the source came from.**
 ///
-/// Split out of [`insert_from_file`] on 2026-08-19, when a page dragged from
-/// one open document into another became a second way to reach exactly this
-/// engine call. The two callers differ in one thing — where the
+/// Split out of [`insert_from_file`] because a page dragged from one open
+/// document into another reaches exactly this engine call by a second route.
+/// The callers differ in one thing — where the
 /// `DocumentView` comes from, a file on disk or a parked `EditSession` — and
 /// everything after that point is identical: the same verb, the same
 /// disclosure, the same navigation to what arrived.
@@ -804,8 +780,8 @@ pub(super) fn insert_from_file(
 ///
 /// **How many pages the document actually gained**, which is `0` for every
 /// refusal — an empty operand list, an engine decline, a source with nothing in
-/// it. Added 2026-08-20 for the cross-document *move*: the source's pages are
-/// removed only if the target's insert happened, and *"did it happen"* is a
+/// it. The cross-document *move* needs it: the source's pages are removed only
+/// if the target's insert happened, and *"did it happen"* is a
 /// question this function is the only one in a position to answer. A move that
 /// deleted first, or deleted regardless, would lose the operator's sheets to a
 /// refusal they never saw.
@@ -849,16 +825,16 @@ pub(super) fn insert_from_view(
     super::apply::vector_edit(doc, "insert-pages", landing, count, |session| {
         session
             .insert_pages(view, pages, position)
-            // ★ `InsertOutcome`, not a `usize`, since 2026-08-19 — and the
-            // second field is the one this shell asked for. `orphaned_widgets`
+            // ★ `InsertOutcome`, not a `usize`, and the second field is the
+            // one this shell needs. `orphaned_widgets`
             // is EXACT rather than an upper bound (the engine's reply: no field
             // in the target can be claiming a widget that just arrived, because
             // `/AcroForm` is not merged and every object number is remapped), so
             // the number goes in front of the operator unhedged and a zero drops
             // the clause entirely.
             //
-            // ★ `orphaned_widgets_unrecoverable` joined it later the same day,
-            // and the two numbers are two different pieces of news. The engine
+            // ★ `orphaned_widgets_unrecoverable` is beside it, and the two
+            // numbers are two different pieces of news. The engine
             // measured its own output and found that of 13 orphans, 11 could be
             // registered and 2 had lost their identity permanently — and said
             // plainly that the old undifferentiated sentence *"is true of both
@@ -884,9 +860,9 @@ pub(super) fn insert_from_view(
     //
     // An operator who inserts four sheets wants to see them; leaving the view
     // on the page they were reading means the only evidence anything happened
-    // is a sentence in the status bar. `HANDOFF.md` §3 instruction 0 is exactly
-    // this: *"what would a competent user reach for next, within this same
-    // gesture?"* — and the answer is "look at them".
+    // is a sentence in the status bar. The question a verb has to answer is
+    // *what would a competent user reach for next, within this same gesture?*
+    // — and the answer is "look at them".
     //
     // Guarded on the page count actually having grown, so a refused insert
     // does not navigate: `vector_edit` reports a refusal to the trace and the
@@ -943,8 +919,8 @@ pub(super) fn delete(
     pages: &[usize],
     separations: pdfcer_core::pageops::SeparationPolicy,
 ) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
-    // ★★★ `delete_pages_with`, not `delete_pages` — the operator's separation
-    // policy, which was a broken promise until 2026-08-28.
+    // ★★★ `delete_pages_with`, not `delete_pages` — the latter is what makes
+    // the operator's separation policy a broken promise.
     //
     // `delete_pages` delegates to this verb with `SeparationPolicy::Repair`
     // hard-coded, so Settings > Pages > "what to do when deleting pages splits
@@ -1129,9 +1105,9 @@ pub(super) fn apply(
         // ★★★ **The page paste** — O59 item 2 — and it is three lines because
         // it is a THIRD SOURCE for a path that already exists.
         //
-        // `insert_from_view` was split out of `insert_from_file` on 2026-08-19
-        // when a page dragged between two open documents became a second way to
-        // reach it. A clipboard paste is the third, and it wants every single
+        // `insert_from_view` is the shared half of `insert_from_file`, reached
+        // also by a page dragged between two open documents. A clipboard paste
+        // is the third route, and it wants every single
         // thing that function already does: the landing calculation done before
         // the edit, `orphaned_widgets` and `orphaned_widgets_unrecoverable`
         // reported as two different pieces of news, the dropped outline and page
@@ -1304,8 +1280,9 @@ mod tests {
     /// **★ A delete clears the canvas selection, because its page index now
     /// names a different sheet.**
     ///
-    /// The exact defect class `HANDOFF.md` §10 warns about, at page level: an
-    /// entry that survived would resolve against another sheet's decomposition
+    /// A selection is an identity, not a position, and this is that rule at
+    /// page level: an entry that survived would resolve against another
+    /// sheet's decomposition
     /// on the next frame and draw an outline round an object nobody selected —
     /// with `format.delete` one keystroke away.
     #[test]

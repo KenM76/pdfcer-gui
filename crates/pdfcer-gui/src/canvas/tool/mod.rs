@@ -41,52 +41,37 @@
 //! focus and would therefore disable space-pan after a single click on the
 //! canvas (the canvas takes focus on click, which is exactly how D1 happened).
 //!
-//! ## ★ This header used to say there would never be a third variant. What
-//! changed
+//! ## ★★★ The bar a new variant has to clear
 //!
-//! Until the markup substrate landed, [`CanvasTool`]'s own doc comment read:
+//! This is **not** a general "tool" enum with one member per authoring surface.
+//! It answers a narrow question — **does a primary drag select, move the paper,
+//! or draw?** — and a candidate is a *mode* that arms a whole surface until it
+//! clears one bar: it must **arrive with its own state**, and it must need this
+//! enum to hold no more than *which kind is armed*.
 //!
-//! > Deliberately two variants and not a general "tool" enum with markup,
-//! > measure and text members. **Those are *modes* that arm a whole authoring
-//! > surface and they will arrive with their own state**; this enum answers the
-//! > narrow navigation question — does a primary drag select, or does it move
-//! > the paper?
+//! [`CanvasTool::Markup`] is the shape every later admission is measured
+//! against. It arrives with [`markup::MarkupKind`], with a `DragKind` and a
+//! `GestureOutcome` of its own in [`crate::canvas::gesture`], with a rubber
+//! band, a commit path and an `Action` — and nothing of it outlives a frame
+//! except **which kind is armed**, which is precisely one enum value and
+//! exactly the kind of thing this module already stores. So the enum grows by
+//! one variant *carrying* the kind, rather than by four.
 //!
-//! That was right, and it is not being overturned — **its condition has been
-//! met.** The sentence set a bar for admission ("arrives with their own
-//! state"), and markup now clears it: it arrives with [`markup::MarkupKind`],
-//! with a `DragKind` and a `GestureOutcome` of its own in
-//! [`crate::canvas::gesture`], with a rubber band, a commit path and an
-//! `Action`. What it does *not* have — and this is the part that decided the
-//! shape — is any state that outlives a frame except **which kind is armed**,
-//! which is precisely one enum value and is exactly the kind of thing this
-//! module already stores.
-//!
-//! So the enum grows by one variant *carrying* the kind, rather than by four,
-//! and the question it answers grows by one word: **does a primary drag select,
-//! move the paper, or draw?** The two rules that made the old sentence true are
-//! both still enforced here rather than at call sites —
-//! [`CanvasTool::pans_with_primary`] is still the single predicate the pan and
-//! gesture-suppression paths share, and [`CanvasTool::cursor`] is still the
+//! Two rules keep the growth cheap, and both are enforced here rather than at
+//! call sites: [`CanvasTool::pans_with_primary`] is the single predicate the
+//! pan and gesture-suppression paths share, and [`CanvasTool::cursor`] is the
 //! single place a tool's cursor is decided.
 //!
-//! ## ★ …and that paragraph then named two exclusions, both of which have since
-//! ## been overtaken. What is left of it, and what replaced it
+//! ## ★ What each later variant had to bring
 //!
-//! It used to close: *"Measure and text are **still** outside, and for the
-//! original reason rather than by inertia."* That sentence was stale twice over
-//! by 2026-08-14 and is kept here in quotation rather than deleted, because the
-//! **bar** it set is the useful part and both admissions were argued against it.
+//! **[`CanvasTool::Measure`]** reads like a counter-example — a two-point pick
+//! with a snap indicator and a live readout — and is not one: that machinery is
+//! [`crate::canvas::measure::pick`]'s, and none of it has to be held here. What
+//! crosses the boundary is one [`MeasureKind`], exactly as markup's one
+//! [`markup::MarkupKind`] does.
 //!
-//! **Measure came in first**, as [`CanvasTool::Measure`], and the old sentence's
-//! objection to it — *"a two-point pick with a snap indicator and a live
-//! readout"* — turned out to describe the pick machinery in
-//! [`crate::canvas::measure::pick`] rather than anything this enum has to hold.
-//! What crossed the boundary was one [`MeasureKind`], exactly as markup's one
-//! [`markup::MarkupKind`] had.
-//!
-//! **Text selection came in second, and it clears the bar more cleanly than
-//! either.** The bar is *"arrives with its own state"*, and the standing set is:
+//! **Text selection** ([`CanvasTool::Text`]) **clears the bar more cleanly than
+//! either**, and the set it arrives with is:
 //!
 //! | it arrives with | where |
 //! |---|---|
@@ -105,22 +90,21 @@
 //! where `Markup` and `Measure` each carry a kind. That is the smallest thing
 //! this enum can be asked to hold and still be worth holding.
 //!
-//! What the admission *buys* is two things at once, and the second is the one
-//! that made it urgent. `canvas::textsel` §3 gave a press its text meaning
-//! *"when the select tool is active and the mode cannot select content"*, which
-//! yields Read ✓, Review ✓, **Edit ✗** — so a reviewer could sweep text and an
-//! editor could not, and, worse, the three text-markup controls drawn on Edit's
-//! Markup tab could **never enable**, because `selection.text` was never true
-//! there. That is a live tension with `RIBBON_IA.md` P3, which reserves greying
-//! for *temporarily* unavailable, and it could not be closed by hiding the
-//! controls, because a command lives on exactly one tab and the Markup tab is in
-//! both Review and Edit. One variant closes both.
+//! What the variant *buys* is two things at once. Without it, `canvas::textsel`
+//! §3 gives a press its text meaning *"when the select tool is active and the
+//! mode cannot select content"*, which yields Read ✓, Review ✓, **Edit ✗** — a
+//! reviewer can sweep text and an editor cannot, and, worse, the three
+//! text-markup controls drawn on Edit's Markup tab can **never enable**, because
+//! `selection.text` is never true there. That is a live tension with
+//! `RIBBON_IA.md` P3, which reserves greying for *temporarily* unavailable, and
+//! it cannot be closed by hiding the controls, because a command lives on
+//! exactly one tab and the Markup tab is in both Review and Edit. One variant
+//! closes both.
 //!
 //! ### ★ The reference applications DISAGREE here, and Inkscape wins
 //!
-//! `HANDOFF.md` §3's standing instruction is to match Inkscape, Acrobat and
-//! SolidWorks, and to say which won where they disagree. On this question they
-//! genuinely do:
+//! The standing instruction is to match Inkscape, Acrobat and SolidWorks, and
+//! to say which won where they disagree. On this question they genuinely do:
 //!
 //! * **Acrobat and SolidWorks resolve text-versus-object *contextually*, within
 //!   one tool** — hover text, get an I-beam; hover an object, get an arrow.
@@ -142,15 +126,17 @@
 //! down happened to be inside a glyph's box, a distinction the operator cannot
 //! see and cannot aim at. A tool makes the answer a thing they chose.
 //!
-//! ### What is STILL outside, and it is the half the old sentence was right about
+//! ### Text EDITING is a separate admission, and it made the argument again
 //!
-//! **Text *editing*** — Phase 5, the defect that began this project — remains
-//! outside, and for exactly the original reason: it is a caret in a re-laid-out
-//! box, it would drag a whole subsystem's state through this type, and
-//! `HANDOFF.md` says in terms *do not start it early*. Selecting text and
-//! editing text are different features with different state, and this variant is
-//! the first one only. Whoever brings the second should have to make this
-//! argument again, in this file.
+//! Selecting text and editing text are different features with different state.
+//! The second is [`CanvasTool::TextEdit`], and it was admitted against this same
+//! bar and against a sharper objection — that a caret in a re-laid-out box would
+//! drag a whole subsystem's state through this type. That variant's own
+//! documentation is where the argument is made and where the objection is
+//! answered; it carries one [`TextEditKind`], and the draft, the caret, the
+//! anchor and the original text live in `egui::Memory`. Whoever brings the next
+//! authoring surface should have to make the argument again, in this file, in
+//! the same place.
 //!
 //! ## Where the state lives, and why `egui::Memory` is right here when it was
 //! wrong for the selection
@@ -195,11 +181,11 @@ pub enum CanvasTool {
     ///
     /// # ★★ Why this exists, and what it replaces
     ///
-    /// It replaces a **ritual this project invented**. Until 2026-08-19 the only
-    /// way to reach an anchor was to click an object, double-click to descend to
-    /// its subpath, double-click again to descend to a node — three gestures,
-    /// none of them signposted, with nothing on screen at any stage saying a
-    /// deeper rung existed. The operator's verdict, and it is the correct one:
+    /// It replaces a **ritual this project invented**: reaching an anchor by
+    /// clicking an object, double-clicking to descend to its subpath and
+    /// double-clicking again to descend to a node — three gestures, none of
+    /// them signposted, with nothing on screen at any stage saying a deeper rung
+    /// exists. The operator's verdict, and it is the correct one:
     ///
     /// > *"How do I get to see the end points of an object and select them to
     /// > drag and move? This doesn't work either. … The selector should be
@@ -214,12 +200,12 @@ pub enum CanvasTool {
     ///
     /// # What the rung ladder is still for
     ///
-    /// [`crate::canvas::selection::SelectionLevel`] stays exactly as it was —
-    /// it is a good **model** and it is what `move_node`, `move_subpath` and
-    /// `move_nodes` are addressed through. What changed is that arming this tool
-    /// *puts* you at the Node rung, instead of requiring you to find your way
-    /// there. Double-click descent still works and is still tested; it is simply
-    /// no longer the only route, which is what made it a trap.
+    /// [`crate::canvas::selection::SelectionLevel`] is a good **model**, and it
+    /// is what `move_node`, `move_subpath` and `move_nodes` are addressed
+    /// through. Arming this tool *puts* the operator at the Node rung instead of
+    /// requiring them to find their way there. Double-click descent still works
+    /// and is still tested; it is simply not the only route, and being the only
+    /// route is what made it a trap.
     Node,
     /// Click does nothing, drag moves the paper under the viewport.
     Hand,
@@ -227,13 +213,10 @@ pub enum CanvasTool {
     ///
     /// # ★ One variant carrying a kind, not one variant per shape
     ///
-    /// The old shell settled this and its reasoning is carried across intact
-    /// (`D:\Dev\pdfce\crates\pdfce-gui\src\canvas.rs:232-244`):
-    ///
-    /// > All markup kinds live in `MarkupToolState::kind` rather than becoming
-    /// > separate `CanvasTool` entries […] Separate entries would put
-    /// > mutually-exclusive states into a type that can express all their
-    /// > combinations.
+    /// All markup kinds live in the carried [`MarkupKind`] rather than becoming
+    /// separate `CanvasTool` entries, because separate entries would put
+    /// mutually-exclusive states into a type that can express all their
+    /// combinations.
     ///
     /// That last clause is the whole argument, and it is a statement about
     /// *types* rather than about tidiness: the operator is drawing exactly one
@@ -247,22 +230,22 @@ pub enum CanvasTool {
     /// [`crate::canvas::gesture::press_kind`] — is written once for markup as a
     /// whole and cannot be written four times and forgotten once.
     ///
-    /// **Changing the kind mid-drag is not possible here**, where the old shell
-    /// had to discard an in-progress gesture on a kind change. Arming is a
-    /// command, commands are dispatched between frames, and a drag in flight is
-    /// owned by [`crate::canvas::gesture::GestureState`], which carries the kind
-    /// it started with on its own `DragKind` — so a kind change mid-drag cannot
-    /// reach the drag at all. The property the old shell had to enforce, this
-    /// one gets from the gesture machine's existing "a drag keeps the kind it
-    /// started with" rule.
+    /// **Changing the kind mid-drag is not possible**, and it costs nothing to
+    /// guarantee. Arming is a command, commands are dispatched between frames,
+    /// and a drag in flight is owned by
+    /// [`crate::canvas::gesture::GestureState`], which carries the kind it
+    /// started with on its own `DragKind` — so a kind change mid-drag cannot
+    /// reach the drag at all. A design that held the kind outside the gesture
+    /// would have to discard an in-progress drag by hand; this one gets the
+    /// property from the gesture machine's "a drag keeps the kind it started
+    /// with" rule.
     Markup(MarkupKind),
     /// Clicks author a **dimension** of the carried kind.
     ///
     /// One variant carrying a kind, for the argument spelled out on
-    /// [`MeasureKind`] — which is the same argument `Markup` above makes, and
-    /// which the old shell did *not* apply here: it had three separate
-    /// `CanvasTool` variants for the measure tools plus five helper predicates
-    /// to ask which was active.
+    /// [`MeasureKind`] — the same argument `Markup` above makes. The
+    /// alternative it avoids is three separate `CanvasTool` variants for the
+    /// measure tools plus five helper predicates to ask which is active.
     ///
     /// # ★ Unlike every other tool, this one works on CLICKS
     ///
@@ -332,48 +315,45 @@ pub enum CanvasTool {
     ///
     /// It changes **no capability**. Selecting text authors nothing — it reads
     /// the page and writes to the clipboard, which is the operator's own
-    /// *copying is not authoring* ruling of 2026-08-14 — so this tool is
+    /// *copying is not authoring* ruling — so this tool is
     /// permitted in every mode, and [`retire_forbidden`] says so explicitly
     /// rather than by omission.
     ///
-    /// # ★ It is exclusive with the content marquee by PRECEDENCE, where the
-    /// mode rule was exclusive by construction
+    /// # ★ It is exclusive with the content marquee by PRECEDENCE, not by
+    /// construction
     ///
-    /// This is the one property the addition genuinely weakens, so it is stated
-    /// here rather than left to be discovered. Under the old rule the two
-    /// meanings read the same flag on both sides of one branch — `edit_content`
-    /// true meant content, false meant text — so no state could produce both and
-    /// there was no ordering to get wrong. With this tool armed in Edit, *both*
-    /// underlying facts are true: the mode can select content, and the operator
-    /// has asked for text.
+    /// This is the one property this variant genuinely weakens, so it is stated
+    /// here rather than left to be discovered. A pure mode rule has the two
+    /// meanings reading the same flag on both sides of one branch —
+    /// `edit_content` true means content, false means text — so no state can
+    /// produce both and there is no ordering to get wrong. With this tool armed
+    /// in Edit, *both* underlying facts are true: the mode can select content,
+    /// and the operator has asked for text.
     ///
     /// The tie is broken where every other armed tool's is, in
     /// [`crate::canvas::gesture::press_kind`], by the rung that already reads
     /// **an armed tool takes the press**. That is not a new rule invented for
-    /// this variant; it is the rule `Markup` has relied on since it landed, and
-    /// the alternative — leaving the mode branch to win — would be a control that
-    /// arms, shows an I-beam, and marquees objects.
+    /// this variant; it is the rule `Markup` relies on, and the alternative —
+    /// leaving the mode branch to win — is a control that arms, shows an I-beam,
+    /// and marquees objects.
     ///
     /// One consequence follows and is real: an object selection and a text
-    /// selection can now both be non-empty at once, in Edit, which
-    /// `canvas::textsel` §3 previously argued could never happen. That is why
-    /// they are two fields on the document rather than one enum, and the shape
-    /// turns out to have been right for a reason its own argument got wrong. See
+    /// selection can both be non-empty at once, in Edit. That is why they are
+    /// two fields on the document rather than one enum. ⚠ `canvas::textsel` §3
+    /// argues the two are mutually exclusive; this variant makes that untrue,
+    /// and the shape is right for a reason that argument gets wrong. See
     /// [`crate::canvas::keys`]'s rung 5, which orders them.
     Text,
     /// A click puts a **caret** on the page — in an existing run for
     /// [`TextEditKind::Edit`], at a fresh origin for [`TextEditKind::Add`] — and
     /// the keyboard then edits the page's own content.
     ///
-    /// # ★ The argument this header demanded, made here as it asked
+    /// # ★ The argument the module header demands of every new variant
     ///
-    /// The module header's exclusion paragraph closes: *"**Text editing** …
-    /// remains outside, and for exactly the original reason: it is a caret in a
-    /// re-laid-out box, it would drag a whole subsystem's state through this
-    /// type … Whoever brings the second should have to make this argument again,
-    /// in this file."* Here it is, against the bar the header actually set —
-    /// *"arrives with its own state"* — and against the objection it actually
-    /// raised, which is a different and stricter thing.
+    /// Made here against the bar the header sets — *"arrives with its own
+    /// state"* — and against the sharper objection text editing specifically
+    /// raises: that it is a caret in a re-laid-out box and would drag a whole
+    /// subsystem's state through this type.
     ///
     /// **The bar is cleared**, in the same five columns
     /// [`Self::Text`]'s table uses:
@@ -386,8 +366,8 @@ pub enum CanvasTool {
     /// | a commit path, and a real one: two `Action`s and two `EditSession` verbs | `Action::CommitTextEdit`, `Action::CommitAddText` |
     /// | a refusal vocabulary of its own | [`crate::canvas::textedit::Refusal`] |
     ///
-    /// **The objection is answered rather than outvoted.** It was not "text
-    /// editing is big"; it was *"it would drag a whole subsystem's state through
+    /// **The objection is answered rather than outvoted.** It is not "text
+    /// editing is big"; it is *"it would drag a whole subsystem's state through
     /// this type"* — a claim about **this enum**, not about the feature. And the
     /// state does not come through. What crosses is one [`TextEditKind`], which
     /// is exactly what [`Self::Markup`] and [`Self::Measure`] each carry and one
@@ -399,8 +379,8 @@ pub enum CanvasTool {
     /// exactly the same way and for exactly the same reason.
     ///
     /// The second clause of the objection — *"a caret in a re-laid-out box"* —
-    /// was a prediction about the **ghost text** the old shell drew, and it was
-    /// right about that. It is answered by not drawing one: see
+    /// is a correct prediction about **ghost text**, and it is answered by not
+    /// drawing any: see
     /// `canvas::textedit::preview`, which paints a caret and an extent bracket
     /// and no glyphs, and argues why a better ghost is the wrong fix rather than
     /// a deferred one.
@@ -691,9 +671,9 @@ pub use arm::*;
 
 #[cfg(test)]
 mod tests {
-    // ★ Imported HERE rather than at module scope. The split of 2026-08-18
-    // moved every production user of these two into `arm`, so a module-level
-    // import would be unused in the non-test build and clippy would refuse it.
+    // ★ Imported HERE rather than at module scope. Every production user of
+    // these two is in `arm`, so a module-level import would be unused in the
+    // non-test build and clippy would refuse it.
     // The tests still exercise the arming API through the re-export, which is
     // the point: they test the module's surface, not its file layout.
     use crate::app::modes::Capabilities;

@@ -1,7 +1,7 @@
 //! Drawing a context menu — and the two decisions that make it a menu
 //! rather than a popup with buttons in it.
 //!
-//! # ★ THE SEAM: the shell reports intent; the application dispatches
+//! # THE SEAM: the shell reports intent; the application dispatches
 //!
 //! Identical to [`crate::ribbon::render`]'s, deliberately and to the
 //! letter. [`Menu::show`] and [`Menu::attach`] return
@@ -23,13 +23,13 @@
 //! The payoff is concrete here: `RIBBON_IA.md` §5 says the context menu
 //! *"carries the same commands again"* as the Format tab. Because both
 //! surfaces return tokens into the same `match`, "the same commands" is
-//! literally true — the confirmation gate, the undo entry and the "this
-//! document is encrypted" refusal are written once and cover both. A
+//! literally true — the confirmation gate, the undo entry and the refusal
+//! on a document that may not be edited are written once and cover both. A
 //! registry of closures would have made the menu a second set of call
 //! sites, and the fifth one somebody added would be the one that forgot
 //! the undo entry.
 //!
-//! # ★ Decision 1: a menu with nothing to offer is never opened
+//! # Decision 1: a menu with nothing to offer is never opened
 //!
 //! Not "opened and then closed", and not "opened showing five greyed
 //! rows". [`Menu::attach`] resolves the menu **before** it asks `egui` for
@@ -48,7 +48,7 @@
 //! decision is taken before `egui` is involved, so there is no state for a
 //! later branch to get wrong.
 //!
-//! # ★ Decision 2: the menu measures itself before it draws
+//! # Decision 2: the menu measures itself before it draws
 //!
 //! A menu row is `[icon?] [label] [grow] [chord]`. The `grow` atom is what
 //! right-aligns the chord, and it right-aligns it *within the button*, so
@@ -65,11 +65,11 @@
 //! `min_rect` (`egui-0.35.0/src/placer.rs`), so the justified rows pick the
 //! new width up in the same pass rather than a frame later.
 //!
-//! # ★ Decision 3: the icon column belongs to the menu, the glyph to the
+//! # Decision 3: the icon column belongs to the menu, the glyph to the
 //! command
 //!
-//! Added 2026-09-04. A menu either has an icon column or it does not, and
-//! the answer is one property of the whole list rather than of each row:
+//! A menu either has an icon column or it does not, and the answer is one
+//! property of the whole list rather than of each row:
 //! [`plan::reserves_icon_column`] is true iff *some* surviving command
 //! names an icon key. Every command row in a reserving menu then lays out
 //! a slot — [`plan::IconSlot::Glyph`] for the ones with a key,
@@ -93,9 +93,9 @@
 //!
 //! **Submenus.** A nested menu is a second popup, a hover-intent timer and
 //! a keyboard model of its own, and none of it is needed by any menu
-//! `RIBBON_IA.md` §6 describes — those are flat lists of six to ten verbs.
-//! Adding it speculatively would be the item vocabulary growing a variant
-//! for a case nobody has.
+//! `RIBBON_IA.md` §6 describes — every one of those is a flat list of a
+//! handful of verbs. Adding it speculatively would be the item vocabulary
+//! growing a variant for a case nobody has.
 //!
 //! **Chord *handling*.** The menu draws the chord the keymap binds; it
 //! does not consume input for it. Chord dispatch belongs with the
@@ -304,7 +304,7 @@ impl<'a> ContextMenu<'a> {
             invoked: Vec::new(),
         };
 
-        // ★ Decision 3 (the icon column) is taken FIRST, because decision 2
+        // Decision 3 (the icon column) is taken FIRST, because decision 2
         // depends on it: whether a row lays out an icon slot changes how
         // wide that row wants to be, and the widest row is what sets the
         // body width. Measuring before knowing this would under-measure
@@ -455,9 +455,9 @@ impl Menu {
 ///
 /// A struct rather than eight parameters, and not only for the lint: every
 /// field here is a *decision already taken* — by [`plan::resolve`], by
-/// [`measure`], by [`plan::icon_slot`] — and a positional argument list of
-/// six `bool`-ish values is the shape where two of them get swapped and
-/// the result still compiles.
+/// [`measure`], by [`plan::icon_slot`] — and a positional list of
+/// interchangeable flags is the shape where two of them get swapped and the
+/// result still compiles.
 struct RowPlan<'a> {
     /// The registration: label, tooltip, icon key, handler token.
     command: &'a crate::commands::Command,
@@ -487,7 +487,7 @@ fn command_row(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, row: &RowPlan<'_>) {
         icon,
     } = *row;
 
-    // ★ The slot is laid out whenever the MENU reserves the column, even
+    // The slot is laid out whenever the MENU reserves the column, even
     // when this command has no key — that blank is what keeps the label
     // column straight, and `plan::icon_slot` argues for it. The painter is
     // only asked for a `Glyph`, so an icon-less row draws literally
@@ -539,7 +539,7 @@ fn command_row(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, row: &RowPlan<'_>) {
         && let Some(rect) = laid_out.rect(slot_id)
         && let Some(painter) = ctx.icons.take()
     {
-        // ★ Published from INSIDE the painting branch, deliberately.
+        // Published from INSIDE the painting branch, deliberately.
         // Reporting it beside the row's own rect would make the name mean
         // "a slot was reserved", which is true of a blank one too and
         // therefore says nothing about whether this build draws glyphs at
@@ -657,7 +657,7 @@ fn measure(
                 command, shortcut, ..
             } => Some(
                 plan::RowWidths {
-                    // ★ `icon_slot`, not `command.icon.is_some()` — an
+                    // `icon_slot`, not `command.icon.is_some()` — an
                     // icon-less row in a menu that reserves the column
                     // still spends the width, and measuring it as though
                     // it did not is how the widest row comes to truncate

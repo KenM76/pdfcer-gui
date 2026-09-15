@@ -5,9 +5,8 @@
 //!
 //! ## Why this is a module rather than three functions at the bottom of [`super`]
 //!
-//! Rule R2's 1,500-line ceiling forced a split when Phase 4 added the strip,
-//! and this is the seam it forced — which turns out to be a real one. Every
-//! function here exists to serve a **consumer outside the process**:
+//! R2's 1,500-line ceiling forces a seam somewhere, and this is a real one.
+//! Every function here exists to serve a **consumer outside the process**:
 //! `tools/ui-verify`, which drives the binary and reads its stderr. That gives
 //! them a property nothing else in `canvas/` has: **their output shape is a
 //! contract.** A field renamed here breaks a harness that does not compile
@@ -18,7 +17,7 @@
 //! Keeping them together is what makes that contract reviewable in one place.
 //! `PROJECT_PLAN.md` §4.3's three requirements are all discharged by the
 //! functions below, and each one's doc comment carries the requirement it
-//! answers and the failure it was written after.
+//! answers and the failure mode it guards.
 //!
 //! ## The de-duplication slots, and why each line has its own
 //!
@@ -38,14 +37,11 @@ use crate::viewer;
 // The names the diagnostic channel is keyed on
 // ---------------------------------------------------------------------------
 //
-// ★ These six lived in `canvas/mod.rs` until form filling landed, and three of
-// them were already being reached back for as `LAYOUT_SLOT`,
-// `POINTER_SLOT` and `SELECTION_SLOT` — which is the module
-// boundary saying out loud where they belonged. They are the *vocabulary* of
-// the contract this module's header describes, so they sit with the functions
-// that spend them rather than with the wiring that happens to call those
-// functions. `canvas/mod.rs` now names them `trace::LAYOUT_SLOT`, which reads
-// as what it is.
+// These are the *vocabulary* of the contract this module's header describes,
+// so they sit with the functions that spend them rather than with the wiring
+// that happens to call those functions. `canvas/mod.rs` reaches them as
+// `trace::LAYOUT_SLOT`, which reads as what it is: a name this module owns and
+// a consumer outside the process is keyed on.
 
 /// The de-duplication slot every canvas-layout line shares.
 ///
@@ -84,7 +80,7 @@ pub(super) const REGION_CANVAS_VIEWPORT: &str = "canvas-viewport"; // ui-text-ex
 /// # Why a third rect, when [`REGION_PAGE`] and [`REGION_CANVAS_VIEWPORT`]
 /// already exist
 ///
-/// `OPERATOR_REQUESTS.md` **O177**, 2026-09-12:
+/// `OPERATOR_REQUESTS.md` **O177**:
 ///
 /// > *"fit page when in 2 pages side by side views should fit the two side by
 /// > side pages onto the canvas - right now it snaps to fitting one."*
@@ -145,18 +141,17 @@ pub(super) const SELECTION_SLOT: &str = "canvas-selection"; // ui-text-exempt: t
 /// next in the same slot and silence nothing.
 pub(super) const TEXT_SELECTION_SLOT: &str = "canvas-text-selection"; // ui-text-exempt: trace slot name, never displayed
 
-/// ★ **Report what the text selection just became.**
+/// **Report what the text selection just became.**
 ///
 /// # Why this line has to exist at all
 ///
-/// `HANDOFF.md` §2's defect 8 is the sharpest lesson this project has:
-/// *"A screenshot could not catch this one — 2,450 hairlines and a wash are the
-/// same picture."* The same trap is here in a purer form. A text selection is a
-/// **translucent wash over glyphs**, and a screenshot of a page with a
-/// three-word selection on it and a screenshot of the same page with none are
-/// very nearly the same picture — at the low alpha `overlay`'s
-/// `TEXT_SELECTION_ALPHA` is deliberately set to, over the linework of a CAD
-/// sheet, they may be indistinguishable to a pixel oracle.
+/// **Dense linework and a flat wash are the same picture to a pixel oracle**,
+/// which is the sharpest lesson this project has, and the trap is here in a
+/// purer form. A text selection is a **translucent wash over glyphs**: a
+/// screenshot of a page carrying a three-word selection and a screenshot of the
+/// same page carrying none are very nearly the same image — at the low alpha
+/// `overlay`'s `TEXT_SELECTION_ALPHA` is deliberately set to, over the linework
+/// of a CAD sheet, they may be indistinguishable.
 ///
 /// So the application says what it selected, in characters, and a harness can
 /// prove the gesture happened rather than inferring it from a wash. `chars=` is
@@ -227,15 +222,14 @@ pub(super) fn text_selection(
 ///   body for why a count and a rung could not answer the question this was
 ///   added for.
 pub(super) fn selection_event(selection: &SelectionState, kind: &str, modifier: bool) {
-    // ★★ **`first=` — which of the two index spaces the selection landed in**,
-    // added 2026-08-27 with form-XObject descent.
+    // **`first=` — which of the two index spaces the selection landed in.**
     //
     // `sel=` is a count and `level=` is a rung, and neither can answer the one
-    // question the operator's headline defect turns on: *did the click select
-    // the page-sized form, or the object painted inside it?* Both produce
-    // `sel=1 level=Object`, so a driven check reading this line before today
-    // could not tell the defect from the fix — and this project's own stated
-    // worst outcome is a check that passes while measuring nothing.
+    // question form-XObject descent turns on: *did the click select the
+    // page-sized form, or the object painted inside it?* Both produce
+    // `sel=1 level=Object`, so without this field a driven check cannot tell
+    // the defect from the fix — and this project's own stated worst outcome is
+    // a check that passes while measuring nothing.
     //
     // Printed as `object:N`, `leaf:N` or `none`. The kind is spelled out
     // rather than implied by a second field, so a human reading a trace after
@@ -243,7 +237,7 @@ pub(super) fn selection_event(selection: &SelectionState, kind: &str, modifier: 
     // things in the same document and the whole safety property of `TargetId`
     // is that they cannot be confused.
     //
-    // ★ Additive: `via=`, `mod=`, `sel=` and `level=` keep their names,
+    // Additive: `via=`, `mod=`, `sel=` and `level=` keep their names,
     // positions and meanings, so every existing consumer of this line is
     // unaffected. That is a deliberate constraint rather than luck — this
     // module's header calls the output shape a **contract** with a consumer
@@ -277,26 +271,21 @@ pub(super) fn selection_event(selection: &SelectionState, kind: &str, modifier: 
 ///
 /// # The deadlock this removes
 ///
-/// `PROJECT_PLAN.md` §4.3 requirement 1, discovered by building
-/// `tools/ui-verify` at S1 rather than by reading code:
+/// `PROJECT_PLAN.md` §4.3 requirement 1: a canvas line traced only on pointer
+/// events deadlocks the harness, which cannot aim until it clicks and cannot
+/// click until it can aim. A line gated on `pressed || released || down ||
+/// zoom` says nothing at all about a freshly opened document, which is none of
+/// those — and without a canvas rect there is no document-to-window mapping,
+/// and without that mapping there is no click that can be aimed.
 ///
-/// > The old binary traces it only on pointer events, so the harness cannot
-/// > aim until it clicks and cannot click until it can aim.
-///
-/// The old shell's canvas line fires on `pressed || released || down ||
-/// zoom`. A freshly opened document is none of those, so it reports no canvas
-/// rect at all — and without a canvas rect there is no document-to-window
-/// mapping, and without that mapping there is no click that can be aimed. The
-/// harness worked around it with one documented *layout-probe* click at the
-/// client-area centre (`ui-verify`'s `WindowFrame::layout_probe_point`),
-/// whose only purpose was to make the application speak.
-///
-/// The workaround was safe but not free: it rests on the assumption that the
-/// centre of the client area is the canvas, it fires a real OS click into a
-/// document before any assertion has been made, and every check that used it
-/// had to count the events it produced so they were not mistaken for the
-/// check's own. All of that goes away if the application simply says where
-/// its canvas is.
+/// The only workaround open to the harness is a *layout-probe* click at the
+/// client-area centre (`ui-verify`'s `WindowFrame::layout_probe_point`, still
+/// used by two checks for reasons of their own), and it is safe but not free:
+/// it rests on the assumption that the centre of the client area is the canvas,
+/// it fires a real OS click into a document before any assertion has been made,
+/// and a check using it must count the events it produces so they are not
+/// mistaken for the check's own. An application that simply says where its
+/// canvas is owes the harness none of that.
 ///
 /// # When this emits
 ///
@@ -337,33 +326,32 @@ pub(super) fn selection_event(selection: &SelectionState, kind: &str, modifier: 
 ///   runs it. It cannot be run against a binary that does not report the
 ///   offset, so this field is what makes the assumption falsifiable.
 ///
-/// # `sel=` — added here, in the commit that gave it something to count
+/// # `sel=` — the selection size, and why it is only ever a real count
 ///
-/// The old binary's canvas line carries `sel=`, the current selection size,
-/// and `ui-verify` reads it as a fallback when a click produced no event of
-/// its own. Stages S0–S3 deliberately did **not** emit it, with the reason
-/// recorded rather than the field silently omitted: there was no hit test and
-/// no selection set, so `sel=0` would have been a measurement of something
-/// that did not exist, and it would have turned
-/// `delete_key_after_canvas_click` from an honest SKIP (*"the harness cannot
-/// tell whether the click landed"*) into a FAIL blaming a subsystem nobody
-/// had written. The stated condition for adding it was *"in the same commit
-/// as the selection model, at S4"* — this is that commit.
+/// `ui-verify` reads `sel=` as a fallback when a click produced no event of its
+/// own, so the field has to mean *the selection holds this many entries* and
+/// nothing else. A `sel=0` published by a build with no hit test and no
+/// selection set is a measurement of something that does not exist, and it
+/// turns `delete_key_after_canvas_click` from an honest SKIP (*"the harness
+/// cannot tell whether the click landed"*) into a FAIL blaming a subsystem
+/// nobody has written.
 ///
-/// It is counted **after** the frame's gesture has been applied (see the call
-/// site), so a click and the `sel=` that describes it appear on the same
-/// frame rather than one apart.
-/// # ★ `display=`, `visible=` and `drawn=` — added at Phase 4, at the END
+/// ⇒ **A trace field lands in the same commit as the thing it counts**, or it
+/// lies for as long as the gap lasts. It is counted **after** the frame's
+/// gesture has been applied (see the call site), so a click and the `sel=` that
+/// describes it appear on the same frame rather than one apart.
 ///
-/// The five original fields keep their names, their order and their meaning,
-/// because `ui-verify`'s `CanvasMapping` parses them and `rect=` is still the
+/// # `display=`, `visible=` and `drawn=` — appended at the END, deliberately
+///
+/// The first five fields keep their names, their order and their meaning,
+/// because `ui-verify`'s `CanvasMapping` parses them and `rect=` is the
 /// **acting page's** rect — the thing `viewer::screen_to_page` is the inverse
 /// of, and the one a click has to be aimed against. Under a continuous mode
 /// several pages are on screen and `rect=` names one of them; `page=` says
-/// which, exactly as it always did.
+/// which.
 ///
-/// The three new fields answer what a strip made askable and are appended so
-/// no existing parser moves:
+/// The fields below answer what a multi-page strip makes askable, and they are
+/// appended rather than inserted so no existing parser moves:
 ///
 /// * `display=` — the page-display mode's id (`single`, `continuous`,
 ///   `facing`, `facing-continuous`). Without it a trace cannot distinguish
@@ -378,17 +366,16 @@ pub(super) fn selection_event(selection: &SelectionState, kind: &str, modifier: 
 ///   undrawn pages are saying on screen; `drawn == visible` is a settled
 ///   strip. A check that measured only `visible` could not tell a filled strip
 ///   from an empty one.
-/// * `crop=` and `rot=` — **added 2026-09-10, and they close a whole class of
-///   harness defect.** `ui-verify` had been reading a page's size by scanning
-///   the PDF's first `/MediaBox` with a regular expression, and doing the
-///   document→canvas conversion as a single `height - y` flip. That is correct
-///   for an upright page whose crop origin is (0, 0) and silently wrong for
-///   every other page — the same defect, in the harness, that O174 was in the
-///   renderer. On the operator's `A-591.pdf` (an incremental update rewrites
-///   `/Rotate 0` to `/Rotate 270`, so even a *correct* regex finds the wrong
-///   one) every `--doc-point` in the suite aimed at the wrong place, and the
-///   right-hand third of the canvas was unreachable because the bounds check
-///   thought the page was 792 pt wide when the canvas is 1224.
+/// * `crop=` and `rot=` — **they close a whole class of harness defect.** The
+///   alternative is a harness reading a page's size by scanning the PDF's first
+///   `/MediaBox` with a regular expression and doing the document→canvas
+///   conversion as a single `height - y` flip: correct for an upright page
+///   whose crop origin is (0, 0) and silently wrong for every other page — the
+///   same defect, in the harness, that O174 was in the renderer. An incremental
+///   update that rewrites `/Rotate 0` to `/Rotate 270` defeats even a *correct*
+///   regex, which finds the superseded one; every `--doc-point` in the suite
+///   then aims at the wrong place, and a bounds check that believes the page is
+///   792 pt wide makes the right-hand third of a 1224 pt canvas unreachable.
 ///
 ///   The application already knows the answer — it holds the parsed `Page`.
 ///   Tracing it makes the harness's mapping a *reading* rather than a *guess*,
@@ -405,7 +392,7 @@ pub(super) fn layout(
     visible: usize,
     with_raster: usize,
 ) {
-    // ★ The acting page's own frame, appended below so a harness never has to
+    // The acting page's own frame, appended below so a harness never has to
     // scan the PDF for it. See the `crop=` / `rot=` note above.
     let (crop, rotate) = doc.pages.get(doc.view.page_index).map_or(
         (
@@ -465,14 +452,13 @@ pub(super) fn layout(
 ///
 /// # Why this is gated on movement
 ///
-/// It was not, and that was a real defect: `pointer_latest_pos` returns the
-/// **last known** position, not "the position it moved to this frame", so a
-/// stationary pointer over the canvas re-reported the same three coordinate
-/// pairs on every single frame. Measured on the S1 binary: **50 identical
-/// lines in 9 seconds.** A driven run is minutes long, so the events that
-/// actually matter — an open, a click, a deletion — end up separated by
-/// thousands of lines saying nothing, and `ui-verify` re-parses the whole
-/// capture after every settle.
+/// `pointer_latest_pos` returns the **last known** position, not "the position
+/// it moved to this frame", so an ungated line re-reports the same three
+/// coordinate pairs on every frame a stationary pointer sits over the canvas.
+/// Measured: **50 identical lines in 9 seconds.** A driven run is minutes long,
+/// so the events that actually matter — an open, a click, a deletion — end up
+/// separated by thousands of lines saying nothing, and `ui-verify` re-parses
+/// the whole capture after every settle.
 ///
 /// The gate is [`crate::diag::trace_changed`] rather than a hand-rolled
 /// comparison against a stored `Pos2` for a specific reason: the printed line
@@ -480,9 +466,8 @@ pub(super) fn layout(
 /// "changed". A movement too small to alter `{:.2}` is a movement no parser
 /// could have seen.
 ///
-/// The line's *shape* is unchanged and must stay so — `screen=`, `page=`,
-/// `pdf=` and `zoom=` are the contract, and only how often it is written has
-/// been fixed.
+/// The line's *shape* is the contract — `screen=`, `page=`, `pdf=` and `zoom=`
+/// — and the gate changes only how often it is written, never what it says.
 pub(super) fn pointer(ui: &egui::Ui, doc: &OpenDoc, image_rect: Rect, extent: (f32, f32)) {
     if !crate::diag::enabled() {
         return;
@@ -511,7 +496,7 @@ pub(super) fn pointer(ui: &egui::Ui, doc: &OpenDoc, image_rect: Rect, extent: (f
 
 /// Report the view's **pan position** on the `PDFCER_DIAG` channel, in `f64`.
 ///
-/// # ★★ Why [`layout`]'s `rect=` cannot answer this
+/// # Why [`layout`]'s `rect=` cannot answer this
 ///
 /// `rect=` is an `egui::Rect`, so it is `f32`, and at a deep zoom the acting
 /// page's rect holds a number around 10¹². An `f32`'s representable spacing
@@ -551,7 +536,7 @@ pub(super) fn pointer(ui: &egui::Ui, doc: &OpenDoc, image_rect: Rect, extent: (f
 /// measure if two consecutive positions rounded to the same text.
 /// `paint=` — where the acting page's raster was actually DRAWN.
 ///
-/// ★★ Below the pixmap ceiling this equals the page's own rect and carries
+/// Below the pixmap ceiling this equals the page's own rect and carries
 /// nothing new. Above it the raster covers a region rather than the page, and
 /// the two part company — which is where `OPERATOR_REQUESTS.md` O24c lived:
 /// the page's rect moved smoothly with the pan the whole time, so `rect=` was
@@ -559,7 +544,7 @@ pub(super) fn pointer(ui: &egui::Ui, doc: &OpenDoc, image_rect: Rect, extent: (f
 /// witness it.
 /// `region=` and `ext=` — what the drawn pixels are a picture OF.
 ///
-/// # ★★★ Why these are here: so the harness can CHECK the placement
+/// # Why these are here: so the harness can CHECK the placement
 ///
 /// `region=` is the page-space rectangle of the raster that was actually
 /// painted, read from the held texture's own key — **not** the region the
@@ -573,7 +558,7 @@ pub(super) fn pointer(ui: &egui::Ui, doc: &OpenDoc, image_rect: Rect, extent: (f
 /// the traced region still describes the pixels, the harness's recomputation
 /// still says where they belong, and the two disagree by the grid step.
 ///
-/// ★ The cross-check is only valid on the `scroll` tier. Above the deep
+/// The cross-check is only valid on the `scroll` tier. Above the deep
 /// threshold the placement comes from the `f64` anchor rather than from the
 /// page's rect, and reconstructing it would need the anchor too — so the
 /// check restricts itself and says so, rather than comparing against a
@@ -582,19 +567,19 @@ pub(super) fn pointer(ui: &egui::Ui, doc: &OpenDoc, image_rect: Rect, extent: (f
 /// `want=` — the region the shell wants NEXT, beside `region=` which is the one
 /// the pixels on screen are a picture of.
 ///
-/// # ★★★ Why both, and what reading only one cost
+/// # Why both, and what reading only one cost
 ///
-/// They differ exactly while a new raster is in flight — and, before
-/// `OPERATOR_REQUESTS.md` O25 was fixed, **for ever**: a pan changed `want` and
-/// nothing asked for a render, so `region` stayed put and the newly exposed
-/// area was blank indefinitely.
+/// They differ exactly while a new raster is in flight — and, under
+/// `OPERATOR_REQUESTS.md` O25's defect, **for ever**: a pan changes `want` and
+/// nothing asks for a render, so `region` stays put and the newly exposed area
+/// is blank indefinitely.
 ///
-/// ★ A check written against `region` alone cannot see that. On the defective
-/// build the held texture never changes, so its region never changes, and the
-/// check reads *"the view did not move"* — which is indistinguishable from
-/// *"nothing was exposed, so nothing was owed"*. That is exactly what the first
-/// version of `panning_past_the_overscan_renders_the_new_area` reported: a
-/// SKIP, against a binary with the defect deliberately restored.
+/// A check written against `region` alone cannot see that. With the defect
+/// present the held texture never changes, so its region never changes, and the
+/// check reads *"the view did not move"* — indistinguishable from *"nothing was
+/// exposed, so nothing was owed"*, which is a SKIP against a broken binary.
+/// `panning_past_the_overscan_renders_the_new_area` asserts on both fields for
+/// exactly that reason.
 ///
 /// `want` is the shell's intent and moves the instant the view does; `region`
 /// is what arrived. **The gap between them is the defect**, and it takes two
@@ -610,7 +595,6 @@ pub(super) fn position(
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI.
-            // ui-text-exempt: diagnostic trace, never displayed in the UI.
             "canvas-pos at={:.3},{:.3} tier={tier} paint={:.3},{:.3} region={} want={} ext={:.3},{:.3}",
             at.0,
             at.1,
@@ -618,17 +602,17 @@ pub(super) fn position(
             paint.1,
             region.map_or_else(
                 || "none".to_owned(),
-                // ★★ SCIENTIFIC, and with enough digits to survive the deep
-                // tier. Printed as `{:.4}` until 2026-08-22, which cannot
-                // express a region 6e-8 pt tall — at a trillion percent every
-                // field rounded to the same four decimals and the difference
-                // between them read as a constant 2.3e-3, which looks exactly
-                // like the region hitting a floor. It is not; it is the trace
-                // hitting one. Same lesson as `position`'s own header: a
-                // measurement coarser than the thing measured invents a defect.
+                // SCIENTIFIC, and with enough digits to survive the deep
+                // tier. A fixed `{:.4}` cannot express a region 6e-8 pt tall:
+                // at a trillion percent every field rounds to the same four
+                // decimals, and the difference between them reads as a constant
+                // 2.3e-3 — which looks exactly like the region hitting a floor.
+                // It is not; it is the trace hitting one. Same lesson as this
+                // function's own header: a measurement coarser than the thing
+                // measured invents a defect.
                 |r| format!("{:.9e},{:.9e},{:.9e},{:.9e}", r.llx, r.lly, r.urx, r.ury),
             ),
-            // ★ The same formatting for both, so a check can compare them as
+            // The same formatting for both, so a check can compare them as
             // text without either side having to parse.
             want.map_or_else(
                 || "none".to_owned(),
@@ -640,7 +624,7 @@ pub(super) fn position(
     });
 }
 
-/// The slot [`pasteboard`] de-duplicates on.
+/// The slot [`surface`] de-duplicates on.
 ///
 /// Separate from [`LAYOUT_SLOT`] for the ordinary reason — a surface decision
 /// is taken every frame and the layout line is not — but also for a sharper
@@ -649,7 +633,7 @@ pub(super) fn position(
 /// the page, and sharing a slot with a line that churns would hide that.
 pub(super) const SURFACE_SLOT: &str = "canvas-surface"; // ui-text-exempt: trace slot name, never displayed
 
-/// ★★★ **Which of the canvas's two interactive rectangles owned this frame's
+/// **Which of the canvas's two interactive rectangles owned this frame's
 /// gesture** — the only external evidence that O23's off-page half is live.
 ///
 /// `canvas-surface surface=page|pasteboard onpage=<bool> pagegesture=<bool>
@@ -693,7 +677,7 @@ pub(super) fn surface(
 /// evidence that O23's "see" half never engaged.
 pub(super) const HALO_SLOT: &str = "canvas-halo"; // ui-text-exempt: trace slot name, never displayed
 
-/// ★★★ **Which raster tier the current page is on, and how far past the sheet
+/// **Which raster tier the current page is on, and how far past the sheet
 /// it reaches** — the only external evidence that O23's "see" half is live.
 ///
 /// `canvas-halo tier=whole|halo|region known=<bool> offpage=on|off box=<llx,lly,urx,ury|none>`
@@ -707,14 +691,14 @@ pub(super) const HALO_SLOT: &str = "canvas-halo"; // ui-text-exempt: trace slot 
 ///   [`crate::render::halo::reach`] rather than by a widened box, and `box=`
 ///   is the visible region in the page's own space.
 ///
-/// ★ `known=` is the field that distinguishes *"this page has no off-page
+/// `known=` is the field that distinguishes *"this page has no off-page
 /// content"* from *"nobody has decomposed this page yet"*, which look
 /// identical from outside and need opposite responses. See
 /// `crate::app::state::OpenDoc::content_bounds_if_known` for why the second
 /// state exists at all and why it resolves itself a frame later.
 ///
-/// ★★★ `offpage=` is the field that keeps `known=` HONEST, added
-/// 2026-09-11 with the View ▸ Display toggle.
+/// `offpage=` is the field that keeps `known=` HONEST under the View ▸ Display
+/// toggle.
 ///
 /// With off-page display switched off, [`crate::canvas::tier`] substitutes
 /// `None` for the content bounds — which is the same value the *not yet
@@ -757,7 +741,7 @@ pub(super) fn halo(
 /// other and leave a check reading a fossil.
 pub(super) const PASTEBOARD_SLOT: &str = "canvas-pasteboard"; // ui-text-exempt: trace slot name, never displayed
 
-/// ★★★ **How far the layout reaches past the sheets** — the second half of
+/// **How far the layout reaches past the sheets** — the second half of
 /// `View ▸ Display ▸ Off-page content`, and the half the operator described
 /// first.
 ///
@@ -827,31 +811,24 @@ pub(super) const PLACE_SLOT: &str = "canvas-place"; // ui-text-exempt: trace slo
 /// # Why this line exists
 ///
 /// `canvas::offset`'s header says it plainly: the decision returns an offset
-/// rather than applying one so that *"which branch won?"* is answerable. Until
-/// 2026-09-13 it was answerable only by reading the whole chain in a debugger,
-/// because nothing published the answer — and the `canvas` line's `off=` field
-/// reports what the area **settled on**, which is a different number whenever
-/// egui clamps the request against a content size it has not laid out yet.
+/// rather than applying one so that *"which branch won?"* is answerable. It is
+/// answerable only if something publishes the answer, and the `canvas` line's
+/// `off=` field is not that — it reports what the area **settled on**, which is
+/// a different number whenever egui clamps the request against a content size
+/// it has not laid out yet.
 ///
-/// ★★★ That difference is not hypothetical, and the history of this paragraph
-/// is itself the argument for the line.
-///
-/// A regression measured on 2026-09-13 opened a multi-page document with the
-/// page parked off the bottom-right corner. The only symptom was the `canvas`
-/// line's `off=[0.0 0.0]`, and the first two explanations written down were
-/// both wrong: *"the frame that should have seeded was skipped"* (disproved by
-/// reading `canvas::present`'s ordering — the decision runs above the scroll
-/// area every frame), then *"the open-seed arm asked for a centred offset and
-/// egui clamped it to zero"*. This line killed the second one in a single run:
-/// the request itself was `0.0,0.0`. Nothing was clamped by egui at all.
+/// That gap is the whole diagnosis. *"The decision asked for the wrong offset"*
+/// and *"the decision was right and egui overrode it"* need opposite fixes, and
+/// the settled offset alone cannot tell them apart: a document that opens with
+/// its page parked off the bottom-right corner reports `off=[0.0 0.0]` under
+/// either. This line is what says whether the **request** was `0.0,0.0` too.
 ///
 /// ⚠ **`(0.0, 0.0)` is the most over-subscribed value in this subsystem.** The
 /// deep-tier arm returns it as a literal; `geometry::strip_offset`'s lower
 /// clamp manufactures it from any sufficiently negative page-local solve; a
 /// strip-space page scroll to the top of the content produces it honestly; and
 /// *no arm firing at all* leaves the area sitting on it. That is why `src=`
-/// exists beside `want=` — the number alone cannot tell those four apart, and
-/// a session was spent proving it.
+/// exists beside `want=`: the number alone cannot tell those four apart.
 ///
 /// # Fields
 ///
@@ -930,7 +907,7 @@ pub(super) fn placed(
 /// hundred it is not.
 pub(super) const CONFINED_SLOT: &str = "canvas-confined"; // ui-text-exempt: trace slot name, never displayed
 
-/// ★★★ **Whether the `f64` anchor had to be pulled back into the range the view
+/// **Whether the `f64` anchor had to be pulled back into the range the view
 /// can actually place** — `OPERATOR_REQUESTS.md` **O186**, stage one.
 ///
 /// `canvas-confined axes=none|x|y|xy`
@@ -951,7 +928,7 @@ pub(super) const CONFINED_SLOT: &str = "canvas-confined"; // ui-text-exempt: tra
 /// check able to say *the mechanism ran*, separately from *the symptom is
 /// gone*.
 ///
-/// # ★★ Four values and no numbers, deliberately
+/// # Four values and no numbers, deliberately
 ///
 /// The magnitudes are already on `canvas-pos`, published by the code that
 /// decided them, and this slot is de-duplicated through
