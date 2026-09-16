@@ -192,7 +192,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              drawing, so it has no fixture to fall back on — the fallback is a different check \
              (`the_format_tab_offers_font_controls_for_swept_text`), which pins \
              `fixtures/paragraph.pdf` on purpose. Pass the drawing and a point on a run of text \
-             in it; `RESUME.md`'s aim table has both.",
+             in it; `fixture::a1_text_target` names a measured pair on the sheet this \
+             repository already ships.",
         )
     })?;
     let target = ctx.target.ok_or_else(|| {
@@ -200,7 +201,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "no --doc-point. {} is open but nothing says where in it a piece of text is, and a \
              click on blank paper reports identically to a hit test that does not work. \
              `pdfcer extract-text --json` gives the first glyph's x and y of every run; \
-             `RESUME.md`'s aim table gives `0,1140,62` for the SolidWorks drawing.",
+             `fixture::a1_text_target` gives `0,1845.5,184.7` on the shipped \
+             `fixtures/a1-titleblock.pdf`, which is the pair the sweep passes here.",
             pdf.display()
         ))
     })?;

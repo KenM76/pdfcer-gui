@@ -38,6 +38,7 @@
 //! or a check at a million percent would quietly accept a metre of drift.
 
 use crate::checks::driving;
+use crate::checks::raster_wall::panic_was_converted;
 use crate::checks::{Check, CheckContext, CheckReport};
 use crate::error::{Error, Result};
 use crate::input::Driver;
@@ -397,6 +398,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    // This check climbs deliberately past the scale at which tiny-skia's pipeline
+    // refuses a slice. `pdfcer-render` catches that panic and converts it into a
+    // `RasterizerLimit`, which the canvas answers with a learned ceiling; the
+    // caught panic still reaches stderr, so undeclared it fails a run whose every
+    // assertion passed. `panic_was_converted` at the end requires the conversion,
+    // so a worker that genuinely died is still caught.
+    session.expect_thread_panic();
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
     let driver = Driver::new(session.window());
@@ -576,5 +584,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         tiers.join(" to ")
     ));
 
+    if let Some(bad) = panic_was_converted(&session)? {
+        return Ok(Some(bad));
+    }
     Ok(None)
 }

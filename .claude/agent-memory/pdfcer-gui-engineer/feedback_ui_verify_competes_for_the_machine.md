@@ -132,3 +132,35 @@ killing the parent alone leaves a window on his screen.
 ★ What survives the kill: everything the agent WROTE. The source edits, the new
 checks and the analysis are on disk and are not contaminated by the run being
 cut short — only the *verdicts* are. Do not revert its work; re-drive it.
+
+## ★★★ AND THE HARNESS COSTS HIS CALENDAR, NOT ONLY HIS DESKTOP — 2026-09-15
+
+He said, unprompted, mid-session: *"yikes. It took nearly 9 hours to get this
+one feature done!"* One request (a Word table-of-contents link that should jump
+without changing zoom) had shipped in that window. The rest of the nine hours
+went to the apparatus around it — new harness tests, falsifying them against
+planted defects, moving aim points into a shared fixture helper, an ALONE table,
+a register row for every symbol an engine pin bump added, and a 95-minute sweep
+that had not started yet.
+
+**None of that work was wrong, and all of it is the wrong thing to do FIRST.**
+Every item was justifiable on its own; what was not justifiable was that four
+filed requests sat designed-and-unbuilt while the verification of an already
+shipped one was polished.
+
+⇒ The ordering rule, and it is his, not mine:
+
+- **Build the requests, then verify.** A request with a written analysis and no
+  code is not "nearly done" — it is not started, and he cannot use an analysis.
+- **The sweep is an end-of-batch instrument, not a pre-flight one.** Running 230
+  driven checks before writing the next feature spends 95 minutes proving the
+  last feature still works. Build the batch, sweep once, ship.
+- **A gate that goes red on an engine pin bump is paperwork with a deadline of
+  "before the next commit", not work in its own right.** Discharge it in one
+  edit and move on; do not let it become an afternoon of register prose.
+- **Watch for the shape:** if a session's commits are mostly under `tools/` and
+  `*.md` while `OPERATOR_REQUESTS.md` still shows FILED rows, the ratio is
+  wrong, whatever each commit was individually worth.
+
+Sibling of [[never-defer-on-an-external-blocker]] — that one is about not
+stalling; this one is about not substituting.

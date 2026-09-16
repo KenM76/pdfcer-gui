@@ -197,6 +197,7 @@ use crate::geom::LRect;
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::sys::vk;
+use crate::trace::Trace;
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
@@ -853,6 +854,52 @@ fn part_a(
     Ok(None)
 }
 
+/// Require that every thread panic in a capture was **converted** into the
+/// engine's own refusal, rather than merely tolerated.
+///
+/// [`Session::expect_thread_panic`] silences the harness's panic detector for
+/// the whole session, and on its own that is an assertion both outcomes satisfy:
+/// a rasterizer that gave out and was caught and one that simply died look the
+/// same afterwards. `pdfcer-render` catches the panic and hands back a
+/// `RasterizerLimit`, which the canvas publishes as a `raster-limit` line
+/// carrying the panic text in its `panic=` field — so the conversion has a
+/// witness, and a check that declares a panic owes the reader that witness.
+///
+/// Measured 1:1 across three runs on 2026-09-15: one `raster-limit` per panic in
+/// each of the two zoom climbs, two of each in this check's own part B.
+///
+/// Returns the failure sentence, or `None` when every panic was converted.
+pub(crate) fn panic_was_converted(session: &Session) -> Result<Option<String>> {
+    Ok(unconverted_panics(&session.trace()?))
+}
+
+/// [`panic_was_converted`]'s judgement, over a trace rather than a session, so
+/// that both of its outcomes can be produced from a string.
+fn unconverted_panics(trace: &Trace) -> Option<String> {
+    let panics = trace
+        .other
+        .iter()
+        .filter(|l| l.contains("panicked at"))
+        .count();
+    if panics == 0 {
+        return None;
+    }
+    let converted = trace
+        .events(RASTER_LIMIT_EVENT)
+        .filter(|l| l.get("panic").is_some())
+        .count();
+    if converted >= panics {
+        return None;
+    }
+    Some(format!(
+        "{panics} thread panic(s) in the capture but only {converted} \
+         `{RASTER_LIMIT_EVENT}` line(s) carrying a `panic=` field. This check drives past \
+         the raster ceiling on purpose and declares the panic, and the engine is supposed \
+         to CATCH it and hand back a refusal. A panic with no refusal behind it is a \
+         worker that simply died, which is a defect nobody has filed."
+    ))
+}
+
 /// ★★ Part B. The operator's fourth clause: the zoom stops, and the bottom bar
 /// says why.
 ///
@@ -1289,4 +1336,51 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
         )));
     }
     part_b(&session, &driver, ui_rect, canvas, report)
+}
+
+#[cfg(test)]
+mod panic_conversion_tests {
+    use super::unconverted_panics;
+    use crate::trace::Trace;
+
+    const PREFIX: &str = "pdfcer-diag";
+
+    /// The panic line as the capture actually carries it: not a diag line at
+    /// all, so it lands in `Trace::other`.
+    const PANIC: &str = "thread '<unnamed>' panicked at crates/tiny-skia/src/pipeline.rs:1: slice";
+
+    /// The witness the canvas publishes when the engine caught it.
+    const REFUSAL: &str = "pdfcer-diag raster-limit scale=64 panic=slice";
+
+    #[test]
+    fn a_panic_with_a_refusal_behind_it_is_the_conversion_this_check_declares() {
+        let trace = Trace::parse(&format!("{PANIC}\n{REFUSAL}"), PREFIX);
+        assert_eq!(unconverted_panics(&trace), None);
+    }
+
+    #[test]
+    fn a_panic_with_no_refusal_behind_it_is_a_worker_that_died() {
+        let trace = Trace::parse(PANIC, PREFIX);
+        let complaint = unconverted_panics(&trace).expect("an unconverted panic must be reported");
+        assert!(complaint.contains("1 thread panic(s)"), "{complaint}");
+        assert!(complaint.contains("only 0"), "{complaint}");
+    }
+
+    /// A `raster-limit` line with no `panic=` field is the ceiling being
+    /// reported for some other reason, and cannot discharge a panic.
+    #[test]
+    fn a_refusal_carrying_no_panic_field_does_not_discharge_one() {
+        let trace = Trace::parse(
+            &format!("{PANIC}\npdfcer-diag raster-limit scale=64"),
+            PREFIX,
+        );
+        assert!(unconverted_panics(&trace).is_some());
+    }
+
+    /// The common case, and the one that must stay cheap: no panic at all.
+    #[test]
+    fn a_capture_with_no_panic_is_not_asked_for_a_refusal() {
+        let trace = Trace::parse("pdfcer-diag canvas-zoom scale=2", PREFIX);
+        assert_eq!(unconverted_panics(&trace), None);
+    }
 }

@@ -308,6 +308,41 @@ pub fn grip_gesture_target() -> (std::path::PathBuf, DocPoint) {
     (pdf, DocPoint::new(0, 300.0, 500.0))
 }
 
+/// **A point on a run of TEXT on the shared drawing fixture** —
+/// `fixtures/a1-titleblock.pdf`, page 0, **1845.5, 184.7**.
+///
+/// # What the document actually has there
+///
+/// The sheet's only ink is its title block. `pdfcer extract-text --json` reports
+/// fourteen runs with a box, and this point is inside the one reading
+/// `PROJECT NO`, whose box is `1831.2, 181.3 → 1872.2, 187.3`. It is a 6 pt
+/// label on a 2383.9 × 1683.8 pt sheet, which is the property that makes it
+/// worth aiming at: a click that lands on it is a click the operator could make
+/// and the harness only just can.
+///
+/// # ★ Two unrelated checks want this point for two unrelated reasons
+///
+/// `the_font_controls_are_live_on_the_drawing_you_open` wants **text under the
+/// cursor**, because a click on blank paper is symptom-identical to a hit test
+/// that does not work.
+///
+/// `text_annot_takes_the_keyboard_unclicked` does not care about text at all. It
+/// wants **room to the right**: it drags a box 440 pt wide from the point, and
+/// the sweep's shared `0,2000,320` puts the far corner at 2440, which is off a
+/// 2383.9 pt sheet. Every assertion in that check passed at the shared point and
+/// the run was then reported SKIPPED on the geometry — a correct skip that reads
+/// like a broken check.
+///
+/// ⇒ The second requirement is the one a reader would not guess, so it is
+/// written here rather than left in whichever check happens to be read first.
+/// **Any replacement point must satisfy both**: on a glyph, and at least 440 pt
+/// clear of the right edge and 190 pt clear of the top.
+#[must_use]
+pub fn a1_text_target() -> (std::path::PathBuf, DocPoint) {
+    let pdf = workspace_root().join("fixtures").join("a1-titleblock.pdf");
+    (pdf, DocPoint::new(0, 1845.5, 184.7))
+}
+
 /// **A point on a path whose stroke is heavy enough to MEASURE a stroke rule**
 /// - `fixtures/polyline-nodes.pdf`, page 0, **150, 260**.
 ///
@@ -327,10 +362,15 @@ pub fn grip_gesture_target() -> (std::path::PathBuf, DocPoint) {
 ///
 ///
 /// Driven first on the sweep's shared `a1-titleblock.pdf --doc-point
-/// 0,2000,320`, the check **SKIPPED**: that coordinate is over text
-/// (`marquee-mode hits=5 paths=0 text=5`), a text run has no stroked geometry,
-/// and `canvas::shapes::for_move_subject` answers it with an erase and no
-/// shapes - so there was no preview stroke to measure at all.
+/// 0,2000,320`, the check **SKIPPED**: nothing at that coordinate has stroked
+/// geometry, so `canvas::shapes::for_move_subject` answers with an erase and no
+/// shapes, and there was no preview stroke to measure at all.
+///
+/// ⚠ The shared point is bare paper. `extract-text --json` puts the nearest
+/// text run 132.9 pt away and the sheet's only ink is the title block in the
+/// bottom right. A `marquee-mode` line read at that point counts what a BAND
+/// returned, not what is under the cursor, so it cannot be quoted as evidence
+/// about the coordinate.
 ///
 /// Moved to [`grip_gesture_target`]'s `0,300,500` it **passed, at 1.00 px at
 /// both zooms** - and that pass is half a measurement. Ruling 1 was real there

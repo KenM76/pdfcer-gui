@@ -42,12 +42,20 @@
 //! because the same region is shown to be present, in the same run, moments
 //! earlier: the instrument that would have reported it is demonstrably
 //! working.
+//!
+//! # The document is pinned, not taken from `--pdf`
+//!
+//! Every claim here is of the form *the page number changed*, so a one-page
+//! document makes the correct behaviour indistinguishable from the defect. The
+//! count is also asserted, because a pinned fixture is only a claim about what
+//! is on disk.
 
 use crate::checks::driving::{declared, declared_names, declared_or_in_overflow, list};
 use crate::checks::{Check, CheckContext, CheckReport};
 use crate::error::{Error, Result};
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
+use std::path::PathBuf;
 
 /// The canvas viewport, over which the wheel is rolled.
 const CANVAS_REGION: &str = "canvas-viewport";
@@ -118,6 +126,31 @@ fn wheel(session: &Session) -> Result<Option<String>> {
 /// `WheelPaging::Scroll::key`, and the shipped default.
 const SCROLL: &str = "scroll";
 
+/// The document this check pins, in place of `--pdf`.
+///
+/// A wheel that turns pages needs a page to turn to, and the sweep's shared
+/// fixture has exactly one. Run against it, every claim up to the toggle passed
+/// and then the check accused the application of ignoring its own preference,
+/// in three confident paragraphs, on a document where the correct behaviour is
+/// to do nothing. Pinned rather than tabled so a hand invocation gets it too.
+const FIXTURE: &str = "fixtures/four-pages.pdf";
+
+fn fixture_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join(FIXTURE)
+}
+
+/// How many pages the status bar last reported the open document to have.
+fn pages(session: &Session) -> Result<Option<usize>> {
+    Ok(session
+        .trace()?
+        .events(STATUS_EVENT)
+        .last()
+        .and_then(|line| line.get_usize("pages")))
+}
+
 /// The page the status bar last reported, 0-based.
 fn page(session: &Session) -> Result<Option<usize>> {
     Ok(session
@@ -165,10 +198,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx
-        .pdf
-        .clone()
-        .ok_or_else(|| Error::new("no --pdf. There are no pages to turn."))?;
+    let pdf = fixture_path();
+    if !pdf.exists() {
+        return Err(Error::new(format!(
+            "{FIXTURE} is missing from the repository, so this check has no document with \
+             a page to turn to. SKIPPED."
+        )));
+    }
     if !ctx.allow_input {
         return Err(Error::new(
             "input is disabled (--no-input). This check rolls the wheel and presses a status-bar \
@@ -212,8 +248,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the status bar never reported a page. SKIPPED.".to_owned(),
         ));
     };
+    // The precondition, ASSERTED rather than assumed. Every claim below is of the
+    // form "the page number changed", and on a one-page document not one of them
+    // can be satisfied by a correct build.
+    let count = pages(&session)?.unwrap_or(1);
+    if count < 2 {
+        return Err(Error::new(format!(
+            "the open document has {count} page(s), so there is no page for the wheel to \
+             turn to and every claim in this check would read as a failure of the \
+             application. SKIPPED."
+        )));
+    }
+    if ctx.pdf.is_some() {
+        report.note(format!(
+            "--pdf was IGNORED; this check pins {FIXTURE} because turning a page needs a \
+             page to turn to"
+        ));
+    }
     report.note(format!(
-        "single-page display, on page {} of the document",
+        "single-page display, on page {} of {count}",
         start + 1
     ));
 

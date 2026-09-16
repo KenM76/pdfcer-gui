@@ -283,8 +283,37 @@ fi
 #   check that needs a different POINT pins the point beside itself - see
 #   `fixture::grip_gesture_target`, which all three now call, and which
 #   carries the reason so the next person does not have to re-derive it.
+#
+#   THE ONE EXCEPTION, and it is a charter, not a convenience: a check
+#   whose whole purpose is to take whatever document and point the
+#   command line names cannot pin either of them, because pinning is the
+#   thing it exists not to do.
+#   `the_font_controls_are_live_on_the_drawing_you_open` is that check -
+#   its module header sets it against a sibling that pins a fixture,
+#   precisely so that green on the fixture and red on a real drawing is a
+#   readable diagnosis. Its aim therefore belongs here even though its
+#   document does not differ.
 ALONE='
 pages_stay_drawn_when_you_scroll_back|--pdf fixtures/synthetic-image-only-8pages.pdf --doc-point 0,150,200
+
+# The shared aim is bare paper. These five need a click that lands on a
+# run of text in a document with real text objects in it; the a1 sheet is
+# CAD line-work with a title block, and per-glyph runs at that.
+text_edit_on_a_real_drawing|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
+arrow_keys_walk_between_blocks|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
+text_selection_sweeps_and_copies|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
+text_markup_marks_a_selection|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
+text_tool_selects_and_marks_in_edit|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
+
+# The refusal this check measures is a refusal on the document the
+# operator brought, so it names that file and the glyph in it. Its own module header
+# states exactly this pair.
+his_typo_can_be_corrected_on_his_own_file|--pdf fixtures/per-glyph-twice.pdf --doc-point 0,84.3,703.8
+
+# The exception described above: same document, different point, and the
+# point cannot be pinned. See `fixture::a1_text_target`, which carries the
+# two requirements any replacement must satisfy.
+the_font_controls_are_live_on_the_drawing_you_open|--pdf fixtures/a1-titleblock.pdf --doc-point 0,1845.5,184.7
 '
 
 # Take each ALONE name out of the chunked list, and refuse to continue when a

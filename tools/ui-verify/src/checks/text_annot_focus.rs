@@ -106,10 +106,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx
-        .pdf
-        .clone()
-        .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
+    // ★ THE DOCUMENT AND THE AIM ARE PINNED, and `--pdf` / `--doc-point` are
+    // read only to say they were ignored.
+    //
+    // This check's subject is a dialog, not a document: nothing it asserts is a
+    // property of the page it draws on. What it does need is 440 x 190 pt of
+    // sheet to the upper right of the point, because that is the box it drags —
+    // and the sweep's shared aim leaves 384. Driven there, every assertion in
+    // this check passed and the run was then reported SKIPPED because the far
+    // corner was off the crop box: a correct skip that reads like a broken
+    // check, in every sweep. Pinned rather than tabled so a hand invocation gets
+    // it too. See `fixture::a1_text_target` for the two requirements.
+    let (pdf, target) = crate::fixture::a1_text_target();
+    if !pdf.exists() {
+        return Err(Error::new(format!(
+            "{} is missing from the repository, so this check has no page to draw a box on. \
+             SKIPPED.",
+            pdf.display()
+        )));
+    }
     if !ctx.allow_input {
         return Err(Error::new(
             "input is disabled (--no-input). This check clicks a ribbon control, drags on the \
@@ -121,13 +136,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    let target = ctx.target.ok_or_else(|| {
-        Error::new(
-            "no --doc-point. This check needs somewhere on the page to draw the box, and a \
-             guessed one can land off the sheet — which is symptom-identical to a drag that \
-             never registered.",
-        )
-    })?;
+    if ctx.pdf.is_some() || ctx.target.is_some() {
+        report.note(
+            "--pdf and --doc-point were IGNORED; this check pins its own page and aim because \
+             the box it drags needs room on the sheet and nothing it asserts is a property of \
+             the document",
+        );
+    }
     let page: PageGeometry = match ctx.page_size {
         Some((w, h)) => PageGeometry {
             width_pt: w,
@@ -331,7 +346,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if px.area() == 0 {
         return Err(Error::new(
             "the placed box resolves to no pixels of the captured client area, so there is \
-             nothing to look at. The --doc-point is probably off the visible page.",
+             nothing to look at. The aim is pinned, so this is the canvas \
+             scrolled or zoomed away from it rather than a bad point.",
         ));
     }
     let changed = changed_pixels(&before_shot, &after_shot, px);
