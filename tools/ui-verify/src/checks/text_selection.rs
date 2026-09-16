@@ -140,11 +140,16 @@ const PAGE_TEXT_EVENT: &str = "page-text";
 ///
 /// [`crate::checks::read_mode`]'s ladder looks for a *point* with an object
 /// under it. This needs a **horizontal run** with glyphs along it, which is a
-/// different target and a more forgiving one: a sweep that starts on blank paper
-/// and ends on a word still selects, because
-/// `EditableTextModel::hit_test` resolves an off-text point to the nearest line
-/// — which is Acrobat's behaviour and is documented as such in
-/// `canvas::textsel::hit`.
+/// different target and a more forgiving one: a sweep only has to *cross* text
+/// somewhere along its length. Neither end has to land on a glyph —
+/// `EditableTextModel::hit_test` answers over a band one line-height deep
+/// around each line, and `canvas::textsel::clamp_to_text` carries the far end
+/// of a sweep back to the furthest point that was in reach.
+///
+/// ⚠ That reach is **bounded**, so a full-width band only works because of the
+/// clamp: a band that crosses no text at all selects nothing, which is why the
+/// ladder has eight of them and why the three title-block fractions below are
+/// measured rather than estimated.
 ///
 /// # Why these, in this order
 ///
@@ -164,9 +169,22 @@ const PAGE_TEXT_EVENT: &str = "page-text";
 pub(crate) const BANDS: [((f64, f64), (f64, f64)); 8] = [
     // The title block, bottom right — three sweeps at different heights,
     // because its rows are close together and a single y can fall between them.
-    ((0.62, 0.06), (0.97, 0.06)),
-    ((0.62, 0.12), (0.97, 0.12)),
-    ((0.62, 0.18), (0.97, 0.18)),
+    //
+    // ★ These three are MEASURED, not estimated. `pdfcer.exe find-text` reports
+    // the box of every run on `fixtures/a1-titleblock.pdf`; the fractions below
+    // are the centres of its three richest rows on a 1683.78 pt sheet:
+    //
+    //   0.0878 → SCALE / FIRST / ISSUE / REVISION   (y 144.66 - 151.08)
+    //   0.1097 → PROJECT / NO / PHASE / AUTHOR      (y 181.51 - 187.93)
+    //   0.1333 → CLIENT / STATUS                    (y 221.20 - 227.62)
+    //
+    // Estimated fractions land BETWEEN rows on this sheet — the rows are
+    // 6.4 pt tall and 37 pt apart, so a guess has about a one-in-six chance of
+    // touching one, and a miss is a SKIP rather than a failure. Re-derive with
+    // `pdfcer.exe find-text --needle <word> <fixture>` if the fixture changes.
+    ((0.62, 0.0878), (0.97, 0.0878)),
+    ((0.62, 0.1097), (0.97, 0.1097)),
+    ((0.62, 0.1333), (0.97, 0.1333)),
     // Across the middle of the sheet, where view labels and notes sit.
     ((0.10, 0.50), (0.90, 0.50)),
     ((0.10, 0.35), (0.90, 0.35)),
@@ -213,6 +231,39 @@ fn selections(trace: &Trace) -> Vec<&crate::trace::TraceLine> {
         .collect()
 }
 
+/// **What the selection SETTLED to** after a gesture — the last
+/// `canvas-text-selection` line, empty or not, paired with the number of such
+/// lines so a caller can tell a gesture that said nothing from one that said
+/// `chars=0`.
+///
+/// # ★★★ Why this exists beside [`selections`], which looks like it answers
+///
+/// [`selections`] filters on `chars > 0`, so its `.last()` is *the last
+/// non-empty state the gesture passed through* — which is **not** the state the
+/// operator is left holding, and a band loop that reads it can report a live
+/// selection that is not there.
+///
+/// That is not hypothetical. A sweep traces every distinct range it passes
+/// through, so a drag whose far end leaves the text traced `chars=26` in the
+/// middle and `chars=0` at rest; three checks read the 26, clicked a control
+/// that was correctly greyed, and reported the application dead. The
+/// application defect was real and separate (`canvas::textsel::clamp_to_text`
+/// now stops a sweep cancelling itself) — but the instrument could not have
+/// told the two apart, and a check that cannot distinguish the failure it
+/// names from the one it does not is not measuring either.
+pub(crate) fn settled(trace: &Trace) -> (Option<&crate::trace::TraceLine>, usize) {
+    let all: Vec<_> = trace.events(TEXT_EVENT).collect();
+    (all.last().copied(), all.len())
+}
+
+/// The settled selection **if the gesture made one** — new since `before`, and
+/// non-empty at rest. `None` covers all three ways a sweep can fail to leave
+/// the operator holding text, and the caller reports which by asking
+/// [`settled`] again.
+pub(crate) fn settled_selection(trace: &Trace, before: usize) -> Option<&crate::trace::TraceLine> {
+    let (line, count) = settled(trace);
+    line.filter(|l| count > before && l.get_usize(CHARS_FIELD).unwrap_or(0) > 0)
+}
 /// Aim a document point at the canvas as it is laid out **right now**.
 ///
 /// Re-derived per use rather than cached, and that is required rather than
@@ -359,12 +410,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
         };
 
-        let before = selections(&session.trace()?).len();
+        let before = settled(&session.trace()?).1;
         driver.drag(from, to)?;
         session.settle(16);
         let after = session.trace()?;
-        let lines = selections(&after);
-        // ★ The **last** new line, not the first.
+        // ★ The SETTLED line, and it must be read unfiltered — see
+        // [`settled_selection`] for the failure that rule closes.
         //
         // A sweep traces every distinct state it passes through — measured on
         // `SW41177.pdf`: `chars=1`, then `9`, then `17`, then the settled
@@ -374,7 +425,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // would pass a check that read it. The last line is the selection the
         // operator is actually left holding, which is what the assertion is
         // about and what the report should print.
-        if let Some(line) = lines.last().filter(|_| lines.len() > before) {
+        if let Some(line) = settled_selection(&after, before) {
             let quads = line.get_usize(QUADS_FIELD).unwrap_or(0);
             if quads == 0 {
                 return Ok(Some(format!(
@@ -402,13 +453,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             break;
         }
         report.note(format!(
-            "band {}: no text under the sweep from ({:.0}, {:.0}) to ({:.0}, {:.0}); trying the \
-             next",
+            "band {}: no text left selected by the sweep from ({:.0}, {:.0}) to ({:.0}, {:.0}); \
+             trying the next. Settled: {}",
             n + 1,
             start.0 * page.width_pt,
             start.1 * page.height_pt,
             end.0 * page.width_pt,
-            end.1 * page.height_pt
+            end.1 * page.height_pt,
+            settled(&after)
+                .0
+                .map_or_else(|| "nothing traced".to_owned(), |l| l.raw.clone())
         ));
     }
 

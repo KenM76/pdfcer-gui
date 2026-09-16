@@ -241,40 +241,61 @@ carried into the next field placed) and a colour changed **after** placement
 "colour" for a field is more than one colour — at minimum background and
 border, and text colour where the field draws text.
 
-**Measured, and the answer is uncomfortable: of a field's three colours the
-engine paints one.** `/MK` `/BG` (background) and `/MK` `/BC` (border) are read
-and written perfectly — the round trip was finished at this shell's own request,
-twice — and **nothing paints them**. None of the four appearance builders takes a
-colour parameter; the push button's plate is a hard-coded constant; and
-`edit_widget`'s regeneration test does not mention either field, so a colour-only
-edit returns "nothing was regenerated" with no way to say *recorded, not painted*.
+**Measured twice, and the second measurement reverses the first.** `/MK` `/BG`
+(background) and `/MK` `/BC` (border) were read and written perfectly and
+**painted by nothing** — none of the four appearance builders took a colour, the
+push button's plate was a hard-coded constant, and a colour-only `edit_widget`
+reported "nothing was regenerated" with no way to say *recorded, not painted*.
+That was the state this row was written against, and on it the decision was R9:
+offer no swatch, because this shell tints its own on-canvas field editor from the
+background value and he would have set a colour, watched the box turn it, saved,
+reopened and found it grey — a screenshot of the editing canvas differing from a
+screenshot of the same file saved and reopened, which is the one-line test for
+what rule 4 forbids.
 
-That matters here more than it would anywhere else, because **this shell already
-tints its own on-canvas field editor from that background value.** Ship the swatch
-and he would set a colour, watch the box turn that colour while he edits it, save,
-reopen, and find it grey. A screenshot of the editing canvas would differ from a
-screenshot of the same document saved and reopened, which is the one-line test for
-the thing rule 4 forbids. So the background and border swatches are **not offered
-at all** — R9, not a stub — and the gap is filed as `G020`.
+**The engine has since painted them.** All four builders take a background and a
+border colour, regeneration covers both, and a colour-only edit redraws. The
+canvas tint and the saved-and-reopened page now agree, which was the condition the
+refusal rested on. **So the refusal is withdrawn and all three colours ship.**
 
 **What ships**, with the decisions made here rather than asked:
 
-1. **The text colour, for text fields, drop-downs and push-button captions.**
+1. **Background and border, for every field kind.** Defaults differ by kind and
+   that is the engine's business, not a thing to normalise here: a push button
+   keeps its plate, a text field and a drop-down draw nothing behind the text.
+   **"No colour" and "not stated" are different** and both must be reachable —
+   an empty `/BC` positively means *draw no border*, and collapsing it into
+   "unset" would silently repaint a field the operator deliberately cleared.
+2. **`/BC` is labelled "border and mark", not "border".** It is the ink a check
+   box's tick and a radio's dot are drawn in, so a label naming only the outline
+   would mis-state what the swatch does. A radio's background is a **disc**, and
+   the swatch preview says so.
+3. **The text colour, for text fields, drop-downs and push-button captions.**
    Those three draw their text through a builder that parses `/DA` and uses the
-   colour in it, falling back to black only when the `/DA` states none — so the
-   colour is genuinely painted. Check box and radio take no `/DA` at all; their
-   builders receive a width, a height and a tick style, so a text colour on those
-   two is the same recorded-not-painted defect and is not offered there.
-2. **Before placement: in the placement dialog**, beside the border-width row —
-   not on the armed-tool surface. The dialog is where a field's other properties
-   are already chosen, and one setting living on two surfaces is the failure mode
-   to avoid.
-3. **The chosen colour is remembered across kinds**, the way border width already
+   colour in it, falling back to black only when the `/DA` states none. Check box
+   and radio take no `/DA` at all; their builders receive a width, a height and a
+   tick style, so a text colour on those two is recorded-not-painted and is not
+   offered there.
+4. **CMYK stays CMYK.** A `/MK` colour written as four components is painted as
+   four and never converted on the way through. Where a swatch cannot represent
+   it, the four numbers are shown rather than a converted approximation.
+5. **After placement first, before placement second.** Changing a selected
+   field's colour is reachable today through the widget properties; choosing a
+   colour *before* placing needs the engine's field-creation half, which is not
+   landed. The placement dialog's colour rows arrive with it, beside the
+   border-width row — not on the armed-tool surface, because one setting living
+   on two surfaces is the failure mode to avoid. Until then the route is
+   place-then-colour, and the two commands coalesce for undo so it is one
+   operator gesture.
+6. **The chosen colour is remembered across kinds**, the way border width already
    is, so placing a run of fields does not mean re-picking it each time.
-4. **A sentence replacing the current "not editable" note**, naming what is out of
-   reach and why: the box's own background and border colour are recorded in the
-   file but drawn by nothing, so they are not offered. An absence with no
-   explanation is indistinguishable from an oversight.
+7. **A recorded-not-painted outcome is disclosed off-canvas, never drawn.** The
+   engine can now answer *the colour was stored but the appearance was not
+   rebuilt*, and one case is live: **a push button created by an earlier build
+   carries RGB `/MK` values while its artwork was painted in grey, so the first
+   colour edit records without repainting — and re-setting either colour rebuilds
+   it.** That sentence belongs in the panel, because the operator's only other
+   signal is a swatch that appears to do nothing once.
 
 A field's `/DA` is font, size and colour as one unit, so a colour-only change has
 to carry the field's current font and size or it silently restyles the text. Where
@@ -361,12 +382,33 @@ product class:**
    thing to fill in; an object ring is per-page and a Tab that changed page
    would also have to scroll, which is a second gesture he did not ask for.
 
-**One thing the file states and we cannot yet compute:** a page carrying
-`/Tabs /R`, `/C` or `/S` declares a tab order that is *not* `/Annots` order, and
-neither the engine nor this shell derives one. Filed as `G019`. Until it comes
-back, the walk is `/Annots` order and the forms panel says so — the sequence he
-is tabbing is not the one the file states, and he is told that off-canvas rather
-than left to notice it.
+**The order he tabs is the engine's to compute, and it now does.** A page
+carrying `/Tabs /R`, `/C` or `/S` declares a tab order that is *not* `/Annots`
+order; when this row was written neither side derived one, and the plan was to
+walk `/Annots` and disclose the shortfall. The engine has since shipped the
+whole computation, so **the shell sorts nothing** — no `/Rect` comparison lives
+here, because a second implementation of a rule this fiddly disagrees with the
+first the day a page is rotated.
+
+What that changes in the plan:
+
+- **The ring is the engine's sequence, verbatim.** It already accounts for page
+  rotation, right-to-left, the annotations pinned to the front of the array, and
+  the row banding that turns a scatter of rectangles into reading order.
+- **A radio group is several annotations and one tab stop.** The sequence lists
+  the widgets; the ring collapses each group to its first member, using the
+  engine's own field-to-widget mapping rather than matching names here.
+- **`/Tabs /S` is undefined, not "last".** The engine answers with an empty
+  order and a sentence saying why. The ring falls back to array order and the
+  sentence goes off-canvas verbatim — it is written to be read by the operator.
+- **Excluded widgets are named, not silently skipped.** Hidden and no-view
+  fields are out of the ring because the specification says so; a couple of
+  other exclusions are the engine's reading rather than the file's, and the
+  count of what was left out belongs in the forms panel beside the sequence.
+- **Whatever the engine reports about the basis is what the panel says.** It
+  distinguishes *the file stated this order* from *we derived it by rows* from
+  *the structure gave us nothing*, and those are three different sentences to an
+  operator wondering why Tab went where it went.
 
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 

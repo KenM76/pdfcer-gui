@@ -521,6 +521,69 @@ nothing else — and by `tools/ui-verify/src/checks/point_destination.rs` over
 
 ---
 
+### D66 — RULE: a text sweep's far end is clamped to the text, never cancelled
+
+`EditableTextModel::hit_test` answers only within **one line-height of a line's
+box on every side**, so a drag whose pointer runs past the end of a run, out
+into a margin, or across the blank middle of a drawing sheet is asking it about
+a point it will not resolve. A sweep is not cancelled by that.
+`canvas::textsel::drag` uses the furthest point along `from`..`to` that the
+engine still resolves as the focus, and keeps the selection.
+
+The reach is a line's own **height**, not its font size — a vertical run of
+12 pt glyphs standing 75 pt tall reaches 75 pt sideways — which is why a point
+chosen by eye as "past the text" often is not, and why the tests probe the
+fixture's measured line boxes before they aim.
+
+`canvas::textsel::clamp_to_text` scans **backwards from the pointer** in 32
+steps and then sharpens by 8 halvings toward the far edge of the text. Backwards
+rather than a bisection from the anchor because the reachable set along a drag
+is not an interval: a sweep crossing the gap between two columns leaves reach
+and re-enters it, and a bisection seeded at the anchor would stop at the near
+edge of the gap and silently under-select. The engine stays the only oracle for
+where text is; nothing in the shell re-derives its geometry.
+
+Enforced by `canvas::textsel`'s unit tests over `fixtures/rotated-text.pdf` —
+reverting `drag` to `hit(to)?` turns `overshooting_the_end_of_a_line_keeps_the_selection`
+and `the_clamp_finds_the_furthest_text_the_drag_passed_not_the_nearest` red and
+leaves `a_sweep_begun_off_the_text_still_selects_nothing` green — and by the
+three driven text checks over `fixtures/layered-drawing.pdf`, where a full-width
+band on a 2,384 pt sheet leaves reach one sixth of the way along a 396 pt note.
+
+---
+
+### D67 — RULE: a gesture's outcome is read from the settled trace line, not the last matching one
+
+`canvas-text-selection` is traced at every distinct state a drag passes through,
+clears included. An instrument that filters the event on `chars > 0` and then
+takes `.last()` reports the last state the gesture was ever *in*, which is not
+the state it *left*. The two differ on exactly the gestures that matter, so such
+an instrument cannot tell *the application is broken* from *my own gesture ended
+off the text* — and what it does instead is click a correctly greyed control and
+report the feature dead.
+
+`checks::text_selection::settled` answers the last line **unfiltered**, paired
+with the number of such lines so a caller can distinguish a gesture that said
+nothing from one that said `chars=0`. `settled_selection` is the presence form:
+new since a recorded count, and non-empty at rest. All three band ladders read
+them, and a ladder that misses says which of the two it was by printing the
+settled line.
+
+The *absence* phases keep the filtered form deliberately — "no non-empty
+selection appeared at any point in the gesture" is the stronger claim, and it is
+the right one when the assertion is that a gesture produced nothing at all.
+
+★ The rule generalises past this event. Any check whose subject is **what a
+gesture left behind** must read the trace unfiltered and take the last line: a
+filter on the property being asserted makes every intermediate state look like a
+result.
+
+Enforced by `checks::text_markup`'s
+`a_sweep_that_ends_cleared_has_selected_nothing`, whose two synthetic traces
+differ only in which line is last.
+
+---
+
 ## Constraints
 
 ### D4 — CONSTRAINT: the edit unit is one show-text operator

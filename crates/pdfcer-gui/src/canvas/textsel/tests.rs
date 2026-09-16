@@ -688,6 +688,83 @@ fn a_degenerate_drag_selects_nothing() {
 }
 
 // =======================================================================
+// Overshooting the text — the clamp in `drag`
+//
+// `EditableTextModel::hit_test` answers `None` beyond one line-height of
+// every line, which this shell asked for. The consequence it did not ask
+// for is that a focus past the end of a run resolved to nothing and took
+// the whole selection with it.
+// =======================================================================
+
+/// ★★★ **A sweep that runs off the end of a line keeps what it swept.**
+///
+/// Measured on this fixture before the clamp existed: a drag from the start
+/// of `HORIZONTAL` to any point past `x = 161.34` — its box plus one
+/// line-height — returned `None`, so the wash vanished mid-gesture and the
+/// operator was left holding nothing. On a drawing sheet that is most
+/// sweeps: `fixtures/layered-drawing.pdf` carries a 396 pt note on a 2,384 pt
+/// page, so a sweep across the sheet leaves reach after one sixth of it.
+///
+/// Both target points sit in the **gap** between `HORIZONTAL`'s reach and
+/// `DOWNWARD`'s, which starts at `x = 222.35` — the vertical line's reach is
+/// its own 74.65 pt height, not its 12 pt size. A target past that would
+/// select through to it, which is the next test.
+#[test]
+fn overshooting_the_end_of_a_line_keeps_the_selection() {
+    on_rotated_page(|ctx| {
+        let from = on_string(ctx, "HORIZONTAL", 0.02);
+        for x in [170.0_f32, 200.0] {
+            let to = crate::viewer::pdf_space_to_canvas(egui::pos2(x, 703.0), ctx.page)
+                .expect("a real page projects");
+            assert!(
+                hit(&model(ctx), ctx, to).is_none(),
+                "x={x} was supposed to be OUTSIDE every line's reach — if the engine has \
+                 widened it, this test is no longer about the clamp"
+            );
+            let swept = drag(ctx, from, to)
+                .unwrap_or_else(|| panic!("the sweep to x={x} cancelled itself"));
+            assert_eq!(swept.text, "HORIZONTAL");
+        }
+    });
+}
+
+/// ★★ **And it does not stop at the first gap** — the clamp scans backwards
+/// from the pointer, so a sweep that crosses blank paper and keeps going
+/// selects through to the furthest text it passed.
+///
+/// This is what a bisection seeded from the anchor could not do: it would
+/// converge on the near edge of the gap at `x = 161.34` and silently
+/// under-select, which looks like a working clamp until the day two columns
+/// are swept at once.
+#[test]
+fn the_clamp_finds_the_furthest_text_the_drag_passed_not_the_nearest() {
+    on_rotated_page(|ctx| {
+        let from = on_string(ctx, "HORIZONTAL", 0.02);
+        let to = crate::viewer::pdf_space_to_canvas(egui::pos2(580.0, 703.0), ctx.page)
+            .expect("a real page projects");
+        assert!(hit(&model(ctx), ctx, to).is_none());
+        let swept = drag(ctx, from, to).expect("the sweep cancelled itself");
+        assert!(
+            swept.text.contains("DOWNWARD") || swept.text.contains("INVERTED"),
+            "the clamp stopped at the near edge of the gap: {:?}",
+            swept.text
+        );
+    });
+}
+
+/// A sweep begun on blank paper still selects nothing. The clamp widens what
+/// a resolvable **anchor** can reach; it does not manufacture one.
+#[test]
+fn a_sweep_begun_off_the_text_still_selects_nothing() {
+    on_rotated_page(|ctx| {
+        let blank = |x: f32, y: f32| {
+            crate::viewer::pdf_space_to_canvas(egui::pos2(x, y), ctx.page)
+                .expect("a real page projects")
+        };
+        assert!(drag(ctx, blank(560.0, 60.0), blank(580.0, 60.0)).is_none());
+    });
+}
+// =======================================================================
 // Ordering
 //
 // The two keyboard verbs and the cost gate in front of them moved to

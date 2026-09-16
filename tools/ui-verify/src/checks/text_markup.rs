@@ -89,14 +89,13 @@ use crate::checks::driving::{
     self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
     declared_names, list, list_str, shell_trace,
 };
-use crate::checks::text_selection::{BANDS, aim};
+use crate::checks::text_selection::{BANDS, aim, settled, settled_selection};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::trace::Trace;
 
 /// ★ **The only mode in which this feature exists**, and the check is aimed at
 /// it deliberately rather than for convenience.
@@ -152,10 +151,6 @@ const SIBLING: &str = "ribbon.item.markup.strikeout";
 /// The third of the family, likewise checked for presence only.
 const THIRD: &str = "ribbon.item.markup.squiggly";
 
-/// `canvas-text-selection via=… page=… chars=… quads=…` — the selection that
-/// will be the operand.
-const TEXT_EVENT: &str = "canvas-text-selection";
-
 /// `text-markup-commit kind=… page=… quads=…` — `canvas::markup::text`'s report
 /// that a command turned a selection into an action.
 const COMMIT_EVENT: &str = "text-markup-commit";
@@ -174,9 +169,6 @@ const DECLINE_EVENT: &str = "text-markup-declined";
 /// [`COMMIT_EVENT`] says the shell decided to author one; this says
 /// `EditSession::add_markup` returned `Ok` and the revision moved.
 const APPLY_EVENT: &str = "add-text-markup";
-
-/// How many characters the selection carries. `> 0` gates phase C.
-const CHARS_FIELD: &str = "chars";
 
 /// How many line boxes. Compared **across** the two events — see the module
 /// header's boundary-spanning assertion.
@@ -206,18 +198,6 @@ impl Check for TextMarkupMarksASelection {
             Err(why) => report.from_error(&why),
         }
     }
-}
-
-/// Every `canvas-text-selection` line reporting a **non-empty** selection.
-///
-/// Filtered on `chars > 0` for the reason [`crate::checks::text_selection`]
-/// records: a *clear* is traced too, with `chars=0`, and a count of the event
-/// would be satisfied by the gesture that ends a selection.
-fn selections(trace: &Trace) -> Vec<&crate::trace::TraceLine> {
-    trace
-        .events(TEXT_EVENT)
-        .filter(|l| l.get_usize(CHARS_FIELD).unwrap_or(0) > 0)
-        .collect()
 }
 
 /// How many times the shell has reported [`SUBJECT_ID`] invoked.
@@ -447,16 +427,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 continue;
             }
         };
-        let before = selections(&session.trace()?).len();
+        let before = settled(&session.trace()?).1;
         driver.drag(from, to)?;
         session.settle(16);
         let after = session.trace()?;
-        let lines = selections(&after);
-        // The **last** new line: a sweep traces every distinct state it passes
-        // through, and the settled one is the selection the operator is left
-        // holding — which is the one the next click will mark. See
-        // `text_selection`'s own note on this.
-        if let Some(line) = lines.last().filter(|_| lines.len() > before) {
+        // The line the gesture SETTLED on, read unfiltered — see
+        // [`settled_selection`] for why the filtered `.last()` this used to
+        // call named a mid-drag state as the operand, and then reported the
+        // correctly-greyed control it went on to click as a dead feature.
+        if let Some(line) = settled_selection(&after, before) {
             let quads = line.get_usize(QUADS_FIELD).unwrap_or(0);
             if quads == 0 {
                 return Ok(Some(format!(
@@ -477,8 +456,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             break;
         }
         report.note(format!(
-            "band {}: no text under the sweep; trying the next",
-            n + 1
+            "band {}: the sweep left no text selected; trying the next. Settled: {}",
+            n + 1,
+            settled(&after)
+                .0
+                .map_or("nothing traced", |l| l.raw.as_str())
         ));
     }
 
@@ -698,6 +680,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::trace::Trace;
 
     /// The names this check greps for are the ones `egui-shell` builds, and the
     /// ids are the ones the application registers.
@@ -736,9 +719,8 @@ mod tests {
              pdfcer-diag add-text-markup page=0 n=1 epoch=1 disclosures=none",
             "pdfcer-diag",
         );
-        let selection = selections(&trace);
-        assert_eq!(selection.len(), 1);
-        assert_eq!(selection[0].get_usize(QUADS_FIELD), Some(2));
+        let selection = settled_selection(&trace, 0).expect("the settled selection");
+        assert_eq!(selection.get_usize(QUADS_FIELD), Some(2));
         let commit = trace
             .events(COMMIT_EVENT)
             .filter(|l| l.get("kind") == Some(SUBJECT_KIND))
@@ -755,7 +737,9 @@ mod tests {
             "pdfcer-diag",
         );
         assert_ne!(
-            selections(&diverged)[0].get_usize(QUADS_FIELD),
+            settled_selection(&diverged, 0)
+                .expect("the settled selection")
+                .get_usize(QUADS_FIELD),
             diverged
                 .events(COMMIT_EVENT)
                 .last()
@@ -763,15 +747,30 @@ mod tests {
         );
     }
 
-    /// A cleared selection is not a selection — the filter phase B's ladder
-    /// depends on, and the same one `text_selection` documents.
+    /// A sweep that **ends** cleared has selected nothing, whatever it passed
+    /// through on the way — the property phase B's ladder rests on.
+    ///
+    /// The two traces differ only in which line is last, and that is the whole
+    /// point: reading the last *non-empty* line instead of the last line is
+    /// what made this check report a correctly-greyed control as a dead
+    /// feature.
     #[test]
-    fn only_a_non_empty_selection_counts() {
-        let trace = Trace::parse(
+    fn a_sweep_that_ends_cleared_has_selected_nothing() {
+        let held = Trace::parse(
             "pdfcer-diag canvas-text-selection via=clear page=0 chars=0 quads=0\n\
              pdfcer-diag canvas-text-selection via=drag page=0 chars=27 quads=2",
             "pdfcer-diag",
         );
-        assert_eq!(selections(&trace).len(), 1, "the clear must not be counted");
+        assert!(settled_selection(&held, 0).is_some());
+
+        let lost = Trace::parse(
+            "pdfcer-diag canvas-text-selection via=drag page=0 chars=27 quads=2\n\
+             pdfcer-diag canvas-text-selection via=drag page=0 chars=0 quads=0",
+            "pdfcer-diag",
+        );
+        assert!(
+            settled_selection(&lost, 0).is_none(),
+            "a sweep whose pointer ran off the text left nothing to mark"
+        );
     }
 }

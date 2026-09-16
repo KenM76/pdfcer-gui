@@ -783,8 +783,84 @@ pub fn reresolve(ctx: &PageContext<'_>, previous: &TextSelection) -> Option<Text
 pub fn drag(ctx: &PageContext<'_>, from: Pos2, to: Pos2) -> Option<TextSelection> {
     let model = model(ctx);
     let anchor = hit(&model, ctx, from)?;
-    let focus = hit(&model, ctx, to)?;
+    // A pointer that has run off the end of the text does not cancel the
+    // sweep; it stops extending it. See [`clamp_to_text`].
+    let focus = match hit(&model, ctx, to) {
+        Some(focus) => focus,
+        None => clamp_to_text(&model, ctx, from, to)?,
+    };
     resolve(&model, ctx, anchor, focus)
+}
+
+/// How many points along `from`..`to` are tried before the clamp gives up,
+/// and how many halvings sharpen the one that answered.
+///
+/// A scan rather than a straight bisection because the reachable set along a
+/// drag is not an interval: a sweep that crosses a gap between two columns
+/// leaves reach and re-enters it, and a bisection seeded from the anchor would
+/// stop at the near edge of the gap and silently under-select. Scanning
+/// **backwards from the pointer** finds the furthest text the operator has
+/// actually dragged past, which is the one they mean.
+const CLAMP_SCAN: u32 = 32;
+/// The reciprocal, stated rather than divided, so the sample positions are
+/// exact f32 and no cast appears in the scan.
+const CLAMP_STEP: f32 = 1.0 / 32.0;
+const CLAMP_SHARPEN: u32 = 8;
+
+/// **The furthest point along `from`..`to` that still lands in text.**
+///
+/// The clamp that makes overshooting a line harmless. Without it a sweep that
+/// ran one line-height past the last character resolved no focus, [`drag`]
+/// returned `None`, and the entire selection vanished mid-gesture — on a
+/// drawing sheet, where a title-block run is 40 pt wide on a 2,384 pt page,
+/// that is most sweeps.
+///
+/// # The engine is the oracle, and nothing here re-derives its geometry
+///
+/// *Where* the text ends is [`EditableTextModel::hit_test`]'s question — its
+/// reach is one line-height around each line's box and is deliberately not a
+/// parameter. So this does not compute a line end, an inflated box or a
+/// direction: it asks `hit_test` at sample points and keeps the furthest one
+/// that answered. A rotated line, a multi-line sweep and a future change to
+/// the reach are all handled by construction, which is the property a
+/// shell-side copy of the rule could not have.
+///
+/// `None` when no sample along the ray resolves — the caller then drops the
+/// selection, which is [`drag`]'s unchanged behaviour for a sweep over paper.
+fn clamp_to_text(
+    model: &EditableTextModel<'_>,
+    ctx: &PageContext<'_>,
+    from: Pos2,
+    to: Pos2,
+) -> Option<TextPosition> {
+    let at = |t: f32| from + (to - from) * t;
+    // Backwards from the pointer. `t = 1.0` is known to fail — it is the
+    // caller's own miss — so the scan starts one step in.
+    let mut hit_t = None;
+    let mut t = 1.0 - CLAMP_STEP;
+    for _ in 1..CLAMP_SCAN {
+        if hit(model, ctx, at(t)).is_some() {
+            hit_t = Some(t);
+            break;
+        }
+        t -= CLAMP_STEP;
+    }
+    let mut lo = hit_t?;
+    // Sharpen towards the far edge of the text, so the clamped caret sits at
+    // the end of the run rather than up to one scan step short of it.
+    let mut hi = (lo + CLAMP_STEP).min(1.0);
+    let mut best = hit(model, ctx, at(lo))?;
+    for _ in 0..CLAMP_SHARPEN {
+        let mid = f32::midpoint(lo, hi);
+        match hit(model, ctx, at(mid)) {
+            Some(pos) => {
+                best = pos;
+                lo = mid;
+            }
+            None => hi = mid,
+        }
+    }
+    Some(best)
 }
 
 /// **Update the selection from a click.**
@@ -882,11 +958,11 @@ fn model<'a>(ctx: &PageContext<'a>) -> EditableTextModel<'a> {
 ///
 /// # ★★★ CONTAINMENT, and it must not be [`hit`]
 ///
-/// [`hit`] falls back to the nearest line when no box contains the point —
-/// deliberately, because that is Acrobat's behaviour for a sweep begun in the
-/// margin. It therefore answers `Some` almost everywhere on a page with any
-/// text at all, and a caller asking *"is there a word here?"* would get "yes"
-/// over blank paper.
+/// [`hit`] falls back to the nearest line **within one line-height** when no
+/// box contains the point — deliberately, because that is Acrobat's behaviour
+/// for a sweep begun in the margin. It therefore answers `Some` over a band of
+/// blank paper around every line, and a caller asking *"is there a word
+/// here?"* would get "yes" in the margin beside one.
 ///
 /// This is the other question, and the two must not be confused. Its one caller
 /// is `canvas::clicking`, deciding whether a click in Read mode means the
@@ -932,11 +1008,16 @@ pub fn word_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<()> {
 /// own** device transform — so the geometry and the picture agree by
 /// construction rather than by two implementations happening to match.
 ///
-/// `None` when the page's transform will not invert, or when the page has no
-/// clustered glyph at all. Note that [`EditableTextModel::hit_test`] otherwise
-/// **always answers**, falling back to the nearest line when no line's box
-/// contains the point — which is deliberate and is Acrobat's behaviour: a drag
-/// begun in the margin selects from the nearest text rather than from nothing.
+/// `None` when the page's transform will not invert, or when the point is out
+/// of **reach** of every line — [`EditableTextModel::hit_test`] inflates each
+/// line's box by one line-height and answers `None` outside all of them, so
+/// this is a presence test and not a placement that never fails. A drag begun
+/// in the margin beside a line still selects from it, which is Acrobat's
+/// behaviour; a drag begun on open paper selects nothing.
+///
+/// ⚠ A sweep whose *focus* leaves that reach must not cancel the gesture. See
+/// [`clamp_to_text`], which is the caller's answer and the reason this
+/// function is allowed to be strict.
 fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Option<TextPosition> {
     let pdf = crate::viewer::canvas_to_pdf_space(canvas, ctx.page)?;
     // ★★ ONE call, and no shell-side rotated-band pass in front of it.
@@ -949,9 +1030,9 @@ fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Op
     // letter short, or a sweep that selects nothing — looks like a gesture bug
     // rather than a duplicated rule.
     //
-    // The nearest-line fallback inside `hit_test` is deliberate and is
-    // Acrobat's behaviour: a drag begun in the margin selects from the nearest
-    // text rather than from nothing.
+    // The nearest-line fallback inside `hit_test` is bounded at one
+    // line-height and that bound is load-bearing: it is what makes this a
+    // presence test. `clamp_to_text` handles the overshoot the bound creates.
     model.hit_test(f64::from(pdf.x), f64::from(pdf.y))
 }
 

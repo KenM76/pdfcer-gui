@@ -56,7 +56,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **38 of 179** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `wanted` — a real gap — **40 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -101,6 +101,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Review status — `/State` + `/StateModel`** (`Pass 253.1`): read `Annotation::state` … | **wanted — the row that turns Review mode into a review WORKFLOW.** `shell::manifest::markup` says the tab is not called Review because Review promises compare, resolve and track; this is the first of the three. The engine does not interpret the strings, so the vocabulary is this shell's to present and an unknown value must be shown, not normalised. Both halves are built: `panels::comments::reviewstate` shows one line per reviewer — §12.5.6.3 makes status a per-author `/IRT` chain, not a field — and builds the filter chooser from the document, so an unknown value is filterable in the file's own spelling. Owed: a driven check, and the other two thirds of the promise. |
 | Ask which characters a text run will accept, BEFORE the first keystroke — `EditSession::run_repertoire(page_index, find, pinned_span)`, accepted-set equal by construction to what `edit_text` will not refuse | **wanted — the pin does not carry it yet.** The in-place editor calls it ONCE when the caret pins a run, keeps the answer for the life of the edit, and refuses an out-of-set keystroke at the key — status line, off-canvas — so the operator keeps the word instead of losing it at commit. A subsetted CAD font accepts a fraction of the standard character set, which is what makes this worth a surface. The engine is explicit that per-keystroke `preview_font_resources_for` is NOT the intended use; this verb is. Wire: `canvas::textedit` on pin → `run_repertoire` → a `Repertoire` kept on editor state → the key handler consults `accepted`. The driven check is the equivalence: a rejected character refuses, an accepted one does not. Next build after a `cargo update`. |
 | Four more `/Ff` field flags and the mapping name — `FieldEdit::with_no_spell_check`, `with_no_scroll`, `with_commit_on_sel_change`, `with_file_select`, `with_mapping_name` / `clearing_mapping_name` | **wanted, and they belong in a group that already exists.** `panels::properties::fieldedit` already carries the default value, the quadding, `/NoExport` and the appearance on the same builder, so each is one row and one round-trip test rather than a new surface. They are not equal: `no_scroll` and `no_spell_check` are text-field options set on purpose; `commit_on_sel_change` is a choice-field option whose effect is invisible until a form is filled; `file_select` turns a text field into a file picker and changes what the widget IS, which needs a sentence rather than a checkbox. `mapping_name` (`/TM`) is an export name for a form-data round trip, invisible on the page, wanting a text box beside the field name saying what it is for. Waiting on nothing; deferred only because one sweep of the properties panel is cheaper than four visits. |
+| **Compute a page's tab-VISIT order for every `/Tabs` state — `EditSession::page_tab_sequence(page_index) -> TabSequence`, CLI `tab-order`** … | **wanted — the engine half of O204, and it landed the same day the request was written.** O204 is *“when I press tab while in a form I end up tabbing through the menus instead of the form items”*. This verb answers the half the shell cannot compute on its own: which widget is next, for every `/Tabs` state, with `/Rotate` and reading direction applied, `Hidden`/`NoView` bearers excluded, and `/S` either derived from the structure tree or refused by name rather than silently falling back. The shell half stays as O204 scopes it — a `raw_input_hook` filter in `app::frame` so egui never sees Tab, a `canvas::tabnav` claimant, Tab branches in `forms::editor` and `canvas::keys`, `vk::TAB` in the harness — but `tabnav` asks this verb rather than sorting `/Rect`s itself, and the off-canvas disclosure it owes under rule 4 comes out of the same call. Do not bind bare Tab in the manifest. |
+| **Paint `/MK` `/BG`/`/BC` into the baked `/AP` the widget builders draw.** … | **wanted — the engine half of O202, which the engine's own row names.** O202 is *“the forms objects have no way to edit their colour before or after placement”*. `Pass 308.0`/`308.2` paints both colours into the appearance all four builders draw, covers both in `needs_regen`, and discloses `RecordedNotPainted` where the edit cannot be baked in. **This changes an earlier scoping decision:** background and border swatches were held back under R9 because nothing would have painted them, and now something does — so the after-placement half belongs in `panels::properties::widgetedit`, which already reads `widget.background` and `widget.border_color`. `RecordedNotPainted` goes off-canvas, never a swatch that lies. The **before**-placement half waits on `Pass 308.1` (carry the colour at field creation), which the engine still lists as owed. Text colour is `/DA` and a different row. |
 
 ### Redaction & security
 
@@ -130,7 +132,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 ---
 
-## `blocked` — waiting on something named — **2 of 179** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `blocked` — waiting on something named — **2 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -148,7 +150,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 179** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -159,7 +161,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 179** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `declined` — deliberately no surface — **14 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -199,7 +201,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **125 of 179** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **125 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

@@ -108,7 +108,7 @@ use crate::checks::driving::{
     self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
     declared_names, list, list_str, shell_trace,
 };
-use crate::checks::text_selection::{BANDS, aim};
+use crate::checks::text_selection::{BANDS, aim, settled, settled_selection};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
@@ -554,15 +554,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 continue;
             }
         };
-        let before = selections(&session.trace()?).len();
+        let before = settled(&session.trace()?).1;
         driver.drag(from, to)?;
         session.settle(16);
         let after = session.trace()?;
-        let lines = selections(&after);
-        // The **last** new line: a sweep traces every distinct state it passes
-        // through, and the settled one is the selection the operator is left
-        // holding — which is the one phase D will mark.
-        if let Some(line) = lines.last().filter(|_| lines.len() > before) {
+        // The line the gesture SETTLED on, read unfiltered — see
+        // [`settled_selection`] for why the filtered `.last()` this used to
+        // call reported a mid-drag state as the operand and then blamed the
+        // application for a control that was correctly greyed.
+        if let Some(line) = settled_selection(&after, before) {
             let quads = line.get_usize(QUADS_FIELD).unwrap_or(0);
             if quads == 0 {
                 return Ok(Some(format!(
@@ -585,8 +585,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             break;
         }
         report.note(format!(
-            "band {}: no text under the sweep; trying the next",
-            n + 1
+            "band {}: the sweep left no text selected; trying the next. Settled: {}",
+            n + 1,
+            settled(&after)
+                .0
+                .map_or("nothing traced", |l| l.raw.as_str())
         ));
     }
 
