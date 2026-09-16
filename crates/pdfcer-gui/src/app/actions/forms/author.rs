@@ -103,6 +103,19 @@ pub(in crate::app::actions) fn author(
     // sentence is owed only when it does not.
     let mut folded = true;
 
+    // The two `/MK` colours, handed to every kind identically.
+    //
+    // ★ One value reaches BOTH the widget's dictionary and its appearance
+    // stream, which is the engine's own reason for modelling them as one
+    // struct: `Pass 308.0` found a push button whose `/MK` said DeviceRGB
+    // while its artwork drew DeviceGray, harmless for months and expensive
+    // the moment something started deriving one from the other.
+    //
+    // `None` in either component writes NO key and leaves the builder's
+    // default standing, so a draft nobody touched authors exactly the bytes
+    // it always did.
+    let chrome = pdfcer_core::annot_author::WidgetChrome::new(draft.background, draft.border_color);
+
     crate::app::actions::apply::vector_edit(doc, "add-form-field", page, 1, |session| {
         let outcome = match kind {
             K::Text => {
@@ -120,6 +133,7 @@ pub(in crate::app::actions) fn author(
                 spec.read_only = draft.read_only;
                 spec.required = draft.required;
                 spec.border = border;
+                spec.chrome = chrome;
                 session.add_text_field(&spec)
             }
             K::CheckBox => {
@@ -130,6 +144,7 @@ pub(in crate::app::actions) fn author(
                 spec.read_only = draft.read_only;
                 spec.required = draft.required;
                 spec.border = border;
+                spec.chrome = chrome;
                 session.add_check_box(&spec)
             }
             K::Radio => {
@@ -145,6 +160,7 @@ pub(in crate::app::actions) fn author(
                 spec.read_only = draft.read_only;
                 spec.required = draft.required;
                 spec.border = border;
+                spec.chrome = chrome;
                 session.add_radio_button(&spec)
             }
             K::Choice => {
@@ -167,6 +183,7 @@ pub(in crate::app::actions) fn author(
                 spec.read_only = draft.read_only;
                 spec.required = draft.required;
                 spec.border = border;
+                spec.chrome = chrome;
                 session.add_choice_field(&spec)
             }
             K::PushButton => {
@@ -174,6 +191,7 @@ pub(in crate::app::actions) fn author(
                 spec.tooltip = tooltip;
                 spec.read_only = draft.read_only;
                 spec.border = border;
+                spec.chrome = chrome;
                 let placed = session.add_push_button(&spec);
                 // AND THEN GIVE IT SOMETHING TO DO.
                 //

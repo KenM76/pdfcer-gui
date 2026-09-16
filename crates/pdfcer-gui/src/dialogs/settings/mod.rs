@@ -106,6 +106,10 @@ pub mod display;
 /// one. See its header for why the list lives here rather than on the batch
 /// pane its blocker named.
 mod fonts;
+/// The order Tab visits a page in. Its header carries the filing rule:
+/// both settings answer *"I pressed Tab and it went to the wrong field"*,
+/// and neither is discoverable from anywhere else in the program.
+mod forms;
 pub mod images;
 pub mod measuring;
 pub mod pages;
@@ -599,6 +603,15 @@ pub fn show(
                 widgets::group(ui, "comments", t::group_comments(), false, |ui| {
                     comments::author_name(ui, &mut draft.working_prefs);
                 });
+                // After Comments and before Pages, because the ordering rule
+                // runs from what the program looks like toward what the
+                // document contains, and a form field is content a page
+                // carries rather than a property of the page itself.
+                widgets::group(ui, "forms", t::group_forms(), false, |ui| {
+                    forms::tab_tail(ui, draft);
+                    ui.add_space(10.0);
+                    forms::row_tolerance(ui, draft);
+                });
                 widgets::group(ui, "pages", t::group_pages(), false, |ui| {
                     pages::separations(ui, draft);
                     ui.add_space(10.0);
@@ -812,6 +825,7 @@ mod tests {
         ("defaultapp", include_str!("defaultapp.rs")),
         ("display", include_str!("display.rs")),
         ("fonts", include_str!("fonts.rs")),
+        ("forms", include_str!("forms.rs")),
         ("images", include_str!("images.rs")),
         ("measuring", include_str!("measuring.rs")),
         ("pages", include_str!("pages.rs")),

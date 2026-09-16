@@ -279,6 +279,13 @@ pub(crate) enum MkPick {
     /// Table 189's empty array — *this widget has no such colour*, stated
     /// positively, which is not the same as the key being absent.
     NoColour,
+    /// Take the key away, so the file states nothing about it and whatever
+    /// builds the appearance falls back to its own default.
+    ///
+    /// Not a colour and not the absence of one. On a push button the two read
+    /// differently on screen: [`Self::NoColour`] gives no plate, this gives
+    /// the plate back.
+    Remove,
 }
 
 /// One `/MK` colour control's inputs, bundled because there are four and the
@@ -286,15 +293,19 @@ pub(crate) enum MkPick {
 pub(crate) struct MkControl<'a> {
     /// What the widget's key currently says.
     pub value: MkValue<'a>,
-    /// Table 189's *no colour* entry, or `None` when this key has no such
-    /// state worth offering.
+    /// The entries above the picker, in the order they are drawn.
     ///
-    /// ★★ `None` is the border colour's case and it is R9 rather than an
-    /// omission: `WidgetChrome::stroke` resolves an empty `/BC` and an absent
-    /// `/BC` to the same black, so an entry writing the empty array would
-    /// change a byte, rebuild an appearance stream, cost an undo entry and
-    /// alter no pixel. A capability that does nothing renders nothing.
-    pub no_colour: Option<MkNoColour<'a>>,
+    /// A list rather than one named field per state, because the states a
+    /// `/MK` key can be put into are a fact about `/MK` and this file does not
+    /// know about `/MK`. An empty slice draws no entries and no separator.
+    ///
+    /// ★★ The border colour offers one entry where the background offers two,
+    /// and that asymmetry is R9 rather than an omission:
+    /// `WidgetChrome::stroke` resolves an empty `/BC` and an absent `/BC` to
+    /// the same black, so an entry writing the empty array would change a
+    /// byte, rebuild an appearance stream, cost an undo entry and alter no
+    /// pixel. A capability that does nothing renders nothing.
+    pub entries: &'a [MkEntry<'a>],
     /// Draw the swatch as a disc rather than a bar.
     ///
     /// ★ A radio button's background is filled as a **circle** by the engine's
@@ -304,17 +315,25 @@ pub(crate) struct MkControl<'a> {
     pub disc: bool,
 }
 
-/// The *no colour* entry, when a key has one.
-pub(crate) struct MkNoColour<'a> {
+/// One entry above the picker — a discrete state the key can be put into
+/// that is not a colour the picker can express.
+pub(crate) struct MkEntry<'a> {
+    /// What pressing it commits. Never [`MkPick::Colour`]: a colour comes from
+    /// the picker, and an entry claiming to return one would give the same
+    /// outcome two routes that commit on different edges.
+    pub pick: MkPick,
     /// The entry's label.
     pub label: &'a str,
-    /// Whether pressing it would change anything. `false` when the widget
-    /// already states *no colour*: the press would author an edit that changes
-    /// no byte and still rebuild the appearance, which is an undo entry for
+    /// Whether pressing it would change anything. `false` when the key is
+    /// already in this state: the press would author an edit that changes no
+    /// byte and still rebuild the appearance, which is an undo entry for
     /// nothing.
     pub available: bool,
     /// R9 requires a greyed control to explain itself on hover.
     pub unavailable_hover: &'a str,
+    /// What this entry's rect is called in the trace, appended to the
+    /// control's own region with a dot.
+    pub trace: &'a str,
 }
 
 /// One frame of a `/MK` colour control.
@@ -384,7 +403,7 @@ pub(crate) fn show_mk(
         state.dirty = false;
     }
 
-    let mut cleared = false;
+    let mut chosen: Option<MkPick> = None;
     egui::Popup::menu(&response)
         .id(popup_id)
         .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
@@ -394,25 +413,27 @@ pub(crate) fn show_mk(
             {
                 ui.label(egui::RichText::new(note).small().weak());
             }
-            if let Some(entry) = &control.no_colour {
-                let none = ui.add_enabled(entry.available, egui::Button::new(entry.label));
+            for entry in control.entries {
+                let pressed = ui.add_enabled(entry.available, egui::Button::new(entry.label));
                 // `ui_rect`, not the gated form, for the reason the picker's
                 // own rect below carries: a popup lives in its own `Area` on
                 // the tooltip layer, where the clip rect is the whole screen
                 // and a visibility fraction asserts nothing.
-                crate::diag::ui_rect(&format!("{region}.none"), none.rect);
+                crate::diag::ui_rect(&format!("{region}.{}", entry.trace), pressed.rect);
                 if entry.available {
-                    if none.clicked() {
-                        cleared = true;
+                    if pressed.clicked() {
+                        chosen = Some(entry.pick);
                         // The working colour is abandoned rather than
-                        // committed: the operator's last act was to ask for no
-                        // colour at all.
+                        // committed: the operator's last act was to ask for
+                        // something that is not a colour.
                         state.dirty = false;
                         ui.close();
                     }
                 } else {
-                    none.on_disabled_hover_text(entry.unavailable_hover);
+                    pressed.on_disabled_hover_text(entry.unavailable_hover);
                 }
+            }
+            if !control.entries.is_empty() {
                 ui.separator();
             }
             // DOCUMENT COLOUR: the working value of a widget's `/MK` colour
@@ -431,8 +452,8 @@ pub(crate) fn show_mk(
         });
 
     let open_after = egui::Popup::is_id_open(ui.ctx(), popup_id);
-    let committed = if cleared {
-        Some(MkPick::NoColour)
+    let committed = if chosen.is_some() {
+        chosen
     } else if state.was_open && !open_after && state.dirty {
         Some(MkPick::Colour(state.working))
     } else {

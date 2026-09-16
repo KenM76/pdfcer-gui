@@ -297,6 +297,34 @@ refusal rested on. **So the refusal is withdrawn and all three colours ship.**
    it.** That sentence belongs in the panel, because the operator's only other
    signal is a swatch that appears to do nothing once.
 
+**Decision 1 is wrong about `/BC`, measured against the engine after
+`Pass 308.0`. Only Ken changes a row, so it is corrected here rather than
+rewritten above.**
+Decision 1 says an empty `/BC` *positively means draw no border*. It does not.
+`WidgetChrome::stroke` resolves the empty array and the absent key to the **same
+black**, deliberately: a border's thickness lives in `/BS` `/W`, and letting an
+empty `/BC` also mean *omit the stroke* would give two unrelated keys one
+meaning. So a *no colour* entry on the border row would change a byte, rebuild an
+appearance stream, cost an undo entry and alter no pixel. The shell therefore
+offers that entry on the **background** row only, which is R9 applied to the
+measurement rather than to the decision. A box with no border at all is a box
+with a border width of 0, and the border-width row already reaches it.
+
+**A colour set can now be un-set.** `Pass 308.3` added the removal verbs the
+shell asked for, so *the file is silent about this key* stops being a state you
+can only leave. That is a third entry on both rows — remove — distinct from *no
+colour*, and the panel must keep the two words apart because they render
+differently on a push button: one gives no plate, the other gives the grey one.
+
+**Both halves are now built.** After placement, a selected field's
+background and border colour are swatches in the widget properties; before
+placement, the same two rows sit in the placement dialog beside the border
+width, and the answer is carried into the next field placed and across kinds.
+Each swatch offers a colour, *remove*, and — on the background only — *no
+colour*, with an entry greyed and explained whenever pressing it would change
+no byte. **Not yet verified by driving the binary**, which is what the row
+still owes.
+
 A field's `/DA` is font, size and colour as one unit, so a colour-only change has
 to carry the field's current font and size or it silently restyles the text. Where
 the `/DA` cannot be parsed, the row renders nothing and says so, rather than

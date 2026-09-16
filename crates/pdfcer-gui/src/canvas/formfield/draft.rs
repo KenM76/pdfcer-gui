@@ -45,6 +45,8 @@
 //! wrongly, which is why [`Remembered::next`] states it in code and the tests
 //! assert both halves.
 
+use pdfcer_core::forms::MkColor;
+
 use super::FormFieldKind;
 
 /// How many characters a field name may run to before the dialog stops
@@ -82,6 +84,22 @@ pub struct Draft {
     pub read_only: bool,
     /// The border width in points; `0.0` for no border.
     pub border_width: f64,
+    /// `/MK` `/BG` — what is painted behind the box, or `None` to state
+    /// nothing and let the kind's own default stand.
+    ///
+    /// Three states, not two: `None` writes no key at all,
+    /// `Some(MkColor::None)` writes Table 189's empty array, which
+    /// positively means *paint nothing* — including a push button's
+    /// plate. `OPERATOR_REQUESTS.md` **O202**, the before-placement half.
+    pub background: Option<MkColor>,
+    /// `/MK` `/BC` — the ink the outline and a check box's tick or radio
+    /// button's dot are drawn in, or `None` for the engine's black.
+    ///
+    /// No empty-array state is offered here, for the reason
+    /// [`crate::panels::properties::mkcolour::Row::no_colour_entry`]
+    /// gives: the engine resolves an empty `/BC` and an absent `/BC` to
+    /// the same black.
+    pub border_color: Option<MkColor>,
     /// **Text** — the value the field starts with.
     pub value: String,
     /// **Text** — whether the box wraps onto more than one line.
@@ -183,6 +201,11 @@ impl Draft {
             required: false,
             read_only: false,
             border_width: 1.0,
+            // Neither key written, which is what every `add_*` verb
+            // authors on its own: a text field draws no box and a push
+            // button keeps its plate.
+            background: None,
+            border_color: None,
             value: String::new(),
             multiline: false,
             password: false,
@@ -227,8 +250,8 @@ impl Remembered {
     /// ## The three rules, in the order they apply
     ///
     /// 1. **The shared settings carry over** from whatever was placed last,
-    ///    even across kinds — border, required, read-only. That is the
-    ///    operator's *"remember last settings"*.
+    ///    even across kinds — border width, both `/MK` colours, required
+    ///    and read-only. That is the operator's *"remember last settings"*.
     /// 2. **The kind-specific settings carry over only within a kind.** A
     ///    check box does not inherit a text field's multiline flag, because it
     ///    has none; but the *next* check box inherits the previous one's export
@@ -242,13 +265,15 @@ impl Remembered {
             // Same kind: everything carries, name aside.
             Some(prev) if prev.kind == kind => prev.clone(),
             // Different kind: only the settings that mean the same thing in
-            // both. Written as an explicit copy of three fields rather than a
-            // clone-then-reset, so adding a kind-specific field to `Draft`
+            // both. Written as an explicit copy of the shared fields rather
+            // than a clone-then-reset, so adding a kind-specific field to `Draft`
             // does not silently start leaking across kinds.
             Some(prev) => Draft {
                 required: prev.required,
                 read_only: prev.read_only,
                 border_width: prev.border_width,
+                background: prev.background,
+                border_color: prev.border_color,
                 ..Draft::fresh(kind)
             },
             None => Draft::fresh(kind),
@@ -355,6 +380,34 @@ mod tests {
         let check = mem.next(FormFieldKind::CheckBox, &[]);
         assert!((check.border_width - 0.0).abs() < f64::EPSILON);
         assert!(check.required);
+    }
+
+    /// **Both `/MK` colours carry across kinds, and neither is invented.**
+    ///
+    /// Two claims in one test because they are the two halves of O202's
+    /// before-placement ask. Carrying is the ask itself — a row of check boxes
+    /// in one colour is the workflow. Not inventing is the part that would
+    /// never be noticed: a default of `Some(MkColor::Rgb(1.0, 1.0, 1.0))`
+    /// looks identical on a white page and writes a `/MK` key into every field
+    /// pdfcer authors, changing bytes in files the operator did not ask to
+    /// change.
+    #[test]
+    fn both_mk_colours_carry_across_kinds_and_default_to_stating_nothing() {
+        for kind in FormFieldKind::ALL {
+            let fresh = Draft::fresh(kind);
+            assert_eq!(fresh.background, None, "{kind:?} invents a background");
+            assert_eq!(fresh.border_color, None, "{kind:?} invents a border colour");
+        }
+
+        let mut mem = Remembered::default();
+        let mut text = Draft::fresh(FormFieldKind::Text);
+        text.background = Some(MkColor::Rgb(1.0, 0.0, 0.0));
+        text.border_color = Some(MkColor::None);
+        mem.remember(&text);
+
+        let check = mem.next(FormFieldKind::CheckBox, &[]);
+        assert_eq!(check.background, text.background);
+        assert_eq!(check.border_color, text.border_color);
     }
 
     /// **…and the kind-specific ones do not.** A check box has no multiline.

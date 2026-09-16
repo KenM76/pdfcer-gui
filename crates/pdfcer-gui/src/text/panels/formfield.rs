@@ -820,6 +820,40 @@ pub const fn background_no_colour_unavailable() -> &'static str {
     "This box already states that it has no background."
 }
 
+/// The popup entry that takes `/BG` out of the file altogether.
+///
+/// Worded as what the operator gets back rather than as what is deleted. The
+/// two entries above it both leave the key present; this one is the only route
+/// to the state a box has before anyone has touched its colour.
+#[must_use]
+pub const fn background_remove_entry() -> &'static str {
+    "Back to the usual background"
+}
+
+/// Why that entry is greyed. R9: greying is for a **temporarily** unavailable
+/// capability and is always explained on hover.
+#[must_use]
+pub const fn background_remove_unavailable() -> &'static str {
+    "This box already says nothing about its background."
+}
+
+/// The popup entry that takes `/BC` out of the file altogether.
+///
+/// The border row offers this and no *no colour* twin, because the engine
+/// draws an empty `/BC` and an absent `/BC` in the same black — so the only
+/// change worth a press is the one that ends with the key gone.
+#[must_use]
+pub const fn border_colour_remove_entry() -> &'static str {
+    "Back to a black outline"
+}
+
+/// Why that entry is greyed. R9: greying is for a **temporarily** unavailable
+/// capability and is always explained on hover.
+#[must_use]
+pub const fn border_colour_remove_unavailable() -> &'static str {
+    "This box already says nothing about its outline colour, so it is drawn black."
+}
+
 /// The popup note over a `/BG` the file is silent about.
 #[must_use]
 pub const fn background_unstated_note() -> &'static str {

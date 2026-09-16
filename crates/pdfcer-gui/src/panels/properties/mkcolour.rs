@@ -73,6 +73,14 @@ pub struct Row<'a> {
     pub no_colour_entry: Option<&'a str>,
     /// Why that entry is greyed, when it is offered and would change nothing.
     pub no_colour_unavailable: &'a str,
+    /// The *remove* entry's label, or `None` to offer no way back to silence.
+    ///
+    /// Distinct from [`Self::no_colour_entry`] and the two words must stay
+    /// apart in front of the operator: on a push button *no colour* gives no
+    /// plate and *remove* gives the builder's own grey one back.
+    pub remove_entry: Option<&'a str>,
+    /// Why that entry is greyed, which is when the key is already absent.
+    pub remove_unavailable: &'a str,
     /// Draw the swatch as a disc rather than a bar.
     ///
     /// ★ A fact about the ENGINE's radio builder, which fills a circle and says
@@ -82,12 +90,30 @@ pub struct Row<'a> {
     pub disc: bool,
 }
 
+/// What the operator asked the key to become.
+///
+/// The shell's own enum rather than `pdfcer_core::edit::MkColorEdit`, which
+/// carries the same two states. `MkColorEdit` is `#[non_exhaustive]`, so
+/// matching it here would need a catch-all arm — and a catch-all is exactly
+/// what [`mk_value`] refuses, for the reason written there: a state added to
+/// the engine's enum must break this file's build rather than fall silently
+/// into a default. The conversion is one `match` in each caller, at the point
+/// where the answer's destination is already known.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Pick {
+    /// Write this colour, `MkColor::None` included — the empty array is a
+    /// value the key can hold, not the absence of one.
+    Set(MkColor),
+    /// Take the key away, so the file says nothing about it.
+    Remove,
+}
+
 /// Draw the row. Returns a colour **once**, on the frame the gesture ended.
 ///
 /// `None` on every other frame, including every frame of a drag inside the
 /// picker — see [`super::swatch`]'s header for why that matters and what it
 /// costs when it is got wrong.
-pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<MkColor> {
+pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<Pick> {
     // Held outside the call because `MkValue` borrows its mark, and this is the
     // one state whose mark is computed rather than a `&'static str`.
     let cmyk = match spec.colour {
@@ -101,6 +127,26 @@ pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<MkColor> {
         spec.no_colour_note,
     );
 
+    let mut entries = Vec::with_capacity(2);
+    if let Some(label) = spec.no_colour_entry {
+        entries.push(super::swatch::MkEntry {
+            pick: super::swatch::MkPick::NoColour,
+            label,
+            available: no_colour_would_change_something(spec.colour),
+            unavailable_hover: spec.no_colour_unavailable,
+            trace: "none",
+        });
+    }
+    if let Some(label) = spec.remove_entry {
+        entries.push(super::swatch::MkEntry {
+            pick: super::swatch::MkPick::Remove,
+            label,
+            available: removal_would_change_something(spec.colour),
+            unavailable_hover: spec.remove_unavailable,
+            trace: "remove",
+        });
+    }
+
     let picked = ui
         .horizontal(|ui| {
             ui.label(spec.label).on_hover_text(spec.hover);
@@ -109,11 +155,7 @@ pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<MkColor> {
                 spec.id_salt,
                 &super::swatch::MkControl {
                     value,
-                    no_colour: spec.no_colour_entry.map(|label| super::swatch::MkNoColour {
-                        label,
-                        available: spec.colour != Some(MkColor::None),
-                        unavailable_hover: spec.no_colour_unavailable,
-                    }),
+                    entries: &entries,
                     disc: spec.disc,
                 },
                 spec.region,
@@ -123,10 +165,29 @@ pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<MkColor> {
 
     Some(match picked {
         super::swatch::MkPick::Colour([r, g, b]) => {
-            MkColor::Rgb(fraction(r), fraction(g), fraction(b))
+            Pick::Set(MkColor::Rgb(fraction(r), fraction(g), fraction(b)))
         }
-        super::swatch::MkPick::NoColour => MkColor::None,
+        super::swatch::MkPick::NoColour => Pick::Set(MkColor::None),
+        super::swatch::MkPick::Remove => Pick::Remove,
     })
+}
+
+/// Whether pressing *no colour* would change the file.
+///
+/// False only when the key already holds the empty array. Named rather than
+/// inlined so [`the_two_entries_never_offer_the_same_state`] can walk Table
+/// 189's states against both predicates at once.
+const fn no_colour_would_change_something(colour: Option<MkColor>) -> bool {
+    !matches!(colour, Some(MkColor::None))
+}
+
+/// Whether pressing *remove* would change the file.
+///
+/// False only when the key is already absent — including when it is absent and
+/// the operator is looking at a *no colour* entry that is live, which is the
+/// pair everyone reads backwards.
+const fn removal_would_change_something(colour: Option<MkColor>) -> bool {
+    colour.is_some()
 }
 
 /// What the swatch should show for one `/MK` colour key.
@@ -258,6 +319,36 @@ mod tests {
         assert_eq!(component(-1.0), 0);
         for byte in [0_u8, 1, 127, 254, 255] {
             assert_eq!(component(fraction(byte)), byte, "round trip at {byte}");
+        }
+    }
+
+    /// Table 189's four states against both entries at once.
+    ///
+    /// The pair this guards is the one that reads backwards: an **absent** key
+    /// offers *no colour* and not *remove*, and an **empty** key offers
+    /// *remove* and not *no colour*. Swap the two predicates and every state
+    /// still lights exactly one entry, so nothing short of the full table
+    /// catches it.
+    #[test]
+    fn the_two_entries_never_offer_the_same_state() {
+        let table = [
+            (None, true, false),
+            (Some(MkColor::None), false, true),
+            (Some(MkColor::Gray(0.5)), true, true),
+            (Some(MkColor::Rgb(0.1, 0.2, 0.3)), true, true),
+            (Some(MkColor::Cmyk(0.1, 0.2, 0.3, 0.4)), true, true),
+        ];
+        for (colour, no_colour, remove) in table {
+            assert_eq!(
+                no_colour_would_change_something(colour),
+                no_colour,
+                "the no-colour entry is wrong for {colour:?}"
+            );
+            assert_eq!(
+                removal_would_change_something(colour),
+                remove,
+                "the remove entry is wrong for {colour:?}"
+            );
         }
     }
 }

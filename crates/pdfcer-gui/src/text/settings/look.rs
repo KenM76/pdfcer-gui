@@ -1374,3 +1374,100 @@ pub const fn auto_hide_rail_label() -> &'static str {
 pub const fn auto_hide_rail_note() -> &'static str {
     "The strip of panel and tool buttons down the left edge shrinks to a narrow band with a small arrow on it. Move the pointer onto the band and the strip comes back over the panel beside it."
 }
+
+// ===========================================================================
+// Forms — the order Tab visits a page in
+// ===========================================================================
+//
+// Two settings whose blast radius is a keystroke. Neither writes a byte, and
+// both say so, because an operator changing how Tab behaves has every reason
+// to wonder whether they are also changing the document.
+//
+// They are here rather than in a module of their own for the reason the four
+// *Drawing the page* strings are here: this file holds every setting whose
+// radius stops at what the operator sees or does.
+
+/// Tab tail: the question.
+#[must_use]
+pub const fn tab_tail_title() -> &'static str {
+    "Tab order on a page that puts form fields first"
+}
+
+/// Tab tail: what the standard leaves open.
+#[must_use]
+pub const fn tab_tail_silence() -> &'static str {
+    "Some pages say, in their own data, that Tab should visit every form field first and everything else afterwards. The standard describes what happens on that second pass twice, in two different places, and the two descriptions disagree with each other. Neither one mentions the other."
+}
+
+/// Tab tail: what changing it costs.
+#[must_use]
+pub const fn tab_tail_radius() -> &'static str {
+    "Changes the order Tab moves through a page like that, and nothing else. Does not change the file. Whichever way it is set, pdfcer still tells you that the standard contradicts itself on that page."
+}
+
+/// Tab tail: the shipped reading.
+#[must_use]
+pub const fn tab_tail_array_label() -> &'static str {
+    "The order things were added to the page"
+}
+
+/// Tab tail: why the shipped reading is shipped.
+#[must_use]
+pub const fn tab_tail_array_note() -> &'static str {
+    "What pdfcer ships. Both passes follow the page's own list from top to bottom. This is the reading that keeps a page's stated order meaning something: the whole reason a page can ask for fields first is to escape being ordered by where things happen to sit."
+}
+
+/// Tab tail: the other reading.
+#[must_use]
+pub const fn tab_tail_row_label() -> &'static str {
+    "Where things sit on the page, left to right"
+}
+
+/// Tab tail: who the other reading is for.
+#[must_use]
+pub const fn tab_tail_row_note() -> &'static str {
+    "Comments, stamps and everything that is not a form field get visited by position instead. Choose this if you have checked what the program your readers use actually does, and found it to be this."
+}
+
+/// Row tolerance: the question.
+#[must_use]
+pub const fn tab_tolerance_title() -> &'static str {
+    "How close two things must be to count as the same row"
+}
+
+/// Row tolerance: what the standard leaves open.
+#[must_use]
+pub const fn tab_tolerance_silence() -> &'static str {
+    "A page can ask for Tab to move in reading order, which means pdfcer has to work out which things are on the same line before it can go along that line. The standard describes no test for that at all, so this number is pdfcer's own."
+}
+
+/// Row tolerance: what changing it costs.
+#[must_use]
+pub const fn tab_tolerance_radius() -> &'static str {
+    "Changes the order Tab moves through a page that asks for reading order. Does not change the file. Every order pdfcer works out tells you which number it used."
+}
+
+/// Row tolerance: the slider's own label.
+#[must_use]
+pub const fn tab_tolerance_slider_label() -> &'static str {
+    "Same row within"
+}
+
+/// Row tolerance: the slider's unit.
+///
+/// A catalog entry rather than a literal, for the reason the millisecond and
+/// degree suffixes are: the ui-strings gate looks for exactly this, and a
+/// translator has to be able to see that a unit exists.
+#[must_use]
+pub const fn point_suffix() -> &'static str {
+    " pt"
+}
+
+/// Row tolerance: how to choose one.
+///
+/// Names both failure modes rather than recommending a number, the same way
+/// the zoom settle note does, because which one bites depends on the drawing.
+#[must_use]
+pub const fn tab_tolerance_note() -> &'static str {
+    "Too small and two boxes a hair apart become two separate rows, so Tab zig-zags down the page. Too large and a whole column folds into one row, so Tab runs across the page when you wanted it to run down. pdfcer ships 1."
+}

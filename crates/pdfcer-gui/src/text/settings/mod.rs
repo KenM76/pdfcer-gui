@@ -266,6 +266,17 @@ pub const fn group_comments() -> &'static str {
     "Comments"
 }
 
+/// The Forms group's caption.
+///
+/// *"Forms"*, not *"Tab order"*. The caption names the subject an
+/// operator is looking for; both controls inside it name the property.
+/// It also leaves room for a second forms setting to join without the
+/// caption turning into a list.
+#[must_use]
+pub const fn group_forms() -> &'static str {
+    "Forms"
+}
+
 /// Group 3.
 #[must_use]
 pub const fn group_images() -> &'static str {
@@ -534,7 +545,7 @@ mod tests {
     // and answered the other way: those two have different blast radii, these
     // two have the same one.
     //
-    const SETTINGS_COUNT: usize = 35;
+    const SETTINGS_COUNT: usize = 37;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
@@ -682,6 +693,16 @@ mod tests {
                 paste_chords_radius(),
             ),
             (chrome_title(), chrome_silence(), chrome_radius()),
+            // The two Forms settings. Both are engine settings whose radius
+            // stops at a keystroke, which is why their strings sit in
+            // `look` beside the shell's own preferences rather than in
+            // `bytes`.
+            (tab_tail_title(), tab_tail_silence(), tab_tail_radius()),
+            (
+                tab_tolerance_title(),
+                tab_tolerance_silence(),
+                tab_tolerance_radius(),
+            ),
             (auto_hide_title(), auto_hide_silence(), auto_hide_radius()),
             // ★★★ The two trust-store settings, reached across into
             // `crate::text::trust` for the reason `crate::text::acrobat`'s
@@ -773,6 +794,7 @@ mod tests {
             include_str!("../../dialogs/settings/comments.rs"),
         ),
         ("display", include_str!("../../dialogs/settings/display.rs")),
+        ("forms", include_str!("../../dialogs/settings/forms.rs")),
         ("fonts", include_str!("../../dialogs/settings/fonts.rs")),
         ("images", include_str!("../../dialogs/settings/images.rs")),
         (
@@ -978,6 +1000,8 @@ mod tests {
             opening_fit_radius(),
             chrome_radius(),
             ui_scale_radius(),
+            tab_tail_radius(),
+            tab_tolerance_radius(),
         ] {
             assert!(
                 !touches_bytes(radius),

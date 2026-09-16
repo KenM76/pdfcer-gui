@@ -63,6 +63,10 @@ const REGION_BODY: &str = "dialog.form_field.body";
 const REGION_ACCEPT: &str = "dialog.form_field.accept";
 /// The name field's rect — the one control that decides whether Accept is live.
 const REGION_NAME: &str = "dialog.form_field.name";
+/// The `/MK` `/BG` swatch's rect.
+const REGION_BACKGROUND: &str = "dialog.form_field.background";
+/// The `/MK` `/BC` swatch's rect.
+const REGION_BORDER_COLOR: &str = "dialog.form_field.border_color";
 
 /// How many characters a tooltip may run to.
 ///
@@ -302,6 +306,21 @@ fn window_size(kind: FormFieldKind, screen: egui::Rect) -> egui::Vec2 {
             .max(MIN_WINDOW_PTS.x),
         wanted.min(cap).max(MIN_WINDOW_PTS.y),
     )
+}
+
+/// What a swatch's answer means to a draft that has no file behind it yet.
+///
+/// A draft's `None` and a saved widget's absent key are the same state said
+/// twice: nothing has been chosen, so the box will be placed the way its kind
+/// is normally placed. That is why *remove* collapses to `None` here rather
+/// than needing a third variant on the draft.
+const fn resolve(
+    pick: crate::panels::properties::mkcolour::Pick,
+) -> Option<pdfcer_core::forms::MkColor> {
+    match pick {
+        crate::panels::properties::mkcolour::Pick::Set(colour) => Some(colour),
+        crate::panels::properties::mkcolour::Pick::Remove => None,
+    }
 }
 
 impl FormFieldDialog {
@@ -678,7 +697,27 @@ impl FormFieldDialog {
         // for the shape that would have caught it.
     }
 
-    /// Required and read-only — asked identically for all five kinds.
+    /// Required, read-only, the border width and the two `/MK` colours —
+    /// asked identically for all five kinds.
+    ///
+    /// # The colours, and why they are here rather than only in the properties
+    ///
+    /// `OPERATOR_REQUESTS.md` **O202**: *"the forms objects have no way to
+    /// edit their colour before or after placement."* Placing a row of
+    /// identically coloured check boxes and then recolouring each one
+    /// afterwards is the workflow that ask is about, and `Remembered` carries
+    /// both colours across placements, so the question is asked once.
+    ///
+    /// The reading of the two keys — which states a swatch can draw, what each
+    /// undrawable one shows instead — belongs to
+    /// [`crate::panels::properties::mkcolour`] and is not restated here. Only
+    /// the destination differs: this writes a [`Draft`] field, the properties
+    /// pane writes a `WidgetEdit` and an undo entry.
+    ///
+    /// # Rule 4
+    ///
+    /// There is no content to mark. The box does not exist until Accept, and
+    /// when it does it is drawn in the colours chosen here with nothing added.
     fn common_flags(&mut self, ui: &mut Ui) {
         ui.checkbox(&mut self.draft.required, t::required())
             .on_hover_text(t::required_hover());
@@ -694,6 +733,62 @@ impl FormFieldDialog {
             )
             .on_hover_text(t::border_hover());
         });
+        self.chrome_rows(ui);
+    }
+
+    /// The `/MK` `/BG` and `/BC` swatches. See [`Self::common_flags`].
+    fn chrome_rows(&mut self, ui: &mut Ui) {
+        use crate::panels::properties::mkcolour;
+
+        // The disc is a fact about the ENGINE's radio builder, which fills a
+        // circle and says so. A rectangular preview over a control that comes
+        // out round would mis-state the result of the operator's own press.
+        let disc = self.draft.kind == FormFieldKind::Radio;
+
+        if let Some(pick) = mkcolour::row(
+            ui,
+            &mkcolour::Row {
+                label: t::background_label(),
+                hover: t::background_hover(),
+                // ui-text-exempt: egui id salt and trace region key, never displayed.
+                id_salt: "form-field-background",
+                region: REGION_BACKGROUND,
+                colour: self.draft.background,
+                unstated_note: t::background_unstated_note(),
+                no_colour_note: t::background_no_colour_note(),
+                no_colour_entry: Some(t::background_no_colour_entry()),
+                no_colour_unavailable: t::background_no_colour_unavailable(),
+                remove_entry: Some(t::background_remove_entry()),
+                remove_unavailable: t::background_remove_unavailable(),
+                disc,
+            },
+        ) {
+            self.draft.background = resolve(pick);
+        }
+
+        if let Some(pick) = mkcolour::row(
+            ui,
+            &mkcolour::Row {
+                label: t::border_colour_label(),
+                hover: t::border_colour_hover(),
+                // ui-text-exempt: egui id salt and trace region key, never displayed.
+                id_salt: "form-field-border-colour",
+                region: REGION_BORDER_COLOR,
+                colour: self.draft.border_color,
+                unstated_note: t::border_colour_note(),
+                no_colour_note: t::border_colour_note(),
+                // No entry: the engine resolves an empty `/BC` and an absent
+                // one to the same black, so writing one would change a byte
+                // and no pixel. R9 renders nothing for that.
+                no_colour_entry: None,
+                no_colour_unavailable: "",
+                remove_entry: Some(t::border_colour_remove_entry()),
+                remove_unavailable: t::border_colour_remove_unavailable(),
+                disc: false,
+            },
+        ) {
+            self.draft.border_color = resolve(pick);
+        }
     }
 }
 

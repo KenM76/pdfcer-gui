@@ -701,13 +701,18 @@ fn chrome_rows(
             no_colour_note: t::background_no_colour_note(),
             no_colour_entry: Some(t::background_no_colour_entry()),
             no_colour_unavailable: t::background_no_colour_unavailable(),
+            remove_entry: Some(t::background_remove_entry()),
+            remove_unavailable: t::background_remove_unavailable(),
             disc,
         },
         t::touched_background(),
         fqn,
         widget_index,
         actions,
-        WidgetEdit::with_background,
+        Setters {
+            build: WidgetEdit::with_background,
+            strip: WidgetEdit::without_background,
+        },
     );
 
     chrome_row(
@@ -723,20 +728,38 @@ fn chrome_rows(
             no_colour_note: t::border_colour_no_colour_note(),
             no_colour_entry: None,
             no_colour_unavailable: "",
+            remove_entry: Some(t::border_colour_remove_entry()),
+            remove_unavailable: t::border_colour_remove_unavailable(),
             disc: false,
         },
         t::touched_border_colour(),
         fqn,
         widget_index,
         actions,
-        WidgetEdit::with_border_color,
+        Setters {
+            build: WidgetEdit::with_border_color,
+            strip: WidgetEdit::without_border_color,
+        },
     );
+}
+
+/// The two `WidgetEdit` verbs that write one `/MK` colour key.
+///
+/// A pair rather than two parameters because they are one fact — *which key
+/// this row owns* — and a call site that got one of them from the background
+/// row and the other from the border row would compile.
+struct Setters {
+    /// Write a colour, the empty array included.
+    build: fn(WidgetEdit, pdfcer_core::forms::MkColor) -> WidgetEdit,
+    /// Take the key out of the file.
+    strip: fn(WidgetEdit) -> WidgetEdit,
 }
 
 /// Draw one `/MK` colour row and queue the edit it produces.
 ///
-/// `build` is the `WidgetEdit` setter for this key. Passing it rather than a
-/// discriminant keeps the two rows from ever writing each other's key — a
+/// [`Setters`] carries the `WidgetEdit` verbs for this key. Passing them
+/// rather than a discriminant keeps the two rows from ever writing each
+/// other's key — a
 /// `match` on "which row am I" is a thing a maintainer can get backwards and a
 /// function pointer is not.
 fn chrome_row(
@@ -746,15 +769,19 @@ fn chrome_row(
     fqn: &str,
     widget_index: usize,
     actions: &mut Vec<Action>,
-    build: fn(WidgetEdit, pdfcer_core::forms::MkColor) -> WidgetEdit,
+    setters: Setters,
 ) {
-    let Some(colour) = mkcolour::row(ui, row) else {
+    let Some(pick) = mkcolour::row(ui, row) else {
         return;
+    };
+    let edit = match pick {
+        mkcolour::Pick::Set(colour) => (setters.build)(WidgetEdit::new(), colour),
+        mkcolour::Pick::Remove => (setters.strip)(WidgetEdit::new()),
     };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "widget-colour-requested field={fqn:?} widget={widget_index} key={} was={:?} now={colour:?}",
+            "widget-colour-requested field={fqn:?} widget={widget_index} key={} was={:?} now={pick:?}",
             row.region, row.colour
         )
     });
@@ -762,7 +789,7 @@ fn chrome_row(
         FieldAction::EditWidget {
             field: fqn.to_owned(),
             widget: widget_index,
-            edit: build(WidgetEdit::new(), colour),
+            edit,
             touched,
         }
         .into(),

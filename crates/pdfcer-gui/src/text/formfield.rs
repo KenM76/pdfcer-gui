@@ -325,6 +325,116 @@ pub fn border_hover() -> String {
     "In points. Zero draws no border at all.".to_owned()
 }
 
+// ===========================================================================
+// THE TWO `/MK` COLOURS, ASKED BEFORE THERE IS ANYTHING TO ASK ABOUT
+// ===========================================================================
+//
+// `OPERATOR_REQUESTS.md` **O202**: *"the forms objects have no way to edit
+// their colour before or after placement."* The after-placement half is
+// `text::panels::formfield`, and the two labels below DELEGATE to it, because
+// one control named two things is the drift this delegation exists to stop.
+//
+// The NOTES do not delegate, and that is the whole reason this block exists.
+// The properties pane speaks about a widget that is in the file — *"this file
+// says nothing about a background colour"* — and there is no file here yet.
+// Every sentence below is in the future tense because the box does not exist
+// until the operator presses Place.
+
+/// `/MK` `/BG`, named as the properties pane names it.
+#[must_use]
+pub const fn background_label() -> &'static str {
+    super::panels::formfield::label_background()
+}
+
+/// What picking a background will do to a box that does not exist yet.
+#[must_use]
+pub const fn background_hover() -> &'static str {
+    "What will be painted behind this box. A radio button's background is a disc rather than a rectangle, and a push button's is the grey plate it sits on."
+}
+
+/// `/MK` `/BC`, named as the properties pane names it — *"Border and mark"*,
+/// because `/MK` carries no separate colour for a tick or a dot.
+#[must_use]
+pub const fn border_colour_label() -> &'static str {
+    super::panels::formfield::label_border_colour()
+}
+
+/// Says where the thickness comes from, because the Border width control is
+/// directly above and an operator who picks a colour against a width of zero
+/// would otherwise see no outline and have nothing to blame.
+#[must_use]
+pub const fn border_colour_hover() -> &'static str {
+    "The ink the outline will be drawn in — and the ink a check box's tick or a radio button's dot will be drawn in, because a box carries no separate colour for its mark. How thick the outline is comes from Border width above, not from here."
+}
+
+/// The popup entry that places the box with Table 189's empty array in `/BG`.
+#[must_use]
+pub const fn background_no_colour_entry() -> &'static str {
+    super::panels::formfield::background_no_colour_entry()
+}
+
+/// Why that entry is greyed. R9: greying is for a **temporarily** unavailable
+/// capability and is always explained on hover.
+#[must_use]
+pub const fn background_no_colour_unavailable() -> &'static str {
+    "This box is already set to be placed with no background."
+}
+
+/// The popup entry that puts the background back to unchosen.
+///
+/// Worded as what the box will look like rather than as undoing a choice,
+/// because before placement there is no file yet for a key to be removed from
+/// — what the operator is picking is how the box will arrive.
+#[must_use]
+pub const fn background_remove_entry() -> &'static str {
+    "Place it the usual way"
+}
+
+/// Why that entry is greyed. R9: greying is for a **temporarily** unavailable
+/// capability and is always explained on hover.
+#[must_use]
+pub const fn background_remove_unavailable() -> &'static str {
+    "No background has been chosen, so the box will already be placed the usual way."
+}
+
+/// The popup entry that puts the outline colour back to unchosen.
+#[must_use]
+pub const fn border_colour_remove_entry() -> &'static str {
+    "Leave the outline black"
+}
+
+/// Why that entry is greyed. R9: greying is for a **temporarily** unavailable
+/// capability and is always explained on hover.
+#[must_use]
+pub const fn border_colour_remove_unavailable() -> &'static str {
+    "No outline colour has been chosen, so the outline will already be drawn black."
+}
+
+/// The popup note when no background has been chosen.
+#[must_use]
+pub const fn background_unstated_note() -> &'static str {
+    "No background colour has been chosen, so the box will be painted the way its kind is normally painted — nothing behind a text field, the grey plate on a push button."
+}
+
+/// The popup note when *No background* has been chosen.
+#[must_use]
+pub const fn background_no_colour_note() -> &'static str {
+    "The box will be placed with no background, so nothing is painted behind it — not even a push button's plate. Picking a colour below replaces that."
+}
+
+/// The popup note over `/BC` — the same sentence in both of its unset states.
+///
+/// ★★ Black, not *nothing*. `WidgetChrome::stroke` resolves an unstated `/BC`
+/// AND an empty one to the same black, so the honest sentence is that the
+/// outline will be drawn — and the way to have none is a border width of 0,
+/// which is the control directly above this one. Because those two states are
+/// indistinguishable before placement, one sentence covers both rather than
+/// two that would have to claim a difference the engine does not make.
+#[must_use]
+pub const fn border_colour_note() -> &'static str {
+    "The outline and any mark will be drawn in black unless a colour is chosen here. A box with no border at all is one with a border width of 0."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
