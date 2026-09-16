@@ -375,6 +375,18 @@ to carry the field's current font and size or it silently restyles the text. Whe
 the `/DA` cannot be parsed, the row renders nothing and says so, rather than
 offering a default that would overwrite what is there.
 
+**The text colour is in too, and it brought the face and the size with it.**
+A selected text field, drop-down or push button now carries a Text group: the
+font, the size, and the ink the value is drawn in. They are one group because
+the file stores them as one string, so the panel reads all three back before
+writing any one of them and a colour change cannot quietly restyle the face.
+Size zero reads as *Auto*, which is the reader picking a size that fits the box
+and re-picking it as the value changes. A signature has no text of its own, so
+the group does not exist for one. Where the ink is a four-ink separation or a
+colour space with no single screen colour, the group says so and changes
+nothing — the same rule the background and border swatches already follow.
+**Not yet verified by driving the binary.**
+
 ## O203 — **FILED** — placing a form item shows no preview of what a single click will produce
 
 > *"when placing form items, there should be a live preview of their size and

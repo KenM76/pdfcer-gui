@@ -1167,6 +1167,146 @@ pub fn widget_rotation_stale(why: &str) -> String {
     format!("The box will keep drawing the old way round until its appearance is rebuilt: {why}")
 }
 
+// ===========================================================================
+// `/DA` — the ink, face and size of a field's own text. `OPERATOR_REQUESTS.md`
+// O202's other half.
+//
+// The box's fill and outline are `/MK`, above; this is what is written INSIDE
+// it. They are different dictionaries set by different verbs, and the engine's
+// own note says conflating them is the likeliest way to end up with a field
+// that looks nothing like what was intended — so the two groups are labelled
+// so that no row here could be read as a third property of the box.
+// ===========================================================================
+
+/// The heading over the `/DA` rows.
+#[must_use]
+pub const fn text_heading() -> &'static str {
+    "Text"
+}
+
+/// The face chooser's label.
+#[must_use]
+pub const fn label_text_font() -> &'static str {
+    "Font"
+}
+
+/// ★ Says the list is the fourteen faces every reader has built in, because an
+/// operator who has just come from their word processor's font menu would
+/// otherwise read a fourteen-entry list as pdfcer failing to find the rest.
+#[must_use]
+pub const fn label_text_font_hover() -> &'static str {
+    "The face this field's own text is drawn in. These fourteen are built into every PDF reader, \
+     so a form using them looks the same everywhere and carries no embedded font."
+}
+
+/// The size spinner's label.
+#[must_use]
+pub const fn label_text_size() -> &'static str {
+    "Size"
+}
+
+/// ★ Names what zero means, which is the one thing about this control that is
+/// not guessable from looking at it.
+#[must_use]
+pub const fn label_text_size_hover() -> &'static str {
+    "Points. Zero means the reader picks a size that fits the box, and re-picks it as the value \
+     changes — which is what a new field normally wants."
+}
+
+/// How a size of zero is written on the face of the spinner.
+#[must_use]
+pub const fn text_size_auto() -> &'static str {
+    "Auto"
+}
+
+/// The text-colour swatch's label.
+///
+/// ★★ **"Text colour", not "Colour"** — it sits directly under Background and
+/// Border and mark, and a bare "Colour" beside those two is the one label an
+/// operator could reasonably read as a third property of the box.
+#[must_use]
+pub const fn label_text_colour() -> &'static str {
+    "Text colour"
+}
+
+/// Says it is the value and not the box, for the reason the label above gives.
+#[must_use]
+pub const fn label_text_colour_hover() -> &'static str {
+    "The ink the field's own value is drawn in — not the box behind it, which is Background."
+}
+
+/// A face the document embedded, named by the key its own `/DA` uses.
+///
+/// ★ Shown verbatim rather than prettified: it is not one of the fourteen, so
+/// this shell has no operator-facing name for it and the file's own key is the
+/// only honest thing to write. A friendly name invented here would be a guess
+/// presented as a fact about the document.
+#[must_use]
+pub fn text_font_embedded(key: &str) -> String {
+    format!("{key} (this document's own)")
+}
+
+/// The operator-facing name of one of the fourteen built-in faces.
+///
+/// ★★ The vocabulary rule this file's header sets, applied to font names: the
+/// standard spells them `Helvetica-BoldOblique` and `Times-Roman`, and no font
+/// menu this operator has ever used writes them that way. **Oblique is offered
+/// as Italic** for the same reason — it is the word in every other program's
+/// menu, and the two faces the distinction separates are not both on offer.
+#[must_use]
+pub const fn text_font_name(font: pdfcer_core::fontdata::Std14) -> &'static str {
+    use pdfcer_core::fontdata::Std14 as F;
+    match font {
+        F::Helvetica => "Helvetica",
+        F::HelveticaBold => "Helvetica Bold",
+        F::HelveticaOblique => "Helvetica Italic",
+        F::HelveticaBoldOblique => "Helvetica Bold Italic",
+        F::TimesRoman => "Times",
+        F::TimesBold => "Times Bold",
+        F::TimesItalic => "Times Italic",
+        F::TimesBoldItalic => "Times Bold Italic",
+        F::Courier => "Courier",
+        F::CourierBold => "Courier Bold",
+        F::CourierOblique => "Courier Italic",
+        F::CourierBoldOblique => "Courier Bold Italic",
+        F::Symbol => "Symbol",
+        F::ZapfDingbats => "Zapf Dingbats",
+    }
+}
+
+/// Stands in for the swatch when the file states an ink no swatch can draw.
+///
+/// ★★ R9 applied to a colour: the control is **absent**, not greyed, and this
+/// sentence stands where it would have been. Converting the separation to
+/// something showable would put a colour on screen the file does not contain,
+/// and the operator's first nudge of the picker would commit pdfcer's guess as
+/// though it were their own — O202 decision 4, which this row inherits from the
+/// `/MK` rows above it.
+#[must_use]
+pub const fn text_colour_unshowable() -> &'static str {
+    "This field's text is set in an ink with no single screen colour — a four-ink separation, or \
+     a colour space pdfcer keeps exactly as the file states it. It is left as it is."
+}
+
+/// What the operator touched, for a refusal and for the receipt. Reads as a
+/// sentence fragment because it is one: *"Changed the text colour."*
+#[must_use]
+pub const fn touched_text_colour() -> &'static str {
+    "text colour"
+}
+
+/// What the operator touched, for a refusal and for the receipt.
+#[must_use]
+pub const fn touched_text_font() -> &'static str {
+    "font"
+}
+
+/// What the operator touched, for a refusal and for the receipt.
+#[must_use]
+pub const fn touched_text_size() -> &'static str {
+    "text size"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

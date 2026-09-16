@@ -87,9 +87,10 @@
 //! render it.
 
 use egui::Ui;
-use pdfcer_core::edit::FieldEdit;
+use pdfcer_core::edit::{FieldAppearance, FieldEdit};
+use pdfcer_core::fontdata::Std14;
 use pdfcer_core::forms::{Field, FieldFlags, FieldType};
-use pdfcer_core::vartext::Quadding;
+use pdfcer_core::vartext::{Quadding, TextColor};
 
 use crate::app::actions::Action;
 use crate::app::actions::forms::FieldAction;
@@ -116,6 +117,15 @@ pub const DEFAULT_VALUE_REGION: &str = "properties.field_edit.default_value";
 /// The Alignment chooser's own region, for `ui-verify`.
 // ui-text-exempt: trace region name, never displayed
 pub const ALIGNMENT_REGION: &str = "properties.field_edit.alignment";
+/// The Font chooser's own region, for `ui-verify`.
+// ui-text-exempt: trace region name, never displayed
+pub const TEXT_FONT_REGION: &str = "properties.field_edit.text_font";
+/// The text Size spinner's own region, for `ui-verify`.
+// ui-text-exempt: trace region name, never displayed
+pub const TEXT_SIZE_REGION: &str = "properties.field_edit.text_size";
+/// The Text colour swatch's own region, for `ui-verify`.
+// ui-text-exempt: trace region name, never displayed
+pub const TEXT_COLOUR_REGION: &str = "properties.field_edit.text_colour";
 
 /// Draw the editable properties of the selected field.
 ///
@@ -262,6 +272,19 @@ pub fn section(
             |edit, on| edit.with_multi_select(on),
             actions,
         );
+    }
+
+    // -- The field's own text ----------------------------------------------
+    //
+    // `/DA` is variable-text apparatus: a `/Tx` draws its value with it, a `/Ch`
+    // draws the chosen option with it, and a `/Btn` draws its caption with it. A
+    // `/Sig` has no text of its own, so the rows do not exist for one — R9, an
+    // unavailable capability renders nothing.
+    if matches!(
+        field.field_type,
+        Some(FieldType::Text | FieldType::Choice | FieldType::Button)
+    ) {
+        text_appearance_rows(ui, field, fqn, state, actions);
     }
 
     tooltip_row(ui, fqn, state, actions);
@@ -612,6 +635,339 @@ fn alignment_row(ui: &mut Ui, field: &Field, fqn: &str, actions: &mut Vec<Action
     }
 }
 
+/// `/DA` — the face, size and colour the field draws its own text in.
+/// `OPERATOR_REQUESTS.md` O202's other half; the box's own fill and outline are
+/// `super::widgetedit`'s rows, a different dictionary set by a different verb.
+///
+/// # ★★★ Three controls and ONE struct, so every press re-states the other two
+///
+/// `FieldEdit::with_appearance` takes a whole `FieldAppearance` — font, size and
+/// colour together — because `/DA` is one string and there is no way to write a
+/// colour into it without writing a `Tf` beside it. So picking a colour here
+/// re-sends the face and the size the file already had.
+///
+/// ⇒ The failure that shape invites is a control that silently resets the other
+/// two to whatever this pane thinks a default is. [`current_appearance`] is the
+/// single place the existing values are recovered, and all three rows start
+/// from it.
+///
+/// ★ It is still one property per press as far as the operator is concerned,
+/// which is what `StyleChange`'s rule is about: one gesture, one undo entry, and
+/// the two values nobody touched come back unchanged.
+///
+/// ## ★★ The whole group disappears over an ink pdfcer will not narrow
+///
+/// A `/DA` may set its colour in a space this engine models as a flag rather
+/// than a value — `/Separation`, `/DeviceN`, `/ICCBased`. There is no
+/// `TextColor` that round-trips one, so **any** write from this pane would
+/// replace it with black: not a refusal the operator could see, a silent
+/// narrowing written into their document. So the rows render nothing and say
+/// why, which is R9 applied to three controls at once rather than to one.
+fn text_appearance_rows(
+    ui: &mut Ui,
+    field: &Field,
+    fqn: &str,
+    state: &mut PanelsState,
+    actions: &mut Vec<Action>,
+) {
+    let current = current_appearance(field);
+
+    ui.add_space(4.0);
+    ui.label(t::text_heading());
+
+    let Some(ink) = current.ink else {
+        ui.label(
+            egui::RichText::new(t::text_colour_unshowable())
+                .small()
+                .weak(),
+        );
+        return;
+    };
+
+    font_row(ui, &current.font, ink, current.size, fqn, actions);
+    text_size_row(ui, &current, ink, fqn, state, actions);
+    text_colour_row(ui, &current.font, ink, current.size, fqn, actions);
+}
+
+/// The face, as the fourteen every reader has built in.
+///
+/// ★ A document's own embedded face is the **selected** entry and is not in the
+/// list, because `FieldFont::Resource` is refused by name unless the key is
+/// already in `/AcroForm` `/DR` `/Font` — so this pane can offer a key it read
+/// out of this field and cannot offer one it made up. Picking any of the
+/// fourteen replaces it; there is no route back, and that is the file's
+/// property rather than this control's limit.
+fn font_row(
+    ui: &mut Ui,
+    font: &Face,
+    ink: TextColor,
+    size: f64,
+    fqn: &str,
+    actions: &mut Vec<Action>,
+) {
+    let selected = match font {
+        Face::Builtin(f) => t::text_font_name(*f).to_owned(),
+        Face::Embedded(key) => t::text_font_embedded(&String::from_utf8_lossy(key)),
+    };
+    let mut chosen: Option<Std14> = match font {
+        Face::Builtin(f) => Some(*f),
+        Face::Embedded(_) => None,
+    };
+    let before = chosen;
+
+    let response = ui
+        .horizontal(|ui| {
+            ui.label(t::label_text_font());
+            egui::ComboBox::from_id_salt("properties-field-text-font")
+                .selected_text(selected)
+                .show_ui(ui, |ui| {
+                    for f in Std14::ALL {
+                        ui.selectable_value(&mut chosen, Some(f), t::text_font_name(f));
+                    }
+                });
+        })
+        .response;
+    crate::diag::ui_rect_visible(TEXT_FONT_REGION, response.rect, ui.clip_rect());
+    response.on_hover_text(t::label_text_font_hover());
+
+    if let Some(f) = chosen
+        && chosen != before
+    {
+        actions.push(
+            FieldAction::EditProperties {
+                field: fqn.to_owned(),
+                edit: appearance_edit(&Face::Builtin(f), size, ink),
+                touched: t::touched_text_font(),
+            }
+            .into(),
+        );
+    }
+}
+
+/// `Tf`'s size, with **zero meaning auto** — Table 224's own convention, not
+/// this pane's.
+///
+/// ★ Committed on release or on losing focus, never on `.changed()`, for the
+/// reason [`max_len_row`] states: a drag across the spinner would otherwise
+/// author one `/DA` rewrite per pixel, each one separately undoable.
+fn text_size_row(
+    ui: &mut Ui,
+    current: &Appearance,
+    ink: TextColor,
+    fqn: &str,
+    state: &mut PanelsState,
+    actions: &mut Vec<Action>,
+) {
+    let draft = state.field_props_mut();
+    ui.horizontal(|ui| {
+        ui.label(t::label_text_size());
+        let response = ui.add(
+            egui::DragValue::new(&mut draft.font_size)
+                .speed(0.5)
+                .range(0.0..=1440.0)
+                .custom_formatter(|n, _| {
+                    if n <= 0.0 {
+                        t::text_size_auto().to_owned()
+                    } else {
+                        format!("{n:.0}")
+                    }
+                }),
+        );
+        crate::diag::ui_rect_visible(TEXT_SIZE_REGION, response.rect, ui.clip_rect());
+        let response = response.on_hover_text(t::label_text_size_hover());
+        if (response.drag_stopped() || response.lost_focus())
+            && (draft.font_size - current.size).abs() > f64::EPSILON
+        {
+            actions.push(
+                FieldAction::EditProperties {
+                    field: fqn.to_owned(),
+                    edit: appearance_edit(&current.font, draft.font_size, ink),
+                    touched: t::touched_text_size(),
+                }
+                .into(),
+            );
+        }
+    });
+}
+
+/// The ink the value's glyphs are drawn in.
+///
+/// ★★ A four-ink separation gets the sentence and no control, for
+/// `text::panels::formfield::text_colour_unshowable`'s stated reason — showing a
+/// converted approximation would put a colour on screen the file does not
+/// contain, and the first nudge of the picker would commit pdfcer's guess. The
+/// font and size rows above still work on such a field, and re-send the CMYK
+/// ink unchanged.
+fn text_colour_row(
+    ui: &mut Ui,
+    font: &Face,
+    ink: TextColor,
+    size: f64,
+    fqn: &str,
+    actions: &mut Vec<Action>,
+) {
+    let Some(rgb) = swatch_rgb(ink) else {
+        ui.label(
+            egui::RichText::new(t::text_colour_unshowable())
+                .small()
+                .weak(),
+        );
+        return;
+    };
+
+    let picked = ui
+        .horizontal(|ui| {
+            ui.label(t::label_text_colour());
+            super::swatch::show(
+                ui,
+                // ui-text-exempt: an egui id salt, never displayed
+                "properties-field-text-colour",
+                super::swatch::Value::Agreed(rgb),
+                TEXT_COLOUR_REGION,
+                t::label_text_colour_hover(),
+            )
+        })
+        .inner;
+
+    if let Some(rgb) = picked {
+        let picked = TextColor::Rgb(
+            f64::from(rgb[0]) / 255.0,
+            f64::from(rgb[1]) / 255.0,
+            f64::from(rgb[2]) / 255.0,
+        );
+        actions.push(
+            FieldAction::EditProperties {
+                field: fqn.to_owned(),
+                edit: appearance_edit(font, size, picked),
+                touched: t::touched_text_colour(),
+            }
+            .into(),
+        );
+    }
+}
+
+/// What the field's `/DA` says today, in the shape the three rows need.
+struct Appearance {
+    /// The face its `Tf` names.
+    font: Face,
+    /// Points; `0.0` is Table 224's auto-size.
+    size: f64,
+    /// The ink, or `None` when the file states one in a space that has no
+    /// `TextColor` — see [`text_appearance_rows`] on why that removes the group
+    /// rather than just the swatch.
+    ink: Option<TextColor>,
+}
+
+/// A `/DA`'s `Tf` face, split by whether this pane can re-author it.
+///
+/// ★ Two variants rather than reusing `FieldFont`, which is `#[non_exhaustive]`
+/// and therefore forces a wildcard arm on every match — and a wildcard here
+/// would mean a future engine variant silently becoming Helvetica. This enum is
+/// exhaustive, so a third case would fail to compile instead.
+enum Face {
+    /// One of the fourteen: `FieldFont::Standard`, which cannot fail for want
+    /// of a resource because pdfcer authors the `/DR` entry.
+    Builtin(Std14),
+    /// A key already in `/AcroForm` `/DR` `/Font` — `FieldFont::Resource`,
+    /// which the engine refuses by name if it is not there.
+    Embedded(Vec<u8>),
+}
+
+/// §12.7.3.3's own default: a `/DA` that sets no colour draws in the
+/// graphics-state black, so that is what the swatch opens on rather than a
+/// colour this pane invented.
+const DEFAULT_INK: TextColor = TextColor::Gray(0.0);
+
+/// Read the field's effective `/DA`.
+///
+/// ★ `Field::default_appearance` is already the **inherited** value — `forms`
+/// falls back to `/AcroForm` `/DA` when the field states none — so this reads
+/// what the field actually draws with, not only what it states.
+///
+/// ⚠ A field with no `/DA` anywhere, and one whose `/DA` does not parse, both
+/// land on Helvetica at auto size in black. That is a guess, and it is the one
+/// guess this pane cannot avoid: `with_appearance` writes all three or none,
+/// and a field with no `Tf` is one §12.7.3.3 already calls malformed.
+fn current_appearance(field: &Field) -> Appearance {
+    let parsed = field
+        .default_appearance
+        .as_deref()
+        .and_then(|da| pdfcer_core::vartext::parse_default_appearance(da).ok());
+    let Some(da) = parsed else {
+        return Appearance {
+            font: Face::Builtin(Std14::Helvetica),
+            size: 0.0,
+            ink: Some(DEFAULT_INK),
+        };
+    };
+    Appearance {
+        font: face_of(&da.font_name),
+        size: da.font_size,
+        ink: (!da.color_unmodelled).then(|| da.color.unwrap_or(DEFAULT_INK)),
+    }
+}
+
+/// A `/DA` resource key, as one of the fourteen when it names one.
+///
+/// # ★★ Why this table is here and not a call into the engine
+///
+/// `pdfcer_core::fontdata::std14_by_base_font` takes a **`BaseFont` name** —
+/// `Helvetica`, `Times-Roman` — and a `/DA` carries a **resource key**, which by
+/// Acrobat's long-standing convention is a four-letter abbreviation: `Helv`,
+/// `TiRo`, `Cour`, `Symb`, `ZaDb`. The engine's own resolver for those is
+/// `pub(crate)`, so it cannot be called from here.
+///
+/// ⇒ The canonical spellings still go through the engine's function, so the
+/// fourteen names are stated once. Only the abbreviations are local, and a key
+/// this table does not know becomes [`Face::Embedded`] — which is the right
+/// answer for one anyway, because it is then re-authored verbatim.
+fn face_of(key: &[u8]) -> Face {
+    let Ok(name) = std::str::from_utf8(key) else {
+        return Face::Embedded(key.to_vec());
+    };
+    if let Some(font) = pdfcer_core::fontdata::std14_by_base_font(name) {
+        return Face::Builtin(font);
+    }
+    // ui-text-exempt: /DA resource keys read out of a file, never displayed
+    match name {
+        "Helv" => Face::Builtin(Std14::Helvetica),
+        "HeBo" => Face::Builtin(Std14::HelveticaBold),
+        "TiRo" => Face::Builtin(Std14::TimesRoman),
+        "Cour" => Face::Builtin(Std14::Courier),
+        "Symb" => Face::Builtin(Std14::Symbol),
+        "ZaDb" => Face::Builtin(Std14::ZapfDingbats),
+        _ => Face::Embedded(key.to_vec()),
+    }
+}
+
+/// One `FieldEdit` carrying a whole `/DA`.
+///
+/// `FieldAppearance` is `#[non_exhaustive]`, so a caller outside `pdfcer-core`
+/// cannot build one with a struct literal — the two constructors are the only
+/// route, and they are what selects between the two `FieldFont` variants.
+fn appearance_edit(font: &Face, size: f64, ink: TextColor) -> FieldEdit {
+    let appearance = match font {
+        Face::Builtin(f) => FieldAppearance::standard(*f, size, ink),
+        Face::Embedded(key) => FieldAppearance::resource(key.clone(), size, ink),
+    };
+    FieldEdit::new().with_appearance(appearance)
+}
+
+/// The ink as something a swatch can draw, or `None` for a four-ink separation.
+///
+/// ★ CMYK is refused rather than converted, O202 decision 4: pdfcer owns no
+/// rendering intent for a form field, so a converted swatch would show a colour
+/// the file does not contain.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn swatch_rgb(ink: TextColor) -> Option<[u8; 3]> {
+    let byte = |v: f64| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+    match ink {
+        TextColor::Gray(g) => Some([byte(g); 3]),
+        TextColor::Rgb(r, g, b) => Some([byte(r), byte(g), byte(b)]),
+        TextColor::Cmyk(..) => None,
+    }
+}
+
 /// Every justification `/Q` can state, in the order the chooser offers them.
 ///
 /// ★ Left first because Table 222 fixes it as `/Q`'s default, so the list reads
@@ -651,6 +1007,10 @@ pub struct FieldPropsDraft {
     /// changed, so the comparison must be against *what this draft was seeded
     /// from*.
     default_value_stored: String,
+    /// The `/DA` text size being dragged, with **0.0 meaning auto** —
+    /// Table 224's own convention. A draft because the spinner commits on
+    /// release rather than on every frame of a drag.
+    font_size: f64,
 }
 
 impl FieldPropsDraft {
@@ -685,6 +1045,7 @@ impl FieldPropsDraft {
         max_len: Option<i64>,
         tooltip: String,
         default_value: String,
+        font_size: f64,
         fqn: &str,
         epoch: u64,
     ) {
@@ -698,6 +1059,7 @@ impl FieldPropsDraft {
         self.tooltip.clone_from(&self.tooltip_stored);
         self.default_value_stored = default_value;
         self.default_value.clone_from(&self.default_value_stored);
+        self.font_size = font_size;
     }
 
     /// Pull the two typed values off a real field, and sync.
@@ -722,7 +1084,8 @@ impl FieldPropsDraft {
         // only shape [`default_value_row`] offers to edit — see the type gate
         // at its call site.
         let default_value = field.default_value.display_text();
-        self.sync(field.max_len, tooltip, default_value, fqn, epoch);
+        let size = current_appearance(field).size;
+        self.sync(field.max_len, tooltip, default_value, size, fqn, epoch);
     }
 }
 
@@ -801,7 +1164,7 @@ mod tests {
     fn a_draft_is_reseeded_when_the_selection_moves() {
         let mut draft = FieldPropsDraft::default();
 
-        draft.sync(Some(8), "first".to_owned(), "100".to_owned(), "A", 0);
+        draft.sync(Some(8), "first".to_owned(), "100".to_owned(), 0.0, "A", 0);
         assert_eq!(draft.tooltip, "first");
         assert_eq!(draft.max_len, 8);
         assert_eq!(draft.default_value, "100");
@@ -810,7 +1173,7 @@ mod tests {
         draft.tooltip = "half typed".to_owned();
         draft.default_value = "999".to_owned();
         // …and clicks a different field.
-        draft.sync(None, "second".to_owned(), "0".to_owned(), "B", 0);
+        draft.sync(None, "second".to_owned(), "0".to_owned(), 0.0, "B", 0);
         assert_eq!(
             draft.tooltip, "second",
             "the half-typed tooltip must not survive onto another field"
@@ -842,14 +1205,14 @@ mod tests {
     #[test]
     fn an_edit_to_the_same_field_reseeds_the_draft() {
         let mut draft = FieldPropsDraft::default();
-        draft.sync(Some(8), String::new(), String::new(), "A", 0);
+        draft.sync(Some(8), String::new(), String::new(), 0.0, "A", 0);
         assert_eq!(draft.max_len, 8);
 
         // Same name, same epoch — the pane has not been told anything changed.
-        draft.sync(Some(12), String::new(), String::new(), "A", 0);
+        draft.sync(Some(12), String::new(), String::new(), 0.0, "A", 0);
         assert_eq!(draft.max_len, 8, "no epoch change, no re-read");
 
-        draft.sync(Some(12), String::new(), String::new(), "A", 1);
+        draft.sync(Some(12), String::new(), String::new(), 0.0, "A", 1);
         assert_eq!(
             draft.max_len, 12,
             "the epoch moved, so the value is re-read"
