@@ -56,7 +56,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `wanted` — a real gap — **42 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -103,6 +103,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Four more `/Ff` field flags and the mapping name — `FieldEdit::with_no_spell_check`, `with_no_scroll`, `with_commit_on_sel_change`, `with_file_select`, `with_mapping_name` / `clearing_mapping_name` | **wanted, and they belong in a group that already exists.** `panels::properties::fieldedit` already carries the default value, the quadding, `/NoExport` and the appearance on the same builder, so each is one row and one round-trip test rather than a new surface. They are not equal: `no_scroll` and `no_spell_check` are text-field options set on purpose; `commit_on_sel_change` is a choice-field option whose effect is invisible until a form is filled; `file_select` turns a text field into a file picker and changes what the widget IS, which needs a sentence rather than a checkbox. `mapping_name` (`/TM`) is an export name for a form-data round trip, invisible on the page, wanting a text box beside the field name saying what it is for. Waiting on nothing; deferred only because one sweep of the properties panel is cheaper than four visits. |
 | **Compute a page's tab-VISIT order for every `/Tabs` state — `EditSession::page_tab_sequence(page_index) -> TabSequence`, CLI `tab-order`** … | **wanted — the engine half of O204, and it landed the same day the request was written.** O204 is *“when I press tab while in a form I end up tabbing through the menus instead of the form items”*. This verb answers the half the shell cannot compute on its own: which widget is next, for every `/Tabs` state, with `/Rotate` and reading direction applied, `Hidden`/`NoView` bearers excluded, and `/S` either derived from the structure tree or refused by name rather than silently falling back. The shell half stays as O204 scopes it — a `raw_input_hook` filter in `app::frame` so egui never sees Tab, a `canvas::tabnav` claimant, Tab branches in `forms::editor` and `canvas::keys`, `vk::TAB` in the harness — but `tabnav` asks this verb rather than sorting `/Rect`s itself, and the off-canvas disclosure it owes under rule 4 comes out of the same call. Do not bind bare Tab in the manifest. |
 | **Paint `/MK` `/BG`/`/BC` into the baked `/AP` the widget builders draw.** … | **wanted — the engine half of O202, which the engine's own row names.** O202 is *“the forms objects have no way to edit their colour before or after placement”*. `Pass 308.0`/`308.2` paints both colours into the appearance all four builders draw, covers both in `needs_regen`, and discloses `RecordedNotPainted` where the edit cannot be baked in. **This changes an earlier scoping decision:** background and border swatches were held back under R9 because nothing would have painted them, and now something does — so the after-placement half belongs in `panels::properties::widgetedit`, which already reads `widget.background` and `widget.border_color`. `RecordedNotPainted` goes off-canvas, never a swatch that lies. The **before**-placement half waits on `Pass 308.1` (carry the colour at field creation), which the engine still lists as owed. Text colour is `/DA` and a different row. |
+| **The Format, Validate and Calculate tabs** — `set_field_format`, `set_field_validation`, `set_field_calculation`, emitting through `pdfcer_core::form_script::emit` | **wanted — `G024` shipped whole on 2026-09-16 and nothing here calls any of it.** Each verb takes `Option<Helper>`, so set and clear are one undoable command, and the engine owns both traps: `set_field_format` writes the `/K` keystroke twin itself, reporting `FieldScriptChange::keystroke_paired`, and `set_field_calculation` maintains `/CO`. Three things are owed HERE. A kind gate whose answer is not the obvious one — a text field and a **combo box get all three**, a **list box gets NONE**, though both are `/Ch`. `FieldScriptChange::replaced` is an `Option<ScriptClass>`, so ask before displacing a script that classifies `Custom`. And a sentence for `EditError::FieldScriptNotEmittable`, which refuses `AdvisoryHelper::Keystroke` by name: that variant captures a helper NAME and never its arguments, so emitting it would destroy an input filter while reporting success. Carried knowingly: an **indirect** `/CO` is replaced by a fresh direct array. Belongs beside the `/Ff` row above, in one sweep of the properties panel. |
+| **What a script change REPORTS** — `FieldScriptChange::calculation_order`, carrying `CalcOrderChange` with `position`, `entries`, `array_created`, `array_removed` and `appended_at_end`; and `CommandKind::SetFieldScript` | **wanted, and it is the rule-4 half of the row above.** Setting a calculation moves the document's calculation ORDER, which is invisible on the page and changes what OTHER fields compute — exactly the shape of inference that owes an off-canvas sentence. The engine says where it put the field (`position` of `entries`) rather than matching Acrobat, whose own documented behaviour is *silently reorders on edit, re-check before distributing*; so the disclosure is a divergence upward and must not be dropped for being wordy. `array_created` and `array_removed` are the two ends nobody would look for: a document with no `/CO` that gains one and then loses its only calculation ends with **no** `/CO`, not an empty array. `CommandKind::SetFieldScript` is the undo entry, so the Edit menu's label is the engine's and must not be re-worded here. |
 
 ### Redaction & security
 
@@ -132,7 +134,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 ---
 
-## `blocked` — waiting on something named — **2 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `blocked` — waiting on something named — **2 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -150,7 +152,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -161,7 +163,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `declined` — deliberately no surface — **14 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -201,7 +203,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **125 of 181** <!-- counted by tools/walk-engine-backlog.py, 2026-09-15; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **125 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

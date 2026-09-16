@@ -4,27 +4,36 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`20e539a2`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`d2fa7352`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** Four things the operator asked for, all four
-about forms and reading.
+**What is new in this build.** One thing the operator asked for, in two parts,
+both about printing a drawing that will not fit on the paper.
 
-Pages are now rendered **before** he scrolls to them: a band either side of the
-page being read is drawn while the renderer is idle, so a scanned sheet is
-already there when it arrives on screen. Whatever is on screen still goes
-first — that is a property of the control flow, not a priority number.
+**The page can be dragged to a new position on the sheet.** When a drawing is
+printed at a scale that loses content, pdfcer places it flush to the corner of
+the printable area, and that used to be the only place it could go. Now it can
+be dragged in the preview to choose which part of the drawing reaches paper,
+with four shortcuts beside it: Centre, which crops evenly on all four edges;
+Centre horizontally; Centre vertically; and Reset position, which puts the page
+back where pdfcer chose. Reset all pages is a control of its own rather than a
+modifier, because its scope is the whole job and a hundred-sheet job is the
+case that matters. Each sheet's position is remembered separately, and survives
+a change of scale, paper, rotation or a press of fit-to-page. The two numbers
+can be typed in millimetres or stepped by the arrow keys, a millimetre at a
+time and ten with Shift held.
 
-A form field's colours can be chosen, before placement and after: the box's
-background and border, and — new here — the ink, face and size of the field's
-own text. Those last three are one group because the file stores them as one
-string, so changing the colour cannot quietly change the font.
+Those numbers say what frame they are measured in, because a displacement with
+no origin means nothing: from where pdfcer places the page, positive right and
+down. Under them is how far the page runs past the printable area, **edge by
+edge**, in millimetres. That line is a readout and never a warning — on a 1:1
+CAD drawing the overhang is usually blank paper, and the ink verdict beside it
+is the surface that gets to make a claim about content actually being lost.
 
-Placing a field shows an outline of exactly what the click will produce,
-hung from the corner the click will hang it from.
-
-And Tab stays in the document. It walks the form's fields in the order the
-form declares, crossing pages, and on a page with no form it walks the
-objects drawn on it. It no longer escapes into the ribbon.
+**And the crop hatching marks all four edges.** It drew two bands, so a drawing
+hanging off the top and the left was hatched on one of them. There are four
+now, each clipped to the page so they cannot overlap, and the build's trace
+names which edges hang over — a capture cannot tell three hatched bands from
+two, and a count cannot tell a page off the left from a page off the right.
 
 **Scope.** This shell only. `pdfcer-core` and `pdfcer` capabilities live in
 `D:\Dev\pdfcer\docs\FEATURES.md`, whose `gui` column is this project's
@@ -483,6 +492,7 @@ proper credit* enforced rather than remembered.
 | ✅ | **Page operations — rotate, delete, move up and down, extract** — the Pages context menu has no inert row left. `resync()` is a single choke point hung off `vector_edit`'s success path rather than off the four arms, so undo gets the page refresh for free |
 | ✅ | **New PDF** — `file.new`, `Ctrl+N`, at a chosen page size. Nothing in `pdfcer-core` writes a `/MediaBox`, so a blank template ships as an asset per size and `document.rs` carries a named permanent invariant against a separate builder model: creation goes through the same session every other edit does |
 | ✅ | **Print dialog** with live preview, reaching a real printer, with paper size, tray and the driver's own Properties…, all three reached from beside the printer drop-down as every other program on this desktop does it. `/Rotate` is honoured, so a rotated page is not planned portrait and rendered landscape |
+| ⬜ | **The printed page can be dragged to a new position on the sheet, per page — operator request O208. Built, undriven.** pdfcer starts an oversized page flush at the top-left of the printable area so that as little as possible falls off; the drag is how the operator chooses *which* part falls off instead. Primary-drag the page in the preview (the gesture is classified against the rectangle that was last drawn, so a drag that starts on the page moves it and one that starts on the sheet pans the view), with **Centre**, **Centre horizontally**, **Centre vertically** and **Reset position** as shortcuts, **Reset all pages** beside them carrying a count of how many sheets of the job are displaced, typed entry in millimetres on both axes, and arrow-key nudge at 1 mm, 10 mm with Shift. The displacement is held per page in the dialog and is applied to the plan at spool time, so it survives a change of scale, paper size, orientation, rotation and fit-to-page by construction — nothing but the five position verbs ever writes it. **The frame is stated on screen**, which is the half a bare offset cannot carry: measured from where pdfcer places the page, positive right and down, so `0, 0` means *where pdfcer chose* and Reset is not a synonym for Centre. Disclosure is off-canvas per R8b: a per-edge readout in whole millimetres of how far the page extends past the printable area, worded as geometry and never as loss, in no warning colour, because the ink verdict beside it is the surface entitled to claim content is lost (operator request O113). The crop hatch is **four bands, one per edge**, each clipped to the page so the union is exactly the overhang and no two bands overlap, and the preview's trace publishes which edges hang over as a four-letter word rather than a count. The driven check `the_printed_page_can_be_moved_on_the_paper` is written and registered; its last run skipped, because the drag was sized against a guess rather than against the measured preview canvas and the dialog's own OS viewport was not being converted through. Both are fixed and neither has been re-measured, so the row stays untickable until it runs green |
 | ⬜ | **The print preview pops out into its own window** — a second OS viewport, resizable, with its own taskbar entry, and the preview column inside the dialog collapses to nothing while it is out, so the room is given away to the options column. Built, undriven |
 | ⬜ | **An open drawing's sheets can be put on a different size of paper — built, undriven.** `pages.resize` on Pages ▸ Transform, beside Rotate: pick sheets in the Pages panel or none at all — picked sheets else the current one, the operand rule every `pages.*` command uses — choose A0 to A6, Letter, Legal, Tabloid, Executive, ANSI A to E or a custom size in millimetres, and every picked sheet changes as **one undo entry**. **The real product of the window is a measurement, not a size list**: changing a `/MediaBox` changes the **paper** and does not move, scale or reflow one byte of what is drawn, so an A1 drawing put on A4 is **cropped, not shrunk**, where every other page-size control the operator has met reflows or scales. So the window states the rule, draws the old sheet, the new sheet and the drawing's own extent to scale, and says in points how far the drawing would run past the paper being chosen, recomputed as the size changes and before anything is committed. That overhang is a thing the engine says it cannot report — `MediaBoxChange::lost_area` knows the sheet shrank and not whether any content was in the region it lost — but `PageObjects::page_bbox` is exactly that facility and this shell already holds one per page. Its boundary is stated on screen: comments, form fields and ce dimensions keep their positions and are **not** counted in that measurement. It opens on what the sheets already are, not on A4, and the new sheet keeps the corner the old ones had. `/CropBox`, `/BleedBox`, `/TrimBox` and `/ArtBox` are left byte-identical; only `/MediaBox` is rewritten. **No scale-to-fit, deliberately** — the engine has no such verb, and composing one would be six verbs across N pages whose most likely failure, a ce dimension group left at the old calibration, prints a wrong measurement and looks perfectly correct. The driven check `resizing_a_sheet_changes_the_paper_in_the_saved_file` is written and not registered |
 | ⬜ | **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed.** `MediaBoxChange` has a field for `/CropBox` and none for the other three — measured, a `/BleedBox [10 10 1000 1000]` survives a resize to 595 × 842 with no disclosure. So a press or CAD export gets one overhang reported and three not. It is an engine gap and it is not in `ENGINE_BACKLOG.md` |

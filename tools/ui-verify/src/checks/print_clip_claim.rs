@@ -61,24 +61,24 @@
 //! # ★ When it SKIPS, and why that is the honest verdict
 //!
 //! The scale mode defaults to **Fit**, which scales a page to the printable
-//! area and therefore does not clip. The operator's case is 1:1, and the scale
-//! radios publish **no `ui-rect` region**, so this harness cannot switch them:
-//! it publishes rects for the paper combo, the Properties button and the
-//! splitter, and for nothing else in the dialog.
+//! area and therefore does not clip, so the check begins by clicking
+//! `print.scale.actual` to force the 1:1 geometry the operator's case is
+//! about. That much is now within reach.
 //!
-//! So on most machines the fixture will not clip at all, `overhang=fits`,
-//! assertion 3 is vacuous, and the check reports SKIPPED with the values it
-//! read. It has learned that the two lines exist and that assertions 1 and 2
-//! hold; it has not exercised the correction, and saying so is the only honest
-//! verdict. The same three-state discipline `print_dialog` applies to a
-//! machine with no printers.
+//! What is still not within reach from here is the *ink*. Assertion 3 needs a
+//! sheet whose overhang is empty paper, and whether it is depends on the
+//! fixture and on the device's printable area together. On a sheet whose
+//! overhang carries a border line or a titleblock edge the ink test correctly
+//! reports `losing`, assertion 3 is vacuous, and the check reports SKIPPED with
+//! the values it read: it has learned that the two lines exist and that
+//! assertions 1 and 2 hold, and nothing about the correction. The same
+//! three-state discipline `print_dialog` applies to a machine with no printers.
 //!
-//! **What would make it bite every time**: a `ui-rect` region on the scale
-//! radios, so the harness could choose Actual size and force the 1:1 geometry
-//! this request is about. That is a change to `dialogs::print::tabs` and it is
-//! the right next step for this check — recorded here rather than done,
-//! because it widens the published-region surface and belongs in its own
-//! commit.
+//! **What would make it bite every time**: a fixture whose page box exceeds a
+//! common printable area *and* whose content stops short of the overhang — a
+//! CAD sheet with a wide blank margin. `fixtures/` has no such page today, and
+//! adding one is a fixture change rather than a harness change, which is why it
+//! is recorded here rather than done.
 //!
 //! # What it deliberately does NOT do
 //!
@@ -89,7 +89,7 @@
 //! one by accident.
 
 use crate::checks::driving::{
-    ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, list, shell_trace,
+    ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
 };
 use crate::checks::{Check, CheckContext, CheckReport};
 use crate::error::{Error, Result};
@@ -109,6 +109,10 @@ const PLAN_EVENT: &str = "print-plan";
 
 /// The per-frame line carrying `overhang=` and `claim=`.
 const PREVIEW_EVENT: &str = "print-preview";
+
+/// The scale radio that makes the page crop. Fit, the opening mode, scales a
+/// page down to the printable area and therefore loses nothing.
+const SCALE_ACTUAL: &str = "print.scale.actual";
 
 /// What a verdict-free claim looks like: the pre-O113 behaviour.
 const GEOMETRIC: &str = "geometric";
@@ -247,6 +251,23 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         ));
     }
 
+    // --- Actual size, so the 1:1 geometry the request is about is reached ---
+    //
+    // Fit scales the page down to the printable area, so from the opening state
+    // `clipped=` is zero and assertion 3 can never be anything but vacuous.
+    // This click is what this check spent its life skipping for want of.
+    let Some(actual) = declared(&trace, ui_rect, SCALE_ACTUAL) else {
+        return Err(Error::new(format!(
+            "the dialog declares no `{SCALE_ACTUAL}` region. Scale regions declared: {}. \
+             Without it the dialog can only be read on Fit, which crops nothing, and the \
+             correction this check exists for is unreachable.",
+            list(&declared_names(&trace, ui_rect, "print.scale."))
+        )));
+    };
+    driver.click_at(frame_of(&session, &trace, ui_rect, SCALE_ACTUAL)?.declared_center(actual))?;
+    session.settle(16);
+    let trace = session.trace()?;
+
     // --- the two lines ------------------------------------------------------
     let Some(plan) = trace.last(PLAN_EVENT) else {
         return Err(Error::new(format!(
@@ -321,12 +342,12 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     }
 
     Err(Error::new(format!(
-        "the sheet on screen reports overhang={overhang}, so the correction this check exists \
-         to verify was never exercised. That is the expected result on most machines: the scale \
-         mode defaults to Fit, which does not clip, and the scale radios publish no `ui-rect` \
-         region for this harness to switch them with. Assertions 1 and 2 held \
+        "at Actual size the sheet on screen reports overhang={overhang}, so the correction this \
+         check exists to verify was never exercised. `blank-band` is what exercises it, and it \
+         needs a page whose overhang is empty paper — this fixture's is not, or the device's \
+         printable area is large enough to contain the content. Assertions 1 and 2 held \
          (clipped={clipped_field} claim={claim_field}). Reported as SKIPPED, because a check \
          that did not exercise its subject has learned nothing about it — see this module's \
-         header for the one change that would make it bite every run."
+         header for the fixture that would make it bite every run."
     )))
 }

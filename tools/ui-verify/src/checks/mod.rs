@@ -723,6 +723,7 @@ pub mod preview_popout;
 pub mod print_auto_paper;
 
 pub mod print_clip_claim;
+pub mod print_position;
 
 pub mod print_dialog;
 

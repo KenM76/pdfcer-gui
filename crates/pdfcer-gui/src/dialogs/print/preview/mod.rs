@@ -78,6 +78,7 @@ use egui::{Color32, Pos2, Rect, Sense, Stroke, StrokeKind, TextureHandle, Textur
 use crate::app::state::OpenDoc;
 use crate::dialogs::print::PrintDialog;
 use crate::dialogs::print::ink;
+use crate::dialogs::print::position;
 use crate::dialogs::print::spooler::Job;
 use crate::text::print as t;
 
@@ -195,6 +196,19 @@ const CANVAS_MAX_HEIGHT_PTS: f32 = 1400.0;
 /// no rect at all; that one exists to be seen to disappear, so a rect that is
 /// merely scrolled out of view must still count as present.
 pub(super) const REGION_POP_OUT: &str = "print.preview.popout";
+
+/// The placed page's own rectangle inside the preview canvas.
+///
+/// Published so a driven check can start a drag INSIDE the page rather than on
+/// the paper around it — the two gestures share one mouse button and differ
+/// only by where the press landed, so a driver that guessed the rectangle
+/// would be measuring the pan half the time.
+///
+/// It is the page clipped to the canvas, i.e. the part that can actually be
+/// pressed, and it is absent rather than empty when there is none. See the
+/// publisher in [`paint`] for why neither the page nor `ui_rect_visible` of the
+/// page is the right thing to publish.
+pub(super) const REGION_PAGE: &str = "print.preview.page";
 
 /// The fraction of the canvas the fitted sheet occupies.
 ///
@@ -533,19 +547,89 @@ pub(super) fn column(
             zoom_by(dialog, step, at, rect.center());
         }
     }
-    // `dragged_by(Primary)`, never bare `dragged()`. Per
-    // `D:\dev\rag\egui\egui_response_drag_predicates_are_button_agnostic.md`
-    // the unqualified predicate fires for middle and right drags too, which
-    // would silently claim the right-drag this preview may later want for a
-    // context menu.
-    if response.dragged_by(egui::PointerButton::Primary) {
-        dialog.preview_pan += response.drag_delta();
-    }
-
     let scale = fit * dialog.preview_zoom;
+
+    // ---- what a primary drag takes hold of — operator request O208 ----
+    //
+    // The page, if the drag started on it; the paper otherwise. Both gestures
+    // are a primary drag on the same rectangle, so the only thing that can
+    // separate them is WHERE the press landed.
+    //
+    // ★ Latched at `drag_started_by`, and read from `press_origin` rather
+    // than `interact_pointer_pos`. Two findings in `D:\dev\rag\egui\`
+    // bind this: `drag_started` fires only after egui's drag threshold, by
+    // which time the interact position has moved off the pixel the operator
+    // actually pressed, and `press_origin` is the one value that stays put for
+    // the whole press. Re-deciding per frame would be worse still — the
+    // page moves under the pointer while it is being dragged, so the same
+    // gesture would reclassify itself the moment it left the page and finish by
+    // panning the view.
+    //
+    // `*_by(Primary)`, never a bare predicate: per
+    // `egui_response_drag_predicates_are_button_agnostic.md` the unqualified
+    // form fires for middle and right drags too, which would silently claim the
+    // right-drag this preview may later want for a context menu.
+    let page_rect = job.plans.get(shown).and_then(|plan| {
+        inputs.page_sizes.get(plan.index).map(|&size| {
+            let (_, printable) = frames(job, rect, dialog.preview_pan, scale);
+            placed_rect(printable, plan.placement, size, scale)
+        })
+    });
+    if response.drag_started_by(egui::PointerButton::Primary) {
+        let origin = ui.input(|i| i.pointer.press_origin());
+        dialog.preview_grab = match (origin, page_rect) {
+            (Some(at), Some(page)) if page.contains(at) => position::Grab::Page,
+            _ => position::Grab::Paper,
+        };
+        // The canvas is already `FOCUSABLE` — `Sense::click_and_drag()` is
+        // `CLICK | FOCUSABLE | DRAG` — but nothing had ever asked for the
+        // focus. The arrow-key nudge below is gated on having it, so the
+        // gesture that moves the page is also what makes the keys that move it
+        // live.
+        response.request_focus();
+    }
+    if response.drag_stopped_by(egui::PointerButton::Primary) {
+        dialog.preview_grab = position::Grab::Nothing;
+    }
+    if response.dragged_by(egui::PointerButton::Primary) {
+        let delta = response.drag_delta();
+        match dialog.preview_grab {
+            // Screen points back to paper points by dividing out the one scale
+            // the whole preview is drawn at, so the page follows the pointer at
+            // any zoom. No sign flip: the placement offsets are fed to the
+            // device context as its own `dest_x`/`dest_y`, which is the same
+            // right-and-down sense as the screen.
+            position::Grab::Page => {
+                if let Some(plan) = job.plans.get(shown) {
+                    dialog.page_positions.nudge(
+                        plan.index,
+                        f64::from(delta.x / scale),
+                        f64::from(delta.y / scale),
+                    );
+                    // The job is planned at the top of `PrintDialog::show`, so
+                    // a position changed here reaches the placement on the NEXT
+                    // frame. Without this the last frame of a drag would never
+                    // be drawn, and the page would appear to stop a pointer-move
+                    // short of where it was let go.
+                    ui.ctx().request_repaint();
+                }
+            }
+            position::Grab::Paper | position::Grab::Nothing => dialog.preview_pan += delta,
+        }
+    }
+    // The keyboard route to the same thing — O206's clause: a gesture
+    // offered with a pointer is offered with the keys as well. It reads the
+    // focus rather than the hover so a nudge cannot be delivered to a page the
+    // operator is merely passing over.
+    if response.has_focus()
+        && let (Some((dx, dy)), Some(plan)) = (position::arrow_nudge(ui), job.plans.get(shown))
+    {
+        dialog.page_positions.nudge(plan.index, dx, dy);
+        ui.ctx().request_repaint();
+    }
     // Rendered before the strip is laid out, because the strip's Actual-size
     // button needs the scale this frame settled on.
-    let (texture, overhang) = paint(ui, inputs, dialog, shown, rect, scale);
+    let (texture, overhang, edges) = paint(ui, inputs, dialog, shown, rect, scale);
     strip(ui, inputs, dialog, shown, rect, scale, placement);
 
     // Read AFTER `paint`, which is what makes the sheet on screen count as
@@ -556,6 +640,12 @@ pub(super) fn column(
     let claim = dialog
         .verdicts
         .claim(inputs.context, job, inputs.page_sizes);
+
+    // The DOCUMENT page the shown sheet is, which is what a position is keyed
+    // on. `shown` walks the job; see `PagePlan::index` for why the two are not
+    // the same number. `0` only when the job plans no pages, which returned
+    // above.
+    let page_index = job.plans.get(shown).map_or(0, |plan| plan.index);
 
     // The canvas rectangle and the two geometry rectangles, in one line.
     //
@@ -571,7 +661,8 @@ pub(super) fn column(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "print-preview canvas=[{:.0},{:.0} {:.0}x{:.0}] fit={fit:.4} scale={scale:.4} \
              device_dpi={:?} sheet={:.0}x{:.0} printable={:.0}x{:.0} margin={:.0},{:.0} \
-             sheet_of={}/{} zoom={:.3} pan=({:.1},{:.1}) tex={} overhang={} claim={}:{}",
+             sheet_of={}/{} zoom={:.3} pan=({:.1},{:.1}) pos={:.2},{:.2} grab={} \
+             moved={} tex={} overhang={} edges={} claim={}:{}",
             rect.min.x,
             rect.min.y,
             rect.width(),
@@ -588,6 +679,32 @@ pub(super) fn column(
             dialog.preview_zoom,
             dialog.preview_pan.x,
             dialog.preview_pan.y,
+            // ★★ `pos=` is the ONLY headless evidence that operator
+            // request O208 works, and it has to be here rather than inferred
+            // from `overhang=` because the two are independent: a page dragged
+            // across a blank border changes its position and changes neither
+            // the hatch nor the verdict. In PAPER POINTS, from the operator's
+            // displacement rather than from the placement, so a driven check
+            // reads the quantity the controls set and not the sum of that and
+            // whatever `place_page` chose — which would make `(0,0)` mean
+            // two different things.
+            //
+            // `grab=` beside it is what separates the two gestures that share
+            // one button. A drag that pans when it should have moved the page
+            // leaves `pos=` unchanged and `pan=` changed, and without this word
+            // that is indistinguishable from a drag that never reached the
+            // canvas at all.
+            dialog.page_positions.of(page_index).dx_pt,
+            dialog.page_positions.of(page_index).dy_pt,
+            match dialog.preview_grab {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                position::Grab::Nothing => "none",
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                position::Grab::Page => "page",
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                position::Grab::Paper => "paper",
+            },
+            dialog.page_positions.moved_count(),
             u8::from(texture.is_some()),
             // `overhang=` is the ONLY headless evidence that operator request
             // O113 works, and it is here because the thing that changed is
@@ -608,6 +725,22 @@ pub(super) fn column(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 Overhang::Unknown => "unknown",
             },
+            // `edges=` is the headless evidence for the four-edge hatch, and
+            // it is SEPARATE from `overhang=` because the two answer different
+            // questions. `overhang=` says what the ink test found; `edges=`
+            // says which of the page's four sides hang past the printable area
+            // at all, which is the geometry the widened hatch draws from.
+            //
+            // A four-character word in [`geometry::EDGE_LETTERS`]' order, not a
+            // count, because a count cannot tell a page hanging off the LEFT
+            // from one hanging off the right, and that distinction is the whole
+            // of what changed. An unmoved oversized page reads `.r.b`; the same
+            // page dragged up and left reads `lrtb`.
+            edges
+                .iter()
+                .zip(geometry::EDGE_LETTERS)
+                .map(|(&over, letter)| if over { letter } else { '.' })
+                .collect::<String>(),
             // The job-wide claim beside the sheet-level verdict, because the
             // pair is what a driven check has to read: `overhang=blank-band`
             // says this sheet's band is empty paper, and `claim=` says what
@@ -679,15 +812,12 @@ fn paint(
     shown: usize,
     rect: Rect,
     scale: f32,
-) -> (Option<TextureId>, Overhang) {
+) -> (Option<TextureId>, Overhang, [bool; 4]) {
     let painter = ui.painter_at(rect);
     let visuals = ui.visuals();
     let job = inputs.job;
-    let sheet = job.device.physical_pt;
 
-    let sheet_px = egui::vec2(sheet.0 as f32 * scale, sheet.1 as f32 * scale);
-    let origin = rect.center() - sheet_px / 2.0 + dialog.preview_pan;
-    let sheet_rect = Rect::from_min_size(origin, sheet_px);
+    let (sheet_rect, printable) = frames(job, rect, dialog.preview_pan, scale);
     painter.rect_filled(sheet_rect, 2.0, visuals.extreme_bg_color);
     painter.rect_stroke(
         sheet_rect,
@@ -696,20 +826,10 @@ fn paint(
         StrokeKind::Middle,
     );
 
-    // The printable area, inset by the driver's own unprintable margins. This
-    // is the rectangle that actually constrains the job — and the reason the
-    // preview is worth having at all.
-    let printable = Rect::from_min_size(
-        origin
-            + egui::vec2(
-                job.device.offset_pt.0 as f32 * scale,
-                job.device.offset_pt.1 as f32 * scale,
-            ),
-        egui::vec2(
-            job.device.printable_pt.0 as f32 * scale,
-            job.device.printable_pt.1 as f32 * scale,
-        ),
-    );
+    // The printable area, inset by the driver's own unprintable margins —
+    // the rectangle that actually constrains the job, and the reason the
+    // preview is worth having at all. Computed by [`frames`] above, with the
+    // sheet, because the two share an origin.
     painter.rect_stroke(
         printable,
         0.0,
@@ -737,20 +857,32 @@ fn paint(
             .get(shown)
             .and_then(|p| inputs.page_sizes.get(p.index)),
     ) else {
-        return (None, Overhang::Fits);
+        return (None, Overhang::Fits, [false; 4]);
     };
 
-    let placed = Rect::from_min_size(
-        printable.min
-            + egui::vec2(
-                plan.placement.offset_x_pt as f32 * scale,
-                plan.placement.offset_y_pt as f32 * scale,
-            ),
-        egui::vec2(
-            (size.0 * plan.placement.scale) as f32 * scale,
-            (size.1 * plan.placement.scale) as f32 * scale,
-        ),
-    );
+    let placed = placed_rect(printable, plan.placement, size, scale);
+    // The drag target, published — and it is the GRABBABLE part of the page,
+    // not the page.
+    //
+    // Neither obvious choice works here, and both fail silently:
+    //
+    // * `placed` itself is wrong because at actual size on a large-format sheet
+    //   the page is several times the canvas, so its centre is off screen —
+    //   sometimes outside the window entirely. A driver handed that point
+    //   presses the desktop.
+    // * `ui_rect_visible(.., placed, rect)` is wrong in the opposite direction:
+    //   it refuses to publish anything below 60 % visible, which is exactly the
+    //   oversized-page case the position controls exist for. The region would
+    //   be absent precisely when it is needed, and an absent region reads as a
+    //   missing control.
+    //
+    // The intersection is right on both counts: its centre is inside the page
+    // AND inside the canvas by construction, and it is empty only when the page
+    // really has been panned off the canvas and cannot be grabbed at all.
+    let grabbable = placed.intersect(rect);
+    if grabbable.is_positive() {
+        crate::diag::ui_rect(REGION_PAGE, grabbable);
+    }
 
     // The rendered page, if one is available. The fallback is a flat fill — a
     // preview showing the right rectangle and no content is degraded but
@@ -788,7 +920,7 @@ fn paint(
     // short-circuits every sheet that fits. Everything past it asks the
     // narrower question O113 is about — is anything actually THERE.
     if !plan.placement.clipped {
-        return (texture, Overhang::Fits);
+        return (texture, Overhang::Fits, [false; 4]);
     }
     // The mask is re-borrowed here rather than returned from `texture_for`
     // because it is 64 KiB (see `ink::CELLS_LONG_SIDE`) and cloning it once a
@@ -825,210 +957,7 @@ fn paint(
     dialog
         .verdicts
         .remember(inputs.context, &plan, inputs.page_sizes, overhang);
-    (texture, overhang)
-}
-
-/// Hatch **only the parts of `placed` that fall outside `printable` AND carry
-/// ink**.
-///
-/// # Why ink and not geometry — operator request O113
-///
-/// > *"can you make it so the red pattern you put over the page if it is going
-/// > to print beyond the printable borders is only over the areas that extend
-/// > beyond the printable page? Our drawing get drawn 1:1 and the area that
-/// > isn't printed is just empty border."*
-///
-/// `Placement::clipped` is a *geometric* verdict — the page box exceeds the
-/// printable rectangle — and on a CAD sheet printed 1:1 the part that exceeds
-/// it is empty paper. Hatching on that flag alone shouts about losing something
-/// on every drawing while nothing is being lost, which is a disclosure that is
-/// technically true and practically false. An operator who sees the same red
-/// band on every 1:1 drawing learns to ignore it, and then does not see it on
-/// the one sheet where the border really does have a title block in it.
-///
-/// So this asks [`ink::InkMask`] what is actually in the band, and hatches the
-/// **ink extent within it**. No ink in the band ⇒ **no hatch at all**.
-///
-/// # Only the right and bottom overhangs, and that is not an omission
-///
-/// A placement offsets the page *into* the printable area from its top-left
-/// corner, so content is lost off the far edges. Hatching all four would draw a
-/// warning over paper that will print.
-///
-/// # The two bands are DISJOINT, and `Rect::union` cannot make them so
-///
-/// `Rect::union` is a **bounding box**, not a set union: the union of a tall
-/// strip on the right and a wide strip along the bottom is a rectangle that
-/// also covers the region which is neither right of nor below the printable
-/// area — paper that prints perfectly. That is the same over-hatch O113 reports,
-/// one size smaller and hiding inside it.
-///
-/// So the bottom band is cut at `printable.max.x` and the two meet without
-/// overlapping. Disjoint also means the shared bottom-right corner is hatched
-/// once rather than twice, so its lines are the same weight as everywhere else
-/// instead of reading as a darker patch.
-///
-/// # What happens when there is no mask
-///
-/// `mask` is `None` when the page did not render — the same degraded state
-/// [`texture_for`] documents, in which the preview shows a flat fill instead of
-/// the page. In that state the honest answer to *"is anything in the band?"* is
-/// **"unknown"**, so the disclosure falls back to hatching the whole band.
-/// Silence is the wrong failure direction here: a missing render must not be
-/// able to turn a warning off.
-/// # Returns
-///
-/// What the band turned out to hold, so the caption can be written from the
-/// same computation the hatch was — see [`Overhang`].
-fn hatch_lost_content(
-    painter: &egui::Painter,
-    placed: Rect,
-    printable: Rect,
-    mask: Option<&ink::InkMask>,
-    colour: Color32,
-) -> Overhang {
-    let (lost, overhang) = lost_regions(placed, printable, mask);
-    for region in lost {
-        hatch(painter, region, colour);
-    }
-    overhang
-}
-
-/// **What is actually lost, and what to call it** — the whole of operator
-/// request O113's decision, with no painter in it.
-///
-/// # Pure on purpose, because this is the pair that must not disagree
-///
-/// It returns the rectangles to hatch *and* the [`Overhang`] the caption is
-/// written from, from **one** computation. That is the only structural
-/// guarantee that the picture and the sentence agree: they are not two readings
-/// of the same data, they are two halves of one answer. Splitting it out from
-/// [`hatch_lost_content`] also makes that agreement **testable with no GUI at
-/// all** — see [`tests::a_blank_overhang_hatches_nothing_and_says_so`], which
-/// asserts the empty list and the `BlankBand` verdict together, and
-/// [`tests::an_inked_overhang_hatches_only_the_ink_and_says_so`], which asserts
-/// the hatched rectangle really is a small part of the band.
-///
-/// The returned rectangles are in screen points and are ready to draw; the
-/// caller does no further arithmetic on them.
-fn lost_regions(
-    placed: Rect,
-    printable: Rect,
-    mask: Option<&ink::InkMask>,
-) -> (Vec<Rect>, Overhang) {
-    // The two disjoint overhangs, in SCREEN points.
-    //
-    // Right: everything of the page past the printable area's right edge, full
-    // height. Bottom: everything past its bottom edge, cut at that same right
-    // edge so the corner belongs to exactly one band.
-    let bands = [
-        placed.intersect(Rect::everything_right_of(printable.max.x)),
-        placed
-            .intersect(Rect::everything_below(printable.max.y))
-            .intersect(Rect::everything_left_of(printable.max.x)),
-    ];
-    let Some(mask) = mask else {
-        // No raster to ask. Disclose the whole of both bands rather than
-        // nothing: "unknown" must not present as "nothing is lost".
-        let whole: Vec<Rect> = bands.into_iter().filter(|b| b.is_positive()).collect();
-        // A clipped placement with no positive band is a geometric
-        // contradiction the arithmetic can produce at a degenerate scale.
-        // Report it as `Fits` rather than as an unexplained warning with no
-        // picture under it.
-        let verdict = if whole.is_empty() {
-            Overhang::Fits
-        } else {
-            Overhang::Unknown
-        };
-        return (whole, verdict);
-    };
-
-    let mut lost = Vec::new();
-    for band in bands {
-        if !band.is_positive() {
-            continue;
-        }
-        // The band, expressed as a fraction of the page, handed to the mask;
-        // the ink extent inside it, brought back to screen points. `placed` is
-        // the page's own rectangle on screen, so it is exactly the frame that
-        // converts between the two — and it already carries the zoom, the pan
-        // and the placement scale, which is why nothing here has to know about
-        // any of them.
-        //
-        // THE REQUEST, in one `else`: no ink in the band means the band is
-        // empty paper, so nothing is lost and nothing is drawn.
-        let Some(extent) = mask.ink_extent(normalised_in(band, placed)) else {
-            continue;
-        };
-        let region = denormalised_in(extent, placed);
-        if region.is_positive() {
-            lost.push(region);
-        }
-    }
-    let verdict = if lost.is_empty() {
-        Overhang::BlankBand
-    } else {
-        Overhang::Losing
-    };
-    (lost, verdict)
-}
-
-/// Express `part` as a fraction of `whole`: 0..1 page space, the coordinate
-/// system [`ink::InkMask`] speaks.
-///
-/// A degenerate `whole` — a page placed at zero scale, which a nonsense
-/// `/MediaBox` can produce — yields a rectangle the mask rejects rather than a
-/// `NaN` that would propagate into the hatch geometry.
-fn normalised_in(part: Rect, whole: Rect) -> Rect {
-    if whole.width() <= 0.0 || whole.height() <= 0.0 {
-        return Rect::NOTHING;
-    }
-    Rect::from_min_max(
-        egui::pos2(
-            (part.min.x - whole.min.x) / whole.width(),
-            (part.min.y - whole.min.y) / whole.height(),
-        ),
-        egui::pos2(
-            (part.max.x - whole.min.x) / whole.width(),
-            (part.max.y - whole.min.y) / whole.height(),
-        ),
-    )
-}
-
-/// The inverse of [`normalised_in`]: 0..1 page space back to screen points.
-fn denormalised_in(fraction: Rect, whole: Rect) -> Rect {
-    Rect::from_min_max(
-        egui::pos2(
-            whole.min.x + fraction.min.x * whole.width(),
-            whole.min.y + fraction.min.y * whole.height(),
-        ),
-        egui::pos2(
-            whole.min.x + fraction.max.x * whole.width(),
-            whole.min.y + fraction.max.y * whole.height(),
-        ),
-    )
-}
-
-/// Draw diagonal hatching across `area`.
-///
-/// Separate from [`hatch_lost_content`] so the geometry question (*what is
-/// lost?*) and the drawing question (*what does a hatch look like?*) do not
-/// share a body. The lines run at 45° and are clamped to the rectangle at both
-/// ends, which is what lets a caller hatch several small regions without any of
-/// them bleeding into the paper between.
-fn hatch(painter: &egui::Painter, area: Rect, colour: Color32) {
-    let step = 6.0;
-    let mut x = area.min.x;
-    while x < area.max.x + area.height() {
-        painter.line_segment(
-            [
-                egui::pos2(x.min(area.max.x), area.min.y),
-                egui::pos2((x - area.height()).max(area.min.x), area.max.y),
-            ],
-            Stroke::new(1.0, colour),
-        );
-        x += step;
-    }
+    (texture, overhang, overhang_edges(placed, printable))
 }
 
 /// The fixed strip: the sheet stepper on the left, the zoom controls on the
@@ -1327,6 +1256,17 @@ fn upload(ctx: &egui::Context, pixmap: &pdfcer_render::tiny_skia::Pixmap) -> Tex
 fn premultiplied_image(width: u32, height: u32, data: &[u8]) -> egui::ColorImage {
     egui::ColorImage::from_rgba_premultiplied([width as usize, height as usize], data)
 }
+
+/// **The preview's arithmetic** — the three rectangles and the hatch
+/// verdict, split out at R2's ceiling when O208 widened the hatch to four
+/// edges. Its header carries the seam and what it must not learn.
+mod geometry;
+
+// Glob re-exported rather than named one by one. A hand-written list here is a
+// list inside the mechanism whose whole purpose is to make the split invisible,
+// and this project's standing lesson is that such a list is exactly where the
+// next addition goes missing — silently, with every gate green.
+pub(super) use geometry::*;
 
 #[cfg(test)]
 #[path = "preview_tests.rs"]

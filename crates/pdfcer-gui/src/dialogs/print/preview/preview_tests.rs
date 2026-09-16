@@ -382,7 +382,12 @@ fn no_raster_falls_back_to_the_whole_band_rather_than_to_silence() {
     let (placed, printable) = overhanging_sheet();
     let (lost, verdict) = lost_regions(placed, printable, None);
     assert_eq!(verdict, Overhang::Unknown);
-    assert_eq!(lost.len(), 2, "both overhangs, whole: {lost:?}");
+    assert_eq!(
+        lost.len(),
+        2,
+        "both FAR overhangs, whole — and only those two, because this page is \
+         inside the printable area on its near edges: {lost:?}"
+    );
     let total: f32 = lost.iter().map(|r| r.width() * r.height()).sum();
     assert!(
         total > 200.0 * 800.0,
@@ -390,8 +395,14 @@ fn no_raster_falls_back_to_the_whole_band_rather_than_to_silence() {
     );
 }
 
-/// ★★ **The two bands are disjoint**, which fixes a second over-hatch that
-/// was hiding inside the first.
+/// ★★ **The far-edge bands are disjoint**, which fixes a second
+/// over-hatch that was hiding inside the first.
+///
+/// This fixture's page sits inside the printable area on its left and top, so
+/// two of the four bands are empty and dropped — which is also the
+/// evidence that O208's widening left an unmoved page alone. The four-edge
+/// case is
+/// [`a_page_dragged_off_all_four_edges_hatches_four_disjoint_bands`].
 ///
 /// The old code took `right.union(bottom)`, and `Rect::union` is a
 /// **bounding box**, not a set union: the union of a tall strip on the
@@ -400,7 +411,7 @@ fn no_raster_falls_back_to_the_whole_band_rather_than_to_silence() {
 /// perfectly. This pins that the two bands now meet without overlapping,
 /// and that neither reaches back into the printable rectangle.
 #[test]
-fn the_two_overhang_bands_do_not_overlap_or_reach_into_the_printable_area() {
+fn the_far_edge_overhang_bands_do_not_overlap_or_reach_into_the_printable_area() {
     let (placed, printable) = overhanging_sheet();
     let (lost, _) = lost_regions(placed, printable, None);
     let [right, bottom] = [lost[0], lost[1]];
@@ -416,6 +427,82 @@ fn the_two_overhang_bands_do_not_overlap_or_reach_into_the_printable_area() {
              paper that will print"
         );
     }
+}
+
+/// ★★ **A page dragged off all four edges hatches four disjoint
+/// bands whose union is exactly the overhang** — operator request O208.
+///
+/// This state was unreachable before the operator could move the page:
+/// `place_page` clamps its offsets at zero, so the near edges could not
+/// overhang and the hatch marked two edges because only two were possible.
+///
+/// The assertion is not "there are four rectangles" — that would pass on
+/// four wrong rectangles. It is the pair of properties a set union has and a
+/// hand-written band list does not: **pairwise disjoint**, so no corner is
+/// hatched twice and reads as a darker patch, and **total area equal to
+/// `placed` minus `printable`**, so nothing is missed and nothing is drawn over
+/// paper that will print. Those two together pin the geometry without naming a
+/// single band, which is what stops this test from being a restatement of the
+/// code it is checking.
+#[test]
+fn a_page_dragged_off_all_four_edges_hatches_four_disjoint_bands() {
+    let placed = Rect::from_min_size(egui::pos2(-100.0, -100.0), egui::vec2(1000.0, 800.0));
+    let printable = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(700.0, 600.0));
+    let (lost, verdict) = lost_regions(placed, printable, None);
+    assert_eq!(verdict, Overhang::Unknown);
+    assert_eq!(lost.len(), 4, "one band per overhanging edge: {lost:?}");
+
+    for (index, band) in lost.iter().enumerate() {
+        for other in lost.iter().skip(index + 1) {
+            assert!(
+                !band.intersect(*other).is_positive(),
+                "bands {band:?} and {other:?} overlap, so their shared corner would be \
+                 hatched twice and read as a darker patch"
+            );
+        }
+        assert!(
+            !band.intersect(printable).is_positive(),
+            "band {band:?} reaches into the printable area — a warning drawn over \
+             paper that will print"
+        );
+    }
+
+    let covered: f32 = lost.iter().map(|r| r.width() * r.height()).sum();
+    let inside = placed.intersect(printable);
+    let overhang = placed.width() * placed.height() - inside.width() * inside.height();
+    assert!(
+        (covered - overhang).abs() < 0.5,
+        "the four bands cover {covered} pt² of an overhang of {overhang} pt² — \
+         a set union of the overhang must be exactly the overhang"
+    );
+}
+
+/// ★ **A page dragged off only the NEAR edge hatches only that edge.**
+///
+/// The half of O208 a two-band hatch was silent about: an operator who drags a
+/// drawing left to bring its right-hand side onto the paper is choosing to lose
+/// the left-hand side, and a hatch that marked only the far edges would show
+/// nothing at all for the crop they had just chosen.
+///
+/// Also pins the converse, which is the regression the widening could cause: a
+/// page that overhangs only the left must NOT grow a band on the right.
+#[test]
+fn a_page_dragged_off_the_near_edge_hatches_the_near_edge_only() {
+    let placed = Rect::from_min_size(egui::pos2(-120.0, 0.0), egui::vec2(600.0, 500.0));
+    let printable = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(700.0, 600.0));
+    let (lost, verdict) = lost_regions(placed, printable, None);
+    assert_eq!(verdict, Overhang::Unknown);
+    assert_eq!(lost.len(), 1, "exactly the left band: {lost:?}");
+    let band = lost[0];
+    assert!(
+        (band.min.x - placed.min.x).abs() < 1e-3 && (band.max.x - printable.min.x).abs() < 1e-3,
+        "the band {band:?} is not the strip between the page's left edge and the \
+         printable area's"
+    );
+    assert!(
+        (band.height() - placed.height()).abs() < 1e-3,
+        "a vertical band takes the page's full height; {band:?} does not"
+    );
 }
 
 /// A degenerate placed rectangle — a page at zero scale, which a nonsense

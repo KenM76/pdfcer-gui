@@ -143,6 +143,11 @@ pub(crate) mod layout;
 /// header carries why the feature is one call and one line, and why the print
 /// dialog's own column then draws nothing at all.
 mod popout;
+/// **Where the page sits on the paper** — operator request O208. One
+/// quantity (a displacement from the placement pdfcer chose), the arithmetic
+/// over it, and the controls that set it; the header carries the frame, the
+/// sign, and why Reset and Centre are different commands.
+mod position;
 pub(crate) mod preview;
 /// ★ `pub(crate)` rather than private since 2026-09-10 (**O166**), because
 /// `crate::app::prefs::printing` persists the operator's print habits and
@@ -249,6 +254,38 @@ pub(super) const REGION_PAPER_ITEM_PREFIX: &str = "print.paper.item.";
 /// the check that needs it, too: `print.paper.auto` cannot silently become a
 /// different entry when the driver's list changes length.
 pub(super) const REGION_PAPER_AUTO: &str = "print.paper.auto";
+
+/// One published region per scale mode, suffixed with the mode's own WORD.
+///
+/// # Why the scale radios are published at all
+///
+/// The dialog opens on **Fit**, which scales a page down to the printable area
+/// and therefore clips nothing. Every claim about what gets cropped — the
+/// hatch, the ink verdict, the whole Position group — is unreachable from that
+/// state, so a driven check that cannot choose **Actual size** cannot assert
+/// any of it. `tools/ui-verify/src/checks/print_clip_claim.rs` skipped on this
+/// machine for exactly that reason and said so in its own header.
+///
+/// A word and not an index, unlike [`REGION_PAPER_ITEM_PREFIX`]: an index here
+/// would be a contract with the order of a `for` loop rather than with anything
+/// outside the process, and this list has gained a mode once already.
+pub(super) const REGION_SCALE_PREFIX: &str = "print.scale.";
+
+/// The Position group's five buttons, one region each.
+///
+/// Published individually rather than as a group union because the group's
+/// rectangle cannot answer *which* button was pressed, and the four placements
+/// differ only in the number they write — see `check-region-names.py`'s third
+/// failure shape.
+pub(super) const REGION_POSITION_RESET: &str = "print.position.reset";
+/// See [`REGION_POSITION_RESET`].
+pub(super) const REGION_POSITION_CENTRE: &str = "print.position.centre";
+/// See [`REGION_POSITION_RESET`].
+pub(super) const REGION_POSITION_CENTRE_H: &str = "print.position.centre-h";
+/// See [`REGION_POSITION_RESET`].
+pub(super) const REGION_POSITION_CENTRE_V: &str = "print.position.centre-v";
+/// See [`REGION_POSITION_RESET`].
+pub(super) const REGION_POSITION_RESET_ALL: &str = "print.position.reset-all";
 
 /// The print dialog's live state.
 ///
@@ -452,6 +489,25 @@ pub struct PrintDialog {
     /// current zoom" and the Fit button is a two-field reset rather than a
     /// recomputation.
     preview_pan: egui::Vec2,
+    /// **Where the operator has put each page on its sheet** — operator
+    /// request O208.
+    ///
+    /// Sparse displacements from the placement pdfcer chose, keyed on the
+    /// **document** page, so they survive a page-range edit, a reversal or a
+    /// scale change rather than sliding onto whichever sheet now sits in that
+    /// slot. Empty means every placement is exactly the one
+    /// [`spooler::plan`] returned.
+    ///
+    /// Dialog-lifetime, like the zoom and pan above it: it is part of what the
+    /// operator has arranged about *this* print. A remembered position would
+    /// crop a later job the operator never framed.
+    page_positions: position::Positions,
+    /// What the primary button took hold of when the current preview drag
+    /// began.
+    ///
+    /// Latched once, at drag start, because the page moves under the pointer
+    /// while it is being dragged — see [`position::Grab`].
+    preview_grab: position::Grab,
     /// The rendered page bitmap behind the preview, what it is a picture of,
     /// and **where that picture carries ink**.
     ///
@@ -672,6 +728,8 @@ impl PrintDialog {
             // operator's act, never the program's.
             preview_popped: false,
             preview_pan: egui::Vec2::ZERO,
+            page_positions: position::Positions::default(),
+            preview_grab: position::Grab::default(),
             preview_texture: None,
             // Empty, and emptied again by every change of context — see
             // `verdicts::Verdicts::remember`. A dialog opens knowing nothing
@@ -889,7 +947,15 @@ impl PrintDialog {
         let job = printer_name
             .as_deref()
             .map(|name| spooler::plan(name, device, self.config.as_ref(), &page_sizes, &spec))
-            .and_then(Result::ok);
+            .and_then(Result::ok)
+            // ★ O208: the operator's chosen positions are applied HERE, on the
+            // value the plan returned, before any reader. Not inside
+            // [`spooler`], whose header rules that nothing in it computes a
+            // placement — the displacement is a shell decision. Applying it at
+            // one point rather than at each reader is what makes the preview,
+            // the per-edge readout, the clip count, the ink-verdict cache key
+            // and the spooled job agree by construction.
+            .map(|job| self.page_positions.displace(job, &page_sizes));
 
         // Keep the stepper inside the job. A range narrowed while the dialog
         // is open can leave `preview_page` past the end, and a preview that
@@ -1326,7 +1392,13 @@ impl PrintDialog {
     /// affordance for the second tabbed surface in the application would teach
     /// the operator that "tab" looks like two different things. The bold
     /// weight is not decoration: R84 forbids state carried by colour alone.
-    fn options_column(&mut self, ui: &mut Ui, job: Option<&Job>, page_count: usize) {
+    fn options_column(
+        &mut self,
+        ui: &mut Ui,
+        job: Option<&Job>,
+        page_count: usize,
+        page_sizes: &[(f64, f64)],
+    ) {
         ui.horizontal(|ui| {
             ui.label(t::printer_label());
             egui::ComboBox::from_id_salt("print-printer")
@@ -1408,17 +1480,7 @@ impl PrintDialog {
         ui.separator();
 
         match self.active_tab {
-            PrintTab::PagesLayout => tabs::pages_layout(
-                ui,
-                self,
-                page_count,
-                // The TURNED sheet, from the plan — so the sentence
-                // names the rectangle the job was actually laid out
-                // against rather than the device's un-rotated default.
-                // `None` while there is no plan, which the sentence
-                // handles rather than the caller guessing.
-                job.map(|j| j.device.physical_pt),
-            ),
+            PrintTab::PagesLayout => tabs::pages_layout(ui, self, page_count, job, page_sizes),
             PrintTab::CopiesFinishing => tabs::copies_finishing(ui, self),
             PrintTab::CommentsResolution => {
                 tabs::comments_resolution(ui, self, job.map(|j| j.resolution));

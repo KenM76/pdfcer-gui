@@ -644,6 +644,72 @@ done about what an operator may TYPE. The parse belongs in the same module, for
 the same reason, and the entry surfaces then all gain it at once instead of one
 box at a time — which is O206's rule applied to its own first instance.
 
+## O208 — **FILED** — a drawing that will not fit the paper cannot be moved on it, so the operator cannot choose what gets cropped
+
+**Source:** his message of 2026-09-16, sent while the O205 option-list work
+was in progress. Filed before any of it was measured.
+
+> *“can we add a control to our print preview screen so that when we are
+> printing at a scale that will lose content we have the option to drag the
+> drawing to a new position on the print page? That way we can choose what gets
+> cropped. we could also have an option to reset position, center, center
+> horizontally, or center vertically. This can be remembered for each page.
+> Also the hash lines we use to show what won’t be printed should have a line
+> for each edge of the page.”*
+
+Two things in one message, and the second is a defect rather than a feature.
+
+1. **The page has no position on the paper.** Printing at a scale that does
+   not fit puts the page somewhere the operator did not choose and cannot
+   change, so which quarter of a site plan survives is decided by the
+   program. He wants to drag it in the preview, and he named the four
+   shortcuts he expects beside the drag: **reset**, **centre**, **centre
+   horizontally**, **centre vertically**. **Remembered per page**, because a
+   drawing set has different content in different corners sheet by sheet.
+2. **The crop indicator only marks some edges.** The hatching that shows what
+   will be lost is drawn for fewer than four sides; he wants a line at every
+   edge of the page. A page can overhang on all four, and an operator reading
+   an unmarked edge as safe has been told something false.
+
+**Clause 7 (O206) scope, and this is what the row means by the whole
+feature rather than the sentence.** A position on the paper is a length pair,
+so it owes what every other length in this product owes: arrow-key nudge,
+typed entry, and O207’s unit parsing in the box. Beyond that:
+
+* the offset must state its units and its frame — paper or page — because a
+  scale change afterwards has to leave it meaning the same thing;
+* **reset all pages** beside the per-page reset, since per-page memory that
+  can only be cleared one sheet at a time is a chore on a forty-sheet set;
+* the amount cropped **per edge** belongs in the disclosure, off-canvas, in the
+  units he prints in — the hatching says *that* something is lost, not *how
+  much*;
+* the drag is bounded by nothing — moving content entirely off the sheet is a
+  legitimate thing to want and refusing it would be the program deciding again;
+* and it has to survive the things that change around it: a scale change, a
+  paper change, a rotation, and a fit-to-page press.
+
+**Rule 4.** The preview is not the canvas, and hatching drawn on a *preview*
+is a disclosure surface rather than content marking — the page view itself
+stays unmarked. The sheet that comes out of the printer carries no hatching.
+
+**Measured, and the answer was yes.** `pdfcer-print` takes the placement as
+part of the job rather than deriving it, so a displacement needed no engine
+change at all: the dialog holds one offset per page and applies it to the plan
+at spool time. That is also why survival across a scale change, a paper change,
+a rotation and a fit-to-page press holds by construction rather than by a
+handler — nothing but the five position verbs ever writes the map, and the plan
+is rebuilt from it on every frame. The engine's own placement tolerance is
+`EPS = 0.5` pt, which this shell matches so that a displacement it calls
+settled is one the engine would also ignore.
+
+**Both clauses are built and the whole of clause 7 with them** — the drag, the
+four shortcuts, reset-all with its count, typed entry in millimetres, arrow
+nudge at 1 mm and 10 mm, the frame and sign stated on screen, the per-edge
+overhang in whole millimetres off-canvas, no bound on the drag, and the hatch
+widened from two bands to four. **Not yet driven.** The R1 oracle
+`the_printed_page_can_be_moved_on_the_paper` is written and registered; it needs
+about two minutes of the operator's desktop, and until it runs green the
+register row stays untickable.
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 
 **Source:** `C:\Users\Ken\OneDrive\pdfTests\FEATURE.txt`, written, read the same morning. Every paragraph in it became a row below, in the

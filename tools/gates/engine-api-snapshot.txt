@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: baf39a1a57877a558beaa68648dffd25dfc1445b
+# baseline: d2fa7352b5613b722b80712af87cd470684570b8
 # crates: pdfcer-core pdfcer-render pdfcer-print
-# items: 7612
+# items: 7657
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
@@ -64,10 +64,10 @@ exempt pdfcer-core method pdfcer_core::xref::HybridPartition::is_reproducible --
 exempt pdfcer-core method pdfcer_core::xref::LoadedXref::hybrid_partition -- the constructor that copies the two `LoadedXref` fields into a `HybridPartition`. Unreachable from this shell for the mechanical reason that it needs a `LoadedXref` receiver and this shell never obtains one, and unwanted for the reason the struct's own exemption gives at length.
 exempt pdfcer-core struct pdfcer_core::parser::DuplicateKeyRecord -- the parser's own untagged record of one duplicate-key decision (key, kept, discarded). This shell wants all three facts and already has them, one layer up and better: `document::LoadAnomaly::DuplicateDictKey` carries the same three PLUS the `ObjId` they came from, and `app::status::anomalies` reads it live at draw time to say which object contradicted itself. The record cannot answer that -- the engine tags it with the object as it carries it out of the parser -- so a shell that reached for `DuplicateKeyRecord` would be trading down to the version with the object number missing. Exempted as a TYPE this shell should not name, not as a fact it does not want.
 exempt pdfcer-core struct pdfcer_core::xref::HybridPartition -- xref-internal plumbing that is public only because `pub mod xref;` publishes the whole module. It exists to answer ONE question, and the writer is the only thing that asks it: `is_reproducible()` gates `writer::save`'s full rewrite, and `Document`'s own field holding it is PRIVATE, read at writer/save.rs and nowhere else. The single public accessor `Document::hybrid_partition()` hands out a reference to it, so this shell COULD hold one -- and would learn nothing an operator can act on, because the only outcome that reaches him is already carried by `WriteError::HybridFullRewrite`, which this shell renders today (O157). Its two fields are a set of hidden object numbers and a did-the-XRefStm-parse flag: file-structure facts about SS 7.5.8.4, not document facts. DELETE THIS LINE if a surface ever needs to say WHICH objects a hybrid file hides -- that is the one thing in here the refusal variant does not carry.
+exempt pdfcer-core variant pdfcer_core::edit::MkColorEdit::Remove -- the removal half of the line above, exempted per variant rather than wildcarded for the type so a third variant arriving costs a look rather than nothing. The removal is the one this shell asked for and is wired: `without_background` and `without_border_color` are the *Remove* entry on both `/MK` colour swatches, in the widget properties and in the placement dialog.
+exempt pdfcer-core variant pdfcer_core::edit::MkColorEdit::Set -- the three-state wrapper the engine built for `G021` so a `/MK` colour edit can say set-this, take-it-away, or say-nothing. This shell consumes the CAPABILITY through the builders -- `WidgetEdit::with_background` / `without_background` and their `/BC` twins, all four named in panels::properties::widgetedit -- and deliberately never names the variants. `MkColorEdit` is `#[non_exhaustive]`, so a match here would need a catch-all arm, and a catch-all is exactly what panels::properties::mkcolour::mk_value refuses for `MkColor`: a state added to the engine's enum must break this build rather than fall silently into a default. The shell's own `mkcolour::Pick` carries the same two states with that argument written above it. DELETE THIS LINE if a surface ever needs to READ back which of the three an edit carried, because reading requires holding the enum.
 exempt pdfcer-core variant pdfcer_core::page_tree::PageTreeError::BadResources -- a NEW refusal from engine `Pass 290.0` (2026-09-10): `/Resources` is present and is not a dictionary. The widening in the same Pass is what this shell consumes -- an ABSENT `/Resources`, on the page and every ancestor, now resolves to the empty dictionary Table 30 names, and the shell discloses that through `Diagnostics::page_resources_defaulted` and `TextDiagnostics::pages_resources_defaulted`, both wired the same day. The refusal half is exempted because this shell never NAMES a `PageTreeError`: the only page-tree failure it can hold is the `String` in `StampCollection::page_tree_error`, which it prints verbatim through `text::stamps::properties_page_tree_unreadable` precisely so a cycle in `/Kids` and a bad `/Resources` stay distinguishable to the operator without the shell having an opinion about either. There is no act this shell would take for a bad `/Resources` that differs from any other page-tree refusal -- it cannot repair the file. DELETE THIS LINE the day a structure-repair surface exists, because that surface would need the variant, not the sentence.
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::stroke_display -- RenderPolicy is the interpreter's INTERNAL derived bundle, not a shell-facing type: every one of its fields' own doc comments reads "See RenderOptions::<the same name>", and the engine builds a RenderPolicy from the RenderOptions a caller hands it. This shell sets RenderOptions::stroke_display (View > Display > Line weights, O137) and constructs no RenderPolicy anywhere in the workspace. Exempted PER FIELD rather than wildcarded for the whole type, deliberately: every future RenderPolicy field mirrors a RenderOptions field this shell probably DOES want, so each one should cost one line and one look.
-exempt pdfcer-core variant pdfcer_core::edit::MkColorEdit::Set -- the three-state wrapper the engine built for `G021` so a `/MK` colour edit can say set-this, take-it-away, or say-nothing. This shell consumes the CAPABILITY through the builders -- `WidgetEdit::with_background` / `without_background` and their `/BC` twins, all four named in panels::properties::widgetedit -- and deliberately never names the variants. `MkColorEdit` is `#[non_exhaustive]`, so a match here would need a catch-all arm, and a catch-all is exactly what panels::properties::mkcolour::mk_value refuses for `MkColor`: a state added to the engine's enum must break this build rather than fall silently into a default. The shell's own `mkcolour::Pick` carries the same two states with that argument written above it. DELETE THIS LINE if a surface ever needs to READ back which of the three an edit carried, because reading requires holding the enum.
-exempt pdfcer-core variant pdfcer_core::edit::MkColorEdit::Remove -- the removal half of the line above, exempted per variant rather than wildcarded for the type so a third variant arriving costs a look rather than nothing. The removal is the one this shell asked for and is wired: `without_background` and `without_border_color` are the *Remove* entry on both `/MK` colour swatches, in the widget properties and in the placement dialog.
 
 pdfcer-core const pdfcer_core::HEADER_SCAN_WINDOW
 pdfcer-core const pdfcer_core::annot::MAX_ANNOTS_PER_PAGE
@@ -314,6 +314,7 @@ pdfcer-core enum pdfcer_core::edit::InfoField
 pdfcer-core enum pdfcer_core::edit::InkEdit
 pdfcer-core enum pdfcer_core::edit::InkEditKind
 pdfcer-core enum pdfcer_core::edit::MediaBoxEntry
+pdfcer-core enum pdfcer_core::edit::MkColorEdit
 pdfcer-core enum pdfcer_core::edit::NamedAction
 pdfcer-core enum pdfcer_core::edit::OutlinePlacement
 pdfcer-core enum pdfcer_core::edit::PageTabs
@@ -374,6 +375,7 @@ pdfcer-core enum pdfcer_core::form_script::Trigger
 pdfcer-core enum pdfcer_core::form_script::calc::CommaPolicy
 pdfcer-core enum pdfcer_core::form_script::calc::Refusal
 pdfcer-core enum pdfcer_core::form_script::disclose::Reproducibility
+pdfcer-core enum pdfcer_core::form_script::emit::NotEmittable
 pdfcer-core enum pdfcer_core::form_script::format::FormatOutcome
 pdfcer-core enum pdfcer_core::form_script::inventory::ScriptSource
 pdfcer-core enum pdfcer_core::form_script::recompute::OrderSource
@@ -879,6 +881,11 @@ pdfcer-core field pdfcer_core::edit::ButtonActionChange::hide
 pdfcer-core field pdfcer_core::edit::ButtonActionChange::name
 pdfcer-core field pdfcer_core::edit::ButtonActionChange::replaced
 pdfcer-core field pdfcer_core::edit::ButtonActionChange::submit
+pdfcer-core field pdfcer_core::edit::CalcOrderChange::appended_at_end
+pdfcer-core field pdfcer_core::edit::CalcOrderChange::array_created
+pdfcer-core field pdfcer_core::edit::CalcOrderChange::array_removed
+pdfcer-core field pdfcer_core::edit::CalcOrderChange::entries
+pdfcer-core field pdfcer_core::edit::CalcOrderChange::position
 pdfcer-core field pdfcer_core::edit::ChoiceOption::display
 pdfcer-core field pdfcer_core::edit::ChoiceOption::export
 pdfcer-core field pdfcer_core::edit::DefaultsApplied::on_state_ambiguous
@@ -974,6 +981,12 @@ pdfcer-core field pdfcer_core::edit::FieldRename::action_targets_retargeted
 pdfcer-core field pdfcer_core::edit::FieldRename::descendants_renamed
 pdfcer-core field pdfcer_core::edit::FieldRename::from
 pdfcer-core field pdfcer_core::edit::FieldRename::to
+pdfcer-core field pdfcer_core::edit::FieldScriptChange::applied
+pdfcer-core field pdfcer_core::edit::FieldScriptChange::calculation_order
+pdfcer-core field pdfcer_core::edit::FieldScriptChange::keystroke_paired
+pdfcer-core field pdfcer_core::edit::FieldScriptChange::name
+pdfcer-core field pdfcer_core::edit::FieldScriptChange::replaced
+pdfcer-core field pdfcer_core::edit::FieldScriptChange::trigger
 pdfcer-core field pdfcer_core::edit::FillOutcome::applied_autosize
 pdfcer-core field pdfcer_core::edit::FillOutcome::applied_autosize_bound
 pdfcer-core field pdfcer_core::edit::FillOutcome::da_colour_unmodelled
@@ -1091,6 +1104,7 @@ pdfcer-core field pdfcer_core::edit::MergeOutcome::outline_items_carried
 pdfcer-core field pdfcer_core::edit::MergeOutcome::pages_merged
 pdfcer-core field pdfcer_core::edit::NewCheckBox::border
 pdfcer-core field pdfcer_core::edit::NewCheckBox::checked
+pdfcer-core field pdfcer_core::edit::NewCheckBox::chrome
 pdfcer-core field pdfcer_core::edit::NewCheckBox::name
 pdfcer-core field pdfcer_core::edit::NewCheckBox::on_state
 pdfcer-core field pdfcer_core::edit::NewCheckBox::page_index
@@ -1101,6 +1115,7 @@ pdfcer-core field pdfcer_core::edit::NewCheckBox::style
 pdfcer-core field pdfcer_core::edit::NewCheckBox::tooltip
 pdfcer-core field pdfcer_core::edit::NewCheckBox::visibility
 pdfcer-core field pdfcer_core::edit::NewChoiceField::border
+pdfcer-core field pdfcer_core::edit::NewChoiceField::chrome
 pdfcer-core field pdfcer_core::edit::NewChoiceField::combo
 pdfcer-core field pdfcer_core::edit::NewChoiceField::editable
 pdfcer-core field pdfcer_core::edit::NewChoiceField::multi_select
@@ -1119,6 +1134,7 @@ pdfcer-core field pdfcer_core::edit::NewImage::page_index
 pdfcer-core field pdfcer_core::edit::NewImage::rect
 pdfcer-core field pdfcer_core::edit::NewPushButton::border
 pdfcer-core field pdfcer_core::edit::NewPushButton::caption
+pdfcer-core field pdfcer_core::edit::NewPushButton::chrome
 pdfcer-core field pdfcer_core::edit::NewPushButton::name
 pdfcer-core field pdfcer_core::edit::NewPushButton::page_index
 pdfcer-core field pdfcer_core::edit::NewPushButton::read_only
@@ -1126,6 +1142,7 @@ pdfcer-core field pdfcer_core::edit::NewPushButton::rect
 pdfcer-core field pdfcer_core::edit::NewPushButton::tooltip
 pdfcer-core field pdfcer_core::edit::NewPushButton::visibility
 pdfcer-core field pdfcer_core::edit::NewRadioButton::border
+pdfcer-core field pdfcer_core::edit::NewRadioButton::chrome
 pdfcer-core field pdfcer_core::edit::NewRadioButton::export_value
 pdfcer-core field pdfcer_core::edit::NewRadioButton::name
 pdfcer-core field pdfcer_core::edit::NewRadioButton::no_toggle_to_off
@@ -1139,6 +1156,7 @@ pdfcer-core field pdfcer_core::edit::NewRadioButton::style
 pdfcer-core field pdfcer_core::edit::NewRadioButton::tooltip
 pdfcer-core field pdfcer_core::edit::NewRadioButton::visibility
 pdfcer-core field pdfcer_core::edit::NewTextField::border
+pdfcer-core field pdfcer_core::edit::NewTextField::chrome
 pdfcer-core field pdfcer_core::edit::NewTextField::comb
 pdfcer-core field pdfcer_core::edit::NewTextField::max_len
 pdfcer-core field pdfcer_core::edit::NewTextField::multiline
@@ -2831,6 +2849,8 @@ pdfcer-core fn pdfcer_core::form_script::disclose::describe
 pdfcer-core fn pdfcer_core::form_script::disclose::for_field
 pdfcer-core fn pdfcer_core::form_script::disclose::for_recompute
 pdfcer-core fn pdfcer_core::form_script::disclose::reproducibility_of
+pdfcer-core fn pdfcer_core::form_script::emit::emit
+pdfcer-core fn pdfcer_core::form_script::emit::keystroke_twin
 pdfcer-core fn pdfcer_core::form_script::format::render
 pdfcer-core fn pdfcer_core::form_script::inventory::inventory
 pdfcer-core fn pdfcer_core::form_script::recompute::plan
@@ -3449,6 +3469,9 @@ pdfcer-core method pdfcer_core::edit::EditSession::set_dimension_group
 pdfcer-core method pdfcer_core::edit::EditSession::set_dimension_label
 pdfcer-core method pdfcer_core::edit::EditSession::set_dimension_style
 pdfcer-core method pdfcer_core::edit::EditSession::set_encryption
+pdfcer-core method pdfcer_core::edit::EditSession::set_field_calculation
+pdfcer-core method pdfcer_core::edit::EditSession::set_field_format
+pdfcer-core method pdfcer_core::edit::EditSession::set_field_validation
 pdfcer-core method pdfcer_core::edit::EditSession::set_group_scale
 pdfcer-core method pdfcer_core::edit::EditSession::set_group_standard
 pdfcer-core method pdfcer_core::edit::EditSession::set_group_style
@@ -3537,12 +3560,15 @@ pdfcer-core method pdfcer_core::edit::MarkupNote::validate
 pdfcer-core method pdfcer_core::edit::MarkupOptions::validate
 pdfcer-core method pdfcer_core::edit::MarkupStyle::is_empty
 pdfcer-core method pdfcer_core::edit::MarkupStyleSupport::for_subtype
+pdfcer-core method pdfcer_core::edit::MkColorEdit::resolved
 pdfcer-core method pdfcer_core::edit::NamedAction::as_pdf_name
 pdfcer-core method pdfcer_core::edit::NewCheckBox::apply_defaults
 pdfcer-core method pdfcer_core::edit::NewCheckBox::checked
 pdfcer-core method pdfcer_core::edit::NewCheckBox::declining_tooltip
 pdfcer-core method pdfcer_core::edit::NewCheckBox::new
+pdfcer-core method pdfcer_core::edit::NewCheckBox::with_background
 pdfcer-core method pdfcer_core::edit::NewCheckBox::with_border
+pdfcer-core method pdfcer_core::edit::NewCheckBox::with_border_color
 pdfcer-core method pdfcer_core::edit::NewCheckBox::with_flags
 pdfcer-core method pdfcer_core::edit::NewCheckBox::with_on_state
 pdfcer-core method pdfcer_core::edit::NewCheckBox::with_tooltip
@@ -3553,7 +3579,9 @@ pdfcer-core method pdfcer_core::edit::NewChoiceField::declining_tooltip
 pdfcer-core method pdfcer_core::edit::NewChoiceField::multi_select
 pdfcer-core method pdfcer_core::edit::NewChoiceField::new
 pdfcer-core method pdfcer_core::edit::NewChoiceField::sorted
+pdfcer-core method pdfcer_core::edit::NewChoiceField::with_background
 pdfcer-core method pdfcer_core::edit::NewChoiceField::with_border
+pdfcer-core method pdfcer_core::edit::NewChoiceField::with_border_color
 pdfcer-core method pdfcer_core::edit::NewChoiceField::with_flags
 pdfcer-core method pdfcer_core::edit::NewChoiceField::with_tooltip
 pdfcer-core method pdfcer_core::edit::NewChoiceField::with_visibility
@@ -3565,7 +3593,9 @@ pdfcer-core method pdfcer_core::edit::NewImage::stretching
 pdfcer-core method pdfcer_core::edit::NewPushButton::apply_defaults
 pdfcer-core method pdfcer_core::edit::NewPushButton::declining_tooltip
 pdfcer-core method pdfcer_core::edit::NewPushButton::new
+pdfcer-core method pdfcer_core::edit::NewPushButton::with_background
 pdfcer-core method pdfcer_core::edit::NewPushButton::with_border
+pdfcer-core method pdfcer_core::edit::NewPushButton::with_border_color
 pdfcer-core method pdfcer_core::edit::NewPushButton::with_flags
 pdfcer-core method pdfcer_core::edit::NewPushButton::with_tooltip
 pdfcer-core method pdfcer_core::edit::NewPushButton::with_visibility
@@ -3573,7 +3603,9 @@ pdfcer-core method pdfcer_core::edit::NewRadioButton::apply_defaults
 pdfcer-core method pdfcer_core::edit::NewRadioButton::declining_tooltip
 pdfcer-core method pdfcer_core::edit::NewRadioButton::new
 pdfcer-core method pdfcer_core::edit::NewRadioButton::selected
+pdfcer-core method pdfcer_core::edit::NewRadioButton::with_background
 pdfcer-core method pdfcer_core::edit::NewRadioButton::with_border
+pdfcer-core method pdfcer_core::edit::NewRadioButton::with_border_color
 pdfcer-core method pdfcer_core::edit::NewRadioButton::with_flags
 pdfcer-core method pdfcer_core::edit::NewRadioButton::with_group_flags
 pdfcer-core method pdfcer_core::edit::NewRadioButton::with_tooltip
@@ -3581,7 +3613,9 @@ pdfcer-core method pdfcer_core::edit::NewRadioButton::with_visibility
 pdfcer-core method pdfcer_core::edit::NewTextField::apply_defaults
 pdfcer-core method pdfcer_core::edit::NewTextField::declining_tooltip
 pdfcer-core method pdfcer_core::edit::NewTextField::new
+pdfcer-core method pdfcer_core::edit::NewTextField::with_background
 pdfcer-core method pdfcer_core::edit::NewTextField::with_border
+pdfcer-core method pdfcer_core::edit::NewTextField::with_border_color
 pdfcer-core method pdfcer_core::edit::NewTextField::with_comb
 pdfcer-core method pdfcer_core::edit::NewTextField::with_flags
 pdfcer-core method pdfcer_core::edit::NewTextField::with_max_len
@@ -3619,6 +3653,8 @@ pdfcer-core method pdfcer_core::edit::WidgetEdit::with_caption
 pdfcer-core method pdfcer_core::edit::WidgetEdit::with_rect
 pdfcer-core method pdfcer_core::edit::WidgetEdit::with_resize
 pdfcer-core method pdfcer_core::edit::WidgetEdit::with_visibility
+pdfcer-core method pdfcer_core::edit::WidgetEdit::without_background
+pdfcer-core method pdfcer_core::edit::WidgetEdit::without_border_color
 pdfcer-core method pdfcer_core::edit::WordBoundary::is_word_char
 pdfcer-core method pdfcer_core::editable::ImportReport::is_empty
 pdfcer-core method pdfcer_core::export::dxf::DxfUnits::for_unit
@@ -3701,6 +3737,7 @@ pdfcer-core method pdfcer_core::form_script::calc::Computation::coerced_operands
 pdfcer-core method pdfcer_core::form_script::datetime::DateTime::is_valid
 pdfcer-core method pdfcer_core::form_script::datetime::DateTime::weekday
 pdfcer-core method pdfcer_core::form_script::disclose::Disclosure::message
+pdfcer-core method pdfcer_core::form_script::emit::NotEmittable::describe
 pdfcer-core method pdfcer_core::form_script::format::FormatOutcome::decline_reason
 pdfcer-core method pdfcer_core::form_script::format::FormatOutcome::text
 pdfcer-core method pdfcer_core::form_script::format::NegativeStyle::from_code
@@ -4399,6 +4436,7 @@ pdfcer-core struct pdfcer_core::edit::AnnotationRotate
 pdfcer-core struct pdfcer_core::edit::AnnotsReorder
 pdfcer-core struct pdfcer_core::edit::BorderSpec
 pdfcer-core struct pdfcer_core::edit::ButtonActionChange
+pdfcer-core struct pdfcer_core::edit::CalcOrderChange
 pdfcer-core struct pdfcer_core::edit::ChoiceOption
 pdfcer-core struct pdfcer_core::edit::DefaultsApplied
 pdfcer-core struct pdfcer_core::edit::DeleteOutcome
@@ -4416,6 +4454,7 @@ pdfcer-core struct pdfcer_core::edit::FieldEdit
 pdfcer-core struct pdfcer_core::edit::FieldEditOutcome
 pdfcer-core struct pdfcer_core::edit::FieldGroupDeletion
 pdfcer-core struct pdfcer_core::edit::FieldRename
+pdfcer-core struct pdfcer_core::edit::FieldScriptChange
 pdfcer-core struct pdfcer_core::edit::FillOutcome
 pdfcer-core struct pdfcer_core::edit::FlattenOutcome
 pdfcer-core struct pdfcer_core::edit::FormSurgeryOutcome
@@ -5084,6 +5123,7 @@ pdfcer-core variant pdfcer_core::edit::CommandKind::SetDimensionDisplay
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetDimensionGroup
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetDimensionLabel
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetDimensionStyle
+pdfcer-core variant pdfcer_core::edit::CommandKind::SetFieldScript
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetGroupScale
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetGroupStandard
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetGroupStyle
@@ -5170,6 +5210,9 @@ pdfcer-core variant pdfcer_core::edit::EditError::FieldNotFound
 pdfcer-core variant pdfcer_core::edit::EditError::FieldObjectIsInPageTree
 pdfcer-core variant pdfcer_core::edit::EditError::FieldPropertyTypeMismatch
 pdfcer-core variant pdfcer_core::edit::EditError::FieldRectDegenerate
+pdfcer-core variant pdfcer_core::edit::EditError::FieldScriptNotEmittable
+pdfcer-core variant pdfcer_core::edit::EditError::FieldScriptOperandUnusable
+pdfcer-core variant pdfcer_core::edit::EditError::FieldScriptWrongFieldType
 pdfcer-core variant pdfcer_core::edit::EditError::FieldStateUnknown
 pdfcer-core variant pdfcer_core::edit::EditError::FormData
 pdfcer-core variant pdfcer_core::edit::EditError::FormLeafOutOfRange
@@ -5534,6 +5577,8 @@ pdfcer-core variant pdfcer_core::form_script::calc::Refusal::UnresolvedOperand
 pdfcer-core variant pdfcer_core::form_script::disclose::Reproducibility::NotReproducible
 pdfcer-core variant pdfcer_core::form_script::disclose::Reproducibility::RecomputableNotRun
 pdfcer-core variant pdfcer_core::form_script::disclose::Reproducibility::Recomputed
+pdfcer-core variant pdfcer_core::form_script::emit::NotEmittable::Custom
+pdfcer-core variant pdfcer_core::form_script::emit::NotEmittable::KeystrokeArgumentsNotCaptured
 pdfcer-core variant pdfcer_core::form_script::format::FormatOutcome::NotADate
 pdfcer-core variant pdfcer_core::form_script::format::FormatOutcome::NotNumeric
 pdfcer-core variant pdfcer_core::form_script::format::FormatOutcome::Rendered

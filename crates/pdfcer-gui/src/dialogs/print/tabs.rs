@@ -31,7 +31,7 @@ use egui::Ui;
 
 use crate::dialogs::print::PrintDialog;
 use crate::dialogs::print::spooler::{
-    Duplex, FormSourceSupport, JobResolution, Orientation, PageSubset, PaperChoice, ScaleMode,
+    Duplex, FormSourceSupport, Job, JobResolution, Orientation, PageSubset, PaperChoice, ScaleMode,
 };
 use crate::text::print as t;
 
@@ -178,13 +178,50 @@ pub(crate) fn parse_page_range(spec: &str, count: usize) -> Option<Vec<usize>> {
 // Tab 1 — Pages & Layout
 // ---------------------------------------------------------------------------
 
+/// Publish one scale radio's rectangle under [`super::REGION_SCALE_PREFIX`].
+///
+/// `ui_rect_visible` and not `ui_rect`, because the options column scrolls: a
+/// radio scrolled out of view must stop being published rather than hand a
+/// driver a rectangle it would click through to whatever is on top.
+///
+/// The percentage inside `ScaleMode::Custom` is ignored — all four modes are
+/// one radio each, and `Custom(0.35)` and `Custom(1.0)` are the same control.
+fn publish_scale_region(ui: &egui::Ui, mode: ScaleMode, rect: egui::Rect) {
+    let key = match mode {
+        // ui-text-exempt: diagnostic region name, never displayed in the UI
+        ScaleMode::Fit => "fit",
+        // ui-text-exempt: diagnostic region name, never displayed in the UI
+        ScaleMode::ActualSize => "actual",
+        // ui-text-exempt: diagnostic region name, never displayed in the UI
+        ScaleMode::ShrinkOversized => "shrink",
+        // ui-text-exempt: diagnostic region name, never displayed in the UI
+        ScaleMode::Custom(_) => "custom",
+    };
+    crate::diag::ui_rect_visible(
+        &format!("{}{key}", super::REGION_SCALE_PREFIX),
+        rect,
+        ui.clip_rect(),
+    );
+}
+
 /// Which pages, and how each one lands on the sheet.
+///
+/// Takes the planned job rather than the sheet extracted from it, because the
+/// position group at the foot of this tab needs the placement of the sheet on
+/// screen as well as the paper it lands on, and both must come from the same
+/// plan. Pulling one value out here and the other out at the call site is how
+/// a tab comes to describe two different jobs in one column.
 pub(super) fn pages_layout(
     ui: &mut Ui,
     dialog: &mut PrintDialog,
     page_count: usize,
-    sheet: Option<(f64, f64)>,
+    job: Option<&Job>,
+    page_sizes: &[(f64, f64)],
 ) {
+    // The TURNED sheet, so every sentence below names the rectangle the job
+    // was actually laid out against rather than the device's un-rotated
+    // default. `None` while there is no plan, which the sentences handle.
+    let sheet = job.map(|j| j.device.physical_pt);
     ui.label(t::pages_heading());
     ui.radio_value(&mut dialog.range, PrintRange::All, t::range_all(page_count));
     ui.radio_value(&mut dialog.range, PrintRange::Current, t::range_current());
@@ -241,13 +278,17 @@ pub(super) fn pages_layout(
         (ScaleMode::ActualSize, t::scale_actual()),
         (ScaleMode::ShrinkOversized, t::scale_shrink()),
     ] {
-        if ui.radio(dialog.scale == mode, label).clicked() {
+        let radio = ui.radio(dialog.scale == mode, label);
+        publish_scale_region(ui, mode, radio.rect);
+        if radio.clicked() {
             dialog.scale = mode;
         }
     }
     let custom_selected = matches!(dialog.scale, ScaleMode::Custom(_));
     ui.horizontal(|ui| {
-        if ui.radio(custom_selected, t::scale_custom()).clicked() {
+        let radio = ui.radio(custom_selected, t::scale_custom());
+        publish_scale_region(ui, ScaleMode::Custom(0.0), radio.rect);
+        if radio.clicked() {
             dialog.scale = ScaleMode::Custom(f64::from(dialog.custom_percent) / 100.0);
         }
         // Enabled only while Custom is chosen, and **greyed rather than
@@ -422,6 +463,11 @@ pub(super) fn pages_layout(
         ui.add_space(2.0);
         ui.label(egui::RichText::new(t::paper_auto_mixed()).small().weak());
     }
+
+    // Last in the tab, because it is the only group here that acts on ONE
+    // sheet: everything above sets the job. See
+    // [`super::position::group`] for why it is not in the preview strip.
+    super::position::group(ui, dialog, job, page_sizes);
 }
 
 // ---------------------------------------------------------------------------

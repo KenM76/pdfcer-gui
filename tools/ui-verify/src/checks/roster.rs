@@ -554,6 +554,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // adds a fifth by copying one of them, the copied file is what they
         // will read.
         Box::new(print_clip_claim::PrintClipClaimFollowsThePreview),
+        // After the other print checks, for the reason they are after
+        // `print_dialog`: every skip this one can produce -- the dialog never
+        // opened, the spooler refused, the ribbon control is missing -- is
+        // somebody else's subject, and a reader of a failing run should meet
+        // the specific cause first. It never presses commit either.
+        Box::new(print_position::ThePrintedPageCanBeMovedOnThePaper),
         // After the print checks above it, for the reason they give.
         // **NEVER RUN** — registered with the operator at
         // his machine; its own header says so first and says what a first run

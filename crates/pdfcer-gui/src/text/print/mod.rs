@@ -978,7 +978,7 @@ pub fn preview_zoom_percent(percent: u32) -> String {
 /// The gesture hint under the preview.
 #[must_use]
 pub const fn preview_pan_hint() -> &'static str {
-    "Drag to pan, Ctrl+wheel to zoom"
+    "Drag the page to move it on the sheet, drag the paper to pan, Ctrl+wheel to zoom"
 }
 
 /// Move the preview into a window of its own — operator request O112.
@@ -1141,6 +1141,15 @@ mod footer;
 // list is exactly where the next addition goes missing. A sixth footer string
 // added next door is reachable as `t::…` the moment it is written.
 pub use footer::*;
+
+/// **Where the page sits on the paper** — operator request O208.
+///
+/// Its own file because every sentence in it is about one quantity and the two
+/// conventions that quantity needs stated; the module header carries both.
+mod position;
+
+// Glob re-exported, for the reason argued over `footer` above.
+pub use position::*;
 
 #[cfg(test)]
 mod tests {

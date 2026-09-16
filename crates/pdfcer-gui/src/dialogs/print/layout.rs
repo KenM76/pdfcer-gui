@@ -548,7 +548,7 @@ impl PrintDialog {
                     ui.allocate_ui_with_layout(
                         egui::vec2(options_width, column_height),
                         egui::Layout::top_down(egui::Align::Min),
-                        |ui| self.options_column(ui, job, doc.pages.len()),
+                        |ui| self.options_column(ui, job, doc.pages.len(), page_sizes),
                     );
                 });
             });

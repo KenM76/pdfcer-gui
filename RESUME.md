@@ -28,7 +28,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `20e539a2` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `d2fa7352` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -48,7 +48,24 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-1. **The form tools, a unit typed beside a number, and the rule behind both —
+1. **Drive the print-position feature — O208, and it is the only thing standing
+   between it and a ticked row.** Both clauses are built: the page drags on the
+   sheet, the four shortcuts and reset-all are there, the offset is typed or
+   nudged, the frame and sign are stated, the per-edge overhang is disclosed
+   off-canvas, and the crop hatch is four bands instead of two.
+   `the_printed_page_can_be_moved_on_the_paper` is written and registered and
+   **has never run green** — its two runs both SKIPPED, and the two causes are
+   worth knowing because both are harness defects with no symptom:
+   the print dialog is its own **child OS viewport**, so every rectangle it
+   publishes carries `viewport=` and must be converted through `frame_of`
+   rather than `session.frame()` (converting through the main window put the
+   clicks hundreds of points off the control, silently, because the numbers
+   stayed plausible); and the drag was sized at 240 pt against a preview canvas
+   that measures **340 x 438 logical points**, so its own room guard could never
+   pass. Both are fixed and neither is measured. It needs about two minutes of
+   his desktop. `print_clip_claim_follows_the_preview` was fixed in the same
+   breath and wants the same two minutes.
+2. **The form tools, a unit typed beside a number, and the rule behind both —
    O205, O206, O207.** The table he asked for is written: `FORMS_PARITY.md`,
    Acrobat against the engine at the pin against this shell, per kind x
    capability, every row cited. **Work from its section 8.1 in its own order.**
@@ -64,21 +81,27 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `src/units.rs` reached from the entry sites, the same shape O194 step 2 used for
    the display side. Section 8.2’s fifteen rows are the channel’s work, not ours,
    and three have moved: **G022 and G023 are both shipped upstream and the pin
-   now carries them** (`20e539a2`, bumped 2026-09-16, both re-measured in the
-   checkout rather than believed from a commit message) — so a `/Btn` rotation
+   now carries them** (measured at `20e539a2`; the lock has since moved to `d2fa7352`, which is
+   what row 3 quotes and what `place_page` was re-verified against — both
+   re-measured in the checkout rather than believed from a commit message) — so a `/Btn` rotation
    now turns, and G022’s reply carries a fact the request did not, that `/Q` is
    inheritable, so the clear-alignment control it unblocks is labelled *inherit*
    and never *Left*. That control is still unbuilt and is now GUI work with no
    blocker in front of it. E3 went out as **`request_G024`**, which asks for an *emitter* over
    the three script enums `classify` already parses — Acrobat’s Format, Validate
    and Calculate tabs, plus `/CO` upkeep and the `/F`+`/K` pairing, as **one
-   set**. That last clause is O206, which is doctrine rather than a feature:
+   set**. **It has landed, and the pin is the very commit that carries it** —
+   `d2fa7352` is *Pass 308.6 (G024)*, measured in the checkout, and there is no
+   reply file in `open/` announcing it: the delivery arrived as a commit before
+   it arrived as a note, which is now the third time. So the Format, Validate
+   and Calculate surface is GUI work with nothing in front of it. That last
+   clause is O206, which is doctrine rather than a feature:
    clause 7 of this file’s own contract, instrumented as section 7’s ten
    sibling sets. A request for one of a set is a request for the row, and the
    row ships whole or not at all. Row 26 overlaps the next item: radio, combo
    and list box have no driven coverage, and `fixtures/all-field-kinds.pdf`
    exists now to give them one.
-2. **Drive the four that just shipped — O201, O202, O203, O204.** All four are
+3. **Drive the four that just shipped — O201, O202, O203, O204.** All four are
    built, unit-falsified, gate-green and **not driven**, which is R1's exact
    failure shape: a green suite over a program nobody has used. Render-ahead is
    a band either side of the current page, ordered by distance ascending because
@@ -92,46 +115,46 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    One still-open sub-item: the forms panel's tab-order view numbers its rows
    from `/Annots` order while the ring uses the engine's derived sequence, so on
    a page carrying `/Tabs /R` or `/C` the two surfaces would disagree.
-3. **O198's remainder, which is O188** — a title-block run the exporter wrote as
+4. **O198's remainder, which is O188** — a title-block run the exporter wrote as
    one lump is still one lump: he can reach that text and drag a line, not take
    it apart. **The verb has landed and is in the pin**: `EditSession::split_text_object`
    with `text_object_split_plan` for the cost-before-committing half. Nothing in
    this shell calls either; the row in `ENGINE_BACKLOG.md` carries the five
    refusals that want operator sentences and the rule-4 disclosure `Line`
    granularity owes.
-4. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
-5. **O189** — bookmarks survive a cross-document page drag.
-6. **O183** — the nine-part ce-dimension paragraph, part 7 first.
-7. **O178** — multi-window tab dragging.
-8. **O182** — white seams between the image tiles of a colour rendering.
-9. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
+5. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
+6. **O189** — bookmarks survive a cross-document page drag.
+7. **O183** — the nine-part ce-dimension paragraph, part 7 first.
+8. **O178** — multi-window tab dragging.
+9. **O182** — white seams between the image tiles of a colour rendering.
+10. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
    unit control, and `ui_text` abbreviations. Step 2 shipped as an invariant:
    `src/units.rs` is the only place a document length is converted or rounded for
    display, `whole()` the only function permitted to round one, and
    `check-unit-conversion.sh` fails the build on a fresh `25.4` under the GUI.
    Font and type sizes are excluded, and the exclusion is written into source.
-10. **O195** — smart select in Review. `smart::enabled` defaults on and
+11. **O195** — smart select in Review. `smart::enabled` defaults on and
     `clicking.rs` reads the scope every frame, but `textsel::takes_the_press`
     answers `tool.is_text() || (Select && !edit_content)`, so in Review the plain
     Select press is consumed as a text sweep and the smart rung never sees it.
     Flipping the manifest condition alone would ship a visible, inert control,
     which is what R9 exists to prevent.
-11. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
+12. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
     wide and its corner grips eat every point on it; the fix is a grip that yields
     the body below some size, not a harness zoom that hides it.
-12. **Wire `SignReport::appearance_lines`** — the one engine delivery genuinely
+13. **Wire `SignReport::appearance_lines`** — the one engine delivery genuinely
     owed. It is what the engine drew into the signature box, and here it reaches
     only a trace the source marks as never displayed, so he signs without seeing
     what the stamp says while the engine records *a rectangle too small for them*
     as a real outcome. Off-canvas, in the signing dialog's result.
-13. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
+14. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
     last one reported `passed=86 failed=3 skipped=141` and **128 of those skips
     were one stuck notification toast**, so it measured nothing for more than
     half its roster while printing a tally that reads like a result. Ninety-five
     minutes taking the real cursor and keyboard, so only while he is away, and
     start `target/scratch/toast-watchdog.ps1` alongside it. Diff the SKIP set by
     NAME against the previous baseline in `target/scratch/`, in both directions.
-14. **The Set-scale window never appears, and the ordering story for it is
+15. **The Set-scale window never appears, and the ordering story for it is
     disproved — D64.** `app::frame`'s `ui` is one function: ribbon at 724, the
     command drain at 954, `dialogs.show` at 995 — so a dispatch always precedes
     `dialogs.show` in the same frame, and `export_text` shows a dialog drawing
@@ -250,25 +273,25 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
 ## Release discipline
 
-1. **Update the engine first**: `cargo update -p pdfcer-core -p pdfcer-render -p
+2. **Update the engine first**: `cargo update -p pdfcer-core -p pdfcer-render -p
    pdfcer-print`. `package-portable.py` does this as its own first step, so on a
    day the engine commits live every packaging run moves the pin and stamps the
    artefact `-dirty`: commit `Cargo.lock`, then package `--no-update`. A stale
    pin has cost eighteen missing images on his own file.
-2. **The order:** commit, `touch crates/pdfcer-gui/build.rs`, rebuild, re-drive
+3. **The order:** commit, `touch crates/pdfcer-gui/build.rs`, rebuild, re-drive
    the checks that read the build stamp against the shipped exe, off-screen smoke
    launch, `package-portable --no-build --no-update`, push, `gh release create`.
    **Never pass `--prerelease`** — GitHub hides one from `releases/latest`.
-3. **Smoke-launch off-screen before every release.** Ninety seconds, and it has
+4. **Smoke-launch off-screen before every release.** Ninety seconds, and it has
    beaten four thousand unit tests and the whole gate suite to a live defect: a
    geometry change moves where a document OPENS, not only where it can be dragged.
-4. **Publish every build worth keeping.** `package-portable.py` rotates the two
+5. **Publish every build worth keeping.** `package-portable.py` rotates the two
    OneDrive slots itself, replacing the older so the previous build survives;
    pass `--slot` only to RETRACT. Read `BUILD-INFO.txt` back out of **both**
    slots afterwards — a tool's own report is not evidence about its own effect —
    and say which slot holds which build, because the slot name carries no
    version. His install at `C:\Users\Ken\OneDrive\pdfcer\` is never touched, and
    the packager's argument against a release with nothing visible is overruled.
-5. **A test that proves WHICH mechanism ran must assert what the WRONG mechanism
+6. **A test that proves WHICH mechanism ran must assert what the WRONG mechanism
    cannot produce.** Falsify it by putting the old call back, never by breaking
    the input.
