@@ -401,6 +401,7 @@ fn two_adjacent_fields_never_claim_each_others_clicks() {
     let boxes = vec![
         WidgetBox {
             page: 0,
+            id: ObjId::new(1, 0),
             field: "A".to_owned(),
             widget: 0,
             kind: BoxKind::Text {
@@ -414,6 +415,7 @@ fn two_adjacent_fields_never_claim_each_others_clicks() {
         },
         WidgetBox {
             page: 0,
+            id: ObjId::new(2, 0),
             field: "B".to_owned(),
             widget: 0,
             kind: BoxKind::Text {
@@ -443,6 +445,7 @@ fn two_adjacent_fields_never_claim_each_others_clicks() {
 fn a_widget_drawn_over_another_claims_the_click() {
     let under = WidgetBox {
         page: 0,
+        id: ObjId::new(3, 0),
         field: "Under".to_owned(),
         widget: 0,
         kind: BoxKind::Check {

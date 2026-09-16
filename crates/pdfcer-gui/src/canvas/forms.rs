@@ -348,6 +348,14 @@ pub mod boxes;
 /// under R2; see its header for why the seam is real and not a cut.
 mod selecting;
 
+/// The order Tab visits a page's fields in, built from the engine's own
+/// `page_tab_sequence`. Split out under R2; see its header.
+mod ring;
+
+/// Tab's own half: advancing the ring, and the focus a button holds while
+/// it waits for a Space. Split out under R2; see its header.
+mod tabbing;
+
 /// Re-exported so the path `canvas::forms::right_click_hits_a_field` — which
 /// `canvas::rightclick` and `panels::properties::formfield` both cite by name
 /// — survived the R2 split unchanged.
@@ -395,28 +403,43 @@ const BOXES_SLOT: &str = "canvas-form-boxes"; // ui-text-exempt: trace slot name
 /// is the structural difference from [`crate::panels::forms::FormsUi`] — that
 /// one draws every row every frame and so must keep a draft per row.
 #[derive(Clone, Debug, PartialEq, Default)]
-struct Focus {
+pub(super) struct Focus {
     /// The document this belongs to. A different file makes every field name
     /// here meaningless.
-    path: PathBuf,
+    pub(super) path: PathBuf,
     /// The revision the draft was seeded from.
-    epoch: u64,
+    pub(super) epoch: u64,
     /// 0-based page index.
-    page: usize,
+    pub(super) page: usize,
     /// The field's fully-qualified name.
-    field: String,
+    pub(super) field: String,
     /// The widget's index within the field.
-    widget: usize,
+    pub(super) widget: usize,
     /// What the operator has typed and not yet committed.
-    draft: String,
+    pub(super) draft: String,
     /// `false` until the frame after the click, so the editor knows to ask for
     /// keyboard focus and to put the caret at the end exactly once.
-    seated: bool,
+    pub(super) seated: bool,
+    /// How many more frames this focus survives not being drawable.
+    ///
+    /// Zero for a focus that arrived by a click: the box was under the
+    /// pointer, so it is on screen, and a frame that cannot draw it is a
+    /// frame that has genuinely lost it.
+    ///
+    /// Non-zero only for a focus a Tab press moved to — see [`advance`].
+    /// That focus names a box which may be below the fold or on another
+    /// page, and the scroll that brings it into view lands one or more
+    /// frames later. Without this, [`editor`]'s two undrawable branches
+    /// would settle the focus on the very frame the reveal was asked for,
+    /// and Tab would appear to do nothing at all whenever the next field was
+    /// off screen — which is most of the time on a form worth tabbing
+    /// through.
+    pub(super) waiting: u8,
 }
 
 impl Focus {
     /// The `egui` id of this focus's editor.
-    fn editor_id(&self) -> Id {
+    pub(super) fn editor_id(&self) -> Id {
         Id::new((EDITOR_KEY, self.page, self.field.as_str(), self.widget))
     }
 
@@ -453,12 +476,12 @@ impl Focus {
 }
 
 /// Read the stored focus.
-fn load_focus(ctx: &egui::Context) -> Option<Focus> {
+pub(super) fn load_focus(ctx: &egui::Context) -> Option<Focus> {
     ctx.data(|d| d.get_temp::<Focus>(Id::new(FOCUS_KEY)))
 }
 
 /// Store, or forget, the focus.
-fn store_focus(ctx: &egui::Context, focus: Option<Focus>) {
+pub(super) fn store_focus(ctx: &egui::Context, focus: Option<Focus>) {
     let id = Id::new(FOCUS_KEY);
     ctx.data_mut(|d| match focus {
         Some(f) => {
@@ -685,7 +708,7 @@ type BoxKey = (PathBuf, u64);
 // ===========================================================================
 
 /// Record that this frame's Escape abandoned a draft.
-fn note_escape(ctx: &egui::Context) {
+pub(super) fn note_escape(ctx: &egui::Context) {
     ctx.data_mut(|d| d.insert_temp(Id::new(ESCAPE_KEY), true));
 }
 
@@ -802,6 +825,11 @@ pub(super) fn overlay(
 
     let placed = placed(&ctx, doc);
     let list = &placed.boxes;
+    // FIRST, so the editor drawn below is the one Tab has just arrived at.
+    // Asked before the empty-list return, so a press claimed on the frame an
+    // undo removed the last field is consumed rather than left parked for a
+    // later frame to act on.
+    tabbing::advance(&ctx, doc, list, actions);
     if list.is_empty() {
         return;
     }
@@ -862,7 +890,7 @@ fn offer(doc: &OpenDoc, tool: CanvasTool) -> bool {
 /// strip. **Committing rather than discarding** is the old spec's rule and it
 /// is right: a half-drawn markup shape has nothing an operator would miss, and
 /// a half-typed field value is something they typed on purpose.
-fn settle(ctx: &egui::Context, doc: &OpenDoc, actions: &mut Vec<Action>) {
+pub(super) fn settle(ctx: &egui::Context, doc: &OpenDoc, actions: &mut Vec<Action>) {
     let Some(focus) = load_focus(ctx) else {
         return;
     };
@@ -881,7 +909,7 @@ fn settle(ctx: &egui::Context, doc: &OpenDoc, actions: &mut Vec<Action>) {
 /// [`crate::panels::forms::rows::commit`] is the rule — **the panel's own pure
 /// function**, called rather than restated, so "tabbing through a field writes
 /// nothing" is one statement with one test and not two.
-fn commit(focus: &Focus, doc: &OpenDoc, actions: &mut Vec<Action>) {
+pub(super) fn commit(focus: &Focus, doc: &OpenDoc, actions: &mut Vec<Action>) {
     let stored = stored_value(doc, &focus.field).unwrap_or_default();
     let Some(value) =
         crate::panels::forms::rows::commit(true, focus.draft.as_str(), stored.as_str())
@@ -917,7 +945,7 @@ fn commit(focus: &Focus, doc: &OpenDoc, actions: &mut Vec<Action>) {
 /// stored value is the thing a draft is compared against, and a cached copy is
 /// one more thing that can be stale at exactly the moment the comparison
 /// decides whether to write.
-fn stored_value(doc: &OpenDoc, field: &str) -> Option<String> {
+pub(super) fn stored_value(doc: &OpenDoc, field: &str) -> Option<String> {
     let view = doc.session.view();
     let form = pdfcer_core::forms::parse_acroform(&view)?;
     form.fields
@@ -957,9 +985,17 @@ fn editor(
         .find(|b| b.page == focus.page && b.field == focus.field && b.widget == focus.widget)
         .and_then(|b| pages.iter().find(|v| v.page == b.page).map(|v| (b, v.map)));
     let Some((widget_box, map)) = placed else {
-        settle(&ctx, doc, actions);
-        return false;
+        return tabbing::hold_or_settle(&ctx, doc, focus, actions);
     };
+
+    let rect = editor_rect(&map, widget_box.rect);
+    if !ui.clip_rect().intersects(rect) {
+        // Scrolled out of the viewport. Same answer as a page that left the
+        // strip: commit what is there -- unless a Tab put the focus here and
+        // the scroll that reveals it is still in flight.
+        return tabbing::hold_or_settle(&ctx, doc, focus, actions);
+    }
+
     let BoxKind::Text {
         multiline,
         password,
@@ -967,19 +1003,11 @@ fn editor(
         align,
     } = widget_box.kind
     else {
-        // A button cannot hold a caret. Reachable only if a document changed
-        // a field's type under a live focus, which is not a case to panic on.
-        store_focus(&ctx, None);
-        return false;
+        // A button cannot hold a caret, so it holds a focus RING instead and
+        // reads Space, Enter and the arrow keys. Reached both by a Tab onto a
+        // check box and by a click on one.
+        return tabbing::button_focus(ui, doc, list, focus, widget_box, rect, actions);
     };
-
-    let rect = editor_rect(&map, widget_box.rect);
-    if !ui.clip_rect().intersects(rect) {
-        // Scrolled out of the viewport. Same answer as a page that left the
-        // strip: commit what is there rather than keep an invisible caret.
-        settle(&ctx, doc, actions);
-        return false;
-    }
 
     let id = focus.editor_id();
     let mut draft = truncate(&focus.draft, max_len);
@@ -1084,6 +1112,12 @@ fn editor(
         });
     }
     let response = ui.put(rect, edit);
+    // The canvas now holds the keyboard, and says so -- this is what lets
+    // `raw_input_hook` take the next Tab away from egui's focus walk before
+    // `Focus::begin_pass` can latch it. Published every frame the editor is
+    // drawn, because the identity test that reads it is also its freshness
+    // test: see `canvas::tabnav`'s header.
+    crate::canvas::tabnav::publish(&ctx, crate::canvas::tabnav::Scope::Field, id);
 
     // ★ Seat the caret exactly once. The click that asked for this editor was
     // consumed by the PAGE (see the module header §4), so there is no click
@@ -1129,6 +1163,9 @@ fn editor(
         Some(Focus {
             draft,
             seated: true,
+            // The editor drew, so whatever reveal it was waiting for has
+            // landed. See `Focus::waiting`.
+            waiting: 0,
             ..focus
         }),
     );
@@ -1212,6 +1249,7 @@ fn click(
                     widget: widget_box.widget,
                     draft: stored_value(doc, &widget_box.field).unwrap_or_default(),
                     seated: false,
+                    waiting: 0,
                 }),
             );
             crate::diag::trace(|| {
@@ -1232,18 +1270,61 @@ fn click(
                 on_state.clone()
             };
             raise_button(&widget_box.field, state, actions);
+            focus_button(ctx, doc, page, widget_box);
         }
         // Clicking the selected radio does nothing — see `BoxKind::Radio`.
         BoxKind::Radio { on_state, on } => {
             if !*on {
                 raise_button(&widget_box.field, on_state.clone(), actions);
             }
+            focus_button(ctx, doc, page, widget_box);
         }
     }
 }
 
+/// Put the keyboard on the button that was just clicked.
+///
+/// Without this a click on a check box would take the ring's place in the
+/// form away from it: the page's own response is focusable, so the click
+/// leaves egui's focus on the PAGE, `tabnav` finds no published owner, and
+/// the next Tab walks the ribbon -- which is O204's complaint, reached from
+/// the one gesture most likely to precede a Tab.
+///
+/// `seated: false` so [`tabbing::button_focus`] asks for the keyboard on the
+/// next frame; `waiting: 0` because a box under the pointer is on screen, and
+/// a frame that cannot draw it has genuinely lost it.
+fn focus_button(ctx: &egui::Context, doc: &OpenDoc, page: usize, widget_box: &WidgetBox) {
+    store_focus(
+        ctx,
+        Some(Focus {
+            path: doc.path.clone(),
+            epoch: doc.edit_epoch,
+            page,
+            field: widget_box.field.clone(),
+            widget: widget_box.widget,
+            // Equal to the stored value by construction, which is what makes
+            // a button's focus harmless to `commit`: it never differs, so
+            // nothing is ever written on the way out.
+            draft: stored_value(doc, &widget_box.field).unwrap_or_default(),
+            seated: false,
+            waiting: 0,
+        }),
+    );
+}
+
+/// **Whether a canvas form ring is holding the keyboard**, and so must be
+/// left the space bar.
+///
+/// Asked by [`crate::canvas::tool::arm::space_held`]. The whole of the
+/// argument is on [`crate::canvas::tabnav::owns_focus`]; this is the form
+/// module's name for it, so that caller reads as a sentence about forms.
+#[must_use]
+pub fn ring_takes_space(ctx: &egui::Context) -> bool {
+    crate::canvas::tabnav::owns_focus(ctx)
+}
+
 /// Push one button-state change.
-fn raise_button(field: &str, state: String, actions: &mut Vec<Action>) {
+pub(super) fn raise_button(field: &str, state: String, actions: &mut Vec<Action>) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!("form-button field={field} state={state}")

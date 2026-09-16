@@ -622,6 +622,14 @@ pub struct OpenDoc {
     /// written when the destination resolves and spent on the first frame that
     /// is drawing the page it names.
     pub dest_scroll: Option<crate::canvas::destscroll::DestScroll>,
+    /// **A rectangle a Tab press asked to be brought into view.** See
+    /// [`crate::canvas::minreveal`]; `OPERATOR_REQUESTS.md` O204.
+    ///
+    /// Beside [`Self::dest_scroll`] because it is the same kind of one-shot,
+    /// and ranked immediately below it for the reason `canvas::offset`'s arm
+    /// carries: a destination the operator clicked outranks a focus move they
+    /// tabbed to.
+    pub min_reveal: Option<crate::canvas::minreveal::MinReveal>,
     /// **The horizontal scroll offset the view had when a destination was
     /// raised**, before anything navigated.
     ///
@@ -1259,6 +1267,7 @@ impl OpenDoc {
             recentre: false,
             pending_destination: None,
             dest_scroll: None,
+            min_reveal: None,
             dest_origin_x: None,
             view_viewport: None,
             // Nothing to reveal on a document nobody has searched yet — and,

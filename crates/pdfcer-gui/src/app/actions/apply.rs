@@ -390,14 +390,15 @@ impl PdfcerApp {
             Action::ZoomBy(factor) => doc.view.zoom_by(factor, max_zoom),
             Action::ZoomIn => doc.view.zoom_in(max_zoom),
             Action::ZoomOut => doc.view.zoom_out(max_zoom),
-            // ★★ **The seven view verbs**, in one arm and one function.
+            // ★★ **The view verbs**, in one arm and one function.
             //
             Action::Fit(_)
             | Action::ZoomTo(_)
             | Action::NextPage
             | Action::PrevPage
             | Action::GoToPage(_)
-            | Action::GoToDestination(_) => {
+            | Action::GoToDestination(_)
+            | Action::RevealRect { .. } => {
                 super::view::apply(doc, action, page_count, max_zoom);
             }
             // ★ Every geometry verb, routed. The body is in

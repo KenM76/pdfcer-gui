@@ -482,6 +482,27 @@ pub enum Action {
     PrevPage,
     /// Jump to a 0-based page index, clamped into the document.
     GoToPage(usize),
+    /// **Bring a rectangle on `page` into view with the least movement.**
+    ///
+    /// `OPERATOR_REQUESTS.md` O204's reveal, and the only way the canvas can
+    /// ask for one: `canvas::forms::overlay` holds the document as a shared
+    /// reference on purpose, so the park has to travel as an action like
+    /// every other outcome that surface produces.
+    ///
+    /// `min` and `max` are fractions of the page's **canvas** extent — see
+    /// [`crate::canvas::minreveal::MinReveal`], which carries why fractions
+    /// and why they span frames. `why` reaches the operator through nothing
+    /// but a `PDFCER_DIAG` line.
+    RevealRect {
+        /// 0-based page index.
+        page: usize,
+        /// Top-left, as a fraction of the page's canvas extent.
+        min: (f32, f32),
+        /// Bottom-right, in the same units.
+        max: (f32, f32),
+        /// Who asked. Never displayed.
+        why: &'static str,
+    },
     /// ★★ **Everything that changes page GEOMETRY** — delete, the four move
     /// verbs, the Bézier handle, and the transform.
     ///

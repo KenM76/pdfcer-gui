@@ -180,6 +180,23 @@ impl eframe::App for PdfcerApp {
         });
     }
 
+    /// **The one place a key can be taken away from `egui`'s focus walk.**
+    ///
+    /// `OPERATOR_REQUESTS.md` O204. `egui::Memory`'s `Focus::begin_pass`
+    /// latches a Tab into a focus direction straight from the `RawInput`
+    /// events, before any application `ui` code runs, so a widget that
+    /// consumed Tab out of `InputState` later in the frame would remove the
+    /// evidence and not the effect. This hook runs before that latch.
+    ///
+    /// It is deliberately one line and knows nothing about forms, objects or
+    /// pages: the decision about whether the canvas owns this press is an
+    /// identity test inside [`crate::canvas::tabnav::claim`], against an id
+    /// the canvas published for itself. Anything more here would be the
+    /// application frame learning what a form field is.
+    fn raw_input_hook(&mut self, ctx: &egui::Context, raw_input: &mut egui::RawInput) {
+        crate::canvas::tabnav::claim(ctx, raw_input);
+    }
+
     /// eframe 0.35's entry point is `ui`, **not** `update`.
     ///
     /// The trait hands a root [`egui::Ui`] rather than a [`egui::Context`]

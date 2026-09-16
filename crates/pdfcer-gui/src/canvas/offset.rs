@@ -14,8 +14,9 @@
 //! | 4 | **an anchored zoom** | the whole point of the anchor is that one page point does not move as the zoom does |
 //! | 5 | **a find reveal** | the operator asked to be taken somewhere, and a one-shot navigation outranks nothing else in flight |
 //! | 6 | **a point destination's scroll** | the same argument as the reveal, and one more: it must outrank the page-change scroll below, which would otherwise satisfy the destination's page turn without visiting the point. O200 |
-//! | 7 | **a page command's scroll** | under a continuous mode a page command has to scroll the strip to the page it named, and that is a one-shot the operator asked for |
-//! | 8 | **a middle-drag pan** | a live gesture — and it is LAST for the reason it wins anyway: it re-arms itself on the next frame, while every one-shot above it is spent once |
+//! | 7 | **a Tab ring's minimal reveal** | below the destination because a link the operator clicked outranks a focus move they tabbed to, and above the page-change scroll for the destination's own reason: a cross-page Tab raises a page command, and letting that park the view at the top of the sheet would leave the field unvisited. O204 |
+//! | 8 | **a page command's scroll** | under a continuous mode a page command has to scroll the strip to the page it named, and that is a one-shot the operator asked for |
+//! | 9 | **a middle-drag pan** | a live gesture — and it is LAST for the reason it wins anyway: it re-arms itself on the next frame, while every one-shot above it is spent once |
 //!
 //! ## Why it returns an offset instead of configuring the area
 //!
@@ -108,7 +109,7 @@ pub(super) struct Decision {
     /// The winning arm's name, or [`Decision::NONE`]'s `"none"`.
     ///
     /// One token per arm, in the same order the chain tests them: `deep`,
-    /// `handover`, `fit`, `zoom-anchor`, `reveal`, `dest-scroll`,
+    /// `handover`, `fit`, `zoom-anchor`, `reveal`, `dest-scroll`, `min-reveal`,
     /// `page-scroll`, `pan`, `open-seed`. Diagnostic only — it reaches the
     /// operator through nothing but a `PDFCER_DIAG` line.
     pub source: &'static str,
@@ -323,6 +324,30 @@ pub(super) fn decide(
         doc.tracked_page = doc.view.page_index;
         // ui-text-exempt: diagnostic token, never displayed in the UI
         return Decision::won("dest-scroll", offset);
+    } else if let Some(offset) = crate::canvas::minreveal::take_reveal_offset(
+        doc,
+        current_display,
+        (vp.x, vp.y),
+        doc_offset,
+        &to_strip,
+    ) {
+        // A Tab press whose next stop was below the fold —
+        // `OPERATOR_REQUESTS.md` O204. Ranked here for the two reasons the
+        // module header's row states, and it is the only arm in this chain
+        // that can decline to move at all: `minreveal` returns `None` when
+        // both axes already show the rectangle, which is the common case and
+        // is what keeps a Tab from nudging a view the operator had settled.
+        //
+        // Already converted to strip space, as the destination's is, and for
+        // the same reason: the visibility test has to be made in the space
+        // the answer is in.
+        //
+        // The side effect runs before the return, as the two arms above do:
+        // a reveal that crossed pages has navigated, so the page it landed
+        // on is the tracked one.
+        doc.tracked_page = doc.view.page_index;
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won("min-reveal", offset);
     } else if let Some(offset) = crate::canvas::strip::page_scroll_offset(doc, layout, (vp.x, vp.y))
     {
         // ui-text-exempt: diagnostic token, never displayed in the UI

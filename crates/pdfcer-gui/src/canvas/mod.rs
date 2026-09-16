@@ -270,6 +270,10 @@ pub mod marquee;
 pub mod markup;
 pub mod measure;
 pub mod menus;
+/// Bringing a rectangle into view with the LEAST movement — `OPERATOR_REQUESTS.md`
+/// O204's reveal. A one-shot parked on the document and spent by [`offset`]'s
+/// ranked chain; its header carries why it cannot be `destscroll` with a flag.
+pub mod minreveal;
 // ★★★ The frame's ONE question about the page's object model: does anything
 // this frame does need a decomposition? It was four lines inside
 // `canvas::interact` — a hand-maintained `matches!` over `GestureOutcome` that
@@ -426,6 +430,11 @@ mod backdrop;
 /// intent and a per-stamp control would be showing a value it invented.
 pub mod stampfit;
 pub mod strip;
+/// ★★ **Tab moves through what the operator clicked on, not through the
+/// ribbon** — `OPERATOR_REQUESTS.md` O204. The seam that takes the press
+/// off `egui` before its focus walk latches, and the pure ring step both
+/// canvas rings share. Its header carries why no other seam can work.
+pub mod tabnav;
 pub mod target;
 pub mod tier;
 // Selecting TEXT on the page, and copying it: the mode gate that needs no

@@ -42,6 +42,7 @@ fn an_edit_reseeds_the_draft_and_a_different_document_discards_it() {
         widget: 0,
         draft: "Anna".to_owned(),
         seated: true,
+        waiting: 0,
     };
 
     // Same document, same revision: the draft survives, or typing would be
@@ -112,6 +113,7 @@ fn the_panel_reads_the_pages_draft_only_while_the_page_holds_the_keyboard() {
         widget: 0,
         draft: "Ann".to_owned(),
         seated: true,
+        waiting: 0,
     };
 
     // Focused on the page: the panel gets the live draft.

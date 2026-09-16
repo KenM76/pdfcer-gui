@@ -282,6 +282,15 @@ pub struct WidgetBox {
     /// The widget's index within `Field::widgets`, used only to salt the
     /// editor's `egui` id so two boxes of one field cannot share one caret.
     pub widget: usize,
+    /// The widget annotation's own object id.
+    ///
+    /// Carried so a tab ring can be built from the ENGINE's answer rather
+    /// than from this list's order. `EditSession::page_tab_sequence` returns
+    /// `Vec<ObjId>`, and an object id is the only vocabulary in which this
+    /// list and that answer can be joined — `/Annots` order, which is what
+    /// this list is sorted into, is the tab order only on a page with no
+    /// `/Tabs` entry. See `OPERATOR_REQUESTS.md` O204.
+    pub id: ObjId,
     /// What a click means.
     pub kind: BoxKind,
     /// Where it is, in canvas space.
@@ -598,6 +607,7 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
                     page: page_index,
                     field: field.fully_qualified_name.clone(),
                     widget: widget_index,
+                    id: widget.id,
                     kind,
                     rect: canvas,
                     fill: editor_fill(widget),

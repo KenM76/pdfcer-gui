@@ -711,9 +711,21 @@ pub fn arm_text_edit(ctx: &egui::Context, kind: TextEditKind) -> CanvasTool {
 /// `app::keyboard` asks the same question about the same second claimant, so
 /// the predicate exists exactly **once** and `tools/gates/check-typing-guard.sh`
 /// refuses a second copy.
+///
+/// # The form ring is a third claimant, and it is a different question
+///
+/// A check box on the Tab ring reads Space as *toggle me*, and it holds no
+/// caret, so `composing` is false while it does. [`forms::ring_takes_space`]
+/// is not a second copy of the typing predicate the gate forbids -- that one
+/// asks whether a caret is open, this one asks whether the canvas owns the
+/// keyboard at all.
+///
+/// [`forms::ring_takes_space`]: crate::canvas::forms::ring_takes_space
 #[must_use]
 pub fn space_held(ctx: &egui::Context) -> bool {
-    !crate::canvas::textedit::composing(ctx) && ctx.input(|i| i.key_down(Key::Space))
+    !crate::canvas::textedit::composing(ctx)
+        && !crate::canvas::forms::ring_takes_space(ctx)
+        && ctx.input(|i| i.key_down(Key::Space))
 }
 
 /// What the primary button means on this frame — [`resolve`] applied to the

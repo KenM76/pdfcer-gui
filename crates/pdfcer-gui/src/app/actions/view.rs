@@ -50,6 +50,26 @@ pub(super) fn apply(doc: &mut OpenDoc, action: Action, page_count: usize, max_zo
         Action::NextPage => doc.view.next_page(page_count),
         Action::PrevPage => doc.view.prev_page(page_count),
         Action::GoToPage(index) => doc.view.go_to_page(index, page_count),
+        // Parked, not performed: the least-movement solve needs the page's
+        // drawn size and the viewport, neither of which this phase has.
+        // `canvas::offset`'s ranked chain spends it. When a `GoToPage` was
+        // raised beside this one the park outlives the page turn by design —
+        // see `MinReveal`'s grace frames.
+        Action::RevealRect {
+            page,
+            min,
+            max,
+            why,
+        } => crate::canvas::minreveal::park(
+            doc,
+            crate::canvas::minreveal::MinReveal {
+                page,
+                min,
+                max,
+                waited: 0,
+                why,
+            },
+        ),
         // ★★ **A bookmark's destination**, parked rather than performed:
         // the landing needs a viewport, which this phase has none of.
         // `canvas::destination` drains it and carries the argument.
