@@ -622,6 +622,17 @@ Click the field on the page and type, exactly as you would in any reader — in
 mode to enter and never will be; filling a form is the reason most form
 documents exist.
 
+**Tab moves to the next field** and **Shift+Tab** to the previous one, in the
+order the form itself declares rather than the order the boxes happen to sit in.
+It carries on across pages, scrolling only as far as it must to bring the field
+into view and leaving your magnification alone. **Space** ticks a check box you
+have tabbed to, instead of scrolling the page. A radio group is one stop, not
+one per button.
+
+On a page with no form, click the page and **Tab** walks the objects drawn on it
+instead. Either way it stays in the document: it will not jump up into the
+ribbon and leave you pressing Escape to get back.
+
 The **Forms panel** (View ▸ Panels) lists every field and fills them too. Use it
 when a field will not take a click: some fields cannot be typed into on the page
 — one with nothing drawn there, one on a rotated sheet, or a drop-down — and the
@@ -701,6 +712,28 @@ and tells you it did — *the box moved* and *the box was resized and its
 contents redrawn* are different things to have done to a file.
 
 Each change is one press and one **Ctrl+Z**.
+
+**The colours.** The box has a **background** and a **border**, and the text
+drawn in it has a colour of its own — they are different things and they are set
+separately. You can pick all of them before you place the first field, in the
+placement window, and pdfcer carries the answer into the next field you place.
+Each colour also offers **remove**, which makes the file silent about it, and
+the background offers **no colour** as well; on a push button those two look
+different, one giving no plate at all and the other the grey one. Whichever
+would change nothing is greyed and says why.
+
+**The field's own text is one group — font, size and colour together.** That is
+how a PDF stores it: one line holding all three. So pdfcer reads all three back
+before it writes any one of them, and changing the colour cannot quietly change
+the typeface. A size of **Auto** means the reader picks a size that fits the box
+and re-picks it as the value changes, which is usually what a new field wants.
+The fourteen faces offered are the ones built into every PDF reader, so a form
+using them looks the same everywhere and carries no embedded font. A signature
+has no text of its own and so has no such group.
+
+If a field's text is set in an ink with no single screen colour — a four-ink
+separation, say — pdfcer says so and leaves it exactly as it is, rather than
+showing you an approximation you would overwrite the moment you pressed Set.
 
 **What cannot be changed is the kind of field it is.** A text field cannot
 become a check box; place the one you want and delete the other.
@@ -854,6 +887,12 @@ overrules the DXF units you set, always in that direction.
 | **Alt** *(held)* | Suspend the snap for one pick or one drag |
 | **Shift** *(held)* | Lock a drag to one axis |
 | **Tab** | Step through the snap candidates under the cursor, while a measure tool is armed |
+
+### Forms
+| | |
+|---|---|
+| **Tab** / **Shift+Tab** | Next / previous field, in the form's own order, across pages |
+| **Space** | Tick the check box you have tabbed to |
 
 ### View
 | | |
