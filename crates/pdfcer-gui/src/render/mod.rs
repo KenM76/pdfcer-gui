@@ -132,6 +132,9 @@ pub mod region;
 /// it. So the region path engages only above the pixmap ceiling, where the
 /// whole-page path cannot work at all — nothing is taken away to pay for it.
 pub mod strategy;
+// Render-ahead: which page outside the viewport to fill next, and what
+// bounds it. Consulted by `settle` only once everything visible is drawn.
+mod prefetch;
 // The per-frame raster decision, and the strip's scheduling.
 pub mod settle;
 // Several pages at once: the bounded texture cache, and what an undrawn page

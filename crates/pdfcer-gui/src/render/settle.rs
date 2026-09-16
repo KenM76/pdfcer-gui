@@ -89,6 +89,7 @@ use std::time::{Duration, Instant};
 
 use crate::app::PdfcerApp;
 use crate::app::state::{OpenDoc, Status};
+use crate::render::prefetch;
 use crate::render::raster::{self, PageTexture};
 use crate::render::strip::{PageRaster, PageState};
 use crate::render::worker::{RefusalKind, RenderKey, RenderOutcome};
@@ -643,7 +644,7 @@ impl OpenDoc {
     ///
     /// # Why this exists as one function rather than two conditions
     ///
-    /// Two callers need the same answer and they must never disagree:
+    /// Three callers need the same answer and they must never disagree:
     ///
     /// * [`Self::fill_strip`] uses it to **not place an order** it knows cannot
     ///   be filled — the fix for the operator's
@@ -657,6 +658,10 @@ impl OpenDoc {
     ///   never coming at this zoom. That is the wrong-refusal-sentence class of
     ///   defect: the sentence is read as an answered question and nobody
     ///   investigates.
+    /// * `render::prefetch` applies it to every band candidate, so a sheet
+    ///   that cannot be ordered on arrival is not ordered ahead of time
+    ///   either. Without it render-ahead would spend its whole budget
+    ///   re-offering the same unorderable A1 every frame.
     ///
     /// # What it deliberately does NOT ask
     ///
@@ -1155,26 +1160,62 @@ impl PdfcerApp {
                 )
             });
 
-        if let Some(page) = next {
+        // O201 requirement 2, in his words: *"the ones on screen should always
+        // take precedence to be rendered first"*. Structurally, the band below is
+        // only consulted when `next` is `None`, so a prefetch can never be
+        // ORDERED ahead of a visible page. That covers the queue and not the
+        // worker: a prefetch already running would still make a page he has just
+        // scrolled to wait out a render of a page he has not reached.
+        //
+        // So a running prefetch is CANCELLED for a visible page. The predicate
+        // can only be true while a page that is neither visible nor current is
+        // rendering, and spawning makes it false, so this cannot chase itself —
+        // which is the livelock `RenderKey` documents and the reason the strip's
+        // ordinary requests wait rather than pre-empt.
+        let preempting = next.is_some()
+            && doc
+                .render_worker
+                .rendering_key()
+                .is_some_and(|key| key.page() != current && !visible.contains(&key.page()));
+
+        let order = match next {
+            Some(page) => Some((page, false)),
+            // Every visible page is filled, so what is left of the budget goes
+            // to the pages he has not reached yet.
+            None => doc
+                .prefetch_candidate(&visible, raster_scale)
+                .map(|page| (page, true)),
+        };
+
+        // The off-canvas half of rule 4 for render-ahead: nothing on the
+        // page says a picture arrived early, so the count has to be
+        // reportable from somewhere. Emitted before the branch that may or
+        // may not act, so the resident band is stated every frame the
+        // number changes rather than only on the frames that order.
+        prefetch::disclose(doc);
+
+        if let Some((page, prefetch)) = order {
             if settling {
                 // The wake-up. See this function's docs: without it the
                 // deadline passes on an idle window with no frame to notice
                 // it, and the strip stops filling until the operator moves the
                 // mouse.
                 ctx.request_repaint_after(doc.zoom_commit_at - now);
-            } else if !doc.render_worker.is_rendering() {
+            } else if !doc.render_worker.is_rendering() || preempting {
+                let seen = visible.len();
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    format!(
-                        "strip-raster-requested page={page} visible={}",
-                        visible.len()
-                    )
+                    if prefetch {
+                        format!("strip-prefetch-requested page={page} current={current}")
+                    } else {
+                        format!("strip-raster-requested page={page} visible={seen}")
+                    }
                 });
                 doc.rasterize(ctx, page, raster_scale);
             }
-            // The third case — a render already in flight — needs nothing:
-            // `settle_and_rasterize` asks for a frame on every frame a worker
-            // is running, so the next one arrives without help.
+            // The remaining case — a visible render already in flight — needs
+            // nothing: `settle_and_rasterize` asks for a frame on every frame a
+            // worker is running, so the next one arrives without help.
         }
         doc.strip_visible = visible;
     }

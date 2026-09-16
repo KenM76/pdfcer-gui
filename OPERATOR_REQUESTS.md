@@ -144,7 +144,7 @@ that same unchanged magnification. In both, the solver read `origin_x` as the
 offset measured *before* the click, which is the property that makes "where you
 were looking" the operator rather than the page-turn.
 
-## O201 — **FILED** — pages should already be rendered when he scrolls to them, and the visible ones come first
+## O201 — ◑ **BUILT AND UNIT-FALSIFIED — NOT YET DRIVEN** — pages should already be rendered when he scrolls to them, and the visible ones come first
 
 > *"on multipage documents I noticed with scanned pdf I have to wait for pages
 > to load as a I scroll to them. As many pages as we can should be rendered and
@@ -230,6 +230,51 @@ owed off-canvas is the count: a `trace_changed` slot saying how many band pages
 are resident, so a driven check can assert the band filled rather than infer it
 from a timing.
 
+### What landed, 2026-09-16
+
+`crates/pdfcer-gui/src/render/prefetch.rs`. The design above is built as
+written rather than amended, and the three requirements map onto three
+separate mechanisms that can each be read on their own:
+
+- **Render ahead** is `prefetch_ranking(current, last, band)` — a pure
+  function over three integers, symmetric about the current page, nearest
+  first, forward winning each tie. Eight pages either side. Seven unit tests
+  pin the ORDER rather than a literal list, because the order is the part
+  that does not fail when it is wrong — it grinds — and reversing the step
+  loop turns three of them red, which is the falsification.
+- **Precedence** is the `None` arm of the existing visible scan and nothing
+  else, exactly as argued above. One thing the design did not name had to be
+  added: a prefetch already RUNNING would still make a page he has just
+  scrolled to wait for a page he has not reached, so a running prefetch is
+  now cancelled for a visible page. The issue order and the worker are two
+  different halves of his second sentence and only the first was covered.
+- **The budget** is `prefetch_headroom`, and it asks for room for one MORE
+  average page rather than for the cache to be under budget. Under budget is
+  satisfied again the instant eviction runs, so the weaker test would fill,
+  be trimmed back, and fill again for ever on an idle window.
+
+**The disclosure.** Nothing on the page says a picture arrived early — a
+prefetched page is the same request and the same raster as one he scrolled
+to. Off the canvas it reports the resident band, the texels and the budget
+on every change, so the connection between *“pages are ready when I get to
+them”* and *“this program is holding a gigabyte”* is readable rather than
+inferred. Render-ahead's own requests carry a **different** trace name from
+the strip's, and that separation is load-bearing: the existing driven check
+for the page cache asserts that no page is ever asked for twice, and a
+prefetched page may legitimately be evicted and asked for again. Folding the
+two lines together would have made that check unfalsifiable.
+
+**What it cost elsewhere.** `render/settle.rs` reached 1,554 lines, over rule
+R2's 1,500, so the subject was split out rather than the limit argued with;
+it is 1,410 now. Four documents claimed the strip cache was pruned to the
+visible set every frame, and one rule table stated as an invariant that
+*“nothing outside that set is ever requested — there is no read-ahead”*.
+That is the sentence this row overturns, and it is corrected in the same
+commit rather than left to contradict the code.
+
+**Not driven.** Every gate green and the unit tests falsified, but the band
+filling on a real scanned document is a claim about a running program and
+only `ui-verify` can make it. That runs at the end of this batch.
 ## O202 — **FILED** — form objects have no way to set their colour, before or after placement
 
 > *"the forms objects have no way to edit their colour before or after

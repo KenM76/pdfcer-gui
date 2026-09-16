@@ -366,9 +366,13 @@ pub struct OpenDoc {
     ///
     /// Empty for the whole of a single-page session — which is the mechanical
     /// form of "continuous is an option, not a replacement": the default path
-    /// allocates nothing here and runs the code it ran before Phase 4. Bounded
-    /// by [`crate::render::strip::MAX_CACHED_TEXELS`] and pruned to the
-    /// visible set every frame by [`crate::render::settle`].
+    /// allocates nothing here and runs the code it ran before Phase 4.
+    ///
+    /// Holds more than the visible set: `crate::render::prefetch` fills the
+    /// band around the current page with whatever the operator's
+    /// `crate::app::prefs::PageCache` budget allows, and
+    /// [`crate::render::strip::StripRasters::retain`] evicts furthest-first
+    /// rather than pruning to what is on screen.
     pub strip_rasters: crate::render::strip::StripRasters,
     /// **Which pages the canvas drew this frame**, nearest the viewport
     /// centre first.

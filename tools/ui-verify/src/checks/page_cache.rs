@@ -14,19 +14,32 @@
 //! gone; scroll back and it is rendered again from the content stream, which
 //! `BENCHMARK.md` measures at **691 ms** for a dense A1.
 //!
-//! **The texel budget then never bites.** 48 M texels is roughly eighteen
-//! fit-width pages against a visible set of two or three, so the eviction loop
-//! never runs on any document an operator opens. *Raising that number alone
-//! changes nothing at all* — which is exactly what "increase the cache" invites
-//! a reader to do, and it is why this check measures **re-requests** rather
-//! than the cache's size.
+//! **The texel budget is not the lever it looks like.** 48 M texels is
+//! roughly eighteen fit-width pages, so on a visible set of two or three the
+//! eviction loop had nothing to do and *raising the number alone changed
+//! nothing at all* — which is exactly what "increase the cache" invites a
+//! reader to do, and it is why this check measures **re-requests** rather than
+//! the cache's size.
+//!
+//! O201's render-ahead changed the second half of that: the strip now fills
+//! the band around the current page up to the budget, so the cache does sit
+//! near its ceiling and eviction does run. What keeps this check's oracle
+//! intact is the direction: `retain` drops the entry FURTHEST from the current
+//! page, and the pages this check scrolls away and back are the nearest ones,
+//! so a band page is always evicted before a page he can see. **A visible page
+//! re-requested is still the defect, and now it also means the two mechanisms
+//! have got their orders crossed.**
 //!
 //! # What it asserts, and why that is the only honest oracle
 //!
-//! `strip-raster-requested page=N` is emitted at the one place the strip asks
-//! for a raster. **A page number appearing twice in that stream is the
-//! defect**, verbatim: it means pdfcer drew a page, forgot it, and drew it
-//! again.
+//! `strip-raster-requested page=N` is emitted where the strip asks for a page
+//! **the operator can see**. Render-ahead has its own line,
+//! `strip-prefetch-requested`, and that separation is load-bearing rather
+//! than tidy: a prefetched page may legitimately be evicted and asked for
+//! again, so folding the two lines together would make this check's oracle
+//! unfalsifiable. **A page number appearing twice in the visible stream is
+//! the defect**, verbatim: it means pdfcer drew a page, forgot it, and drew
+//! it again.
 //!
 //! Nothing else would do. The cache's *size* is not the claim — a build that
 //! held a gigabyte and still re-requested would pass a size assertion and fail
@@ -52,7 +65,9 @@ use crate::report::CheckReport;
 
 /// The mode whose default page display is continuous.
 const MODE: &str = "read";
-/// `strip-raster-requested page=N visible=M` — the one place the strip asks.
+/// `strip-raster-requested page=N visible=M` — where the strip asks for a
+/// page the operator can SEE. Render-ahead's requests carry
+/// `strip-prefetch-requested` and are deliberately not matched here.
 const REQUEST_EVENT: &str = "strip-raster-requested";
 /// How many wheel notches to send in each direction.
 ///
