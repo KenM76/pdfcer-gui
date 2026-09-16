@@ -286,6 +286,14 @@ pub(super) struct Keys<'a> {
     pub ctx: &'a egui::Context,
     /// The page on screen.
     pub page_index: usize,
+    /// **What a pick is allowed to land on** — the operator's selection filter.
+    ///
+    /// Carried for the object ring alone: a Tab that stopped on a class the
+    /// filter excludes would offer a selection the very next click could not
+    /// make, and the filter is the operator's own statement of what is on the
+    /// table. Sampled once per frame by `canvas::interact`, exactly as the
+    /// click path samples it.
+    pub pick: crate::canvas::pick::PickFilter,
     /// What the mode permits.
     pub caps: Capabilities,
     /// The selected form field, when one is selected.
@@ -481,6 +489,7 @@ pub(super) fn canvas_keys(
     let Keys {
         ctx,
         page_index,
+        pick,
         caps,
         selected_field,
         annot_delete_refused,
@@ -502,6 +511,16 @@ pub(super) fn canvas_keys(
     // With nothing focused it is `false` and costs one map lookup, exactly as
     // an un-armed `disarm_region_zoom` costs one.
     let form_abandoned = crate::canvas::forms::escape_spent(ctx);
+
+    // ★ Claimant 0b: a Tab the raw-input hook already took off egui, for the
+    // object ring.
+    //
+    // Read BEFORE the D1 guard for a different reason than `escape_spent` is:
+    // a claimed press has been removed from the event stream, so nothing else
+    // can spend it, and a return that left it unspent would park it for a later
+    // frame to act on out of order. `advance` is a no-op on every frame no
+    // press was claimed, which is very nearly all of them.
+    crate::canvas::objring::advance(ctx, page_index, targets, pick, selection);
 
     // ★ D1: `text_edit_focused()`, NEVER `egui_wants_keyboard_input()`.
     //

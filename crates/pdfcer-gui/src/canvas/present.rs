@@ -779,6 +779,9 @@ fn show_in(
                     response
                 }
             };
+            // ★ The page becomes a keyboard focus owner here, which is what
+            // stops Tab falling through to the ribbon. See `pagefocus`.
+            crate::canvas::pagefocus::seat(ui, placement.page, rect, &response);
             drawn.push(strip::DrawnPage {
                 page: placement.page,
                 rect,

@@ -26,6 +26,14 @@
 //!   which is the **page-would-not-decompose** case.
 //!
 //!
+//! ## ★ Every case passes `PickFilter::all()`, and it is not a stub either
+//!
+//! The filter reaches this function for the object ring alone, and no case
+//! below presses Tab. `all()` is what a shell that has never touched the
+//! filter hands over, so it is the state the ladders are actually exercised
+//! in; the ring’s own enumeration lives beside `canvas::objring`, where a
+//! narrowed filter is the point rather than an incidental.
+//!
 //! ## ★ …and every case passes `page: None`, which is the honest value
 //!
 //! [`keys::Keys::page`] exists for the arrow-key nudge and for nothing else, and
@@ -42,6 +50,7 @@
 
 use super::*;
 use crate::app::actions::VectorAction;
+use crate::canvas::pick::PickFilter;
 use crate::canvas::selection::{ClickHit, SelectionLevel};
 use crate::canvas::target::TargetId;
 use egui::{Context, Event, Modifiers, RawInput};
@@ -101,6 +110,7 @@ fn keys_for(input: RawInput, selection: &mut SelectionState) -> Vec<Action> {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -178,6 +188,7 @@ fn an_arrow_key_reaches_the_nudge_through_canvas_keys() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -237,6 +248,7 @@ fn delete_removes_a_selected_form_field_and_nothing_else() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: Some(&field),
                 annot_delete_refused: false,
@@ -307,6 +319,7 @@ fn delete_does_not_act_on_a_form_field_whose_deletion_would_be_refused() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: Some(&field),
                 annot_delete_refused: false,
@@ -370,6 +383,7 @@ fn delete_acts_on_a_form_field_when_the_gate_is_open() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: Some(&field),
                 annot_delete_refused: false,
@@ -488,6 +502,7 @@ fn an_escape_spent_on_a_drag_leaves_the_rung_alone() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -529,6 +544,7 @@ fn escape_retires_an_armed_region_zoom_before_it_touches_the_ladder() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -573,6 +589,7 @@ fn escape_reaches_the_ladder_again_once_nothing_is_armed() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -612,6 +629,7 @@ fn an_escape_spent_on_a_drag_leaves_the_armed_zoom_alone() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -684,6 +702,7 @@ fn a_focused_text_field_keeps_delete_for_itself() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -735,6 +754,7 @@ fn escape_retires_the_markup_tool_before_the_region_zoom() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -793,6 +813,7 @@ fn an_escape_spent_on_a_markup_drag_leaves_the_tool_armed() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -835,6 +856,7 @@ fn escape_still_reaches_the_zoom_and_the_ladder_with_no_markup_armed() {
                 Keys {
                     ctx: ui.ctx(),
                     page_index: 0,
+                    pick: PickFilter::all(),
                     caps: Capabilities::FULL,
                     selected_field: None,
                     annot_delete_refused: false,
@@ -889,6 +911,7 @@ fn escape_abandons_a_guide_drag_before_it_touches_the_region_zoom() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -958,6 +981,7 @@ fn escape_abandons_a_circle_fit_before_it_puts_the_measure_tool_down() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -991,6 +1015,7 @@ fn escape_abandons_a_circle_fit_before_it_puts_the_measure_tool_down() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -1067,6 +1092,7 @@ fn escape_abandons_a_vertex_run_before_it_puts_the_markup_tool_down() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -1100,6 +1126,7 @@ fn escape_abandons_a_vertex_run_before_it_puts_the_markup_tool_down() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -1153,6 +1180,7 @@ fn a_second_escape_retires_the_zoom_the_guide_drag_protected() {
                 Keys {
                     ctx: ui.ctx(),
                     page_index: 0,
+                    pick: PickFilter::all(),
                     caps: Capabilities::FULL,
                     selected_field: None,
                     annot_delete_refused: false,
@@ -1227,6 +1255,7 @@ fn delete_does_not_act_on_an_annotation_whose_deletion_would_be_refused() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: true,
@@ -1333,6 +1362,7 @@ fn a_delete_declined_for_want_of_asking_is_not_allowed_to_be_quiet() {
             Keys {
                 ctx: ui.ctx(),
                 page_index: 0,
+                pick: PickFilter::all(),
                 caps: Capabilities::FULL,
                 selected_field: None,
                 annot_delete_refused: false,
@@ -1349,4 +1379,88 @@ fn a_delete_declined_for_want_of_asking_is_not_allowed_to_be_quiet() {
             &mut actions,
         );
     });
+}
+
+/// ★★★ **A CLAIMED TAB REACHES THE OBJECT RING THROUGH THIS FUNCTION.**
+///
+/// The ring's own rules are enumerated in [`crate::canvas::objring`]'s tests,
+/// which call `stops` directly. This asserts the one thing those cannot: that
+/// the wiring exists.
+///
+/// ★★ It is written as *the press was spent*, not *the selection moved*,
+/// because a unit test has no decomposition to move a selection within —
+/// `targets: None` is what every case in this file passes and what lets them
+/// run without opening a file. Spending the press is still the whole of what
+/// the wiring does: `canvas::tabnav::claim` has already removed the event from
+/// `RawInput`, so nothing else in the program can see it, and a press left in
+/// the store would be a Tab that did nothing this frame and something
+/// arbitrary several frames later.
+///
+/// ★ This project has shipped a working verb reachable by nothing **four**
+/// times, every time with the verb's own tests green. Deleting the
+/// `objring::advance` call from `canvas_keys` leaves all five ring tests
+/// passing and this one red.
+#[test]
+fn a_claimed_tab_reaches_the_object_ring_through_canvas_keys() {
+    use crate::canvas::tabnav::{self, Scope};
+
+    let ctx = Context::default();
+    let id = egui::Id::new("objring-wiring-test");
+
+    // The page's stand-in: one keyboard-only widget that asks for focus and
+    // publishes itself, which is exactly what `canvas::pagefocus` does.
+    let seat = |ui: &mut egui::Ui| {
+        let r = ui.interact(
+            egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(100.0, 100.0)),
+            id,
+            egui::Sense::focusable_noninteractive(),
+        );
+        r.request_focus();
+        tabnav::publish(ui.ctx(), Scope::Object, id);
+    };
+
+    // Frame 1 seats the focus. `claim` runs before a frame begins and reads
+    // the focus the PREVIOUS frame left, so there has to be a previous one.
+    let _ = ctx.run_ui(RawInput::default(), |ui| seat(ui));
+
+    // Frame 2: the hook takes the press off the raw events, then the frame
+    // runs and `canvas_keys` is the only thing in it that could spend one.
+    let mut raw = key(Key::Tab);
+    tabnav::claim(&ctx, &mut raw);
+    assert!(
+        raw.events.is_empty(),
+        "the hook claims the press, or this test is measuring nothing"
+    );
+
+    let mut selection = SelectionState::default();
+    let mut actions = Vec::new();
+    let mut text_selection = None;
+    let _ = ctx.run_ui(raw, |ui| {
+        seat(ui);
+        canvas_keys(
+            Keys {
+                ctx: ui.ctx(),
+                page_index: 0,
+                pick: PickFilter::all(),
+                caps: Capabilities::FULL,
+                selected_field: None,
+                annot_delete_refused: false,
+                field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
+                model_attempted: true,
+                page: None,
+                escape_consumed: false,
+            },
+            &mut selection,
+            &mut text_selection,
+            &mut actions,
+        );
+    });
+
+    assert!(
+        tabnav::take(&ctx, Scope::Object).is_none(),
+        "the claimed press was still sitting in the store after the frame that \
+         should have spent it — `canvas_keys` is not reaching `objring::advance`"
+    );
 }

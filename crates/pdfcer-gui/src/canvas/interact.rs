@@ -1090,6 +1090,10 @@ pub(super) fn interact(
         keys::Keys {
             ctx: &ctx,
             page_index,
+            // ★ The object ring's stops are filtered by it, for the reason on
+            // `keys::Keys::pick`. Dereferenced from the frame's borrow, which
+            // is the same value the click path reads this frame.
+            pick: *pick,
             caps,
             // ★ The third surface Delete has to know about, and the one it
             // could not see. See the field's own doc on `keys::Keys`.

@@ -94,6 +94,20 @@ pub fn publish(ctx: &egui::Context, scope: Scope, id: Id) {
     ctx.data_mut(|d| d.insert_temp(Id::new(OWNER_KEY), Owner { scope, id }));
 }
 
+/// **Give up ownership**, so no further press is claimed for it.
+///
+/// Published ownership is otherwise dropped by egui itself: a widget that
+/// stops being drawn stops being focused, and [`owner`]'s identity test then
+/// rejects the stale entry. This exists for the case that test cannot see —
+/// a surface that is still drawn, still focused, and has handed the key to
+/// somebody else. The measure tools are that case: Tab cycles the snap mode
+/// while one is armed, and the owner is the same page id either way, so
+/// merely declining to re-publish would leave the hook swallowing a press
+/// with nothing to spend it on.
+pub fn release(ctx: &egui::Context) {
+    ctx.data_mut(|d| d.remove::<Owner>(Id::new(OWNER_KEY)));
+}
+
 /// The published owner, if it still holds egui's keyboard focus.
 ///
 /// The identity test the module header argues for, in one place because two
@@ -104,7 +118,7 @@ fn owner(ctx: &egui::Context) -> Option<Owner> {
     (ctx.memory(|m| m.focused()) == Some(owner.id)).then_some(owner)
 }
 
-/// **Whether a canvas ring currently holds the keyboard.**
+/// **Whether `scope`'s canvas ring currently holds the keyboard.**
 ///
 /// For the one place outside this module that must ask: the space bar is the
 /// canvas's hand-tool modifier, and a focused form button reads Space as
@@ -114,11 +128,18 @@ fn owner(ctx: &egui::Context) -> Option<Owner> {
 ///
 /// Not a second spelling of the typing guard
 /// (`crate::canvas::textedit::composing`): that one answers *is the operator
-/// composing text*, this one answers *does the canvas own the keyboard at
-/// all*, and a focused push button is the case where those differ.
+/// composing text*, this one answers *does this canvas ring own the keyboard*,
+/// and a focused push button is the case where those differ.
+///
+/// # Why it takes a scope rather than answering for the canvas as a whole
+///
+/// A focused PAGE owns Tab and nothing else — the space bar is still the hand
+/// tool, which is the gesture the operator uses most on a drawing. Asking the
+/// unscoped question would hand Space to the object ring, which has no use for
+/// it, and stop the paper panning the moment a page was clicked.
 #[must_use]
-pub fn owns_focus(ctx: &egui::Context) -> bool {
-    owner(ctx).is_some()
+pub fn owns_focus(ctx: &egui::Context, scope: Scope) -> bool {
+    owner(ctx).is_some_and(|owner| owner.scope == scope)
 }
 
 /// **Take the Tab press, if the canvas owns it.**

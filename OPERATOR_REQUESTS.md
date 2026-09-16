@@ -356,7 +356,7 @@ moment a drag starts, because the drag's own rubber-band is then the cursor.
 
 Nothing in the engine is involved: this draws and commits nothing.
 
-## O204 — **FILED** — Tab escapes into the ribbon instead of moving through the form
+## O204 — ◑ **BOTH HALVES ARE BUILT** — Tab escapes into the ribbon instead of moving through the form
 
 > *"when I press tab while in a form I end up tabbing through the menus instead
 > of the form items. The tab should tab through whatever space I have clicked
@@ -437,6 +437,34 @@ What that changes in the plan:
   distinguishes *the file stated this order* from *we derived it by rows* from
   *the structure gave us nothing*, and those are three different sentences to an
   operator wondering why Tab went where it went.
+
+**What has landed, 2026-09-16.** The form half, committed as the field ring.
+The press is taken off `RawInput` in `raw_input_hook` before egui can latch a
+focus direction; the ring is the engine’s `page_tab_sequence` verbatim with
+radio groups collapsed to one stop; it crosses pages as decision 3 says, and
+the scroll that costs is the smallest one that reveals the field, with the
+zoom untouched. Space now reaches a focused check box instead of panning the
+paper. Unit-tested, falsified, and every gate green — **not yet driven**, and
+the driven check runs at the end of this batch rather than before each commit.
+
+**What landed second, the same day.** The object ring. Clicking a page now
+gives that page the keyboard, which is what stopped Tab falling through to
+the ribbon in the first place, and Tab then walks the objects on that page in
+paint order. The ring is scoped to whatever the selection is standing in: a
+selected object rings the things drawn beside it inside the same form, and a
+sheet whose whole body is one page-sized wrapper — every CAD export this
+project has seen — rings the wrapper’s contents rather than offering one
+stop that is the entire drawing. It wraps within the page, per decision 3.
+Unit-tested over the engine’s own form fixture, falsified, every gate green
+(57 passed, 0 failed, 0 skipped) — **not yet driven**.
+
+**What is still open on this row.** The forms panel’s own tab-order view
+numbers its rows from `/Annots` order while the field ring uses the engine’s
+derived sequence, so on a page carrying `/Tabs /R` or `/C` the two surfaces
+would disagree — and three sentences in that panel state, by name, that the
+order shown is NOT the tab order. Both halves of the gesture, and the panel,
+are still owed a driven check; it runs at the end of this batch rather than
+before each commit.
 
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 

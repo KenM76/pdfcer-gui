@@ -287,6 +287,11 @@ pub mod modelneed;
 // module is already 1,352 lines and owns *what is selected*, while this owns
 // *what happens when you drag it*.
 pub mod moving;
+/// ★★ **Tab walks the objects on the page** — `OPERATOR_REQUESTS.md`
+/// O204, the canvas half. Pure over a provider and a pick filter; its
+/// header carries why the ring is scoped to whatever the selection is
+/// standing in rather than to the page’s own paint order.
+pub mod objring;
 pub mod overlay;
 /// ★ The application's own colour ROLES — `preview` and `dimension_selected` —
 /// built from the resolved theme's palette and published per frame.
@@ -340,6 +345,10 @@ mod escape;
 /// clauses about a drag that crosses the sheet edge mid-gesture.
 pub mod pasteboard;
 
+/// The page is a keyboard focus owner — `OPERATOR_REQUESTS.md` O204
+/// decision 2. One keyboard-only widget per drawn page, so `Memory::focused`
+/// names a page instead of nothing and Tab stops falling to the ribbon.
+mod pagefocus;
 /// ★ Everything the canvas draws, once everything is decided — lifted out of
 /// [`interact`] when that file crossed R2's ceiling. Its header carries the
 /// layer order and the argument for each position in it.

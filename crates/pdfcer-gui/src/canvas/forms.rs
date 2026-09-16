@@ -1320,7 +1320,7 @@ fn focus_button(ctx: &egui::Context, doc: &OpenDoc, page: usize, widget_box: &Wi
 /// module's name for it, so that caller reads as a sentence about forms.
 #[must_use]
 pub fn ring_takes_space(ctx: &egui::Context) -> bool {
-    crate::canvas::tabnav::owns_focus(ctx)
+    crate::canvas::tabnav::owns_focus(ctx, crate::canvas::tabnav::Scope::Field)
 }
 
 /// Push one button-state change.
