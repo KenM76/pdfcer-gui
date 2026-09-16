@@ -299,6 +299,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // in the process that deleted the page is a count the code under test
         // wrote about itself.
         Box::new(page_cache::PagesStayDrawnWhenYouScrollBack),
+        // Immediately after `page_cache`, and deliberately: the two are the
+        // halves of one claim. That one says a page he has SEEN is not drawn
+        // twice; this one says a page he has not reached yet is drawn once,
+        // early. A run where both fail is a cache that forgets; a run where
+        // only this one fails is a band that fills and is evicted.
+        Box::new(page_prefetch::PagesAreDrawnBeforeHeScrollsToThem),
         Box::new(page_ops::PageOpsRoundTrip),
         // The FIRST check anywhere that drives the Pages PANEL rather than
         // the Pages tab. `page_ops` above drives the ribbon and records why it
@@ -1003,6 +1009,16 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // this one on its first assertion.
         Box::new(field_clipboard::TheAcrobatPasteOrderSwapsWhichChordDoesWhich),
         Box::new(form_selection::AClickInsideAFormSelectsWhatIsDrawnThere),
+        // Straight after the click check, and the order is the argument this
+        // feature makes: a click puts the keyboard IN a field, and Tab is what
+        // he does next. A run where both fail is a form surface no gesture
+        // reaches; a run where only this one fails is the press reaching egui
+        // before the canvas sees it, which is O204's whole subject.
+        //
+        // It opens its own document. Not one form fixture in the engine corpus
+        // carries a text field with a drawn appearance, and an undrawn field is
+        // not on the canvas to click.
+        Box::new(tab_navigation::TabMovesBetweenFormFields),
         // Immediately after it, and the adjacency is the point: both are
         // "what does a click on the canvas mean?", read through two different
         // off-canvas oracles. A run where both fail says the click is not

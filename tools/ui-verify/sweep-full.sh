@@ -296,6 +296,18 @@ fi
 ALONE='
 pages_stay_drawn_when_you_scroll_back|--pdf fixtures/synthetic-image-only-8pages.pdf --doc-point 0,150,200
 
+# Its other half, and it needs the same several pages for the same reason:
+# a render-ahead band has nothing to fill on a one-page sheet. No aim point -
+# it puts the wheel over the canvas rect the application publishes, because
+# the question is what the strip did, not where the pointer was.
+pages_are_drawn_before_he_scrolls_to_them|--pdf fixtures/synthetic-image-only-8pages.pdf
+
+# Three fillable text fields with drawn appearances, which no fixture in the
+# engine corpus has: every text field in it is /AP-less, and an /AP-less field
+# is not drawn on the canvas at all. Three and not two - a ring of two cannot
+# tell a step from a wrap. No aim point; it clicks the field the census names.
+tab_moves_between_form_fields|--pdf fixtures/three-text-fields.pdf
+
 # The shared aim is bare paper. These five need a click that lands on a
 # run of text in a document with real text objects in it; the a1 sheet is
 # CAD line-work with a title block, and per-glyph runs at that.

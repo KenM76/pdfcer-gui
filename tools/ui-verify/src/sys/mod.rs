@@ -60,6 +60,13 @@ pub mod vk {
     pub const BACKSPACE: u16 = 0x08;
     /// `Enter` — steps to the next Find hit, commits the page box.
     pub const ENTER: u16 = 0x0D;
+    /// `Tab` — O204's key: the one that walked into the ribbon.
+    ///
+    /// Pressed with [`LSHIFT`] for the backward direction, never with
+    /// [`SHIFT`]: the shell decides the direction from winit's modifier
+    /// state, which is derived from key EVENTS, and `VK_SHIFT` is a key no
+    /// real keyboard ever sends.
+    pub const TAB: u16 = 0x09;
 
     /// `Ctrl`, as a **modifier** for [`super::key_stroke_with`].
     ///

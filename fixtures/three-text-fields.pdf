@@ -1,0 +1,68 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R 7 0 R 9 0 R] /DA (/Helv 0 Tf 0 g) /DR << /Font << /Helv 11 0 R >> >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 260] /Resources << /Font << /Helv 11 0 R >> >> /Contents 4 0 R /Annots [5 0 R 7 0 R 9 0 R] >>
+endobj
+4 0 obj
+<< /Length 115 >>
+stream
+BT /Helv 10 Tf 20 232 Td (One:) Tj ET
+BT /Helv 10 Tf 20 182 Td (Two:) Tj ET
+BT /Helv 10 Tf 20 132 Td (Three:) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (FieldOne) /TU (FieldOne) /Rect [70 225 260 250] /F 4 /P 3 0 R /DA (/Helv 10 Tf 0 g) /V (Ada) /AP << /N 6 0 R >> >>
+endobj
+6 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 190 25] /Resources << /Font << /Helv 11 0 R >> >> /Length 53 >>
+stream
+/Tx BMC q BT /Helv 10 Tf 0 g 2 7 Td (Ada) Tj ET Q EMC
+endstream
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (FieldTwo) /TU (FieldTwo) /Rect [70 175 260 200] /F 4 /P 3 0 R /DA (/Helv 10 Tf 0 g) /V (Bea) /AP << /N 8 0 R >> >>
+endobj
+8 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 190 25] /Resources << /Font << /Helv 11 0 R >> >> /Length 53 >>
+stream
+/Tx BMC q BT /Helv 10 Tf 0 g 2 7 Td (Bea) Tj ET Q EMC
+endstream
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (FieldThree) /TU (FieldThree) /Rect [70 125 260 150] /F 4 /P 3 0 R /DA (/Helv 10 Tf 0 g) /V (Cyd) /AP << /N 10 0 R >> >>
+endobj
+10 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 190 25] /Resources << /Font << /Helv 11 0 R >> >> /Length 53 >>
+stream
+/Tx BMC q BT /Helv 10 Tf 0 g 2 7 Td (Cyd) Tj ET Q EMC
+endstream
+endobj
+11 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000015 00000 n 
+0000000164 00000 n 
+0000000221 00000 n 
+0000000378 00000 n 
+0000000544 00000 n 
+0000000719 00000 n 
+0000000913 00000 n 
+0000001088 00000 n 
+0000001282 00000 n 
+0000001462 00000 n 
+0000001657 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R >>
+startxref
+1755
+%%EOF

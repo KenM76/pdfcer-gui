@@ -80,6 +80,21 @@ pub(crate) const FOUR_PAGES: &str = "pageops/four-pages.pdf";
 #[cfg(test)]
 pub(crate) const ORPHAN_WIDGET: &str = "orphan-widget.pdf";
 
+/// **One page, THREE text widgets, every one of them with a drawn `/AP`.**
+///
+/// Hand-authored as `fixtures/three-text-fields.PROVENANCE.py`, for a reason
+/// the generator at the foot of `canvas::forms::boxes::tests` already
+/// measured: not one of the engine corpus’ eleven form fixtures carries a
+/// text field with an appearance, so none of them can be CLICKED on the page
+/// -- an `/AP`-less field is routed to the properties panel instead. O204’s
+/// driven check needs a field to click and then two more to tab between.
+///
+/// Three rather than two: a ring of two cannot distinguish "Tab moved on"
+/// from "Tab wrapped", so forward and backward would land on the same field
+/// and the direction could not be asserted.
+#[cfg(test)]
+pub(crate) const THREE_TEXT_FIELDS: &str = "three-text-fields.pdf";
+
 /// One page carrying the same words at 0°, 90°, 180°, 270° and 30° — the page
 /// `canvas::textsel`'s §8 rules are asserted on. See
 /// [`crate::canvas::textsel::fixture`] for what each string is for and why it

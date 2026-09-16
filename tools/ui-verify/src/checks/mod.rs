@@ -591,6 +591,13 @@ pub mod page_display_recentres;
 
 pub mod page_ops;
 
+/// Render-ahead: pages are drawn BEFORE he scrolls to them —
+/// `OPERATOR_REQUESTS.md` O201. Registered next to `page_cache` because the
+/// two split one trace stream between them: this one reads
+/// `strip-prefetch-requested`, that one reads `strip-raster-requested`, and
+/// folding the names together would make both oracles unfalsifiable at once.
+pub mod page_prefetch;
+
 /// ★★★ **The page-preview limit is remembered, and zero means never** —
 /// `OPERATOR_REQUESTS.md` O187. THREE processes, each KILLED rather than
 /// closed, which is the deliberate opposite of [`page_display_pref`]: this
@@ -630,6 +637,12 @@ pub mod quit_unsaved;
 pub mod save_as;
 
 pub mod scale_reads_the_group;
+
+/// Tab inside a form field goes to the next FIELD — `OPERATOR_REQUESTS.md`
+/// O204. The only oracle for it: the press is taken in
+/// `eframe::App::raw_input_hook`, before one line of application `ui` code,
+/// so a unit test of the ring measures a press the ring may never receive.
+pub mod tab_navigation;
 
 /// The **two** driven checks of *"give this page its own copy"*:
 /// `the_context_menu_gives_this_page_its_own_copy_of_a_shared_form` and

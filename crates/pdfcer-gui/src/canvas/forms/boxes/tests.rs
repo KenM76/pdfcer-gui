@@ -658,6 +658,42 @@ fn a_real_form_produces_boxes_inside_its_own_pages() {
     }
 }
 
+/// **The fixture O204’s driven check aims at really has three clickable text
+/// fields** — `app::state::THREE_TEXT_FIELDS`.
+///
+/// Its own test, so that a fixture which stopped having them fails here with a
+/// sentence about the fixture rather than turning a driven tab-navigation run
+/// into a confusing report about keyboard focus.
+///
+/// The generator below records why the engine corpus could not supply this:
+/// every text field in it is `/AP`-less, and an `/AP`-less field is not drawn
+/// on the canvas at all, so there is nothing to click.
+#[test]
+fn the_three_field_fixture_offers_three_clickable_text_boxes() {
+    let doc = crate::app::state::open_local_fixture(crate::app::state::THREE_TEXT_FIELDS);
+    let view = doc.session.view();
+    let form = pdfcer_core::forms::parse_acroform(&view).expect("the fixture has a form");
+    let pages = &doc.pages;
+    let annots: Vec<Vec<(ObjId, [f64; 4])>> = (0..pages.len())
+        .map(|page| doc.session.widget_rects(page))
+        .collect();
+
+    let placed = place(&form, pages, &annots);
+    let text: Vec<&str> = placed
+        .boxes
+        .iter()
+        .filter(|b| matches!(b.kind, BoxKind::Text { .. }))
+        .map(|b| b.field.as_str())
+        .collect();
+    assert_eq!(
+        text,
+        vec!["FieldOne", "FieldTwo", "FieldThree"],
+        "three drawn text fields, in the order the form declares them"
+    );
+    for b in &placed.boxes {
+        assert_eq!(b.page, 0, "{} is not on the single page", b.field);
+    }
+}
 /// ★ **A generator, not a check: build a form with a DRAWN text field.**
 ///
 /// ```text

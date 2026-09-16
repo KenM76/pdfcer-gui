@@ -1428,6 +1428,7 @@ pub(crate) use fixtures::{
     RECOVERED_WITH_LOSSES,
     ROTATED_TEXT,
     SIGNED_TWO_PAGES,
+    THREE_TEXT_FIELDS,
     open_fixture,
     open_local_fixture,
 };
