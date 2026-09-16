@@ -724,6 +724,211 @@ pub const fn label_caption_hint() -> &'static str {
     "The words on a button"
 }
 
+// ===========================================================================
+// `/MK` `/BG` and `/BC` — a widget's two colours. `OPERATOR_REQUESTS.md` O202.
+//
+// Table 189 gives each key four states and only two of them are a colour a
+// swatch can draw, so each key needs a MARK for the button face and a NOTE for
+// the popup in the states it cannot draw. The two keys get their own strings
+// rather than one pair parameterised by a noun, because the sentences differ
+// by more than the noun:
+//
+//   * a background stating *no colour* paints nothing at all, including on a
+//     push button, which otherwise keeps its grey plate;
+//   * a border stating *no colour* is still drawn BLACK, because a border's
+//     thickness lives in `/BS` `/W` and a widget wanting no border says so
+//     there. `WidgetChrome::stroke` resolves the empty array and the absent
+//     key to the same black, and says why at length.
+//
+// ⚠ That second bullet contradicts O202's own decision 1, which was written
+// against the engine as it stood before `Pass 308.0` and assumed an empty
+// `/BC` would mean *draw no border*. It does not. The text below states what
+// the engine measurably does.
+// ===========================================================================
+
+/// `/MK` `/BG` — the widget's background colour.
+#[must_use]
+pub const fn label_background() -> &'static str {
+    "Background"
+}
+
+/// ★ Names the two kinds whose background is not a plain rectangle, because
+/// those are the two where an operator picking a colour would otherwise be
+/// surprised by the shape of what appears.
+#[must_use]
+pub const fn label_background_hover() -> &'static str {
+    "What is painted behind this box. A radio button's background is a disc rather than a \
+     rectangle, and a push button's is the grey plate it sits on. Changing it redraws the box."
+}
+
+/// `/MK` `/BC`.
+///
+/// ★★ **"Border and mark", not "Border"** — O202 decision 2. This is the ink a
+/// check box's tick and a radio button's dot are drawn in as well as the
+/// outline, because `/MK` carries no third colour for the mark and the
+/// engine's own appearance builders read `/BC` for both. A label naming only
+/// the outline would mis-state what the swatch does on the two kinds where it
+/// matters most.
+#[must_use]
+pub const fn label_border_colour() -> &'static str {
+    "Border and mark"
+}
+
+/// ★ Says where the *thickness* comes from, because this row and the Border
+/// width row above are two keys in two different dictionaries and an operator
+/// who set a colour and saw no outline would otherwise have no way to learn
+/// that the width is zero.
+#[must_use]
+pub const fn label_border_colour_hover() -> &'static str {
+    "The ink the outline is drawn in — and the ink a check box's tick and a radio button's dot \
+     are drawn in, because a box carries no separate colour for its mark. How thick the outline \
+     is comes from Border width above, not from here."
+}
+
+/// The button face when the file states nothing about this colour.
+///
+/// The same em dash the properties grid already uses for *no value*, and for
+/// the reason that function's own doc comment gives: every property grid in
+/// this class shows a dash for a field the document is silent about.
+#[must_use]
+pub const fn colour_mark_unstated() -> &'static str {
+    super::properties::text_value_absent()
+}
+
+/// The button face when the file states Table 189's empty array.
+///
+/// ★ A word rather than a second dash. *The file is silent* and *the file says
+/// there is no colour* are different facts and the whole reason `/MK`'s
+/// colours are modelled as `Option<MkColor>` with an `MkColor::None` inside;
+/// two controls showing the same glyph for both would throw that away on the
+/// surface the operator actually reads.
+#[must_use]
+pub const fn colour_mark_no_colour() -> &'static str {
+    "None"
+}
+
+/// The popup entry that writes Table 189's empty array into `/BG`.
+#[must_use]
+pub const fn background_no_colour_entry() -> &'static str {
+    "No background"
+}
+
+/// Why that entry is greyed. R9: greying is for a **temporarily** unavailable
+/// capability and is always explained on hover.
+#[must_use]
+pub const fn background_no_colour_unavailable() -> &'static str {
+    "This box already states that it has no background."
+}
+
+/// The popup note over a `/BG` the file is silent about.
+#[must_use]
+pub const fn background_unstated_note() -> &'static str {
+    "This file says nothing about a background colour, so the box is painted the way its kind is \
+     normally painted — nothing behind a text field, the grey plate on a push button."
+}
+
+/// The popup note over a `/BG` that states the empty array.
+#[must_use]
+pub const fn background_no_colour_note() -> &'static str {
+    "This box states that it has no background, so nothing is painted behind it — not even a push \
+     button's plate. Picking a colour below replaces that."
+}
+
+/// The popup note over a `/BC` the file is silent about.
+#[must_use]
+pub const fn border_colour_unstated_note() -> &'static str {
+    "This file says nothing about a border colour, so the outline and any mark are drawn in black."
+}
+
+/// The popup note over a `/BC` that states the empty array.
+///
+/// ★★ It says the box is **still drawn black**, which is the opposite of what
+/// the phrase "no colour" suggests and is what the engine does. A box with no
+/// border says so through a border width of 0.
+#[must_use]
+pub const fn border_colour_no_colour_note() -> &'static str {
+    "This box states no border colour, and pdfcer still draws the outline and any mark in black: \
+     a box with no border says so through a border width of 0, not through this. Picking a colour \
+     below replaces it."
+}
+
+/// The button face for a four-ink separation — the file's own four numbers.
+///
+/// ★★★ **Not a converted approximation**, O202 decision 4. pdfcer owns no
+/// rendering intent for a widget's chrome, so converting DeviceCMYK to
+/// something a swatch could show would put a colour on screen that the file
+/// does not contain — and the operator's first nudge of the picker would
+/// commit pdfcer's guess at their separation as though it were their own.
+#[must_use]
+pub fn colour_cmyk_mark(c: f32, m: f32, y: f32, k: f32) -> String {
+    format!("{c:.2} {m:.2} {y:.2} {k:.2}")
+}
+
+/// The popup note over a four-ink separation.
+#[must_use]
+pub const fn colour_cmyk_note() -> &'static str {
+    "This colour is a four-ink CMYK separation, kept exactly as the file states it and never \
+     converted, so there is no one screen colour to show for it. Picking a colour below replaces \
+     the separation."
+}
+
+// ===========================================================================
+// What the operator touched, for a refusal and for the receipt.
+//
+// ★★ These are OPERATOR-VISIBLE and live here for that reason. They reach the
+// status line through `text::forms::field_widget_property_changed`, and they
+// reach a refusal through the engine's §6 rule — *"the gates are checked
+// against the RESULT, not against your request"* — which can name a property
+// the request never mentioned, so the shell has to carry which control was
+// actually pressed.
+//
+// They read as sentence fragments because they are one: *"Changed the border
+// width."* is the whole line.
+// ===========================================================================
+
+/// The four geometry numbers, committed together by Apply.
+#[must_use]
+pub const fn touched_box() -> &'static str {
+    "the box"
+}
+
+/// The border style combo.
+#[must_use]
+pub const fn touched_border() -> &'static str {
+    "the border"
+}
+
+/// The border width spinner.
+#[must_use]
+pub const fn touched_border_width() -> &'static str {
+    "the border width"
+}
+
+/// The caption field.
+#[must_use]
+pub const fn touched_caption() -> &'static str {
+    "the caption"
+}
+
+/// The visibility combo.
+#[must_use]
+pub const fn touched_visibility() -> &'static str {
+    "where the box is shown"
+}
+
+/// The `/BG` swatch.
+#[must_use]
+pub const fn touched_background() -> &'static str {
+    "the background colour"
+}
+
+/// The `/BC` swatch. Named the way its label is, for the reason
+/// [`label_border_colour`] gives.
+#[must_use]
+pub const fn touched_border_colour() -> &'static str {
+    "the border and mark colour"
+}
+
 //
 // ★★★ Filed at 22:40 as *"a widget's border can be written and not read, so a
 // properties control would lie"*, shipped by the engine within the hour, and

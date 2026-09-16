@@ -831,22 +831,24 @@ pub(super) fn edit_properties(
     });
 }
 
-/// **Move, resize, or re-caption one placement of a field.**
+/// **Change one placement of a field** — its rectangle, its border, its
+/// caption, its visibility, or either of its two `/MK` colours.
 ///
-/// # The three disclosures, and the order is the operator's
+/// # The disclosures, in the order the operator reads them
 ///
-/// **1. `appearance_stale` first**, because it is the only one about something
-/// they can *see* and will misread. A resize makes §12.5.5's algorithm scale
-/// the baked artwork to the new rectangle; where it cannot be rebuilt — a push
-/// button's baked caption, a signature — the widget renders **distorted**. The
-/// engine's own string names which and why, and it is prefixed rather than
-/// re-worded, because *"stale appearance"* is a fact about the file and *"it
-/// will look stretched"* is a fact about the screen.
+/// **1. A recorded-but-not-painted appearance first**, because it is the only
+/// one about something they can *see* and will misread. Read from
+/// `AppearanceOutcome`, which distinguishes *nothing needed redrawing* from
+/// *something did and pdfcer could not*; the older `appearance_regenerated` /
+/// `appearance_stale` pair could not, and this crate got it wrong for as long
+/// as it read them. The engine's own sentence is carried verbatim and the
+/// shell's framing is chosen by `resized`, because only a resize stretches
+/// artwork — a colour edit that could not be repainted simply shows the old
+/// colour.
 ///
-/// **2. Which act it was.** A move keeps the artwork exact and free; a resize
-/// rebuilt it. Reported from `WidgetEditOutcome::resized` rather than
-/// re-derived here, because the engine compares the **extent** and this crate
-/// comparing corners would eventually disagree with it about a nudge.
+/// **2. What changed.** `rect_after` is `Some` only when the rectangle
+/// actually moved, so a border or colour edit gets the `touched` fragment the
+/// panel supplied rather than *"The box was moved."*
 ///
 /// **3. `siblings_untouched`**, and only when there are any. It is the mirror
 /// of `widgets_affected` on the field verb, and the pair exists so an operator
@@ -882,33 +884,57 @@ pub(super) fn edit_widget(
             crate::diag::trace(|| {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "edit-widget-applied field={field} widget={widget} resized={} \
-                     regenerated={} stale={}",
+                    "edit-widget-applied field={field} widget={widget} touched={touched:?} \
+                     geometry={} resized={} appearance={:?}",
+                    outcome.rect_after.is_some(),
                     outcome.resized,
-                    outcome.appearance_regenerated,
-                    outcome.appearance_stale.is_some(),
+                    outcome.appearance,
                 )
             });
             let mut lines = Vec::new();
-            if let Some(why) = &outcome.appearance_stale {
-                lines.push(crate::text::forms::field_appearance_stale(why));
-            }
-            // **`appearance_regenerated`, not `resized`** (O76). The outcome
-            // carries both and this line was reading the wrong one, so a resize
-            // that redrew nothing was reported as one that had.
-            lines.push(
-                crate::text::forms::field_widget_moved(
+            // **First**, because it is the only one about something on screen.
+            //
+            // ★★ Read off `AppearanceOutcome` rather than off `appearance_stale`
+            // being `Some`, which is what the engine's own field doc asks for:
+            // `appearance_regenerated: false` + `appearance_stale: None` meant
+            // two different things — *nothing needed redrawing* and *something
+            // did and pdfcer could not* — and this crate read the ambiguous
+            // pair for the whole of the time `with_background` existed. An enum
+            // cannot silently acquire a fourth meaning for an existing value.
+            if let pdfcer_core::edit::AppearanceOutcome::RecordedNotPainted(why) =
+                &outcome.appearance
+            {
+                lines.push(crate::text::forms::field_appearance_not_repainted(
                     outcome.resized,
+                    why,
+                ));
+            }
+            // ★★★ **`rect_after`, not "always"**. This line was pushed
+            // unconditionally, so every border, caption, visibility and — since
+            // O202 — colour edit ended with *"The box was moved."* on the
+            // status line, naming an act the operator had not performed. The
+            // engine reports geometry as `Option`; a `None` there means the
+            // edit never touched the rectangle, and there is nothing to say
+            // about a move that did not happen.
+            if outcome.rect_after.is_some() {
+                lines.push(
+                    crate::text::forms::field_widget_moved(
+                        outcome.resized,
+                        outcome.appearance_regenerated,
+                    )
+                    .to_owned(),
+                );
+            } else {
+                lines.push(crate::text::forms::field_widget_property_changed(
+                    touched,
                     outcome.appearance_regenerated,
-                )
-                .to_owned(),
-            );
+                ));
+            }
             if outcome.siblings_untouched > 0 {
                 lines.push(crate::text::forms::field_siblings_untouched(
                     outcome.siblings_untouched,
                 ));
             }
-            let _ = touched;
             lines
         })
     });

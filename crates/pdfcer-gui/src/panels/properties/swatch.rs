@@ -240,6 +240,237 @@ pub(super) fn show(
     committed
 }
 
+/// What one `/MK` colour key says, as far as a swatch is concerned.
+///
+/// ★★★ Deliberately **not** [`Value`], and the difference is the subject.
+/// [`Value`] models a *selection of document objects*, which has exactly two
+/// states — they agree or they do not. One widget's `/MK` `/BG` is one key on
+/// one dictionary, and Table 189 gives it four: absent, the empty array that
+/// states *no colour*, a DeviceGray or DeviceRGB value, and a DeviceCMYK
+/// separation. Two of those four are colours no swatch can draw, and one of
+/// them is not a colour at all.
+///
+/// So this enum carries the one state a swatch CAN draw and defers the rest to
+/// the caller, exactly as the module header requires: *"the sentence that
+/// stands in its place belongs to whoever knows what the ink is."* Which of the
+/// three unshowable states a widget is in is a fact about `/MK`, and `/MK` is
+/// not a thing this file knows about.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(super) enum MkValue<'a> {
+    /// A colour the swatch draws exactly.
+    Shown([u8; 3]),
+    /// No colour this control can draw. `mark` is what the button reads
+    /// instead — an em dash for *the file says nothing*, a word for *no
+    /// colour*, four numbers for a separation — and `note` is the sentence the
+    /// popup shows above the picker, or empty for none.
+    Unshowable {
+        /// The button's face.
+        mark: &'a str,
+        /// The popup's opening sentence. Empty draws no label at all.
+        note: &'a str,
+    },
+}
+
+/// What the operator chose. Returned **once**, on the frame the gesture ended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum MkPick {
+    /// A colour, from the picker, on the frame it closed.
+    Colour([u8; 3]),
+    /// Table 189's empty array — *this widget has no such colour*, stated
+    /// positively, which is not the same as the key being absent.
+    NoColour,
+}
+
+/// One `/MK` colour control's inputs, bundled because there are four and the
+/// two strings would otherwise be positional.
+pub(super) struct MkControl<'a> {
+    /// What the widget's key currently says.
+    pub value: MkValue<'a>,
+    /// Table 189's *no colour* entry, or `None` when this key has no such
+    /// state worth offering.
+    ///
+    /// ★★ `None` is the border colour's case and it is R9 rather than an
+    /// omission: `WidgetChrome::stroke` resolves an empty `/BC` and an absent
+    /// `/BC` to the same black, so an entry writing the empty array would
+    /// change a byte, rebuild an appearance stream, cost an undo entry and
+    /// alter no pixel. A capability that does nothing renders nothing.
+    pub no_colour: Option<MkNoColour<'a>>,
+    /// Draw the swatch as a disc rather than a bar.
+    ///
+    /// ★ A radio button's background is filled as a **circle** by the engine's
+    /// own builder, which says so in as many words. A rectangular preview over
+    /// a control that will come out round is this panel mis-stating the result
+    /// of the operator's own press.
+    pub disc: bool,
+}
+
+/// The *no colour* entry, when a key has one.
+pub(super) struct MkNoColour<'a> {
+    /// The entry's label.
+    pub label: &'a str,
+    /// Whether pressing it would change anything. `false` when the widget
+    /// already states *no colour*: the press would author an edit that changes
+    /// no byte and still rebuild the appearance, which is an undo entry for
+    /// nothing.
+    pub available: bool,
+    /// R9 requires a greyed control to explain itself on hover.
+    pub unavailable_hover: &'a str,
+}
+
+/// One frame of a `/MK` colour control.
+///
+/// Returns `Some` **only** on the frame a choice was made: the picker closed
+/// after the operator moved it, or the *no colour* entry was pressed. The
+/// commit rule is [`show`]'s, for [`show`]'s reason — the module header's
+/// sixty-content-stream-rewrites-a-second defect — and the two functions share
+/// [`Editing`] so there is one implementation of it rather than two that drift.
+///
+/// ★ The *no colour* entry commits **immediately** rather than on close, and
+/// that is not an inconsistency: it is a discrete press, not a drag, so there
+/// is no run of intermediate values for a close-edge to collapse. It closes the
+/// popup itself, because `PopupCloseBehavior::CloseOnClickOutside` would
+/// otherwise leave a picker open over a widget that no longer has a colour.
+pub(super) fn show_mk(
+    ui: &mut Ui,
+    id_salt: &str,
+    control: &MkControl<'_>,
+    region: &str,
+) -> Option<MkPick> {
+    let id = ui.make_persistent_id(id_salt);
+    let popup_id = id.with("popup"); // ui-text-exempt: an egui id salt, never displayed
+    let seed = match control.value {
+        MkValue::Shown(rgb) => rgb,
+        // ★ Black, never a conversion of the CMYK the widget may be carrying.
+        // Converting would put a number in the picker that the file does not
+        // contain, and the operator's first nudge would commit pdfcer's guess
+        // at their separation as though it were their own.
+        MkValue::Unshowable { .. } => NO_PARTICULAR_COLOUR,
+    };
+
+    let mut state: Editing = ui.data(|d| d.get_temp(id)).unwrap_or(Editing {
+        working: seed,
+        dirty: false,
+        was_open: false,
+    });
+
+    let height = ui.spacing().interact_size.y;
+    let size = egui::vec2(height * ASPECT, height);
+    let response = match control.value {
+        MkValue::Shown(rgb) => {
+            // DOCUMENT COLOUR: the widget's own `/MK` value, read from the
+            // file. A theme must never move it — restyling the application
+            // would change what the operator sees their form's ink as.
+            let fill = egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
+            if control.disc {
+                disc(ui, size, fill)
+            } else {
+                ui.add(egui::Button::new("").fill(fill).min_size(size))
+            }
+        }
+        // The button's ordinary chrome fill, deliberately: there is no document
+        // colour to show, and tinting it would be this panel proposing one.
+        MkValue::Unshowable { mark, .. } => {
+            ui.add(egui::Button::new(egui::RichText::new(mark).small()).min_size(size))
+        }
+    };
+    crate::diag::ui_rect_visible(region, response.rect, ui.clip_rect());
+
+    // A fresh open re-seeds, for [`show`]'s reason: a picker opened over one
+    // widget, closed, and re-opened over another would otherwise show the first
+    // one's colour as though it were the second's.
+    let open_before = egui::Popup::is_id_open(ui.ctx(), popup_id);
+    if open_before && !state.was_open {
+        state.working = seed;
+        state.dirty = false;
+    }
+
+    let mut cleared = false;
+    egui::Popup::menu(&response)
+        .id(popup_id)
+        .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+        .show(|ui| {
+            if let MkValue::Unshowable { note, .. } = control.value
+                && !note.is_empty()
+            {
+                ui.label(egui::RichText::new(note).small().weak());
+            }
+            if let Some(entry) = &control.no_colour {
+                let none = ui.add_enabled(entry.available, egui::Button::new(entry.label));
+                // `ui_rect`, not the gated form, for the reason the picker's
+                // own rect below carries: a popup lives in its own `Area` on
+                // the tooltip layer, where the clip rect is the whole screen
+                // and a visibility fraction asserts nothing.
+                crate::diag::ui_rect(&format!("{region}.none"), none.rect);
+                if entry.available {
+                    if none.clicked() {
+                        cleared = true;
+                        // The working colour is abandoned rather than
+                        // committed: the operator's last act was to ask for no
+                        // colour at all.
+                        state.dirty = false;
+                        ui.close();
+                    }
+                } else {
+                    none.on_disabled_hover_text(entry.unavailable_hover);
+                }
+                ui.separator();
+            }
+            // DOCUMENT COLOUR: the working value of a widget's `/MK` colour
+            // being edited. Not chrome.
+            let mut colour =
+                egui::Color32::from_rgb(state.working[0], state.working[1], state.working[2]);
+            if egui::color_picker::color_picker_color32(
+                ui,
+                &mut colour,
+                egui::color_picker::Alpha::Opaque,
+            ) {
+                state.working = [colour.r(), colour.g(), colour.b()];
+                state.dirty = true;
+            }
+            crate::diag::ui_rect(&format!("{region}.picker"), ui.min_rect());
+        });
+
+    let open_after = egui::Popup::is_id_open(ui.ctx(), popup_id);
+    let committed = if cleared {
+        Some(MkPick::NoColour)
+    } else if state.was_open && !open_after && state.dirty {
+        Some(MkPick::Colour(state.working))
+    } else {
+        None
+    };
+    if committed.is_some() {
+        state.dirty = false;
+    }
+    state.was_open = open_after;
+    ui.data_mut(|d| d.insert_temp(id, state));
+    committed
+}
+
+/// A round swatch, for a control whose background the engine fills as a circle.
+///
+/// ★ Hand-drawn rather than a `Button` with a rounded corner radius, because a
+/// rounded rectangle at this size reads as a button with a tint and the point
+/// of the shape is that the operator sees a **disc** — the thing a radio
+/// button's background will actually be. It keeps the button's own interaction
+/// (a click opens the popup) by allocating an interactive rect of the same size
+/// and painting into it.
+fn disc(ui: &mut Ui, size: egui::Vec2, fill: egui::Color32) -> egui::Response {
+    let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
+    if ui.is_rect_visible(rect) {
+        let visuals = ui.style().interact(&response);
+        // The plate the disc sits on is CHROME — it is the control's own
+        // surface, not the document's ink — so it comes from the style the way
+        // every other button's does.
+        ui.painter()
+            .rect_filled(rect, visuals.corner_radius, visuals.weak_bg_fill);
+        let radius = rect.height().mul_add(0.5, -2.0).max(1.0);
+        ui.painter().circle_filled(rect.center(), radius, fill);
+        ui.painter()
+            .circle_stroke(rect.center(), radius, visuals.bg_stroke);
+    }
+    response
+}
+
 /// The picker's in-progress value, across the frames it is open for.
 ///
 /// ★ In `egui`'s temp data rather than on a draft struct, and that is a

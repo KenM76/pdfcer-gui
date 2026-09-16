@@ -295,24 +295,40 @@ pub fn field_widgets_affected(widgets: usize) -> String {
     )
 }
 
-/// **The widget was resized and its artwork could not be rebuilt.**
+/// **The engine recorded the edit and could not repaint the box.**
 ///
 /// ★★★ The one disclosure here that is about something the operator can SEE
-/// and will misread. §12.5.5 derives the appearance matrix from the appearance
-/// box's corners and the `/Rect` corners, so a pure translation moves baked
-/// artwork exactly and a changed **extent** makes the same algorithm *scale*
-/// it. `edit_widget` rebuilds the appearance when the extent changed — except
-/// where it cannot: a push button's baked caption, or a signature.
+/// and will misread — [`AppearanceOutcome::RecordedNotPainted`], the state the
+/// two older outcome fields could not name. The value is in the file and what
+/// is on screen has not changed.
 ///
-/// The widget then renders **distorted**, and `appearance_stale` is the
-/// engine's own string saying which one and why. It is passed through verbatim
-/// and this sentence prefixes it, because "stale appearance" is a phrase about
-/// the file and "it will look stretched" is a fact about the screen.
+/// # ★★ `resized` picks the sentence, and getting it wrong CONTRADICTS the engine
+///
+/// This function said *"This box was resized and its artwork could not be
+/// redrawn, so it will look stretched"* for every unpaintable outcome, because
+/// until `Pass 308.0` a resize was the only edit that could produce one. A
+/// colour-only edit now can, and for that case the engine's own string ends
+/// *"The geometry did not change, so nothing is stretched."* — so the shell was
+/// prefixing a denial with its own assertion of the same claim, in one
+/// sentence, on the operator's status line.
+///
+/// ⇒ §12.5.5 derives the appearance matrix from the appearance box's corners
+/// and the `/Rect` corners, so only a changed **extent** makes the old stream
+/// stretch. Where the extent did not change, the artwork is exactly as correct
+/// as it was; what is wrong is that it does not reflect the edit.
 #[must_use]
-pub fn field_appearance_stale(why: &str) -> String {
-    format!(
-        "This box was resized and its artwork could not be redrawn, so it will look stretched: {why}"
-    )
+pub fn field_appearance_not_repainted(resized: bool, why: &str) -> String {
+    if resized {
+        format!(
+            "This box was resized and its artwork could not be redrawn, so it will look \
+             stretched: {why}"
+        )
+    } else {
+        format!(
+            "This was stored in the file, but the box could not be redrawn, so what you see has \
+             not changed: {why}"
+        )
+    }
 }
 
 /// **A widget was moved or resized.**
@@ -366,6 +382,31 @@ pub fn field_widget_moved(resized: bool, regenerated: bool) -> &'static str {
         // changes no length, so an appearance carried across is exact and
         // there is nothing to disclose. Only a RESIZE can be unsatisfiable.
         (false, _) => "The box was moved.",
+    }
+}
+
+/// **A widget property other than its geometry changed.**
+///
+/// ★★★ The line [`field_widget_moved`] was giving for every non-geometry edit,
+/// and it said **"The box was moved."** A border style, a caption, a visibility
+/// flag and — since O202 — a colour all reached it, because the caller pushed
+/// that sentence unconditionally and `resized` is `false` for all of them. The
+/// receipt named an act the operator had not performed.
+///
+/// `touched` is the control they actually pressed, carried from the panel for
+/// the same reason a refusal carries it: after the fact nothing else can say
+/// which one it was.
+///
+/// ★ `regenerated` is added rather than assumed. A colour change rebuilds the
+/// appearance stream and a visibility flag does not, and an operator who just
+/// watched a check box redraw itself is owed the difference from one who did
+/// not.
+#[must_use]
+pub fn field_widget_property_changed(touched: &str, regenerated: bool) -> String {
+    if regenerated {
+        format!("Changed {touched}. The box was redrawn to match.")
+    } else {
+        format!("Changed {touched}.")
     }
 }
 
@@ -426,6 +467,55 @@ mod tests {
             !moved.contains("resized") && !moved.contains("stretched"),
             "a move changes no length and owes no disclosure about one: {moved}"
         );
+    }
+
+    /// ★★★ **A non-geometry edit does not report a move it did not make.**
+    ///
+    /// Every border, caption, visibility and colour edit ended with *"The box
+    /// was moved."*, because the handler pushed that line unconditionally. The
+    /// claim asserted here rather than the wording: what the operator touched
+    /// must appear, and the word *moved* must not.
+    #[test]
+    fn a_property_change_names_what_was_touched_and_not_a_move() {
+        let line = field_widget_property_changed("the background colour", true);
+        assert!(
+            line.contains("the background colour"),
+            "the receipt must name the control that was pressed: {line}"
+        );
+        assert!(
+            !line.contains("moved"),
+            "★ the defect, stated: a colour edit claimed a move: {line}"
+        );
+        assert_ne!(
+            field_widget_property_changed("the border", true),
+            field_widget_property_changed("the border", false),
+            "whether the box was redrawn is the one fact this line adds"
+        );
+    }
+
+    /// ★★ **The stretched-artwork sentence belongs to a RESIZE only.**
+    ///
+    /// The engine's string for a colour edit it could not repaint ends *"The
+    /// geometry did not change, so nothing is stretched."* — and the shell
+    /// prefixed its own assertion of a stretch onto it, so the operator read
+    /// two sentences contradicting each other in one line.
+    #[test]
+    fn only_a_resize_claims_the_artwork_is_stretched() {
+        let why = "the caption font is not embedded";
+        let resized = field_appearance_not_repainted(true, why);
+        let colour_only = field_appearance_not_repainted(false, why);
+
+        assert!(resized.contains("stretched"), "{resized}");
+        assert!(
+            !colour_only.contains("stretched"),
+            "★ the defect, stated: a colour edit was told its artwork is stretched: {colour_only}"
+        );
+        for line in [&resized, &colour_only] {
+            assert!(
+                line.contains(why),
+                "the engine's own reason is carried verbatim: {line}"
+            );
+        }
     }
 
     /// A move says the same thing whether or not the appearance regenerated.
