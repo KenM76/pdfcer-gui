@@ -20,7 +20,7 @@ filed in the request channel. One the engine can reach and the shell does not
 call is **GUI work** and is ours. Keeping those two apart is the whole point of
 the table — without it every gap looks like the same size of job.
 
-**Measured 2026-09-16** against engine pin `5d43d2ea` (what
+**Measured 2026-09-16** against engine pin `20e539a2` (what
 `pdfcer-gui/Cargo.lock` pins) and Acrobat DC `AcroForm.api` file version
 `25.1.20435.0`. Re-measure before quoting any count below; the commands are in
 §10.
@@ -30,9 +30,9 @@ capabilities Acrobat offers and a PDF may legally carry, the shell reaches
 roughly two thirds and the engine reaches roughly nine tenths — so most of what
 Ken hit in O205 is *wiring*, not engineering. The exceptions are real and
 named: `/AA` (format / validate / calculate / keystroke) is the single largest
-hole and is engine-side; button icons are engine-side; and one operator-visible
-defect (a `/Btn` rotation that reports success and never turns) is engine-side
-and already filed as G023.
+hole and is engine-side, and button icons are engine-side. The one
+operator-visible engine defect O205 named — a `/Btn` rotation that reported
+success and never turned — is fixed upstream and live here at this pin.
 
 ---
 
@@ -144,7 +144,7 @@ Acrobat labels, verbatim from `ACRO:strings.txt:3326`: `&Name:` `&Tooltip:`
 | Name | all | `/T` | ✅ `rename_field` ENGINE:`edit.rs:25971`; validator `forms_author.rs:465` | ✅ `formfield.rs:486-566` | ✅ |
 | Tooltip | all | `/TU` | ✅ `TooltipChoice{Undecided,Text,Declined}` ENGINE:`edit.rs:1751`, writes `:25736`/`:25739` | ✅ `fieldedit.rs:487-514` | ✅ — but no `PDFCER_DIAG` region, so it cannot be driven-asserted |
 | Form Field (visibility) | all | `/F` | ✅ `Visibility{VisibleAndPrints,ScreenOnly,PrintOnly,Hidden}` ENGINE:`edit.rs:1540` | ✅ `widgetedit.rs:546-591` | ✅ — exactly Acrobat's four. NoView/NoZoom/NoRotate are 🚫 in both (ENGINE `set_annotation_flags` refuses a `/Widget` by name, deliberately) |
-| Orientation | all | `/MK /R` | ⚠ ENGINE:`edit.rs:24982` — **writes the key for every kind, turns the artwork only for `/Tx` and `/Ch`** | ✅ controls present `widgetedit.rs:337-338` | ⚠ **ENGINE defect, filed G023.** For CB/RB/PB the engine returns success, discloses nothing, and no pixel moves |
+| Orientation | all | `/MK /R` | ✅ ENGINE:`edit.rs:25026` — writes the key and turns the artwork for every kind pdfcer drew, buttons included (`:38508`) | ✅ controls present `widgetedit.rs:337-338` | ✅ — and a widget whose `/AP` pdfcer did not author still gets `/MK /R` plus the `appearance_stale` sentence, because redrawing somebody else’s artwork is the one thing worse than not turning it |
 | Read Only | all | `/Ff` 1 | ✅ `FieldEdit::read_only` | ✅ `fieldedit.rs:163-176` | ✅ |
 | Required | all | `/Ff` 2 | ✅ `FieldEdit::required` | ✅ `fieldedit.rs:150-162` | ✅ |
 | *(no Acrobat control)* | all | `/Ff` 3 NoExport | ✅ `with_no_export` ENGINE:`edit.rs:21857` | ❌ | ❌ `GUI` — Acrobat hides this one under Options for some kinds; the engine has it and the shell has nowhere for it. Row goes beside `fieldedit.rs:150-176` |
@@ -420,7 +420,7 @@ is not "done" — it is the defect he is describing.
 | **Colour and border** | all seven | `/MK /BG`, `/MK /BC`, `/BS /S`, `/BS /W` — the shell does treat these uniformly. **This set is the example of it done right.** |
 | **Visibility, read-only, required, tooltip, rename, delete** | all seven | Also uniform today. Keep them that way. |
 | **Length entry** | every numeric length in the product | O207. See §6. |
-| **Rotation** | all seven | Uniform in the shell; **non-uniform in the engine**, which is G023. |
+| **Rotation** | all seven | Uniform in the shell and, since `20e539a2`, uniform in the engine. The one asymmetry left is by design: pdfcer turns artwork it drew and discloses rather than redraw artwork it did not. |
 
 **How to use this when a request arrives.** Find the capability in §3–§5, read
 its row, then check §7 for the sibling set it belongs to. If the set has members
@@ -469,8 +469,8 @@ Owner tags as defined in §1. `GUI` rows are ours and need no one's permission.
 
 | # | Gap | Status |
 |---|---|---|
-| E1 | A `/Btn` rotation is written, reports success, and never turns | **FILED — `request_G023`** |
-| E2 | `/Q` written but never redrawn | **SHIPPED upstream — `503ad9d4`, Pass 308.4.** Not in this shell until the pin moves past `5d43d2ea`; the reply adds that a clear means *inherit* |
+| E1 | A `/Btn` rotation is written, reports success, and never turns | **CLOSED — `20e539a2`, Pass 308.5, and live in this shell.** `build_button_states` now takes the quarter turn, authors into an `h x w` `/BBox` for 90/270 and emits `quarter_turn_matrix`. Verified at the pin, not taken from the commit message |
+| E2 | `/Q` written but never redrawn | **CLOSED — `503ad9d4`, Pass 308.4, and live in this shell.** `edit.rs:25912` gates the redraw on `edit.quadding.is_some()` and `inherited_quadding` resolves a clear to *inherit*. The shell still owes the clear control that says so — `GUI` work, not engine |
 | E3 | `/AA` authoring: format, keystroke, validate, calculate | **FILED — `request_G024`.** Asks for an **emitter** over the three enums `classify` already parses, plus `/CO` maintenance and the `/F`+`/K` pairing, as one set per O206 |
 | E4 | `/MK` button icons and state captions: `/I` `/RI` `/IX` `/IF` `/TP` `/AC` `/RC` | to file |
 | E5 | `/H` highlight behaviour (None/Push/Outline/Invert) | to file |
@@ -510,7 +510,7 @@ Derived from the tables above, not asserted:
 | Owner | Rows |
 |---|---|
 | `GUI` | 26 |
-| `ENGINE` | 15 (1 shipped upstream, 2 filed, 12 to file) |
+| `ENGINE` | 15 (2 closed and live, 1 filed, 12 to file) |
 | `ASK` | 3 |
 
 Re-derive with the commands in §10 before quoting these anywhere.
@@ -523,7 +523,7 @@ Re-derive with the commands in §10 before quoting these anywhere.
 |---|---|---|
 | Acrobat | `evidence/acrobat-forms/strings.txt` (5,033 runs), `form-dialogs.txt` — **not committed; regenerate with `python tools/acrobat-form-strings.py`.** This repository is public and those files are Adobe's resource strings verbatim; see `evidence/acrobat-forms/README.md` | `tools/acrobat-form-strings.py` — UTF-16LE runs out of `AcroForm.api` (20,508,568 bytes, v25.1.20435.0) and `AcrobatRes.dll`. **Vocabulary, verbatim; structure by adjacency** — see A1. ⚠ Line numbers and offsets in every `ACRO:` citation are version-specific: search for the quoted label, do not seek to the offset |
 | Spec ceiling | `evidence/forms-parity/spec-field-properties.md` | ISO 32000-1 Tables 220/221/226/228/230, §12.7.3–§12.7.5, §12.5.5, erratum #56 |
-| Engine | `evidence/forms-parity/engine-form-verbs.md` | measured against `git show HEAD:` at pin `5d43d2ea` — the working tree is dirty with the G022 fix |
+| Engine | `evidence/forms-parity/engine-form-verbs.md` | measured against `git show HEAD:` at pin `5d43d2ea`, which is one revision behind the pin this table now quotes. E1 and E2 were re-measured against `20e539a2` directly; nothing else in the engine changed between the two |
 | Shell | `evidence/forms-parity/shell-form-surface.md`, `canvas-per-kind.md` | two independent measurements of the same surface; they agree on every mechanism |
 
 ```

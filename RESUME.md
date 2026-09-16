@@ -28,7 +28,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `5d43d2ea` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `20e539a2` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -63,11 +63,13 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    (`pdfcer-core/src/dimension/length_parse.rs:139`), so the work is one helper in
    `src/units.rs` reached from the entry sites, the same shape O194 step 2 used for
    the display side. Section 8.2’s fifteen rows are the channel’s work, not ours,
-   and three have moved: **G022 shipped upstream in `503ad9d4`, one commit past
-   the pin** — and its reply carries a fact the request did not, that `/Q` is
+   and three have moved: **G022 and G023 are both shipped upstream and the pin
+   now carries them** (`20e539a2`, bumped 2026-09-16, both re-measured in the
+   checkout rather than believed from a commit message) — so a `/Btn` rotation
+   now turns, and G022’s reply carries a fact the request did not, that `/Q` is
    inheritable, so the clear-alignment control it unblocks is labelled *inherit*
-   and never *Left*; G023 (a `/Btn` rotation that reports success and never turns)
-   is open; and E3 went out as **`request_G024`**, which asks for an *emitter* over
+   and never *Left*. That control is still unbuilt and is now GUI work with no
+   blocker in front of it. E3 went out as **`request_G024`**, which asks for an *emitter* over
    the three script enums `classify` already parses — Acrobat’s Format, Validate
    and Calculate tabs, plus `/CO` upkeep and the `/F`+`/K` pairing, as **one
    set**. That last clause is O206, which is doctrine rather than a feature:
