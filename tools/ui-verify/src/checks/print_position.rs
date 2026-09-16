@@ -133,25 +133,31 @@ const RESET_ALL: &str = "print.position.reset-all";
 /// canvas, and so the canvas's short side is the ceiling. 240 pt was tried
 /// first and skipped every run for want of room.
 ///
-/// Bounded below by egui, which does not call a press a drag until the pointer
-/// has travelled its own threshold — around 45 pt in an eframe 0.35 app on
-/// Windows — and that first stretch appears in no `drag_delta()`. A drag much
-/// shorter than this would move the page by an amount dominated by the
-/// threshold rather than by the gesture, which turns the magnitude assertion
-/// below into a measurement of egui rather than of us.
+/// Bounded below by [`EGUI_MAX_CLICK_DIST`]: the driver walks the pointer in
+/// [`DRAG_STEPS`] equal steps, and the prediction below is only the truth while
+/// one of those steps is longer than that distance. `travel_per_step_clears_egui`
+/// holds the two numbers against each other.
 const DRAG_PT: f32 = 120.0;
 
-/// The travel egui swallows before it reports a drag, logical points. Used only
-/// to predict the expected movement; the band around that prediction is wide.
-const THRESHOLD_PT: f32 = 45.0;
+/// egui's own click-versus-drag distance, logical points: `Options::max_click_dist`,
+/// `egui-0.36.2/src/input_state/mod.rs:113`.
+///
+/// A press becomes a drag on the first frame whose travel from the press origin
+/// exceeds this, and that frame's `drag_delta()` carries its entire step. So a
+/// driver whose step is longer than this loses nothing to the decision, and one
+/// whose step is shorter loses every step before the crossing. The prediction
+/// below is the whole travel, which assumes the first case — hence the test.
+const EGUI_MAX_CLICK_DIST: f32 = 6.0;
 
 /// How much of the predicted movement must actually arrive.
 ///
-/// Wide, because [`THRESHOLD_PT`] is a measurement of one machine and the
-/// driver walks the pointer in steps, so the frame the threshold is crossed on
-/// may carry part of a step with it. The sharp assertion about magnitude is not
-/// this band — it is [`assert_magnified`].
-const MOVE_BAND: (f64, f64) = (0.35, 1.15);
+/// The prediction is the whole pointer travel, so the floor is for steps the
+/// application misses under load — two of the eight — and the ceiling is for
+/// rounding. Deliberately too narrow to be satisfied by a delta applied twice
+/// (a ratio near 2) or by one never divided by the preview scale (a ratio near
+/// the scale itself, about 0.4). The sharp assertion about magnitude is not this
+/// band — it is [`assert_magnified`].
+const MOVE_BAND: (f64, f64) = (0.70, 1.10);
 
 /// Above this preview scale, dividing the screen delta by it no longer
 /// magnifies, so [`assert_magnified`] has nothing to say and says so.
@@ -572,16 +578,33 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         return Ok(Some(why));
     }
 
-    let predicted = f64::from((DRAG_PT - THRESHOLD_PT) / dragged.scale);
+    // The prediction is the WHOLE pointer travel, and that is only what arrives
+    // when egui has already called the press a drag by the end of the first step.
+    // Held here as well as in `travel_per_step_clears_egui`, because a check that
+    // mis-predicts does not report a broken prediction — it reports a defect in
+    // the application, in a sentence naming functions that are correct.
+    let step_pt = f64::from(DRAG_PT) / f64::from(crate::input::DRAG_STEPS);
+    if step_pt <= f64::from(EGUI_MAX_CLICK_DIST) {
+        return Ok(Some(format!(
+            "the driver walks this {DRAG_PT} pt drag in steps of {step_pt:.1} pt, which does \
+             not exceed egui's {EGUI_MAX_CLICK_DIST} pt click distance. The steps before \
+             egui calls the press a drag reach no `drag_delta()`, so the movement predicted \
+             below is larger than any correct application would produce. This is a fact about \
+             the harness, not about the application."
+        )));
+    }
+
+    let predicted = f64::from(DRAG_PT / dragged.scale);
     for (axis, got) in [('x', dragged.dx_pt), ('y', dragged.dy_pt)] {
         let ratio = got.abs() / predicted;
         if ratio < MOVE_BAND.0 || ratio > MOVE_BAND.1 {
             return Ok(Some(format!(
                 "on {axis} the page moved {got:.2} paper points against a predicted \
-                 {predicted:.2} — a ratio of {ratio:.2}, outside the {:.2}..{:.2} band this \
-                 check allows for egui's drag threshold. Either the delta is being scaled by \
-                 something other than the preview scale, or it is being applied more than once \
-                 per frame.",
+                 {predicted:.2} — a ratio of {ratio:.2}, outside the {:.2}..{:.2} band. The \
+                 prediction is the whole pointer travel, which is what reaches the page while \
+                 one driver step is longer than egui's click distance. Either the delta is \
+                 being scaled by something other than the preview scale, or it is being \
+                 applied more than once per frame.",
                 MOVE_BAND.0, MOVE_BAND.1
             )));
         }
@@ -649,6 +672,48 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
+    // --- assertion 5b: each axis button moves ONE axis ----------------------
+    //
+    // Assertion 5 presses the two axis buttons on an already-centred page,
+    // where not moving is the pass. A button that does nothing at all satisfies
+    // that, and so does one wired to the axis it does not own. The state that
+    // separates the three is an UNcentred one, so the page goes back to the
+    // engine's placement and each button is pressed from there: the axis it owns
+    // has to reach the value Centre produced, and the other axis has to stay.
+    let origin = press(&session, &driver, ui_rect, RESET, report)?;
+    if !origin.at_the_origin() {
+        return Ok(Some(format!(
+            "Reset left {} rather than the engine's own placement, so the two axis buttons \
+             below would be pressed from a state this check does not know.",
+            origin.where_it_is()
+        )));
+    }
+    let only_across = press(&session, &driver, ui_rect, CENTRE_H, report)?;
+    if (only_across.dx_pt - centred.dx_pt).abs() >= 0.005 || only_across.dy_pt.abs() >= 0.005 {
+        return Ok(Some(format!(
+            "Centre horizontally, pressed on a page at the engine's placement, left {} — it \
+             was asked to put x at {:.2} and to leave y at 0. A button that moves NEITHER axis \
+             passes the idempotence assertion above, and so does one wired to the other axis: \
+             this is the assertion neither of those can pass.",
+            only_across.where_it_is(),
+            centred.dx_pt
+        )));
+    }
+    let then_down = press(&session, &driver, ui_rect, CENTRE_V, report)?;
+    if !then_down.same_place_as(&centred) {
+        return Ok(Some(format!(
+            "Centre vertically, pressed after Centre horizontally, left {} rather than the \
+             {} that Centre itself produces. The two axis buttons have to compose into Centre, \
+             or one of them is moving the axis it does not own.",
+            then_down.where_it_is(),
+            centred.where_it_is()
+        )));
+    }
+    report.note(
+        "each axis button moved only its own axis, and the two together composed into Centre"
+            .to_owned(),
+    );
+
     // --- assertion 6: the job-wide reset ------------------------------------
     let all = press(&session, &driver, ui_rect, RESET_ALL, report)?;
     if !all.at_the_origin() {
@@ -685,4 +750,25 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             .to_owned(),
     );
     Ok(None)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DRAG_PT, EGUI_MAX_CLICK_DIST};
+    use crate::input::DRAG_STEPS;
+
+    /// The movement this check predicts is the whole pointer travel, and that is
+    /// only right while one step of the driver's walk is longer than egui's
+    /// click-versus-drag distance. Shorten the drag, raise the step count, or let
+    /// egui's default move, and the prediction is wrong by however many steps
+    /// precede the crossing — which the check would report as the application
+    /// scaling the delta by something other than the preview scale.
+    #[test]
+    fn travel_per_step_clears_egui() {
+        let step = f64::from(DRAG_PT) / f64::from(DRAG_STEPS);
+        assert!(
+            step > f64::from(EGUI_MAX_CLICK_DIST),
+            "one driver step is {step} pt, which does not exceed egui's {EGUI_MAX_CLICK_DIST} pt"
+        );
+    }
 }

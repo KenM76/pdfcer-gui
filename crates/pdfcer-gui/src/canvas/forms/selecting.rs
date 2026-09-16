@@ -33,6 +33,96 @@
 
 use super::*;
 
+/// The environment variable that selects a form field when no pointer can.
+///
+/// Takes one fully-qualified field name. Consumed on the first frame the field
+/// appears in the placement census, and never again.
+///
+/// # Why it exists
+///
+/// `doc.selected_field` is the Properties pane's only input, and until this
+/// seam the only writer was [`select_click`] — a pointer gesture. So every
+/// properties surface for a form field was reachable by R1 only on a machine
+/// whose desktop was free, and `tools/ui-verify` moves the operator's real
+/// mouse. The result is that the largest editing surface in the shell could not
+/// be driven on any day he was working, which is most days.
+///
+/// It is the same wall `DIAG_OPEN_PATH` and
+/// [`DIAG_TYPE`](crate::canvas::textedit::DIAG_TYPE) are behind, arriving from
+/// the other side: not *"synthetic input cannot reach this dialog"* but
+/// *"synthetic input cannot be produced at all right now"*.
+///
+/// # What it deliberately cannot do
+///
+/// It resolves the name against **the same census [`select_click`] hit-tests**,
+/// `boxes::Placed::targets`. A widget the census excludes — one with no
+/// appearance stream, which `super::boxes` will not admit — is therefore
+/// unreachable through this seam exactly as it is unreachable by clicking. A
+/// seam that resolved names against the AcroForm dictionary instead would let a
+/// check pass on a field no operator can select, which is the defect class R1
+/// exists to catch rather than a convenience worth having.
+///
+/// And it raises the same [`FieldAction::Select`] the click raises, through the
+/// same queue, so what it substitutes is the gesture and not the selection.
+// ui-text-exempt: an environment variable name, never displayed
+pub const DIAG_SELECT_FIELD: &str = "PDFCER_DIAG_SELECT_FIELD";
+
+/// Select the field [`DIAG_SELECT_FIELD`] names, once.
+///
+/// Called before [`select_click`] on the frames that one is called on, so a
+/// real click in the same frame wins: both raise `FieldAction::Select` and the
+/// queue applies them in order.
+pub(super) fn seeded_select(
+    doc: &OpenDoc,
+    targets: &[boxes::FieldTarget],
+    actions: &mut Vec<Action>,
+) {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static DONE: AtomicBool = AtomicBool::new(false);
+    if !crate::diag::enabled() || DONE.load(Ordering::Relaxed) {
+        return;
+    }
+    let Ok(name) = std::env::var(DIAG_SELECT_FIELD) else {
+        return;
+    };
+    let name = name.trim().to_owned();
+    if name.is_empty() {
+        return;
+    }
+    // An empty census is a document that has not finished arriving, not a
+    // document without the field. Returning without reporting anything is
+    // right here and only here: the next frame asks again.
+    if targets.is_empty() {
+        return;
+    }
+    let found = targets.iter().find(|t| t.field == name);
+    // A miss is disclosed rather than left as silence, for `report_clipped`'s
+    // reason: a check that sees no selection cannot otherwise tell a misspelt
+    // name from a selection mechanism that is broken, and those have opposite
+    // fixes.
+    //
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    crate::diag::trace_on_change("form-field-seam", || match found {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        Some(t) => format!("name={name} found=true page={} widget={}", t.page, t.widget),
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        None => format!("name={name} found=false candidates={}", targets.len()),
+    });
+    let Some(target) = found else {
+        return;
+    };
+    DONE.store(true, Ordering::Relaxed);
+    let picked = crate::app::state::SelectedField {
+        field: target.field.clone(),
+        widget: target.widget,
+        page: target.page,
+    };
+    if doc.selected_field.as_ref() == Some(&picked) {
+        return;
+    }
+    actions.push(FieldAction::Select(Some(picked)).into());
+}
+
 /// A click in **Edit mode**: select the field under the pointer, or clear the
 /// selection.
 ///

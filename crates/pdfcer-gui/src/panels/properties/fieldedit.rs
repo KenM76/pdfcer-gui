@@ -272,6 +272,10 @@ pub fn section(
             |edit, on| edit.with_multi_select(on),
             actions,
         );
+        // The `/Opt` list, and the three flags that describe it. Its own module
+        // under R2, and drawn last in this branch because the two rows above
+        // decide which of its controls are live.
+        super::choiceopts::section(ui, field, fqn, state, epoch, actions);
     }
 
     // -- The field's own text ----------------------------------------------

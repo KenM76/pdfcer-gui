@@ -817,6 +817,14 @@ pub(super) fn edit_properties(
             if outcome.sort_claim_unmet {
                 lines.push(crate::text::forms::field_sort_claim_unmet().to_owned());
             }
+            // A reorder the shell did not expect. `choiceopts` sorts the list
+            // it sends with the engine's own exported sorter, so this is
+            // normally false and says nothing — it is true only if the two
+            // orderings have come apart, which is the drift `G026` exported the
+            // comparator to prevent and which no test on either side can see.
+            if outcome.options_sorted {
+                lines.push(crate::text::forms::field_options_reordered().to_owned());
+            }
             if outcome.widgets_affected > 1 {
                 lines.push(crate::text::forms::field_widgets_affected(
                     outcome.widgets_affected,

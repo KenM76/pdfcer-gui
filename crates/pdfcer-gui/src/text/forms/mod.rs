@@ -68,12 +68,12 @@ pub mod groups;
 mod tab_order;
 
 pub use authoring::{
-    field_appearance_not_repainted, field_siblings_untouched, field_sort_claim_unmet,
-    field_widget_moved, field_widget_property_changed, field_widgets_affected,
-    form_field_actions_orphaned, form_field_actions_retargeted, form_field_added,
-    form_field_deleted, form_field_merged, form_field_no_options, form_field_no_tooltip,
-    form_field_renamed, form_field_tagged_document, form_noun_check_box, form_noun_choice,
-    form_noun_push_button, form_noun_radio, form_noun_text, form_widget_deleted,
+    field_appearance_not_repainted, field_options_reordered, field_siblings_untouched,
+    field_sort_claim_unmet, field_widget_moved, field_widget_property_changed,
+    field_widgets_affected, form_field_actions_orphaned, form_field_actions_retargeted,
+    form_field_added, form_field_deleted, form_field_merged, form_field_no_options,
+    form_field_no_tooltip, form_field_renamed, form_field_tagged_document, form_noun_check_box,
+    form_noun_choice, form_noun_push_button, form_noun_radio, form_noun_text, form_widget_deleted,
     form_widget_deleted_last,
 };
 
@@ -478,6 +478,22 @@ pub fn form_field_choice_unset() -> &'static str {
 pub fn form_field_choice_value_not_listed() -> &'static str {
     "The value stored in this field is not one of the options the document lists. It is shown \
      as it is stored; picking an option below replaces it."
+}
+
+/// The same caveat on a **multi-select** list, where the wording above would
+/// be false.
+///
+/// A check-box stack has no box for a value matching no option, so "it is
+/// shown as it is stored" cannot be true and there is nothing for the
+/// operator to replace. The value is dropped from the selection the row
+/// writes — carrying it into `set_choice_value` earns
+/// `ChoiceValueNotInOptions`, a refusal naming a value the operator never
+/// touched — and this says so, because a silent drop is an inference the
+/// operator cannot see.
+#[must_use]
+pub fn form_field_choice_multi_value_not_listed() -> &'static str {
+    "One of the values stored in this field is not an option the document lists, so it has no \
+     box below. Ticking any box drops it."
 }
 
 // ---------------------------------------------------------------------------

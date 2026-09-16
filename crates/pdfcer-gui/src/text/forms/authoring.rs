@@ -254,8 +254,8 @@ pub fn form_widget_deleted_last() -> String {
 
 /// **The `Sort` flag was set over a list nobody has sorted.**
 ///
-/// ★★ pdfcer will not reorder `/Opt` on the operator's behalf and this sentence
-/// is why that is the right refusal rather than an omission. Table 230 makes
+/// ★★ pdfcer will not reorder an `/Opt` list it was not given, and this
+/// sentence is why that is the right refusal rather than an omission.
 /// `Sort` *"intended for use by writers, not by readers"* and requires a
 /// conforming reader to display the options *"in the order in which they occur
 /// in the Opt array"* — so `Sort` is a **claim about provenance**, not an
@@ -269,6 +269,24 @@ pub fn form_widget_deleted_last() -> String {
 pub const fn field_sort_claim_unmet() -> &'static str {
     "The Sort flag now says this list was sorted by whoever wrote the file, and it is not in \
      order. pdfcer has not reordered it — the order options appear in is what a reader shows."
+}
+
+/// **pdfcer put the list in a different order from the one it was sent.**
+///
+/// A tripwire rather than an everyday disclosure. `edit_field` sorts an `/Opt`
+/// list when the same edit supplies the list and sets the Sort flag, and the
+/// properties pane sorts with the engine's own exported comparator before
+/// sending — so the engine finds nothing to move and this never fires.
+///
+/// It fires if the two orderings come apart, which is the failure the
+/// comparator was exported to prevent and which neither side's tests can see,
+/// because each stays internally consistent. Worded for the operator anyway:
+/// the thing they can act on is that the list on screen was not the list
+/// written, and Rule 4 owes them that off-canvas whether or not the cause is
+/// theirs.
+#[must_use]
+pub const fn field_options_reordered() -> &'static str {
+    "pdfcer put the options in a different order from the one shown when you pressed. The list in the file is sorted; what you saw was not."
 }
 
 /// **One field's flag changed and several boxes on the page followed.**

@@ -4,43 +4,49 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`d2fa7352`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`fb987cde`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** One thing the operator asked for, in two parts,
-both about printing a drawing that will not fit on the paper.
+**What is new in this build.** The drop-downs and lists on a form can now be
+answered on the sheet itself, and the list of choices behind one can be edited
+after the field is placed.
 
-**The page can be dragged to a new position on the sheet.** When a drawing is
-printed at a scale that loses content, pdfcer places it flush to the corner of
-the printable area, and that used to be the only place it could go. Now it can
-be dragged in the preview to choose which part of the drawing reaches paper,
-with four shortcuts on a **Position** tab of the print window: Centre, which
-crops evenly on all four edges; Centre horizontally; Centre vertically; and
-Reset position, which puts the page back where pdfcer chose. The preview is a
-column of its own and stays visible whichever tab is open, so the picture never
-hides behind the controls that change it. Reset all pages is a control of its own rather than a
-modifier, because its scope is the whole job and a hundred-sheet job is the
-case that matters. Each sheet's position is remembered separately, and survives
-a change of scale, paper, rotation or a press of fit-to-page. The two numbers
-can be typed in millimetres or stepped by the arrow keys, a millimetre at a
-time and ten with Shift held.
+**A drop-down or a list is answered where it is drawn.** Click the field on the
+page and its options open beside it; the arrow keys move the highlight, Enter
+or a click answers it, Escape leaves it as it was, and Tab carries on through
+the form. Until now those two kinds were the only fillable fields that had to
+be answered from the side panel — read the question off the page, then find the
+same field again in a list, which is the round trip the on-page text editor
+exists to avoid. Nothing at all is drawn over a field that is not focused, so a
+picture of the page is a picture of the document as it will save. The option
+list opens above or below the field and is held to that side, because a list
+that slid back over the box it belongs to would then take the clicks meant for
+it.
 
-Those numbers say what frame they are measured in, because a displacement with
-no origin means nothing: from where pdfcer places the page, positive right and
-down. Under them is how far the page runs past the printable area, **edge by
-edge**, in millimetres. That line is a readout and never a warning — on a 1:1
-CAD drawing the overhang is usually blank paper, and the ink verdict beside it
-is the surface that gets to make a claim about content actually being lost.
+**The choices themselves can be edited.** In a choice field's Properties:
+add, remove, move up, move down, rename what the reader sees without changing
+what the form sends, sort the list, and choose which entry a Reset returns the
+field to — including *Nothing*, which clears it, because a reset to empty is a
+different instruction from having nothing picked. A repeated sent value is
+refused by name before anything is written: a fill resolves to the first match,
+so a second copy of it could never be selected by anyone, ever.
 
-**And the crop hatching marks all four edges.** It drew two bands, so a drawing
-hanging off the top and the left was hatched on one of them. There are four
-now, each clipped to the page so they cannot overlap, and the build's trace
-names which edges hang over — a capture cannot tell three hatched bands from
-two, and a count cannot tell a page off the left from a page off the right.
+**More fields are drawn on the page than were.** A widget whose own dictionary
+does not say which sheet it belongs to used to be absent from the page and
+reachable only from the panel. The page is now found by looking — the sheet
+whose annotation list names the widget — so those fields appear where they
+actually are, and the page and the panel no longer disagree about what exists.
 
-**The print window's tabs are single words now** — Pages, Copies, Comments,
-Position — with the fuller question on hover. A fourth tab would not fit beside
-the old names on one row, and a strip that wraps onto a second row costs the
-dialog vertical space it does not have.
+**A list holding an answer that is not one of its own options no longer earns a
+baffling refusal.** Some files carry a stored answer the option list does not
+contain, left behind when the choices were edited or written by another
+program. Ticking the first box used to be rejected with a complaint naming a
+value the operator never touched. The stray answer is now dropped from the
+selection, and the panel says so in words, because a check-box stack has no box
+to show it in and a silent drop is a change nobody can see.
+
+**Two of those are checked by driving the program**, not only by tests: one
+answers a drop-down on the page and reads the value back, the other proves the
+reorder arrows are greyed only at the two ends of the list.
 
 **Scope.** This shell only. `pdfcer-core` and `pdfcer` capabilities live in
 `D:\Dev\pdfcer\docs\FEATURES.md`, whose `gui` column is this project's
@@ -82,7 +88,7 @@ than the number it produced last.
 | **Source** | `git ls-files '*.rs'` through `xargs` with a newline delimiter, then `cat`, then `wc -l`. The `cat` matters: without it `xargs` splits into two `wc` invocations and emits two `total` lines. A `find crates -name '*.rs'` count answers a different question |
 | **Commands** | read from the build's own trace line `pdfcer-diag shell commands=… planned=… directed=…` on an off-screen smoke launch under `PDFCER_DIAG_VIEWPORT` |
 | **Engine** | `pdfcer-core` v0.53.0, pinned as above |
-| **Panels** | 13 — `Panel::ALL` is `[Self; 13]` at `crates/pdfcer-gui/src/panels/mod.rs:354`, pinned by `tests::the_panel_catalog_is_complete` |
+| **Panels** | 13 — `Panel::ALL` is `[Self; 13]` at `crates/pdfcer-gui/src/panels/mod.rs:353`, pinned by `tests::the_panel_catalog_is_complete` |
 | **Ribbon surface** | 40 captioned groups — `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` |
 
 ---
@@ -461,6 +467,10 @@ declare an intention before pointing at anything.
 | 🔨 | **Placing a field shows what the click will produce** — an outline follows the pointer at the size the field will be, hung from its lower-left corner, so on screen it grows up and to the right — deliberately the same rule the drag uses, and read from the same function, because two copies would disagree the first time a page carried a rotation. Outline only, no label: the kind is already named on the armed-tool surface, and a label positioned relative to the document is what rule 4 sends off-canvas. It is drawn over existing widgets too, since a click there still places a field on top, and it disappears the moment a drag starts, because the rubber-band is then the cursor. Nothing is drawn into the document and nothing is committed. **Not yet driven** |
 | 🔨 | **Tab stays in the document instead of escaping into the ribbon** — the press is taken off the raw input before egui can latch a focus direction. On a form it walks the engine's own tab sequence, with a radio group collapsed to one stop, crossing pages, scrolling by the smallest amount that reveals the field and leaving the zoom alone; Space reaches a focused check box rather than panning the paper. On a page with no form, clicking the page gives it the keyboard and Tab walks the objects in paint order, scoped to whatever the selection is standing in — so a sheet whose whole body is one page-sized wrapper, which is every CAD export this project has seen, rings the wrapper's contents rather than offering one stop that is the entire drawing. **Not yet driven**, and the forms panel's tab-order view still numbers from `/Annots` order, which it says of itself in three places |
 | ✅ | **Forms can be authored, not only filled** — five commands on Edit ▸ Forms, one per kind `pdfcer-core` has a verb for |
+| ✅ | **A drop-down or a list is answered on the page** — a click on the widget opens its options anchored to the field itself, with the arrow keys moving the highlight and writing nothing, Enter or a click writing one value, and Escape leaving the stored answer alone. A pick closes the list and **keeps** the focus ring, because the commonest gesture on a form is pick-then-Tab and dropping focus on the pick would throw the operator back into the ribbon. A Tab arrival leaves the list closed, so tabbing a form does not spray dropdowns over the sheet. The popup's side is chosen before its constraint rectangle is set, so it cannot slide back over its own anchor and steal that anchor's clicks. Nothing is drawn over an unfocused choice field, which is rule 4's one-line test. Driven: `a_drop_down_can_be_answered_on_the_page` |
+| ✅ | **A choice field's option list is editable after placement** — add, remove, move up, move down, rename the displayed text without changing the exported value, sort, and choose the entry a Reset returns to, whose first offer is *Nothing*, because a reset that clears the field is a different fact from the chooser having nothing selected. `/Opt` is one property and `with_options` replaces the whole list, so every operation sends all of it and the panel emits **at most one edit per frame**: a button press steals focus from a half-typed box, so the box's commit and the button's operation arrive together, and two pushes would be two undo entries for one press with the second silently taking the rename back. The reorder happens through the engine's own `sort_choice_options`, and a repeated exported value is refused **by name** using the engine's own predicate, because the refusal that reaches the operator otherwise names neither the rule nor the value and the list is long enough that finding the repeat unaided is the whole difficulty. Driven: `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` |
+| ✅ | **A widget the file does not place is placed by looking** — the page is found by walking each sheet's annotation list for the widget rather than by reading the widget's own `/P`, which `pdfcer-core` reports as absent when a producer wrote it directly instead of as a reference. Two reasons a field could not be offered on the page collapse into one fact — no sheet lists it, or the listed rectangle has no area — and fields that used to be panel-only appear where they are drawn |
+| ✅ | **A stored answer the options do not list is dropped, and said so in words** — on a multi-select list the selection is rebuilt by asking each option whether it is chosen, never by copying the stored value and editing it. A value matching no option is legal and real, and carrying it forward made the operator's first tick arrive as that value plus theirs, which the engine refuses as a value not in the options: a refusal naming something they never touched, in answer to a gesture that was valid. A check-box stack has no box to show such a value in, so the drop is the only outcome it can express, and it is disclosed off-canvas because it is a change nobody can see. **Not driven** — the visible half needs a fixture whose stored value names no option |
 | ✅ | **A placed form field's properties are editable** — Required, Read only and a tooltip for every type, plus multiple lines, hide as typed, equal cells and a maximum length on a text field, rather than a pane that answers a click by offering to delete the field |
 | ✅ | **A field's box can be moved and resized** — X, Y, Width, Height and a caption with an Apply, plus all four of `WidgetEdit`'s box properties: position, size, border style and width, where it is visible, and the caption. **Moving is free and resizing is not, and the pane says which you are about to do**, because §12.5.5 derives the appearance matrix from the appearance box's corners |
 | 🔨 | **Turn a form field's box** — Turn left and Turn right in the field's Properties, driven one way. It turns what is drawn **inside** the box; the box itself stays put. A widget's `/MK /R` is **counterclockwise** while a page's `/Rotate` is **clockwise**, and the standard's two sentences are word for word identical apart from that one word, so a shell that missed it would ship two buttons that both write a legal angle and both turn the box the wrong way with nothing failing. The controls say *left* and *right* and the negation happens in one line at the panel. `turning_a_field_right_turns_it_right` asserts **270** after one right turn |

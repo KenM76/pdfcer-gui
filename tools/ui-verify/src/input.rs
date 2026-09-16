@@ -126,7 +126,12 @@ const DOUBLE_CLICK_GAP: Duration = Duration::from_millis(40);
 /// see that method's docs on why a two-point drag can be delivered as a click.
 /// Not more, because each step costs [`DRAG_STEP_SETTLE`] and a check that holds
 /// the operator's desktop is one that should finish.
-const DRAG_STEPS: u32 = 8;
+///
+/// Readable outside this module because the *size* of one step decides whether
+/// egui calls the press a drag on the first step or on a later one, and so
+/// decides how much of the travel a check may predict will arrive. A check that
+/// predicts the whole travel is asserting something about this number.
+pub(crate) const DRAG_STEPS: u32 = 8;
 
 /// How long to pause between the intermediate positions of a drag.
 ///

@@ -322,6 +322,14 @@ text_tool_selects_and_marks_in_edit|--pdf fixtures/layered-drawing.pdf --doc-poi
 # states exactly this pair.
 his_typo_can_be_corrected_on_his_own_file|--pdf fixtures/per-glyph-twice.pdf --doc-point 0,84.3,703.8
 
+# The only sheet in the corpus whose overhang is empty paper. On the shared
+# a1-titleblock.pdf the ink test correctly reports overhang=losing - that sheet
+# is drawn full-bleed - so the check's third assertion was vacuous and it
+# reported SKIPPED in every sweep since it was written. The fixture states the
+# geometry it satisfies and why, and has no aim point: the check clicks the
+# regions the dialog declares.
+print_clip_claim_follows_the_preview|--pdf fixtures/blank-overhang.pdf
+
 # The exception described above: same document, different point, and the
 # point cannot be pinned. See `fixture::a1_text_target`, which carries the
 # two requirements any replacement must satisfy.

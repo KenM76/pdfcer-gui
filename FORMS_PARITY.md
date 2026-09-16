@@ -254,13 +254,13 @@ make it the default choice."*
 
 | Acrobat control | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|
-| **Item List — add** | `/Opt` | ✅ `FieldEdit::with_options` ENGINE:`edit.rs:21815`, write `:25744`; whole-list replace by design | ❌ **after placement** — ✅ only in the placement dialog `dialogs/formfield.rs:648-655` | ❌ `GUI` — **O205's second named defect.** Insertion point `panels/properties/fieldedit.rs:246-275` |
-| Item List — delete | `/Opt` | ✅ — whole list with one fewer; stale selection **disclosed** via `value_no_longer_fits`, never silently repaired | ❌ | ❌ `GUI`, same row |
-| Item List — reorder (Up/Down) | `/Opt` | ✅ — `/Opt` order is display order (Table 230) | ❌ | ❌ `GUI`, same row |
-| Item List — rename display text | `/Opt` | ✅ | ❌ | ❌ `GUI`, same row |
-| Export Value ≠ display | `/Opt` pair | ✅ two-string option writes `[export display]` ENGINE:`forms.rs:375` | ❌ **collapsed** — the shell has no second column | ❌ `GUI`, same row |
+| **Item List — add** | `/Opt` | ✅ `FieldEdit::with_options` ENGINE:`edit.rs:21815`, write `:25744`; whole-list replace by design | ✅ both — placement dialog `dialogs/formfield.rs:648-655`, and after placement in `panels/properties/choiceopts.rs` (`add` + `add_button` regions) | ✅ O205's second named defect, closed |
+| Item List — delete | `/Opt` | ✅ — whole list with one fewer; stale selection **disclosed** via `value_no_longer_fits`, never silently repaired | ✅ `panels/properties/choiceopts.rs`, `row{n}.remove` | ✅ |
+| Item List — reorder (Up/Down) | `/Opt` | ✅ — `/Opt` order is display order (Table 230) | ✅ `panels/properties/choiceopts.rs`, `row{n}.up`/`.down`, each greyed at its own end of the list rather than swallowing the press | ✅ driven `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` |
+| Item List — rename display text | `/Opt` | ✅ | ✅ `panels/properties/choiceopts.rs`, `row{n}.shown` | ✅ |
+| Export Value ≠ display | `/Opt` pair | ✅ two-string option writes `[export display]` ENGINE:`forms.rs:375` | ✅ `panels/properties/choiceopts.rs` draws both columns — `row{n}.shown` and `row{n}.sent` | ✅ |
 | Duplicate item | — | ✅ **refused** `ChoiceOptionDuplicate` ENGINE:`edit.rs:7354` | ➖ | ✅ the refusal is the right behaviour; surface it |
-| Sort items | `/Ff` 20 | ⚠ flag written, **`/Opt` never reordered** — `sort_claim_unmet` discloses the mismatch ENGINE:`edit.rs:22080` | ⚠ author-only `dialogs/formfield.rs:673`; ❌ afterwards | ⚠ `ENGINE` to actually sort; `GUI` to expose the flag + its disclosure |
+| Sort items | `/Ff` 20 | ⚠ flag written, **`/Opt` never reordered** — `sort_claim_unmet` discloses the mismatch ENGINE:`edit.rs:22080` | ✅ author-only `dialogs/formfield.rs:673`, and afterwards in `panels/properties/choiceopts.rs` (`sort` region) | ⚠ `ENGINE` still owed — see 8.2 E9; the shell sorts for itself meanwhile, which is the 058 report |
 | Allow custom text (CO) | `/Ff` 19 Edit | ✅ `editable`; `Edit` without `Combo` refused | ⚠ **flag settable at placement only, and no free-text entry exists anywhere** — not canvas, not panel, not Properties (`dialogs/formfield.rs:664-666`, `rows.rs:749-835`) | ⚠ `GUI` — an editable combo is authorable and unfillable |
 | Commit immediately (CO) | `/Ff` 27 | ✅ `with_commit_on_sel_change` | ❌ | ❌ `GUI` |
 | Multiple selection (LB) | `/Ff` 22 | ✅ | ✅ `fieldedit.rs:261-274` | ✅ |
@@ -438,10 +438,10 @@ Owner tags as defined in §1. `GUI` rows are ours and need no one's permission.
 
 | # | Gap | Where it goes | Engine verb |
 |---|---|---|---|
-| 1 | `/Opt` list editing after placement (7 operations) | `panels/properties/fieldedit.rs:246-275` | ENGINE:`edit.rs:21815` |
-| 2 | Canvas fill for CO and LB | `canvas/forms/boxes/mod.rs:414-473` | ENGINE:`edit.rs:38709` |
+| 1 | ~~`/Opt` list editing after placement (7 operations)~~ **BUILT** — `panels/properties/choiceopts.rs`, drawn at the end of the `FieldType::Choice` branch. All seven: add, remove, move up, move down, rename display, export separate from display, and keep-sorted; plus the default choice, and bits 19, 23 and 27 because Acrobat's Options tab groups them (O206). **Driven** — `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` asserts all six arrow states across three rows through `PDFCER_DIAG_SELECT_FIELD`, and was falsified against a planted live top-row arrow and against a broken seam | `panels/properties/choiceopts.rs` | ENGINE:`edit.rs:21815` |
+| 2 | ~~Canvas fill for CO and LB~~ **BUILT** — `canvas/forms/choosing.rs`. A click on a combo or list widget opens its option list on the field's own answered row; Up/Down move the highlight and write nothing; Enter or Space, or a click on a row, writes one `SetChoice`; a multi-select list adds a value per tick and stays open; Escape closes the list on the first press and gives up the ring on the second. **Driven** — `a_drop_down_can_be_answered_on_the_page` asserts all seven steps on `fixtures/all-field-kinds.pdf` and was falsified three ways: a reverted focus lock, an arrow that answers the form, and a multi-select tick that replaces instead of adding. The driving is what found the defect — egui moves keyboard focus on a bare arrow and surrenders it on Escape unless the focused widget locks them, so the list opened, took one arrow, and then went dead to every further key, silently. Fixed by `canvas/forms.rs::keyboard_box`, which both on-page field editors now share | `canvas/forms/choosing.rs` | ENGINE:`edit.rs:38709` |
 | 3 | `NotOffered` is silent — nothing can explain a dead click | `boxes/mod.rs:623-631` + `panels/forms/mod.rs:499-522` | ➖ |
-| 4 | `/DV` for CB, RB, CO, LB | `fieldedit.rs:544-581` | ENGINE:`edit.rs:21382` |
+| 4 | `/DV` for CB and RB. **CO and LB are done** — the default-choice chooser in `choiceopts.rs`, which offers *"Nothing — Reset clears the field"* as its first entry because a reset to empty is a different fact from the chooser having nothing selected | `fieldedit.rs:544-581` | ENGINE:`edit.rs:21382` |
 | 5 | Glyph-style picker for RB, and a kind fork so the row is labelled right | `widgetedit.rs:604-629` | `/MK /CA` char |
 | 6 | Radios-in-unison | beside `fieldedit.rs:228-243` | ENGINE:`edit.rs:21419` |
 | 7 | Do-not-scroll | `fieldedit.rs:186-225` | ENGINE:`edit.rs:21530` |
@@ -463,7 +463,8 @@ Owner tags as defined in §1. `GUI` rows are ours and need no one's permission.
 | 23 | Place an empty signature field | `canvas/formfield.rs:89-95` | signing path |
 | 24 | Distinct placement ghost per kind | `canvas/formfield/ghost.rs:79-127` | ➖ |
 | 25 | Per-kind tool defaults (Acrobat's "*Tool* Properties") | new | `FieldDefaults` ENGINE:`edit.rs:1953` |
-| 26 | Driven `ui-verify` coverage for RB, CO, LB | `fixtures/all-field-kinds.pdf` is wired to nothing; `D:\Dev\pdfcer\fixtures\synthetic\forms\radio-choice-form.pdf` already exists | ➖ |
+| 26 | Driven `ui-verify` coverage for RB, CO, LB. **CO and LB are done** — `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` drives the Properties pane and `a_drop_down_can_be_answered_on_the_page` drives the page, both pinning `fixtures/all-field-kinds.pdf` and both falsified. **RB is not** — no driven check presses a radio button, so the arrow-key sibling walk in `canvas/forms/tabbing.rs` is asserted only by unit test, and it shares the focus-lock defect row 2 found: a press that finds no sibling abandons the ring | `fixtures/all-field-kinds.pdf`; `D:\Dev\pdfcer\fixtures\synthetic\forms\radio-choice-form.pdf` also exists | ➖ |
+| 27 | ~~A multi-select list carried a stored value the options do not list into an engine refusal~~ **BUILT** — `panels/forms/rows.rs::multi_choice_ticks`. The check-box stack copied `/V` and edited it, so a `/V` entry matching no `/Opt` entry — set by another program, or left behind when the option list was edited — rode along, and the operator's first tick arrived at `set_choice_value` as that value plus theirs, which the engine refuses as `ChoiceValueNotInOptions`: a refusal naming a value they never touched, in answer to a gesture that was valid. The row now rebuilds the selection by asking each option whether it is selected — the rule `canvas::forms::choosing::wanted` already followed, and whose doc comment already said *"which is not what the panel does"* — and discloses the drop in words, because a check-box stack has no box to show the value in and the single-select wording (*"It is shown as it is stored"*) is false there. Falsified both halves: copying `/V` back makes `a_value_the_options_do_not_list_is_dropped_and_disclosed` and `a_selection_stored_by_display_string_is_recognised` fail, and forcing the disclosure flag false fails the first alone. **Not driven** — the visible half needs a fixture whose `/V` names no option, which `fixtures/all-field-kinds.pdf` does not have; the defect itself was invisible on screen, which is why eight green unit tests of the verb never saw it | `panels/forms/rows.rs` | ENGINE:`edit.rs:38709` |
 
 ### 8.2 `ENGINE` — hand-offs
 
@@ -477,13 +478,14 @@ Owner tags as defined in §1. `GUI` rows are ours and need no one's permission.
 | E6 | `/Lock` authoring | to file; `ENGINE_BACKLOG.md:117` |
 | E7 | `/CO` reordering | to file |
 | E8 | `/Tabs` writing — the verb `reorder_annotations`' own doc says should exist | to file |
-| E9 | `/Opt` actually sorted when bit 20 is set | to file |
+| E9 | `/Opt` actually sorted when bit 20 is set | **DELIVERED - engine `Pass 308.8`, carried by the pin.** Both halves of the ask landed: `choice_option_order` and `sort_choice_options` are public, and `edit_field` sorts when `options` and `sort` arrive in one `FieldEdit`. Bit 20 set alone still reorders nothing and is still disclosed as `sort_claim_unmet`, which was never the complaint. **The shell's copy is deleted** - `choiceopts::sort_by_display` calls the engine's sorter - and `FieldEditOutcome::options_sorted` is consumed as the tripwire for the drift the export prevents |
 | E10 | Glyph style change as a first-class verb on an existing field | to file |
 | E11 | Rich-text authoring (`/RV`, `/DS`, bit 26 on) | to file |
 | E12 | `/A` on a non-button widget; the five non-`Mouse Up` triggers | to file |
 | E13 | List-box selection highlight in the appearance; SG/untyped appearance | to file |
 | E14 | Move a widget to another page in place; split a field; promote a terminal to a grouping node | to file |
 | E15 | `apply_recompute` — the shell writes the loop today | low priority, works |
+| E16 | `edit_field` writes a duplicate `/Opt` export that `add_choice_field` refuses by name | **DELIVERED - engine `Pass 308.7`, carried by the pin.** The guard moved to `refuse_duplicate_exports` and both verbs call it, so no door writes a duplicate. A document that ARRIVED holding one stays editable, which was the requester's call and was the right one. **The shell's `refuse_duplicate` is kept, not deleted**, and this is a live 058 report: the engine's refusal reaches the funnel as the un-categorised `Declined::EditRefused`, which names neither the rule nor the repeated value, so the panel asks first in order to say which one. That leaves one rule spelled in two places - filed as **`request_G027`**, which asks for the predicate to be exported the way `G026` exported the ordering |
 
 ### 8.3 `NONGOAL` — do not build, do not stub (R9)
 
@@ -509,8 +511,8 @@ Derived from the tables above, not asserted:
 
 | Owner | Rows |
 |---|---|
-| `GUI` | 26 |
-| `ENGINE` | 15 (2 closed and live, 1 filed, 12 to file) |
+| `GUI` | 27 |
+| `ENGINE` | 16 (E1 and E2 closed and live, E3 filed, 13 to file) |
 | `ASK` | 3 |
 
 Re-derive with the commands in §10 before quoting these anywhere.
@@ -529,11 +531,17 @@ Re-derive with the commands in §10 before quoting these anywhere.
 ```
 # gap-register row counts -- section 8 only. Counting backticked tags
 # document-wide over-reports: a tag also appears in every verdict cell
-# in sections 3-5. Measured 2026-09-16: 26 / 15 (2 filed) / 3.
-sed -n '/^### 8.1/,/^### 8.2/p' FORMS_PARITY.md | grep -cE '^\| [0-9]+ |'
-sed -n '/^### 8.2/,/^### 8.3/p' FORMS_PARITY.md | grep -cE '^\| E[0-9]+ |'
-sed -n '/^### 8.2/,/^### 8.3/p' FORMS_PARITY.md | grep -cE '^\| E[0-9]+ |'.*FILED
-sed -n '/^### 8.4/,/^---/p'     FORMS_PARITY.md | grep -cE '^\| A[0-9]+ |'
+# in sections 3-5. Measured 2026-09-16: 27 / 16 (E3 filed) / 3.
+#
+# The closing pipe of each row pattern is ESCAPED. An earlier revision of
+# these four commands left it bare, where an unescaped trailing pipe is an
+# ERE alternation with the empty string: the pattern then matches EVERY line
+# and 8.1 reports 32 rows in a 26-row table. A count command can be wrong,
+# not just its answer.
+sed -n '/^### 8.1/,/^### 8.2/p' FORMS_PARITY.md | grep -cE '^\| [0-9]+ \|'
+sed -n '/^### 8.2/,/^### 8.3/p' FORMS_PARITY.md | grep -cE '^\| E[0-9]+ \|'
+sed -n '/^### 8.2/,/^### 8.3/p' FORMS_PARITY.md | grep -E '^\| E[0-9]+ \|' | grep -c FILED
+sed -n '/^### 8.4/,/^---/p'     FORMS_PARITY.md | grep -cE '^\| A[0-9]+ \|'
 
 # the engine pin this was measured against
 grep -A2 'name = "pdfcer-core"' Cargo.lock | grep source

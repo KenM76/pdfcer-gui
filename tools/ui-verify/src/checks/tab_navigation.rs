@@ -58,11 +58,15 @@ use crate::trace::Trace;
 
 /// The fillable census — one line per box this canvas will let him type into.
 ///
-/// Deliberately not `form-target`, which is the *selectable* census: a
-/// drop-down and a push button are selectable and not fillable, and the field
+/// Deliberately not `form-target`, which is the *selectable* census: a push
+/// button and an undrawn widget are selectable and not fillable, and the field
 /// ring walks the fillable set. Aiming from the wrong census would put the
 /// click on a widget the ring does not contain and report the miss as a broken
 /// Tab.
+///
+/// Narrowed to `kind=text` below for a second reason: this check needs a box
+/// that takes the keyboard on a click. A drop-down is fillable and on the same
+/// ring, but clicking it opens an option list instead.
 const BOX_LINE: &str = "form-box";
 /// A text field took the keyboard.
 const FOCUS: &str = "form-focus";

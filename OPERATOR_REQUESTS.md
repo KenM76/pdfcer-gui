@@ -573,6 +573,14 @@ the list:
 2. **A drop-down's option list cannot be edited in Properties.** `/Opt` is the
    list of choices; without an editor the kind can be placed and never made
    useful, which is R9's shape with the refusal moved one step later.
+   **Built 2026-09-16** — `panels/properties/choiceopts.rs`, all seven
+   operations plus the default choice and the three `/Ff` bits Acrobat groups
+   with them. Unit-tested, gate-green, and **driven 2026-09-16** —
+   `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` asserts all six
+   Move-up/Move-down states across three rows, and was falsified against a
+   planted live top-row arrow (FAIL) and a broken selection seam (SKIP, not
+   green). R1 is satisfied for this item. **His row stays open regardless; only
+   he closes it**, and two of the three named instances above are still open.
 3. **Turn left and Turn right do nothing on a check box.** The controls are
    drawn, so this is worse than absent: a control that writes no byte and says
    nothing is the failure R1 exists to catch, and the turn was driven one way on
@@ -584,8 +592,9 @@ is missing. That table is the deliverable, and it is a measurement of three
 surfaces against one reference: what Acrobat offers, what `pdfcer-core` can
 write at the pin, and what this shell reaches today. **It is written, and it is
 `FORMS_PARITY.md`** — per kind x capability, every row cited, with a gap register
-at section 8 holding 26 `GUI` rows, 15 `ENGINE` rows and 3 questions only he can
-answer.
+at section 8 holding 26 `GUI` rows, 16 `ENGINE` rows and 3 questions only he
+can answer — count them there, because this sentence goes stale and that register
+does not.
 
 The Acrobat column is sourced from the installed Acrobat DC rather than recalled,
 as the reference-app rule requires — but from its resource strings, not a

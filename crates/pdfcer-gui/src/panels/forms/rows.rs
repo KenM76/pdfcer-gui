@@ -743,9 +743,13 @@ fn radio_states(field: &Field) -> Vec<String> {
 /// export differs from its display is what makes the omission visible at all.
 ///
 /// A `/V` that matches no option is a real state — set by another program, or
-/// left behind when the option list changed — so it is shown as stored, with
-/// [`crate::text::forms::form_field_choice_value_not_listed`] beside it.
-/// Showing blank would claim the field is unanswered when it is not.
+/// left behind when the option list changed. A single-select field shows it as
+/// stored, with
+/// [`crate::text::forms::form_field_choice_value_not_listed`] beside it;
+/// showing blank would claim the field is unanswered when it is not. A
+/// multi-select field has no box to show it in, so [`multi_choice_ticks`]
+/// drops it and
+/// [`crate::text::forms::form_field_choice_multi_value_not_listed`] says so.
 fn choice_row(ui: &mut egui::Ui, field: &Field, index: usize, out: &mut Vec<FormEdit>) {
     if field.options.is_empty() {
         ui.label(
@@ -757,34 +761,26 @@ fn choice_row(ui: &mut egui::Ui, field: &Field, index: usize, out: &mut Vec<Form
     }
 
     let selected_now = choice_selections(field);
-    let options: Vec<(String, String)> = field
-        .options
-        .iter()
-        .map(|o| {
-            (
-                pdfcer_core::edit::decode_text_string(&o.export).text,
-                pdfcer_core::edit::decode_text_string(&o.display).text,
-            )
-        })
-        .collect();
+    let options = choice_options(field);
 
     if field.flags.has(FieldFlags::MULTI_SELECT) {
         // A check-box stack: several selections are the point, and a combo
         // cannot express "these three".
-        let mut wanted = selected_now;
+        let (mut wanted, unlisted) = multi_choice_ticks(&options, &selected_now);
         let mut changed = false;
         ui.push_id(("pdfcer-forms-choice-multi", index), |ui| {
             for (export, display) in &options {
-                // Matched on EXPORT or DISPLAY: `/V` may hold either in the
-                // wild, and a strict match on one shows a filled field as
-                // empty.
-                let mut on = wanted.iter().any(|v| v == export || v == display);
+                // `wanted` holds exports only — `multi_choice_ticks` has
+                // already resolved the display-string case — so one comparison
+                // is enough here, and the box cannot tick on one form of the
+                // value while unticking on the other.
+                let mut on = wanted.iter().any(|v| v == export);
                 if ui.checkbox(&mut on, display).changed() {
                     changed = true;
                     if on {
                         wanted.push(export.clone());
                     } else {
-                        wanted.retain(|v| v != export && v != display);
+                        wanted.retain(|v| v != export);
                     }
                 }
             }
@@ -794,6 +790,13 @@ fn choice_row(ui: &mut egui::Ui, field: &Field, index: usize, out: &mut Vec<Form
                 field: field.fully_qualified_name.clone(),
                 values: wanted,
             });
+        }
+        if unlisted {
+            ui.label(
+                egui::RichText::new(t::form_field_choice_multi_value_not_listed())
+                    .small()
+                    .weak(),
+            );
         }
         return;
     }
@@ -834,12 +837,72 @@ fn choice_row(ui: &mut egui::Ui, field: &Field, index: usize, out: &mut Vec<Form
     }
 }
 
-/// A choice field's current selections, as decoded display strings.
+/// Which options a multi-select row pre-ticks, and whether the stored value
+/// named something the option list does not.
+///
+/// The selection is rebuilt by asking each **option** whether it is selected,
+/// never by copying `/V` and editing it. That is the rule
+/// [`crate::canvas::forms::choosing::wanted`] follows, and it is not a style
+/// choice: `/V` may hold an entry matching no option, `set_choice_value`
+/// refuses such a value as `ChoiceValueNotInOptions`, so copying it forward
+/// turns the operator's first tick into a refusal naming a value they never
+/// touched. Dropping it is the only outcome a check-box stack can express,
+/// since there is no box to show it in.
+///
+/// `/V` may legally hold an export or a display string, so both are matched;
+/// only exports are returned, which is what `SetChoice` writes and what the
+/// boxes then compare against.
+///
+/// The returned flag is the disclosure's trigger — the drop is invisible on
+/// the page, so it is owed words. Empty entries are not counted: they are
+/// "unanswered", not "unlisted".
+fn multi_choice_ticks(options: &[(String, String)], selected: &[String]) -> (Vec<String>, bool) {
+    let ticks: Vec<String> = options
+        .iter()
+        .filter(|(export, display)| selected.iter().any(|v| v == export || v == display))
+        .map(|(export, _)| export.clone())
+        .collect();
+    let unlisted = selected.iter().any(|v| {
+        !v.is_empty()
+            && !options
+                .iter()
+                .any(|(export, display)| v == export || v == display)
+    });
+    (ticks, unlisted)
+}
+
+/// A choice field's `/Opt` as `(export, display)` pairs, decoded, in the
+/// file's own order.
+///
+/// Crate-visible because [`crate::canvas::forms::boxes::classify`] needs the
+/// same list to build a canvas box from, and two decoders for one array is how
+/// the panel and the page come to offer different options for one field. Order
+/// is never touched — §12.7.4.4 makes `/Opt` order a conformance requirement.
+pub(crate) fn choice_options(field: &Field) -> Vec<(String, String)> {
+    field
+        .options
+        .iter()
+        .map(|o| {
+            (
+                pdfcer_core::edit::decode_text_string(&o.export).text,
+                pdfcer_core::edit::decode_text_string(&o.display).text,
+            )
+        })
+        .collect()
+}
+
+/// A choice field's current selections, as decoded strings.
 ///
 /// Accepts both shapes `/V` legally takes: an array for a `MultiSelect` field
 /// and a bare string for a single-select one. A reader that handled only the
 /// array form would show every ordinary combo box as unanswered.
-fn choice_selections(field: &Field) -> Vec<String> {
+///
+/// Crate-visible for [`choice_options`]'s reason. Note what it does **not**
+/// do: it does not check the values against `/Opt`. A `/V` naming no option is
+/// a real state both surfaces have to see, and one neither may carry into
+/// `set_choice_value`, which refuses it. Both therefore rebuild the selection
+/// from `/Opt` — [`multi_choice_ticks`] here — and disclose the drop in words.
+pub(crate) fn choice_selections(field: &Field) -> Vec<String> {
     match &field.value {
         FieldValue::Choice(items) => items
             .iter()
@@ -900,6 +963,58 @@ mod tests {
         );
         // Nobody typing on the page: every row keeps its own draft.
         assert_eq!(mirrored(None, "Name"), None);
+    }
+
+    /// **A stored value the option list does not have is dropped, not carried.**
+    ///
+    /// The whole point of rebuilding from `/Opt`. Carrying `Kiribati` forward
+    /// would make the operator's next tick arrive at `set_choice_value` as
+    /// `["Kiribati", "MX"]`, which it refuses as `ChoiceValueNotInOptions` -
+    /// a refusal naming a value the operator never touched, in answer to a
+    /// gesture that was valid.
+    #[test]
+    fn a_value_the_options_do_not_list_is_dropped_and_disclosed() {
+        let options = vec![
+            ("MX".to_owned(), "Mexico".to_owned()),
+            ("CA".to_owned(), "Canada".to_owned()),
+        ];
+
+        let (ticks, unlisted) = multi_choice_ticks(&options, &["Kiribati".to_owned()]);
+        assert!(ticks.is_empty(), "no option matches, so nothing is ticked");
+        assert!(unlisted, "and the drop is owed an explanation");
+
+        // Dropped, but the options that DO match survive it.
+        let (ticks, unlisted) =
+            multi_choice_ticks(&options, &["Kiribati".to_owned(), "CA".to_owned()]);
+        assert_eq!(ticks, vec!["CA".to_owned()]);
+        assert!(unlisted);
+    }
+
+    /// **A selection stored as the display string still ticks its box.**
+    ///
+    /// `/V` may hold either half of an `[export display]` pair, so matching
+    /// only exports shows a filled field as empty — and then reports the
+    /// operator's own answer as a value the document does not list, which is
+    /// the same disclosure firing on a false premise.
+    #[test]
+    fn a_selection_stored_by_display_string_is_recognised() {
+        let options = vec![
+            ("MX".to_owned(), "Mexico".to_owned()),
+            ("CA".to_owned(), "Canada".to_owned()),
+        ];
+
+        let (ticks, unlisted) = multi_choice_ticks(&options, &["Mexico".to_owned()]);
+        assert_eq!(
+            ticks,
+            vec!["MX".to_owned()],
+            "matched on display, returned as export"
+        );
+        assert!(!unlisted, "a recognised value owes no explanation");
+
+        // An empty `/V` entry is "unanswered", never "unlisted".
+        let (ticks, unlisted) = multi_choice_ticks(&options, &[String::new()]);
+        assert!(ticks.is_empty());
+        assert!(!unlisted);
     }
 
     /// **Clearing a field is a real edit.**

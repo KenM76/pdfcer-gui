@@ -92,8 +92,10 @@
 #    belongs in the catalog. This exclusion is not permission to route UI text
 #    through an error type.
 #
-# 4. The body of a `diag::trace(...)` call — stderr diagnostics, never operator
-#    copy. Tracked by PAREN depth so the skip ends exactly where the call does.
+# 4. The body of a `diag::trace(...)` call, and of its de-duplicating twins
+#    `diag::trace_changed(...)` and `diag::trace_on_change(...)` — stderr
+#    diagnostics, never operator copy. Tracked by PAREN depth so the skip ends
+#    exactly where the call does.
 #
 # 5. Comment-only lines, and any line carrying `// ui-text-exempt: <reason>`.
 #
@@ -215,7 +217,14 @@ scan_tree() {
                     next
                 }
 
-                # exclusion 4: the body of a `diag::trace(...)` call.
+                # exclusion 4: the body of a `diag::trace(...)` call, and of
+                # `diag::trace_changed(...)` / `diag::trace_on_change(...)`.
+                #
+                # All three write the same stderr line; the twins only add a
+                # de-duplication slot. Keying this on `diag::trace(` alone left
+                # 49 call sites re-stating an exemption the category already
+                # grants, which is the outcome the paragraph below says the
+                # category exists to prevent — and the fiftieth forgot it.
                 #
                 # These are stderr diagnostics, never operator copy. They are
                 # excluded as a CATEGORY rather than by tagging each one, for two
@@ -235,7 +244,7 @@ scan_tree() {
                     if (depth_diag <= 0) { in_diag = 0 }
                     next
                 }
-                if (line ~ /diag::trace\(/) {
+                if (line ~ /diag::trace(_changed|_on_change)?\(/) {
                     in_diag = 1
                     depth_diag = gsub(/\(/, "(", line) - gsub(/\)/, ")", line)
                     if (depth_diag <= 0) { in_diag = 0 }

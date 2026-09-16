@@ -27,8 +27,8 @@
 //! Read [`super`]'s header first. It carries the whole argument — why this is
 //! not a [`CanvasTool`] variant, why the panel is not replaced, what the
 //! editor cannot promise, how input layers, why the hit test takes no
-//! tolerance, and the five reasons a field is routed to the panel instead.
-//! This file is where those five reasons are actually decided
+//! tolerance, and the four reasons a field is routed to the panel instead.
+//! This file is where those four reasons are actually decided
 //! ([`classify`]), where the geometry is done
 //! ([`crate::canvas::mapping::annot_canvas_rect`], which serves annotation
 //! selection too) and
@@ -79,11 +79,11 @@ const EDITOR_TEXT_RANGE: (f32, f32) = (9.0, 22.0);
 
 /// What clicking a widget means.
 ///
-/// Three variants, not five: choice fields and everything in
-/// [`NotOnCanvas::NotOffered`] have no canvas gesture at all, so they are
-/// absent rather than present-and-inert. The "no placeholders" invariant
-/// applies to enums as much as to labels — a variant nothing can raise is dead
-/// code wearing a design pattern.
+/// One variant per gesture, and no others: everything in
+/// [`NotOnCanvas::NotOffered`] has no canvas gesture at all, so it is absent
+/// here rather than present-and-inert. The "no placeholders" invariant applies
+/// to enums as much as to labels — a variant nothing can raise is dead code
+/// wearing a design pattern.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BoxKind {
     /// A `/Tx` field. A click focuses an editor; the value is committed on
@@ -159,6 +159,37 @@ pub enum BoxKind {
         on_state: String,
         /// Whether the field currently holds it.
         on: bool,
+    },
+    /// A `/Ch` field — a combo box or a list box. A click focuses the widget
+    /// and opens its option list beside it; every pick is a complete command,
+    /// with no draft in between, which is why nothing here has a `Text`-like
+    /// commit boundary.
+    Choice {
+        /// `/Opt` as `(export, display)` pairs, in the file's own order.
+        ///
+        /// §12.7.4.4 makes displaying them in `/Opt` order a conformance
+        /// requirement rather than a presentation choice; the `Sort` flag is
+        /// an instruction to whoever *writes* the list.
+        ///
+        /// Either half may be empty. A single-string `/Opt` entry sets both to
+        /// the same text, and a two-element `[export display]` entry may carry
+        /// an explicitly empty display string — which is why
+        /// `super::choosing`'s rows fall back to the export for a label.
+        options: Vec<(String, String)>,
+        /// `/V`, decoded, in whichever shape it legally takes: an array for a
+        /// `MultiSelect` field, a bare string otherwise.
+        ///
+        /// Stored strings rather than indices into `options`, because a `/V`
+        /// naming no option is a real state — another program wrote it, or the
+        /// option list changed under it — and an index has nowhere to put it.
+        /// What that costs is that every match asks both halves of an option;
+        /// what it buys is that `super::choosing` can *see* the unlisted value
+        /// and drop it, instead of carrying it into an engine refusal that
+        /// would name a value the operator never touched.
+        selected: Vec<String>,
+        /// `/Ff` `MultiSelect` — several rows may be ticked at once, and the
+        /// list stays open between ticks.
+        multi: bool,
     },
 }
 
@@ -466,6 +497,34 @@ pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, 
             Ok(match kind {
                 ButtonKind::Check => BoxKind::Check { on_state, on },
                 _ => BoxKind::Radio { on_state, on },
+            })
+        }
+        (Some(FieldType::Choice), _) => {
+            // An empty `/Opt` is not offered, and that is the same rule as a
+            // button with no on-state: there is no pick to make. The panel
+            // says so in words (`form_field_choice_no_options`); an empty
+            // popup over the page would be a placeholder.
+            if field.options.is_empty() {
+                return Err(NotOnCanvas::NotOffered);
+            }
+            // Rotation is NOT asked here, unlike the text case above, and the
+            // asymmetry is the rotated-page decision stated exactly. What
+            // `RotatedPage` refuses is an `egui::TextEdit` laid OVER the
+            // appearance it is editing, running horizontally across text the
+            // `/AP` draws vertically. A choice field has no editor over the
+            // box: the ring traces the box, and the list is drawn beside it in
+            // screen space. Neither overlays the widget's own text, so a
+            // `/Rotate 90` sheet's choice fields are offered exactly as any
+            // other sheet's are.
+            //
+            // Both halves come from the panel's own readers rather than from a
+            // second decode here, for the reason the `block_reason` call above
+            // exists: two statements of one rule is how the page and the panel
+            // come to offer different options for one field.
+            Ok(BoxKind::Choice {
+                options: crate::panels::forms::rows::choice_options(field),
+                selected: crate::panels::forms::rows::choice_selections(field),
+                multi: field.flags.has(FieldFlags::MULTI_SELECT),
             })
         }
         _ => Err(NotOnCanvas::NotOffered),

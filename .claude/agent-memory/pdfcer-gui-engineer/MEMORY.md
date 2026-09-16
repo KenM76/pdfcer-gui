@@ -77,9 +77,9 @@
 - [Count a condition and you will reason about the other one](feedback_count_a_condition_and_you_will_reason_about_the_other_one.md) — two wrong diagnoses from one half of an AND.
 - [An `||` between two required conditions asserts neither](feedback_an_or_between_two_required_conditions_asserts_neither.md) — it looks like tolerance of a rewording.
 - [A check whose input is convenient tests the assertion](feedback_a_check_whose_input_is_chosen_for_convenience_tests_the_assertion.md) — "what is typed does not matter" is a finding.
-- [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) - 2nd instance: it claims which code paths reach it; measure the fork.
-- [A disproof is a measurement too](feedback_a_disproof_is_a_measurement_too_and_the_dead_hypothesis_was_the_truth.md) - the truth died on a number read against the WINDOW.
-- [A number with no control is an attribution](feedback_a_launch_failure_blamed_on_a_resource_count_needs_a_control_binary.md) — resource counts and layout numbers alike; the shipped exe is the control.
+- [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) — it claims which paths reach it; measure the fork.
+- [A disproof is a measurement too](feedback_a_disproof_is_a_measurement_too_and_the_dead_hypothesis_was_the_truth.md) — the number was read against the WINDOW.
+- [A number with no control is an attribution](feedback_a_launch_failure_blamed_on_a_resource_count_needs_a_control_binary.md) — the shipped exe is the control.
 - [When a wobble is inside the framework, list the leaves by id](feedback_when_a_wobble_is_inside_the_framework_list_the_leaves_by_id.md) - five container probes stalled.
 - [A "still broken" report is first about which build and which pin](feedback_a_still_broken_report_is_first_a_question_about_which_build_and_which_pin.md) - check the pin.
 - [A gate whose evidence you write is blind to what you forget to write](feedback_a_gate_whose_evidence_you_write_is_blind_to_what_you_forget_to_write.md) — no CONSUMED note, no guard.
@@ -108,7 +108,7 @@
 - [A gate fed by git measures the index](feedback_a_gate_whose_input_set_comes_from_git_measures_the_index.md) — green before the commit, red after, nothing changed.
 - [A check's own gesture can satisfy its condition](feedback_a_checks_own_gesture_can_satisfy_the_condition_it_was_written_to_catch.md) — read the event's only emitter, not the fixture.
 - [A capability claim needs a citation too](feedback_a_capability_claim_in_product_copy_needs_the_same_citation_as_a_limitation_claim.md) — this one was invented from the feature's shape.
-- [A running sweep forbids its own 95 minutes](feedback_a_running_sweep_forbids_the_obvious_use_of_its_own_ninety_five_minutes.md) — any .rs or .toml edit aborts it; .md is safe.
+- [A running sweep forbids its own 95 minutes](feedback_a_running_sweep_forbids_the_obvious_use_of_its_own_ninety_five_minutes.md) — .rs/.toml edits abort it; .md is safe.
 - [A lesson in a docstring is not an instrument](feedback_a_lesson_in_a_docstring_is_not_an_instrument.md) — four instances, the generalisation beside them; build the sweep.
 - [A register row outranks memory, so correcting the row is the work](feedback_a_register_row_outranks_memory_so_correcting_the_row_is_the_work.md) — a cold session reads RESUME first.
 - [A value cannot identify which producer made it](feedback_a_value_cannot_identify_which_producer_made_it.md) — three arms emit `(0,0)`; trace the DECIDER, not the number.
@@ -130,10 +130,12 @@
 - [A rewrite of a cell deletes what only that cell held](feedback_a_rewrite_of_a_cell_deletes_what_only_that_cell_held.md) - it held the only copy.
 - [A gesture named without its outcome](feedback_a_gesture_without_its_outcome.md) — drag copies, Shift moves; the header was wrong 4h44m later.
 - [A falsification proves the check, not each assertion inside it](feedback_a_falsification_proves_the_check_not_each_assertion.md) — ask of every `if`: what input reaches this line?
-- [An index crossing a boundary is numbered in the callee's list](feedback_an_index_handed_across_a_boundary_must_be_numbered_in_the_callees_own_list.md) — 106-of-144 vs 49-of-70.
+- [An index crossing a boundary is numbered in the callee's list](feedback_an_index_handed_across_a_boundary_must_be_numbered_in_the_callees_own_list.md) — 106/144 vs 49/70.
 - [A doc arguing for a guard claims the guard exists](feedback_a_doc_comment_that_argues_for_a_guard_is_a_claim_the_guard_exists.md) — the gate went; its defence survived in five files.
-- [A capability greyed everywhere is one selection defect](feedback_a_capability_greyed_everywhere_is_one_selection_defect.md) — three dead surfaces, one predicate; ask at tolerance ZERO.
+- [A capability greyed everywhere is one selection defect](feedback_a_capability_greyed_everywhere_is_one_selection_defect.md) — three surfaces, one predicate.
 - [Tidying an input changes every instrument reading it](feedback_tidying_an_input_changes_every_instrument.md) — the sweep was right; it blinded a gate and killed 18 citations.
 - [A command judged through a pipe reports the pipe's exit code](feedback_a_command_judged_through_a_pipe_reports_the_pipes_exit_code.md) — a FAILED release build read as exit 0.
 - [The injected memory warning is a snapshot](feedback_the_injected_memory_warning_is_a_snapshot.md) — 36 h stale; it nearly bought a 136-file rename. Measure.
 - [Verify the result, not the diff](feedback_verify_the_result_not_the_diff.md) — two checks passed on a file that would not compile.
+- [A remembered "unset" names one variable, not its neighbour](feedback_env_var_neighbour.md) - $TMP was set; I derived a root path and reached for rm -f.
+- [A doc-range edit eats the attribute under it](feedback_doc_edit_eats_the_attribute.md) — a #[test] vanished; the count is the only witness.

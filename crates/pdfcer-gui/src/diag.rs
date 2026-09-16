@@ -493,6 +493,55 @@ fn report_clipped(name: &str, rect: egui::Rect, clip: egui::Rect) {
     });
 }
 
+/// **A named control's rectangle, and whether it would respond to a press.**
+///
+/// ```text
+/// pdfcer-diag ui-rect    name=properties.choice_opts.row0.up rect=[[..] - [..]]
+/// pdfcer-diag ui-control name=properties.choice_opts.row0.up enabled=false
+/// ```
+///
+/// Returns what [`ui_rect_visible`] returns: whether the region was published.
+///
+/// # What the second line is for, and why an assertion needs it
+///
+/// **A correctly greyed control and a broken one are identical to a driven
+/// check.** A harness can press the control and observe that nothing changed,
+/// and that outcome is produced equally by a control that was disabled and by
+/// one that was live, reported `clicked()`, and had its result thrown away by
+/// a condition written behind the call. The second is a defect this shell has
+/// shipped; `D:/dev/rag/egui/` records it, and the instrument it asks for is
+/// this one.
+///
+/// So the line carries the one fact the wrong mechanism cannot produce.
+/// [`egui::Response::enabled`] is false **only** for a widget allocated inside
+/// a disabled `Ui` — never for one merely painted grey, and never for one given
+/// a weaker `Sense`, both of which leave the response reporting itself enabled.
+/// `enabled=false` is therefore evidence about the mechanism and not only about
+/// the appearance.
+///
+/// # Why it takes the response rather than a rect and a flag
+///
+/// So the pair cannot be half-published. A call site that emits the rectangle
+/// and forgets the state leaves a check reading a region it has no way to
+/// judge, and that omission is indistinguishable from a control which only
+/// ever has one state.
+pub fn ui_control(name: &str, response: &egui::Response, clip: egui::Rect) -> bool {
+    let published = ui_rect_visible(name, response.rect, clip);
+    // Emitted whether or not the rectangle was published, because being
+    // clipped and being disabled are independent facts and a reader asking
+    // the second one deserves an answer either way.
+    //
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    trace_on_change(&format!("ui-control name={name}"), || {
+        // `Display`, not `Debug`: a machine reads this field, and a `{:?}`
+        // wrapper is something a parser has to strip and sometimes does not.
+        //
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("enabled={}", response.enabled())
+    });
+    published
+}
+
 /// **Where a child viewport's client area sits on the DESKTOP.**
 ///
 /// ```text

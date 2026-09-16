@@ -28,7 +28,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `d2fa7352` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `fb987cde` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -48,48 +48,108 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-1. **Drive the print-position feature — O208, and it is the only thing standing
-   between it and a ticked row.** Both clauses are built: the page drags on the
+1. **O208 is built, driven and falsified — what is left is his word.** Both
+   clauses are built: the page drags on the
    sheet, the four shortcuts and reset-all are there, the offset is typed or
    nudged, the frame and sign are stated, the per-edge overhang is disclosed
    off-canvas, and the crop hatch is four bands instead of two.
-   `the_printed_page_can_be_moved_on_the_paper` is written and registered and
-   **has never run green** — its two runs both SKIPPED, and the two causes are
-   worth knowing because both are harness defects with no symptom:
-   the print dialog is its own **child OS viewport**, so every rectangle it
-   publishes carries `viewport=` and must be converted through `frame_of`
-   rather than `session.frame()` (converting through the main window put the
-   clicks hundreds of points off the control, silently, because the numbers
-   stayed plausible); and the drag was sized at 240 pt against a preview canvas
-   that measures **340 x 438 logical points**, so its own room guard could never
-   pass. Both are fixed and neither is measured. It needs about two minutes of
-   his desktop. `print_clip_claim_follows_the_preview` was fixed in the same
-   breath and wants the same two minutes.
+   **Both its checks are now driven GREEN and both were falsified.**
+   `the_printed_page_can_be_moved_on_the_paper`: drag `-303.84,-303.84` against
+   `303.87` predicted at scale 0.3949, hatch `.r.b` to `lrtb`, `centre-h` alone
+   to `-804.37,0.00 edges=lr.b`, `centre-v` composing to Centre, and both reset
+   routes returning to the engine's own placement. Three planted defects each
+   gave FAIL with the right sentence: a no-op `centre-h`, a `centre-h` wired to
+   the other axis, and a doubled drag delta.
+   `print_clip_claim_follows_the_preview`: `overhang=blank-band claim=none:0`
+   against a geometric count of 1, and a planted verdict cache that never
+   matches gave `claim=geometric:1` and FAIL.
 
-   **Read the check's tab click before touching it.** The controls now live on a
-   **Position** tab of the print dialog, not at the foot of the scale tab, so
-   the check presses `print.tab.position` after the scale radio and scrolls over
-   that button rather than over `print.scale.fit` — the scale radios are on a
-   different tab and are not drawn at all once Position is open, so the old
-   anchor would have been absent exactly when it was needed and the check would
-   have reported *"the group drew nothing"*.
+   **What it took, and what a cold session should not re-derive.** Two harness
+   defects with no symptom: the print dialog is its own **child OS viewport**,
+   so every rectangle it publishes carries `viewport=` and must be converted
+   through `frame_of` rather than `session.frame()` — converting through the
+   main window put the clicks hundreds of points off the control, silently,
+   because the numbers stayed plausible. And the drag was sized at 240 pt
+   against a preview canvas that measures **340 x 438 logical points**, so its
+   own room guard could never pass. Then two defects in the assertions
+   themselves: a `THRESHOLD_PT = 45.0` that was invented prose — egui's real
+   click-versus-drag distance is `Options::max_click_dist = 6.0` logical points,
+   and since the driver steps 15 pt the whole travel arrives, so the prediction
+   is `DRAG_PT / scale` and nothing is swallowed — and `centre-h` / `centre-v`
+   pressed only from an already-centred page, where a no-op button and a
+   wrong-axis button both pass.
+
+   **The clip-claim check needed a FIXTURE, not a flag** —
+   `fixtures/blank-overhang.pdf`, 1,000 x 800 pt with every mark 95 pt clear of
+   the crop line on either orientation of Letter paper and no page-wide
+   background rectangle, which would be ink under `INK_MAX_LEVEL` and would
+   make every band report `losing`. On the shared `a1-titleblock.pdf` it
+   SKIPPED in every sweep since it was written, so `sweep-full.sh` now names it
+   in the `ALONE` table.
+
+   **The controls live on a Position tab** of the print dialog, not at the foot
+   of the scale tab, so the check presses `print.tab.position` after the scale
+   radio and scrolls over that button rather than over `print.scale.fit` — the
+   scale radios are on a different tab and are not drawn at all once Position
+   is open.
+
+   **What remains on O208 is Ken's word.** The row stays FILED until he closes
+   it.
 2. **The form tools, a unit typed beside a number, and the rule behind both —
    O205, O206, O207.** The table he asked for is written: `FORMS_PARITY.md`,
    Acrobat against the engine at the pin against this shell, per kind x
    capability, every row cited. **Work from its section 8.1 in its own order.**
-   Row 1 is a drop-down’s `/Opt` list, uneditable after placement though the
-   engine verb exists, insertion point `panels/properties/fieldedit.rs:246-275`;
-   row 2 is filling a drop-down or a list box on the canvas, which is a Read-mode
-   capability and so is not gated behind authoring; row 3 is that `classify()`
-   refuses with `NotOffered` and says nothing at all
-   (`canvas/forms/boxes/mod.rs:623-631`), which is why he had to discover row 2
+   **Row 1 is built** — `panels/properties/choiceopts.rs` draws all seven
+   `/Opt` operations at the end of the `FieldType::Choice` branch, plus the
+   default choice and the three `/Ff` bits Acrobat groups with them. Unit-tested
+   and gate-green. **Row 1 is now also DRIVEN, and is done** —
+   `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` asserts all six
+   arrow states across three rows of `ComboOne` in `fixtures/all-field-kinds.pdf`,
+   and was falsified twice: a planted live top-row arrow gave FAIL, a broken
+   selection seam gave SKIP rather than green. Two general things landed to make
+   it possible. `diag::ui_control` publishes a named control's `enabled=` beside
+   its rect, because **a correctly greyed control and a broken one are one
+   observation to a driven check** — it takes the `&Response` so the pair
+   cannot be half-emitted, and it emits the state even when the rect is clipped.
+   And `PDFCER_DIAG_SELECT_FIELD` selects a form field by name, which is the
+   first headless route to the Properties pane at all: before it, the largest
+   editing surface in the shell was R1-unreachable on any day he is at his
+   machine, which is most days. **Every future properties check is unblocked by
+   that seam, not only this one.**
+   **Row 2 is built and DRIVEN, and is done** — `canvas/forms/choosing.rs`
+   answers a combo or list box on the sheet, and
+   `a_drop_down_can_be_answered_on_the_page` drives it. Two things a cold
+   session should not re-derive from it. A page-anchored popup **chooses its
+   side before its constraint rectangle**, because one constrained to the
+   viewport slides back over its own anchor and then takes that anchor's
+   clicks; the general finding is in `D:/dev/rag/egui/`. And egui refuses to
+   store a focus-lock filter until the widget has held focus for a **full
+   frame**, so `canvas::forms::keyboard_box` calls `set_focus_lock_filter`
+   unconditionally every frame rather than on the frame that requests focus -
+   the failure is SILENT, the field simply stops answering keys, and it hit
+   the arrow keys and Escape on every on-page field editor, not only this one.
+   Building it also placed **more fields on the page**: `boxes::place` now
+   finds the sheet by walking each page's `/Annots` rather than by reading the
+   widget's own `/P`, which `pdfcer-core` reports absent when a producer wrote
+   it directly, so two `NotOnCanvas` reasons collapsed into one and fields that
+   were panel-only appear where they are drawn.
+   **Row 27 is a defect measuring row 2 found, and it is fixed** — a
+   multi-select stack copied `/V` and edited it, so a stored value matching no
+   option rode along into `set_choice_value` and the operator's first tick came
+   back refused, naming a value they never touched. The selection is rebuilt
+   from `/Opt` now, and the drop is disclosed in words. **Not driven** — it
+   needs a fixture whose `/V` names no option, which
+   `fixtures/all-field-kinds.pdf` does not carry, and that fixture is the
+   cheapest next thing on this row.
+   **Start at row 3**: `classify()` refuses with `NotOffered` and says nothing
+   at all (`canvas/forms/boxes/mod.rs`), which is why he had to discover row 2
    by clicking; row 19 is O207, and it is adoption rather than engineering —
    `parse_length` already implements the CAD length grammar at the pin
    (`pdfcer-core/src/dimension/length_parse.rs:139`), so the work is one helper in
    `src/units.rs` reached from the entry sites, the same shape O194 step 2 used for
-   the display side. Section 8.2’s fifteen rows are the channel’s work, not ours,
-   and three have moved: **G022 and G023 are both shipped upstream and the pin
-   now carries them** (measured at `20e539a2`; the lock has since moved to `d2fa7352`, which is
+   the display side. Section 8.2’s rows are the channel’s work, not ours — count
+   them, do not quote a number — and five have moved: **G022 and G023 are both shipped upstream and the pin
+   now carries them** (measured at `20e539a2`; the lock has since moved to `fb987cde`, which is
    what row 3 quotes and what `place_page` was re-verified against — both
    re-measured in the checkout rather than believed from a commit message) — so a `/Btn` rotation
    now turns, and G022’s reply carries a fact the request did not, that `/Q` is
@@ -98,17 +158,41 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    blocker in front of it. E3 went out as **`request_G024`**, which asks for an *emitter* over
    the three script enums `classify` already parses — Acrobat’s Format, Validate
    and Calculate tabs, plus `/CO` upkeep and the `/F`+`/K` pairing, as **one
-   set**. **It has landed, and the pin is the very commit that carries it** —
-   `d2fa7352` is *Pass 308.6 (G024)*, measured in the checkout, and there is no
+   set**. **It has landed and the pin carries it** - `d2fa7352` is *Pass 308.6
+   (G024)*, now two commits below the pinned revision, measured in the checkout
+   rather than believed from a commit message, and there is no
    reply file in `open/` announcing it: the delivery arrived as a commit before
    it arrived as a note, which is now the third time. So the Format, Validate
    and Calculate surface is GUI work with nothing in front of it. That last
    clause is O206, which is doctrine rather than a feature:
    clause 7 of this file’s own contract, instrumented as section 7’s ten
-   sibling sets. A request for one of a set is a request for the row, and the
-   row ships whole or not at all. Row 26 overlaps the next item: radio, combo
-   and list box have no driven coverage, and `fixtures/all-field-kinds.pdf`
-   exists now to give them one.
+   sibling sets. Building row 1 also produced **`request_G025`** and
+   **`request_G026`**, both about `/Opt`, and **both have landed** - engine
+   `Pass 308.7` + `308.8` in one commit, which the pin carries. `edit_field`
+   now makes the same duplicate-export refusal `add_choice_field` always made,
+   and `sort` means the same thing on both choice builders: the engine sorts
+   when one edit supplies the list and sets the flag, and `choice_option_order`
+   / `sort_choice_options` are exported so a shell cannot hold a second opinion
+   about the ordering. **One workaround was deleted, one was kept, and the
+   difference is worth a sentence.** The copied comparator went: the panel now
+   calls the engine's sorter. The panel's own duplicate check STAYED, because
+   an engine refusal reaching `vector_edit` is shown as `Declined::EditRefused`
+   - *"That change was refused"* - which names neither the rule nor the value,
+   and the operator is looking at a long list. That leaves one rule spelled in
+   two places, which is the shape `G026` was filed against, so it went back out
+   as **`request_G027`**: export the predicate as well as the ordering, for the
+   engine's own stated reason. **It landed as `duplicate_choice_export` and is
+   consumed** — `choiceopts::refuse_duplicate` asks the engine's own predicate
+   and only the SENTENCE is the shell's half now, which is the part that has to
+   be in the operator's language. The drift gate found the delivery, not the
+   channel: there was no reply file, which is the fourth time. A new outcome
+   field, `options_sorted`, is wired as the tripwire for the drift the export
+   was meant to prevent. A request for one of a set is a request for the row, and the
+   row ships whole or not at all. Row 26's combo and list halves are
+   done — `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` and
+   `a_drop_down_can_be_answered_on_the_page`, both pinning
+   `fixtures/all-field-kinds.pdf`. **Radio is the half left**, and it shares
+   the focus-lock defect row 2 found, so it is a drive rather than a build.
 3. **Drive the four that just shipped — O201, O202, O203, O204.** All four are
    built, unit-falsified, gate-green and **not driven**, which is R1's exact
    failure shape: a green suite over a program nobody has used. Render-ahead is
@@ -175,6 +259,23 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
     fix this row used to prescribe.
 
 ## Traps
+
+- **`PDFCER_DIAG_VIEWPORT`'s height is silently clamped to the monitor's work
+  area, so a control below the fold CANNOT be revealed by asking for a taller
+  window.** Measured 2026-09-16: heights of 2000, 2200 and 2600 all produced the
+  **byte-identical** clip rect `[[846.0 821.8] - [1200.0 1406.0]]`, because both
+  monitors here are 3440x1440 with a 3440x1392 work area. Nothing is reported
+  back — the request simply does not happen. The tell was available at the
+  second rung and was nearly read past: **a result uniform at every rung of a
+  sweep is a measurement of the probe, not the subject.** A check that asserts
+  on a rect it cannot bring into view fails identically on a correct build and a
+  broken one, which manufactures an investigation that ends at the harness. So:
+  assert the traced **state** for every row (`diag::ui_control` publishes
+  `enabled=` whether or not the rect was published), and assert **reachability**
+  for at least one row, never for all — *"some row is in the viewport"* catches
+  the shipped-unreachable defect, *"all three are"* is a claim about the monitor.
+  Full workings in `D:/dev/rag/egui/`. Width was never swept, and a figure quoted
+  for the wrong axis is wrong by the aspect ratio.
 
 - **A SKIP is not a FAIL, and nearly every FAIL is a defect in the CHECK — a
   prior, never a verdict.** Load alone removes coverage with nothing turning

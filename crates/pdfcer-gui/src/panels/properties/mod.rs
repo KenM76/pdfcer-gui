@@ -140,6 +140,11 @@
 /// `selection.delete_permitted` — the condition that decides whether
 /// `format.delete` is drawn at all. One question, two consumers; see its header.
 pub mod annotdelete;
+/// A **choice field's `/Opt` list** and the three `/Ff` flags Acrobat groups
+/// with it. Its own module under R2 and on the seam the code takes:
+/// [`fieldedit`] draws a field's flags, this draws the list those flags
+/// describe.
+pub mod choiceopts;
 /// ★ The **selected ce dimension's** own properties — a contextual section
 /// drawn above this panel's object form.
 ///

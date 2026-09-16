@@ -90,3 +90,24 @@ as [[a-count-command-can-be-wrong-not-just-its-quoted-answer]]. And the wrong
 conclusion was specifically an accusation about code I had not read, which is
 [[a-driven-failure-is-a-claim-about-the-check-too]] pointed at a harness instead
 of a check.
+
+
+---
+
+## ★★★★ Fourth instance, 2026-09-16 — **a prose-prettifying transform applied
+to a payload that CONTAINS code rewrote the code**
+
+Every patch script in this project runs its payload through a helper that turns
+` - ` into an em dash, because the documentation standard wants em dashes and
+the Bash tool's stdin does not carry one safely. Writing a RAG finding, that
+helper reached inside backticks and produced `screen.bottom() — rect.bottom()`
+— an expression that does not compile, in a file whose whole purpose is to
+be copied by a future session.
+
+⇒ **A transform over a mixed payload has no way to know which half it is
+editing.** The same class as the three above: a document's syntax and a
+command's syntax sharing one string. Fix the payload, not the transform —
+keep code out of the transformed text (assemble it after), or assert the code
+spans survived verbatim. And **read back any line containing a code span** after
+a prettifier has run over it, because a mangled expression inside backticks is
+invisible in every gate this repo has: it is prose to all of them.

@@ -679,6 +679,16 @@ pub mod display_two_rows;
 
 pub mod field_shading;
 
+/// Row 2 of `FORMS_PARITY.md` §8.1, driven: a drop-down is answered by
+/// clicking it on the page. Its sibling above reaches the same fixture's
+/// Properties pane without a pointer; this one uses one.
+pub mod canvas_choice_fill;
+/// **A drop-down's reorder arrows are dead only at the ends of its list** —
+/// the six-assertion form, because asserting only the two disabled arrows
+/// would pass on a build that disabled every one of them. Its header carries
+/// the measurement for why the third row's rectangle is not asserted.
+pub mod option_arrows;
+
 pub mod forms_spotlight;
 
 /// **Selecting a page object names the layer it is on** — O126's third

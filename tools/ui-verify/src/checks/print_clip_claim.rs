@@ -58,27 +58,33 @@
 //! `none`. Requiring `none` would fail a correct build on any job longer than
 //! one sheet.
 //!
-//! # ★ When it SKIPS, and why that is the honest verdict
+//! # The fixture assertion 3 requires, and why it is a fixture rather than a
+//! harness setting
 //!
 //! The scale mode defaults to **Fit**, which scales a page to the printable
 //! area and therefore does not clip, so the check begins by clicking
 //! `print.scale.actual` to force the 1:1 geometry the operator's case is
-//! about. That much is now within reach.
+//! about.
 //!
-//! What is still not within reach from here is the *ink*. Assertion 3 needs a
-//! sheet whose overhang is empty paper, and whether it is depends on the
-//! fixture and on the device's printable area together. On a sheet whose
-//! overhang carries a border line or a titleblock edge the ink test correctly
-//! reports `losing`, assertion 3 is vacuous, and the check reports SKIPPED with
-//! the values it read: it has learned that the two lines exist and that
-//! assertions 1 and 2 hold, and nothing about the correction. The same
+//! That reaches the geometry but not the *ink*. Assertion 3 needs a sheet whose
+//! overhang is empty paper, and whether it is depends on the document and on
+//! the device's printable area together — neither of which a flag can set.
+//!
+//! `fixtures/blank-overhang.pdf` is that sheet: 1,000 x 800 pt with every mark
+//! inside a box in the upper-left corner, 95 pt clear of the nearest crop line
+//! on either orientation of Letter paper, and with no page-wide background
+//! rectangle, which would be ink under the `INK_MAX_LEVEL` threshold and would
+//! make every band report `losing`. Its `.PROVENANCE.py` carries the geometry
+//! and the reason for each number. `sweep-full.sh` names it in the `ALONE`
+//! table, so the sweep drives this check on it and not on the shared sheet.
+//!
+//! **It still SKIPS honestly, on two inputs.** Pointed at a full-bleed sheet
+//! such as `a1-titleblock.pdf` the ink test correctly reports `losing`;
+//! pointed at any document on a machine whose printable area contains the page,
+//! nothing clips at all. In both cases assertion 3 is vacuous and the report is
+//! SKIPPED with the values it read: it has learned that the two lines exist and
+//! that assertions 1 and 2 hold, and nothing about the correction. The same
 //! three-state discipline `print_dialog` applies to a machine with no printers.
-//!
-//! **What would make it bite every time**: a fixture whose page box exceeds a
-//! common printable area *and* whose content stops short of the overhang — a
-//! CAD sheet with a wide blank margin. `fixtures/` has no such page today, and
-//! adding one is a fixture change rather than a harness change, which is why it
-//! is recorded here rather than done.
 //!
 //! # What it deliberately does NOT do
 //!
@@ -160,8 +166,8 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let pdf = ctx.pdf.clone().ok_or_else(|| {
         Error::new(
             "no --pdf. `file.print` is gated on `doc.open`, so with nothing open the control is \
-             greyed and there is no dialog to reach. A large-format 1:1 sheet such as \
-             fixtures/a1-titleblock.pdf is the fixture this check is about.",
+             greyed and there is no dialog to reach. fixtures/blank-overhang.pdf is the sheet \
+             this check is about: oversize, and blank where it crops.",
         )
     })?;
     if !ctx.allow_input {
@@ -347,7 +353,8 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
          needs a page whose overhang is empty paper — this fixture's is not, or the device's \
          printable area is large enough to contain the content. Assertions 1 and 2 held \
          (clipped={clipped_field} claim={claim_field}). Reported as SKIPPED, because a check \
-         that did not exercise its subject has learned nothing about it — see this module's \
-         header for the fixture that would make it bite every run."
+         that did not exercise its subject has learned nothing about it. fixtures/blank-overhang.pdf \
+         is the sheet that exercises it, and `sweep-full.sh` pins it there; this run was given \
+         something else, or a device whose printable area contains the page."
     )))
 }

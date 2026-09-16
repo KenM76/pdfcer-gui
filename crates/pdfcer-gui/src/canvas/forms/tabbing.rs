@@ -263,12 +263,10 @@ pub(super) fn button_focus(
 ) -> bool {
     let ctx = ui.ctx().clone();
     let id = focus.editor_id();
-    // `focusable_noninteractive`: the box takes the keyboard and nothing else.
-    // Sensing a click here would take the press away from the page response
-    // `super::click` reads, which is the input layering the module header §4
-    // settles — and a button that both claimed the press and toggled on it
-    // would toggle twice.
-    let response = ui.interact(rect, id, egui::Sense::focusable_noninteractive());
+    // The arrow keys the radio group below reads are only reachable because
+    // this locks them to the field; see [`super::keyboard_box`], which also
+    // holds the reason the sense is `focusable_noninteractive`.
+    let response = super::keyboard_box(ui, id, rect);
     if !focus.seated {
         response.request_focus();
     } else if !response.has_focus() {
@@ -364,6 +362,13 @@ fn activate(widget_box: &WidgetBox, actions: &mut Vec<Action>) {
         // A caret's keys do not reach here: `super::editor` routes a text box
         // to the `TextEdit` before this function can be called.
         BoxKind::Text { .. } => {}
+        // Nor a choice field's: `super::editor` routes it to
+        // `super::choosing`, which owns its own ring, its own Enter and its
+        // own arrows — and which must, because Enter on a closed list opens it
+        // rather than answering the form. Listed as its own arm rather than
+        // folded in above so that adding a kind cannot compile without
+        // deciding what a keyboard activation of it means.
+        BoxKind::Choice { .. } => {}
     }
 }
 

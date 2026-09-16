@@ -322,12 +322,52 @@ invalidate:
    once shipped unreachable in real builds, for their entire lifetime, with all
    gates green.
 
-A seam exists for what OS input cannot reach: `PDFCER_DIAG_INVOKE` (a command
-invoked once, consumed on the first frame that reads it), `PDFCER_DIAG_OPEN_PATH`
-(a native file picker is a hard wall for synthetic input), `PDFCER_DIAG_DROP_PATH`
-(a drop originates in Explorer and cannot be synthesised at all), and
-`PDFCER_DIAG_VIEWPORT` (a real, laid-out, invisible window — which cannot be
-driven by OS input, so a headless run reads its trace and presses nothing).
+A seam exists for what OS input cannot reach. **There were 26 of them when this
+paragraph was last measured (2026-09-16)** and the number only ever grows, so
+what follows names the *kinds* rather than the members. Measure the membership
+rather than quoting this list:
+
+```bash
+grep -rhoE 'PDFCER_DIAG[A-Z_]*' crates/pdfcer-gui/src tools --include=*.rs -r | sort -u
+```
+
+That command reports 28 lines: the 26 seams, plus `PDFCER_DIAG` itself (the
+channel switch, not a seam) and a bare `PDFCER_DIAG_` fragment. Note also that
+several seams are read through a `const` whose own name omits `DIAG`
+(`FONT_DIR_ENV` is one), so a grep for the *variable* name under-counts.
+
+- `PDFCER_DIAG_VIEWPORT` — a real, laid-out, invisible window. It cannot be
+  driven by OS input at all, so a headless run reads its trace and presses
+  nothing. Every other seam exists to give that window something to do.
+  — **and its height is silently clamped to the monitor's work area**, so a
+  control below the fold cannot be revealed by asking for a taller window. See
+  `D:/dev/rag/egui/`; a check that assumes otherwise fails identically on a
+  correct build and a broken one.
+- `PDFCER_DIAG_INVOKE` — a comma-separated list of command ids, rung one per
+  frame through the same `dispatch_command` a chord reaches. A list of
+  doorbells, deliberately not a grammar.
+- **A family of path seams** — a native file picker, an Explorer drop and a
+  certificate store are each a hard wall for synthetic input, so the surface
+  that would have opened one reads a path instead. `PDFCER_DIAG_OPEN_PATH` is
+  the original and there are fifteen more, which is over half the family.
+- **State and decision seams** — where the state a check needs is reachable
+  **only** by a pointer gesture or a keystroke the harness cannot aim.
+  `PDFCER_DIAG_TYPE` seeds a text draft, `PDFCER_DIAG_SELECT_FIELD` selects a
+  form field by name, `PDFCER_DIAG_FIND` seeds a search, and
+  `PDFCER_DIAG_FORM_ACCEPT` / `PDFCER_DIAG_PASTE_CHORDS` supply a decision the
+  operator would otherwise make in a dialog or a preference. This is the same
+  wall as a file picker arriving from the other direction: the Properties pane
+  for a form field had no headless route to it **at all** until
+  `PDFCER_DIAG_SELECT_FIELD` landed, so the largest editing surface in the shell
+  was R1-unreachable on any day the operator was at his machine — which is most
+  days.
+
+The four kinds are a description, not a partition: `PDFCER_DIAG_DROP_AFTER_MS`
+is a *parameter of* a path seam rather than a seam, and
+`PDFCER_DIAG_CERTIFICATE_PASSPHRASE` supplies a secret where a modal would ask
+for one. A new seam that fits none of the four is a signal about the surface it
+was added for, not a flaw in this list.
+
 Without these, a feature would be implemented, unit-tested, and never once
 exercised in a running window, which is the state R1 exists to forbid.
 

@@ -754,6 +754,14 @@ pub struct PanelsState {
     /// Here rather than on `OpenDoc` by this struct's own rule: a half-typed
     /// tooltip is the operator's state, not the document's.
     field_props: properties::fieldedit::FieldPropsDraft,
+    /// The selected choice field's **option list** as it is being typed,
+    /// and the `(name, epoch)` it was read at.
+    ///
+    /// Separate from [`Self::field_props`] rather than a field inside it,
+    /// because it is a list of rows rather than a handful of scalars and
+    /// because `properties::choiceopts` destructures it into three disjoint
+    /// borrows in one frame. Same stamp rule, different shape.
+    choice_opts: properties::choiceopts::ChoiceOptsDraft,
     /// ★ The selected WIDGET's four typed numbers and its caption, and the
     /// `(name, widget index, epoch)` they were read at.
     ///
@@ -1218,6 +1226,12 @@ impl PanelsState {
     /// would have to be handed that as well.
     pub fn field_props_mut(&mut self) -> &mut properties::fieldedit::FieldPropsDraft {
         &mut self.field_props
+    }
+
+    /// The selected choice field's option-list draft. See
+    /// [`Self::field_props_mut`]; this one owns the same `(name, epoch)` stamp.
+    pub fn choice_opts_mut(&mut self) -> &mut properties::choiceopts::ChoiceOptsDraft {
+        &mut self.choice_opts
     }
 
     /// The selected widget's typed-property draft. See

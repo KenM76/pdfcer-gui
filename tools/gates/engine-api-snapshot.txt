@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: d2fa7352b5613b722b80712af87cd470684570b8
+# baseline: fb987cde0366eb635f8e29b7b17b5d5ddacf24be
 # crates: pdfcer-core pdfcer-render pdfcer-print
-# items: 7657
+# items: 7660
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
@@ -53,6 +53,7 @@ exempt pdfcer-core field pdfcer_core::xref::HybridPartition::hidden -- the objec
 exempt pdfcer-core field pdfcer_core::xref::HybridPartition::stream_unreadable -- a did-the-XRefStm-parse flag. Its ONLY consumer is `is_reproducible()`, which is the gate on `writer::save`'s full rewrite, and this shell already renders the outcome of that gate as `WriteError::HybridFullRewrite` (O157). Reading the flag would let the shell predict the refusal one step earlier; it would not let it say anything new, and a prediction that disagreed with the writer's own check would be a second description of the rule.
 exempt pdfcer-core field pdfcer_core::xref::LoadedXref::hidden_objects -- the same set as `HybridPartition::hidden`, one layer down, on the type `load_xref_chain` returns. This shell never holds a `LoadedXref`: it opens documents through `Document::load`, which consumes the xref chain internally. Exempted separately from the `HybridPartition` copy rather than folded into it, because the two would have to be exempted separately again if the engine ever stopped keeping them in sync.
 exempt pdfcer-core field pdfcer_core::xref::LoadedXref::hybrid_stream_unreadable -- the same flag as `HybridPartition::stream_unreadable`, on the type this shell never holds. See the two lines above; the argument is theirs.
+exempt pdfcer-core fn pdfcer_core::edit::choice_option_order -- the bare comparator under `sort_choice_options`, which this shell DOES call: `panels::properties::choiceopts::sort_by_display` delegates to the sorter so the panel cannot hold a second opinion about what /Opt order means, which is the whole point of `G026` exporting the pair. The comparator itself is for a caller sorting something that is not a whole list -- a merge, a partial insert, a binary search -- and this panel has none of those: `FieldEdit::with_options` replaces the entire array, so every write here sorts the entire array. Exempted as the UNUSED HALF OF A CONSUMED PAIR rather than as a declined capability. DELETE THIS LINE if a surface ever inserts into a sorted /Opt list in place, because that caller needs the comparator and must not re-spell it.
 exempt pdfcer-core method pdfcer_core::document::Document::hybrid_partition -- the single public accessor for `xref::HybridPartition`, which this snapshot already exempts at length two lines below along with both of its fields and its `is_reproducible` gate. It is listed separately rather than folded into that argument because it lives on `Document` -- the one engine type this shell holds for every open file -- so it is the ONE member of the hybrid cluster that is actually reachable from here, and a reader who found the struct exempted could reasonably assume the cluster was unreachable and stop. It is not unreachable; it is unwanted, for the reason the struct's own line gives: everything in a `HybridPartition` that an operator can act on already reaches him as `WriteError::HybridFullRewrite`, which this shell renders today (O157). DELETE THIS LINE together with the struct's, under the same condition it names.
 exempt pdfcer-core method pdfcer_core::edit::EditSession::search_and_mark_redactions_by_pattern -- the UNSTYLED convenience spelling of a verb this shell already calls. `Pass 296.3` (`90576a8`) made `search_and_mark_redactions_by_pattern_styled` the single implementation and left this one delegating to it with `RedactAppearance::default()`; `app::actions::redact` calls the styled form because the shell always HAS an appearance -- the operator's redaction fill and overlay text are a control, not a default -- and because the styled form is the one whose return this shell reads BOTH fields of (`created` and `diagnostics`). Calling the unstyled one would silently paint the engine's default black and would throw away nothing, since both return the same `RedactionMarking`; it is the appearance that makes it wrong. Exempted as an ALTERNATE SPELLING this shell will never hold, not as a capability it declined. DELETE THIS LINE if the styled verb is ever narrowed such that the plain one stops being a strict subset of it.
 exempt pdfcer-core method pdfcer_core::parser::Parser::duplicate_keys -- every duplicate key one `Parser` resolved. This shell never constructs a `Parser` and never will: it opens documents through `Document::load`, which drives the parser internally, tags each record with its object and hands the result out as `Document::load_anomalies()` -- the call `app::status::anomalies` actually makes. Reading the parser's own list would require standing up a second parse of the same bytes, and would produce a report that disagreed with the one on screen the moment the two parses were given different `LoadOptions`.
@@ -967,6 +968,7 @@ pdfcer-core field pdfcer_core::edit::FieldEditOutcome::appearance_regenerated
 pdfcer-core field pdfcer_core::edit::FieldEditOutcome::flags_after
 pdfcer-core field pdfcer_core::edit::FieldEditOutcome::flags_before
 pdfcer-core field pdfcer_core::edit::FieldEditOutcome::name
+pdfcer-core field pdfcer_core::edit::FieldEditOutcome::options_sorted
 pdfcer-core field pdfcer_core::edit::FieldEditOutcome::sort_claim_unmet
 pdfcer-core field pdfcer_core::edit::FieldEditOutcome::tooltip_removed
 pdfcer-core field pdfcer_core::edit::FieldEditOutcome::value_no_longer_fits
@@ -2800,7 +2802,9 @@ pdfcer-core fn pdfcer_core::dimension::units::format_angle_degrees
 pdfcer-core fn pdfcer_core::dimension::units::format_measurement
 pdfcer-core fn pdfcer_core::dimension::units::preview_group_scale
 pdfcer-core fn pdfcer_core::edit::decode_text_string
+pdfcer-core fn pdfcer_core::edit::duplicate_choice_export
 pdfcer-core fn pdfcer_core::edit::encode_text_string
+pdfcer-core fn pdfcer_core::edit::sort_choice_options
 pdfcer-core fn pdfcer_core::editable::export
 pdfcer-core fn pdfcer_core::editable::import
 pdfcer-core fn pdfcer_core::editable::stream_is_unchanged

@@ -143,9 +143,15 @@ pub mod layers;
 /// have been churn in files this landing does not otherwise touch.
 pub use layers::layer_selection_unlayered;
 
+/// ★ **A choice field's `/Opt` list**, and the three `/Ff` flags Acrobat groups
+/// with it. Its own module under R2 and on the seam the code takes; the header
+/// argues the Shown/Sent vocabulary.
+pub mod choiceopts;
 /// The Fonts panel's inventory report.
 pub mod fonts;
-/// The Comments panel — every annotation on the document, listed.
+/// **The Forms panel and the form-field half of Properties** — a placed
+/// field's flags, its tooltip, its maximum length, its default value and its
+/// alignment.
 pub mod formfield;
 /// The Objects panel, and the wording of every object fact.
 pub mod objects;

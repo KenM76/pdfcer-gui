@@ -317,6 +317,14 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(display_two_rows::TheDisplayButtonsStackInTwoRows),
         Box::new(title_build_stamp::TheTitleBarCarriesTheBuildTime),
         Box::new(field_shading::FillableFieldsAreShadedOnThePage),
+        // The first check to reach a form field's Properties pane without a
+        // pointer, through `PDFCER_DIAG_SELECT_FIELD`. Beside `field_shading`
+        // because both drive the same fixture family and neither sends input.
+        Box::new(option_arrows::TheOptionArrowsAreGreyedOnlyAtTheEndsOfTheList),
+        // The canvas half of the same subject, and the one that sends input:
+        // it pins the same fixture and ignores `--pdf`, because no other
+        // document in the corpus carries a choice field to click.
+        Box::new(canvas_choice_fill::ADropDownCanBeAnsweredOnThePage),
         Box::new(preset_group_reachable::TheStandardsPresetsGroupIsReachable),
         Box::new(redact_image_warning::MarkingOverAnImageSaysSoBeforeApply),
         // The DXF export. Beside the page checks because it is the

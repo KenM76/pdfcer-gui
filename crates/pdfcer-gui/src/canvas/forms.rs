@@ -57,7 +57,7 @@
 //!    a picture with no text alternative. An operator who cannot see the page
 //!    cannot discover that a field exists here, let alone which one it is.
 //! 2. **Everything this surface declines is still fillable there.** §5 lists
-//!    five reasons a field is not offered on the page. Every one of them has
+//!    four reasons a field is not offered on the page. Every one of them has
 //!    the panel as its answer, and the panel says so
 //!    ([`crate::text::forms::forms_canvas_undrawn_note`] and
 //!    [`crate::text::forms::forms_canvas_unreachable_note`]).
@@ -213,7 +213,7 @@
 //!
 //! ---
 //!
-//! ## 5. Five reasons a field is not offered here — and all five keep the panel
+//! ## 5. Four reasons a field is not offered here — and all four keep the panel
 //!
 //! [`NotOnCanvas`] is the complete list, and each entry is a fact the *file*
 //! states rather than a limit this module chose:
@@ -237,24 +237,35 @@
 //!    `/AP` draws vertically. **Text fields only**: a check box has no text
 //!    direction, so a button on a rotated page is offered exactly as it is
 //!    anywhere else, and only the editor is withheld.
-//! 3. **[`NotOnCanvas::NoRect`] — no usable `/Rect`.** A missing or zero-area
-//!    rectangle is a widget with no place on the page. (§12.7.4.5 makes a
-//!    zero-area `/Rect` *deliberate* invisibility for a signature field, which
-//!    is not offered here anyway.)
-//! 4. **[`NotOnCanvas::UnknownPage`] — the file does not say which page.**
-//!    `pdfcer_core::forms::Widget::page` is `/P`, and core reads it without
-//!    resolving through the graph, so a direct (non-reference) `/P` reads as
-//!    absent. Either way there is no page to place the box on. Reported as a
-//!    boundary observation rather than worked around: the shell cannot repair
-//!    a fact the model does not carry.
-//! 5. **[`NotOnCanvas::NotOffered`] — this kind has no canvas gesture.**
+//! 3. **[`NotOnCanvas::NotPlaced`] — no page's `/Annots` lists this widget
+//!    with a usable rectangle.** One reason rather than two, and the merge is
+//!    the point: [`boxes::place`] answers *"which page is this widget on?"* by
+//!    walking each page's `/Annots`, so there is no `/P` to be absent and no
+//!    second question to ask. A widget no page lists — or one whose listed
+//!    rectangle has no area — has no place on the page whatever its own
+//!    dictionary says. (§12.7.4.5 makes a zero-area `/Rect` *deliberate*
+//!    invisibility for a signature field, which is not offered here anyway.)
+//! 4. **[`NotOnCanvas::NotOffered`] — this kind has no canvas gesture.**
 //!    Read-only, signature and push-button fields (the panel's
 //!    [`crate::panels::forms::rows::block_reason`], asked here rather than
-//!    re-derived), rich text (which the panel offers a *conversion* rather than
-//!    a box), choice fields, and a button with no on-state. A choice field
-//!    would need a dropdown anchored to the page, which is a second popup
+//!    re-derived), rich text (which the panel offers a *conversion* rather
+//!    than a box), a button with no on-state, and a choice field whose `/Opt`
+//!    is empty.
+//!
+//!    **A choice field with options is offered**, and that overturns what this
+//!    section used to argue: that a page-anchored dropdown was "a second popup
 //!    surface with its own placement rules and no gesture the panel does not
-//!    already have.
+//!    already have". Both clauses were wrong. The gesture clause was wrong
+//!    because a form's combo boxes and list boxes are on the sheet the
+//!    operator is reading, so routing them to a panel is exactly the round
+//!    trip §1 refuses for text — reading the option off the page and then
+//!    hunting the same field in a list is the round trip, whatever widget sits
+//!    at the far end of it. The placement clause was wrong because the rules
+//!    turned out to be one rule, and [`choosing`]'s ★ is all of it.
+//!
+//!    Rule 4 is answered by what the popup does **not** draw: nothing at all
+//!    over an unfocused field. A screenshot of the page with nothing focused
+//!    is the screenshot of the saved document, which is the one-line test.
 //!
 //! Two document-wide gates sit in front of all five, in [`offer`]:
 //!
@@ -355,6 +366,11 @@ mod ring;
 /// Tab's own half: advancing the ring, and the focus a button holds while
 /// it waits for a Space. Split out under R2; see its header.
 mod tabbing;
+
+/// A choice field's option list: the popup's side, its keyboard, and what a
+/// pick sends. Split out under R2; see its header, and in particular its ★ on
+/// why the side is chosen before the constraint rather than after it.
+mod choosing;
 
 /// Re-exported so the path `canvas::forms::right_click_hits_a_field` — which
 /// `canvas::rightclick` and `panels::properties::formfield` both cite by name
@@ -637,8 +653,8 @@ pub(crate) fn placed(ctx: &egui::Context, doc: &OpenDoc) -> Arc<boxes::Placed> {
     // capture, which is the same "fifty identical lines in nine seconds"
     // failure `trace::pointer` was fixed for.
     // ★★ The SELECTABLE census, beside the fillable one and deliberately
-    // separate. The two sets differ — a drop-down, a push button and an undrawn
-    // widget are selectable and not fillable — and that difference is the whole
+    // separate. The two sets differ — a push button and an undrawn widget are
+    // selectable and not fillable — and that difference is the whole
     // of what form authoring added to this surface. One census reporting the
     // union would make a harness unable to tell "this widget cannot be typed
     // into" from "this widget cannot be reached at all", which are the two
@@ -786,6 +802,7 @@ pub(super) fn overlay(
         settle(&ctx, doc, actions);
         if doc.annotations_visible() {
             let placed = placed(&ctx, doc);
+            selecting::seeded_select(doc, &placed.targets, actions);
             selecting::select_click(&ctx, doc, pages, drawn, &placed.targets, actions);
             selecting::select_cursor(&ctx, pages, &placed.targets);
             // ★★★ DRAW THE SELECTION. `OPERATOR_REQUESTS.md` **O53**.
@@ -954,6 +971,49 @@ pub(super) fn stored_value(doc: &OpenDoc, field: &str) -> Option<String> {
         .map(|f| f.value.display_text())
 }
 
+/// **Interact with a focused field's rectangle and keep the keys it reads.**
+///
+/// Returns the `focusable_noninteractive` response every on-page field editor
+/// is built on. `focusable_noninteractive` rather than a clickable sense
+/// because sensing the press here would take it away from the page response
+/// [`click`] reads, which is the input layering the module header §4 settles.
+///
+/// # Why the event filter is not optional
+///
+/// egui moves keyboard focus on a bare arrow key and *surrenders* it on
+/// Escape, both inside `Memory::begin_pass`, before any of this module runs.
+/// The default [`egui::EventFilter`] declines every lock, so a field that
+/// reads Up/Down for its own purpose loses the ring on the same press it
+/// acted on, and one that wants Escape to mean "close the list, keep the
+/// ring" never gets a second press to interpret.
+///
+/// Both failures are **silent**: the field simply stops answering keys. The
+/// only outside evidence is `form-choice-unfocused`, which exists for that
+/// reason.
+///
+/// `tab` is deliberately left unlocked — Tab moves the field ring, and that
+/// is `tabnav`'s job, not a key any one field consumes. Horizontal arrows are
+/// left unlocked because no field editor reads them.
+///
+/// egui refuses to store a filter until the widget has held focus for a full
+/// frame (`Memory::set_focus_lock_filter`), so this is called on every frame
+/// rather than only on the one that requests focus.
+pub(super) fn keyboard_box(ui: &mut Ui, id: Id, rect: egui::Rect) -> egui::Response {
+    let response = ui.interact(rect, id, egui::Sense::focusable_noninteractive());
+    ui.memory_mut(|m| {
+        m.set_focus_lock_filter(
+            id,
+            egui::EventFilter {
+                tab: false,
+                horizontal_arrows: false,
+                vertical_arrows: true,
+                escape: true,
+            },
+        );
+    });
+    response
+}
+
 /// Draw the focused field's editor, and settle it when it is finished.
 ///
 /// Returns whether the editor claimed this frame's primary click, so
@@ -994,6 +1054,14 @@ fn editor(
         // strip: commit what is there -- unless a Tab put the focus here and
         // the scroll that reveals it is still in flight.
         return tabbing::hold_or_settle(&ctx, doc, focus, actions);
+    }
+
+    if matches!(widget_box.kind, BoxKind::Choice { .. }) {
+        // Routed before the destructure below, which binds its fields by copy
+        // — a `Choice` carries two `Vec`s and cannot. `choosing::choose` draws
+        // the ring itself, for the same reason `tabbing::button_focus` does:
+        // the box takes the keyboard and the popup is the only thing on screen.
+        return choosing::choose(ui, focus, widget_box, rect, actions);
     }
 
     let BoxKind::Text {
@@ -1279,6 +1347,11 @@ fn click(
             }
             focus_button(ctx, doc, page, widget_box);
         }
+        // A click writes nothing here: it opens the list, and the pick is the
+        // command. Unlike a button, whose click IS the answer, a choice field
+        // has to be asked which option — so the gesture is two-step and the
+        // first step is not an edit.
+        BoxKind::Choice { .. } => choosing::focus_choice(ctx, doc, page, widget_box),
     }
 }
 
@@ -1341,9 +1414,10 @@ pub(super) fn raise_button(field: &str, state: String, actions: &mut Vec<Action>
 /// The trace's one-word name for a kind.
 fn kind_label(kind: &BoxKind) -> &'static str {
     match kind {
-        BoxKind::Text { .. } => "text",   // ui-text-exempt: trace token
-        BoxKind::Check { .. } => "check", // ui-text-exempt: trace token
-        BoxKind::Radio { .. } => "radio", // ui-text-exempt: trace token
+        BoxKind::Text { .. } => "text",     // ui-text-exempt: trace token
+        BoxKind::Check { .. } => "check",   // ui-text-exempt: trace token
+        BoxKind::Radio { .. } => "radio",   // ui-text-exempt: trace token
+        BoxKind::Choice { .. } => "choice", // ui-text-exempt: trace token
     }
 }
 
