@@ -81,3 +81,26 @@ suspect the derivation before the program: a constant is what an artefact looks
 like. Related: [[a-value-cannot-identify-which-producer-made-it]],
 [[an-oracle-built-from-the-system-under-test-needs-an-independent-calibration]],
 [[a-count-command-can-be-wrong-not-just-its-quoted-answer]].
+
+## ★ THIRD, 2026-09-15 — the harness filtered its input on the very property it was asserting
+
+Same failure as the first section, but this time in the *instrument* rather than
+the program. A check wanting *"what did this drag select?"* collected the
+`canvas-text-selection` lines, **filtered them to the ones with `chars > 0`**,
+and took `.last()`. A sweep whose pointer ran off the end of the text emits a
+final `chars=0` line — which the filter discards — so the check read the last
+state the gesture was **in** and scored it as the state the gesture **left**. It
+then clicked a control that was correctly greyed and reported the application
+broken.
+
+⇒ **An instrument that filters its input on the property it is asserting cannot
+observe the property being false.** The filter is the assertion, moved earlier,
+where nothing can see it fail. Read the settled line first — the last line of
+the event, unfiltered — and *then* test it.
+
+⚠ **The corollary, and it is why this is not a blanket "always read settled":
+presence and absence assertions want opposite readings.** A phase asserting
+*"this gesture must select nothing"* keeps the filtered form deliberately, because
+*"no non-empty line appeared at any point"* is a stronger claim than *"the last
+line is empty"*. Written into `DEFECTS.md` D67 so the asymmetry is not tidied
+into consistency later.

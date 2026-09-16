@@ -43,3 +43,34 @@ different mechanism) and of
 [[a-disclosure-has-a-subject-delete-it-when-the-subject-goes]], which is its
 mirror image: that one is about failing to delete prose when its subject goes,
 this one about deleting prose whose subject is still there.
+
+## ★ SECOND, 2026-09-15 — the splice helper's anchor assert passed on the wrong row and ate it
+
+Adding two rows to the top of the channel's `INDEX.md`, I reused a
+splice-by-line-number helper whose contract is **replace `[start, end]`**, and
+called it with `start = end = 12`, meaning *insert before line 12*. It did what
+it says: it replaced line 12 — a 1,829-character row for another exchange,
+written the same morning — with the two new ones.
+
+**The guard was there and it endorsed the mistake.** The helper asserts that the
+first and last lines start with a given prefix, and I passed
+`"| 2026-09-15 | "`. Every row filed that day starts with exactly that. The
+assert was satisfied by the row I was about to destroy just as readily as by the
+one I meant to write before.
+
+⇒ Two rules, and the second is the general one:
+
+- **There is no "insert" in a replace-a-range helper.** If you want insertion,
+  call something that inserts (`lines[n:n] = rep`). A range of length one is a
+  deletion with extra steps.
+- **An anchor shared by every sibling is not an anchor.** In a file that is a
+  list of dated rows, the date is the *least* identifying thing on the line.
+  Anchor on the part that is unique to the row — here the exchange key.
+
+It was recoverable only because the destroyed row happened to have been printed
+into a persisted tool-output file minutes earlier. That is luck, not a process.
+For anything outside version control — and this channel is deliberately outside
+it — **`git diff` is not available as the safety net the section above
+prescribes**, so the check has to happen before the write: print the lines the
+splice is about to consume, or count rows before and after and require the
+arithmetic to match.
