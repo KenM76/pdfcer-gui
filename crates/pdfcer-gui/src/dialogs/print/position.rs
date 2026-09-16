@@ -430,8 +430,8 @@ pub(super) fn arrow_nudge(ui: &Ui) -> Option<(f64, f64)> {
 
 /// Publish one Position button's rectangle for `ui-verify`.
 ///
-/// `ui_rect_visible` and not `ui_rect`: this group is at the FOOT of a
-/// scrolling options column, so on a short dialog it is genuinely off screen,
+/// `ui_rect_visible` and not `ui_rect`: the group sits in a scrolling options
+/// column, so on a short dialog its lower controls are genuinely off screen,
 /// and a driver handed a rectangle for an unreachable button would click
 /// whatever is drawn over it and then report the wrong thing about the result.
 ///
@@ -443,21 +443,27 @@ fn publish(ui: &Ui, name: &str, rect: egui::Rect) {
     crate::diag::ui_rect_visible(name, rect, ui.clip_rect());
 }
 
-/// **The Position group, at the bottom of the Pages & Layout tab.**
+/// **The body of the Position tab.**
 ///
 /// Draws nothing at all when there is no job, or when the stepper is on a sheet
 /// the job does not contain (`R9`: an unavailable capability renders nothing,
 /// and a position control with no page to act on is unavailable rather than
 /// temporarily disabled).
 ///
-/// # Why here and not in the preview strip
+/// # Why a tab of its own, and not the preview strip
 ///
 /// The strip under the preview already lays seven controls into a
 /// `horizontal_wrapped` row that measures wider than the column holding it.
 /// Four more would wrap it into a second row, and the strip's height is fixed
 /// for the feedback-loop reason `preview::STRIP_HEIGHT_PTS` documents — so they
-/// would be clipped, not merely cramped. The options column is also where every
-/// other *what will be printed* answer already is.
+/// would be clipped, not merely cramped.
+///
+/// The remaining candidate was the foot of the Pages & Layout options column,
+/// beside the scale radios, which is where scale and position belong together
+/// conceptually. That was measured and does not fit; [`super::tabs::PrintTab`]
+/// carries the numbers. What makes the split cheap is that the preview is a
+/// separate column and is visible whichever tab is open, so the feedback these
+/// controls need is never hidden behind the tab that owns them.
 pub(super) fn group(
     ui: &mut Ui,
     dialog: &mut PrintDialog,
@@ -489,7 +495,11 @@ pub(super) fn group(
     // back only on `changed()`, so an unedited entry is never rewritten by its
     // own display rounding.
     let offset = dialog.page_positions.of(page);
-    ui.horizontal(|ui| {
+    // `horizontal_wrapped`, like the two button rows below it: a plain
+    // `ui.horizontal` lays out past the end of its column and reports a
+    // `min_rect` that wide, which propagates outward as the body's content
+    // width and raises a horizontal scrollbar the operator cannot dismiss.
+    ui.horizontal_wrapped(|ui| {
         ui.label(t::position_across());
         let mut across_mm = units::mm_from_points(offset.dx_pt);
         if ui

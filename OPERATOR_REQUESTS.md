@@ -706,10 +706,23 @@ settled is one the engine would also ignore.
 four shortcuts, reset-all with its count, typed entry in millimetres, arrow
 nudge at 1 mm and 10 mm, the frame and sign stated on screen, the per-edge
 overhang in whole millimetres off-canvas, no bound on the drag, and the hatch
-widened from two bands to four. **Not yet driven.** The R1 oracle
+widened from two bands to four.
+
+**Where they ended up, which was not where they started.** The controls were
+first built at the foot of the scale tab, where scale and position belong
+together conceptually. Measured there, the group took the dialog's body 149 pt
+past its scroll viewport — a vertical scrollbar in the one dialog whose own
+operator report was *two scroll bars that will not go away* — so they moved to
+a **Position** tab of their own, and the three existing tabs lost their
+qualifiers so that a fourth still fits on one row. The preview is a separate
+column and stays visible whichever tab is open, so the feedback the drag needs
+is never behind the tab that owns it.
+
+**Not yet driven.** The R1 oracle
 `the_printed_page_can_be_moved_on_the_paper` is written and registered; it needs
 about two minutes of the operator's desktop, and until it runs green the
 register row stays untickable.
+
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 
 **Source:** `C:\Users\Ken\OneDrive\pdfTests\FEATURE.txt`, written, read the same morning. Every paragraph in it became a row below, in the

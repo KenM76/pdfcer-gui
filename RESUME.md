@@ -65,6 +65,14 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    pass. Both are fixed and neither is measured. It needs about two minutes of
    his desktop. `print_clip_claim_follows_the_preview` was fixed in the same
    breath and wants the same two minutes.
+
+   **Read the check's tab click before touching it.** The controls now live on a
+   **Position** tab of the print dialog, not at the foot of the scale tab, so
+   the check presses `print.tab.position` after the scale radio and scrolls over
+   that button rather than over `print.scale.fit` — the scale radios are on a
+   different tab and are not drawn at all once Position is open, so the old
+   anchor would have been absent exactly when it was needed and the check would
+   have reported *"the group drew nothing"*.
 2. **The form tools, a unit typed beside a number, and the rule behind both —
    O205, O206, O207.** The table he asked for is written: `FORMS_PARITY.md`,
    Acrobat against the engine at the pin against this shell, per kind x

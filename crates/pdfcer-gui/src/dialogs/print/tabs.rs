@@ -48,6 +48,25 @@ pub(super) enum PrintTab {
     /// Annotation scope and rendering resolution — what is painted onto each
     /// page, and how finely.
     CommentsResolution,
+    /// Where each page sits on the sheet, and therefore what gets cropped off
+    /// a drawing too big for the paper.
+    ///
+    /// ★ A tab of its own rather than a group at the foot of
+    /// [`Self::PagesLayout`], where it started and where it belongs
+    /// conceptually — scale and position are one decision. It was measured
+    /// there and it did not fit: the group is about 180 pt tall, the options
+    /// column had 16 pt of slack, and the body's content went to 699 pt
+    /// against a 550 pt viewport. That is a vertical scrollbar in the one
+    /// dialog whose operator report was *"two scroll bars in the pop up window
+    /// that won't go away"*, so the room had to come from somewhere.
+    ///
+    /// What makes the split cost little is that the **preview is a separate
+    /// column and is always visible**, so the feedback the position controls
+    /// need is on screen whichever tab is open. What it costs is that the
+    /// scale radios are not, which is why this tab restates neither: it names
+    /// the sheet and the page it is acting on and leaves the scale to the tab
+    /// that owns it.
+    Position,
 }
 
 impl PrintTab {
@@ -56,10 +75,11 @@ impl PrintTab {
     /// An array rather than three literal calls at the draw site, so adding a
     /// tab is one edit and cannot leave the strip and the content branch
     /// disagreeing about how many there are.
-    pub(super) const ALL: [Self; 3] = [
+    pub(super) const ALL: [Self; 4] = [
         Self::PagesLayout,
         Self::CopiesFinishing,
         Self::CommentsResolution,
+        Self::Position,
     ];
 
     /// The tab's label.
@@ -68,6 +88,25 @@ impl PrintTab {
             Self::PagesLayout => t::tab_pages_layout(),
             Self::CopiesFinishing => t::tab_copies_finishing(),
             Self::CommentsResolution => t::tab_comments_resolution(),
+            Self::Position => t::tab_position(),
+        }
+    }
+
+    /// The tab's suffix under [`super::REGION_TAB_PREFIX`].
+    ///
+    /// Deliberately not [`Self::label`] lowercased: a published region name is
+    /// a contract with `tools/ui-verify`, and deriving it from user-visible
+    /// copy would break every driven check the next time a label is reworded.
+    pub(super) fn region_word(self) -> &'static str {
+        match self {
+            // ui-text-exempt: diagnostic region name, never displayed in the UI
+            Self::PagesLayout => "pages",
+            // ui-text-exempt: diagnostic region name, never displayed in the UI
+            Self::CopiesFinishing => "copies",
+            // ui-text-exempt: diagnostic region name, never displayed in the UI
+            Self::CommentsResolution => "comments",
+            // ui-text-exempt: diagnostic region name, never displayed in the UI
+            Self::Position => "position",
         }
     }
 
@@ -77,6 +116,7 @@ impl PrintTab {
             Self::PagesLayout => t::tab_pages_layout_tooltip(),
             Self::CopiesFinishing => t::tab_copies_finishing_tooltip(),
             Self::CommentsResolution => t::tab_comments_resolution_tooltip(),
+            Self::Position => t::tab_position_tooltip(),
         }
     }
 }
@@ -206,17 +246,16 @@ fn publish_scale_region(ui: &egui::Ui, mode: ScaleMode, rect: egui::Rect) {
 
 /// Which pages, and how each one lands on the sheet.
 ///
-/// Takes the planned job rather than the sheet extracted from it, because the
-/// position group at the foot of this tab needs the placement of the sheet on
-/// screen as well as the paper it lands on, and both must come from the same
-/// plan. Pulling one value out here and the other out at the call site is how
-/// a tab comes to describe two different jobs in one column.
+/// Takes the planned job rather than the sheet extracted from it, so that every
+/// sentence in the column names the rectangle the job was actually laid out
+/// against — the TURNED sheet — rather than the device's un-rotated default.
+/// Pulling one value out here and another out at the call site is how a tab
+/// comes to describe two different jobs in one column.
 pub(super) fn pages_layout(
     ui: &mut Ui,
     dialog: &mut PrintDialog,
     page_count: usize,
     job: Option<&Job>,
-    page_sizes: &[(f64, f64)],
 ) {
     // The TURNED sheet, so every sentence below names the rectangle the job
     // was actually laid out against rather than the device's un-rotated
@@ -463,11 +502,6 @@ pub(super) fn pages_layout(
         ui.add_space(2.0);
         ui.label(egui::RichText::new(t::paper_auto_mixed()).small().weak());
     }
-
-    // Last in the tab, because it is the only group here that acts on ONE
-    // sheet: everything above sets the job. See
-    // [`super::position::group`] for why it is not in the preview strip.
-    super::position::group(ui, dialog, job, page_sizes);
 }
 
 // ---------------------------------------------------------------------------

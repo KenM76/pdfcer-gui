@@ -1101,7 +1101,13 @@ fn strip(
             rect.width()
         )
     });
-    ui.horizontal(|ui| {
+    // `horizontal_wrapped`, not `horizontal`, for the reason the strip probe
+    // above documents: a plain `ui.horizontal` lays out past the end of its
+    // column and reports a `min_rect` that wide, which propagates outward as
+    // the body's content width and raises a horizontal scrollbar the operator
+    // cannot dismiss. Measured: this row laid out 402.5 pt inside a 340 pt
+    // column and took the body to 822.5 pt against a 776 pt viewport.
+    ui.horizontal_wrapped(|ui| {
         // The scale as a percentage of ACTUAL size, not of the fit — see
         // `text::print::preview_zoom_percent` for why a number that changes
         // when the window is dragged would be useless. Clamped and rounded

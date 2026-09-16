@@ -235,9 +235,16 @@ pub const fn no_document() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// Tab 1's label.
+///
+/// One word, like every other tab here. The strip is 404 pt wide in the
+/// narrowest layout the dialog allows and there are now four tabs; the fuller
+/// names measured 360 pt for three and wrapped the strip onto a second row,
+/// which the dialog has no vertical room for. The qualifier lives in
+/// [`tab_pages_layout_tooltip`], which is where a tab strip conventionally
+/// keeps it.
 #[must_use]
 pub const fn tab_pages_layout() -> &'static str {
-    "Pages & Layout"
+    "Pages"
 }
 
 /// Tab 1's hover text — the question the tab answers.
@@ -249,7 +256,7 @@ pub const fn tab_pages_layout_tooltip() -> &'static str {
 /// Tab 2's label.
 #[must_use]
 pub const fn tab_copies_finishing() -> &'static str {
-    "Copies & Finishing"
+    "Copies"
 }
 
 /// Tab 2's hover text.
@@ -261,13 +268,25 @@ pub const fn tab_copies_finishing_tooltip() -> &'static str {
 /// Tab 3's label.
 #[must_use]
 pub const fn tab_comments_resolution() -> &'static str {
-    "Comments & Resolution"
+    "Comments"
 }
 
 /// Tab 3's hover text.
 #[must_use]
 pub const fn tab_comments_resolution_tooltip() -> &'static str {
     "What is painted onto each page, and how finely."
+}
+
+/// Tab 4's label.
+#[must_use]
+pub const fn tab_position() -> &'static str {
+    "Position"
+}
+
+/// Tab 4's hover text.
+#[must_use]
+pub const fn tab_position_tooltip() -> &'static str {
+    "Where each page sits on the sheet, and therefore what gets cropped."
 }
 
 // ---------------------------------------------------------------------------

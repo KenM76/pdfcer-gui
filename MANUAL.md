@@ -756,13 +756,14 @@ what it will not do is decide for you and write something you never chose.
 **Ctrl+P**. The print window is a window of its own: it has a taskbar entry and
 can be dragged onto a second monitor.
 
-Three tabs:
+Four tabs:
 
 | tab | the question it answers |
 |---|---|
-| **Pages & Layout** | which pages print, and how each one lands on the sheet |
-| **Copies & Finishing** | how many sheets come out, in what order, and on how many sides |
-| **Comments & Resolution** | what is painted onto each page, and how finely |
+| **Pages** | which pages print, and how each one lands on the sheet |
+| **Copies** | how many sheets come out, in what order, and on how many sides |
+| **Comments** | what is painted onto each page, and how finely |
+| **Position** | where each page sits on the sheet, and therefore what gets cropped |
 
 **The preview shows the printable rectangle, not just the sheet** — what you see
 is what the printer can actually reach. Pan and zoom it, or pop it out into a

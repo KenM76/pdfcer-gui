@@ -101,13 +101,19 @@ const PREVIEW_EVENT: &str = "print-preview";
 /// so every claim this check makes is unreachable from the opening state.
 const SCALE_ACTUAL: &str = "print.scale.actual";
 
-/// The radio the wheel is rolled over to bring the Position group into view.
+/// The Position tab's own button — both the control that opens the tab and the
+/// thing the wheel is rolled over to bring the group below it into view.
 ///
-/// A radio, deliberately: it does not consume a wheel notch, so the notch
+/// A button, deliberately: it does not consume a wheel notch, so the notch
 /// reaches the scrolling body behind it. A `DragValue` — and the Position group
-/// has two nearby — would have eaten the notch and changed the number it was
-/// sitting on, which is a silent edit to the very geometry being measured.
-const SCALE_FIT: &str = "print.scale.fit";
+/// has two — would have eaten the notch and changed the number it was sitting
+/// on, which is a silent edit to the very geometry being measured.
+///
+/// It is also the only anchor that can work. The scale radios, which this
+/// check used to scroll over, are on a different tab: once Position is open
+/// they are not drawn at all, so an anchor there would be absent exactly when
+/// it was needed and the check would read "the group drew nothing".
+const TAB_POSITION: &str = "print.tab.position";
 
 /// The page's grabbable rectangle inside the preview canvas.
 const PAGE: &str = "print.preview.page";
@@ -275,8 +281,8 @@ fn position(trace: &Trace) -> Result<Position> {
 
 /// A declared region, scrolling the dialog body downward until it appears.
 ///
-/// The Position group is at the foot of a scrolling options column, so on a
-/// short window it is genuinely off screen and its regions are genuinely
+/// The Position group fills a scrolling options column, so on a short window
+/// its lower controls are genuinely off screen and their regions are genuinely
 /// absent — `ui_rect_visible` is what publishes them and it refuses below 60 %
 /// visible. An absent region here is therefore a scroll position, not a missing
 /// control, and a check that read it as the latter would report a defect in a
@@ -292,11 +298,11 @@ fn scrolled_into_view(
         if let Some(rect) = declared(&trace, ui_rect, name) {
             return Ok(Some(rect));
         }
-        let Some(anchor) = declared(&trace, ui_rect, SCALE_FIT) else {
+        let Some(anchor) = declared(&trace, ui_rect, TAB_POSITION) else {
             return Ok(None);
         };
         driver.scroll_at(
-            frame_of(session, &trace, ui_rect, SCALE_FIT)?.declared_center(anchor),
+            frame_of(session, &trace, ui_rect, TAB_POSITION)?.declared_center(anchor),
             SCROLL_NOTCHES,
         )?;
         session.settle(10);
@@ -472,6 +478,26 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     };
     driver.click_at(frame_of(&session, &trace, ui_rect, SCALE_ACTUAL)?.declared_center(actual))?;
+    session.settle(16);
+
+    // --- the Position tab, which is where every control below now lives -----
+    //
+    // Pressed AFTER the scale radio and not before: the radio is on the Pages
+    // & Layout tab, and the two tabs are never drawn at once. The preview is a
+    // separate column and stays visible either way, which is why the drag
+    // below needs no tab of its own.
+    let trace = session.trace()?;
+    let Some(tab_position) = declared(&trace, ui_rect, TAB_POSITION) else {
+        return Err(Error::new(format!(
+            "the dialog declares no `{TAB_POSITION}` region. Print-dialog tabs declared: {}. \
+             Every position control is behind that tab, so without it none of them is \
+             reachable.",
+            list(&declared_names(&trace, ui_rect, "print.tab."))
+        )));
+    };
+    driver.click_at(
+        frame_of(&session, &trace, ui_rect, TAB_POSITION)?.declared_center(tab_position),
+    )?;
     session.settle(16);
 
     // --- assertion 1: it starts unmoved -------------------------------------
