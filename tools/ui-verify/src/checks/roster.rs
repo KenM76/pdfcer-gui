@@ -1008,6 +1008,10 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // build that ignored the paste-order setting passes the first and fails
         // this one on its first assertion.
         Box::new(field_clipboard::TheAcrobatPasteOrderSwapsWhichChordDoesWhich),
+        // Before the click and tab checks because it is the gesture that comes
+        // first: he arms a tool and looks at the page before he commits to a
+        // placement. It runs on the shared fixture and aim point.
+        Box::new(form_ghost::TheOutlineFollowsThePointerAndIsWhatGetsPlaced),
         Box::new(form_selection::AClickInsideAFormSelectsWhatIsDrawnThere),
         // Straight after the click check, and the order is the argument this
         // feature makes: a click puts the keyboard IN a field, and Tab is what

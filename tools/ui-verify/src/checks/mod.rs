@@ -294,6 +294,11 @@ pub mod find_options;
 
 pub mod form_field;
 
+/// The live preview of a form field's size and placement —
+/// `OPERATOR_REQUESTS.md` O203. It asserts the half a screenshot cannot see:
+/// that the rectangle the outline promises is the rectangle the click writes.
+pub mod form_ghost;
+
 /// ★★★ The two forms surfaces `EDITABLE_SURFACES.md` found the engine had
 /// shipped and this shell had never grown: **deleting a field group**, which no
 /// control in the program could name, and **the structural refusal queries**,

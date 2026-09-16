@@ -509,6 +509,33 @@ impl CanvasMapping {
         }
     }
 
+    /// **A PDF user-space rectangle, as its canvas-space bounding box.**
+    ///
+    /// All four corners go through [`Self::user_to_canvas`] and the extremes
+    /// are taken. Mapping only the two named corners and calling the result a
+    /// rectangle would be the upright assumption in a new place: a quarter
+    /// turn sends the lower-left corner somewhere that is neither lower nor
+    /// left.
+    ///
+    /// The result is `(min_x, min_y, max_x, max_y)` in canvas space, which is
+    /// the space the application's own rectangles are published in, so a
+    /// caller comparing a traced `/Rect` against a traced canvas rect can do
+    /// it without arithmetic of its own.
+    #[must_use]
+    pub fn user_rect_to_canvas(&self, rect: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
+        let (llx, lly, urx, ury) = rect;
+        let corners = [(llx, lly), (llx, ury), (urx, lly), (urx, ury)]
+            .map(|(x, y)| self.user_to_canvas(DocPoint::new(self.page_index, x, y)));
+        let xs = corners.map(|c| f64::from(c.0));
+        let ys = corners.map(|c| f64::from(c.1));
+        (
+            xs.iter().copied().fold(f64::INFINITY, f64::min),
+            ys.iter().copied().fold(f64::INFINITY, f64::min),
+            xs.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+            ys.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+        )
+    }
+
     /// Convert a document point to a window point.
     ///
     /// Two steps, and the first of them is [`Self::user_to_canvas`]:
@@ -1068,6 +1095,33 @@ mod tests {
             frame: Some(frame),
             page_index: 0,
         }
+    }
+
+    /// **A rectangle's canvas box on an upright page is the single flip.**
+    #[test]
+    fn an_upright_rectangle_maps_to_the_flipped_rectangle() {
+        let m = framed((0.0, 0.0, 612.0, 792.0), 0);
+        assert_eq!(
+            m.user_rect_to_canvas((100.0, 200.0, 300.0, 250.0)),
+            (100.0, 792.0 - 250.0, 300.0, 792.0 - 200.0)
+        );
+    }
+
+    /// **A quarter turn is not the flip, and that is the whole point of the
+    /// method existing.**
+    ///
+    /// The falsification: the naive `(x, height - y)` answer for this input is
+    /// `(100, 542, 300, 592)`, which this asserts it is NOT. Without the
+    /// inequality the test passes on the arithmetic the method was written to
+    /// replace.
+    #[test]
+    fn a_turned_page_does_not_get_the_flip() {
+        let m = framed((0.0, 0.0, 612.0, 792.0), 90);
+        let got = m.user_rect_to_canvas((100.0, 200.0, 300.0, 250.0));
+        // At 90 degrees `user_to_canvas` is `(y - lly, x - llx)`: the axes
+        // swap, so the box is 50 wide and 200 tall.
+        assert_eq!(got, (200.0, 100.0, 250.0, 300.0));
+        assert_ne!(got, (100.0, 542.0, 300.0, 592.0));
     }
 
     /// **A quarter turn swaps the canvas extent.**
