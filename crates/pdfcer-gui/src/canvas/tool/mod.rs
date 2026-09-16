@@ -588,6 +588,18 @@ impl CanvasTool {
         }
     }
 
+    /// Which form-field kind is armed, if any.
+    ///
+    /// [`Self::markup_kind`]'s sibling, for the ghost outline the canvas draws
+    /// under the pointer while a form tool is up — `OPERATOR_REQUESTS.md` O203.
+    #[must_use]
+    pub fn form_kind(self) -> Option<crate::canvas::formfield::FormFieldKind> {
+        match self {
+            Self::Form(kind) => Some(kind),
+            _ => None,
+        }
+    }
+
     /// Which placement is armed, if any — `OPERATOR_REQUESTS.md` O66.
     ///
     /// [`Self::markup_kind`]'s and [`Self::measure_kind`]'s sibling, with the

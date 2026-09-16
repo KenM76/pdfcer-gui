@@ -691,20 +691,19 @@ pub fn click(
         // are defensible; lower-left is chosen because it matches what the drag
         // does — the press is one corner and the control grows from it — so the
         // two gestures agree about what the pointer meant.
+        //
+        // ★ Through `formfield::ghost::click_rect` rather than inline, and the
+        // indirection is the feature: the ghost outline drawn under the pointer
+        // (O203) is the SAME value, so a preview that promises one rectangle
+        // and a click that places another is not a state this code can reach.
         if let Some(page) = doc.current_page()
-            && let Some((at, _)) = super::markup::band::endpoints(point, point, page)
+            && let Some(rect) = super::formfield::ghost::click_rect(kind, point, page)
         {
-            let (w, h) = kind.default_size_pt();
             actions.push(
                 FieldAction::Begin {
                     page: page_index,
                     kind,
-                    rect: pdfcer_core::page_tree::Rect {
-                        llx: at.0,
-                        lly: at.1,
-                        urx: at.0 + w,
-                        ury: at.1 + h,
-                    },
+                    rect,
                 }
                 .into(),
             );

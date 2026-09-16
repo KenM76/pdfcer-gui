@@ -646,6 +646,24 @@ pub(super) fn draw(
             pen,
         );
     }
+    // ★ …and the form-field ghost — `OPERATOR_REQUESTS.md` O203 — which is the
+    // same argument once more and arrives at the same answer from the other
+    // end: a click-placed field has no gesture in flight for a frame to see, so
+    // the outline is drawn on every frame the tool is armed.
+    //
+    // **Suppressed while a band is up**, because a drag is sizing the field
+    // explicitly and the band already says what will be placed. Two outlines,
+    // one promising the dragged size and one promising the default, would be
+    // the canvas contradicting itself about the operator's own gesture.
+    if let Some(kind) = active_tool.form_kind().filter(|_| f.band.is_none()) {
+        crate::canvas::formfield::ghost::preview(
+            ui,
+            doc.current_page(),
+            kind,
+            map,
+            screen_pos.map(|p| map.to_page(p)),
+        );
+    }
     // …and the measure preview, on the same argument: while a pick is in
     // progress the preview IS the cursor, and it describes what the next click
     // will commit.

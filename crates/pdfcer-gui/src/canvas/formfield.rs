@@ -43,6 +43,7 @@
 
 pub mod action;
 pub mod draft;
+pub mod ghost;
 
 pub use draft::{Draft, Remembered};
 
