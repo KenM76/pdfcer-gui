@@ -330,7 +330,12 @@ for entry in "${SIZES[@]}"; do
         echo "                left (the harness truncates at 24400). Hook-shortening is"
         echo "                SPENT: 36 rewritten rows freed 14 bytes each. CONSOLIDATE"
         echo "                two entries of the same shape, and give new memories short"
-        echo "                filenames — filenames are 8,942 of these bytes."
+        # ★ MEASURED, not quoted. This line used to name a constant, which
+        # cannot track a rename — and shortening filenames is the remedy it
+        # recommends, so it went stale the first time anyone took its advice.
+        fnbytes=$(grep -oE '\]\([a-z0-9_.-]+\.md\)' "$ROOT/$rel/MEMORY.md"                   | sed 's/^](//; s/)$//' | tr -d '
+' | wc -c | tr -d ' ')
+        echo "                filenames — filenames are $fnbytes of these bytes."
     else
         echo "              $rel/MEMORY.md: $size bytes, $head of $MAX_INDEX to spare."
     fi

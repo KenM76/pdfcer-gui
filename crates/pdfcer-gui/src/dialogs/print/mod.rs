@@ -1327,7 +1327,7 @@ impl PrintDialog {
         page_count: usize,
         page_sizes: &[(f64, f64)],
     ) {
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             ui.label(t::printer_label());
             egui::ComboBox::from_id_salt("print-printer")
                 .selected_text(

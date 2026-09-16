@@ -79,19 +79,19 @@
 - [A check whose input is convenient tests the assertion](feedback_a_check_whose_input_is_chosen_for_convenience_tests_the_assertion.md) — "what is typed does not matter" is a finding.
 - [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) - 2nd instance: it claims which code paths reach it; measure the fork.
 - [A disproof is a measurement too](feedback_a_disproof_is_a_measurement_too_and_the_dead_hypothesis_was_the_truth.md) - the truth died on a number read against the WINDOW.
-- [A launch failure blamed on a resource count](feedback_a_launch_failure_blamed_on_a_resource_count_needs_a_control_binary.md) — two wrong attributions; run the control binary first.
+- [A number with no control is an attribution](feedback_a_launch_failure_blamed_on_a_resource_count_needs_a_control_binary.md) — resource counts and layout numbers alike; the shipped exe is the control.
 - [When a wobble is inside the framework, list the leaves by id](feedback_when_a_wobble_is_inside_the_framework_list_the_leaves_by_id.md) - five container probes stalled.
 - [A "still broken" report is first about which build and which pin](feedback_a_still_broken_report_is_first_a_question_about_which_build_and_which_pin.md) - check the pin.
 - [A gate whose evidence you write is blind to what you forget to write](feedback_a_gate_whose_evidence_you_write_is_blind_to_what_you_forget_to_write.md) — no CONSUMED note, no guard.
 - [An API-drift hit is sometimes a feature, not paperwork](feedback_an_api_drift_hit_is_sometimes_a_feature_not_paperwork.md) — the counter was a disclosure's missing half.
 - [A quoted count goes stale invisibly](feedback_a_verbatim_quotation_of_another_files_count_goes_stale_invisibly.md) — the changed file lacks the number that went wrong.
-- [An oracle built from the system under test](feedback_an_oracle_built_from_the_system_under_test_needs_an_independent_calibration.md) — calibrate it: build the fixture from the spec first.
+- [An oracle built from the system under test](feedback_oracle_needs_calibration.md) — calibrate it: build the fixture from the spec first.
 - [Slack in screen units shrinks in the units he cares about](feedback_a_slack_in_screen_units_shrinks_in_the_units_he_cares_about.md) — viewport-sized areas die at high zoom.
 - [A runner's sentinel is a claim about the runner](feedback_a_runners_sentinel_is_a_claim_about_the_runner.md) — 210 checks "swept" in a minute, every chunk rc=2; print a tally.
 - [A tool that mutates before stamping reports its dirt](feedback_a_tool_that_mutates_the_tree_before_stamping_it_reports_its_own_dirt.md) — `cargo update` earned the `-dirty`.
 - [`gh release create` tags remotely, so `git describe` goes stale](feedback_gh_release_create_tags_remotely_so_git_describe_goes_stale.md) — I told Ken "51 commits unreleased".
 - [A capability can change meaning under a stable signature](feedback_a_capability_can_change_meaning_under_a_stable_signature.md) - `is_editable` went from hard false to *is a path*.
-- [A refusal filtered on the opposite condition](feedback_a_refusal_filtered_on_the_opposite_condition_is_recorded_and_never_readable.md) — the symptom is SILENCE, which nobody reports.
+- [A refusal filtered on the opposite condition](feedback_refusal_filtered_on_opposite_condition.md) — the symptom is SILENCE, which nobody reports.
 - [A substring match on another crate's prose survives a narrowing](feedback_a_substring_match_on_another_crates_prose_survives_a_narrowing.md) - the words stayed, the condition shrank.
 - [A count command can be wrong, not just its answer](feedback_a_count_command_can_be_wrong_not_just_its_quoted_answer.md) — 3rd: `xargs` batches, so `tail -1` reads one batch.
 - [A checker named in every document and registered in no runner](feedback_a_checker_named_in_every_document_and_registered_in_no_runner.md) — grep the runner, not the prose.
@@ -117,9 +117,9 @@
 - [A comment-only edit can abort a running measurement](feedback_a_comment_only_edit_freezes_nothing_but_it_can_abort_a_running_measurement.md) — the tree is frozen during a sweep.
 - [A quotation I wrote myself can carry a line number](feedback_a_quotation_i_wrote_myself_can_carry_a_line_number.md) — not stale, never true; right claim, manufactured evidence.
 - [The thing you measured is never the thing you ship](feedback_the_thing_you_measured_is_never_the_thing_you_ship.md) — the release commit relinks the exe; 8M bytes differ, none real.
-- [One property differs; an absence needs a witness](feedback_a_control_must_differ_in_exactly_one_property_and_an_absence_needs_a_witness.md) — a healthy file satisfies it three ways.
+- [One property differs; an absence needs a witness](feedback_control_differs_in_one_property.md) — a healthy file satisfies it three ways.
 - [A type reached by field access is invisible to the drift gate](feedback_a_type_reached_only_by_field_access_is_invisible_to_the_drift_gate.md) — bind it, don't mention it.
-- [Falsify the gate on real files, the fix on a control binary](feedback_falsify_the_gate_against_the_real_files_and_the_fix_against_a_control_binary.md) - a self-test says nothing.
+- [Falsify the gate on real files, the fix on a control binary](feedback_falsify_on_real_files.md) - a self-test says nothing.
 - [A classification in a rule invites the next exception](feedback_a_rule_with_a_classification_in_it_is_where_the_next_exception_goes.md) — one token plus a written exemption, not a list.
 - [An inherited session summary is not a source](feedback_an_inherited_session_summary_is_not_a_source.md) — quoting across a summary has no re-measure rule; it reached a commit.
 - [Scope a use-measurement the way the language does](feedback_a_use_measurement_must_be_scoped_the_way_the_language_scopes_it.md) - a namesake discharges a twin.

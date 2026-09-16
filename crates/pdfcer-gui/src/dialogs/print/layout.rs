@@ -474,6 +474,9 @@ impl PrintDialog {
             .max_height(body_height)
             .id_salt("print-dialog-body")
             .show(ui, |ui| {
+                // scroll-row-exempt: its two children are the explicitly
+                // sized columns; wrapping them would stack the preview
+                // above the options rather than beside them.
                 ui.horizontal_top(|ui| {
                     // ★★★ R9, AND IT IS THE WHOLE OF ASK 2's DESIGN: WHILE THE
                     // PREVIEW IS POPPED OUT, THIS COLUMN DRAWS NOTHING AT ALL.
@@ -700,6 +703,9 @@ impl PrintDialog {
         page_sizes: &[(f64, f64)],
         context: Option<&super::verdicts::Context>,
     ) {
+        // scroll-row-exempt: drawn AFTER the body, so outside the scroll
+        // area that could raise a bar, and its one variable-width child
+        // is `.truncate()`d.
         ui.horizontal(|ui| {
             // ★★ G4 — ENTER PRESSES PRINT, AND PRINT LOOKS LIKE THE DEFAULT.
             //

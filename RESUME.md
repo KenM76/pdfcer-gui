@@ -180,6 +180,21 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   prior, never a verdict.** Load alone removes coverage with nothing turning
   red, so diff skips by NAME and run one; and a session that reads the first
   harness fault as proof of a harness bug stops where a program defect once sat.
+- **Anything appended to the print dialog is a SIZE claim, on both axes, and
+  there is now a gate for half of it.** A plain `ui.horizontal` lays out past
+  the end of its column and reports a `min_rect` that wide, which becomes the
+  body's content size and a scrollbar the operator cannot dismiss — he has
+  reported that in the same seven words twice. `check-scroll-row-wrapping.sh`
+  now fails any non-wrapped row under `dialogs/print/` that does not carry
+  `// scroll-row-exempt: <reason>`; two rows legitimately do. The vertical half
+  has no gate and cannot easily have one: `allocate_ui_with_layout` sizes the
+  options column at a **floor**, so a group or a wrapped tab-strip row that
+  grows past it overflows silently, and the fitting case reads back the
+  allocation rather than the children's real height — there is no trace value
+  for the remaining slack. **Smoke-launch off-screen and read `print-body`'s
+  `egui_content` against `egui_view` after any edit there, including a
+  reworded tab label**: a label's width is the strip's height.
+
 - **A stuck notification toast voids a whole sweep and reports it as SKIP.**
   Windows refuses `SetForegroundWindow` to a background process while anything
   else owns the desktop, so a single `Windows.UI.Core.CoreWindow` belonging to

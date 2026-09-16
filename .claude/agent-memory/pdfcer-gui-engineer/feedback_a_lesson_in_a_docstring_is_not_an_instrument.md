@@ -75,3 +75,29 @@ a **debt register that prints its own count every run**, not an exemption list,
 and both directions must be red — a new site AND a register line that matches
 nothing. The second is what stops the register quietly ceasing to describe the
 tree.
+
+## A THIRD — 2026-09-16, and this one is the cleanest illustration yet
+
+**`tools/gates/check-scroll-row-wrapping.sh`** — the class is *"a plain
+`ui.horizontal` lays out past the end of its column, so inside a fixed-size
+window it raises a scrollbar the operator cannot dismiss"*.
+
+The illustration: the first instance was diagnosed, fixed, and written up at
+length — in a RAG entry, in the module's own header, and in a comment block
+immediately above the repaired row. **The second instance was in the same file,
+about a hundred lines below that comment block, and had been there all along.**
+Ken reported it in the same seven words he used the first time. A third latent
+one was sitting in a group added the same day.
+
+Seven candidate rows existed in the whole tree; five were converted in minutes
+and two took a stated reason. The cost of the instrument was under an hour, and
+the prose it replaces had already failed twice.
+
+**How to apply, sharpened:** the question is not *"is this finding written
+down?"* but *"what would I grep for?"* — and if the answer is a directory plus
+a token, it is a gate and the writing is the work. Scope it to a **directory**
+so a new module is covered the day it lands, exempt with a **stated reason**
+rather than a path list, and make **both directions red**: a new violation AND
+an exemption marker that no longer sits above the thing it excuses. Then
+falsify it against the real files, not only the self-test — see
+[[falsify-the-gate-against-the-real-files-and-the-fix-against-a-control-binary]].

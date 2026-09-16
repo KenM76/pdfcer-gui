@@ -36,6 +36,30 @@ edit `sweep-full.sh` (safe from the stale-binary guard because it is a `.sh`).
 executing resumes it inside arbitrary new bytes. Never edit a shell script any
 process might currently be executing.
 
+## A second instance, and this time the liveness check was the defect
+
+A full gate sweep was reported *"stopped because the system is running low on
+memory"*. It had not stopped. It ran to completion and wrote
+`RESULT: PASS - 61 passed, 0 failed, 0 skipped`, fmt and clippy included, into
+the same log, roughly fifteen minutes after the notification.
+
+What made me believe it: I checked the log twice, one second apart, saw the same
+byte count, and read that as death. **A no-growth window shorter than the
+slowest single unit of work is not evidence of anything** - some gates in that
+suite take minutes, so a quiet log is the normal appearance of a healthy run.
+Measure over longer than the slowest step, or do not measure that way at all.
+
+And the second half: I reached for `tasklist | grep -c bash.exe`, which answered
+`16` and told me nothing, because `tasklist` does not print a command line. The
+query in this entry - `Get-CimInstance Win32_Process ... Select CommandLine` -
+is written the way it is precisely because the count is useless and the command
+line is the whole answer. Having the right query recorded and reaching for a
+convenient wrong one cost twenty-seven gates re-run by hand.
+
+**A completion notification CAN still arrive after a kill notice**, so the
+earlier entry's *"no completion notification is coming"* is a property of that
+2026-09-12 case, not a rule.
+
 Related: [[a-runners-sentinel-is-a-claim-about-the-runner]],
 [[a-launch-failure-blamed-on-a-resource-count-needs-a-control-binary]],
 [[a-harness-with-a-bad-input-produces-defects-that-do-not-exist]].

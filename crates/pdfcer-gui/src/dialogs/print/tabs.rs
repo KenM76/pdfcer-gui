@@ -264,7 +264,7 @@ pub(super) fn pages_layout(
     ui.label(t::pages_heading());
     ui.radio_value(&mut dialog.range, PrintRange::All, t::range_all(page_count));
     ui.radio_value(&mut dialog.range, PrintRange::Current, t::range_current());
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         ui.radio_value(&mut dialog.range, PrintRange::Custom, t::range_custom());
         if ui
             .add(egui::TextEdit::singleline(&mut dialog.range_text).desired_width(120.0))
@@ -287,7 +287,7 @@ pub(super) fn pages_layout(
         ui.label(egui::RichText::new(t::range_unparsable()).color(ui.visuals().warn_fg_color));
     }
 
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         ui.label(t::subset_label());
         for (subset, label) in [
             (PageSubset::All, t::subset_all()),
@@ -324,7 +324,7 @@ pub(super) fn pages_layout(
         }
     }
     let custom_selected = matches!(dialog.scale, ScaleMode::Custom(_));
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         let radio = ui.radio(custom_selected, t::scale_custom());
         publish_scale_region(ui, ScaleMode::Custom(0.0), radio.rect);
         if radio.clicked() {
@@ -510,7 +510,7 @@ pub(super) fn pages_layout(
 
 /// How many sheets come out, and in what state.
 pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         ui.label(t::copies_label());
         ui.add(egui::DragValue::new(&mut dialog.copies).range(1..=999));
     });

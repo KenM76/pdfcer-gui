@@ -137,6 +137,7 @@ run "check-unit-conversion --self-test" bash "$HERE/check-unit-conversion.sh" --
 run "check-test-temp-paths --self-test" python "$HERE/check-test-temp-paths.py" --self-test
 run "check-patch-residue --self-test" python "$HERE/check-patch-residue.py" --self-test
 run "check-settings-funnel --self-test" python "$HERE/check-settings-funnel.py" --self-test
+run "check-scroll-row-wrapping --self-test" bash "$HERE/check-scroll-row-wrapping.sh" --self-test
 # ★★ A gate can report OK over an evidence set of size ZERO and look exactly
 # like a gate that passed. Its `archived` case is the guard: it returns 1 only
 # if the consumption notes in `archive/` are read, so narrowing the evidence
@@ -206,6 +207,10 @@ run "check-plate-colour" bash "$HERE/check-plate-colour.sh"
 # blessed a site for a reason that had silently stopped being true.
 run "check-selection-channel --self-test" bash "$HERE/check-selection-channel.sh" --self-test
 run "check-selection-channel" bash "$HERE/check-selection-channel.sh"
+# ★★ The operator found this class TWICE, three weeks apart, and the second
+# instance sat a hundred lines under a comment block explaining the
+# mechanism. A finding written next to the code does not apply itself.
+run "check-scroll-row-wrapping" bash "$HERE/check-scroll-row-wrapping.sh"
 run "check-file-size"    bash "$HERE/check-file-size.sh"
 run "check-shell-purity" bash "$HERE/check-shell-purity.sh"
 run "check-shipped-assets" bash "$HERE/check-shipped-assets.sh"
