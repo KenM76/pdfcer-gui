@@ -191,6 +191,19 @@ pub mod geometry;
 /// (`RIBBON_IA.md` §5.8) and why every control raises one action carrying one
 /// field.
 mod markup;
+/// ★★★ **One colour control, three honest states** — a swatch, an
+/// indeterminate swatch, and nothing at all over an ink pdfcer will not
+/// overwrite. Shared by [`paint`] and [`textobject`], because O89's two pieces
+/// have to answer the same three questions the same way.
+///
+/// Its header carries the reason it is hand-built rather than
+/// `ui.color_edit_button_srgb`: `egui`'s own colour button marks itself changed
+/// on **every frame of a drag inside the picker**, so a caller acting on
+/// `.changed()` authors one undo entry per frame.
+/// One `/MK` colour key as a labelled swatch, shared by the properties pane
+/// and the placement dialog. `O202` asks for colour before AND after
+/// placement, and its header carries why one module answers both.
+pub mod mkcolour;
 /// The colour of a selected path. `OPERATOR_REQUESTS.md` O89's vector half, and
 /// the colour of a whole **selection** of paths, with the indeterminate state
 /// the product class already agrees on.
@@ -210,16 +223,8 @@ mod paint;
 /// `pub` for [`text`]'s reason: `crate::panels::PanelsState` holds its state,
 /// because the face list costs a provenance extraction and a pre-flight.
 pub mod refusedchar;
-/// ★★★ **One colour control, three honest states** — a swatch, an
-/// indeterminate swatch, and nothing at all over an ink pdfcer will not
-/// overwrite. Shared by [`paint`] and [`textobject`], because O89's two pieces
-/// have to answer the same three questions the same way.
-///
-/// Its header carries the reason it is hand-built rather than
-/// `ui.color_edit_button_srgb`: `egui`'s own colour button marks itself changed
-/// on **every frame of a drag inside the picker**, so a caller acting on
-/// `.changed()` authors one undo entry per frame.
-mod swatch;
+
+pub mod swatch;
 /// ★ The **selected text's** face, size, weight and colour — O37's Font
 /// controls, built panel-first as §5.8 says to.
 ///

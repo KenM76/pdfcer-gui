@@ -108,6 +108,7 @@ use pdfcer_core::edit::WidgetEdit;
 use pdfcer_core::forms::{Field, Widget};
 use pdfcer_core::page_tree::Rect;
 
+use super::mkcolour;
 use crate::app::actions::Action;
 use crate::app::actions::forms::FieldAction;
 use crate::panels::PanelsState;
@@ -681,15 +682,15 @@ fn chrome_rows(
 ) {
     use pdfcer_core::forms::ButtonKind;
 
-    // ★ The disc is a fact about the ENGINE's radio builder, which fills a
-    // circle and says so, not a decoration chosen here. A rectangular preview
-    // over a control that comes out round is this panel mis-stating the result
-    // of the operator's own press.
+    // The disc is a fact about the ENGINE's radio builder, which fills a circle
+    // and says so, not a decoration chosen here. A rectangular preview over a
+    // control that comes out round is this panel mis-stating the result of the
+    // operator's own press.
     let disc = field.button_kind == Some(ButtonKind::Radio);
 
     chrome_row(
         ui,
-        &ChromeRow {
+        &mkcolour::Row {
             label: t::label_background(),
             hover: t::label_background_hover(),
             // ui-text-exempt: egui id salt and trace region key, never displayed.
@@ -701,17 +702,17 @@ fn chrome_rows(
             no_colour_entry: Some(t::background_no_colour_entry()),
             no_colour_unavailable: t::background_no_colour_unavailable(),
             disc,
-            touched: t::touched_background(),
         },
+        t::touched_background(),
         fqn,
         widget_index,
         actions,
-        pdfcer_core::edit::WidgetEdit::with_background,
+        WidgetEdit::with_background,
     );
 
     chrome_row(
         ui,
-        &ChromeRow {
+        &mkcolour::Row {
             label: t::label_border_colour(),
             hover: t::label_border_colour_hover(),
             // ui-text-exempt: egui id salt and trace region key, never displayed.
@@ -723,42 +724,13 @@ fn chrome_rows(
             no_colour_entry: None,
             no_colour_unavailable: "",
             disc: false,
-            touched: t::touched_border_colour(),
         },
+        t::touched_border_colour(),
         fqn,
         widget_index,
         actions,
-        pdfcer_core::edit::WidgetEdit::with_border_color,
+        WidgetEdit::with_border_color,
     );
-}
-
-/// One `/MK` colour row's inputs. A struct because there are ten and nine of
-/// them are strings or bools, which is precisely the shape a positional
-/// argument list gets silently wrong.
-struct ChromeRow<'a> {
-    /// The row's label.
-    label: &'a str,
-    /// What the label says on hover.
-    hover: &'a str,
-    /// The swatch's `egui` id salt. Must be unique within the pane.
-    id_salt: &'a str,
-    /// The trace region the swatch publishes.
-    region: &'a str,
-    /// What the file says, as the engine read it.
-    colour: Option<pdfcer_core::forms::MkColor>,
-    /// The popup note when the key is absent.
-    unstated_note: &'a str,
-    /// The popup note when the key is Table 189's empty array.
-    no_colour_note: &'a str,
-    /// The *no colour* entry's label, or `None` when this key has none worth
-    /// offering. See [`chrome_rows`]' table.
-    no_colour_entry: Option<&'a str>,
-    /// Why that entry is greyed, when it is offered and would change nothing.
-    no_colour_unavailable: &'a str,
-    /// Draw the swatch as a disc.
-    disc: bool,
-    /// What the operator touched, for the receipt and for a refusal.
-    touched: &'static str,
 }
 
 /// Draw one `/MK` colour row and queue the edit it produces.
@@ -769,55 +741,15 @@ struct ChromeRow<'a> {
 /// function pointer is not.
 fn chrome_row(
     ui: &mut Ui,
-    row: &ChromeRow<'_>,
+    row: &mkcolour::Row<'_>,
+    touched: &'static str,
     fqn: &str,
     widget_index: usize,
     actions: &mut Vec<Action>,
     build: fn(WidgetEdit, pdfcer_core::forms::MkColor) -> WidgetEdit,
 ) {
-    use pdfcer_core::forms::MkColor;
-
-    // Held outside the call because `MkValue` borrows its mark and this is the
-    // one state whose mark is computed rather than a `&'static str`.
-    let cmyk = match row.colour {
-        Some(MkColor::Cmyk(c, m, y, k)) => Some(t::colour_cmyk_mark(c, m, y, k)),
-        _ => None,
-    };
-    let value = mk_value(
-        row.colour,
-        cmyk.as_deref(),
-        row.unstated_note,
-        row.no_colour_note,
-    );
-
-    let picked = ui
-        .horizontal(|ui| {
-            ui.label(row.label).on_hover_text(row.hover);
-            super::swatch::show_mk(
-                ui,
-                row.id_salt,
-                &super::swatch::MkControl {
-                    value,
-                    no_colour: row.no_colour_entry.map(|label| super::swatch::MkNoColour {
-                        label,
-                        available: row.colour != Some(MkColor::None),
-                        unavailable_hover: row.no_colour_unavailable,
-                    }),
-                    disc: row.disc,
-                },
-                row.region,
-            )
-        })
-        .inner;
-
-    let Some(picked) = picked else {
+    let Some(colour) = mkcolour::row(ui, row) else {
         return;
-    };
-    let colour = match picked {
-        super::swatch::MkPick::Colour([r, g, b]) => {
-            MkColor::Rgb(fraction(r), fraction(g), fraction(b))
-        }
-        super::swatch::MkPick::NoColour => MkColor::None,
     };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
@@ -831,67 +763,10 @@ fn chrome_row(
             field: fqn.to_owned(),
             widget: widget_index,
             edit: build(WidgetEdit::new(), colour),
-            touched: row.touched,
+            touched,
         }
         .into(),
     );
-}
-
-/// What the swatch should show for one `/MK` colour key.
-///
-/// Separate from [`chrome_row`] because this is the whole of Table 189's
-/// four-state reading and the only part of the row a test can reach without a
-/// live `Ui`. `cmyk` is threaded in rather than computed here so the caller
-/// owns the `String` the returned value borrows.
-fn mk_value<'a>(
-    colour: Option<pdfcer_core::forms::MkColor>,
-    cmyk: Option<&'a str>,
-    unstated_note: &'a str,
-    no_colour_note: &'a str,
-) -> super::swatch::MkValue<'a> {
-    use pdfcer_core::forms::MkColor;
-
-    match colour {
-        // DeviceGray widens exactly — one component repeated three times is the
-        // same colour, not an approximation — so it is SHOWN. DeviceCMYK does
-        // not, and is not. O202 decision 4.
-        Some(MkColor::Gray(g)) => super::swatch::MkValue::Shown([component(g); 3]),
-        Some(MkColor::Rgb(r, g, b)) => {
-            super::swatch::MkValue::Shown([component(r), component(g), component(b)])
-        }
-        Some(MkColor::Cmyk(..)) => super::swatch::MkValue::Unshowable {
-            mark: cmyk.unwrap_or_default(),
-            note: t::colour_cmyk_note(),
-        },
-        Some(MkColor::None) => super::swatch::MkValue::Unshowable {
-            mark: t::colour_mark_no_colour(),
-            note: no_colour_note,
-        },
-        None => super::swatch::MkValue::Unshowable {
-            mark: t::colour_mark_unstated(),
-            note: unstated_note,
-        },
-        // NO catch-all arm, for `border_style_label`'s reason: `MkColor` is not
-        // `#[non_exhaustive]`, so a fifth colour space added to `pdfcer-core`
-        // fails to build in this file — which is where the decision about how
-        // to show it belongs.
-    }
-}
-
-/// A `/MK` component as a screen byte.
-///
-/// Clamped, because the engine reports the file's own numbers **unclamped** —
-/// *"an out-of-range component is a malformed file, not a value to silently
-/// correct"* — and a byte is what a swatch needs. The clamp happens on the way
-/// to the SCREEN and never on the way to the file: nothing here writes a
-/// clamped value back.
-fn component(v: f32) -> u8 {
-    (v.clamp(0.0, 1.0) * 255.0).round() as u8
-}
-
-/// A screen byte as a `/MK` component.
-fn fraction(v: u8) -> f32 {
-    f32::from(v) / 255.0
 }
 
 /// The typed box and caption, and the widget they were read for.
@@ -1060,81 +935,5 @@ mod tests {
             !draft.resizes(),
             "both corners moved by the same amount, so the extent is unchanged"
         );
-    }
-    /// **The four states of a `/MK` colour key stay four.**
-    ///
-    /// The two that matter and would not be noticed if they collapsed:
-    /// DeviceGray is drawn and DeviceCMYK is not, and *the file is silent*
-    /// carries a different face from *the file states no colour*. The second is
-    /// the whole reason the engine models the key as `Option<MkColor>` with an
-    /// `MkColor::None` inside, and a panel that showed one glyph for both would
-    /// throw that distinction away on the only surface an operator reads.
-    #[test]
-    fn a_mk_key_reaches_the_swatch_in_four_distinguishable_states() {
-        use super::super::swatch::MkValue;
-        use pdfcer_core::forms::MkColor;
-
-        // Gray widens exactly.
-        assert_eq!(
-            mk_value(Some(MkColor::Gray(1.0)), None, "unstated", "none"),
-            MkValue::Shown([255, 255, 255])
-        );
-        assert_eq!(
-            mk_value(Some(MkColor::Rgb(1.0, 0.0, 0.0)), None, "unstated", "none"),
-            MkValue::Shown([255, 0, 0])
-        );
-
-        // A separation is never converted, so it is never shown.
-        let mark = t::colour_cmyk_mark(0.1, 0.2, 0.3, 0.4);
-        assert_eq!(
-            mk_value(
-                Some(MkColor::Cmyk(0.1, 0.2, 0.3, 0.4)),
-                Some(&mark),
-                "unstated",
-                "none"
-            ),
-            MkValue::Unshowable {
-                mark: "0.10 0.20 0.30 0.40",
-                note: t::colour_cmyk_note(),
-            }
-        );
-
-        let stated = mk_value(Some(MkColor::None), None, "unstated", "none");
-        let absent = mk_value(None, None, "unstated", "none");
-        assert_ne!(
-            stated, absent,
-            "`no colour` and `the file is silent` must not read the same"
-        );
-        assert_eq!(
-            stated,
-            MkValue::Unshowable {
-                mark: t::colour_mark_no_colour(),
-                note: "none",
-            }
-        );
-        assert_eq!(
-            absent,
-            MkValue::Unshowable {
-                mark: t::colour_mark_unstated(),
-                note: "unstated",
-            }
-        );
-    }
-
-    /// **The clamp is on the way to the screen and nowhere else.**
-    ///
-    /// The engine reports a `/MK` component as the file states it, unclamped,
-    /// because an out-of-range component is a malformed file rather than a
-    /// value to silently correct. A swatch needs a byte, so it clamps — and the
-    /// thing to prove is that nothing clamped comes back the other way, which
-    /// is what `fraction`'s domain being `u8` gives for free and what this
-    /// pins.
-    #[test]
-    fn an_out_of_range_component_is_clamped_for_the_screen_only() {
-        assert_eq!(component(2.5), 255);
-        assert_eq!(component(-1.0), 0);
-        for byte in [0_u8, 1, 127, 254, 255] {
-            assert_eq!(component(fraction(byte)), byte, "round trip at {byte}");
-        }
     }
 }

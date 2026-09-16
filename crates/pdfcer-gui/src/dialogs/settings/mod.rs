@@ -933,17 +933,26 @@ mod tests {
             keys.len()
         );
 
-        for key in keys {
-            let needle = format!("working.{key}");
-            assert!(
-                SOURCES.iter().any(|(_, src)| src.contains(&needle)),
-                "`Settings::{key}` is honoured by the engine and has NO control in this \
-                 window, so an operator can only change it by hand-editing settings.txt — \
-                 which is not a user interface. Add one to whichever group matches the \
-                 SYMPTOM that would send somebody looking for it (see the module header), \
-                 rather than to whichever group is shortest."
-            );
-        }
+        // Collected rather than asserted one at a time: an engine pin bump
+        // commonly adds a related PAIR of settings, and a test that stops at
+        // the first makes the operator discover the second on the next run.
+        let missing: Vec<&str> = keys
+            .into_iter()
+            .filter(|key| {
+                let needle = format!("working.{key}");
+                !SOURCES.iter().any(|(_, src)| src.contains(&needle))
+            })
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "{} setting(s) honoured by the engine have NO control in this window, so an \
+             operator can only change them by hand-editing settings.txt — which is not a user \
+             interface: {}. Add each to whichever group matches the SYMPTOM that would send \
+             somebody looking for it (see the module header), rather than to whichever group \
+             is shortest.",
+            missing.len(),
+            missing.join(", ")
+        );
     }
 
     /// The shell's own preferences are **not** covered by the sweep above, and

@@ -256,7 +256,7 @@ pub(super) fn show(
 /// three unshowable states a widget is in is a fact about `/MK`, and `/MK` is
 /// not a thing this file knows about.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(super) enum MkValue<'a> {
+pub(crate) enum MkValue<'a> {
     /// A colour the swatch draws exactly.
     Shown([u8; 3]),
     /// No colour this control can draw. `mark` is what the button reads
@@ -273,7 +273,7 @@ pub(super) enum MkValue<'a> {
 
 /// What the operator chose. Returned **once**, on the frame the gesture ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum MkPick {
+pub(crate) enum MkPick {
     /// A colour, from the picker, on the frame it closed.
     Colour([u8; 3]),
     /// Table 189's empty array — *this widget has no such colour*, stated
@@ -283,7 +283,7 @@ pub(super) enum MkPick {
 
 /// One `/MK` colour control's inputs, bundled because there are four and the
 /// two strings would otherwise be positional.
-pub(super) struct MkControl<'a> {
+pub(crate) struct MkControl<'a> {
     /// What the widget's key currently says.
     pub value: MkValue<'a>,
     /// Table 189's *no colour* entry, or `None` when this key has no such
@@ -305,7 +305,7 @@ pub(super) struct MkControl<'a> {
 }
 
 /// The *no colour* entry, when a key has one.
-pub(super) struct MkNoColour<'a> {
+pub(crate) struct MkNoColour<'a> {
     /// The entry's label.
     pub label: &'a str,
     /// Whether pressing it would change anything. `false` when the widget
@@ -330,7 +330,7 @@ pub(super) struct MkNoColour<'a> {
 /// is no run of intermediate values for a close-edge to collapse. It closes the
 /// popup itself, because `PopupCloseBehavior::CloseOnClickOutside` would
 /// otherwise leave a picker open over a widget that no longer has a colour.
-pub(super) fn show_mk(
+pub(crate) fn show_mk(
     ui: &mut Ui,
     id_salt: &str,
     control: &MkControl<'_>,
