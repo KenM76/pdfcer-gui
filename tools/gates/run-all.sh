@@ -136,6 +136,7 @@ run "check-completeness-tests --self-test" python "$HERE/check-completeness-test
 run "check-unit-conversion --self-test" bash "$HERE/check-unit-conversion.sh" --self-test
 run "check-test-temp-paths --self-test" python "$HERE/check-test-temp-paths.py" --self-test
 run "check-patch-residue --self-test" python "$HERE/check-patch-residue.py" --self-test
+run "check-settings-funnel --self-test" python "$HERE/check-settings-funnel.py" --self-test
 # ★★ A gate can report OK over an evidence set of size ZERO and look exactly
 # like a gate that passed. Its `archived` case is the guard: it returns 1 only
 # if the consumption notes in `archive/` are read, so narrowing the evidence
@@ -710,6 +711,36 @@ run "check-ui-toolkit-drift" bash "$HERE/check-ui-toolkit-drift.sh"
 #
 # Its --self-test runs inside the wrapper, for the reason stated there.
 run "check-unreachable-refusals" bash "$HERE/check-unreachable-refusals.sh"
+
+# ★★★ `check-settings-funnel`, the FIFTH member of that
+# family, and it watches the drift that runs the other way. The four above
+# ask what the ENGINE did that we have not noticed. This one asks what the
+# engine already offers that we accept from the operator and then throw
+# away.
+#
+# It found six on its first run. `page_blend_space_source`,
+# `overprint_zero_tint_scope`, `spot_colorant_device_model` and
+# `mesh_patch_padding` had controls in Settings > Colour, were written to
+# the settings file, were read back on the next launch, and were never
+# chained onto `RenderOptions`. `widget_tab_tail` and `tab_row_tolerance`
+# had controls in Settings > Forms and never reached an `EditSession`, so
+# an operator who widened the tab row tolerance got the engine default in
+# the very tab ring he set it for.
+#
+# ★★ There WAS a guard, and it is a good one keyed on the wrong half:
+# `no_call_site_builds_its_own_options` forbids constructing an options
+# struct outside the funnel, which proves nobody BYPASSES it and says
+# nothing about whether the funnel ASSIGNS every field. What was supposed
+# to cover the gap was prose, and the prose was three separate counts --
+# "thirteen operator choices" for a struct of twenty-three, "Five
+# settings" for a chain of six, and "fifteen setters ... and nothing else"
+# for twenty-nine. All three were written as measurements and all three
+# were wrong, because no count in a comment can fail a build.
+#
+# ★ The oracle is `Cargo.lock`, not the engine working tree: the operator
+# can only set a setting that exists in the crate we compile against. A
+# revision absent from the clone is the gate’s ONLY skip.
+run "check-settings-funnel" python "$HERE/check-settings-funnel.py"
 
 # ★★★ `check-pin-citation`, and it is the THIRD member of
 # the drift family above -- but it watches a different kind of drift, and the

@@ -2,9 +2,15 @@
 //!
 //! ## ★ Why this module exists, and it is not "to hold a struct"
 //!
-//! `pdfcer_core::settings::Settings` is thirteen operator choices about
-//! questions the PDF standard declines to answer. Loading them is easy;
-//! **honouring** them is where the old shell failed, and it failed silently.
+//! `pdfcer_core::settings::Settings` is the operator's answers to questions
+//! the PDF standard declines to answer. Loading them is easy; **honouring**
+//! them is where the old shell failed, and it failed silently.
+//!
+//! ⚠ That sentence read *"thirteen operator choices"* while the struct
+//! carried twenty-three, and the drift was invisible because a number in
+//! prose fails nothing. Every completeness claim in this module is now
+//! phrased against the type, and `tools/gates/check-settings-funnel.py` is
+//! what enforces it.
 //!
 //!
 //! The mechanism is not a bug anyone wrote. It is what happens when option
@@ -193,12 +199,25 @@ impl SettingsExt for Settings {
     ///
     /// # What it applies, and what it deliberately does not
     ///
-    /// **`quad_point_order`, and nothing else**, because that is the only
-    /// member of `Settings` with a session-level setter. Measured rather than
-    /// assumed: `grep "pub const fn set_\|pub fn set_"` over
-    /// `pdfcer-core/src/edit.rs` returns fifteen setters and fourteen of them
-    /// take an operand from the operator's gesture rather than from the
-    /// configuration.
+    /// **Every `Settings` member `EditSession` has a setter for**, which today
+    /// is `quad_point_order`, `widget_tab_tail` and `tab_row_tolerance`. The
+    /// rest of `EditSession`'s setters take their operand from a gesture, not
+    /// from the configuration, and do not belong to a session's opening.
+    ///
+    /// ⚠ This paragraph read *"`quad_point_order`, and nothing else, because
+    /// that is the only member of `Settings` with a session-level setter"*, and
+    /// backed it with a setter count. Both halves went stale together: the
+    /// engine grew the two `/Tabs` settings, the count went from fifteen to
+    /// twenty-nine, and the two controls in Settings › Forms were stored and
+    /// never reached a session — so an operator who chose a `/Tabs` tail rule or
+    /// widened the row tolerance got the engine's default in the very tab ring
+    /// he set them for. `check-settings-funnel.py` derives the pairs from the
+    /// pinned engine's own source rather than from a sentence here.
+    ///
+    /// `set_tab_row_tolerance` clamps to a range and rejects a non-finite
+    /// value, so the setter is also the only honest way in: assigning the field
+    /// would skip a guard the engine wrote for a real failure, since a `NaN`
+    /// tolerance makes no two annotations ever share a row.
     ///
     /// # ★ What the setting actually changes, so the disclosure can be honest
     ///
@@ -215,17 +234,23 @@ impl SettingsExt for Settings {
     fn open_session(&self, doc: pdfcer_core::document::Document) -> pdfcer_core::edit::EditSession {
         let mut session = pdfcer_core::edit::EditSession::new(doc);
         session.set_quad_point_order(self.quad_point_order);
+        session.set_widget_tab_tail(self.widget_tab_tail);
+        session.set_tab_row_tolerance(self.tab_row_tolerance);
         session
     }
 
     /// Every rasterisation in the application starts here.
     ///
-    /// # Five settings, and one deliberate absence
+    /// # What it applies, and one deliberate absence
     ///
-    /// `cmyk_intent`, `mask_resample`, `image_minify`, `cmyk_jpeg_polarity` and
-    /// `missing_as` are all read. Four of the five were persisted and ignored
-    /// by the old shell, which chained only `.with_annotations()` and
-    /// `.with_cmyk_intent()` onto a bare default.
+    /// **Every member of `Settings` that `RenderOptions` has a builder for.**
+    /// Stated against the two types on purpose: this heading read *"Five
+    /// settings"* while the chain assigned six, and four more were offered in
+    /// Settings › Colour, written to the settings file, and discarded by
+    /// every rasterisation the shell had ever done. The count was wrong before
+    /// those four existed and nothing failed either time, which is why the
+    /// guarantee lives in `tools/gates/check-settings-funnel.py` and not in
+    /// this sentence.
     ///
     /// **Annotation scope is NOT set here**, and that is the absence worth
     /// stating. Whether annotations are drawn is a property of *what is being
@@ -248,6 +273,14 @@ impl SettingsExt for Settings {
             .with_image_minify(self.image_minify)
             .with_cmyk_jpeg_polarity(self.cmyk_jpeg_polarity)
             .with_missing_as(self.missing_as)
+            //
+            // The colour-fidelity four. Each answers a rendering ambiguity
+            // whose wrong answer is a wrong colour on screen and on paper, and
+            // each takes its `Settings` value verbatim.
+            .with_page_blend_space_source(self.page_blend_space_source)
+            .with_overprint_zero_tint_scope(self.overprint_zero_tint_scope)
+            .with_spot_colorant_device_model(self.spot_colorant_device_model)
+            .with_mesh_patch_padding(self.mesh_patch_padding)
             //
             // `Option<usize>` passed VERBATIM: `None` means the engine's own
             // default and every one of its four public helpers takes the same

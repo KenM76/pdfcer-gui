@@ -55,7 +55,12 @@
 
 use pdfcer_core::edit::{ButtonAction, NamedAction, PageView, ResetScope};
 
-/// Which of the six things a button may be set to do.
+/// What a button is set to do — one variant per `/A` subtype this shell
+/// writes, plus `Nothing` for no `/A` at all.
+///
+/// [`Self::ALL`] is the exhaustive list the picker is built from, so a new
+/// variant reaches the operator by existing. No count is stated here: the
+/// array's own length is the claim, and it is one the compiler checks.
 ///
 /// ★ `Nothing` is first and is the default, because that is what
 /// `add_push_button` authors and this shell does not change a document's

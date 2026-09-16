@@ -280,11 +280,13 @@ pub fn grabbable(
         // ★★ The eight and NOT the ninth, and the asymmetry is §12.5.6.19's.
         // A widget's rotation is `/MK /R` — a quantised 0/90/180/270
         // *declaration* the field's appearance generator reads, not a
-        // free-angle transform — and it is not built. `rotate_annotation`
-        // refuses a widget by name and points at a verb that does not exist
-        // yet.
+        // free-angle transform. `EditSession::rotate_widget` refuses any angle
+        // that is not a multiple of 90, so a handle that followed the pointer
+        // would be offering an angle the verb cannot store.
         //
-        // ⇒ **R9**: nothing is painted and nothing is hit-tested. A ninth
+        // ⇒ **R9**: nothing is painted and nothing is hit-tested. The quarter
+        // turns live where a quantised choice belongs — Turn left and Turn
+        // right, through `app::actions::forms::widget::rotate` — and a ninth
         // handle here would be a control that declines on release, which is the
         // defect this project exists to remove wearing the costume of a fix.
         return Grabbable {
